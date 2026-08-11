@@ -6,118 +6,139 @@
 
 > A cairn is a trail marker left for those who come after.
 
-**Every AI-assisted change starts as a short written proposal that an
-independent reviewer — a different model, or a human — checks before any code
-is written. The whole deliberation is committed to git, so you can always
-reconstruct why your software is the way it is.**
+**Peer review, for code written with AI agents.** Every substantial change is
+read by someone who did not write it — a different AI model, or a person —
+first while it is still an argument on a page, and again once it is built. That
+review is the point. The written trail it leaves behind is a by-product, and a
+useful one.
+
+**The practice comes with it.** Cairn also writes down the software-engineering
+discipline most scientists never had the chance to learn, so your agents arrive
+already working that way.
 
 ---
 
 ## Does this sound familiar?
 
-You have been using an AI coding agent on your research software.  The
-agent writes good code — fast.  But then:
+You have been using an AI coding agent on your research software.  The agent
+writes good code — fast.  But then:
 
-- The reasoning behind last week's change **evaporated when the chat
-  closed**.  You cannot explain why the model is parameterized this way.
-- A reviewer asks how you got a result.  **You cannot reconstruct the
-  path** — only the output survives.
-- You suspect the agent made a scientific assumption you would not have
-  made.  **Nobody independent ever checked it.**
+- You suspect the agent made a scientific assumption you would not have made.
+  **Nobody independent ever checked it.**
 - The agent reviewed its own work.  **Author and reviewer were the same
   entity**, and neither noticed the gap.
+- The reasoning behind last week's change **evaporated when the chat closed**.
+  You cannot explain why the model is parameterised this way.
+- A colleague asks how you got a result.  **You cannot reconstruct the path** —
+  only the output survives.
 
 Cairn is built for this exact moment.
 
 ---
 
-## What doing it better looks like
+## What Cairn is
 
-| Working with AI, ad hoc | The same work, with Cairn |
+You already trust a process that works this way. A manuscript is read by
+referees who did not write it, before it counts as knowledge. Cairn applies the
+same idea to code changes:
+
+| Journal peer review | Cairn |
 |---|---|
-| Reasoning lives in chat; gone on close | Reasoning committed as a reviewed proposal |
-| Agent is sole author **and** sole reviewer | Review across structural independence (fresh session / different model) |
-| A wrong scientific assumption ships | Caught at proposal review, before any code |
-| "How did I get this result?" | The deliberation record **is** the answer |
-| Slower? Faster? Hard to know | Slower for the first few changes; the overhead pays back in fewer rework cycles |
+| Manuscript → editor → referees → decision | Written proposal → maintainer → reviewers → decision |
+| A colleague's read before you submit | A first review that helps the change land |
+| Independent referees who don't know you | A second review from a **different** AI model, or a person |
+| Referee report → your response → revision | Review → response → revised proposal |
+| Conflict-of-interest rules | Independence you can check: a different model, or a different human |
+
+Two things differ, and both favour the code case. Independence is easier to
+establish — "a different model architecture" is a brighter line than "no recent
+co-authorship." And review happens **before the work is done**, when saying
+"that is the wrong thing to build" is still cheap.
+
+One thing is harder, and worth knowing up front: your reviewers are as diverse
+as the AI models you have access to. A second model reduces the chance of a
+shared blind spot; it does not eliminate it.
+
+### The practice you did not have a chance to learn
+
+Most scientists writing research code did not train as software engineers, and
+there is rarely a senior engineer down the hall to learn it from. The craft
+exists — when something deserves a test, what a change should be checked
+against, how to keep a repository honest, what to do about secrets and
+dependencies, when to stop and ask a person. You would normally absorb it over
+years, from whichever colleagues you happened to have.
+
+Cairn writes it down and hands it to your agents. They arrive already working
+that way: arguing a change before building it, testing what they claim, keeping
+commits clean, and stopping at the points where a person should decide. You do
+not have to know all of it in advance — the review is what checks they actually
+did it.
+
+That is the honest framing, too. Cairn is **opinionated** about engineering
+practice, and the opinions are written down in [`doctrine/`](doctrine/) where
+you can read them and disagree. Bringing in a disciplined team means adopting
+somebody's idea of discipline; this way you can see exactly whose, and what it
+says.
 
 ---
 
 ## What you get
 
-- **Review before code.** A change is argued and reviewed as a written
-  proposal *before* an implementation exists, so a wrong assumption is caught
-  on a page instead of in a result.
-- **Independence you can check.** The stronger review tier requires a
-  different agent type or a human. Who reviewed what is recorded in the
-  repository, not asserted.
-- **The record is the repository.** Append-only, one commit per lifecycle
-  step. The whole arc of a decision replays from `git log`.
-- **Falsification fixed in advance.** What would disprove a change is
-  committed *before* the evidence is gathered — the shape of a registered
-  report, applied to software.
-- **Vendor- and stack-neutral by construction.** The coordination channel is
-  Markdown in git. Change models, tools, or languages without changing the
-  method.
-- **Fitted, not one-size.** The apparatus is sized to your codebase and team,
-  and stays only as heavy as they earn.
-- **No runtime dependencies.** Everything Cairn installs is standard-library
-  Python, and nothing phones home.
+- **Someone independent checks the thinking before any code is written.** A
+  change starts as a short written argument. A reviewer who did not write it
+  reads that argument while it is still cheap to say "that assumption is
+  wrong" — before it is buried in a result.
+- **The reviewer is genuinely independent, and you can see that they were.**
+  The stronger review has to come from a different AI model, or from a person.
+  Who reviewed what is written down in your repository, not claimed.
+- **You write down what would prove you wrong, before you look.** The same
+  discipline as pre-registering an analysis: the test is fixed before the
+  result is known, so it cannot be quietly adjusted afterwards.
+- **Nothing locks you in.** The whole system is plain text files kept under
+  version control. You can change AI tools, or programming languages, without
+  changing how you work.
+- **Sized to your project.** A solo script and a fifteen-year model do not get
+  the same treatment. You start light and add only what your work earns.
+- **Nothing to install but Python, and nothing leaves your machine.** No
+  accounts, no service, no data sent anywhere.
 
-New vocabulary is a real cost of adopting a method.
+New vocabulary is a real cost of adopting any method.
 [`docs/glossary.md`](docs/glossary.md) defines the terms that carry weight.
+
+### The record is a by-product
+
+Cairn keeps every proposal, every review, and every response in your
+repository, next to the code. That trail is genuinely useful a year later — you
+can see why a parameter is 0.3, who challenged it, and what they were told.
+
+But it is not why you would adopt this. You write the argument down because a
+reviewer needs something to argue with, and you keep the review because that is
+how you know it happened. Do review properly and the record falls out of it. Aim
+at the record instead, and you get paperwork.
 
 ### Isn't this just careful prompting with extra steps?
 
-Cairn is slower for the first few changes, and it will not make an agent write
-better code. What it changes is what *survives*. An unrecorded loop cannot tell
-you why a change was made, who checked it, or what would have falsified it —
-and those are exactly the questions a reviewer, a collaborator, or you in six
-months will ask. The apparatus exists to keep those three answers in the
-repository. If you never need to answer them, you do not need Cairn.
+**It does produce better code, and the reason is not mysterious.** A second
+reader who did not write the work catches what the writer cannot see — the same
+reason you do not referee your own manuscript, and do not calibrate an
+instrument against itself. Cairn puts that reader in the loop twice: once while
+the change is still an argument, and again after it is written. The agent is
+unchanged; what changes is that its work is checked at the point where fixing it
+is cheapest.
 
-Decision records, RFC-style proposal processes, lab notebooks, pre-registration
-and ordinary code review all overlap with what Cairn does.
+It is still slower for the first few changes. The payback is fewer things to
+undo later — and an unrecorded session cannot tell you why a change was made,
+who checked it, or what would have shown it to be wrong. If you never need to
+answer those questions, you do not need Cairn.
+
+Decision records, formal proposal processes, lab notebooks, pre-registration and
+ordinary code review all overlap with what Cairn does.
 [`docs/related-practices.md`](docs/related-practices.md) compares them honestly
-and names the four things that are actually distinctive.
+and names the four things that are genuinely different.
 
 ---
 
-## Cairn is a methodology, not software
-
-Cairn is an Open Science repository for scientists building
-scientific-computing software who are adopting AI agents and care about
-rigor, reproducibility, and review discipline.
-
-Cairn has four jobs:
-
-1. **Explain the doctrine** — the invariant core of a human + AI
-   development methodology, and *why* each piece exists.
-2. **Ship forkable templates** — `AGENTS.md`, the `dev/`
-   coordination tree, the proposal / plan / review templates, the
-   session routines.
-3. **Ship a single-agent bootstrap** — a procedure plus a thin
-   script that installs and customizes the apparatus into a target
-   repository, adapting it along a set of codebase and team
-   dimensions.
-4. **Show two worked case studies** — two real scientific-software
-   projects as contrasting points in that dimensional space.
-
-The two differentiators Cairn leads with: an **append-only,
-git-committed deliberation lifecycle**, and a **Dual-Review model**
-(two-tier review across structural independence).
-
-> **The adoption promise.**  Start small.  Use Cairn to make one
-> AI-assisted change with a recorded decision and test.  Keep the
-> apparatus only as heavy as your codebase and team earn.
-
----
-
-## The lifecycle at a glance
-
-Every substantive change moves through a proposal (deliberation) and,
-for non-trivial work, a plan (execution).  Both are append-only,
-git-committed, and reviewed before the code lands.
+## How a change moves
 
 ```mermaid
 flowchart LR
@@ -130,112 +151,78 @@ flowchart LR
     D -->|reject / supersede| A[archive]
 ```
 
+A change is argued in a **proposal**, reviewed, revised if the review found
+something, and then decided by you. Larger work gets a **plan** that carries it
+through implementation and a second review of the code itself. Every step is a
+commit, so the sequence is visible afterwards.
+
 *A faithful simplification of `doctrine/lifecycle.md` — no invented or
-contradicting transition; named states are not dropped.*
+contradicting transition, and no named state dropped.*
+
+![Two review tiers: a first read that helps a change land, and an independent read from a different model or a person that makes it prove it should.](docs/assets/dual-review-independence.svg)
+
+**This works with one agent.** If you have a single AI tool, your own read or a
+fresh session covers the first review. The stronger independent review arrives
+when a second model — or a second person — is available. You do not need a team
+to start.
 
 ---
 
-## Why it works: the Dual-Review model
+## What is proven, and what is not
 
-![Dual-Review independence diagram: author submits a proposal; Internal review from same agent type fresh session helps it land; External review from different agent type or human makes it prove it should land.](docs/assets/dual-review-independence.svg)
+Cairn's practices are not invented from first principles. They answer to
+published research on human–AI software development, on trust in automated
+systems, and on rigour in scientific software, and
+[`doctrine/rationale.md`](doctrine/rationale.md) records where Cairn follows
+that work and where it deliberately departs from it.
 
-**Internal review** (same agent type, fresh session) helps a change
-land — a constructive second read.  **External review** (different
-agent type, or a human) makes a change prove it should land — an
-independent read that sharply lowers the chance of a *shared*
-training-time blind spot (it reduces correlated failure; it cannot
-eliminate it).  Both are
-asynchronous, commit-mediated, and attributed.
+**Cairn does not claim to be validated science.** It claims to be grounded in
+peer-reviewed work and explicit about where it diverges. No controlled study
+shows that adopting Cairn improves outcomes; what exists is two projects using
+it, and reasoning you can check.
 
-**Cairn works with one agent.**  At that scale, the Maintainer's own
-review or a fresh-session review from the same agent type covers the
-Internal tier.  The stronger External floor lands once a second agent
-type or a second human reviewer is available.  See
-[`on-ramp/README.md`](on-ramp/README.md) for the graduated path.
+The same honesty applies to who has tested it. Every deployment so far is one
+its own maintainer is close to. An independent adoption — by people who did not
+help write the doctrine — is the test that has not happened yet.
 
----
+One rule runs underneath everything: **you cannot decide what you cannot
+follow.** Cairn requires its agents to explain in plain language and to stop
+when you do not understand, because a decision you cannot follow is not a
+decision you are really making.
 
-## Grounded in research — and honest about the limits
-
-Cairn's practices are not invented from first principles.  They answer
-to a body of research on human-AI software development, multi-agent
-role design, trust calibration, and scientific-software rigor —
-and `doctrine/rationale.md` records where Cairn **follows** that
-literature and where it deliberately **diverges** from it.
-
-Two examples of where Cairn takes a named position:
-
-- **On review:** Cairn's Dual-Review is closer to scientific peer
-  review (anchor 6 in `doctrine/rationale.md`) than to the
-  multi-agent debate pattern dominant in the 2025 literature — a
-  deliberate choice, with stated reasoning.
-- **On coordination:** Cairn coordinates through persistent `dev/`
-  artifacts (the stigmergy lineage, anchor 5) rather than real-time
-  agent protocols — also deliberate, and explained.
-
-Cairn **does not claim to be peer-reviewed science**.  It claims to be
-*grounded in peer-reviewed work on human-AI software development* and
-*explicit about where it diverges*.  That distinction is the honest
-center.  The comprehension floor (anchor 16) runs underneath the whole
-system: you cannot legitimately decide what you cannot understand, so
-every Cairn output is written to be followable by the human Maintainer,
-not just by the next AI session.
-
-See [`doctrine/rationale.md`](doctrine/rationale.md) for the full
-follows-and-diverges treatment, and
-[`docs/further-reading.md`](docs/further-reading.md) for the curated
-craft signpost (the Turing Way; the PLOS "Ten simple rules" set;
-the V&V canon).
-
----
-
-## Honest framing
-
-Cairn is **slower for the first few changes**.  Its speed comes
-later: fewer repeated decisions, fewer forgotten assumptions, fewer
-agent collisions, and less rework after unreviewed scientific
-choices.  Keep the apparatus only as heavy as your codebase and team
-earn — the [on-ramp](on-ramp/README.md) is the self-locate aid for
-that calibration. Proportionality is a correctness property: process that
-obscures the work or makes bypass attractive weakens the method, while
-load-bearing controls remain in place wherever criticality or a real trust
-boundary earns them.
-
----
-
-## Who Cairn is for
-
-- A scientist or research-software team building scientific code
-  (numerical simulation, data pipelines, calibration / inversion,
-  ML for science).
-- Adopting one or more AI coding agents (any vendor; Cairn is
-  vendor-neutral throughout).
-- Wanting recorded, reviewed deliberation rather than ad-hoc
-  prompting — and willing to commit the apparatus to git.
-- Working at a graduate-research, faculty-research, or small-group
-  scale (one human plus agents, up to a small multi-human team).
-
-Cairn is **not** a project-management framework, a CI/CD tool, or a
-prompt library.  It is upstream of those — the doctrine that decides
-what gets prompted, reviewed, and shipped.
+See [`docs/further-reading.md`](docs/further-reading.md) for the wider
+craft literature — the Turing Way, the PLOS "Ten simple rules" papers, and the
+verification-and-validation canon.
 
 ---
 
 ## Trust and safety
 
-> **What stays on your machine — and what doesn't.** Cairn's own
-> tools never phone home: they read and write only inside your
-> repository and never act around your approval.  But the AI agents
-> you run **do** send everything they read to their model provider —
-> that's how they work — so the tree, proposals, and plans **must
-> never contain** secrets, credentials, private paths, embargoed
-> datasets, or unpublished results.
+> **What stays on your machine — and what doesn't.** Cairn's own tools never
+> phone home: they read and write only inside your repository and never act
+> around your approval.  But the AI agents you run **do** send everything they
+> read to their model provider — that is how they work — so the tree,
+> proposals, and plans **must never contain** secrets, credentials, private
+> paths, embargoed datasets, or unpublished results.
 >
-> Cairn agents also **run commands and execute local code**, so point
-> them only at inputs you trust and keep credentials out of the
-> environment.  See [`SECURITY.md`](SECURITY.md) for the full
-> contract: what the agent reads, what the scanners check, and the
-> residual risks.
+> Cairn agents also **run commands and execute local code**, so point them only
+> at inputs you trust and keep credentials out of the environment.  See
+> [`SECURITY.md`](SECURITY.md) for the full contract: what the agent reads,
+> what the scanners check, and the residual risks.
+
+---
+
+## Who this is for
+
+- A scientist, or a small research-software team, writing code for your own
+  research — models, data pipelines, calibration, analysis.
+- Using one or more AI coding agents. Any vendor; Cairn does not care which.
+- Wanting your AI-assisted work reviewed and recorded rather than just
+  prompted — and willing to keep that record in git alongside the code.
+
+Cairn is **not** a project-management framework, a testing tool, or a prompt
+library. It sits upstream of those: it governs how one change is argued,
+checked, and recorded.
 
 ---
 
@@ -244,8 +231,8 @@ what gets prompted, reviewed, and shipped.
 **Try it first.**  Follow [`docs/quickstart.md`](docs/quickstart.md) on a
 disposable repository: one human, one AI agent, one trivial change through the
 full lifecycle.  It is a short walkthrough, and nothing it installs touches a
-repository you care about.  If you would rather see the apparatus on something
-that looks like science than on a toy,
+repository you care about.  If you would rather see it on something that looks
+like science than on a toy,
 [`examples/scientific-minimal/`](examples/scientific-minimal/) runs the same
 lifecycle over a mass-balance invariant test.
 
@@ -273,17 +260,16 @@ for the full ladder):
   agent and the maintainer through assessment, install,
   customization, and a dogfood pass.
 
-The bootstrap is intentionally single-agent: one capable reasoning
-agent running alongside the Maintainer, working from
+The bootstrap is intentionally single-agent: one capable reasoning agent
+running alongside you, working from
 [`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md).
 
-**Bringing a legacy scientific codebase to Cairn?**  Fill
+**Bringing an older scientific codebase?**  Fill
 [`templates/codebase-readiness-report.md`](templates/codebase-readiness-report.md)
-first.  The eleven-section assessment (tests, hidden state, data I/O,
-reproducibility, security boundaries, scientific assumptions, and
-more) surfaces the load-bearing questions *before* you pick a level,
-and its scoring appendix turns your answers into a recommended starting
-depth and module set.
+first.  Its eleven sections — tests, hidden state, data handling,
+reproducibility, security, scientific assumptions and more — surface the
+questions that matter *before* you pick a depth, and its scoring appendix turns
+your answers into a recommended starting point.
 
 ---
 
