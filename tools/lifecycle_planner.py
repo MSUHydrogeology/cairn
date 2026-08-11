@@ -1135,6 +1135,43 @@ _S1_PASS_RE = re.compile(
 )
 
 
+def _pass_body(lines: List[str], line_no: int, boundaries: List[int]) -> str:
+    """The body of the pass whose heading is at *line_no* (Chunk B, B1).
+
+    **One ordered boundary set, used for every pass body of either record
+    kind.**  A boundary is a level-<=2 Section *or* a raw S1-conforming pass
+    line, so a pass heading the looser ``_HEADER_RE`` could not parse still
+    terminates the pass above it.
+
+    Why this is not merely tidier: before B1 only *synthesized* sections were
+    sliced this way, and a recognized pass kept the body ``_parse_sections``
+    gave it.  ``_parse_sections`` knows nothing about raw S1 lines, so a later
+    unparseable pass heading -- a reviewer field with parentheses outside the
+    ``(<role>)`` position is enough -- was invisible to it.  The earlier pass's
+    body then ran straight through the later heading and **swallowed its
+    ``**Tier**`` and ``**Findings**`` lines**, which surfaced as *the earlier
+    pass* carrying "duplicate Tier" / "duplicate Findings".  Reproduced before
+    the fix; pinned by
+    ``test_lifecycle_contract.py``'s later-pass-body mutation.
+
+    This can only ever *narrow* a body, never widen one: the boundary set is a
+    superset of the section boundaries ``_parse_sections`` already used, so the
+    computed end is always at or before the previous one.  That monotonicity is
+    what makes applying it to already-recognized sections safe.
+
+    The ceiling half of B1 falls out of the same set rather than needing its own
+    rule: since ``286f07d`` the only surviving positional ceiling is
+    ``### Sharpening``, which is scoped to a pass *body* -- so a correct body is
+    a correct ceiling.
+    """
+    end = len(lines)
+    for b in boundaries:
+        if b > line_no:
+            end = b - 1
+            break
+    return "\n".join(lines[line_no:end])
+
+
 def _synthesize_pass_section(lines: List[str], line_no: int,
                              m: "re.Match[str]",
                              boundaries: List[int]) -> Section:
@@ -1143,18 +1180,10 @@ def _synthesize_pass_section(lines: List[str], line_no: int,
     Only reached when a raw line matches `_S1_PASS_RE` but has no entry in
     ``art.sections`` -- e.g. a reviewer field carrying literal parentheses
     outside the ``(<role>)`` position, which ``_HEADER_RE`` rejects outright.
-    The body is bounded exactly as ``_parse_sections`` bounds every other H2
-    section's: text up to (not including) the next boundary line, where a
-    boundary is either a known-kind Section at level <= 2 or another raw S1
-    pass line -- so two adjacent synthesized passes still get their own
-    bodies rather than swallowing each other's.
+    The body comes from :func:`_pass_body`, the single boundary rule every pass
+    now shares.
     """
-    end = len(lines)
-    for b in boundaries:
-        if b > line_no:
-            end = b - 1
-            break
-    body = "\n".join(lines[line_no:end])
+    body = _pass_body(lines, line_no, boundaries)
     sec = Section(level=2, kind="Plan review", name=m.group("reviewer"),
                  role="", date=m.group("date"), line_no=line_no)
     sec.body = body
@@ -1203,6 +1232,21 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
         sec = by_line.get(line_no)
         if sec is None:
             sec = _synthesize_pass_section(lines, line_no, m, boundaries)
+        else:
+            body = _pass_body(lines, line_no, boundaries)
+            if body != sec.body:
+                # B1: a recognized pass gets the SAME boundary rule as a
+                # synthesized one.  Re-sliced into a **copy** -- `art.sections`
+                # is shared with every other consumer (`_has_disposition`,
+                # `_reviewers`, the Decision predicates), and narrowing a body
+                # in place would silently change what they see for reasons none
+                # of them asked about.  Only the pass view is corrected here.
+                resliced = Section(level=sec.level, kind=sec.kind,
+                                   name=sec.name, role=sec.role,
+                                   date=sec.date, line_no=sec.line_no)
+                resliced.body = body
+                resliced.has_isolated_blockquote = _has_isolated_blockquote(body)
+                sec = resliced
         out.append((sec, hashlib.sha256(
             raw.encode("utf-8")).hexdigest()[:16]))
     return out

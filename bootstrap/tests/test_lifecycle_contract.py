@@ -1549,3 +1549,69 @@ def test_documentation_illustrates_the_form_with_inline_code():
     text = ("## Lasting-truth migration\n\nwrite `Dispositions: none` when "
             "there are no follow-ups.\n")
     assert planner._has_disposition_attestation(text) is False
+
+
+# B1 -- one boundary set for every pass body, of either record kind.
+
+
+class TestPassBodyBoundaries:
+    """Chunk B, B1: a later pass heading terminates the pass above it **even
+    when ``_HEADER_RE`` cannot parse that heading**.
+
+    Before B1 only *synthesized* sections were sliced against the unified
+    boundary set; a recognized pass kept whatever body ``_parse_sections`` gave
+    it, and ``_parse_sections`` knows nothing about raw S1 lines.  So an
+    unparseable later heading was invisible to it, the earlier pass's body ran
+    through that heading, and the later pass's attestation lines were counted as
+    **the earlier pass's duplicates** -- a silent misattribution that blamed a
+    conforming record for its neighbour's shape.
+    """
+
+    #: Matches `_S1_PASS_RE` but NOT `_HEADER_RE`: `_HEADER_RE`'s `name` group
+    #: is `[^()\n]+?`, so a reviewer carrying parentheses outside the single
+    #: `(<role>)` position is rejected outright and produces no Section.
+    UNPARSEABLE = "## Plan review -- Bob (a) (b) -- 2026-08-02"
+
+    BODY = (
+        "## Plan review -- Alice -- 2026-08-01\n\n"
+        "**Tier**: Internal\n"
+        "**Findings**: none\n\n"
+        + UNPARSEABLE + "\n\n"
+        "**Tier**: External\n"
+        "**Findings**: none\n"
+    )
+
+    def test_the_unparseable_heading_is_still_seen_as_a_pass(self, tmp_path):
+        """Precondition for the rest: the second heading is a *pass* with no
+        Section.  If `_HEADER_RE` ever widens to parse it, this test stops
+        exercising the swallowing case and must be re-pointed at a heading that
+        still has no Section -- otherwise the nodes below would pass for a
+        reason unrelated to what they claim."""
+        art = _plan_art(tmp_path, self.BODY)
+        passes = planner._pass_headings(art)
+        assert [s.name for s, _ in passes] == ["Alice", "Bob (a) (b)"]
+        assert not [s for s in art.sections
+                    if s.level <= 2 and s.name == "Bob (a) (b)"]
+
+    def test_an_earlier_pass_body_stops_at_an_unparseable_later_heading(
+            self, tmp_path):
+        art = _plan_art(tmp_path, self.BODY)
+        bodies = {s.name: s.body for s, _ in planner._pass_headings(art)}
+        assert planner._TIER_LINE_RE.findall(bodies["Alice"]) == ["Internal"]
+        assert planner._TIER_LINE_RE.findall(bodies["Bob (a) (b)"]) == ["External"]
+
+    def test_no_pass_is_blamed_for_its_neighbours_attestation_lines(
+            self, tmp_path):
+        """The observable defect: `duplicate Tier` / `duplicate Findings`
+        reported against a record that declares each field exactly once."""
+        assert _violations(tmp_path, self.BODY) == []
+
+    def test_reslicing_does_not_mutate_the_shared_section_bodies(
+            self, tmp_path):
+        """`art.sections` is shared with `_has_disposition`, `_reviewers` and the
+        Decision predicates.  B1 corrects the *pass view* only; narrowing a body
+        in place would silently change what those consumers see."""
+        art = _plan_art(tmp_path, self.BODY)
+        before = {s.line_no: s.body for s in art.sections}
+        planner._pass_headings(art)
+        assert {s.line_no: s.body for s in art.sections} == before
