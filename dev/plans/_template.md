@@ -291,7 +291,36 @@ was actually updated; the gates don't enforce that.
      is required is what `required(<tier>)` vs `none` on that line decides.
      See `doctrine/plans.md` > "Plan review" for reviewer identity, format,
      sharpening, multi-round review, and the distinction from
-     discovery-driven plan revision. -->
+     discovery-driven plan revision.
+
+     SCOPE DELTA -- accepted scope is a FLOOR, and the Sharpening is where
+     that most often bites, because a reviewer's narrowing recommendation and
+     the author's acceptance of it land in the same section.  Sequencing is
+     free: moving work between chunks, re-ordering them, or splitting one
+     across commits changes no outcome and owes nothing.  REMOVING an accepted
+     outcome is a deviation from approved scope under `AGENTS.md`, not a scope
+     fence the plan may draw for itself -- and a plan reviewer cannot create
+     that authority by calling the remainder "out of scope".
+
+     So when a Sharpening disposition narrows what this plan will deliver,
+     judge it against the scope AS ACCEPTED and declare the result inside the
+     Sharpening:
+
+       **Scope delta**: degraded | lost
+
+       **Removed scope**
+       * <unit> -- source section; reason; revival/closure condition.
+
+       **Disposition/home**: <where the grouped remainder lives>
+
+     Omit the block when every accepted outcome is still delivered
+     (`preserved`) -- a lighter mechanism that still delivers is what
+     restraint asks for, and a declaration on every revision would be ritual
+     within a month.  `degraded` and `lost` both additionally need the
+     Maintainer's explicit disposition under the deviation gate; partial
+     changes what residual is recorded, never who may concede it.  Full rule:
+     `doctrine/dual-review.md` > "Review expectations -- the scope-reduction
+     trap". -->
 
 ## Code review
 

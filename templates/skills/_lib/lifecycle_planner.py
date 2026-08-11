@@ -1644,12 +1644,25 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "* **[R1]** <accept|accept with modification|reject|defer> -- "
                 "<rationale>\n\n"
                 "<If accepted critiques substantially change the proposal, add a "
-                "'## Revised proposal' section and set Status: revised.>"
+                "'## Revised proposal' section and set Status: revised.>\n\n"
+                "<Scope delta -- ONLY if this revision narrows what the "
+                "proposal will deliver, judged against the scope AS OPENED. "
+                "Omit entirely when every opened outcome is still delivered.>\n\n"
+                "**Scope delta**: degraded | lost\n\n"
+                "**Removed scope**\n\n"
+                "* <unit> -- source section; reason; revival/closure "
+                "condition.\n\n"
+                "**Disposition/home**: <where the grouped remainder lives>"
             )
             manifest = [
                 "Status: reviewed -> revised",
                 "append '## Response' (+ optional '## Revised proposal'); "
                 "append-only.",
+                "the Scope-delta block is OMITTED unless the revision narrows "
+                "an outcome the proposal opened with; declining a reviewer's "
+                "proposed expansion is not a reduction. THE TOOL DOES NOT "
+                "CHECK THIS -- no transition refuses on a missing or malformed "
+                "declaration; review is the enforcement.",
                 "one commit for this transition.",
             ]
             return ("reviewed/revised", "revised", [block] + manifest)
@@ -1699,10 +1712,24 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "<orientation> **Findings:** ... **Coverage + second-round "
                 "recommendation:** ...\n\n"
                 "### Sharpening -- <author> -- " + date + "\n\n"
-                "<dispositions on the findings, if any>"
+                "<dispositions on the findings, if any>\n\n"
+                "<Scope delta -- ONLY if a disposition here narrows what the "
+                "plan will deliver, judged against the scope AS ACCEPTED. "
+                "Sequencing between chunks owes nothing; removing an accepted "
+                "outcome is a deviation under AGENTS.md.>\n\n"
+                "**Scope delta**: degraded | lost\n\n"
+                "**Removed scope**\n\n"
+                "* <unit> -- source section; reason; revival/closure "
+                "condition.\n\n"
+                "**Disposition/home**: <where the grouped remainder lives>"
             )
             manifest = [
                 "Status: -> executing",
+                "accepted scope is a FLOOR: a Sharpening that removes an "
+                "accepted outcome needs the Maintainer's explicit disposition "
+                "under the deviation gate. A plan reviewer cannot create that "
+                "authority by calling the remainder 'out of scope'. THE TOOL "
+                "DOES NOT CHECK THIS.",
                 "for a review-required plan, the '## Plan review' section (+ "
                 "Sharpening if findings) must have landed first; plan-open and "
                 "first-implementation commits stay distinct.",

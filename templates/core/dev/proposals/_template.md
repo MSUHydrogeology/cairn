@@ -396,6 +396,44 @@ If accepted critiques substantially change the proposal, write a short
 "## Revised proposal" section above this and update `Status:` to
 `revised`.
 
+**Scope delta — declare it when the revision narrows what this proposal
+will deliver.** Judge the narrowing against the **scope as opened**, not
+against the previous round and not against a summary of purpose written
+now. If every outcome the opened proposal committed to is still
+delivered, the narrowing is `preserved` and this block is omitted
+entirely — a lighter mechanism that still delivers is what restraint
+asks for. Otherwise:
+
+```
+**Scope delta**: degraded | lost
+
+**Removed scope**
+* <unit> -- source section: <where it was committed to>; reason: <why>;
+  revival/closure condition: <what would bring it back>.
+
+**Disposition/home**: <where the grouped remainder now lives>
+```
+
+Three rules make this worth writing rather than ritual:
+
+* **One grouped record**, not one roadmap row per unit. Dispersing a
+  reduction into backlog fragments preserves the words and loses the
+  reach.
+* **The Maintainer allows the loss**, via the Decision, with the
+  reduction visible. An author may propose one and a reviewer may
+  recommend one; neither may concede a baseline outcome. `degraded`
+  changes *what residual is recorded*, never *who may concede it*.
+* **Declining a reviewer's proposed expansion is not a reduction.** It
+  was never in the baseline. Record the suggestion and the reason in the
+  Response — *Alternatives considered* if the idea is worth keeping.
+
+And when review finds a part *underspecified*, the default resolution is
+to **specify** it. Removing it instead is available and sometimes right,
+but say why specifying was rejected — that sentence is what makes the
+easy path visible as a choice. Full rule:
+`doctrine/dual-review.md` > "Review expectations — the scope-reduction
+trap".
+
 <!-- `{{Maintainer}}` is the human Maintainer's FULL DISPLAY NAME, exactly as
      configured in `dev/.cairn/agent-identities.json` ("human_maintainers") --
      e.g. `## Decision -- Ada Lovelace (Maintainer) -- 2026-05-20`.  A bare role
