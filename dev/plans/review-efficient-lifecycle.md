@@ -276,7 +276,7 @@ B   canonical pass boundaries                      [B1+B2 1329b22; B3 pending]
 P1  assurance paths + four-field review basis      [commit pending]
 C   Code-review record schema + legacy manifest    [commit pending]
 P5  Contract non-expansion attestation             [commit pending]  (binds into C)
-D   claim-check archive resolution + registry      [D1/D2/D5 4723107; D3/D4 pending]
+D   claim-check archive resolution + registry      [DONE 4723107 D1/D2/D5; 6869022 D3/D4]
 E   status vocabulary, transitions, conformance    [commit pending]
 P2  plan readiness, inheritance, expansion refusal [commit pending]
 P3  current-contract revision + withdrawal ledger  [commit pending]
