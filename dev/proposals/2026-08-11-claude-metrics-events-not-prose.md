@@ -201,3 +201,102 @@ Owed at implementation, belonging to the plan:
 ### Summary Verdict
 **Verdict**: **ACCEPT** (Proposal approved; 0 blocking, 0 substantive, 0 minor findings). Ready for Maintainer disposition.
 
+## Review -- Codex (External) -- 2026-08-11
+
+**Model**: OpenAI GPT-5 (Codex)
+**Reviewed commit**: `1e65dd72f0618b61ed137cd607d1ae3c59e2833e`
+**Reviewed proposal blob**: `26d91de77862610a0f91c6b3565a199d34118a2f`
+**Tier**: External, different agent type from the author
+
+**Verdict: REVISE.** The incentive diagnosis is correct and independently
+reproduces. Retiring the eight named columns from routine emission is the right
+default. The proposal does not yet define the compatibility boundary for that
+breaking schema change, though, and it leaves its largest architectural part
+simultaneously proposed and possibly deferred. Those are plan-shaping decisions,
+not details an implementer should infer.
+
+### Findings
+
+**[E1 -- P1] Version the schema being broken now, not only the future event
+record.** The current snapshot manifest labels its CSV columns
+`stability_tier: contract`; all eight named columns are in
+`PROPOSAL_COLUMNS`, and therefore in routine CSV/Markdown output and persisted
+snapshots. There is no schema/version field in the 39-column unified snapshot.
+The proposal acknowledges that removal breaks adopter scripts but treats a
+visible break as the migration contract. Visibility is useful failure behavior,
+not versioning.
+
+Part 3 says future emitted records need schema versions, but Part 1 changes a
+contract first. Bind this proposal to a concrete boundary: assign the post-
+retirement output a new schema identity, expose it through `--manifest` and the
+persisted snapshot, document the eight v1-to-v2 removals, and leave existing v1
+snapshot bytes untouched. Routine v2 output should not dual-emit deprecated
+metrics. If a compatibility reader is offered, make it an explicit bounded
+migration/backfill mode rather than the default measurement path. This preserves
+the proposal's incentive argument while giving adopters a machine-readable way
+to branch or refuse.
+
+**[E2 -- P1] Part 3 has no executable disposition.** “It may belong in its own
+proposal” leaves two incompatible plans valid: one can retire columns and edit
+doctrine only; another can also add a planner writer, durable event store,
+backfill mode, and event schema. The proposal must choose before Decision.
+Recommended closure: make Parts 1 and 2 plus the immediate output-schema boundary
+the accepted scope here, and explicitly defer emit-at-transition to a named
+follow-up artifact or roadmap row. Alternatively, keep Part 3 here only after
+specifying the event owner, record location and format, append/transaction
+semantics, schema identity, and backfill boundary. Do not hand that architecture
+to the plan author as an open choice.
+
+**[E3 -- P2] The retained columns are lower-incentive corpus proxies today, not
+yet emitted structural events.** I built two independent fixture proposals with
+the same status and review identity. Splitting one concern and one disposition
+into three changed `total_findings`, `findings_p1`, and
+`review_yield_accept_count` from 1 to 3, confirming the proposal's primary
+claim. Adding a second `## Review` heading also changed `review_rounds` from 1
+to 2 without evidence of a separate commit or independent act. Free-text role
+and model fields similarly remain parser inputs. The future event architecture
+is what can make these immutable structural events; the present corpus walk
+does not.
+
+Revise “An event either happened or it did not; writing more cannot inflate it”
+to distinguish structured lifecycle proxies from body-volume metrics. Keep the
+former during the transition because they are materially harder and costlier to
+inflate, but record their current provenance and reliability honestly.
+
+**[E4 -- P2] Retire the metric definitions and dependencies, not just eight CSV
+keys.** Three review-yield metrics remain in `METRIC_CONTRACT_MAP`, the snapshot
+manifest derives its contract from the column lists, `_review_yield_counts`
+still parses Response prose, package/module prose advertises the subsystem, and
+the installed-tool integration test asserts finding columns. The plan must name
+the disposition of each surface: delete it from routine extraction and the
+Metric Contract, or move it behind the explicitly bounded study/backfill path
+described by Part 2. A test that only checks absent output keys can leave dead or
+still-advertised prose measurement behind.
+
+### Reproduction
+
+Under the canonical Python 3.13.13 interpreter:
+
+* `PROPOSAL_COLUMNS` contains exactly 30 columns and all eight proposed
+  retirements; the unified snapshot has 39 columns, its manifest matches that
+  list, and no column carries `schema` or `version`.
+* The independent fixtures produced finding/yield counts of 1 versus 3 from
+  prose splitting while status, revision state, and cross-agent-type presence
+  stayed fixed. They also demonstrated that another Review heading increments
+  the retained round count.
+* The current metrics-focused baseline is green: `test_reference_scripts.py`
+  plus `test_lifecycle_metrics_config.py` reported **29 passed**.
+* Repository search confirmed the full dependency surface named in E4 and the
+  three existing untracked snapshot headers that still carry all eight columns.
+  I did not modify or treat those concurrent measurement artifacts as authority.
+
+### Closure
+
+No further argument is needed for whether the eight columns should remain in
+routine output: remove them. A concise amendment that (1) names the immediate
+schema version and migration behavior, (2) defers or fully specifies Part 3,
+(3) calls retained corpus fields interim proxies, and (4) binds removal through
+the manifest/Metric-Contract/helper/test dependency graph would satisfy this
+review. No Security Review is indicated by the current retirement-only scope;
+an append-only event writer proposed under Part 3 should receive its own
+untrusted-input, concurrency, and failure-atomicity preflight.
