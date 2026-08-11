@@ -180,40 +180,50 @@ One column named in the original sixteen, `human_review`, is **not** in the
 live schema; `external_tier_review` remains. Treat any analysis written
 against the old column list as needing a re-check.
 
-**Both plan-side review-round columns are broken, and the cause is a
-heading-level mismatch.** `code_review_rounds` reports 0 for 28 of 38 plans and
-`plan_review_rounds` is worse. This is a **metric defect, not a process
-defect** -- the reviews happened, are dated, and are present in every archived
-plan. The extractor cannot see them.
+**Both plan-side review-round columns are broken, and the corpus is not at
+fault -- the metric was written against a shape the plan template does not
+prescribe.** `code_review_rounds` reports 0 for 28 of 38 plans;
+`plan_review_rounds` is worse. This is a **metric defect, not a process defect
+and not convention drift**: the reviews happened, are dated, are present in
+every archived plan, and are written in the form the template asks for.
 
-`parse.py` requires an **h3** heading on the same line as a date:
+`parse.py` requires an **h3** heading carrying a date:
 
 ```python
 _CODE_REVIEW_HEADING_RE = re.compile(r'### (?:[a-z]+ )?code review\b', re.I)
 _PLAN_REVIEW_HEADING_RE = re.compile(r'### (?:[a-z]+ )?plan review\b', re.I)
 ```
 
-The corpus convention is **h2**. Measured across the 36 archived plans:
+What `templates/core/dev/plans/_template.md` actually specifies:
 
-| heading | dated, at h2 (missed) | counted |
-|---|---|---|
-| code review | **33** | 11 |
-| plan review | **95** | 2 |
+* **Plan review -- H2, explicitly.** *"Each review pass is its own dated **H2**
+  section... `## Plan review -- <reviewer> -- YYYY-MM-DD`"*, and *"There is no
+  `## Plan review` container heading."* The template prescribes H2 dated
+  passes and defines no H3 round form at all. **The metric could never count a
+  template-conformant plan review.** Measured: **95** dated H2 plan-review
+  headings missed, 2 counted -- and those 2 are the non-conformant ones.
+* **Code review -- H2 container, H3 optional.** The template opens a
+  `## Code review` section and refers to a `### Code review -- <reviewer> --
+  YYYY-MM-DD` sub-heading *"if used."* The metric counts only that optional
+  form, so a plan using the sanctioned H2 shape reports zero. Measured: **33**
+  dated H2 code-review headings missed, 11 counted. All 36 archived plans carry
+  a code-review heading; 10 carry one the extractor counts.
 
-All 36 archived plans carry a code-review heading; **10** carry one the
-extractor counts. So Cairn's plan-archive precondition -- a plan cannot archive
-until a code review has occurred -- is being satisfied; the column that would
-*evidence* it simply misses the dominant form.
+The chronology confirms the direction. H3 sub-headings appear only from
+2026-08-03, in about ten of thirty-six plans -- *recent, partial adoption of an
+optional form*, not a convention that was abandoned. Cairn's plan-archive
+precondition is being satisfied throughout; the column that would evidence it
+is measuring the wrong shape.
 
 Two consequences. **Neither column is usable as review-coverage evidence
-today**, and any analysis or snapshot built on them understates review activity
-by roughly an order of magnitude on the plan-review side. And the fix is not
-purely mechanical: relaxing the pattern to accept `##` is a one-line change to
-a module Cairn *ships to adopters*, and it **changes the values of every
-historical snapshot** -- so it needs a proposal that decides whether past
-snapshots are re-derived, annotated, or left as a documented discontinuity.
-That is a measurement-boundary problem of exactly the kind this note's
-methodological cautions already name.
+today**, and plan-review activity is understated by roughly an order of
+magnitude. And the fix direction is now unambiguous -- **the metric must match
+the template**, not the corpus match the metric -- but it is still not purely
+mechanical: relaxing the patterns is a small change to a module Cairn *ships to
+adopters*, and it **changes the values of every historical snapshot**. It needs
+a proposal that decides whether past snapshots are re-derived, annotated, or
+left as a documented discontinuity -- the measurement-boundary problem this
+note's methodological cautions already describe.
 
 **Per-plan: still 6 columns** -- `stem`, `status`, `plan_review_rounds`,
 `code_review_rounds`, `paired_proposal`, `paired_proposal_reliability`.
