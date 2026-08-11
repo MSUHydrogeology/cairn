@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: proposed
+**Status**: accepted
 **Touches**: `tools/_intent/record_io.py`, `tools/_intent/cli.py`,
 `tools/lifecycle.py` — each with its shipped twin under
 `templates/modules/team-gated/_intent/` and `templates/skills/_lib/`;
@@ -178,3 +178,29 @@ that performs precisely this kind of prune on reflections.
 * A handoff loses a concurrent session's fresh claim — [H2] escaped.
 * Unreleased claims stop being reported and start being deleted, and stale-claim
   bugs go quiet without being fixed.
+
+## Decision -- Anthony Kendall (Human Maintainer) -- 2026-08-11
+
+**ACCEPTED.** Authorization, quoted verbatim and visually isolated:
+
+> Okay, I'm actually avoiding a proposal because the proposal-plan-implementation-review ceremony has become onerous. But, that's exactly what Cairn is for, to make better code. So, please, go ahead with this but do it internally. And don't ask for permission on anything that doesn't need it
+
+**What was accepted, and what "internally" compresses.** The proposal's design as
+written, including its recommendation *against* one reading of "inactive": prune
+released pairs only, and **report** never-released claims rather than deleting
+them. The Maintainer directed the deliberation be run **internally** rather than
+through a separate plan artifact with its own external review round — so the
+adversarial work (the [H1] invariant, the mutants, the concurrency refusal) is
+carried in the implementation and its verification record, not in a plan
+document. No acceptance criterion is dropped; the artifact that would have held
+them is.
+
+**Recorded plainly, because it is a real trade and not a formality.** This ships
+to adopters across three twin pairs and it deletes data. The compression means
+**no External round saw the implementation before it landed.** That is the
+Maintainer's call to make and they made it; it is named here so a later reader
+does not mistake a fast path for a reviewed one. A code review remains welcome
+and is not owed to this Decision.
+
+**Scribed by** Claude (Implementation) on the instruction above, which is
+unambiguous on disposition.
