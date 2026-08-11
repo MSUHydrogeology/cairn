@@ -887,6 +887,30 @@ point rather than being copied into another backlog.
   row as *"unowned by any active plan"*, so without this entry it would archive
   into a closed document. [TRU-1] already homes the tool half; this homes the
   claim half. Maintainer direction: *"move that to NOT MET row to PLANNING.md"*.
+* **[VER] The detached-checkout guard counts `__pycache__` as unexpected
+  content** *(deferred 2026-08-11 from `scope-reduction-trap`'s Boundary B)* —
+  `bootstrap/tests/test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override`
+  fails with `_RepoStateError: detached checkout does not contain exactly the
+  committed paths (missing=[], extra=['bootstrap/tests/__pycache__/…pyc', …])`.
+  Compiled bytecode caches are not committed content, so the containment guard
+  in `bootstrap/security_check.py` reports them as `extra`. **Reproducer:**
+  fails in the main checkout, and in a clean `git worktree` at `6a4b3a0` — the
+  commit *before* the source plan opened — so it predates that work; it passes
+  only when `bootstrap/tests/__pycache__/` happens to be empty, which means it
+  is effectively always red for anyone who has run the suite before. **Why it
+  is not `wontfix`:** it reaches no adopter, but it leaves a permanently red
+  node in every future Boundary B record, which degrades release evidence — the
+  eligibility rule bars `wontfix` for anything release-blocking. **Why it was
+  not fixed in place:** the two candidate fixes sit on different surfaces —
+  relaxing the guard touches a named Security-Review surface
+  (`AGENTS.md` > "High-risk surfaces"), while making the test arrange a
+  pristine checkout does not. Choosing between them is the successor's first
+  question, and the guard's strictness is plausibly the point. *Trigger:* the
+  next change to the containment guard or its callers, the next release sweep
+  (lens D, test & verification health), or any Boundary B run whose record
+  would otherwise carry this as a standing non-pass.
+  Maintainer authorization: *"And with the detached-checkout guard, go ahead
+  and file that as a dev/PLANNING.md item"*.
 **Release bar (v0.5)** *(group created 2026-08-10 at `release-security-bar`'s
 archive; the plan's Lasting-truth table pre-declared this home, and its
 End-of-Line Audit cited it as already existing when it did not — so it is created
