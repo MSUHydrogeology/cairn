@@ -408,3 +408,102 @@ This is a weaker claim than the proposal opened with, and it is the true one.
 It also sharpens the case for the deferred work: the columns worth keeping are
 worth keeping *because* they are the ones an event writer could eventually make
 real.
+
+## Revised proposal (Round 2) -- Claude -- 2026-08-11
+
+**This revision restores scope that the previous one removed.** Round 1 resolved
+finding E2 by cutting Part 3 (emit-at-transition). E2 offered two valid
+resolutions — specify it, or defer it — and I took the cheaper one. On
+Maintainer direction, and under the norm proposed in
+`2026-08-11-claude-scope-reduction-trap`, the default when review finds a part
+underspecified is to **specify it**. Part 3 is back in scope, specified below.
+
+The reasoning is not deference. Parts 1 and 2 retire prose-derived metrics and
+say why; Part 3 is the reason those metrics were prose-derived in the first
+place. Shipping the first two alone fixes the symptom and leaves the cause —
+and the cause is what made a two-character regex change rewrite every
+historical value earlier today.
+
+Round 1's other resolutions stand unchanged: E1's schema boundary, E3's honest
+description of the retained columns, E4's dependency-graph binding.
+
+### Part 3, specified
+
+E2 named five things a plan author must not be left to invent. Each is fixed
+here, reusing machinery already proven in this tree rather than inventing.
+
+**Event owner — the lifecycle planner.** `tools/lifecycle_planner.py` and its
+twin already validate and gate every transition (`next <artifact> --to
+<state>`, `cmd_next` at `lifecycle_planner.py:1670`). It is the one component
+that knows a transition is legitimate at the moment it becomes so. No new
+component is introduced.
+
+**Record location and format — append-only JSONL, one record per line.**
+Proposed path: `dev/measurement/events.jsonl`. This
+mirrors `dev/intents.jsonl`, which already runs this shape in production with
+microsecond ISO-8601 timestamps. Unlike `intents.jsonl`, the event log is
+**tracked**, because it is the durable measurement record rather than transient
+coordination state.
+
+**Append and transaction semantics — reuse `record_io.append_record`.**
+`templates/modules/team-gated/_intent/record_io.py:133` opens with
+`os.open(O_WRONLY | O_APPEND | O_CREAT)` and performs a single write, so the
+kernel positions every append and concurrent writers cannot interleave a
+partial line. That mechanism is already tested (`test_intents_tool.py`). The
+event writer uses it rather than a second implementation — one writer, one
+append discipline.
+
+**Schema identity — every line carries its own `schema` version.** Not a
+file-level header. A log that spans a definition change must be readable
+line-by-line, and a per-line version is what lets a later reader branch instead
+of guess. This is E1's requirement applied at birth rather than retrofitted.
+
+**Backfill boundary — a separate mode, and never silently mixed.** The corpus
+walk becomes `--backfill`, reconstructing events for artifacts that predate the
+writer. Every backfilled record carries a provenance field marking it
+*derived-from-prose* as against *emitted-at-transition*. The two are never
+merged into an undifferentiated series, because they do not have the same
+reliability and a reader must be able to tell.
+
+**Emission point, and its residual, named rather than left open.** `next --to
+<state>` writes the event line; the agent's transition commit carries both the
+status flip and the new line. This preserves the existing one-commit-per-
+transition rule and needs no git hook, since hooks are opt-in in Cairn.
+
+The residual: an event can be written for a transition that is then abandoned,
+leaving a line for a transition that never landed. This is **detectable, not
+silent** — an uncommitted event line shows in `git status`, and the log can be
+reconciled against artifact status fields. The `--backfill` mode carries the
+repair path. Stated here rather than discovered at implementation.
+
+### Security preflight for the writer
+
+E2's closing note asked that an append-only event writer receive its own
+preflight. It does not inherit the retirement-only answer above.
+
+1. **Untrusted input?** No. Inputs are the artifact path and target state, both
+   already validated by the planner's existing transition gate. The writer adds
+   no new parser.
+2. **Concurrency?** Yes, and it is the reason for reusing `append_record`
+   rather than writing a new one. Multiple agents transition artifacts in the
+   same tree; `O_APPEND` plus single-write is what makes interleaving
+   impossible.
+3. **Failure atomicity?** A partial line must never corrupt the log. Single
+   write per record is the mechanism; a torn write is a truncated final line,
+   which a reader can detect and a repair mode can drop — as against a
+   corrupted record that reads as valid.
+4. **Does it execute anything?** No.
+5. **Does it widen a trust boundary?** It adds a tracked file the planner
+   writes to. The planner is already trusted to gate transitions; writing a
+   record of what it gated is not a wider authority. The twin must stay
+   byte-identical, as ever.
+
+### Scope of this proposal, restated
+
+**In:** retirement of the eight prose-scraped columns and their dependency
+graph; the output-schema boundary; the doctrine change; **and** the
+emit-at-transition writer specified above.
+
+**Out:** nothing deferred. If a later review argues part of this should be
+removed, the scope-reduction norm applies — the removal is stated as a delta
+and homed at the moment it is made.
