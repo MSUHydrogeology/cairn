@@ -833,3 +833,114 @@ direction. If P6a's contract changes before it lands, the plan opened from this
 proposal adapts to what shipped — and if the shared contract ends up unable to
 carry a permanent ledger, that is a finding for the plan, not a licence to fork
 a second writer.
+
+## Review -- Codex (External) -- 2026-08-11 (Round 3)
+
+**Model**: GPT-5.6-Codex
+**Reviewed commit**: `a09b3e10c1ba533a440b2e6335fad1bade05b6d9`
+**Reviewed proposal blob**: `f1003be2d39d1f9179f3e5aba121b713b5ee623e`
+**Tier**: External, different agent type from the author
+
+**Verdict: REVISE.** Round 4 closes R2-E1 and the default-install half of
+R2-E2: the planner stays read-only, the optional `_intent` append helper is
+gone, and the always-installed lifecycle backend is a plausible owner. It also
+adopts the right strict-reader and failure-atomicity requirements. R2-E3 is not
+closed, however, because expected-old file writes do not bind a shared tracked
+file to one Git commit. R2-E4 is partly closed at the field-list level and still
+open at the event-identity and activation boundaries.
+
+### Findings
+
+**[R3-E1 -- P1] The shared ledger still permits one agent to commit another
+agent's event.** I reproduced the exact two-transition shape in a fresh Git
+repository. Agent A changed plan A and appended event A; agent B changed plan B
+and then successfully appended event B to the same tracked ledger. A
+path-scoped commit of plan A plus the ledger contained **both** events while
+plan B remained modified and uncommitted. The commit that first introduced
+event B was therefore plan A's transition commit, and that commit contained no
+plan B transition.
+
+An expected-old check does not prevent this. Both appends can be sequential and
+race-free: B reads the ledger after A's append and supplies that exact value as
+its expected old bytes. The conflict occurs later, when Git commits the current
+whole-file blob. This directly falsifies “the commit carrying the event is the
+transition commit by construction.” A strict reader could detect the mismatch
+after it lands, but then the durable ledger is already invalid and all metrics
+refuse.
+
+Close this at the Git boundary. Prefer a non-shared same-commit record — a
+versioned event block in the transitioning artifact, a validated commit trailer,
+or one immutable per-transition event file. If the central file remains, name a
+mechanism that owns and verifies the artifact edit, event update, expected HEAD,
+and exact commit path set as one operation; byte-level compare-and-swap alone is
+not that mechanism. Add the two-agent cross-commit mutation as a required test.
+
+**[R3-E2 -- P1] The proposal names a writer module but no emission path that can
+make the completeness claim true.** The current `tools/lifecycle.py` CLI has
+only `session-start` and `session-end`. P6a names it as the bounded pilot-event
+writer, but does not define a general lifecycle-transition command. Round 4
+does not say which command writes a permanent event, who invokes it, whether it
+also changes the artifact, or what refuses a status-only commit with no event.
+Without that last check, an agent can perform the ordinary manual transition
+and silently create no forward event at all.
+
+Specify the public command/call path and its transaction boundary. Define the
+reconciliation rule in both directions: every committed emitted event must
+match the same commit's artifact transition, and every post-activation artifact
+transition must have exactly one matching event. Repeated preview remains
+read-only; abandoned pre-commit bytes remain uncounted; a committed status flip
+without an event is loud `INCOMPLETE` or refusal, never a shorter clean series.
+
+**[R3-E3 -- P1] The v1 field list still leaves identity and the live/backfill
+cutoff for the plan author to invent.** `ordinal` is part of the idempotency key
+but has no deterministic derivation. A retry can choose the next ordinal and
+append a second record that passes the stated uniqueness check. Backfill needs
+the same deterministic ordering across repeated state pairs. Bind identity to
+an observable transition occurrence — preferably the source transition commit
+derived by the reader — and define how ordinal is calculated when that commit
+cannot be stored in its own event.
+
+Likewise, “the writer's own activation commit” has no record or derivation in
+this proposal. P6a can derive its cutoff from a separate immutable pilot
+activation record; Round 4 proposes no corresponding permanent activation
+artifact, schema, or install/upgrade rule. State what commit becomes the cutoff
+for Cairn and for an adopter upgrading an existing repository, how an empty or
+first-use ledger finds it, and how overlap at the boundary refuses rather than
+double-counts.
+
+`recorded_by` also needs modest semantics. The always-installed lifecycle tool's
+intent identity is optional and its current fallback is the neutral `agent`.
+That is acceptable as informational provenance, but it is neither unique nor
+authenticated and must not participate in authority or idempotency.
+
+**[R3-E4 -- P2] The dependency and changed-path contracts remain too loose.**
+“The plan adapts to what shipped” permits a plan author to absorb a changed P6a
+contract that this review never saw. Make P6a implementation plus its Code
+review a sequencing precondition for Part 3's plan, bind that plan to the actual
+shared-writer interface, and return here for revision if the landed contract
+cannot supply these guarantees.
+
+The header and `Proposed paths` still list only the original metrics package,
+module prose, and tests. They now omit at least `tools/lifecycle.py` and its
+twin, the proposed `lifecycle-events.md` record or its replacement, the command
+and teaching surface that makes emission happen, install/upgrade treatment for
+the new durable record, and cross-commit/activation/idempotency tests. Update
+the inventory so the plan cannot silently choose them.
+
+### Closure
+
+Keep Parts 1–3 together; Round 3 correctly shows why the event work completes
+the metric-retirement outcome. The remaining revision is architectural, not a
+scope cut: bind events to the actual transition commit without a shared-file
+cross-commit window, name the emission/reconciliation path, make event identity
+and activation deterministic, and pin the dependency to landed P6a bytes. That
+would close the prior findings without another broad reconsideration of Parts 1
+and 2.
+
+### Verification
+
+I reviewed the exact `a09b3e1` blob, ran `claim_check`, inspected the live P6a
+contract and the always-installed lifecycle CLI, and executed the two-agent
+central-ledger Git reproduction above. I did not run the full pytest suite,
+because no implementation of this revision exists, and I did not test a
+replacement storage architecture.
