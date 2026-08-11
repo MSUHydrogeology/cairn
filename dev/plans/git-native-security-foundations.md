@@ -395,3 +395,150 @@ focused exact-byte Security Review (**M2**), which it does not replace.
 *Filled in at archive time.* Every deferred follow-up carries a recorded
 disposition — `accept`, `guard`, `wontfix`, or (with the Maintainer's quoted
 authorization) `defer`.
+
+## Plan review -- Codex -- 2026-08-11 (round 1)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `9463f680fa556d10e52971a1389a221c32a5ee58`
+**Reviewed plan blob**: `60bf7f565264f740bde9a7d5c2eb7023754d10ee`
+**Assurance path**: high-assurance
+**Findings**: raised
+**Verdict: REVISE.** The plan preserves Revision 1's security decisions and its
+Maintainer fences well, but it does not yet turn four repository-native claims
+into an executable contract. The most important is demonstrated, not
+hypothetical: the proposed local `fsck --strict` can be disabled by the very
+candidate repository it is meant to check.
+
+**Independence disclosure.** I authored the source proposal. Claude authored
+this plan's executable mapping after Claude had already supplied the proposal's
+different-agent External challenge, so this pass is an independent review of
+the plan author and mapping, but not a fresh authorship-independent invention
+of the source design. It discharges only the ordinary External plan-review
+clause if its findings are later closed. It does not discharge the separately
+declared External Security Review.
+
+### [E1] HIGH -- `fsck --strict` still trusts candidate `fsck.*` policy
+
+E1 and E3 require `git fsck --strict --no-dangling HEAD` in the candidate
+repository and promise proof that candidate Git configuration cannot disable
+the check. A sterile environment and the current style of command-line config
+pins do not establish that property.
+
+I created a reachable commit object with no `author` line. On Git 2.53.0,
+default strict fsck refused it with `missingAuthor` and exit 1. With only this
+candidate-local setting added, the same command and object exited 0:
+
+```text
+fsck.missingAuthor=ignore
+```
+
+A second candidate-local setting also made the malformed object pass:
+
+```text
+fsck.skipList=<candidate-controlled file containing the object id>
+```
+
+The skip-list case is particularly important to the proposed launcher design:
+adding `-c fsck.skipList=/dev/null` did not override the repository value. Git
+treated both as multi-valued and still skipped the object. Thus E3's requested
+hostile-config test is good, but the plan has not selected a mechanism capable
+of making it green without enumerating an evolving family incompletely.
+
+**Required satisfier.** Bind a configuration-independent acquisition design in
+Chunk E. The local candidate object graph should be checked from a sterile
+repository/config context (or an equivalently complete mechanism), not by
+running fsck under candidate-local `fsck.*` policy. Specify the separate
+sterility contract for the operator-created fetch workspace. Add independent
+negative controls for both a severity downgrade and `fsck.skipList`, and show
+that neither `fsck.*` nor `fetch.fsck.*` from candidate-controlled sources can
+change the disposition. The implementation choice belongs in the reviewed
+plan because it changes the acquisition trust boundary.
+
+### [E2] HIGH -- the "single sterile launcher" has no coherent owner
+
+The sequence says every later chunk calls one sterile launcher, R1-B forbids a
+direct `hash-object` outside it, and Author-accounting uses that launcher to
+close candidate configuration steering. But A2 maps launcher work only to
+`bootstrap/security_check.py` and `_gate_preflight.py`. D3 separately requires
+`_gate_manifest.py` to call `hash-object`, while E2 is a shell entry point with
+its own `wsgit` function. These are four independently executable entry points;
+the plan names neither a shared owner nor one complete launcher contract per
+boundary.
+
+This is not cosmetic reuse. Today `_gate_manifest.py` has direct Git subprocess
+calls, `security_check.py` has separate text/bytes launchers, and
+`verify-ref.sh` neutralizes a different configuration set. An implementation
+could satisfy each local test while leaving Author-accounting's global
+invariant false.
+
+**Required satisfier.** Choose and record the ownership model. Either add a
+shared standard-library module that all Python entry points can safely load, or
+state that there is one guarded launcher *per executable boundary* and specify
+each one's environment, config, repository binding, read/write allowlist and
+direct-subprocess prohibition. Add `_gate_manifest.py` and its tests to Chunk
+A's mapping. Treat the shell fetch/fsck wrapper as its own explicitly tested
+boundary rather than implying that it consumes a Python launcher.
+
+### [E3] MEDIUM -- the report classifier has no semantic oracle
+
+B5 proves that every changed path receives exactly one class. That proves a
+partition, not that the class agrees with the manifest policy which later
+decides HOLD, mutable treatment, or admission. The current policy source is
+`_gate_manifest._frozen_files()` plus the mutable registries and manifest
+artifact exclusion; the plan does not say whether B consumes those exact
+decisions, the newly produced v2 manifest, or a duplicated classifier. D4's
+v1/v2 differential corpus checks manifest dispositions but is not connected to
+B's Maintainer-facing report.
+
+A total but wrong partition is dangerous here: for example, a newly added gate
+path could be reported as outside coverage while the checkpoint manifest
+admits it as frozen. The report digest would bind the misdescription perfectly.
+
+**Required satisfier.** Name one canonical classification source and make B's
+report consume it. Add a cross-contract corpus showing that report classes and
+manifest production/verification agree for existing frozen files, newly added
+gate files, cascade/phase mutable files, the manifest artifact, ordinary
+outside paths, and unsupported modes. Keep the raw-byte identity tests; they
+answer a different question.
+
+### [E4] MEDIUM -- SHA-256 coverage can pass below a failing public path
+
+A3 and D4 require SHA-1 and SHA-256 repositories, but the plan does not account
+for existing fixed-width object-id validators on the public paths.
+`_gate_preflight._resolve` and `security_check._head_commit` currently require
+40 hexadecimal characters. In a fresh SHA-256 repository, Git returned a valid
+64-character HEAD and `_gate_preflight._resolve("HEAD")` refused it. Therefore
+helper-level `hash-object` and manifest tests can pass while `check`, `apply`,
+or the release security entry point fails before reaching those helpers.
+
+**Required satisfier.** Either declare the public ceremony/release paths
+SHA-1-only and describe the SHA-256 nodes as isolated compatibility groundwork,
+or, preferably, replace every touched fixed-width validator with validation
+against the already-bound repository object format and add SHA-256 public-path
+tests. Do not present helper-only coverage as repository-format support.
+
+### What reproduced
+
+At the reviewed plan commit, `_gate_preflight.py` is 1,617 lines and
+`_gate_manifest.py` is 453; the plan blob is unchanged at current HEAD.
+`claim_check.py` reports no flags. `lifecycle_planner.py next` reports the plan
+structurally sound and at `open -> awaiting-plan-review`. The cited
+`test_verify_ref.py` isolation result also reproduces exactly: **67 passed**
+under Python 3.13.13. The `review-efficient-lifecycle` collision is real: its
+Chunk I still performs the v1 re-anchor and Boundary B2 follows it, so the
+fence before this plan's Chunk D is correctly placed.
+
+### Covered and not covered
+
+**Covered**: exact plan bytes from `9463f68`; accepted Revision 1 and its prior
+External review; current Git launchers and manifest classifier; strict-fsck
+severity and skip-list attacks; SHA-256 public-path resolution; plan claims,
+structure, cross-plan sequencing, and the isolated verify-ref suite.
+
+**Not covered**: future implementation bytes, the full bootstrap suite,
+Windows, a real remote atomic-capability probe, the Maintainer ceremony, or the
+focused exact-byte review. I did not move any ref, load a signing key, or push.
+Those remain later obligations; the four findings above are plan-contract
+issues to settle first.
