@@ -543,7 +543,12 @@ The vocabulary (full rule, including *why*, in
 `doctrine/lifecycle.md` > "Archive precondition"):
 
 * `accept` — fixed in scope. Includes writing the doc, and narrowing
-  the artifact's own claim so the finding no longer applies.
+  the artifact's own claim so the finding no longer applies (a
+  *scope-cut*). **A scope-cut removes no work** — it corrects a claim
+  to match what the artifact always did. Removing previously proposed
+  or accepted work is a **scope reduction**, which is not an `accept`:
+  it takes the outcome test in `doctrine/dual-review.md` and a grouped
+  scope-remainder record, and only the Maintainer may concede it.
 * `guard (<path>::<node>)` — homed in something that **executes** —
   a test node, an assertion, a runtime guard — and **names the node**.
   A comment is *not* eligible: comments do not fire, and a comment is

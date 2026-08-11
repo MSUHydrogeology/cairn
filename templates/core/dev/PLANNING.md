@@ -108,7 +108,17 @@ The vocabulary (full rule, including *why*, in
 `doctrine/lifecycle.md` > "Archive precondition"):
 
 * `accept` — fixed in scope. Includes writing the doc, and narrowing
-  the artifact's own claim so the finding no longer applies.
+  the artifact's own claim so the finding no longer applies (a
+  *scope-cut*). **A scope-cut removes no work** — it corrects a claim
+  to match what the artifact always did. Removing previously proposed
+  or accepted work is a **scope reduction**, which is not an `accept`.
+  Judge it against the baseline artifact's own commitments — the scope
+  as *opened* before a Decision, as *accepted* after it: if every
+  baseline outcome is still delivered the narrowing owes nothing, and
+  otherwise it takes a `**Scope delta**` declaration, one grouped
+  scope-remainder record per source artifact, and the Maintainer's
+  explicit allowance. Neither author nor reviewer may concede a
+  baseline outcome.
 * `guard (<path>::<node>)` — homed in something that **executes** —
   a test node, an assertion, a runtime guard — and **names the node**.
   A comment is *not* eligible: comments do not fire, and a comment is

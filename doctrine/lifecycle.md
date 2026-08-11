@@ -433,7 +433,11 @@ vocabulary is therefore:
 
 * `accept` — fixed in this artifact's scope. Includes writing the
   doc the finding asked for, and narrowing the artifact's own claim
-  so the finding no longer applies (a scope-cut).
+  so the finding no longer applies (a scope-cut). **A scope-cut is
+  claim correction with no work removed.** Removing previously
+  proposed or accepted work is a *scope reduction*, which is not an
+  `accept`: it takes the outcome test and the scope-remainder record
+  below, and only the Maintainer may concede it.
 * **`guard`** — homed in an artifact that **executes**: a test node,
   an assertion, a runtime guard. The entry **names the node**
   (`path::node`). A follow-up whose revival condition is mechanical

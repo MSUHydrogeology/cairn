@@ -286,6 +286,16 @@ where this change's bug lives.
    Maintainer's call. Naming the satisfier and naming who pays for it
    are then the same act.
 
+   **`scope-cut` means claim correction, and nothing else.** It is
+   reserved for narrowing an artifact's *stated claim* to match what the
+   artifact always did, so the finding no longer applies — no work is
+   removed. Removing work that was previously proposed or accepted is a
+   **scope reduction**, not a scope-cut: it takes the outcome test and
+   the grouped remainder record below, and only the Maintainer may
+   concede it. Without that distinction an author can lose real work,
+   label it a scope-cut, take the `accept` disposition, and be
+   conformant with every doctrine at once.
+
 **Falsifiable coverage, not "checked."** A swept lens is credible only
 if its claim is *falsifiable* — it cites the file path, test node,
 line, or command output that backs it ("#2: `tests/contract/foo.py::test_bar`

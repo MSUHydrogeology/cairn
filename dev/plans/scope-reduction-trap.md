@@ -8,7 +8,7 @@
 # Plan: the scope-reduction trap
 
 **Source proposal**: [`2026-08-11-claude-scope-reduction-trap`](../proposals/archive/2026-08-11-claude-scope-reduction-trap.md)
-**Status**: open
+**Status**: executing
 **Plan review**: none — **waived by the Maintainer at plan-open**, adjusting the
 accepted proposal's `required(External)` declaration. See "The waived plan
 review" below; the code review before archive is unaffected and remains
@@ -141,7 +141,7 @@ No `docs/` page other than the glossary changes.
 ## Sequence
 
 ```
-1. Chunk A -- doctrine: the trap, the outcome test, the stage floor   [commit pending]
+1. Chunk A -- doctrine: the trap, the outcome test, the stage floor   [commit be40b41]
 2. Chunk B -- vocabulary reconciliation (scope-cut vs scope reduction) [commit pending]
 3. Chunk C -- templates + planner scaffolds (the author-facing surface)[commit pending]
 4. Chunk D -- governing + deliberation surfaces (AGENTS, collaboration)[commit pending]
