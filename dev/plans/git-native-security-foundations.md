@@ -4,7 +4,7 @@
 
 **Source proposal**: `2026-08-10-codex-git-native-security-foundations`,
 accepted at Revision 1 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10`).
-**Status**: open
+**Status**: awaiting-plan-review
 **Plan review**: required(**External** + **External Security Review**) — set by
 the proposal, not by this plan. Two passes, one per clause; **one pass cannot
 discharge both**.
