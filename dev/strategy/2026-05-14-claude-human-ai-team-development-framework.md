@@ -42,24 +42,19 @@ not the primary artifact -- see "Cairn as a publishable artifact" below.
 
 ## Framework anchors
 
-Citable frameworks ground the rationale.  They fall in two groups, and the
-numbering is **canonical and append-only** -- a new anchor takes the next
-integer and a new row in the Anchor index below, so a cross-reference like
-"Anchor 10" stays unambiguous as the set grows.
+Citable frameworks ground the rationale. The numbering is **canonical and
+append-only**: a new anchor takes the next integer and a new row in the index
+below, so "Anchor 10" stays unambiguous as the set grows.
 
-* **Anchors 1-6 -- the gap-analysis frame.**  They bound the apparatus *as it
-  stands*; each has its own `## Gap analysis -- Anchor N` section below.
-* **Anchors 7-13 -- introduced where they bite.**  Defined at their point of
-  use rather than front-loaded: the research-software-community trio (7-9) and
-  the trustworthy-operation principles (10) ground the forward direction; the
-  AI-productivity value curve (11) grounds Cairn's "faster" claim; agentic
-  context efficiency (12) grounds the apparatus's own context-budget rationale;
-  the durable neutral coordination layer (13) grounds vendor- and
-  stack-neutrality as a single principle.
-  All are indexed after the first six (under "What Cairn is today" and "Where
-  Cairn is headed").
+**Every anchor is introduced where it bites**, with its full citation at that
+point. There is no privileged tier. The first six were once set apart because
+each carried its own gap-analysis section; those sections have been folded
+down (see *What the anchors bound*), and the anchors now sit on equal footing.
+That change matters for how this document ages: a living reference should let
+new anchors arrive without asking whether they are first-class.
 
-The first six:
+The six that opened the analysis, kept here because later sections cite them
+by number:
 
 1. **Interaction taxonomy** -- Treude, C., & Gerosa, M. A. (2025). *How Developers Interact with AI: A Taxonomy of Human-AI Collaboration in Software Engineering.*  Proceedings of the 2nd ACM International Conference on AI Foundation Models and Software Engineering (FORGE 2025).  [arXiv:2501.08774](https://arxiv.org/abs/2501.08774).  Eleven distinct interaction types across the SDLC.
 2. **Multi-agent SDLC role design** -- Liu, J. et al. (2025). *LLM-Based Multi-Agent Systems for Software Engineering: Literature Review, Vision, and the Road Ahead.*  ACM Transactions on Software Engineering and Methodology.  [doi:10.1145/3712003](https://dl.acm.org/doi/10.1145/3712003).  Systematic review of LMA applications across SDLC stages.
@@ -73,11 +68,10 @@ The first six:
 
 Each anchor provides one axis of gap analysis below.  None of the six maps perfectly onto the modflow_tools structure; the mismatches are the interesting part.
 
-### Anchor index (clustered, 1-16)
+### Anchor index (clustered)
 
-All sixteen anchors are introduced where they bite (the full citation lives at the
-point of use): anchors **1-6** each carry a full *Gap analysis* section; anchors
-**7-16** are the lighter, inline ones. This index fixes the numbering so
+All anchors are introduced where they bite, with the full citation at the point
+of use. This index fixes the numbering so
 cross-references stay stable and now groups the anchors into a cross-cutting
 **Foundation** plus **four thematic clusters** for navigation. The Foundation
 (the narrow-waist coordination layer) is the **open-science substrate the four
@@ -90,21 +84,22 @@ cross-cutting), and define the citation at its point of introduction.
 | Cluster | # | Theme | Introduced under |
 |---|---|-------|------------------|
 | **0 · Foundation (cross-cutting)** | 13 | Durable neutral coordination layer (hourglass / narrow-waist; Beck 2019; Akhshabi & Dovrolis 2011) — the open-science substrate: underpins vendor-neutrality (I), stack-neutrality + protocol-conformance (III/IV), and the trust layer (II) | "Trust as design center" > "The durable neutral coordination layer" |
-| **I · AI & multi-agent collaboration** | 1 | Interaction taxonomy (Treude & Gerosa 2025) | "Gap analysis — Anchor 1" |
-| | 2 | Multi-agent SDLC role design (Liu et al. 2025) | "Gap analysis — Anchor 2" |
-| | 5 | Inter-agent communication patterns (Ricci 2007; Ehtesham 2025; Du 2024) | "Gap analysis — Anchor 5" |
+| **I · AI & multi-agent collaboration** | 1 | Interaction taxonomy (Treude & Gerosa 2025) | "What the anchors bound" > the frame table |
+| | 2 | Multi-agent SDLC role design (Liu et al. 2025) | "What the anchors bound" > the frame table |
+| | 5 | Inter-agent communication patterns (Ricci 2007; Ehtesham 2025; Du 2024) | "What the anchors bound" > stigmergy as a deliberate choice |
 | | 11 | AI-productivity value curve (METR 2025; Boehm 1981 / 2001) | "Cairn as a publishable artifact" > "The honest value curve" |
 | | 12 | Agentic context efficiency / "context rot" (EMNLP 2025; Liu et al. 2024) | "Where Cairn is headed" > Horizon 3 |
-| **II · Trust, governance & coordination** | 3 | Trust + governance maturity (TCMM; Steinmetz et al. 2025) | "Gap analysis — Anchor 3" |
+| **II · Trust, governance & coordination** | 3 | Trust + governance maturity (TCMM; Steinmetz et al. 2025) | "What the anchors bound" > the frame table |
 | | 10 | Trustworthy operation (TRUST principles; Lin et al. 2020) | Horizon 1 + "Trust as design center" |
 | | 14 | Scientific-software governance exemplars (USGS FSP; NEP/APE; LIGO/CESM/CMIP) | "Where Cairn is headed" > "Reframing the governance axis for scientific software" |
 | | 16 | Recipient-calibrated communication + the comprehension floor (Miller 2019; Kalyuga 2007; Clark & Brennan 1991; Rozenblit & Keil 2002; appropriate-reliance literature) | "Trust as design center" > "Recipient-calibrated communication and the comprehension floor" |
-| **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "Gap analysis — Anchor 4" |
-| | 6 | Scientific peer review as a process model | "Gap analysis — Anchor 6" |
+| **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "What the anchors bound" > the frame table |
+| | 6 | Scientific peer review as a process model | "What the anchors bound" > peer review, not agent debate |
 | | 15 | Research-software character taxonomy + V&V / reproducibility canon (Hasselbring 2024; Oberkampf & Roy 2010; Roache 2002; PROV-DM; Sandve 2013; Eisty & Carver 2022) | "Where Cairn is headed" > "The scientific-character dimension" |
 | **IV · Open-source sustainability & community** | 7 | Maintenance-burden thesis + project typology (Eghbal 2020) | "Where Cairn is headed" > Horizon 1 |
 | | 8 | External reuse contract (FAIR4RS; Barker et al. 2022) | Horizon 1 |
 | | 9 | Open-development playbook for scientific software (Prlić & Procter 2012) | Horizon 1 |
+| | 17 | Waste, and how much process a project should carry (Poppendieck & Poppendieck 2003; Boehm & Turner 2003; Saltzer & Schroeder 1975) | "Restraint as design center" |
 
 ## Current structure (compact reference)
 
@@ -142,292 +137,91 @@ Before the gap analysis, a one-page sketch of what currently exists:
   - External Review Norms: make confidence prove itself; closed by fix or explicit wontfix; reviewer prefers different agent type (Codex if Claude authored; Claude if Codex authored).
   - Structural-independence tiers (per `dev/collaboration_agreement.md`): Internal-review tier accepts same-agent-fresh-session; External-review tier requires different agent type or human; code-review tier floors at "not the implementing agent."
 
-## Gap analysis -- Anchor 1: Interaction taxonomy (Treude & Gerosa 2025)
-
-Treude & Gerosa identify eleven interaction types covering the SDLC.  The modflow_tools structure exercises a subset of these heavily and others not at all.
-
-**Heavy usage**:
-
-* **Conversational assistance** -- the Strategy-mode and Review-mode planning sessions.  Probably the most-exercised type in this project.
-* **Command-driven actions** -- the Implementation Agent's plan-driven execution; Claude Code's harness shape encourages this.
-* **Agentic operations on multi-step tasks** -- the review cycle is an agentic operation that spans multiple turns / sessions.
-
-**Inline tier present but not team-doctrine-named as a role**:
-
-* **Inline auto-complete / suggestion** -- the maintainer uses GitHub Copilot during hand-edits.  It is in use and now named in the doctrine as inline-tier editing tooling, distinct from the agent-side roles (see G1).
-
-**Light or absent usage**:
-
-* **Conversational explanation / Q&A** -- happens implicitly (in User Agent sessions); not a named role / mechanism.
-* **Documentation generation** -- happens implicitly inside Implementation work; no dedicated agent or mechanism, but every proposal's acceptance criteria typically include doc updates.
-
-**Gap**:
-
-The project's full AI surface is **bimodal** -- agent-side AI under formal roles, inline-side AI under maintainer-controlled tooling.  This is underdescribed in the LMA literature surveyed (Anchor 2), which treats agent-side AI as the entire AI surface.  The bimodal real-world picture affects how the team's mechanism design should balance handoff burden (where agent-side work picks up) vs. real-time-edit burden (where inline-side work happens within the maintainer's editing session).
-
-**Future-development directions surfaced**:
-
-* **G1 -- Document the bimodal AI surface.**  *Resolved.*  `dev/agent_collaboration.md` > "The AI surface is bimodal" names Copilot's role as inline-tier AI tooling, distinguishing "AI the team coordinates with" (Claude / Codex, named roles) from "AI the maintainer uses while editing" (Copilot, tooling).
-* **G1-B -- Semantic drift at the bimodal boundary.**  Inline completions (e.g., Copilot) operate in microscopic contexts optimized for raw speed/convenience, whereas agent-side operations (e.g., Claude/Codex) rely on macroscopic architectural consistency.  Edits made via the inline tier can introduce subtle style, type, or contract drift that pollutes the agent's context window.  This requires the team's pre-commit claim-checking mechanisms to act as a **boundary filter** that gates both human-made inline edits and agent-made implementations before staging.
-* **G2 -- Test + documentation as proposal-template requirements, not new roles.**  *Resolved.*  Rather than add Test Agent and Documentation Agent roles (the LMA-literature path), testing, documentation, and examples are formalized as **required, omission-is-a-finding prompts in the proposal template**.  Reasoning: agent roles like Test Agent and Doc Agent are *retrofitting* tools -- they exist because legacy code has untested surfaces and undocumented behavior.  When a codebase is built AI-team-first (modflow_tools is), every proposal already produces its own tests + docs as acceptance criteria; making this explicit in the template requires only a small amendment, not a new role.  Concrete shape: the **documentation** prompt is the `## Proposal > Documentation / doctrine surface` subsection; the **tests** and **examples / smoke checks** prompts are subsections of `## Evidence / verification plan`.  Silent omission of any of the three is a review finding; explicit `N/A: <reason>` is the way out.  Itself a paper-worthy distinction: **"AI-team-built from the ground up" workflows have different requirements than "retrofit AI assistance onto legacy code" workflows**, and the literature is heavily weighted toward the latter.
-
-## Gap analysis -- Anchor 2: Multi-agent SDLC role design (Liu et al. 2025)
-
-Liu et al.'s systematic review maps LMA agents to SDLC stages.  Common LMA roles in the literature:
-
-* Requirements / product-management agent.
-* Architecture / design agent.
-* Code-generation / programmer agent.
-* Code-review agent.
-* Test-generation / tester agent.
-* Debugging agent.
-* Documentation agent.
-* Project-management / orchestration agent.
-
-**Mapping the current modflow_tools roster against this**:
-
-| LMA role (literature) | modflow_tools role |
-|---|---|
-| Requirements / product-management | Strategy and Research Agent (combined with architecture; maintainer holds final product-direction authority) |
-| Architecture / design | Strategy and Research Agent |
-| Code-generation / programmer | Implementation Agent |
-| Code-review | Internal Reviewer + External Reviewer (two-tier) |
-| Test-generation | (absorbed into every proposal's acceptance criteria; not a distinct role -- see G2 / G3 for why this is structural, not accidental) |
-| Debugging | (partially the User Agent role, but it's user-side not agent-side) |
-| Documentation | (absorbed into every proposal's acceptance criteria; not a distinct role -- same reasoning as Test-generation) |
-| Project-management / orchestration | Strategy + the proposal lifecycle artifacts themselves |
-| (no LMA equivalent) | **User Agent** (user-side, interactive, gap-capture) |
-| (no LMA equivalent) | **External Reviewer** (named harder-to-please stance, distinct from the Internal review) |
-
-**Gaps and novel directions**:
-
-* **G3 (novel contribution) -- AI-team-first lifecycle absorbs test + doc work into every proposal rather than separating it into specialist roles.**  The LMA literature's Test-Agent and Documentation-Agent roles are retrofitting tools -- they exist because legacy code arrives at the AI team with untested surfaces and undocumented behavior; someone has to go fill those in.  modflow_tools was built AI-team-first, so every proposal that ships already produces its own tests + docs as part of its acceptance criteria.  Adding Test/Doc roles would be a structural redundancy; the better move is to *formalize* the implicit requirement (see G2).  **This distinction -- AI-team-built-from-scratch workflows vs. retrofit-AI-assistance workflows -- is itself paper-worthy** because the literature is heavily weighted toward the retrofit case.  The accepted LHM `dev/`-collaboration-model proposal instantiates the retrofit case directly -- its Legacy Agent is the standing retrofit role this distinction predicts, justified for LHM's ~18-year legacy exactly where it is unjustified for greenfield modflow_tools.  The built-from-scratch / retrofit pair now has a concrete case on each side; see "Bridge to the publishable artifact" below.
-* **G3-B (novel contribution) -- Retrofit roles as a Human Cognitive Adapter.**  In legacy codebases, the biggest hurdle is not merely code rot, but the human developer's entrenched, un-automated coding habits.  The introduction of the Legacy Agent and the Surface-Readiness Ledger serves a social-cognitive purpose: they act as a **cognitive adapter** that forces the human to transition from ad-hoc, untracked modifications to structured, staged git hygiene.
-* **G4 (novel contribution) -- The User Agent role.**  LMA literature focuses on agent-side roles (agents acting on the project); modflow_tools introduced a user-side role (agent helping the user act on the project).  Different mode of presence.  Worth surfacing as a contribution to the role-design literature.
-* **G5 (novel contribution) -- The External Reviewer as a distinct role.**  Most LMA papers treat "code review" as a single role; modflow_tools' two-tier split (Internal review for landing, External review for proving) with explicit structural-independence requirements (different agent type for the External review) is more disciplined than typical descriptions.  Pair with G6 below.
-* **G6 (novel contribution) -- Structural-independence tiers.**  The codified tier rule (Internal review OK with same-agent-fresh-session; External review requires different agent type; code-review floor "not the implementing agent") gives the review system its empirical bite.  Not a standard part of LMA-system descriptions in the literature surveyed.
-
-## Gap analysis -- Anchor 3: Trust + governance maturity (TCMM, Steinmetz et al. 2025)
-
-The Trust Calibration Maturity Model evaluates five dimensions.  Mapping the current structure:
-
-**Performance Characterization**:
-
-The lifecycle-metrics measurement layer (`tools/lifecycle_metrics.py`) walks `dev/proposals/`, `dev/plans/`, and `git log` and emits per-proposal lifecycle metrics (review rounds, revision counts, time-to-decision, finding severities).  The infrastructure and a baseline snapshot exist; what is still missing is a *time series* -- a single snapshot is not yet a trend, so the longitudinal empirical record Cairn's evidence section needs is not yet produced (see "Where Cairn is headed").
-
-**Bias & Robustness Quantification**:
-
-The `verify-before-asserting` operational pitfall (`AGENTS.md > Operational pitfalls > #5`) is now structured as a **4+1 failure-mode typology** (see G9) backed by a date-ordered instance table of agent-side hallucinations caught during review.  This is a deliberate defect taxonomy, but it is not yet wired into the measurement layer for quantitative trend analysis.
-
-**Transparency**:
-
-Within the project: high.  The proposal lifecycle's append-only commit-per-transition structure means every deliberation arc is reconstructible from `git log`.  Externally (to a third-party reader): no formal artifacts beyond the repo itself.
-
-**Safety & Security**:
-
-Covered.  `dev/security_review_protocols.md` carries the threat model, audit surfaces, and severity-tier reporting.  Contract-tier security gate enforced in `tests/contract/test_security_lint.py`.
-
-**Usability**:
-
-The maintainer's interaction surface is well-documented (`AGENTS.md > Session start`; goodnight routine; handoff templates).  No measurement of maintainer-time efficiency or cognitive load.
-
-**Gaps**:
-
-* **G7 -- Measurement layer.**  *Partially addressed.*  The lifecycle-metrics script ships the Performance-Characterization infrastructure with a baseline snapshot; the remaining work is to (a) build a time series across commits rather than the single snapshot, and (b) extend coverage to the Bias & Robustness and Usability dimensions, which remain unmeasured.  The metrics also seed Cairn's empirical section.
-* **G8 -- External-facing transparency artifact.**  For the publishable artifact, the in-repo deliberation arc needs an external-readable synthesis.  Not a redesign of the in-repo structure; an additional artifact (perhaps a *docs/methods/* tier) that points outside collaborators at the deliberation record without making them read `git log`.
-* **G9 -- Failure-mode typology.**  *Resolved.*  `AGENTS.md` Operational pitfall #5 is structured as a **4+1 typology** -- four subject categories (code-object shape, file existence, tree & history, count claims), each with one 30-second verification check, plus a cross-cutting self-contradiction check -- backed by a single date-ordered instance table.  The flat list became structured data; the next step (G7) is to wire the instance table into the measurement layer.
-
-## Gap analysis -- Anchor 4: Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025)
-
-Bridgeford et al.'s four themes:
-
-**Problem preparation and understanding**:
-
-Strongly served by the existing structure.  Strategy Agent + proposals + PLANNING.md are essentially infrastructure for problem preparation.  The "Frame" step in the collaboration agreement's Working Rhythm names this explicitly.
-
-**Managing context and interaction**:
-
-Strongly served.  AGENTS.md + CLAUDE.md + good-morning routine + handoff template + the GitLab Issues capture surface form a context-management substrate.  The role-confirmation step in the Working Rhythm tightens this further.
-
-**Testing and validation**:
-
-Mixed.  The test tier roster (`tests/contract/`, `tests/unit/`, `tests/integration/`, `tests/workflow/{smoke,regression}/`, `tests/notebook/`, `tests/benchmarks/`) is unusually disciplined for a scientific-software project.  But:
-
-* Testing isn't role-distinguished (no Test Agent); tests are absorbed into every proposal's acceptance criteria instead -- see G2 / G3 for the structural reasoning.
-* Validation of **agent output** specifically -- distinct from validation of code correctness -- is still partly informal (the verify-before-asserting pitfall catches it, with the typology making the catch more systematic; a write-time check would make it proactive -- see G10 / Cluster D).
-
-**Code quality assurance and iterative improvement**:
-
-Strongly served.  The review system + plan-archive precondition (code review must precede archive) + sharpening cycles institutionalize iterative improvement.
-
-**Nature Computational Science risk anchor**:
-
-The Nature paper warns against over-reliance leading to undetected errors in scientific code.  The modflow_tools structure has explicit countermeasures:
-
-* Decision rights preserve human agency (the maintainer is the final arbiter).
-* Internal + External review are designed to catch silent errors.
-* The verify-before-asserting pitfall is exactly the over-reliance failure mode the Nature paper warns about; it has been caught and documented repeatedly and is now organized as a typology.
-
-**Gaps**:
-
-* **G10 -- Agent-output validation infrastructure.**  *Resolved.*  Distinct from code-correctness tests (which are well-covered).  The write-time claim checker (`scripts/claim_check.py`) flags load-bearing assertions about tree state and forces a verification round before commit -- moving agent-output validation from reactive (caught in review) to proactive.
-* **G11 -- Scientific-discipline interlock.**  *Answered in direction.*  The team has hydrogeology-aware vocabulary in memory + AGENTS.md, but discipline-domain expertise is held by the human maintainer, so when the maintainer is out of the loop (e.g., an overnight External review) there is no agent-side mechanism for catching scientific (vs. structural) errors.  The 2026-06-05 LHM fold-back review resolves the long-deferred "gap or feature" question: it is a **gap, and fillable** -- by the **`deliverable` axis's** science-disciplines (physical-validity, numerical-tolerance, provenance; see "Where Cairn is headed" > "The scientific-character dimension").  USGS's *Fundamental Science Practices* domain review is the proof-of-concept that such an apparatus-/agent-run gate is real and separable from the structural review -- proven LHM-first, then folded up.
-
-## Gap analysis -- Anchor 5: Inter-agent communication patterns (Ricci et al. 2007; Ehtesham et al. 2025; Du et al. 2024)
-
-The literature on how agents talk to each other splits into two paradigms, and the choice between them is consequential.  Mapping the current structure against both:
-
-**Paradigm 1 -- Cognitive stigmergy / artifact-mediated coordination (Ricci et al. 2007; Crowston on software development)**:
-
-Agents coordinate via persistent artifacts in a shared environment that subsequent agents read and update.  The original definition (Ricci et al.): *artifacts are environment abstractions that mediate agent interaction and enable emergent coordination*.  Software-engineering precedent (Crowston): FLOSS projects coordinate via git, CVS, issue trackers, mailing-list archives -- all artifacts the next contributor reads to update their mental model.
-
-The modflow_tools structure is **textbook cognitive stigmergy**.  Concrete examples in the current artifact roster:
-
-* **Proposal files** -- the deliberation channel.  Append-only because the artifact-as-channel relies on history being intact.  Status field (`proposed -> reviewed -> revised -> accepted`) IS the coordination signal.  File location (`dev/proposals/` vs. `dev/proposals/archive/`) IS the lifecycle-stage signal.
-* **Plan files** -- the execution channel.  Chunk tables are coordination state visible to any agent reading them.  Status field + commit references inside the plan signal what's in flight.
-* **PLANNING.md** -- the roadmap-coordination artifact.  Status-tagged entries with cross-links coordinate which agent picks up which item next.
-* **NEXT_SESSION.md** -- explicit handoff artifact for cold-pickup contexts.
-* **`dev/reflections/`** -- per-agent end-of-session retrospectives; a stigmergic handoff channel read forward by the agent running the goodnight routine.
-* **Signature log** (in `dev/collaboration_agreement.md`) -- a coordination artifact for "who has agreed to what version of the working norms."
-* **Commit history** -- one-commit-per-lifecycle-transition makes the coordination state machine auditable from `git log` alone.
-
-The pattern fits Ricci et al.'s "engineered artifacts populating the agent working environment" exactly.  
-
-**The Model-Agnostic Resilience Vector**: A vital advantage of filesystem-based stigmergy over real-time communication protocols (Paradigm 2) is **infrastructure-independence**.  By offloading all system coordination state to the version-controlled directory structure, the team eliminates the need for persistent server orchestration.  Crucially, this makes the methodology **completely model-agnostic**: any LLM family (whether a proprietary API or a locally hosted open-weights model like Llama) can seamlessly participate in the team simply by reading and writing files.
-
-**Paradigm 2 -- Direct agent communication protocols (Ehtesham et al. 2025 survey)**:
-
-Dominant in 2025 multi-agent LLM systems.  Real-time message-passing; agents discover each other, exchange task specifications via structured capability cards, stream status events.  The four major protocols:
-
-* **MCP (Model Context Protocol)** -- standardizes how an LLM accesses external tools and contextual data.
-* **A2A (Agent-to-Agent)** -- standardizes how autonomous agents discover and communicate; capability cards + artifact exchanges.
-* **ACP (Agent Communication Protocol)** -- April 2025; asynchronous REST-based task exchanges.
-* **ANP (Agent Network Protocol)** -- broader network-of-agents focus.
-
-The modflow_tools structure uses **none** of these protocols directly.  Agents (Claude in a session, Codex in a session) don't send each other messages; they leave traces in the shared artifact environment that other agents read.  The choice is structural, not incidental -- A2A-style real-time message-passing would require persistent inter-session agent identity and orchestration infrastructure neither agent currently has.
-
-**Paradigm 3 (debate as a special case) -- Multi-agent debate (Du et al. 2024)**:
-
-The foundational paper introduces multi-agent debate for improving factuality and reasoning: multiple language-model instances propose and debate responses over multiple rounds to arrive at a common final answer.  Most implementations are **synchronous** (turn-by-turn within one session, possibly with role-specialized agents like Verifier / Solver).
-
-The modflow_tools Internal + External review structure IS multi-agent debate, but **asynchronous**:
-
-* Proposal author drafts; Internal Reviewer appends Review section in a separate commit; author appends Response section in another commit.
-* Each round is a commit-mediated turn, not a synchronous exchange.
-* Structural-independence tiers govern who can be on which side (different agent type for the External review, etc.) -- a richer governance layer than typical debate frameworks describe.
-
-This is asynchronous multi-agent debate with codified structural independence -- a variant the literature has not centrally addressed.
-
-**Coordination-failure context**:
-
-Recent industry reporting on multi-agent LLM systems cites striking failure-rate statistics:
-
-* UC Berkeley research finds **coordination breakdowns account for ~35% of all multi-agent failures**.
-* Anthropic's enterprise analysis attributes **~57% of multi-agent failures to orchestration-design issues**.
-
-(These figures appear in 2025 survey articles; the primary-source citations would warrant verification for the publishable artifact.)  The modflow_tools structure has explicit countermeasures -- handoff-template discipline, append-only deliberation, role-confirmation at session start, the Stage-to-role matrix -- but no quantitative measurement of how those countermeasures perform.
-
-**Gaps and novel directions**:
-
-* **G12 (novel contribution) -- Stigmergic coordination as a deliberate design choice.**  The modflow_tools structure sits in the cognitive-stigmergy lineage (Ricci et al. 2007; Crowston on software development), NOT in the dominant 2025 agent-protocol lineage (MCP / A2A / ACP).  The literature treats these as alternatives suiting different operational contexts; the choice has consequences for what the team can and can't do (e.g., real-time orchestration is harder under stigmergy; long-arc deliberation across sessions is easier).  Worth naming as a deliberate position rather than an accident, especially because pairing artifact-mediated coordination with multi-agent debate (G5 / G6 / G13) is a coherent design philosophy the publishable artifact articulates as a contribution.
-* **G13 (novel contribution) -- Asynchronous, structurally-tiered multi-agent debate.**  Du et al. (2024) and follow-on work (Adaptive Heterogeneous Multi-Agent Debate; Tool-MAD) describe synchronous debate within a session.  modflow_tools' Internal + External review structure is *asynchronous* (commit-mediated turn-taking across sessions) with *structural-independence tiers* (different floors at different stages, including the External-review-tier different-agent-type requirement).  Refines / extends G5 (two-tier review) and G6 (structural-independence tiers) by naming the debate-literature connection explicitly.
-* **G14 -- Coordination-failure taxonomy.**  Industry reporting attributes 35-57% of multi-agent failures to coordination / orchestration issues.  modflow_tools has explicit countermeasures but no measurement of how they perform.  Cluster A's measurement layer (G7) could extend to track coordination-class failures specifically -- handoff drift, lifecycle-stage skips, missed cross-references -- and the verify-before-asserting instance table (G9) becomes a starting point for a broader failure-mode taxonomy.
-
-## Gap analysis -- Anchor 6: Scientific peer review as a process model
-
-The closest real-world analog to the modflow_tools review system is not the
-multi-agent-debate literature (Anchor 5) -- it is **scientific peer review**, a
-fitting and more legible frame for a *scientific* software project.
-
-**The two-stage parallel.**  A careful author runs review in two stages: a
-*pre-submission* collegial read that helps the draft *land*, then independent
-*journal peer review* that decides whether it is *sound*.  modflow_tools
-formalizes exactly this -- the doctrine's own gloss (the Internal Reviewer helps
-a proposal *land*; the External makes it *prove* it should) is precisely that
-distinction:
-
-| Scientific peer review | modflow_tools |
+## What the anchors bound, and what came out of it
+
+*Folded down 2026-08-11.* The first six anchors each used to carry a full
+gap-analysis section — roughly 240 lines of working-out. Most of what they
+surfaced is now resolved and lives in the doctrine and templates. Keeping the
+derivation would turn this document into a changelog of its own reasoning, and
+this note has to stay readable as it grows. What follows keeps the durable
+output: the frame, the analogy that does the most explanatory work, the
+contributions, and the gaps still open.
+
+### The frame
+
+| Anchor | What it bounds | Where Cairn sits |
+|---|---|---|
+| 1 · Interaction taxonomy | the eleven ways humans and AI actually work together | Cairn exercises conversational, command-driven, and agentic modes heavily. Its AI surface is *bimodal*: agents under named roles, plus inline completion the maintainer uses while editing. The literature treats agent-side AI as the whole surface. |
+| 2 · Multi-agent role design | what roles a multi-agent system needs | Cairn has no Test or Doc agent. Those are retrofit roles for legacy code; work built AI-team-first produces its tests and docs inside every proposal. |
+| 3 · Trust + governance maturity | five dimensions of trustworthy AI operation | Strong on transparency and safety. Weakest on performance characterization — the measurement layer exists but the trend does not. |
+| 4 · Scientific-software rigor | what rigor means for research code | Well served on problem framing, context management, and iterative review. Validating *agent output* — as distinct from code correctness — is the thinner half. |
+| 5 · Inter-agent communication | how agents coordinate | Cairn coordinates through files in git, not through a message protocol. That choice is deliberate and load-bearing (below). |
+| 6 · Peer review as a process model | how disciplined review actually works | The closest analogue to Cairn's review system, and the most legible one for a scientific audience (below). |
+
+### Peer review, not agent debate
+
+The closest real-world match for Cairn's review system is not the multi-agent
+debate literature. It is scientific peer review, which is also the frame a
+scientist already understands.
+
+| Scientific peer review | Cairn |
 |---|---|
 | Manuscript → editor → referees → decision | Proposal → maintainer → review tiers → Decision |
-| Pre-submission collegial read | **Internal Review** (same-agent-fresh-session floor) |
-| Independent journal referees | **External Review** (different-agent-type / human floor) |
+| Pre-submission collegial read | **Internal review** (same agent type, fresh session) |
+| Independent journal referees | **External review** (different agent type, or a human) |
 | Report → rebuttal → revised manuscript | Review → Response → Revised sections |
-| COI rules; open peer review (disclosed identities, published reports) | Structural-independence tiers; append-only attributed file in `git` |
+| Conflict-of-interest rules; open review | Structural-independence tiers; attributed, append-only files in git |
 
-G5, G6, and G13 -- previously anchored only on the debate literature -- are more
-aptly framed here: the project runs a faithful instantiation of peer review, the
-discipline's own gold-standard quality control.
+Three differences are the interesting part. Independence is **structural, not
+institutional** — a different model architecture is a brighter line than "no
+recent co-authorship." The record is **radically open**: the whole arc replays
+from `git log`. And the proposal's up-front verification plan gives it a
+**registered-report flavour**, committing to what would falsify the change
+before the work starts.
 
-**Where it differs -- the interesting part:**
+Two costs come with it. Reviewer diversity is bounded by the number of model
+families available, so the External tier reduces correlated blind spots without
+eliminating them. And the maintainer is editor, domain expert, and reviewer at
+once — efficient at this scale, and a real single point of judgment.
 
-* **Independence is structural, not institutional.**  Journal independence rests
-  on fuzzy social facts (different institution, no recent co-authorship);
-  modflow_tools derives it from a brighter, externally checkable one -- a
-  different model architecture (Codex reviewing Claude-authored work).
-* **Radically open.**  The proposal file is fully attributed and the whole arc
-  (manuscript → reports → rebuttal → decision) is reconstructible from `git log`
-  -- the maximally-open end of Ross-Hellauer's taxonomy, which the open-science
-  movement advocates but few journals adopt.
-* **Fast and asynchronous**, with on-call reviewers -- removing peer review's
-  worst failure mode (delay) but introducing a different one (G15).
-* **Role conflation.**  The maintainer is editor + domain expert + reviewer at
-  once (efficient at this scale, but the concern G11 raises); the Internal
-  Reviewer's decision-support + Decision-scribing partly mitigates by delegating
-  the *drafting* while the maintainer keeps the *call*.
-* **A Registered-Reports flavor.**  The proposal's up-front "Evidence /
-  verification plan" -- committing to what would falsify the change *before*
-  implementation -- is a countermeasure against agentic metric p-hacking: Stage 1
-  (design + test plan) is locked before Stage 2 (execution evidence) proceeds.
+### What the analysis produced
 
-**Gaps surfaced:** **G15 -- reviewer-pool diversity is structurally bounded**
-(two agent families + the maintainer; the External tier mitigates *correlated*
-blind spots but cannot manufacture diversity past two model families -- feeds
-Cluster A's measurement layer).  **G16 -- structural independence as a
-contribution to the peer-review COI literature** (a more enforceable independence
-criterion than the institutional one journals rely on; sharpens G6, feeds
-Cluster C).
+Four things Cairn does that the surveyed literature does not describe, or
+describes only in passing:
 
-## Cross-cutting synthesis
+* **The Dual-Review model.** Two tiers — one that helps a change land, one that
+  makes it prove it should — executed across structural independence,
+  asynchronously, mediated by commits. This is Cairn's most legible
+  contribution to a scientific audience, and one of its two differentiators.
+* **Stigmergic coordination as a deliberate choice.** Agents leave traces in
+  version-controlled artifacts rather than messaging each other. No server, no
+  session-spanning agent identity, and any model family can join by reading and
+  writing files. That is where vendor-neutrality actually comes from.
+* **Test and documentation absorbed into every proposal**, rather than split
+  into specialist agents. The distinction between built-AI-team-first and
+  retrofit-onto-legacy work is itself worth naming; Cairn has a case on each
+  side.
+* **The User Agent** — a user-side role, where the literature covers agent-side
+  roles acting on a project.
 
-Pulling the 17 named items together, they cluster into four directions:
+### Still open
 
-### Cluster A -- Measurement layer (G7, G8, G9, G14, G15, G17)
+* **Measurement.** The layer emits rows; the time series is not in the record.
+  Coordination-failure and reviewer-diversity blind spots remain unmeasured.
+  (See the metrics note for what should and should not be measured.)
+* **External transparency.** The in-repo record is complete and hard to read
+  from outside. An outside reader should not have to walk `git log`.
+* **Scientific-discipline interlock.** Domain correctness routes entirely
+  through the human maintainer. The `deliverable` axis is the proposed way to
+  move part of it into the apparatus.
+* **Comprehension calibration** (Anchor 16). The norm is settled; the axis is
+  not. Notably, the norm is stated in `doctrine/rationale.md` and appears
+  nowhere an adopter receives.
 
-The structure was mechanism-rich and metric-poor.  The lightweight measurement infrastructure (`tools/lifecycle_metrics.py`) is now in place; running it would:
-
-* Seed the publishable artifact's empirical section.
-* Make the team's claims about its own discipline (e.g., "External review catches structural problems the author can't see") falsifiable / quantifiable.
-* Surface drift: agents whose acceptance rates change over model versions; rounds where revision counts spike.
-
-This is the highest-leverage direction.  The infrastructure cost was low (a script + a PLANNING entry); the remaining cost is even lower (run it, read the output).  G14 specifically extends the layer to coordination-class failures, which the inter-agent-communication literature flags as a major source of multi-agent system failures (35-57% per the 2025 industry reporting).  G15 extends it again -- to reviewer-pool-diversity blind spots: whether particular finding-classes are systematically missed, not only how many findings land.  G17 extends it once more -- to the **comprehension surface** (Anchor 16): keep visible whether the human actually understood a change before deciding on it, so a collapse of review into rubber-stamping is caught rather than silently logged as assent.
-
-### Cluster B -- Documenting deliberate design choices (G1, G2)
-
-Two pieces of the current structure are *intentional* but were *unnamed*; both are now documented:
-
-* The **bimodal AI surface** -- the team's role roster covers agent-side AI (Claude, Codex) exhaustively; `dev/agent_collaboration.md` > "The AI surface is bimodal" now also names the inline tier (GitHub Copilot, used during maintainer hand-edits), distinguishing "AI the team coordinates with" from "AI the maintainer uses while editing."
-* The **test + doc absorption into proposals** -- rather than adopting Test Agent and Doc Agent roles (the LMA-literature path, which is a retrofit pattern), testing, documentation, and examples are required, omission-is-a-finding prompts in the proposal template -- **documentation** under `## Proposal > Documentation / doctrine surface`, **tests** and **examples / smoke checks** under `## Evidence / verification plan`.
-
-Both were cheap to ship (small doctrine amendments via the normal proposal lifecycle) and resolve "is this intentional or oversight?" ambiguities for any future reader of the project's structure.
-
-### Cluster C -- Novel contributions to surface (G3, G4, G5, G6, G12, G13, G16)
-
-Seven pieces of the current structure either don't appear in the literature surveyed, or sit in named-but-uncommon corners of it.  They are surfaced as such in `dev/agent_collaboration.md` > "Comparison with the multi-agent-systems literature":
-
-* **AI-team-first lifecycle** (G3) -- the choice to absorb test + doc work into every proposal rather than spinning up Test/Doc agents.  Reflects the underlying distinction between AI-team-built-from-scratch and retrofit-AI-on-legacy workflows.
-* **User Agent role** (G4) -- user-side interactive collaboration mode.
-* **Two-tier review** (G5) -- Internal review for landing; External review for proving.  Specialized variant of multi-agent debate (Du et al. 2024) with role-asymmetric debate stances.
-* **Structural-independence tiers** (G6) -- different floors for review at different stages.  No direct analog in the surveyed debate literature.  The peer-review frame (Anchor 6) sharpens this as **G16**: structural independence -- a different model architecture -- is a more enforceable conflict-of-interest criterion than the institutional independence journal peer review relies on.
-* **Stigmergic coordination as deliberate design choice** (G12) -- the project's coordination paradigm sits in the cognitive-stigmergy lineage (Ricci et al. 2007; Crowston) rather than the dominant 2025 agent-protocol lineage (MCP / A2A / ACP).  Worth naming because the literature treats these as alternatives suiting different operational contexts; modflow_tools' choice is structural and load-bearing.
-* **Asynchronous, structurally-tiered multi-agent debate** (G13) -- commit-mediated turn-taking across sessions with codified role-asymmetry.  Refines G5 + G6 by naming the debate-literature connection.
-
-**The Dual-Review model.**  G5, G6, G13, and G16 are facets of one nameable contribution -- the **Dual-Review model**: two-tier review (an *Internal* pass that helps a change land; an *External* pass that makes it prove it should land) executed across **structural independence** (a different model architecture reviews -- Codex on Claude-authored work; in LHM, domain-rotation), asynchronously and commit-mediated.  It is a faithful instantiation of scientific peer review (Anchor 6) and, on the openness and independence axes, a *more rigorous* one -- which makes it the project's most legible contribution to a scientific-computing audience.  Alongside the append-only git-committed deliberation lifecycle, it is one of the two differentiators Cairn leads with.
-
-The combination of stigmergy + asynchronous structurally-tiered debate is the coherent design philosophy the team enacts; naming it as such gives Cairn -- and any later paper -- a clean contribution shape.
-
-### Cluster D -- Output-validation surface (G10, G11)
-
-Agent-output validation moved from reactive (caught in review) to proactive: the write-time claim checker (`scripts/claim_check.py`) flags load-bearing assertions about tree state and forces a verification round before commit -- it gates this very doc.  It is tied to the scientific-discipline-interlock question (G11), where the discipline-domain judgment is deliberately routed through the human maintainer.
+Four early gaps are closed and now live in the doctrine: the bimodal AI surface
+is documented, test/doc requirements are in the proposal template, the
+verify-before-asserting failure typology is structured, and the write-time
+claim checker moved agent-output validation from reactive to proactive.
 
 ## What Cairn is today
 
@@ -455,7 +249,7 @@ rationale grounds.  Its surfaces:
   metadata.
 
 **The two differentiators Cairn leads with** (both genuinely uncommon; see the
-Cluster C synthesis above):
+"What the analysis produced" above):
 
 * the **append-only, git-committed deliberation lifecycle** -- every decision's
   full arc reconstructible from `git log`; and
@@ -550,8 +344,8 @@ template repository, a quickstart, a piecemeal-adoption path).  **If a paper is
 ever written** it is optional amplification -- a short arXiv preprint (cs.SE)
 pointing at the DOI'd repository; JOSS does not fit (it reviews research
 *software*, not a methodology) -- and its skeleton already exists here: the
-framework anchors as related work, the two case descriptions, the Cluster C
-contributions, and the forward directions as future work.
+framework anchors as related work, the two case descriptions, the
+contributions under "What the analysis produced", and the forward directions as future work.
 
 ## Trust as design center
 
@@ -736,6 +530,94 @@ aspirational and costly (a Python reference implementation plus
 run-it-in-Python docs today; a different-language implementation only if an
 adopter builds one from the project's inherent specs).  The shared waist is the
 principle; the distance each has travelled is not the same.
+
+## Restraint as design center
+
+Cairn's two differentiators are the deliberation record and Dual-Review. The way
+Cairn dies is not that they fail. It is that they get expensive enough that
+people work around them. Restraint therefore sits beside trust as a design
+center, not as a nice-to-have.
+
+**The dominant failure is bloat, and it takes two forms.** Bloat in code is
+visible and gets audited. Bloat in deliberation is invisible, because it looks
+like diligence: every artifact is defensible on its own, and together they
+crowd out the work.
+
+**The recursive form is the dangerous one — apparatus built to prevent bloat
+that itself bloats.** Two instances from this repository on 2026-08-11:
+
+* A complexity instrument, built to find code bloat, accumulated two external
+  review rounds, a twelve-anchor literature grounding, a declared corpus, and a
+  preregistered validation design. That exceeded the refactoring it existed to
+  justify, and no refactor followed.
+* A metrics note, built to measure the apparatus, reached 724 lines specifying a
+  measurement platform. It was cut to 161.
+
+That day the repository produced **41 commits, 4 of which touched shipped
+code**. A proposal named `review-efficient-lifecycle` has consumed **32
+commits** of lifecycle ceremony.
+
+**17. Waste, and how much process a project should carry.** Poppendieck, M., &
+Poppendieck, T. (2003). *Lean Software Development: An Agile Toolkit.*
+Addison-Wesley. Lean's first principle is **eliminate waste**, translating
+Ohno's seven wastes into software; **extra processes** and **extra features**
+are named waste categories, waste being anything that does not produce value for
+the user. With Boehm, B., & Turner, R. (2003). *Balancing Agility and
+Discipline: A Guide for the Perplexed.* Addison-Wesley, which makes "how much
+process" an explicit judgment across five factors — **personnel, criticality,
+size, culture, dynamism** — where too much ceremony and too little are both
+failures. The security-side companion is Saltzer, J. H., & Schroeder, M. D.
+(1975). *The Protection of Information in Computer Systems.* Proceedings of the
+IEEE 63(9): 1278-1308, whose **first** design principle is **economy of
+mechanism**: *"Keep the design as simple and small as possible… design and
+implementation errors that result in unwanted access paths will not be noticed
+during normal use."* Over-building a protection mechanism is a security failure,
+not only a cost.
+
+### Not all weight is waste
+
+Boehm & Turner's **criticality** factor is not discounted by how many adopters
+exist. It measures what happens if the thing is wrong, not how often it is
+exercised. Cairn installs executable code into other people's repositories and
+gives agents write authority there. That is a supply-chain position, and it is
+exactly where a default-trust posture has failed worst — the point Thompson, K.
+(1984), *Reflections on Trusting Trust*, Communications of the ACM 27(8):
+761-763, made in the first place: you cannot trust code you did not create
+entirely yourself.
+
+So the line runs between two things that are easy to confuse:
+
+* **Security properties on trust boundaries are worth keeping even when they
+  look premature.** Fail-closed defaults, trust roots that measure rather than
+  assume, revalidation immediately before use. These are cheap to hold and
+  expensive to retrofit, because once a boundary is assumed trustworthy that
+  assumption spreads everywhere. Economy of mechanism keeps them small, not
+  absent.
+* **Security deliberation bloats like anything else.** Six review rounds on a
+  proposal about review efficiency is ceremony wearing a security jacket.
+
+The test is not "is this security?" It is **does the deliberation cost track
+the blast radius, or how interesting the question is?**
+
+### The default is currently backwards
+
+Cairn's triage separates trivial from substantive work, but in practice
+everything routes to the heavy path unless the maintainer intervenes. On
+2026-08-11 the maintainer twice had to ask "why not just do it?" — once about a
+two-character fix, once about cutting a document. For a method that claims
+nimbleness, **ceremony should be opt-in on demonstrated blast radius, not
+opt-out on maintainer override.**
+
+**The standing test:** shipped change versus deliberation about change, over a
+working period. It is crude and gameable in principle, but it counts structural
+events rather than prose, and a method that never passes it is not earning its
+overhead. *The session that produced this section fails it.*
+
+This section is where three existing threads belong, and they should point here
+rather than restate: Anchor 12's argument that leanness is a **correctness**
+property and not only a cost one; the adoption promise (*keep the apparatus only
+as heavy as your codebase and team earn*); and the Horizon 2 maturity ladder,
+which this supplies with its actual justification.
 
 ## Where Cairn is headed
 
