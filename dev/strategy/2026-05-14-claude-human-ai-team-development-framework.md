@@ -140,23 +140,25 @@ Before the gap analysis, a one-page sketch of what currently exists:
 ## What the anchors bound, and what came out of it
 
 *Folded down 2026-08-11.* The first six anchors each used to carry a full
-gap-analysis section — roughly 240 lines of working-out. Most of what they
-surfaced is now resolved and lives in the doctrine and templates. Keeping the
-derivation would turn this document into a changelog of its own reasoning, and
-this note has to stay readable as it grows. What follows keeps the durable
-output: the frame, the analogy that does the most explanatory work, the
-contributions, and the gaps still open.
+gap-analysis section — roughly 240 lines of working-out — and that working was
+then summarised again in a per-anchor table. Both are gone.
 
-### The frame
+**The rule that replaced them**, and it applies to every strategy note here,
+not just this one:
 
-| Anchor | What it bounds | Where Cairn sits |
-|---|---|---|
-| 1 · Interaction taxonomy | the eleven ways humans and AI actually work together | Cairn exercises conversational, command-driven, and agentic modes heavily. Its AI surface is *bimodal*: agents under named roles, plus inline completion the maintainer uses while editing. The literature treats agent-side AI as the whole surface. |
-| 2 · Multi-agent role design | what roles a multi-agent system needs | Cairn has no Test or Doc agent. Those are retrofit roles for legacy code; work built AI-team-first produces its tests and docs inside every proposal. |
-| 3 · Trust + governance maturity | five dimensions of trustworthy AI operation | Strong on transparency and safety. Weakest on performance characterization — the measurement layer exists but the trend does not. |
-| 4 · Scientific-software rigor | what rigor means for research code | Well served on problem framing, context management, and iterative review. Validating *agent output* — as distinct from code correctness — is the thinner half. |
-| 5 · Inter-agent communication | how agents coordinate | Cairn coordinates through files in git, not through a message protocol. That choice is deliberate and load-bearing (below). |
-| 6 · Peer review as a process model | how disciplined review actually works | The closest analogue to Cairn's review system, and the most legible one for a scientific audience (below). |
+> **Ground the anchor where it bites. State the gap it exposes once. Maintain
+> the gap list, never the mapping.**
+
+A central "here is where Cairn sits against each anchor" table has to track
+every introduction scattered through the document. It goes stale by
+construction — the same failure as a module catalogue that lists twelve of
+twenty modules, or a doctrine index that maps eight of sixteen files. Gap
+analysis produces **durable output** (the contributions, the open gaps) from
+**disposable working** (the per-anchor mapping). Keep the output current;
+delete the working once it has yielded it.
+
+So what survives below is the analogy that does the most explanatory work, the
+contributions, and — the one list that must stay complete — what is still open.
 
 ### Peer review, not agent debate
 
@@ -206,22 +208,44 @@ describes only in passing:
 
 ### Still open
 
-* **Measurement.** The layer emits rows; the time series is not in the record.
-  Coordination-failure and reviewer-diversity blind spots remain unmeasured.
-  (See the metrics note for what should and should not be measured.)
-* **External transparency.** The in-repo record is complete and hard to read
-  from outside. An outside reader should not have to walk `git log`.
-* **Scientific-discipline interlock.** Domain correctness routes entirely
-  through the human maintainer. The `deliverable` axis is the proposed way to
-  move part of it into the apparatus.
-* **Comprehension calibration** (Anchor 16). The norm is settled; the axis is
-  not. Notably, the norm is stated in `doctrine/rationale.md` and appears
-  nowhere an adopter receives.
+**The one list in this section that must stay complete.** Each item names the
+anchor it comes from, so a new anchor arrives with its gap rather than needing
+a table row.
+
+* **Measurement has no trend** (3). The layer emits rows; the time series is
+  not in the record. Coordination-failure rates and reviewer-diversity blind
+  spots are unmeasured. See the metrics note for what should and should not be
+  measured at all.
+* **No external-facing transparency artifact** (3, 8). The in-repo record is
+  complete and hard to read from outside. An outside reader should not have to
+  walk `git log` to reconstruct a decision.
+* **Scientific correctness routes entirely through the human** (4). No
+  agent-side check exists for domain error as distinct from structural error.
+  The `deliverable` axis is the proposed way to move part of it into the
+  apparatus.
+* **Reviewer diversity is bounded by the model families available** (6). The
+  External tier reduces correlated blind spots; it cannot manufacture
+  independence past the number of distinct families in use.
+* **The comprehension floor is stated where adopters never see it** (16). The
+  norm lives in `doctrine/rationale.md`; the file every adopter receives says
+  nothing about it, and `doctrine/` is not installed. The calibration *axis* is
+  a separate, unbuilt question needing its own evidence.
+* **Stack-neutrality of the tooling is aspirational** (13). The methodology
+  sits at the waist and is stack-independent; the Python tooling sits above it
+  and has no second implementation.
+* **The governance-regime and `deliverable` axes are unbuilt** (14, 15). Both
+  are argued and neither is a dimension yet.
+* **The context budget is unmeasured** (12). Leanness is argued as a
+  correctness property with no measurement of the always-loaded surface.
+* **The default routes to ceremony** (17). Triage separates trivial from
+  substantive, but in practice the heavy path is the default and the maintainer
+  has to intervene to get the cheap one.
 
 Four early gaps are closed and now live in the doctrine: the bimodal AI surface
-is documented, test/doc requirements are in the proposal template, the
-verify-before-asserting failure typology is structured, and the write-time
-claim checker moved agent-output validation from reactive to proactive.
+is documented, test and documentation requirements sit in the proposal
+template, the verify-before-asserting failure typology is structured, and the
+write-time claim checker moved agent-output validation from reactive to
+proactive.
 
 ## What Cairn is today
 
