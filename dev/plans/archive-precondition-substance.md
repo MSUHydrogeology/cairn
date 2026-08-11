@@ -4,7 +4,7 @@
 
 **Source proposal**: `2026-08-11-claude-archive-precondition-substance`,
 accepted at Revision 1 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-11`).
-**Status**: awaiting-plan-review
+**Status**: executing
 **Plan review**: required(**External**) — set by the proposal: this changes a
 shipped checker's archive contract, which every adopter's lifecycle depends on.
 **Last update**: 2026-08-11
