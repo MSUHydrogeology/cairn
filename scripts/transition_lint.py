@@ -88,6 +88,136 @@ WHITELIST: dict[str, str] = _whitelist_mod.WHITELIST
 
 
 # ---------------------------------------------------------------------------
+# The one runtime status vocabulary -- contained loader
+# ---------------------------------------------------------------------------
+#
+# `lifecycle-status-vocabulary` R5, as replaced by that proposal's "R5
+# replacement -- contained consumers and corpus boundary".  This file used to
+# declare its own `_OPEN_STATUSES`; the planner declares the vocabulary and this
+# is one of exactly two consumers that read it.  The contract is restated here
+# **per consumer** rather than inherited by implication, because the containment
+# is the security property and a reader of this file must be able to check it
+# without opening the other consumer.
+#
+# The rules, each implemented below:
+#   * the path is derived from THIS file's own resolved location -- never from
+#     ambient `sys.path`, and no `tools/__init__.py` is created to manufacture
+#     a package;
+#   * before execution: refuse a missing or unreadable planner, a symlinked
+#     planner, a symlinked containing `tools/` directory, and any planner whose
+#     resolution lands outside the expected `tools/` root;
+#   * a fixed private module name, registered only for the loader's duration;
+#   * cache only a FULLY initialized module carrying our completion sentinel;
+#   * on any execution failure, remove that module *and every child registered
+#     under its private name*, so a retry rebuilds a clean graph;
+#   * a pre-existing entry under that name is never trusted merely for being
+#     present -- it passes the same identity checks or it is replaced;
+#   * every validation `OSError` is a clean refusal, never a traceback and
+#     never a fallback.
+
+
+class VocabularyUnavailable(RuntimeError):
+    """The single vocabulary source could not be loaded *safely*.
+
+    Raised in place of falling back to a local status tuple.  The fallback is
+    the exact defect R5 removes: this file carried its own opening-status tuple
+    and drifted from the planner's state machine, which is how shape (b) went
+    silent for plans.  A tool that cannot read the vocabulary says so.
+    """
+
+
+#: Fixed private name.  Fixed so a poisoned entry is *detectable* at a known
+#: key; private so it cannot be mistaken for an importable module.
+_PLANNER_MODULE_NAME = "_transition_lint_lifecycle_planner"
+
+#: Set by *this* loader only after exec_module returned AND every required
+#: export is present.  Presence in `sys.modules` is not initialization.
+_PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
+
+#: What this consumer actually reads.  Checked before the module is cached, so
+#: a planner that loads but has lost an export is a refusal, not an
+#: `AttributeError` at the first added file.
+_REQUIRED_EXPORTS = ("RECOGNIZED_STATES", "SHAPE_B_STATUSES")
+
+_planner_cache = None
+
+
+def _purge_planner_module() -> None:
+    """Drop the private module and every child registered under its name."""
+    prefix = _PLANNER_MODULE_NAME + "."
+    for name in [n for n in sys.modules
+                 if n == _PLANNER_MODULE_NAME or n.startswith(prefix)]:
+        sys.modules.pop(name, None)
+
+
+def _validated_planner_path() -> Path:
+    """The planner path, or a clean refusal.  Never raises `OSError`."""
+    path = _CAIRN_ROOT / "tools" / "lifecycle_planner.py"
+    tools_dir = path.parent
+    try:
+        if tools_dir.is_symlink():
+            raise VocabularyUnavailable(
+                f"the containing directory {tools_dir} is a symlink -- "
+                f"refusing to load the status vocabulary through it")
+        if path.is_symlink():
+            raise VocabularyUnavailable(
+                f"{path} is a symlink -- refusing to load the status "
+                f"vocabulary through it")
+        if not path.is_file():
+            raise VocabularyUnavailable(
+                f"no status vocabulary at {path} -- this tool reads the "
+                f"lifecycle vocabulary from the planner and has no local copy")
+        if path.resolve().parent != tools_dir.resolve():
+            raise VocabularyUnavailable(
+                f"{path} resolves outside the expected {tools_dir} root")
+        with path.open("rb"):
+            pass
+    except OSError as exc:
+        # A clean refusal, not a traceback: an unreadable planner, a permission
+        # error, or a broken link all arrive here.
+        raise VocabularyUnavailable(
+            f"cannot read the status vocabulary at {path}: {exc}") from None
+    return path
+
+
+def _vocabulary():
+    """The planner module, loaded under containment and cached when complete."""
+    global _planner_cache
+    if _planner_cache is not None:
+        return _planner_cache
+    path = _validated_planner_path()
+
+    existing = sys.modules.get(_PLANNER_MODULE_NAME)
+    if existing is not None:
+        if (getattr(existing, _PLANNER_SENTINEL, False)
+                and getattr(existing, "__file__", None) == str(path)
+                and all(hasattr(existing, n) for n in _REQUIRED_EXPORTS)):
+            _planner_cache = existing
+            return existing
+        _purge_planner_module()
+
+    spec = _importlib_util.spec_from_file_location(_PLANNER_MODULE_NAME, path)
+    if spec is None or spec.loader is None:
+        raise VocabularyUnavailable(f"could not build an import spec for {path}")
+    module = _importlib_util.module_from_spec(spec)
+    sys.modules[_PLANNER_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException as exc:
+        _purge_planner_module()
+        raise VocabularyUnavailable(
+            f"the status vocabulary at {path} failed to load: {exc!r}") from None
+    missing = [n for n in _REQUIRED_EXPORTS if not hasattr(module, n)]
+    if missing:
+        _purge_planner_module()
+        raise VocabularyUnavailable(
+            f"the status vocabulary at {path} is missing {missing}")
+    setattr(module, _PLANNER_SENTINEL, True)
+    _planner_cache = module
+    return module
+
+
+# ---------------------------------------------------------------------------
 # Findings
 # ---------------------------------------------------------------------------
 
@@ -227,11 +357,12 @@ _PINNED_REVIEW_PREFIXES = ("review", "plan review", "code review")
 #: dishonest one.  Count *body* lines instead.
 _MIN_EVIDENCE_LINES = 3
 
-#: A lifecycle file is a shape-(b) candidate only while it is still
-#: pre-review.  ``proposed`` alone was the original rule; no plan ever
-#: carries it, which made the exact analogue of the 17b7e5c incident
-#: undetectable on plans.
-_OPEN_STATUSES = ("proposed", "open", "awaiting-plan-review")
+#  The shape-(b) candidate set used to live here as a local `_OPEN_STATUSES`
+#  tuple.  It is now the planner's `SHAPE_B_STATUSES` (see the contained loader
+#  above), which is what closed the drift: `proposed` alone was the original
+#  rule, no plan ever carries it, and that made the exact analogue of the
+#  17b7e5c incident undetectable on plans for as long as the two vocabularies
+#  were separate declarations.
 
 #: How far into an added blob ``**Status**:`` is looked for.  Measured
 #: 2026-08-04 across every file under both trigger roots including
@@ -546,7 +677,24 @@ def _shape_b(
             if m:
                 declared = m.group(1).lower()
                 break
-        if declared not in _OPEN_STATUSES:
+        if declared is None:
+            # No `**Status**:` within the header bound.  Deliberately a silent
+            # skip and not an advisory: the trigger roots also carry files that
+            # are not lifecycle artifacts, and the chunk's rule is about an
+            # *unrecognized* token, not an absent one.  Widening this to fire on
+            # absence would make the tool noisy about files it does not govern.
+            continue
+        vocab = _vocabulary()
+        if declared not in vocab.RECOGNIZED_STATES:
+            # Never a silent skip.  An unknown token used to fall through this
+            # branch and disable shape (b) for that file with no trace, which
+            # is fail-open in the one place the tool is supposed to be honest.
+            findings.append(Finding(
+                sha, "b?", path,
+                f"unrecognized **Status**: {declared!r} -- shape (b) could not "
+                f"be evaluated for this added file (advisory)"))
+            continue
+        if declared not in vocab.SHAPE_B_STATUSES:
             continue
         for start, end, heading in _section_spans(lines, "review", rules):
             if rules.dated_heading and not _ISO_DATE_RE.search(heading):

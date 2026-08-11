@@ -23,6 +23,9 @@ from .parse import (
     _CODE_REVIEW_HEADING_RE,
     _PLAN_REVIEW_HEADING_RE,
 )
+import importlib.util as _importlib_util
+import sys as _sys
+
 from .gitmeta import _resolve_stage_commits, _hour_delta, _day_delta, _stage_reliability
 from .subsystems import (
     _load_all_annotations,
@@ -93,7 +96,10 @@ PLAN_COLUMNS = [
 ]
 
 # The enum tokens a plan status normalizes to.
-_PLAN_STATUS_ENUM = ('open', 'executing', 'review', 'archived')
+#  The plan-status enum used to be declared here as a local tuple, and it
+#  omitted ``awaiting-plan-review``.  It is now the planner's ``PLAN_STATES``,
+#  read through the contained loader below (`lifecycle-status-vocabulary` R5, as
+#  replaced).  See ``_plan_status_enum()``.
 
 
 # --------------------------------------------------------------- corpus walk
@@ -292,6 +298,130 @@ def proposal_rows(root: Path) -> List[Dict[str, object]]:
 # --------------------------------------------------------------- plan rows
 
 
+# ---------------------------------------------------------------------------
+# The one runtime status vocabulary -- contained loader
+# ---------------------------------------------------------------------------
+#
+# `lifecycle-status-vocabulary` R5, as replaced by that proposal's "R5
+# replacement -- contained consumers and corpus boundary".  The contract is
+# restated here **per consumer** rather than inherited from the other consumer
+# by implication, so a reader can check the containment without opening
+# ``scripts/transition_lint.py``.
+#
+# The path is derived from THIS file's own resolved location as the *sibling*
+# ``lifecycle_planner.py``.  Both files install into ``tools/``
+# (``tools/_lifecycle_metrics/extract.py`` and ``tools/lifecycle_planner.py``),
+# so in a real adopter tree the sibling exists.  **At this file's SOURCE
+# location it does not** -- ``templates/modules/default-on/_lifecycle_metrics/``
+# has no planner beside it -- so the byte-identical twin *refuses* there.  That
+# refusal is the contract, not a defect: metrics is a tool that runs from an
+# installed tree.
+#
+# Before execution: refuse a missing or unreadable planner, a symlinked planner,
+# a symlinked containing directory, and any planner resolving outside the
+# expected root.  A fixed private module name, registered only for the loader's
+# duration.  Cache only a fully initialized module carrying our sentinel.  On
+# execution failure, purge the module and every child under its private name.
+# A pre-existing entry is never trusted for being present.  No ambient
+# ``sys.path``, no ``tools/__init__.py``, no CLI side effect at import.
+
+
+class VocabularyUnavailable(RuntimeError):
+    """The single vocabulary source could not be loaded *safely*.
+
+    Raised instead of falling back to a local status tuple.  The fallback is
+    the defect R5 removes: this module's own enum silently omitted
+    ``awaiting-plan-review`` for as long as it was a separate declaration.
+    """
+
+
+_PLANNER_MODULE_NAME = "_lifecycle_metrics_lifecycle_planner"
+_PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
+_REQUIRED_EXPORTS = ('PLAN_STATES',)
+_planner_cache = None
+
+
+def _purge_planner_module() -> None:
+    """Drop the private module and every child registered under its name."""
+    prefix = _PLANNER_MODULE_NAME + '.'
+    for name in [n for n in _sys.modules
+                 if n == _PLANNER_MODULE_NAME or n.startswith(prefix)]:
+        _sys.modules.pop(name, None)
+
+
+def _validated_planner_path() -> Path:
+    """The sibling planner path, or a clean refusal.  Never raises ``OSError``."""
+    here = Path(__file__).resolve()
+    root = here.parents[1]
+    path = root / 'lifecycle_planner.py'
+    try:
+        if root.is_symlink():
+            raise VocabularyUnavailable(
+                f'the containing directory {root} is a symlink -- refusing to '
+                f'load the status vocabulary through it')
+        if path.is_symlink():
+            raise VocabularyUnavailable(
+                f'{path} is a symlink -- refusing to load the status '
+                f'vocabulary through it')
+        if not path.is_file():
+            raise VocabularyUnavailable(
+                f'no status vocabulary beside this module at {path} -- metrics '
+                f'reads the lifecycle vocabulary from the planner and keeps no '
+                f'local copy.  This is the expected refusal at the template '
+                f'source location, where no planner is installed alongside.')
+        if path.resolve().parent != root.resolve():
+            raise VocabularyUnavailable(
+                f'{path} resolves outside the expected {root} root')
+        with path.open('rb'):
+            pass
+    except OSError as exc:
+        raise VocabularyUnavailable(
+            f'cannot read the status vocabulary at {path}: {exc}') from None
+    return path
+
+
+def _vocabulary():
+    """The planner module, loaded under containment and cached when complete."""
+    global _planner_cache
+    if _planner_cache is not None:
+        return _planner_cache
+    path = _validated_planner_path()
+
+    existing = _sys.modules.get(_PLANNER_MODULE_NAME)
+    if existing is not None:
+        if (getattr(existing, _PLANNER_SENTINEL, False)
+                and getattr(existing, '__file__', None) == str(path)
+                and all(hasattr(existing, n) for n in _REQUIRED_EXPORTS)):
+            _planner_cache = existing
+            return existing
+        _purge_planner_module()
+
+    spec = _importlib_util.spec_from_file_location(_PLANNER_MODULE_NAME, path)
+    if spec is None or spec.loader is None:
+        raise VocabularyUnavailable(f'could not build an import spec for {path}')
+    module = _importlib_util.module_from_spec(spec)
+    _sys.modules[_PLANNER_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException as exc:
+        _purge_planner_module()
+        raise VocabularyUnavailable(
+            f'the status vocabulary at {path} failed to load: {exc!r}') from None
+    missing = [n for n in _REQUIRED_EXPORTS if not hasattr(module, n)]
+    if missing:
+        _purge_planner_module()
+        raise VocabularyUnavailable(
+            f'the status vocabulary at {path} is missing {missing}')
+    setattr(module, _PLANNER_SENTINEL, True)
+    _planner_cache = module
+    return module
+
+
+def _plan_status_enum() -> Tuple[str, ...]:
+    """The current plan states, from the one runtime source."""
+    return tuple(_vocabulary().PLAN_STATES)
+
+
 def _normalize_plan_status(value: str) -> str:
     """Normalize a free-text status to its leading enum token.
     ``archived 2026-05-14 (...)`` -> ``archived``; ``reviewed; ...`` ->
@@ -300,7 +430,7 @@ def _normalize_plan_status(value: str) -> str:
     if not tokens:
         return ''
     lead = tokens[0].strip(' .,;:*').lower()
-    for enum in _PLAN_STATUS_ENUM:
+    for enum in _plan_status_enum():
         if lead.startswith(enum):
             return enum
     return lead

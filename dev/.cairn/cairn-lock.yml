@@ -489,7 +489,7 @@
     {
       "base_hash": "sha256:ce5f7558c91c07f7c991aeba17274a7e345369f8c96a92565c4d08082a7f8476",
       "dst": "tools/_lifecycle_metrics/extract.py",
-      "hash": "sha256:4629a36384b495e065fa372ac7673bfb28e2ca1d4b82b1d7a53267b5f4db6a64",
+      "hash": "sha256:932742394a0355b6d034a9898adf3b48df2fa2e2e199b041f2ff50cfdfa6b4a5",
       "src": "modules/default-on/_lifecycle_metrics/extract.py",
       "verbatim": true
     },
