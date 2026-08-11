@@ -17,7 +17,14 @@ from pathlib import Path
 from typing import List, Optional
 
 from .shared import INTENTS_LOG_PATH, _read_nul_delimited_paths, normalize_path
-from .record_io import active_intents, conflict_check, write_claim, write_release
+from .record_io import (
+    DEFAULT_PRUNE_GRACE_DAYS,
+    active_intents,
+    conflict_check,
+    prune_released_pairs,
+    write_claim,
+    write_release,
+)
 from .identity import (
     AGENT_ENV_VAR,
     _load_config,
@@ -117,6 +124,45 @@ def _cmd_list(args) -> int:
         )
         if active.get("stem"):
             sys.stdout.write(f"  stem={active.get('stem')!r}\n")
+    return 0
+
+
+def _cmd_prune(args) -> int:
+    """Drop released claim/release PAIRS older than the grace window.
+
+    The log is a coordination surface, not an archive.  This never deletes an
+    unreleased claim (that is a bug signal -- a session died holding a lock) and
+    never drops a line it could not parse; both are reported instead.  Refuses
+    while any claim is active, because an active claim means a live session may
+    still be appending to a file this command rewrites.
+    """
+    report = prune_released_pairs(
+        older_than_days=args.older_than_days, dry_run=args.dry_run,
+    )
+    if report["refused"]:
+        sys.stdout.write(f"intent: prune refused -- {report['refused']}\n")
+        return 0
+    stale = report["stale_unreleased"]
+    if stale:
+        sys.stdout.write(
+            f"intent: {len(stale)} claim(s) older than "
+            f"{args.older_than_days}d were NEVER RELEASED -- reported, not "
+            f"deleted (a session that died holding a lock):\n"
+        )
+        for entry in stale[:10]:
+            files = entry.get("files") or []
+            shown = ", ".join(files[:3]) + ("..." if len(files) > 3 else "")
+            sys.stdout.write(
+                f"  {entry['ts']}  {entry.get('agent')}  {shown}\n"
+            )
+    verb = "would prune" if report["dry_run"] else "pruned"
+    sys.stdout.write(
+        f"intent: {verb} {report['pruned_pairs']} released pair(s) "
+        f"({report['pruned_lines']} line(s)); {report['kept_lines']} kept"
+        + (f", {report['unparseable_kept']} unparseable preserved"
+           if report["unparseable_kept"] else "")
+        + "\n"
+    )
     return 0
 
 
@@ -402,6 +448,24 @@ def _build_parser():
         ),
     )
     p_list.set_defaults(func=_cmd_list)
+
+    p_prune = sub.add_parser(
+        "prune",
+        help=(
+            "Drop RELEASED claim/release pairs older than the grace window. "
+            "Never deletes an unreleased claim or an unparseable line; "
+            "refuses while any claim is active."
+        ),
+    )
+    p_prune.add_argument(
+        "--older-than-days", type=int, default=DEFAULT_PRUNE_GRACE_DAYS,
+        help=f"Grace window in days (default: {DEFAULT_PRUNE_GRACE_DAYS}).",
+    )
+    p_prune.add_argument(
+        "--dry-run", action="store_true",
+        help="Report what would be pruned and write nothing.",
+    )
+    p_prune.set_defaults(func=_cmd_prune)
 
     p_whoami = sub.add_parser(
         "whoami",

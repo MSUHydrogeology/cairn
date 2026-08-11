@@ -21,7 +21,11 @@ The scaffold installs this verbatim into an adopting repo's `tools/lifecycle.py`
 Two safety properties are load-bearing and are *not* negotiable defaults:
 
 * **No network.**  The CLI's surface is local git state, the reflections /
-  handoff files, and (optionally) the intents log -- nothing else.
+  handoff files, and (optionally) the intents log -- nothing else.  Read versus
+  write, stated because listing them together previously read as write access to
+  all three: reflections and handoff files are *written*; the intents log is
+  *read* everywhere except the full handoff, which **prunes released pairs** from
+  it (see ``_prune_intents``).
 * **Reflection-only by default.**  `session-end` performs only non-destructive
   work (it *creates* a reflection scaffold and *reads* the board); the
   destructive full-handoff path (prune reflections, run metrics, surface
@@ -61,6 +65,13 @@ from typing import List, Optional, Tuple
 #: Reflections older than this are pruned at full-handoff (`session-routines.md`
 #: makes reflections ephemeral; durable observations migrate out before then).
 _REFLECTION_GRACE_DAYS = 14
+
+#: Released claim/release *pairs* older than this are pruned from the work-intent
+#: coordination surface at full handoff.  Independent of the reflection window on
+#: purpose: a reflection is a document, a claim is a lock.  Never applied to an
+#: *unreleased* claim -- that is a session that died holding a lock, so it is
+#: reported instead (proposal 2026-08-11-claude-intent-ledger-pruning, [H1]/[H2]).
+_INTENT_GRACE_DAYS = 30
 
 #: A handoff lease is considered *expired* after this many seconds without a
 #: heartbeat refresh.  Expiry alone never reclaims a lock -- it is one of two
@@ -1019,6 +1030,38 @@ def _prune_reflections(root: Path, days: int, *, dry_run: bool) -> List[Path]:
     return pruned
 
 
+def _prune_intents(root: Path, interpreter: str, days: int, *,
+                   dry_run: bool) -> None:
+    """Prune released claim/release pairs from the intent log, if installed.
+
+    Full-handoff only.  The intent log is a coordination surface, not an
+    archive, and the tool that owns it does the pruning -- invoked as a
+    subprocess exactly like :func:`_surface_intents`, so this module never
+    imports the intent engine.  The command refuses on its own if any claim is
+    still active, and it never deletes an unreleased claim or an unparseable
+    line; both are reported.
+    """
+    _emit_section("pruning the work-intent surface")
+    intent_tool = _sibling_tool("intent.py")
+    if intent_tool is None:
+        _warn("intent.py (coordination-tiers) not installed -- skipping.")
+        return
+    argv = [interpreter, str(intent_tool), "prune", "--older-than-days",
+            str(days)]
+    if dry_run:
+        argv.append("--dry-run")
+    try:
+        proc = subprocess.run(
+            argv, cwd=str(root), capture_output=True, text=True, check=False,
+            env=_git_env(),
+        )
+        sys.stdout.write(proc.stdout)
+        if proc.returncode != 0 and proc.stderr:
+            _warn(proc.stderr.strip())
+    except OSError as exc:  # pragma: no cover -- defensive
+        _warn(f"intent prune failed to run: {exc}")
+
+
 def _surface_intents(root: Path, interpreter: str) -> None:
     """Read-only surface of active work-intents, if intent.py is installed.
 
@@ -1270,6 +1313,8 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
           f"{names}")
     _emit("would run lifecycle-metrics (read-only) if installed")
     _emit("would surface active intents (read-only) if installed")
+    _emit(f"would prune released work-intent pairs older than "
+          f"{args.intent_grace_days}d (never an unreleased claim) if installed")
     _emit("would surface aging fold-back candidates (read-only) if installed")
     _emit("would run the rate-limit-gate / backlog check (read-only) if installed")
 
@@ -1305,6 +1350,14 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
         # Coordination-safety check: whether another session still holds claimed
         # work (read-only).  Mirrors the manifest line above (finding 2).
         _surface_intents(root, interpreter)
+        lock.heartbeat()
+
+        # Destructive, and deliberately AFTER the read-only surface above so the
+        # operator sees the live state before anything is removed.  Runs under
+        # the handoff lock: the prune rewrites a file whose concurrent-append
+        # atomicity is best-effort, so a live appender could otherwise lose a
+        # claim (and a lost claim is a lost lock).
+        _prune_intents(root, interpreter, args.intent_grace_days, dry_run=False)
         lock.heartbeat()
 
         # Fold-back surfacing -- gated behind --handoff (F5 binding): fires
@@ -1386,6 +1439,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=_REFLECTION_GRACE_DAYS,
         help=f"Full-handoff prune horizon for reflections. "
              f"Default: {_REFLECTION_GRACE_DAYS}.",
+    )
+    p_end.add_argument(
+        "--intent-grace-days",
+        type=int,
+        default=_INTENT_GRACE_DAYS,
+        help=f"Full-handoff prune horizon for RELEASED work-intent pairs. Never "
+             f"applies to an unreleased claim. Default: {_INTENT_GRACE_DAYS}.",
     )
     p_end.add_argument(
         "--dry-run",

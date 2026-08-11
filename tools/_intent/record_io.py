@@ -256,6 +256,184 @@ def active_intents(log_path: Optional[Path] = None) -> List[Dict[str, object]]:
     ]
 
 
+#: Default age, in days, past which a RELEASED claim/release pair is garbage on
+#: the coordination surface.  Sited to mirror ``lifecycle``'s
+#: ``_REFLECTION_GRACE_DAYS``; the two windows are independent on purpose (a
+#: reflection is a document, a claim is a lock).
+DEFAULT_PRUNE_GRACE_DAYS = 30
+
+#: How recent an *unreleased* claim must be to count as a **live session** and
+#: refuse a prune.  Mirrors ``conflict.DEFAULT_CLAIM_TTL_HOURS`` -- the value
+#: that module already uses to decide a claim is fresh enough to block a commit.
+#: Duplicated as a literal rather than imported because ``conflict`` imports
+#: *this* module; the layering runs one way.
+#:
+#: **Why this is not "any unreleased claim".**  A never-released claim IS active
+#: by :func:`active_intents`, so refusing on any active claim would make
+#: :func:`prune_released_pairs` refuse forever in exactly the repositories that
+#: need it -- and would make its ``stale_unreleased`` report unreachable.  The
+#: distinction that matters is *live appender* (refuse; a rewrite could lose its
+#: claim) versus *dead lock* (report it, keep it, prune around it).
+LIVE_CLAIM_HOURS = 4.0
+
+
+def prune_released_pairs(
+    *,
+    older_than_days: int = DEFAULT_PRUNE_GRACE_DAYS,
+    log_path: Optional[Path] = None,
+    now: Optional[datetime.datetime] = None,
+    dry_run: bool = False,
+    live_within_hours: float = LIVE_CLAIM_HOURS,
+) -> Dict[str, object]:
+    """Drop ``claim``+``release`` **pairs** whose release is older than N days.
+
+    The intent log is a *coordination surface*, not an archive: it is gitignored,
+    local to one checkout, and exists to answer "who holds which paths right
+    now".  A released pair from a month ago answers nothing, and
+    :func:`active_intents` replays the whole file on the pre-commit path, so
+    growth is a cost on the most frequent operation in the project.
+
+    **Three invariants, each load-bearing and each tested:**
+
+    1. **Pairwise, never a lone release.**  :func:`active_intents` derives the
+       active set as *claims minus released ids*.  Removing a release while its
+       claim survives would **resurrect that claim as active** and block its
+       paths forever, with no release left to match it.  A pair is therefore
+       eligible only when **both** records are present, and both leave together.
+       The observable consequence: this function can never *increase* the active
+       set, and can never change it at all.
+    2. **An unreleased claim is never deleted.**  A month-old claim with no
+       release means a session died holding a lock.  That is a bug signal and it
+       is what blocks other agents; deleting it would make the surface tidier and
+       the coordination worse.  Such claims are **reported** in
+       ``stale_unreleased`` for the caller to surface, and left in place.
+    3. **A line that cannot be parsed is never dropped.**  :func:`read_log`
+       skips malformed lines with a warning; rebuilding the file from its output
+       would silently delete them.  This function walks **raw lines** and
+       preserves anything it cannot parse, byte for byte.
+
+    Rewriting at all is in tension with the append-only atomicity contract
+    documented at the top of this module (concurrent appends rely on a single
+    unbuffered ``os.write``; a rewrite can lose a record appended between read
+    and replace, and a lost *claim* is a lost lock).  That is why the caller is
+    expected to be the **full handoff**, which already holds a fail-closed
+    concurrent-handoff lock, and why the replace is atomic
+    (:func:`os.replace`) so no reader ever observes a partial ledger.  This
+    function additionally **refuses** when any claim is active, since an active
+    claim means a live session may still be appending.
+
+    Returns a report dict; writes nothing when *dry_run*.
+    """
+    target = log_path if log_path is not None else INTENTS_LOG_PATH
+    report: Dict[str, object] = {
+        "path": str(target), "pruned_pairs": 0, "pruned_lines": 0,
+        "kept_lines": 0, "unparseable_kept": 0, "stale_unreleased": [],
+        "refused": None, "dry_run": bool(dry_run),
+    }
+    if not target.exists():
+        return report
+
+    raw_lines = target.read_text(encoding="utf-8").splitlines(keepends=True)
+
+    # Parse what we can; remember which raw index each parsed record came from.
+    parsed: List[tuple] = []          # (index, record dict)
+    unparseable: set = set()
+    for idx, line in enumerate(raw_lines):
+        if not line.strip():
+            continue
+        try:
+            parsed.append((idx, json.loads(line.strip())))
+        except json.JSONDecodeError:
+            unparseable.add(idx)
+
+    releases: Dict[str, str] = {}     # id -> release ts
+    claims: Dict[str, Dict[str, object]] = {}
+    for _idx, rec in parsed:
+        rid = rec.get("id")
+        if not isinstance(rid, str):
+            continue
+        if rec.get("event") == "release":
+            ts = rec.get("ts")
+            releases[rid] = ts if isinstance(ts, str) else ""
+        elif rec.get("event") == "claim":
+            claims[rid] = rec
+
+    reference = now if now is not None else datetime.datetime.now(
+        datetime.timezone.utc)
+    cutoff = reference - datetime.timedelta(days=older_than_days)
+    live_edge = reference - datetime.timedelta(hours=live_within_hours)
+
+    def _parse_ts(ts_text: object) -> Optional[datetime.datetime]:
+        if not isinstance(ts_text, str) or not ts_text:
+            return None
+        try:
+            when = datetime.datetime.fromisoformat(ts_text)
+        except (ValueError, TypeError):
+            return None
+        return when.replace(tzinfo=datetime.timezone.utc) if when.tzinfo is None \
+            else when
+
+    # [H2] guard: refuse only for a claim recent enough to be a LIVE session,
+    # because a rewrite can lose a record such a session is appending.  An old
+    # unreleased claim is a dead lock, not an appender -- it is reported below.
+    live_ids = []
+    for rid, claim in claims.items():
+        if rid in releases:
+            continue
+        when = _parse_ts(claim.get("ts"))
+        if when is None or when >= live_edge:
+            live_ids.append(rid)      # unparseable ts counts as live: fail-safe
+    if live_ids:
+        report["refused"] = (
+            f"{len(live_ids)} claim(s) held within the last "
+            f"{live_within_hours}h -- a live session may be appending; run this "
+            f"only at a quiet serialization point"
+        )
+        report["kept_lines"] = len(raw_lines)
+        return report
+
+    def _older(ts_text: object) -> bool:
+        """True when *ts_text* parses and predates the cutoff.  An unparseable
+        or absent timestamp is treated as NOT old -- fail-safe, since the cost
+        of keeping a record is bytes and the cost of dropping one is a lock."""
+        when = _parse_ts(ts_text)
+        return when is not None and when < cutoff
+
+    prunable = {rid for rid, ts in releases.items()
+                if rid in claims and _older(ts)}
+
+    # Invariant 2: report, never delete.
+    for rid, claim in claims.items():
+        if rid in releases:
+            continue
+        if _older(claim.get("ts")):
+            report["stale_unreleased"].append({
+                "id": rid, "agent": claim.get("agent"),
+                "ts": claim.get("ts"), "files": claim.get("files"),
+            })
+
+    drop_indices = {idx for idx, rec in parsed
+                    if isinstance(rec.get("id"), str)
+                    and rec["id"] in prunable
+                    and rec.get("event") in ("claim", "release")}
+    # Invariant 3: never drop what we could not parse.
+    drop_indices -= unparseable
+
+    report["pruned_pairs"] = len(prunable)
+    report["pruned_lines"] = len(drop_indices)
+    report["kept_lines"] = len(raw_lines) - len(drop_indices)
+    report["unparseable_kept"] = len(unparseable)
+
+    if dry_run or not drop_indices:
+        return report
+
+    kept = [ln for idx, ln in enumerate(raw_lines) if idx not in drop_indices]
+    tmp = target.with_name(target.name + ".prune-tmp")
+    tmp.write_text("".join(kept), encoding="utf-8")
+    os.replace(str(tmp), str(target))
+    return report
+
+
 def conflict_check(
     files: Sequence[str],
     *,

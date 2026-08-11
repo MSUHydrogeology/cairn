@@ -1458,3 +1458,191 @@ class TestSensingWritePath:
         txt = self._tracker(tmp_path).read_text()
         assert txt.count("| direct | pending |") == 2
         assert txt.count("| Date | Event Class |") == 1  # header once
+
+
+# ---------------------------------------------------------------------------
+# Pruning the coordination surface
+# (proposal 2026-08-11-claude-intent-ledger-pruning, accepted; deliberation
+# compressed to internal, so the acceptance criteria live here.)
+#
+# The intent log is a coordination surface, not an archive. Three invariants
+# make pruning safe, and each has a mutant below:
+#   [H1] pairwise only -- a lone release would RESURRECT its claim as active
+#   [H2] an unreleased claim is reported, never deleted (it is a dead lock)
+#   [H3] an unparseable line is preserved (read_log skips them; a rebuild
+#        from parsed records would silently delete them)
+# ---------------------------------------------------------------------------
+
+_DAY = 86400.0
+
+
+def _ts(days_ago: float) -> str:
+    import datetime as _dt
+    return (_dt.datetime.now(_dt.timezone.utc)
+            - _dt.timedelta(days=days_ago)).isoformat()
+
+
+def _ledger(path: Path, rows: list[dict]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "".join(json.dumps(r, sort_keys=True) + "\n" for r in rows),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _corpus(path: Path) -> Path:
+    """Released-old (prunable), released-recent (kept), unreleased-old
+    (reported), plus a deliberately malformed line."""
+    _ledger(path, [
+        {"event": "claim", "id": "old-1", "ts": _ts(45), "agent": "a",
+         "files": ["x.md"], "action": "old work"},
+        {"event": "release", "id": "old-1", "ts": _ts(44)},
+        {"event": "claim", "id": "new-1", "ts": _ts(3), "agent": "b",
+         "files": ["y.md"], "action": "recent work"},
+        {"event": "release", "id": "new-1", "ts": _ts(2)},
+        {"event": "claim", "id": "dead-1", "ts": _ts(40), "agent": "c",
+         "files": ["z.md"], "action": "died holding this"},
+    ])
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write("{ this line is not json\n")
+    return path
+
+
+def _engine(tools_dir: Path):
+    """Load the staged engine's record_io (the TEMPLATE copy, which is what
+    the shipped tool is -- never the repo's own tools/ twin)."""
+    sys.path.insert(0, str(tools_dir))
+    try:
+        import importlib
+        for name in [n for n in list(sys.modules) if n.startswith("_intent")]:
+            del sys.modules[name]
+        return importlib.import_module("_intent.record_io")
+    finally:
+        sys.path.remove(str(tools_dir))
+
+
+class TestIntentSurfacePruning:
+    def test_h1_a_prune_cannot_change_the_active_set(self, tmp_path: Path) -> None:
+        """THE load-bearing invariant. active_intents = claims minus released
+        ids; a prune that removed a release without its claim would resurrect
+        that claim as active and block its paths forever."""
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        before = {c["id"] for c in ri.active_intents(log_path=log)}
+        ri.prune_released_pairs(older_than_days=30, log_path=log)
+        after = {c["id"] for c in ri.active_intents(log_path=log)}
+        assert before == after == {"dead-1"}
+
+    def test_h1_mutant_pruning_a_lone_release_resurrects_the_claim(
+        self, tmp_path: Path,
+    ) -> None:
+        """Proves the invariant above is not vacuous, by hand-building the
+        exact corruption the implementation refuses to produce: drop the
+        release line only, and the claim comes back as active."""
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        before = {c["id"] for c in ri.active_intents(log_path=log)}
+        kept = [ln for ln in log.read_text(encoding="utf-8").splitlines(True)
+                if '"event": "release", "id": "old-1"' not in ln
+                and '"id": "old-1"' not in ln or '"event": "claim"' in ln]
+        log.write_text("".join(kept), encoding="utf-8")
+        after = {c["id"] for c in ri.active_intents(log_path=log)}
+        assert "old-1" in after and "old-1" not in before, (
+            "the resurrection this invariant guards against must be real"
+        )
+
+    def test_h2_an_unreleased_old_claim_is_reported_not_deleted(
+        self, tmp_path: Path,
+    ) -> None:
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        assert [e["id"] for e in rep["stale_unreleased"]] == ["dead-1"]
+        assert '"dead-1"' in log.read_text(encoding="utf-8")
+
+    def test_h3_an_unparseable_line_survives(self, tmp_path: Path) -> None:
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        assert rep["unparseable_kept"] == 1
+        assert "this line is not json" in log.read_text(encoding="utf-8")
+
+    def test_only_the_old_released_pair_leaves(self, tmp_path: Path) -> None:
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        body = log.read_text(encoding="utf-8")
+        assert rep["pruned_pairs"] == 1 and rep["pruned_lines"] == 2
+        assert "old-1" not in body          # both records gone
+        assert '"new-1"' in body            # inside the window, kept
+
+    def test_it_refuses_while_any_claim_is_active(self, tmp_path: Path) -> None:
+        """A live claim means a live session may be appending to a file this
+        rewrites -- and a lost claim is a lost lock."""
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _ledger(tmp_path / "dev" / "intents.jsonl", [
+            {"event": "claim", "id": "old-1", "ts": _ts(45), "agent": "a",
+             "files": ["x.md"], "action": "old"},
+            {"event": "release", "id": "old-1", "ts": _ts(44)},
+            {"event": "claim", "id": "live", "ts": _ts(0.01), "agent": "b",
+             "files": ["y.md"], "action": "in flight"},
+        ])
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        assert rep["refused"] and rep["pruned_pairs"] == 0
+        assert "old-1" in log.read_text(encoding="utf-8")
+
+    def test_dry_run_writes_nothing(self, tmp_path: Path) -> None:
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        before = log.read_bytes()
+        rep = ri.prune_released_pairs(
+            older_than_days=30, log_path=log, dry_run=True)
+        assert rep["pruned_pairs"] == 1 and log.read_bytes() == before
+
+    def test_prune_is_idempotent(self, tmp_path: Path) -> None:
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        ri.prune_released_pairs(older_than_days=30, log_path=log)
+        once = log.read_bytes()
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        assert rep["pruned_pairs"] == 0 and log.read_bytes() == once
+
+    def test_an_unparseable_timestamp_is_kept_not_dropped(
+        self, tmp_path: Path,
+    ) -> None:
+        """Fail-safe direction: the cost of keeping a record is bytes, the cost
+        of dropping one is a lock."""
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _ledger(tmp_path / "dev" / "intents.jsonl", [
+            {"event": "claim", "id": "bad-ts", "ts": "not-a-date", "agent": "a",
+             "files": ["x.md"], "action": "x"},
+            {"event": "release", "id": "bad-ts", "ts": "also-not-a-date"},
+        ])
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        assert rep["pruned_pairs"] == 0
+        assert "bad-ts" in log.read_text(encoding="utf-8")
+
+    def test_no_temp_file_is_left_behind(self, tmp_path: Path) -> None:
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        ri.prune_released_pairs(older_than_days=30, log_path=log)
+        leftovers = list(log.parent.glob("*.prune-tmp"))
+        assert leftovers == [], f"temp file left: {leftovers}"
+
+    def test_absent_ledger_is_a_no_op(self, tmp_path: Path) -> None:
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        missing = tmp_path / "dev" / "nope.jsonl"
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=missing)
+        assert rep["pruned_pairs"] == 0 and not missing.exists()
+
+    def test_the_cli_exposes_prune_with_a_dry_run(self, tmp_path: Path) -> None:
+        """End to end through the shipped facade, not the engine directly."""
+        repo = tmp_path
+        tool = _git_repo(tmp_path)
+        _corpus(repo / "dev" / "intents.jsonl")
+        proc = _run_tool(tool, ["prune", "--older-than-days", "30",
+                                "--dry-run"], cwd=repo)
+        assert proc.returncode == 0, proc.stderr
+        assert "would prune 1 released pair" in proc.stdout, proc.stdout
+        assert "NEVER RELEASED" in proc.stdout, proc.stdout
