@@ -1159,6 +1159,22 @@ ups, and the 28 below with no durable home at all (**27 as of 2026-08-04** —
 one was merged into its duplicate). A plan does not archive
 until its items here are landed -- that is this section's whole purpose.
 
+*From `archive-precondition-substance` (2) — [REC], deposited 2026-08-11:*
+
+* **The marker grammar has a second, weaker definition.**
+  `templates/modules/default-on/_lifecycle_metrics/parse.py` matches
+  `### (?:[a-z]+ )?code review\b` (H3 only) while the planner's grammar is
+  strictly stronger — measured, 25 plans where the planner finds a review and
+  metrics misses, 0 the reverse. Two components answering "did a review happen"
+  differently, with nothing keeping them in sync. **Converge them, measuring the
+  snapshot impact first** (R1-3 / [E3] / [I1]). A second regex must not quietly
+  become a second definition again.
+* **One unchecked claim survives in the transition gates.** *"the plan-open and
+  first-implementation commits stay distinct"* asserts a git-history property
+  the planner cannot see from artifact text, and reports it met unconditionally.
+  Inventoried and count-guarded in `bootstrap/tests/test_lifecycle_contract.py`;
+  closing it needs a contract that lets the planner read history.
+
 *From `byline-classification` (4) — [REC]:*
 * **[REC-1] byline-classification, uncovered — the NFKD compatibility mappings are
   unpinned.** The `NFD`-granting / `NFKD`-flagging split rests on a
@@ -1390,8 +1406,11 @@ rather than left pointing at a section that was never written.)*
   on the single most-read file Cairn installs. Found by
   `security-verification-activation`'s Chunk B when it reddened a test whose
   docstring premise that chunk had falsified.
-* **[SP8-9] The archive preconditions did not test what they name -- PLAN
-  EXECUTING 2026-08-11, chunks A-F landing.** Corrected figures, superseding
+* **[SP8-9] The archive preconditions did not test what they name -- CLOSED
+  2026-08-11.** Plan `archive-precondition-substance` archived to `dev/plans/archive/`: SHIP on both
+  the External plan review and the External code review, zero regressions
+  against baseline (2933 -> 2955 passing, identical 4 pre-existing failures).
+  Two follow-ups deposited under [REC] above. Corrected figures, superseding
   the ones this entry carried: the old-vs-new `Dispositions:` parser delta is
   **6**, not 12 (the 12 came from an unanchored presence test used to measure a
   presence-test bug); the default scan covers **7** live artifacts, not 6; and
@@ -1408,8 +1427,8 @@ rather than left pointing at a section that was never written.)*
   as author-review is routed to **[REC]** alongside `code-review-blindness`;
   this plan does not change identity policy. Proposal accepted at
   Revision 1 and archived; the plan
-  `dev/plans/archive-precondition-substance.md` is now the permanent home for
-  the remainder, `required(External)`. Its Boundary C range must include
+  `dev/plans/archive/archive-precondition-substance.md` is the permanent home
+  for the remainder. Its Boundary C range must include
   `da3e296`, which shipped both planner twins and eight tests before the
   proposal was reviewed. **Fixed in code:** the `## Code review`
   gate now requires a reviewer marker (a `**Model**:` line or a dated `Code

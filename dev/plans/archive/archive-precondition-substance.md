@@ -4,7 +4,7 @@
 
 **Source proposal**: `2026-08-11-claude-archive-precondition-substance`,
 accepted at Revision 1 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-11`).
-**Status**: review
+**Status**: archived
 **Plan review**: required(**External**) — set by the proposal: this changes a
 shipped checker's archive contract, which every adopter's lifecycle depends on.
 **Last update**: 2026-08-11
@@ -362,6 +362,65 @@ chunk changes.
 *Filled in at archive time.* Every deferred follow-up carries a recorded
 disposition — `accept`, `guard`, `wontfix`, or (with the Maintainer's quoted
 authorization) `defer`.
+
+## Lasting-truth migration -- 2026-08-11
+
+Dispositions:
+
+* The surviving unconditional gate — *"the plan-open and first-implementation
+  commits stay distinct"* -> **guard**
+  (`bootstrap/tests/test_lifecycle_contract.py::TestGateInventory::test_only_one_unchecked_claim_survives`).
+  It is not closed; it is *inventoried and count-guarded*, so the number cannot
+  move in either direction unnoticed. Also deposited on the board.
+* The second marker definition in `_lifecycle_metrics/parse.py` -> **defer** ->
+  `dev/PLANNING.md` > [REC]. Maintainer authorization, quoted verbatim from the
+  source proposal's Decision:
+
+  > **ACCEPTED as revised (Revision 1).**
+
+  Revision 1's R1-3 is the term being deferred: *"route
+  `_lifecycle_metrics/parse.py` convergence as an explicit follow-up whose
+  snapshot impact is measured before implementation."*
+* The identity-normalizer collision that reads a valid same-agent-type Internal
+  review as author-review -> **defer** -> `dev/PLANNING.md` > [REC], under the
+  same quoted authorization; the Decision names this routing explicitly.
+* Retrofitting the 61-of-91 archived records the stricter predicates flag ->
+  **wontfix.** R1-1 forbids it, and the Maintainer's governing instruction —
+  *"We do not want to be retrospectively scanning on a regular basis. Moving
+  forward always"* — settles it. The count is a measurement, not a debt.
+* Wiring `--include-archive` to a recurring test that re-derives the count ->
+  **wontfix**, withdrawn rather than deferred. It would make history a standing
+  gate over records nobody may edit, which is the failure this plan closed.
+
+**Evidence shipped**: the structural grammar, the renamed predicate and
+narrowed messages, the gate inventory and its two drift guards, both template
+surfaces, and the corrected board figures. **Evidence deferred**: the two [REC]
+items above. **Deferred evidence home**: `dev/PLANNING.md` > [REC].
+
+**Fidelity sign-off.** The landed implementation commits `a1ec37a` (A),
+`fef5295` (B), `1e65dd7` (C–F), `5a7989d` and `a450dd7` match the accepted
+`## Revised proposal -- Revision 1` section, R1-1 through R1-6, as ratified by
+the Decision of 2026-08-11. Two things the chain did **not** deliver as
+originally written, both recorded above rather than smoothed over: fenced-block
+masking was added and then reverted after it cost two archived records their
+attestation, and D2's "drainable backlog" framing was corrected to a
+measurement after the Maintainer questioned what the archive scan is for.
+
+## Archive -- Claude -- 2026-08-11
+
+The two archive gates now refuse this very plan until it attests properly —
+`next --to archived` reported `[MISSING]` on both while this section was empty,
+where the shipped code would have reported `[ok]` unconditionally. That is the
+whole change, demonstrated on its author.
+
+**What this plan is a record of.** A checker asserted three things it never
+tested and refused one thing that was real, and the shipped template satisfied
+its own precondition, so the gate could not fail on any plan Cairn generates.
+Fixing it produced two more instances of the same error *by the same author
+during the fix* — a first-section read that rejected five real sign-offs, and
+fenced-block masking that rejected two real records. Both were caught by
+running the predicate across the archived corpus, which is why that corpus is
+now documented as a regression instrument and not an audit.
 
 ## Implementation verification -- Claude -- 2026-08-11
 
