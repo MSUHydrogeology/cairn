@@ -14,6 +14,8 @@
      since rewriting a prior section to chase a later move is exactly what the
      append-only rule forbids.  Added by the corpus-tier-cost archive commit,
      which caused the move -- no content of this plan was edited. -->
+<!-- claim-check-allow: dev/plans/security-verification-activation.md, dev/plans/api-web-security-modules.md -->
+<!-- ^ Archived 2026-08-11; reciprocal plans moved to dev/plans/archive/. Cited in append-only sections. -->
 
      historical citations in append-only or logged content, so the path is
      exempted rather than rewritten -- editing a prior section to chase a
@@ -4380,3 +4382,66 @@ re-anchor) and `test_verify_ref::test_candidate_gpg_ssh_program_never_executes`
 is knowingly red at archive**, and the archive does not wait on it.
 
 This section is append-only once written.
+
+## Code review -- Antigravity (External, security lens) -- 2026-08-11
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External (security lens)
+**Findings**: raised (1 minor test assertion boundary condition; 0 blocking, 0 substantive)
+
+### 1. Scope & Discharged Obligations
+This single External Security Review discharges:
+- **Code review tier over both plans' implementation**: `dev/plans/archive/api-web-security-modules.md` and `dev/plans/archive/security-verification-activation.md` (**DISCHARGED**).
+- **The four Security Reviews owed per `dev/PLANNING.md` [SP8-2]**:
+  1. *Surface 1* (`701be3a` in `bootstrap/_scaffold/lockfile.py`): Addition of `dev/.cairn/api-access-policy.json` and `dev/.cairn/web-hosting-policy.json` to engine `_LIVING_STATE_DSTS` (**DISCHARGED**).
+  2. *Surface 2* (`04e8609` in `templates/modules/default-on/run_security_verification.py`): `RegistryEntry.argv_mode` widened `str` -> `tuple[str, ...]`, spliced into subprocess argv, validated against `_ARGV_MODES = frozenset({("local", "--child-document")})` (**DISCHARGED**).
+  3. *Surface 3* (`04e8609` in `templates/modules/default-on/run_security_verification.py`): `_selected_capability_ids` changed from `-security` name-suffix heuristic to `_DECLARED_CAPABILITY_MODULES` frozenset (**DISCHARGED**).
+  4. *Surface 4* (`fd0eb21` in `templates/modules/team-gated/_security_net/report.py` and facades): Child document's `details` contract changed from JSON dict to scrubbed string via `render_details()` (**DISCHARGED**).
+
+### 2. Independent Falsification & Attack Ledger
+
+Each claim was independently evaluated and falsified against code and Python runtime state:
+
+1. **[#1] Living-State Policy Exclusions from Hash Attestation (`701be3a` in `lockfile.py`)**:
+   - *Claim Attack*: Are policy files non-integrity anchors for deployed legs? Does excluding them from hash attestation introduce security risk?
+   - *Falsification Result*: Evaluated. Policy files contain local base URLs, expected status codes, and principal allow/deny matrices. Excluding them from `verify_integrity` hash-pinning allows adopters to configure local policies without triggering false tamper alerts. Executable code (`scripts/api_access_security.py` and `scripts/_api_access_security/*.py`) remains in the strict immutable digest set. Furthermore, `run_security_verification.py` enforces dual `_LIVING_STATE_DSTS` validation (lines 546–549): a policy declaring `living_state` MUST be listed in the dispatcher's authoritative set, preventing unauthorized files from claiming living-state status. Policy exclusion is an explicit, safe tradeoff documented in `lockfile.py` and reviewed via git.
+
+2. **[#2] Structural Unreachability of `deployed-passive` (`04e8609` in `run_security_verification.py`)**:
+   - *Claim Attack*: Try to reach a `deployed-passive` argv through `run_security_verification.py`.
+   - *Falsification Result*: Tested in Python runtime. `RegistryEntry.__post_init__` validates `self.argv_mode in _ARGV_MODES`. `_ARGV_MODES` is a `frozenset` containing exactly one member: `("local", "--child-document")`. Instantiating a `RegistryEntry` with `argv_mode=("deployed-passive",)` immediately raises `ValueError`. `_run_child` constructs `argv = [sys.executable, "-I", str(runner_path), *entry.argv_mode]`. `deployed-passive` is **structurally unreachable** from the dispatcher.
+
+3. **[#2] Safety of Splicing Registry-Owned Tuple into Subprocess Argv (`04e8609`)**:
+   - *Claim Attack*: Is `argv_mode` tuple splicing safe against command/argument injection?
+   - *Falsification Result*: Audited `_run_child` (lines 615–626). `argv` is constructed using `sys.executable`, `-I`, parent-bound `runner_path` (verified regular unsymlinked file matching lockfile hash), and trusted `entry.argv_mode`. `subprocess.Popen` is invoked with `shell=False` and list-based argv. OS execve receives exact string arguments with zero shell evaluation or globbing. **Confirmed safe and free of command injection**.
+
+4. **[#3] Fail-Closed Signal Preservation for Unadmitted Capabilities (`04e8609`)**:
+   - *Claim Attack*: Confirm that declared, installed, unadmitted capabilities report `INCOMPLETE` (exit 5) and are not silently dropped.
+   - *Falsification Result*: Tested in Python runtime. Added `unadmitted-security` to `_DECLARED_CAPABILITY_MODULES` and lockfile `modules`. `_selected_capability_ids` selected `unadmitted-security`. When evaluated, `_REGISTRY.get("unadmitted-security")` returned `None`, yielding `aggregate: INCOMPLETE` (exit 5) with detail: `'unadmitted-security' is selected but has no admitted local security-verification registry entry`. Filtering on `_REGISTRY` membership would have silently dropped the capability to `NOT_APPLICABLE` (exit 0). **Confirmed fail-closed signal intact**.
+
+5. **[#4] `render_details` Confidentiality and Leak-Free Property (`fd0eb21`)**:
+   - *Claim Attack*: Can credentials, response bodies, headers, cookies, or terminal control sequences leak into the dispatcher aggregate report sink?
+   - *Falsification Result*: Audited `templates/modules/team-gated/_security_net/report.py`. `render_details()` constructs its string strictly from scrubbed notes, `code:reason` pairs (drawn from closed `ERROR_CODES` and `REASON_TOKENS`), and `build_finding` output (which uses ordinal `principal_ids` and 5-value `magnitude_bucket`). No raw response body/header/credential/cookie enters `render_details`. Final `scrub_terminal` pass is applied for defense-in-depth, and `run_security_verification.py` applies `_safe_render` (escaping C0/DEL/C1 control characters to `\xNN`). Verified that `TestTheDispatcherAggregateReportIsANewSweptSink` in `test_security_finding_confidentiality.py` covers this sink with a live leak-injection mutant. **Confirmed leak-free**.
+
+6. **[#4] Intactness of Dispatcher's String Channel Contract (`fd0eb21`)**:
+   - *Claim Attack*: Confirm `isinstance(details, str)` is enforced and child text is sanitized.
+   - *Falsification Result*: Audited `run_security_verification.py:750-753`. Any child document where `details` is not a `str` immediately returns `DEGRADED` (exit 20). Raw child stdout/stderr bytes are never relayed. **Confirmed intact**.
+
+7. **Inertness of `_CHANNEL_PASSTHROUGH` Seam**:
+   - *Claim Attack*: Confirm `_CHANNEL_PASSTHROUGH` in `_security_net/net.py` is inert.
+   - *Falsification Result*: Audited `_security_net/net.py` and `report.py`. `Response.reason_withheld` and `Response.redirect_withheld` are written during HTTP parsing but never read by any facade, report generator, or output formatter. 11 of 13 `CHANNEL_TOKENS` have no call site. Verified pinned by `test_d2_the_channel_passthrough_seam_cannot_demonstrate_liveness` in `test_security_finding_confidentiality.py`. **Confirmed inert seam**.
+
+8. **`dev/PLANNING.md` [SP8-3] Structural Unreachability of CLEAN for Credentialed Capabilities**:
+   - *Claim Attack*: Can a credentialed capability report `CLEAN` through `run_security_verification.py`?
+   - *Falsification Result*: Audited `_CHILD_ENV_ALLOWLIST` in `run_security_verification.py:164-177`. The allowlist admits only basic OS variables (`PATH`, `HOME`, `LANG`, `TMPDIR`, etc.) and `LC_` prefixes. No credential environment variable (`API_KEY`, `AWS_SECRET_ACCESS_KEY`, etc.) or `SSL_CERT_FILE` can reach a dispatched child. When a credentialed capability's `local` runner executes, `_read_credentials` receives `E_CREDENTIAL_ABSENT` and reports `INCOMPLETE` or `DEGRADED`. **Confirmed CLEAN is structurally unreachable for credentialed capabilities under the dispatcher**. This design constraint is correctly tracked as `dev/PLANNING.md` **[SP8-3]**.
+
+9. **Dataclass Strictness of `RegistryEntry`**:
+   - *Claim Attack*: Confirm `RegistryEntry` has 11 required fields, no defaults, no extra fields, and frozen post-construction immutability.
+   - *Falsification Result*: Tested in Python runtime. Omitting any field raises `TypeError`. Passing unexpected arguments raises `TypeError`. Post-construction mutation raises `FrozenInstanceError`. No `principal` or `scope` fields exist. **Confirmed strict**.
+
+10. **Finding — Minor Test Boundary Condition in `test_security_verification.py`**:
+    - During suite verification on macOS, `test_child_env_is_minimal_and_strips_proxies_and_credentials` (line 360) failed with `AssertionError: extra item 'LC_CTYPE'`. CPython's PEP 538 locale initialization auto-injects `LC_CTYPE="C.UTF-8"` into child subprocesses when parent `os.environ` lacks `LC_CTYPE`. The dispatcher's `_CHILD_ENV_ALLOWLIST_PREFIXES = ("LC_",)` intentionally admits `LC_` variables, but the test computed `expected` from parent `_os.environ` prior to subprocess launch. This is a minor test assertion sensitivity on platforms where CPython injects locale variables at subprocess spawn. Routed to `dev/PLANNING.md`.
+
+### 3. Summary Verdict
+**Verdict**: **SHIP** (Implementation accepted; 0 blocking, 0 substantive, 1 minor test assertion boundary finding).
+**Summary**: **0 BLOCKING, 0 SUBSTANTIVE, 1 MINOR.**
+

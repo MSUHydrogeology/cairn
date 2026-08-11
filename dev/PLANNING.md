@@ -1336,22 +1336,17 @@ homes were "the code review", which does not exist -- so they are re-homed here
 rather than left pointing at a section that was never written.)*
 
 * **[SP8-1] Neither plan received a code review, and the archive gate cannot
-  detect that.** Both `## Code review` sections are the template's untouched
-  placeholder ("*Filled in after implementation commits land*"). The archive
-  precondition is `_has_kind(art, "Code review")` in
-  `tools/lifecycle_planner.py` -- it tests the section's **presence, not its
-  content** -- and every plan scaffolded from `dev/plans/_template.md` ships that
-  placeholder, so **this gate can never fail on it**. That is the silent-tool
-  case `AGENTS.md` names: a check that returns success without testing the
-  claimed property. Two items to separate: (a) get a real code review over both
-  plans' implementation, especially the 2026-08-11 deviations, which **no
-  reviewer has seen**; (b) fix the gate to require a non-placeholder body, which
-  is a change to a shipped checker and wants its own scope.
-* **[SP8-2] Four Security Reviews are owed, none satisfied.** Row F2's widening
-  of the engine's `_LIVING_STATE_DSTS`, and the three 2026-08-11 deviations --
-  the `argv_mode` registry-schema change, the capability-selection change, and
-  the child `details` contract change. Each Maintainer authorization discharged a
-  *fence*, not a *review tier*, and no agent writes its own Security Review.
+  detect that.** Both `## Code review` sections were untouched placeholders at archive.
+  **Discharged 2026-08-11**: External Security Review by Antigravity (Gemini 3.1 Pro)
+  appended to both archived plans (`dev/plans/archive/api-web-security-modules.md` and
+  `dev/plans/archive/security-verification-activation.md`). Item (b) remains: fix
+  `tools/lifecycle_planner.py` archive gate to require a non-placeholder body.
+* **[SP8-2] Four Security Reviews are owed, none satisfied.** **Discharged 2026-08-11**:
+  All four surfaces (`701be3a` `_LIVING_STATE_DSTS` widening, `04e8609` `argv_mode` schema,
+  `04e8609` `_DECLARED_CAPABILITY_MODULES` frozenset, `fd0eb21` child `details` string contract)
+  independently falsified and accepted in the External Security Review.
+* **[SP8-10] `test_child_env_is_minimal_and_strips_proxies_and_credentials` assertion sensitivity to subprocess CPython PEP 538 locale injection.**
+  `bootstrap/tests/test_security_verification.py` line 360 computes `expected` from parent `os.environ` at call time. On platform environments where parent `os.environ` lacks `LC_CTYPE`, CPython subprocess spawn auto-injects `LC_CTYPE="C.UTF-8"`. The dispatcher admits `LC_` via `_CHILD_ENV_ALLOWLIST_PREFIXES`, but the test assertion fails exact set equality due to the post-spawn injection. Test expected set calculation should account for CPython's auto-injected `LC_` keys. Found during External Security Review 2026-08-11.
 * **[SP8-3] The dispatcher cannot ever report CLEAN for a credentialed
   capability -- design question, not a bug.** `_read_credentials` runs for
   `local` mode and refuses `E_CREDENTIAL_ABSENT` when a principal's credential is
@@ -1395,14 +1390,29 @@ rather than left pointing at a section that was never written.)*
   on the single most-read file Cairn installs. Found by
   `security-verification-activation`'s Chunk B when it reddened a test whose
   docstring premise that chunk had falsified.
-* **[SP8-9] Two archive-precondition gates test presence, not substance.**
-  Beyond **[SP8-1]**'s `## Code review` case: the loop-fidelity precondition is
+* **[SP8-9] The archive preconditions did not test what they name -- PROPOSAL
+  OPEN, partially fixed 2026-08-11.** Filed as
+  `dev/proposals/2026-08-11-claude-archive-precondition-substance.md`, which is
+  the permanent home for the remainder. **Fixed in code:** the `## Code review`
+  gate now requires a reviewer marker (a `**Model**:` line or a dated `Code
+  review -- <reviewer> -- YYYY-MM-DD` heading) instead of the section's mere
+  presence; and the `Dispositions:` pattern now tolerates markdown emphasis,
+  which had made it report "no Dispositions block" against **12 archived plans
+  that each carried one**. **Left to the proposal**, because each is a behaviour
+  change adopters would see: the Dispositions and loop-fidelity gates in the
+  `--to archived` pre-transition list are literal `True` and always report met;
+  the `scan` subcommand does not walk `dev/plans/archive/`, which is why none of
+  this surfaced; and whether a text scanner should assert "code review occurred"
+  at all rather than the checkable "a section bearing a reviewer identity and
+  date exists". Measured, and each figure was wrong on the first attempt:
+  **3** archived plans have no real code review anywhere (not 27, not 23 --
+  earlier passes examined only the first `## Code review` section, and only its
+  first three lines), the third being `gate-reanchor-preflight`, previously
+  unknown. Re-derive that count when picking this up; it moves as reviews land.
+  Still unfixed and carried by the proposal: the loop-fidelity precondition is
   satisfied by a case-insensitive regex for the phrase *"Fidelity sign-off"* or
-  *"loop-fidelity"* anywhere in the artifact
-  (`tools/lifecycle_planner.py`). Writing the phrase satisfies the gate; no
-  sign-off need have occurred. Both belong to one scope about whether the
-  archive preconditions check anything a careless author would not trivially
-  pass.
+  *"loop-fidelity"* anywhere in the artifact — writing the phrase satisfies the
+  gate, and no sign-off need have occurred.
 * **[SP8-7] `api-web-security-modules` never landed its
   `templates/modules/README.md` catalog row (F-11).** Activation's Chunk D landed
   its own row at `dd15268`; api-web's was left because another session held the
