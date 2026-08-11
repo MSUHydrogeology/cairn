@@ -506,9 +506,22 @@ implementation parent rather than carrying these figures forward.
   `286f07d` landed before the `executing` transition, but Chunk B now *depends*
   on it: B2 pins its behavior rather than deriving it. A reviewed range that
   starts after it would leave the gate change this plan relies on outside the
-  only independent review it ever gets. Use `286f07d^..<B1 commit>` or an
-  equivalently exact range that provably contains those bytes, and name the
-  commit explicitly in **both** Boundary B ledgers.
+  only independent review it ever gets. Name the commit explicitly in **both**
+  Boundary B ledgers.
+
+  **Use the exact union, not one contiguous range** — the reading External
+  round 7 supplied, adopted here so a later implementer does not have to
+  re-derive it:
+
+  ```
+  286f07d^..286f07d        the pre-landed gate repair
+  <first impl>..<B1>       this plan's own implementation range
+  ```
+
+  A single contiguous `286f07d^..<B1>` is also correct, but it drags in **34
+  unrelated intervening commits** and spends reviewer attention without adding
+  a byte of coverage. Both exact ranges are reviewed in the plan's **one**
+  Boundary C pass — this is a targeting decision, not a second review.
 * **Restart rule — canonical text lives in `## Sequence` and is not restated
   here.** This section previously carried an unqualified summary ("a corrective
   byte after the ceremony restarts B2 only") that contradicted it and would have
