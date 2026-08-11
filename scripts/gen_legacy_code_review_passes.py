@@ -108,6 +108,16 @@ _RESPONSE_RE = re.compile(
 #: Status line, for rule 3's `archived`-only restriction.
 _STATUS_RE = re.compile(r"^\*\*Status\*\*:\s*(?P<value>.*?)\s*$", re.M)
 
+#: The disposition shapes this tree actually uses to answer a Code review, from
+#: the real answered cases.  Used ONLY by `--report`, to resolve the digests in
+#: the planner's `_LEGACY_CODE_REVIEW_DISPOSITIONS` back to readable headings:
+#: that table must store digests because the planner ships as a template and the
+#: neutrality gate refuses an AI-vendor name under `templates/` with no
+#: exemption, while every real disposition heading carries its author's byline.
+_DISPOSITION_SHAPES = ("### Sharpening", "## Response to code review",
+                       "## Implementation disposition", "## Review disposition",
+                       "## Archive record")
+
 #: The verdict vocabulary, for the report's blocking-latest-pass column only.
 #: The report is an inventory, never an oracle for the gate.
 _CLEARING = ("ship", "accept", "accept-with-followups", "pass")
@@ -258,14 +268,25 @@ def report(root: Path, commit: str = BASELINE_COMMIT) -> int:
     for r in sorted(naked, key=lambda r: r["stem"]):
         print(f"   {r['stem']:45} containers={len(r['containers'])}")
 
-    blocking = [r for r in recs if r["latest_verdict"] == "blocking"]
+    blocking = [(r, rel) for r, rel in
+                zip(recs, artifacts(root, commit))
+                if r["latest_verdict"] == "blocking"]
     noverdict = [r for r in recs
                  if r["passes"] and r["latest_verdict"] is None]
     print(f"\n-- plans whose LATEST pass is blocking ({len(blocking)}) --")
     print("   R3' requires the manifest to additionally name the specific")
-    print("   admitted disposition heading completing each of these")
-    for r in sorted(blocking, key=lambda r: r["stem"]):
-        print(f"   {r['stem']:45} {r['latest_pass']}")
+    print("   admitted disposition heading completing each of these.  The")
+    print("   planner stores both sides as digests (neutrality gate); the")
+    print("   candidate headings below are how a reader resolves them.")
+    for r, rel in sorted(blocking, key=lambda pair: pair[0]["stem"]):
+        print(f"   {r['stem']}")
+        print(f"      pass  {digest(r['latest_pass'])}  {r['latest_pass']}")
+        text = read_at(root, rel, commit)
+        lines = text.split("\n")
+        after = lines.index(r["latest_pass"]) if r["latest_pass"] in lines else 0
+        for i, line in enumerate(lines):
+            if i > after and line.startswith(_DISPOSITION_SHAPES):
+                print(f"      cand  {digest(line.strip())}  {line}")
     print(f"\n-- plans whose latest pass carries no verdict line "
           f"({len(noverdict)}) --")
     for r in sorted(noverdict, key=lambda r: r["stem"]):

@@ -94,7 +94,7 @@ import subprocess
 import sys
 import unicodedata
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 # --- structured output (mirrors tools/lifecycle.py) --------------------------
 
@@ -1222,9 +1222,11 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
     matches: List[Tuple[int, str, "Optional[re.Match[str]]"]] = [
         (i + 1, raw, _S1_PASS_RE.match(raw)) for i, raw in enumerate(lines)
     ]
-    boundaries = sorted(
-        {sec.line_no for sec in art.sections if sec.level <= 2}
-        | {ln for ln, _raw, m in matches if m})
+    # R4 -- ONE canonical boundary set, of BOTH record kinds.  Defined below
+    # with the Code-review schema (Chunk C) because it needs that block's
+    # heading grammar; resolved at call time, so the reading order is the only
+    # thing that differs from defining it here.
+    boundaries = _record_boundaries(art)
     out: List[Tuple[Section, str]] = []
     for line_no, raw, m in matches:
         if not m:
@@ -1394,7 +1396,9 @@ def _response_to_code_review_lines(art: Artifact) -> List[Tuple[int, int]]:
     return out
 
 
-def code_review_binding_violations(art: Artifact) -> List[str]:
+def code_review_binding_violations(
+        art: Artifact,
+        skip_lines: Optional[Set[int]] = None) -> List[str]:
     """Every ``Answers:`` binding defect in *art* (B3).
 
     Six refusal directions, each named separately in the message so a reader is
@@ -1402,11 +1406,23 @@ def code_review_binding_violations(art: Artifact) -> List[str]:
     **unmatched**, **ambiguous**, and **precedes its target**.  R2'' lists the
     first four; Revision 3 adds *ambiguous* by requiring exactly one match; the
     last is R2''s "A Response positioned before its target refuses".
+
+    *skip_lines* (Chunk C) names Response headings admitted by
+    `_LEGACY_CODE_REVIEW_RECORDS`.  The ``Answers:`` field is **newer than every
+    Response in this tree** -- 2 exist corpus-wide and neither carries it -- so
+    without the exemption the gate reddens on a real archived record the moment
+    C1 wires it in, and R5's accepted blast radius says *"no existing artifact
+    violates"*.  Default `None` keeps the B3 signature callable, which is how
+    the forward contract is expressed: a Response written after the baseline has
+    no exemption to pass.
     """
     lines = art.text.split("\n")
     passes = _code_review_pass_lines(art)
+    exempt = skip_lines or set()
     v: List[str] = []
     for start, end in _response_to_code_review_lines(art):
+        if start in exempt:
+            continue
         label = f"'{lines[start - 1].lstrip('# ').strip()}'"
         body = "\n".join(lines[start:end])
         found = _ANSWERS_LINE_RE.findall(body)
@@ -1477,6 +1493,451 @@ def code_review_pass_is_dispositioned(art: Artifact, pass_line: int) -> bool:
     return False
 
 
+# === Chunk C: the Code-review record schema ==================================
+#
+# Contract: accepted proposal `2026-08-10-claude-code-review-blindness`, whose
+# **R2 is superseded**.  The operative clauses are:
+#
+#   R2'   the archive rule -- the latest applicable pass must CLEAR.  There is
+#         no disposition branch: a Response records the implementer's answer and
+#         does not clear archive; eligibility comes from a later independent
+#         pass.  ([R2-E1] -- letting an author's own Response convert `REVISE`
+#         into archive eligibility would weaken the accepted parent's
+#         correction-review boundary, which this amendment exists to *supply*.)
+#   R2''  the exact grammar -- document-order recency, the `(round N)` rules,
+#         and the full-line `Answers:` binding (implemented at B3 above).
+#   R3'   legacy, keyed non-replayably -- digest + occurrence count, pinned to
+#         one named baseline commit.
+#   R5''  one predicate, evaluating an explicit EFFECTIVE STATE, reached by both
+#         callers regardless of whether Plan review was required.
+#
+# **Why the effective state and not the status.**  [R3-E1] executed the bypass:
+# `review_record_violations` sat behind `requires_review`, so a plan declaring
+# `Plan review: not required(doc-only)` never reached it, and deleting the weak
+# `_has_kind` presence check would have made such a plan archive *clean* instead
+# of replacing the weak check with the strong one -- "the same governing failure
+# the proposal exists to close, reached through a common legitimate plan
+# declaration."  So the Code-review half is keyed on the effective state alone,
+# and only the Plan-review half consults the declaration.
+
+#: The effective states at which the Code-review record is evaluated (R5'').
+#: `scan` supplies the current status; `next`/closeout supplies the requested
+#: target.  `ready-to-archive` is named here **before** it exists in
+#: `PLAN_STATES`: the accepted status-vocabulary change introduces it, and R5''
+#: names both tokens, so wiring it now makes that change a data edit rather than
+#: a second search for every archive-effective branch.
+CODE_REVIEW_EFFECTIVE_STATES = ("ready-to-archive", "archived")
+
+#: R2' -- the closed verdict vocabulary, two classes.  Chosen to cover what this
+#: tree already writes rather than to impose a new dialect: every value below
+#: appears in `dev/plans/`'s real Code-review sections.
+CODE_REVIEW_CLEARING_VERDICTS = ("SHIP", "Accept", "Accept-with-followups",
+                                 "PASS")
+CODE_REVIEW_BLOCKING_VERDICTS = ("REVISE", "Request changes", "BLOCK")
+
+#: The four-field review basis a Code-review pass inherits from the accepted
+#: parent (`review-efficient-lifecycle` > "Every review names a bounded
+#: target"), plus R2's three attestation lines.  Order is the reported order.
+_CODE_REVIEW_BASIS_FIELDS = ("Reviewed commit", "Target", "Prior findings")
+_ASSURANCE_PATHS = ("standard", "high-assurance")
+
+
+def _code_review_field_re(name: str) -> "re.Pattern[str]":
+    """One full-line field matcher, **emphasis-optional**.
+
+    The field NAME is the contract; the emphasis is not, and admitting only one
+    spelling would refuse correct records for no contract reason.  Both spellings
+    are live text: the accepted parent writes the basis unbolded --
+
+        Reviewed commit: <full commit id>
+
+    -- while every real review in `dev/plans/` writes the same lines bolded
+    (`**Reviewed commit**:`), and R2 itself specifies `**Model**:`,
+    `**Verdict**:`, `**Findings**:` with the bold.  Full-line anchored, so an
+    ``Answers``-style prose mention cannot become a field.
+    """
+    return re.compile(
+        r"^(?:\*\*|__)?" + re.escape(name) + r"(?:\*\*|__)?:[ \t]*"
+        r"(?P<value>.*?)[ \t]*$", re.M)
+
+
+_CODE_REVIEW_FIELD_RE = {
+    name: _code_review_field_re(name)
+    for name in _CODE_REVIEW_BASIS_FIELDS
+    + ("Assurance path", "Model", "Verdict", "Findings")
+}
+
+#: Emphasis markers, deleted before the verdict line is read.  The house form in
+#: this tree wraps the label **and** the value in one bold span --
+#: ``**Verdict: SHIP.**``, 30 of the 38 corpus passes -- not just the label, so a
+#: matcher anchored on ``**Verdict**:`` alone would miss almost every real
+#: record while appearing to work on the three that use the other spelling.
+_EMPHASIS_RE = re.compile(r"\*\*|__")
+
+#: The verdict VALUE, once emphasis is gone: everything up to the first clause
+#: break.  ``**Verdict: REVISE / NOT CLEARED TO ARCHIVE.**`` and
+#: ``**Verdict: Accept-with-followups**, applying to the four commits ...`` are
+#: both real, so trailing prose must be tolerated -- but only *after* a break
+#: character, never inside the token, so `SHIP but actually BLOCK` is
+#: out-of-vocabulary and refuses rather than parsing as `SHIP`.
+_VERDICT_CLAUSE_RE = re.compile(r"^[^.,;(/]*")
+
+#: R2: the mandatory fields sit **before the pass's first H3**.  Not decoration:
+#: real passes carry a `### 4. Verdict & Archive Readiness` subsection that
+#: repeats the verdict, and reading the whole body would report the pass's own
+#: summary as a *duplicate field*.
+_FIRST_H3_RE = re.compile(r"^###\s", re.M)
+
+#: S9(a) for the Code-review record -- the legacy population, ENUMERATED.
+#: ``stem -> {raw-heading digest: n}``, the same shape as `_LEGACY_PASSES`, so
+#: `_is_legacy`'s k-th-occurrence anti-replay rule applies unchanged (R3').
+#:
+#: **Baseline commit `4ca44eb8d1b378a0214019270e1a2d83976c7bb0`.**  R3' requires
+#: the baseline pinned to one named commit and recorded in the manifest; the
+#: generator, `scripts/gen_legacy_code_review_passes.py`, reads *that commit's*
+#: tree rather than the working tree, so the population is reproducible by
+#: anyone.  A record appearing after it conforms to the forward schema or
+#: violates -- the contract is forward-only.
+#:
+#: Authored **independently of the generator** (the separation the Plan-review
+#: manifest already requires of itself): this literal was derived through a
+#: second, unrelated path -- `git ls-tree` / `git show` / `grep -E` /
+#: `shasum -a 256` at the shell, with the heading patterns typed from the
+#: published grammar -- and the two derivations agreed byte-for-byte.  Two
+#: independent producers agreeing is the oracle; a manifest checked only by its
+#: own generator has none.
+#:
+#: The population is three admission rules, and rule 3's restriction is a
+#: **safety** boundary rather than tidiness -- see the generator's docstring:
+#: conforming passes and Response headings from a plan of any status, but a
+#: NON-conforming ``## Code review`` container heading only from a plan already
+#: `archived`.  Every live plan ships that bare heading as a template
+#: placeholder, and admitting one would let a placeholder satisfy the archive
+#: presence obligation -- the exact defect `archive-precondition-substance`
+#: closed after two plans archived with no code review while the gate reported
+#: success.
+_LEGACY_CODE_REVIEW_RECORDS: Dict[str, Dict[str, int]] = {
+    "adopter-entry-doc-refresh": {"da0d3a494e6c2399": 1},
+    "adopter-licensing-compliance": {"b6d076f60c9256a0": 1},
+    "agent-context-scrub": {"1f5b17996546874b": 1, "3710ab6ae7910816": 1},
+    "api-web-security-modules": {"19c404c4ed5669d6": 1, "3710ab6ae7910816": 1},
+    "archive-precondition-substance": {"bff67e0bf923a268": 1, "e08f6cbd1145cce3": 1},
+    "ast-known-new-repin": {"3710ab6ae7910816": 1, "dad784757d072aaa": 1},
+    "board-drain-guards": {"3710ab6ae7910816": 1},
+    "byline-classification": {"3710ab6ae7910816": 1, "a2e2e2d01b4c4b84": 1},
+    "content-scan-detectors": {"3710ab6ae7910816": 2},
+    "content-scan-url-classification": {"3710ab6ae7910816": 1},
+    "corpus-tier-cost": {"3710ab6ae7910816": 1, "953182b8d0c88a33": 1},
+    "default-security-stance": {"2f1ed5f4a6030e9a": 1, "3710ab6ae7910816": 1},
+    "deferral-discipline": {"3710ab6ae7910816": 1},
+    "dependency-advisory-coverage": {"3710ab6ae7910816": 2},
+    "first-session-survivability": {"b6d076f60c9256a0": 1},
+    "fork-advisory-semantics": {"1f5b17996546874b": 1, "a2e2e2d01b4c4b84": 1},
+    "gate-claims-vs-enforcement": {"3710ab6ae7910816": 1, "a2e2e2d01b4c4b84": 1},
+    "gate-reanchor-preflight": {"3710ab6ae7910816": 1},
+    "interpreter-trust-root-fallback": {"3710ab6ae7910816": 1, "dad784757d072aaa": 1},
+    "lockfile-provenance-fields": {"3710ab6ae7910816": 1, "dad784757d072aaa": 1},
+    "planner-line-semantics": {"1f5b17996546874b": 1, "3710ab6ae7910816": 1},
+    "portable-security-sweeps": {"133b1b1bada928a1": 1, "3710ab6ae7910816": 1, "4d0d177eaa09cd1a": 1},
+    "profile-parse-fail-open": {"1f5b17996546874b": 1, "a2e2e2d01b4c4b84": 1},
+    "record-corrections": {"3710ab6ae7910816": 1, "b6d076f60c9256a0": 1},
+    "release-authenticity": {"1f5b17996546874b": 1, "a2e2e2d01b4c4b84": 1},
+    "release-security-bar": {"613fd1047ac9437e": 1, "953182b8d0c88a33": 1},
+    "release-security-orchestration": {"3710ab6ae7910816": 1, "9095c6aaeb9010af": 1},
+    "review-gate-enforcement": {"133b1b1bada928a1": 1, "3710ab6ae7910816": 1, "4d0d177eaa09cd1a": 1},
+    "review-record-integrity": {"d6bb6fb023fccc3b": 1},
+    "scan-coverage": {"3710ab6ae7910816": 1, "a2e2e2d01b4c4b84": 1},
+    "scope-reduction-trap": {"8d164c71a3d3304a": 1},
+    "security-preflight-checklist": {"133b1b1bada928a1": 1, "1f5b17996546874b": 1, "3710ab6ae7910816": 1},
+    "security-verification-activation": {"19c404c4ed5669d6": 1, "3710ab6ae7910816": 1},
+    "separator-detection": {"3710ab6ae7910816": 1, "4d0d177eaa09cd1a": 1, "583870e04dc21873": 1},
+    "solo-legacy-adopter-path": {"3710ab6ae7910816": 1, "dad784757d072aaa": 1},
+    "stage-commit-patterns": {"133b1b1bada928a1": 1, "3710ab6ae7910816": 1},
+    "transition-lint": {"133b1b1bada928a1": 1, "3710ab6ae7910816": 1},
+    "verification-evidence-boundaries": {"3710ab6ae7910816": 1},
+}
+
+#: R3', final bullet: for a legacy pass whose verdict BLOCKS, the manifest
+#: *"additionally names the specific admitted disposition heading that completes
+#: each record."*  ``stem -> {pass digest: disposition-heading digest}``.
+#:
+#: This is a **check, not a comment**: the named heading must appear as a raw
+#: line positioned after that pass, or the record is not admitted.  Naming it
+#: without checking it would be the failure mode `AGENTS.md` > *Verifying claims*
+#: describes -- a claim whose only trigger is a reader believing it.
+#:
+#: **Why a digest rather than the heading text, which would read better.**  This
+#: file ships as a template, and `scripts/quality_gate.py --sub neutrality`
+#: refuses an AI-vendor name anywhere under `templates/` with **no exemption
+#: path**.  Every real disposition heading in this repository carries its
+#: author's byline, and those bylines are vendor names -- so the literal form
+#: fails that gate by construction (measured: 4 new failures, 93 -> 97).  A
+#: digest names exactly one heading, in the same currency `_LEGACY_PASSES`
+#: already uses for the same reason, and
+#: ``gen_legacy_code_review_passes.py --report`` resolves it back to text.
+#:
+#: **The population is four, not the two R2' names.**  R2' names
+#: `record-corrections` and `release-security-orchestration`, measured
+#: `as_of 2026-08-10`.  Re-derived at the baseline commit
+#: (`gen_legacy_code_review_passes.py --report`): `release-security-bar` and
+#: `scope-reduction-trap` also carry a blocking latest pass, both landing after
+#: that measurement.  Naming only the proposal's two would grant two *unnamed*
+#: blocking exemptions, which is the opposite of what the clause is for.
+_LEGACY_CODE_REVIEW_DISPOSITIONS: Dict[str, Dict[str, str]] = {
+    "record-corrections": {"b6d076f60c9256a0": "1e1cbf1ba07bf9ff"},
+    "release-security-bar": {"953182b8d0c88a33": "6cbb16665ede606e"},
+    "release-security-orchestration": {"9095c6aaeb9010af": "97aae64e391a75c6"},
+    "scope-reduction-trap": {"8d164c71a3d3304a": "30861d65bf98a5b5"},
+}
+
+
+def _record_boundaries(art: Artifact) -> List[int]:
+    """R4 -- the ONE canonical ordered boundary set, of **both** record kinds.
+
+    Level-<=2 Sections, unioned with every raw conforming pass line of either
+    kind.  B1 built this from `_S1_PASS_RE` alone because the Code-review
+    grammar did not exist yet; R4 asks for both, and this completes it.
+
+    Widening a boundary set can only ever **narrow** a body, never widen one, so
+    applying it to already-recognized sections stays safe -- the property
+    `_pass_body` relies on.  What it fixes: a Code-review heading whose reviewer
+    field carries parentheses outside the ``(<role>)`` position is invisible to
+    `_HEADER_RE`, so before this it did not terminate the Plan-review pass above
+    it, and that pass's body ran straight through it -- swallowing its
+    attestation lines and reporting them as the *earlier* pass's duplicates.
+    """
+    lines = art.text.split("\n")
+    return sorted(
+        {sec.line_no for sec in art.sections if sec.level <= 2}
+        | {i + 1 for i, raw in enumerate(lines) if _S1_PASS_RE.match(raw)}
+        | {i + 1 for i, raw in enumerate(lines)
+           if _CODE_REVIEW_PASS_RE.match(raw)})
+
+
+#: Any ``## Code review`` H2 heading at all.  The set difference against
+#: `_CODE_REVIEW_PASS_RE` is the *container* population -- the bare heading the
+#: plan template ships, and decorated variants like
+#: ``## Code review — the brief (no review has landed)``.
+_CODE_REVIEW_ANY_RE = re.compile(r"^## Code review(?:[^0-9A-Za-z].*)?$")
+
+
+def _code_review_records(art: Artifact) -> List[Tuple[int, str, str]]:
+    """Every Code-review record heading in *art*, in document order.
+
+    ``(line_no, raw_heading, kind)`` with *kind* one of ``pass`` (conforming per
+    R2''), ``container`` (a ``## Code review`` heading that is not a pass), or
+    ``response``.  One ordered stream, because the legacy fence counts
+    occurrences and the count must be taken over the same sequence the generator
+    walked.
+    """
+    out: List[Tuple[int, str, str]] = []
+    for i, raw in enumerate(art.text.split("\n")):
+        if _CODE_REVIEW_PASS_RE.match(raw):
+            out.append((i + 1, raw, "pass"))
+        elif _CODE_REVIEW_ANY_RE.match(raw):
+            out.append((i + 1, raw, "container"))
+        elif _RESPONSE_TO_CODE_REVIEW_RE.match(raw):
+            out.append((i + 1, raw, "response"))
+    return out
+
+
+def _code_review_pass_body(art: Artifact, line_no: int) -> str:
+    """The field scope of the pass at *line_no*: its body up to its first H3."""
+    body = _pass_body(art.text.split("\n"), line_no, _record_boundaries(art))
+    cut = _FIRST_H3_RE.search(body)
+    return body[:cut.start()] if cut else body
+
+
+def _parse_verdict(body: str) -> Tuple[Optional[str], Optional[str]]:
+    """R2' -- ``(clearing|blocking, violation)`` from one pass's field scope."""
+    found = _CODE_REVIEW_FIELD_RE["Verdict"].findall(_EMPHASIS_RE.sub("", body))
+    if not found:
+        return None, "missing Verdict"
+    if len(found) > 1:
+        return None, "duplicate Verdict"
+    raw = _VERDICT_CLAUSE_RE.match(found[0]).group(0).strip()
+    for value in CODE_REVIEW_CLEARING_VERDICTS:
+        if raw.casefold() == value.casefold():
+            return "clearing", None
+    for value in CODE_REVIEW_BLOCKING_VERDICTS:
+        if raw.casefold() == value.casefold():
+            return "blocking", None
+    return None, (
+        f"unrecognized Verdict value: {raw!r} -- the vocabulary is closed: "
+        f"clearing {'/'.join(CODE_REVIEW_CLEARING_VERDICTS)}; "
+        f"blocking {'/'.join(CODE_REVIEW_BLOCKING_VERDICTS)}")
+
+
+def _code_review_ordering_violations(
+        passes: List[Tuple[int, str, str, Optional[str]]]) -> List[str]:
+    """R2'' -- the ordering rules, over passes **sharing a date**.
+
+    Document order is authoritative, and `(round N)` exists only to make round
+    order and document order agree.  So among passes sharing one date: a round
+    must be unique and strictly increasing down the file, and an unnumbered pass
+    may not share a date with a numbered one.  "Ties refuse" was reaching for
+    exactly this and never defined it; there is no other tie case.
+
+    Two *unnumbered* passes sharing a date are **allowed** -- one archived plan
+    has them, from two different reviewers on one day -- and the ambiguity that
+    creates is answered where it actually bites, in the `Answers:` binding's
+    exactly-one-match rule ([R3-E2]), not by refusing the passes.
+    """
+    v: List[str] = []
+    by_date: Dict[str, List[Tuple[int, Optional[str]]]] = {}
+    for line_no, _reviewer, date, rnd in passes:
+        by_date.setdefault(date, []).append((line_no, rnd))
+    for date, group in sorted(by_date.items()):
+        rounds = [(ln, rnd) for ln, rnd in group if rnd is not None]
+        bare = [ln for ln, rnd in group if rnd is None]
+        if rounds and bare:
+            v.append(
+                f"Code-review passes dated {date} mix an unnumbered pass (line "
+                f"{bare[0]}) with a '(round N)' pass (line {rounds[0][0]}) -- "
+                "on one date, either every pass carries a round or none does")
+            continue
+        previous: Optional[int] = None
+        for line_no, rnd in rounds:
+            number = int(rnd or 0)
+            if previous is not None and number <= previous:
+                v.append(
+                    f"Code-review pass at line {line_no} declares '(round "
+                    f"{number})' after '(round {previous})' on the same date "
+                    f"({date}) -- rounds must be unique and strictly increasing "
+                    "in document order")
+            previous = number
+    return v
+
+
+def _code_review_violations(art: Artifact) -> List[str]:
+    """The Code-review record contract over one artifact (C1/C2/C4).
+
+    **Not a public entry point and not a second predicate.**  R5'' folds
+    Code-review evaluation *into* `review_record_violations`, which already
+    declares itself the one predicate (S12); this is that function's
+    Code-review half, factored out for reading only, and it has exactly one
+    caller.  A sibling public predicate would recreate the
+    two-interpretations problem S12 exists to prevent.
+    """
+    stem = art.path.stem
+    records = _code_review_records(art)
+    v: List[str] = []
+
+    # The legacy fence, walked over the ordered stream so occurrence k is the
+    # k-th appearance of that digest in the file (R3's anti-replay component).
+    seen: Dict[str, int] = {}
+    legacy: Dict[int, bool] = {}
+    for line_no, raw, _kind in records:
+        dig = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+        seen[dig] = seen.get(dig, 0) + 1
+        legacy[line_no] = _is_legacy(stem, dig, seen,
+                                     _LEGACY_CODE_REVIEW_RECORDS)
+
+    passes = _code_review_pass_lines(art)
+    v.extend(_code_review_ordering_violations(passes))
+
+    # R2''s binding, with legacy Responses exempt.  A Response is a record about
+    # a pass, so its defects are reported whether or not a pass is the latest.
+    v.extend(code_review_binding_violations(
+        art, skip_lines={line_no for line_no, _raw, kind in records
+                         if kind == "response" and legacy[line_no]}))
+
+    if not passes:
+        # Presence.  R2: "Absent Code review on an `archived` plan remains the
+        # existing violation."  A legacy container satisfies it, but only with a
+        # reviewer marker somewhere: grandfathering reaches records written
+        # before the schema, not records with no reviewer identity at all.
+        container = any(kind == "container" and legacy[line_no]
+                        for line_no, _raw, kind in records)
+        if container and art.has_code_review_marker:
+            return v
+        v.append(
+            "no conforming '## Code review -- <reviewer> -- YYYY-MM-DD"
+            "[ (round N)]' pass is present, and this state requires one. The "
+            "section's PRESENCE is not evidence a review happened: the plan "
+            "template ships '## Code review' pre-written, so a presence test "
+            "is impossible to fail (two plans archived on 2026-08-11 with no "
+            "code review while it reported success).")
+        return v
+
+    line_no, reviewer, date, _round = passes[-1]   # R2'': document order
+    label = f"'## Code review -- {reviewer} -- {date}'"
+    ok_date, date_violation = _parse_pass_date(date)
+    if date_violation:
+        # Checked BEFORE the legacy fence, for the reason the Plan-review path
+        # states: an exemption keyed on the heading would otherwise swallow the
+        # date contract, which is how the replaced dated epoch failed.
+        v.append(f"{label}: {date_violation}")
+    if legacy[line_no]:
+        return v + _legacy_disposition_violations(art, stem, line_no, label)
+
+    body = _code_review_pass_body(art, line_no)
+    for field in _CODE_REVIEW_BASIS_FIELDS + ("Model",):
+        found = _CODE_REVIEW_FIELD_RE[field].findall(body)
+        if not found:
+            v.append(f"{label}: missing '{field}:' -- the four-field review "
+                     "basis plus '**Model**:' is mandatory before the pass's "
+                     "first H3")
+        elif len(found) > 1:
+            v.append(f"{label}: duplicate '{field}:' ({len(found)} lines)")
+        elif not found[0].strip():
+            v.append(f"{label}: empty '{field}:' value")
+    _path, path_violation = _parse_one_field(
+        body, _CODE_REVIEW_FIELD_RE["Assurance path"], _ASSURANCE_PATHS,
+        "Assurance path")
+    _find, findings_violation = _parse_one_field(
+        body, _CODE_REVIEW_FIELD_RE["Findings"], _FINDINGS, "Findings")
+    verdict, verdict_violation = _parse_verdict(body)
+    for problem in (path_violation, findings_violation, verdict_violation):
+        if problem:
+            v.append(f"{label}: {problem}")
+    if verdict == "blocking":
+        # R2', the whole point: no disposition branch.  A `## Response to code
+        # review` records the implementer's answer and does NOT clear archive --
+        # eligibility comes from a later pass by an independent correction
+        # reviewer, which is the accepted parent's boundary this amendment was
+        # written to supply rather than weaken ([R2-E1]).
+        v.append(
+            f"{label} carries a BLOCKING verdict, so this state is refused. A "
+            "'## Response to code review' does not clear it: correct the "
+            "findings, land a replacement Boundary B record over the corrected "
+            "range, and have an independent correction reviewer append a new "
+            "pass. Archive eligibility comes from THAT pass's clearing verdict.")
+    # 'Findings: raised' with a clearing verdict is a COMPLETE record and does
+    # not block ([A1] -- the common case; a schema must not criminalise it).
+    return v
+
+
+def _legacy_disposition_violations(art: Artifact, stem: str, line_no: int,
+                                   label: str) -> List[str]:
+    """R3', final bullet -- a blocking legacy pass needs its named disposition.
+
+    Silent when the pass carries no verdict line (15 of the 38 corpus passes do
+    not) or a clearing one: grandfathering exempts a legacy record from the
+    *schema*, and the only thing this adds back is the completion the accepted
+    clause requires of the blocking cases specifically.
+    """
+    lines = art.text.split("\n")
+    verdict, _violation = _parse_verdict(_code_review_pass_body(art, line_no))
+    if verdict != "blocking":
+        return []
+    dig = hashlib.sha256(lines[line_no - 1].encode("utf-8")).hexdigest()[:16]
+    wanted = _LEGACY_CODE_REVIEW_DISPOSITIONS.get(stem, {}).get(dig)
+    if wanted is None:
+        return [f"{label} is a legacy pass with a BLOCKING verdict and no "
+                "admitted disposition named for it in "
+                "'_LEGACY_CODE_REVIEW_DISPOSITIONS' -- the enumeration admits "
+                "such a pass only by naming the heading that completes it"]
+    for i, raw in enumerate(lines):
+        if i + 1 > line_no and hashlib.sha256(
+                raw.strip().encode("utf-8")).hexdigest()[:16] == wanted:
+            return []
+    return [f"{label} is admitted as legacy on the disposition heading "
+            f"digested {wanted}, which is not present after it "
+            "(resolve the digest with "
+            "'scripts/gen_legacy_code_review_passes.py --report')"]
+
+
 def _near_miss_headings(art: Artifact) -> List[str]:
     """Every heading that begins `Plan review` but is **not** an S1 pass.
 
@@ -1500,14 +1961,29 @@ def _near_miss_headings(art: Artifact) -> List[str]:
     return out
 
 
-def _is_legacy(stem: str, dig: str, seen: Dict[str, int]) -> bool:
-    """S9(b) -- is this the k-th occurrence of `dig`, with k <= manifest count?"""
-    admitted = _LEGACY_PASSES.get(stem, {}).get(dig, 0)
+def _is_legacy(stem: str, dig: str, seen: Dict[str, int],
+               manifest: Optional[Dict[str, Dict[str, int]]] = None) -> bool:
+    """S9(b) -- is this the k-th occurrence of `dig`, with k <= manifest count?
+
+    **One k-th-occurrence rule, two manifests.**  Chunk C adds a second
+    enumeration (`_LEGACY_CODE_REVIEW_RECORDS`) for the Code-review record, and
+    the accepted `code-review-blindness` **R3'** requires that it match
+    `_LEGACY_PASSES`' shape *"so ``_is_legacy``'s k-th-occurrence rule applies
+    unchanged"*.  A default argument is how that stays literally true: writing a
+    sibling `_is_legacy_code_review` would put two implementations of one
+    anti-replay rule in the file, and the next person to fix a bug in one of
+    them would not know to fix the other.
+    """
+    table = _LEGACY_PASSES if manifest is None else manifest
+    admitted = table.get(stem, {}).get(dig, 0)
     return seen.get(dig, 0) <= admitted
 
 
-def review_record_violations(art: Artifact) -> List[str]:
-    """S1-S9 over one artifact -> violations.  **The one predicate (S12).**
+def review_record_violations(art: Artifact,
+                             effective_state: Optional[str] = None
+                             ) -> List[str]:
+    """S1-S9 plus the Code-review record over one artifact.  **The one
+    predicate (S12).**
 
     Both gate call sites -- ``_conformance_violations`` and
     ``_gating_preconditions`` -- go through this function, so the two cannot
@@ -1515,11 +1991,32 @@ def review_record_violations(art: Artifact) -> List[str]:
     **neither a pass nor a violation**: it can no longer clear anything, because
     clearing requires an S1 match, and near misses therefore fail closed as
     "no conforming pass has landed" rather than as "a pass with problems".
+
+    *effective_state* (R5'') is the state being asserted, **explicitly**: the
+    current status for `scan`, the requested target for `next`/closeout.  It
+    decides only the Code-review half; the Plan-review half is decided by the
+    plan's own declaration.  `None` means "the artifact's current status", which
+    is the conformance reading.
+
+    **Two halves, two different keys, and that asymmetry is the finding.**
+    Plan-review obligations are evaluated only when the plan declares
+    `required(...)`; Code-review obligations are evaluated whenever the effective
+    state is archive-effective, *regardless* of that declaration.  Keying the
+    Code-review half on the declaration is the bypass [R3-E1] executed: a plan
+    declaring `Plan review: not required(doc-only)` never reached this predicate
+    at all, so deleting the weak `_has_kind` presence check would have made such
+    a plan archive **clean**.
     """
     stem = art.path.stem
+    state = art.status if effective_state is None else effective_state
     required, tier_violation = normalize_required_tier(art.plan_review)
+    plan_review_required = art.plan_review.lower().startswith("required")
     v: List[str] = []
-    if tier_violation and art.plan_review.lower().startswith("required"):
+    if state in CODE_REVIEW_EFFECTIVE_STATES:
+        v.extend(_code_review_violations(art))
+    if not plan_review_required:
+        return v
+    if tier_violation:
         v.append(f"'**Plan review**:' {tier_violation}")
 
     seen: Dict[str, int] = {}
@@ -1668,7 +2165,8 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 "'not required(<rationale>)'; a missing line is a finding)."
             )
         requires_review = art.plan_review.lower().startswith("required")
-        if s in ("executing", "review", "archived") and requires_review:
+        if s in CODE_REVIEW_EFFECTIVE_STATES or (
+                s in ("executing", "review") and requires_review):
             # S12 -- ONE predicate, BOTH call sites.  This was
             # `not _has_kind(art, "Plan review")`: a PREFIX PRESENCE test that
             # cleared on a bare `## Plan review` container, an undated heading,
@@ -1687,20 +2185,18 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
             # review happened or that the declared tier is true (R1 / [E4]).
             v.extend(review_record_violations(art))
         if s == "archived":
-            if not _has_kind(art, "Code review"):
-                v.append(
-                    "status is 'archived' but no '## Code review' section is "
-                    "present (a plan never archives until code review occurred)."
-                )
-            elif not art.has_code_review_marker:
-                v.append(
-                    "status is 'archived' but its '## Code review' section(s) "
-                    "carry no reviewer marker -- no '**Model**:' identity line "
-                    "and no dated 'Code review -- <reviewer> -- YYYY-MM-DD' "
-                    "heading. The section's PRESENCE is not evidence a review "
-                    "occurred: the plan template ships it pre-written, so this "
-                    "gate is otherwise impossible to fail."
-                )
+            # R5'' -- the two weak Code-review opinions that stood here are
+            # DELETED, not kept alongside the schema check.  They were
+            # `_has_kind(art, "Code review")` (section presence, which the
+            # shipped template satisfies by itself) and, added later,
+            # `art.has_code_review_marker` (a `**Model**:`-or-dated-heading
+            # marker).  Both asked "did a code review happen?" more weakly than
+            # the schema now does, and the accepted proposal is explicit that
+            # "presence becomes a consequence of the schema check rather than a
+            # second, weaker opinion".  The marker predicate itself survives and
+            # is still consulted -- but INSIDE the one predicate, as the
+            # substance floor a legacy container heading must clear, which is the
+            # only place it can still say something the schema cannot.
             if not art.has_disposition_attestation:
                 v.append(
                     "status is 'archived' but no 'Dispositions:' block "
@@ -1793,12 +2289,26 @@ def _gating_preconditions(art: Artifact, target: str,
                           "append a '## Code review' pass (reviewer is not the "
                           "implementing agent); append-only."))
         elif target == "archived":
-            gates.append((art.has_code_review_marker,
-                          "a '## Code review' section carries a reviewer "
-                          "marker ('**Model**:' or a dated 'Code review -- "
-                          "<reviewer> -- YYYY-MM-DD' heading); the template's "
-                          "placeholder does not count. This attests the record "
-                          "shape, not that a review occurred"))
+            # S12 / R5'' -- the SAME predicate `_conformance_violations` uses,
+            # on the requested TARGET as the effective state.  This replaces the
+            # separate `art.has_code_review_marker` gate that stood here: two
+            # surfaces asking one question in two strengths is the drift S12
+            # exists to prevent, and the marker was the weaker of the two.
+            # Called regardless of the `Plan review:` declaration -- [R3-E1]
+            # executed the bypass a declaration-keyed call leaves open.
+            problems = review_record_violations(art, "archived")
+            detail = "" if not problems else "  UNMET: " + "; ".join(problems)
+            gates.append((not problems,
+                          "the review record conforms for archive: a CONFORMING "
+                          "'## Code review -- <reviewer> -- YYYY-MM-DD' pass "
+                          "whose LATEST instance carries the four-field review "
+                          "basis, '**Model**:', '**Findings**:', and a CLEARING "
+                          "'**Verdict**:' (SHIP / Accept / "
+                          "Accept-with-followups / PASS). A blocking verdict is "
+                          "answered by a later independent pass, never by a "
+                          "'## Response to code review'. Conformance only -- "
+                          "the tool attests the record shape, never that a "
+                          "review took place" + detail))
             gates.append((art.has_disposition_attestation,
                           "every deferred follow-up carries a recorded "
                           "disposition: an explicit 'none', or an entry naming "

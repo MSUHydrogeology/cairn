@@ -273,7 +273,7 @@ every later chunk builds on, so they are strictly first.
 A   central vocabulary + contained loaders         [DONE 1c68926 b0e92fd ca22f21 94bda8b]
 B   canonical pass boundaries                      [B1+B2 1329b22; B3 pending]
 P1  assurance paths + four-field review basis      [commit pending]
-C   Code-review record schema + legacy manifest    [commit pending]
+C   Code-review record schema + legacy manifest    [C3 0935a09; C1/C2/C4/C5 pending]
 P5  Contract non-expansion attestation             [commit pending]  (binds into C)
 D   claim-check archive resolution + registry      [DONE 4723107 D1/D2/D5; 6869022 D3/D4]
 E   status vocabulary, transitions, conformance    [commit pending]

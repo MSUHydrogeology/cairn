@@ -30,6 +30,7 @@ re-anchor).
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib.util
 import re
@@ -377,13 +378,23 @@ def test_scan_flags_decision_without_blockquote(tmp_path, monkeypatch, capsys):
 
 
 def test_scan_flags_plan_archived_without_code_review(tmp_path, monkeypatch, capsys):
+    """**This fixture is [R3-E1]'s executed bypass, and the node that pins it.**
+
+    The plan declares `Plan review: not required(doc)`. Before Chunk C the
+    Code-review obligation was carried by a separate `_has_kind` presence test,
+    because `review_record_violations` sat behind `requires_review` and a `not
+    required` plan never reached it -- so deleting that presence test (which
+    R5'' does) would have made exactly this fixture archive **clean**. The
+    message asserted below now comes from the one predicate, reached on the
+    EFFECTIVE STATE alone.
+    """
     repo = _make_repo(tmp_path)
     _write_plan(repo, "x.md", status="archived", plan_review="not required(doc)")
     monkeypatch.chdir(repo)
     rc = planner.main(["scan"])
     out = capsys.readouterr().out
     assert rc == 1
-    assert "no '## Code review' section" in out
+    assert "no conforming '## Code review" in out
 
 
 def test_decision_authored_by_ai_agent_is_flagged(tmp_path, monkeypatch, capsys):
@@ -1268,9 +1279,35 @@ _ARCHIVED_HEAD = (
     "# Plan: some-plan\n\n**Status**: archived\n**Author**: Someone\n\n"
 )
 
+#: A fully schema-conforming Code-review pass (Chunk C / R2', R2''), written in
+#: the accepted parent's UNBOLDED basis spelling.  `_code_review_pass()` below
+#: is the parameterized form; this constant is the clearing default, needed by
+#: the archive-precondition pair above it.
+_CODE_REVIEW_PASS = (
+    "## Code review -- Reviewer A (External) -- 2026-08-10\n\n"
+    "Reviewed commit: 0123456789abcdef0123456789abcdef01234567\n"
+    "Target: dev/plans/some-plan.md chunks A-C\n"
+    "Prior findings: none\n"
+    "Assurance path: standard\n"
+    "**Model**: some-model-id\n"
+    "**Verdict**: SHIP\n"
+    "**Findings**: none\n\n"
+    "the reading.\n"
+)
+
 
 def test_an_archived_plan_with_only_the_placeholder_is_a_violation(tmp_path):
-    """End to end through the reader, not just the helper."""
+    """End to end through the reader, not just the helper.
+
+    **Assertion changed by Chunk C (`code-review-blindness` R5'').** The
+    property this node names is unchanged and is what it still pins: the shipped
+    placeholder does not satisfy the archive obligation. What changed is which
+    predicate says so. The marker check that produced the old `reviewer marker`
+    wording was one of the two weak Code-review opinions R5'' deletes -- "presence
+    becomes a consequence of the schema check rather than a second, weaker
+    opinion" -- so the refusal now comes from the schema check, which is strictly
+    stronger: `## Code review` is not a conforming pass at all.
+    """
     art = _plan_on_disk(
         tmp_path,
         _ARCHIVED_HEAD + "**Dispositions:**\n\n* x -> accept\n\n"
@@ -1278,21 +1315,41 @@ def test_an_archived_plan_with_only_the_placeholder_is_a_violation(tmp_path):
     )
     assert art.has_code_review_marker is False
     joined = " ".join(planner._conformance_violations(art, planner.IdentityModel(frozenset(), frozenset())))
-    assert "reviewer marker" in joined, joined
+    assert "no conforming '## Code review" in joined, joined
 
 
 def test_the_same_plan_conforms_once_a_real_review_is_appended(tmp_path):
-    """The mutant for the test above: add the marker, the violation clears.
-    Without this pair, a always-violating checker would look correct."""
+    """The mutant for the test above: add a real review, the violation clears.
+    Without this pair, a always-violating checker would look correct.
+
+    **Strengthened by Chunk C.** As written, the appended section was a dated
+    heading with a body of `Findings.` and the assertion was
+    `"reviewer marker" not in joined` -- which the schema check makes *vacuously*
+    true, so the node would have kept passing while testing nothing. The clearing
+    fixture is now a schema-conforming pass, and the intermediate state (a dated
+    heading with no fields) is asserted to still refuse, which is the half that
+    keeps this pair honest.
+    """
+    dated_only = ("\n## Code review -- Reviewer A (External) -- 2026-08-10\n\n"
+                  "Findings.\n")
+    art = _plan_on_disk(
+        tmp_path,
+        _ARCHIVED_HEAD + "**Dispositions:**\n\n* x -> accept\n\n"
+        "Fidelity sign-off: someone\n\n" + _PLACEHOLDER_REVIEW + dated_only,
+    )
+    assert art.has_code_review_marker is True
+    joined = " ".join(planner._conformance_violations(art, planner.IdentityModel(frozenset(), frozenset())))
+    assert "no conforming '## Code review" not in joined, joined
+    assert "missing 'Reviewed commit:'" in joined, joined
+
     art = _plan_on_disk(
         tmp_path,
         _ARCHIVED_HEAD + "**Dispositions:**\n\n* x -> accept\n\n"
         "Fidelity sign-off: someone\n\n" + _PLACEHOLDER_REVIEW
-        + "\n## Code review -- Reviewer A (External) -- 2026-08-10\n\nFindings.\n",
+        + "\n" + _CODE_REVIEW_PASS,
     )
-    assert art.has_code_review_marker is True
     joined = " ".join(planner._conformance_violations(art, planner.IdentityModel(frozenset(), frozenset())))
-    assert "reviewer marker" not in joined, joined
+    assert "Code review" not in joined, joined
 
 
 def test_dispositions_is_recognized_in_the_repository_house_style(tmp_path):
@@ -1746,3 +1803,580 @@ class TestTheTwoRecordTypesDisagreeOnPurpose:
             "## Response to code review -- Bob -- 2026-08-02\n\n"
             "Answers: Ann, sometime\n"))
         assert planner.code_review_pass_is_dispositioned(art, 10) is False
+
+
+# ---------------------------------------------------------------------------
+# Chunk C -- the Code-review record schema.
+#
+# Contract: accepted `code-review-blindness`, whose **R2 is superseded**.  The
+# operative clauses are R2' (the latest pass must CLEAR; there is no disposition
+# branch), R2'' (document-order recency, the `(round N)` rules, the `Answers:`
+# grammar), R3' (legacy keyed by digest + occurrence count against a named
+# baseline commit) and R5'' (one predicate on an explicit EFFECTIVE STATE,
+# reached by both callers regardless of the `Plan review:` declaration).
+#
+# Every node below carries a single-property falsifier -- a mutation applied to
+# `templates/skills/_lib/lifecycle_planner.py`, which is the copy this module
+# LOADS, then reverted -- recorded in the plan's implementation-verification
+# section rather than asserted here.  The only thing that runs these nodes is a
+# person typing `python -m pytest bootstrap/tests`; Cairn has no CI.
+# ---------------------------------------------------------------------------
+
+_CR_STEM = "code-review-fixture"    # deliberately NOT in either manifest
+
+
+def _code_review_pass(*, reviewer: str = "Reviewer A (External)",
+                      date: str = "2026-08-10", round_n: int | None = None,
+                      commit: str | None = "0123456789abcdef" * 2 + "01234567",
+                      target: str | None = "chunks A-C",
+                      prior: str | None = "none",
+                      assurance: str | None = "standard",
+                      model: str | None = "some-model-id",
+                      verdict: str | None = "SHIP",
+                      findings: str | None = "none",
+                      bold_basis: bool = False,
+                      verdict_line: str | None = None,
+                      trailer: str = "") -> str:
+    """One Code-review pass, with every part independently omittable so a node
+    can vary exactly one property."""
+    tail = f" (round {round_n})" if round_n is not None else ""
+    out = f"## Code review -- {reviewer} -- {date}{tail}\n\n"
+    mark = "**" if bold_basis else ""
+    for name, value in (("Reviewed commit", commit), ("Target", target),
+                        ("Prior findings", prior), ("Assurance path", assurance)):
+        if value is not None:
+            out += f"{mark}{name}{mark}: {value}\n"
+    if model is not None:
+        out += f"**Model**: {model}\n"
+    if verdict_line is not None:
+        out += verdict_line + "\n"
+    elif verdict is not None:
+        out += f"**Verdict**: {verdict}\n"
+    if findings is not None:
+        out += f"**Findings**: {findings}\n"
+    return out + "\nthe reading.\n\n" + trailer
+
+
+def _cr_violations(tmp_path: Path, body: str, *, state: str = "archived",
+                   stem: str = _CR_STEM,
+                   plan_review: str = "not required(Chunk C fixture)") -> list:
+    """The ONE predicate on an explicit effective state (R5'').
+
+    `plan_review` defaults to `not required(...)` on purpose: that is [R3-E1]'s
+    executed bypass shape, so every node here also asserts the Code-review half
+    is reached without the declaration's help.
+    """
+    art = _plan_art(tmp_path, body, status=state, plan_review=plan_review,
+                    stem=stem)
+    return planner.review_record_violations(art, state)
+
+
+class TestCodeReviewSchema:
+    """R2's mandatory fields, read from the scope R2 names."""
+
+    @pytest.mark.parametrize("field,kwargs", [
+        ("Reviewed commit", {"commit": None}),
+        ("Target", {"target": None}),
+        ("Prior findings", {"prior": None}),
+        ("Assurance path", {"assurance": None}),
+        ("Model", {"model": None}),
+        ("Verdict", {"verdict": None}),
+        ("Findings", {"findings": None}),
+    ])
+    def test_each_mandatory_field_is_required_on_its_own(
+            self, tmp_path, field, kwargs):
+        v = _cr_violations(tmp_path, _code_review_pass(**kwargs))
+        assert any(field in msg for msg in v), (field, v)
+
+    def test_a_complete_clearing_pass_is_silent(self, tmp_path):
+        """The mutant for every node above: with all seven fields and a clearing
+        verdict the record is complete, so an always-violating check is caught."""
+        assert _cr_violations(tmp_path, _code_review_pass()) == []
+
+    def test_both_emphasis_spellings_of_the_basis_are_accepted(self, tmp_path):
+        """The field NAME is the contract, the emphasis is not. Both spellings
+        are live text: the accepted parent writes the basis unbolded, every real
+        review in `dev/plans/` writes it bolded."""
+        assert _cr_violations(tmp_path, _code_review_pass()) == []
+        assert _cr_violations(
+            tmp_path, _code_review_pass(bold_basis=True)) == []
+
+    def test_a_duplicate_field_refuses_even_when_the_values_agree(
+            self, tmp_path):
+        """Agreement is a judgement a conformance backstop must not make."""
+        body = _code_review_pass().replace(
+            "Prior findings: none\n", "Prior findings: none\nPrior findings: none\n")
+        v = _cr_violations(tmp_path, body)
+        assert any("duplicate 'Prior findings:'" in m for m in v), v
+
+    def test_an_empty_field_value_refuses(self, tmp_path):
+        v = _cr_violations(tmp_path, _code_review_pass(target=""))
+        assert any("empty 'Target:'" in m for m in v), v
+
+    def test_fields_below_the_first_h3_do_not_count(self, tmp_path):
+        """R2: the mandatory fields sit BEFORE the pass's first H3."""
+        v = _cr_violations(tmp_path, _code_review_pass(
+            commit=None, trailer="### Coverage\n\nReviewed commit: abc1234\n"))
+        assert any("missing 'Reviewed commit:'" in m for m in v), v
+
+    def test_a_repeated_verdict_below_an_h3_is_not_a_duplicate(self, tmp_path):
+        """The reason the H3 scope exists rather than being tidiness: real passes
+        carry a `### 4. Verdict & Archive Readiness` subsection that repeats the
+        verdict, and reading the whole body reports the pass's own summary as a
+        duplicate field."""
+        assert _cr_violations(tmp_path, _code_review_pass(
+            trailer="### 4. Verdict & Archive Readiness\n\n"
+                    "**Verdict: SHIP.** Ready to archive.\n")) == []
+
+    def test_an_out_of_vocabulary_assurance_path_refuses(self, tmp_path):
+        v = _cr_violations(tmp_path, _code_review_pass(assurance="medium"))
+        assert any("unrecognized Assurance path" in m for m in v), v
+
+    def test_a_malformed_date_is_a_violation_before_any_exemption(self, tmp_path):
+        v = _cr_violations(tmp_path, _code_review_pass(date="2026-02-30"))
+        assert any("malformed date" in m for m in v), v
+
+
+class TestCodeReviewBoundariesAreCanonical:
+    """R4 -- ONE boundary set, of **both** record kinds.
+
+    B1 built the set from `_S1_PASS_RE` alone, because the Code-review grammar
+    did not exist yet; R4 asks for both kinds and C2 completes it. The witness
+    has to be a heading `_HEADER_RE` cannot parse -- a reviewer field carrying
+    parentheses outside the `(<role>)` position is enough -- because every
+    heading it *can* parse is already a boundary via `art.sections`, so a
+    fixture built from an ordinary heading cannot tell the two designs apart.
+    """
+
+    UNPARSEABLE = "Jane (Lab) Smith"
+
+    def test_a_code_review_heading_terminates_the_plan_review_pass_above_it(
+            self, tmp_path):
+        body = _pass_block(reviewer="R", findings="none") + _code_review_pass(
+            reviewer=self.UNPARSEABLE, findings="raised")
+        art = _plan_art(tmp_path, body, stem=_CR_STEM,
+                        plan_review="required(Internal)")
+        plan_pass, = [sec for sec, _dig in planner._pass_headings(art)]
+        assert "**Findings**: raised" not in plan_pass.body, plan_pass.body
+        assert "**Verdict**" not in plan_pass.body, plan_pass.body
+        # And the Plan-review pass keeps its OWN single Findings line, rather
+        # than being reported for the later pass's duplicates.
+        assert planner.review_record_violations(art, "executing") == []
+
+    def test_the_unparseable_code_review_heading_is_still_a_pass(self, tmp_path):
+        """The inverse direction: narrowing the body must not lose the record."""
+        art = _plan_art(tmp_path, _code_review_pass(reviewer=self.UNPARSEABLE),
+                        status="archived", stem=_CR_STEM,
+                        plan_review="not required(Chunk C fixture)")
+        assert [r for r in planner._code_review_pass_lines(art)
+                if r[1] == self.UNPARSEABLE]
+        assert planner.review_record_violations(art, "archived") == []
+
+
+class TestCodeReviewVerdictClasses:
+    """R2' -- two closed classes, and only one of them clears archive."""
+
+    @pytest.mark.parametrize("verdict", planner.CODE_REVIEW_CLEARING_VERDICTS)
+    def test_every_clearing_verdict_clears(self, tmp_path, verdict):
+        assert _cr_violations(tmp_path, _code_review_pass(verdict=verdict)) == []
+
+    @pytest.mark.parametrize("verdict", planner.CODE_REVIEW_BLOCKING_VERDICTS)
+    def test_every_blocking_verdict_refuses(self, tmp_path, verdict):
+        v = _cr_violations(tmp_path, _code_review_pass(verdict=verdict))
+        assert any("BLOCKING verdict" in m for m in v), (verdict, v)
+
+    @pytest.mark.parametrize("line", [
+        "**Verdict: SHIP**",
+        "**Verdict: SHIP.** The implementation is clean.",
+        "**Verdict**: **SHIP** (0 blocking, 0 substantive)",
+        "Verdict: Accept-with-followups, applying to the four commits",
+    ])
+    def test_the_house_forms_parse(self, tmp_path, line):
+        """The label and the value share one bold span in 30 of the 38 corpus
+        passes. A matcher anchored on `**Verdict**:` alone would miss almost
+        every real record while appearing to work on the three others."""
+        assert _cr_violations(
+            tmp_path, _code_review_pass(verdict_line=line)) == []
+
+    @pytest.mark.parametrize("line", [
+        "**Verdict: REVISE / NOT CLEARED TO ARCHIVE.**",
+        "**Verdict: REVISE.** I reviewed the implemented chunks.",
+    ])
+    def test_the_blocking_house_forms_parse_as_blocking(self, tmp_path, line):
+        v = _cr_violations(tmp_path, _code_review_pass(verdict_line=line))
+        assert any("BLOCKING verdict" in m for m in v), v
+
+    @pytest.mark.parametrize("verdict", [
+        "SHIP but actually BLOCK", "looks fine", "approved", "LGTM"])
+    def test_an_out_of_vocabulary_verdict_refuses(self, tmp_path, verdict):
+        """Trailing prose is tolerated only AFTER a clause break, never inside
+        the token -- otherwise `SHIP but actually BLOCK` parses as `SHIP`."""
+        v = _cr_violations(tmp_path, _code_review_pass(verdict=verdict))
+        assert any("unrecognized Verdict value" in m for m in v), (verdict, v)
+
+    def test_a_duplicate_verdict_in_scope_refuses(self, tmp_path):
+        body = _code_review_pass().replace(
+            "**Verdict**: SHIP\n", "**Verdict**: SHIP\n**Verdict**: PASS\n")
+        v = _cr_violations(tmp_path, body)
+        assert any("duplicate Verdict" in m for m in v), v
+
+    def test_findings_raised_with_a_clearing_verdict_is_complete(self, tmp_path):
+        """[A1]: the common case. A schema must not criminalise it -- a reviewer
+        who raises findings and still ships has written a complete record."""
+        assert _cr_violations(
+            tmp_path, _code_review_pass(findings="raised")) == []
+
+    def test_a_response_does_not_clear_a_blocking_verdict(self, tmp_path):
+        """**R2', and the reason R2 was superseded.** [R2-E1]: letting an
+        author's own Response convert `REVISE` into archive eligibility would
+        weaken the accepted parent's independent-correction-review boundary --
+        which this amendment exists to SUPPLY, not to weaken. The binding below
+        is exact and correctly positioned, and it still does not clear."""
+        body = _code_review_pass(verdict="REVISE") + (
+            "## Response to code review -- Author -- 2026-08-11\n\n"
+            "Answers: Reviewer A (External) -- 2026-08-10\n\n"
+            "every finding corrected.\n")
+        v = _cr_violations(tmp_path, body)
+        assert any("BLOCKING verdict" in m for m in v), v
+        assert not any("Answers" in m for m in v), v
+
+    def test_a_later_independent_pass_is_what_clears_it(self, tmp_path):
+        """The mutant for the node above: the correction loop's step 4."""
+        body = _code_review_pass(verdict="REVISE") + (
+            "## Response to code review -- Author -- 2026-08-11\n\n"
+            "Answers: Reviewer A (External) -- 2026-08-10\n\n"
+            "every finding corrected.\n\n"
+        ) + _code_review_pass(reviewer="Reviewer B (External)",
+                              date="2026-08-12", prior="CR1-CR3")
+        assert _cr_violations(tmp_path, body) == []
+
+
+class TestCodeReviewRecency:
+    """R2'' -- document order is authoritative."""
+
+    def test_a_clearing_pass_earlier_does_not_rescue_a_blocking_latest(
+            self, tmp_path):
+        body = _code_review_pass(date="2026-08-09") + _code_review_pass(
+            reviewer="Reviewer B (External)", date="2026-08-10",
+            verdict="BLOCK")
+        v = _cr_violations(tmp_path, body)
+        assert any("BLOCKING verdict" in m for m in v), v
+
+    def test_only_the_latest_pass_is_held_to_the_schema(self, tmp_path):
+        """A superseded earlier pass is history; the record that governs is the
+        last one. Holding every pass to the schema would redden a plan for a
+        record its own later review already replaced."""
+        body = _code_review_pass(date="2026-08-09", commit=None, model=None,
+                                 verdict=None) + _code_review_pass()
+        assert _cr_violations(tmp_path, body) == []
+
+    @pytest.mark.parametrize("rounds,ok", [
+        ((1, 2), True), ((1, 3), True),
+        ((2, 1), False), ((2, 2), False), ((1, 1), False),
+    ])
+    def test_rounds_on_one_date_must_be_unique_and_increasing(
+            self, tmp_path, rounds, ok):
+        body = "".join(
+            _code_review_pass(reviewer=f"Reviewer {i}", round_n=n)
+            for i, n in enumerate(rounds))
+        v = [m for m in _cr_violations(tmp_path, body)
+             if "strictly increasing" in m]
+        assert (not v) is ok, (rounds, v)
+
+    def test_an_unnumbered_and_a_numbered_pass_on_one_date_refuse(
+            self, tmp_path):
+        body = _code_review_pass() + _code_review_pass(
+            reviewer="Reviewer B", round_n=2)
+        v = _cr_violations(tmp_path, body)
+        assert any("either every pass carries a round" in m for m in v), v
+
+    def test_two_unnumbered_passes_on_one_date_are_allowed(self, tmp_path):
+        """One archived plan has exactly this -- two reviewers on 2026-08-05 --
+        and the ambiguity it creates is answered where it bites, in the
+        `Answers:` exactly-one-match rule ([R3-E2]), not by refusing the passes.
+        """
+        body = _code_review_pass(verdict="Accept") + _code_review_pass(
+            reviewer="Reviewer B (External)")
+        assert _cr_violations(tmp_path, body) == []
+
+    def test_rounds_on_different_dates_are_independent(self, tmp_path):
+        body = _code_review_pass(date="2026-08-09", round_n=7) + \
+            _code_review_pass(date="2026-08-10", round_n=1)
+        assert _cr_violations(tmp_path, body) == []
+
+
+class TestCodeReviewBindingReachesTheGate:
+    """B3 built the `Answers:` predicate; C1 is what wires it in."""
+
+    @pytest.mark.parametrize("answers,expected", [
+        (None, "missing 'Answers:'"),
+        ("Answers: nobody, sometime", "malformed 'Answers:'"),
+        ("Answers: Ghost -- 2026-08-10", "matches no Code-review pass"),
+    ])
+    def test_a_binding_defect_surfaces_through_the_one_predicate(
+            self, tmp_path, answers, expected):
+        body = _code_review_pass() + (
+            "## Response to code review -- Author -- 2026-08-11\n\n"
+            + (answers + "\n" if answers else "") + "the reply.\n")
+        v = _cr_violations(tmp_path, body)
+        assert any(expected in m for m in v), (expected, v)
+
+    def test_a_correct_binding_is_silent(self, tmp_path):
+        body = _code_review_pass() + (
+            "## Response to code review -- Author -- 2026-08-11\n\n"
+            "Answers: Reviewer A (External) -- 2026-08-10\n\nthe reply.\n")
+        assert _cr_violations(tmp_path, body) == []
+
+
+class TestCodeReviewLegacyEnumeration:
+    """R3' -- forward-only, keyed non-replayably against a named baseline."""
+
+    def test_the_manifest_is_re_derived_by_the_generator(self):
+        """The C4/C3 separation, checked in the only direction that is sound.
+
+        Subset only, deliberately, for the reason the Plan-review manifest's own
+        node states: a record appended after the baseline legitimately exists and
+        legitimately is not in the manifest, so an equality check would redden on
+        the next review that lands. This catches a FABRICATED or stale entry. It
+        cannot catch a defect in the generator's own regex -- a producer cannot
+        falsify its own output -- which is why the committed literal was ALSO
+        derived by a second, unrelated path (`git ls-tree` / `grep -E` /
+        `shasum -a 256` at the shell) and the two agreed byte-for-byte.
+        """
+        gen = _code_review_generator()
+        live = gen.build_manifest(CAIRN_ROOT, gen.BASELINE_COMMIT)
+        for stem, digests in sorted(
+                planner._LEGACY_CODE_REVIEW_RECORDS.items()):
+            for dig, count in sorted(digests.items()):
+                found = live.get(stem, {}).get(dig, 0)
+                assert found >= count, (
+                    f"_LEGACY_CODE_REVIEW_RECORDS[{stem!r}][{dig!r}] admits "
+                    f"{count} but the generator finds {found} at the baseline "
+                    "-- a fabricated or stale manifest entry")
+
+    def test_the_baseline_commit_is_the_one_the_manifest_records(self):
+        """R3' requires the baseline pinned to ONE named commit recorded in the
+        manifest. Two homes for one fact drift silently, so the planner's
+        docstring and the generator's constant are compared rather than trusted.
+        """
+        gen = _code_review_generator()
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        assert gen.BASELINE_COMMIT in src, (
+            "the planner's manifest docstring does not record the generator's "
+            f"baseline commit {gen.BASELINE_COMMIT}")
+
+    def test_no_live_plans_placeholder_is_admitted(self):
+        """**The safety boundary of rule 3, and the reason it is not tidiness.**
+
+        Every live plan ships `## Code review` as a template placeholder.
+        Admitting one would let a placeholder satisfy the archive presence
+        obligation with no review at all -- the exact defect plan
+        `archive-precondition-substance` closed after two plans archived on
+        2026-08-11 with no code review while the gate reported success. So the
+        container rule reaches only plans already past that gate.
+        """
+        gen = _code_review_generator()
+        offenders = []
+        for rel in gen.artifacts(CAIRN_ROOT, gen.BASELINE_COMMIT):
+            stem = Path(rel).stem
+            rec = gen.scan(gen.read_at(CAIRN_ROOT, rel, gen.BASELINE_COMMIT),
+                           stem)
+            if rec["status"] == "archived":
+                continue
+            for heading in rec["containers"]:
+                dig = gen.digest(heading)
+                if dig in planner._LEGACY_CODE_REVIEW_RECORDS.get(stem, {}):
+                    offenders.append((stem, heading))
+        assert not offenders, offenders
+
+    def test_a_pass_outside_the_manifest_gets_no_exemption(self, tmp_path):
+        assert _CR_STEM not in planner._LEGACY_CODE_REVIEW_RECORDS
+        v = _cr_violations(tmp_path, _code_review_pass(
+            commit=None, model=None, verdict=None, findings=None))
+        assert v, "a non-manifest pass was exempted"
+
+    def test_re_appending_an_admitted_heading_is_refused_at_count_plus_one(
+            self, tmp_path):
+        """The occurrence COUNT closes the duplicate-append hole. A set-valued
+        manifest would admit an admitted digest forever, so copying a heading
+        byte-identical to a legacy one would reopen the bypass."""
+        stem = "content-scan-detectors"
+        heading = "## Code review"
+        dig = hashlib.sha256(heading.encode("utf-8")).hexdigest()[:16]
+        n = planner._LEGACY_CODE_REVIEW_RECORDS[stem][dig]
+        assert n >= 2, (
+            "the fixture must exercise n + 1 on a count > 1, not the 1 -> 2 "
+            f"edge; the manifest now admits {dig} {n} time(s) at {stem}")
+        for k in range(1, n + 2):
+            assert planner._is_legacy(
+                stem, dig, {dig: k},
+                planner._LEGACY_CODE_REVIEW_RECORDS) is (k <= n), k
+
+    def test_a_legacy_pass_satisfies_presence_without_the_schema(self, tmp_path):
+        """Grandfathering is the whole of R3': a record the Maintainer accepted
+        before the schema existed is admitted as it stands."""
+        stem = "review-record-integrity"
+        heading, = [h for h in _real_headings(stem)
+                    if h.startswith("## Code review -- ")]
+        assert _cr_violations(
+            tmp_path, heading + "\n\nan old-format record, no fields.\n",
+            stem=stem) == []
+
+    def test_a_legacy_blocking_pass_needs_its_named_disposition(self, tmp_path):
+        """R3', final bullet: a blocking legacy pass is admitted only by NAMING
+        the heading that completes it -- and naming it without checking it would
+        be the silent-check failure `AGENTS.md` > *Verifying claims* describes.
+        """
+        stem = "record-corrections"
+        pass_dig, disp_dig = next(iter(
+            planner._LEGACY_CODE_REVIEW_DISPOSITIONS[stem].items()))
+        pass_heading, = [h for h in _real_headings(stem) if _dig(h) == pass_dig]
+        # The disposition heading occurs TWICE in this artifact, byte-identical
+        # (its Plan review carries one too), so the digest matches more than
+        # once. Positional: only an occurrence AFTER the pass completes it, and
+        # the planner enforces that -- taking the first match here is enough to
+        # reconstruct the text.
+        heading = next(h for h in _real_headings(stem) if _dig(h) == disp_dig)
+        naked = pass_heading + "\n\n**Verdict: Request changes**\n"
+        v = _cr_violations(tmp_path, naked, stem=stem)
+        assert any("is not present after it" in m for m in v), v
+        answered = naked + f"\n{heading}\n\nthe disposition.\n"
+        assert _cr_violations(tmp_path, answered, stem=stem) == []
+
+    def test_every_named_disposition_is_present_in_its_real_artifact(self):
+        """The four entries, checked against the tree rather than believed.
+
+        Both sides are digests because the planner ships as a template and the
+        neutrality gate admits no AI-vendor name under `templates/` -- and every
+        real disposition heading in this tree carries its author's byline. So the
+        readable form of each entry lives here, derived from the artifact.
+        """
+        for stem, entries in sorted(
+                planner._LEGACY_CODE_REVIEW_DISPOSITIONS.items()):
+            headings = _real_headings(stem)
+            for pass_dig, disp_dig in sorted(entries.items()):
+                assert any(_dig(h) == pass_dig for h in headings), (stem, pass_dig)
+                assert any(_dig(h) == disp_dig for h in headings), (stem, disp_dig)
+
+
+class TestCodeReviewIsReachedByBothPublicPaths:
+    """S12 / R5'' -- [R3-E1]'s required satisfier, pinned through both paths."""
+
+    def _both(self, tmp_path, body):
+        art = _plan_art(tmp_path, body, status="review", stem=_CR_STEM,
+                        plan_review="not required(Chunk C fixture)")
+        scanned = planner.review_record_violations(art, "archived")
+        gates = planner._gating_preconditions(
+            art, "archived", planner.IdentityModel(frozenset(), frozenset()))
+        record_gate = [met for met, text in gates
+                       if "the review record conforms for archive" in text]
+        assert len(record_gate) == 1, gates
+        return scanned, record_gate[0]
+
+    @pytest.mark.parametrize("body,why", [
+        ("", "no Code review at all"),
+        (_code_review_pass(verdict="REVISE"), "a blocking latest review"),
+        (_code_review_pass(commit=None), "a malformed latest review"),
+    ])
+    def test_a_not_required_plan_refuses_on_both_paths(
+            self, tmp_path, body, why):
+        scanned, gate_met = self._both(tmp_path, body)
+        assert scanned, why
+        assert gate_met is False, why
+
+    def test_a_conforming_clearing_review_passes_on_both_paths(self, tmp_path):
+        scanned, gate_met = self._both(tmp_path, _code_review_pass())
+        assert scanned == []
+        assert gate_met is True
+
+    def test_the_two_weak_presence_opinions_are_gone(self):
+        """R5'': "presence becomes a consequence of the schema check rather than
+        a second, weaker opinion". Read from the source, because the property is
+        the ABSENCE of a call and no fixture can witness an absence."""
+        body = _code_of(_PLANNER_PATH, "_conformance_violations")
+        assert '_has_kind(art, "Code review")' not in body, body
+        assert "has_code_review_marker" not in body, body
+        gating = _code_of(_PLANNER_PATH, "_gating_preconditions")
+        assert "has_code_review_marker" not in gating, gating
+        # `_code_of` normalizes through `ast.unparse`, which rewrites string
+        # literals to single quotes -- so the expected spelling is the
+        # normalized one, not the source's.
+        assert "review_record_violations(art, 'archived')" in gating, gating
+
+    def test_the_marker_predicate_still_has_a_consulted_home(self):
+        """It is deleted as a *gate*, not as a predicate: inside the one
+        predicate it is the substance floor a legacy CONTAINER heading must
+        clear, which is the only thing it can still say that the schema cannot.
+        """
+        assert "art.has_code_review_marker" in _code_of(
+            _PLANNER_PATH, "_code_review_violations")
+
+    def test_a_non_archive_effective_state_does_not_evaluate_code_review(
+            self, tmp_path):
+        """The effective state is the key, and `review` is not archive-effective:
+        a plan awaiting its code review is not in violation for not having one.
+        """
+        assert planner.CODE_REVIEW_EFFECTIVE_STATES == (
+            "ready-to-archive", "archived")
+        art = _plan_art(tmp_path, "", status="review", stem=_CR_STEM,
+                        plan_review="not required(Chunk C fixture)")
+        assert planner.review_record_violations(art, "review") == []
+        assert planner.review_record_violations(art, "archived")
+
+
+def _code_of(path: Path, function: str) -> str:
+    """One function's **executable** source -- comments and docstring removed.
+
+    The absence assertions above are about what the code *calls*, and a comment
+    explaining why a call was deleted necessarily names that call. Scanning raw
+    text makes the explanation trip the check, which would push a future author
+    toward deleting the explanation rather than fixing the scan.
+    """
+    module = ast.parse(path.read_text(encoding="utf-8"))
+    node, = [n for n in module.body
+             if isinstance(n, ast.FunctionDef) and n.name == function]
+    body = list(node.body)
+    if (body and isinstance(body[0], ast.Expr)
+            and isinstance(body[0].value, ast.Constant)
+            and isinstance(body[0].value.value, str)):
+        body = body[1:]
+    return "\n".join(ast.unparse(stmt) for stmt in body)
+
+
+def _code_review_generator():
+    """The Chunk C legacy generator, loaded as the corpus oracle.
+
+    It supplies the population; the planner is the code under test. Like its
+    Plan-review sibling it deliberately does not import the gate, so the
+    exempted population is not defined by the predicate that exempts it."""
+    spec = importlib.util.spec_from_file_location(
+        "cairn_gen_legacy_code_review_passes",
+        CAIRN_ROOT / "scripts" / "gen_legacy_code_review_passes.py")
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _dig(heading: str) -> str:
+    """The 16-hex heading identity the manifests key on."""
+    return hashlib.sha256(heading.strip().encode("utf-8")).hexdigest()[:16]
+
+
+def _real_headings(stem: str) -> list[str]:
+    """Every Code-review record heading of a real artifact, read off the tree.
+
+    Fixtures for the legacy nodes must use the ACTUAL heading bytes: the digest
+    is taken from the raw line, so a heading retyped by hand -- dropping a
+    `(<role>)` parenthetical, say -- hashes to something else and the node would
+    silently test the non-legacy path instead."""
+    for rel in ("dev/plans", "dev/plans/archive"):
+        path = CAIRN_ROOT / rel / f"{stem}.md"
+        if path.is_file():
+            return [line for line in path.read_text(encoding="utf-8").split("\n")
+                    if line.startswith("## Code review")
+                    or line.startswith("## Response to code review")
+                    or line.startswith("### Sharpening")
+                    or line.startswith("## Implementation disposition")
+                    or line.startswith("## Archive record")]
+    raise AssertionError(f"no artifact for stem {stem!r}")
