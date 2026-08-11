@@ -186,7 +186,12 @@ Four instruments, standard-library Python plus `git`.
 2. **Separability** — the intra-file call graph among module-level functions
    (`ast.Call` resolved by name), reported as connected components with ≥2
    members.
-3. **Churn** — commits touching the artifact in a bounded recent window.
+3. **Churn** — commits touching the artifact in a bounded window **anchored to
+   the pinned commit's own date**, not to wall-clock time: the window is
+   `[commit_date − N days, commit_date]` over commits reachable from that
+   commit. Anchoring is not a detail. A wall-clock window (`--since=30.days`)
+   re-run against the *same* tree returns fewer commits as time passes, so the
+   table silently decays into unreproducibility while appearing to be pinned.
 4. **Hotspot** — `churn × concentration × max nesting`.
 
 Plus **change coupling**: co-change frequency between pairs over a 60-day
@@ -229,10 +234,17 @@ exclusions silently reshape conclusions. The corpus rule, fixed in advance:
   *against* a confident high count.
 * **The call graph is name-resolved** — it over-matches same-named methods and
   misses dynamic dispatch.
-* **The churn window must stay short relative to history.** Cairn's history
-  begins 2026-05-19; a 90-day window is the entire project and carries no
-  recency signal at all. The tables use 30 days, and any future run must
-  re-derive the window rather than inherit it.
+* **The churn window must stay short relative to history**, and its length must
+  be re-derived per run rather than inherited. Cairn's history begins
+  2026-05-19; a 90-day window is the entire project and carries no recency
+  signal at all. The tables use 30 days, commit-anchored per the Method.
+* **Prose underdetermines some of these choices**, and the residual ambiguities
+  move individual cells rather than the conclusions: whether `elif` counts as
+  nesting (Python's AST represents it as a nested `If`, so a flat chain reads
+  as depth 3), exactly which call forms make a graph edge, whether a
+  function's span includes its decorators, and how ties break when choosing a
+  twin's representative path. **Golden fixtures, not more prose, are the fix**
+  — which is why they are part of Recommendation 1 rather than a later polish.
 * **`--follow` inherits rename history**, so all-time churn is not comparable
   across the scaffold split. Only windowed churn is ranked.
 
@@ -244,7 +256,9 @@ count (anchor 2), they are an expensive way to sort by size.
 ## Findings
 
 Measured 2026-08-11 against **the exact tree at `0e6ce06`** — sufficient to
-reproduce every row. Twins collapsed; `cp` = copies collapsed into the artifact.
+reproduce every row. Churn is the 30 days **preceding that commit's own date**
+(`2026-08-11T11:39:38-04:00`), so the figures do not move as wall-clock time
+advances. Twins collapsed; `cp` = copies collapsed into the artifact.
 Derived values are computed at full precision and rounded only for display;
 rounding an input before multiplying it shifts the hotspot column.
 
