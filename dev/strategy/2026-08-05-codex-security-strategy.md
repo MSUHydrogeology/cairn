@@ -209,7 +209,7 @@ executes, or treats as configuration authority?
   narrower: framed relays from sibling tools and the pairs-only CRLF guard are
   clustered in `dev/PLANNING.md` rather than reopened as separate proposals.
 * [BND-5] **Network client and hosted/API boundaries.** Plan
-  [`api-web-security-modules`](../plans/api-web-security-modules.md) owns the
+  [`api-web-security-modules`](../plans/archive/api-web-security-modules.md) owns the
   shared hardened client, credential containment, loopback agent-facing checks,
   and Maintainer-only passive deployed checks. Its activation binding amendment
   belongs in [VER-3], not as a local exception.
@@ -244,7 +244,7 @@ each check inspect, and can coverage silently narrow?
   Python package, preserves exact explicit module lists, and keeps Cairn's own
   source scanner authoritative.
 * [VER-3] **Activation and evidence aggregation.** Plan
-  [`security-verification-activation`](../plans/security-verification-activation.md)
+  [`security-verification-activation`](../plans/archive/security-verification-activation.md)
   owns the default-on narrowing dispatcher. It is the dependency root for
   portable and API/web capability admission. Before either registry entry
   lands, it must settle the reviewed closed binding mode for runner and policy

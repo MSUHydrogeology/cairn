@@ -1329,6 +1329,88 @@ nothing was dropped.)*
   own proposal.
 
 
+**Security pair close-out (2026-08-11)** *(group created at the archive of
+`api-web-security-modules` and `security-verification-activation`. Both plans'
+Lasting-truth tables declared homes for several of these; two of those declared
+homes were "the code review", which does not exist -- so they are re-homed here
+rather than left pointing at a section that was never written.)*
+
+* **[SP8-1] Neither plan received a code review, and the archive gate cannot
+  detect that.** Both `## Code review` sections are the template's untouched
+  placeholder ("*Filled in after implementation commits land*"). The archive
+  precondition is `_has_kind(art, "Code review")` in
+  `tools/lifecycle_planner.py` -- it tests the section's **presence, not its
+  content** -- and every plan scaffolded from `dev/plans/_template.md` ships that
+  placeholder, so **this gate can never fail on it**. That is the silent-tool
+  case `AGENTS.md` names: a check that returns success without testing the
+  claimed property. Two items to separate: (a) get a real code review over both
+  plans' implementation, especially the 2026-08-11 deviations, which **no
+  reviewer has seen**; (b) fix the gate to require a non-placeholder body, which
+  is a change to a shipped checker and wants its own scope.
+* **[SP8-2] Four Security Reviews are owed, none satisfied.** Row F2's widening
+  of the engine's `_LIVING_STATE_DSTS`, and the three 2026-08-11 deviations --
+  the `argv_mode` registry-schema change, the capability-selection change, and
+  the child `details` contract change. Each Maintainer authorization discharged a
+  *fence*, not a *review tier*, and no agent writes its own Security Review.
+* **[SP8-3] The dispatcher cannot ever report CLEAN for a credentialed
+  capability -- design question, not a bug.** `_read_credentials` runs for
+  `local` mode and refuses `E_CREDENTIAL_ABSENT` when a principal's credential is
+  absent from the environment; the dispatcher's child env allowlist admits no
+  credential name and no `SSL_CERT_FILE`. So both capabilities can report
+  *unconfigured*, *refused* or *degraded* through the dispatcher, never *passed*
+  -- which sits oddly beside their registry entries declaring `evidence_mode:
+  loopback`. Weakening the allowlist would be a real security regression and was
+  correctly refused. Needs a proposal on what the dispatcher's role **is** for a
+  credentialed capability.
+* **[SP8-4] Three defects hid at one interface because each side tested itself.**
+  The `-security` name-suffix filter, the single-token `argv_mode`, and the
+  `details` dict-vs-string contract were all invisible to both plans' reviews:
+  the activation tests drive a **synthetic** runner and the facade tests invoke
+  the CLI **directly**. `TestChunkGRealFacadeThroughRealDispatcher` now closes
+  this seam. The generalizable question -- whether any reciprocal plan pair
+  should be *required* to carry a both-sides-real integration test before either
+  half archives -- belongs in the Dual-Review doctrine, not in a plan.
+* **[SP8-5] Cairn does not self-host the dispatcher, and that was never
+  decided.** Activation's L2 pre-declared the decision to the first capability
+  plan; no capability plan made it. Measured 2026-08-11: no copy of
+  `run_security_verification.py` exists under `scripts/` (the path is cited
+  nowhere here precisely because it does not resolve) and the lockfile carries
+  zero references. The de facto
+  answer is "no self-hosting"; making it deliberate is a one-line decision
+  nobody has taken. Related: **Cairn's own lockfile does not record
+  `dev/modules/security-verification.md`** even though the file is in the tree
+  and the module is default-on, and **no gate reddened** -- a scoped
+  re-finalize.
+* **[SP8-6] Activation's L4 and L6, re-homed from a review that does not
+  exist.** L4 (the destination-collision path for the two new files) and L6 (the
+  install-manifest byte-stability invariant having no standing test) both
+  declared "the code review" as their durable home. Carried here verbatim so
+  neither is lost; L6 in particular is a *gap claim* that wanted a reviewer's
+  agreement it is real.
+* **[SP8-8] Every adopter's `AGENTS.md` reads `clean-locally-modified` on
+  upgrade with no adopter edit.** The module merge pass rewrites the file after
+  `install_core` while the base cache retains the unmerged template, so the
+  classifier sees divergence that the adopter did not create. Not a blocked
+  upgrade -- the kind stays inside `_ADVANCING_KINDS` -- but an inaccurate label
+  on the single most-read file Cairn installs. Found by
+  `security-verification-activation`'s Chunk B when it reddened a test whose
+  docstring premise that chunk had falsified.
+* **[SP8-9] Two archive-precondition gates test presence, not substance.**
+  Beyond **[SP8-1]**'s `## Code review` case: the loop-fidelity precondition is
+  satisfied by a case-insensitive regex for the phrase *"Fidelity sign-off"* or
+  *"loop-fidelity"* anywhere in the artifact
+  (`tools/lifecycle_planner.py`). Writing the phrase satisfies the gate; no
+  sign-off need have occurred. Both belong to one scope about whether the
+  archive preconditions check anything a careless author would not trivially
+  pass.
+* **[SP8-7] `api-web-security-modules` never landed its
+  `templates/modules/README.md` catalog row (F-11).** Activation's Chunk D landed
+  its own row at `dd15268`; api-web's was left because another session held the
+  file. Activation's L5 assigned the pre-existing default-on drift fix to
+  "whichever cluster scope lands its README row last" -- with api-web's row
+  never landing, that owner never resolved.
+
+
 ### Release path
 
 The version ladder is staged so the methodology stabilizes before going

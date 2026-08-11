@@ -18,7 +18,7 @@
 Maintainer Decision, *"I accept this proposal as revised"*). It currently sits at
 `dev/proposals/archive/2026-08-03-codex-security-verification-activation.md` and moves to
 `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External**, security lens) — carried from the
 proposal, whose Decision says so in terms: *"The plan carries
 `required(External, security lens)` in its own right; this Decision does not
@@ -3380,3 +3380,57 @@ discharged the fences; no agent writes its own Security Review. Fence #2, the AS
 re-anchor, is still Maintainer-run; **fence #3 was never entered and self-cleared**
 (`run_oracle` compares against `HEAD`, and the three nodes were red only while
 Chunk B sat uncommitted).
+
+## Archive record -- Claude -- 2026-08-11
+
+**Status: archived.** Maintainer-directed, in the same commit as its reciprocal
+`api-web-security-modules`.
+
+**Deviation from the one-commit-per-lifecycle-transition rule.** This plan's
+`**Status**` field read `open` from 2026-08-05 (`299a7f3`) through its entire
+implementation. The Maintainer directed a single archive commit:
+
+> Just do them in a single commit, with the deviation noted. We don't need excessive ceremony. We are already so far beyond normal practice of process documentation robustness.
+
+The reciprocal plan's archive record carries the full reasoning, including why
+scaffolding four dated transitions would have falsified the record rather than
+documented it.
+
+**No code review was performed.** This plan's `## Code review` section is the
+template's untouched placeholder; the gate passes on presence, not content
+(**[SP8-1]**).
+
+**Dispositions:**
+
+* Chunks A, B, C, D and the A4 correction -> **accept**, landed (`6e3a8ed`, `237eb7a`, `bf49579`, `dd15268`, `5792298`)
+* Chunk A's registry, shipped **empty** at v1, now carries the reciprocal plan's two entries -> **accept**
+* T33's criterion unreachable from a real default roster (stock install exit 5) -> **accept**, resolved by authorized deviation 2 rather than left characterized; T33 rewritten from a contradiction-characterization into a direct guard
+* T32 and T35, two tests whose stated hazards could not fire -> **accept** (both fixed rather than explained, found by the perturbation ledger)
+* `argv_mode` widened from `str` to a validated token vector -> **accept** as an authorized deviation; a **registry-schema change**, review owed
+* `_selected_capability_ids` no longer matches on a name suffix -> **accept** as an authorized deviation, review owed
+* The dispatcher's own `_LIVING_STATE_DSTS` (a **different** constant from the engine's, which the implementing brief conflated) -> **accept**, populated
+* The dispatcher's `isinstance(details, str)` channel property -> **accept, deliberately unchanged**; the facades conformed instead
+* Every adopter's `AGENTS.md` reads `clean-locally-modified` on upgrade with no adopter edit -> **defer** -> `dev/PLANNING.md` **[SP8-8]**
+* L1 (per-capability scaffold-summary rendering) -> **accept**, landed as the reciprocal plan's F3/F4 (`625c161`)
+* L2 (whether Cairn self-hosts the dispatcher) -> **defer** -> `dev/PLANNING.md` **[SP8-5]**; measured unresolved, and the de facto answer was never a decision
+* L3 (`configured: false` -> INCOMPLETE, execution-backed) -> **accept**, discharged by the end-to-end tests at `fd0eb21`, which is the first execution-backed proof of it
+* L4 (destination-collision path) -> **defer** -> `dev/PLANNING.md` **[SP8-6]**, re-homed because its declared home was a code review that does not exist
+* L5 (`templates/modules/README.md` default-on drift) -> **defer** -> `dev/PLANNING.md` **[SP8-7]**; its owner was "whichever scope lands its README row last," and the reciprocal plan never landed its row, so the owner never resolved
+* L6 (install-manifest byte-stability invariant, no standing test) -> **defer** -> `dev/PLANNING.md` **[SP8-6]**, re-homed for the same reason
+* L7 (cluster re-anchor sequencing) -> **escalated**, Maintainer-owned; fence #2 outstanding
+* Cairn's lockfile does not record `dev/modules/security-verification.md` although the module is default-on, and no gate reddened -> **defer** -> `dev/PLANNING.md` **[SP8-5]**; a scoped re-finalize
+* Fence #3, the differential-oracle re-anchor -> **accept as never due**; it self-cleared once Chunk B was committed (`run_oracle` compares against `HEAD`), and `bootstrap/REANCHOR_RUNBOOK.md` was never opened
+
+**Loop-fidelity sign-off.** Implementing agent: **Claude (Implementation)**,
+across this session and its delegated sub-agents. **No independent reviewer
+signed this implementation.** As with the reciprocal plan, this precondition is
+regex-satisfied (**[SP8-9]**) and should not be read as assurance.
+
+**Verification at archive.** Boundary B ran in a clean detached worktree at
+`dd15268` (zero dirty paths before and after): **2847 passed / 2 failed / 1
+skipped** on Python 3.13.13, the two failures being the fenced AST pair. Re-run
+after the deviations at `fd0eb21`: **2904 passed, 3 failed** (the same AST pair
+plus one GPG-key-dependent node). Perturbation ledger 18/18 red. `check_cairn`
+OK; neutrality `fail=93` with zero lines attributable to this scope.
+
+This section is append-only once written.

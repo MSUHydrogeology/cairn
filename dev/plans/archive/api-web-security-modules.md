@@ -26,7 +26,7 @@
 **Source proposal**: `api-web-security-modules` — accepted 2026-08-03 by
 Maintainer Decision at `156305f`, *"ACCEPTED as revised"*. It currently sits
 under `dev/proposals/` and moves to `dev/proposals/archive/` when it archives.
-**Status**: open
+**Status**: archived
 **Plan review**: required(**External** + **External Security Review**) — carried
 verbatim from the proposal header, where the tier is a *declared trigger*, not a
 judgement call. **No implementation commit lands before a review section is in
@@ -4317,3 +4317,66 @@ regression and was correctly refused -- so it is routed rather than patched.
   rather than claimed as equivalent.
 * **The AST re-anchor** (fence #2) and a **scoped lockfile re-finalize** for
   `dev/modules/security-verification.md` remain Maintainer-run.
+
+## Archive record -- Claude -- 2026-08-11
+
+**Status: archived.** Maintainer-directed.
+
+**Deviation from the one-commit-per-lifecycle-transition rule, stated plainly.**
+This plan's `**Status**` field read `open` from 2026-08-05 (`c1d3b70`) through
+roughly fifty implementing commits, so the field lagged the record by four
+states: the plan reviews, the Responses, the whole implementation, and Boundary B
+all landed while it still said `open`. The Maintainer directed a single archive
+commit rather than four scaffolded transitions:
+
+> Just do them in a single commit, with the deviation noted. We don't need excessive ceremony. We are already so far beyond normal practice of process documentation robustness.
+
+The alternative was worse than the deviation: the transition scaffolds stamp
+*today's* date, which would have written 2026-08-11 onto a plan review that
+actually landed 2026-08-04/05. **Collapsing the transitions loses sequencing the
+record already carries in its dated sections; faking the dates would have
+falsified it.** The lag itself is the finding worth keeping -- nothing in the
+apparatus noticed a plan being implemented for a week while marked `open`.
+
+**No code review was performed.** Both this plan's and its reciprocal's
+`## Code review` sections are the template's untouched placeholder. The archive
+gate passed anyway because it tests that section's **presence, not its content**
+-- see **[SP8-1]**. So this archive is *not* evidence of a reviewed
+implementation, and in particular **no reviewer has seen the three 2026-08-11
+deviations**, which are the most security-sensitive changes in the scope.
+
+**Dispositions:**
+
+* Chunk G's argv-token blocker (no `argv_mode` value could reach either facade) -> **accept** (fixed by authorized deviation 1, `04e8609`)
+* The `-security` suffix heuristic; stock install exit 5 -> **accept** (fixed by authorized deviation 2, `04e8609`; measured 5 -> 0)
+* The child `details` dict-vs-string contract -> **accept** (fixed by authorized deviation 3, `fd0eb21`; facades conformed, dispatcher unrelaxed)
+* G-1's argv-mode deletion mutant that could not fail -> **accept** (the validation it presupposed now exists)
+* Chunk G row G3 -> **struck**, per its own stated condition (the general "every registry entry" clause landed, not a literal enumeration)
+* No code review over either plan -> **defer** -> `dev/PLANNING.md` **[SP8-1]**
+* Four Security Reviews (F2 + the three deviations) -> **defer** -> `dev/PLANNING.md` **[SP8-2]**
+* The dispatcher can never report CLEAN for a credentialed capability -> **defer** -> `dev/PLANNING.md` **[SP8-3]**
+* Three defects at one interface; whether a reciprocal pair must carry a both-sides-real integration test -> **defer** -> `dev/PLANNING.md` **[SP8-4]**
+* F-11, this plan's `templates/modules/README.md` catalog row, never landed -> **defer** -> `dev/PLANNING.md` **[SP8-7]**
+* `_CHANNEL_PASSTHROUGH` is an inert seam (both fields written, never read; eleven of thirteen channel tokens have no call site) -> **accept**, pinned by a test that fails the day a consumer is wired
+* Chunk D's `request_body` channel -> **accept** as **UNCOVERED**, per D-2's own rule, recorded rather than quietly closed
+* D1/D2's live planted-marker scenarios cannot be replicated against the new dispatcher sink (the env allowlist makes their credential-and-fixture scenario structurally unreachable there) -> **accept** as recorded, addressed with a render-layer mutant rather than claimed equivalent
+* `bootstrap/verify_integrity.py`'s extra-key gap (an unrecognized lockfile key is ignored, not named) -> **defer**, owned by neither plan in this pair, pre-existing and unchanged
+* The stale "four files" prose over the engine's living-state set -> **accept** (corrected at `701be3a`, now a class breakdown rather than a count)
+
+**Loop-fidelity sign-off.** The implementing agent for Chunks A-H, rows F1-F6 and
+the three deviations was **Claude (Implementation)**, across this session and its
+delegated sub-agents; the F2 row, the deviation records and this archive were
+written by Claude in the main session. **No independent reviewer signed any of
+it** -- which is exactly what **[SP8-1]** and **[SP8-2]** exist to correct, and
+why this sign-off should not be read as an assurance. Note that this
+precondition is satisfied by a regex matching the phrase itself
+(**[SP8-9]**), so its presence here proves only that the phrase is present.
+
+**Verification at archive.** Full `bootstrap/tests
+--quality-gate-shuffle-seed=0` on Python 3.13.13: **2904 passed, 3 failed** --
+`test_ast_attest` x2 (pre-existing at clean HEAD, awaiting the Maintainer's
+re-anchor) and `test_verify_ref::test_candidate_gpg_ssh_program_never_executes`
+(needs a GPG secret key). `claim_check` OK; `check_cairn` OK. **The AST baseline
+is knowingly red at archive**, and the archive does not wait on it.
+
+This section is append-only once written.
