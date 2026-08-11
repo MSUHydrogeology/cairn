@@ -1833,44 +1833,43 @@ class TestChunkGDeclaredCapabilitySet:
 class TestChunkGRealFacadeThroughRealDispatcher:
     """The end-to-end wiring both prior reviews missed: the REAL facades
     driven by the REAL dispatcher, never a synthetic fixture child and
-    never the facade CLI invoked directly in place of the dispatcher."""
+    never the facade CLI invoked directly in place of the dispatcher.
 
-    def test_a_real_capability_alone_reveals_the_child_details_schema_mismatch(  # noqa: E501
+    **History.** This class originally characterized a defect rather than
+    guarding a working seam: `_security_net/report.py`'s
+    `child_document(..., details: dict, ...)` and both facades' `_emit`
+    built `details` as a JSON OBJECT, while
+    `run_security_verification.py`'s `_evaluate_capability` requires
+    `isinstance(details, str)` and DEGRADES otherwise -- so every real leg
+    that reached child-launch degraded, regardless of the capability's own
+    evidence. That contract mismatch is now fixed: both facades render
+    `details` through `_security_net/report.py`'s `render_details`, a
+    single scrubbed string built from exactly the closed-vocabulary content
+    already proven clean on stdout (notes, a refusal's `code:reason`, and
+    each finding's already-scrubbed fields) -- never a nested object, and
+    never `result_line`'s `RESULT_LINE_PREFIX` text (criterion B-6 forbids
+    that appearing anywhere in dispatcher-mode output). The tests below now
+    assert the seam actually WORKS: a real facade, through the real
+    dispatcher, yields the child's TRUE result.
+    """
+
+    def test_a_real_capability_alone_yields_a_real_non_degraded_leg(
             self, tmp_path: Path) -> None:
-        """The required real-facade-through-real-dispatcher test --
-        **and a characterization, not the guard G2's row anticipated,
-        because of what it found.** Read this docstring before treating a
-        green run here as "the real pair works end to end" -- it proves
-        the OPPOSITE for the child's `details` field, and that is the
-        node's actual value.
-
-        With G-1's argv-vector fix landed, the dispatcher's child DOES
-        launch, DOES emit valid UTF-8 JSON, and every identity field
+        """The required real-facade-through-real-dispatcher test, now
+        proving the positive: with G-1's argv-vector fix and the
+        child-`details` string-contract fix both landed, the dispatcher's
+        child launches, emits valid UTF-8 JSON, every identity field
         (`schema`, `capability`, `contract`, `evidence_mode`) matches the
-        registry entry -- proving the argv splice this chunk exists to fix
-        is correct. But the aggregate is **DEGRADED**, not the INCOMPLETE
-        the facade itself reports, because of a SEPARATE, pre-existing,
-        previously-undetected contract mismatch this end-to-end run is what
-        exposes: `templates/modules/team-gated/_security_net/report.py`'s
-        `child_document(..., details: dict, ...)` and both facades' `_emit`
-        always build `details` as a JSON OBJECT (`{"capability", "findings",
-        "notes", ...}`), while `run_security_verification.py`'s own
-        `_evaluate_capability` requires `isinstance(details, str)` and
-        DEGRADES with `"child details is not a string"` otherwise. Measured
-        directly: `python scripts/api_access_security.py local
-        --child-document` on a stock unfilled-stub install prints
-        `"details": {"capability": "api-access-security", "findings": [],
-        "notes": [...]}`.  Neither side is this deviation's to redesign
-        (Change 1/2/3's scope is the argv vector, the capability set, and
-        the two registry rows) -- this is the STOP-and-report finding the
-        task's end-to-end instruction anticipated might surface. **Its
-        practical consequence:** as shipped right now, NEITHER admitted
-        capability can EVER report CLEAN, FINDINGS, or INCOMPLETE through
-        the dispatcher, regardless of the capability's own actual evidence
-        -- every real leg that reaches the child-launch stage degrades on
-        this check. Only a leg that fails EARLIER (a binding failure, before
-        the child ever launches) reports DEGRADED for its own, unrelated
-        reason.
+        registry entry, AND the dispatcher's own aggregate now equals what
+        the facade itself reported.
+
+        This demonstrates INCOMPLETE, not CLEAN or FINDINGS: the shipped
+        install carries the UNFILLED policy stub, and driving a real
+        loopback fixture through the scaffold-installed policy is a
+        separate, heavier fixture this node does not need to prove the
+        seam -- INCOMPLETE on the real, unconfigured stub is what the real
+        installed pair actually produces end to end, and a real
+        non-DEGRADED aggregate is exactly what was missing before.
         """
         target = _g_scaffold(
             tmp_path, ["security-verification", _API_MODULE],
@@ -1886,8 +1885,8 @@ class TestChunkGRealFacadeThroughRealDispatcher:
         assert leg["evidence_mode"] == "loopback"
 
         # The independent oracle: the same facade, invoked directly. Its
-        # child document PARSES and every identity field matches -- the
-        # G-1 argv-splice fix is what makes even this much true.
+        # child document PARSES, every identity field matches, and
+        # `details` is now the STRING the dispatcher's contract requires.
         _fproc, child_doc = _run_facade_child_document(
             target, _API_RUNNER_DST)
         assert child_doc["schema"] == "cairn.security.capability-result.v1"
@@ -1895,29 +1894,23 @@ class TestChunkGRealFacadeThroughRealDispatcher:
         assert child_doc["contract"] == "1"
         assert child_doc["evidence_mode"] == "loopback"
         assert child_doc["result"] == "INCOMPLETE"
-        assert isinstance(child_doc["details"], dict), (
-            "if this ever becomes a str, the facade side of the mismatch "
-            "has changed and this node's characterization is stale")
+        assert isinstance(child_doc["details"], str), (
+            "the facade side of the string contract has regressed")
 
-        # The characterized mismatch: the dispatcher's aggregate is NOT what
-        # the child reported, because `details` fails the dispatcher's own
-        # `isinstance(..., str)` requirement.
-        assert proc.returncode == 20, proc.stdout + proc.stderr
-        assert obj["aggregate"] == "DEGRADED"
-        assert leg["aggregate_label"] == "DEGRADED"
-        assert leg["aggregate_label"] != child_doc["result"], (
-            "the schema mismatch this node characterizes appears to be "
-            "fixed -- re-read the docstring and rewrite this node against "
-            "the resolved contract, the same discipline the former T33 "
-            "characterization used")
-        assert "details is not a string" in leg["detail"]
+        # The seam now works: the dispatcher's aggregate is the child's
+        # TRUE result, not a schema-mismatch DEGRADED artifact.
+        assert proc.returncode == 5, proc.stdout + proc.stderr
+        assert obj["aggregate"] == "INCOMPLETE"
+        assert leg["aggregate_label"] == "INCOMPLETE"
+        assert leg["aggregate_label"] == child_doc["result"]
+        assert "unconfigured" in leg["detail"]
 
-    def test_the_other_real_capability_alone_hits_the_same_mismatch(
+    def test_the_other_real_capability_alone_also_yields_a_real_leg(
             self, tmp_path: Path) -> None:
-        """Same characterization as the api-access-security node, run
-        against web-hosting-security -- confirming the mismatch is systemic
-        (both facades share `_security_net/report.py`'s `child_document`),
-        not an artifact of one facade's own code."""
+        """Same demonstration as the api-access-security node, run against
+        web-hosting-security -- confirming the fix is systemic (both
+        facades share `_security_net/report.py`'s `render_details` /
+        `child_document`), not an artifact of one facade's own code."""
         target = _g_scaffold(
             tmp_path, ["security-verification", _WEB_MODULE],
             target_name="g-web-alone")
@@ -1931,54 +1924,50 @@ class TestChunkGRealFacadeThroughRealDispatcher:
             target, _WEB_RUNNER_DST)
         assert child_doc["capability"] == _WEB_MODULE
         assert child_doc["result"] == "INCOMPLETE"
-        assert isinstance(child_doc["details"], dict)
+        assert isinstance(child_doc["details"], str)
 
-        assert proc.returncode == 20, proc.stdout + proc.stderr
-        assert obj["aggregate"] == "DEGRADED"
-        assert leg["aggregate_label"] == "DEGRADED"
-        assert "details is not a string" in leg["detail"]
+        assert proc.returncode == 5, proc.stdout + proc.stderr
+        assert obj["aggregate"] == "INCOMPLETE"
+        assert leg["aggregate_label"] == "INCOMPLETE"
+        assert leg["aggregate_label"] == child_doc["result"]
+        assert "unconfigured" in leg["detail"]
 
-    def test_both_real_capabilities_together_both_hit_the_mismatch(
+    def test_both_real_capabilities_together_both_yield_real_legs(
             self, tmp_path: Path) -> None:
-        """G2's "both together" row, characterized rather than guarded for
-        the same reason as the two single-capability nodes above: both
-        selected, both legs launch their real child, and -- because the
-        `details`-schema mismatch is not specific to either facade -- both
-        degrade the same way, with `_build_report` correctly keeping the
-        two legs distinct rather than collapsing them (T32's property,
-        reconfirmed here over real legs)."""
+        """G2's "both together" row: both selected, both legs launch their
+        real child, and -- now that the `details`-string contract holds for
+        both facades -- both resolve to their TRUE INCOMPLETE result, with
+        `_build_report` correctly keeping the two legs distinct rather than
+        collapsing them (T32's property, reconfirmed here over real legs
+        that are no longer forced to the same DEGRADED floor)."""
         target = _g_scaffold(
             tmp_path,
             ["security-verification", _API_MODULE, _WEB_MODULE],
             target_name="g-both")
         proc = _run_dispatcher_local(target)
-        assert proc.returncode == 20, proc.stdout + proc.stderr
+        assert proc.returncode == 5, proc.stdout + proc.stderr
         obj = _machine_object(proc)
-        assert obj["aggregate"] == "DEGRADED"
+        assert obj["aggregate"] == "INCOMPLETE"
         assert obj["evidence_count"] == 2
         by_module = {leg["module_id"]: leg for leg in obj["legs"]}
         assert set(by_module) == {_API_MODULE, _WEB_MODULE}
         for leg in by_module.values():
-            assert leg["aggregate_label"] == "DEGRADED"
+            assert leg["aggregate_label"] == "INCOMPLETE"
             assert leg["child_launched"] is True
-            assert "details is not a string" in leg["detail"]
+            assert "unconfigured" in leg["detail"]
 
-    def test_a_binding_failure_still_precedes_and_differs_from_the_details_mismatch(  # noqa: E501
+    def test_a_binding_failure_outranks_a_real_incomplete_leg(
             self, tmp_path: Path) -> None:
-        """G2's precedence row (`20 > 10 > 5 > 0`) cannot currently be
-        demonstrated end to end with REAL legs: the `details`-schema
-        mismatch characterized above means a real leg that reaches the
-        child-launch stage can now ONLY resolve to DEGRADED, whatever the
-        capability's own evidence actually is -- there is no live path to a
-        real CLEAN, FINDINGS, or INCOMPLETE aggregate to show precedence
-        against. T15 remains the exhaustive, synthetic proof that
-        `_build_report`'s `max()` respects `20 > 10 > 5 > 0` over every
-        ordered pair; this node instead shows the one real-leg distinction
-        still available -- a binding failure (digest mismatch) refuses
-        BEFORE the child launches, for its own named reason, while the
-        details-mismatch failure happens AFTER a real launch, for a
-        different named reason -- and confirms the two are not collapsed
-        into one leg despite sharing an aggregate level."""
+        """G2's precedence row (`20 > 10 > 5 > 0`), demonstrable end to end
+        with a REAL non-DEGRADED leg for the first time: the `details`-
+        string fix means the untampered api-access-security leg now
+        reaches its TRUE INCOMPLETE result instead of bottoming out at
+        DEGRADED for the unrelated schema reason the prior version of this
+        node characterized. Tampering web-hosting-security's runner digest
+        still refuses BEFORE its child ever launches, for its own named
+        reason, and the aggregate correctly takes the DEGRADED tampered leg
+        over the real leg's INCOMPLETE (20 > 5) while keeping the two legs
+        distinct."""
         target = _g_scaffold(
             tmp_path,
             ["security-verification", _API_MODULE, _WEB_MODULE],
@@ -1993,12 +1982,13 @@ class TestChunkGRealFacadeThroughRealDispatcher:
         obj = _machine_object(proc)
         assert obj["aggregate"] == "DEGRADED"
         by_module = {leg["module_id"]: leg for leg in obj["legs"]}
-        # The untampered leg: launches, degrades on the details mismatch.
-        assert by_module[_API_MODULE]["aggregate_label"] == "DEGRADED"
+        # The untampered leg: launches, now reports its REAL result.
+        assert by_module[_API_MODULE]["aggregate_label"] == "INCOMPLETE"
         assert by_module[_API_MODULE]["child_launched"] is True
-        assert "details is not a string" in by_module[_API_MODULE]["detail"]
+        assert "unconfigured" in by_module[_API_MODULE]["detail"]
         # The tampered leg: refused at binding, never launches -- a
-        # DIFFERENT reason, at a DIFFERENT point in the pipeline.
+        # DIFFERENT reason, at a DIFFERENT point in the pipeline, and it
+        # outranks the real leg's INCOMPLETE (20 > 5).
         assert by_module[_WEB_MODULE]["aggregate_label"] == "DEGRADED"
         assert by_module[_WEB_MODULE]["child_launched"] is False
         assert "digest mismatch" in by_module[_WEB_MODULE]["detail"]

@@ -505,6 +505,10 @@ def test_b6_the_dispatcher_document_and_the_human_summary_are_disjoint(
     assert document["schema"] == "cairn.security.capability-result.v1"
     assert document["evidence_mode"] == "loopback"
     assert document["result"] == "CLEAN"
+    assert isinstance(document["details"], str), (
+        "the activation dispatcher's _evaluate_capability requires "
+        "isinstance(details, str); a nested object degrades every real leg"
+    )
     # The child document carries no human summary...
     assert "cairn-security-result:" not in child.stdout.decode()
     # ...and the human summary does not parse as the child document.
@@ -521,7 +525,8 @@ def test_c5_local_evidence_says_it_is_not_deployed_evidence(tmp_path, serve):
     assert "not a deployed CLEAN" in human.stdout.decode()
     document = json.loads(child.stdout.decode())
     assert document["evidence_mode"] == "loopback"
-    assert any("not a deployed CLEAN" in n for n in document["details"]["notes"])
+    assert isinstance(document["details"], str)
+    assert "not a deployed CLEAN" in document["details"]
 
 
 # ---------------------------------------------------------------------------

@@ -457,6 +457,11 @@ def test_c5_local_clean_never_presents_as_deployed_clean(tmp_path, serve, ca):
     document = json.loads(child.stdout.decode())
     assert document["evidence_mode"] == "loopback"
     assert document["result"] == "CLEAN"
+    assert isinstance(document["details"], str), (
+        "the activation dispatcher's _evaluate_capability requires "
+        "isinstance(details, str); a nested object degrades every real leg"
+    )
+    assert "not a deployed CLEAN" in document["details"]
 
     report_path = None
     for line in human.stdout.decode().splitlines():

@@ -537,15 +537,70 @@ CHILD_KEYS = ("schema", "capability", "contract", "evidence_mode", "result",
               "details")
 
 
+def render_details(
+    *,
+    findings: "list[dict]",
+    refusal: "SecurityRefusal | None",
+    notes: "list[str]",
+    finding_label: str,
+) -> str:
+    """Render a child document's ``details`` as ONE scrubbed string.
+
+    ``run_security_verification.py``'s dispatcher requires ``details`` to be
+    a string -- it is control-sanitized (``_safe_render``) and is the ONLY
+    channel a child's text ever reaches the operator's aggregate report
+    through (see that module's ``_CONTROL_KEEP`` comment).  This function is
+    the single place both facades build that string, so it is built from
+    exactly the closed-vocabulary content a facade's own human-readable
+    branch already writes to stdout: each already-scrubbed note, the
+    refusal's ``code:reason`` pair (both drawn from
+    :class:`SecurityRefusal`'s closed vocabulary), and each finding's
+    already-scrubbed/bucketed field=value pairs from :func:`build_finding`.
+    Nothing here is new content a confidentiality sweep has not already
+    exercised over that same text on stdout.  ``scrub_terminal`` is applied
+    to the assembled string too, defence in depth matching every other
+    closed-vocabulary field this engine emits.
+
+    Deliberately excludes :func:`result_line`: the child document already
+    carries ``result`` in its own field, and criterion B-6 requires that a
+    dispatcher-mode document never contain the ``RESULT_LINE_PREFIX`` text
+    anywhere in its stdout, so the two output modes (human summary vs.
+    dispatcher document) stay textually disjoint and cannot be confused for
+    one another.
+
+    ``notes`` must already be scrubbed by the caller (both facades scrub
+    notes before building the child document); ``findings`` must already
+    carry only :func:`build_finding`'s output.
+    """
+    lines = [f"  {note}" for note in notes]
+    if refusal is not None:
+        lines.append(f"  {refusal.code}:{refusal.reason}")
+    for finding in findings:
+        lines.append(
+            f"  {finding_label} "
+            + " ".join(f"{k}={finding[k]}" for k in sorted(finding))
+        )
+    return scrub_terminal("\n".join(lines))
+
+
 def child_document(
     *,
     capability: str,
     contract: str,
     result: str,
-    details: dict,
+    details: str,
     evidence_mode: str = "loopback",
 ) -> dict:
-    """Build the bounded child result document the activation contract fixes."""
+    """Build the bounded child result document the activation contract fixes.
+
+    ``details`` is a single string, never a nested object: the activation
+    dispatcher's ``_evaluate_capability`` requires
+    ``isinstance(details, str)`` and DEGRADES the leg otherwise, because
+    ``details`` is rendered through the dispatcher's own control-sanitizing
+    ``_safe_render`` and is the ONLY channel a child's text ever reaches the
+    operator's aggregate report through.  Build it with
+    :func:`render_details`.
+    """
     if result not in RESULTS:
         result = RESULT_DEGRADED
     return {
@@ -554,7 +609,7 @@ def child_document(
         "contract": scrub_terminal(contract),
         "evidence_mode": scrub_terminal(evidence_mode),
         "result": result,
-        "details": details,
+        "details": scrub_terminal(details),
     }
 
 

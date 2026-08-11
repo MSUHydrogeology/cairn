@@ -53,9 +53,26 @@ timeout-diagnostic and TLS-failure channels as a **class** rather than one at a
 time, and it is tested with a real deletion mutant (remove the clamp; the marker
 arrives).  Recorded rather than hidden: this is why those three channels have no
 per-channel injection row.
+
+**A later addition: the activation dispatcher's own aggregate report.**
+Everything above drives an installed facade directly and has nothing to do
+with ``run_security_verification.py`` -- the child ``details`` document was a
+JSON object until the fix this addition follows, and the dispatcher's own
+``_evaluate_capability`` DEGRADED any real leg that reached it, so there was
+no sink there to sweep.  With ``details`` now a single string built by
+``_security_net/report.py``'s ``render_details``, it reaches the
+dispatcher's OWN aggregate report for the first time, which makes that
+report a NEW, previously-unswept sink.
+:class:`TestTheDispatcherAggregateReportIsANewSweptSink` at the end of this
+file covers it -- through a real subprocess chain (this file's own
+hand-assembled dispatcher install spawning the real facade as its child,
+never a synthetic ``RegistryEntry``), on the one leg reachable without a
+credential or a trusted TLS peer (see that class's own docstring for why
+that is the reachable leg, not a live FINDINGS run).
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -1367,3 +1384,241 @@ def test_d7_absent_randomness_is_degraded_before_the_first_request(
     assert fixture.accepted == 0, (
         "a connection was made before the fingerprint key existed"
     )
+
+
+# ===========================================================================
+# The activation dispatcher's own aggregate report -- a NEW swept sink
+# ===========================================================================
+# The child `details` document was a JSON object until the fix this section
+# follows: `_security_net/report.py`'s `child_document(..., details: dict,
+# ...)` and both facades' `_emit` always built it as `{"capability",
+# "findings", "notes", ...}`, while `run_security_verification.py`'s own
+# `_evaluate_capability` requires `isinstance(details, str)` and DEGRADES
+# otherwise -- so `_safe_render(details)` was NEVER reached by a real leg,
+# and the dispatcher's own aggregate report was not a sink anything could
+# leak into. With `details` now a single string built by this engine's
+# `render_details`, it reaches the dispatcher's aggregate report for the
+# first time, through `_safe_render` -- which the dispatcher's own
+# `_CONTROL_KEEP` comment names as "the ONLY channel a child's text ever
+# reaches the report through". That makes the dispatcher's own stdout a NEW
+# sink this file's Chunk D scope never swept (nothing above this section
+# drives the dispatcher at all).
+#
+# **Why the reachable leg is the unfilled-policy-stub INCOMPLETE result,
+# never a live FINDINGS run.** Measured directly against the dispatcher's
+# own source:
+#   * `_CHILD_ENV_ALLOWLIST` (T7, `run_security_verification.py`) is a
+#     CLOSED set -- `PATH`, `HOME`, `LANG`, `TMPDIR`/`TEMP`/`TMP`, a handful
+#     of Windows-minimum names, and an `LC_` prefix. It does not include
+#     `CAIRN_API_P1_CREDENTIAL` / `CAIRN_API_P2_CREDENTIAL` or
+#     `SSL_CERT_FILE`, and neither is a name a future entry could add
+#     without its own Security Review (the registry section above the
+#     allowlist says so explicitly).
+#   * api-access-security's `local` mode reads both credentials from
+#     `os.environ` BEFORE any network call (`_read_credentials`); through
+#     the dispatcher those names are always absent, so the child always
+#     refuses `credential_absent` before touching the fixture.
+#   * web-hosting-security's `local` mode always performs a mandatory HTTPS
+#     connection to `https_origin` using `ssl.create_default_context()`
+#     (`_security_net/net.py`), which resolves trust from the platform
+#     default store honoring `SSL_CERT_FILE`/`SSL_CERT_DIR` -- both
+#     stripped by the same allowlist. A self-signed test certificate is
+#     therefore never trusted, and the TLS handshake refuses before any
+#     header or cookie is ever read.
+# Both are the SAME reviewed property working as designed (the child a
+# malicious dispatcher spawns cannot be handed a real credential or a real
+# trust anchor), not a gap in this test's fixture. It forecloses a live,
+# network-observed marker reaching the dispatcher for EITHER capability --
+# D1/D2's own scenario included -- so this section instead drives the one
+# leg that IS reachable through the real subprocess chain with no network
+# and no credential at all: the unfilled policy stub's INCOMPLETE result.
+# `render_details` runs on that leg exactly as it would on any other, so it
+# is sufficient to exercise the property actually under test here: whether
+# `render_details`'s OUTPUT survives to the dispatcher's aggregate report
+# unscrubbed if compromised, not whether a peer response can be observed
+# through the dispatcher at all.
+
+DISPATCHER_SRC = (
+    REPO_ROOT / "templates" / "modules" / "default-on"
+    / "run_security_verification.py"
+)
+
+#: Planted at the RENDERING layer (report.py's `render_details`), never by a
+#: peer -- distinct from every entry in `MARKERS` so a hit unambiguously
+#: names this section's own mutation, not a coincidence with a fixture
+#: channel.
+_RENDER_LEAK_MARKER = "MkRDL8v2Tn6WgXq"
+
+#: The single-line mutation the liveness test applies to a COPY of the
+#: shared engine: drop nothing, just append an unscrubbed marker to
+#: `render_details`'s return value -- "the rendering ... emits a raw value",
+#: the exact hazard this sink coverage exists to catch.
+_LEAK_RENDER_DETAILS = {
+    "report.py": [(
+        '    return scrub_terminal("\\n".join(lines))',
+        '    return scrub_terminal("\\n".join(lines)) + "'
+        + _RENDER_LEAK_MARKER + '"',
+    )],
+}
+
+
+def _sha256_file(path: Path) -> str:
+    return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def install_dispatcher(root: Path, *, capability_dst: str, policy_dst: str,
+                        modules: "list[str]") -> None:
+    """Lay the REAL dispatcher and a matching, digest-consistent lockfile
+    over an already-``install()``-ed capability root, so a subprocess run
+    of ``root/scripts/run_security_verification.py local`` exercises the
+    real activation seam end to end.
+
+    Hand-assembled to the dispatcher's own documented lockfile contract (a
+    JSON body -- ``_load_lockfile`` strips ``#``-prefixed lines and then
+    calls ``json.loads`` -- shaped ``{"modules": [...], "files": [...]}``)
+    rather than run through the scaffold engine, for the same reason
+    ``install()`` above is: a facade OR dispatcher defect must not be
+    maskable by an installer defect, or vice versa. The runner record's
+    hash MUST be exact (``runner_binding_mode`` is ``immutable_digest``);
+    the policy record's hash is unchecked (``policy_binding_mode`` is
+    ``living_state`` for both admitted capabilities) but included anyway
+    for a lockfile a human reader would not find suspicious.
+    """
+    scripts = root / "scripts"
+    shutil.copy(DISPATCHER_SRC, scripts / "run_security_verification.py")
+    lock = {
+        "modules": modules,
+        "files": [
+            {"dst": capability_dst,
+             "hash": _sha256_file(root / capability_dst)},
+            {"dst": policy_dst,
+             "hash": _sha256_file(root / policy_dst), "living_state": True},
+        ],
+    }
+    lockdir = root / "dev" / ".cairn"
+    lockdir.mkdir(parents=True, exist_ok=True)
+    (lockdir / "cairn-lock.yml").write_text(
+        json.dumps(lock, indent=2), encoding="utf-8")
+
+
+def run_dispatcher(root: Path, *, tmproot: Path) -> subprocess.CompletedProcess:
+    """Run the installed dispatcher as a real subprocess, ``TMPDIR`` pointed
+    at a test-owned root -- forwarded to the child by the dispatcher's own
+    closed allowlist, so the child's report directory lands inside it too."""
+    tmproot.mkdir(parents=True, exist_ok=True)
+    env = {
+        "PATH": os.environ.get("PATH", ""),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "HOME": os.environ.get("HOME", ""),
+        "TMPDIR": str(tmproot),
+    }
+    return subprocess.run(
+        [sys.executable, str(root / "scripts" / "run_security_verification.py"),
+         "local"],
+        capture_output=True, env=env, timeout=120,
+    )
+
+
+def _dispatcher_sinks(proc, tmproot: Path) -> "list[tuple[str, bytes]]":
+    """Every sink the DISPATCHER's own run can write: its stdout, its
+    stderr, and every file under its (and its child's) TMPDIR."""
+    out: "list[tuple[str, bytes]]" = [
+        ("dispatcher:stdout", proc.stdout),
+        ("dispatcher:stderr", proc.stderr),
+    ]
+    if tmproot.exists():
+        for path in sorted(p for p in tmproot.rglob("*") if p.is_file()):
+            out.append((f"dispatcher:tmp:{path.relative_to(tmproot)}",
+                        path.read_bytes()))
+    return out
+
+
+def _dispatcher_occurrences(proc, tmproot: Path, needle: str) -> "list[str]":
+    raw = needle.encode("utf-8")
+    return [name for name, blob in _dispatcher_sinks(proc, tmproot) if raw in blob]
+
+
+def _dispatcher_aggregate(proc: subprocess.CompletedProcess) -> dict:
+    lines = [ln for ln in proc.stdout.decode("utf-8", "replace").splitlines()
+             if ln.startswith("{")]
+    assert lines, proc.stdout + proc.stderr
+    return json.loads(lines[-1])
+
+
+class TestTheDispatcherAggregateReportIsANewSweptSink:
+    """The dispatcher's OWN aggregate report, driven end to end through a
+    real subprocess chain -- this section's own hand-assembled dispatcher
+    install spawning the real, installed web-hosting-security facade as
+    ITS child, never a synthetic ``RegistryEntry`` and never the facade
+    invoked in place of the dispatcher. See this module's own docstring
+    addition (top of file) and this section's header comment for why the
+    unfilled-policy-stub INCOMPLETE leg is the one exercised here rather
+    than a live, network-observed FINDINGS run."""
+
+    def test_the_pristine_renderer_never_leaks_into_the_dispatcher_report(
+        self, tmp_path, tmproot
+    ):
+        """Phase (b), the baseline: the shipped, unmutated
+        ``render_details`` produces no marker on this leg (there being none
+        planted anywhere on this leg to begin with), swept over the
+        dispatcher's own stdout/stderr/tmp sinks -- established here as
+        what the next test's mutation is compared against, and reusing the
+        SAME ``MARKERS`` set D1/D2 sweep for, so this really is "the
+        existing planted-marker assertions, re-checked against this new
+        sink"."""
+        root = install(tmp_path, "hosting", None, name="dispatcher-clean")
+        install_dispatcher(
+            root, capability_dst=f"scripts/{HOSTING_FACADE_SRC.name}",
+            policy_dst=HOSTING_POLICY_REL,
+            modules=["web-hosting-security"],
+        )
+        proc = run_dispatcher(root, tmproot=tmproot)
+        assert proc.returncode == 5, proc.stdout + proc.stderr
+        agg = _dispatcher_aggregate(proc)
+        assert agg["aggregate"] == "INCOMPLETE"
+        [leg] = agg["legs"]
+        assert leg["module_id"] == "web-hosting-security"
+        assert leg["aggregate_label"] == "INCOMPLETE"
+        assert leg["child_launched"] is True
+        assert "unconfigured" in leg["detail"]
+
+        for name, marker in MARKERS.items():
+            assert _dispatcher_occurrences(proc, tmproot, marker) == [], name
+        assert _dispatcher_occurrences(proc, tmproot, _RENDER_LEAK_MARKER) == []
+
+    def test_a_leaking_renderer_is_caught_at_the_dispatcher_report(
+        self, tmp_path, tmproot
+    ):
+        """Phase (a), the liveness proof required alongside phase (b): the
+        SAME reachable leg, but ``_security_net/report.py``'s
+        ``render_details`` is mutated -- on a COPY, never the repository
+        tree -- to append a marker to its returned string WITHOUT
+        scrubbing it. The child's stdout stays valid JSON (the marker is
+        embedded as an ordinary string value via ``json.dumps``), so the
+        dispatcher parses it, ``_safe_render``s it (a no-op on plain
+        ASCII), and prints it in its OWN aggregate report. A sweep that
+        stayed green here would be exactly the vacuous-assertion trap this
+        repository has already caught twice today."""
+        root = install(
+            tmp_path, "hosting", None, name="dispatcher-leaky",
+            engine_edits=_LEAK_RENDER_DETAILS,
+        )
+        install_dispatcher(
+            root, capability_dst=f"scripts/{HOSTING_FACADE_SRC.name}",
+            policy_dst=HOSTING_POLICY_REL,
+            modules=["web-hosting-security"],
+        )
+        proc = run_dispatcher(root, tmproot=tmproot)
+        assert proc.returncode == 5, proc.stdout + proc.stderr
+        agg = _dispatcher_aggregate(proc)
+        [leg] = agg["legs"]
+        assert leg["aggregate_label"] == "INCOMPLETE"
+        assert _RENDER_LEAK_MARKER in leg["detail"], (
+            "the mutant did not leak into the dispatcher's own aggregate "
+            "report -- this sink assertion proves nothing"
+        )
+        hits = _dispatcher_occurrences(proc, tmproot, _RENDER_LEAK_MARKER)
+        assert "dispatcher:stdout" in hits, (
+            "the marker did not reach the dispatcher's OWN stdout sink -- "
+            "the property this class exists to catch"
+        )

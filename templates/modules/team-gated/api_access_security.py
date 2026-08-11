@@ -316,14 +316,12 @@ def _refuse_non_loopback_target(engine, base) -> object:
 
 def _emit(engine, *, result, findings, refusal, report_path, child, notes=()):
     engine_report = importlib.import_module(f"{engine.__name__}.report")
-    details = {
-        "capability": CAPABILITY,
-        "findings": findings,
-        "notes": [engine_report.scrub_terminal(n) for n in notes],
-    }
-    if refusal is not None:
-        details["refusal"] = {"code": refusal.code, "reason": refusal.reason}
+    scrubbed_notes = [engine_report.scrub_terminal(n) for n in notes]
     if child:
+        details = engine_report.render_details(
+            findings=findings, refusal=refusal,
+            notes=scrubbed_notes, finding_label="finding",
+        )
         document = engine_report.child_document(
             capability=CAPABILITY, contract=CAPABILITY_CONTRACT,
             result=result, details=details,
@@ -331,7 +329,7 @@ def _emit(engine, *, result, findings, refusal, report_path, child, notes=()):
         sys.stdout.write(json.dumps(document, sort_keys=True) + "\n")
     else:
         sys.stdout.write(engine_report.result_line(result) + "\n")
-        for note in details["notes"]:
+        for note in scrubbed_notes:
             sys.stdout.write(f"  {note}\n")
         if refusal is not None:
             sys.stdout.write(f"  {refusal.code}:{refusal.reason}\n")
