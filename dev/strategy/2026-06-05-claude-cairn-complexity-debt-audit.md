@@ -489,35 +489,73 @@ and not part of this program.
 
 ## Open questions for the maintainer
 
-1. **Appetite.** Option 4 (instrument checked in, evidence gathered forward, no
-   split yet), or Option 1 (retire until something hurts)? *(Recommended: 4 —
-   its marginal cost over 1 is one template field and one Security read, and
-   unlike 1 it eventually produces the number the stopping rule needs.)*
-2. **How lightweight is lightweight enough?** The forward mechanism is a file
-   attribution on code-review findings. Is that the right unit — or is even
-   that too much ceremony on a reviewer, in which case the fallback is deriving
-   attribution from the reviewed range's changed files (weaker: a finding may
-   concern one file in a multi-file range, but it costs a reviewer nothing).
-   *(Recommended: the explicit field, because the reviewer is the only party
-   who knows which file they meant, and 56% of them already write it in prose.)*
-3. **What is the evidence for, and who may see it?** The Measurement Compact
-   fixes the posture — internal-diagnostic, not evaluative — but this data is
-   finer-grained than anything Cairn currently keeps: it links a *file* to a
-   *finding* to a *reviewer*. Worth an explicit statement that it is not a
-   reviewer-performance surface before it starts accumulating, not after.
-   *(Recommended: state it in the proposal, and keep per-reviewer aggregation
-   out of the declared analysis entirely.)*
-4. **Trust-surface priority.** Promote trust-boundary status to a primary
-   ordering factor? Note this is now the *risk* argument standing alone — the
-   complexity-to-review-cost half is explicitly a hypothesis. *(Recommended:
-   yes, on risk. A defect on a trust root costs more; that holds whether or not
-   the complexity link survives testing.)*
-5. **Does this note become a `living-reference`?** It is a standing instrument
-   with a release-boundary re-measure cadence rather than a point-in-time
-   exploration. The folder's validity rule ties that type to `Status: living`
-   and forbids promotion, so the switch waits until the validation proposal has
-   been carried. *(Recommended: convert once forward evidence starts reporting;
-   keep it a `design-exploration` until then.)*
+*Written plainly on purpose. These are the decisions the rest of the note
+exists to serve, and a decision surface the Maintainer cannot follow is not
+decidable — so the jargon stays above this line.*
+
+**The situation in one paragraph.** I built a script that ranks Cairn's code
+files by how tangled and how frequently-changed they are, and points at the
+ones most likely to be costing us something. It is a screening tool, like a
+coarse model run that tells you where to refine the grid — useful for choosing
+where to look, not evidence that anything is actually wrong. I have no data yet
+showing that the files it flags really do cost us more effort. Everything below
+is about whether to get that data, and how.
+
+1. **Do we do anything about this right now, or drop it until something
+   breaks?**
+   Dropping it is a real answer — nothing has gone wrong that traces to any
+   file on the list. The alternative is a small amount of work now: check the
+   measuring script into the repo so its results can be reproduced, add one
+   field to the review template, and do one careful read of a single file.
+   The difference in effort between "drop it" and "do that" is roughly one
+   template field plus one focused review session. The difference in outcome is
+   that in a few months you would have actual evidence instead of my ranking.
+   *I recommend doing the small version.* It is the only path that eventually
+   tells us when to stop.
+
+2. **When a reviewer finds a problem, should they record which file it was in?**
+   Today they write it in prose and mention the file a bit more than half the
+   time. To ever answer "which parts of the code cost us the most review
+   effort," we need that recorded consistently. Two ways:
+   * *The reviewer notes the file as they write the finding.* Accurate, costs
+     seconds, and they are the only one who actually knows which file they
+     meant.
+   * *We infer it from which files the commit touched.* Free, but wrong
+     whenever a change touches several files and the problem is in one of them.
+
+   *I recommend the reviewer noting it.* But you know the real cost of adding
+   anything to a reviewer's checklist better than I do, and if it would be
+   skipped in practice then the inferred version is honestly better than a
+   field nobody fills in.
+
+3. **What is this record for, and what should it never be used for?**
+   It would link *a file* → *a problem found* → *who found it*. That is more
+   detailed than anything Cairn keeps today. The intended use is "which parts
+   of the code are expensive to review." It could easily be misread as "which
+   reviewer finds the most problems" or "who writes the buggiest code" — the
+   equivalent of turning a record of which river reaches need the most sampling
+   into a scorecard for the field crew.
+   *I recommend saying so explicitly before any of it is collected, not after,
+   and simply not computing per-reviewer totals at all.* Cairn already commits
+   to this posture elsewhere; this is the place it actually gets tested.
+
+4. **Should "this file is security-critical" outrank "this file looks
+   complicated"?**
+   I have two reasons to prioritise a file, and they are not equally solid.
+   The solid one: a bug in the files that check tree integrity or run the
+   security scans costs more than a bug elsewhere. The shaky one: that tangled
+   code costs more review effort — which is my hypothesis, not a finding, and
+   the research I checked does not support it.
+   *I recommend prioritising on the solid reason alone* and letting the other
+   earn its place once there is evidence, or not.
+
+5. **What kind of document should this become?**
+   Right now it is a one-off study waiting to turn into a proposal. It could
+   instead become a standing reference we re-run at each release — closer to a
+   monitoring record than a report. The folder's own rules do not let it be
+   both at once.
+   *I recommend leaving it as-is until evidence starts arriving, then
+   converting.* Lowest-stakes question here; it changes nothing but a label.
 
 ## Fold-up note
 
