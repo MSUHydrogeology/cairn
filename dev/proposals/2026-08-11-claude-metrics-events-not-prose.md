@@ -6,7 +6,10 @@
 **Status**: revised
 **Touches**: `templates/modules/default-on/lifecycle-metrics.md`;
 `templates/modules/default-on/_lifecycle_metrics/` and its `tools/` twin;
-`bootstrap/tests/test_lifecycle_metrics*.py`
+`tools/lifecycle.py` and its twin (the event writer, Round 4);
+`bootstrap/tests/test_lifecycle_metrics*.py`; `bootstrap/tests/test_lifecycle_contract.py`
+**Depends on**: `review-efficient-lifecycle` P6a — the shared event-ledger
+contract this proposal extends, `[commit pending]` at Round 4
 **Related**: `dev/strategy/2026-05-20-claude-team-productivity-metrics.md`
 (the principle and the column triage); the guide star's Anchor 17 and
 "Restraint as design center"
@@ -694,3 +697,139 @@ outcome and that part delivers the rest."
 Parts 1, 2, 3 and the schema boundary all stand as specified in Round 2. The
 outcome test adds no scope; it names what each part actually delivers, and
 requires the two partial deliveries to say so where a reader will meet them.
+
+## Response + Revised proposal (Round 4) -- Claude -- 2026-08-11
+
+**All four Round-2 findings accepted.** Each was found by executing something —
+running the planner, scaffolding a default adopter, forcing a torn write,
+diffing against an in-flight plan — and each falsified something I had asserted
+from reading. Part 3's architecture is replaced, not patched.
+
+**Scope delta: preserved.** Part 3's baseline outcome is unchanged: past values
+cannot be rewritten by a later tool change, and format evolution stops being a
+measurement discontinuity. Only the mechanism changes. Under Round 6 of
+`scope-reduction-trap`, replacing a mechanism while every baseline outcome
+still delivers is not a scope change and owes no remainder record.
+
+### The four findings
+
+**[R2-E1] Accepted — `next --to` is a preview and cannot be the writer.** It is
+read-only by doctrine, implementation and test, and the reviewer's fixture run
+confirmed it changes no byte. My "the planner already gates transitions, so it
+is the natural emission point" was wrong: it *previews* a transition and the
+lifecycle contract names that visible pause a safety boundary. Turning it into
+a writer incidentally would spend a reviewed safety property for a metric.
+
+**[R2-E2] Accepted twice over.** `_intent/record_io.py` ships with team-gated
+`coordination-tiers`, while `lifecycle-metrics` is default-on — so my named
+append implementation cannot run for the adopter this proposal changes. And the
+executing `review-efficient-lifecycle` plan already specifies a tracked,
+commit-bound, schema-closed event ledger. Two ledgers would be two answers to
+one question.
+
+**[R2-E3] Accepted.** `O_APPEND` is best-effort by its own docstring and
+excludes network and overlay filesystems; the forced partial write left a
+45-byte fragment and the reader skipped it with a warning. Silently dropping a
+torn measurement turns missing evidence into clean evidence, which is worse
+than the problem this proposal exists to fix.
+
+**[R2-E4] Accepted.** "Every line carries `schema`" is a direction, not a
+schema. Idempotency is load-bearing precisely because `next --to` is safe to
+rerun.
+
+### Part 3, rebuilt on the shared contract
+
+**This proposal now extends `review-efficient-lifecycle`'s event contract
+rather than inventing a parallel one.** That plan (P6a) specifies an
+append-only tracked ledger whose events are bound to a source artifact and
+commit, from which counts are *derived, never stored*, with writer requirements
+already reviewed: repository containment; regular non-symlink leaf **and**
+parent; closed bounded schema; atomic replace-or-append with an expected-old
+check; clean refusal on race or `OSError`; and malformed or unknown-version
+**refusing** rather than defaulting to a permissive state.
+
+Nothing below weakens any of those. Where this proposal needs something that
+contract does not specify, it is named as an addition to the shared contract,
+not as a local exception.
+
+**Writer and owner.** `tools/lifecycle.py` and its twin — the same component
+P6a makes the pilot writer, and one that ships default-on. One implementation
+of the write path, not two.
+
+**Two ledgers, one contract, and why they are separate files.** The pilot
+ledger is bounded — a six-plan rule inside a 60-day window, retired when the
+pilot concludes. Lifecycle-metric events are permanent and unbounded. Mixing a
+retiring record with a durable one invites the wrong lifetime for both.
+Proposed path: `dev/measurement/lifecycle-events.md`, under the same directory
+and the same writer contract.
+
+**Emission bound to the landed transition, not to the preview.** Cairn already
+requires one commit per lifecycle transition. The event line is written and
+committed *with* the status flip, so the commit carrying the event **is** the
+transition commit by construction. As in P6a's activation record, the commit
+binding is **derived from Git** — the commit that first introduced the exact
+event line — never stored in the line itself, so nothing is self-referential.
+An event written but not committed is a working-tree artifact that no derived
+count sees, which is the honest failure mode: absent, not wrong.
+
+**Closed v1 schema.** Bounded fields, unknown keys refused:
+
+* `schema` — version token; unknown version refuses.
+* `kind` — `proposal` | `plan`.
+* `stem` — the artifact stem.
+* `artifact` — repository-relative path; containment, regular-file and
+  non-symlink checks on leaf and parent.
+* `from_state`, `to_state` — members of the closed lifecycle vocabulary.
+* `ordinal` — disambiguates a legitimately repeated transition.
+* `provenance` — `emitted` | `derived`.
+* `recorded_by` — the agent identity already resolved for intents.
+
+**Idempotency key:** `(kind, stem, from_state, to_state, ordinal)`. A write
+whose identity already exists **refuses**; it does not append a duplicate. That
+is what makes a repeated `next --to` — or a repeated backfill — safe, and it
+answers the inflation R2-E4 identified.
+
+**Reader is strict.** A malformed line, an unknown key, or an unknown schema
+version **refuses the read**. It does not skip-with-warning. A measurement
+reader that silently drops records it cannot parse reports clean evidence from
+incomplete evidence, which is the failure R2-E3 demonstrated.
+
+**Live/backfill boundary.** The cutoff is the writer's own activation commit,
+derived the same non-circular way. Transitions before it are reconstructed by
+the corpus walk and written with `provenance: derived`; transitions after it
+are `emitted`. Derived and emitted records share the file and are never merged
+into one series by any reader — the field exists to keep them apart, and the
+derived portion is not claimed to deliver Part 3's outcome. Backfill is
+idempotent under the same identity key, so a rerun adds nothing.
+
+### Security preflight, corrected
+
+The Round-2 answers were wrong and are replaced. An artifact path and target
+state **are** repository-controlled inputs to a persistent writer, and the
+writer necessarily adds parsing, path normalisation, schema validation and
+failure modes.
+
+1. **Untrusted input?** Repository-controlled, not external — but *parsed*, so
+   it is a real input surface. Containment under the repository root; regular
+   non-symlink leaf **and** parent; control characters and size bounds enforced
+   on every field; unknown keys refused.
+2. **Concurrency?** Atomic replace-or-append with an expected-old check, and
+   clean refusal on race — inherited from the shared contract. `O_APPEND` alone
+   is explicitly *not* relied upon, per R2-E3.
+3. **Failure atomicity?** An interrupted write must leave the ledger readable
+   and the record absent, never a fragment that a reader skips. Refusal on
+   `OSError`, and a strict reader that fails rather than drops.
+4. **Executes anything?** No.
+5. **Widens a trust boundary?** It adds a tracked file a default-on component
+   writes. The read-only guarantee of `next --to` is **preserved** — the writer
+   is a separate path, not a mutating arm bolted onto the preview.
+
+### Dependency, stated plainly
+
+`review-efficient-lifecycle` P6a is `[commit pending]`: the contract is
+specified and reviewed, and not yet landed. This proposal is therefore written
+against a contract that does not yet exist in the tree, at the Maintainer's
+direction. If P6a's contract changes before it lands, the plan opened from this
+proposal adapts to what shipped — and if the shared contract ends up unable to
+carry a permanent ledger, that is a finding for the plan, not a licence to fork
+a second writer.
