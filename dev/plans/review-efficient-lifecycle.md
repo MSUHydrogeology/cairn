@@ -2546,3 +2546,263 @@ for this revision remain inside this plan's existing B1, Code-review, M1 and B2
 boundaries. The final Code review must name this section in its reviewed
 contract and falsify at least the wrong-tier, wrong-SHA, high-assurance-READY
 and monitoring-absent cases rather than treating the table's presence as proof.
+
+## Plan review -- Claude -- 2026-08-11
+
+**Model**: Claude Sonnet 5 (claude-sonnet-5)
+**Tier**: Internal
+**Obligation**: the Maintainer-directed contract revision's own fresh-context
+Internal plan review
+**Reviewed commit**: `da23dbca99b567026296300ad86988b2b1d68566`
+**Target**: the 2026-08-11 Maintainer-directed contract revision
+**Findings**: raised
+
+**Method.** Fresh context; nothing inherited from the authoring session. Read
+`AGENTS.md` in full, this plan's header, `## The review budget`, `##
+Maintainer interventions`, `## Sequence`, the P1--P8 chunk table, `##
+Acceptance criteria`, `## Verification`, both clearing passes (round 7
+External, round 6 Security), and the revision section itself in full. Read
+`doctrine/dual-review.md` in full for the structural-independence floors,
+Code-review floor, and the standing recommend-and-decide instrument. Read the
+parent proposal `dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md`
+sections 1--3 (assurance paths, the four-field basis, the original
+inheritance/high-assurance-refusal design) to understand exactly what the
+revision changes relative to what was accepted. Grepped the whole plan file
+for `promotion`, `high.assurance`, `External plan`, `distinct review` and
+`cross-type` to hunt for surviving contradictions outside the named
+superseded cells. Ran `tools/lifecycle_planner.py scan` (all 8 artifacts
+structurally sound) and `scripts/claim_check.py` against this file (clean)
+directly against the current tree.
+
+**Verdict: REVISE.** The revision is implementable and internally consistent
+in its core mechanism -- the two-field `Inherited proposal basis`, the
+`DISTINCT REVIEW REQUIRED` escape valve, and the unchanged Code-review floor
+are all precise enough to execute as written, and M1/M2 are verified
+untouched (below). But the superseding table does not reach every place the
+old contract's assumptions still live, one of the six invalidating triggers
+is defined at the wrong grain to catch the exact risk the parent proposal
+built the high-assurance path to stop, and the required test matrix has a
+shape-shaped hole where the old row-level matrix had an oracle. None of this
+reopens the Maintainer's policy choice; each finding is a text-only
+tightening inside P2-R/G-R/P8-R's own chunks, addressable without another
+round.
+
+**Steelman first.** The core trade is honestly stated, not smuggled: the
+revision states plainly that it "removes one routine cross-type reread," it
+does not touch Code review's independence floor, it keeps M1's ceremony and
+M2's data-only activation exactly where they were, and it converts the old
+promote/revise/retire vocabulary to retain/revise/retire without inventing a
+new mechanism -- P6a--P6c's engine, ledger, report, pause and mutation
+machinery survive by relabeling, not rewrite. The standing `recommend-and-
+decide` instrument (`doctrine/dual-review.md`, "Recommend-and-decide -- the
+second independent pass") is untouched by this revision and remains a live
+escape hatch: any reviewer, including a future Internal one, can still
+recommend a cross-type second pass to the Maintainer at any point, so "no
+independent read ever" is not literally true even under the new default --
+it is "no independent read *by default*." And the revision is honest about
+its own residual authority: it does not claim the six-item invalidation list
+is exhaustive protection, it describes the pilot/monitoring machinery
+accurately as evidence rather than permission, and it correctly keeps this
+very self-review as a precondition on P2 rather than skipping review of
+itself.
+
+### [R1] The high-assurance READY removal is checked at the wrong grain --
+translation fidelity, not sequencing risk
+
+The parent proposal's own words for why high-assurance was excluded from
+inheritance: *"High-assurance plans cannot inherit plan readiness. They
+retain a distinct plan review because sequencing itself can create risk even
+when the proposal is sound"*
+(`dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md:171-173`).
+That is a claim about a **fully faithful** translation still being
+dangerous -- risk introduced by *how* a sound design is sequenced into
+chunks, not by any deviation from the design. The revision's own mitigant is
+the six-item invalidation list -- *"a new scope item, invariant, public
+path, failure disposition, trust boundary, scientific assumption, or
+ceremony invalidates readiness"* (line 2464) -- which by construction only
+fires on an *addition* relative to the proposal. A plan that sequences a
+faithful translation of a high-assurance design into a *dangerous order*
+(the exact failure class B4/H/I exist in this very plan to catch) trips none
+of the six items and would clear an Internal-only pass, precisely because
+the Internal reviewer's charter is *"it does not reopen the accepted
+design."* Under the pre-revision contract this was exactly what the
+mandatory distinct (External-tier, per this plan's own opening line 24 and
+`doctrine/dual-review.md:181-187`) plan review existed to catch, independent
+of translation fidelity.
+
+The revision's compensating claim -- *"High assurance continues to govern
+verification, Security Review, scientific review, protected-surface
+handling, risk acceptance and ceremonies"* (line 2475-2477) -- only actually
+backstops one of the parent's five original high-assurance trigger
+categories. Checked against `AGENTS.md`'s "High-risk surfaces" list
+(`AGENTS.md:372` onward): a *security trust boundary, credential, executable
+path, parser, or network boundary* trigger keeps an independent fallback via
+the named-protected-surface Security-Review fences (M3-style). The other
+three original trigger categories --- *"a scientific assumption ...  that
+can change reported results"*, *"a destructive migration, data-loss risk,
+public compatibility break"*, and *"a governing doctrine or
+lifecycle-enforcement change"*
+(`dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md:80-84`) ---
+have no AGENTS.md-named fallback at all once plan review is Internal-only;
+"scientific review" and "risk acceptance" are named in the mitigant sentence
+but neither is a defined mechanism anywhere in this plan or in
+`doctrine/dual-review.md` as read. Concretely: a future high-assurance
+proposal whose trigger is a doctrine/lifecycle-enforcement change (this
+revision's own P2/G work is itself exactly that category) can reach
+implementation behind nothing but one same-agent-type Internal pass, with no
+structural requirement that anyone independent ever sees the sequencing.
+
+**Required satisfier.** State this trade-off explicitly rather than
+implicitly, in the same section that removes the refusal: name which of the
+five original high-assurance trigger categories keep an independent-review
+backstop elsewhere (security-trust-boundary, via AGENTS.md's named
+surfaces) and which now rely solely on the Internal reviewer's judgment plus
+the optional `recommend-and-decide` escalation (scientific-assumption,
+destructive-migration/data-loss/compatibility-break,
+doctrine/lifecycle-enforcement-change). This can land as a one-paragraph
+addition to this revision section or as part of P2-R/G-R's `dual-review.md`
+text -- it does not require reopening the policy.
+
+### [R2] Silent scope reduction during translation is not one of the six
+invalidating triggers
+
+The six items that invalidate `READY` (line 2464) guard against *additions*
+a translation makes beyond the proposal. They say nothing about a
+translation that **narrows** an accepted proposal's committed scope --
+exactly the failure class `AGENTS.md` was sharpened for in this same
+session: *"Removal counts as a deviation, in both directions ... A reviewer
+cannot create that authority by calling the remainder 'out of scope.'
+Narrowing is the path of least resistance in review -- it costs the
+reviewer nothing, reads as prudence, and can never be shown wrong, because
+the wider version is never built"* (`AGENTS.md:169-176`; see also the
+concurrently-landed `scope-reduction-trap` work, commit `3f92cd8`). The
+Internal plan reviewer's charter -- *"it does not reopen the accepted
+design"* -- is exactly the posture in which narrowing is easiest to wave
+through as a faithful-looking translation choice, and under the new default
+this reviewer is the *only* read most plans will get before implementation.
+
+**Required satisfier.** Add "a scope reduction or removed accepted outcome
+relative to the proposal's committed scope, absent a Maintainer-recorded
+`Scope delta` allowance per `AGENTS.md`" to the list of items that
+invalidate readiness (alongside the existing six), and add a corresponding
+bullet to the required test matrix. This is additive to P2-R/P8-R, not a
+redesign.
+
+### [R3] Stale "promotion" language survives in two live locations the
+superseding table does not name
+
+The superseding table's cells are the P1--P8 table rows and the M-table row;
+two other locations still describe the retired `promote` disposition and are
+not literally any of "P2, G, P6, P7, P8 and M6 cells" even though they carry
+the same content:
+
+* `## Sequence`'s ASCII diagram, the P7 line: *"P7  post-pilot promotion /
+  retirement              [M6; own evidence]"* (line 299). Post-revision,
+  `promote` no longer exists as a disposition (`M6-R` / `P7-R` replace it
+  with `retain`/`revise`/`retire`), so this line now names a removed token,
+  not merely an imprecise one.
+* Chunk P6b's own row: *"the pilot's human contract: pause conditions,
+  evidence report shape, and a description of the Maintainer promotion
+  Decision at the boundary"* (line 482). `P6-R`'s *"relabel it as monitoring
+  evidence"* only reaches this by inference through the separate `M6-R`
+  bullet; it does not say in so many words that P6b's authored prose must
+  now describe a retain/revise/retire Decision rather than "the promotion
+  Decision." P6b has not landed yet (`commit pending`), so an implementer
+  copying this row's wording into `dev/collaboration_agreement.md` risks
+  writing the retired term into the shipped contract.
+
+**Required satisfier.** A one-line correction to each location (or folding
+both explicitly into the superseding table as named cells) closes this --
+no design question, purely a stale-reference cleanup of exactly the kind
+Chunk G's own acceptance criteria already check for elsewhere in this plan
+("no second restart rule exists anywhere in this plan", line 598-599).
+
+### [R4] "A through E may continue" does not name two chunks that sit in
+that exact span
+
+`## Sequence`'s dependency order is `A, B, P1, C, P5, D, E, P2, ...` (lines
+275--300). P1 and P5 are neither superseded by this revision nor excluded
+from "may continue" by anything the revision says -- they simply are not
+named. A literal reading of *"A through E may continue while that review is
+obtained"* (line 2441-2442) leaves an implementing agent to infer, rather
+than be told, that P1 (`commit pending`) and P5 (`commit pending`), which sit
+between C and D in the load-bearing order, are also authorized to proceed.
+
+**Required satisfier.** Reword to name the actual pre-P2 span explicitly --
+e.g. "every chunk preceding P2 in the Sequence order (A, B, P1, C, P5, D,
+E)" -- removing the inference step.
+
+### [R5] The required test matrix has no malformed-shape fixture for the new
+two-field basis
+
+The old row-level assurance matrix this table replaces explicitly required
+*"missing / duplicate / unknown `Assurance path` values (all refuse --
+**never default to `standard`**)"* (line 486). The new matrix's closest
+analog is *"changed review or accepted-proposal SHA refuses"* (line 2530) --
+which covers a *mismatched* SHA but not an absent, half-present (only
+`review=` or only `proposal=`), or unparseable `Inherited proposal basis`
+field. `P8-R`'s *"preserve every ... malformed-record ... mutation not
+contradicted here"* (line 2519) cannot preserve a test for a field shape
+that did not exist before this revision.
+
+**Required satisfier.** Add to the required test matrix: "a malformed or
+partially-specified `Inherited proposal basis` (only one sub-field present,
+unparseable commit id, wrong field name) refuses and never defaults to
+`READY`."
+
+**Second-round recommendation.** Recommended, narrowly, and not blocking.
+R1 and R2 concern the review-independence axis and the scope-reduction
+failure mode this very repository is actively hardening against elsewhere
+this session; the Maintainer already explicitly authorized skipping a
+distinct plan-review round for *this* revision, so I do not gate P2 on a
+cross-type read of my own findings. But once P2/G land, a cross-type or
+human second look at R1/R2's disposition (folded into the plan's Code review
+or flagged separately) would be consistent with `AGENTS.md`'s own
+rate-limit-gate rationale for doctrine changes and with the fact that this
+change touches the mechanism that decides when such a second look happens at
+all.
+
+**Covered by execution/inspection**: the revision section in full
+(2417--2548); the P1--P8 chunk table (327--513) and Maintainer interventions
+table (50--133), confirming M1/M2 mechanically untouched and M0 irrelevant
+here; `## Sequence` (270--326); `## Acceptance criteria` / `## Verification`
+(514--602); both clearing passes (2314--2416) read to confirm nothing here
+reopens them; a full-file grep for `promotion`, `high.assurance`, `External
+plan`, `distinct review`, `cross-type` to find surviving contradictions;
+`dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md` sections 1--3
+(lines 60--248) for the original inheritance/high-assurance design this
+revision changes; `doctrine/dual-review.md` in full for the independence
+floors, Code-review floor, and recommend-and-decide; `AGENTS.md`'s deviation
+and High-risk-surfaces sections; direct execution of
+`tools/lifecycle_planner.py scan` (8/8 sound on the tree before this pass was
+appended) and `scripts/claim_check.py` against this file, clean of anything
+this pass's own text introduces. Both are re-run after this pass lands, and
+their post-append state is exactly what a `**Findings**: raised` pass with no
+disposition yet should show -- see the note after **Not covered**, below.
+
+**Not covered**: `dev/proposals/2026-08-10-codex-lifecycle-status-vocabulary.md`
+beyond a grep for `retain`/`revise`/`retire`; `dev/collaboration_agreement.md`,
+`doctrine/dual-review.md`'s and `AGENTS.md`'s own future edited text, since
+P2/G have not executed and there is nothing yet to falsify there;
+implementation of P1--P8, B1, Code review, M1, B2 or pilot evidence, all
+explicitly execution-phase; the sibling plans and the two files another
+session has modified (`bootstrap/tests/_gate_manifest.py`,
+`bootstrap/tests/test_gate_manifest.py`), untouched per instruction; whether
+bypassing the proposal boundary for this revision was itself the right call,
+out of scope per this review's charge; and a structurally-independent
+(cross-type) read of this review's own findings -- see the second-round
+recommendation above.
+
+**Note on post-append verification state.** After this pass lands,
+`tools/lifecycle_planner.py scan` correctly reports this artifact as carrying
+a structural violation -- `**Findings**: raised` with no `### Sharpening` or
+`## Response to plan review` yet -- and that is this pass doing its job, not
+a defect: it is the mechanical form of "revised P2 does not execute until
+this review is obtained and answered." `scripts/claim_check.py` separately
+reports pre-existing, unrelated hard flags on this file's `Proposed paths:`
+declarations (lines 2, 211, 217) for `bootstrap/tests/test_lifecycle_vocabulary.py`
+and `dev/plans/git-native-security-foundations.md`, both of which have
+already materialized; those declarations predate this pass, are caused by an
+in-flight, uncommitted edit to `scripts/claim_check.py` and its twin by
+another concurrent session, and are outside this review's target. This
+pass's own added text introduces no claim-check flag.
