@@ -135,9 +135,19 @@ def _cmd_prune(args) -> int:
 
     The log is a coordination surface, not an archive.  This never deletes an
     unreleased claim (that is a bug signal -- a session died holding a lock) and
-    never drops a line it could not parse; both are reported instead.  Refuses
-    while any claim is active, because an active claim means a live session may
-    still be appending to a file this command rewrites.
+    never drops a line it could not parse; both are reported instead.
+
+    Refuses while an **unreleased claim newer than the adopter's claim-TTL**
+    exists, because a recent claim means a live session may still be appending to
+    the file this command rewrites.  Not "while *any* claim is active": every
+    unreleased claim is active by :func:`active_intents`, so that reading would
+    refuse forever and make the never-released report unreachable.
+
+    This command carries the liveness refusal but **not** the handoff owner
+    marker or the concurrent-handoff lock.  The rewrite's quiet-window
+    precondition -- the full handoff is the session-day's last act -- is an
+    operating rule of the ``session-end`` path, so a hand-run prune during active
+    sessions relies on the liveness refusal alone.  Prefer ``--dry-run`` there.
     """
     # CR3: single-source the liveness horizon.  `record_io` cannot import
     # `conflict` (conflict imports record_io -- the layering runs one way), so

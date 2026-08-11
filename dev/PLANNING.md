@@ -1456,8 +1456,20 @@ rather than left pointing at a section that was never written.)*
   *"loop-fidelity"* anywhere in the artifact — writing the phrase satisfies the
   gate, and no sign-off need have occurred.
 * **[SP8-11] `dev/intents.jsonl` grows without bound, and the cost lands on the
-  commit path.** PROPOSAL OPEN:
-  `dev/proposals/2026-08-11-claude-intent-ledger-pruning.md`. The ledger is a
+  commit path.** **DISCHARGED 2026-08-11** — shipped at `e54f43c`, External code
+  review (Codex) BLOCK at `bf38e67`, answered at `80e6ea4` + `409caae`, Response
+  and Addendum at `3bf5ccf` and the archive commit; proposal archived at
+  `dev/proposals/archive/2026-08-11-claude-intent-ledger-pruning.md`. All five
+  findings dispositioned `accept`/`guard` — see the Addendum's superseding
+  block. **One correction to the text below, which is preserved as written:**
+  "a lost claim is a lost lock" is **false** and was retracted in the
+  implementation. `dev/intents.jsonl` is an *advisory* collision hint, not a
+  mutual-exclusion lock; a claim past the 4h TTL warns but never blocks. That
+  one wrong sentence, written here and in the proposal's [H2], is what escalated
+  a file prune into a BLOCKER. The remaining concurrency window is closed by
+  disposition, not by code: the full handoff runs after other sessions end, and
+  that precondition is now written into `session-end`'s `SKILL.md`. The ledger
+  is a
   **coordination surface, not an archive** (Maintainer's framing) -- gitignored,
   local to one checkout -- yet nothing prunes it: claim and release both append,
   and the full handoff's `_surface_intents` is read-only. Measured 2026-08-11:
@@ -1481,6 +1493,23 @@ rather than left pointing at a section that was never written.)*
   GPG key" tells the next reader to stop looking. Narrowing the polluter is a
   bisect nobody has run. Adjacent to Antigravity's **[SP8-10]** (same shape: a
   test whose expectation depends on ambient state).
+* **[SP8-13] `intent.py claim` cannot record a legitimate wide claim, and its
+  error advises the wrong remedy.** Met 2026-08-11 while claiming nine paths for
+  the intent-prune close-out: refused at **553** bytes, then at **522** after
+  shortening `--action` to two words, against the **512**-byte cap — with **342
+  bytes of that being paths alone**. The cap itself is correct and load-bearing:
+  it keeps one record inside a single `os.write`, which is the append atomicity
+  the whole surface rests on (`record_io.py`'s Atomicity note). The defect is
+  that the error names `--stem` and a shorter `--action` as the remedies while
+  reporting paths as the dominant contributor — neither remedy touches paths — so
+  the operator's only recourse is to split the claim into pieces and hope the
+  overlap check still means something. A cross-cutting refactor is exactly when a
+  claim matters most and exactly when it cannot be filed. Candidate shapes: fold
+  a common prefix (`templates/modules/team-gated/_intent/` appeared twice in that
+  set), or emit **multiple lines sharing one `id`** so the record stays inside one
+  `os.write` per line while the claim stays whole. Either is a change to the
+  record schema that `active_intents`, `conflict`, and now `prune_released_pairs`
+  all read, so it takes a proposal. Adjacent: **[SP8-11]** (archived).
 * **[SP8-7] `api-web-security-modules` never landed its
   `templates/modules/README.md` catalog row (F-11).** Activation's Chunk D landed
   its own row at `dd15268`; api-web's was left because another session held the

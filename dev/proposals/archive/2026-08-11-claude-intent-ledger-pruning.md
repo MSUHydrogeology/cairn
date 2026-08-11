@@ -501,3 +501,137 @@ before landing — so the record has a `## Code review` that arrived *after* the
 Decision and no `## Review` that preceded it. The structure looks irregular
 because the process was. Retro-fitting a `## Review` heading to satisfy a scanner
 would be the fabrication this lifecycle exists to prevent.
+
+## Addendum -- [CR1] re-dispositioned to `accept` -- Claude (Implementation) -- 2026-08-11
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+The Response above dispositioned [CR1] as `defer`, pending the Maintainer's
+authorization. **That disposition is superseded by this section** (this record is
+append-only, so the block above stands as what was believed at that point). The
+Maintainer supplied two facts I did not have and one I had not thought to ask
+for, and together they make `accept` — a scope-cut — the correct disposition, with
+no deferral and nothing deposited on the board.
+
+### What changed the answer
+
+**1. The window is quiet by operating rule, not merely narrow.** The Maintainer:
+
+> But session-end --handoff is only ever run after all other agents are done in
+> the repository, having done their own reflection routines. So between 1 and 4
+> the intents.jsonl is quiet
+
+[CR1]'s premise is a *concurrent appender* during the rewrite. At the only
+shipped call site there is none, because the full handoff is the session-day's
+last act. `doctrine/session-routines.md` already reaches for this — the
+single-owner scrub "keeps the shared communication files a single-writer surface
+at handoff time" — but its *mechanism* only refuses a second **handoff**, which is
+exactly what the review said. The rule was true and unwritten.
+
+**2. The consequence is bounded, and the bound is structural.** A claim past
+`conflict.DEFAULT_CLAIM_TTL_HOURS` is *stale*: it warns but **never blocks** a
+commit, so a crashed session cannot wedge anyone (`conflict.py`, the
+`DEFAULT_CLAIM_TTL_HOURS` comment). The prune refuses on any unreleased claim
+*newer* than that same horizon. **The two numbers are equal**, so a release lost
+to the window belongs to a claim already past the blocking horizon. Worst case is
+a warning row that does not clear — on a gitignored, single-checkout file with no
+provenance role, correctable by appending one line. I asserted "one advisory
+record" in the Response without showing this bound; the bound is the argument.
+
+**3. The measured base rate, which no argument of mine could substitute for.**
+The Maintainer's operating history from before this surface existed:
+
+> In all of the work I've been doing with agents before the intents structure was
+> created, we only ever lost content once from clobbering
+
+> There were lots of clobbers, but mostly recoverable, except for one time
+
+> Mostly the risk is wasted time and effort. Things are way better with the
+> intents file, btw
+
+So the hazard class this ledger mitigates cost **one** unrecoverable loss across
+months of multi-agent work, with the rest recovered through git, and its residual
+cost is wasted effort. [CR1] risks degrading that mitigation by one advisory
+record in a rare interleaving. Building a shared serialization protocol across
+the pre-commit append path — the most frequently executed path in the project — to
+protect that is the disproportion. `doctrine/rationale.md` > "How the doctrine
+evolves under evidence" applies in the mirror direction here: evidence bounds a
+change *down* as well as up.
+
+### The condition this `accept` carries, and how it was met
+
+An `accept` that rests on an operating rule requires the rule to **exist in
+writing**, or the finding is closed on an assumption an adopter cannot see — and
+adopters get this tool. So the rule is now recorded in the three places a reader
+meets it:
+
+* **`session-end`'s `SKILL.md`, step 1** (both copies) — *"Run the full handoff
+  last — after other sessions have ended,"* stated as **a precondition of the
+  prune, not tidiness**, with the mechanism (appends hold no lock; the
+  fail-closed lock serializes two handoffs, never a handoff against a live
+  session) and the worst case. This is where the handoff owner reads.
+* **`prune_released_pairs`' docstring** — the first narrowing now names the
+  operating rule and points at the skill; a new paragraph states the structural
+  bound above.
+* **`_cmd_prune`'s docstring** — see the correction below.
+
+### Corrections this addendum lands
+
+* **The review's "ungated CLI" was imprecise, and my Response repeated it.**
+  `intent.py prune` is **not** unguarded: it runs the same liveness refusal, and
+  since `409caae` with the adopter's configured TTL. What it lacks is the owner
+  marker and the handoff lock — so a hand-run prune during live sessions relies on
+  the liveness refusal alone. Its docstring now says exactly that, and recommends
+  `--dry-run` there.
+* **[CR3]'s defect class, third instance.** `_cmd_prune`'s docstring still read
+  *"Refuses while any claim is active"* — the precise claim [CR3] proved false,
+  surviving in a third file after being fixed in `record_io.py` (`80e6ea4`) and in
+  the test suite (this proposal's Response commit). Fixed. Three instances of one
+  wrong sentence in three files is the real lesson here: the sentence was
+  copy-propagated, and only opening each file found them.
+* **A new finding, met while claiming paths for this work.** A nine-path claim
+  **cannot be recorded**: `intent.py claim` refused at 522 and 553 bytes against
+  the 512-byte cap, with 342 bytes of that being paths alone. The cap is correct —
+  it keeps a record inside one `os.write`, which is the append atomicity this
+  whole surface rests on — but neither remedy the error suggests (`--stem`, a
+  shorter `--action`) touches the dominant contributor, so a legitimate
+  wide-refactor claim is unrecordable and the operator's only recourse is to split
+  it and hope. Filed at `dev/PLANNING.md` **[SP8-13]**.
+
+### Superseding dispositions
+
+```
+Dispositions:
+* [CR1] rewrite is not serialized with the lock-free append path
+    -> accept (scope-cut). The finding's premise -- a concurrent appender -- is
+       excluded at the only shipped call site by a recorded operating rule
+       (session-end SKILL.md step 1, both copies), and the residual consequence is
+       structurally bounded to a non-blocking warning row on a gitignored local
+       file. SUPERSEDES the `defer` recorded in the Response above; no board
+       deposit, no Maintainer authorization required.
+* [CR2] -> accept (80e6ea4) + guard (unchanged from the Response)
+* [CR3] -> accept (409caae + this addendum's third-instance fix in _cmd_prune)
+* [CR4] -> accept (409caae) + guard (unchanged from the Response)
+* [CR5] -> accept (409caae, both SKILL.md copies)
+* [proposal] lifecycle.py docstring read-vs-write -> accept
+* [new, out of scope] intent claim's 512-byte cap rejects legitimate multi-path
+    claims -> defer -> dev/PLANNING.md > [SP8-13]   (a discovered adjacent defect,
+    not a follow-up this proposal deferred; recorded so it is not lost)
+```
+
+### Verification
+
+Canonical interpreter, `PYTHONDONTWRITEBYTECODE=1`, Python 3.13.13. Scoped, per
+`AGENTS.md` > Verification boundaries — this addendum changes three docstrings
+and one skill paragraph; no executable behavior changed.
+
+* `test_intents_tool`, `test_lifecycle_cli`, `test_coordination_broad_intent`,
+  `test_skills_install`, `test_skills_security`: **149 passed in 15.2s**.
+* Three twin pairs byte-identical after the edit (`shasum -a 256`):
+  `record_io.py` `01a80707…`, `cli.py` `2ab6e8e8…`, `session-end/SKILL.md`
+  `04e6bfea…`.
+* Scoped lockfile finalize over the three installed `dst` paths this touches.
+* **Still true, and still the honest limit:** no independent Boundary C read of
+  `80e6ea4`, `409caae`, or these bytes exists. The `accept` rests on the
+  Maintainer's operating rule and measured history, not on a second agent's
+  falsification.

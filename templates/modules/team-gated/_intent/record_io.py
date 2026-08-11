@@ -317,7 +317,11 @@ def prune_released_pairs(
     record appended between the snapshot and the replace does not survive it.
     Three things narrow that, and none of them closes it:
 
-    * the caller is the **full handoff**, a quiet serialization point;
+    * the caller is the **full handoff**, which by operating rule is the
+      session-day's **last** act, run after other sessions have ended -- so the
+      window is *quiet*, not merely narrow.  That rule is a precondition of this
+      function, stated where the handoff owner reads it (``session-end``'s
+      ``SKILL.md``, step 1);
     * a claim held within *live_within_hours* refuses the prune outright;
     * the ledger's size is re-checked immediately before the replace, so a
       detected concurrent append **skips** the prune rather than dropping it.
@@ -328,6 +332,17 @@ def prune_released_pairs(
     draft of this docstring called a lost claim "a lost lock"; that overstated
     it, and the overstatement is what made a scratch-file cleanup look like a
     concurrency-critical change.
+
+    **The consequence is bounded, and the bound is structural.**  A claim past
+    ``conflict.DEFAULT_CLAIM_TTL_HOURS`` is *stale*: it still warns but never
+    **blocks** a commit, so an abandoned session cannot wedge anyone.  This
+    function refuses on any unreleased claim *newer* than that same horizon.
+    The two numbers are deliberately equal, so a release lost to the window can
+    only belong to a claim already past the blocking horizon.  The worst case is
+    therefore a warning row that does not clear -- not a blocked commit -- on a
+    gitignored, single-checkout file with no provenance role, correctable by
+    appending one release line.  What is at risk is *wasted effort*, which is
+    also the entire hazard this surface exists to reduce.
 
     Note the refusal is scoped to a **recent** unreleased claim, not to any
     active one: every unreleased claim is active by :func:`active_intents`, so

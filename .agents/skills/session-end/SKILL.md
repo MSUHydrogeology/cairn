@@ -41,6 +41,17 @@ python tools/lifecycle.py session-end $ARGUMENTS
   reports instead. `dev/modules/coordination-tiers.md` specifies this as the
   goodnight *prune-intents* step; `--handoff --dry-run` lists it before it runs.
 
+  **Run the full handoff last -- after other sessions have ended.** This is a
+  precondition of the intent-log prune, not just tidiness. The prune *rewrites*
+  the same file that ordinary `claim` / `release` **append** to, and those
+  appends hold no lock; the fail-closed lock above serializes two *handoffs*,
+  never a handoff against a live session. So a session appending during the
+  rewrite can lose one advisory record. The prune refuses while any unreleased
+  claim is newer than the claim-TTL, and skips if the file changes underneath
+  it -- but running last is what makes the window *quiet* rather than merely
+  narrow. Worst case if you ignore this: a warning row that never clears, on a
+  gitignored local file, fixable by appending one release line.
+
 ## 2. Judgment steps (yours, not the tool's)
 
 **Fill in the reflection** -- what shipped, what went well, what went wrong and
