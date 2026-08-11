@@ -64,6 +64,9 @@ Cairn is built for this exact moment.
 - **No runtime dependencies.** Everything Cairn installs is standard-library
   Python, and nothing phones home.
 
+New vocabulary is a real cost of adopting a method.
+[`docs/glossary.md`](docs/glossary.md) defines the terms that carry weight.
+
 ### Isn't this just careful prompting with extra steps?
 
 Cairn is slower for the first few changes, and it will not make an agent write
@@ -72,6 +75,11 @@ you why a change was made, who checked it, or what would have falsified it —
 and those are exactly the questions a reviewer, a collaborator, or you in six
 months will ask. The apparatus exists to keep those three answers in the
 repository. If you never need to answer them, you do not need Cairn.
+
+Decision records, RFC-style proposal processes, lab notebooks, pre-registration
+and ordinary code review all overlap with what Cairn does.
+[`docs/related-practices.md`](docs/related-practices.md) compares them honestly
+and names the four things that are actually distinctive.
 
 ---
 
