@@ -1,5 +1,5 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/lifecycle-contract.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_vocabulary.py, scripts/gen_legacy_code_review_passes.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, dev/plans/corpus-tier-cost.md, dev/plans/git-native-security-foundations.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
+<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, scripts/gen_legacy_code_review_passes.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, dev/plans/corpus-tier-cost.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
 <!-- The three paths above are forward references created by Chunks A, C and F.
      They are also registered under `Proposed paths:`; that marker exempts only
      its own contiguous bullet block, so this file-scoped directive covers the
@@ -208,13 +208,11 @@ an authority: each plan keeps its own scope, gates, and archive.
 ## Proposed paths
 
 Proposed paths:
-- `bootstrap/tests/test_lifecycle_vocabulary.py` — Chunk A's source-audit + shape-(b) matrix.
 - `scripts/gen_legacy_code_review_passes.py` — Chunk C's legacy manifest generator.
 - `bootstrap/tests/test_lifecycle_board.py` — Chunk F's board CLI and encoder tests.
 - `dev/measurement/pilot-activation.md` — P6a's immutable activation record; introduced by P6d.
 - `dev/measurement/pilot-events.md` — P6a's append-only event ledger; counts and pauses are derived from it.
 - `dev/plans/corpus-tier-cost.md` — sibling plan for proposal 1; opened alongside this one.
-- `dev/plans/git-native-security-foundations.md` — sibling plan for proposal 6; opens when its reviews clear.
 
 ## Scope
 
@@ -296,7 +294,7 @@ I   Maintainer re-anchor of the reviewed frozen set[M1]
 B2  Boundary B + closeout on post-ceremony commit  [record]
 --- pilot ----------------------------------------------------------
 P6d pilot ACTIVATION (data-only, Maintainer-gated)  [M2]
-P7  post-pilot promotion / retirement              [M6; own evidence]
+P7  post-monitoring retain/revise/retire           [M6-R; own evidence]
 ```
 
 Only *activation* is post-ceremony. The pilot engine, its state schema, its
@@ -479,7 +477,7 @@ are chunks, not another planning artifact.
 | P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run`. **Fenced**: P4 does not modify `_resolve_interpreter` (`tools/lifecycle.py:414`), its schema, validation order, fallback disposition, warning visibility, or any subprocess use of the resolved path — the protected local interpreter binding named in `AGENTS.md`. Pinned by a focused exact-function-byte / AST sentinel test. If implementation needs such a change, **stop for a new Security Review** (fence **M3**). Both commands stay read-only and execute no artifact content; human output passes through the **same** terminal encoder as F2. **The planner owns it**: the encoder lives in `tools/lifecycle_planner.py` (and its installed twin), and `tools/lifecycle.py` reaches it by the **same A3 contained-loader contract** — fixed `spec_from_file_location`, no ambient `sys.path`, no `tools/__init__.py`, no CLI import with side effects. This adds no install-manifest row: both files already install as siblings under `tools/`. The existing `_safe_field` (`tools/lifecycle.py:113`) is **not** this rule — it translates a fixed escape table and truncates; it applies neither `str.isprintable()` nor `_DISPLAY_UNSAFE_RANGES` — and is replaced, not wrapped. Machine output is versioned ASCII-safe JSON. Control-character, invisible-range, delimiter, malformed-record and mutation-sentinel tests, **plus the full A6 loader matrix for this second consumer** (decoy path, leaf and parent symlink, out-of-root, partial-import cleanup, clean retry) and byte/parity checks for every installed twin |
 | P5 | planner + `bootstrap/tests/test_lifecycle_contract.py` | the bound `Contract non-expansion: VERIFIED \| NOT VERIFIED` attestation with its `Basis:` line; `NOT VERIFIED` blocks. Validates presence and binding shape only — the parent is explicit that the semantic claim stays human |
 | P6a | `tools/lifecycle.py` + twin, `dev/measurement/pilot-activation.md`, `dev/measurement/pilot-events.md` | **pilot engine, inside the reviewed range**, split so no authority input is a mutable last-writer-wins file. (1) An **immutable tracked activation record** naming `machinery_sha` = the reviewed **B2** commit; the *enabling* commit is derived from Git as the commit that first introduced this exact record, so nothing is self-referential, and `activation_date` is that commit's author date. (2) An **append-only tracked event ledger** — one event per counted plan stem or pause, each bound to its source artifact and commit — from which counts, pauses, and the report are **derived**, never stored. Six-plan rule = distinct plan stems reaching `ready-to-archive` under the contract; 60-day window from the derived activation date inclusive. Every writer: repository containment, regular non-symlink leaf **and** parent, closed bounded schema, atomic replace-or-append with an expected-old check, clean refusal on race or `OSError`. Malformed or unknown-version **refuses**; it never defaults to inactive |
-| P6b | `dev/collaboration_agreement.md` + twin | the pilot's human contract: pause conditions, evidence report shape, and a description of the Maintainer promotion Decision at the boundary. **Agent-authored**, inside the reviewed range — describing the Decision is not taking it; the Decision itself is M6 |
+| P6b | `dev/collaboration_agreement.md` + twin | the pilot's human contract: pause conditions, evidence report shape, and a description of the Maintainer's `retain | revise | retire` Decision at the monitoring boundary (**not** a *promotion* Decision -- that token is retired by `M6-R`; see the 2026-08-11 revision). **Agent-authored**, inside the reviewed range — describing the Decision is not taking it; the Decision itself is M6 |
 | P6c | `bootstrap/tests/test_lifecycle_contract.py` | pilot mutations: absent record, wrong schema version, altered prior event, duplicate or conflicting stem, symlink redirection of leaf or parent, interrupted write, stale writer / lost update, boundary-day arithmetic, pause set and cleared, and the exact activation-binding oracle (a record whose `machinery_sha` is not the B2 commit, and a derived-enabling-commit mismatch, both refuse) |
 | P6d | `dev/measurement/pilot-activation.md` | **activation only (M2)** — the data-only, Maintainer-gated commit introducing the immutable activation record after B2, enabling already-reviewed machinery. No code lands at activation |
 | P7 | `doctrine/`, both authoring templates + twins, `docs/workflow-role.md`, `docs/getting-started.md`, `docs/tool-usage.md`, `templates/skills/_lib/` | **conditional** post-pilot `promote` / `revise` / `retire`, each with distinct behavior, plus the three-layer canonical / self-hosted / shipped-template parity contract. Executes only after the Maintainer's promotion Decision (M6) |
@@ -2806,3 +2804,110 @@ already materialized; those declarations predate this pass, are caused by an
 in-flight, uncommitted edit to `scripts/claim_check.py` and its twin by
 another concurrent session, and are outside this review's target. This
 pass's own added text introduces no claim-check flag.
+
+## Response to plan review -- Claude -- 2026-08-11
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+**Reviewed review commit**: `62e2db2`
+**Obligation answered**: the Maintainer-directed contract revision's own
+fresh-context Internal plan review
+**Disposition**: accept [R1]--[R5]. All five are text-only and additive; none
+reopens the Maintainer's policy decision, and none required a redesign. The
+amendments below are **binding on P2-R, G-R and P8-R** and are stated here rather
+than edited into the Maintainer's own revision section, whose authorizing quotes
+must stay verbatim.
+
+### [R3] -- accept, and fixed inline, because it named a *retired token*
+
+Two live locations still spoke of a `promote` disposition that `M6-R` had
+removed. Left alone, an implementer copying P6b's row into
+`dev/collaboration_agreement.md` would have written a retired token into a
+shipped adopter contract. Corrected:
+
+* `## Sequence`, the P7 line -> `P7  post-monitoring retain/revise/retire
+  [M6-R; own evidence]`.
+* Chunk P6b's row -> now names the `retain | revise | retire` Decision at the
+  **monitoring** boundary, and says explicitly that *promotion* is retired.
+
+This is the class of stale-reference cleanup Chunk G's own acceptance already
+checks for elsewhere in this plan, and the reviewer was right that the
+superseding table did not literally reach either location.
+
+### [R1] -- accept. The trade-off is now stated where the refusal was removed.
+
+**Amendment A (binds G-R's `doctrine/dual-review.md` text and this plan's
+record).** Removing the automatic high-assurance refusal removes the *plan's*
+only mandated independent read for some triggers but not others, and the
+difference is now named rather than left implicit. Of the five original
+high-assurance trigger categories:
+
+* **security / trust-boundary** -- keeps an independent backstop **outside**
+  this plan: `AGENTS.md`'s named high-risk surfaces each require a Security
+  Review, and fence **M3** already stops implementation that touches
+  `_resolve_interpreter`. Unchanged by this revision.
+* **scientific-assumption**, **destructive migration / data-loss /
+  compatibility-break**, and **doctrine or lifecycle-enforcement change** --
+  now rely on the fresh-context Internal reviewer's judgement plus the
+  *optional* `recommend-and-decide` escalation in `doctrine/dual-review.md`.
+  There is no structural requirement that a different agent type ever reads the
+  sequencing.
+
+The reviewer's sharpest point is that this revision's **own** P2/G work falls in
+the third category, so the policy change is being made under the allocation it
+installs. That is exactly what the Maintainer authorized and it is recorded in
+their quoted words; naming it here means a later reader sees the reflexivity
+rather than discovering it.
+
+### [R2] -- accept, and this is the finding I would have missed.
+
+**Amendment B (binds P2-R and P8-R).** A seventh item joins the six that
+invalidate `READY`:
+
+> a **scope reduction or removed accepted outcome** relative to the proposal's
+> committed scope, absent a Maintainer-recorded `Scope delta` allowance per
+> `AGENTS.md` > *Git and commit workflow*.
+
+And the required test matrix gains: *a plan whose chunk table drops an outcome
+the accepted proposal committed to refuses, and a recorded `Scope delta`
+allowance is the only thing that admits it.*
+
+The six existing triggers all guard against a translation **adding** something.
+Narrowing was unguarded — and the Internal reviewer's charter ("it does not
+reopen the accepted design") is precisely the posture in which a quiet narrowing
+reads as a faithful translation choice. `AGENTS.md:169-176` was sharpened against
+this exact failure in this same session, and the concurrently-landing
+`scope-reduction-trap` work exists for it. Under the new default this reviewer is
+the only read most plans get before implementation, so the asymmetry mattered
+more here than it would have under the old allocation.
+
+### [R4] -- accept. The inference step is removed.
+
+**Amendment C.** "A through E may continue" is read as **every chunk preceding
+P2 in the `## Sequence` order — A, B, P1, C, P5, D, E**. P1 and P5 sit inside
+that span, are neither superseded nor excluded, and were previously left to
+inference. This matters operationally right now: P1 is the next chunk in
+dependency order.
+
+### [R5] -- accept. The new field gets the shape tests the old one had.
+
+**Amendment D (binds P8-R).** The required test matrix gains: *a malformed or
+partially-specified `Inherited proposal basis` — only one sub-field present, an
+unparseable commit id, or a wrong field name — refuses, and never defaults to
+`READY`.* The reviewer is right that `P8-R`'s "preserve every malformed-record
+mutation" cannot preserve a test for a field shape that did not exist before the
+revision, and that "changed SHA refuses" covers mismatch but not absence.
+
+### Second-round recommendation -- noted, not gated
+
+The reviewer recommended, narrowly and non-blockingly, a cross-type or human
+second look at [R1]/[R2]'s disposition once P2/G land. Recorded rather than
+actioned: the Maintainer authorized internal delegated review for this work, and
+the plan's single Code review already must name the revision section and falsify
+its wrong-tier, wrong-SHA, high-assurance-`READY` and monitoring-absent cases.
+Amendments A and B are the surfaces that read should attack first.
+
+### Verification of this Response
+
+`lifecycle_planner scan` returns to **all artifacts sound** with this Response
+landed — the 7/8 the reviewer honestly reported was their own raised finding
+awaiting disposition, which is the mechanism working, not a defect.
