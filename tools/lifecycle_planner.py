@@ -923,39 +923,126 @@ def _has_code_review_marker(text: str) -> bool:
     return False
 
 
-# --- the state machines (mirror doctrine/lifecycle-contract.md) --------------
+# === the ONE runtime status vocabulary =======================================
+#
+# This module is the **single runtime owner** of the lifecycle status
+# vocabulary (`lifecycle-status-vocabulary` R5, as replaced by that proposal's
+# "R5 replacement -- contained consumers and corpus boundary").  It mirrors
+# `doctrine/lifecycle-contract.md`, which stays the human contract.
+#
+# Two consumers live OUTSIDE this file's package and read the names below by
+# loading this file through a contained fixed-path loader -- never through
+# ambient `sys.path`, and never by re-declaring a status literal of their own:
+#
+#   * `tools/_lifecycle_metrics/extract.py` + its installed twin
+#     (`templates/modules/default-on/_lifecycle_metrics/extract.py`);
+#   * `scripts/transition_lint.py` (repository-only).
+#
+# `bootstrap/tests/test_lifecycle_vocabulary.py` audits both consumers' source
+# for local status enums and is observed red against a reintroduced one.
+#
+# Five declarations, each with exactly one job.  Keeping them as *data* is what
+# makes the next vocabulary change (`ready-to-implement` / `implementing` /
+# `awaiting-code-review` / `ready-to-archive`, which move `executing` and
+# `review` into the historical sets) an edit to these tuples rather than a
+# refactor of every consumer.
 
-#: target-state -> human label, per artifact kind.  The *legal* set from a
-#: given current status is computed in `_legal_transitions`.
-_PROPOSAL_STATES = ("proposed", "reviewed", "revised", "accepted",
-                    "rejected", "superseded")
-_PLAN_STATES = ("open", "awaiting-plan-review", "executing", "review",
-                "archived")
+#: The CURRENT vocabulary -- the only statuses an *active* artifact may declare.
+PROPOSAL_STATES = ("proposed", "reviewed", "revised", "accepted",
+                   "rejected", "superseded")
+PLAN_STATES = ("open", "awaiting-plan-review", "executing", "review",
+               "archived")
+
+#: Terminal = no status flip leaves them.  A proposal's `accepted` IS terminal:
+#: its archive move is a file operation, not a transition.
+PROPOSAL_TERMINAL_STATES = ("accepted", "rejected", "superseded")
+PLAN_TERMINAL_STATES = ("archived",)
+
+PROPOSAL_NON_TERMINAL_STATES = tuple(
+    s for s in PROPOSAL_STATES if s not in PROPOSAL_TERMINAL_STATES)
+PLAN_NON_TERMINAL_STATES = tuple(
+    s for s in PLAN_STATES if s not in PLAN_TERMINAL_STATES)
+
+#: Legal next target states, as data.  `""` is the not-yet-created artifact.
+PROPOSAL_TRANSITIONS = {
+    "": ("proposed",),
+    "proposed": ("reviewed",),
+    "reviewed": ("revised", "accepted", "rejected", "superseded"),
+    "revised": ("reviewed", "accepted", "rejected", "superseded"),
+    "accepted": (),
+    "rejected": (),
+    "superseded": (),
+}
+PLAN_TRANSITIONS = {
+    "": ("open",),
+    "open": ("awaiting-plan-review",),
+    "awaiting-plan-review": ("executing",),
+    "executing": ("review",),
+    "review": ("archived",),
+    "archived": (),
+}
+
+#: The single status whose legal set depends on the artifact's own declaration
+#: rather than on the state machine: a `not required(...)` plan skips the wait.
+#: Isolated and named so the conditional is one entry, not a branch in a table.
+PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED = {"open": ("executing",)}
+
+#: Historical tokens -- admitted ONLY for migration, archived-artifact
+#: compatibility, and longitudinal metrics.  **Never** legal for an active
+#: artifact and never a transition target.
+#:
+#: Both are empty today, and that is a measured statement rather than a
+#: placeholder: the current vocabulary has never dropped a token, so every
+#: status appearing in this repository's history is still current.  The seam
+#: exists because the accepted vocabulary change *will* retire `executing` and
+#: `review`, and metrics must keep parsing commits that used them.
+HISTORICAL_PROPOSAL_STATES: Tuple[str, ...] = ()
+HISTORICAL_PLAN_STATES: Tuple[str, ...] = ()
+
+#: The *opening* statuses -- an artifact still at or before its review floor.
+#: `transition_lint`'s shape (b) asks whether an ADDED lifecycle file already
+#: carried a landed review, which is only meaningful pre-review.
+OPENING_STATES = ("proposed", "open", "awaiting-plan-review")
+
+#: The added-artifact status set shape (b) consumes: every recognized current
+#: non-terminal state, plus the historical opening states old commits need.
+#:
+#: Widened here from `OPENING_STATES` alone (3 tokens -> 7) per the accepted R5
+#: replacement.  The proposal records this as corpus-neutral at the reviewed
+#: 2026-08-10 history because none of the newly admitted tokens occurs as the
+#: status of an *added* file there.  That is a claim about a pinned corpus, so
+#: `test_transition_lint.py`'s corpus expectations are the witness, not this
+#: comment -- and a later widening to historical NON-opening tokens is
+#: corpus-CHANGING and re-runs that measurement.
+SHAPE_B_STATUSES = tuple(dict.fromkeys(
+    PROPOSAL_NON_TERMINAL_STATES
+    + PLAN_NON_TERMINAL_STATES
+    + tuple(s for s in OPENING_STATES
+            if s in HISTORICAL_PROPOSAL_STATES + HISTORICAL_PLAN_STATES)
+))
+
+#: Every status any consumer may *recognize* without raising an advisory
+#: malformed-status finding.  Unknown is not safe silence.
+RECOGNIZED_STATES = tuple(dict.fromkeys(
+    PROPOSAL_STATES + PLAN_STATES
+    + HISTORICAL_PROPOSAL_STATES + HISTORICAL_PLAN_STATES
+))
+
+# Internal aliases, retained so this module's own call sites are unchanged.
+_PROPOSAL_STATES = PROPOSAL_STATES
+_PLAN_STATES = PLAN_STATES
 
 
 def _legal_transitions(art: Artifact) -> List[str]:
     """The legal next target states from the artifact's current status."""
     s = art.status
     if art.kind == "proposal":
-        return {
-            "": ["proposed"],
-            "proposed": ["reviewed"],
-            "reviewed": ["revised", "accepted", "rejected", "superseded"],
-            "revised": ["reviewed", "accepted", "rejected", "superseded"],
-            "accepted": [],      # archive move is a file op, not a status flip
-            "rejected": [],
-            "superseded": [],
-        }.get(s, [])
-    # plan
-    requires_review = art.plan_review.lower().startswith("required")
-    return {
-        "": ["open"],
-        "open": (["awaiting-plan-review"] if requires_review else ["executing"]),
-        "awaiting-plan-review": ["executing"],
-        "executing": ["review"],
-        "review": ["archived"],
-        "archived": [],
-    }.get(s, [])
+        return list(PROPOSAL_TRANSITIONS.get(s, ()))
+    if not art.plan_review.lower().startswith("required"):
+        override = PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED.get(s)
+        if override is not None:
+            return list(override)
+    return list(PLAN_TRANSITIONS.get(s, ()))
 
 
 def _reviewers(art: Artifact) -> List[Section]:
