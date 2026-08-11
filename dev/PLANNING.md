@@ -1391,7 +1391,19 @@ rather than left pointing at a section that was never written.)*
   `security-verification-activation`'s Chunk B when it reddened a test whose
   docstring premise that chunk had falsified.
 * **[SP8-9] The archive preconditions did not test what they name -- PLAN
-  OPEN 2026-08-11, partially fixed 2026-08-11.** Proposal accepted at
+  EXECUTING 2026-08-11, chunks A-F landing.** Corrected figures, superseding
+  the ones this entry carried: the old-vs-new `Dispositions:` parser delta is
+  **6**, not 12 (the 12 came from an unanchored presence test used to measure a
+  presence-test bug); the default scan covers **7** live artifacts, not 6; and
+  the no-review count is **re-derived at implementation time** rather than
+  carried forward, having been measured 27 -> 23 -> 3 before it was right.
+  Strict archive audit, `as_of` 2026-08-11 under the new predicates:
+  **61 of 91** artifacts flagged by `scan --include-archive` (was 53 of 88
+  under the old ones) -- a dated, drainable backlog, deliberately **not**
+  suppressed into the default gate, which stays live-only. The identity-
+  normalizer collision that makes a valid same-agent-type Internal review read
+  as author-review is routed to **[REC]** alongside `code-review-blindness`;
+  this plan does not change identity policy. Proposal accepted at
   Revision 1 and archived; the plan
   `dev/plans/archive-precondition-substance.md` is now the permanent home for
   the remainder, `required(External)`. Its Boundary C range must include

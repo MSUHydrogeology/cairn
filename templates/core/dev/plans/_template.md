@@ -315,6 +315,17 @@ migration doctrine" for the full rule: the disposition vocabulary, the
 `Dispositions:` commit-body form, the evidence ledger, and the
 loop-fidelity sign-off.
 
+**The archive gate now checks substance, not the label.** An attestation is
+required **every time**: either at least one entry naming `accept`, `guard`,
+`wontfix` or `defer`, or the explicit form `Dispositions: none` on its own
+line when there are genuinely no follow-ups. This supersedes the earlier rule that
+allowed the block to be *omitted* in the zero-follow-up case — omission and an
+empty label are now indistinguishable to a reader, and both refuse.
+
+The loop-fidelity sign-off must sit **inside this section** and name at least
+one implementing commit id plus the governing accepted/Revised section.
+Promising that it is owed does not satisfy it.
+
 See also `doctrine/lifecycle.md` > "Loop-fidelity verification" for
 the Decision→implementation fidelity sign-off checkpoint.
 

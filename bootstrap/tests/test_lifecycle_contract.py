@@ -1454,3 +1454,98 @@ class TestMessagesClaimOnlyTheRecordShape:
         src = _PLANNER_PATH.read_text(encoding="utf-8")
         assert "def _has_code_review_marker(" in src
         assert "def _has_substantive_code_review(" not in src
+
+
+# ---------------------------------------------------------------------------
+# Chunk C -- the gate inventory.  `[I3]`: enumerate EVERY gate in both `--to`
+# lists with the predicate supplying it, so coverage is visible rather than
+# inferred from the handful anyone happened to investigate.
+# ---------------------------------------------------------------------------
+
+#: Every unconditional (`True`) gate, keyed by a distinctive slice of its
+#: description.  Two classes, and the distinction is the point:
+#:
+#:   INSTRUCTION -- tells the operator what to write next.  It is not a claim
+#:   about the artifact, so there is nothing for it to test and `True` is
+#:   correct.
+#:
+#:   UNCHECKED CLAIM -- asserts a property, and reports it met without testing
+#:   it.  This is the defect class the plan exists to close.  One survives, and
+#:   it is recorded rather than silently tolerated: the planner reads artifact
+#:   text and cannot see git history, so closing it needs a contract this plan
+#:   does not have.  Routed as a scope question, not widened here.
+_UNCONDITIONAL_GATES = {
+    "append a '## Review'": "INSTRUCTION",
+    "append a '## Response'": "INSTRUCTION",
+    "append a '## Decision'": "INSTRUCTION",
+    "the Decision commit also moves the file": "INSTRUCTION",
+    "append a '## Code review' pass": "INSTRUCTION",
+    "execution may combine with plan-open": "INSTRUCTION",
+    "plan-open and first-implementation commits stay distinct": "UNCHECKED CLAIM",
+}
+
+
+def _unconditional_gate_descriptions() -> list[str]:
+    """Every `gates.append((True, ...)` description, read from the source."""
+    src = _PLANNER_PATH.read_text(encoding="utf-8")
+    body = src[src.index("def _gating_preconditions"):]
+    body = body[: body.index("\ndef ", 1)]
+    out, lines = [], body.split("\n")
+    for i, line in enumerate(lines):
+        if re.search(r"gates\.append\(\(True,\s*$", line):
+            chunk = " ".join(l.strip() for l in lines[i + 1: i + 6])
+            joined = "".join(re.findall(r'"([^"]*)"', chunk))
+            out.append(re.sub(r"\s+", " ", joined).strip())
+    return out
+
+
+class TestGateInventory:
+
+    def test_every_unconditional_gate_is_inventoried(self):
+        # Perturbation: add a `gates.append((True, "something new"))` without an
+        # inventory row.  Red.  This is what keeps the sweep swept.
+        found = _unconditional_gate_descriptions()
+        unlisted = [d for d in found
+                    if not any(k in d for k in _UNCONDITIONAL_GATES)]
+        assert not unlisted, (
+            "unconditional gate(s) with no inventory row -- classify each as "
+            f"INSTRUCTION or UNCHECKED CLAIM: {unlisted}"
+        )
+
+    def test_the_inventory_has_no_stale_rows(self):
+        found = " || ".join(_unconditional_gate_descriptions())
+        stale = [k for k in _UNCONDITIONAL_GATES if k not in found]
+        assert not stale, f"inventory rows matching no gate: {stale}"
+
+    def test_the_two_archive_gates_are_no_longer_unconditional(self):
+        found = " || ".join(_unconditional_gate_descriptions())
+        assert "deferred follow-up" not in found
+        assert "loop-fidelity sign-off" not in found
+
+    def test_only_one_unchecked_claim_survives(self):
+        # If this count rises, a new claim is being reported met without a
+        # predicate. If it falls, the remaining one was closed -- update the
+        # inventory rather than deleting the guard.
+        claims = [k for k, v in _UNCONDITIONAL_GATES.items()
+                  if v == "UNCHECKED CLAIM"]
+        assert len(claims) == 1, claims
+
+
+def test_a_real_record_inside_a_fence_is_still_an_attestation():
+    """Fences are NOT masked, and this is why.
+
+    `board-drain-guards.md:1274` and `default-security-stance.md:2568` write
+    their real disposition records inside a fence to hold column alignment.
+    Masking fences -- which looks principled -- cost both of them their
+    attestation. Measured, then reverted.
+    """
+    text = ("## Lasting-truth migration\n\n### Dispositions\n\n"
+            "```\nDispositions:\n* [C1] the thing -> accept (commit a0fe4a3)\n```\n")
+    assert planner._has_disposition_attestation(text) is True
+
+
+def test_documentation_illustrates_the_form_with_inline_code():
+    """Inline code IS masked, so prose may name the form without becoming it."""
+    text = ("## Lasting-truth migration\n\nwrite `Dispositions: none` when "
+            "there are no follow-ups.\n")
+    assert planner._has_disposition_attestation(text) is False

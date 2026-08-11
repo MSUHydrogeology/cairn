@@ -792,6 +792,7 @@ _CODE_REVIEW_SECTION_RE = re.compile(
 #: the label search below drop its `^` anchor without re-admitting prose.
 _INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
 
+
 #: The label, emphasis-tolerant and **not** line-anchored.  Dropping `^` is
 #: deliberate: `adopter-entry-doc-refresh.md:173` carries a real block as
 #: ``Archived 2026-06-12. **Follow-ups migrated to:** `dev/PLANNING.md` > Queued``
@@ -814,9 +815,22 @@ _GOVERNING_REF_RE = re.compile(r"\b(?:accepted|Revised|Decision)\b")
 _FIDELITY_PHRASE_RE = re.compile(r"fidelity sign-off|loop-fidelity", re.I)
 
 
-def _mask_inline_code(text: str) -> str:
-    """Blank inline-code spans, preserving length so offsets still line up."""
-    return _INLINE_CODE_RE.sub(lambda m: " " * len(m.group(0)), text)
+def _mask_examples(text: str) -> str:
+    """Blank inline-code spans, preserving length so offsets still line up.
+
+    **Inline code only -- fenced blocks are NOT masked, and that is measured.**
+    Masking fences looks principled (a fence is an illustration) and is wrong
+    here: `board-drain-guards.md:1274` and `default-security-stance.md:2568`
+    write their *real* disposition records inside a fence to hold the column
+    alignment. Masking cost both of them their attestation -- a false fail,
+    which this plan's own stop-conditions forbid.
+
+    Documentation therefore illustrates the form with **inline** code
+    (``write `Dispositions: none```), which is masked and so cannot be mistaken
+    for the record it describes.
+    """
+    return _INLINE_CODE_RE.sub(
+        lambda m: " " * len(m.group(0)), text)
 
 
 def _lasting_truth_bodies(text: str) -> List[str]:
@@ -845,7 +859,7 @@ def _has_disposition_attestation(text: str) -> bool:
     ``Follow-ups migrated to:`` label with a destination on its own line.
     An empty label refuses -- which is what the previous predicate accepted.
     """
-    masked = _mask_inline_code(text)
+    masked = _mask_examples(text)
     for m in _DISPOSITION_LABEL_RE.finditer(masked):
         tail = masked[m.end():]
         # Bound the search at the next H2 so a later section cannot lend
@@ -1629,6 +1643,8 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "* <item> -> accept | guard (<path>::<node>) | wontfix (<why>)\n"
                 "* <item> -> defer -> dev/PLANNING.md > <section>"
                 "   [Maintainer: \"<quote>\"]\n\n"
+                "  (no follow-ups? write `Dispositions: none` -- the gate "
+                "requires an attestation either way)\n\n"
                 "**Evidence shipped** / **Evidence deferred** / **Deferred "
                 "evidence home**: ...\n\n"
                 "**Fidelity sign-off** -- the landed implementation commit(s) "
@@ -1731,10 +1747,26 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
     This is the read-only checker doing double duty as the **adopter-side
     fidelity scan** (R3): the same structural checks `next` reports per
-    artifact, run across `dev/proposals/` + `dev/plans/` (live files; the
-    `--include-archive` flag also scans `archive/`).  Exit code is non-zero
-    when any violation is found, so an adopter test wrapper can assert a
-    clean corpus."""
+    artifact, run across `dev/proposals/` + `dev/plans/` (live files).  Exit
+    code is non-zero when any violation is found, so an adopter test wrapper
+    can assert a clean corpus.
+
+    **Two modes, and the default is deliberately live-only.**
+
+    * *default* -- live `dev/proposals/` + `dev/plans/`.  These are artifacts
+      someone can still fix, so a violation here is actionable.
+    * `--include-archive` -- adds `dev/plans/archive/` and
+      `dev/proposals/archive/`.  This is the **explicit strict historical
+      audit**, not the routine gate.  Archived records are immutable history:
+      most predate the rules they are now measured against, and a gate that
+      reds permanently on records nobody may edit is one people learn to
+      ignore -- which is the failure this checker exists to prevent, one level
+      up.  Its findings are a **drainable backlog**, recorded dated in the
+      plan that measured them, never suppressed into a baseline.
+
+    Exit semantics are the same in both modes: non-zero when anything is
+    flagged.  `--include-archive` is louder by design, and that is why it is
+    opt-in rather than silently folded into the default."""
     root = _repo_root()
     identity = _load_identity_model(root)
     total = 0
