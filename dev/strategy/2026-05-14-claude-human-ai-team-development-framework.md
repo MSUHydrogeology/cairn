@@ -84,16 +84,16 @@ cross-cutting), and define the citation at its point of introduction.
 | Cluster | # | Theme | Introduced under |
 |---|---|-------|------------------|
 | **0 · Foundation (cross-cutting)** | 13 | Durable neutral coordination layer (hourglass / narrow-waist; Beck 2019; Akhshabi & Dovrolis 2011) — the open-science substrate: underpins vendor-neutrality (I), stack-neutrality + protocol-conformance (III/IV), and the trust layer (II) | "Trust as design center" > "The durable neutral coordination layer" |
-| **I · AI & multi-agent collaboration** | 1 | Interaction taxonomy (Treude & Gerosa 2025) | "What the anchors bound" > the frame table |
-| | 2 | Multi-agent SDLC role design (Liu et al. 2025) | "What the anchors bound" > the frame table |
-| | 5 | Inter-agent communication patterns (Ricci 2007; Ehtesham 2025; Du 2024) | "What the anchors bound" > stigmergy as a deliberate choice |
+| **I · AI & multi-agent collaboration** | 1 | Interaction taxonomy (Treude & Gerosa 2025) | "Framework anchors" |
+| | 2 | Multi-agent SDLC role design (Liu et al. 2025) | "Framework anchors" |
+| | 5 | Inter-agent communication patterns (Ricci 2007; Ehtesham 2025; Du 2024) | "What the anchors bound" > "What the analysis produced" |
 | | 11 | AI-productivity value curve (METR 2025; Boehm 1981 / 2001) | "Cairn as a publishable artifact" > "The honest value curve" |
 | | 12 | Agentic context efficiency / "context rot" (EMNLP 2025; Liu et al. 2024) | "Where Cairn is headed" > Horizon 3 |
-| **II · Trust, governance & coordination** | 3 | Trust + governance maturity (TCMM; Steinmetz et al. 2025) | "What the anchors bound" > the frame table |
+| **II · Trust, governance & coordination** | 3 | Trust + governance maturity (TCMM; Steinmetz et al. 2025) | "Framework anchors" |
 | | 10 | Trustworthy operation (TRUST principles; Lin et al. 2020) | Horizon 1 + "Trust as design center" |
 | | 14 | Scientific-software governance exemplars (USGS FSP; NEP/APE; LIGO/CESM/CMIP) | "Where Cairn is headed" > "Reframing the governance axis for scientific software" |
 | | 16 | Recipient-calibrated communication + the comprehension floor (Miller 2019; Kalyuga 2007; Clark & Brennan 1991; Rozenblit & Keil 2002; appropriate-reliance literature) | "Trust as design center" > "Recipient-calibrated communication and the comprehension floor" |
-| **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "What the anchors bound" > the frame table |
+| **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "Framework anchors" |
 | | 6 | Scientific peer review as a process model | "What the anchors bound" > peer review, not agent debate |
 | | 15 | Research-software character taxonomy + V&V / reproducibility canon (Hasselbring 2024; Oberkampf & Roy 2010; Roache 2002; PROV-DM; Sandve 2013; Eisty & Carver 2022) | "Where Cairn is headed" > "The scientific-character dimension" |
 | **IV · Open-source sustainability & community** | 7 | Maintenance-burden thesis + project typology (Eghbal 2020) | "Where Cairn is headed" > Horizon 1 |
