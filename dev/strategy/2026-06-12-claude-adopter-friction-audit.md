@@ -1,228 +1,395 @@
-# Cairn adopter-friction audit — current state (post-self-host)
+# Cairn adopter friction: make the smallest recommended path executable
 
-**Author**: Claude (Strategy), with a parallel surface-walk gather pass
-**Role**: External Reviewer / prospective adopter
-**Date**: 2026-06-12
-**Status**: settled
-**Type**: comparative-research
-**Re-runs**: `dev/strategy/archive/2026-05-27-codex-cairn-adopter-friction-audit.md`
-(the original pre-0.3 lens, archived once this re-run superseded it; this
-is the v0.3 / self-hosted re-run)
+**Author**: Claude (2026-06-12 audit); rebuilt by Codex (Strategy)
+**Model**: GPT-5 (Codex)
+**Date**: 2026-06-12, rebuilt 2026-08-11
+**Status**: draft (current reconstruction; not yet independently reviewed)
+**Type**: product-strategy
+**Surfaces this would feed**: one adopter-path consolidation proposal; an
+immediate quickstart correctness repair; a release-boundary adopter canary;
+and a downstream entry-doc integration after `review-efficient-lifecycle`'s
+Maintainer promotion Decision.
 
-## Lens
+## The question
 
-Read Cairn as a new potential adopter — a scientist maintaining or
-starting a codebase, who knows only that Cairn promises a way to build
-better scientific software with AI agents than ad-hoc prompting. The
-question is not "is the doctrine internally coherent?" but **"does a
-scientist + one AI agent know what to do, trust the apparatus, and get
-value before the process feels heavier than the problem?"** A skeptical
-first-time adopter.
+Can a solo scientist move from **curious** to **trying Cairn** to **using it on
+a real repository** without needing an author beside them to explain which
+path is real?
 
-## Summary
+That is a narrower and more useful question than whether every entry document
+is accurate in isolation. Cairn can have a good README, a working scaffold, a
+tested quickstart, and still lose the adopter in the handoff between them. The
+current audit therefore follows three transitions:
 
-The original (2026-05-27) audit's pre-0.3 **adopter-friction package
-shipped**: 8 of its 9 gaps are resolved, and the 9th (a scientific
-example) exists as an artifact but is undiscoverable. On paper Cairn now
-"feels small at the point of entry."
+1. **Try** -- can the scientist run the disposable quickstart exactly as
+   written and see the promised lifecycle?
+2. **Choose** -- after the trial, can they tell which adoption level fits and
+   what that choice changes?
+3. **Install** -- can they execute the recommended real-adoption path without
+   inventing file mappings or silently graduating to a different level?
 
-A fresh walk surfaces one **dominant, ironic** failure: the
-**adopter-entry docs have drifted behind the shipped scaffold** — the
-exact "docs lag the tool" failure mode Cairn's own lifecycle exists to
-prevent. `docs/quickstart.md`'s most *checkable* claims (the module
-count, the slot count, the installed-file list, and "leave the slots")
-are now factually wrong against the live scaffold. Because the quickstart's
-whole job is to let a skeptic confirm "the apparatus does what the page
-says," a doc-vs-terminal mismatch at the install step **corrodes the
-trust the quickstart exists to build**. The fix is a focused doc-refresh,
-not a redesign.
+## Executive judgment
 
-## Original-gap resolution (the 9 from 2026-05-27)
+The **trial works**, but the **handoff to real adoption does not**.
 
-1. **No 15-minute quickstart** — **RESOLVED** (`docs/quickstart.md`, a
-   concrete 7-step recipe), with accuracy defects (F1).
-2. **Bootstrap intimidating** — **RESOLVED**
-   (`bootstrap/prompts/bootstrap-lite.md`; `BOOTSTRAP.md` opens with the
-   "smaller first step" pointer).
-3. **Manual module merging fragile** — **RESOLVED** (mechanized merge
-   pass + `slot-content-stale-or-partial` fidelity check, `BOOTSTRAP.md`
-   II-4/II-5).
-4. **"Faster" claim not honest** — **RESOLVED** (the "slower for the first
-   few changes" line is in `README.md`, `docs/quickstart.md`,
-   `on-ramp/README.md`, and `docs/getting-started.md`, consistently).
-5. **Single-agent reassurance** — **RESOLVED** (`README.md` "Cairn works
-   with one agent"; `on-ramp/README.md` Level 1 as the solo+one-agent
-   home).
-6. **Legacy readiness artifact** — **RESOLVED**
-   (`templates/codebase-readiness-report.md`, an 11-section G/M/P
-   assessment with a profile-mapping appendix).
-7. **Security earlier** — **RESOLVED** (`README.md` Trust-and-safety box;
-   `SECURITY.md`; the readiness report's check-in posture).
-8. **Minimal example too toy-like** — **PARTIAL**:
-   `examples/scientific-minimal/` exists and is excellent, but it is **not
-   linked from the README or the quickstart** (F6). The fix shipped; the
-   wayfinding did not.
-9. **Release hygiene / pristine tree** — **RESOLVED** (clean tree; no
-   stray cache under the examples).
+The June doc-refresh held where it was mechanically guarded: the current
+quickstart's module and slot counts match a live install, the scientific example
+is discoverable, Python 3.11+ is stated consistently, and the scaffold clearly
+separates a throwaway shakedown from real-adoption next steps.
 
-## Current friction (highest-friction first)
+The dominant friction has moved one step later. Cairn tells its primary
+audience -- a solo scientist with one agent -- to adopt at **Level 1**, defined
+as hand-copying the kernel and selected modules. No runnable greenfield Level 1
+recipe supplies those mappings. The only complete copy-paste route is
+`scaffold.py`, which the docs define as Level 2. `bootstrap-lite` also ends by
+running that scaffold while describing itself as a step short of the full
+Level 2 procedure. The product has one functioning installer and two names for
+the experience around it.
 
-**F1 — the quickstart's load-bearing numbers and file list are stale
-against the live scaffold (the headline).** `docs/quickstart.md` Step 3
-tells the reader they "should see four modules" for `solo-greenfield`
-(`lifecycle-metrics`, `reflections`, `claim-check`, `fold-back-ledger`) and
-that the scaffold reports "20 unfilled block slots." **Verified against the
-live scaffold:** `solo-greenfield` resolves **six** default-on modules —
-those four *plus* `incident-trackers` and `documentation-plan` — and the
-install reports **21** slots. The named-file list also omits an entire
-subsystem the scaffold now installs: `.agents/skills/` (session-start /
-session-end), `tools/lifecycle.py`, `scripts/_onboarding/`,
-`dev/modules/onboarding/`, and `docs/DOCUMENTATION_PLAN.md`. The
-`bootstrap/profiles/solo-greenfield.yml` header comment carries the same
-stale four-module claim. *Lens:* a skeptic who reads "four," runs the
-command, and sees "six" immediately distrusts the apparatus — exactly the
-trust the page exists to build.
+The recommendation is not another installer. It is to **make the existing
+scaffold the single installation mechanism for Levels 1 and 2**, with the
+levels distinguished by assessment and operating burden rather than by whether
+files were copied manually. Preserve the accepted default-on security posture;
+make the output and customization obligations progressive. Then test the path
+an adopter actually runs.
 
-**F2 — the quickstart's `git add` line drops files the scaffold wrote.**
-Step 3's `git add AGENTS.md VENDOR.md dev/ tools/ scripts/` omits
-`.agents/` and `docs/`, so the documented commit is *incomplete*; the
-"one commit per lifecycle step, visibly clean" promise breaks on the very
-first commit, and Step 6's `git log` shows an untracked `.agents/` the
-adopter was never told about.
+## Method
 
-**F3 — the scaffold's own "Next steps" output contradicts the quickstart.**
-The post-scaffold report prints "Next steps (BOOTSTRAP.md Act II): … Fill
-all block slots (II-4). Run the R-F acceptance gate (II-5). Dogfood…" The
-quickstart says the opposite for this path: "we leave them; the trivial
-dogfood does not need them filled." A newcomer reading doc and terminal
-side by side cannot tell which authority to trust — and the tool's
-instruction (fill 21 slots, run a gate) makes the "15–25 minute" promise
-feel false.
+Measured on 2026-08-11 against exact committed source
+`0f09170ad65fa7e5ca46d0577465eac63d59727d`, using the canonical interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
 
-**F4 — an unexplained provenance warning fires on every quickstart run.**
-Step 1 clones the tip (not a tagged release), so the scaffold prints a
-provenance warning suggesting `--allow-dev`. A security-conscious
-scientist — the exact persona the Trust-and-safety box courts — hits this
-on their first command with no preparation. One sentence ("you'll see a
-provenance warning because you cloned the tip; expected for a shakedown")
-defuses it.
+I:
 
-**F5 — the Python-version floor is stated inconsistently across three
-surfaces.** The intended floor is **3.11+** (a deliberate, security-driven
-choice — a dependency deprecation / security floor), and
-`bootstrap/prompts/bootstrap-lite.md` states it correctly. But
-`docs/quickstart.md` says 3.8+ and `examples/scientific-minimal/README.md`
-says 3.10+ — both stale and **below** the security floor. The apparatus
-looks under-tested on its own prerequisites — corrosive for a scientist
-evaluating reproducibility discipline, and the quickstart/example numbers
-actively undersell the security posture. Fix: raise both to 3.11+.
+* read the front-door sequence in `README.md`, `docs/quickstart.md`,
+  `docs/getting-started.md`, `on-ramp/README.md`,
+  `bootstrap/prompts/bootstrap-lite.md`, and `bootstrap/BOOTSTRAP.md`;
+* mapped the June audit to the archived `adopter-entry-doc-refresh` plan and
+  rechecked its claimed durable guards;
+* exported the exact Git tree, installed `solo-greenfield` into a new Git
+  repository, and compared the terminal output and resulting tree with every
+  documented Step 1-3 command;
+* ran the published `git add` command and inspected the residual paths;
+* ran `python scripts/run_security_verification.py local` in the installed
+  tree to classify the new default-on dispatcher's first-run behavior;
+* installed an explicit `modules: []` profile to test whether the existing
+  scaffold already provides a clean mechanized Level 1; and
+* ran `bootstrap/tests/test_quickstart_sequence.py` and inspected what each
+  green assertion actually governs.
 
-**F6 — the scientific example is undiscoverable from the front door.** The
-`README.md` repo-layout table and examples row cite only
-`examples/minimal/` (the `greet` toy the README itself calls a toy);
-neither the README nor `docs/quickstart.md` links
-`examples/scientific-minimal/`. The artifact built to answer gap #8 is
-hidden from the scientist it was built for.
+The falsifier is straightforward: a documented, mechanized Level 1 route that
+a fresh adopter can run today would overturn the headline. No such route was
+found. This was not a human-subject usability study and did not execute Steps
+4-6 through a fresh external AI agent; those are explicit limits, not evidence
+that the prompts fail.
 
-**F7 — `/path/to/cairn` placeholders break literal copy-paste on the most
-important command.** Step 1 clones into `cairn/`, but Steps 2–3 use
-`/path/to/cairn/bootstrap/scaffold.py`. A true copy-paste fails on the
-scaffold command. A single `export CAIRN=$(pwd)` in Step 1 makes the rest
-literally pasteable.
+## What already works
 
-**F8 — onboarding/skills vocabulary leaks into the scaffold output with no
-entry-doc coverage.** The scaffold references "progressive onboarding,"
-"lifecycle skills," `session-start`/`session-end`, and `/good-morning` —
-none of which appear in the README, quickstart, getting-started, or
-on-ramp. The adopter ends Step 3 holding a `.agents/skills/` tree and a
-`tools/lifecycle.py` CLI the docs never mention.
+The entry surface is much stronger than it was at first publication:
 
-**F9 — the README repo-layout table is out of step with what installs.**
-It describes `templates/` as `core/` + `modules/default-on/` +
-`modules/team-gated/` + `phase-0/`, but the scaffold now also installs an
-onboarding module layer and the documentation-plan module. Lowest-stakes,
-same root cause.
+* **The front door is clear.** The README names the audience, the cost, the
+  safety boundary, the quickstart, the on-ramp, and both minimal examples
+  without pretending Cairn is a package manager or CI system.
+* **The disposable install is mechanically real.** `solo-greenfield` resolved
+  exactly 8 modules, advertised 72 file-install rows, and reported 22 unfilled
+  slots in the clean cold walk. The two counts published by
+  `docs/quickstart.md` -- modules and slots -- match the live output.
+* **The count guard is non-vacuous within its scope.** The quickstart test reads
+  the two prose numbers and compares them with live scaffold output; the module
+  count is also registered under `scripts/measurements.py` for
+  `check_cairn`.
+* **The scary output is mostly explained.** The quickstart prepares the reader
+  for the tip-checkout provenance warning, names the installed skills and
+  onboarding layer, and explains why a shakedown skips the real-adoption slot
+  pass.
+* **Default-on security does not falsely report success.** With no selected API
+  or web capability, the installed dispatcher returned `NOT_APPLICABLE`, exit
+  0, with `evidence_count: 0`; the scaffold had already said that the route
+  inspected nothing. This audit does not reopen the Maintainer's accepted
+  default-on security decisions.
+* **The scientific example is visible and recognizable.** The front door now
+  links the mass-balance example instead of leaving the scientist with only a
+  greeting CLI.
 
-**Root cause (F1–F4, F8, F9):** the scaffold gained an onboarding/skills
-layer and the `incident-trackers` + `documentation-plan` default-on
-modules *after* the pre-0.3 friction package shipped; the entry docs were
-not regenerated against it. The doctrine/docs layer drifted behind the
-tool — precisely the failure Cairn's lifecycle exists to prevent. The fix
-is a focused refresh, not a redesign.
+These are reasons to simplify around the existing path, not replace it.
 
-## Where Cairn now overachieves
+## Findings
 
-* **The honest-speed framing is everywhere and consistent** — four
-  surfaces carry compatible "slower first, pays back later" wording; a
-  skeptic is never sold a false speed promise.
-* **The single-agent reassurance is explicit and repeated** — README,
-  on-ramp Level 1, and bootstrap-lite all tell a one-human+one-agent
-  scientist this works for them and how the Dual-Review tier degrades
-  gracefully.
-* **The Codebase Readiness Report is excellent and genuinely
-  pre-doctrine** — scientifically literate (sign conventions, hidden
-  state, reproducibility, data provenance), with a real scoring→level
-  mapping and a standout privacy-aware "what to check in" posture.
-* **The scientific-minimal example is the right artifact** — a
-  mass-balance invariant, explicit tolerance rationale, sign/unit
-  conventions made load-bearing, a non-vacuous test, exit codes, zero
-  third-party deps. A hydrologist recognizes it instantly. Its only
-  problem is discoverability (F6).
-* **The trust contract is mature** — the README box's "Cairn's own tools
-  never phone home, but the *agents* you run send everything they read to
-  their provider" is exactly the nuance a scientist needs; `SECURITY.md`'s
-  supply-chain threat model is unusually serious for a methodology repo.
-* **`docs/workflow-role.md` nails the most common misread** — the "what
-  Cairn does NOT do" framing (not CI, not a test runner, not a prompt
-  library) is what a tool-fatigued scientist needs to decide whether to
-  invest.
+### F1 -- the recommended Level 1 has no executable greenfield path
 
-## Quickstart cold-walk verdict
+`on-ramp/README.md` calls Level 1 the natural home for solo + one-agent
+adopters and instructs them to copy `templates/core/`, add the modules their
+profile selects, fill placeholders, and run the lifecycle by hand.
+`docs/quickstart.md` says most teams start there. `docs/getting-started.md`
+repeats the hand-copy instruction.
 
-The path **mechanically works end-to-end** (install succeeds, the lifecycle
-is real, teardown is clean) — but a first-time adopter loses trust around
-**Step 3**, because the doc's described output no longer matches the tool's
-actual output (F1), the documented commit is incomplete (F2), the tool's
-"Next steps" contradict the doc (F3), and two copy-paste breaks (F4
-warning, F7 placeholder) hit the most important command. The 15–25-minute
-*clock* is plausible for the trivial path; the 15–25-minute *confidence* is
-not, because the page's most checkable claims are exactly the ones now
-wrong.
+The kernel copy itself is discoverable: `templates/core/` contains 18 tracked
+files and 22 slot markers at the measured commit. The selected-module step is
+not. The default-on source directory contains module prose, renamed destination
+documents, companion scripts, package directories, merge directives, state
+files, and generated mappings. No Level 1 recipe tells a greenfield adopter
+which source becomes which destination or how to apply the merge contributions.
+The installer manifest knows; the human-facing Level 1 path does not expose it.
 
-## Recommended package — a doc-refresh, not doctrine
+The solo-legacy recipe demonstrates the mismatch sharply. It uses
+`scaffold.py --summary` as a roster oracle, then tells the adopter to hand-copy
+10 modules without providing the install map. It is an exact *selection*
+recipe, not an exact *installation* recipe.
 
-1. **Regenerate `docs/quickstart.md` Step 3 from a live `solo-greenfield`
-   run** — the module roster (six), the slot count (21), and the
-   installed-file list (include the onboarding/skills/docs subsystem);
-   fix the `solo-greenfield.yml` header comment too.
-2. **Reconcile "leave the slots" with the scaffold's "Next steps"** (F3) —
-   either soften the scaffold's next-steps wording for the trivial path,
-   or have the quickstart explain the divergence explicitly.
-3. **Add one sentence each** for the provenance warning (F4) and the
-   onboarding/skills artifacts (F8).
-4. **Align the Python floor** (F5) — raise `docs/quickstart.md` (3.8+) and
-   `examples/scientific-minimal/README.md` (3.10+) to **3.11+**, the
-   security-driven floor that `bootstrap/prompts/bootstrap-lite.md` already
-   states.
-5. **Link `examples/scientific-minimal/` from the README and the
-   quickstart's "what next"** (F6) — close gap #8's discoverability.
-6. **Refresh the README repo-layout table** for the current module
-   taxonomy (F9); fix the `git add` line (F2) and the `/path/to/cairn`
-   placeholders (F7).
-7. **Durable fix (a candidate proposal, not a one-time refresh):** make
-   the quickstart's load-bearing numbers **generated or drift-gated**
-   against a live scaffold run, rather than hand-maintained. This failure
-   recurs every time the default-on set changes — which is exactly the
-   class the `doc-drift-prevention` module exists to guard. A small drift
-   gate ("the quickstart's claimed module/slot counts match a live
-   `solo-greenfield` install") would have caught F1 at the moment the
-   default-on set grew.
+This is the headline because it affects the audience Cairn most explicitly
+claims to serve. A path is not lightweight merely because its automation was
+removed.
 
-## Product framing (unchanged, still right)
+### F2 -- `bootstrap-lite` and the on-ramp assign different levels to the same action
 
-> Start small. Use Cairn to make one AI-assisted change with a recorded
-> decision and test. Keep the apparatus only as heavy as your codebase and
-> team earn.
+The quickstart's "What to do next" order is:
 
-The promise is sound; the entry surface just needs to *match the tool* so
-a skeptic's first command confirms the promise instead of undercutting it.
+1. fill the readiness report;
+2. use `bootstrap-lite` to produce a profile;
+3. pick an adoption level.
+
+But `bootstrap-lite` has the Maintainer run `scaffold.py --summary` and then
+rerun it to install immediately after accepting the profile. The on-ramp
+defines running the scaffold as Level 2. By the time the quickstart asks the
+adopter to pick a level, the recommended helper has already selected the
+Level 2 mechanism.
+
+The distinction bootstrap-lite is reaching for is useful: a solo adopter needs
+a shorter assessment than a large legacy team. The error is encoding that
+difference as "hand copy versus scaffold." Assessment depth, module selection,
+customization timing, and review staffing are the dimensions the adopter cares
+about; the byte-copy mechanism is not a maturity level.
+
+### F3 -- the quickstart teaches a commit command its installed rules forbid
+
+Every literal commit in Steps 1, 3, and 4 uses this shape:
+
+```bash
+git add <paths> && git commit -m "..."
+```
+
+The `AGENTS.md` installed in Step 3 says never to issue a bare `git commit`,
+requires explicit paths on the commit command, and explains the shared-index
+reason. The quickstart therefore teaches the opposite habit moments before
+installing the rule. A solo disposable repository lowers the immediate
+collision risk, but the page presents these commands as the lifecycle pattern
+the adopter should carry into real work.
+
+The fix is mechanical: use the documented new-file form, `git add <paths> &&
+git commit <paths> -m ...`, and use path-scoped commits for later tracked-file
+transitions.
+
+### F4 -- the documented install commit is incomplete, while the regression test stays green
+
+The clean cold walk installed `NOTICE.md`. The quickstart's Step 3 staging list
+does not include it. Running the exact published `git add` command leaves:
+
+```text
+?? NOTICE.md
+?? profile.yml
+```
+
+`profile.yml` is adopter-created and may reasonably be deleted after a
+throwaway install or moved to a durable project-owned profile location for a
+real adoption. The page currently states neither disposition. `NOTICE.md` is
+unambiguously present in the scaffold's 72-row report and must be committed.
+
+That report is not the final authority the quickstart says it is. It is printed
+before the module merge, `.gitignore` seeding, interpreter binding, and
+lockfile/base-cache write complete; those later writes are not all in its
+list, and `dev/PLANNING.md` appears twice. The durable oracle for a published
+commit command is the resulting repository state, not the mid-install report.
+
+`bootstrap/tests/test_quickstart_sequence.py` still reports 8 passing tests.
+Its module docstring says Layer A drives the literal shell commands in Steps
+1-3, but no test runs the documented Step 3 staging or commit command or
+asserts its residual state. The Layer B helper stages an older, smaller set
+(`AGENTS.md`, `VENDOR.md`, `dev`, `tools`, `scripts`) and also uses bare
+commits. The gate proves counts and lifecycle shape, but its "literal shell
+coverage" description overclaims and concealed this recurrence.
+
+This is the same high-yield question Cairn applies to security controls: what
+trigger actually executes the claimed check? The test must govern the command,
+not merely the files around it.
+
+### F5 -- the smallest scaffold output is not progressive yet
+
+The current `solo-greenfield` scaffold result is not automatically too large:
+a long install report can be cheap if the agent manages the tree and the
+Maintainer sees only the decisions that matter. The terminal currently turns
+file count into human burden, however, by printing 72 install rows and labeling
+all 22 remaining slots as "requiring agent attention."
+
+An explicit `modules: []` cold install tested whether the mechanism already
+scales down. It still installed 32 files, installed lifecycle skills and the
+progressive-onboarding helper, reported all 22 core slots, and told the adopter
+to fill all of them. Several slots are contribution points for modules the
+profile did not select. Therefore an empty module roster does not yield a
+coherent kernel-only obligation set even though the config grammar admits it.
+
+The product need not minimize file count. It needs to distinguish:
+
+* mechanically filled and complete;
+* project facts required before first real work;
+* selected-module customization scheduled by progressive onboarding; and
+* dormant contribution points that require no action under this profile.
+
+That is the context-aware output already gestured at by the deferred
+`--quickstart` follow-up, but it should govern real Level 1 too.
+
+### F6 -- the 15-25 minute promise has outlived its measured path
+
+The quickstart has changed repeatedly since its original pilot. Since v0.3.0,
+the measured entry surfaces gained 222 lines and removed 71 across
+`docs/quickstart.md`, the installed `AGENTS.md`, the installed proposal
+template, the on-ramp, and the solo profile. The current installed
+`AGENTS.md` is 2,676 words; the proposal and plan templates add 5,098 words.
+The shakedown does not require the human to read all of them, but its agent is
+explicitly asked to read `AGENTS.md` before acting.
+
+No current canary records elapsed time, undocumented intervention, warning
+interpretation, or whether a fresh agent follows the prompt correctly. The
+15-25 minute range may still be right. It is not currently measured evidence.
+A static test cannot answer that question.
+
+### F7 -- a known lifecycle change has an entry-doc integration gap
+
+The executing `review-efficient-lifecycle` plan conditionally changes the
+proposal/plan contract and status vocabulary after its pilot and Maintainer
+promotion Decision. Its P7 names `docs/getting-started.md`,
+`docs/workflow-role.md`, and `docs/tool-usage.md`; it does not name
+`docs/quickstart.md`, `on-ramp/README.md`, or the two minimal examples that
+teach the old lifecycle to a first adopter.
+
+This strategy does not expand or de-scope that reviewed plan. It records a
+downstream integration condition: if M6 promotes the new lifecycle, the entry
+surface must be revised and cold-walked against it before the next release.
+Doing that now would document a conditional contract as though it had shipped.
+
+## Options
+
+1. **Refresh the quickstart again and leave the level model alone.** Necessary
+   for F3-F4, but it leaves the primary audience on an unexecutable adoption
+   path and guarantees another drift round.
+2. **Fully document manual Level 1 copying.** Generate a human-readable mapping
+   from the install manifest and teach every merge/state step. This makes a
+   second installation procedure out of the scaffold's internals and asks the
+   least-resourced adopter to operate it manually.
+3. **Retire Level 1 and call every install Level 2.** Mechanically honest, but
+   throws away the valuable promise that adoption burden should grow with the
+   project.
+4. **Use one installer; let levels describe burden, not copying**
+   (**recommended**). Level 0 remains read-only. Level 1 uses the scaffold with
+   a named small-team profile, a short acceptance pass, progressive
+   customization, and no hand-maintained mappings. Level 2 adds the full
+   readiness/profile procedure, broader module set, upgrade posture, and
+   staffed review/coordination practices.
+
+## Recommendation
+
+### 1. Repair the quickstart immediately
+
+Treat F3-F4 as a bounded correctness change, not a product redesign:
+
+* add `NOTICE.md` to the install commit;
+* give the disposable `profile.yml` an explicit delete-or-commit disposition;
+* make every example commit path-scoped in the exact form installed
+  `AGENTS.md` teaches;
+* make Layer A run the exact documented staging/commit vectors and assert the
+  intended residual state; and
+* narrow the test's claim where agent-mediated behavior remains a surrogate.
+
+This closes a live contradiction while the shaping proposal is reviewed.
+
+### 2. Open one adopter-path consolidation proposal
+
+The proposal should settle one product contract: **the scaffold is Cairn's
+single installer; Levels 1 and 2 differ in obligations and depth.** It should:
+
+* rewrite the on-ramp, bootstrap-lite, quickstart handoff, profile comments,
+  and getting-started route around that contract;
+* define a canonical solo Level 1 invocation using the existing profile
+  resolver rather than a second copy map;
+* classify post-install slots by current profile and timing, so "not selected"
+  is never reported as "fill this now";
+* preserve all accepted default-on module and security decisions unless a
+  separate proposal changes them on evidence;
+* state the durable home of the accepted profile for a real adoption; and
+* disposition the old deferred `--quickstart` idea: absorb its context-aware
+  output into the general installer rather than add a shakedown-only mode.
+
+The proposal should measure Maintainer decisions and required customization,
+not optimize raw file count. Files that need no human attention are cheap;
+ambiguous obligations are not.
+
+### 3. Add one release-boundary adopter canary
+
+Before claiming the next release is adopter-ready, a different agent type or a
+human who did not author the entry docs should follow the exact path from a
+clean, tagged checkout into a disposable repository. Record:
+
+* source tag and interpreter;
+* commands actually run;
+* elapsed time by step;
+* every warning and whether the docs predicted it;
+* every intervention not present in the page;
+* final tracked/untracked state; and
+* whether the agent stopped at each Maintainer gate.
+
+Keep deterministic tests for commands, counts, paths, and lifecycle shape.
+Use the canary for comprehension and time. If no canary is run, replace the
+15-25 minute claim with an unquantified "short walkthrough" rather than carry
+an inherited number.
+
+### 4. Integrate, do not race, the lifecycle pilot
+
+Do not teach `review-efficient-lifecycle`'s conditional status contract before
+M6. If the Maintainer promotes it, the adopter-path proposal's release check
+must include the quickstart, on-ramp, both minimal examples, and any profile
+comment that names lifecycle states. If it is revised or retired, those
+surfaces remain on the current contract.
+
+## Success criteria
+
+The adopter path is coherent when all of these are true:
+
+* the README offers one obvious trial and one obvious real-adoption next step;
+* the recommended solo route contains no undefined "hand-copy the selected
+  modules" operation;
+* the same installer implements every non-zero adoption level;
+* the post-install report asks only for work the accepted profile makes live;
+* every published command is exercised by a governing test and leaves the
+  documented repository state;
+* the timing claim is backed by a current canary or removed; and
+* a promoted lifecycle change cannot release with stale first-contact docs.
+
+The success measure is **undocumented decisions and interventions**, not
+installed file count.
+
+## Open questions for the Maintainer
+
+1. **Level meaning.** May the consolidation proposal redefine Level 1 as a
+   scaffolded, progressively customized adoption rather than a hand-copy path?
+   *(Recommended: yes. One installer removes an entire drift surface without
+   making Level 1 more demanding.)*
+2. **Accepted profile home.** For a real adoption, should the reviewed profile
+   live at `dev/.cairn/profile.yml` and be committed, with the quickstart's
+   temporary `profile.yml` deleted after install? *(Recommended: yes, subject
+   to checking the upgrade contract before the proposal fixes the path.)*
+3. **Timing claim.** Keep 15-25 minutes only if the release canary reproduces
+   it? *(Recommended: yes.)*
+
+## Fold-up note
+
+Three findings are methodology-general, but each needs evidence beyond this
+single repository before becoming doctrine:
+
+* **An adoption level should name human obligations, not whether bytes were
+  copied by hand.** Removing automation from the smallest team can increase
+  rather than reduce its burden.
+* **Progressive installation and progressive attention are different.** A
+  module may be present without demanding a day-one decision; tools should
+  classify what is live now.
+* **A test that claims to exercise a published command must execute that
+  command vector and assert its residual state.** Testing adjacent output is
+  useful coverage, not evidence that the recipe itself works.
