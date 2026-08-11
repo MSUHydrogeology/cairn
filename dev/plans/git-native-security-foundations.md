@@ -1004,3 +1004,31 @@ recorded rather than slipped in:
 (the exact-byte bootstrap, M3/M4). The open question from the fence correction
 stands — whether this plan's Chunk H and `review-efficient-lifecycle`'s Chunk I
 are one ceremony or two.
+
+### Maintainer decision: one ceremony -- 2026-08-11
+
+Authorization, quoted verbatim:
+
+> Let's go a single ceremony. The other plan doesn't care about what's in the
+> runbook
+
+**Chunk H is the ceremony. `review-efficient-lifecycle`'s Chunk I is subsumed
+by it.** H already re-derives v2 evidence and advances branch + anchor, so it
+re-pins the frozen set — which is what that plan's Chunk I would have done
+under v1. Running both would re-anchor twice, the second time over a set the
+first had just fixed.
+
+**Consequences, so nothing is inferred later:**
+
+* **D and F are unblocked.** F writes the runbook for **one** procedure, not
+  two, and D's v2 migration lands before it — the ceremony runs under v2.
+* The single ceremony's frozen-set delta covers **both plans**, including
+  `bootstrap/tests/test_lifecycle_contract.py`, which `review-efficient-lifecycle`
+  and the archived `archive-precondition-substance` both changed.
+* **The other plan's owner should know its Chunk I no longer executes.** This
+  plan does not edit that plan — another session is executing it — and a
+  subsumed chunk is that plan's own record to make.
+
+The Maintainer's second clause is the load-bearing one: the other plan depends
+on a ceremony *happening*, not on the runbook's contents, so rewriting the
+runbook here does not disturb what its reviewers approved.
