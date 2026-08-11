@@ -144,7 +144,7 @@ No `docs/` page other than the glossary changes.
 1. Chunk A -- doctrine: the trap, the outcome test, the stage floor   [commit be40b41]
 2. Chunk B -- vocabulary reconciliation (scope-cut vs scope reduction) [commit pending]
 3. Chunk C -- templates + planner scaffolds (the author-facing surface)[commit ccffb77]
-4. Chunk D -- governing + deliberation surfaces (AGENTS, collaboration)[commit pending]
+4. Chunk D -- governing + deliberation surfaces (AGENTS, collaboration)[commit 64b4ee2]
 5. Chunk E -- obligation-parity test, glossary, changelog              [commit pending]
 ```
 

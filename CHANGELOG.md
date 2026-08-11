@@ -42,6 +42,32 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **The scope-reduction trap, and a test that judges narrowing on outcome
+  rather than on size.** Review has a systematic bias toward making changes
+  smaller: recommending a reduction costs the reviewer nothing, reads as
+  prudence, and can never be shown wrong, because the wider version is never
+  built. `doctrine/dual-review.md` gains the mirror of the clean-pass trap, and
+  with it a **baseline-bound outcome test** — judge a narrowing against the
+  concrete commitments of the artifact as *opened* (pre-Decision) or as
+  *accepted* (post-Decision), never against a summary of purpose written
+  afterwards by whoever is narrowing it. `preserved` owes nothing, so a lighter
+  mechanism that still delivers stays free; `degraded` and `lost` take a
+  `**Scope delta**` declaration, one **grouped scope-remainder record** per
+  source artifact rather than scattered backlog rows, and the Maintainer's
+  explicit allowance — partial changes what residual is recorded, never who may
+  concede it. Accepted scope becomes a **floor**: sequencing between chunks is
+  free, removing an accepted outcome is a deviation under `AGENTS.md`, and a
+  plan reviewer cannot create that authority by calling the remainder "out of
+  scope". `scope-cut` is reconciled to mean claim correction with no work
+  removed, closing the path by which lost work could take an `accept`
+  disposition. Declining a stronger outcome a reviewer proposed is explicitly
+  *not* a reduction. Deliberately **not** mechanized: a formal check can confirm
+  a declaration exists, never that it is true, so it would catch forgetting and
+  not evading while handing a quiet cut a green check to sit behind —
+  `bootstrap/tests/test_scope_reduction_trap.py` pins that absence alongside the
+  obligation parity across the shipped surfaces. From
+  `dev/proposals/archive/2026-08-11-claude-scope-reduction-trap.md`.
+
 - **A default-on local security-verification dispatcher whose authority can only
   narrow — and whose registry ships empty.** Selecting a security capability now
   makes its local evidence runner part of the expected trusted-checkout workflow,

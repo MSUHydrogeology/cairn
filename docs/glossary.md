@@ -64,6 +64,30 @@ by named high-risk surfaces rather than by size.
 cannot understand. An agent leads plain and keeps precision beneath; "I don't
 understand this yet" is a mandatory pause.
 
+**Scope-reduction trap** — the mirror of the clean-pass trap. Recommending that
+a change be made smaller costs the reviewer nothing, looks prudent, and can
+never be shown wrong, because the smaller version is the one that gets built.
+Each narrowing is defensible on its own; the damage only shows up in aggregate,
+as a long deliberation record with very little shipped behind it.
+
+**Outcome test** — how you tell a harmless narrowing from a real one. Ask
+whether the smaller version still delivers what the original artifact
+*committed to delivering*: `preserved` (yes — nothing is owed), `degraded`
+(partly), or `lost` (no). The comparison is against the artifact as written,
+never against a summary of its purpose composed afterwards by whoever is doing
+the narrowing.
+
+**Scope-cut** — narrowing an artifact's stated *claim* to match what it always
+did. No work disappears, so it is an ordinary `accept`. Deliberately distinct
+from a **scope reduction**, where work that was proposed or accepted stops
+happening — only the Maintainer can allow one of those.
+
+**Scope-remainder record** — what a reduction leaves behind, kept as one
+grouped record attached to the artifact it came from rather than scattered into
+separate backlog rows. It blocks the artifact from being archived until every
+entry has been explicitly disposed of. Scattering is the failure it exists to
+prevent: fragments preserve the words and lose the reach.
+
 ## Roles
 
 **Human Maintainer** — final decision authority. The one role that is not
