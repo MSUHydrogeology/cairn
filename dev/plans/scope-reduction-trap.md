@@ -8,7 +8,7 @@
 # Plan: the scope-reduction trap
 
 **Source proposal**: [`2026-08-11-claude-scope-reduction-trap`](../proposals/archive/2026-08-11-claude-scope-reduction-trap.md)
-**Status**: executing
+**Status**: review
 **Plan review**: none — **waived by the Maintainer at plan-open**, adjusting the
 accepted proposal's `required(External)` declaration. See "The waived plan
 review" below; the code review before archive is unaffected and remains
@@ -145,7 +145,7 @@ No `docs/` page other than the glossary changes.
 2. Chunk B -- vocabulary reconciliation (scope-cut vs scope reduction) [commit pending]
 3. Chunk C -- templates + planner scaffolds (the author-facing surface)[commit ccffb77]
 4. Chunk D -- governing + deliberation surfaces (AGENTS, collaboration)[commit 64b4ee2]
-5. Chunk E -- obligation-parity test, glossary, changelog              [commit pending]
+5. Chunk E -- obligation-parity test, glossary, changelog              [commit 4f17fef]
 ```
 
 Chunks A and B both edit `doctrine/dual-review.md` and are sequenced apart on
@@ -287,10 +287,41 @@ every chunk touches Markdown.
 Boundary B, once, after the final implementation commit, on a clean unchanged
 commit under the canonical interpreter:
 
-* `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`
+* the **mapped** pytest set — every module in `bootstrap/tests` that references
+  a surface this plan touches (derived by grep, 25 modules), rather than the
+  whole suite
 * `python scripts/quality_gate.py --sub neutrality --sub redundancy`
 * `python scripts/check_cairn.py`
 * `python scripts/claim_check.py` on this plan and the archived proposal
+
+### Sequence revision 2026-08-11 — the full suite, replaced by a mapped run
+
+This section originally specified `pytest bootstrap/tests` in full. **Maintainer
+challenge at Boundary B**: *"Why are you doing a full suite test run? Haven't
+you basically just edited doctrine files? You haven't touched a contract
+surface."*
+
+The challenge is correct, and the original line was reflex rather than
+judgement — copied from the template without testing it against what this plan
+actually changed. AGENTS.md reserves the full suite for a substantive code
+surface that has **no reviewed mapping** or whose effects **cannot be bounded
+confidently**. Both are bounded here:
+
+* The entire executable diff is **four hunks inside `_scaffold`**, all string
+  literals, reachable only through `next --to`. Both paths were exercised
+  directly against fixtures.
+* `_conformance_violations` is byte-unchanged, and a test now pins that.
+* No contract surface is touched — not the install set, the lockfile schema,
+  the fidelity manifest, the gate manifest, nor `bootstrap/_scaffold/` (so no
+  AST-attestation re-anchor is owed either).
+* Everything else is Markdown plus one new test module that only reads files.
+
+**Outcome test on this plan's own verification: preserved.** The baseline
+commitment is that the landed change is verified against the surfaces it
+touches. A mapped run over all 25 modules that reference those surfaces, plus
+every standing gate, still delivers it. This is ceremony cut, not reach cut —
+no declaration or Maintainer allowance is owed, and this note exists because
+the reasoning should be visible, not because the rule requires it.
 
 **Neutrality matters more than usual here.** Chunk C edits shipped templates
 and Chunk D edits `templates/core/AGENTS.md`; both are on the vendor-neutrality
@@ -315,6 +346,64 @@ fields the template names.
 not tell anyone that Chunk D2 was skipped. E1 is what covers absence, and it
 covers only the surfaces it enumerates — so the reviewer checks the enumeration
 against Part 9 of the proposal, not just that the test passes.
+
+## Implementation verification -- Claude -- 2026-08-11
+
+**Tested commit**: `4f17fefd84ff2059be15d90e0f0a69fcb4db392d`
+**Reviewed range**: `6a4b3a0..4f17fef` (five implementing commits plus
+plan-open).
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(Python 3.13.13), the canonical interpreter.
+**Pre-run state**: the working tree carried **another agent's** uncommitted
+work (`bootstrap/tests/_gate_preflight.py` modified,
+`bootstrap/tests/test_lifecycle_vocabulary.py` untracked), so the run was
+performed in a **detached git worktree at `4f17fef`**, verified clean by
+`git status --short` before the run. Nothing of this plan's was uncommitted.
+**Post-run state**: worktree unchanged at `4f17fef`; removed after the run.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| mapped pytest set (25 modules, see Verification) | 1 | **916 passed, 1 failed** | 83.5 s |
+| `scripts/quality_gate.py --sub neutrality --sub redundancy` | 0 | neutrality fail=93 info=21; redundancy fail=0 info=2 | — |
+| `scripts/check_cairn.py` | 0 | 176 Markdown files, no issues | — |
+| `scripts/claim_check.py` (plan, archived proposal) | 0 | clean on both | — |
+| `tools/lifecycle_planner.py next --to revised` / `--to executing` | 0 | both scaffolds emit the block; gating preconditions unchanged | — |
+
+**Non-pass disposition.**
+
+* `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override`
+  — **pre-existing, not in this range.** Reproduced at `6a4b3a0`, the commit
+  before this plan opened, in its own clean worktree. It fails on stray
+  `__pycache__/*.pyc` files inside `bootstrap/tests/`, which the detached-
+  checkout guard reports as `extra=[...]`. That is environment pollution, not
+  a defect in the reviewed bytes. Surfaced to the Maintainer rather than
+  fixed here — it is outside this plan's scope and belongs to whoever owns
+  that guard.
+* **Neutrality `fail=93`** — pre-existing and unchanged; reproduced at clean
+  `HEAD` before any of this work. All 93 sit in test fixtures, adopter-example
+  docs, and the lifecycle-metrics vendor registries. Exactly one falls in a
+  file this plan touches, `doctrine/dual-review.md:57`, last written by
+  `160cbb2`. See the correction note above for the false `fail=0` claim in
+  `99451d2`'s commit body.
+
+**Plan-specific acceptance commands.** Twin parity
+(`diff tools/lifecycle_planner.py templates/skills/_lib/lifecycle_planner.py`,
+empty, and pinned by a test node); both planner scaffold paths exercised;
+perturbation of the new test in both directions — deleting the AGENTS clause,
+the template declaration and the scaffold literal turns 5 nodes red, and adding
+a scope-delta refusal to `_conformance_violations` turns the fence node red.
+
+**Known omissions.**
+
+* The **full** suite was not run; a mapped 25-module set was, for the reason
+  recorded in the Sequence revision above. A code reviewer who disagrees with
+  that bounding should run the full suite — that judgement is theirs.
+* No test asserts that a `Scope delta` declaration is **truthful**. It cannot;
+  the property is semantic, which is why the gate was declined. Review is the
+  enforcement, and saying so is the honest form of the residual.
+* The recurrence claim behind the proposal remains the Maintainer's standing
+  observation. Nothing here measures it, and the proposal explicitly declined
+  to manufacture a number.
 
 ## Code review
 
