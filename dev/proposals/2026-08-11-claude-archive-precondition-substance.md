@@ -812,6 +812,38 @@ syntax; if a legacy `Follow-ups migrated to:` record that a human would call a
 real block still refuses; if the shipped template satisfies its own gate; if the
 default scan turns red on historical records; if a message still claims a review
 *occurred*; or if closing the `^`-anchored false-fail requires an unanchored
-match anywhere in the file. In each case retain the current predicate and record
-why — **do not widen a matcher to make a gate green**, which is the failure
 this proposal was opened to end.
+
+## Review -- Antigravity (External) -- 2026-08-11
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External, different agent type from the author (Claude) and prior reviewer (Codex)
+**Reviewed commit**: `e54f43cd74e2d8290ec517e770170540f8cf2c95`
+**Reviewed proposal blob**: `0678cf48f882f41150432ae0e9dd890bfd6568a8`
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: ACCEPT (as revised).** Revision 1 (R1-1 through R1-6) thoroughly resolves all findings raised in Codex's External review (E1–E6) and Claude's Internal review (I1–I4). The binding delta replaces broad boolean presence flags with an explicit, robust structural grammar, preserves historical archive scan semantics, accurately re-names predicates to match what is testable, and establishes clean verification criteria.
+
+### Steelman & Evaluation of Revision 1
+
+1. **R1-1 Structural Grammar & Supersession**:
+   - Explicitly supersedes `deferral-discipline`'s omission rule by name for future archives while leaving historical archives untouched.
+   - Replaces literal `True` gates in `--to archived` with a strict structural grammar for Dispositions (`none` OR explicit disposition keywords OR legacy `Follow-ups migrated to:` including mid-line forms) and Fidelity (commit id + governing section).
+   - Correctly refuses empty labels, template instructions, promissory text ("owed at archive"), and prose discussing the markers.
+
+2. **R1-2 Archive Scan Boundaries**:
+   - Preserves live-only default scan behavior (7 live artifacts) while documenting `--include-archive` as an explicit opt-in historical audit mode.
+   - Prevents the creation of an unactionable default-red scan state or 53-entry suppression baseline.
+
+3. **R1-3 Canonical Predicate Naming & Metrics Alignment**:
+   - Renames `_has_substantive_code_review` / `has_substantive_code_review` to reflect marker presence (`attributed/dated code-review record marker`), bringing tool assertions into exact alignment with testable properties.
+   - Identifies the `_lifecycle_metrics/parse.py` regex divergence (I1) and routes metric parser convergence as a separate, measured follow-up.
+
+4. **R1-4 through R1-6 Scope & Verification Discipline**:
+   - Includes opening commit `da3e296` in implementation review coverage (Boundary B).
+   - Rigorously decomposes and corrects measurement errors (12 -> 6 Dispositions parser delta; 6 -> 7 live default scan artifacts).
+   - Routes the identity-normalizer self-pass collision (E6/R1-6) to `[REC]` / `code-review-blindness` rather than altering identity policy ad-hoc.
+
+### Summary Verdict
+**Verdict**: **ACCEPT** (Proposal Revision 1 approved; 0 blocking, 0 substantive, 0 minor findings). The proposal is decision-ready for Maintainer disposition.
+
