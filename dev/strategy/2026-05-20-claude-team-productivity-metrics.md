@@ -3,7 +3,7 @@
 # Strategy: team productivity metrics for the human + AI development team
 
 **Author**: Claude (Strategy)
-**Date**: 2026-05-20 (substantively revised 2026-05-28)
+**Date**: 2026-05-20 (substantively revised 2026-05-28; currency pass + External review folded 2026-08-11)
 **Status**: living
 **Type**: living-reference
 **Audience**: maintainer + collaborating AI agents; secondary audience is a scientist (or scientist-team) adopting a structured human + AI development methodology and wanting to know what to measure -- and how the measurement infrastructure itself earns the adopter's trust
@@ -38,7 +38,7 @@ Two structural moves drove the original (pre-review) revision:
 
 * **The measurement work IS itself a Cairn portability question -- specifically, the question "how does a Cairn deployment empirically demonstrate trustworthiness?"**  TRUST principles (Anchor 10 of the master guide-star) give the answer; Cairn 0.3 Goal 7 gives the concrete primitive; the trust paradox (below) gives the discipline that prevents over-collection.  Cairn portability is no longer the doc's fourth layer -- it is the doc's spine.
 
-This is a strategy artifact, not a proposal.  Strategy notes (per `AGENTS.md > dev/`) are comparative research and long-horizon design context, not commitments.  Per the original framing, the doc seeded a subsequent `lifecycle-metrics-layer-v2` proposal -- **that proposal has shipped** (accepted; v2A's `tools/lifecycle_metrics.py` + the Measurement Compact codified in `AGENTS.md` + the v2A contract test gating per-agent / per-tier external publication).  This doc's residual job is **strategy companion to Cairn 0.3 Goal 7** -- the per-project efficacy-data primitive Cairn ships before public launch.
+This is a strategy artifact, not a proposal.  Strategy notes (per `AGENTS.md > dev/`) are comparative research and long-horizon design context, not commitments.  Per the original framing, the doc seeded a subsequent `lifecycle-metrics-layer-v2` proposal -- **that proposal has shipped** (accepted; v2A's `tools/lifecycle_metrics.py` + the Measurement Compact -- whose Cairn home is the `lifecycle-metrics` module doc, not `AGENTS.md`; see that section -- and the v2A contract test gating per-agent / per-tier external publication).  This doc's residual job is twofold: **strategy companion to the per-project efficacy-data horizon item** (now 0.5+, not pre-0.4), and **the home of Cairn's measure-forward discipline** (see *Measuring forward*).
 
 ## The 2026-05-28 reframe -- what shipped + what changed
 
@@ -58,7 +58,7 @@ A human+AI team's data on its own efficacy is **load-bearing trust material**.  
 * **Transparency** -- the measurement schema, the collection logic, and the audit trail of "what was collected when, by whom" are public, append-only, and adopter-inspectable.  Cairn-side: lifecycle-metrics output schema is documented; the v2A contract test scans for compact violations; the consent flow doctrine is public.
 * **Responsibility** -- the measurement infrastructure is dogfooded before it ships.  Each metric is exercised on the reference deployment(s) under real conditions; no metric ships untested.  Cairn-side: v2A landed on modflow_tools, the reference deployment, with N=2 dimension-corpora (proposals + plans).
 * **User focus** -- the adopter chooses what to collect, when to collect, what to share.  No metric is mandatory; default mode is **collection-only-where-consented** with the lifecycle-metrics module's per-deployment opt-in.  Cairn-side: the on-ramp's graduated levels mean an L1 (hand-copy-kernel) adopter doesn't get the same measurement surface as an L2 (full bootstrap) one.
-* **Sustainability** -- measurement infrastructure must not silently lock the adopter into Cairn.  Data leaves with the adopter when they exit; collection produces a portable artifact (the on-disk metric tables); no central server, no Cairn-side persisted state.
+* **Sustainability** -- measurement infrastructure must not silently lock the adopter into Cairn.  Data leaves with the adopter when they exit; collection produces a portable artifact (the on-disk metric tables); no central server, no Cairn-side persisted state.  *(Naming the analogical strain honestly: Lin et al.'s Sustainability is long-term **preservation** -- can the repository fund and operate for decades. What is claimed here is **portability and no-lock-in**, which is a different property wearing the same label. The five TRUST labels carry over as a useful structural frame; their conceptual content shifts when moved from a data repository to a methodology framework, and this dimension shifts most.)*
 * **Technology** -- no-network-by-default composition; the export-safety scrub on any outbound artifact; the `content-security` module protects against accidental exfiltration; verify-integrity gates protect against silently-corrupted data.
 
 **Reference**: the master guide-star doc's "Trust as design center" section names the same five dimensions and provides the analog mapping for Cairn's other apparatus.  This section narrows the lens to the measurement infrastructure specifically.
@@ -75,9 +75,15 @@ A human+AI team's data on its own efficacy is **load-bearing trust material**.  
 
 The Measurement Compact (above; now `AGENTS.md` doctrine) closes most of the paradox at the framework-level.  The remaining gap is the per-adopter-deployment surface: every Cairn deployment must be able to verify the trust architecture on its own tree, not just trust that Cairn's framework-level commitments hold.  That verification surface is what Goal 7's pre-shipping work creates.
 
-## Cairn 0.3 Goal 7 -- the concrete realization of Layer 4
+## Per-project efficacy-data infrastructure -- the realization of Layer 4
 
-The original (2026-05-20) doc's Layer 4 framed Cairn-portability metrics as "design-only in modflow_tools; Cairn-side / v3 instrumentation."  The 2026-05-28 PLANNING.md edit promoted that anticipated work into the Cairn 0.3 milestone roadmap as **Goal 7 -- Per-project efficacy-data infrastructure (pre-0.4 / 0.5)**.
+**Roadmap home re-checked 2026-08-11.** This work was once tracked as "Cairn
+0.3 Goal 7." That numbering no longer exists: `dev/PLANNING.md` now carries it
+as a horizon line -- *"0.5+ -- per-project efficacy-data infrastructure and
+beyond."* Cite it by description, not by a goal number, and read every "Goal 7"
+below as naming that horizon item. **It has also moved further out** (0.5+
+rather than pre-0.4/0.5), which changes its sequencing relative to everything
+else here: the trust-architecture work it is gated on is no longer near-term.
 
 **What Goal 7 collects** (working list, per the PLANNING entry):
 
@@ -136,13 +142,64 @@ Eight citable frameworks bound the gap analysis:
 
 These eight anchors -- DORA for delivery-level metrics, SPACE for multi-dimensional caution, AI-assisted-coding empirics for what's been quantified in adjacent settings, multi-agent LMA evaluation for our team's specific shape, CHAOSS for contributor / community metrics, ITS for practice-correlation methodology, RSE for scientific-software-specific outcomes, and Three Ways / ASD / PDCA for the adaptive-doctrine closed loop -- bound the design space for a lifecycle-metrics v2.
 
-## Current state -- what v1 measures
+## Current state -- what the layer measures *(re-measured 2026-08-11)*
 
-`tools/lifecycle_metrics.py` (single-file extractor at baseline-snapshot scale; accepted via the `2026-05-18-claude-lifecycle-metrics-layer` proposal) emits two CSVs:
+`tools/lifecycle_metrics.py` is no longer a single-file extractor: it is a
+69-line facade over a nine-module `_lifecycle_metrics/` package (`extract`,
+`parse`, `snapshot`, `subsystems`, `gitmeta`, `config`, `report`, `cli`).
+**Substantially more of the recommended scope below has shipped than the
+recommendation text implies** -- read the layer sections as a mix of *landed*
+and *outstanding*, not as a forward plan.
 
-**Per-proposal** (16 columns): `stem`, `author`, `date_opened`, `status`, `decision_date`, `days_to_decision`, `review_rounds`, `reviewer_agents`, `cross_agent_type_review`, `human_review`, `external_tier_review`, `revised`, `total_findings`, `findings_p1/p2/p3`.
+**Per-proposal: 30 columns**, verified by running the tool. Beyond the
+original sixteen, the live schema now carries:
 
-**Per-plan** (6 columns): `stem`, `status`, `plan_review_rounds`, `code_review_rounds`, `paired_proposal`, `paired_proposal_reliability`.
+* **Per-stage timestamps and deltas** -- `reviewed_date`, `revised_date`,
+  `days_open_to_reviewed`, `days_reviewed_to_revised`,
+  `days_revised_to_decision`, plus **hour-resolution** counterparts
+  (`hours_*`) and a `stage_timestamp_reliability` tier. This is Layer 1's
+  stage-granularity ask, delivered -- including the sub-day resolution the
+  original text treated as an open question.
+* **Review-yield dispositions** -- `review_yield_accept_count`,
+  `review_yield_accept_with_modification_count`, `review_yield_reject_count`,
+  `review_yield_defer_count`. This is Layer 2's disposition grammar, which the
+  original text called "a slogan, not a signal" without the template
+  amendment. The amendment happened; the signal exists.
+* **`response_models`** -- the `**Model**:` extraction Layer 2 required for
+  honest per-tier comparison.
+* **`proposal_annotation_count`** -- the doctrine-intervention annotation hook.
+
+One column named in the original sixteen, `human_review`, is **not** in the
+live schema; `external_tier_review` remains. Treat any analysis written
+against the old column list as needing a re-check.
+
+**Per-plan: still 6 columns** -- `stem`, `status`, `plan_review_rounds`,
+`code_review_rounds`, `paired_proposal`, `paired_proposal_reliability`.
+
+**That asymmetry is the single most important fact in this section.** The
+proposal side has rich per-finding data; the plan side has **round counts
+only** -- no code-review finding counts, and no file attribution. So the layer
+can say a great deal about how *proposals* are deliberated and almost nothing
+about what *implementing* a given code surface costs. Any study of the form
+"does this part of the codebase cost more review effort" runs straight into
+that gap (see *Measuring forward* below).
+
+**Snapshots and events have shipped too.** The CLI carries `--snapshot`,
+`--event {plan-archive,goodnight,doctrine-intervention,manual,backfill}`,
+`--backfill-from`, `--manifest`, and `--format {csv,md}` -- the
+event-triggered cadence Layer 1 specified, with the conservative trigger set
+it recommended.
+
+**But the time series is not in the record.** `dev/measurement/snapshots/`
+holds real snapshots (2026-07-31, 2026-08-04, 2026-08-05) and is **untracked
+-- not gitignored, simply uncommitted**; `dev/measurement/collision_log.md` is
+in the same state. `dev/intents.jsonl` *is* deliberately gitignored
+(`.gitignore:12`), so the contrast is not a blanket policy. Layer 1 asked
+explicitly whether snapshots should be tracked artifacts or live outside the
+hot working tree; that question was never answered, and the current state is
+the worst of both -- a time series that exists on one machine and is absent
+from the durable record. **This is the highest-value cheap fix in the note:
+decide, and either commit them or gitignore them deliberately.**
 
 The 2026-05-19 baseline run (historical snapshot, not live count):
 
@@ -233,7 +290,7 @@ The right framing per SPACE and per the multi-agent LMA evaluation literature: p
 
 **What v2 should add**: see "Recommended v2 scope > Layer 1 / Layer 2" (annotation file + before/after deltas, with annotations framed as *small causal hypotheses* not date labels).
 
-**Critical methodological caveat -- doctrine-churn coupling**: today's session landed 5+ doctrine commits within hours (`90cdd76` work-intent required-signal+read; `13f60c2` NEXT_SESSION rewrite-from-scratch; `2ef4864` PLANNING completed-sweep; `cf2f45e` + `3ac3f3b` role-based-model-selection; `5dfeecd` proposal-cycle-clarifications).  For ITS analysis these are **coupled interventions**, not independent point-events.  You cannot attribute any subsequent metric shift to any single doctrine without controlling for the others.  Three responses available -- the v2 proposal must pick:
+**Critical methodological caveat -- doctrine-churn coupling**: the 2026-05-20 session landed 5+ doctrine commits within hours (`90cdd76` work-intent required-signal+read; `13f60c2` NEXT_SESSION rewrite-from-scratch; `2ef4864` PLANNING completed-sweep; `cf2f45e` + `3ac3f3b` role-based-model-selection; `5dfeecd` proposal-cycle-clarifications).  For ITS analysis these are **coupled interventions**, not independent point-events.  You cannot attribute any subsequent metric shift to any single doctrine without controlling for the others.  Three responses available -- the v2 proposal must pick:
 
 * **Cluster the interventions**.  Treat clusters of doctrine commits within one session as a single intervention.  Loses resolution; preserves causal inference.
 * **Spread the interventions deliberately**.  Doctrine-work pacing as a process discipline -- one doctrine change per calendar day, not five per session.  Aligns with small-N reality; makes ITS tractable.
@@ -374,11 +431,22 @@ demonstrably checked.
 
 *Anchors*: CHAOSS adoption-coverage; AGENT 2026 Framework category; the master guide-star doc's "Trust as design center" section (Anchor 10 + the trust paradox); the 2026-05-14 human-AI-team-development-framework note's "publishable repo-first" framing.
 
-## The Measurement Compact (shipped 2026-05-21 via the v2A proposal; now AGENTS.md doctrine)
+## The Measurement Compact (operative; home re-checked 2026-08-11)
 
-**This section's draft text is now the operative compact shipped in `AGENTS.md`.**  Per the accepted `2026-05-21-claude-lifecycle-metrics-layer-v2` proposal (v2A operational-minimum), the five commitments below are repo doctrine, the v2A contract test scans tracked externally-facing artifacts for the violation pattern Tier 1 prohibits (per-agent / per-tier metric tokens), and the two-tier enforcement (Tier 1 Maintainer-Decision-required for externally-published artifacts; Tier 2 normative-only for internal dashboards) is the bite.  The original (2026-05-20) "the v2 proposal should commit to..." framing is superseded -- the v2 proposal DID commit, and the compact landed.
+The compact landed. **Its home in Cairn is not `AGENTS.md`** -- that was true
+of the reference deployment this note was written in, and carrying the claim
+forward would send a reader to the wrong file. In Cairn the five commitments
+live in `templates/modules/default-on/lifecycle-metrics.md`, the module doc
+shipped to every adopter that selects the metrics layer, and the
+adaptive-doctrine **rate-limit gate** is separately operative in Cairn's own
+`AGENTS.md` citing `doctrine/rationale.md`.
 
-The five doctrine commitments (operative; verbatim from `AGENTS.md > The Measurement Compact`):
+That placement difference is not pedantry: it means the compact governs
+adopters **only if they install the module**, whereas an `AGENTS.md` rule
+would bind every adopter unconditionally. Whether that is the right scope is a
+real question and is left open here rather than assumed.
+
+The five commitments (operative):
 
 * **Metrics are for system learning, not agent punishment.**  Per-agent and per-tier summaries exist to surface routing-policy mistakes and missing review-coverage patterns, not to rank agents.
 * **No single score.**  Composite indices that collapse multiple dimensions into one number are not adopted.
@@ -421,7 +489,7 @@ Five caveats matter for any analysis built on this v2:
 
 4. **Measurement-boundary discontinuity at `**Model**:` field introduction.**  The `**Model**:` header field that Layer 2's per-tier comparison depends on was introduced today by the role-based-model-selection doctrine (`cf2f45e`).  Pre-today proposals carry no `**Model**:` annotation and cannot be assigned a tier retroactively without forensic git-archaeology that v2 does not propose.  The retroactive-snapshot backfill (Sequence step 6) will therefore have NULL tier columns for all pre-`cf2f45e` proposals.  This is a *measurement-boundary* discontinuity distinct from the doctrine-effect discontinuities the ITS framing engages with: pre-`cf2f45e` per-tier metrics are not "tier X = 0" but "tier unknown."  V2 reports of per-tier surfaces must either restrict to the post-`cf2f45e` window or carry an explicit "tier-unknown" bucket for the pre-window slice.  This is the cleanest example of how a doctrine landing can also be a *measurement landing*.
 
-5. **Goodhart's Law and AI-specific sensitivity.**  Per the Measurement Compact above: AI agents respond to evaluation criteria more literally than humans; the gameable-metric risk is larger here than in human-team SPACE applications.  Metric design must select for game-resistance (distributions over means; samples over counts; rolling-window aggregates over point-in-time) or accept the gameable-metric cost with complementary anti-gaming measures (sampling, cross-validation, human review).
+5. **Goodhart's Law and AI-specific sensitivity.**  Per the Measurement Compact above: the gameable-metric risk plausibly runs larger with AI agents than in human-team SPACE applications, because agents optimize against a stated criterion more literally.  **Evidence status, stated rather than implied: this is reasoning from first principles and from the reward-hacking literature's general shape -- no measurement of the specific magnitude in a human+AI development team exists in the public literature, and none is offered here.**  Treat it as a design posture, not a finding.  Metric design should still select for game-resistance (distributions over means; samples over counts; rolling-window aggregates over point-in-time) or accept the cost with complementary measures (sampling, cross-validation, human review) -- the posture is cheap and the downside of being wrong about it is small.
 
 ## Operating vs publishing -- separate the dashboards
 
@@ -440,7 +508,7 @@ This is especially load-bearing for **Cairn as a dynamic and adaptable framework
 
 ### Today's session as the working example
 
-The d75df00a → revert → proposal-cycle-clarifications-doctrine arc earlier today is the prototype of this loop, just executed informally:
+The d75df00a → revert → proposal-cycle-clarifications-doctrine arc of 2026-05-20 is the prototype of this loop, just executed informally:
 
 1. **Failure mode surfaces in practice**: I (Implementation) shipped a substantive cross-cutting refactor without a proposal -- `d75df00a` Tier 5.8 visualization split.
 2. **Maintainer catches**: chat surface flagged the lifecycle violation about 30 minutes after the commit landed.
@@ -491,7 +559,7 @@ Three risks deserve explicit framing in any v2 proposal that introduces feedback
 
 * **Goodhart amplification at scale**.  Already discussed in the Measurement Compact.  When metrics drive doctrine changes automatically (or even semi-automatically), the gameable-metric risk compounds: agents optimize for the metric, doctrine adapts to reward the metric, the metric-and-doctrine pair drifts away from the underlying objective.  Mitigation: keep the loop *human-in-the-loop* at the maintainer's discretion; no automated doctrine commits.
 
-* **Doctrine churn**.  Today landed 5+ doctrine commits in hours -- itself an instance of a measurement-induced loop running too fast.  Adopters of Cairn (today: zero; tomorrow: hopefully N≥1) cannot absorb high doctrine churn rates.  Mitigation: rate-limit doctrine changes; cluster related changes; respect the "marinate overnight" disposition (which the maintainer has used today; doctrine choices benefit from cool-off).
+* **Doctrine churn**.  2026-05-20 landed 5+ doctrine commits in hours -- itself an instance of a measurement-induced loop running too fast.  Adopters of Cairn (zero at the time of writing; N≥2 today) cannot absorb high doctrine churn rates.  Mitigation: rate-limit doctrine changes; cluster related changes; respect the "marinate overnight" disposition (which the maintainer used that day; doctrine choices benefit from cool-off).
 
 * **Loss of intentionality**.  An adaptive framework that responds too readily to local signals loses the deeper strategic frame that made it useful.  The 2026-05-14 human-AI-team-development-framework strategy note's six-anchor scaffolding is the kind of structural commitment that should *not* adapt away on a metric trend.  Mitigation: separate *operational* doctrine (which can adapt quickly) from *foundational* doctrine (which adapts only via deliberate Strategy-level reconsideration).
 
@@ -519,16 +587,76 @@ Items worth recording but not yet committed:
 
 4. **Re-learning curves at model upgrades** -- the 11-week learning curve found in Copilot studies may have a model-upgrade analog: when models are upgraded (Opus 4.7 → 5; Sonnet 4.6 → 4.7), does the team experience a measurable re-learning period?  Conjectural; would require N >> our current.
 
-## Recommended sequence
+## Measuring forward -- the discipline this layer still owes
 
-1. **Maintainer reads this revised strategy note.**  Decides on v2 scope (the four-layer recommendation above, or a different cut).
-2. **Strategy opens a `lifecycle-metrics-layer-v2` proposal** at the agreed scope.  Per today's proposal-cycle clarifications doctrine, chat input is cited as drafting preference, not Decision.
-3. **External review by Codex** (different agent type per the role-based-model-selection independence floor).
-4. **Response + Decision + plan-open** per normal lifecycle.
-5. **Implementation** -- additive to `tools/lifecycle_metrics.py`; new files for snapshots + annotations + the metric contract table; no breaking changes to v1.
-6. **Backfill snapshot retroactively** at first run -- generate one snapshot per past goodnight-commit date so the time-series starts before v2 lands, not at v2 launch.  V1 IS read-only and regenerable; running it at past commits gives historical CSVs.
+The v2 sequence this section once carried is spent: the proposal shipped, the
+layer was built, and the schema above is what it produces. What remains is not
+another build. It is a discipline question that surfaced from an unrelated
+attempt to *use* the layer as evidence, and it belongs here because it
+constrains every future measurement Cairn adds.
 
-Total span from this strategy note to v2 shipping: probably 1-2 weeks of calendar time once initiated (today's atypical session-density is not the steady-state cadence).  The most valuable use of the time is not the implementation but the design decisions surfaced here -- which is what a strategy note is for.
+**The attempt.** A 2026-08 complexity study needed to answer "does a
+higher-complexity code surface cost more review effort?" and reached for this
+layer. It could not get there, for two reasons already visible above: the
+per-plan schema carries **round counts, not code-review findings**, and it
+carries **no file attribution**; and the per-proposal finding counts describe
+deliberation *before* implementation, so attributing them to files a later
+plan touched would not measure what the question asks.
+
+**The temptation, and the rule.** The obvious repair is to reconstruct the
+missing attribution from the archive -- read closed plans and decide which
+file each historical finding concerned. **That is prohibited, and the reason
+is methodological rather than procedural.** A plan is append-only once
+implementation starts and closed once archived; the plan-archive precondition
+(a plan cannot archive until a code review occurred) is what makes an archived
+plan usable as evidence at all. Deciding *now, with a hypothesis in hand*
+which file a past finding blamed is fitting evidence to a conclusion, done by
+the party who wants a particular answer. **The archive's entire evidentiary
+value is that it was written before anyone asked the question.**
+
+Measured coverage, so the sparsity is a stated limit rather than a repair
+target: of 34 archived plans, 20 touch a substantial code artifact, 13 carry
+tagged code-review findings, and 32 of 57 such findings (56%) name a file.
+
+**So: instrument the next cycle instead of litigating the last one.** The
+generalizable rule, and the one this note should carry as measurement
+doctrine:
+
+> **If you want a question answerable later, add the field that answers it
+> before you need it, where the person who knows the answer is already
+> writing.** When an existing record is too sparse to test a hypothesis, the
+> legitimate moves are to report the sparsity and to instrument forward --
+> never to annotate the old record.
+
+Three design constraints follow, and they are what keep forward instrumentation
+from becoming ceremony:
+
+* **Lightweight -- a field, not a workflow.** Reviewers already name a file in
+  prose 56% of the time. Structuring that extends the plan template's existing
+  finding-disposition vocabulary rather than adding a mechanism.
+* **Transparent by construction.** The data lives where the finding lives --
+  in the committed plan, human-readable, reviewable by the person it concerns.
+  No separate database, no side channel, no telemetry, nothing collected that
+  was not already being written down. This is the compact's posture made
+  concrete rather than asserted.
+* **Analysis registered before the data exists.** Outcome, covariates,
+  retention of zero-finding cases, and an explicit **INCONCLUSIVE** branch
+  declared up front -- which is *easier* prospectively than retrospectively,
+  because no results exist yet to fit to. Cairn's proposal template is already
+  registered-report-shaped; this inherits that discipline rather than inventing
+  it (cf. Chambers 2013, *Registered Reports*, Cortex 49(3):609-610).
+
+**The honest cost:** forward instrumentation answers in months, not weeks, and
+whatever prompted the question stays unvalidated meanwhile. That is the price
+of not manufacturing the evidence, and it is the right price.
+
+**One compact application worth deciding before collection starts.** A
+file-attributed finding links *a file* to *a problem* to *whoever found it* --
+finer-grained than anything this layer currently keeps. Under the first
+commitment ("system learning, not agent punishment") the answer is to say so
+explicitly in advance and to keep per-reviewer aggregation out of the declared
+analysis entirely. Retrofitting that constraint after the data exists is the
+harder direction.
 
 ## References
 
@@ -542,68 +670,3 @@ Total span from this strategy note to v2 shipping: probably 1-2 weeks of calenda
 * **Adjacent project context**: the [2026-05-14 human-AI-team-development-framework strategy note](2026-05-14-claude-human-ai-team-development-framework.md) for the broader six-anchor framework that this metrics note nests inside.
 
 This note is the seed for the subsequent `lifecycle-metrics-layer-v2` proposal.  It is not itself a commitment.
-
----
-
-## Review -- Claude (External Reviewer-functioning, broad feedback) -- 2026-05-28
-
-<!-- claim-check-allow-count: 513 lines, 51 proposals, 49 accepted, 11-week, 7.7 findings, 4 asks -->
-
-**Model**: Opus 4.7 (1M context).  Frontier-tier.  Invited by the maintainer to provide External-Reviewer-style broad feedback on the 2026-05-28-rewritten state of this strategy doc.
-
-**Structural-independence disclosure (load-bearing)**: I am Claude; the author (also Claude per the header) is the same vendor.  Per `agent_collaboration.md > Stage-to-role matrix`, External review requires a **different agent type or a human** -- same-vendor-different-session is *explicitly insufficient* for the External-tier floor.  This review therefore does **not** meet that floor.  Treat as **decision-support / pre-Codex/Antigravity stress-testing**, not a satisfying External-tier checkpoint.  For a strategy doc, the floor is looser than for a proposal (strategy is design-space exploration, not commitment), and the doc has already had one Codex External round per the header -- so this pass is *third-round same-vendor* primarily catching post-rewrite drift + operationalization gaps.
-
-**Pre-review verifications** (cheap factual checks before drafting):
-
-* `tools/lifecycle_metrics.py` exists -- v2A genuinely shipped. ✓
-* `dev/proposals/archive/2026-05-21-claude-lifecycle-metrics-layer-v2.md` is archived -- v2A accepted + archived. ✓
-* `~/Code/lhm/dev/` exists with `agent_collaboration.md` + the Cairn-methodology adoption per `~/Code/lhm/AGENTS.md` line 5 -- N=2 deployment claim is real, not aspirational. ✓
-* `dev/PLANNING.md` references Goal 7 (lines 1188 / 1235 / 1237) -- the per-project efficacy-data infrastructure goal is captured. ✓
-* `tests/integration/test_intent_jsonl_atomic_appends.py` exists locally -- confirms the intent-system precedent the doc cites. ✓
-
-### Steelman
-
-The 2026-05-28 rewrite materially improves the doc: trust-architecture-first framing is the right design center (the Lin TRUST anchor + the trust paradox section together make the case that measurement infrastructure earns its keep only after the trust architecture lands).  The four-layer factoring (Flow / Collaboration / Quality+Outcome / Cairn-portability) cleanly separates evaluation purposes.  The staging discipline (v2A / v2B / v3) explicitly addresses "build it all, learn from none."  The Measurement Compact's five commitments are operationally codified in `AGENTS.md` doctrine with a contract test backing the most obvious violation surface.  Eight framework anchors carry real citations + URLs; the AI-assisted-coding empirics are honest about effect-size variance and learning-curve realities.  Five methodological cautions are explicit and non-defensive.  The working example (today's `d75df00a` → revert → proposal-cycle-clarifications arc) gives the adaptive-doctrine loop a concrete illustration.
-
-### Findings
-
-**A. Currency / drift (the older bottom half lags the 2026-05-28 rewrite):**
-
-1. **The "Recommended sequence" section (lines 491-499) is fully stale.**  It recommends "Strategy opens a `lifecycle-metrics-layer-v2` proposal at the agreed scope" -- but the doc's preamble explicitly says that proposal has shipped (v2A accepted, archived).  Steps 1-6 describe work that already happened.  *Close by*: either delete the section + replace with a one-paragraph "what shipped" recap pointing at the archive, or rewrite as a forward-looking "Recommended next sequence" describing v2B and Cairn-side / Goal 7 work.
-
-2. **The adaptive-doctrine "Strategy lean" section (lines 466-476) frames the rate-limit gate as "to add."**  But the rate-limit gate IS now `AGENTS.md` doctrine (`AGENTS.md > Adaptive-doctrine rate-limit gate`, landed via the v2A arc per the doc's own preamble note about the Measurement Compact + the same arc).  Mechanism 1 (trigger-condition re-proposals) is also operational via the collision-log's R2 14-day rolling-window trigger (and now the handoff-hazard-log's parallel trigger that landed earlier today).  *Close by*: convert "v2 ships mechanisms 1 + 6" / "Rate-limit gate -- in the core mechanism, not just in the risks section" framing to a "what's now operational" recap + a "what's still aspirational" forward look.
-
-3. **Layer 4 supersession leaves a redundant candidate list.**  Lines 325-334 carry the original Layer-4 candidate measures with a note that "PLANNING.md > Goal 7's working-list, which is the authoritative version" supersedes them.  Strategy docs aren't append-only.  *Close by*: delete the redundant list + leave only the pointer to PLANNING > Goal 7, OR keep it explicitly as "historical record of what the doc originally anticipated" framed as such.
-
-4. **Date-anchor drift in narrative voice.**  The doc says "today's session landed 5+ doctrine commits within hours" (Ask 4 caveat) and "Today landed 5+ doctrine commits in hours" (Risks of an adaptive layer) -- where "today" was 2026-05-20.  Reads as present-tense to a 2026-05-28+ reader.  Same with "this team works in bursts" framing.  *Close by*: replace "today" with explicit dates (`2026-05-20`) so the temporal anchors are stable.
-
-**B. TRUST framing strain (the analogy stretches in places):**
-
-5. **The TRUST principles (Lin et al. 2020) → measurement-infrastructure mapping is more metaphorical than literal in places.**  Lin et al. designed TRUST for digital data repositories (preservation infrastructure); the doc maps the five labels onto a research-software-methodology framework.  The labels fit, but the conceptual content shifts.  Most strained: **Sustainability** -- Lin et al.'s "sustainability" is long-term data preservation (the repository can fund and operate over decades); the doc maps it to "measurement infrastructure must not silently lock the adopter into Cairn / data leaves with the adopter."  That's a portability / no-vendor-lock-in claim, not a sustainability-in-the-Lin-sense claim.  *Close by*: either tighten by naming the analogical strain (e.g., "TRUST labels carry analogically; the conceptual content for methodology-framework Sustainability is portability + no-lock-in, which differs from Lin et al.'s data-preservation Sustainability"), OR adopt a different label that fits more literally.  Not a blocker -- the mapping is *useful* as a structural framing -- but honest framing would acknowledge the metaphor.
-
-**C. Operationalization gaps (concepts that need mechanism):**
-
-6. **"Each Anchor 10 TRUST dimension must be demonstrably checked" -- but how, and by whom?**  The doc treats this as the load-bearing precondition for Goal 7's primitive shipping ("dogfooded + Cairn-portable BEFORE the primitive ships"), but doesn't name a verification artifact, attestation surface, or check protocol.  Is it a checklist?  A code-level test?  A doctrine-doc attestation?  A maintainer Decision?  *Close by*: name the verification artifact explicitly, OR explicitly defer to Goal 7's implementation plan with "the verification protocol is decided at Goal 7 plan-open."  Either is fine; leaving it implicit makes the precondition slogan rather than gate.
-
-7. **The Measurement Compact's contract test is a token-pattern scanner.**  The doc honestly acknowledges (under "Operating vs publishing" + adjacent) that "the contract test catches the most obvious violations; broader violation patterns (e.g., per-agent metrics inferred from non-token language) fall outside the test's bite and rely on the doctrine itself."  Fine -- but the doc could be more honest about the gap structure: the Compact's five commitments are mostly enforced by agent discipline + maintainer judgment, with the token scanner covering only the most-mechanical-of-the-most-egregious external violations.  This isn't a defect (mechanical enforcement of all five commitments would be over-engineered), but the doc should name the architecture rather than implying the scanner is broader than it is.  *Close by*: a paragraph explicitly mapping each of the five commitments to its enforcement surface (token-scanner / agent-discipline / Maintainer-Decision / norm-only) so the bite-architecture is transparent.
-
-**D. Missing data / under-exploited surfaces:**
-
-8. **The N=2 deployment claim doesn't surface what LHM specifically demonstrates.**  The doc cites N=2 (modflow_tools + LHM) but doesn't analyze what LHM's adoption process has revealed about Cairn-portability so far -- which is *exactly* the kind of empirical data Goal 7's eventual research artifact would draw on.  Today's adopter-friction-package proposal Decision explicitly noted the willing-volunteer-target is "almost certainly an existing project" -- so LHM (existing scientific codebase, getting Cairn-bootstrapped today) is the canonical first data point.  *Close by*: a paragraph naming what LHM's adoption has demonstrated to date -- bootstrap time, customization burden, doctrine that fit cleanly vs. needed adaptation, friction reports -- even if N=1 on the non-reference-deployment side and the data is qualitative.  This is the load-bearing real-world data the doc otherwise gestures at without surfacing.
-
-9. **Sub-day timing surfaces already exist + the doc doesn't note them.**  Layer 1's "sub-day granularity question" answer is "git log cross-check, no doctrine change" -- but the doc misses that `dev/intents.jsonl` already carries microsecond-precision ISO-8601 timestamps (per the schema doctrine), and `dev/reflections/<date>-<HHMMSS>-*` filenames carry HHMMSS-precision timestamps.  Some per-stage sub-day signal is already available without git-log cross-reference.  *Close by*: a paragraph naming the three existing timing surfaces (intents JSONL / reflection filenames / git log) + their precision + the cross-reference workflow for Layer 1's flow metrics.
-
-10. **Methodological caution #5 (Goodhart + AI-specific sensitivity) is uncited.**  "AI agents respond to evaluation criteria more literally than humans; the gameable-metric risk is larger here than in human-team SPACE applications."  Plausible but empirically thin in the public literature.  *Close by*: cite a specific study (a Goodhart-in-LLM or reward-hacking paper would work) OR weaken to "plausible from first principles; specific empirical magnitude not in public literature" so the claim's status is honest.
-
-### Recommendation
-
-**The 2026-05-28 rewrite's spine (trust-architecture-first + Goal 7 as concrete realization) is strong and lands the doc in a good place as a strategy companion to Goal 7.**  Findings cluster as:
-
-* **A (currency/drift)**: four light edits would close the post-shipping lag in the older bottom half.  Highest ratio of impact-per-effort.
-* **B (TRUST framing)**: one paragraph naming the analogical strain on Sustainability.
-* **C (operationalization)**: two paragraphs naming the verification artifact (Goal 7 implementation plan?) + the Compact's enforcement-surface architecture.  Most-load-bearing of the four themes.
-* **D (under-exploited)**: three small additions surfacing LHM's adoption data, the existing sub-day timing surfaces, and the citation for the Goodhart-AI claim.
-
-None block.  If the maintainer wants a tighter doc, A's currency-drift fixes are the cheapest with the highest readability payoff; C's operationalization gaps are the most consequential if Goal 7 ramps up under capability-pull.
-
-The **structural-independence floor for strategy-doc External review remains insufficient with same-vendor**.  A Codex or Antigravity pass would carry the floor my review structurally cannot -- worth invoking if the doc graduates from "strategy companion to Goal 7" into a public-facing methodology artifact (per the doc's own "Operating vs publishing" framing).
