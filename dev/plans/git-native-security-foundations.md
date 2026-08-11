@@ -1032,3 +1032,53 @@ first had just fixed.
 The Maintainer's second clause is the load-bearing one: the other plan depends
 on a ceremony *happening*, not on the runbook's contents, so rewriting the
 runbook here does not disturb what its reviewers approved.
+
+## Chunk D withdrawn under M5 -- Claude -- 2026-08-11
+
+**D landed at `77ae814` and is reverted at `aca6fe9`.** Fence M5's terms —
+*"stop and retain v1, record why"* — apply, and this is the why.
+
+**The process failure first, because it is the more useful one.** D changed the
+gate-manifest schema. I ran `test_gate_manifest.py`, saw 20 green, and
+committed. I never ran `test_gate_preflight.py`, which **independently
+re-derives that schema** — 11 of its tests were failing at `77ae814`. Boundary A
+says "the tests named in that chunk's table **plus standing gates for its
+touched surfaces**"; a schema is a surface whose consumers are the gate.
+
+**The design premise was wrong, and checkably so.** I searched for callers of
+`produce()`, found one (`test_gate_manifest.py:34`, passing a real repository),
+and concluded it always has one. It does not. The evidence stage extracts the
+anchored checker into a **materialized raw tree with no `.git`** — deliberately,
+so the candidate's own code cannot interfere — and runs `produce` there as a
+CLI. A v2 that needs Git to *build* the manifest cannot run at the point the
+architecture most depends on it. One `grep` for the CLI path would have found
+this before a line was written.
+
+**What re-opening D now knows that R1-C did not:**
+
+* `produce()` must work with **no repository present**. Git-native identity has
+  to come from `rederive_static_manifest`, which always has the real repo —
+  which is arguably the stronger arrangement anyway, since **mode and oid would
+  then be derived by the trusted side and never accepted from the candidate**.
+  That is a change to the evidence trust boundary, and it belongs in a reviewed
+  contract rather than in a debugging patch.
+* `check_static_manifest` iterates the re-derivation's fields, so any field the
+  candidate cannot supply must be **explicitly declared checker-derived** or
+  `test_only_collection_and_interpreter_stay_delegated` fails — correctly. That
+  test is a good boundary and should not be relaxed.
+* Hashing the **committed blob** rather than the worktree is right, and it means
+  a dirty frozen file HOLDs where v1 compared worktree-to-worktree. Consequence:
+  the gate cannot be exercised from a dirty tree, including by the agent editing
+  it.
+* R1-C lists *"an untracked file under a gate root HOLDs"* under **"the
+  behavioral contract stays"**. Measured against the pre-change `verify()`: **v1
+  never held on untracked** — it emitted `FROZEN-NEW` for any new path, tracked
+  or not. It is a *new* strictness, and applied unconditionally it reds the gate
+  continuously in a live multi-agent tree.
+
+The differential corpus D4 asked for **passed**; what failed was integration
+with the evidence path. So M5's trigger is met in substance if not in its exact
+words, and v1 is retained.
+
+**A, B, C, E and G are unaffected and stay landed.** D re-opens with the four
+findings above as inputs; F and H were already held.
