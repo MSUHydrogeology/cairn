@@ -116,6 +116,15 @@ commits their own findings, or the Maintainer does. The attribution
 sign, and a structurally-independent read is only independent if its
 author is its committer.
 
+**Comprehension is a precondition of the Decision, not a courtesy.** You cannot
+review what you cannot penetrate, so an opaque change quietly turns "review and
+decide" into "approve". Lead plain and keep the precision beneath it; define a
+specialist term the first time it carries weight; and treat *"I don't
+understand this yet"* as a **mandatory pause** — a decision surface the
+Maintainer cannot follow is not decidable. This binds the agent, who is
+typically the stronger party on the software, not the reader. Rationale and
+grounding: `doctrine/rationale.md` > the comprehension floor.
+
 ## Session routines
 
 * **Session start** — at a cold start, or after a context-loss
