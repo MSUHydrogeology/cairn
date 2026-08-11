@@ -6,6 +6,11 @@
 
 > A cairn is a trail marker left for those who come after.
 
+**Every AI-assisted change starts as a short written proposal that an
+independent reviewer — a different model, or a human — checks before any code
+is written. The whole deliberation is committed to git, so you can always
+reconstruct why your software is the way it is.**
+
 ---
 
 ## Does this sound familiar?
@@ -35,6 +40,38 @@ Cairn is built for this exact moment.
 | A wrong scientific assumption ships | Caught at proposal review, before any code |
 | "How did I get this result?" | The deliberation record **is** the answer |
 | Slower? Faster? Hard to know | Slower for the first few changes; the overhead pays back in fewer rework cycles |
+
+---
+
+## What you get
+
+- **Review before code.** A change is argued and reviewed as a written
+  proposal *before* an implementation exists, so a wrong assumption is caught
+  on a page instead of in a result.
+- **Independence you can check.** The stronger review tier requires a
+  different agent type or a human. Who reviewed what is recorded in the
+  repository, not asserted.
+- **The record is the repository.** Append-only, one commit per lifecycle
+  step. The whole arc of a decision replays from `git log`.
+- **Falsification fixed in advance.** What would disprove a change is
+  committed *before* the evidence is gathered — the shape of a registered
+  report, applied to software.
+- **Vendor- and stack-neutral by construction.** The coordination channel is
+  Markdown in git. Change models, tools, or languages without changing the
+  method.
+- **Fitted, not one-size.** The apparatus is sized to your codebase and team,
+  and stays only as heavy as they earn.
+- **No runtime dependencies.** Everything Cairn installs is standard-library
+  Python, and nothing phones home.
+
+### Isn't this just careful prompting with extra steps?
+
+Cairn is slower for the first few changes, and it will not make an agent write
+better code. What it changes is what *survives*. An unrecorded loop cannot tell
+you why a change was made, who checked it, or what would have falsified it —
+and those are exactly the questions a reviewer, a collaborator, or you in six
+months will ask. The apparatus exists to keep those three answers in the
+repository. If you never need to answer them, you do not need Cairn.
 
 ---
 
@@ -194,17 +231,22 @@ what gets prompted, reviewed, and shipped.
 
 ---
 
-## How to adopt — try it in 15 minutes
+## How to adopt
 
-Want to see the apparatus before committing to a level?  Follow
-[`docs/quickstart.md`](docs/quickstart.md) on a disposable repo — one
-human + one AI agent, one trivial change through the full lifecycle,
-in 15–25 minutes.
+**Try it first.**  Follow [`docs/quickstart.md`](docs/quickstart.md) on a
+disposable repository: one human, one AI agent, one trivial change through the
+full lifecycle.  It is a short walkthrough, and nothing it installs touches a
+repository you care about.  If you would rather see the apparatus on something
+that looks like science than on a toy,
+[`examples/scientific-minimal/`](examples/scientific-minimal/) runs the same
+lifecycle over a mass-balance invariant test.
 
-New to Cairn? [`docs/getting-started.md`](docs/getting-started.md)
-narrates one change moving through the lifecycle, and
-[`docs/workflow-role.md`](docs/workflow-role.md) explains where Cairn
-sits in the workflow — and what it deliberately does *not* do.
+**Then pick a depth.**  The on-ramp below is the real next step.
+
+Prefer to read before running?
+[`docs/getting-started.md`](docs/getting-started.md) narrates one change moving
+through the lifecycle, and [`docs/workflow-role.md`](docs/workflow-role.md)
+explains where Cairn sits — and what it deliberately does *not* do.
 
 Three graduated levels (see [`on-ramp/README.md`](on-ramp/README.md)
 for the full ladder):
@@ -232,8 +274,8 @@ agent running alongside the Maintainer, working from
 first.  The eleven-section assessment (tests, hidden state, data I/O,
 reproducibility, security boundaries, scientific assumptions, and
 more) surfaces the load-bearing questions *before* you pick a level,
-and the profile-mapping appendix translates your G/M/P scores into a
-recommended Cairn level + module roster.
+and its scoring appendix turns your answers into a recommended starting
+depth and module set.
 
 ---
 
@@ -244,7 +286,7 @@ recommended Cairn level + module roster.
 | [`doctrine/`](doctrine/) | The invariant core: lifecycle, dual-review, coordination, role roster, session routines, rationale. |
 | [`dimensions/`](dimensions/) | The six adaptation axes (age, size, complexity, language, human team, agent team) and the three module layers. |
 | [`templates/`](templates/) | The forkable files: `core/` (the kernel), `modules/default-on/` and `modules/team-gated/` (the dimension-selected add-ons), `phase-0/` (the assessment templates), and `onboarding/` (the progressive-onboarding presets). |
-| [`bootstrap/`](bootstrap/) | The R-A three-act bootstrap procedure (`BOOTSTRAP.md`), the mechanical scaffold (`scaffold.py` + tests), safety rules (`SAFETY.md`, R-I), and the fidelity-check manifest spec (`fidelity-check.md`, R-H). |
+| [`bootstrap/`](bootstrap/) | The three-act install procedure (`BOOTSTRAP.md`), the scaffold that performs it (`scaffold.py` + tests), the safety rules it operates under (`SAFETY.md`), and the fidelity-check manifest spec (`fidelity-check.md`). |
 | [`case-studies/`](case-studies/) | Worked examples of the matrix applied: [`modflow_tools.md`](case-studies/modflow_tools.md) (smaller sibling) and [`lhm.md`](case-studies/lhm.md) (full apparatus). |
 | [`on-ramp/`](on-ramp/) | The graduated-adoption ladder (Level 0 / 1 / 2). |
 | [`docs/`](docs/) | Adopter orientation: Cairn's role in the workflow (`workflow-role.md`), a getting-started walkthrough (`getting-started.md`), and a curated further-reading signpost (`further-reading.md`). |
@@ -261,9 +303,10 @@ Cairn is released at **v0.3.0** (2026-06-12).
   suite, and two case studies (modflow_tools, LHM) covering
   opposite-leaning points on the dimension matrix.
 - **Phase 5 — launch and governance — in progress.**
-- **R-H third-party correctness probe (chunk 5.3 of the plan)** is
-  outstanding: it awaits a consenting third-party scientific
-  repository that did not contribute to the doctrine.  The
+- **An independent correctness probe is still outstanding**: it awaits a
+  consenting third-party scientific repository that did not contribute to the
+  doctrine.  Until one exists, every deployment Cairn has been tested against
+  is one its own maintainer is close to.  The
   bootstrap is validated end-to-end against modflow_tools through
   the v1 reference manifest at
   [`case-studies/modflow_tools-fidelity-manifest.yml`](case-studies/modflow_tools-fidelity-manifest.yml).
