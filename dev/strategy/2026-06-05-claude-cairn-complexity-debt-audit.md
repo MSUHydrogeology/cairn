@@ -7,12 +7,14 @@
 **Author**: Claude (Strategy & Research Agent)
 **Model**: Opus 5
 **Date**: 2026-06-05, last revised 2026-08-11
-**Status**: revised (External round 1 — Codex, security lens — folded in and
+**Status**: revised (External rounds 1–2 — Codex, security lens — folded in and
 removed 2026-08-11)
 **Type**: design-exploration
-**Surfaces this would feed**: one bounded validation proposal that carries the
-instrument, its fixtures, and a preregistered cost pilot together; a targeted
-Security read of the integrity path; the release-boundary re-measure cadence.
+**Surfaces this would feed**: one bounded validation proposal carrying the
+instrument and its golden fixtures; a lightweight file-attribution field on
+code-review findings, with its analysis registered before the data exists; a
+targeted Security read of the integrity path; the release-boundary re-measure
+cadence.
 
 ---
 
@@ -94,10 +96,17 @@ only supports the author's design is decoration.
    Community Structure in Networks.* PNAS 103(23): 8577–8582; with Mancoridis,
    S., Mitchell, B. S., Rorres, C., Chen, Y., & Gansner, E. R. (1998). *Using
    Automatic Clustering to Produce High-Level System Organizations of Source
-   Code.* IWPC 1998. Community detection over a weighted graph, optimizing
-   modularity, is the established method. **Connected components — what the
-   instrument below actually computes — is a degenerate special case** that any
-   single shared helper collapses to one.
+   Code.* IWPC 1998. Community detection by modularity optimization is
+   established for **general networks**, and the software-clustering work
+   operates on a **module-dependency graph**. **Connected components — what the
+   instrument below computes — is a degenerate special case** that any single
+   shared helper collapses to one.
+   **The gap these sources do not close:** the graph here is an *unweighted,
+   intra-file, name-resolved call graph* with admitted edge loss and name
+   collision. Neither source shows that modularity optimization on **that**
+   graph beats connected components. They justify *testing* community
+   detection as a candidate; they do not license mandating it before the input
+   graph has earned the cost.
 
 **Debt, review, and evidence discipline**
 
@@ -108,13 +117,25 @@ only supports the author's design is decoration.
     29(6): 18–21, which argues the metaphor is only useful when principal and
     interest are made concrete. A ledger without a cost side is the failure
     mode this anchor names.
-11. **Review as the thing complexity actually taxes** — Rigby, P. C., & Bird,
-    C. (2013). *Convergent Contemporary Software Peer Review Practices.*
-    ESEC/FSE 2013; with Sadowski, C., Söderberg, E., Church, L., Sipko, M., &
-    Bacchelli, A. (2018). *Modern Code Review: A Case Study at Google.*
-    ICSE-SEIP 2018. Review effectiveness falls as change size and complexity
-    rise — the mechanism behind treating trust-surface complexity as a
-    reviewability problem.
+11. **Review, at the strength the studies actually establish** — Rigby, P. C.,
+    & Bird, C. (2013). *Convergent Contemporary Software Peer Review
+    Practices.* ESEC/FSE 2013, which finds that keeping changes small is a
+    convergent practice across projects, and that review requires reading,
+    understanding, and critiquing a change; Sadowski, C., Söderberg, E.,
+    Church, L., Sipko, M., & Bacchelli, A. (2018). *Modern Code Review: A Case
+    Study at Google.* ICSE-SEIP 2018, which documents review practice and the
+    comprehension burden reviewers report; and — closest to a measured
+    size effect — Bosu, A., Greiler, M., & Bird, C. (2015). *Characteristics of
+    Useful Code Reviews: An Empirical Study at Microsoft.* MSR 2015, which
+    finds the density of *useful* review comments falls as the **number of
+    files in a changeset** rises.
+    **What these do not establish** is the claim this note most wants: that
+    *static code complexity* raises review cost. Changeset size is not
+    nesting depth, and none of these studies measured anything resembling the
+    concentration or nesting proxies used here. So the link from
+    static complexity to review cost is **this note's hypothesis**, held
+    separately from the evidence above and tested by the forward instrument
+    and the targeted Security read — not borrowed from the literature.
 12. **Register before you measure** — Chambers, C. D. (2013). *Registered
     Reports: A New Publishing Initiative at Cortex.* Cortex 49(3): 609–610.
     Specifying hypothesis, population, and analysis before seeing results is
@@ -125,10 +146,14 @@ only supports the author's design is decoration.
 **What the anchor set implies, taken together.** Anchors 2 and 4 point the same
 way: **the history-derived half of this instrument is better supported than the
 static half**, and the static half owes a decorrelation check before it earns
-its place. Anchors 5 and 9 say two specific components are mis-specified as
-built. Anchor 10 says the whole exercise is unjustified until cost is modeled.
-That is the honest position: a defensible triage tool, not a measurement of
-debt.
+its place. Anchor 5 names one component as **measurably** mis-specified —
+Nagappan and Ball compared absolute against size-normalized churn directly, so
+that fix is dictated. Anchor 9 names a component as **unvalidated**, which is a
+weaker claim and calls for a declared comparison rather than a mandated
+replacement. Anchors 11 and 12 mark the review-cost link as hypothesis, not
+inheritance. Anchor 10 says the whole exercise is unjustified until cost is
+modeled. That is the honest position: **a defensible triage tool, not a
+measurement of debt** — and one whose central inference is still untested.
 
 ## Why size alone is the wrong screen
 
@@ -218,8 +243,10 @@ count (anchor 2), they are an expensive way to sort by size.
 
 ## Findings
 
-Measured 2026-08-11 against the working tree at `0e6ce06` (one unrelated file
-modified). Twins collapsed; `cp` = copies collapsed into the artifact.
+Measured 2026-08-11 against **the exact tree at `0e6ce06`** — sufficient to
+reproduce every row. Twins collapsed; `cp` = copies collapsed into the artifact.
+Derived values are computed at full precision and rounded only for display;
+rounding an input before multiplying it shifts the hotspot column.
 
 ### Production stratum — 34 artifacts ≥400 lines, top 12
 
@@ -228,7 +255,7 @@ modified). Twins collapsed; `cp` = copies collapsed into the artifact.
 | 1 | `bootstrap/_scaffold/cli.py` | 754 | **2** | 1.00 | 4 | 1 | 7 | **28.0** | 1 |
 | 2 | `bootstrap/_scaffold/lockfile.py` | 633 | 12 | 0.69 | **8** | 2 | 5 | 27.7 | 1 |
 | 3 | `bootstrap/_scaffold/config.py` | 1773 | 17 | 0.65 | 5 | 2 | 8 | 25.9 | 1 |
-| 4 | `scripts/run_portable_security_sweeps.py` | 1858 | 39 | 0.38 | 7 | 1 | 8 | 21.3 | 2 |
+| 4 | `scripts/run_portable_security_sweeps.py` | 1858 | 39 | 0.38 | 7 | 1 | 8 | 21.4 | 2 |
 | 5 | `tools/lifecycle_planner.py` | 1728 | 46 | 0.28 | 5 | 2 | 13 | 18.2 | 2 |
 | 6 | `scripts/content_scan.py` | 914 | 22 | 0.41 | 4 | 1 | 9 | 14.7 | 2 |
 | 7 | `bootstrap/security_check.py` | 1099 | 33 | 0.29 | 5 | **3** | 8 | 11.6 | 1 |
@@ -277,14 +304,25 @@ Five of the top seven are trust-relevant: `cli.py` (engine entry point),
 executable trust root), and `security_check.py` (the scan surface, and the
 corpus's second-highest subsystem count).
 
-Per anchor 11, review effectiveness degrades as complexity rises, which makes
-this a **reviewability** question rather than an aesthetic one: can one reviewer
-hold the path from untrusted input to a dangerous sink? That argues
-trust-boundary concentration should be the **primary** ordering factor.
+The reason to care is **reviewability**: can one reviewer hold the path from
+untrusted input to a dangerous sink? Two separate propositions sit behind that,
+and per anchor 11 they carry very different weight:
 
-The limit on that inference is real and worth stating precisely: the instrument
-**traces no input-to-sink path**. Depth-8 nesting on the integrity record does
-not establish that no reviewer can comprehend it. It establishes that
+* **Trust-surface status is a risk-prioritization factor** — a defensible
+  ordering input on its own terms, because a defect on a trust root costs more
+  than a defect elsewhere. This does not need the literature's support and does
+  not get it.
+* **Static complexity raises review cost** — the *hypothesis*. The cited
+  studies measured changeset size and reviewer-reported comprehension burden,
+  not nesting or concentration. Nothing here establishes it.
+
+So trust-boundary status earns a place as a **primary ordering factor on risk**,
+while the complexity-to-review-cost link stays an open question the forward
+instrument and the Security read are built to test.
+
+The limit is worth stating precisely: the instrument **traces no
+input-to-sink path**. Depth-8 nesting on the integrity record does not
+establish that no reviewer can comprehend it. It establishes that
 `lockfile.py` is the highest-priority surface to *inspect*. The inspection is
 the evidence; the metric is only the triage.
 
@@ -314,40 +352,81 @@ instrument's blind spot rather than the code.
 It measures shape and activity. It does not measure **cost** — and per anchor
 10, cost is the entire justification for the word "debt."
 
-The obvious-looking join is **not available**, and the specifics matter because
-they determine what a real study must do instead:
+### The archive is read-only, and that settles how cost gets measured
 
-* `lifecycle_metrics`' per-plan rows carry **round counts** (plan-review,
-  code-review), not code-review finding counts and not file attribution. Its
-  finding counts are **per proposal** — raised *before* implementation, mostly
-  against design and governance. Attributing those to every file a later plan
-  touched cannot show that a code surface caused review cost.
-* Recovering a plan's commits by subject stem is incomplete: the literal
-  `git log --grep='^<stem>:'` recipe returns **zero commits for 7 of 34
-  archived plans**, because implementation subjects also take forms like
-  `<stem> Chunk …` or a component name.
+The tempting move is to reconstruct cost from the existing record. It is the
+wrong move, for a reason that is methodological before it is procedural.
 
-So the cost side needs a **purpose-built pilot**, not a query. Per anchor 12,
-its design is registered before its results exist:
+**The rule.** A plan is append-only once implementation starts and closed once
+archived; the record shows what was believed *at each point*, and the
+plan-archive precondition — a plan cannot archive until a code review has
+occurred — is what makes an archived plan usable as evidence at all. A record
+that can be edited afterwards attests nothing.
 
-* **Unit of change** — a plan's reviewed implementation range.
-* **Outcome** — findings extracted from that plan's `## Code review` passes,
-  attributed to a file only when the finding or its disposition **names that
-  file**. Zero-finding plans are retained; dropping them is the survivorship
-  error.
-* **Covariates** — review tier, changed lines, mechanical-only changes, and
-  trust-surface status.
-* **Kept separate** — proposal findings and plan-review findings remain their
-  own process outcomes, never evidence that code shape caused rework.
-* **Declared in advance** — repository baseline, minimum sample, uncertainty
-  treatment, and an explicit **INCONCLUSIVE** outcome, so "indistinguishable
-  from baseline" is a defined result rather than a rhetorical exit.
+**Why that matters here specifically.** Attributing a historical finding to a
+file means deciding, *now, with the hypothesis in hand*, which file each past
+finding blamed. That is fitting evidence to a conclusion — the failure anchor 12
+exists to prevent — performed by the party who wants the instrument validated.
+The archive's entire evidentiary value is that it was written **before anyone
+asked this question**. Annotating it would convert an independent record into a
+derived one and destroy the property being relied on.
 
-A manual pilot over a handful of plans is preferable to expanding
-`lifecycle_metrics` before the signal is known to exist.
+**What the archive does contain**, measured rather than assumed, and reported
+as a coverage limit rather than a repair target:
 
-Until that runs, every ranking here is a **hypothesis about where cost lives**,
-not a measurement of it.
+| | |
+|---|---|
+| archived plans | 34 |
+| touching ≥1 artifact in the ranked corpus | **20** |
+| whose code review carries tagged findings | **13** |
+| tagged code-review findings | 57 |
+| naming ≥1 file path | **32 (56%)** |
+
+Two structural gaps compound it: `lifecycle_metrics`' per-plan rows carry
+**round counts**, not code-review findings or file attribution, and its finding
+counts are **per proposal** — raised before implementation, mostly against
+design and governance. And recovering a plan's commits by subject stem is
+incomplete, returning zero for 7 of 34 plans whose implementation subjects take
+forms like `<stem> Chunk …`.
+
+So roughly **32 file-attributed findings across 13 plans** is the whole
+retrospective evidence base, and it is thin enough that a study built on it
+could only detect a large effect. That is a real argument for not building one.
+
+### Evidence forward, not reconstructed
+
+The alternative is to make the *next* two years measurable rather than
+litigating the last two months: record file attribution on code-review findings
+**at the moment the finding is written**, by the reviewer who knows which file
+they meant.
+
+Three design constraints, and they are what keep this from becoming ceremony:
+
+* **Lightweight — a field, not a workflow.** Reviewers already name a file in
+  prose 56% of the time; the change is to make that a structured part of a
+  finding rather than a habit. The plan template already carries a finding
+  **disposition** vocabulary (`accept`, `guard`, `wontfix`), so this extends an
+  existing convention instead of introducing a mechanism.
+* **Transparent by construction.** The data lives where the finding lives — in
+  the committed plan, human-readable, reviewable by the person it concerns.
+  No separate database, no side-channel, no telemetry, nothing collected that
+  is not already being written down. This is the posture the
+  **Measurement Compact** already fixes
+  (`templates/modules/default-on/lifecycle-metrics.md`): internal-diagnostic,
+  not evaluative; system learning, not agent ranking.
+* **Analysis declared before the data exists** (anchor 12) — outcome,
+  covariates (review tier, changed lines, mechanical-only changes, trust-surface
+  status), the retention of zero-finding plans, and an explicit
+  **INCONCLUSIVE** branch, so "indistinguishable from baseline" is a defined
+  result rather than a rhetorical exit. Registering it now is *easier* than
+  registering a retrospective study, because no results exist yet to fit to.
+
+**The honest cost of this route:** the answer arrives in months, not weeks, and
+the current ranking stays unvalidated in the meantime. That is the price of not
+manufacturing the evidence, and it is the right price to pay.
+
+Until then, every ranking here is a **hypothesis about where cost lives**, not
+a measurement of it.
 
 ## Options
 
@@ -357,40 +436,51 @@ not a measurement of it.
 2. **Ship the instrument as a standing Cairn tool now**, act on nothing.
    Premature: it would give an unvalidated proxy a maintained product surface
    and the authority that comes with one.
-3. **Carry the instrument inside a bounded validation proposal** — fixtures,
-   declared corpus, the preregistered cost pilot, and the targeted Security
-   read — and decide afterwards whether it deserves to be a product.
-4. **Act on the current ranking now.** Fastest, and it treats an explicitly
+3. **Reconstruct cost from the archive.** Rejected on the evidence above: ~32
+   file-attributed findings across 13 plans, and getting more would mean
+   retroactively annotating closed records with the hypothesis in hand.
+4. **Carry the instrument inside a bounded validation proposal, and gather cost
+   evidence forward** — fixtures, declared corpus, a lightweight
+   file-attribution field on code-review findings, and the targeted Security
+   read — deciding whether the instrument deserves to be a product only once
+   evidence accumulates.
+5. **Act on the current ranking now.** Fastest, and it treats an explicitly
    unvalidated proxy as a finding.
 
 ## Recommendation
 
-**Option 3, with the Security read running in parallel.**
+**Option 4, with the Security read running in parallel.**
 
-1. **One proposal carries the instrument and its validation together.** The
-   script, golden fixtures pinning the declared corpus and strata, the
-   decorrelation check anchor 2 demands, and the preregistered cost pilot ship
-   as a single reviewable unit. The instrument is *checked in* — a ranking
-   nobody can reproduce is not evidence — but it is **not** promoted to a
-   maintained Cairn tool until the pilot reports.
-2. **Run the pilot.** It is the only thing that can either justify the queue or
-   retire the inquiry, and it is the highest-value item in this note.
-3. **Two mis-specifications get fixed as part of (1)**, both dictated by the
-   anchors rather than by taste: size-normalized churn (anchor 5), and
-   modularity-based clustering in place of connected components (anchor 9).
+1. **One proposal carries the instrument and its validation design together.**
+   The script, golden fixtures pinning the declared corpus and strata, and the
+   decorrelation check anchor 2 demands, as a single reviewable unit. The
+   instrument is *checked in* — a ranking nobody can reproduce is not evidence
+   — but **not** promoted to a maintained Cairn surface until evidence exists.
+2. **Land the forward evidence mechanism**: a file-attribution field on
+   code-review findings, plus the preregistered analysis it will eventually
+   feed. This is the cheapest item here and the only one that compounds.
+3. **One mis-specification is dictated and one is a candidate.**
+   Size-normalized churn (anchor 5) is a fix — Nagappan and Ball measured that
+   comparison directly. Modularity-based clustering (anchor 9) is **one
+   preregistered candidate** in the golden-fixture validation, with a declared
+   comparison against connected components and an INCONCLUSIVE path; the
+   sources justify testing it on a module-dependency graph, not mandating it on
+   this note's lossy intra-file one. If the graph cannot separate
+   expert-labeled cases, **separability drops out of the v1 ranking entirely**
+   rather than acquiring a more expensive implementation.
 4. **In parallel, one targeted Security read of `lockfile.py`** — identify the
    actual integrity decision path, assess its branches and tests end to end,
-   and report whether a reviewer could hold it. It is cheap, it tests this
-   note's strongest inference directly, and it **authorizes no refactor**.
-5. **Then, and only then, consider at most one split**, chosen by measured cost
-   × trust surface, and opened only if the Security read or the pilot finds a
-   concrete comprehension or defect burden.
+   and report whether a reviewer could hold it. Cheap, tests the note's central
+   hypothesis directly, and **authorizes no refactor**.
+5. **No split opens** until the Security read or accumulated forward evidence
+   finds a concrete comprehension or defect burden.
 
 **The stopping rule.** The queue is empty when findings-per-change on the
 remaining surfaces is indistinguishable from the repository baseline — with
-"indistinguishable" defined by the pilot's preregistered analysis, including its
+"indistinguishable" defined by the preregistered analysis, including its
 INCONCLUSIVE branch. Without that number, per anchor 10, a ledger regenerates
-indefinitely because nothing tells it when to stop.
+indefinitely because nothing tells it when to stop. **Forward evidence is what
+eventually supplies it**; the archive cannot, and should not be made to.
 
 **One adjacent item, correctly scoped.** `doctrine/plans.md` at 836 lines is
 the corpus-largest doctrine file, with roughly 900 words duplicated against
@@ -399,23 +489,35 @@ and not part of this program.
 
 ## Open questions for the maintainer
 
-1. **Appetite.** Option 3 (instrument inside a validation proposal, no split
-   yet), or Option 1 (retire until something hurts)? *(Recommended: 3 — but 1
-   is a real answer and better than acting on an unvalidated proxy.)*
-2. **Pilot scale.** How many plans is a credible first sample, given a corpus of
-   34 archived plans and a hand-extraction cost per plan? *(Recommended: the
-   maintainer sets the minimum before extraction begins, per anchor 12 — not
-   after seeing the first few.)*
-3. **Trust-surface priority.** Promote trust-boundary concentration to the
-   primary ordering factor? *(Recommended: yes — it reframes complexity work as
-   review integrity, which is the finding here with an actual mechanism behind
-   it, per anchor 11.)*
-4. **Does this note become a `living-reference`?** It is now a standing
-   instrument with a release-boundary re-measure cadence rather than a
-   point-in-time exploration. The folder's validity rule ties that type to
-   `Status: living` and forbids promotion, so the switch waits until the
-   validation proposal has been carried. *(Recommended: convert once the pilot
-   reports; keep it a `design-exploration` until then.)*
+1. **Appetite.** Option 4 (instrument checked in, evidence gathered forward, no
+   split yet), or Option 1 (retire until something hurts)? *(Recommended: 4 —
+   its marginal cost over 1 is one template field and one Security read, and
+   unlike 1 it eventually produces the number the stopping rule needs.)*
+2. **How lightweight is lightweight enough?** The forward mechanism is a file
+   attribution on code-review findings. Is that the right unit — or is even
+   that too much ceremony on a reviewer, in which case the fallback is deriving
+   attribution from the reviewed range's changed files (weaker: a finding may
+   concern one file in a multi-file range, but it costs a reviewer nothing).
+   *(Recommended: the explicit field, because the reviewer is the only party
+   who knows which file they meant, and 56% of them already write it in prose.)*
+3. **What is the evidence for, and who may see it?** The Measurement Compact
+   fixes the posture — internal-diagnostic, not evaluative — but this data is
+   finer-grained than anything Cairn currently keeps: it links a *file* to a
+   *finding* to a *reviewer*. Worth an explicit statement that it is not a
+   reviewer-performance surface before it starts accumulating, not after.
+   *(Recommended: state it in the proposal, and keep per-reviewer aggregation
+   out of the declared analysis entirely.)*
+4. **Trust-surface priority.** Promote trust-boundary status to a primary
+   ordering factor? Note this is now the *risk* argument standing alone — the
+   complexity-to-review-cost half is explicitly a hypothesis. *(Recommended:
+   yes, on risk. A defect on a trust root costs more; that holds whether or not
+   the complexity link survives testing.)*
+5. **Does this note become a `living-reference`?** It is a standing instrument
+   with a release-boundary re-measure cadence rather than a point-in-time
+   exploration. The folder's validity rule ties that type to `Status: living`
+   and forbids promotion, so the switch waits until the validation proposal has
+   been carried. *(Recommended: convert once forward evidence starts reporting;
+   keep it a `design-exploration` until then.)*
 
 ## Fold-up note
 
@@ -432,102 +534,10 @@ one-incident-is-not-doctrine rate-limit gate:
   a ranking without a declared population is not reproducible — partial
   exclusions reshape conclusions silently, and excluding a trust root from a
   trust-surface finding is the flattering direction.
-* **On a trust boundary, complexity is a reviewability property** (anchor 11).
-  The question is whether one reviewer can hold the untrusted-input-to-sink
-  path, not how long the file is. Cairn already ties decision authority to
-  comprehension; this applies the same principle to code review.
-
----
-
-## Review -- Codex (External, security lens, revision closure) -- 2026-08-11
-
-<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
-     this section. Strategy notes are inline-revised, not append-only. -->
-
-**Structural independence.** This is a different-agent-type re-review of the
-revision at `55c97b109291a4ec3c1ff8e4fcd5a589e30aed12`. I independently
-reconstructed the declared production corpus and measurements from the exact
-tree at `0e6ce061fdeb844e2ca3612940fe11955d9210eb`, and checked the primary
-sources behind the revision's new churn, clustering, and review-effectiveness
-prescriptions.
-
-**Recommendation: REVISE, narrowly.** The revision closes all four findings
-from the first round and is now a sound basis for a bounded validation
-proposal. Before promotion, narrow two claims that the cited studies do not
-establish and correct the snapshot's one rounding discrepancy. This does not
-reopen the corpus, cost-pilot, parser, or trust-path design.
-
-### Prior findings
-
-* **C1 closed.** The corpus now includes template-only Python, collapses
-  byte-identical copies with union churn, separates tests, and ranks 34
-  production artifacts coherently. My independent implementation reproduced
-  the artifact count, order, and displayed measurements apart from R3 below.
-* **C2 closed.** The unavailable lifecycle-metrics join is withdrawn and the
-  executable strategy now specifies a preregistered, range-based manual pilot,
-  file-attribution rule, zero-finding population, covariates, and an explicit
-  `INCONCLUSIVE` outcome.
-* **C3 closed.** The obsolete parser-divergence premise is gone.
-* **C4 closed.** Nesting is now explicitly a triage signal; the targeted
-  `lockfile.py` Security read, not the metric, supplies any comprehension
-  finding and authorizes no refactor by itself.
-
-### Findings
-
-**[R1] MEDIUM -- anchor 11 overstates what its cited review studies establish.**
-Rigby and Bird report that small changes are a convergent practice and that
-review requires reading, understanding, and critique. Sadowski et al. describe
-Google's review practices and comprehension challenges. Neither cited study
-establishes the sentence "review effectiveness falls as change size and
-complexity rise," particularly its static-code-complexity half. A closer
-empirical source, Bosu et al., *Characteristics of Useful Code Reviews*, finds
-that useful-comment density falls as the **number of files in a changeset**
-rises; that still does not validate this strategy's nesting/concentration
-proxy.
-
-This matters because F3 and the fold-up call anchor 11 an actual mechanism and
-use it to make trust-boundary concentration the primary ordering factor. Close
-R1 by separating evidence from hypothesis: cite the small-change and
-comprehension results at their measured strength, optionally add Bosu et al.
-for changeset size, and state that Cairn's static-complexity-to-review-cost link
-is the hypothesis the preregistered pilot and targeted Security read will test.
-Trust-surface status may remain a risk-prioritization factor without pretending
-that the cited studies measured Cairn's proxy.
-
-**[R2] MEDIUM -- anchor 9 identifies a candidate family, not the replacement
-algorithm this strategy now mandates.** Newman's work establishes modularity
-optimization for community detection in general networks; the software-
-clustering work begins from a module-dependency graph. Cairn's proposed graph
-is instead an unweighted, intra-file, name-resolved call graph with admitted
-edge loss and collision. Those sources justify testing community detection,
-but they do not show that modularity optimization on this particular graph is
-more valid than connected components. The Recommendation's "dictated by the
-anchors" wording prematurely converts a research candidate into scope.
-
-Close R2 by making modularity-based clustering one preregistered candidate in
-the golden-fixture validation, with a declared comparison and an
-`INCONCLUSIVE` path. The proposal may also omit separability from v1 ranking if
-the graph cannot distinguish expert-labeled cases. Do not require a more
-complex clustering implementation before its input graph has earned that cost.
-
-**[R3] LOW -- the exact reconstruction yields hotspot `21.4`, not `21.3`, for
-`run_portable_security_sweeps.py`.** Its unrounded inputs are concentration
-`0.38130021913805695`, nesting `7`, and union churn `8`, producing
-`21.35281227173119`; Python's one-decimal rounding is `21.4`. Everything else
-shown in the top twelve reproduced. Also describe the source as the exact tree
-at `0e6ce06`, which is sufficient to reproduce the table, rather than a
-"working tree at" that commit with an unnamed modification.
-
-### Disposition
-
-Option 3 remains the right direction. After R1 and R2 are narrowed, the note is
-ready to feed one validation proposal and the independent `lockfile.py`
-Security read. The pilot, not the literature summary or current ranking,
-decides whether the instrument becomes a maintained Cairn surface or whether
-any split opens.
-
-I did not run the proposed cost pilot, review an eventual checked-in
-measurement tool, or perform the end-to-end `lockfile.py` Security read. I did
-not exhaustively re-review all twelve literature anchors; I checked the three
-that prescribe changes in the recommendation and the review-cost inference
-that governs F3.
+* **A closed record is evidence precisely because it predates the question;
+  measure forward instead of reconstructing backward.** When an existing
+  archive is too sparse to test a hypothesis, the legitimate moves are to
+  report the sparsity and to instrument the *next* cycle — never to annotate
+  the old one with the hypothesis in hand. The corollary is a design rule: if
+  you want a question answerable later, add the field that answers it *before*
+  you need it, where the person who knows the answer is already writing.
