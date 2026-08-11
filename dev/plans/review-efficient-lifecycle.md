@@ -2229,3 +2229,51 @@ It does not clear either obligation. Both passes declare themselves blocking,
 the plan stays `open`, and `required(External + External Security Review)` still
 wants a clearing pass on each track. No implementation commit is authorized by
 this Response.
+
+## Plan review -- Codex -- 2026-08-11 (round 7)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `f0a716bbca273a8f9b86ce0074eec569b036e1f2`
+**Target**: closure of N1 and N2 against the revised executable contract
+**Prior findings**: N1, N2
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: SHIP.** N1 is closed in the Chunk B contract, not only in the
+Response: B1 keeps raw boundaries canonical for both pass bodies, B2 preserves
+the landed grouped Plan-review Response rule, B3 separately requires exact
+Code-review `Answers:` binding, and B4 requires independent falsifiers in both
+directions. N2 is corrected to four in the operative account and the current
+Response accurately explains the later `6 -> 2` observation without making
+that transient count authoritative.
+
+Direct execution under Python 3.13.13 reports this plan structurally sound,
+`lifecycle_planner.py scan` reports all eight active artifacts sound, the
+planner twins are byte-identical, and all 77 focused lifecycle-contract tests
+pass. The fresh two-pass/one-Response fixture clears; a pass after that Response
+and a group with no Response still refuse.
+
+The final Code review's "equivalently exact range" may and should be an exact
+**union**: `286f07d^..286f07d` for the pre-landed repair plus the plan's actual
+implementation range through Boundary B1. A single contiguous range is also
+correct but already includes 34 unrelated intervening commits and would spend
+review attention without increasing coverage. This is an interpretation of the
+alternative the Verification section already permits, not a new review pass or
+a scope change; both exact ranges are reviewed in the plan's one Boundary C
+pass and named in both Boundary B ledgers.
+
+**Closure accounting.** All prior External findings E1--E4, G1--G4, H1--H3,
+J1, L1, L2, N1 and N2 are closed. The plan keeps every accepted parent chunk,
+preserves the two sibling plans' independent gates, and leaves the final Code
+review, Maintainer ceremony, second Boundary B run, pilot activation and
+conditional promotion in their proper later phases. This pass clears the
+External obligation.
+
+**Covered**: exact plan bytes at `f0a716b`; the N1/N2 revisions; direct planner
+and corpus-scan execution; 77 focused tests; twin identity; the pre-landed
+repair diff; and the final review-range contract.
+
+**Not covered**: implementation bytes, future Code review, full-suite behavior,
+pilot observations, or the Maintainer re-anchor. Those remain execution-phase
+obligations and do not block plan approval.
