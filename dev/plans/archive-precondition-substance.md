@@ -292,11 +292,41 @@ reproduce in isolation. Neither is this plan's. A failure inside
 ### Summary Verdict
 **Verdict**: **SHIP** (Plan approved; 0 blocking, 0 substantive, 0 minor findings). Implementation may proceed.
 
-## Code review
+## Code review -- Antigravity (External) -- 2026-08-11
 
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External, different agent type from implementing author (Claude Opus 5)
+**Range**: `da3e296` (opening bug-fix) through `a450dd7` (record forward-only enforcement)
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: SHIP.** The implementation across `da3e296` through `a450dd7` cleanly and completely satisfies all six plan chunks (A–F), Revision 1 contract terms (R1-1 through R1-6), and all 8 acceptance criteria. Twin byte-identity (`tools/lifecycle_planner.py` ↔ `templates/skills/_lib/lifecycle_planner.py`) is verified exact. No matcher widening or unanchored whole-file matching was introduced.
 
-*Filled in after implementation commits land.* One independent pass, reviewer
-not the implementing agent, over a range that includes `da3e296`.
+### Steelman & Implementation Evaluation
+
+1. **Opening Bug-Fix & Range Inclusion (`da3e296`)**:
+   - Re-evaluated commit `da3e296` alongside implementation commits. The marker check for `## Code review` (`**Model**:` or dated heading) eliminates the placeholder false-pass vulnerability without breaking valid attributed reviews.
+
+2. **Chunk A Structural Grammar (`a1ec37a`)**:
+   - `_has_disposition_attestation` and `_has_fidelity_signoff` replace literal `True` at `:1379` and `:1382` with explicit structural grammars.
+   - Refuses empty `**Dispositions:**` labels, template instructions, and promissory "owed at archive" text. Accepts `Dispositions: none`, explicit keywords, and legacy `Follow-ups migrated to:` including the mid-line form (`adopter-entry-doc-refresh.md:173`) without unanchored whole-file matching (satisfying M2).
+
+3. **Chunk B Predicate Naming (`fef5295`)**:
+   - Renamed `_has_substantive_code_review` / `has_substantive_code_review` to `_has_attributed_code_review_record_marker` / `has_code_review_marker`. All operator-facing messages accurately claim only marker presence.
+
+4. **Chunk C Inventory & Chunk D Audit Docstring (`1e65dd7`, `5a7989d`, `a450dd7`)**:
+   - Categorized all 9 `gates.append((True` sites; added test `test_unconditional_gates_inventory_coverage` (C2).
+   - Documented `--include-archive` as an opt-in predicate validation tool with forward-only enforcement.
+
+5. **Chunk E & F Template & Record Coverage (`1e65dd7`)**:
+   - Updated `dev/plans/_template.md` and `templates/core/dev/plans/_template.md` (edited on their own terms). Updated `PLANNING.md` **[SP8-1]**, **[SP8-9]** and routed `[REC]` identity normalizer collision.
+
+6. **Verification & Twin Parity**:
+   - `cmp tools/lifecycle_planner.py templates/skills/_lib/lifecycle_planner.py` -> byte-identical twins OK.
+   - `pytest bootstrap/tests/test_lifecycle_contract.py` -> 108 passed in 1.83s.
+
+### Summary Verdict
+**Verdict**: **SHIP** (Code review approved; 0 blocking, 0 substantive, 0 minor findings).
+
 
 ## Lasting-truth migration
 
