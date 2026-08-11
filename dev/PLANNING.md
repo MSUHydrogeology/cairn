@@ -1397,8 +1397,13 @@ rather than left pointing at a section that was never written.)*
   gate now requires a reviewer marker (a `**Model**:` line or a dated `Code
   review -- <reviewer> -- YYYY-MM-DD` heading) instead of the section's mere
   presence; and the `Dispositions:` pattern now tolerates markdown emphasis,
-  which had made it report "no Dispositions block" against **12 archived plans
-  that each carried one**. **Left to the proposal**, because each is a behaviour
+  which had made it report "no Dispositions block" against archived plans that
+  carried one. **That count was first recorded as 12 and is wrong: the real
+  old-vs-new parser delta is 6.** The 12 came from an unanchored hand-rolled
+  regex -- 5 of its hits were prose *discussing* the phrase, and 1
+  (`adopter-entry-doc-refresh.md:173`) is a real **mid-line** block the
+  `^`-anchored fix still rejects, i.e. a live false-fail. Measuring a
+  presence-test bug with a presence test; see the proposal's Response. **Left to the proposal**, because each is a behaviour
   change adopters would see: the Dispositions and loop-fidelity gates in the
   `--to archived` pre-transition list are literal `True` and always report met;
   the `scan` subcommand does not walk `dev/plans/archive/`, which is why none of
@@ -1413,6 +1418,32 @@ rather than left pointing at a section that was never written.)*
   satisfied by a case-insensitive regex for the phrase *"Fidelity sign-off"* or
   *"loop-fidelity"* anywhere in the artifact — writing the phrase satisfies the
   gate, and no sign-off need have occurred.
+* **[SP8-11] `dev/intents.jsonl` grows without bound, and the cost lands on the
+  commit path.** PROPOSAL OPEN:
+  `dev/proposals/2026-08-11-claude-intent-ledger-pruning.md`. The ledger is a
+  **coordination surface, not an archive** (Maintainer's framing) -- gitignored,
+  local to one checkout -- yet nothing prunes it: claim and release both append,
+  and the full handoff's `_surface_intents` is read-only. Measured 2026-08-11:
+  650 records / 188 KB since 2026-07-22. `active_intents` replays the whole file
+  and runs in the **pre-commit hook**, so every commit pays for project age.
+  Two hazards are the design content, both verified: pruning a release without
+  its claim **resurrects the claim as active** and blocks its paths forever; and
+  any rewrite races the deliberately append-only single-`os.write` shape, where a
+  lost claim is a lost lock. Recommendation in the proposal: prune released pairs
+  only, and *report* never-released claims rather than deleting them -- a 30-day
+  unreleased claim is a bug signal, and this session hit that failure twice.
+* **[SP8-12] `test_verify_ref`'s two failures are NOT a missing GPG key.** That
+  explanation was propagated all day -- into both archived plans' verification
+  sections, the `da3e296` and archive commit bodies, and several sub-agent
+  briefs -- and it is **false**. Measured 2026-08-11: `test_verify_ref.py` alone
+  is **67/67 green**; both nodes fail only in the full suite, reproducibly across
+  two consecutive runs, and not when paired with `test_gate_preflight`,
+  `test_security_check`, or `test_lifecycle_cli` individually. So it is cross-file
+  state pollution, and the conclusion those records drew ("not this work's") was
+  right for the wrong reason. A wrong reason is worse than none here: "needs a
+  GPG key" tells the next reader to stop looking. Narrowing the polluter is a
+  bisect nobody has run. Adjacent to Antigravity's **[SP8-10]** (same shape: a
+  test whose expectation depends on ambient state).
 * **[SP8-7] `api-web-security-modules` never landed its
   `templates/modules/README.md` catalog row (F-11).** Activation's Chunk D landed
   its own row at `dd15268`; api-web's was left because another session held the
