@@ -47,6 +47,11 @@ work and any fixes land in Cairn via PR-flow.
 
 ---
 
+>  **The procedure now lives in [`docs/release-process.md`](../../docs/release-process.md).**
+>  That page is what a Maintainer runs; this note is the provenance behind it —
+>  the v0.2.0 instance, the per-sweep findings, and the reasoning that produced
+>  the roster. Do not rediscover the release process here.
+
 ## 1. Why a pre-release sweep (version-independent)
 
 Three structural forces make a whole-tree sweep worth running before *any*

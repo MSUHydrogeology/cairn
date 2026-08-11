@@ -116,7 +116,7 @@ deliberation layer, not Cairn's own.
 
 Documentation of Cairn *as it exists today*, by audience
 (getting-started, quickstart, dev-tour, agent-team-onboarding,
-workflow-role, further-reading).  Its defining property: it
+workflow-role, further-reading, release-process).  Its defining property: it
 **describes current reality** -- it neither prescribes how to build
 nor deliberates what to build.
 
