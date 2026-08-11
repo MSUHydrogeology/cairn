@@ -1792,6 +1792,13 @@ class TestStaticManifestIsRederived:
 
         produced = set(json.loads(ev.read_text())["manifest"])
         rederived = set(P.rederive_static_manifest(head, repo=repo))
+        # Three-way split, which is what the boundary now is:
+        #   candidate-only  -> needs the suite to run (collection, interpreter)
+        #   checker-only    -> Git-native identity, derived on the trusted side
+        #   both            -> compared field by field
+        assert rederived - produced == P._CHECKER_DERIVED_FIELDS, (
+            f"a checker-derived field leaked into the candidate's manifest, or "
+            f"one stopped being derived: {sorted(rederived - produced)}")
         assert produced - rederived == P._EXECUTABLE_ONLY_FIELDS, (
             f"a manifest field is neither re-derived nor declared "
             f"executable-only: {sorted(produced - rederived - P._EXECUTABLE_ONLY_FIELDS)}")
@@ -1810,6 +1817,31 @@ class TestStaticManifestIsRederived:
         produced = json.loads(ev.read_text())["manifest"]
         rederived = P.rederive_static_manifest(head, repo=repo)
         for field, expected in rederived.items():
+            if field in P._CHECKER_DERIVED_FIELDS:
+                # Derived HERE and never accepted from the candidate: the
+                # evidence stage runs `produce` from a raw tree with no
+                # repository, so it has no object format or oids to offer --
+                # and must not be trusted with any it did offer.
+                assert field not in produced, (
+                    f"{field} is checker-derived; the candidate must not "
+                    f"supply it")
+                continue
+            if field == "frozen_files":
+                # The candidate supplies content digests. Mode and oid are
+                # checker-derived within each entry, for the same reason.
+                expected = {r: (e["sha256"] if isinstance(e, dict) else e)
+                            for r, e in expected.items()}
+                got = {r: (e["sha256"] if isinstance(e, dict) else e)
+                       for r, e in produced[field].items()}
+                assert got == expected, "frozen_files digests diverged"
+                continue
+            if field in ("cascade_mutable", "phase_mutable"):
+                # Same rule one level down, and it must be applied here too --
+                # asserting a boundary while comparing across it is how this
+                # test passed for the wrong reason once already.
+                assert (P._candidate_comparable(produced[field])
+                        == P._candidate_comparable(expected)), f"{field} diverged"
+                continue
             assert produced[field] == expected, f"{field} diverged"
 
 

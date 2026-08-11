@@ -1145,6 +1145,33 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
 #: :func:`rederive_static_manifest` and compared.
 _EXECUTABLE_ONLY_FIELDS = frozenset({"collection", "interpreter"})
 
+#: Fields the CHECKER derives and never compares against the candidate.
+#: `produce` runs from a raw tree with no repository, so it cannot supply
+#: these -- and the trusted side deriving them is the stronger arrangement.
+_CHECKER_DERIVED_FIELDS = frozenset({"object_format"})
+
+#: Git-native identity *inside* an entry.  Same rule, one level down: the
+#: candidate produces its manifest from a raw tree with no repository, so it
+#: cannot supply these -- and the trusted side deriving them means a candidate
+#: cannot assert its own file modes or object ids.
+_CHECKER_DERIVED_SUBKEYS = frozenset({"mode", "oid"})
+
+
+def _candidate_comparable(value):
+    """Strip checker-derived sub-keys so like is compared with like."""
+    if not isinstance(value, dict):
+        return value
+    out = {}
+    for k, v in value.items():
+        if isinstance(v, dict):
+            out[k] = {sk: sv for sk, sv in v.items()
+                      if sk not in _CHECKER_DERIVED_SUBKEYS}
+        elif isinstance(v, str):
+            out[k] = v
+        else:
+            out[k] = v
+    return out
+
 
 def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
     """Recompute every statically derivable manifest field, independently.
@@ -1169,15 +1196,33 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
     collection cannot be derived from object bytes, which is exactly why the
     evidence stage exists.
     """
+    # v2 shape.  Mode and oid come from the commit's tree via Git; SHA-256 is
+    # computed here over the **materialized raw bytes** -- so the two halves are
+    # derived by different means over the same object, which is the point of
+    # this function existing at all.  A `raw_tree` directory is not a git
+    # repository, so the oids cannot come from it.
+    blobs = G._tree_blobs(repo, commit)
+    object_format = G._object_format(repo)
     with raw_tree(commit, repo=repo) as tree:
-        frozen = {rel: G._sha256(tree / rel) for rel in G._frozen_files(tree)}
+        frozen = {}
+        for rel in G._frozen_files(tree):
+            mode_oid = blobs.get(rel)
+            if mode_oid is None:
+                # Unreachable in practice: a raw tree holds only tracked files.
+                continue
+            frozen[rel] = {"sha256": G._sha256(tree / rel),
+                           "mode": mode_oid[0], "oid": mode_oid[1]}
         cascade = {
-            rel: {"pre_run_sha256": G._sha256(tree / rel), "governed_by": why}
+            rel: {"pre_run_sha256": G._sha256(tree / rel), "governed_by": why,
+                  "mode": blobs.get(rel, (None, None))[0],
+                  "oid": blobs.get(rel, (None, None))[1]}
             for rel, why in sorted(G.CASCADE_MUTABLE.items())
             if (tree / rel).is_file()
         }
         phase_mutable = {
-            rel: {"pre_run_sha256": G._sha256(tree / rel), "governed_by": why}
+            rel: {"pre_run_sha256": G._sha256(tree / rel), "governed_by": why,
+                  "mode": blobs.get(rel, (None, None))[0],
+                  "oid": blobs.get(rel, (None, None))[1]}
             for rel, why in sorted(G.PHASE_SPLIT_TARGETS.items())
             if (tree / rel).is_file()
         }
@@ -1200,6 +1245,13 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
                              "may_change_in_phases": phases}
     return {
         "schema": G.SCHEMA,
+        "object_format": object_format,
+        # `untracked_gate_files` is deliberately NOT re-derived. A `raw_tree`
+        # contains only tracked files by construction, so the re-derivation
+        # would always compute `[]` and every candidate carrying a real entry
+        # would be refused for a difference that is an artifact of how the two
+        # sides read the tree, not a disagreement about it. It is diagnostic
+        # output from `produce`, not a statically verifiable field.
         "gate_commands": G.GATE_COMMANDS,
         "frozen_files": frozen,
         "cascade_mutable": cascade,
@@ -1215,6 +1267,21 @@ def check_static_manifest(evidence: dict, head: str, report: Report, *,
     theirs = evidence.get("manifest") or {}
     for field, expected in sorted(ours.items()):
         got = theirs.get(field)
+        if field in _CHECKER_DERIVED_FIELDS:
+            # Git-native identity is derived HERE and never accepted from the
+            # candidate: the evidence stage runs `produce` from a materialized
+            # raw tree with no repository, so it has no oids to offer and must
+            # not be trusted with any it did offer.
+            continue
+        if field == "frozen_files":
+            # The candidate supplies content digests; compare exactly those.
+            expected = {rel: (e["sha256"] if isinstance(e, dict) else e)
+                        for rel, e in expected.items()}
+            got = {rel: (e["sha256"] if isinstance(e, dict) else e)
+                   for rel, e in (got or {}).items()}
+        elif field in ("cascade_mutable", "phase_mutable"):
+            expected = _candidate_comparable(expected)
+            got = _candidate_comparable(got or {})
         if got == expected:
             continue
         detail = f"field {field!r} differs from the independent re-derivation"
@@ -1636,7 +1703,16 @@ def _advance_both_refs(repo: Path, branch: str, new: str, *,
              f"update {branch} {new} {branch_old}\n"
              f"update {_ANCHOR_REF} {new} {anchor_old}\n"
              f"prepare\ncommit\n")
-    p = _git_write("update-ref", "--no-deref", "--stdin", repo=repo, stdin=stdin)
+    # `--create-reflog` with a fixed reason: custom refs carry no reflog by
+    # default, which is how a mis-set anchor once became unrecoverable -- the
+    # prior value simply was not written down anywhere.
+    #
+    # A reflog is a **local, mutable diagnostic** for recovery and sequencing.
+    # It is never tamper evidence and never authentication: anyone who can write
+    # the ref can write its reflog. No decision predicate in this module reads
+    # reflog content, and none may.
+    p = _git_write("update-ref", "--no-deref", "--create-reflog", "--stdin",
+                   repo=repo, stdin=stdin)
     return p.returncode == 0, (p.stderr or p.stdout or "").strip()
 
 
