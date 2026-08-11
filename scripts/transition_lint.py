@@ -74,17 +74,135 @@ import importlib.util as _importlib_util
 _HERE = Path(__file__).resolve().parent
 _CAIRN_ROOT = _HERE.parent
 
-# Loaded by file path -- as ``scripts/quality_gate.py`` loads its own
-# whitelist -- so the CLI works from any cwd without a package context.
-_whitelist_spec = _importlib_util.spec_from_file_location(
-    "_transition_lint_whitelist", _HERE / "transition_lint_whitelist.py",
-)
-assert _whitelist_spec is not None and _whitelist_spec.loader is not None
-_whitelist_mod = _importlib_util.module_from_spec(_whitelist_spec)
-_whitelist_spec.loader.exec_module(_whitelist_mod)
+# ---------------------------------------------------------------------------
+# The suppression whitelist -- contained loader
+# ---------------------------------------------------------------------------
+#
+# This module loads **two** files by path: the whitelist here, and the status
+# vocabulary further down.  Both get the same pre-execution discipline, and
+# their failure dispositions are **deliberately opposite**:
+#
+#   * the vocabulary is an INPUT the tool cannot work without, so an unsafe or
+#     missing one is a refusal;
+#   * the whitelist is a PRIVILEGE that *silences findings*, so an unsafe or
+#     invalid one degrades to **no suppression, loudly**.
+#
+# That asymmetry is the whole design.  For a tool whose only value is honesty
+# about the record, going quiet is the worst available failure and extra noise
+# is the cheapest one.  Losing the whitelist costs two known findings on
+# immutable history reappearing on stdout; *trusting a redirected whitelist*
+# costs the tool entirely, because whoever controls this file controls what the
+# tool is able to report.
+#
+# What was here before, and why each part mattered:
+#
+#   * a bare ``assert`` on the spec -- which ``python -O`` strips, turning what
+#     looks like a guard into an ``AttributeError`` traceback on the next line;
+#   * no symlink or containment checks at all, on the one file in this tool
+#     whose only purpose is suppression.  A symlinked leaf, a symlinked
+#     ``scripts/``, or a path resolving out of the tree was executed unchecked;
+#   * no registration in ``sys.modules`` before ``exec_module``.  Harmless for
+#     today's plain ``dict``, and a silent breakage the moment that module grows
+#     a ``@dataclass`` or a ``typing`` construct -- ``dataclasses`` resolves
+#     ``cls.__module__`` through ``sys.modules`` and raises on the ``None``;
+#   * no validation of the schema the tool then relies on.  The 40-hex-key and
+#     non-empty-rationale rules were asserted **only** in pytest
+#     (``test_every_whitelist_entry_has_a_nonempty_rationale``), and Cairn has
+#     no CI -- so that check's only trigger was a human remembering to run it.
+
+
+class WhitelistUnavailable(RuntimeError):
+    """The suppression whitelist could not be loaded and validated *safely*."""
+
+
+_WHITELIST_MODULE_NAME = "_transition_lint_whitelist"
+
+#: A whitelist key is a full, lowercase, 40-character object id.  An abbreviated
+#: or upper-case key would never match ``_commits``' output and would suppress
+#: nothing while *looking* like an active entry -- a latch that reads as live.
+_SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
+
+
+def _validated_whitelist_path() -> Path:
+    """The whitelist path, or a clean refusal.  Never raises ``OSError``."""
+    path = _HERE / "transition_lint_whitelist.py"
+    try:
+        if _HERE.is_symlink():
+            raise WhitelistUnavailable(
+                f"the containing directory {_HERE} is a symlink")
+        if path.is_symlink():
+            raise WhitelistUnavailable(f"{path} is a symlink")
+        if not path.is_file():
+            raise WhitelistUnavailable(f"no whitelist at {path}")
+        if path.resolve().parent != _HERE.resolve():
+            raise WhitelistUnavailable(
+                f"{path} resolves outside the expected {_HERE} root")
+        with path.open("rb"):
+            pass
+    except OSError as exc:
+        raise WhitelistUnavailable(f"cannot read {path}: {exc}") from None
+    return path
+
+
+def _validate_whitelist(raw: object) -> dict[str, str]:
+    """Every key a full 40-hex object id; every value a non-empty rationale.
+
+    One bad entry refuses the **whole** list rather than being dropped
+    individually.  A suppression list is not a place for partial credit: a typo
+    that silently disables one entry while the rest keep working is exactly the
+    latch this file's own docstring says must never exist.  Refusing loudly
+    makes the typo obvious and the fix a one-liner.
+    """
+    if not isinstance(raw, dict):
+        raise WhitelistUnavailable(
+            f"WHITELIST is {type(raw).__name__}, expected dict")
+    bad: list[str] = []
+    for key, value in raw.items():
+        if not isinstance(key, str) or not _SHA40_RE.match(key):
+            bad.append(f"{key!r}: not a full 40-hex object id")
+        elif not isinstance(value, str) or not value.strip():
+            bad.append(f"{key}: empty or non-string rationale")
+    if bad:
+        raise WhitelistUnavailable("invalid entries -- " + "; ".join(bad))
+    return dict(raw)
+
+
+def _load_whitelist() -> dict[str, str]:
+    """Load and validate the whitelist, or continue with no suppressions."""
+    path = None
+    try:
+        path = _validated_whitelist_path()
+        spec = _importlib_util.spec_from_file_location(
+            _WHITELIST_MODULE_NAME, path)
+        if spec is None or spec.loader is None:
+            raise WhitelistUnavailable(f"could not build an import spec for {path}")
+        module = _importlib_util.module_from_spec(spec)
+        # Registered BEFORE exec_module, and purged on failure: the stdlib
+        # resolves a loaded module's own name through sys.modules.
+        sys.modules[_WHITELIST_MODULE_NAME] = module
+        try:
+            spec.loader.exec_module(module)
+        except BaseException as exc:
+            raise WhitelistUnavailable(f"{path} failed to load: {exc!r}") from None
+        finally:
+            sys.modules.pop(_WHITELIST_MODULE_NAME, None)
+        if not hasattr(module, "WHITELIST"):
+            raise WhitelistUnavailable(f"{path} declares no WHITELIST")
+        return _validate_whitelist(module.WHITELIST)
+    except WhitelistUnavailable as exc:
+        # Degrade, never refuse, and never quietly.  stderr so a piped stdout
+        # of findings stays machine-readable.
+        sys.stderr.write(
+            f"transition_lint: WARNING -- suppression whitelist unavailable "
+            f"({exc}).  Continuing with NO suppressions: findings on immutable "
+            f"history will reappear.  A whitelist that cannot be validated is "
+            f"not trusted.\n"
+        )
+        return {}
+
 
 #: Full 40-character SHA -> mandatory non-empty rationale.
-WHITELIST: dict[str, str] = _whitelist_mod.WHITELIST
+WHITELIST: dict[str, str] = _load_whitelist()
 
 
 # ---------------------------------------------------------------------------
