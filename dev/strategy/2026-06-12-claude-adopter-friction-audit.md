@@ -393,3 +393,134 @@ single repository before becoming doctrine:
 * **A test that claims to exercise a published command must execute that
   command vector and assert its residual state.** Testing adjacent output is
   useful coverage, not evidence that the recipe itself works.
+
+---
+
+## Review -- Claude (External, comprehension lens) -- 2026-08-11
+
+<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
+     this section. Strategy notes are inline-revised, not append-only. -->
+
+**Structural independence.** Cross-type read: Codex rebuilt this audit, I am
+Claude. I did not re-run the cold install; I verified the audit's load-bearing
+evidence against the tree and checked the doctrine claims this review adds.
+
+**Recommendation: ACCEPT the findings, REVISE the criteria.** The mechanical
+analysis holds and the consolidation direction is right. What is missing is an
+axis rather than a fact: the audit asks whether the adopter can *execute* the
+path and never whether they can *understand* what they executed. Cairn's own
+doctrine makes that second question a precondition of the Maintainer's
+authority, so its absence from the success criteria is a gap in the instrument.
+
+### Steelman
+
+The reframe from "is each document accurate" to "do the three transitions
+connect" is the right question, and F1 is a genuine catch: a path is not
+lightweight because its automation was removed. Option 4 -- one installer,
+levels describing obligation rather than byte-copying -- resolves the
+contradiction without inventing a second procedure. F4's observation that a
+green test concealed a recurrence is the strongest methodological finding here
+and generalizes past this repository. Spot-checks reproduced: `docs/quickstart.md`
+publishes 8 modules (`:129`) and 22 slots (`:183`), matching the reported live
+install, and `:196` is a bare `git commit -q -m` with no paths, confirming F3.
+
+### Findings
+
+**[V1] MEDIUM -- F6 contains a comprehension finding and reports it as a timing
+finding.** F6 measures the installed `AGENTS.md` at 2,676 words and the
+templates at 5,098, then concludes the 15-25 minute claim is unmeasured. The
+timing conclusion is correct but secondary. The primary reading is that ~7,800
+words of governing prose is a **comprehension load placed on someone whose
+expertise is hydrology, not software engineering** -- and the audit's seven
+success criteria are all mechanical (one obvious trial, no undefined operation,
+one installer, live-only obligations, governed commands, backed timing, no
+stale lifecycle docs). None asks whether the adopter understood what they
+installed or what it will ask of them. Recommend one further criterion: *the
+adopter can state, in their own words, what the apparatus does and what it will
+require of them.* Without it the audit optimizes an executable path toward a
+reader who may still not know what they have agreed to.
+
+**[V2] MEDIUM -- the canary omits the one thing only a canary can measure.**
+Recommendation 3 records tag, interpreter, commands, elapsed time, warnings,
+interventions, final tree state, and gate stops. Every one of those is
+mechanical, and most could eventually be automated. The canary is a human or
+different-agent walk -- the only proposed instrument that can observe
+comprehension at all -- and it does not. Two additions cost nothing beyond what
+the walker is already doing: **which terms they had to look up or ask about**,
+and **whether they could restate the apparatus's purpose and obligations
+unprompted**. That converts a timing instrument into the comprehension
+instrument the doctrine implies and Cairn does not currently have anywhere.
+
+**[V3] LOW -- express the level model in obligations the adopter recognizes.**
+Option 4 is right that levels should name burden. The burden vocabulary offered
+-- assessment depth, module set, upgrade posture, review staffing -- is Cairn's
+own. A scientist choosing a level is asking: how much must I read, what will I
+be asked to decide, what happens if I skip a step, and can I reverse it. The
+consolidation proposal should define the levels in that register and let the
+internal vocabulary sit beneath it. Same failure mode as V1, one layer up.
+
+**[V4] MEDIUM -- Cairn states the comprehension floor and ships it nowhere the
+adopter can reach.** This is the Cairn-side gap the audit's framing surfaces
+but does not own, recorded here because the audit is the natural place it
+would have been caught. Verified at this commit:
+
+* `doctrine/rationale.md` anchor 16 states the principle in full -- *"you cannot
+  review what you cannot penetrate"*, comprehension as **a precondition of the
+  human's authority**, not a courtesy -- with four grounding literatures and an
+  operative norm: lead plain, keep precision beneath, treat *"I don't understand
+  this yet"* as a mandatory pause.
+* `templates/core/AGENTS.md` -- the operational file **every adopter receives**
+  and every agent loads every session -- says nothing about it. A search for
+  plain-language, comprehension, jargon, or calibration terms returns one
+  unrelated hit about non-pass outcomes.
+* `doctrine/` is **not installed into an adopter tree**; `templates/core/AGENTS.md:53`
+  states that doctrine references are citations to Cairn's published
+  methodology, not local files.
+
+So the one principle governing how an agent must make its work understandable
+to the adopting scientist lives exclusively in a document that scientist never
+receives, and states no rule in the document they do. The asymmetry that makes
+this matter is the same one the audit is implicitly about: **the agent is far
+stronger in the software domain than the adopter, the adopter holds decision
+authority, and Cairn provides no operational rule requiring the stronger party
+to make its work reviewable by the weaker one.** Every other Cairn obligation
+of that shape -- structural independence, verification boundaries, commit
+discipline -- is stated operationally in `AGENTS.md`. This one is not.
+
+Related and separable: the guide star's G17 named two parts -- a *settled*
+universal norm and an *observed* candidate for a communication-calibration
+dimension. Neither landed. The six axes are age, agent-team, complexity,
+human-team, language, size; there is no communication axis, and no module
+covers it. The dimension is a genuine open question that needs its own
+evidence. **The settled norm is not** -- it is a routing omission, and a small
+one: an operational one-liner in `templates/core/AGENTS.md` with its rationale
+already written in `doctrine/rationale.md`.
+
+Recommend this audit **name it as a finding and route it out**, rather than
+absorb it. It is doctrine placement, not adopter-path scope, and it should not
+enlarge the consolidation proposal.
+
+**[V5] LOW -- "the front door is clear" is slightly stronger than the audit's
+own criterion allows.** The What-already-works section credits the README with
+naming the audience, cost, safety boundary, quickstart, on-ramp, and both
+minimal examples. Against the audit's own first success criterion -- *one*
+obvious trial and *one* obvious real-adoption next step -- the current "How to
+adopt" section offers a quickstart (`:197`), a getting-started walkthrough
+(`:201`), three levels (`:209`, `:212`, `:216`), and a readiness report
+(`:228`). The scientific example is linked only at `:248`, in the
+repository-layout table, not in the adoption flow. Suggest softening to "the
+front door names the right things" and letting the route-count problem sit
+where F1/F2 already put it.
+
+### Disposition
+
+F1-F7 stand. Add the comprehension criterion (V1) and the two canary fields
+(V2); adjust the level vocabulary (V3) and the front-door wording (V5) when
+convenient; route V4 to its own doctrine-placement proposal rather than
+absorbing it here.
+
+I did not re-run the cold install, execute the quickstart end to end, exercise
+`bootstrap-lite` through a fresh agent, or review the consolidation proposal
+that does not yet exist. I did verify the published module and slot counts, the
+bare-commit shape, the README route inventory and example placement, and every
+doctrine and template claim in V4.
