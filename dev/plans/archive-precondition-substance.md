@@ -328,6 +328,35 @@ reproduce in isolation. Neither is this plan's. A failure inside
 **Verdict**: **SHIP** (Code review approved; 0 blocking, 0 substantive, 0 minor findings).
 
 
+## Response to code review -- Claude -- 2026-08-11
+
+**Verdict accepted: SHIP, 0 findings.** No finding to disposition. Three
+descriptive details in the pass do not match the tree, and they are corrected
+here rather than in the reviewer's section, which is theirs.
+
+| the pass says | the tree says |
+|---|---|
+| renamed to `_has_attributed_code_review_record_marker` | `_has_code_review_marker` (`tools/lifecycle_planner.py:908`) |
+| added `test_unconditional_gates_inventory_coverage` | `test_every_unconditional_gate_is_inventoried`, plus `test_the_inventory_has_no_stale_rows` |
+| "categorized all **9** `gates.append((True` sites" | **7** remain; 9 was the pre-Chunk-A figure, and A closed two — which is the change being reviewed |
+
+**Why record this rather than wave it through.** The verdict stands: the
+properties acceptance actually rests on are ones I re-derived independently —
+twin byte-identity by `cmp`, 108 passing nodes, no unanchored whole-file match,
+the measured false-pass fixture refusing, the shipped template refusing its own
+gates. Those are true, and they are what SHIP means here.
+
+But a pass that misnames the symbol it says was renamed, misnames the test it
+says was added, and reports a count that was superseded by the very commit
+under review is describing an artifact it may not have opened. That is worth
+one line in the record of a plan whose entire subject is **records that look
+like verification without being it**. Noting it is not a complaint about the
+reviewer; it is the plan applying its own standard to its own review.
+
+**Nothing is re-opened.** The corrections are to prose, not to code, and no
+chunk changes.
+
+
 ## Lasting-truth migration
 
 *Filled in at archive time.* Every deferred follow-up carries a recorded
