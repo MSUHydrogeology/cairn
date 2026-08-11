@@ -734,3 +734,69 @@ External obligation closes only when a later pass says these findings are shut,
 and the **External Security Review is untouched and still outstanding** — from a
 reviewer independent of both the proposal author and me. The plan stays `open`;
 **M1** is unchanged; no implementation commit is authorized.
+
+## Plan review -- Codex -- 2026-08-11 (round 2)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External
+**Obligation**: External
+**Reviewed commit**: `1582803ed9d63d5ff490473d5e1fe5b311616bf3`
+**Reviewed plan blob**: `e41fc18259ebd58a44b0c663c793de3335f1bea9`
+**Target**: closure of E1--E4 against the revised executable contract
+**Prior findings**: E1, E2, E3, E4
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: SHIP.** All four findings are closed in the chunk and acceptance
+contracts, not only in the Response. This pass clears the ordinary External
+obligation. It does not clear the distinct External Security Review, and M1
+continues to prohibit implementation until that independent pass lands.
+
+### Closure
+
+**E1 is closed.** Chunk E no longer asks strict fsck to judge an object graph
+while inheriting that graph's candidate-local policy. It selects a sterile
+repository/config context, gives the operator-created fetch workspace a
+separate sterility contract, and requires both severity-downgrade and
+multi-valued skip-list falsifiers at each acquisition boundary. The acceptance
+criterion now names the candidate-configuration property directly.
+
+I independently repeated the decisive path on Git 2.53.0. A reachable commit
+without an `author` line was written with `hash-object --literally`. The source
+repository passed strict fsck after candidate-local
+`fsck.missingAuthor=ignore` and `fsck.skipList` settings were applied. A bare
+clone inherited neither setting, retained the same malformed reachable object,
+and `fsck --strict --no-dangling HEAD` refused it with `missingAuthor`, exit 1.
+That is the reference behavior the revised E1 requires. The implementation
+still has to bind the exact candidate HEAD/object format while constructing its
+sterile context; that is implementation and code-review work under the now
+correct acceptance property, not an unsettled policy choice.
+
+**E2 is closed.** A4 and the ownership table replace the false single-launcher
+claim with one guarded launcher per executable boundary. All four are named,
+including `_gate_manifest.py` and the shell verifier; each receives an
+environment, config, repository-binding, allowlist, and no-bypass contract.
+The shell boundary is no longer implied to consume Python machinery.
+
+**E3 is closed.** B6 makes manifest path policy the canonical source consumed
+by the report, and B7 connects report labels to actual manifest
+production/verification across the cases the first pass named. B5 remains the
+partition proof and B7 becomes the semantic oracle, so neither is asked to
+stand in for the other.
+
+**E4 is closed.** A5 enumerates the touched fixed-width validators and replaces
+literal width assumptions with validation against the already-bound repository
+object format. A6 requires SHA-256 evidence through `check`, `apply`, and the
+release-security entry point rather than allowing helper-only success.
+
+### Covered and not covered
+
+**Covered**: exact revised plan bytes at `1582803`; direct reproduction of the
+malformed-object candidate-policy bypass and sterile-clone refusal; current
+launcher ownership and fixed-width validators; B5--B7, E1--E4, A4--A6 and the
+acceptance criteria; claim checking; and lifecycle structural conformance.
+
+**Not covered**: implementation bytes, the exact sterile-context construction,
+future tests, full-suite behavior, Windows, real-remote atomic capability, key
+handling, or either Maintainer ceremony. I did not move a ref, load a signing
+key, or push. Those are later code-review, Security-review, and Maintainer
+obligations rather than reasons to hold the revised plan contract.
