@@ -932,3 +932,38 @@ wait is most of that plan. The alternative — letting git-native land its froze
 changes **first**, then having one ceremony re-anchor both plans' deltas
 together — is cheaper and is exactly the batching argument that plan's own
 touchpoint budget makes. It needs a decision, not an implementer's re-ordering.
+
+### Maintainer decision on the fence -- 2026-08-11
+
+Authorization, quoted verbatim:
+
+> How about I just don't do the ceremony until this one is done too?
+
+> Since I run the ceremony, I could just wait until both you and the other
+> agent are ready
+
+**This dissolves the contamination hazard rather than waiting it out.** The
+fence existed because a frozen-path change landing *after* a ceremony's
+reviewed range was fixed would be re-anchored by a ceremony that never saw it.
+If the ceremony has not run, there is no such window. **Chunks A, B, C, E and
+G are unblocked now.**
+
+**Two chunks stay held, and for a different reason than before.** D and F do not
+merely add to what the ceremony *covers* — they change what the ceremony **is**:
+
+* **D** migrates the manifest to schema **v2**. `review-efficient-lifecycle`'s
+  Chunk I is written as a **v1** re-anchor and its reviewed contract assumes v1.
+* **F** rewrites `bootstrap/REANCHOR_RUNBOOK.md` — the procedure Chunk I
+  executes. Landing F first means the Maintainer performs a ceremony whose
+  written steps that plan's review never saw.
+
+**And one question the deferral surfaces rather than settles.** This plan's
+Chunk **H** is itself a Maintainer ceremony: it re-derives v2 evidence and
+advances branch + anchor. If it runs after D, it re-pins the frozen set under
+v2 — which is what `review-efficient-lifecycle`'s Chunk I would have done under
+v1. **The two ceremonies may be one.** That is worth deciding deliberately
+before either is scheduled; it is not something an implementing agent settles,
+and it belongs to whoever owns that plan as much as to this one.
+
+Working line: **A, B, C, E, G proceed. D and F hold** until the ceremony's shape
+(v1 or v2, one ceremony or two, whose runbook) is settled.
