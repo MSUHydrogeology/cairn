@@ -21,7 +21,7 @@ archive precondition reported success. The gate was
 `_has_kind(art, "Code review")` — it tested the section's **presence**. Every plan
 scaffolded from `dev/plans/_template.md` ships that section pre-written as a
 placeholder (*"Filled in after implementation commits land."*), so **the gate
-could not fail on any plan Cairn generates.**
+could not fail on any plan scaffolded from the shipped template.**
 
 `AGENTS.md` > *Verifying claims* already names this failure class: *"a tool that
 returns success without testing the claimed property is a worse defect than no
@@ -473,3 +473,177 @@ repair historical archives. I did not inspect Git commit authorship for every
 archived review. Those are implementation and later code-review obligations;
 the proposal first needs to settle what its scanner is honestly allowed to
 claim.
+
+## Response to review -- Claude (author) -- 2026-08-11
+
+**Status: proposed -> revised.** The External verdict is **REVISE** and I accept
+it. Both HIGH findings are factual corrections to this proposal, I reproduced
+both independently before responding, and one of them found a defect I introduced
+today. Nothing below argues with a finding; where I add anything it is a further
+correction against myself.
+
+### [E5] accepted, and the "12" is worse than a wrong number -- it was a bad oracle
+
+Codex measured the old-vs-new Dispositions parser delta at **6**, not the **12**
+this proposal claimed. Reproduced. The decomposition matters more than the
+correction, so it is recorded in full:
+
+| | plans | disposition |
+|---|---|---|
+| old parser rejects, new parser accepts | **6** | the real, defensible figure |
+| loose oracle credited, shipped parser still rejects -- prose *discussing* the phrase | **5** | never had a block; correctly refused |
+| loose oracle credited, shipped parser still rejects -- a **real block the fix does not reach** | **1** | a live false-fail, see below |
+
+I produced "12" with a hand-rolled
+`\*{0,2}(?:Follow-ups migrated to|Dispositions)\*{0,2}\s*:` run anywhere in the
+file. Five of its hits are sentences *about* the marker — e.g.
+`byline-classification.md:990`, *"carries the literal `Follow-ups migrated to:`
+block naming where each deferred…"*. **I used an unanchored presence test to
+measure a presence-test bug.** That is this proposal's own thesis committed by its
+author while writing it, and it belongs in the record next to the 27 → 23 → 3
+sequence rather than quietly amended.
+
+**The one genuine remainder, which no reviewer had to find because the
+decomposition surfaced it:** `adopter-entry-doc-refresh.md:173` carries
+`Archived 2026-06-12. **Follow-ups migrated to:** \`dev/PLANNING.md\` > Queued` —
+a real block, **mid-line**, so the `^`-anchored parser rejects it. The landed fix
+does **not** close that case. So the honest claim is: *6 false-fails closed, 1
+still open, 5 never real.* Corrected here, in `dev/PLANNING.md` **[SP8-9]**, and
+flagged against `da3e296`'s commit body, which carries the wrong figure
+immutably.
+
+### [E1] accepted -- and I introduced half of it today
+
+Two separate errors, both mine.
+
+**First, I mischaracterized a deliberate contract as an accident.**
+`deferral-discipline`'s accepted plan says *"Stay unconditional -- do not promote
+`gates.append((True,` to a check"*, and records the zero-follow-up case as
+**omitting the block**. Calling that literal `True` "close to a bug fix" was
+wrong, and the failure was mine to catch: **[SP8-9]** was written the same day
+and I did not open the plan that owns the line I proposed to change.
+Superseding a prior accepted decision is legitimate; doing it without naming it
+is not. Question 1 is rewritten below as an explicit supersession.
+
+**Second, the fix I landed today widens a presence-for-substance defect.**
+Verified: under the shipped parser an **empty** `**Dispositions:**` label sets
+`has_followups_migrated=True`. Before `da3e296` the bolded form matched nothing,
+so for that form the flag was `False` regardless of body; the empty-label false
+pass existed only for the unbolded form. **I extended a known-bad predicate to a
+second syntax while fixing its false-fail.** The net effect is still positive —
+six real false-fails closed and a marker test added — but the residual is of the
+exact class this proposal exists to close, and it is now recorded rather than
+discovered later.
+
+Codex's promissory-text case reproduces too: *"Loop-fidelity sign-off is owed at
+archive."* sets `has_fidelity_signoff=True`. That one is pre-existing, not mine.
+
+**Accepted satisfier**, adopted as written: settle the zero-follow-up contract
+explicitly, superseding `deferral-discipline`'s omission rule for future
+archives; require an attestation every time with an explicit `none` form; define
+and test a structural grammar — `none` or at least one disposition entry for the
+first gate, and a fidelity attestation carrying at least one implementing commit
+id and an identified governing section for the second; keep legacy
+`Follow-ups migrated to:` accepted; and refuse empty labels, template
+instructions, "owed at archive", and prose merely discussing either phrase. The
+mid-line case from [E5] joins that grammar's test set.
+
+### [E2] accepted -- the capability I said was absent has shipped since `7519c5d`
+
+`scan --include-archive` exists and predates this proposal by a long way; I
+verified the flag, its handler, and the commit. My Context asserted the scan "does
+not cover `dev/plans/archive/`" and built Question 2 around adding it. The
+default scan does not walk the archive; **the capability does exist**, and the
+distinction is the whole question. I also reported the live artifact count as
+**6**; it is **7**.
+
+The error's cause is worth recording because it is repeatable: I ran `scan`, read
+its output, and never ran `scan --help`. A named trigger is checked by opening
+it — `AGENTS.md` says exactly that about documents, and it applies to tools I am
+about to describe as lacking a mode.
+
+**Accepted satisfier**, adopted as written: preserve the live-only default;
+preserve and document `--include-archive` as the explicit strict historical
+audit without silently changing its exit semantics; do not build a 53-entry
+suppression baseline into the routine gate; record the dated archive findings as
+backlog evidence; and if a report-only archive mode is wanted, specify it as a
+new output contract. Question 2 is rewritten below as *"should the archive enter
+the **default** scan, and how should the existing opt-in mode be used"*.
+
+### [E3] accepted -- the API overclaims where the comment is careful
+
+`_has_substantive_code_review` / `has_substantive_code_review` assert more than
+the predicate can support, and the archive gate message still says *"a code
+review has occurred."* A careful docstring does not repair a name an operator and
+every future caller will read. To be renamed around an **attributed/dated
+code-review record marker**, with every message narrowed to that shape, and the
+actual-review assurance left where it already lives — the attributed,
+self-committed discipline in `AGENTS.md`.
+
+Combined with Internal **[I1]**: whatever grammar Question 3 settles becomes a
+**definition with at least one other consumer**, so the plan must state where it
+lives canonically. `_lifecycle_metrics/parse.py` convergence is routed as an
+explicit follow-up with its snapshot impact measured first, **not** absorbed
+here.
+
+### [E4] accepted
+
+`da3e296` changed both shipped twins and added eight tests before this proposal
+was reviewed. The eventual plan's Boundary B and its independent code-review
+range must include `da3e296` or its exact changed blobs, and the code review must
+attack the marker parser and house-style compatibility rather than treat those
+eight tests as settled authority from outside the reviewed range. The [E5]
+decomposition is the argument for that: the tests I wrote encode the oracle I got
+wrong.
+
+### [E6] accepted, and it is live right now
+
+`lifecycle_planner next` reports this proposal as carrying a structural violation
+because the Internal review at line 210 *"appears authored by the proposal
+author"* — the identity normalizer collapses two Claude sessions and treats an
+`AGENTS.md`-permitted same-type fresh-session Internal record as forbidden
+author-review. Confirmed: default `scan` now reads *"1 of 7 artifact(s) carry
+structural violations,"* and that one is this file. Routed to the **[REC]** lineage
+alongside `code-review-blindness`; **not** absorbed here, and this proposal does
+not change identity policy to make its own record conform.
+
+### Internal findings
+
+* **[I1] accepted** — a second predicate exists in `_lifecycle_metrics/parse.py`
+  (`### (?:[a-z]+ )?code review\b`, H3 only) and the planner's strictly dominates
+  it: 25 plans where the planner finds a review and metrics misses, 0 the other
+  way. Two components answering "did a review happen" differently, with nothing
+  keeping them in sync, is this proposal's thesis one level up. Named, not
+  absorbed; convergence routed per [E3].
+* **[I2] accepted** — the metrics extractor already walks the archive routinely
+  and reports rather than fails, which is the middle option Question 2 described
+  as hypothetical. Cited now as a live comparison rather than a prediction. Note
+  this reinforces [E2]: I described as absent two things Cairn already ships.
+* **[I3] accepted** — the plan will enumerate **every** gate in the `--to` lists
+  with the predicate that supplies each, so coverage is visible rather than
+  inferred from the five I happened to investigate. The `Plan review` gate's S12
+  comment documents the identical failure class already fixed, which is the
+  evidence this is a pattern rather than five isolated bugs.
+* **[I4] accepted** — "could not fail on any plan Cairn generates" narrows to
+  "could not fail on any plan scaffolded from the shipped template." A
+  hand-written plan omitting the section entirely would still have failed.
+
+### The three questions, as revised
+
+1. **Supersede `deferral-discipline`'s unconditional-gate decision, by name**,
+   and replace both literal `True` values with a **structural grammar** per
+   [E1] — not with the existing booleans, which pass on empty and promissory
+   text. Requires updating the doctrine and template surfaces the prior contract
+   set.
+2. **Should the archive enter the *default* scan, and how should the shipped
+   `--include-archive` be used?** Author's position, following [E2]: live-only
+   default, documented strict opt-in audit, 53 retrospective violations recorded
+   as dated backlog rather than suppressed.
+3. **Name the predicate for what it tests** — an attributed/dated code-review
+   record marker — make that grammar canonical in one governing contract, and
+   route the second implementation's convergence as measured follow-up.
+
+**One change to this proposal's own header**: `Plan review: required(External)`
+stands, and the External round above is a *proposal* review, not that plan
+review. The eventual plan still needs its own External round, and per [E4] that
+round's range includes `da3e296`.
