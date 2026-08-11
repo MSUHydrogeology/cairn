@@ -547,3 +547,77 @@ becomes warranted — omission is exactly the failure a formal check catches.
 * Part 7: declaration retained; planner gate, its twin, mutation tests, and the
   associated lockfile finalization declined.
 * Part 10: new — the baseline rule and the declined-expansion distinction.
+
+## Revised proposal (Round 4) -- Claude -- 2026-08-11
+
+**Scope delta: unchanged.** Under the definition this round establishes, no
+objective has been added or dropped since Round 2.
+
+Maintainer correction, and it supersedes the baseline framing in Round 10:
+**scope is what a proposal seeks to address, not the means by which it does
+so.** I had been treating every change of mechanism as a scope change, which
+inflated three rounds of accounting and would have made the declaration fire
+constantly.
+
+### 10 (revised). Scope means objectives, not mechanisms
+
+> **Scope** is the set of problems an artifact commits to solving.
+> **Means** is how it solves them. A `Scope delta` is declared when the
+> *objective set* changes — a problem is added, or a problem stops being
+> addressed. Changing the mechanism, the implementation, or the enforcement
+> approach is not a scope change and owes no declaration.
+
+The baseline rule still holds where it applies — pre-Decision against the scope
+as opened, post-Decision against the scope as accepted — but it now measures
+objectives rather than parts.
+
+**This is what keeps the declaration from becoming ritual.** If a delta fired on
+every implementation choice, every artifact would carry one, every author would
+write it from habit, and it would stop carrying information. Restricting it to
+the objective set means the declaration appears rarely and means something when
+it does.
+
+### Reclassifying this proposal's own history
+
+Applying the definition backwards, most of what I called scope changes were not:
+
+* **E1 — the only genuine objective expansion.** Extending to post-Decision
+  plans added a *problem*: a plan silently draining less than the accepted
+  proposal. The original addressed pre-Decision revision and nothing else.
+* **E2, E3, E4, E5, and the declined planner gate — all means.** A grouped
+  remainder record versus a board row; a template field versus a planner gate;
+  reconciled vocabulary; wider distribution. Every one is a different way to
+  serve objectives already committed to. None changes what problems the
+  proposal addresses.
+
+So Round 3's "declining an expansion is not a reduction" was right about the
+conclusion and wrong about the reason. The gate was never scope. It was a
+mechanism proposed for an objective that remains fully in scope, and choosing
+a lighter mechanism for it is exactly what restraint asks.
+
+### The motivating instance, re-checked against the definition
+
+The definition has to classify the case that prompted this proposal, or it is
+not the right definition.
+
+`metrics-events-not-prose` opened with three parts. Retiring prose-derived
+columns addresses *"stop measuring things that reward writing more."*
+Emit-at-transition addresses a **different problem** — that re-deriving metrics
+from historical prose makes past values rewritable and turns format evolution
+into measurement discontinuity. Two problems, not one problem and its
+mechanism.
+
+Cutting Part 3 therefore **dropped an objective**. It was a real scope
+reduction, and it is still the worked instance. The definition holds.
+
+### What this sharpens in the proposal's own thesis
+
+The trap is not "the implementation got smaller." A smaller mechanism that
+still solves the problem is a good outcome, and Anchor 17 asks for it.
+
+The trap is that **a problem the artifact committed to solving quietly stops
+being solved** — and the reason it is hard to see is that dropping an objective
+and simplifying a mechanism look identical in a diff. Parts 3 and 6 (declare
+the delta, home the remainder) apply to dropped *objectives*. They do not apply
+to a changed mechanism, and saying so removes most of what would otherwise have
+been ceremony.
