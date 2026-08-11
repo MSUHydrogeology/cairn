@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: revised
+**Status**: accepted
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle_planner.py`; `bootstrap/tests/test_lifecycle_contract.py`;
 `dev/plans/_template.md`; potentially `doctrine/lifecycle-contract.md` and
@@ -846,4 +846,19 @@ this proposal was opened to end.
 
 ### Summary Verdict
 **Verdict**: **ACCEPT** (Proposal Revision 1 approved; 0 blocking, 0 substantive, 0 minor findings). The proposal is decision-ready for Maintainer disposition.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-11
+
+**ACCEPTED as revised (Revision 1).** Authorization, quoted verbatim and visually isolated:
+
+> Okay, please scribe my acceptance of this proposal as revised
+
+**Summary of accepted terms (Revision 1)**:
+- **R1-1**: Explicitly supersedes `deferral-discipline`'s omission rule by name for future archives. Replaces literal `True` gates in `--to archived` with a strict structural grammar for Dispositions (`none` OR explicit disposition keywords OR legacy `Follow-ups migrated to:` including mid-line forms) and Fidelity (implementing commit ID + identified governing section).
+- **R1-2**: Preserves live-only default scan (7 live artifacts) and documents `--include-archive` as an explicit opt-in historical audit mode without creating a default-red scan state.
+- **R1-3**: Renames `_has_substantive_code_review` / `has_substantive_code_review` to reflect marker presence (`attributed/dated code-review record marker`) and establishes canonical marker grammar.
+- **R1-4 through R1-6**: Includes opening commit `da3e296` in Boundary B implementation review coverage, records corrected measurement deltas (12 -> 6 Dispositions parser delta; 6 -> 7 default scan artifacts), and routes the identity-normalizer self-pass collision to `[REC]` / `code-review-blindness`.
+
+**Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
+
 
