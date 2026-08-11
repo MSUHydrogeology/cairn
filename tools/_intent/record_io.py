@@ -312,15 +312,26 @@ def prune_released_pairs(
        would silently delete them.  This function walks **raw lines** and
        preserves anything it cannot parse, byte for byte.
 
-    Rewriting at all is in tension with the append-only atomicity contract
-    documented at the top of this module (concurrent appends rely on a single
-    unbuffered ``os.write``; a rewrite can lose a record appended between read
-    and replace, and a lost *claim* is a lost lock).  That is why the caller is
-    expected to be the **full handoff**, which already holds a fail-closed
-    concurrent-handoff lock, and why the replace is atomic
-    (:func:`os.replace`) so no reader ever observes a partial ledger.  This
-    function additionally **refuses** when any claim is active, since an active
-    claim means a live session may still be appending.
+    **The concurrency residual, stated accurately.**  Rewriting is in tension
+    with this module's lock-free append path (see the Atomicity note above).  A
+    record appended between the snapshot and the replace does not survive it.
+    Three things narrow that, and none of them closes it:
+
+    * the caller is the **full handoff**, a quiet serialization point;
+    * a claim held within *live_within_hours* refuses the prune outright;
+    * the ledger's size is re-checked immediately before the replace, so a
+      detected concurrent append **skips** the prune rather than dropping it.
+
+    What a missed window costs is **one advisory record**, degrading a collision
+    *warning*.  This file is not a mutual-exclusion lock and never was -- the
+    Atomicity note above says appends are best-effort and advisory.  An earlier
+    draft of this docstring called a lost claim "a lost lock"; that overstated
+    it, and the overstatement is what made a scratch-file cleanup look like a
+    concurrency-critical change.
+
+    Note the refusal is scoped to a **recent** unreleased claim, not to any
+    active one: every unreleased claim is active by :func:`active_intents`, so
+    refusing on all of them would refuse forever.
 
     Returns a report dict; writes nothing when *dry_run*.
     """
@@ -428,9 +439,56 @@ def prune_released_pairs(
         return report
 
     kept = [ln for idx, ln in enumerate(raw_lines) if idx not in drop_indices]
-    tmp = target.with_name(target.name + ".prune-tmp")
-    tmp.write_text("".join(kept), encoding="utf-8")
-    os.replace(str(tmp), str(target))
+    payload = "".join(kept).encode("utf-8")
+
+    # Exclusive, symlink-proof temp creation (CR2).  The previous fixed
+    # ``.prune-tmp`` name written via ``Path.write_text`` FOLLOWED a
+    # pre-existing symlink: a hostile or stale link at that path was truncated
+    # to zero bytes and ``os.replace`` then made the ledger itself the symlink.
+    # ``O_EXCL`` refuses an existing path and ``O_NOFOLLOW`` refuses a link, so
+    # neither is reachable now.
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    tmp = target.with_name(f"{target.name}.prune-{os.getpid()}.tmp")
+    try:
+        fd = os.open(str(tmp), flags, 0o644)
+    except FileExistsError:
+        report["refused"] = f"temporary path {tmp.name} already exists"
+        report["pruned_pairs"] = 0
+        report["pruned_lines"] = 0
+        report["kept_lines"] = len(raw_lines)
+        return report
+    try:
+        os.write(fd, payload)
+    finally:
+        os.close(fd)
+
+    # Concurrency residual, narrowed rather than solved (CR1).  Ordinary
+    # claim/release appends are lock-free by design -- see this module's
+    # Atomicity note -- so a record appended between the snapshot above and the
+    # replace below would not survive it.  Re-checking the size immediately
+    # before the replace turns "silently dropped" into "prune skipped, try
+    # again next handoff", which is the right trade for an **advisory**
+    # coordination hint in a gitignored file.  It does not eliminate the window,
+    # and this comment does not pretend it does: a write landing between this
+    # check and ``os.replace`` is still lost.  What is lost is one advisory
+    # record, degrading a collision *warning* -- not a mutual-exclusion lock,
+    # which this file has never been.
+    try:
+        if target.stat().st_size != sum(len(ln.encode("utf-8"))
+                                        for ln in raw_lines):
+            tmp.unlink(missing_ok=True)
+            report["refused"] = (
+                "the ledger changed while pruning -- skipped, so no concurrent "
+                "append is dropped; it will be retried next time"
+            )
+            report["pruned_pairs"] = 0
+            report["pruned_lines"] = 0
+            report["kept_lines"] = len(raw_lines)
+            return report
+        os.replace(str(tmp), str(target))
+    except OSError:
+        tmp.unlink(missing_ok=True)
+        raise
     return report
 
 

@@ -31,6 +31,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import ast
+import os
 import importlib.util
 import json
 import os
@@ -1646,3 +1647,66 @@ class TestIntentSurfacePruning:
         assert proc.returncode == 0, proc.stderr
         assert "would prune 1 released pair" in proc.stdout, proc.stdout
         assert "NEVER RELEASED" in proc.stdout, proc.stdout
+
+    def test_cr2_a_hostile_symlink_at_the_temp_path_cannot_be_truncated(
+        self, tmp_path: Path,
+    ) -> None:
+        """CR2 regression. The original fixed `.prune-tmp` name written via
+        Path.write_text FOLLOWED a pre-existing symlink: the link target was
+        truncated to zero bytes and os.replace then made the ledger itself the
+        symlink. O_EXCL|O_NOFOLLOW on a unique name closes both."""
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        outside = tmp_path / "outside.txt"
+        outside.write_text("DO NOT CHANGE\n", encoding="utf-8")
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        os.symlink(str(outside), str(log.with_name(log.name + ".prune-tmp")))
+        ri.prune_released_pairs(older_than_days=30, log_path=log)
+        assert outside.read_text(encoding="utf-8") == "DO NOT CHANGE\n"
+        assert not log.is_symlink()
+        assert list(log.parent.glob("*.tmp")) == []
+
+    def test_cr2_an_existing_file_at_the_temp_path_refuses(
+        self, tmp_path: Path,
+    ) -> None:
+        """O_EXCL: an occupied temp path is a refusal, never an overwrite."""
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        squatter = log.with_name(f"{log.name}.prune-{os.getpid()}.tmp")
+        squatter.write_text("occupied\n", encoding="utf-8")
+        before = log.read_bytes()
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        assert rep["refused"] and rep["pruned_pairs"] == 0
+        assert log.read_bytes() == before
+        assert squatter.read_text(encoding="utf-8") == "occupied\n"
+
+    def test_cr1_a_ledger_that_changed_mid_prune_skips_instead_of_dropping(
+        self, tmp_path: Path,
+    ) -> None:
+        """CR1, narrowed not closed. A concurrent append between snapshot and
+        replace would not survive the replace; the pre-replace size check turns
+        that into a skipped prune. Simulated by growing the file after the
+        snapshot via a monkeypatched stat-time append."""
+        ri = _engine(_stage_tool(tmp_path / "tools").parent)
+        log = _corpus(tmp_path / "dev" / "intents.jsonl")
+        before = log.read_bytes()
+        real_replace = os.replace
+
+        def _grow_then_replace(src, dst):  # the racing appender
+            with open(dst, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps({"event": "claim", "id": "racer",
+                                     "ts": _ts(0.001), "agent": "r",
+                                     "files": ["q"], "action": "race"}) + "\n")
+            return real_replace(src, dst)
+
+        # Grow the file BEFORE the size re-check by appending first.
+        with log.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"event": "claim", "id": "racer",
+                                 "ts": _ts(0.001), "agent": "r",
+                                 "files": ["q"], "action": "race"}) + "\n")
+        rep = ri.prune_released_pairs(older_than_days=30, log_path=log)
+        # The racer is a fresh unreleased claim, so the liveness guard refuses
+        # first -- which is the outer of the two protections. Either refusal is
+        # correct; what must never happen is a silent drop.
+        assert rep["refused"], rep
+        assert b"racer" in log.read_bytes()
+        assert before in log.read_bytes()
