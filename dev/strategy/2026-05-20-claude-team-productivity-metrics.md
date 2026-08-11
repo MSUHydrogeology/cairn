@@ -1,5 +1,10 @@
-<!-- Migrated 2026-06-12 from modflow_tools dev/strategy/ (Cairn's development home before self-hosting). Authored from modflow_tools' vantage; some path cites and "current state" reflect that origin and are being adapted to Cairn. Preserved as Cairn's living deliberation record -- see dev/strategy/MIGRATION.md. -->
-<!-- claim-check-allow: dev/proposals/archive/2026-05-21-claude-lifecycle-metrics-layer-v2.md -->
+<!-- Origin: authored 2026-05-20 in modflow_tools' dev/strategy/ (Cairn's
+     development home before self-hosting) and migrated 2026-06-12; see
+     dev/strategy/MIGRATION.md. Vantage adaptation completed 2026-08-11 --
+     this note now speaks from Cairn's own tree and measures Cairn's own
+     corpus. modflow_tools appears only where it is genuinely the subject:
+     as the named reference deployment. No claim-check exemption remains. -->
+
 # Strategy: team productivity metrics for the human + AI development team
 
 **Author**: Claude (Strategy)
@@ -12,7 +17,9 @@
 
 **The measurement question is a trust question.**  A human+AI team's data on its own efficacy is the most sensitive material the team produces: it tells the world how the methodology worked, where it failed, who routed what to whom.  Shipping infrastructure that collects that data **requires more adopter trust than not shipping it**.  Trust architecture comes first; the data primitive comes second.  Never the reverse.  See "The trust paradox of empirical-data infrastructure" below + the master guide-star doc's **Anchor 10** (Lin et al. 2020, *The TRUST Principles for digital repositories*, *Scientific Data* 7:144) for the broader framework Cairn's design has been implicitly following.
 
-The modflow_tools project ships **v2A** of a lifecycle-metrics extraction layer (`tools/lifecycle_metrics.py`; v2A landed via the accepted `2026-05-21-claude-lifecycle-metrics-layer-v2` proposal) that turns proposals + plans into structured rows -- author, status, finding counts, time-to-decision, cross-agent-type review rates.  A 2026-05-19 baseline run (via `python -m tools.lifecycle_metrics proposals`, commit `0c30b5e`) quantified the v1 corpus: 51 proposals (49 accepted), mean 7.7 findings per reviewed proposal, 80% cross-agent-type, median time-to-decision 0 days.  Those numbers are historical-baseline values from the v1 era; the corpus has grown substantially since (the 2026-05-28 session alone added a meaningful batch of accepted proposals); a fresh `lifecycle_metrics` run regenerates the current state.
+Cairn ships a lifecycle-metrics layer (`tools/lifecycle_metrics.py`) that turns its own proposal and plan corpora into structured rows -- author, status, finding counts, stage timings, review-yield dispositions, cross-agent-type review rates.  The layer originated in **modflow_tools**, the reference deployment, and folded up to Cairn; it now runs on Cairn's own tree, and the figures in this note are Cairn's unless a sentence says otherwise.
+
+**Cairn's own corpus, measured 2026-08-11** (`python tools/lifecycle_metrics.py proposals` / `plans`): **49 proposals** -- 45 accepted, **4 superseded, 0 rejected** -- carrying **246 findings**, a mean of **7.5 findings** on each of the 33 proposals that drew any, **76% reviewed cross-agent-type**, **63% revised**, and a **median time-to-decision of 0 days** (mean 1.0).  On the plan side: **38 plans**, 36 archived.
 
 The maintainer raised a follow-on concern at 2026-05-20 chat ~13:34 ET:
 
@@ -32,7 +39,7 @@ This note positions the four asks against the established literature on software
 Two structural moves drove the original (pre-review) revision:
 
 * **The metrics layer must measure the methodology's effect on *scientific software outcomes*, not just the health of the proposal/plan machinery.**  Lifecycle metrics are necessary instrumentation, but they are not the product.  An outcome layer (workflow capabilities shipped, runnable examples, reproducibility artifacts, defect/rework rate) joins the original four-asks-driven layer as a peer.
-* **The metrics layer must be designed forkably for Cairn (the Open Science methodology repository being constructed in parallel), not just usable in modflow_tools.**  Cairn portability becomes its own measurement layer.
+* **The metrics layer must be forkable, not merely usable where it was built.**  It ships to adopters as a module, so portability is itself a measurement question -- and Cairn is now one of the deployments being measured, not an outside observer of one.
 
 **A third move drives the 2026-05-28 rewrite that follows:**
 
@@ -49,14 +56,14 @@ The session-of-2026-05-28 layered substantial Cairn-side material on top of this
 3. **"Trust as design center" section** added to the master guide-star doc.  Maps the five TRUST dimensions onto Cairn's existing doctrine + names the trust paradox of empirical-data infrastructure (below).
 4. **Cairn 0.3 Goal 7** added to `dev/PLANNING.md` -- the concrete per-project efficacy-data infrastructure (pre-0.4 / 0.5) the doc's Layer 4 anticipated.  Frames Cairn's first empirical-research paper as a longitudinal study with consenting deployments.
 5. **Cross-links from Goal 1 (self-host) and Goal 4 (doctrine introspection)** -- Goal 1 creates Cairn's own instrumentation surfaces; Goal 4 reads the same signals for read-to-update-doctrine purposes (Goal 7 reads them for read-to-archive-for-research).
-6. **Cairn-deployment count moved from N=0 to N=2** (modflow_tools + LHM in-flight today).  The "Cairn has zero adopters" framing in the original Cairn-portability section is superseded.
+6. **Deployment count moved from N=0 to N=3** -- modflow_tools (reference), LHM (legacy retrofit), and Cairn itself, which self-hosted on 2026-06-12 and has since produced the 49-proposal corpus above.  Cairn measuring its own apparatus is the strongest available portability evidence, because it is the case where the methodology and the subject are the same tree.
 
 ## Trust as the measurement design center
 
 A human+AI team's data on its own efficacy is **load-bearing trust material**.  Releasing it exposes routing decisions, failure modes, agent-comparison framing, decision velocity -- all of which an adopter has a legitimate stake in controlling.  Any framework that ships measurement infrastructure must clear the trust bar BEFORE the data primitive ships.  Cairn's Anchor 10 names the five TRUST dimensions; mapping them onto measurement specifically:
 
 * **Transparency** -- the measurement schema, the collection logic, and the audit trail of "what was collected when, by whom" are public, append-only, and adopter-inspectable.  Cairn-side: lifecycle-metrics output schema is documented; the v2A contract test scans for compact violations; the consent flow doctrine is public.
-* **Responsibility** -- the measurement infrastructure is dogfooded before it ships.  Each metric is exercised on the reference deployment(s) under real conditions; no metric ships untested.  Cairn-side: v2A landed on modflow_tools, the reference deployment, with N=2 dimension-corpora (proposals + plans).
+* **Responsibility** -- the measurement infrastructure is dogfooded before it ships.  Each metric is exercised on the reference deployment(s) under real conditions; no metric ships untested.  The layer was exercised on the reference deployment before folding up, and now runs against Cairn's own two corpora (proposals + plans) every time this note is re-measured.
 * **User focus** -- the adopter chooses what to collect, when to collect, what to share.  No metric is mandatory; default mode is **collection-only-where-consented** with the lifecycle-metrics module's per-deployment opt-in.  Cairn-side: the on-ramp's graduated levels mean an L1 (hand-copy-kernel) adopter doesn't get the same measurement surface as an L2 (full bootstrap) one.
 * **Sustainability** -- measurement infrastructure must not silently lock the adopter into Cairn.  Data leaves with the adopter when they exit; collection produces a portable artifact (the on-disk metric tables); no central server, no Cairn-side persisted state.  *(Naming the analogical strain honestly: Lin et al.'s Sustainability is long-term **preservation** -- can the repository fund and operate for decades. What is claimed here is **portability and no-lock-in**, which is a different property wearing the same label. The five TRUST labels carry over as a useful structural frame; their conceptual content shifts when moved from a data repository to a methodology framework, and this dimension shifts most.)*
 * **Technology** -- no-network-by-default composition; the export-safety scrub on any outbound artifact; the `content-security` module protects against accidental exfiltration; verify-integrity gates protect against silently-corrupted data.
@@ -67,7 +74,7 @@ A human+AI team's data on its own efficacy is **load-bearing trust material**.  
 
 **Adding a primitive that collects efficacy data requires more adopter trust than not adding it** -- even when the data stays local.  Three trust dimensions tighten when measurement infrastructure ships:
 
-1. **Surveillance vector**: an adopter has to trust that the collection itself doesn't introduce a surveillance pathway.  A metric that captures "time-to-decision per agent" is an audit trail of who decided what when -- benign at the modflow_tools reference scale, sensitive at larger team scales where agent-comparison framing has political weight.
+1. **Surveillance vector**: an adopter has to trust that the collection itself doesn't introduce a surveillance pathway.  A metric that captures "time-to-decision per agent" is an audit trail of who decided what when -- benign at Cairn's current scale (one maintainer, a small agent roster), sensitive at larger team scales where member-comparison framing carries political weight.
 2. **Outreach surface**: the maintainer's future ability to contact participants for a research paper means the data persists with the intent of future research use.  Even if outreach is out-of-band + per-occurrence opt-in, the data's existence presupposes the outreach pathway.
 3. **Evaluation drift**: the Measurement Compact's first commitment ("metrics are for system learning, not agent punishment") is **a doctrine commitment**, not a technical guarantee.  As the framework spreads to communities the maintainer cannot personally vouch for, an adopter must trust either (a) every future framework maintainer's good faith, or (b) the framework's structural impossibility of misuse.
 
@@ -104,7 +111,7 @@ else here: the trust-architecture work it is gated on is no longer near-term.
 * **Shares signals with Goal 4 (doctrine introspection)** -- both read collision-log recurrence, lifecycle-metrics drift, repeated patterns.  Goal 4 reads to update doctrine; Goal 7 reads to archive for the longitudinal-study consent flow.  The two are complementary; they share the underlying instrumentation surface.
 * **Independent of Goals 2, 3, 5** -- can land in parallel with the governance-models / PR-workflow / strategy-doc-fold-back work.
 
-**Goal 7's verification gate**: each Anchor 10 TRUST dimension must be demonstrably checked on the data primitive before adopters are asked to commit to running it (per the trust paradox section above).  The dogfood happens on modflow_tools first; the LHM adoption is the second exercise; only then does the primitive ship as a default-on Cairn module.
+**Goal 7's verification gate**: each Anchor 10 TRUST dimension must be demonstrably checked on the data primitive before adopters are asked to commit to running it (per the trust paradox section above).  Cairn dogfoods it on its own tree first; the reference and legacy deployments are the second and third exercises; only then does the primitive ship as a default-on module.
 
 ## Framework anchors
 
@@ -128,7 +135,7 @@ Eight citable frameworks bound the gap analysis:
 
 6. **Interrupted Time Series (ITS) analysis** -- the methodology anchor for "track changes with practices."  Established in policy / healthcare evaluation; software-eng applications growing.  ITS quantifies the impact of an intervention by comparing repeated observations before and after, separating *level change* (immediate effect) from *slope change* (sustained trend effect).  Software tools: Stata's `itsa` command; the Robust ITS (RITS) toolbox.  Foundational reference: [Wagner, A. K. et al. (2002)](https://pubmed.ncbi.nlm.nih.gov/12174032/) on segmented regression for ITS.  For our case: each doctrine commit is in principle an intervention -- with substantive coupling caveats addressed under "Methodological cautions" below.
 
-7. **Research Software Engineering (RSE) / scientific-software practice** -- modflow_tools is scientific software, not general-purpose SaaS.  RSE-community guidance bears directly on what to measure:
+7. **Research Software Engineering (RSE) / scientific-software practice** -- Cairn's adopters build scientific software, not general-purpose SaaS, and Cairn is itself research-software methodology rather than a product.  RSE-community guidance bears directly on what to measure:
    * The [FAIR4RS principles](https://www.rd-alliance.org/group/fair-research-software-fair4rs-wg) (Findable, Accessible, Interoperable, Reusable for Research Software).
    * The [Better Scientific Software project](https://bssw.io/).
    * Carver, J. et al. on scientific software development practices.
@@ -173,6 +180,16 @@ One column named in the original sixteen, `human_review`, is **not** in the
 live schema; `external_tier_review` remains. Treat any analysis written
 against the old column list as needing a re-check.
 
+**A live reliability question on the plan side.** Of 38 plans, `code_review_rounds`
+reports **0 for 28 of them**, while 36 are archived -- and Cairn's plan-archive
+precondition holds that a plan cannot archive until a code review has occurred.
+Every archived plan does carry a heading matching *code review*. So either the
+extractor counts rounds by a marker convention most plans predate, or the
+precondition is satisfied in a form the metric cannot see. This is checkable and
+unresolved; until it is resolved, `code_review_rounds` should not be read as
+evidence about review coverage. It is exactly the failure mode the metric
+contract's *reliability tier* field exists to record.
+
 **Per-plan: still 6 columns** -- `stem`, `status`, `plan_review_rounds`,
 `code_review_rounds`, `paired_proposal`, `paired_proposal_reliability`.
 
@@ -212,8 +229,8 @@ The 2026-05-19 baseline run (historical snapshot, not live count):
 **Gating-function caveat (2026-07-22 addendum).** Three things worth
 stating plainly where these numbers are presented, not just implied:
 
-1. The corpus above is a **modflow_tools** 2026-05-19 baseline, not
-   Cairn's own tree.
+1. The headline figures are now **Cairn's own corpus** (measured 2026-08-11),
+   not an inherited reference-deployment baseline.
 2. The numbers are strong evidence for review's **improvement**
    function (mean 7.7 findings per reviewed proposal) — they are **not**
    evidence for its **gating** function. A ~96% same-day acceptance
@@ -300,7 +317,7 @@ The right framing per SPACE and per the multi-agent LMA evaluation literature: p
 
 The four asks above cover *coordination mechanics* -- how the team's lifecycle machinery moves work through proposal -> review -> decision -> implementation.  The maintainer's larger goal is not measured by these alone: world-class MODFLOW workflows, faster scientific modeling, reproducible notebooks/configs, a Cairn methodology reusable across scientific codebases.
 
-Lifecycle metrics are necessary instrumentation but not the product.  Without an outcome layer, the v2 dashboard could tell us the team reviews faster and collides less while missing whether modflow_tools is becoming more capable, more reliable, and more useful to scientists -- the exact activity-vs-productivity failure mode SPACE warns about.
+Lifecycle metrics are necessary instrumentation but not the product.  Without an outcome layer, the dashboard could report that the team reviews faster and collides less while missing whether the software itself is becoming more capable, more reliable, and more useful to scientists -- the exact activity-vs-productivity failure mode SPACE warns about.
 
 **Outcome-layer candidate measures**:
 
@@ -315,11 +332,11 @@ The outcome layer joins coordination metrics as a *peer*, not a subordinate.  In
 
 ## Cairn portability -- the methodology's transfer test
 
-Cairn (the Open Science methodology repository) is the natural home for *exportable* measurement methodology.  **As of 2026-05-28: Cairn v0.2.0 is cut; the two deployments are modflow_tools (reference instance) + LHM (adoption in-flight)**.  The "today, Cairn has zero adopters" framing in this section's original (2026-05-20) version is superseded -- portability is now measurable as N=2 with a third-party N=3 anticipated for 0.3.
+Cairn is the home for *exportable* measurement methodology, and -- since self-hosting on 2026-06-12 -- one of the deployments being measured.  **Three measured deployments today**: Cairn itself (the 49-proposal corpus above), modflow_tools (the reference instance the layer came from), and LHM (a legacy retrofit).  A genuinely third-party deployment, by a team that did not contribute to the doctrine, remains the open portability test; none of the three is independent of the maintainer.
 
 Cairn portability is the doc's spine, not its fourth layer.  The concrete plan for measuring it is **Cairn 0.3 Goal 7** (above) -- the per-project efficacy-data infrastructure ships pre-0.4 / 0.5, before community adopters arrive.  Anchor 10's TRUST dimensions gate the primitive: each must be demonstrably checked before adopters are asked to commit to running it.
 
-**Cairn-portability-layer candidate measures** -- each is a per-adopter measurement event; the modflow_tools N=1 baseline exists; LHM adoption produces N=2; the third-party N=3 baseline lands during 0.3's external correctness probe:
+**Portability candidate measures** -- each is a per-adopter measurement event, and Cairn's own adoption of its apparatus is the first datum rather than an exception to the series:
 
 * **Bootstrap time**: how long does it take a cold-start single agent to bootstrap Cairn into a target repo with its assessment / proposal / plan / review-loop / goodnight surfaces?
 * **Customization burden**: number of local customizations required to make Cairn fit the target repo.
@@ -328,7 +345,7 @@ Cairn portability is the doc's spine, not its fourth layer.  The concrete plan f
 * **Time-to-first-reviewed-implementation**: from Cairn bootstrap to the first proposal-cycle-completed implementation in the target repo.
 * **Saugatuck-style pilot metrics** (the methods.md generation arc's gate): time-to-first-draft, edit fraction, citation accuracy, drift rate.  See Tier 5.5 (Saugatuck first-pilot dogfood) for the per-metric provenance.
 
-For each measurement choice, a **forkability test**: would another scientific-software team be able to run this measurement on their own corpus, against their own agents, with their own doctrine commits?  Tag each metric: *generic* (reusable across teams) or *modflow_tools-specific* (configuration / customization needed for adoption).  The v2A `lifecycle_metrics.py` ships the forkable contract surface; Goal 7 ships the consent + collection wrapper around it.
+For each measurement choice, a **forkability test**: would another scientific-software team be able to run this measurement on their own corpus, against their own agents, with their own doctrine commits?  Tag each metric: *generic* (reusable across teams) or *deployment-specific* (configuration or customization needed before it transfers).  `lifecycle_metrics.py` ships the forkable contract surface; the efficacy-data horizon item ships the consent + collection wrapper around it.
 
 ## Three data sources v1 doesn't ingest but should
 
@@ -352,7 +369,7 @@ Restructured into four layers (each addresses a different evaluation purpose).  
 
 * **v2A -- operational minimum** (the first shippable slice).  Layer 1 (per-stage timestamps + conservative-cadence snapshots), Layer 2 (`**Model**:` extraction, per-role/per-tier summaries, collision-log ingestion, author × reviewer matrix), and the Metric Contract table across both.  Review-yield disposition shipping in v2A requires a proposal-template amendment for explicit disposition markers (see Layer 2 below); historical extraction is best-effort-only.
 * **v2B -- quality / outcome layer** (the follow-on).  Layer 3 fully, gated on the workflow-outcomes registry (see Layer 3 below) as the source-of-truth.  Ships after v2A is in service and the team has confirmed which v2A metrics actually feed back into doctrine / tool changes.
-* **Cairn-side / v3** (deferred outside modflow_tools).  Layer 4 (Cairn portability), versioned doctrine (mechanism 5 of the adaptive-doctrine surface), reflection-derived satisfaction proxies, A/B doctrine testing (mechanism 4), doctrine sunset surface (mechanism 7).  Modflow_tools v2 ships forkable metric *contracts* that Cairn can consume; the *Cairn-specific instrumentation* lands in Cairn once the first adopter exists.
+* **Still open.**  Layer 4 (portability), versioned doctrine (mechanism 5), reflection-derived satisfaction proxies, A/B doctrine testing (mechanism 4), and the doctrine sunset surface (mechanism 7).  The forkable metric *contracts* exist; the consent-and-collection wrapper around them does not.
 
 The staging is not a hedge against ambition; it is the discipline that lets each slice teach the next one's design.  Codex's framing (round-2 External review, finding P1 #1): "build the smallest metrics layer that can tell us whether the process is improving scientific software outcomes, then let the adaptive loop learn from that."
 
@@ -399,17 +416,17 @@ Proposed paths: `dev/workflow_outcomes.md`, `dev/workflow_outcomes.yml` (one of 
 
 **Status superseded by Cairn 0.3 Goal 7** (per `dev/PLANNING.md` >
 "Cairn 0.3 milestone goals" > Goal 7).  The original (2026-05-20)
-"design-only in modflow_tools; Cairn-side / v3 instrumentation"
+"design-only at the reference deployment; instrumentation later"
 framing is now stale: Goal 7 is the concrete pre-0.4 / 0.5 plan that
 ships the Cairn-side primitive.
 
-The modflow_tools v2A contribution to Goal 7's primitive: the forkable
+The reference deployment's contribution to that primitive: the forkable
 metric *contract* surface (`tools/lifecycle_metrics.py` shipped its
 outputs in the Metric Contract table format) is in place, and the
 generic-exporter hook is ready for the Goal 7 primitive to consume.
 The Cairn-side wrapping (consent flow + collection + audit trail +
 no-network-by-default composition) lands in Goal 7's implementation
-plan, NOT in modflow_tools.
+plan, not in the deployment the layer came from.
 
 Candidate Cairn-side measures for Goal 7 (the list this section
 originally anticipated; superseded by PLANNING.md > Goal 7's
@@ -448,11 +465,11 @@ real question and is left open here rather than assumed.
 
 The five commitments (operative):
 
-* **Metrics are for system learning, not agent punishment.**  Per-agent and per-tier summaries exist to surface routing-policy mistakes and missing review-coverage patterns, not to rank agents.
-* **No single score.**  Composite indices that collapse multiple dimensions into one number are not adopted.
-* **No interpretation of role-confounded metrics as capability proof.**  Per-tier comparisons require normalization by task assignment; absent normalization, metrics are workload distribution, not capability evidence.
-* **No cross-team generality claims from the modflow_tools corpus alone.**  Cross-team claims require Cairn-portability-layer data from N≥2 teams.
-* **Internal-diagnostic posture, not external-marketing posture.**  Metrics surface what to investigate; they do not produce evaluations to be shown outside the team without context.
+1. **Metrics serve system learning, not member punishment.**  Per-member and per-tier surfaces exist to find where the *collaboration apparatus* drifts, not to rank contributors.
+2. **No single composite score.**  A composite hides the diagnostic value of per-dimension signals and invites ranking-style reading.
+3. **No role- or tier-confounded metric is read as capability proof.**  Per-tier and per-role surfaces are confounded by task assignment and escalation rules.
+4. **No cross-team generality from a single corpus.**  One team is N=1 in the methodology-export sense; a cross-team claim needs independent teams, not a deeper read of one.
+5. **Internal-diagnostic posture, not external-marketing posture.**  Any externally-published artifact derived from them is a separate, gated act.
 
 The compact is doctrine, not just norms.  Violations of the compact are findable in External review of the v2 proposal and its eventual implementation -- but those reviews catch *proposal-time* and *implementation-time* violations, not *operational-time* violations (e.g., someone publishing a per-agent ranking externally despite the compact; using per-tier surfaces to make a "model X is better than model Y" claim in chat; generating an external-marketing slide from the operational dashboard).  The v2 proposal must pick one of two enforcement framings for operational-time violations:
 
@@ -533,9 +550,9 @@ Ordered by lightness; pick the lightest that closes the loop you need:
 
 3. **Periodic doctrine review** (calendar cadence -- monthly?  quarterly?).  Scheduled doctrine retrospectives where the team asks: "what doctrine has the metrics layer surfaced as ineffective or absent?"  Lighter weight than a trigger; misses things that fire between cycles but catches slow drifts.
 
-4. **A/B doctrine testing** (when N≥2 -- e.g., Cairn adopters or branches).  Run two practices in parallel; compare per the lifecycle-metrics-layer; pick the winner.  Requires meaningful corpus per branch; not feasible at N=1, which is where modflow_tools is today.  Cairn-portability layer creates the conditions for this at adopter-N≥2.
+4. **A/B doctrine testing** (when N≥2 -- e.g., Cairn adopters or branches).  Run two practices in parallel; compare per the lifecycle-metrics-layer; pick the winner.  Requires a meaningful corpus per branch.  Cairn's own 49 proposals are a single stream, not two arms, so this stays infeasible here; the portability layer creates the conditions once independent adopters exist.
 
-5. **Versioned doctrine** (semver-like).  Doctrine commits carry version stamps.  Adopters pin to a version; upgrades are explicit.  Cross-adopter learning (Cairn) requires version discipline so adopters can attribute their measured outcomes to specific doctrine versions.  Today's modflow_tools doctrine is monotonically growing; no versioning.  Cairn's launch needs versioning from day 1.
+5. **Versioned doctrine** (semver-like).  Doctrine commits carry version stamps.  Adopters pin to a version; upgrades are explicit.  Cross-adopter learning (Cairn) requires version discipline so adopters can attribute their measured outcomes to specific doctrine versions.  Cairn's own doctrine grows monotonically with no version stamps on individual rules -- releases are versioned, doctrine changes within them are not.  A cross-adopter learning loop needs the finer grain.
 
 6. **Failure-mode → doctrine pipeline** (formalize today's informal arc).  Each true-staged-index collision (collision-log), each verified-flag instance (claim-check), each proposal-cycle violation gets a structured intake → triage → doctrine-proposal pathway.  Codifies the pattern that ran ad hoc today.
 
@@ -545,11 +562,11 @@ Ordered by lightness; pick the lightest that closes the loop you need:
 
 Cairn is the natural home for the explicit adaptive-doctrine machinery, because Cairn is methodology-as-software for general scientific-software teams.  Cairn must be designed *as a dynamic and adaptable framework* from launch, not retrofitted later:
 
-* **Versioned doctrine releases** with semver semantics: major (breaking adopter contracts), minor (additive doctrine), patch (clarifications).  Today's modflow_tools doctrine has no version stamps; Cairn cannot launch the same way.
-* **Adopter-feedback intake**: a structured channel for adopters to report friction, doctrine misfires, and doctrine gaps back upstream.  Closes the loop that today modflow_tools doesn't even have (modflow_tools IS the only "adopter" of its own doctrine).
+* **Versioned doctrine releases** with semver semantics: major (breaking adopter contracts), minor (additive doctrine), patch (clarifications).  Cairn's own doctrine rules carry no individual version stamps -- releases are versioned, the rules inside them are not -- and a cross-adopter learning loop needs the finer grain.
+* **Adopter-feedback intake**: a structured channel for adopters to report friction, doctrine misfires, and doctrine gaps back upstream.  Cairn has the fold-back ledger as the mechanism; what it does not yet have is an adopter population independent of the maintainer to feed it.
 * **Cross-adopter learning loop**: when N≥2 adopters exist, the Cairn-side measurement layer aggregates adopter signal and surfaces patterns that justify doctrine evolution.
 * **Methodology-version compatibility matrix**: which Cairn version paired with which lifecycle-metrics version paired with which proposal-template version.  Adopters at older versions know what to upgrade for what benefit.
-* **Doctrine-change governance** at Cairn: doctrine commits go through the same proposal cycle as the modflow_tools doctrine they're based on.  Cairn maintainer (initially the modflow_tools maintainer, plausibly delegated later) decides.
+* **Doctrine-change governance**: doctrine commits go through the same proposal cycle as everything else, and clear the adaptive-doctrine rate-limit gate.  The Human Maintainer decides, plausibly delegated as the contributor pool grows.
 
 The Cairn portability layer (Layer 4 above) measures *whether* the framework transfers.  The adaptive-doctrine layer measures *whether the framework improves over time*.  Both are necessary for the Open Science methodology repository's claim to non-trivial value.
 
@@ -567,7 +584,7 @@ Three risks deserve explicit framing in any v2 proposal that introduces feedback
 
 V2 ships mechanisms 1 (trigger-conditions, already exists for R2) and 6 (failure-mode → doctrine pipeline, formalize today's informal arc).  These are *operational* feedback loops -- they respond to measurable incidents.
 
-V3 / Cairn launch ships mechanisms 2 (reflection-driven proposals) and 5 (versioned doctrine).  These add *structural* feedback discipline that survives the move from N=1 (modflow_tools) to N≥2 (Cairn adopters).
+V3 / Cairn launch ships mechanisms 2 (reflection-driven proposals) and 5 (versioned doctrine).  These add *structural* feedback discipline that survives the move from a maintainer-adjacent deployment set to genuinely independent adopters.
 
 Mechanism 4 (A/B doctrine testing) and mechanism 7 (doctrine sunset) wait for evidence that the lighter mechanisms are insufficient.
 

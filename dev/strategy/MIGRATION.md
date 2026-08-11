@@ -22,7 +22,7 @@ modflow_tools' own science and must not enter the public Cairn repo.
 | Old path (modflow_tools `dev/strategy/`) | New path (Cairn `dev/strategy/`) | Status | Notes |
 |---|---|---|---|
 | `2026-05-14-claude-human-ai-team-development-framework.md` | same | living | **The guide star** — Cairn's rationale/state/direction. Source for the P3 permanent vision/charter doc. |
-| `2026-05-20-claude-team-productivity-metrics.md` | same | living | The Measurement-Compact research. |
+| `2026-05-20-claude-team-productivity-metrics.md` | same | living | The Measurement-Compact research. **Vantage adaptation complete (2026-08-11)** — rewritten to Cairn's own tree, measures Cairn's own corpus, `claim-check-allow` directive dropped; modflow_tools now appears only as the named reference deployment. |
 | `2026-05-27-claude-cairn-pre-release-sweep.md` | same | living | Version-independent release-strategy sweep. |
 | `2026-05-27-codex-cairn-adopter-friction-audit.md` | → `archive/` (2026-06-12) | settled | Prospective-scientist adopter-friction lens. Superseded + archived by the v0.3 re-run `2026-06-12-claude-adopter-friction-audit.md`. |
 | `2026-06-04-claude-documentation-graphics.md` | → `archive/` (2026-08-10) | settled | Docs-graphics strategy (`docs/assets/`). Superseded + archived by the Cairn-vantage re-scope `2026-08-10-claude-documentation-enhancement.md`, which carries the portable production model forward and drops the modflow_tools figure inventory. |
@@ -51,6 +51,18 @@ claim-path checking. Track that here.
   into `archive/`. That leaves three of the original four *vantage*-directive
   docs live: `human-ai-team-development-framework`,
   `team-productivity-metrics`, and `pre-release-sweep`.
+* **2026-08-11 — `team-productivity-metrics` completed vantage adaptation.**
+  Rewritten to speak from Cairn's own tree: the headline corpus is now Cairn's
+  49 proposals rather than an inherited reference-deployment baseline, the
+  quoted Measurement Compact is the shipped generic wording rather than the
+  superseded project-specific one, and the `claim-check-allow` directive is
+  dropped (`claim_check` passes with none). modflow_tools remains named only
+  where it is genuinely the subject — the layer's origin and the deployment
+  roster. **Two of the original four vantage-directive docs remain**:
+  `human-ai-team-development-framework` and `pre-release-sweep`.
+  (`documentation-enhancement` also carries a directive, but it is a
+  Cairn-authored note marking forward references to files it proposes
+  creating — not a migration artifact, and outside this ledger's scope.)
 * **2026-08-11 — `complexity-debt-audit` rejoined normal claim-path
   checking.** Its top-down rewrite drops every `claim-check-allow` directive:
   the Cairn-repo path and count exemptions it used to carry are gone, because
