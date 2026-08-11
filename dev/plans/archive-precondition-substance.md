@@ -78,12 +78,12 @@ the implementation needs a second.
 ## Sequence
 
 ```
-A  the structural grammar for the two archive gates   [commit pending]
-B  rename the predicate; narrow every message         [commit pending]
-C  the full gate inventory, both --to lists           [commit pending]
-D  --include-archive documented; the 53 as backlog    [commit pending]
-E  doctrine + both template surfaces                  [commit pending]
-F  record corrections, PLANNING, [REC] routing        [commit pending]
+A  the structural grammar for the two archive gates   [commit a1ec37a]
+B  rename the predicate; narrow every message         [commit fef5295]
+C  the full gate inventory, both --to lists           [commit 1e65dd7]
+D  --include-archive documented; the 61 as backlog    [commit 1e65dd7]
+E  doctrine + both template surfaces                  [commit 1e65dd7]
+F  record corrections, PLANNING, [REC] routing        [commit 1e65dd7]
 ```
 
 **A before B** — B renames what A rewrites; doing it in the other order churns
@@ -303,3 +303,49 @@ not the implementing agent, over a range that includes `da3e296`.
 *Filled in at archive time.* Every deferred follow-up carries a recorded
 disposition — `accept`, `guard`, `wontfix`, or (with the Maintainer's quoted
 authorization) `defer`.
+
+## Implementation verification -- Claude -- 2026-08-11
+
+**Range**: `a1ec37a` (A), `fef5295` (B), `1e65dd7` (C–F).
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python
+**3.13.13**, canonical.
+**Tree state**: a `git clone --shared` checked out at `1e65dd7`, verified clean
+(`git status --porcelain` empty) before each run. The live tree could not be
+used: other sessions hold uncommitted work in it.
+
+| command | outcome | wall clock |
+|---|---|---|
+| `pytest bootstrap/tests --quality-gate-shuffle-seed=0` @ `1e65dd7` | **4 failed, 2955 passed, 1 skipped** | 366.98 s |
+| same @ `6df71b7` (pre-implementation baseline) | **4 failed, 2933 passed, 1 skipped** | 357.17 s |
+| `quality_gate.py --sub neutrality --sub redundancy` @ `1e65dd7` | `neutrality fail=93 info=21`, `redundancy fail=0 info=2`, exit 1 | — |
+| `pytest bootstrap/tests/test_lifecycle_contract.py` @ `1e65dd7` | **108 passed** | 2.14 s |
+
+**Zero regressions.** The failing set is **identical** at both commits — same
+four tests, same names:
+
+* `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override`
+* `test_verify_ref.py::test_mutation_verifying_inside_the_candidate_runs_the_forger`
+* `test_verify_ref.py::test_candidate_gpg_ssh_program_never_executes`
+* `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports`
+
+None is in a file this plan touches. The last runs the public CLI against the
+*live* repository, which a `--shared` clone is not; the two `verify_ref` nodes
+are the full-suite-only order sensitivity recorded at plan-open. Passing count
+rises **2933 → 2955**: the 22 nodes this plan added.
+
+`quality_gate` exits 1 on `neutrality fail=93`, which is unchanged from the
+figure measured on other plans today and names no file this plan touched.
+
+### Known omissions
+
+* **The archived corpus is not repaired.** 61 of 91 artifacts are flagged by
+  `scan --include-archive` under the new predicates (53 of 88 under the old
+  ones). That is the dated backlog Chunk D records, not a regression: the gates
+  got stricter and history predates them. R1-1 forbids retrofitting.
+* **One unchecked claim survives**, inventoried in Chunk C: *"the plan-open and
+  first-implementation commits stay distinct"* asserts a git-history property
+  the planner cannot see from artifact text. Closing it needs a contract this
+  plan does not have.
+* **The metrics predicate is not converged.**
+  `_lifecycle_metrics/parse.py` still carries a second, weaker definition,
+  routed as measured follow-up per [E3]/[I1].
