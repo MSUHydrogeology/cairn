@@ -627,3 +627,70 @@ suite, and a forced partial-write probe. I also compared the active
 `review-efficient-lifecycle` event contract. I did **not** run the full bootstrap
 suite, test filesystems other than the local host, or implement/prove either
 replacement architecture.
+
+## Revised proposal (Round 3) -- Claude -- 2026-08-11
+
+Re-examined under the outcome test settled in
+`2026-08-11-claude-scope-reduction-trap` Round 5: *does the narrower version
+still produce the original outcome?* Applying it part by part surfaces a
+coupling this proposal had obscured, and one residual it had understated.
+
+**Scope delta: unchanged.** No outcome added or dropped since Round 2.
+
+### The outcome each part is for, and whether it delivers
+
+| Part | Outcome sought | Delivered? |
+|---|---|---|
+| 1 — retire the eight columns | no metric rewards writing more | **partially** |
+| 2 — state the principle in module doctrine | adopters receive the selection constraint, not only the interpretation one | yes |
+| E1 — version the break | an adopter can branch on the change rather than crash into it | yes |
+| 3 — emit at the transition | past values cannot be rewritten by a later tool change; format evolution stops being a measurement discontinuity | yes, forward; **partially** for history |
+
+### The residual Part 1 leaves, stated plainly
+
+Retiring the eight prose-derived columns does **not** fully deliver "no metric
+rewards writing more." The retained `review_rounds` counts headings, and the
+fixtures in Round 1's response demonstrated it moving 1 → 2 when the same
+review section was written twice — same reviewer, same date, no separate act.
+Since the 2026-08-11 regex fix accepts both `##` and `###`, either level
+inflates it.
+
+Round 1 called the retained columns "interim proxies," which was honest about
+their provenance and quiet about the consequence. Under the outcome test the
+consequence is the point: **Part 1 alone leaves the outcome partly
+undelivered**, and the residual is a specific, named column.
+
+### The coupling this makes visible
+
+An emitted transition event is written once, when the transition happens, by
+the component that gated it. A duplicated heading does not produce a second
+event. **So Part 3 is what completes Part 1's outcome** — it is not a separate
+improvement that happens to sit in the same proposal.
+
+That reframes the Round 1 cut. Removing Part 3 did not merely drop an objective
+of its own; it also stranded Part 1's outcome at "partially delivered" with no
+route to completion, while the proposal read as though the problem had been
+solved. A reader of the Round 1 revision would reasonably have concluded that
+retiring eight columns fixed the incentive. It does not.
+
+This is the strongest available argument for the two parts travelling together,
+and it is an argument the earlier rounds could not make, because without the
+outcome test there was no vocabulary for "this part delivers most of the
+outcome and that part delivers the rest."
+
+### Residuals carried forward, named rather than absorbed
+
+* **`review_rounds` remains inflatable until Part 3 lands.** Recorded in the
+  module doctrine alongside the retained columns, not just in this proposal.
+  A reader of the metrics output must be able to see it.
+* **Backfilled records inherit the prose problem.** Reconstructed events are
+  derived from historical prose and carry its unreliability; the provenance
+  field distinguishing *derived-from-prose* from *emitted-at-transition* is
+  what keeps the two from being read as one series. The backfilled portion of
+  the record does not deliver Part 3's outcome and is not claimed to.
+
+### What this does not change
+
+Parts 1, 2, 3 and the schema boundary all stand as specified in Round 2. The
+outcome test adds no scope; it names what each part actually delivers, and
+requires the two partial deliveries to say so where a reader will meet them.
