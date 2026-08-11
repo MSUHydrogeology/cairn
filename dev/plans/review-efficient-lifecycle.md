@@ -65,7 +65,7 @@ one is an unauthorized ceremony rather than a paused agent.
 
 | # | Condition | State as of 2026-08-11 |
 |---|---|---|
-| **M0** | The three security plans are **archived** — `api-web-security-modules`, `release-security-bar`, `security-verification-activation` — per the Maintainer's 2026-08-10 sequencing statement | **NOT MET.** `release-security-bar` is archived; `api-web-security-modules` and `security-verification-activation` are both live at `**Status**: open`, and both were being actively committed to on 2026-08-11 |
+| **M0** | The three security plans are **archived** — `api-web-security-modules`, `release-security-bar`, `security-verification-activation` — per the Maintainer's 2026-08-10 sequencing statement | **MET as of 2026-08-11.** All three are at `**Status**: archived` under `dev/plans/archive/`. Was NOT MET when this table was written; the remaining two archived during the day. *Caveat, not a blocker:* none carries a `Dispositions:` block in the checked spelling, and moving them out of `dev/plans/` removed them from the conformance scan's live set rather than satisfying the precondition. That is the subject of the in-flight `archive-precondition-substance` proposal and is not this plan's to fix |
 
 M0 is a **precondition, not a ceremony** — nobody has to *do* anything at it
 except confirm it. But it gates the first implementation commit, and it is
