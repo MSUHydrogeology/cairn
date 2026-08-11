@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `tools/lifecycle_planner.py` and its byte-identical twin
 `templates/skills/_lib/lifecycle_planner.py`; `bootstrap/tests/test_lifecycle_contract.py`;
 `dev/plans/_template.md`; potentially `doctrine/lifecycle-contract.md` and
@@ -302,3 +302,174 @@ whatever it decides is a definition with at least one other consumer.
 Nothing here blocks. The proposal is well-scoped and unusually honest about its
 own measurement errors; my findings add a second consumer, a precedent, a
 completeness question, and one sentence to narrow.
+
+## Review -- Codex (External) -- 2026-08-11
+
+**Model**: GPT-5.6-Codex
+**Tier**: External, different agent type from the author
+**Reviewed commit**: `b1eb3b3e490130741d91e309d2b3c92fee0d5d8e`
+**Reviewed proposal blob**: `af3fb86c683eba6afca8e6253f434a61c6f9444e`
+**Assurance path**: high-assurance
+
+**Verdict: REVISE.** The false-pass diagnosis and the marker improvement are
+real, and the Internal review found the right adjacent consumer. The proposal
+is not yet decision-ready because Question 1 treats a prior deliberate doctrine
+choice as an accidental `True`, then proposes wiring two booleans that still
+pass on empty or promissory text. Question 2 also overlooks a shipped
+`--include-archive` mode, so its option set is framed around adding a capability
+that already exists.
+
+### Steelman
+
+The opening repair measurably improves the code-review predicate: against the
+exact 36-plan archive at `da3e296`, all three plans the proposal names lack both
+accepted markers, while a placeholder followed by a later attributed review is
+correctly accepted. The shipped plan template itself refuses. The bold-label
+parser repair also moves in the right direction, and the nine focused tests I
+ran pass. Most importantly, the proposal distinguishes what text can attest
+from what actually occurred; that should govern the revision.
+
+### [E1] HIGH -- wiring the existing flags repeats the presence-for-substance defect
+
+The two literal `True` values are not equivalent.
+`deferral-discipline` deliberately required the Dispositions transition gate to
+remain unconditional: its accepted plan says *"Stay unconditional -- do not
+promote `gates.append((True,` to a check"*, and records the zero-follow-up edge
+case as **omitting the block**. This proposal may supersede that choice, but it
+must name and redesign it; it cannot classify the `True` as an unambiguous bug.
+
+More directly, the parsed booleans do not test the descriptions beside them. I
+executed the exact `da3e296` planner against a `Status: review` fixture carrying:
+
+```text
+**Dispositions:**
+
+Loop-fidelity sign-off is owed at archive.
+```
+
+The empty label sets `has_followups_migrated=True`; the promissory sentence sets
+`has_fidelity_signoff=True`. The fixture's existing archive gate descriptions
+claim every follow-up has a disposition and that the sign-off names an
+implementing commit and governing Revised section. Replacing the two `True`
+values with these flags would report both claims met without either fact.
+
+**Required satisfier.** Settle the zero-follow-up contract explicitly. My
+recommendation is to supersede the omission rule for future archives and require
+a non-placeholder `Dispositions:` attestation every time, with an explicit
+`none` form when there are no follow-ups. Define and test a structural grammar:
+at least `none` or one allowed disposition entry for the first gate; and a
+fidelity attestation scoped to the lasting-truth section that contains at least
+one implementing commit id and an identified governing section for the second.
+Legacy `Follow-ups migrated to:` records remain accepted. Empty labels, template
+instructions, "owed at archive," and prose merely discussing either phrase must
+all refuse. Update the doctrine/template surfaces because this intentionally
+changes the accepted `deferral-discipline` contract.
+
+The plan should also take Internal [I3]: enumerate every transition gate and the
+predicate that supplies it. That table is how reviewers verify this pattern was
+swept rather than repaired twice more by discovery.
+
+### [E2] HIGH -- archive scanning already exists, and its current output changes the decision
+
+`scan --include-archive` has existed since `7519c5d`; the proposal's opening
+commit did not add it. At the exact proposal-opening tree, default `scan`
+examines **7**, not 6, live artifacts and exits 0. The existing archive mode
+examines **88** artifacts, reports **53** with structural violations, and exits
+1. I reproduced both from a `git archive da3e296` extraction so concurrent live
+work could not affect the result.
+
+Question 2 is therefore not "should scan cover the archive?" It is whether the
+archive should enter the **default** scan and how the already-strict opt-in mode
+should be used. Fifty-three retrospective violations across proposal and plan
+rules make a default-red scan exactly the suppression pressure the proposal
+warns about.
+
+**Required satisfier.** Preserve the live-only default. Preserve and document
+`--include-archive` as the explicit strict historical audit; do not silently
+change its exit semantics or build a 53-entry suppression baseline into the
+routine gate. Record the dated archive findings as backlog/report evidence, and
+let the corrected pre-transition predicates prevent new instances. If the
+author wants a report-only archive mode, specify it as a new output contract
+rather than describing archive traversal as absent.
+
+### [E3] MEDIUM -- call the marker what it is, and make that definition canonical
+
+Question 3 should choose the narrower claim. A `**Model**:` line or dated heading
+proves a review-shaped marker is present; it does not prove a review was
+substantive or occurred. Yet the landed helper and field are named
+`_has_substantive_code_review` / `has_substantive_code_review`, and the archive
+gate still says *"a code review has occurred."* The careful comment does not
+repair an overclaim in the API and operator output.
+
+**Required satisfier.** Rename the predicate around an attributed/dated
+code-review record marker and make every message claim only that shape. Keep the
+actual-review assurance in the self-authored/self-committed Git discipline, as
+the proposal recommends. Accept Internal [I1] without absorbing the metrics
+migration: declare this marker grammar canonical in one governing contract,
+and route `_lifecycle_metrics/parse.py` convergence as an explicit follow-up
+whose snapshot impact is measured before implementation. A second regex must
+not quietly become a second definition again.
+
+### [E4] MEDIUM -- the opening implementation must remain inside code-review coverage
+
+Commit `da3e296` already changes both shipped planner twins and adds the marker
+tests before this proposal is reviewed or decided. The urgent, reversible bug
+fix rationale explains the ordering, but proposal review is not implementation
+code review.
+
+**Required satisfier.** Require the eventual plan's Boundary B and independent
+code-review range to include `da3e296` (or its exact changed blobs) alongside
+the later implementation. The code review must attack the marker parser and
+house-style compatibility, not treat the eight opening tests as settled
+authority outside the reviewed range.
+
+### [E5] LOW -- two recorded figures do not reproduce at the cited opening tree
+
+The load-bearing count of three no-marker archived plans reproduces exactly.
+Two supporting figures do not: default scan reports 7 live artifacts, not 6;
+and comparing the old and new Dispositions parsers over the exact 36 archived
+plans shows **6** plans change from absent to present, not 12. If 12 uses a
+broader manual definition of "carrying a block," the opening parser does not
+recognize that broader set, which strengthens E1 rather than validating the
+claim.
+
+**Required satisfier.** Correct the live count, and either replace 12 with the
+measured six-parser delta or define the broader oracle, list its members, and
+make the proposed parser recognize it. Keep the instruction to re-derive the
+moving no-review count at implementation time.
+
+### [E6] MEDIUM -- the proposal's valid Internal review makes the planner call the artifact invalid
+
+After this External section was present, `lifecycle_planner.py next` still
+reported a structural violation: the Internal review at line 210 *"appears
+authored by the proposal author."* That review explicitly declares the
+same-agent-type, fresh-session Internal floor which `AGENTS.md` permits. The
+identity normalizer collapses both sessions to `Claude` and therefore treats an
+allowed Internal record as forbidden author-review. The External pass satisfies
+the independent-review transition, but it cannot make the valid Internal record
+stop poisoning conformance.
+
+**Required satisfier.** Name and route this defect to the existing **[REC]
+Deliberation authority, identity, context, record integrity** lineage (including
+`code-review-blindness`), rather than absorbing another identity-policy change
+here. Do not claim this proposal structurally sound while the planner reports
+otherwise, and do not delete or relabel the Internal review to appease the
+checker. This is another instance of Question 3's limit: the tool can inspect a
+declared record shape but cannot infer whether two same-named sessions are the
+same authoring context.
+
+### Covered and not covered
+
+**Covered**: exact proposal and opening-commit bytes; both planner twins; the
+opening tests and real template fixture; exact-tree default and archive scans;
+the 36-plan marker count; old/new Dispositions parser delta; direct empty-block
+and promissory-sign-off fixtures; `deferral-discipline`'s accepted plan and
+zero-follow-up rule; current doctrine; and the metrics predicate identified by
+the Internal review.
+
+**Not covered / low confidence**: I did not run all seven suites or the full
+bootstrap suite, mutate either twin, design the final disposition grammar, or
+repair historical archives. I did not inspect Git commit authorship for every
+archived review. Those are implementation and later code-review obligations;
+the proposal first needs to settle what its scanner is honestly allowed to
+claim.
