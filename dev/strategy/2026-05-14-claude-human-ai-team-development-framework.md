@@ -45,6 +45,7 @@ not the primary artifact -- see "Cairn as a publishable artifact" below.
 Citable frameworks ground the rationale. The numbering is **canonical and
 append-only**: a new anchor takes the next integer and a new row in the index
 below, so "Anchor 10" stays unambiguous as the set grows.
+As of 2026-08-11, the index contains **17 anchors**.
 
 **Every anchor is introduced where it bites**, with its full citation at that
 point. There is no privileged tier. The first six were once set apart because
@@ -151,9 +152,9 @@ not just this one:
 
 A central "here is where Cairn sits against each anchor" table has to track
 every introduction scattered through the document. It goes stale by
-construction — the same failure as a module catalogue that lists twelve of
-twenty modules, or a doctrine index that maps eight of sixteen files. Gap
-analysis produces **durable output** (the contributions, the open gaps) from
+construction — the same failure as a module catalogue or doctrine index that
+silently omits newer entries. Gap analysis produces **durable output** (the
+contributions, the open gaps) from
 **disposable working** (the per-anchor mapping). Keep the output current;
 delete the working once it has yielded it.
 
@@ -346,13 +347,14 @@ multi-language legacy codebase.  What the pair shows:
   dual-language test architecture, bounded port stewardship.
 * **The retrofit role the framework predicts, instantiated.**  modflow_tools,
   AI-team-first, deliberately has no Test/Doc agent; LHM, retrofit-on-legacy,
-  needs a standing Legacy Agent -- G3's built-from-scratch-vs-retrofit
+  needs a standing Legacy Agent -- the built-from-scratch-versus-retrofit
   distinction, with a concrete case on each side under one maintainer.
 * **Role-design and independence variants.**  LHM splits agents by *domain*
   (Inputs / Model / Postprocess) where modflow_tools splits by *lifecycle stage*
   (Strategy / Implementation); LHM's domain agents cross-review one another, so
   structural independence comes from domain-rotation, not only agent-type
-  difference (extending G6 / G16).
+  difference (extending the role-design and structural-independence findings
+  above).
 * **The surface-readiness ledger** -- a Ready / Transitional / Frozen tiering of
   every code surface: both a safety interlock and a *measurable* human-only ->
   human+AI transition metric.
@@ -450,9 +452,9 @@ community-mode horizon directly address.
 
 **Worked example (the origin case).**  This anchor surfaced from a real comprehension failure during the six-proposal superplan.  The package-splitting work leaned on "AST source-motion attestation" -- opaque enough that the Maintainer had to look the term up separately, then reverse-engineer the implementing agent's function names and outputs to follow it.  In plain terms the claim was simply: *"we used Python's own structured representation of the code (its abstract syntax tree) to prove every function moved exactly once when the oversized package was split -- nothing lost, nothing altered."*  The plain version is not less precise -- it is more reviewable.  And the jargon's cost was not merely slower reading: it left the Maintainer unable to *review* the work, because the opaque surface was the only window onto it.  The thesis, in miniature.
 
-**The Cairn contribution / divergence.**  The XAI and reliance literatures study AI-to-human explanation largely in *decision-support* settings (a model advises; a human accepts or overrides).  Cairn's setting differs: a **recorded-deliberation lifecycle** in which the human must understand in order to *legitimately decide and sign*, on a durable, reviewable record.  So Cairn does what the source literatures do not -- it makes the **comprehension floor a reviewable property of the lifecycle**, the same move that turned reviewer independence into a structural, checkable tier (G16).  "Did the human actually understand what they decided?" becomes a first-class question, not an afterthought.  Stated reflexively: this anchor was itself produced by the failure mode it names -- a jargon-dense stretch that degraded the Maintainer's review -- which is exactly the incident-grounded evidence the doctrine-evolution gate asks for.
+**The Cairn contribution / divergence.**  The XAI and reliance literatures study AI-to-human explanation largely in *decision-support* settings (a model advises; a human accepts or overrides).  Cairn's setting differs: a **recorded-deliberation lifecycle** in which the human must understand in order to *legitimately decide and sign*, on a durable, reviewable record.  So Cairn does what the source literatures do not -- it makes the **comprehension floor a reviewable property of the lifecycle**, the same move that turned reviewer independence into a structural, checkable tier.  "Did the human actually understand what they decided?" becomes a first-class question, not an afterthought.  Stated reflexively: this anchor was itself produced by the failure mode it names -- a jargon-dense stretch that degraded the Maintainer's review -- which is exactly the incident-grounded evidence the doctrine-evolution gate asks for.
 
-**Surfaced direction -- G17: communication calibration -- a universal norm now, a dimension on the evidence.**  Anchor 3's *Usability* dimension was flagged unmeasured (G7); this is where it gets watched -- two parts, deliberately at different maturity.
+**Surfaced direction -- communication calibration -- a universal norm now, a dimension on the evidence.**  Anchor 3's *Usability* dimension remains part of the open measurement gap; this is where it gets watched -- two parts, deliberately at different maturity.
 
 * **Settled -- the universal norm.**  Lead plain, keep precision beneath, and treat *"I don't understand this yet"* as a **mandatory pause**: a decision surface the Maintainer cannot follow is not decidable.  Every adopter, always.
 * **Observed -- heading toward a dimension.**  Treat communication calibration as its own Cairn axis (distinct from the *programming-language* axis), tuned to the reader's register -- *domain* proximity and *software* proximity.  This is **not imagined enrichment**: it is an **origin-deployment design note from real maintainer usage** (it surfaced this very session), evidence-status *observed-here, not yet externally replicated* -- the same footing the project's `deliverable` / product axis arose on.  Adopt an **existing** controlled-language grammar rather than invent one -- *Simplified Technical English* (ASD-STE100), *Attempto Controlled English*, the *Federal Plain Language Guidelines* -- so calibration is by language-*class* (undefined acronyms, nominalizations, dense embedding, abstraction-without-instance), not ad-hoc word-banning.
@@ -753,7 +755,7 @@ doctrine already has a community-mode analog waiting to be drawn out:
   **Dual-Review model** already assumes structural independence; community
   mode generalizes the External Reviewer from "a different agent type" to
   "a rotating pool of external human + AI reviewers."  This directly attacks
-  the open G15 reviewer-diversity gap -- a community is *how* the reviewer
+  the open reviewer-diversity gap -- a community is *how* the reviewer
   pool grows past N=2.
 * **Maintainer sustainability as the design center.**  Eghbal's thesis is
   that the binding constraint is *maintainer attention*, not contributor
@@ -770,7 +772,7 @@ doctrine already has a community-mode analog waiting to be drawn out:
   doctrine.  How are agent-authored PRs attributed, reviewed, and trusted
   when the contributor pool is open?  How does the work-intent /
   staged-index discipline extend past a single working tree to many forks?
-  This is uncharted in all nine anchors and is the clearest candidate for a
+  This is uncharted in the surveyed anchors and is the clearest candidate for a
   Cairn-native research contribution.
 * **The FAIR4RS external contract, by construction.**  Community mode folds
   the FAIR4RS obligations (citation, semantic versioning, dependency
@@ -813,7 +815,7 @@ Two exemplars are gifts to existing theses. **USGS / MODFLOW** releases software
 under *Fundamental Science Practices* mandating **two reviews -- a code review and
 a domain review** -- plus center-director sign-off: the **Dual-Review model already
 operating in agency-stewarded science**, whose *domain review* is exactly the
-agent-side scientific-error check **G11** calls missing (the move is to make part
+agent-side scientific-error check the open-gap list calls missing (the move is to make part
 of it apparatus-run, not to invent it). That the ecosystem modflow_tools wraps is
 governed this way puts the whole modflow_tools/LHM stack *downstream of an
 agency-steward governance model*. And **NumPy NEP / Astropy APE** are
@@ -834,7 +836,8 @@ The axis above asks *how a project is governed*; this orthogonal one asks *what
 science it is on the hook for*, and it answers the standing **audience/apparatus
 gap**: Cairn claims an audience of "scientists building scientific-computing
 software," yet nearly everything it ships is *science-agnostic* SE rigor. The
-genuinely scientific content is thin -- Anchor 4 (borrowed) and the open **G11**.
+genuinely scientific content is thin -- Anchor 4 (borrowed) and the open
+scientific-correctness gap.
 (Raised 2026-06-05 by an LHM fold-back review; the axis is on **LHM's Cairn
 fold-back ledger** and prototypes LHM-first.)
 
@@ -857,7 +860,7 @@ spans characters. **LHM** is `model` + `coupled`, the first adopter whose
 correctness includes science *the code itself produces*. That asymmetry is why
 the disciplines prototype LHM-first and only the proven core folds up
 (prove-then-fold -- the Anchor-13 maturity-asymmetry caveat, applied to a
-dimension). It also feeds the trust model: G11's finding that *scientific
+dimension). It also feeds the trust model: the finding that *scientific
 validity routes wholly through the human maintainer* is the verification-owner
 bottleneck, and the PV/NT/PROV disciplines -- with USGS's domain review as the
 proof-of-concept -- are how some of it moves into the apparatus.
@@ -911,8 +914,8 @@ Rules* papers, FAIR4RS) are *static prose* -- none watches your repository and
 tells you when you have outgrown your setup; even TCMM (Anchor 3) scores an AI
 system's trustworthiness, not a deployment's depth. This turns the `dimensions/`
 model from *statically-profiled* axes into *continuously re-observed* ones, and
-is the natural consumer of the still-open **empirical time-series** work (R1 /
-G7) -- the triggers need a *trend*, not a snapshot.
+is the natural consumer of the still-open **empirical time-series** work -- the
+triggers need a *trend*, not a snapshot.
 
 ### Near-term moves
 
@@ -975,7 +978,8 @@ footing -- correctness, not only cost.
     moves into Cairn.)*
 
 Three things follow -- two of them the **framework's own contribution**, where
-it leads the literature rather than borrows from it (as at G3 / G4 / G12):
+it leads the literature rather than borrows from it (as with the AI-team-first
+lifecycle, User Agent, and stigmergic-coordination contributions):
 
 * **Lean is a *correctness* property, not only a cost one.**  The earlier
   "faster / cheaper" framing undersold the case: an over-stuffed
@@ -997,8 +1001,9 @@ it leads the literature rather than borrows from it (as at G3 / G4 / G12):
   verified work is single-agent / single-session.  The shared-context
   economics of *one* always-loaded doctrine file read by *many* agents
   across *many* adopters -- the multiplier that makes a heavy Cairn prefix
-  expensive at scale -- is unmodeled in the surveyed literature.  Like G12
-  (stigmergy), it is a distinctive position worth holding onto as such.
+  expensive at scale -- is unmodeled in the surveyed literature.  Like the
+  stigmergic-coordination contribution, it is a distinctive position worth
+  holding onto as such.
 
 **The caveat -- do not over-minimize (a reliability floor).**  Leanness has a
 floor: independent testing measured on-demand / deferred retrieval accuracy
