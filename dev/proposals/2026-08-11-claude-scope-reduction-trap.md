@@ -677,3 +677,71 @@ gate after it.
 The proposal's thesis, in its final form: **narrowing is fine until it stops
 producing the outcome, and the moment it does, that must be visible and
 explicitly allowed rather than absorbed.**
+
+## Review -- Codex (External) -- 2026-08-11 (Round 2)
+
+**Model**: GPT-5.6-Codex
+**Reviewed commit**: `a680af93e912f48a682cadae1900198307898115`
+**Reviewed proposal blob**: `50b0ca87ae09e21ac0dd32f47c3f2f075accc395`
+**Tier**: External, different agent type from the author
+
+**Verdict: REVISE.** The outcome test is simpler and more useful than Round 4's
+objectives-versus-means taxonomy. E1, E2, E4, and E5 from my first review are
+closed. I also accept the decision not to add a planner gate: the proposal now
+states the omission residual and a concrete revival condition, and a formal
+presence check cannot establish semantic truth. One authority contradiction
+remains in the new three-way test.
+
+### Finding
+
+**[R2-E1 -- P1] “Partially” currently permits the author or reviewer to concede
+some of the outcome, contrary to the accepted-scope floor.** Round 5 says that a
+partial outcome needs a residual and revival condition, then classifies the
+declined planner gate as partial while saying “No Maintainer allowance needed.”
+But Part 5 says post-Decision accepted scope is a floor, Part 6 says removed work
+blocks archive pending an explicit disposition, and Round 5 itself closes by
+saying Part 5 governs who allows a loss. Those rules cannot all hold if partial
+loss needs no allowance.
+
+The loose phrase “the original outcome” also leaves the escape route this
+proposal is meant to close. A change promising A, B, and C can be reframed under
+the broad outcome “improve security”; shipping only A then looks partial rather
+than a loss of B and C. The comparison must use the concrete outcome commitments
+in the baseline artifact, not a new summary written by the party narrowing it.
+
+Use one compact rule:
+
+* The baseline is still the scope as opened before Decision and as accepted
+  after Decision. “Outcome” means the **set of concrete outcome commitments** in
+  that baseline, including named coverage and exclusions, not its broad purpose.
+* **Preserved** means every baseline outcome remains delivered. It needs no
+  declaration or allowance.
+* **Degraded** or **lost** means at least one baseline outcome is only partly or
+  no longer delivered. Both take the scope-delta/grouped-remainder path and the
+  existing Maintainer authority point. “Partial” changes the residual recorded,
+  not who may concede it.
+* A stronger outcome proposed only during review is not in the baseline.
+  Declining it is not a reduction and does not make the reviewer an authority;
+  record the rejected suggestion and reason in the ordinary review Response.
+
+Under that rule, the two examples settle cleanly. Metrics Part 3 is lost and
+requires the recorded path the proposal describes. The planner gate is **not a
+scope reduction**: automatic omission detection was a reviewer-proposed stronger
+mechanism, while the baseline visibility outcome remains assigned to the
+template declaration and human review. Its omission risk remains an honest
+design residual with the existing revival condition, not a scope remainder that
+needs Maintainer allowance.
+
+### Closure
+
+This is a wording and authority-alignment revision, not a request for more
+machinery or less scope. Replace the three branches with the baseline-bound
+`preserved / degraded / lost` rule above and correct the planner-gate example.
+The proposal would then be ready for Decision without another External round.
+
+### Verification
+
+I reviewed the exact `a680af9` blob (the current file is byte-identical), checked
+the Round 5 rule against Parts 5, 6, and the retained Round 3 baseline, and ran
+`claim_check` successfully. This is a semantic doctrine review; I ran no pytest
+suite and claim no runtime behavior.
