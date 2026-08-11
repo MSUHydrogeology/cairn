@@ -333,14 +333,19 @@ archived plan / proposal, the implementing commits, and the
 changelog. There is no "completed recently" section on this
 board by design.
 
-* **git-native-security-foundations** *(proposal opened 2026-08-10)* -- align
+* **git-native-security-foundations** *(plan opened 2026-08-11)* -- align
   Cairn's security boundary with Git's native object, signature, graph, and ref
   primitives: replace incompatible per-agent signing with Maintainer-signed
-  checkpoints, delegate blob ids and strict object validation to Git, migrate
-  the frozen-file leg toward Git object identity without losing collection
-  semantics, add diagnostic reflogs, and publish only the durable gate anchor
-  atomically. Requires External plus External Security Review and a
-  Maintainer-only exact-byte trust-root bootstrap.
+  checkpoints bound to a canonical range-review report, delegate blob ids and
+  strict object validation to Git, migrate the frozen-file leg to Git object
+  identity without dropping SHA-256 or losing collection semantics, add
+  diagnostic reflogs, and publish only the durable gate anchor atomically.
+  Eight chunks; `required(External + External Security Review)`. Four
+  Maintainer stops, enumerated in the plan's own fence table, including a
+  Maintainer-only exact-byte trust-root bootstrap that no agent performs.
+  **Chunk D is fenced behind `review-efficient-lifecycle`'s Chunk I ceremony
+  and B2** -- both plans touch the gate manifest, and this one migrates its
+  schema.
 
 * **review-efficient-lifecycle** *(plan opened 2026-08-10)* -- one plan for
   the four accepted lifecycle contracts (`review-efficient-lifecycle` plus the
