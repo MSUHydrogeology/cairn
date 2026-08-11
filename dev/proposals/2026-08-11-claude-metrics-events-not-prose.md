@@ -507,3 +507,123 @@ emit-at-transition writer specified above.
 **Out:** nothing deferred. If a later review argues part of this should be
 removed, the scope-reduction norm applies — the removal is stated as a delta
 and homed at the moment it is made.
+
+## Review -- Codex (External) -- 2026-08-11 (Round 2)
+
+**Model**: GPT-5.6-Codex
+**Tier**: External, different agent type from the author (Claude Opus 5)
+**Verdict**: **REVISE**
+
+Restoring Part 3 is the right scope decision. This review does **not** recommend
+cutting it again. E1, E3, and E4 from my first review are closed: Round 1 gives
+the output a v2 identity, describes the retained fields honestly as corpus
+proxies, and binds retirement through the full metric dependency graph. E2's
+remaining branch was to specify emit-at-transition. Round 2 names the right
+questions, but its answers conflict with executable contracts and with each
+other, so a plan author would still have to redesign the writer.
+
+### Findings
+
+**[R2-E1 -- P1] `next --to` is a preview, not a transition gate or transition
+event.** The proposed owner is explicitly read-only by doctrine, implementation,
+and test: `cmd_next` prints a scaffold and mutation manifest, then says that it
+wrote and committed nothing. The lifecycle contract calls that visible pause a
+safety boundary and says any future mutating arm is a separate,
+separately-reviewed privilege. I ran `next --to reviewed` against an independent
+fixture repository: it returned success, changed no artifact byte, and created
+no event file. The focused lifecycle-contract suite passed **108 tests**,
+including the no-write invariant.
+
+Therefore the planner neither observes nor performs the actual transition. If
+it appends before the artifact edit, a repeated preview, an abandoned edit, or a
+failed commit records an event that did not happen. `git status` makes the byte
+visible, but does not bind it to the intended artifact transition. Do not turn
+the read-only planner into the writer incidentally. Keep its preview contract
+and bind event creation to the durable transition commit, or propose an
+explicitly separate mutating arm and the doctrine/authority change that entails.
+
+**[R2-E2 -- P1] The proposed reusable helper is absent from a valid default
+installation, and another executing plan already owns a stricter event
+substrate.** `lifecycle-metrics` is default-on. `_intent/record_io.py` ships only
+with the team-gated `coordination-tiers` module. I scaffolded an adopter with the
+default module selection and confirmed that the planner and lifecycle metrics
+were present while `tools/_intent/record_io.py` was absent. Thus Part 3's only
+named append implementation cannot run for the ordinary adopter this proposal
+changes.
+
+There is also live overlap the proposal does not acknowledge:
+`review-efficient-lifecycle`, now executing, specifies a tracked lifecycle pilot
+event ledger with source-artifact-and-commit binding, closed bounded schemas,
+expected-old writes, race refusal, duplicate/conflict rejection, and fail-closed
+handling of malformed or unknown versions. This proposal must either extend a
+single shared event contract from that work or explain why its events are a
+different layer. Shipping a second ledger and weaker writer would create two
+answers to the same transition-event question. Preserving Part 3 does not
+require preserving this particular storage choice.
+
+**[R2-E3 -- P1] `O_APPEND` solves neither the tracked-file transaction nor
+failure atomicity.** A single append call can reduce byte interleaving on tested
+local filesystems; the helper's own docstring correctly calls even that
+best-effort and excludes network and overlay filesystems. It does not make the
+artifact edit, event line, and Git commit atomic. In a shared worktree, if two
+agents append events for different artifacts before either commits, the first
+path-scoped commit of the central log captures both lines. The second agent's
+event is then attributed to the wrong transition commit. Claiming the one
+central path would instead serialize otherwise independent lifecycle work.
+
+The failure claim also fails by execution. I forced `os.write` to return a
+partial count while calling `append_record`; it raised `OSError` only **after**
+leaving a 45-byte JSON fragment in the file. The reused reader then skips
+malformed lines with a warning. Silently dropping a torn durable measurement is
+not a repair or a fail-closed record. The event design needs an exact
+expected-old/concurrency contract, interrupted-write behavior, and a reader
+disposition that does not quietly turn missing evidence into clean evidence.
+
+**[R2-E4 -- P1] The record and backfill contracts remain unspecified.** “Every
+line carries `schema`” is a versioning direction, not a v1 schema. At minimum the
+proposal must settle bounded fields and validation for event identity, artifact
+kind and repository-contained path, from/to state, provenance, actor/time, and
+the source commit that proves the transition landed; unknown keys and versions;
+duplicate and conflicting events; and reader behavior on invalid input.
+
+Idempotency is load-bearing. `next --to` is routinely safe to run repeatedly;
+under this design each run inflates the metric. Backfill likewise needs a fixed
+historical/live cutoff, deterministic event identity, rerun behavior, overlap
+handling, and a decision on whether derived and emitted records share a file or
+only a reader. A provenance flag distinguishes origins but does not prevent
+duplicates. Nor can backfill repair an orphan emitted record merely by
+re-deriving another record.
+
+The security preflight should be corrected with the design. An artifact path
+and target state are repository-controlled inputs to a persistent writer, and
+the writer necessarily adds parsing, path normalization, schema validation, and
+failure modes. Name containment, symlink/regular-file treatment, control
+characters, size bounds, and malformed-record behavior rather than declaring
+that no untrusted input or parser exists.
+
+### Required revision
+
+Keep all three parts. For Part 3, select one transition-bound architecture and
+make it executable rather than aspirational. The lowest-contention shapes are a
+versioned machine record carried in the same artifact/commit as the transition,
+or a commit-bound event/trailer validated against that artifact change. If a
+central tracked ledger remains, it needs expected-old Git-aware writes and must
+prove that two agents cannot cross-commit each other's events; `O_APPEND` is not
+that proof.
+
+Then provide the closed event-v1 schema, idempotency key, live/backfill boundary,
+strict reader behavior, default-adopter ownership, interaction with the
+`review-efficient-lifecycle` event ledger, and the complete changed-path set.
+That set necessarily reaches beyond the proposal header's current metrics-only
+inventory: planner or new writer and shipped twin, lifecycle doctrine if the
+read-only boundary changes, install mappings/manifests, event storage/reader,
+and concurrency/failure/default-scaffold tests all need explicit dispositions.
+
+### Verification performed
+
+All execution used the canonical Python 3.13.13 interpreter. I ran an independent
+planner fixture, a real default-module scaffold, the 108-test lifecycle-contract
+suite, and a forced partial-write probe. I also compared the active
+`review-efficient-lifecycle` event contract. I did **not** run the full bootstrap
+suite, test filesystems other than the local host, or implement/prove either
+replacement architecture.
