@@ -117,6 +117,14 @@ they don't drift back into this pass by accident. See
 `doctrine/plans.md` > "The planning handshake" for the convergence
 questions this section answers.
 
+**The fence bounds this pass; it does not bound the accepted proposal.**
+Accepted scope is a **floor** — a plan that drains less than the proposal
+it executes has deviated from approved scope, not chosen a tidy fence,
+and no reviewer can create that authority by calling the remainder "out
+of scope". If this fence leaves an accepted outcome undelivered, say so
+here and get the Maintainer's explicit disposition; see the `Scope delta`
+prompt in the plan-review section below.
+
 ### Documentation / doctrine surface
 
 What documentation, doctrine, or contract surface does this plan
@@ -306,15 +314,15 @@ was actually updated; the gates don't enforce that.
      judge it against the scope AS ACCEPTED and declare the result inside the
      Sharpening:
 
-       **Scope delta**: degraded | lost
+       **Scope delta**: preserved | degraded | lost
 
        **Removed scope**
        * <unit> -- source section; reason; revival/closure condition.
 
        **Disposition/home**: <where the grouped remainder lives>
 
-     Omit the block when every accepted outcome is still delivered
-     (`preserved`) -- a lighter mechanism that still delivers is what
+     State `preserved` if you want the record to show you checked; only
+     `degraded` and `lost` require the block above -- a lighter mechanism that still delivers is what
      restraint asks for, and a declaration on every revision would be ritual
      within a month.  `degraded` and `lost` both additionally need the
      Maintainer's explicit disposition under the deviation gate; partial

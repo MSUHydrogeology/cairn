@@ -400,12 +400,13 @@ If accepted critiques substantially change the proposal, write a short
 will deliver.** Judge the narrowing against the **scope as opened**, not
 against the previous round and not against a summary of purpose written
 now. If every outcome the opened proposal committed to is still
-delivered, the narrowing is `preserved` and this block is omitted
-entirely — a lighter mechanism that still delivers is what restraint
-asks for. Otherwise:
+delivered, the narrowing is `preserved` and **nothing further is
+owed** — a lighter mechanism that still delivers is what restraint asks
+for. You may state `preserved` so the record shows you checked; only
+`degraded` and `lost` require the block below:
 
 ```
-**Scope delta**: degraded | lost
+**Scope delta**: preserved | degraded | lost
 
 **Removed scope**
 * <unit> -- source section: <where it was committed to>; reason: <why>;

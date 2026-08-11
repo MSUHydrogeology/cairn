@@ -100,6 +100,12 @@ _BOARD_TAXONOMY = {
         r"scope-cut removes no work|scope-cut is claim correction",
     "removing work is a scope reduction instead":
         r"is a \*{0,2}scope reduction",
+    # R2-E1: the authority rule. Without this the shipped board could lose
+    # its self-contained statement and stay green -- demonstrated by the
+    # code review (C3), which cut exactly that text and saw 51 passed.
+    "only the Maintainer may concede a baseline outcome":
+        r"only the Maintainer may concede|[Nn]either author nor reviewer may "
+        r"concede",
 }
 
 _TEAM_GATED_MODULE = {
@@ -111,10 +117,79 @@ _TEAM_GATED_MODULE = {
         r"preserved.{0,300}degraded",
     "declining a review-proposed expansion is not a reduction":
         r"never in the baseline",
+    # R2-E1 again. The code review (C3) rewrote this module to say degraded
+    # and lost "are for the author and reviewer to settle between them" --
+    # the exact contradiction an External round was spent eliminating -- and
+    # the suite stayed green.
+    "only the Maintainer may concede a baseline outcome":
+        r"only the Maintainer may concede|never who may concede it|the "
+        r"\*{0,2}Maintainer'?.{0,4}s?\*{0,2} explicit allowance",
+}
+
+_DOCTRINE_CANONICAL = {
+    "states the asymmetry that makes narrowing cheap":
+        r"costs the reviewer nothing|never be shown wrong",
+    "the reviewer must say what is lost":
+        r"states \*{0,2}what is lost",
+    "specify is the default, cutting must argue":
+        r"[Dd]efault resolution is to specify|why specifying was rejected",
+    "carries all three outcome values":
+        r"preserved.{0,400}degraded.{0,200}lost",
+    "the baseline is the artifact's own commitments, both stages":
+        r"as opened.{0,120}as accepted",
+    "the comparison term is not written by the narrowing party":
+        r"never a summary of its purpose written afterwards|party being tested",
+    "degraded and lost take the same authority path":
+        r"[Dd]egraded and lost take the same path|never \*{0,2}who may concede",
+    "a review-proposed stronger outcome is not in the baseline":
+        r"not in the baseline",
+    "the grouped remainder blocks archive":
+        r"blocks\*{0,2}\s*\*{0,2}archive",
+    "the counterweight against reading this as anti-restraint":
+        r"[Cc]ut ceremony.{0,20}[Dd]o not cut reach",
+    "states why it is not mechanized":
+        r"could not confirm that it is \*{0,2}true|cannot establish semantic "
+        r"truth|catch forgetting and not evading",
+}
+
+_DOCTRINE_PROPOSALS = {
+    "pre-Decision baseline is the scope as opened":
+        r"baseline is the scope as opened",
+    "carries the declaration":
+        r"\*\*Scope delta\*\*",
+    "requires the grouped remainder and a named home":
+        r"one record|Disposition/home",
+    "the Maintainer allows the loss via the Decision":
+        r"[Nn]either may concede|Maintainer, via the Decision",
+    "declining a reviewer's expansion is not a reduction":
+        r"not a reduction",
+}
+
+_DOCTRINE_PLANS = {
+    "accepted scope is a floor":
+        r"[Aa]ccepted scope is a \*{0,2}floor",
+    "sequencing is free, removal is not":
+        r"[Ss]equencing is free; removal is not|Sequencing may move work",
+    "a plan reviewer cannot self-authorize":
+        r"cannot create that authority",
+    "post-Decision baseline is the scope as accepted":
+        r"baseline is the scope as accepted",
+}
+
+_DOCTRINE_LIFECYCLE = {
+    "the remainder record blocks archive per entry":
+        r"each entry blocks archive",
+    "it is one grouped record, not roadmap rows":
+        r"[Nn]ot a set of roadmap rows|one grouped record",
+    "nothing is owed for a declined suggestion":
+        r"[Nn]ot owed for a declined suggestion",
+    "scope-cut is claim correction only":
+        r"scope-cut is\s+claim correction|A scope-cut is",
 }
 
 #: surface -> obligations. Every path here is one an adopter receives, except
-#: `doctrine/dual-review.md`, which is the canonical home the others point at.
+#: the `doctrine/` entries, which are the canonical home the others point at
+#: and were previously pinned only by their section heading (code review C7).
 _SURFACES = {
     "AGENTS.md": _GOVERNING,
     "templates/core/AGENTS.md": _GOVERNING,
@@ -127,6 +202,16 @@ _SURFACES = {
     "dev/PLANNING.md": _BOARD_TAXONOMY,
     "templates/core/dev/PLANNING.md": _BOARD_TAXONOMY,
     "templates/modules/team-gated/dual-review.md": _TEAM_GATED_MODULE,
+    # Cairn's OWN installed copy of the module above, paired to it by
+    # `dev/.cairn/cairn-lock.yml`. Chunk B edited the shipped source and not
+    # this one, leaving the unsound `scope-cut -> accept` mapping live in the
+    # copy Cairn itself reads (code review C1). Listing it here is what makes
+    # that drift a red test rather than a lucky catch.
+    "dev/modules/dual-review.md": _TEAM_GATED_MODULE,
+    "doctrine/dual-review.md": _DOCTRINE_CANONICAL,
+    "doctrine/proposals.md": _DOCTRINE_PROPOSALS,
+    "doctrine/plans.md": _DOCTRINE_PLANS,
+    "doctrine/lifecycle.md": _DOCTRINE_LIFECYCLE,
 }
 
 _CASES = [
@@ -266,12 +351,31 @@ def test_the_planner_does_not_gate_on_a_missing_declaration(tmp_path) -> None:
 
     art = planner._read_artifact(f)
     identity = planner.IdentityModel(frozenset(), frozenset())
-    joined = " ".join(planner._conformance_violations(art, identity)).lower()
 
-    assert "scope delta" not in joined and "scope-remainder" not in joined, (
-        "the lifecycle planner now refuses a transition over the scope-delta "
-        "declaration. That gate was declined in the accepted proposal "
-        "(Round 3) because a presence check cannot establish semantic truth. "
-        "Reviving it takes a new proposal against the recorded revival "
-        "condition -- authors omitting the declaration in practice."
-    )
+    # BOTH refusal surfaces, not just one. `_conformance_violations` reports
+    # structural unsoundness; `_gating_preconditions` reports a transition as
+    # MISSING. The code review (C4) showed that pinning only the first leaves
+    # a gate added to the second entirely green -- an invariant whose named
+    # enforcers do not enforce it, which is the failure this repository keeps
+    # rediscovering.
+    surfaces = {
+        "_conformance_violations":
+            planner._conformance_violations(art, identity),
+    }
+    for target in planner._legal_transitions(art):
+        surfaces[f"_gating_preconditions(-> {target})"] = [
+            desc for _met, desc
+            in planner._gating_preconditions(art, target, identity)
+        ]
+
+    for surface, messages in surfaces.items():
+        joined = " ".join(messages).lower()
+        assert "scope delta" not in joined and "scope-remainder" not in joined, (
+            f"the lifecycle planner now refuses a transition over the "
+            f"scope-delta declaration, via {surface}. That gate was declined "
+            f"in the accepted proposal (Round 3) because a presence check "
+            f"cannot establish semantic truth -- it catches forgetting and "
+            f"not evading, and hands a quiet cut a green check to sit "
+            f"behind. Reviving it takes a new proposal against the recorded "
+            f"revival condition: authors omitting the declaration in practice."
+        )
