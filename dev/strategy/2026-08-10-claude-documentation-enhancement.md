@@ -193,6 +193,24 @@ and the **cross-harness story** (the compatibility table lists supported AI
 tools as claimed-but-unverified). A feature list may name these; it must not
 oversell them.
 
+**And a drift gate is not automatically the answer — it has to execute the
+thing it claims to check.** The 2026-08-11 adopter-friction rebuild found the
+sharper version of this, with a live precedent: `docs/quickstart.md`'s
+published `git add` command leaves `NOTICE.md` and `profile.yml` untracked,
+while `bootstrap/tests/test_quickstart_sequence.py` reports 8 passing tests and
+describes itself as driving the literal shell commands. It does not run the
+documented staging or commit vector, and asserts nothing about the residual
+state; its helper stages an older, smaller set. **The gate was green and the
+defect recurred anyway** — and the green gate is *why* nobody noticed.
+
+So the constraint on stage 1 is stronger than "cover the numbers." A gate over
+a documentation claim must run the claimed command or read the claimed surface
+and assert the result. A gate that tests adjacent output is coverage, not
+evidence, and it is worse than no gate because it converts an unchecked claim
+into an apparently-checked one. This is the same question Cairn already asks of
+its security controls — *what trigger actually executes the claimed check?* —
+turned on its own docs.
+
 ### F5 — What carries over from the superseded graphics note, and what does not
 
 **Carries over (methodology-general, and already half-practiced here):**
@@ -260,13 +278,64 @@ and hand-authoring those is correct.
   MIT wherever it lives. The three families must not overlap, so every new
   asset lands on a declared side.
 
-### F8 — The roadmap already has a home for this
+### F8 — The roadmap already has a home for this, and part of that row is not a graphics problem
 
 `dev/PLANNING.md` carries **"0.4 launch-surface polish"** *(queued for 0.4,
 not launch-blocking)* — "graphics/figures in the adopter-facing docs +
 quickstart (lower the 'doctrine-heavy at first contact' friction)". This note
 feeds that existing row. **No new roadmap row is needed**, and none should be
 opened at a non-serialization point.
+
+One scoping honesty note, from the adopter-friction rebuild: a large share of
+the "doctrine-heavy at first contact" friction is **install output, not prose
+or pictures**. The smallest profile prints 72 install rows and labels all 22
+remaining slots as requiring attention — including contribution points for
+modules the profile never selected — and an explicit empty-module install still
+reports all 22. Diagrams will not touch that. The fix there is classifying
+obligations by what the accepted profile makes live, which belongs to the
+adopter-path work rather than here. **This note should not claim the graphics
+stage will lower that friction**, or it will be measured against a problem it
+cannot reach.
+
+### F9 — Three findings elsewhere would make this work land twice
+
+The adopter-friction rebuild (2026-08-11) and the executing
+`review-efficient-lifecycle` plan each hold a contract this note's stages
+would otherwise write against prematurely. None of these is this note's to
+settle; all three are sequencing constraints on it.
+
+* **The adoption-level model is under active revision, and the README is one of
+  the surfaces teaching the unexecutable path.** The rebuild's headline is that
+  Level 1 — the level Cairn recommends to its primary audience — has **no
+  executable greenfield path**: the docs instruct hand-copying selected modules
+  and no recipe supplies the source→destination mapping. Verified here:
+  `README.md:206–217` carries the three-level ladder, and `:212` is literally
+  *"Level 1 — hand-copy the kernel."* Its recommendation is one installer, with
+  levels distinguished by obligation rather than by whether bytes were copied by
+  hand — which rewrites exactly that section. **Stage 1 must not restate or
+  harden the level model**; treat those lines as owned by the adopter-path
+  proposal and leave them untouched.
+* **The "try it in 15 minutes" claim is unbacked.** The rebuild found the
+  timing promise has outlived its measured path — entry surfaces gained 222
+  lines and lost 71 since v0.3.0, the installed `AGENTS.md` is 2,676 words, and
+  no current canary records elapsed time. The recommendation is to reproduce
+  the figure with a release-boundary canary or replace it with an unquantified
+  "short walkthrough." By this note's own F4 the answer is forced: it is a
+  checkable claim with no current measurement, so **the README rewrite must not
+  re-assert the number** — drop it or defer to the canary.
+* **The lifecycle state machine may be about to change.** The executing
+  `review-efficient-lifecycle` plan conditionally changes the proposal/plan
+  status vocabulary pending a Maintainer promotion Decision, and the rebuild
+  records that the entry surface would need revising if it promotes. Stage 4
+  proposes drawing that state machine into `doctrine/lifecycle.md`. **Drawing
+  it before that Decision means drawing it twice** — and a stale diagram is
+  worse than no diagram, because a picture reads as more authoritative than the
+  prose beside it.
+
+The practical consequence is small and worth stating plainly: **stages 1–2 stay
+shippable now** provided stage 1 leaves the level model and the timing claim
+alone, and **stage 4's lifecycle diagram waits** on the promotion Decision.
+Nothing here blocks the front-door work; it bounds it.
 
 ## The feature story — raw material, not final copy
 
@@ -324,12 +393,29 @@ sequencing matters more than the scope, because each stage is independently
 shippable and the later ones are where the cost is.
 
 1. **The front door.** Feature list, the two-sentence pitch at the top, the
-   vibe-coding paragraph, internal codes stripped, `examples/scientific-minimal/`
-   linked (the friction audit's F6 — the artifact built for the scientist is
-   still not linked from the page the scientist reads). Prose only; no new
-   files. **Paired with F4's constraint**: every checkable number in the
-   feature list either carries no number at all, or is covered by a drift
-   gate. Prefer the former — a feature list does not need counts.
+   vibe-coding paragraph, internal codes stripped. Prose only; no new files.
+   Four constraints, three of them from elsewhere (F4, F9):
+   * **Numbers**: every checkable figure in the feature list either carries no
+     number at all, or is covered by a gate that *executes the claim*. Prefer
+     the former — a feature list does not need counts.
+   * **Leave the level model alone.** It is being rewritten by the adopter-path
+     consolidation proposal; restating it here lands the work twice.
+   * **Do not re-assert "15 minutes."** Drop the figure or defer to the release
+     canary, per this note's own F4 applied to itself.
+   * **One trial, one next step.** The rebuild's first success criterion is that
+     the README offers *one* obvious trial and *one* obvious real-adoption next
+     step. Today it offers a quickstart, three levels, a bootstrap procedure,
+     and a readiness report — four routes, which is the enticement problem in a
+     different costume. A feature-forward rewrite that adds a fifth would make
+     the page worse while looking better.
+
+   The previously-cited "link `examples/scientific-minimal/`" item is
+   **partly done, and the remainder is a placement question rather than a
+   missing link.** Verified at `README.md:248`: the mass-balance example is
+   linked — but only as a row in the repository-layout table, not anywhere in
+   the "How to adopt" flow. A scientist deciding whether to invest reads the
+   adoption path, not the directory inventory. Carry it forward as *where it
+   should appear*, not *whether it exists*.
 2. **The two skeptic answers.** `docs/related-practices.md` and
    `docs/glossary.md`, linked from the README. Independently useful, and the
    related-practices page is the single highest-leverage defence against the
@@ -400,40 +486,63 @@ dropped instead.
 
 ## Open questions
 
-Each is the Maintainer's call; the recommended answer is noted.
+*Written plainly on purpose — these are the decisions the rest of the note
+exists to serve, and a decision you cannot follow is not one you can make.*
 
-1. **Scope.** Option 4 as sequenced, or stop after stage 2 (prose only)?
-   *Recommended: authorize stages 1–2 now as one proposal, and let stages 3–5
-   open separately once the front door has landed.* The README rewrite does
-   not need the visual system to be decided.
-2. **How many features is the right number?** Fourteen rows is a table, not a
-   scan. *Recommended: six to eight in the README, chosen for
-   differentiation rather than completeness, with the rest reachable through
-   the doctrine.*
-3. **The two under-verified features** (upgrade, cross-harness). Name them
-   with an honest qualifier, or omit them from the front page until the
-   rehearsal and the test records exist? *Recommended: omit from the feature
-   list; a front door is the wrong place to hedge.*
-4. **Asset convention** — a single `docs/assets/` for everything, or split
-   generated from hand-authored? *Recommended: keep the single `docs/assets/`
-   until there is a generator to justify a split; the superseded note's
-   two-directory recommendation was sized for a repository with a plotting
-   module.*
-5. **Does the lifecycle diagram move or duplicate?** Promoting it into
-   `doctrine/lifecycle.md` and keeping it in the README means two drawings of
-   one state machine. *Recommended: keep both, and be precise that this is
-   **two representations, not one source** — calling it a single canonical
-   source would be a comfortable fiction, since a simplification is by
-   construction different bytes conveying a deliberately smaller claim.* The
-   honest arrangement names three things: the **authoritative** drawing lives
-   in `doctrine/lifecycle.md` and shows every named state and transition; the
-   README's is a **faithful simplification**, defined as introducing no state
-   or transition the authoritative one lacks and contradicting none of them
-   (the caveat already under the README's diagram states exactly this); and
-   the **drift check** is the relationship, not the bytes — a reviewer
-   confirms the simplification's states remain a subset when either changes.
-   Whether that check is a human step at the doctrine-change gate or a
-   mechanical one is a question for the implementing proposal, not this note.
+**The situation in one paragraph.** Cairn's front page tells a good story but
+never gives the reader a list of what Cairn actually does, and the rest of the
+documentation has no pictures at all — of nearly three hundred files, exactly
+one (the README) contains a diagram. I want to fix the front page with words
+first, and separately decide whether the doctrine gets diagrams. The questions
+below split along that line.
+
+1. **How far do we go right now?**
+   The work comes in two halves. The **words half** rewrites the front page's
+   opening and adds two short explainer pages — one answering "how is this
+   different from things I already know," one defining the house vocabulary.
+   The **pictures half** adds three to five diagrams and possibly a small
+   script that draws some of them from Cairn's own configuration files.
+   *I recommend approving the words now and deciding pictures later.* The front
+   page does not need the diagrams settled, and the words half is the part
+   that pays off soonest.
+
+2. **How many things should the front page list?**
+   I drafted fourteen. That is a reference table, not something anyone scans.
+   *I recommend six to eight*, chosen for what makes Cairn genuinely unusual
+   rather than for completeness, with everything else reachable a click away.
+   You are better placed than I am to say which six a skeptical colleague
+   would actually care about.
+
+3. **Two of those items we can't fully stand behind yet.**
+   *Upgrading an existing installation across versions* is built but has never
+   been rehearsed — not once, including by Cairn on itself. *Working with
+   different AI tools* is claimed but not tested. We can list them with a
+   caveat, or leave them off the front page until the evidence exists.
+   *I recommend leaving them off.* A front page is the wrong place to hedge,
+   and a caveat there invites exactly the scrutiny we cannot yet survive.
+
+4. **Where should image files live?**
+   One folder for everything, or separate folders for hand-drawn versus
+   script-generated? *I recommend one folder* until a generator actually
+   exists to justify splitting. This only matters if you approve the pictures
+   half.
+
+5. **The lifecycle diagram — should it wait, and should there be one or two?**
+   *Waiting:* the proposal/plan status vocabulary may change pending your
+   promotion decision on `review-efficient-lifecycle`. Drawing that diagram
+   before you decide means drawing it twice, and a wrong diagram is worse than
+   none — a picture reads as more authoritative than the paragraph next to it.
+   *I recommend this one diagram waits*; the other candidates don't depend on
+   that decision and can proceed.
+   *One or two:* if it does proceed, the full version would live in the
+   doctrine and the README would keep its simplified one. That is honestly
+   **two drawings, not one source** — a simplification is by construction a
+   different picture making a smaller claim. The workable arrangement is that
+   the doctrine's version is authoritative, the README's may leave things out
+   but must never contradict it (the caveat already under it says exactly
+   this), and when either changes someone checks the relationship still holds.
+   Whether that check is a person or a script is for the implementing proposal
+   to decide, not this note.
 
 ## Fold-up note
 
