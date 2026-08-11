@@ -3,9 +3,11 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: proposed
+**Status**: revised
 **Touches**: `doctrine/dual-review.md`; `doctrine/proposals.md`;
-`templates/core/dev/agent_collaboration.md`
+`doctrine/plans.md`; the proposal and plan templates, self-hosted and shipped;
+`tools/lifecycle_planner.py` and its twin; `templates/core/dev/agent_collaboration.md`;
+`AGENTS.md` and `templates/core/AGENTS.md` (expanded at Round 2)
 **Related**: the guide star's Anchor 17 and "Restraint as design center" (the
 counterweight this must not collide with); `2026-08-11-claude-metrics-events-not-prose`
 (the worked instance)
@@ -334,3 +336,138 @@ scope a post-Decision floor, group rather than scatter removed work, distinguish
 claim correction from work removal, and bind a small scope-delta declaration
 through the lifecycle planner and the shipped/self-hosted templates. That closes
 this review without de-scoping the proposal.
+
+## Response -- Claude -- 2026-08-11
+
+**All five findings accepted.** The review argues for *extending* this proposal
+rather than narrowing it, which is the norm under discussion working on the
+proposal that proposes it. Recorded as the first datum.
+
+**[E1] Accepted — and it is the more important half.** I covered pre-Decision
+proposal revision and stopped there. After a Decision the proposal's scope is
+the authority the plan drains, so a plan that quietly carries A from an
+accepted A+B+C has *deviated from approved scope* — and `AGENTS.md` already
+gates deviation. The doctrine simply has to say scope reduction is included,
+alongside new scope and a revived struck chunk. `doctrine/plans.md` and both
+plan templates join the paths.
+
+**[E2] Accepted, and it caught me proposing the problem we spent today on.**
+"Home it immediately in a `dev/PLANNING.md` row" would have solved silent
+deletion by manufacturing backlog fragments — on a board that states outright
+it **cannot be drained from this file** (`dev/PLANNING.md:643`) and already
+carries dozens of deferred items. Adopting the grouped **scope-remainder
+record** instead: one per source artifact, holding every removed unit with its
+source section, reason, disposition, and revival condition; attached to the
+source artifact rather than scattered; blocking archive until the Maintainer
+explicitly `defer`s or `wontfix`es it. A board deposit becomes a last
+disposition, not the default consequence of a reviewer preferring something
+smaller.
+
+**[E3] Accepted, and verified structurally rather than by fixture.**
+`_conformance_violations` inspects `art.status`, headings, and record shape. It
+has **no representation of scope content at all**, so it could not detect a
+silent reduction under any input — the finding holds by construction, not just
+for the two fixtures built. My proposed test would have proved the norm was
+installed and nothing more, which is precisely the "check that does not test
+what it names" failure this repository keeps finding.
+
+Adopting the closed declaration. The tool makes the author *declare*; review
+verifies whether the declaration is true. That is the right boundary, and it is
+honest about which half a machine can hold.
+
+**[E4] Accepted.** Confirmed at `doctrine/dual-review.md:283`: the satisfier
+mapping is stated as *total*, and *scope-cut* → `accept` sits inside it. So an
+author can today lose real work, label it a scope-cut, take the `accept`
+disposition, and be conformant with both doctrines. Reserving `scope-cut` for
+**claim correction with no removed work** and naming removal of stated work a
+**scope reduction**. The lifecycle/disposition text and the board's inline
+taxonomy update with it, or the vocabulary contradicts itself.
+
+**[E5] Accepted.** A rule an author must remember from a doctrine essay is a
+rule that fires late. It belongs where the author is already typing — the
+scaffolded Response and plan-review shapes.
+
+**Second-round review: accepted as recommended.** A review-norm change whose
+own failure mode is ritual prose deserves one more different-type read of the
+settled mechanism.
+
+## Revised proposal (Round 2) -- Claude -- 2026-08-11
+
+**Scope delta: expanded.** Parts 1–4 stand as written; the following are added.
+Stating this in the grammar the proposal itself introduces, because a proposal
+about declaring scope changes should declare its own.
+
+### 5. The stage distinction — and accepted scope as a floor
+
+* **Pre-Decision (proposal revision).** A reduction is a design change. State
+  the delta and why specification was rejected; the Maintainer decides the
+  resulting scope with the reduction visible.
+* **Post-Decision (planning and execution).** Accepted scope is a **floor**.
+  Sequencing may move work between chunks; *removing* it is a deviation
+  requiring explicit Maintainer disposition under the existing `AGENTS.md`
+  deviation gate. **A plan reviewer cannot create that authority by calling the
+  remainder "out of scope."**
+
+No new approval ceremony: the Decision and the deviation gate are already the
+authority points. Doctrine only has to say that reduction is one of the things
+they govern.
+
+### 6. The grouped scope-remainder record
+
+Removed work is collected into **one record per source artifact**, not scattered
+into individual backlog rows. Each entry carries its source section, the reason,
+a disposition, and a revival or closure condition.
+
+Before Decision it lives in the proposal's scope delta, where the Maintainer can
+reject, restore, or defer it. After Decision it stays attached to the source
+plan or proposal, or to one named continuation artifact, and **blocks archive**
+until each entry has an explicit `defer` or `wontfix` under the existing
+eligibility rules. Depositing on the general board is a last disposition; if
+chosen, the grouped parent survives rather than shedding one row per unit.
+
+### 7. A closed declaration the planner can enforce
+
+Add to the scaffolded Response / revision and plan-review shapes:
+
+```
+**Scope delta**: unchanged | expanded | reduced
+```
+
+`reduced` requires one grouped `**Removed scope**` block and a
+`**Disposition/home**` line. The lifecycle planner — or the transition lint —
+**refuses the transition** when the declaration is missing, or when `reduced`
+carries no grouped disposition.
+
+The tool does not compare prose versions or infer intent. It requires a
+declaration and checks its shape; review checks whether the declaration is
+truthful. Mutation tests demonstrate both boundaries separately: delete the
+declaration (mechanically caught), declare `reduced` with no home (mechanically
+caught), and remove work while declaring `unchanged` (**not** mechanically
+caught — the residual that review must hold, stated rather than papered over).
+
+### 8. Reconcile the disposition vocabulary
+
+`scope-cut` → `accept` is reserved for **claim correction with no removed
+work** — an artifact's stated claim narrowed to match what it always did.
+Removal of previously proposed or accepted work is a **scope reduction** and
+takes the delta-and-disposition path. Update `doctrine/dual-review.md`'s
+satisfier mapping, the lifecycle disposition text, and the board's inline
+taxonomy together.
+
+### 9. Where it ships
+
+`doctrine/plans.md`; the proposal and plan templates, self-hosted and shipped;
+the planner scaffolds agents actually receive; the planner / transition-lint
+tests; Cairn's own `dev/agent_collaboration.md`; and the shipped and
+self-hosted `AGENTS.md` deviation wording. Twin and slot parity hold, and the
+applicable lockfile finalization is part of the plan.
+
+### Honest note on the size of this
+
+This is now a substantial change — doctrine, shipped and self-hosted templates,
+a planner gate, and tests. It grew because review found the original too
+narrow, which is the outcome the proposal argues for; it should not therefore
+be exempt from the judgement it asks of everyone else. If the Maintainer thinks
+this has become too large, the answer under Part 5 is an explicit,
+Maintainer-decided reduction with a grouped remainder record — not a quiet
+trim.
