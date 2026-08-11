@@ -383,6 +383,16 @@ compliance figure.
 `--include-archive`: the only reference outside the planner is
 `bootstrap/tests/test_lifecycle_contract.py:157`, which asserts the subcommand
 is read-only, not that anyone runs it. `AGENTS.md` requires a check whose only
-trigger is a human to be described that way, and D1's docstring does not. That
-is a real gap this plan leaves open; it is named here rather than left to be
-rediscovered.
+trigger is a human to be described that way, and D1's docstring does not. That gap is
+now closed in the docstring, and with it the Maintainer's governing principle,
+quoted:
+
+> We do not want to be retrospectively scanning on a regular basis. Moving
+> forward always
+
+**The follow-up floated alongside this is therefore withdrawn, not deferred.**
+Wiring `--include-archive` to a recurring test that re-derives the flagged
+count would have made history a standing gate — the thing this instruction
+rules out, and the thing R1-1 already forbids acting on. Enforcement is
+forward-only: the pre-transition gates prevent new instances, and the archive
+is consulted when a *predicate* changes, by a person, deliberately.

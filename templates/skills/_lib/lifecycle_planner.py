@@ -1766,7 +1766,26 @@ def cmd_scan(args: argparse.Namespace) -> int:
 
     Exit semantics are the same in both modes: non-zero when anything is
     flagged.  `--include-archive` is louder by design, and that is why it is
-    opt-in rather than silently folded into the default."""
+    opt-in rather than silently folded into the default.
+
+    **Nothing invokes `--include-archive`, and that is correct.**  No CI job,
+    no script, no gate runs it; its only trigger is an operator typing it.  It
+    is named here rather than left implied, because a check whose trigger is a
+    human remembering must be described that way.
+
+    It is a **development-time instrument for validating a predicate**, not a
+    recurring audit.  Run it when a predicate changes: a large movement in the
+    flagged count means the predicate moved, which is what you want to know
+    *before* shipping it.  Every defect this checker's own archive sweeps have
+    caught was a fact about the code -- a false pass, a false fail, a bad
+    measuring oracle -- and none was a request to edit a historical record.
+
+    **Enforcement is forward-only.**  Archived records are immutable and are
+    not retro-fitted; the pre-transition gates above are what prevent new
+    instances.  So the flagged count is a measurement, never a debt, and
+    nothing should be built that re-scans history on a schedule -- a
+    permanently-red recurring gate over records nobody may edit is the failure
+    this checker exists to prevent, one level up."""
     root = _repo_root()
     identity = _load_identity_model(root)
     total = 0
