@@ -92,6 +92,27 @@ authorize its own replacement.
 | # | Stop | Where | What the Maintainer does | What an agent must not do |
 |---|---|---|---|---|
 | **M1** | Two plan-review passes | Before any implementation | Obtains one **External** and one **External Security Review** pass | Begin implementation. One pass cannot discharge both clauses |
+
+**M1 obligation state — as of 2026-08-11:**
+
+| clause | state |
+|---|---|
+| **External** | **CLEARED.** Round 2 (`c06275a`) verdict SHIP, findings none, closing E1–E4 raised at round 1 (`5c3d36f`) |
+| **External Security Review** | **OUTSTANDING.** No pass has been taken. It must come from a reviewer independent of both the source-proposal author and this plan's author |
+
+**The tooling will not stop you here, and that is the trap.** Measured on this
+plan at `1582803`: with the status set to `awaiting-plan-review` and only the
+External clause satisfied, `lifecycle_planner.py next` reports
+`-> executing  [ok]`. The gate attests that *a* conforming pass meeting the
+floor has landed — **not** that every declared clause has one. Its own text says
+so: *"conformance only — the tool attests that a tier was DECLARED, never that
+it was true."*
+
+So on this plan the mechanical result is **not** evidence that M1 cleared. An
+agent that consults the planner instead of reading this row would begin
+implementing the local executable trust root having had one of its two required
+reviews. Until the row above reads CLEARED on both lines, no implementation
+commit lands.
 | **M2** | Focused exact-byte Security Review | After Chunk G, before H | Obtains a focused review of the exact `_gate_preflight.py`, `_gate_manifest.py`, runbook and imported authority bytes; it **records their SHA-256 set and the exact manual bootstrap invocation** | Treat the ordinary Code review as this review, or accept a prose inspection — R1 requires it to *execute* the range-report mutations, the v1/v2 differential corpus, the key-load sentinel and the bootstrap |
 | **M3** | The exact-byte bootstrap ceremony | **Chunk H** | Confirms reviewed hashes **while the ceremony key is unavailable**, then loads the key, constructs the signed checkpoint, verifies the object and pinned principal, and advances branch + anchor in one expected-old `--no-deref` transaction | Perform any of it. R1-F: *"No author or implementing agent performs this step."* An agent does not load the key, construct the checkpoint, or move a Cairn ref |
 | **M4** | Atomic publication + the [TRU-7] probe | **Chunk F/H** | Records a non-mutating capability probe **or** the first supervised publication result against the **real** remote, then publishes branch + `refs/cairn/gate-anchor` atomically | Push to `origin`. R1-D: *"No reviewer or implementation agent pushes to `origin` on the Maintainer's behalf, and no two-push fallback is allowed."* A local bare-remote test is necessary but **not sufficient** to close [TRU-7] |
