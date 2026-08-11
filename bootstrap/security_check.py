@@ -601,9 +601,61 @@ def _verify_committed_checkout(repo_root: Path, head: str) -> None:
                 f"detached checkout path {rel!r} does not match commit {head}")
 
 
+class _ObjectIntegrityError(_RepoStateError):
+    """Structural object corruption. Distinct from a scanner finding.
+
+    `fsck` proves structural object integrity -- **not** authorization, not
+    safety, not signature validity. The type keeps those claims apart in the
+    result labels.
+    """
+
+
+def _fsck_from_sterile_context(repo_root: Path) -> None:
+    """Validate the object graph from a context the candidate cannot configure.
+
+    **Why not just run `fsck --strict` in the candidate repository.** Measured
+    on git 2.53.0 against a reachable commit written with
+    `hash-object -t commit -w --stdin --literally` and no `author` line:
+
+      * default `--strict` refuses it (exit 1) -- correct;
+      * repo-local `fsck.missingAuthor=ignore` makes it pass (exit 0);
+      * repo-local `fsck.skipList=<file naming the oid>` also makes it pass.
+
+    A command-line pin defeats the first and **not the second**: `fsck.skipList`
+    is multi-valued, so `-c fsck.skipList=/dev/null` *accumulates* with the
+    candidate's entry rather than replacing it. No enumeration of `fsck.*`
+    closes this -- the family grows, and one member is immune to the technique.
+
+    So the graph is checked from a **sterile bare clone**, which inherits the
+    objects and none of the candidate's `.git/config`. Measured: the same
+    malformed object refuses there with `missingAuthor`, exit 1. The clone is
+    `--local`, so objects are hardlinked rather than copied.
+    """
+    with tempfile.TemporaryDirectory(prefix="cairn-fsck-") as parent:
+        sterile = Path(parent) / "sterile.git"
+        clone = _git_at(repo_root, "clone", "--bare", "--local", "--quiet",
+                        str(repo_root), str(sterile))
+        if clone.returncode != 0:
+            raise _ObjectIntegrityError(
+                f"could not build a sterile context for object validation "
+                f"({(clone.stderr or '').strip()})")
+        proc = _git_at(sterile, "fsck", "--strict", "--no-dangling")
+        if proc.returncode != 0:
+            raise _ObjectIntegrityError(
+                "git fsck --strict reported object corruption in the "
+                "repository being released -- FAIL CLOSED. This is a "
+                "structural object-integrity failure, not a scanner finding "
+                "and not a signature verdict.\n"
+                f"{(proc.stdout or '').strip()}\n{(proc.stderr or '').strip()}")
+
+
 @contextmanager
 def _detached_checkout(head: str) -> Iterator[Path]:
     """Yield an exact-byte detached worktree for *head*, then remove it."""
+    # Before materialising anything executable from this repository, prove its
+    # object graph is structurally sound -- from a context the candidate cannot
+    # configure away. Fails closed.
+    _fsck_from_sterile_context(CAIRN_ROOT)
     with tempfile.TemporaryDirectory(prefix="cairn-release-") as parent:
         checkout = Path(parent) / "checkout"
         added = False

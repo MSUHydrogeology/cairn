@@ -291,10 +291,25 @@ WS="$WORKSPACE/verify"
 # empty config removes the rest. Scoped to these calls (a prefix assignment on a
 # simple command) so the build-surface probe below still sees the operator's own
 # core.excludesFile and reports what they would see.
+# The workspace's sterility contract, stated rather than implied.
+#
+# `$WS` is created by THIS script, so its config is not candidate-controlled --
+# that is the property the fetch-time object check below rests on, and it is
+# why the check cannot be configured away by the repository being verified.
+# `GIT_CONFIG_GLOBAL`/`SYSTEM` are neutralised so the operator's own config
+# cannot relax it either. What is deliberately NOT relied on: pinning
+# `fsck.*` on the command line. Those settings are read from the repository
+# doing the checking, and `fsck.skipList` is multi-valued, so a `-c` pin
+# accumulates rather than replaces -- a fresh workspace is the only mechanism
+# that closes the family rather than chasing its members.
 wsgit() { GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null git "$@"; }
 
 wsgit init --quiet --bare "$WS" 2>/dev/null || refuse "could not initialise the verification workspace"
-if ! wsgit -C "$WS" fetch --no-tags --quiet "$REPO" "+refs/tags/$TAGNAME:refs/tags/$TAGNAME" 2>/dev/null; then
+# Object validation at the acquisition boundary: incoming objects are checked
+# as they arrive, before any tag-name or signature claim is made about them.
+# `fsck` proves STRUCTURAL integrity only -- not authorship, not authorization.
+if ! wsgit -C "$WS" -c fetch.fsckObjects=true -c transfer.fsckObjects=true \
+     fetch --no-tags --quiet "$REPO" "+refs/tags/$TAGNAME:refs/tags/$TAGNAME" 2>/dev/null; then
   # Name the cause. A fetch of an absent source ref fails the same way a fetch
   # that could not run at all does, so re-probe the candidate for the ref: the
   # probe can only make the refusal MORE specific, never turn one into a pass.

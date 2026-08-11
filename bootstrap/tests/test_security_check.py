@@ -1159,3 +1159,108 @@ def test_a_missing_root_refuses(tmp_path):
 def test_the_object_format_probe_names_the_repository_it_read(tmp_path):
     repo = _init_repo(tmp_path / "fmt", "sha256")
     assert security_check._repository_object_format(repo) == "sha256"
+
+
+# ---------------------------------------------------------------------------
+# Chunk E: object validation the candidate cannot configure away.
+# ---------------------------------------------------------------------------
+
+
+def _repo_with_malformed_reachable_object(tmp_path: Path) -> Path:
+    """A repository whose HEAD is a commit object with no `author` line.
+
+    `hash-object` refuses to write a malformed object without `--literally`;
+    an earlier attempt at this fixture silently produced a CLEAN commit and
+    every assertion below passed for the wrong reason.
+    """
+    repo = tmp_path / "candidate"
+    repo.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull,
+               GIT_CONFIG_SYSTEM=os.devnull)
+
+    def git(*args, **kw):
+        return subprocess.run(["git", "-C", str(repo), *args], env=env,
+                              capture_output=True, check=True, **kw)
+
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], env=env,
+                   check=True, capture_output=True)
+    (repo / "f.txt").write_text("seed\n", encoding="utf-8")
+    git("add", "-A")
+    git("-c", "user.name=T", "-c", "user.email=t@t.invalid",
+        "-c", "commit.gpgsign=false", "commit", "-q", "-m", "seed")
+    tree = git("rev-parse", "HEAD^{tree}").stdout.decode().strip()
+    parent = git("rev-parse", "HEAD").stdout.decode().strip()
+    payload = (f"tree {tree}\nparent {parent}\n"
+               f"committer T <t@t.invalid> 1700000000 +0000\n\nmalformed\n")
+    bad = subprocess.run(
+        ["git", "-C", str(repo), "hash-object", "-t", "commit", "-w",
+         "--stdin", "--literally"],
+        input=payload.encode(), env=env, capture_output=True,
+        check=True).stdout.decode().strip()
+    git("update-ref", "refs/heads/main", bad)
+    return repo
+
+
+def test_the_fixture_really_is_malformed(tmp_path):
+    """Guard the guard: if this passes plain fsck, every test below is vacuous."""
+    repo = _repo_with_malformed_reachable_object(tmp_path)
+    proc = subprocess.run(["git", "-C", str(repo), "fsck", "--strict",
+                           "--no-dangling"], capture_output=True)
+    assert proc.returncode != 0, "fixture is not actually corrupt"
+
+
+def test_a_candidate_severity_downgrade_cannot_hide_corruption(tmp_path):
+    """Negative control 1 of 2: single-valued `fsck.*` downgrade."""
+    repo = _repo_with_malformed_reachable_object(tmp_path)
+    subprocess.run(["git", "-C", str(repo), "config", "fsck.missingAuthor",
+                    "ignore"], check=True, capture_output=True)
+    # It really does defeat a plain in-repo check ...
+    assert subprocess.run(["git", "-C", str(repo), "fsck", "--strict",
+                           "--no-dangling"], capture_output=True).returncode == 0
+    # ... and must not defeat ours.
+    with pytest.raises(security_check._ObjectIntegrityError):
+        security_check._fsck_from_sterile_context(repo)
+
+
+def test_a_candidate_skiplist_cannot_hide_corruption(tmp_path):
+    """Negative control 2 of 2, and the one a `-c` pin cannot answer.
+
+    `fsck.skipList` is multi-valued: `-c fsck.skipList=/dev/null` accumulates
+    with the repository's entry instead of replacing it, so the candidate's
+    exemption survives every command-line pin. A single negative control would
+    pass under a design that defeats only the downgrade above.
+    """
+    repo = _repo_with_malformed_reachable_object(tmp_path)
+    bad = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                         capture_output=True, check=True).stdout.decode().strip()
+    skip = repo / "skip.txt"
+    skip.write_text(bad + "\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "config", "fsck.skipList",
+                    str(skip)], check=True, capture_output=True)
+    assert subprocess.run(["git", "-C", str(repo), "fsck", "--strict",
+                           "--no-dangling"], capture_output=True).returncode == 0
+    with pytest.raises(security_check._ObjectIntegrityError):
+        security_check._fsck_from_sterile_context(repo)
+
+
+def test_a_sound_repository_passes(tmp_path):
+    """The check must be able to succeed, or it proves nothing when it fails."""
+    repo = tmp_path / "sound"
+    repo.mkdir()
+    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull,
+               GIT_CONFIG_SYSTEM=os.devnull)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], env=env,
+                   check=True, capture_output=True)
+    (repo / "f.txt").write_text("ok\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], env=env, check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.name=T", "-c",
+                    "user.email=t@t.invalid", "-c", "commit.gpgsign=false",
+                    "commit", "-q", "-m", "seed"], env=env, check=True,
+                   capture_output=True)
+    security_check._fsck_from_sterile_context(repo)
+
+
+def test_integrity_failure_is_typed_apart_from_a_scanner_finding():
+    assert issubclass(security_check._ObjectIntegrityError,
+                      security_check._RepoStateError)

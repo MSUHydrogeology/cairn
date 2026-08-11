@@ -1444,3 +1444,60 @@ def test_mutation_deleting_the_extraction_bounds_lets_the_message_forge_the_name
     assert "PROVENANCED" in r.stdout
     assert SCRIPT.read_text() != mutant.read_text(), \
         "the mutant must live outside the repository"
+
+
+# ---------------------------------------------------------------------------
+# Chunk E4: the fetch boundary validates incoming objects, and the candidate
+# cannot configure that away.
+# ---------------------------------------------------------------------------
+
+
+def _script_text() -> str:
+    return (Path(__file__).resolve().parents[1] / "container"
+            / "verify-ref.sh").read_text(encoding="utf-8")
+
+
+def test_the_fetch_enables_object_checking():
+    """Perturbation: drop `-c fetch.fsckObjects=true`.  Red."""
+    src = _script_text()
+    assert "-c fetch.fsckObjects=true" in src
+    assert "-c transfer.fsckObjects=true" in src
+
+
+def test_object_checking_precedes_any_signature_claim():
+    """Structural integrity is established before a signature verdict exists.
+
+    A corrupt object must fail acquisition rather than reach the point where
+    the script would make a signature or tag-name claim about it.
+    """
+    # Executable lines only: `verify-tag` first appears at :274 inside a
+    # comment explaining what the script deliberately never does, so a naive
+    # substring search finds the prose and not the invocation.
+    lines = [(i, ln) for i, ln in enumerate(_script_text().split("\n"))
+             if not ln.lstrip().startswith("#")]
+    fetch_at = next(i for i, ln in lines if "fetch.fsckObjects=true" in ln)
+    for later in ("verify-tag", "allowedSignersFile"):
+        hits = [i for i, ln in lines if later in ln]
+        assert hits, later
+        assert min(hits) > fetch_at, (
+            f"{later} is reached at line {min(hits)}, before the fetch-time "
+            f"object check at {fetch_at}")
+
+
+def test_the_workspace_sterility_contract_is_stated():
+    """The contract the fetch check rests on is written down, not implied.
+
+    `$WS` is script-created, so its config is not candidate-controlled. The
+    script must say so -- and must say why command-line `fsck.*` pinning is
+    NOT the mechanism, since `fsck.skipList` is multi-valued and accumulates.
+    """
+    src = _script_text()
+    assert "not candidate-controlled" in src
+    assert "multi-valued" in src
+
+
+def test_the_script_does_not_rely_on_pinning_fsck_on_the_command_line():
+    """Perturbation: replace the fresh-workspace mechanism with `-c fsck.*`
+    pins.  This test is what makes that substitution visible."""
+    src = _script_text()
+    assert "-c fsck.skipList" not in src
