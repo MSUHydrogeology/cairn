@@ -3,23 +3,23 @@
 **Author**: Claude (2026-06-12 audit); rebuilt by Codex (Strategy)
 **Model**: GPT-5 (Codex)
 **Date**: 2026-06-12, rebuilt 2026-08-11
-**Status**: draft (current reconstruction; not yet independently reviewed)
+**Status**: revised (External comprehension review folded in 2026-08-11)
 **Type**: product-strategy
 **Surfaces this would feed**: one adopter-path consolidation proposal; an
-immediate quickstart correctness repair; a release-boundary adopter canary;
-and a downstream entry-doc integration after `review-efficient-lifecycle`'s
-Maintainer promotion Decision.
+immediate quickstart correctness repair; a release-boundary adopter canary; a
+small comprehension-floor placement proposal; and a downstream entry-doc
+integration after `review-efficient-lifecycle`'s Maintainer promotion Decision.
 
 ## The question
 
 Can a solo scientist move from **curious** to **trying Cairn** to **using it on
-a real repository** without needing an author beside them to explain which
-path is real?
+a real repository**, and explain what they have installed and agreed to,
+without needing an author beside them to translate the path?
 
 That is a narrower and more useful question than whether every entry document
 is accurate in isolation. Cairn can have a good README, a working scaffold, a
 tested quickstart, and still lose the adopter in the handoff between them. The
-current audit therefore follows three transitions:
+current audit therefore follows four transitions:
 
 1. **Try** -- can the scientist run the disposable quickstart exactly as
    written and see the promised lifecycle?
@@ -27,6 +27,8 @@ current audit therefore follows three transitions:
    what that choice changes?
 3. **Install** -- can they execute the recommended real-adoption path without
    inventing file mappings or silently graduating to a different level?
+4. **Understand** -- can they state in their own words what the apparatus does,
+   what it will require of them, and when they must stop rather than approve?
 
 ## Executive judgment
 
@@ -53,6 +55,14 @@ files were copied manually. Preserve the accepted default-on security posture;
 make the output and customization obligations progressive. Then test the path
 an adopter actually runs.
 
+Execution is not the whole adoption contract. The measured entry surfaces put
+roughly 7,800 words of governing prose in front of the agent and project, while
+no current canary asks whether a scientist understands the resulting
+apparatus. The consolidated path must therefore reduce ambiguity in terms the
+adopter recognizes -- required reading, decisions, consequences of skipping,
+and reversibility -- and measure comprehension rather than infer it from a
+completed command sequence.
+
 ## Method
 
 Measured on 2026-08-11 against exact committed source
@@ -77,6 +87,11 @@ I:
 * ran `bootstrap/tests/test_quickstart_sequence.py` and inspected what each
   green assertion actually governs.
 
+The External comprehension review rechecked the published module and slot
+counts, bare commit shape, README route inventory, and comprehension-floor
+placement against parent commit
+`8c8a8b9c1940c4a1500930532e0bcade81ff697c`; it did not repeat the cold install.
+
 The falsifier is straightforward: a documented, mechanized Level 1 route that
 a fresh adopter can run today would overturn the headline. No such route was
 found. This was not a human-subject usability study and did not execute Steps
@@ -87,9 +102,12 @@ that the prompts fail.
 
 The entry surface is much stronger than it was at first publication:
 
-* **The front door is clear.** The README names the audience, the cost, the
-  safety boundary, the quickstart, the on-ramp, and both minimal examples
-  without pretending Cairn is a package manager or CI system.
+* **The front door names the right things.** The README names the audience, the
+  cost, the safety boundary, the quickstart, the on-ramp, and both minimal
+  examples without pretending Cairn is a package manager or CI system. It does
+  not yet reduce those choices to one obvious trial and one obvious adoption
+  route; the scientific example is discoverable from the repository map rather
+  than carried through the adoption handoff.
 * **The disposable install is mechanically real.** `solo-greenfield` resolved
   exactly 8 modules, advertised 72 file-install rows, and reported 22 unfilled
   slots in the clean cold walk. The two counts published by
@@ -237,7 +255,7 @@ The product need not minimize file count. It needs to distinguish:
 That is the context-aware output already gestured at by the deferred
 `--quickstart` follow-up, but it should govern real Level 1 too.
 
-### F6 -- the 15-25 minute promise has outlived its measured path
+### F6 -- timing and comprehension have outgrown the measured path
 
 The quickstart has changed repeatedly since its original pilot. Since v0.3.0,
 the measured entry surfaces gained 222 lines and removed 71 across
@@ -251,6 +269,14 @@ No current canary records elapsed time, undocumented intervention, warning
 interpretation, or whether a fresh agent follows the prompt correctly. The
 15-25 minute range may still be right. It is not currently measured evidence.
 A static test cannot answer that question.
+
+The larger finding is comprehension load, not word count by itself. Those
+roughly 7,800 words govern work for an adopter whose expertise may be hydrology,
+ecology, or another scientific domain rather than software process. Completing
+the commands does not establish that the adopter understands what Cairn will
+ask them to review and decide. No current success criterion or release canary
+asks them to restate the purpose and obligations in their own words, so the
+project currently measures mechanics and assumes comprehension.
 
 ### F7 -- a known lifecycle change has an entry-doc integration gap
 
@@ -266,6 +292,26 @@ downstream integration condition: if M6 promotes the new lifecycle, the entry
 surface must be revised and cold-walked against it before the next release.
 Doing that now would document a conditional contract as though it had shipped.
 
+### F8 -- the comprehension floor is published but not installed
+
+`doctrine/rationale.md` makes comprehension a precondition of Maintainer
+authority: lead with plain language, preserve precision beneath it, and pause
+when the decision-maker does not yet understand. The operational
+`templates/core/AGENTS.md` every adopter receives does not state that rule, and
+the published `doctrine/` tree is not installed into adopter repositories.
+
+That is a placement gap, not an installer-design problem. Cairn operationalizes
+structural independence, verification boundaries, and commit discipline in the
+installed agent contract; the rule that makes those outputs reviewable by a
+scientist should be there too. A small separate proposal should place the
+settled norm in Cairn's and adopters' `AGENTS.md` files, with the existing
+rationale remaining canonical in doctrine. It should not enlarge the
+adopter-path consolidation proposal.
+
+The related G17 idea -- a communication-calibration dimension or module -- is
+not settled by this audit. It needs evidence about recurring communication
+failure modes and stays out of the placement repair.
+
 ## Options
 
 1. **Refresh the quickstart again and leave the level model alone.** Necessary
@@ -280,10 +326,14 @@ Doing that now would document a conditional contract as though it had shipped.
    project.
 4. **Use one installer; let levels describe burden, not copying**
    (**recommended**). Level 0 remains read-only. Level 1 uses the scaffold with
-   a named small-team profile, a short acceptance pass, progressive
-   customization, and no hand-maintained mappings. Level 2 adds the full
-   readiness/profile procedure, broader module set, upgrade posture, and
-   staffed review/coordination practices.
+   a named small-team profile, a short required-reading and acceptance pass,
+   progressive customization, and no hand-maintained mappings. Level 2 asks
+   for more preparation, project decisions, upgrade commitments, and review
+   capacity. The adopter-facing definition answers four questions at each
+   level: **what must I read, what must I decide, what does skipping a step
+   cost, and can I reverse the choice?** Internal labels such as assessment
+   depth, module set, upgrade posture, and review staffing may implement that
+   model but should not be the chooser's only vocabulary.
 
 ## Recommendation
 
@@ -312,6 +362,8 @@ single installer; Levels 1 and 2 differ in obligations and depth.** It should:
   resolver rather than a second copy map;
 * classify post-install slots by current profile and timing, so "not selected"
   is never reported as "fill this now";
+* define each level in adopter-recognizable obligations: required reading,
+  decisions, skip consequences, and reversibility;
 * preserve all accepted default-on module and security decisions unless a
   separate proposal changes them on evidence;
 * state the durable home of the accepted profile for a real adoption; and
@@ -334,7 +386,10 @@ clean, tagged checkout into a disposable repository. Record:
 * every warning and whether the docs predicted it;
 * every intervention not present in the page;
 * final tracked/untracked state; and
-* whether the agent stopped at each Maintainer gate.
+* whether the agent stopped at each Maintainer gate;
+* every term the walker had to look up or ask someone to explain; and
+* whether the walker could restate, unprompted and in their own words, Cairn's
+  purpose and the obligations they had accepted.
 
 Keep deterministic tests for commands, counts, paths, and lifecycle shape.
 Use the canary for comprehension and time. If no canary is run, replace the
@@ -349,6 +404,21 @@ must include the quickstart, on-ramp, both minimal examples, and any profile
 comment that names lifecycle states. If it is revised or retired, those
 surfaces remain on the current contract.
 
+### 5. Place the settled comprehension floor in the operational contract
+
+Open a small, separate proposal for F8. It should add an operational rule to
+Cairn's own and `templates/core/AGENTS.md`: agents lead with a plain explanation
+suited to the Maintainer's software familiarity, define unavoidable specialist
+terms, keep technical precision available beneath the explanation, and treat
+"I do not understand this yet" as a required pause before a Decision. The
+proposal should preserve `doctrine/rationale.md` as the canonical explanation
+and include the self-host/template parity check appropriate to an installed
+rule.
+
+Do not add a communication-calibration module or measurement dimension in that
+proposal. Those are evidence-seeking extensions; the placement repair merely
+makes an already-settled norm reachable where work is governed.
+
 ## Success criteria
 
 The adopter path is coherent when all of these are true:
@@ -361,10 +431,14 @@ The adopter path is coherent when all of these are true:
 * every published command is exercised by a governing test and leaves the
   documented repository state;
 * the timing claim is backed by a current canary or removed; and
-* a promoted lifecycle change cannot release with stale first-contact docs.
+* a promoted lifecycle change cannot release with stale first-contact docs;
+  and
+* a canary adopter can state in their own words what Cairn does, what decisions
+  it reserves to them, and what obligations the selected level creates, with
+  every term they needed translated recorded as evidence rather than hidden.
 
-The success measure is **undocumented decisions and interventions**, not
-installed file count.
+The success measure is **undocumented decisions, interventions, and unresolved
+terms**, not installed file count.
 
 ## Open questions for the Maintainer
 
@@ -393,134 +467,3 @@ single repository before becoming doctrine:
 * **A test that claims to exercise a published command must execute that
   command vector and assert its residual state.** Testing adjacent output is
   useful coverage, not evidence that the recipe itself works.
-
----
-
-## Review -- Claude (External, comprehension lens) -- 2026-08-11
-
-<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
-     this section. Strategy notes are inline-revised, not append-only. -->
-
-**Structural independence.** Cross-type read: Codex rebuilt this audit, I am
-Claude. I did not re-run the cold install; I verified the audit's load-bearing
-evidence against the tree and checked the doctrine claims this review adds.
-
-**Recommendation: ACCEPT the findings, REVISE the criteria.** The mechanical
-analysis holds and the consolidation direction is right. What is missing is an
-axis rather than a fact: the audit asks whether the adopter can *execute* the
-path and never whether they can *understand* what they executed. Cairn's own
-doctrine makes that second question a precondition of the Maintainer's
-authority, so its absence from the success criteria is a gap in the instrument.
-
-### Steelman
-
-The reframe from "is each document accurate" to "do the three transitions
-connect" is the right question, and F1 is a genuine catch: a path is not
-lightweight because its automation was removed. Option 4 -- one installer,
-levels describing obligation rather than byte-copying -- resolves the
-contradiction without inventing a second procedure. F4's observation that a
-green test concealed a recurrence is the strongest methodological finding here
-and generalizes past this repository. Spot-checks reproduced: `docs/quickstart.md`
-publishes 8 modules (`:129`) and 22 slots (`:183`), matching the reported live
-install, and `:196` is a bare `git commit -q -m` with no paths, confirming F3.
-
-### Findings
-
-**[V1] MEDIUM -- F6 contains a comprehension finding and reports it as a timing
-finding.** F6 measures the installed `AGENTS.md` at 2,676 words and the
-templates at 5,098, then concludes the 15-25 minute claim is unmeasured. The
-timing conclusion is correct but secondary. The primary reading is that ~7,800
-words of governing prose is a **comprehension load placed on someone whose
-expertise is hydrology, not software engineering** -- and the audit's seven
-success criteria are all mechanical (one obvious trial, no undefined operation,
-one installer, live-only obligations, governed commands, backed timing, no
-stale lifecycle docs). None asks whether the adopter understood what they
-installed or what it will ask of them. Recommend one further criterion: *the
-adopter can state, in their own words, what the apparatus does and what it will
-require of them.* Without it the audit optimizes an executable path toward a
-reader who may still not know what they have agreed to.
-
-**[V2] MEDIUM -- the canary omits the one thing only a canary can measure.**
-Recommendation 3 records tag, interpreter, commands, elapsed time, warnings,
-interventions, final tree state, and gate stops. Every one of those is
-mechanical, and most could eventually be automated. The canary is a human or
-different-agent walk -- the only proposed instrument that can observe
-comprehension at all -- and it does not. Two additions cost nothing beyond what
-the walker is already doing: **which terms they had to look up or ask about**,
-and **whether they could restate the apparatus's purpose and obligations
-unprompted**. That converts a timing instrument into the comprehension
-instrument the doctrine implies and Cairn does not currently have anywhere.
-
-**[V3] LOW -- express the level model in obligations the adopter recognizes.**
-Option 4 is right that levels should name burden. The burden vocabulary offered
--- assessment depth, module set, upgrade posture, review staffing -- is Cairn's
-own. A scientist choosing a level is asking: how much must I read, what will I
-be asked to decide, what happens if I skip a step, and can I reverse it. The
-consolidation proposal should define the levels in that register and let the
-internal vocabulary sit beneath it. Same failure mode as V1, one layer up.
-
-**[V4] MEDIUM -- Cairn states the comprehension floor and ships it nowhere the
-adopter can reach.** This is the Cairn-side gap the audit's framing surfaces
-but does not own, recorded here because the audit is the natural place it
-would have been caught. Verified at this commit:
-
-* `doctrine/rationale.md` anchor 16 states the principle in full -- *"you cannot
-  review what you cannot penetrate"*, comprehension as **a precondition of the
-  human's authority**, not a courtesy -- with four grounding literatures and an
-  operative norm: lead plain, keep precision beneath, treat *"I don't understand
-  this yet"* as a mandatory pause.
-* `templates/core/AGENTS.md` -- the operational file **every adopter receives**
-  and every agent loads every session -- says nothing about it. A search for
-  plain-language, comprehension, jargon, or calibration terms returns one
-  unrelated hit about non-pass outcomes.
-* `doctrine/` is **not installed into an adopter tree**; `templates/core/AGENTS.md:53`
-  states that doctrine references are citations to Cairn's published
-  methodology, not local files.
-
-So the one principle governing how an agent must make its work understandable
-to the adopting scientist lives exclusively in a document that scientist never
-receives, and states no rule in the document they do. The asymmetry that makes
-this matter is the same one the audit is implicitly about: **the agent is far
-stronger in the software domain than the adopter, the adopter holds decision
-authority, and Cairn provides no operational rule requiring the stronger party
-to make its work reviewable by the weaker one.** Every other Cairn obligation
-of that shape -- structural independence, verification boundaries, commit
-discipline -- is stated operationally in `AGENTS.md`. This one is not.
-
-Related and separable: the guide star's G17 named two parts -- a *settled*
-universal norm and an *observed* candidate for a communication-calibration
-dimension. Neither landed. The six axes are age, agent-team, complexity,
-human-team, language, size; there is no communication axis, and no module
-covers it. The dimension is a genuine open question that needs its own
-evidence. **The settled norm is not** -- it is a routing omission, and a small
-one: an operational one-liner in `templates/core/AGENTS.md` with its rationale
-already written in `doctrine/rationale.md`.
-
-Recommend this audit **name it as a finding and route it out**, rather than
-absorb it. It is doctrine placement, not adopter-path scope, and it should not
-enlarge the consolidation proposal.
-
-**[V5] LOW -- "the front door is clear" is slightly stronger than the audit's
-own criterion allows.** The What-already-works section credits the README with
-naming the audience, cost, safety boundary, quickstart, on-ramp, and both
-minimal examples. Against the audit's own first success criterion -- *one*
-obvious trial and *one* obvious real-adoption next step -- the current "How to
-adopt" section offers a quickstart (`:197`), a getting-started walkthrough
-(`:201`), three levels (`:209`, `:212`, `:216`), and a readiness report
-(`:228`). The scientific example is linked only at `:248`, in the
-repository-layout table, not in the adoption flow. Suggest softening to "the
-front door names the right things" and letting the route-count problem sit
-where F1/F2 already put it.
-
-### Disposition
-
-F1-F7 stand. Add the comprehension criterion (V1) and the two canary fields
-(V2); adjust the level vocabulary (V3) and the front-door wording (V5) when
-convenient; route V4 to its own doctrine-placement proposal rather than
-absorbing it here.
-
-I did not re-run the cold install, execute the quickstart end to end, exercise
-`bootstrap-lite` through a fresh agent, or review the consolidation proposal
-that does not yet exist. I did verify the published module and slot counts, the
-bare-commit shape, the README route inventory and example placement, and every
-doctrine and template claim in V4.
