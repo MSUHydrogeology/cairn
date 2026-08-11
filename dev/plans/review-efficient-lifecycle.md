@@ -273,12 +273,12 @@ Dependency order, not preference. Chunks A and B touch the same four functions
 every later chunk builds on, so they are strictly first.
 
 ```
-A   central vocabulary + contained loaders         [commit pending]
-B   canonical pass boundaries                      [commit pending]
+A   central vocabulary + contained loaders         [DONE 1c68926 b0e92fd ca22f21 94bda8b]
+B   canonical pass boundaries                      [B1+B2 1329b22; B3 pending]
 P1  assurance paths + four-field review basis      [commit pending]
 C   Code-review record schema + legacy manifest    [commit pending]
 P5  Contract non-expansion attestation             [commit pending]  (binds into C)
-D   claim-check archive resolution + registry      [commit pending]
+D   claim-check archive resolution + registry      [D1/D2/D5 4723107; D3/D4 pending]
 E   status vocabulary, transitions, conformance    [commit pending]
 P2  plan readiness, inheritance, expansion refusal [commit pending]
 P3  current-contract revision + withdrawal ledger  [commit pending]
