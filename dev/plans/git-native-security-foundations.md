@@ -152,11 +152,41 @@ That is an agent-side rule, not just a ceremony rule.
 | A1 | `bootstrap/security_check.py` | replace `_blob_oid` (`:342`, called at `:562`) with a call through the sterile launcher. **No `-w`, no path argument, no `--path`, no attribute/filter participation** |
 | A2 | same + `bootstrap/tests/_gate_preflight.py` | the launcher itself: every hashing call takes an **explicit repository path**; there is no default repository. It establishes the path resolves to the operation's already-bound repository, obtains that repository's object format, and validates the returned full-width id against it |
 | A3 | `bootstrap/tests/test_security_check.py` | SHA-1 **and** SHA-256 `hash-object --stdin`; an object-directory before/after check proving **no object is written**; explicit-repository success; and refusal on missing, non-repository, wrong-format and omitted-repository roots |
+| A4 | `bootstrap/tests/_gate_manifest.py` + `test_gate_manifest.py` | its **direct** Git subprocess calls (e.g. `merge-base --is-ancestor` at `:285`) come behind that module's guarded boundary. D3 requires this module to call `hash-object`; it must not be the one entry point that reaches Git unguarded |
+| A5 | `bootstrap/tests/_gate_preflight.py`, `security_check.py` | **object-format-aware id validation replaces every fixed-width check** on a touched path — `_gate_preflight._resolve` (`:319`), `:1038`, `:1283`, and `security_check._head_commit` (`:271`) — validating against the already-bound repository object format instead of a literal 40 |
+| A6 | `test_gate_preflight.py`, `test_security_check.py` | **SHA-256 public-path** tests: `check`, `apply`, and the release security entry point over a SHA-256 repository, not helper-level coverage only |
+
+**The ownership model, stated because the plan previously implied one that does
+not exist.** There is **one guarded launcher per executable boundary**, not a
+single shared module. There are four boundaries and they are genuinely
+independent processes:
+
+| boundary | today | contract |
+|---|---|---|
+| `bootstrap/security_check.py` | `_git_at` (`:208`), `_git` (`:226`), `_git_bytes_at` (`:231`) — three launchers | consolidated; one guarded entry, text and bytes variants of the *same* guard |
+| `bootstrap/tests/_gate_preflight.py` | `_run_git` (`:232`) / `_git` (`:255`) | already the closest to the target shape; becomes the reference |
+| `bootstrap/tests/_gate_manifest.py` | **direct `subprocess.run(["git", …])`** | gains its own guarded boundary (A4) |
+| `bootstrap/container/verify-ref.sh` | `wsgit()` (`:294`) | **its own explicitly tested shell boundary** — it does not and cannot consume a Python launcher |
+
+Each boundary specifies, in its own module: the sterile environment, the config
+pins, the repository binding, the read/write allowlist, and a **prohibition on
+direct `subprocess` Git calls bypassing it**. Author-accounting's "candidate
+configuration cannot steer a Git security command" is a claim about all four; an
+implementation that satisfies each local test while leaving one boundary
+unguarded would make that claim false while the suite stayed green.
 
 **The negative control is named by the proposal and must not be dropped**: the
 outside-repository plausible-SHA-1 case. A missing or mismatched root must
 **refuse**, never fall back to Git's process default SHA-1 — that fallback is
 the defect this chunk exists to make impossible.
+
+**Why A5/A6 rather than declaring the ceremony SHA-1-only.** `_resolve` (`:319`)
+refuses any id whose length is not 40, so in a SHA-256 repository Git returns a
+valid 64-character HEAD and the public path fails *before* reaching the helpers
+A3 tests. Declaring SHA-1-only would be honest but would contradict R1-B and
+R1-C, which require validating the returned id **against the repository's object
+format** and refusing object-format mismatch. Helper-only SHA-256 coverage must
+not be presented as repository-format support.
 
 ### Chunk B — the canonical range-review report
 
@@ -167,6 +197,21 @@ the defect this chunk exists to make impossible.
 | B3 | same | **path identity is raw bytes.** Each canonical JSON entry carries the raw bytes as padded base64 plus a deterministic ASCII-only escaped display, and the implementation *verifies the display is a pure rendering of the bound bytes*. Ordering is by raw bytes. No locale, filesystem decoding, `quotePath`, rename detection or terminal rendering decides identity |
 | B4 | same | duplicate, unclassifiable, or multiply-classified paths **refuse** |
 | B5 | `bootstrap/tests/test_gate_preflight.py` | determinism; NUL-safe raw-byte ingestion; base64 identity; ASCII-only display escaping; rename/config independence; exhaustive one-class-per-path partitioning; complete outside-coverage list; and **digest change on every bound field** |
+| B6 | `bootstrap/tests/_gate_preflight.py` | the report **consumes the one canonical classification source** — `_gate_manifest._frozen_files()` (`:151`) plus the mutable registries and the manifest-artifact exclusion — rather than duplicating the policy. Name it in the code; a second classifier is the defect |
+| B7 | `bootstrap/tests/test_gate_preflight.py` | the **cross-contract corpus**: report classes and manifest production/verification agree for existing frozen files, newly added gate files, cascade/phase mutable files, the manifest artifact, ordinary outside paths, and unsupported modes |
+
+**B5 proves a partition; B6/B7 prove the partition is *right*.** Exhaustive
+one-class-per-path says every changed path got exactly one label. It says
+nothing about whether that label matches the policy that later decides HOLD,
+mutable treatment or admission — and a total-but-wrong partition is the
+dangerous case here, because the digest would bind the misdescription perfectly
+and the Maintainer would sign an accurate-looking report of the wrong facts. The
+concrete failure: a newly added gate path reported as *outside coverage* while
+the checkpoint manifest admits it as *frozen*.
+
+D4's v1/v2 differential corpus checks manifest dispositions against each other;
+it is not connected to this report. B7 is that connection, and the raw-byte
+identity tests in B3/B5 stay — they answer a different question.
 
 `_SIGNING_EPOCH` (`bootstrap/tests/_gate_preflight.py:64`) is **retired**, and
 its six current monkeypatch sites in `test_gate_preflight.py` go with it. B5
@@ -188,9 +233,39 @@ rather than renamed.
 
 | # | File | Change |
 |---|------|--------|
-| E1 | `bootstrap/security_check.py` | `git fsck --strict --no-dangling HEAD` **before** creating the detached execution tree. Failure is typed distinctly from a scanner finding and fails the release check **closed** |
-| E2 | `bootstrap/container/verify-ref.sh` | fetch into the operator-created bare workspace with `-c fetch.fsckObjects=true`, then a strict reachable-object check **before** tag-name and signature verification |
-| E3 | `bootstrap/tests/test_verify_ref.py`, `test_security_check.py` | strict-fsck success; a **malformed reachable-object negative control**; unchanged signed-name/signature behavior; proof candidate Git configuration cannot disable either object check; and distinct command-error reporting |
+**The original design was broken, and the break is demonstrated.** An earlier
+draft ran `git fsck --strict --no-dangling HEAD` *in the candidate repository*
+and promised a test that candidate config could not disable it. That property is
+not achievable that way. Measured on git 2.53.0 against a reachable commit
+object written with `hash-object -t commit -w --stdin --literally` and no
+`author` line:
+
+| disposition | fsck exit | verdict |
+|---|---|---|
+| default `--strict` | **1** | refuses, correctly |
+| repo-local `fsck.missingAuthor=ignore` | **0** | **bypassed** |
+| … plus launcher pin `-c fsck.missingAuthor=error` | **1** | pin wins |
+| repo-local `fsck.skipList=<file with the oid>` | **0** | **bypassed** |
+| … plus launcher pin `-c fsck.skipList=/dev/null` | **0** | **pin does NOT win** |
+| sterile bare clone, no candidate `.git/config` | **1** | refuses |
+
+**The two attacks are not equally severe, and the difference is the whole
+finding.** A severity downgrade is single-valued, so a command-line `-c` pin
+overrides it. `fsck.skipList` is **multi-valued**: `-c` *accumulates* rather
+than replaces, so the candidate's entry survives every pin. You cannot
+enumerate-and-pin your way out of it, and any design that tries is committing to
+chase an evolving `fsck.*` family forever.
+
+| # | File | Change |
+|---|------|--------|
+| E1 | `bootstrap/security_check.py` | the local object graph is checked from a **sterile repository/config context** — not by running `fsck` under candidate-local `fsck.*` policy. The last row above is the reference behavior. Failure stays typed distinctly from a scanner finding and fails the release check **closed** |
+| E2 | `bootstrap/container/verify-ref.sh` | fetch into the operator-created bare workspace with `-c fetch.fsckObjects=true`, then a strict reachable-object check **before** tag-name and signature verification. This workspace has its **own** sterility contract, stated explicitly: it is operator-created, so its config is not candidate-controlled — but `wsgit` (`:294`) today neutralizes only `GIT_CONFIG_GLOBAL` / `GIT_CONFIG_SYSTEM`, and the contract must say what else is pinned and why the fetched repository cannot influence it |
+| E3 | `bootstrap/tests/test_security_check.py` | **two independent negative controls, not one**: a severity downgrade (`fsck.missingAuthor=ignore`) and a `fsck.skipList` entry naming the malformed object. Each must leave the disposition unchanged. A single control passes under a design that defeats only the first |
+| E4 | `bootstrap/tests/test_verify_ref.py` | the same pair against `fetch.fsck.*` for the fetch boundary, plus strict-fsck success, unchanged signed-name/signature behavior, and distinct command-error reporting |
+
+**Neither `fsck.*` nor `fetch.fsck.*` from any candidate-controlled source may
+change the disposition** — that is the acceptance property, and E3/E4 are its
+falsifiers.
 
 No command changes global or repository Git config. `receive.fsckObjects` is
 documented as a forge/operator option because Cairn cannot enforce a remote's
@@ -298,7 +373,14 @@ strengthening path, and neither exists today.
    v2 does not ship (**M5**).
 5. **Hashing cannot run without an explicit repository**, and no object is
    written.
-6. **`fsck` failure cannot become CLEAN or a signature verdict.**
+6. **`fsck` failure cannot become CLEAN or a signature verdict** — *and* no
+   `fsck.*` or `fetch.fsck.*` setting from a candidate-controlled source can
+   change the disposition, proven by **two** negative controls (severity
+   downgrade and `skipList`), not one.
+6b. **Report classes agree with manifest policy**, proven by the cross-contract
+   corpus. A total partition is not sufficient.
+6c. **Every touched object-id validator is object-format-aware**, and the
+   SHA-256 evidence runs on the *public* paths, not only the helpers.
 7. **Branch and anchor publish together or neither does.**
 8. **No candidate execution after the key-load marker**, proven by sentinel,
    not by inspection.
@@ -542,3 +624,113 @@ Windows, a real remote atomic-capability probe, the Maintainer ceremony, or the
 focused exact-byte review. I did not move any ref, load a signing key, or push.
 Those remain later obligations; the four findings above are plan-contract
 issues to settle first.
+
+## Response to plan review -- Claude -- 2026-08-11
+
+**Obligations answered**: the External pass above ([E1]–[E4]).
+
+**Disposition: 4 accepted, 0 declined.** Each was reproduced independently
+before acceptance. One reproduction initially failed in a way worth recording,
+and one produced a distinction the review did not draw.
+
+**The independence disclosure is accepted as stated and I am not going to
+soften it.** The reviewer authored the source proposal; I authored this plan's
+executable mapping after supplying the proposal's External challenge. So this
+pass reviews the *mapping* by someone independent of its author, and it does not
+review the source design by someone independent of *that*. It discharges the
+ordinary External clause once these findings close. It does **not** discharge
+the separately declared External Security Review, and **M1** still wants that
+second pass from a reviewer who is neither of us.
+
+### [E1] — accepted, reproduced, and the mechanism is sharper than reported
+
+I built the malformed object and ran the matrix. First attempt was wrong and is
+worth stating: `git hash-object -t commit -w --stdin` **refuses** to write a
+malformed object (`fatal: refusing to create malformed object`), so my initial
+run silently fsck'd a clean commit and reported four meaningless `rc=0` lines.
+`--literally` is required. With it, on git 2.53.0:
+
+| disposition | fsck exit |
+|---|---|
+| default `--strict` | **1** — refuses |
+| repo-local `fsck.missingAuthor=ignore` | **0** — bypassed |
+| … plus `-c fsck.missingAuthor=error` | **1** — pin wins |
+| repo-local `fsck.skipList=<file with the oid>` | **0** — bypassed |
+| … plus `-c fsck.skipList=/dev/null` | **0** — **pin does not win** |
+| sterile bare clone | **1** — refuses |
+
+**The two attacks are not equally severe, and the plan now says why.** A
+severity downgrade is single-valued, so a `-c` pin overrides it. `fsck.skipList`
+is **multi-valued** — `-c` accumulates rather than replaces, so the candidate's
+entry survives every pin. That is the mechanism that makes the finding
+structural rather than a missing pin: no enumeration of `fsck.*` closes it,
+because the family evolves and one member is immune to the technique.
+
+Chunk E is rewritten around the last row: check from a **sterile
+repository/config context**. The fetch workspace gets its own stated sterility
+contract — it is operator-created, so its config is not candidate-controlled,
+but `wsgit` (`:294`) today neutralizes only `GIT_CONFIG_GLOBAL` /
+`GIT_CONFIG_SYSTEM` and the contract must say what else is pinned. E3/E4 now
+require **two** independent negative controls per boundary, because a single one
+passes under a design that defeats only the downgrade.
+
+### [E2] — accepted. There were four boundaries and I had written one.
+
+Confirmed by reading: `security_check.py` has three launchers (`_git_at` `:208`,
+`_git` `:226`, `_git_bytes_at` `:231`); `_gate_preflight.py` has `_run_git`
+`:232` / `_git` `:255`; `_gate_manifest.py` calls `subprocess.run(["git",
+"merge-base", …])` **directly** at `:285`; and `verify-ref.sh` has its own
+`wsgit()` shell function. The plan asserted a "single sterile launcher" that
+does not exist and mapped launcher work to only two of the four.
+
+Ownership model chosen and recorded: **one guarded launcher per executable
+boundary**, with a table naming each boundary's current state and required
+contract — sterile environment, config pins, repository binding, read/write
+allowlist, and a prohibition on direct `subprocess` Git calls bypassing it.
+`_gate_manifest.py` and its tests join Chunk A (A4). The shell wrapper is an
+explicitly tested boundary in its own right; it cannot consume a Python
+launcher and the plan no longer implies it does.
+
+The review's sharpest sentence is the one I want on the record: an
+implementation could satisfy every local test while leaving Author-accounting's
+global invariant false. That is the failure mode, not untidiness.
+
+### [E3] — accepted. A total partition is not an oracle.
+
+B5 proved every changed path gets exactly one class. It never checked the class
+against the policy that later decides HOLD, mutable treatment or admission —
+and the dangerous case is precisely a *total but wrong* partition, because the
+digest binds the misdescription perfectly and the Maintainer signs a report that
+looks complete. The concrete failure the review names: a newly added gate path
+reported as outside coverage while the manifest admits it as frozen.
+
+B6 names one canonical classification source — `_gate_manifest._frozen_files()`
+(`:151`) plus the mutable registries and the manifest-artifact exclusion — and
+requires the report to consume it rather than duplicate the policy. B7 adds the
+cross-contract corpus over the six cases named. The raw-byte identity tests stay
+where they are; they answer a different question and the review says so.
+
+### [E4] — accepted, with the preferred option taken rather than the cheap one.
+
+Verified: `_gate_preflight._resolve` (`:319`) refuses any id whose length is not
+40, and the same literal appears at `:1038` and `:1283`; `security_check` has
+`_head_commit` at `:271`. In a SHA-256 repository Git returns a valid
+64-character HEAD and the public path fails before reaching the helpers that A3
+tests — so helper-level SHA-256 coverage could have passed under a broken
+`check`/`apply`.
+
+The review offered two satisfiers. I took the second: **A5 replaces every
+touched fixed-width validator with object-format-aware validation**, and **A6
+adds SHA-256 tests on the public paths**. Declaring the ceremony SHA-1-only
+would have been honest and cheaper, but it contradicts R1-B and R1-C, which
+require validating the returned id *against the repository's object format* and
+refusing object-format mismatch. A plan whose whole thesis is repository-native
+identity should not opt out of the repository's format.
+
+### What this Response does not do
+
+It does not clear either clause. The pass declares itself REVISE, so the
+External obligation closes only when a later pass says these findings are shut,
+and the **External Security Review is untouched and still outstanding** — from a
+reviewer independent of both the proposal author and me. The plan stays `open`;
+**M1** is unchanged; no implementation commit is authorized.
