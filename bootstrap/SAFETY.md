@@ -562,6 +562,39 @@ treatment**, and the change takes a Security Review.
 
 ---
 
+## Rule 12 — Git owns Git's facts; Cairn owns policy
+
+Cairn does **not** reimplement a Git object algorithm when native plumbing
+produces the same fact without executing candidate code or accepting candidate
+policy. The division is explicit:
+
+| property | Git owns | Cairn owns |
+|---|---|---|
+| committed bytes and modes | object ids, trees, `cat-file`, `ls-tree`, `hash-object` | which paths are protected, which modes are allowed |
+| history | parent links, reachability, ancestry | the accepted range and its expiry conditions |
+| object integrity | `fsck --strict`, fetch-time checks | when integrity is decisive, and how failure is reported |
+| key authentication | signed objects and Git's verifier | the out-of-band roster and what authorization *means* |
+| ref movement | expected-old transactions, `--no-deref`, reflogs | the exact ref set, the Maintainer fence, publication policy |
+
+**A sterile context beats an enumerated pin.** Object validation runs from a
+context the candidate cannot configure — a bare clone that inherits the objects
+and none of its `.git/config` — rather than by pinning `fsck.*` on the command
+line. Measured on git 2.53.0: a repo-local severity downgrade *is* defeated by
+a `-c` pin, but `fsck.skipList` is **multi-valued**, so `-c fsck.skipList=/dev/null`
+accumulates with the candidate's entry rather than replacing it. Any design that
+enumerates members of an evolving config family is chasing it.
+
+**`fsck` proves structural object integrity — nothing else.** Not
+authorization, not safety, not signature validity. Result labels and prose keep
+those apart, and the failure is typed distinctly from a scanner finding.
+
+**Local hooks are not an authorization gate.** Cairn uses pre-commit and
+post-commit hooks for intent coordination. They are bypassable and replaceable,
+and **no decisive release, trust-root or review claim may depend only on a hook
+having run.** Porcelain status and reflog output are evidence about local state,
+not identity: security-sensitive decisions bind to object ids, explicit refs,
+verifier exit status and pinned policy.
+
 ## Self-check before committing any bootstrap output
 
 Before committing bootstrap-generated or bootstrap-customized

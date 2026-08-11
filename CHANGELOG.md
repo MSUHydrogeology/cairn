@@ -39,6 +39,23 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+### Changed — Git-native security foundations
+
+- Object ids come from Git.  `bootstrap/security_check.py` no longer
+  reimplements Git's blob framing in Python; it calls `git hash-object --stdin`
+  against an explicitly-named repository, with no `-w`, no path argument and no
+  attribute/filter participation.  A missing or non-repository root **refuses**
+  rather than falling back to SHA-1.
+- Object-id widths are read from the repository's object format instead of a
+  literal 40, so a SHA-256 repository is no longer refused on the public path.
+- Object integrity is validated at both acquisition boundaries, **from a
+  sterile context the candidate cannot configure**: a bare clone for the local
+  graph, and `fetch.fsckObjects` for the release verifier.  A repository's own
+  `fsck.skipList` can no longer hide a corrupt object from either.
+- Authorization is a Maintainer-signed checkpoint bound to a canonical
+  range-review report.  Unsigned intermediate commits are the normal
+  agent-work format and no longer refuse a ceremony.
+
 
 ### Added
 

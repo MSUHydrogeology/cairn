@@ -129,6 +129,37 @@ machinery — on any of:** a second release Maintainer; accepting release-path
 contributions from outside the trusted set; adding forge automation that can
 cut or publish a tag; or a check being missed in practice even once.
 
+## The authorization model, and what it rests on
+
+Authorization is a **Maintainer-signed checkpoint bound to a canonical
+range-review report**, not a property of the commits in the range.
+
+The report binds the anchor, the candidate head and tree, the branch and its
+expected-old value, the manifest schema and digest, and **every changed path in
+exactly one class with the complete sorted list per class** — the
+outside-coverage set listed in full rather than counted. Path identity is raw
+bytes, carried as base64 with a deterministic ASCII-only rendering, so no
+locale, filesystem decoding or terminal decides what a path *is*. The
+checkpoint's message carries the report digest, and the constructed commit
+object is re-read and checked before either ref moves.
+
+### Residuals, accepted and dated
+
+* **An unauthorized second person with write access can create an unsigned
+  intermediate commit** indistinguishable from an agent commit by signature
+  status alone. The checkpoint is safe only because the Maintainer reviews the
+  preflight result and controls the signing act.
+* **Signing authenticates a key, not a person or a process.**
+* **The report proves what a scanner can prove.** It makes the authorized state
+  bounded and inspectable; it does not establish that anyone read every diff.
+
+**This posture is dated to the solo trusted-contributor model and expires**
+when the checkout is not solely Maintainer-controlled, when another human gains
+ordinary write authority, or when the ceremony key's availability cannot be
+separated operationally. At that point branch/forge authorization and
+contributor identity need a new design — silently restoring automatic
+per-commit signing is not the default.
+
 ## Documented residual risks (consciously accepted)
 
 Recorded so a reviewer can tell *known and accepted* from *missed*, under the

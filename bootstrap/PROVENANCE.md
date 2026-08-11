@@ -330,6 +330,32 @@ roster path that resolves *inside* the candidate tree, symlinks resolved
 first — a **path** property, not a content property: a hardlinked or
 concurrently-rewritten roster is not covered.
 
+## Signed release tags vs. internal signed checkpoints
+
+Two different signatures, two different claims, and conflating them would
+overstate both.
+
+**A signed release tag** is public provenance. It says: this named release
+object was signed by a key on the published roster. `verify-ref.sh` checks it,
+and adopters verify it without trusting this repository's internal machinery.
+
+**An internal signed checkpoint** is an authorization record. It says: the
+Maintainer reviewed a bounded, digest-bound report of a candidate state and
+signed a commit whose message carries that digest. It authorizes *that exact
+state* and binds its complete parent history.
+
+What the checkpoint deliberately does **not** claim:
+
+* that the Maintainer authored or separately reviewed every intermediate
+  commit — unsigned intermediate commits are the normal agent-work format;
+* that a signature identifies a human. Signing authenticates a **key holder**.
+  If an agent process can invoke the same key, the cryptographic statement
+  remains only "this key signed this checkpoint", and the Maintainer-only
+  boundary is procedural under the accepted trusted-contributor posture.
+
+Repository-wide `commit.gpgsign=true` is neither required nor recommended. The
+release-tag boundary above is unchanged by any of this.
+
 ## What this is not
 
 * **Not a transparency log.** This is trust-on-first-use over **account
