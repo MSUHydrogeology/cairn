@@ -2413,3 +2413,136 @@ frozen-path restart disposition.
 **Not covered**: future implementation bytes, execution of the Code-review
 binding, full-suite behavior, pilot evidence, or the Maintainer ceremony. Those
 are deliberately later controls and require their own recorded evidence.
+
+## Maintainer-directed contract revision -- 2026-08-11
+
+This section is an append-only sequence revision made after execution began. It
+supersedes the affected P2, G, P6, P7, P8 and M6 cells where they conflict. It
+does not alter completed Chunk A work or reopen the External and Security SHIP
+passes over the unchanged parts of this plan.
+
+The Maintainer's direction, quoted verbatim:
+
+> The problem is that throwing external plan + code review in creates multiple
+> hurdles to development, and slows the process down immensely. The proposal is
+> where the deliberative weight should reside.
+
+> I am completely fine with the policy change here. We are doing everything
+> possible to reduce the burden that Cairn's machinery creates while balancing
+> quality. So, go ahead and make this change
+
+And the process disposition, also verbatim:
+
+> I really don't want a proposal. I just want this changed. Please watch for
+> when the files are available and make your changes
+
+This is the explicit Maintainer authorization for the deviation from the
+accepted pilot-first contract. No separate proposal is opened. The revision
+itself receives one fresh-context **Internal** plan review before revised P2
+executes; A through E may continue while that review is obtained. This is the
+review allocation being adopted, applied to its own implementation rather than
+requiring the External plan round it removes as a default.
+
+### The default review allocation
+
+The proposal is the deliberative boundary. When an **External proposal review**
+has reviewed a complete current contract and records `Plan readiness: READY`,
+the derived plan receives a fresh-context **Internal plan review**, not another
+different-agent-type External round.
+
+The plan carries both facts separately:
+
+```text
+Plan review: required(Internal)
+Inherited proposal basis: review=<full External-review commit>;
+                            proposal=<full accepted commit>
+```
+
+The Internal reviewer checks faithful translation into files, chunks,
+sequencing, tests, omissions, failure dispositions and Maintainer fences. It
+does not reopen the accepted design. A new scope item, invariant, public path,
+failure disposition, trust boundary, scientific assumption or ceremony
+invalidates readiness and stops implementation until the change returns to the
+proposal boundary or a distinct review is explicitly required.
+
+`Plan readiness: DISTINCT REVIEW REQUIRED` still requires a separate plan
+review at the tier named by the proposal/Decision. The proposal reviewer uses
+it when consequential design necessarily remains for planning. It is an
+explicit finding about the contract, not a default inferred from the topic.
+
+**Assurance path no longer decides plan-review independence.** Standard and
+high-assurance proposals may both receive `READY` when their External review
+settled the complete contract. High assurance continues to govern verification,
+Security Review, scientific review, protected-surface handling, risk acceptance
+and ceremonies. It does not automatically purchase a second External read of a
+plan that only translates already-reviewed decisions.
+
+### Code review is unchanged
+
+Current doctrine already sets the ordinary Code-review floor at **not the
+implementing agent**, not at different agent type. A same-type agent in an
+independent context may perform it. External or Security code review remains an
+explicit escalation for implementation risk not resolved at proposal review;
+this revision neither removes Code review nor adds a universal External code
+review.
+
+### Pilot becomes monitoring, not permission
+
+The machinery and evidence work in P6a--P6d remain in scope. Their purpose
+changes from deciding whether the review allocation may become the default to
+monitoring a default that is already active:
+
+* G teaches the proposal-centered allocation in Cairn's self-hosted surfaces
+  and the shipped templates in the reviewed implementation range. There are no
+  existing adopters and therefore no migration or compatibility branch.
+* P6d activates the bounded evidence window only. It does not activate the
+  review policy.
+* The six-plan / 60-day report still measures review input, removed
+  transitions, escaped findings, Maintainer prompts and pauses.
+* M6 becomes a `retain | revise | retire` Decision at the monitoring boundary,
+  not a promotion Decision. `retain` requires no second distribution change;
+  `revise` or `retire` executes P7 against the same changed-path,
+  Boundary-B/Code-review and ceremony classification already specified.
+
+This keeps the evidence and rollback mechanism the accepted proposal paid for,
+without making the efficiency improvement wait for permission from its own
+pilot.
+
+### Superseding chunk cells
+
+| Cell | Revised executable contract |
+|---|---|
+| **P2-R** | Implement the two-field inheritance shape above. `READY` requires an exact External proposal-review commit, the exact accepted proposal commit, and a fresh-context Internal plan review. Remove the automatic high-assurance refusal. `DISTINCT REVIEW REQUIRED`, a mismatched binding, or any declared expansion refuses. |
+| **G-R** | Teach the proposal-centered default immediately in canonical, self-hosted and shipped operational surfaces. State plainly that plan review is Internal after an External proposal `READY`, Code review's floor is a non-implementer, and External plan/code review is explicit escalation. |
+| **P6-R** | Preserve activation, ledger, report, pause and mutation machinery; relabel it as monitoring evidence. No reader or writer may treat absent monitoring activation as disabling the review policy. |
+| **P7-R** | `retain` is a no-op disposition over already-distributed policy. `revise` and `retire` remain conditional implementations with their existing evidence and classification requirements. |
+| **P8-R** | Add the matrix below and replace tests whose oracle is “high assurance can never inherit.” Preserve every binding, expansion, uncertainty, malformed-record and downgrade mutation not contradicted here. |
+| **M6-R** | At the six-plan / 60-day boundary the Maintainer chooses `retain`, `revise` or `retire`; no promotion gate remains. |
+
+### Required test matrix
+
+The revised P8 acceptance matrix proves at least:
+
+* External proposal `READY` plus exact Decision binding plus Internal plan
+  review clears, for both standard and high-assurance fixtures;
+* same proposal with no Internal plan review refuses;
+* an Internal proposal review cannot supply the inherited External basis;
+* changed review or accepted-proposal SHA refuses;
+* `DISTINCT REVIEW REQUIRED` cannot be satisfied by the Internal plan pass;
+* every declared expansion dimension still invalidates readiness;
+* an absent monitoring activation record does **not** restore distinct External
+  plan review or disable the policy;
+* Code review still requires a non-implementer and is not silently upgraded to
+  External by this routing change; and
+* `revise` / `retire` after monitoring retain P7's evidence and restart rules.
+
+### Scope and verification effect
+
+This revision changes review allocation and rollout, not the accepted outcome:
+bounded contracts, exact review binding, independent implementation review and
+measured evidence remain. It removes one routine cross-type reread between an
+External proposal review and implementation. All implementation bytes produced
+for this revision remain inside this plan's existing B1, Code-review, M1 and B2
+boundaries. The final Code review must name this section in its reviewed
+contract and falsify at least the wrong-tier, wrong-SHA, high-assurance-READY
+and monitoring-absent cases rather than treating the table's presence as proof.
