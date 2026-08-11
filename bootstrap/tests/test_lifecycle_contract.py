@@ -1220,7 +1220,7 @@ _PLACEHOLDER_REVIEW = (
 def test_the_template_placeholder_code_review_is_not_substantive():
     """The exact section dev/plans/_template.md ships must NOT satisfy the
     archive precondition -- otherwise the gate is impossible to fail."""
-    assert planner._has_substantive_code_review(_PLACEHOLDER_REVIEW) is False
+    assert planner._has_code_review_marker(_PLACEHOLDER_REVIEW) is False
 
 
 def test_the_shipped_plan_template_itself_would_not_pass_the_gate():
@@ -1230,17 +1230,17 @@ def test_the_shipped_plan_template_itself_would_not_pass_the_gate():
     template = (CAIRN_ROOT / "dev" / "plans" / "_template.md").read_text(
         encoding="utf-8"
     )
-    assert planner._has_substantive_code_review(template) is False
+    assert planner._has_code_review_marker(template) is False
 
 
 def test_a_model_line_makes_a_code_review_substantive():
     body = "## Code review\n\n**Model**: some-model-id\n\nFindings.\n"
-    assert planner._has_substantive_code_review(body) is True
+    assert planner._has_code_review_marker(body) is True
 
 
 def test_a_dated_reviewer_heading_makes_a_code_review_substantive():
     body = "## Code review -- Reviewer A (External) -- 2026-08-10\n\nFindings.\n"
-    assert planner._has_substantive_code_review(body) is True
+    assert planner._has_code_review_marker(body) is True
 
 
 def test_every_code_review_section_is_examined_not_only_the_first():
@@ -1251,7 +1251,7 @@ def test_every_code_review_section_is_examined_not_only_the_first():
         _PLACEHOLDER_REVIEW
         + "\n## Code review -- Reviewer A (External) -- 2026-08-10\n\nFindings.\n"
     )
-    assert planner._has_substantive_code_review(body) is True
+    assert planner._has_code_review_marker(body) is True
 
 
 def _plan_on_disk(tmp_path, body: str):
@@ -1276,7 +1276,7 @@ def test_an_archived_plan_with_only_the_placeholder_is_a_violation(tmp_path):
         _ARCHIVED_HEAD + "**Dispositions:**\n\n* x -> accept\n\n"
         "Fidelity sign-off: someone\n\n" + _PLACEHOLDER_REVIEW,
     )
-    assert art.has_substantive_code_review is False
+    assert art.has_code_review_marker is False
     joined = " ".join(planner._conformance_violations(art, planner.IdentityModel(frozenset(), frozenset())))
     assert "reviewer marker" in joined, joined
 
@@ -1290,7 +1290,7 @@ def test_the_same_plan_conforms_once_a_real_review_is_appended(tmp_path):
         "Fidelity sign-off: someone\n\n" + _PLACEHOLDER_REVIEW
         + "\n## Code review -- Reviewer A (External) -- 2026-08-10\n\nFindings.\n",
     )
-    assert art.has_substantive_code_review is True
+    assert art.has_code_review_marker is True
     joined = " ".join(planner._conformance_violations(art, planner.IdentityModel(frozenset(), frozenset())))
     assert "reviewer marker" not in joined, joined
 
@@ -1429,3 +1429,28 @@ class TestArchiveGatesConsultTheirPredicates:
             "every archived gate reports met on a plan with no dispositions "
             "and no sign-off -- the hardcoded-True defect has returned"
         )
+
+
+class TestMessagesClaimOnlyTheRecordShape:
+    """B2/B3: no operator-facing gate may say a review *occurred*.
+
+    The predicate reads text. It cannot distinguish a review from a
+    convincingly-shaped section, and the archive gate used to say it could.
+    """
+
+    def test_no_gate_description_claims_a_review_occurred(self, tmp_path):
+        repo = _make_repo(tmp_path)
+        _write_plan(repo, "fx.md", status="review")
+        art = planner._read_artifact(repo / "dev" / "plans" / "fx.md")
+        identity = planner._load_identity_model(repo)
+        said = []
+        for target in ("archived", "review", "executing"):
+            said += [d for _, d in planner._gating_preconditions(art, target, identity)]
+        for d in said:
+            assert "review has occurred" not in d, d
+            assert "has occurred" not in d, d
+
+    def test_the_predicate_name_does_not_claim_substance(self):
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        assert "def _has_code_review_marker(" in src
+        assert "def _has_substantive_code_review(" not in src

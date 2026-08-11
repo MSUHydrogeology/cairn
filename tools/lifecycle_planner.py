@@ -516,7 +516,7 @@ class Artifact:
         self.sections: List[Section] = []
         self.has_disposition_attestation = False
         self.has_fidelity_signoff = False
-        self.has_substantive_code_review = False
+        self.has_code_review_marker = False
 
 
 #: ``## Review -- Reviewer A (External Reviewer) -- 2026-06-08``.  The
@@ -759,7 +759,7 @@ def _read_artifact(path: Path) -> Artifact:
     # the property it names.
     art.has_disposition_attestation = _has_disposition_attestation(text)
     art.has_fidelity_signoff = _has_fidelity_signoff(text)
-    art.has_substantive_code_review = _has_substantive_code_review(text)
+    art.has_code_review_marker = _has_code_review_marker(text)
     return art
 
 
@@ -891,8 +891,18 @@ _REVIEW_DATED_RE = re.compile(
     r"^#{2,3} Code review\s*--\s*\S+.*\d{4}-\d{2}-\d{2}", re.MULTILINE)
 
 
-def _has_substantive_code_review(text: str) -> bool:
-    """True when some ``## Code review`` section carries a reviewer marker."""
+def _has_code_review_marker(text: str) -> bool:
+    """True when some ``## Code review`` section carries a reviewer marker.
+
+    **What this can and cannot say.** It attests a *record shape*: a section
+    bearing a reviewer identity (``**Model**:``) or a dated
+    ``Code review -- <reviewer> -- YYYY-MM-DD`` heading. It does **not** attest
+    that a review occurred, that it was substantive, or that its reviewer was
+    independent -- a text scanner reaches none of those. That assurance lives in
+    ``AGENTS.md``'s rule that reviews are attributed and self-committed, which
+    Git authorship enforces. The predicate was previously named
+    ``_has_substantive_code_review``, which claimed the thing it cannot check.
+    """
     for section in _CODE_REVIEW_SECTION_RE.findall(text):
         if _REVIEW_MODEL_RE.search(section) or _REVIEW_DATED_RE.search(section):
             return True
@@ -1367,7 +1377,7 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                     "status is 'archived' but no '## Code review' section is "
                     "present (a plan never archives until code review occurred)."
                 )
-            elif not art.has_substantive_code_review:
+            elif not art.has_code_review_marker:
                 v.append(
                     "status is 'archived' but its '## Code review' section(s) "
                     "carry no reviewer marker -- no '**Model**:' identity line "
@@ -1422,7 +1432,10 @@ def _gating_preconditions(art: Artifact, target: str,
                           "proposal'); append-only."))
         elif target in ("accepted", "rejected", "superseded"):
             gates.append((independent_review,
-                          "an independent '## Review' has occurred"))
+                          "an independent '## Review' section is present, "
+                          "bearing a reviewer identity and date (the record "
+                          "shape; whether the review occurred is carried by "
+                          "attributed, self-committed authorship)"))
             gates.append((True,
                           "append a '## Decision' (Human Maintainer) quoting the "
                           "authorization verbatim in an isolated blockquote; the "
@@ -1465,11 +1478,12 @@ def _gating_preconditions(art: Artifact, target: str,
                           "append a '## Code review' pass (reviewer is not the "
                           "implementing agent); append-only."))
         elif target == "archived":
-            gates.append((art.has_substantive_code_review,
-                          "a '## Code review' has occurred and carries a "
-                          "reviewer marker ('**Model**:' or a dated 'Code "
-                          "review -- <reviewer> -- YYYY-MM-DD' heading); the "
-                          "template's placeholder section does not count"))
+            gates.append((art.has_code_review_marker,
+                          "a '## Code review' section carries a reviewer "
+                          "marker ('**Model**:' or a dated 'Code review -- "
+                          "<reviewer> -- YYYY-MM-DD' heading); the template's "
+                          "placeholder does not count. This attests the record "
+                          "shape, not that a review occurred"))
             gates.append((art.has_disposition_attestation,
                           "every deferred follow-up carries a recorded "
                           "disposition: an explicit 'none', or an entry naming "
