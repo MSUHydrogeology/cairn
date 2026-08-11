@@ -68,7 +68,6 @@ Security-hardening Chunk 7 / R1; manifest derivation per the
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import shutil
@@ -269,10 +268,14 @@ def _require_checkout_root() -> None:
 
 
 def _head_commit() -> str:
-    """The full 40-hex id of ``HEAD``, or raise."""
+    """The full object id of ``HEAD`` at this repository's format, or raise."""
     p = _git("rev-parse", "--verify", "--end-of-options", "HEAD^{commit}")
     sha = (p.stdout or "").strip()
-    if p.returncode != 0 or len(sha) != 40 or any(
+    # Width comes from the repository's object format, never a literal 40: a
+    # SHA-256 repository returns a valid 64-hex HEAD, and a fixed-width check
+    # rejects it before any helper is reached.
+    width = _OBJECT_FORMAT_WIDTH[_repository_object_format(CAIRN_ROOT)]
+    if p.returncode != 0 or len(sha) != width or any(
             c not in "0123456789abcdef" for c in sha):
         raise _RepoStateError(
             f"HEAD does not resolve to a full commit id "
@@ -339,18 +342,52 @@ def repo_state_postflight(head: str) -> int:
     return 0
 
 
-def _blob_oid(data: bytes, hex_length: int) -> str:
-    """Hash one worktree payload with Git's blob framing."""
-    framed = b"blob " + str(len(data)).encode("ascii") + b"\0" + data
-    if hex_length == 40:
-        # The repository's object format chooses this algorithm; this code is
-        # reproducing an existing Git oid, not selecting SHA-1 for a new
-        # security protocol.
-        return hashlib.sha1(framed, usedforsecurity=False).hexdigest()
-    if hex_length == 64:
-        return hashlib.sha256(framed).hexdigest()
-    raise _RepoStateError(
-        f"unsupported Git object-id width {hex_length}; cannot verify checkout")
+#: Object format -> full object-id width. The single place a width is named.
+_OBJECT_FORMAT_WIDTH = {"sha1": 40, "sha256": 64}
+
+
+def _repository_object_format(repo_root: Path) -> str:
+    """The repository's own object format, or a refusal.
+
+    **There is no default.** A missing, unreadable or non-repository root
+    refuses rather than falling back to Git's process default of SHA-1 --
+    that fallback is precisely the failure this function exists to remove.
+    """
+    proc = _git_at(repo_root, "rev-parse", "--show-object-format")
+    fmt = (proc.stdout or "").strip()
+    if proc.returncode != 0 or fmt not in _OBJECT_FORMAT_WIDTH:
+        raise _RepoStateError(
+            f"could not establish the object format of {str(repo_root)!r} "
+            f"({(proc.stderr or '').strip() or fmt!r}); refusing rather than "
+            f"assuming SHA-1")
+    return fmt
+
+
+def _blob_oid_at(repo_root: Path, data: bytes) -> str:
+    """Ask **Git** for the blob id of *data*, under *repo_root*'s format.
+
+    Replaces a Python reimplementation of Git's blob framing
+    (``b"blob " + len + NUL + data`` hashed with sha1/sha256). Cairn does not
+    reimplement a Git object algorithm when the native plumbing produces the
+    same fact.
+
+    The call is sterile and read-only by construction: **no ``-w``** (nothing
+    is written to the object database), **no path argument and no ``--path``**
+    (so no `.gitattributes` filter or eol conversion participates), and the
+    repository is **explicit** -- there is no default root.
+    """
+    fmt = _repository_object_format(repo_root)
+    width = _OBJECT_FORMAT_WIDTH[fmt]
+    proc = _git_bytes_at(repo_root, "hash-object", "-t", "blob", "--stdin",
+                         input_bytes=data)
+    oid = os.fsdecode(proc.stdout or b"").strip()
+    if proc.returncode != 0 or len(oid) != width or any(
+            c not in "0123456789abcdef" for c in oid):
+        detail = os.fsdecode(proc.stderr or b"").strip()
+        raise _RepoStateError(
+            f"git hash-object did not return a {width}-hex {fmt} id "
+            f"({detail or oid!r})")
+    return oid
 
 
 def _committed_blobs(repo_root: Path, head: str) -> dict[str, tuple[str, str]]:
@@ -559,7 +596,7 @@ def _verify_committed_checkout(repo_root: Path, head: str) -> None:
         except (OSError, RuntimeError) as exc:
             raise _RepoStateError(
                 f"could not read detached checkout path {rel!r} ({exc})") from None
-        if _blob_oid(data, len(oid)) != oid:
+        if _blob_oid_at(repo_root, data) != oid:
             raise _RepoStateError(
                 f"detached checkout path {rel!r} does not match commit {head}")
 

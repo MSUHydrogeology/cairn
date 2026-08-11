@@ -312,11 +312,34 @@ def _require_worktree_root(repo: Path) -> Path:
     return resolved
 
 
+#: Object format -> full object-id width.  The one place a width is named.
+#: Plan `git-native-security-foundations`, Chunk A5: three call sites required
+#: a literal 40, so a SHA-256 repository -- which returns a valid 64-hex id --
+#: was refused on the PUBLIC path before any helper could be reached.
+_OBJECT_FORMAT_WIDTH = {"sha1": 40, "sha256": 64}
+
+
+def _object_id_width(*, repo: Path = _REPO) -> int:
+    """The repository's own object-id width.  No default, ever.
+
+    A missing or unreadable format is a refusal rather than a fall back to
+    SHA-1: assuming the algorithm is the defect this replaces.
+    """
+    p = _git("rev-parse", "--show-object-format", repo=repo)
+    fmt = (p.stdout or "").strip()
+    if p.returncode != 0 or fmt not in _OBJECT_FORMAT_WIDTH:
+        raise PreflightError(
+            f"could not establish the object format of {str(repo)!r} "
+            f"({(p.stderr or '').strip() or fmt!r}); refusing rather than "
+            f"assuming sha1")
+    return _OBJECT_FORMAT_WIDTH[fmt]
+
+
 def _resolve(ref: str, *, repo: Path = _REPO) -> str:
     p = _git("rev-parse", "--verify", "--end-of-options", f"{ref}^{{commit}}",
              repo=repo)
     sha = (p.stdout or "").strip()
-    if p.returncode != 0 or len(sha) != 40 or any(
+    if p.returncode != 0 or len(sha) != _object_id_width(repo=repo) or any(
             c not in "0123456789abcdef" for c in sha):
         raise PreflightError(
             f"ref does not resolve to a commit: {ref!r} "
@@ -1035,7 +1058,14 @@ def parse_evidence(text: str) -> dict:
             raise PreflightError(
                 f"evidence field {key!r} missing or not {typ.__name__}")
     sha = data["candidate_sha"]
-    if len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
+    # **No repository probe here, deliberately.**  This validates the *shape* of
+    # an id recorded in an evidence file, not one resolved against a repository:
+    # Stage-B runs from an extracted directory that is not a git repository at
+    # all, so probing would refuse the ceremony for lack of a `.git`.  Accept
+    # any legal object-id width; the repo-bound checks in `_resolve` and after
+    # `commit-tree` are where the format is authoritative.
+    if len(sha) not in _OBJECT_FORMAT_WIDTH.values() or any(
+            c not in "0123456789abcdef" for c in sha):
         raise PreflightError(f"evidence candidate_sha is not a full sha: {sha!r}")
     return data
 
@@ -1280,7 +1310,7 @@ def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
         ct = _git_write("commit-tree", tree, "-p", head, "-S", "-F", "-",
                         repo=repo, stdin=message)
         new = ct.stdout.strip()
-        if ct.returncode != 0 or len(new) != 40:
+        if ct.returncode != 0 or len(new) != _object_id_width(repo=repo):
             raise PreflightError(
                 f"commit-tree failed (is signing configured?): "
                 f"{ct.stderr.strip()}")

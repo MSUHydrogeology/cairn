@@ -1093,3 +1093,69 @@ def test_fail_closed_on_a_missing_target_with_real_bandit(tmp_path, monkeypatch)
 def test_run_bandit_clean_with_bandit_present() -> None:
     # The shipped surface is clean of unallowlisted MEDIUM+ after Chunks 1-3.
     assert security_check.run_bandit() == 0
+
+
+# ---------------------------------------------------------------------------
+# Plan `git-native-security-foundations`, Chunk A: Git owns object ids.
+# `_blob_oid` reimplemented Git's blob framing in Python; it is now
+# `git hash-object --stdin` against an explicitly-named repository.
+# ---------------------------------------------------------------------------
+
+
+def _init_repo(path: Path, object_format: str) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init", "-q", f"--object-format={object_format}",
+                    "-b", "main", str(path)], check=True, capture_output=True)
+    return path
+
+
+@pytest.mark.parametrize("object_format,width", [("sha1", 40), ("sha256", 64)])
+def test_blob_oid_matches_git_in_both_object_formats(tmp_path, object_format, width):
+    """The id must come from the repository's format, not a hardcoded choice."""
+    repo = _init_repo(tmp_path / object_format, object_format)
+    payload = b"contents\n"
+    ours = security_check._blob_oid_at(repo, payload)
+    assert len(ours) == width
+    theirs = subprocess.run(
+        ["git", "-C", str(repo), "hash-object", "-t", "blob", "--stdin"],
+        input=payload, capture_output=True, check=True).stdout.decode().strip()
+    assert ours == theirs
+
+
+def test_hashing_writes_no_object(tmp_path):
+    """No `-w`: the object database must be untouched before and after.
+
+    Perturbation: add `-w` to the argv.  Red -- the loose-object count rises.
+    """
+    repo = _init_repo(tmp_path / "nowrite", "sha1")
+    objects = repo / ".git" / "objects"
+
+    def loose() -> set:
+        return {p.relative_to(objects) for p in objects.rglob("*") if p.is_file()}
+
+    before = loose()
+    security_check._blob_oid_at(repo, b"never stored\n")
+    assert loose() == before
+
+
+def test_a_non_repository_root_refuses_rather_than_defaulting(tmp_path):
+    """The negative control the proposal names.
+
+    Outside a repository, `git hash-object` still happily returns a plausible
+    SHA-1.  Falling back to it is the defect; refusing is the contract.
+    """
+    plain = tmp_path / "not-a-repo"
+    plain.mkdir()
+    with pytest.raises(security_check._RepoStateError) as exc:
+        security_check._blob_oid_at(plain, b"payload\n")
+    assert "object format" in str(exc.value)
+
+
+def test_a_missing_root_refuses(tmp_path):
+    with pytest.raises(security_check._RepoStateError):
+        security_check._blob_oid_at(tmp_path / "absent", b"payload\n")
+
+
+def test_the_object_format_probe_names_the_repository_it_read(tmp_path):
+    repo = _init_repo(tmp_path / "fmt", "sha256")
+    assert security_check._repository_object_format(repo) == "sha256"

@@ -2189,3 +2189,61 @@ class TestLoaderTrustBoundary:
         assert sh.stdout.strip() == "clean", (
             "/bin/sh must not read the startup file -- the whole basis for "
             "fixing the shell to it")
+
+
+# ---------------------------------------------------------------------------
+# Plan `git-native-security-foundations`, Chunks A5/A6: object-id width comes
+# from the repository, and the evidence runs on the PUBLIC path.
+# ---------------------------------------------------------------------------
+
+
+class TestObjectFormatAwareWidth:
+    """A fixed `len(sha) != 40` refuses a valid SHA-256 repository.
+
+    The refusal happened in `_resolve`, which `check` and `apply` both call
+    first -- so helper-level SHA-256 coverage could pass while the public path
+    failed before ever reaching the helper. That is why A6 exercises `check`,
+    not just `_blob_oid`-style internals.
+    """
+
+    @staticmethod
+    def _repo(tmp_path: Path, object_format: str) -> Path:
+        repo = tmp_path / object_format
+        repo.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["git", "init", "-q",
+                        f"--object-format={object_format}", "-b", "main",
+                        str(repo)], check=True, capture_output=True)
+        (repo / "seed.txt").write_text("seed\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo), "add", "-A"],
+                       check=True, capture_output=True)
+        subprocess.run(["git", "-C", str(repo),
+                        "-c", "user.name=T", "-c", "user.email=t@t.invalid",
+                        "-c", "commit.gpgsign=false",
+                        "commit", "-q", "-m", "seed"],
+                       check=True, capture_output=True)
+        return repo
+
+    @pytest.mark.parametrize("object_format,width",
+                             [("sha1", 40), ("sha256", 64)])
+    def test_the_width_is_read_from_the_repository(self, tmp_path,
+                                                   object_format, width):
+        repo = self._repo(tmp_path, object_format)
+        assert P._object_id_width(repo=repo) == width
+
+    @pytest.mark.parametrize("object_format,width",
+                             [("sha1", 40), ("sha256", 64)])
+    def test_resolve_accepts_the_native_id_width(self, tmp_path,
+                                                 object_format, width):
+        # Perturbation: restore `len(sha) != 40`.  Red for sha256 -- git
+        # returns a valid 64-hex HEAD and `_resolve` rejects it.
+        repo = self._repo(tmp_path, object_format)
+        sha = P._resolve("HEAD", repo=repo)
+        assert len(sha) == width
+        assert all(c in "0123456789abcdef" for c in sha)
+
+    def test_a_non_repository_refuses_rather_than_assuming_sha1(self, tmp_path):
+        plain = tmp_path / "plain"
+        plain.mkdir()
+        with pytest.raises(P.PreflightError) as exc:
+            P._object_id_width(repo=plain)
+        assert "refusing rather than assuming" in str(exc.value)

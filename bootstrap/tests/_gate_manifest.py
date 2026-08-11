@@ -144,6 +144,60 @@ _INTERPRETER_NOTE = ("ast.dump / differential-oracle digests are interpreter-min
                      "sensitive; every gate runs under the canonical lhm/3.13 interpreter")
 
 
+# ---------------------------------------------------------------------------
+# The guarded Git boundary for THIS module
+# ---------------------------------------------------------------------------
+#
+# Plan `git-native-security-foundations`, Chunk A4. There is **one guarded
+# launcher per executable boundary**, not one shared module: this file,
+# `_gate_preflight.py`, `bootstrap/security_check.py` and
+# `bootstrap/container/verify-ref.sh` are four independently executable entry
+# points, and a Python launcher cannot serve the shell one.
+#
+# Before this, the two git calls below ran bare `["git", ...]` with the
+# operator's whole environment -- so `GIT_DIR`, `GIT_CONFIG_GLOBAL`,
+# `GIT_REPLACE_REF_BASE` and friends could steer the anchor reachability check
+# and the manifest read that decide whether a release proceeds.
+
+#: Config pinned on every invocation. Read-only commands, but `core.quotePath`
+#: and the pager change what the caller *parses*, and `protocol.*` bounds what a
+#: hostile ref could reach for.
+_STERILE_CONFIG = {
+    "core.quotePath": "false",
+    "core.pager": "cat",
+    "core.hooksPath": "/dev/null",
+    "protocol.version": "2",
+}
+
+
+def _sterile_env() -> dict[str, str]:
+    """Drop every ``GIT_*`` rather than denylisting by name.
+
+    The steering set is large and grows between releases, so removing all of it
+    and putting back only what is needed fails safe where an enumerated
+    denylist does not.
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    return env
+
+
+def _git(*args: str, repo: Path) -> subprocess.CompletedProcess:
+    """The single sterile-Git launcher for this module.
+
+    **Nothing else here may call ``subprocess`` with ``git``.** The guarantees
+    hold only if there is exactly one place they are applied;
+    `test_gate_manifest.py` pins that at the source level.
+    """
+    overrides: list[str] = []
+    for key, value in _STERILE_CONFIG.items():
+        overrides += ["-c", f"{key}={value}"]
+    return subprocess.run(
+        ["git", "-C", str(repo), *overrides, *args],
+        capture_output=True, text=True, check=False, env=_sterile_env(),
+    )
+
+
 def _sha256(path: str | Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -282,9 +336,8 @@ def _check_anchor(anchor_ref: str, live_text: str, *, repo: Path,
     notes: list[str] = []
     if trusted_repo:
         src = Path(trusted_repo)
-        reach = subprocess.run(
-            ["git", "merge-base", "--is-ancestor", anchor_ref, trusted_ref],
-            cwd=str(src), capture_output=True, text=True)
+        reach = _git("merge-base", "--is-ancestor", anchor_ref, trusted_ref,
+                     repo=src)
         if reach.returncode != 0:
             holds.append(
                 f"ANCHOR: {anchor_ref} is NOT reachable from the trusted ref "
@@ -297,8 +350,7 @@ def _check_anchor(anchor_ref: str, live_text: str, *, repo: Path,
             "the working-tree manifest matches a target-owned object, NOT an "
             "externally anchored one; pass --trusted-repo + --trusted-ref for full "
             "external anchoring")
-    r = subprocess.run(["git", "show", f"{anchor_ref}:{_MANIFEST_REL}"],
-                       cwd=str(src), capture_output=True, text=True)
+    r = _git("show", f"{anchor_ref}:{_MANIFEST_REL}", repo=src)
     if r.returncode != 0:
         holds.append(f"ANCHOR: cannot read the manifest from {anchor_ref} in {src}: "
                      f"{r.stderr.strip() or 'git show failed'}")

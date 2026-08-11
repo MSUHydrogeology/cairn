@@ -9,6 +9,7 @@ mismatch, broken external anchor) while allowing additions. Stdlib only.
 """
 from __future__ import annotations
 
+import ast
 import copy
 import json
 import sys
@@ -234,3 +235,57 @@ def test_anchor_from_trusted_repo_refuses_target_owned_forge(tmp_path):
     holds, notes = G._check_anchor(target_anchor, forged, repo=target,
                                    trusted_repo=None, trusted_ref="HEAD")
     assert holds == [] and any("TARGET repo" in n for n in notes)
+
+
+# ---------------------------------------------------------------------------
+# Plan `git-native-security-foundations`, Chunk A4: one guarded Git boundary.
+# ---------------------------------------------------------------------------
+
+
+def test_no_direct_git_subprocess_bypasses_the_launcher():
+    """Every git call in this module routes through `_git`.
+
+    Before Chunk A the anchor-reachability check and the manifest read ran bare
+    `["git", ...]` with the operator's whole environment, so `GIT_DIR`,
+    `GIT_CONFIG_GLOBAL` and `GIT_REPLACE_REF_BASE` could steer two decisions
+    that gate a release.
+
+    Perturbation: restore either call as a bare `subprocess.run(["git", ...])`.
+    Red.
+    """
+    src = (Path(__file__).resolve().parent / "_gate_manifest.py").read_text(
+        encoding="utf-8")
+    tree = ast.parse(src)
+    offenders = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "run"):
+            continue
+        if not node.args:
+            continue
+        first = node.args[0]
+        if isinstance(first, ast.List) and first.elts:
+            head = first.elts[0]
+            if isinstance(head, ast.Constant) and head.value == "git":
+                # The launcher itself is the one permitted site.
+                fn = _enclosing_function(tree, node)
+                if fn != "_git":
+                    offenders.append((fn, node.lineno))
+    assert not offenders, f"git subprocess outside the launcher: {offenders}"
+
+
+def _enclosing_function(tree: ast.AST, target: ast.AST) -> str | None:
+    for fn in ast.walk(tree):
+        if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            for inner in ast.walk(fn):
+                if inner is target:
+                    return fn.name
+    return None
+
+
+def test_the_launcher_strips_every_git_environment_variable():
+    """`GIT_*` is dropped wholesale, not denylisted by name."""
+    src = (Path(__file__).resolve().parent / "_gate_manifest.py").read_text(
+        encoding="utf-8")
+    assert 'if not k.startswith("GIT_")' in src
