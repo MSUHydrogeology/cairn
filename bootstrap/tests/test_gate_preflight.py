@@ -2389,3 +2389,67 @@ class TestReportAgreesWithManifestPolicy:
         with pytest.raises(P.PreflightError) as exc:
             P._classify_path("dup.py", {"dup.py"}, {"dup.py"}, set(), "m.json")
         assert "multiply classified" in str(exc.value)
+
+
+# ---------------------------------------------------------------------------
+# Chunk C: the checkpoint binds the reviewed report, and drift voids it.
+# ---------------------------------------------------------------------------
+
+
+class TestCheckpointBindsTheReport:
+
+    def test_the_message_carries_the_digest_tree_and_head(self):
+        msg = P.draft_message(
+            observed_anchor="a" * 40, checked_head="b" * 40,
+            manifest_sha256="c" * 64, authority_hashes={"x.py": "d" * 64},
+            scope={}, range_report_digest="e" * 64, candidate_tree="f" * 40)
+        assert "e" * 64 in msg
+        assert "f" * 40 in msg
+        assert "b" * 40 in msg
+
+    def test_an_unbound_message_says_so_rather_than_looking_bound(self):
+        # Perturbation: default the digest to "" instead of "(not bound)".  The
+        # message then reads as though a digest were present but empty.
+        msg = P.draft_message(
+            observed_anchor="a" * 40, checked_head="b" * 40,
+            manifest_sha256="c" * 64, authority_hashes={}, scope={})
+        assert "(not bound)" in msg
+
+    def test_rederivation_refuses_a_stale_confirmation(self):
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
+                              capture_output=True, text=True).stdout.strip()
+        anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
+                                capture_output=True, text=True).stdout.strip()
+        with pytest.raises(P.RangeReportDrift) as exc:
+            P.rederive_and_bind(anchor, head, branch="master",
+                                expected_old=head, confirmed_digest="0" * 64)
+        assert "confirmation is void" in str(exc.value)
+
+    def test_rederivation_accepts_the_matching_digest(self):
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
+                              capture_output=True, text=True).stdout.strip()
+        anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
+                                capture_output=True, text=True).stdout.strip()
+        good = P.range_report_digest(P.range_review_report(
+            anchor, head, branch="master", expected_old=head))
+        fresh = P.rederive_and_bind(anchor, head, branch="master",
+                                    expected_old=head, confirmed_digest=good)
+        assert P.range_report_digest(fresh) == good
+
+    def test_a_draft_missing_a_binding_field_refuses_before_construction(self):
+        """Caught on the draft, not after signing.
+
+        `verify_constructed` re-parses the object and compares the exact
+        message, which is stronger -- but by then a signature exists and the
+        only remedy is to discard it.
+        """
+        msg = P.draft_message(
+            observed_anchor="a" * 40, checked_head="b" * 40,
+            manifest_sha256="c" * 64, authority_hashes={}, scope={},
+            range_report_digest="e" * 64, candidate_tree="f" * 40)
+        P.verify_message_binds_report(msg, digest="e" * 64, tree="f" * 40,
+                                      head="b" * 40, anchor="a" * 40)
+        with pytest.raises(P.PreflightError) as exc:
+            P.verify_message_binds_report(msg, digest="9" * 64, tree="f" * 40,
+                                          head="b" * 40, anchor="a" * 40)
+        assert "does not bind" in str(exc.value)

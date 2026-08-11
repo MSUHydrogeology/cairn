@@ -1328,7 +1328,9 @@ _WRITE_GIT = frozenset({
 def draft_message(*, observed_anchor: str, checked_head: str,
                   manifest_sha256: str, authority_hashes: dict,
                   scope: dict, last_legitimate_anchor: str | None = None,
-                  erroneous_ref: str | None = None) -> str:
+                  erroneous_ref: str | None = None,
+                  range_report_digest: str | None = None,
+                  candidate_tree: str | None = None) -> str:
     """The commit message, built from values the checker computed.
 
     The runbook's audit trail requires the authorized verifier hashes, both
@@ -1367,6 +1369,8 @@ Scope blessed -- derived at check time from the observed state:
 
   superseded anchor P : {last_legitimate_anchor or observed_anchor}
   checked HEAD        : {checked_head}
+  candidate tree      : {candidate_tree or '(not bound)'}
+  range-report digest : {range_report_digest or '(not bound)'}
   new anchor P        : this commit
   prospective manifest: {manifest_sha256}
   frozen gate files   : {scope.get('modified', '?')} modified, \
@@ -1378,6 +1382,61 @@ Produced under the canonical interpreter. The pre-flight ran read-only from the
 anchored checker; the review, the decision, this commit and the ref advance are
 the Maintainer's own acts, per REANCHOR_RUNBOOK's Maintainer-only constraint.
 """
+
+
+# --- Chunk C: the checkpoint binds the reviewed report ---------------------
+
+
+class RangeReportDrift(PreflightError):
+    """The report changed between review and construction."""
+
+
+def rederive_and_bind(anchor: str, head: str, *, branch: str,
+                      expected_old: str, confirmed_digest: str,
+                      repo: Path = _REPO) -> dict:
+    """Re-derive the report **in memory** and refuse any drift.
+
+    R1-A: `apply` neither reads nor trusts a handoff file.  The report the
+    Maintainer confirmed is named by digest; this recomputes it from the same
+    exact refs immediately before construction and compares.  A handoff artifact
+    would be a second place the authorized state could be edited between the
+    confirmation and the signature.
+
+    Any ref, tree, manifest, path set, classification or report-byte drift
+    invalidates the confirmation and requires a fresh derivation.
+    """
+    fresh = range_review_report(anchor, head, branch=branch,
+                                expected_old=expected_old, repo=repo)
+    actual = range_report_digest(fresh)
+    if actual != confirmed_digest:
+        raise RangeReportDrift(
+            "the range-review report changed between confirmation and "
+            f"construction: confirmed {confirmed_digest}, re-derived {actual}. "
+            "Re-run the review; the confirmation is void.")
+    return fresh
+
+
+def verify_message_binds_report(message: str, *, digest: str, tree: str,
+                                head: str, anchor: str) -> None:
+    """Check a **drafted** message carries every binding field, before signing.
+
+    Deliberately *not* a second object read-back: `verify_constructed` below
+    already re-parses the commit and compares the **exact** message, which is
+    strictly stronger than looking for substrings. This runs earlier, on the
+    draft, so a `draft_message` regression is caught before a commit is
+    constructed and signed rather than after -- at which point the only remedy
+    is to throw the signature away.
+    """
+    missing = [label for label, value in (
+        ("range-report digest", digest),
+        ("candidate tree", tree),
+        ("checked HEAD", head),
+        ("superseded anchor", anchor),
+    ) if value not in message]
+    if missing:
+        raise PreflightError(
+            f"drafted checkpoint message does not bind: {', '.join(missing)}. "
+            f"Refusing before construction.")
 
 
 def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
