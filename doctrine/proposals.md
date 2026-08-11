@@ -503,3 +503,56 @@ so a `<sha>` is referenceable):
 
 If accepted critiques substantially change the proposal, write a short
 "## Revised proposal" section and update `Status:` to `revised`.
+
+## Scope reduction — the pre-Decision obligation
+
+A revision that narrows what the proposal will deliver is judged by the
+**outcome test** (`dual-review.md` > "Review expectations — the
+scope-reduction trap"), which is the canonical statement of the rule.
+This section states only what the *proposal stage* owes.
+
+**The baseline is the scope as opened.** Before a Decision, a proposal's
+own opening section is the comparison term — not the previous revision,
+and not a summary of purpose written later. Measuring against the
+previous round would make declining a reviewer's suggested addition read
+as a cut, which it is not.
+
+**Declare in the Response or the Revised proposal:**
+
+```
+**Scope delta**: preserved | degraded | lost
+```
+
+Required when the revision degrades or loses a baseline outcome; omit it
+when nothing was narrowed. A `degraded` or `lost` value additionally
+carries:
+
+* a grouped **`Removed scope`** block — every removed unit with its
+  source section, the reason, and a revival or closure condition, in
+  **one record**, not scattered into roadmap rows; and
+* a **`Disposition/home`** line naming where each entry now lives.
+
+**Naming a home is the point of it.** "Deferred to a named follow-up"
+that names no follow-up is not a deferral; it is a deletion with better
+manners. The archive precondition already requires a recorded
+disposition for every deferred item, but that binds at *plan-archive*
+time — between "review cut this" and "someone archives the resulting
+plan," removed scope otherwise lives nowhere but in prose inside a
+superseded section. That window is where work disappears, which is why
+the home is named at the moment of removal rather than at the end.
+
+**Who allows the loss.** The Maintainer, via the Decision, with the
+reduction visible. An author may propose a reduction and a reviewer may
+recommend one; neither may concede a baseline outcome.
+
+**Declining a reviewer's proposed expansion is not a reduction.** It
+never entered the baseline, so nothing was lost, no declaration is owed,
+and no remainder record exists to keep. Record the suggestion and the
+reason in the ordinary Response — *Alternatives considered* is the
+natural home when the idea is worth preserving.
+
+**And the resolution that should have to argue for itself.** When review
+finds a part underspecified, the default is to *specify* it. An author
+who instead removes it says why specifying was rejected. That sentence is
+the mechanism: it makes the easy path visible as a choice rather than as
+an outcome.

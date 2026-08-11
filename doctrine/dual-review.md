@@ -326,6 +326,130 @@ the checks its high-risk surfaces demand. The collaborative-skeptic
 stance (`collaboration-stance.md`) is the posture the sweep operates
 in: steelman the change, then hunt for what it missed.
 
+## Review expectations — the scope-reduction trap
+
+The clean-pass trap has a mirror, and it is the more common of the two.
+
+**Narrowing is the path of least resistance in review.** It costs the reviewer
+nothing, it reads as prudence, and it can never be shown wrong — because the
+wider version is never built, nobody ever demonstrates it would have been
+better. Each individual narrowing is defensible on its own terms; the aggregate
+is what does the damage. Treat a proposed reduction with the same skepticism as
+a clean pass, and for the same reason: both are failure modes that feel like
+diligence.
+
+The cost lands in the worst possible place. Deliberation is **sunk** by the time
+review narrows the work, so a late cut means paying full price for the thinking
+and shipping a fraction of the change — a worse ratio than either doing the
+whole thing or never deliberating at all. And it often produces worse software
+rather than safer software, because **a wider scope is frequently what reveals
+the pattern**. Narrowed to the immediate case, a change fixes a symptom; the
+shape that caused it survives, recurs, and costs another full deliberation.
+
+**A reviewer recommending a reduction states what is lost and why the narrower
+change still reaches the cause** — not merely that it is smaller or more
+decidable. *"This is too large"* is not a finding. *"This is too large, here is
+the part that does not belong, and here is why the rest still reaches the
+root"* is.
+
+**The author's default resolution is to specify, not to cut.** When review finds
+a part underspecified, cutting is available and sometimes right, but it is the
+lazy resolution and it argues for itself: an author who resolves an
+underspecification finding by removing the work says why specifying it was
+rejected. That one sentence is the whole mechanism — it makes the easy path
+visible as a choice.
+
+### The outcome test
+
+Not every narrowing is a reduction, and a rule that fired on all of them would
+become ritual within a month. The test is about **outcome**, not process:
+
+> **Reduction is judged on outcome, against the baseline artifact's own
+> commitments.** The baseline is the scope **as opened** before a Decision, and
+> **as accepted** after it. *Outcome* means the **set of concrete outcome
+> commitments in that baseline** — its named coverage and its stated
+> exclusions — never a summary of its purpose written afterwards by the party
+> doing the narrowing.
+>
+> * **preserved** — every baseline outcome is still delivered. No declaration,
+>   no allowance, nothing owed. A lighter mechanism that still delivers is what
+>   restraint asks for.
+> * **degraded** — a baseline outcome is only partly delivered.
+> * **lost** — a baseline outcome is no longer delivered.
+>
+> **Degraded and lost take the same path**: the `Scope delta` declaration, the
+> grouped scope-remainder record, and the stage's Maintainer authority point.
+> Partial changes *what residual is recorded*, never *who may concede it*.
+
+Fixing the comparison term to the baseline artifact is what closes the escape
+route. A change promising A, B and C can always be restated as *"improve
+security,"* after which shipping only A reads as partial rather than as losing
+B and C. **A test whose comparison term is written by the party being tested is
+not a test.**
+
+**A stronger outcome proposed only during review is not in the baseline.**
+Declining it is not a reduction, owes no remainder record, and does not make the
+reviewer an authority. Record the suggestion and the reason in the ordinary
+Response. Without this clause the doctrine would push every author into
+accepting every expansion a reviewer suggested — which would make review's
+recommendations binding, the opposite of the calibration intended.
+
+### The two stages, and who allows a loss
+
+* **Pre-Decision** (proposal revision) — a reduction is a design change. State
+  the delta and why specification was rejected; the **Maintainer decides the
+  resulting scope with the reduction visible**. See `proposals.md`.
+* **Post-Decision** (planning and execution) — accepted scope is a **floor**.
+  Sequencing may move work between chunks; *removing* it is a deviation
+  requiring explicit Maintainer disposition. **A plan reviewer cannot create
+  that authority by calling the remainder "out of scope."** See `plans.md`.
+
+This adds no new approval ceremony. The Decision and the existing deviation gate
+are already the authority points; doctrine only has to say that reduction is one
+of the things they govern, alongside new scope and a revived struck chunk.
+
+### The grouped scope-remainder record
+
+Removed work is collected into **one record per source artifact** — not
+scattered into individual backlog rows. Each entry carries its source section,
+the reason, a disposition, and a revival or closure condition.
+
+Before a Decision it lives in the proposal's scope delta, where the Maintainer
+can reject, restore, or defer it. After a Decision it stays attached to the
+source plan or proposal, or to one named continuation artifact, and **blocks
+archive** until every entry carries an explicit disposition under the archive
+precondition (`lifecycle.md`). Depositing on the general roadmap board is a
+*last* disposition, not the default consequence of a reviewer preferring
+something smaller; if chosen, the grouped parent survives rather than shedding
+one row per unit.
+
+The reason the grouped form is required rather than a row apiece: a roadmap
+board is a one-way accumulator, and dispersing a reduction into fragments
+preserves the *words* while losing the *reach* — which is the failure this
+section exists to prevent, achieved by the remedy meant to prevent it.
+
+### The counterweight, stated so this cannot be misread
+
+> **Cut ceremony. Do not cut reach.** Deliberation should be as cheap as it can
+> be. The change that deliberation authorizes should be as wide as the pattern
+> it addresses. Reducing the *process* is almost always right; reducing the
+> *change* is usually the expensive kind of easy.
+
+This licenses no scope creep. A proposal that grows because nobody said no is
+still a defect, and the ordinary triage still applies. The two rules operate on
+different axes — ceremony and reach — and conflating them is what let a bias
+toward narrowing hide inside a doctrine of restraint.
+
+**Enforcement is review reading review.** No tool refuses a transition on a
+missing or malformed declaration. A formal check could confirm that a
+declaration *exists*; it could not confirm that it is *true*, because the
+property is semantic. Such a check would catch forgetting and not evading — and
+would make evading easier, by giving a quiet cut a green check to sit behind.
+That is the clean-pass trap, manufactured on the one question that needed
+judgment. **Mechanize when the failure is silent, the check is substantive
+rather than formal, and the consequence is expensive or hard to reverse.**
+Otherwise state the norm and accept the occasional miss.
+
 ## Recommend-and-decide — the second independent pass
 
 The review sweep is the *one* pass that always runs. What it cannot

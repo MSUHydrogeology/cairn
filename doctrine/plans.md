@@ -339,6 +339,43 @@ names what the plan executes *and* what it deliberately leaves alone.
 The scope fence is the load-bearing one — an unstated "not this pass"
 is how a bounded plan quietly grows.
 
+### Accepted scope is a floor — the scope fence is not a licence to shrink
+
+The fence bounds *this pass*. It does not bound the **accepted
+proposal**, and the difference is the whole of this rule.
+
+Before a Decision, reducing a proposal is a design change the Maintainer
+can see and accept or reject. **After** an accepted Decision the
+proposal's scope is the authority the plan drains. A plan that carries
+only A from an accepted A+B+C proposal has not chosen a tidy scope
+fence — it has **deviated from approved scope**, and `AGENTS.md`
+already gates deviation.
+
+So, post-Decision:
+
+* **The baseline is the scope as accepted.** Judge any narrowing by the
+  outcome test (`dual-review.md` > "Review expectations — the
+  scope-reduction trap"): `preserved` owes nothing; `degraded` or `lost`
+  takes the declaration, the grouped scope-remainder record, and the
+  Maintainer's explicit disposition under the deviation gate.
+* **Sequencing is free; removal is not.** Moving work between chunks,
+  re-ordering them, or splitting one across commits changes no outcome
+  and owes no declaration. Dropping an accepted outcome does.
+* **A plan reviewer cannot create that authority by calling the
+  remainder "out of scope."** A reviewer may recommend a reduction and
+  must state what is lost; only the Maintainer may concede it.
+
+A **plan-review Sharpening** is where this most often bites, because a
+narrowing recommendation and its acceptance land in the same section.
+The Sharpening carries the `Scope delta` when the disposition it records
+degrades or loses an accepted outcome.
+
+This adds no new approval step. The deviation gate is the existing
+authority point; doctrine only has to say that removing accepted scope is
+one of the deviations it governs, alongside new scope, a revived struck
+chunk, a contract the review never saw, and an acceptance criterion the
+implementer cannot meet.
+
 ---
 
 ## Forward-reference paths — `Proposed paths:` marker doctrine

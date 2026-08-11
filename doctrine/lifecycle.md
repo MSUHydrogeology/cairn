@@ -476,6 +476,32 @@ point, where a later reader (or the same person, cold) can see what
 was claimed. That is the same premise the rest of this lifecycle
 rests on.
 
+### The scope-remainder record
+
+A **scope-remainder record** is what a reduction leaves behind: work that
+was in the artifact's baseline scope and is no longer being delivered.
+It is created at the moment of removal, not at archive time, and it is
+**one grouped record per source artifact** rather than one row per unit.
+The rule that produces it — and the outcome test that decides whether a
+narrowing produced one at all — is in `dual-review.md` > "Review
+expectations — the scope-reduction trap".
+
+Its effect on this precondition: **each entry blocks archive** exactly
+as a deferred follow-up does, and closes the same way — `accept`,
+`guard`, `wontfix` bounded by the two eligibility rules above, or
+`defer` with the Maintainer's quoted authorization.
+
+Two things it is *not*:
+
+* **Not a set of roadmap rows.** Dispersing a reduction into individual
+  board items preserves the words and loses the reach, on a board that
+  is already a one-way accumulator. If a board deposit is the chosen
+  disposition, the grouped parent survives; it does not shed one row per
+  removed unit.
+* **Not owed for a declined suggestion.** A stronger outcome proposed
+  only during review was never in the baseline, so declining it creates
+  no remainder and nothing to dispose of.
+
 ### Recording it
 
 The record must be **auditable**. Record each follow-up's disposition
