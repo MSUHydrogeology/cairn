@@ -173,3 +173,31 @@ Owed at implementation, belonging to the plan:
 * The event-emission direction proves impractical at the planner, leaving the
   corpus walk permanent. Then the discontinuity problem stays and needs a
   different answer, not this one.
+
+## Review -- Antigravity (External) -- 2026-08-11
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External, different agent type from the author (Claude Opus 5)
+**Reviewed commit**: `be7f80ce4d24c74f6c152acff8bd12a60af8c582`
+**Reviewed proposal blob**: `9ef22272a1387e146c5b390c4a9516c234082495`
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: ACCEPT.** The proposal is well-reasoned, tightly grounded in Cairn's doctrine of restraint (Anchor 17), and correctly identifies a real Goodhart's Law incentive hazard where prose-scraped finding counts reward artificial prose inflation.
+
+### Steelman & Evaluation
+
+1. **Elimination of Perverse Incentives**:
+   - Removing the 8 prose-derived columns (`total_findings`, `findings_p1/p2/p3`, four `review_yield_*`) eliminates the incentive for agents to split or pad findings to look thorough.
+   - Retaining structural columns (dates, stage deltas, review tiers, `cross_agent_type_review`, `revised`, round counts) preserves event-based measurement integrity.
+
+2. **Removal vs. Deprecation**:
+   - Recommending complete removal rather than soft deprecation is the honest path: a deprecated column that continues emitting still exerts incentive pressure. Downstream adopters should consume clean structural events.
+
+3. **Doctrine & Architecture Alignment**:
+   - Embeds the selection constraint into `lifecycle-metrics.md` doctrine and resolves the internal contradiction in the late-blocker section.
+   - Distinguishes standing instrumentation from bounded research studies.
+   - Decouples immediate column retirement (Parts 1 & 2) from event-emission refactoring (Part 3), allowing cheap high-confidence changes to land without being blocked.
+
+### Summary Verdict
+**Verdict**: **ACCEPT** (Proposal approved; 0 blocking, 0 substantive, 0 minor findings). Ready for Maintainer disposition.
+
