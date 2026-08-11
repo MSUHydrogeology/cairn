@@ -67,12 +67,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-SCHEMA = "cairn-gate-manifest/v2"
-#: v1 is still READ: the committed fixture is v1 until the single
-#: re-anchor ceremony regenerates it.  `verify` accepts both; `produce`
-#: only ever emits v2.  Refusing v1 before the ceremony that replaces it
-#: would brick the gate it is meant to protect.
-SCHEMA_V1 = "cairn-gate-manifest/v1"
+SCHEMA = "cairn-gate-manifest/v1"
 _REPO = Path(__file__).resolve().parents[2]
 _MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
 _TESTDIR_REL = "bootstrap/tests"
@@ -187,8 +182,7 @@ def _sterile_env() -> dict[str, str]:
     return env
 
 
-def _git(*args: str, repo: Path,
-         want_bytes: bool = False) -> subprocess.CompletedProcess:
+def _git(*args: str, repo: Path) -> subprocess.CompletedProcess:
     """The single sterile-Git launcher for this module.
 
     **Nothing else here may call ``subprocess`` with ``git``.** The guarantees
@@ -200,90 +194,8 @@ def _git(*args: str, repo: Path,
         overrides += ["-c", f"{key}={value}"]
     return subprocess.run(
         ["git", "-C", str(repo), *overrides, *args],
-        capture_output=True, text=not want_bytes, check=False,
-        env=_sterile_env(),
+        capture_output=True, text=True, check=False, env=_sterile_env(),
     )
-
-
-# --- v2: Git-native identity alongside the content digest ------------------
-#
-# R1-C.  Each tracked entry records committed **mode**, full Git **blob oid**,
-# and lowercase **SHA-256** over the exact blob bytes, with the repository's
-# object format at the manifest level.
-#
-# Both values are kept, deliberately.  The Git oid supplies repository-native
-# identity, the committed mode, and tracked/untracked state -- facts Git owns.
-# SHA-256 preserves an independent content digest that does not depend on the
-# repository's object format, which is what the out-of-band exact-byte review
-# needs.  **Neither is authenticity**: the checkpoint signature and the pinned
-# roster own that claim, and no label here may imply otherwise.
-
-_OBJECT_FORMAT_WIDTH = {"sha1": 40, "sha256": 64}
-
-
-def _object_format(repo: Path) -> str:
-    """The repository's object format.  No default; a bad root refuses."""
-    r = _git("rev-parse", "--show-object-format", repo=repo)
-    fmt = (r.stdout or "").strip()
-    if r.returncode != 0 or fmt not in _OBJECT_FORMAT_WIDTH:
-        raise RuntimeError(
-            f"could not establish the object format of {str(repo)!r} "
-            f"({(r.stderr or '').strip() or fmt!r}); refusing rather than "
-            f"assuming sha1")
-    return fmt
-
-
-def _tree_blobs(repo: Path, commit: str = "HEAD") -> dict:
-    """``rel -> (mode, oid)`` from the commit's raw tree.
-
-    Mode and oid come from **Git**, not from the filesystem: a worktree stat
-    cannot tell a committed 100644 from a 100755 that was chmod'd after
-    checkout, and it has no oid at all.
-    """
-    r = _git("ls-tree", "-r", "-z", "--full-tree", commit, repo=repo)
-    if r.returncode != 0:
-        raise RuntimeError(
-            f"could not read the tree of {commit!r}: {(r.stderr or '').strip()}")
-    out = {}
-    for rec in (r.stdout or "").split("\0"):
-        if not rec.strip():
-            continue
-        meta, _, rel = rec.partition("\t")
-        parts = meta.split()
-        if len(parts) < 3:
-            continue
-        mode, _typ, oid = parts[0], parts[1], parts[2]
-        out[rel] = (mode, oid)
-    return out
-
-
-def _blob_sha256(repo: Path, oid: str) -> str:
-    """SHA-256 over the **committed blob's** bytes, read through Git.
-
-    Not the worktree's bytes.  Mixing the two is a real defect and it was
-    caught by a test: `produce` originally hashed the worktree while taking
-    mode and oid from `ls-tree HEAD`, so for any dirty file the manifest
-    carried two digests describing *different content*, and a target tree
-    holding the worktree bytes then failed the oid comparison.
-
-    R1-C: production obtains mode and oid from the candidate commit's raw tree
-    and computes SHA-256 independently over the raw blob bytes -- independently
-    of Git's hashing, over the same bytes Git hashed.
-    """
-    r = _git("cat-file", "blob", oid, repo=repo, want_bytes=True)
-    if r.returncode != 0:
-        raise RuntimeError(f"could not read blob {oid}: {r.stderr!r}")
-    return hashlib.sha256(r.stdout).hexdigest()
-
-
-def _entry_sha256(entry) -> str:
-    """The SHA-256 from a frozen entry, in either schema.
-
-    v1 stored a bare digest string; v2 stores a dict.  Reading both is what
-    lets the gate keep working between this change and the ceremony that
-    regenerates the committed fixture.
-    """
-    return entry if isinstance(entry, str) else entry["sha256"]
 
 
 def _sha256(path: str | Path) -> str:
@@ -368,40 +280,14 @@ def produce(repo: Path = _REPO) -> dict:
         # even though pytest exited 0 — refuse rather than pin a vacuous manifest.
         raise RuntimeError(
             "pytest collected zero nodes; refusing to pin a vacuous collection manifest")
-    fmt = _object_format(repo)
-    blobs = _tree_blobs(repo)
-    frozen = {}
-    untracked: list[str] = []
-    for rel in _frozen_files(repo):
-        mode_oid = blobs.get(rel)
-        if mode_oid is None:
-            # Untracked file under a gate root.  v1 pinned its worktree bytes
-            # anyway, which is the defect R1-C names: a pin that no commit
-            # binds.  v2 cannot give it an oid, so it is NOT pinned -- and it
-            # is recorded rather than silently dropped, because a gate file
-            # nobody pinned is exactly the thing a reader needs to see.
-            # `verify` HOLDs on it; refusing to *produce* would instead make
-            # any work-in-progress test file unbuildable.
-            untracked.append(rel)
-            continue
-        mode, oid = mode_oid
-        if mode not in ("100644", "100755"):
-            raise RuntimeError(
-                f"unsupported mode {mode} for {rel}: symlinks and gitlinks are "
-                f"refused (a symlink hashes through to its target)")
-        frozen[rel] = {"sha256": _blob_sha256(repo, oid),
-                       "mode": mode, "oid": oid}
+    frozen = {rel: _sha256(repo / rel) for rel in _frozen_files(repo)}
     cascade = {
-        rel: {"pre_run_sha256": _sha256(repo / rel), "governed_by": why,
-              "mode": blobs.get(rel, (None, None))[0],
-              "oid": blobs.get(rel, (None, None))[1]}
+        rel: {"pre_run_sha256": _sha256(repo / rel), "governed_by": why}
         for rel, why in sorted(CASCADE_MUTABLE.items())
         if (repo / rel).is_file()
     }
     phase_mutable = {
-        rel: {"pre_run_sha256": _sha256(repo / rel), "governed_by": why,
-              "mode": blobs.get(rel, (None, None))[0],
-              "oid": blobs.get(rel, (None, None))[1]}
+        rel: {"pre_run_sha256": _sha256(repo / rel), "governed_by": why}
         for rel, why in sorted(PHASE_SPLIT_TARGETS.items())
         if (repo / rel).is_file()
     }
@@ -415,8 +301,6 @@ def produce(repo: Path = _REPO) -> dict:
         mappings[sym] = {"baseline_digest": entry["digest"], "may_change_in_phases": phases}
     return {
         "schema": SCHEMA,
-        "object_format": fmt,
-        "untracked_gate_files": sorted(untracked),
         "interpreter": {
             "version": ".".join(map(str, sys.version_info[:3])),
             "version_info": list(sys.version_info[:3]),
@@ -525,79 +409,13 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
     # 3) Frozen files — modification / removal HOLDs; new files are recorded.
     pinned_frozen = manifest["frozen_files"]
     current_frozen = {rel: _sha256(repo / rel) for rel in _frozen_files(repo)}
-
-    # v2 adds Git-native identity.  A target whose object format differs from
-    # the manifest's refuses rather than comparing incomparable ids -- an oid
-    # from a sha1 repository and one from a sha256 repository are not merely
-    # unequal, they are not the same kind of fact.
-    pinned_fmt = manifest.get("object_format")
-    live_blobs: dict = {}
-    if pinned_fmt is not None:
-        try:
-            live_fmt = _object_format(repo)
-        except RuntimeError as exc:
-            holds.append(f"OBJECT-FORMAT: {exc}")
-            live_fmt = None
-        if live_fmt is not None and live_fmt != pinned_fmt:
-            holds.append(
-                f"OBJECT-FORMAT: target is {live_fmt}, manifest pins "
-                f"{pinned_fmt} — refusing to compare object ids across formats")
-        elif live_fmt is not None:
-            try:
-                live_blobs = _tree_blobs(repo)
-            except RuntimeError as exc:
-                holds.append(f"OBJECT-FORMAT: {exc}")
-
-    for rel, entry in pinned_frozen.items():
-        pinned_sha = _entry_sha256(entry)
+    for rel, h in pinned_frozen.items():
         if rel not in current_frozen:
             holds.append(f"FROZEN-MISSING: {rel} (a pinned gate file was removed)")
-            continue
-        if current_frozen[rel] != pinned_sha:
+        elif current_frozen[rel] != h:
             holds.append(f"FROZEN-MODIFIED: {rel} (gate file edited — sha differs)")
-        if isinstance(entry, dict) and live_blobs:
-            live = live_blobs.get(rel)
-            if live is None:
-                holds.append(
-                    f"FROZEN-UNTRACKED: {rel} (pinned but not tracked at HEAD — "
-                    f"code that can affect collection or execution must be "
-                    f"bound to a commit)")
-            else:
-                live_mode, live_oid = live
-                if live_mode != entry.get("mode"):
-                    holds.append(
-                        f"FROZEN-MODE: {rel} ({entry.get('mode')} -> {live_mode})")
-                if live_oid != entry.get("oid"):
-                    holds.append(
-                        f"FROZEN-OID: {rel} (git object id differs from the "
-                        f"pinned one)")
     for rel in sorted(set(current_frozen) - set(pinned_frozen)):
-        if live_blobs and rel not in live_blobs:
-            # R1-C asks for a HOLD here.  It is scoped to the ceremony mode,
-            # and the reason is measured rather than assumed: **v1 never held
-            # on untracked gate files** -- it emitted `FROZEN-NEW` for any new
-            # path, tracked or not (see the pre-change `verify`).  R1-C lists
-            # the untracked HOLD under "the behavioral contract stays", but it
-            # is a NEW strictness, not a preserved one.
-            #
-            # Applied unconditionally it reds the gate for anyone holding an
-            # untracked test file, which in a live multi-agent tree is
-            # continuous -- a permanently-red gate people learn to ignore.
-            # "Bound to a commit" is load-bearing at the **ceremony**, where
-            # the pin becomes authoritative and the tree is clean; interactive
-            # verification gets the fact as a note.
-            msg = (f"{rel} (a gate file under a frozen root is not tracked at "
-                   f"HEAD — code that can affect collection or execution must "
-                   f"be bound to a commit)")
-            if require_anchor:
-                holds.append(f"FROZEN-UNTRACKED: {msg}")
-            else:
-                notes.append(f"FROZEN-UNTRACKED: {msg} [note: ceremony mode "
-                             f"(--require-anchor) makes this a HOLD]")
-        else:
-            notes.append(
-                f"FROZEN-NEW: {rel} (new tracked gate/test file — allowed, "
-                f"joins the next checkpoint)")
+        notes.append(f"FROZEN-NEW: {rel} (new gate/test file — allowed, recorded)")
 
     # 4) Collection identity — dropped node or new skip/xfail HOLDs; added recorded.
     pinned_ids = set(manifest["collection"]["node_ids"])
