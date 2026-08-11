@@ -2,13 +2,13 @@
 
 # Plan: stop the corpus tier re-deriving a constant
 
-**Source proposal**: [`corpus-tier-cost`](../proposals/2026-08-10-claude-corpus-tier-cost.md),
+**Source proposal**: `2026-08-10-claude-corpus-tier-cost`,
 accepted at Revision 2 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10`).
-**Status**: review
+**Status**: archived
 **Plan review**: required(**Internal**) — decided in the proposal per [E4].
 Test infrastructure only: no shipped file, no adopter surface, no doctrine, no
 dependency, no ceremony.
-**Last update**: 2026-08-10
+**Last update**: 2026-08-11
 **Opened**: 2026-08-10
 
 ## Source proposal
@@ -54,11 +54,11 @@ dropped that obligation.
 ## Sequence
 
 ```
-A  the memo fixture + its own contract tests        [commit pending]
-B  attach to the three corpus classes               [commit pending]
-C  narrow the span-widening window (severable)      [commit pending]
-D  measure and disposition the remaining head       [commit pending]
-E  prune R7's spent forward-reference markers       [commit pending]
+A  the memo fixture + its own contract tests        [commit 3a1b879]
+B  attach to the three corpus classes               [commit bdc5f21]
+C  narrow the span-widening window (severable)      [commit a489ed1]
+D  measure and disposition the remaining head       [commit 857062d]
+E  prune R7's spent forward-reference markers       [commit fb487ca]
 ```
 
 Two hard orderings, not one:
@@ -853,3 +853,90 @@ pre-existing condition, unchanged.
 
 **Summary: 0 BLOCKING, 0 SUBSTANTIVE, 0 MINOR.**
 
+
+## Lasting-truth migration -- 2026-08-11
+
+Dispositions:
+
+* The `<path>` key dimension no corpus assertion can witness -> **guard**
+  (`bootstrap/tests/test_transition_lint.py::TestMemoContract::test_the_path_operand_is_in_the_key`).
+  This is the plan's most important lasting truth: stripping `<path>` from the
+  key leaves all eleven corpus methods green *and* the distinct-key count
+  unmoved at 1279, so nothing but a dedicated node can see it. The node exists
+  and its mutant was observed red twice — by the implementer and independently
+  by the code review.
+* The install-scope leak -> **guard**
+  (`...::TestMemoContract::test_the_install_is_function_scoped_and_does_not_leak`),
+  deliberately an **AST** assertion on the declared scope rather than a
+  behavioural one. Measured: with a module-scoped install, natural collection
+  order stays **completely green at 40 passed** while every shuffled seed
+  reddens 16–19 nodes. An order-dependent guard for an order-dependent defect
+  would have been the same mistake one level up.
+* The narrowed span-widening window's mechanism -> **guard**
+  (`...::TestWideningIsNotCreating::test_the_dropped_prefix_contains_no_in_scope_commit`).
+  A narrowed window is a suppression; the predicate that justifies it is now
+  re-measured on every run rather than asserted once at implementation.
+* The obvious two-root fixture is a dead test -> **accept**, recorded in Chunk
+  A's prose and in the `two_roots` docstring. Content-addressing means two
+  ordinary clones return identical bytes, so the construction has to be a full
+  clone against a shallow one. The code review re-derived this on git 2.53.0
+  and additionally confirmed it survives `git gc`.
+* The cross-file `rev-parse --short HEAD` redundancy -> **wontfix**. Priced,
+  not waved away: 106 calls in `test_upgrade.py` at a measured 9.8 ms ≈ 1.04 s
+  of 16.35 s (6.3 %), plus 3.1 % and 1.0 % in two more files. Capturing it
+  needs a memo *shared across files* — precisely the `_immutable_git.py` helper
+  R1 withdrew — which would trade this plan's narrowest, best-tested surface
+  for its widest. Recorded in D1 so it is not rediscovered as if new.
+* `test_verify_ref.py`'s full-suite order sensitivity -> **wontfix** (not this
+  plan's). Pre-existing at `947fa95`, 67/67 in isolation at `857062d`. Described
+  in the Boundary B record; it belongs to that file's owner.
+* The stale AST attestation baseline -> **wontfix** (not this plan's).
+  Attributed by `git log` to `625c161`, `bf49579`, `237eb7a`, all other agents'
+  commits touching `bootstrap/_scaffold/`. `AGENTS.md` already carries the
+  standing re-anchor obligation.
+* Chunk E's deviation from R7 -> **accept**. R7 directed both the
+  `Proposed paths:` entry and the `claim-check-allow` directive to drop; only
+  the entry was actually spent, because R1 withdrew the helper and three
+  historical citations remain in an append-only record. The External code
+  review re-derived the 3 hard flags independently and assessed the deviation
+  sound. **No separate Maintainer ratification was sought** — it was flagged in
+  the plan and in the implementer's report, and the review's assessment is what
+  it rests on.
+
+**Evidence shipped**: the seven `TestMemoContract` nodes, the C2 historical
+predicate, the B2 paired run, and the D1 census table — all in the tree.
+**Evidence deferred**: none. **Deferred evidence home**: n/a.
+
+**Two dated figures moved slightly between the implementation and review runs**
+and neither moves a disposition: `rev-parse --short HEAD` in `test_upgrade.py`
+(implementer 106, reviewer 114) and the full-suite collection size (2882 vs
+2875), both explained by other agents' commits landing in between. The
+durable claim is the **ratio** — 1.09–1.34 across the head against the corpus
+tier's 5.09 — which the review reproduced exactly (974 / 852 / 1.14).
+
+**Fidelity sign-off** — the landed implementation commits `3a1b879` (A),
+`bdc5f21` (B), `a489ed1` (C), `fb487ca` (E) and `857062d` (D) match the accepted
+Revised proposal's R1–R7, with R7's third bullet landing in the corrected form
+recorded above. Boundary B at `f25ca27`; Boundary C at `2b9974d`, 0 findings.
+
+## Archive -- Claude -- 2026-08-11
+
+`bootstrap/tests/test_transition_lint.py`: **118.88 s → 18.29 s** while growing
+40 → 48 tests. Calls reaching git across the corpus tier: **6509 → 1279**
+(5.09×), with 1279 distinct keys in both arms of the paired run and every one
+of the eleven corpus nodes' exact integers and finding sets unchanged.
+
+**What this plan is actually a record of.** The optimization was the easy part.
+Two defects in the *reviewed* design shipped past the plan's own named
+verification commands and were caught only because someone ran them: a
+module-scoped install that natural collection order cannot see, and a key
+missing a dimension that neither the corpus assertions nor the admission
+grammar could witness. Both were found by the Internal plan review, both were
+reproduced independently before being accepted, and a third — that the
+prescribed two-root fixture was not constructible as specified — surfaced only
+during prototyping. A plan can be reviewed, accepted, and still specify tests
+that cannot fail.
+
+Acceptance held to R6 throughout: invocation counts, byte-identical results,
+observed-red mutants. Wall-clock is reported with host and date attached and
+was never a threshold.

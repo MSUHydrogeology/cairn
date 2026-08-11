@@ -5,6 +5,15 @@
 <!-- claim-check-allow: dev/proposals/2026-08-03-codex-security-verification-activation.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
+<!-- claim-check-allow: dev/plans/corpus-tier-cost.md -->
+<!-- ^ Archived 2026-08-11; the plan moved to dev/plans/archive/.  Cited once,
+     at :3768, inside this plan's own append-only "Implementation verification
+     -- Chunks H and D" record, which names it among the other sessions' live
+     working-tree files that pass explicitly did NOT touch.  The statement was
+     true when written; exempting the path is the only correction available,
+     since rewriting a prior section to chase a later move is exactly what the
+     append-only rule forbids.  Added by the corpus-tier-cost archive commit,
+     which caused the move -- no content of this plan was edited. -->
 
      historical citations in append-only or logged content, so the path is
      exempted rather than rewritten -- editing a prior section to chase a

@@ -342,13 +342,6 @@ board by design.
   atomically. Requires External plus External Security Review and a
   Maintainer-only exact-byte trust-root bootstrap.
 
-* **corpus-tier-cost** *(plan opened 2026-08-10)* -- cut engine-suite
-  wall-clock at its head. The transition-lint corpus tier re-derives a constant:
-  3,829 commit-visits over 867 distinct SHA-pinned commits. A test-local memo
-  over the five verified git call families, with its own two-root key-completeness
-  tests. `required(Internal)`; no shipped surface. Acceptance is invocation
-  reduction plus byte-identical results, never seconds.
-
 * **review-efficient-lifecycle** *(plan opened 2026-08-10)* -- one plan for
   the four accepted lifecycle contracts (`review-efficient-lifecycle` plus the
   `claim-check-exemption-hygiene`, `code-review-blindness`, and
@@ -371,14 +364,6 @@ board by design.
   and auditable, fail stale active exemptions, and stop copying inert internal-
   reference headers into Cairn's self-hosted deliberation artifacts. If
   accepted, joins the `review-efficient-lifecycle` implementation plan.
-
-* **corpus-tier-cost** *(proposal opened 2026-08-10)* -- cut engine-suite
-  wall-clock at its head: six files are 16% of nodes and 56% of runtime
-  (`as_of 2026-08-10`), and the largest re-derives constants over SHA-pinned
-  history, visiting 867 distinct commits 3,829 times. Proposes a test-only
-  memo for provably-immutable subprocess reads (prototype: 4.66x), changing no
-  assertion. The complementary axis to `verification-evidence-boundaries`,
-  which bounded how *often* the suite runs.
 
 * **Security program — clustered current view** *(living strategy opened
   2026-08-05)* — the canonical taxonomy, threat posture, sequencing rules and
