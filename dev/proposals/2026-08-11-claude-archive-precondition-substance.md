@@ -206,3 +206,99 @@ Still owed, and belonging to the plan rather than here:
   identity-registry alternative is needed.
 * An adopter's legitimate archive is blocked by a reviewer format Cairn did not
   anticipate.
+
+## Review -- Claude (Internal) -- 2026-08-11
+
+**Tier**: Internal. Same agent type as the author, fresh context — this meets
+the Internal floor and **does not** meet the External one. The proposal's
+`**Plan review**: required(External)` is unaffected; this complements it rather
+than substituting for it.
+
+**Verified before commenting** (not inherited from the proposal text): the twins
+are byte-identical right now; the planner's substantive-review predicate is
+`^#{2,3} Code review\s*--\s*\S+.*\d{4}-\d{2}-\d{2}` plus the `**Model**:`
+alternative; and the archived corpus was re-measured independently.
+
+### Steelman
+
+The proposal does the thing that is easy to skip: it found a false-pass gate,
+and then kept looking and found a false-*fail* in the opposite direction plus
+three more gates of the same shape. Splitting unambiguous bugs from
+adopter-visible behaviour changes is right, and the "measured wrong first, and
+the wrong numbers are the plausible ones" paragraph is the most valuable thing
+here — 27 → 23 → 3 is exactly the correction sequence a reader needs to see to
+trust the final figure. The instruction *not* to carry the 3 forward is already
+vindicated: measuring today, only **one** archived plan (`gate-reanchor-preflight`)
+fails both markers, because reviews landed for the other two.
+
+### Findings
+
+**[I1] A second implementation of this predicate already exists, disagrees, and
+nothing keeps them in sync.** `_lifecycle_metrics/parse.py` detects code reviews
+for the metrics layer with `r'### (?:[a-z]+ )?code review\b'` — **H3 only**.
+The planner accepts `#{2,3}`. Measured over the 36 archived plans:
+
+| | plans |
+|---|---|
+| both patterns find a review | 10 |
+| **planner finds, metrics misses** | **25** |
+| metrics finds, planner misses | 0 |
+| neither | 1 |
+
+The planner's pattern strictly dominates — there is no case the metrics regex
+catches that the planner misses. Two consequences for this proposal. First, it
+is **evidence for question 3**: the marker approach is not merely a defensible
+compromise, it is measurably the better-calibrated of the two shapes Cairn
+currently ships, and `#{2,3}` matches what `dev/plans/_template.md` actually
+prescribes. Second, and more important: **two components now answer "did a code
+review happen" differently, and no mechanism keeps them agreeing.** That is the
+proposal's own thesis — a check that names a property without testing it — at
+one level up.
+
+*Recommended disposition: name it, do not absorb it.* The metrics defect belongs
+to the `lifecycle-metrics` module, has a consequence this proposal does not
+share (fixing it changes the values of every historical snapshot), and pulling
+it in would put a second module's contract change inside a lifecycle-planner
+proposal. But question 3 should record that whatever predicate it settles on
+becomes the **definition other components must converge to**, and the plan
+should say where that definition lives so the next implementation copies rather
+than re-invents.
+
+**[I2] Question 2 has an existing precedent the proposal does not cite.** The
+metrics extractor already walks `dev/plans/archive/` routinely — its plan
+corpus is 38 rows, 36 of them archived — and this has produced no noise
+complaints, because it **reports** rather than **fails**. That is the proposal's
+own middle option, already running in another component. Worth citing: it turns
+"a scan that reds on history is unactionable noise" from a prediction into a
+comparison against something Cairn already does.
+
+**[I3] Is the gate enumeration complete?** The table lists five. The
+`Plan review` gate carries a comment (S12) documenting the *identical* failure
+class — a prefix-presence test that cleared on a bare container, an undated
+heading, an H3 pass, and an `Internal`-only pass on an `External` floor. It
+appears already fixed, so it is correctly out of scope, but its existence means
+this is a **pattern across the planner's gates rather than five isolated bugs**.
+Recommend the plan enumerate *every* gate in the `--to` lists and record each
+one's predicate, so the next reader can see coverage rather than infer it from
+the five that happened to be investigated.
+
+**[I4] One wording tightening.** The Context says the gate "could not fail on
+any plan Cairn generates." That is right for the template's placeholder, but
+the sentence reads as *no plan could ever fail*, when a hand-written plan
+omitting the section entirely would still have failed. Narrow to "could not
+fail on any plan scaffolded from the shipped template" — the claim is strong
+enough without the broader reading, and the broader reading is the kind a
+skeptical reviewer will test.
+
+### Recommendation
+
+**Land questions 1 and 3; decide 2 with [I2] on the table.** Question 1 is a
+bug fix wearing a behaviour-change coat and should not linger — a gate that
+reports met before its condition is written is the same defect class the
+proposal exists to close. Question 3 is the one that needs the External plan
+review the header already requires, and [I1] gives it a concrete obligation:
+whatever it decides is a definition with at least one other consumer.
+
+Nothing here blocks. The proposal is well-scoped and unusually honest about its
+own measurement errors; my findings add a second consumer, a precedent, a
+completeness question, and one sentence to narrow.
