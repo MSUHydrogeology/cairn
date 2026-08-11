@@ -1390,10 +1390,13 @@ rather than left pointing at a section that was never written.)*
   on the single most-read file Cairn installs. Found by
   `security-verification-activation`'s Chunk B when it reddened a test whose
   docstring premise that chunk had falsified.
-* **[SP8-9] The archive preconditions did not test what they name -- PROPOSAL
-  OPEN, partially fixed 2026-08-11.** Filed as
-  `dev/proposals/2026-08-11-claude-archive-precondition-substance.md`, which is
-  the permanent home for the remainder. **Fixed in code:** the `## Code review`
+* **[SP8-9] The archive preconditions did not test what they name -- PLAN
+  OPEN 2026-08-11, partially fixed 2026-08-11.** Proposal accepted at
+  Revision 1 and archived; the plan
+  `dev/plans/archive-precondition-substance.md` is now the permanent home for
+  the remainder, `required(External)`. Its Boundary C range must include
+  `da3e296`, which shipped both planner twins and eight tests before the
+  proposal was reviewed. **Fixed in code:** the `## Code review`
   gate now requires a reviewer marker (a `**Model**:` line or a dated `Code
   review -- <reviewer> -- YYYY-MM-DD` heading) instead of the section's mere
   presence; and the `Dispositions:` pattern now tolerates markdown emphasis,
