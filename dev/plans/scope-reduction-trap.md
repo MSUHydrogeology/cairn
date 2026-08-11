@@ -143,7 +143,7 @@ No `docs/` page other than the glossary changes.
 ```
 1. Chunk A -- doctrine: the trap, the outcome test, the stage floor   [commit be40b41]
 2. Chunk B -- vocabulary reconciliation (scope-cut vs scope reduction) [commit pending]
-3. Chunk C -- templates + planner scaffolds (the author-facing surface)[commit pending]
+3. Chunk C -- templates + planner scaffolds (the author-facing surface)[commit ccffb77]
 4. Chunk D -- governing + deliberation surfaces (AGENTS, collaboration)[commit pending]
 5. Chunk E -- obligation-parity test, glossary, changelog              [commit pending]
 ```
@@ -295,6 +295,18 @@ commit under the canonical interpreter:
 **Neutrality matters more than usual here.** Chunk C edits shipped templates
 and Chunk D edits `templates/core/AGENTS.md`; both are on the vendor-neutrality
 surface. The neutrality leg is not a formality on this plan.
+
+**Correction, recorded rather than quietly fixed.** The Chunk B commit body
+(`99451d2`) claims `quality_gate neutrality fail=0`. That is **false**. The
+neutrality leg stands at **fail=93 as_of 2026-08-11**, and stood there before
+this plan opened — I read only the tail of the gate output, saw the redundancy
+summary and the neutrality *info* lines, and inferred a summary line I never
+saw. The claim is wrong; the underlying state is unchanged by this work.
+Verified at Chunk D: every one of the 93 sits in fixtures, adopter-example
+docs, and the lifecycle-metrics vendor registries. Exactly one falls in a file
+this plan touches — `doctrine/dual-review.md:57` — and it was last written by
+`160cbb2`, not by any commit here. A reader of `99451d2` should take the
+verification line as covering `check_cairn` and redundancy only.
 
 Then append `## Implementation verification -- <agent> -- YYYY-MM-DD` with the
 fields the template names.

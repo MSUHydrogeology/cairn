@@ -97,6 +97,29 @@ and never a downgrade of a tier the lifecycle already declared
 `required` (see `doctrine/dual-review.md` > "Review expectations — the
 clean-pass trap" and "Recommend-and-decide").
 
+**The clean pass has a mirror: the scope-reduction trap.** Narrowing is
+the path of least resistance in review — it costs the reviewer nothing,
+reads as prudence, and can never be shown wrong, because the wider
+version is never built. Treat a proposed reduction with the same
+skepticism as a clean pass. A reviewer recommending one states **what is
+lost** and **why the narrower change still reaches the cause**; "this is
+too large" is not a finding. An author who resolves an *underspecified*
+finding by removing the work says why specifying it was rejected.
+
+Whether a narrowing is a reduction at all is judged on **outcome**,
+against the baseline artifact's own commitments — the scope *as opened*
+before a Decision, *as accepted* after it, never a summary of purpose
+written afterwards by whoever is doing the narrowing. If every baseline
+outcome is still delivered, nothing is owed; a lighter mechanism that
+still delivers is what restraint asks for. If one is partly or wholly
+lost, it takes a `**Scope delta**` declaration, one grouped
+scope-remainder record per source artifact, and the **Maintainer's**
+explicit allowance — neither author nor reviewer may concede a baseline
+outcome. A stronger outcome proposed *only during review* was never in
+the baseline, so declining it is not a reduction and owes no record
+(see `doctrine/dual-review.md` > "Review expectations — the
+scope-reduction trap").
+
 A **Decision-support Round-2 review** is a Review section
 appended *after* the author's Response and Revised proposal; it
 feeds the Maintainer's Decision rather than triggering another

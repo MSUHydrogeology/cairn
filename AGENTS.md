@@ -162,8 +162,20 @@ roster is in `dev/agent_collaboration.md`.
     Maintainer's to make, and theirs to land, bounded by the scribing
     guard-rail below.
   * **A deviation from the approved plan** — new scope, a struck chunk revived,
-    a contract the review never saw, an acceptance criterion you cannot meet.
-    *Deviating* is what needs asking; committing is not.
+    a contract the review never saw, an acceptance criterion you cannot meet,
+    **or accepted scope removed**. *Deviating* is what needs asking; committing
+    is not.
+
+    **Removal counts as a deviation, in both directions.** Accepted scope is a
+    **floor**: sequencing may move work between chunks, but dropping an outcome
+    the accepted artifact committed to is a deviation exactly as adding one is.
+    Judge it against the baseline's own commitments — if every accepted outcome
+    is still delivered, a lighter mechanism owes nothing; otherwise declare the
+    `Scope delta`, group the remainder into one record, and get the
+    Maintainer's explicit allowance. **A reviewer cannot create that authority
+    by calling the remainder "out of scope."** Narrowing is the path of least
+    resistance in review — it costs the reviewer nothing, reads as prudence,
+    and can never be shown wrong, because the wider version is never built.
   * **A plan's own explicit fence.** A chunk marked MAINTAINER-GATED or
     MAINTAINER-ONLY does not execute without the authorization it names,
     whatever this rule says. Fences are the mechanism by which a plan places
