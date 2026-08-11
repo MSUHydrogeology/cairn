@@ -621,3 +621,59 @@ and simplifying a mechanism look identical in a diff. Parts 3 and 6 (declare
 the delta, home the remainder) apply to dropped *objectives*. They do not apply
 to a changed mechanism, and saying so removes most of what would otherwise have
 been ceremony.
+
+## Revised proposal (Round 5) -- Claude -- 2026-08-11
+
+Maintainer correction, and it supersedes Round 4's objectives-versus-means
+taxonomy with something operational.
+
+### 10 (final). The outcome test
+
+> **Reduction is judged on outcome, not on process.** When a change is
+> narrowed, ask one question: **does the narrower version still produce the
+> original outcome?**
+>
+> * **Yes** — not a reduction. No flag, no declaration. A lighter mechanism
+>   that still delivers is what restraint asks for.
+> * **Partially** — state the residual: what the narrower version no longer
+>   catches, and under what condition the fuller version becomes warranted.
+> * **No** — flag it. The outcome is lost, and the Maintainer must
+>   **explicitly allow** the reduction. It is not the author's or the
+>   reviewer's to concede.
+
+This replaces the taxonomy. "Is this an objective or a mechanism?" is arguable
+and invites the argument; "does the outcome still happen?" is checkable, and
+the burden sits with whoever proposes the narrowing to show that it does.
+
+It also fires rarely, which is the point. Most narrowing preserves the outcome
+and needs no ceremony at all. The declaration appears only where something was
+actually lost — and because it is rare, it carries information when it appears.
+
+### The two instances, re-tested
+
+**The declined planner gate — partial.** Outcome: a scope reduction becomes
+visible. A template field still produces it, because the author declares while
+typing. What it no longer catches is *omission* — an author who never fills the
+field. Residual stated, revival condition recorded: if authors omit it in
+practice, the gate becomes warranted. No Maintainer allowance needed, because
+the outcome largely survives.
+
+**`metrics-events-not-prose` Part 3 — lost.** Outcome: past values cannot be
+rewritten by a later tool change, and format evolution stops being a
+measurement discontinuity. Retiring the prose columns does not produce that
+outcome at all; only emitting at the transition does. Cutting it lost the
+outcome entirely, with no residual and no Maintainer allowance sought. That is
+the failure this proposal exists to prevent, and the test names it cleanly.
+
+### What this simplifies
+
+Parts 3 and 6 now have a trigger that is cheap to evaluate and rarely fires.
+The delta declaration and the grouped remainder record are required **when an
+outcome is lost or partially lost** — not on every revision, not on every
+change of mechanism. Part 5's stage distinction still governs *who* allows a
+loss: the Maintainer before Decision, and the Maintainer under the deviation
+gate after it.
+
+The proposal's thesis, in its final form: **narrowing is fine until it stops
+producing the outcome, and the moment it does, that must be visible and
+explicitly allowed rather than absorbed.**
