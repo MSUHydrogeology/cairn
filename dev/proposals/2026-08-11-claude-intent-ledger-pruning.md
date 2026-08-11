@@ -347,3 +347,157 @@ neutrality/integrity backlog, or investigate SP8-12 beyond confirming the one
 exact-commit failure passes alone. This review makes no archival disposition;
 CR1 and CR2 must be repaired and independently falsified before these bytes are
 fit to ship.
+
+## Response to code review -- Claude (Implementation) -- 2026-08-11
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+**The BLOCK was correct, and the two blockers failed for opposite reasons.**
+[CR2] was a real bug I shipped: a destructive operation that could truncate a
+file outside the ledger. It is fixed. [CR1] is a real window that is still open —
+but the *severity* the review assigned it came from a sentence **I** wrote in
+this proposal ("a lost claim is a lost lock"), which was false about this
+module's own design. Fixing my words does not close the window, and this response
+does not pretend it does. The window is deferred, named, and homed.
+
+Two commits answer the review: `80e6ea4` (CR2 + the CR1 narrowing and
+retraction) and `409caae` (CR3, CR4, CR5).
+
+### Dispositions
+
+```
+Dispositions:
+* [CR1] rewrite is not serialized with the lock-free append path
+    -> defer -> dev/PLANNING.md > [SP8-11]   [Maintainer authorization quoted in the archive commit]
+* [CR2] fixed .prune-tmp pathname follows a symlink / writes outside the ledger
+    -> accept (80e6ea4) + guard
+       (bootstrap/tests/test_intents_tool.py::TestIntentSurfacePruning::test_cr2_a_hostile_symlink_at_the_temp_path_cannot_be_truncated,
+        ::test_cr2_an_existing_file_at_the_temp_path_refuses)
+* [CR3] the 4h liveness rule is duplicated, adopter-configurable elsewhere, and
+        documented more strongly than implemented
+    -> accept (409caae, plus the test-name correction in this response's commit)
+* [CR4] no test proves the shipped full-handoff path invokes pruning
+    -> accept (409caae -- it needed a code fix, not only a test) + guard
+       (bootstrap/tests/test_lifecycle_cli.py::test_handoff_prunes_the_intent_surface,
+        ::test_handoff_dry_run_does_not_touch_the_intent_surface,
+        ::test_plain_session_end_does_not_touch_the_intent_surface)
+* [CR5] the adopter contract understates the new destructive operation
+    -> accept (409caae, both SKILL.md copies)
+* [proposal, "A documentation defect fixed in passing"] lifecycle.py's module
+        docstring read the intents log as write-access inside the no-network property
+    -> accept (tools/lifecycle.py:23-28 now states read versus write for all three
+       surfaces and points at _prune_intents)
+```
+
+`wontfix` was **not available for [CR1]**: `doctrine/lifecycle.md` >
+"Archive precondition" makes a follow-up that reaches an adopter ineligible for
+it, and this ships to adopters across three twin pairs. `guard` was not available
+either — the mitigations have executing homes, but the follow-up itself ("build
+real serialization") has no mechanical revival condition, and homing it in a test
+that pins the *mitigation* would be a roadmap row wearing a guard's clothes.
+`defer` with the Maintainer's authorization is the honest disposition, and it is
+the one thing in this close-out that needed asking.
+
+### [CR1], stated so a cold reader can judge it themselves
+
+The finding is literally true and remains true: `prune_released_pairs` snapshots
+the ledger, builds its output from that snapshot, and `os.replace`s the file. A
+record appended in between does not survive. The appenders hold no lock —
+`HandoffLock` serializes two full handoffs, never a handoff against a normal
+session — so nothing serializes prune against a concurrent `claim` or `release`.
+
+What the review and I disagreed about is the **cost**, and the disagreement was
+my fault. `record_io.py`'s own Atomicity note says appends are best-effort,
+filesystem-dependent, and **advisory**. `dev/intents.jsonl` is gitignored, local
+to one checkout, and its whole product is a collision *warning* on the pre-commit
+path. A lost record degrades that warning; it does not release a mutual-exclusion
+lock, because there is no lock. I wrote otherwise in this proposal's [H2], the
+review took me at my word, and the required repair it derived — one serialization
+protocol shared by every append and the prune — is a substantially larger and
+riskier change to the most frequently-executed path in the project than the
+surface it would protect.
+
+Three things narrow the window; **none closes it**, and the docstring
+(`record_io.py`, `prune_released_pairs`) says so in place:
+
+* the caller is the full handoff, a quiet serialization point;
+* an unreleased claim inside the liveness horizon refuses the prune outright;
+* the ledger's size is re-checked immediately before the replace, so a detected
+  concurrent append **skips** the prune rather than dropping the record.
+
+**Honest coverage note, repeated from `80e6ea4` because it belongs on the
+record:** the pre-replace size re-check is not directly unit-tested. For any
+append that would trip it, the liveness guard refuses first, which is the outer
+protection; `test_cr1_a_ledger_that_changed_mid_prune_skips_instead_of_dropping`
+asserts a mid-prune change yields a *refusal* and names in its docstring which
+guard fired.
+
+### Corrections to the record, and one found while writing this
+
+* **`dev/modules/coordination-tiers.md` already specified this step** —
+  "Prune-intents — completed claim/release pairs are compacted out of the log
+  past a grace window." The feature was already deliberated doctrine. I opened it
+  as a new proposal because I did not read the module doctrine that owns it, and
+  that is a large part of why a scratch-file cleanup consumed a proposal, an
+  implementation, an External BLOCK, and this response.
+* **[CR3]'s residue outlived [CR3]'s fix.** Writing this response, I found the
+  retracted phrase still in the test suite:
+  `test_it_refuses_while_any_claim_is_active` claimed the exact behavior [CR3]
+  showed the implementation does *not* have, and its docstring still read "a lost
+  claim is a lost lock". Renamed to
+  `test_it_refuses_while_a_recent_claim_is_unreleased`, with the docstring
+  corrected to the liveness-scoped behavior it actually asserts. Same defect
+  class as [CR3] itself — documentation stronger than implementation — surviving
+  in the one file the CR3 fix did not touch.
+* **[CR3]'s remaining duplication, precisely.** `LIVE_CLAIM_HOURS = 4.0` still
+  exists in `record_io.py` as the *default* parameter value. It is now only a
+  fallback for a direct library caller: the CLI resolves the adopter-configured
+  `claim_ttl_hours` via `_read_claim_ttl_hours` and passes it in, and the shipped
+  handoff path reaches the prune **through** that CLI as a subprocess. The
+  layering forbids the obvious fix (`record_io` cannot import `conflict`;
+  `conflict` imports `record_io`). Dispositioned `accept` rather than deferred
+  because the operative path is single-sourced.
+
+### What no one has independently checked
+
+The review closed: "CR1 and CR2 must be repaired and independently falsified
+before these bytes are fit to ship." **No independent read of `80e6ea4` or
+`409caae` has happened.** CR2's fix has a reproducer that previously truncated an
+outside file and now leaves it intact, and CR4's fix is pinned by the exact
+mutant the reviewer used — but both of those are *my* measurements of *my*
+repairs, which is the thing Boundary C exists to distrust. Archiving with the
+[CR1] deferral is a decision made on that basis, and it is recorded here rather
+than smoothed over.
+
+### Verification -- deliberately scoped, not another full suite
+
+`AGENTS.md` > Verification boundaries opens "do not pay for the same broad run at
+every one." This response changes one test name and one docstring; a full suite
+would measure nothing this scoped run does not.
+
+* Canonical interpreter, `PYTHONDONTWRITEBYTECODE=1`, Python 3.13.13.
+* `test_intents_tool.py`, `test_lifecycle_cli.py`, `test_lifecycle_contract.py`,
+  `test_lifecycle_failsafe.py`, `test_coordination_broad_intent.py`,
+  `test_skills_install.py`: **264 passed in 18.4s** before the rename;
+  `test_intents_tool.py` **92 passed in 11.5s** after it.
+* **Twin parity, all four pairs byte-identical** (`shasum -a 256`):
+  `_intent/record_io.py` `02e53d77…`, `_intent/cli.py` `bad995f1…`,
+  `lifecycle.py` `96774aa3…`, `session-end/SKILL.md` `460becab…`.
+* **Lockfile**: every shipped path this proposal touches is finalized —
+  `verify_integrity --target .` reports 11 mismatches and **none of them is
+  this proposal's**. `tools/lifecycle_planner.py` is among them because
+  `e1a15f4` reverted its `da3e296` finalize; that path belongs to the
+  `archive-precondition-substance` plan, which owns its own finalize.
+* Last full suite (`d2b5019`, this proposal's bytes included): **2964 passed, 2
+  failed** — the two `test_verify_ref` nodes of **[SP8-12]**, which pass in
+  isolation. The review's exact-commit run saw one of the pair. No third failure.
+
+### One irregularity a later reader will notice, explained rather than hidden
+
+`lifecycle_planner next` reports a structural violation on this file: *status is
+'accepted' but no '## Review' section is present.* That is accurate and it should
+stay. The Decision compressed the ceremony — no plan artifact, no review round
+before landing — so the record has a `## Code review` that arrived *after* the
+Decision and no `## Review` that preceded it. The structure looks irregular
+because the process was. Retro-fitting a `## Review` heading to satisfy a scanner
+would be the fabrication this lifecycle exists to prevent.

@@ -1578,9 +1578,15 @@ class TestIntentSurfacePruning:
         assert "old-1" not in body          # both records gone
         assert '"new-1"' in body            # inside the window, kept
 
-    def test_it_refuses_while_any_claim_is_active(self, tmp_path: Path) -> None:
-        """A live claim means a live session may be appending to a file this
-        rewrites -- and a lost claim is a lost lock."""
+    def test_it_refuses_while_a_recent_claim_is_unreleased(
+        self, tmp_path: Path
+    ) -> None:
+        """A *recent* unreleased claim means a live session may still be appending
+        to the file this rewrites, so the prune refuses rather than risk the
+        window.  The refusal is scoped to the liveness horizon, **not** to "any
+        active claim" -- every unreleased claim is active, so that reading would
+        refuse forever.  What a missed window costs is one advisory collision
+        record, not mutual exclusion (see ``prune_released_pairs``' docstring)."""
         ri = _engine(_stage_tool(tmp_path / "tools").parent)
         log = _ledger(tmp_path / "dev" / "intents.jsonl", [
             {"event": "claim", "id": "old-1", "ts": _ts(45), "agent": "a",
