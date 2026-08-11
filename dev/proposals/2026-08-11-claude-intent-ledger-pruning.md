@@ -204,3 +204,146 @@ and is not owed to this Decision.
 
 **Scribed by** Claude (Implementation) on the instruction above, which is
 unambiguous on disposition.
+
+## Code review -- Codex (External) -- 2026-08-11
+
+**Model**: OpenAI GPT-5 (Codex)
+
+**Verdict: BLOCK.** The pairwise pruning invariants are sound, but the rewrite is
+not serialized with the writers it can erase. I reproduced the proposal's own
+named [H2] escape: a new claim appended after the prune's read and immediately
+before its `os.replace` is absent afterward. I also reproduced an independent
+arbitrary-file truncation through the predictable temporary pathname. These are
+defects in a destructive coordination operation shipped to adopters, not
+acceptable residuals.
+
+### Findings
+
+**[CR1 -- BLOCKER / High] The handoff lock does not serialize pruning with claim
+and release appenders, so the replace can erase a live claim.**
+`prune_released_pairs` snapshots the ledger at
+`tools/_intent/record_io.py:336`, builds output solely from that snapshot, and
+replaces the ledger at lines 430-433. Ordinary writers use an independent
+`O_APPEND`/single-`os.write` path at lines 133-159; they never acquire
+`HandoffLock`. That lock serializes two full handoffs, not a handoff and a normal
+session. The four-hour timestamp scan happens before the same race window and
+cannot prove that no older session remains able to append. The public
+`intent.py prune` command can invoke the rewrite without the owner marker or the
+handoff lock at all.
+
+I forced the exact interleaving by appending a fresh claim inside an instrumented
+`os.replace`: the claim was active immediately before replace, absent immediately
+afterward, and its bytes were gone. This is the proposal's signal that [H2]
+escaped: a lost claim is a lost coordination lock. Re-reading or rechecking just
+before replace would leave another TOCTOU window.
+
+**Required repair:** use one serialization protocol shared by every
+claim/release append and prune, held across prune's read-build-replace sequence.
+The lock must cover the public prune command as well as the handoff caller and
+must preserve the append path's current failure behavior. Add a deterministic
+test that pauses prune after its snapshot, starts a writer, and proves the writer
+either completes before the snapshot or waits and survives after replacement.
+
+**[CR2 -- BLOCKER / High] The fixed `.prune-tmp` pathname follows a pre-existing
+symlink and writes outside the ledger.** Lines 431-433 construct a predictable
+name and call `Path.write_text` without exclusive creation. In a temporary
+fixture I made `intents.jsonl.prune-tmp` a symlink to a file containing `DO NOT
+CHANGE`. One prune truncated that target to zero bytes; `os.replace` then made
+`intents.jsonl` itself the symlink. This violates both the mutation boundary and
+the ledger's integrity.
+
+**Required repair:** create a unique same-directory temporary file with an
+exclusive, symlink-safe standard-library primitive, write through the obtained
+descriptor, and clean it on every failure before atomic replacement. Add a
+regression with a hostile pre-existing pathname/symlink and assert both the
+outside file and ledger type remain unchanged on refusal or failure.
+
+**[CR3 -- Major] The four-hour "liveness" rule is duplicated, configurable
+elsewhere, and documented more strongly than implemented.**
+`LIVE_CLAIM_HOURS = 4.0` at `record_io.py:265-277` duplicates
+`conflict.DEFAULT_CLAIM_TTL_HOURS`, while the conflict path permits an adopter's
+`claim_ttl_hours` configuration. Thus a five-hour claim can still block commits
+under a 24-hour adopter policy while prune treats it as a dead appender. A
+long-running session can also append after four hours irrespective of policy.
+Meanwhile the resolver docstring, CLI docstring/help, and lifecycle helper say
+prune refuses while *any* claim is active; the implementation refuses only a
+recent or timestamp-invalid unreleased claim. Real shared serialization removes
+age as a safety argument. If age remains a reporting/UX policy, single-source it
+and describe the exact boundary honestly.
+
+**[CR4 -- Major] No test proves the shipped full-handoff path actually invokes
+pruning.** All 12 new tests exercise the engine or direct CLI. I replaced the
+actual `_prune_intents(...)` call at `tools/lifecycle.py:1360` in the shipped
+template with `pass`; all four lifecycle/install files still reported **145
+passed**. A regression can therefore remove the feature, move it outside the
+lock, or disconnect dry-run/real-run behavior while the relied-on suites remain
+green. Add an installed-adopter integration test that exercises the real full
+handoff with owner marker, verifies an old pair is removed and an unreleased
+claim survives, and verifies reflection-only and dry-run modes do not mutate the
+ledger.
+
+**[CR5 -- Moderate] The adopter contract understates the new destructive
+operation.** `coordination-tiers.md` names goodnight pruning, but the shipped
+`session-end` skill still summarizes the mechanized steps as "prune reflections,
+metrics, intent surface" and does not say that the intent surface is rewritten.
+The manifest is accurate and the lifecycle path is behind the owner marker and
+handoff lock, but direct `intent.py prune` is separately discoverable and
+ungated. Once CR1 defines the real gate, update the skill and CLI wording so an
+adopter can tell what mutates, where serialization comes from, and what the
+liveness/refusal policy actually guarantees.
+
+### Falsification ledger
+
+* H1 survived 1,000 randomized valid-ledger trials: active sets were identical
+  before and after. Mutating the **loaded template**
+  `templates/modules/team-gated/_intent/record_io.py` to drop only releases made
+  the focused H1 test fail by resurrecting `old-1`.
+* H2's unreleased-report path and H3's malformed-adjacent-line preservation both
+  reproduced. Mutants that admitted an unreleased claim to the delete set and
+  omitted unparseable lines each failed their predicted focused test. Disabling
+  the live-claim refusal also failed its predicted test. Bad or absent timestamps
+  stayed fail-safe: paired records were kept and unreleased claims refused.
+* The three intended source/template pairs were byte-identical at the reviewed
+  tree. Independent SHA-256 checks matched the four newly finalized lock entries
+  (record I/O, CLI, lifecycle, and the `da3e296` planner finalization).
+  `verify_integrity` reported exactly the nine deliberately unfinalized paths,
+  so this commit did not launder them.
+* The real ledger changed from 669 to 671 records while this review was running,
+  useful direct evidence that writers are concurrent in the actual operating
+  environment. A non-mutating measurement still found 6 eligible pairs / 12
+  lines and an unchanged active set.
+* `git show e54f43c -- bootstrap/tests/` showed the 12 pruning tests appended;
+  no pre-existing test line was altered. The temporary mutants were restored to
+  the reviewed SHA-256 (`record_io.py` template
+  `a1ef0ed2807ba9e64012fe169bcedc4b193d43e71afee4817a2669f3b7d18205`).
+* The `da3e296` planner change is acceptable within this review's scope: its
+  substantive-code-review marker behavior and bold-Disposition parsing execute
+  under the focused contract suite, its twin was identical at `e54f43c`, and its
+  lock entry matched independently. No separate blocker remains for SP8-1.
+
+### Verification
+
+All stable figures below are from a detached worktree at exact commit
+`e54f43c`, under the canonical Python 3.13.13 interpreter with bytecode writes
+disabled:
+
+* targeted six-file command: **236 passed**;
+* full shuffled suite: **2926 passed, 1 failed, 1 skipped**; the sole failure was
+  `test_mutation_verifying_inside_the_candidate_runs_the_forger`, which then
+  passed alone (**1 passed**) and remains the recorded cross-file signing-state
+  issue, not a pruning failure; `test_ast_attest.py` was green;
+* quality gate: redundancy **0 fail / 2 info**; neutrality **93 fail / 21 info**,
+  all outside this commit's changed paths;
+* integrity check: the expected nine pre-existing/unfinalized mismatches listed
+  above; none of the four scoped finalize paths mismatched.
+
+The first full-suite attempt in the constrained harness was discarded because
+loopback sockets were denied (`PermissionError`), producing 127 environmental
+failures. A run in the live shared checkout was also not used as exact-byte
+evidence because concurrent edits changed twin files during collection.
+
+I did not examine unrelated security-module semantics, resolve the pre-existing
+neutrality/integrity backlog, or investigate SP8-12 beyond confirming the one
+exact-commit failure passes alone. This review makes no archival disposition;
+CR1 and CR2 must be repaired and independently falsified before these bytes are
+fit to ship.
