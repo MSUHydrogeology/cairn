@@ -151,7 +151,10 @@ later: fewer repeated decisions, fewer forgotten assumptions, fewer
 agent collisions, and less rework after unreviewed scientific
 choices.  Keep the apparatus only as heavy as your codebase and team
 earn — the [on-ramp](on-ramp/README.md) is the self-locate aid for
-that calibration.
+that calibration. Proportionality is a correctness property: process that
+obscures the work or makes bypass attractive weakens the method, while
+load-bearing controls remain in place wherever criticality or a real trust
+boundary earns them.
 
 ---
 

@@ -1,6 +1,6 @@
 # Cairn — vision and charter
 
-> Cairn's **purpose, design center, and anti-scope** — the project's
+> Cairn's **purpose, design centers, and anti-scope** — the project's
 > foundational identity. The `README.md` is the front door;
 > `doctrine/rationale.md` is the research grounding; this is the charter
 > that states *what Cairn is for, and what it refuses to become*. It is
@@ -88,6 +88,27 @@ marketing. Five dimensions, each mapped to a concrete commitment:
 The fuller treatment — and where Cairn deliberately *diverges* from the
 literature it draws on — is `doctrine/rationale.md`; the contract for what
 the agent reads and the scanners check is `SECURITY.md`.
+
+## Restraint is the other design center
+
+Cairn fails if its trust machinery becomes expensive enough that people work
+around it. Process must therefore track the consequence and reach of the
+change, not how interesting the question is. Low-risk, local work should take
+the light path; critical, cross-cutting, uncertain, or trust-boundary work
+earns deeper ceremony.
+
+This is not a license to skip a declared review, a Maintainer fence, or a
+security control. A one-person scientific project can still carry a
+high-criticality surface, and controls such as fail-closed defaults and measured
+trust roots are often cheapest to establish before assumptions spread. The
+discipline is to keep those protections small and legible, and to prevent the
+deliberation around them from growing without regard to blast radius.
+
+The practical test is whether the apparatus continues to help the Maintainer
+understand and judge the work. When ceremony repeatedly outweighs the change,
+obscures it, or makes bypass attractive, the mechanism needs simplification or
+the work needs the lighter route. The research grounding is Anchor 17 in
+`doctrine/rationale.md`.
 
 ## Anti-scope — what Cairn refuses to become
 

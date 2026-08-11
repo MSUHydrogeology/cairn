@@ -23,11 +23,11 @@ interface principle whether the interface is a data format, a science
 protocol, or Cairn's `dev/` tree. The four clusters organize
 the anchors by concern: AI and multi-agent collaboration (I), trust
 and governance (II), scientific-software rigor and validation (III),
-and the community and sustainability horizon (IV).
+and community, sustainability, and restraint (IV).
 
 **Numbering is canonical and append-only.** Each anchor keeps its
 integer from the guide-star, so the harvested set reads non-sequentially
-(11, 12, 13, 16) by design — a *harvested* anchor retains its guide-star
+(11, 12, 13, 16, 17) by design — a *harvested* anchor retains its guide-star
 identifier rather than being renumbered into sequence. The existing six
 (1–6) are regrouped into clusters — not renumbered or rewritten. A newly
 *authored* Cairn anchor (one with no guide-star origin) takes the next
@@ -45,8 +45,9 @@ unused integer.
 | | 16 | Comprehension floor |
 | **III · Scientific-software rigor** | 4 | Scientific-software rigor |
 | | 6 | Scientific peer review as a process model |
-| **IV · Community & sustainability** | 7–9 | Community-maintained scientific software (horizon) |
+| **IV · Community, sustainability & restraint** | 7–9 | Community-maintained scientific software (horizon) |
 | | 10 | Trustworthy operation |
+| | 17 | Waste and proportional process |
 
 ---
 
@@ -257,6 +258,43 @@ the Council of Science Editors), and the open-peer-review taxonomy
 of Ross-Hellauer (2017), *What is open peer review?*
 (*F1000Research* 6:588). This is the anchor Cairn instantiates
 most directly (`dual-review.md`).
+
+---
+
+## Cluster IV — Community, sustainability, and restraint
+
+Anchors 7–10 remain Cairn's community-maintained-software and
+trustworthy-operation horizon. Anchor 17 supplies the present-tense design
+discipline that keeps the methodology sustainable enough to use.
+
+**17. Waste and proportional process.** Poppendieck & Poppendieck
+(2003), *Lean Software Development: An Agile Toolkit*, Addison-Wesley,
+names extra processes and extra features as waste when they do not produce
+value for the user. Boehm & Turner (2003), *Balancing Agility and
+Discipline: A Guide for the Perplexed*, Addison-Wesley, makes the amount of
+process a judgment across personnel, criticality, size, culture, and
+dynamism: too much ceremony and too little are both failure modes. Saltzer
+& Schroeder (1975), *The Protection of Information in Computer Systems*,
+*Proceedings of the IEEE* 63(9):1278–1308, supplies the security-side
+companion through **economy of mechanism**: protection mechanisms should
+remain as simple and small as possible so unwanted access paths stay
+visible.
+
+Cairn therefore treats **restraint as a design center beside trust**. The
+method's default path should be proportionate to demonstrated blast
+radius, while deeper ceremony is earned by criticality, uncertainty,
+cross-cutting reach, or a real trust boundary. This is not permission to
+skip a declared review tier, a Maintainer fence, or a security control.
+Criticality measures the consequence of being wrong, not the number of
+users: fail-closed defaults and measured trust roots can remain necessary
+even in a one-person project. The restraint test applies to the
+*deliberation around* those controls as much as to any other work.
+
+The operational warning is simple: if the apparatus repeatedly costs more
+than the change it governs, obscures the work the Maintainer must judge, or
+makes bypass attractive, it is no longer buying rigor. Simplify the
+mechanism or route low-risk work through the lighter path while preserving
+the load-bearing property.
 
 ---
 
