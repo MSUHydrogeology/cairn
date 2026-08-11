@@ -514,7 +514,7 @@ class Artifact:
         self.author: str = ""
         self.plan_review: str = ""  # "required(...)" | "not required(...)" | ""
         self.sections: List[Section] = []
-        self.has_followups_migrated = False
+        self.has_disposition_attestation = False
         self.has_fidelity_signoff = False
         self.has_substantive_code_review = False
 
@@ -757,17 +757,8 @@ def _read_artifact(path: Path) -> Artifact:
     # introduced the vocabulary.  A precondition that fails a correct record is
     # the same defect class as one that passes an empty one: it is not testing
     # the property it names.
-    art.has_followups_migrated = bool(
-        re.search(
-            r"^\s*[*_]{0,2}\s*(?:Follow-ups migrated to|Dispositions)"
-            r"\s*[*_]{0,2}\s*:",
-            text,
-            re.MULTILINE,
-        )
-    )
-    art.has_fidelity_signoff = bool(
-        re.search(r"Fidelity sign-off|loop-fidelity", text, re.IGNORECASE)
-    )
+    art.has_disposition_attestation = _has_disposition_attestation(text)
+    art.has_fidelity_signoff = _has_fidelity_signoff(text)
     art.has_substantive_code_review = _has_substantive_code_review(text)
     return art
 
@@ -792,6 +783,109 @@ def _read_artifact(path: Path) -> Artifact:
 #: carry a placeholder section and a real reviewer's section further down.
 _CODE_REVIEW_SECTION_RE = re.compile(
     r"^## Code review.*?(?=^## |\Z)", re.MULTILINE | re.DOTALL)
+#: Inline-code spans are **masked before any label search**, preserving offsets.
+#: This is the discriminator that separates a real block from prose *discussing*
+#: one.  Measured over the 39-plan corpus: masking drops exactly 6 files, and
+#: all six carry only backticked mentions -- e.g. `byline-classification.md:990`,
+#: "carries the literal `Follow-ups migrated to:` block naming where each
+#: deferred...".  A bolded mid-line block survives masking, which is what lets
+#: the label search below drop its `^` anchor without re-admitting prose.
+_INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+
+#: The label, emphasis-tolerant and **not** line-anchored.  Dropping `^` is
+#: deliberate: `adopter-entry-doc-refresh.md:173` carries a real block as
+#: ``Archived 2026-06-12. **Follow-ups migrated to:** `dev/PLANNING.md` > Queued``
+#: which the anchored form rejected.
+_DISPOSITION_LABEL_RE = re.compile(
+    r"[*_]{0,2}\s*(?:Follow-ups migrated to|Dispositions)\s*[*_]{0,2}\s*:")
+
+#: Substance, one of three shapes.  Presence of the label is never enough --
+#: that is the defect this predicate exists to close.
+_DISPOSITION_ENTRY_RE = re.compile(
+    r"->\s*[*_`]{0,2}(?:accept|guard|wontfix|defer)\b", re.IGNORECASE)
+_DISPOSITION_NONE_RE = re.compile(
+    r"^\s*[*_]{0,2}\s*none\b", re.IGNORECASE | re.MULTILINE)
+
+#: A commit id as the records actually write them, usually backticked.
+_COMMIT_ID_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
+#: The governing-section reference.  A *shape* test, not a semantic one: every
+#: real sign-off in the archive names what it matches against in these terms.
+_GOVERNING_REF_RE = re.compile(r"\b(?:accepted|Revised|Decision)\b")
+_FIDELITY_PHRASE_RE = re.compile(r"fidelity sign-off|loop-fidelity", re.I)
+
+
+def _mask_inline_code(text: str) -> str:
+    """Blank inline-code spans, preserving length so offsets still line up."""
+    return _INLINE_CODE_RE.sub(lambda m: " " * len(m.group(0)), text)
+
+
+def _lasting_truth_bodies(text: str) -> List[str]:
+    """**Every** `## Lasting-truth migration` section body.
+
+    Scoping matters: the old fidelity check searched the **whole file** for the
+    phrase, so any plan merely mentioning "loop-fidelity" anywhere satisfied a
+    gate that claims the sign-off names an implementing commit.
+
+    All of them, not the first: a plan scaffolded from the template carries the
+    empty stub, and the real dated section (``## Lasting-truth migration --
+    YYYY-MM-DD``) is *appended below it* under the append-only rule. Reading
+    only the first match reports the placeholder and rejects the real sign-off
+    -- measured against 5 archived plans, including one written this session.
+    """
+    return [m.group(1) for m in re.finditer(
+        r"^##\s+Lasting-truth migration\b(.*?)(?=^##\s|\Z)",
+        text, re.MULTILINE | re.DOTALL)]
+
+
+def _has_disposition_attestation(text: str) -> bool:
+    """True when a disposition block is present **and carries substance**.
+
+    Three accepted shapes: an explicit ``none``; at least one entry naming a
+    disposition from the accepted vocabulary; or a legacy
+    ``Follow-ups migrated to:`` label with a destination on its own line.
+    An empty label refuses -- which is what the previous predicate accepted.
+    """
+    masked = _mask_inline_code(text)
+    for m in _DISPOSITION_LABEL_RE.finditer(masked):
+        tail = masked[m.end():]
+        # Bound the search at the next H2 so a later section cannot lend
+        # substance to an empty label above it.
+        stop = re.search(r"^##\s", tail, re.MULTILINE)
+        block = tail[: stop.start()] if stop else tail
+        # Substring, not prefix: the label pattern's leading `\s*` absorbs
+        # the preceding newlines, so a prefix test never reaches the word.
+        legacy = "follow-ups" in m.group(0).lower()
+        if legacy:
+            # Legacy records predate the disposition vocabulary and write a
+            # destination instead: `Follow-ups migrated to: dev/PLANNING.md`,
+            # or `* the thing -> dev/PLANNING.md > Queued` on the lines below.
+            # Any non-empty body is substance; only a bare label refuses.
+            # (Prose *discussing* the phrase never reaches here -- it is
+            # backticked, and inline code was masked above.)
+            if block.strip():
+                return True
+        else:
+            if _DISPOSITION_ENTRY_RE.search(block) or _DISPOSITION_NONE_RE.search(block):
+                return True
+    return False
+
+
+def _has_fidelity_signoff(text: str) -> bool:
+    """True when the lasting-truth section carries a real sign-off.
+
+    Requires all three, together, inside that section: the phrase, at least one
+    implementing commit id, and a reference identifying what it was matched
+    against.  "Loop-fidelity sign-off is owed at archive." satisfies none of
+    the last two and refuses.
+    """
+    for body in _lasting_truth_bodies(text):
+        if (_FIDELITY_PHRASE_RE.search(body)
+                and _COMMIT_ID_RE.search(body)
+                and _GOVERNING_REF_RE.search(body)):
+            return True
+    return False
+
+
 _REVIEW_MODEL_RE = re.compile(r"^\*\*Model\*\*:", re.MULTILINE)
 _REVIEW_DATED_RE = re.compile(
     r"^#{2,3} Code review\s*--\s*\S+.*\d{4}-\d{2}-\d{2}", re.MULTILINE)
@@ -1282,7 +1376,7 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                     "occurred: the plan template ships it pre-written, so this "
                     "gate is otherwise impossible to fail."
                 )
-            if not art.has_followups_migrated:
+            if not art.has_disposition_attestation:
                 v.append(
                     "status is 'archived' but no 'Dispositions:' block "
                     "(or the older 'Follow-ups migrated to:') is present "
@@ -1376,12 +1470,16 @@ def _gating_preconditions(art: Artifact, target: str,
                           "reviewer marker ('**Model**:' or a dated 'Code "
                           "review -- <reviewer> -- YYYY-MM-DD' heading); the "
                           "template's placeholder section does not count"))
-            gates.append((True,
+            gates.append((art.has_disposition_attestation,
                           "every deferred follow-up carries a recorded "
-                          "disposition in a 'Dispositions:' block."))
-            gates.append((True,
-                          "the loop-fidelity sign-off names the implementing "
-                          "commit and the governing Revised section."))
+                          "disposition: an explicit 'none', or an entry naming "
+                          "accept / guard / wontfix / defer. An empty "
+                          "'Dispositions:' label does not count."))
+            gates.append((art.has_fidelity_signoff,
+                          "the loop-fidelity sign-off, inside '## Lasting-truth "
+                          "migration', names at least one implementing commit "
+                          "id and the governing accepted/Revised section. "
+                          "Promising it is owed does not count."))
     return gates
 
 

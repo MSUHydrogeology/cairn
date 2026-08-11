@@ -1297,12 +1297,21 @@ def test_the_same_plan_conforms_once_a_real_review_is_appended(tmp_path):
 
 def test_dispositions_is_recognized_in_the_repository_house_style(tmp_path):
     """`**Dispositions:**` is what every plan in dev/plans/archive/ actually
-    writes; an unbolded-only pattern reported 12 of them as having no block."""
+    writes; an unbolded-only pattern reported 6 of them as having no block.
+
+    **Assertion changed by plan `archive-precondition-substance`, Chunk A.**
+    As `da3e296` wrote it, each form was a bare label with no body and was
+    asserted `True` -- which is the presence-for-substance defect that plan
+    exists to close, encoded as a test. The house-style intent is preserved and
+    is what this still pins: every emphasis form is *recognized*. Each form now
+    carries substance, because a bare label must now refuse (see
+    `TestArchiveAttestationGrammar`).
+    """
     for form in (
-        "**Dispositions:**",
-        "Dispositions:",
-        "*Dispositions:*",
-        "**Follow-ups migrated to:**",
+        "**Dispositions:** none",
+        "Dispositions:\n* x -> accept",
+        "*Dispositions:*\n* x -> wontfix (why)",
+        "**Follow-ups migrated to:** dev/PLANNING.md",
         "Follow-ups migrated to: dev/PLANNING.md",
     ):
         d = tmp_path / "dev" / "plans"
@@ -1310,7 +1319,7 @@ def test_dispositions_is_recognized_in_the_repository_house_style(tmp_path):
         f = d / "p.md"
         f.write_text(f"# Plan\n\n**Status**: archived\n\n{form}\n", encoding="utf-8")
         art = planner._read_artifact(f)
-        assert art.has_followups_migrated is True, f"rejected: {form!r}"
+        assert art.has_disposition_attestation is True, f"rejected: {form!r}"
 
 
 def test_dispositions_absence_is_still_detected(tmp_path):
@@ -1321,4 +1330,102 @@ def test_dispositions_absence_is_still_detected(tmp_path):
         f = d / "p.md"
         f.write_text(f"# Plan\n\n**Status**: archived\n\n{form}\n", encoding="utf-8")
         art = planner._read_artifact(f)
-        assert art.has_followups_migrated is False, f"accepted: {form!r}"
+        assert art.has_disposition_attestation is False, f"accepted: {form!r}"
+
+
+# ---------------------------------------------------------------------------
+# Archive preconditions that test what they name (plan `archive-precondition-
+# substance`, Chunk A).  Every gate below used to be a literal `True`, or a
+# presence test the shipped template satisfied by itself.
+# ---------------------------------------------------------------------------
+
+_LT = "## Lasting-truth migration\n\n"
+
+#: The exact fixture measured against the pre-change tree, where it set BOTH
+#: `has_followups_migrated` and `has_fidelity_signoff` to True: an empty label
+#: and a sentence promising the work is owed.
+_FALSE_PASS = _LT + "**Dispositions:**\n\nLoop-fidelity sign-off is owed at archive.\n"
+
+_REAL_SIGNOFF = ("**Loop-fidelity sign-off.** Commits `3a1b879` match the "
+                 "accepted Revised section.\n")
+
+
+class TestArchiveAttestationGrammar:
+    """A1-A4: presence is never enough, and a real record is never refused."""
+
+    def test_the_measured_false_pass_refuses_under_both_gates(self):
+        assert planner._has_disposition_attestation(_FALSE_PASS) is False
+        assert planner._has_fidelity_signoff(_FALSE_PASS) is False
+
+    def test_explicit_none_is_an_accepted_disposition(self):
+        text = _LT + "**Dispositions:** none\n\n" + _REAL_SIGNOFF
+        assert planner._has_disposition_attestation(text) is True
+
+    @pytest.mark.parametrize("verb", ["accept", "guard", "wontfix", "defer"])
+    def test_each_vocabulary_entry_is_accepted(self, verb):
+        text = _LT + f"Dispositions:\n* the thing -> {verb} (why)\n\n" + _REAL_SIGNOFF
+        assert planner._has_disposition_attestation(text) is True
+
+    def test_the_legacy_mid_line_block_is_accepted(self):
+        # The `^`-anchored predicate rejected this real block; closing that
+        # false-fail is A3.  Shape taken from
+        # dev/plans/archive/adopter-entry-doc-refresh.md:173.
+        text = (_LT + "Archived 2026-06-12. **Follow-ups migrated to:** "
+                "`dev/PLANNING.md` > Queued\n\n" + _REAL_SIGNOFF)
+        assert planner._has_disposition_attestation(text) is True
+
+    def test_prose_merely_discussing_the_label_refuses(self):
+        # Five archived plans carry exactly this shape.  Masking inline code is
+        # what separates them from a real block without re-anchoring.
+        text = (_LT + "carries the literal `Follow-ups migrated to:` block "
+                "naming where each deferred item went, and a `Dispositions:` "
+                "label.\n")
+        assert planner._has_disposition_attestation(text) is False
+
+    def test_an_empty_label_cannot_borrow_substance_from_a_later_section(self):
+        text = (_LT + "**Dispositions:**\n\n## Archive\n\n* thing -> accept\n")
+        assert planner._has_disposition_attestation(text) is False
+
+    def test_a_signoff_without_a_commit_id_refuses(self):
+        text = _LT + ("Dispositions:\n* x -> accept\n\n"
+                      "**Loop-fidelity sign-off.** The chain holds.\n")
+        assert planner._has_fidelity_signoff(text) is False
+
+    def test_a_signoff_outside_the_lasting_truth_section_refuses(self):
+        text = ("## Scope\n\n**Loop-fidelity sign-off.** `3a1b879` matches the "
+                "accepted Revised section.\n\n" + _LT + "**Dispositions:** none\n")
+        assert planner._has_fidelity_signoff(text) is False
+
+    def test_the_appended_dated_section_is_read_not_only_the_first(self):
+        # A plan carries the template's empty stub and appends the real dated
+        # section below it.  Reading only the first match reported the
+        # placeholder and rejected 5 real archived sign-offs.
+        text = (_LT + "*Filled in at archive time.*\n\n"
+                "## Lasting-truth migration -- 2026-08-11\n\n"
+                "**Dispositions:** none\n\n" + _REAL_SIGNOFF)
+        assert planner._has_fidelity_signoff(text) is True
+        assert planner._has_disposition_attestation(text) is True
+
+    def test_the_shipped_plan_template_refuses_its_own_gates(self):
+        # A template that satisfies its own precondition is the original defect.
+        text = (CAIRN_ROOT / "dev" / "plans" / "_template.md").read_text(
+            encoding="utf-8")
+        assert planner._has_disposition_attestation(text) is False
+        assert planner._has_fidelity_signoff(text) is False
+
+
+class TestArchiveGatesConsultTheirPredicates:
+    """The two `--to archived` gates were literal `True` and always reported met."""
+
+    def test_no_archive_gate_is_hardcoded_true(self, tmp_path):
+        repo = _make_repo(tmp_path)
+        _write_plan(repo, "fx.md", status="review")
+        art = planner._read_artifact(repo / "dev" / "plans" / "fx.md")
+        gates = planner._gating_preconditions(
+            art, "archived", planner._load_identity_model(repo))
+        assert gates, "the archived target must declare gates"
+        met = [g for g, _ in gates]
+        assert not all(met), (
+            "every archived gate reports met on a plan with no dispositions "
+            "and no sign-off -- the hardcoded-True defect has returned"
+        )
