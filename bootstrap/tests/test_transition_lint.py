@@ -1052,6 +1052,100 @@ class TestShapeB:
         assert findings == []
 
 
+class TestShapeBWideningAndAdvisory:
+    """A7 -- ``review-efficient-lifecycle`` Chunk A.  ``_OPEN_STATUSES`` is
+    gone; shape (b) now consumes the planner's ``SHAPE_B_STATUSES`` (3 -> 7
+    tokens) and an unrecognized ``**Status**:`` is a new advisory ``'b?'``
+    finding rather than a silent skip.  ``bootstrap/tests/
+    test_lifecycle_vocabulary.py`` carries the exhaustive synthetic matrix
+    over every ``SHAPE_B_STATUSES`` member and every terminal state; the
+    nodes here are targeted regressions on the specific widening and the new
+    finding shape, not a restatement of that matrix.  None of these touch the
+    pinned corpus expectations in ``TestWideningIsNotCreating`` below --
+    corpus counts are a finding to report if they move, never a number to
+    update here.
+    """
+
+    def test_a_revised_proposal_open_is_now_shape_b_eligible(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # "revised" was never a member of the old _OPEN_STATUSES tuple
+        # ("proposed", "open", "awaiting-plan-review"), so a proposal ADDED at
+        # status "revised" carrying a baked-in review used to fall through
+        # shape (b) with no finding at all.  Perturbation: narrow
+        # SHAPE_B_STATUSES back to the pre-widening three tokens.  Red.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/p.md", _HEADER.replace("open", "revised")
+               + "## Review -- Internal -- 2026-01-01\n\n[R1] a finding\n")
+        _commit(repo, "dev/proposals: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert [(f.shape, f.file) for f in findings] == [("b", "dev/proposals/p.md")]
+
+    def test_an_executing_plan_open_is_now_shape_b_eligible(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # "executing" is a plan non-terminal state that was never in
+        # _OPEN_STATUSES either.  Perturbation: same as above.  Red.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/plans/p.md",
+               "# p\n\n**Status**: executing\n\n"
+               "## Plan review -- Reviewer -- 2026-01-01\n\n[E1] a finding\n")
+        _commit(repo, "dev/plans: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert [(f.shape, f.file) for f in findings] == [("b", "dev/plans/p.md")]
+
+    def test_a_review_status_plan_open_is_now_shape_b_eligible(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # "review" -- the plan status immediately before "archived" -- is the
+        # last of the four newly-widened tokens.  Perturbation: same.  Red.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/plans/p.md",
+               "# p\n\n**Status**: review\n\n"
+               "## Plan review -- Reviewer -- 2026-01-01\n\n[E1] a finding\n")
+        _commit(repo, "dev/plans: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert [(f.shape, f.file) for f in findings] == [("b", "dev/plans/p.md")]
+
+    def test_an_unrecognized_status_produces_an_advisory_b_question_finding(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # The new failure mode this chunk closes: an unrecognized token used
+        # to fall through the old `declared not in _OPEN_STATUSES` branch and
+        # disable shape (b) for that file with NO trace.  Perturbation:
+        # replace the advisory-finding branch with a silent `continue` (the
+        # pre-A5 behaviour).  Red -- the finding list goes empty.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/p.md",
+               "# p\n\n**Status**: frobnicated\n\nbody\n\n"
+               "## Review -- Internal -- 2026-01-01\n\n[R1] a finding\n")
+        _commit(repo, "dev/proposals: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert len(findings) == 1
+        finding = findings[0]
+        assert finding.shape == "b?"
+        assert finding.file == "dev/proposals/p.md"
+        assert "frobnicated" in finding.message
+
+    def test_an_absent_status_stays_a_silent_skip_not_an_advisory(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # Contrast with the node above: absence of `**Status**:` within the
+        # header bound is a DIFFERENT case from an unrecognized token, and the
+        # asymmetry is deliberate (A5's commit body) -- the trigger roots also
+        # carry non-artifact files, so firing on absence would make the tool
+        # noisy about files it does not govern.  Perturbation: widen the
+        # advisory branch to fire on `declared is None` too.  Red -- a finding
+        # appears where none should.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/proposals/p.md",
+               "# p\n\nno status line in this file\n\n"
+               "## Review -- Internal -- 2026-01-01\n\n[R1] a finding\n")
+        _commit(repo, "dev/proposals: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+
 @requires_corpus
 @pytest.mark.usefixtures("_install_git_memo")
 class TestWideningIsNotCreating:
