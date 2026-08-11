@@ -163,13 +163,13 @@ the row above — not the planner — is what a reader should trust.
 ## Sequence
 
 ```
-A  the sterile launcher + repository-pinned hashing   [commit pending]
-B  the canonical range-review report                  [commit pending]
-C  checkpoint construction bound to the report digest [commit pending]
-E  fsck at the two acquisition boundaries             [commit pending]
+A  the sterile launcher + repository-pinned hashing   [commit ab51587]
+B  the canonical range-review report                  [commit ca4b4cf]
+C  checkpoint construction bound to the report digest [commit 068745b]
+E  fsck at the two acquisition boundaries             [commit 02b0c59]
 D  manifest v2  (blocked: see Sequencing)             [commit pending]
 F  reflogs, atomic publication, runbook text          [commit pending]
-G  the security/provenance documentation surface      [commit pending]
+G  the security/provenance documentation surface      [commit 4889d8e]
 --- stable bytes -----------------------------------------------------
 B1 Boundary B on the stable pre-review commit         [record]
 CR independent External Code review                   [review]
@@ -967,3 +967,40 @@ and it belongs to whoever owns that plan as much as to this one.
 
 Working line: **A, B, C, E, G proceed. D and F hold** until the ceremony's shape
 (v1 or v2, one ceremony or two, whose runbook) is settled.
+
+## Progress verification -- Claude -- 2026-08-11
+
+**Not Boundary B.** D, F and H are held, so the implementation range is
+incomplete and this records the state rather than closing the boundary.
+
+**Landed**: A `ab51587`, B `ca4b4cf`, C `068745b`, E `02b0c59`, G `4889d8e`.
+
+Full suite on a clean `--shared` clone at `4889d8e`, canonical interpreter
+(3.13.13): **3082 passed, 2 failed, 1 skipped** in 374.41 s. Both failures are
+pre-existing and reproduce independent of this plan —
+`test_detached_checkout_excludes_an_ignored_pytest_override`, and
+`test_check_runs_against_the_live_repo_and_reports`, which runs the public CLI
+against the *live* repository that a clone is not.
+
+Each chunk was additionally verified in a clone carrying **only that chunk's
+diff**, because another session holds uncommitted edits to
+`templates/modules/default-on/claim_check.py` — a *frozen* file — which makes
+`_gate_manifest.verify()` report `FROZEN-MODIFIED` and fails two
+`test_gate_manifest.py` nodes for everyone in the tree. That is worth knowing
+generally: while any frozen file is dirty, `test_gate_manifest.py` is not a
+usable Boundary A signal.
+
+**Two allowlist/API changes a reviewer should look at first**, both widenings
+recorded rather than slipped in:
+
+* `diff-tree` added to `_READ_ONLY_GIT`, justified at the call site — cannot
+  write, `--name-only` so no textconv or external diff runs, `diff.external`
+  already pinned empty, `--no-renames` passed.
+* `_SIGNING_EPOCH` is still present and no longer decisive. Chunk B replaced
+  what it did; removing the constant belongs with F/H, where the ceremony that
+  reads it is rewritten.
+
+**Still held**: D (manifest v2), F (reflogs, atomic publication, runbook), H
+(the exact-byte bootstrap, M3/M4). The open question from the fence correction
+stands — whether this plan's Chunk H and `review-efficient-lifecycle`'s Chunk I
+are one ceremony or two.
