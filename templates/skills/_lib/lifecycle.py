@@ -1042,8 +1042,18 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
     line; both are reported.
     """
     _emit_section("pruning the work-intent surface")
-    intent_tool = _sibling_tool("intent.py")
-    if intent_tool is None:
+    # Resolve against *root*, the way _surface_foldback_candidates does, not via
+    # _sibling_tool -- which returns the copy beside THIS file regardless of the
+    # target root.  That distinction is invisible in an adopter tree (the CLI is
+    # installed in the tree it operates on) but it matters here: the intent
+    # engine computes its ledger path from its OWN location, so a root-blind
+    # lookup would rewrite the installing tree's ledger while reporting on the
+    # target.  It also made this wiring untestable, which is why CR4 could
+    # replace the call with `pass` and see every suite stay green.
+    intent_tool = root / "tools" / "intent.py"
+    if not intent_tool.is_file():
+        intent_tool = _sibling_tool("intent.py")
+    if intent_tool is None or not intent_tool.is_file():
         _warn("intent.py (coordination-tiers) not installed -- skipping.")
         return
     argv = [interpreter, str(intent_tool), "prune", "--older-than-days",

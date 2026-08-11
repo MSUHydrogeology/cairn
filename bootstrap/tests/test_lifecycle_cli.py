@@ -589,3 +589,96 @@ def test_module_docstring_scopes_dry_run_claim_to_session_end() -> None:
     # this replaces would have been false for session-start (F4's defect);
     # it must not have come back.
     assert "every side-effecting subcommand honors" not in doc.lower()
+
+
+# ---------------------------------------------------------------------------
+# CR4: the shipped full-handoff path must actually invoke the intent prune.
+# The External review replaced the `_prune_intents(...)` call with `pass` and
+# every relied-on suite still reported 145 passed -- so a regression could
+# silently delete the feature. This test fails if the call is removed, moved
+# outside the lock, or disconnected from dry-run.
+# ---------------------------------------------------------------------------
+
+def _intent_repo(tmp_path: Path) -> Path:
+    """A scratch repo with the intent tool staged and a ledger holding one old
+    RELEASED pair (prunable) and one old UNRELEASED claim (must survive)."""
+    import datetime as dt
+    import json as _json
+    import shutil
+    root = tmp_path.resolve()
+    _init_repo(root)
+    _commit(root, "initial commit")
+    cairn_root = Path(__file__).resolve().parent.parent.parent
+    src = cairn_root / "templates" / "modules" / "team-gated"
+    tools = root / "tools"
+    tools.mkdir(exist_ok=True)
+    (tools / "intent.py").write_bytes((src / "intent.py").read_bytes())
+    shutil.copytree(src / "_intent", tools / "_intent")
+    old = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=60)).isoformat()
+    dev = root / "dev"
+    dev.mkdir(exist_ok=True)
+    (dev / "intents.jsonl").write_text("".join(
+        _json.dumps(r) + "\n" for r in [
+            {"event": "claim", "id": "gone", "ts": old, "agent": "a",
+             "files": ["x.md"], "action": "old released work"},
+            {"event": "release", "id": "gone", "ts": old},
+            {"event": "claim", "id": "kept", "ts": old, "agent": "b",
+             "files": ["y.md"], "action": "died holding this"},
+        ]), encoding="utf-8")
+    return root
+
+
+def test_handoff_prunes_the_intent_surface(tmp_path, monkeypatch, capsys):
+    """CR4: the real --handoff removes an old released pair and keeps an
+    unreleased claim. Replacing the _prune_intents call with `pass` must fail
+    this."""
+    root = _intent_repo(tmp_path)
+    monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sessP")
+    monkeypatch.chdir(root)
+
+    rc = lifecycle.main(["session-end", "--handoff"])
+    out, err = capsys.readouterr()
+    assert rc == 0, f"rc={rc}\nstdout={out}\nstderr={err}"
+
+    body = (root / "dev" / "intents.jsonl").read_text(encoding="utf-8")
+    assert '"gone"' not in body, (
+        f"the old released pair survived the handoff -- prune not invoked?\n{out}"
+    )
+    assert '"kept"' in body, "an UNRELEASED claim must never be pruned"
+    assert "NEVER RELEASED" in out, (
+        f"the unreleased claim must be reported at handoff:\n{out}"
+    )
+
+
+def test_handoff_dry_run_does_not_touch_the_intent_surface(
+    tmp_path, monkeypatch, capsys,
+):
+    """The dry-run manifest must describe the prune without performing it."""
+    root = _intent_repo(tmp_path)
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sessD")
+    monkeypatch.chdir(root)
+    before = (root / "dev" / "intents.jsonl").read_bytes()
+
+    rc = lifecycle.main(["session-end", "--handoff", "--dry-run"])
+    out, _ = capsys.readouterr()
+    assert rc == 0
+    assert "would prune released work-intent pairs" in out, out
+    assert (root / "dev" / "intents.jsonl").read_bytes() == before
+
+
+def test_reflection_only_session_end_does_not_touch_the_intent_surface(
+    tmp_path, monkeypatch, capsys,
+):
+    """The non-destructive default must remain non-destructive."""
+    root = _intent_repo(tmp_path)
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sessR")
+    monkeypatch.chdir(root)
+    before = (root / "dev" / "intents.jsonl").read_bytes()
+
+    lifecycle.main(["session-end"])
+    capsys.readouterr()
+    assert (root / "dev" / "intents.jsonl").read_bytes() == before

@@ -10,6 +10,8 @@ install-precommit / hooks-status / precommit-check / auto-release dispatch, plus
 """
 from __future__ import annotations
 
+import pathlib
+
 import argparse
 import os
 import sys
@@ -33,6 +35,7 @@ from .identity import (
     resolve_session_token,
 )
 from .conflict import (
+    _read_claim_ttl_hours,
     INVOKE_HINT,
     PRECOMMIT_SENTINEL_BEGIN,
     _format_conflict_warning,
@@ -136,8 +139,15 @@ def _cmd_prune(args) -> int:
     while any claim is active, because an active claim means a live session may
     still be appending to a file this command rewrites.
     """
+    # CR3: single-source the liveness horizon.  `record_io` cannot import
+    # `conflict` (conflict imports record_io -- the layering runs one way), so
+    # the CLI, which imports both, resolves the ADOPTER-CONFIGURED
+    # `claim_ttl_hours` and passes it in.  Without this, an adopter running a
+    # 24h TTL would have prune treat a 5h claim as a dead appender while the
+    # commit path still treated it as live.
     report = prune_released_pairs(
         older_than_days=args.older_than_days, dry_run=args.dry_run,
+        live_within_hours=_read_claim_ttl_hours(pathlib.Path.cwd()),
     )
     if report["refused"]:
         sys.stdout.write(f"intent: prune refused -- {report['refused']}\n")

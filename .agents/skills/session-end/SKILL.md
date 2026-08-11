@@ -34,8 +34,12 @@ python tools/lifecycle.py session-end $ARGUMENTS
 
   The marker is an **anti-accidental-run gate, not an authorization control**;
   a fail-closed lock prevents two concurrent owners from a double roadmap-scrub.
-  The CLI runs only the mechanizable steps (prune reflections, metrics, intent
-  surface).
+  The CLI runs only the mechanizable steps: prune reflections, metrics, surface
+  active intents, and **prune the work-intent log** -- the one step that
+  *rewrites* a coordination surface. It removes released claim/release pairs past
+  a grace window (default 30d) and never removes an unreleased claim, which it
+  reports instead. `dev/modules/coordination-tiers.md` specifies this as the
+  goodnight *prune-intents* step; `--handoff --dry-run` lists it before it runs.
 
 ## 2. Judgment steps (yours, not the tool's)
 
