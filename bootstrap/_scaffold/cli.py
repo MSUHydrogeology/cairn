@@ -725,8 +725,9 @@ def main(argv: list[str] | None = None) -> int:
             "tool and makes no claim about this repository. Run the\n"
             "dispatcher yourself to see what it reports:\n"
             "  python scripts/run_security_verification.py local\n"
-            "Its registry ships EMPTY at v1, so it can only report that a\n"
-            "selected capability has no admitted local evidence leg yet."
+            "Its registry admits a fixed, source-owned set of capabilities\n"
+            "(api-web-security-modules Chunk G); a selected capability with\n"
+            "no admitted registry entry reports INCOMPLETE."
         )
 
     # Write the install lockfile + base-template cache: the upgrade

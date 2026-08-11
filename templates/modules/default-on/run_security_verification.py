@@ -104,6 +104,20 @@ _RUNNER_BINDING_MODES: frozenset[str] = frozenset({"immutable_digest"})
 _POLICY_BINDING_MODES: frozenset[str] = frozenset(
     {"none", "immutable_digest", "living_state"})
 
+#: The admitted child-process argv vector(s) (api-web-security-modules /
+#: Chunk G, G-1) -- a THIRD closed set alongside the two B1 apparatus
+#: bindings above, not a member of B1 itself. Deliberately ONE member: the
+#: two api-web-security-modules facades' `local` subcommand takes the
+#: dispatcher's bounded `--child-document` flag, and that is the only
+#: admitted invocation shape. This is what makes a `deployed-passive` (or
+#: any other) argv structurally unreachable from this dispatcher -- refused
+#: here, at registry construction, never at the child process. Widening
+#: this frozenset is a registry-schema change and carries its own Security
+#: Review, exactly as widening `_RUNNER_BINDING_MODES` would.
+_ARGV_MODES: frozenset[tuple[str, ...]] = frozenset({
+    ("local", "--child-document"),
+})
+
 #: The lockfile-record keys this dispatcher recognizes for a runner or policy
 #: destination it binds (B2, shared contract with ``api-web-security-modules``
 #: / ``security-verification-activation``). ``{src, dst, verbatim, hash}`` are
@@ -123,13 +137,24 @@ _ALLOWED_RECORD_KEYS: frozenset[str] = frozenset({
 #: THIS dispatcher's own authoritative living-state destination set --
 #: distinct from ``bootstrap/_scaffold/lockfile.py``'s ``_LIVING_STATE_DSTS``
 #: (an engine-only constant this shipped, adopter-tree file cannot import; an
-#: adopter checkout never has a ``bootstrap/`` directory). **Empty at v1**: no
-#: ``policy_binding_mode="living_state"`` registry entry may land until the
-#: Maintainer ratifies the narrowing (B3, ``api-web-security-modules`` /
-#: ``security-verification-activation``). A future capability plan that earns
-#: living-state status adds its policy destination here in the SAME commit
-#: that adds its registry entry -- never before, never separately.
-_LIVING_STATE_DSTS: frozenset[str] = frozenset()
+#: adopter checkout never has a ``bootstrap/`` directory). Carries exactly the
+#: two policy destinations of the two ``policy_binding_mode: living_state``
+#: entries admitted below (api-web-security-modules Chunk G, rows G1/G2),
+#: added in the SAME commit as those registry entries, per this constant's
+#: own standing rule: a future capability plan that earns living-state status
+#: adds its policy destination here in the SAME commit that adds its
+#: registry entry -- never before, never separately. The Maintainer ratified
+#: the living-state narrowing (B3) before either landed; row F2
+#: (``701be3a``) added these same two destinations to the DIFFERENT,
+#: engine-side ``_LIVING_STATE_DSTS`` in ``bootstrap/_scaffold/lockfile.py``
+#: (what makes the install lockfile mark them ``living_state: true`` in the
+#: first place) -- that landing does not, by itself, populate this
+#: dispatcher's own set; each is a separate source edit, and this one is
+#: this commit's.
+_LIVING_STATE_DSTS: frozenset[str] = frozenset({
+    "dev/.cairn/api-access-policy.json",
+    "dev/.cairn/web-hosting-policy.json",
+})
 
 #: The CLOSED allowlist of environment variables a dispatched child inherits.
 #: Mirrors ``templates/modules/team-gated/run_security_audit.py``'s
@@ -217,7 +242,7 @@ class RegistryEntry:
 
     module_id: str
     runner_repository_path: str
-    argv_mode: str
+    argv_mode: tuple[str, ...]
     policy_repository_path: str | None
     child_schema_version: str
     capability_contract_version: str
@@ -228,6 +253,10 @@ class RegistryEntry:
     policy_binding_mode: str
 
     def __post_init__(self) -> None:
+        if self.argv_mode not in _ARGV_MODES:
+            raise ValueError(
+                f"argv_mode {self.argv_mode!r} is not one of "
+                f"{sorted(_ARGV_MODES)}")
         if self.evidence_mode not in _EVIDENCE_MODES:
             raise ValueError(
                 f"evidence_mode {self.evidence_mode!r} is not one of "
@@ -261,7 +290,7 @@ class RegistryEntry:
 # cannot be added here without this comment (and the review it names) moving
 # with it.
 #
-# The registry is EMPTY at activation v1 (Decision, api-web-security-modules
+# The registry was EMPTY at activation v1 (Decision, api-web-security-modules
 # / security-verification-activation, 2026-08-03): a dormant entry for an
 # unaccepted or uninstalled capability is not permitted. Admission requires
 # an accepted capability proposal, a reviewed plan with execution evidence
@@ -269,9 +298,59 @@ class RegistryEntry:
 # precedence tests, a Security Review of the registry change, and -- for a
 # ``living_state`` policy binding -- execution evidence for the compensating
 # controls that replace the digest (additionally gated on B3: Maintainer
-# ratification of the living-state narrowing). No entry meets that bar yet.
+# ratification of the living-state narrowing). No entry met that bar until
+# now.
+#
+# Two entries admitted (api-web-security-modules Chunk G, rows G1/G2):
+# ``api-access-security`` and ``web-hosting-security``, the two capabilities
+# this plan pair ships. Both clear every gate above: the accepted proposal,
+# this reviewed plan (with both declared review rounds landed), the complete
+# lockfile mapping group (Chunk F), this module's own schema and precedence
+# tests (below), the Security Review of this registry change, and -- because
+# both declare ``policy_binding_mode: living_state`` -- the Maintainer's
+# ratification of the living-state narrowing (B3) plus execution evidence for
+# its compensating controls (``_LIVING_STATE_DSTS`` above carries both policy
+# destinations, added in this SAME commit). No other entry meets the bar; the
+# registry admits exactly these two.
 # ---------------------------------------------------------------------------
-_REGISTRY: dict[str, RegistryEntry] = {}
+_REGISTRY: dict[str, RegistryEntry] = {
+    "api-access-security": RegistryEntry(
+        module_id="api-access-security",
+        runner_repository_path="scripts/api_access_security.py",
+        argv_mode=("local", "--child-document"),
+        policy_repository_path="dev/.cairn/api-access-policy.json",
+        child_schema_version="cairn.security.capability-result.v1",
+        capability_contract_version="1",
+        evidence_mode="loopback",
+        accepted_process_exits=frozenset({0, 5, 10, 20}),
+        result_to_aggregate_mapping={
+            "CLEAN": (0, CLEAN),
+            "INCOMPLETE": (5, INCOMPLETE),
+            "FINDINGS": (10, FINDINGS),
+            "DEGRADED": (20, DEGRADED),
+        },
+        runner_binding_mode="immutable_digest",
+        policy_binding_mode="living_state",
+    ),
+    "web-hosting-security": RegistryEntry(
+        module_id="web-hosting-security",
+        runner_repository_path="scripts/web_hosting_security.py",
+        argv_mode=("local", "--child-document"),
+        policy_repository_path="dev/.cairn/web-hosting-policy.json",
+        child_schema_version="cairn.security.capability-result.v1",
+        capability_contract_version="1",
+        evidence_mode="loopback",
+        accepted_process_exits=frozenset({0, 5, 10, 20}),
+        result_to_aggregate_mapping={
+            "CLEAN": (0, CLEAN),
+            "INCOMPLETE": (5, INCOMPLETE),
+            "FINDINGS": (10, FINDINGS),
+            "DEGRADED": (20, DEGRADED),
+        },
+        runner_binding_mode="immutable_digest",
+        policy_binding_mode="living_state",
+    ),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -306,17 +385,38 @@ def _load_lockfile(path: Path | None = None) -> dict[str, Any] | None:
     return data if isinstance(data, dict) else None
 
 
+#: The declared, source-owned set of module IDs this dispatcher treats as a
+#: security capability (api-web-security-modules / Chunk G, replacing the
+#: prior ``-security`` NAME-SUFFIX heuristic, which was wrong in both
+#: directions: ``content-security`` is default-on, matches the suffix, has
+#: no admitted registry entry, and made a stock install exit 5 INCOMPLETE
+#: with nothing wrong -- measured, not hypothetical, at
+#: ``bootstrap/_scaffold/config.py``'s prior ``_DEFAULT_ON_MODULES`` comment
+#: and ``test_security_verification.py``'s prior T33 characterization; and a
+#: capability named without the suffix would have been missed entirely.
+#:
+#: Deliberately kept SEPARATE from `_REGISTRY` -- never narrow this set to
+#: `installed & set(_REGISTRY)`. The fail-closed signal this dispatcher must
+#: preserve is: a module that is DECLARED here, IS installed, but has NO
+#: admitted `_REGISTRY` entry (an unsupported capability at this Cairn
+#: version) is still SELECTED and still reports INCOMPLETE (T3's contract).
+#: Filtering on registry membership instead would make that exact case
+#: silently invisible -- no leg, no INCOMPLETE, nothing -- which is the
+#: property this set exists to protect. Do not "simplify" this to a registry
+#: intersection.
+_DECLARED_CAPABILITY_MODULES: frozenset[str] = frozenset({
+    "api-access-security", "web-hosting-security",
+})
+
+
 def _selected_capability_ids(lock: dict[str, Any]) -> list[str]:
-    """The installed-module roster, narrowed to the ones this dispatcher
-    treats as a declared security capability: every Cairn security-capability
-    module name ends in ``"-security"`` (``content-security``,
-    ``python-security``, ``api-access-security``, ``web-hosting-security``);
-    this dispatcher's own module, ``security-verification``, does not match.
+    """The installed-module roster, narrowed to `_DECLARED_CAPABILITY_MODULES`
+    -- this dispatcher's declared security-capability set, not a name-suffix
+    guess and not `_REGISTRY` membership (see that constant's own comment).
     Sorted for a deterministic evaluation order."""
     modules = lock.get("modules") or []
-    return sorted({
-        m for m in modules if isinstance(m, str) and m.endswith("-security")
-    })
+    installed = {m for m in modules if isinstance(m, str)}
+    return sorted(installed & _DECLARED_CAPABILITY_MODULES)
 
 
 def _records_by_dst(lock: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -512,7 +612,7 @@ def _run_child(
     stdout/stderr are captured to a neutral temp directory, never a pipe an
     unbounded child could fill before being read (T8); it is killed on
     timeout (T9) or byte-cap overflow (T8)."""
-    argv = [sys.executable, "-I", str(runner_path), entry.argv_mode]
+    argv = [sys.executable, "-I", str(runner_path), *entry.argv_mode]
     env = _build_child_env()
     with tempfile.TemporaryDirectory(prefix="cairn-secver-") as td:
         cwd = Path(td)

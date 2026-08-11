@@ -91,21 +91,25 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     # adopter whose agents ingest only operator-attached content.
     "content-security",
     # security-verification-activation Chunk B: the local security-evidence
-    # dispatcher becomes universal.  Its shipped registry is EMPTY at
-    # activation-v1, so no evidence is ever gathered until a capability's own
-    # proposal is accepted and its registry entry admitted; default-on is what
-    # makes the *route* standard, not the evidence.
+    # dispatcher becomes universal.  Its shipped registry admitted no entry
+    # at activation-v1, so no evidence was gathered until a capability's own
+    # proposal was accepted and its registry entry admitted; default-on is
+    # what makes the *route* standard, not the evidence.
     #
-    # MEASURED CAVEAT (2026-08-10), because the plan predicted otherwise: a
-    # stock install's first `scripts/run_security_verification.py local` exits
-    # 5 (INCOMPLETE), NOT 0 (NOT APPLICABLE).  The dispatcher selects
-    # capabilities by the `-security` NAME SUFFIX, and `content-security` --
-    # default-on since the sibling default-security-stance scope -- matches it
-    # while having no admitted registry entry.  Removing content-security from
-    # the roster yields exit 0 and the NOT APPLICABLE line.  Characterized by
-    # test_security_verification.py's T33 node; resolving it (narrow the
-    # source-owned capability filter, or amend the accepted v1 contract) is a
-    # Maintainer decision this chunk does not take.
+    # RESOLVED (api-web-security-modules Chunk G, 2026-08-11): a stock
+    # install's first `scripts/run_security_verification.py local` used to
+    # exit 5 (INCOMPLETE) instead of the plan's intended 0 (NOT APPLICABLE),
+    # because the dispatcher selected capabilities by the `-security` NAME
+    # SUFFIX and `content-security` -- default-on since the sibling
+    # default-security-stance scope -- matched it while having no admitted
+    # registry entry. Chunk G replaced that heuristic with a source-owned
+    # declared-capability set (`_DECLARED_CAPABILITY_MODULES` in
+    # `run_security_verification.py`) that does not include
+    # `content-security`, so a stock install now exits 0 with the NOT
+    # APPLICABLE line, matching the plan's original intent.  Re-measured, not
+    # carried forward: see `test_security_verification.py`'s
+    # `test_the_dispatcher_runs_from_a_real_fresh_scaffold` (formerly the T33
+    # characterization node) and `TestChunkGDeclaredCapabilitySet`.
     "security-verification",
 )
 

@@ -113,7 +113,7 @@ def _valid_child_obj(module_id: str, *, result: str = _VALID_RESULT,
 
 def _entry(module_id: str = "widget-security", *,
            runner_repository_path: str = "scripts/widget_security.py",
-           argv_mode: str = "local",
+           argv_mode: tuple = ("local", "--child-document"),
            policy_repository_path: str | None = None,
            child_schema_version: str = _VALID_SCHEMA,
            capability_contract_version: str = _VALID_CONTRACT,
@@ -183,11 +183,19 @@ def _setup_clean_leg(tmp_path: Path, *, module_id: str = "widget-security",
 
 class TestRegistryIntegrity:
 
-    def test_shipped_registry_is_empty_at_activation_v1(self) -> None:
-        """T1. Asserted against the SHIPPED source, read independently --
-        never against ``mod`` (other tests monkeypatch its ``_REGISTRY``)."""
+    def test_shipped_registry_admits_exactly_the_two_landed_capabilities(
+            self) -> None:
+        """T1, corrected for api-web-security-modules Chunk G (rows G1/G2):
+        the registry shipped EMPTY at activation v1 and admits exactly two
+        entries as of this chunk -- no more, no dormant third. Asserted
+        against the SHIPPED source, read independently -- never against
+        ``mod`` (other tests monkeypatch its ``_REGISTRY``). The eleven-field
+        shape of each entry is TestChunkGRegistryShape's job, not this
+        node's; this node is the closed-set membership claim T1 always
+        made."""
         fresh = _load_fresh("cairn_security_verification_t1_fresh")
-        assert fresh._REGISTRY == {}
+        assert set(fresh._REGISTRY) == {
+            "api-access-security", "web-hosting-security"}
 
     def test_no_lockfile_or_policy_field_can_enter_the_registry(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -222,7 +230,8 @@ class TestRegistryIntegrity:
         assert len(calls) == 1
         assert calls[0] == [
             sys.executable, "-I",
-            str(tmp_path / entry.runner_repository_path), "local"]
+            str(tmp_path / entry.runner_repository_path),
+            "local", "--child-document"]
         # The decoy top-level lockfile fields were never even offered to the
         # resolution path in this test's design, so re-affirm they are
         # simply absent from anything the dispatcher touched.
@@ -256,7 +265,8 @@ class TestRegistryIntegrity:
         full_kwargs = dict(
             module_id="widget-security",
             runner_repository_path="scripts/widget_security.py",
-            argv_mode="local", policy_repository_path=None,
+            argv_mode=("local", "--child-document"),
+            policy_repository_path=None,
             child_schema_version=_VALID_SCHEMA,
             capability_contract_version=_VALID_CONTRACT,
             evidence_mode=_VALID_EVIDENCE,
@@ -300,11 +310,12 @@ class TestDispatchBehavior:
         assert leg["aggregate"] == mod.CLEAN, leg
         assert len(calls) == 1
         argv = calls[0]
-        assert len(argv) == 4
+        assert len(argv) == 3 + len(entry.argv_mode)
         assert argv[0] == sys.executable
         assert argv[1] == "-I"
         assert argv[2] == str(tmp_path / entry.runner_repository_path)
-        assert argv[3] == "local"
+        assert tuple(argv[3:]) == entry.argv_mode
+        assert entry.argv_mode == ("local", "--child-document")
 
     def test_child_env_is_minimal_and_strips_proxies_and_credentials(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -917,7 +928,8 @@ class TestUnrecognizedKeyRefusal:
         base = dict(
             module_id="widget-security",
             runner_repository_path="scripts/widget_security.py",
-            argv_mode="local", policy_repository_path=None,
+            argv_mode=("local", "--child-document"),
+            policy_repository_path=None,
             child_schema_version=_VALID_SCHEMA,
             capability_contract_version=_VALID_CONTRACT,
             evidence_mode=_VALID_EVIDENCE,
@@ -1313,40 +1325,27 @@ class TestComposition:
 
     def test_the_dispatcher_runs_from_a_real_fresh_scaffold(
             self, tmp_path: Path) -> None:
-        """T33, **as a characterization of a measured contradiction, not as
-        the guard the plan specified.**  Read the docstring before treating
-        a green run here as the plan's T33 criterion being met -- it is not.
+        """T33, **resolved** (api-web-security-modules Chunk G).  This node
+        used to characterize a measured contradiction: a stock
+        `solo-greenfield` install exited 5 (INCOMPLETE) instead of the
+        plan's criterion of 0 (NOT APPLICABLE), because `content-security`
+        (default-on, matches the OLD `-security` name-suffix heuristic) had
+        no admitted registry entry.  Chunk G replaces that heuristic with a
+        source-owned declared-capability set (`_DECLARED_CAPABILITY_MODULES`)
+        that does not contain `content-security`, so it is no longer
+        selected and the plan's original criterion now holds directly, with
+        no isolation step needed.  Re-measured against THIS tree (not
+        carried from the plan or the prior docstring): see this file's
+        `test_the_declared_set_is_not_a_name_suffix_heuristic` for the
+        narrow regression version of this exact claim.
 
-        The plan requires: scaffold, run `python
-        scripts/run_security_verification.py local` as a subprocess, and
-        assert **exit 0** and the exact `NOT APPLICABLE` line.  Measured on
-        2026-08-10, a stock `solo-greenfield` install instead exits **5
-        (INCOMPLETE)**, because:
-
-        * `content-security` became default-on in the sibling
-          `default-security-stance` scope AFTER this plan was measured (the
-          plan's own reading was six default-on modules, none of them
-          matching);
-        * `_selected_capability_ids` selects capabilities by the **name
-          suffix** `-security`, which `content-security` matches;
-        * the shipped registry is empty at v1, so that selected capability
-          has no admitted entry and its leg is INCOMPLETE (T3's contract),
-          which the ladder aggregates to exit 5.
-
-        Removing `content-security` from the roster yields exactly the
-        plan's criterion (asserted below), which isolates the cause to that
-        one module rather than to the dispatcher.  Resolving the
-        contradiction means either narrowing the source-owned capability
-        filter or amending the accepted v1 contract -- a Maintainer
-        decision, so this node records the discrepancy rather than choosing.
-        **Whichever way it is resolved, this node goes RED and must be
-        rewritten deliberately.**
-
-        Hazard perturbations for the parts that ARE guards: break the
-        lockfile read path (point `_LOCKFILE` at a non-existent relative
-        location) and the machine object's `status` changes; emit exit 0
-        with no machine object at all and every machine assertion below
-        goes red while the exit code and the human line still match.
+        Hazard perturbations: break the lockfile read path (point
+        `_LOCKFILE` at a non-existent relative location) and the machine
+        object's `status` changes; emit exit 0 with no machine object at all
+        and every machine assertion below goes red while the exit code and
+        the human line still match; widen `_DECLARED_CAPABILITY_MODULES`
+        back to a `-security` suffix match and this node goes red on
+        `content-security` reappearing in `obj["legs"]`.
         """
         import subprocess as sp
 
@@ -1359,49 +1358,21 @@ class TestComposition:
             [sys.executable, str(dispatcher), "local"],
             cwd=str(target), capture_output=True, text=True,
         )
-        obj = json.loads([
-            ln for ln in proc.stdout.splitlines() if ln.startswith("{")
-        ][-1])
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert proc.stdout.splitlines()[0] == (
+            "NOT APPLICABLE: no selected local security capability")
+        obj = json.loads(proc.stdout.splitlines()[1])
 
-        # --- Guards: true regardless of how the contradiction is resolved.
         assert obj["schema"] == "cairn.security_verification.dispatcher/v1"
         assert set(obj) >= {
             "schema", "status", "ok", "aggregate", "evidence_count", "legs"}
-        assert isinstance(obj["evidence_count"], int)
-        assert obj["evidence_count"] == len(obj["legs"])
+        assert obj["status"] == "not_applicable"
+        assert obj["ok"] is True
+        assert obj["aggregate"] == "NOT_APPLICABLE"
+        assert obj["evidence_count"] == 0
+        assert obj["legs"] == []
         for word in ("CLEAN", "secure", "passed security", "no vulnerabilities"):
             assert word not in proc.stdout, (word, proc.stdout)
-
-        # --- Characterization: the measured contradiction of the plan's
-        # stated T33 criterion.  RED on any resolution, by design.
-        assert proc.returncode == 5, (
-            "the recorded residual is gone -- a stock install no longer "
-            f"exits 5; got {proc.returncode}.  Re-read this node's "
-            "docstring and re-specify it against the resolved contract."
-        )
-        assert obj["aggregate"] == "INCOMPLETE"
-        assert [leg["module_id"] for leg in obj["legs"]] == ["content-security"]
-
-        # --- The cause, isolated: with that one module removed, the plan's
-        # criterion holds exactly.
-        rc2, target2 = _scaffold(
-            tmp_path,
-            "preset: solo-greenfield\nmodules_remove:\n  - content-security\n",
-            target_name="without-content-security")
-        assert rc2 == 0
-        proc2 = sp.run(
-            [sys.executable, str(target2 / DISPATCHER_DST), "local"],
-            cwd=str(target2), capture_output=True, text=True,
-        )
-        assert proc2.returncode == 0, proc2.stdout + proc2.stderr
-        assert proc2.stdout.splitlines()[0] == (
-            "NOT APPLICABLE: no selected local security capability")
-        obj2 = json.loads(proc2.stdout.splitlines()[1])
-        assert obj2["status"] == "not_applicable"
-        assert obj2["ok"] is True
-        assert obj2["aggregate"] == "NOT_APPLICABLE"
-        assert obj2["evidence_count"] == 0
-        assert obj2["legs"] == []
 
 
 class TestTheHighRiskDesignationChannels:
@@ -1533,9 +1504,12 @@ class TestTheNonSilentInstall:
                      "no vulnerabilities", "security check passed"):
             assert word not in out, (word, out)
 
-        # The note must also not promise an outcome.  A stock install
-        # actually exits 5 (see T33's characterization), so a note claiming
-        # `NOT APPLICABLE` would be wrong as well as overclaiming.
+        # The note must also not promise an outcome, even now that a stock
+        # install's real exit (0, NOT APPLICABLE -- see the rewritten T33
+        # node) would make the specific phrase below true: an install-time
+        # notice that names a result is a notice that can go stale the next
+        # time the default-on set changes, which is exactly how T33's own
+        # prior characterization came to exist.
         assert "NOT APPLICABLE" not in out
 
     def test_installation_executes_no_selected_scanner(
@@ -1593,3 +1567,454 @@ class TestTheNonSilentInstall:
         # And the route really was installed -- otherwise every assertion
         # above would pass for the trivial reason that nothing happened.
         assert (target / DISPATCHER_DST).is_file()
+
+
+# ===========================================================================
+# Chunk G -- activation registry admission (api-web-security-modules G1/G2)
+# ===========================================================================
+#
+# Everything below except TestChunkGArgvVectorValidation and
+# TestChunkGDeclaredCapabilitySet drives the REAL two capability facades
+# through the REAL dispatcher: a real scaffold install, the shipped,
+# un-monkeypatched ``_REGISTRY``, and
+# ``python scripts/run_security_verification.py local`` run as an actual
+# subprocess (T33's pattern, not a synthetic fixture child).
+#
+# This is deliberate, not decoration. The activation-side unit tests above
+# inject a synthetic ``RegistryEntry`` pointed at a fixture child -- the
+# module docstring explains why that is legitimate for THOSE tests. But it
+# means none of them could ever catch the defect this chunk fixes: the
+# dispatcher's child argv carried one token (``"local"``) while both
+# admitted facades require their own ``local`` subcommand PLUS
+# ``--child-document`` to emit the dispatcher's bounded JSON document at
+# all -- without it they print the human-readable summary instead, which
+# the dispatcher cannot parse as JSON (DEGRADED, not the leg's true state).
+# ``test_api_access_security.py`` / ``test_web_hosting_security.py`` invoke
+# the CLI directly and always pass ``--child-document`` explicitly, so they
+# never exercised the dispatcher's own splice either. Nothing before this
+# section ran the real pair together.
+
+_API_MODULE = "api-access-security"
+_WEB_MODULE = "web-hosting-security"
+_API_RUNNER_DST = "scripts/api_access_security.py"
+_WEB_RUNNER_DST = "scripts/web_hosting_security.py"
+_API_POLICY_DST = "dev/.cairn/api-access-policy.json"
+_WEB_POLICY_DST = "dev/.cairn/web-hosting-policy.json"
+
+
+def _g_scaffold(tmp_path: Path, modules: "list[str]", *,
+                 target_name: str = "g-target") -> Path:
+    """A real, minimal, EXPLICIT-module install -- never a preset, so the
+    selected roster is exactly ``modules`` (T26/T27's settled rule: an
+    explicit ``modules:`` list is exact, never merged with default-on)."""
+    body = "modules:\n" + "".join(f"  - {m}\n" for m in modules)
+    rc, target = _scaffold(tmp_path, body, target_name=target_name)
+    assert rc == 0, (modules, target)
+    return target
+
+
+def _run_dispatcher_local(target: Path):
+    import subprocess as sp
+    return sp.run(
+        [sys.executable, str(target / DISPATCHER_DST), "local"],
+        cwd=str(target), capture_output=True, text=True, timeout=120,
+    )
+
+
+def _run_facade_child_document(target: Path, runner_dst: str):
+    """Invoke the installed facade DIRECTLY (never through the dispatcher)
+    with the exact admitted argv vector, and parse its own emitted child
+    document -- the independent oracle a real end-to-end test compares the
+    dispatcher's aggregate against."""
+    import subprocess as sp
+    proc = sp.run(
+        [sys.executable, str(target / runner_dst),
+         "local", "--child-document"],
+        cwd=str(target), capture_output=True, text=True, timeout=120,
+    )
+    return proc, json.loads(proc.stdout.strip().splitlines()[-1])
+
+
+def _machine_object(proc) -> dict:
+    return json.loads(
+        [ln for ln in proc.stdout.splitlines() if ln.startswith("{")][-1])
+
+
+class TestChunkGRegistryShape:
+    """G1: the two admitted entries, all eleven fields explicit, none
+    defaulted or inferred; G2(i)/(ii): each constructs from exactly its
+    eleven fields, and a twelfth is refused by attempting it."""
+
+    def test_the_two_entries_carry_all_eleven_fields_explicit(self) -> None:
+        """G1. Read from a FRESH, un-monkeypatched load of the shipped
+        source (T1's own discipline)."""
+        fresh = _load_fresh("cairn_security_verification_g1_shape_fresh")
+        assert set(fresh._REGISTRY) == {_API_MODULE, _WEB_MODULE}
+
+        expected_result_mapping = {
+            "CLEAN": (0, fresh.CLEAN),
+            "INCOMPLETE": (5, fresh.INCOMPLETE),
+            "FINDINGS": (10, fresh.FINDINGS),
+            "DEGRADED": (20, fresh.DEGRADED),
+        }
+        expected_common = dict(
+            argv_mode=("local", "--child-document"),
+            child_schema_version="cairn.security.capability-result.v1",
+            capability_contract_version="1",
+            evidence_mode="loopback",
+            accepted_process_exits=frozenset({0, 5, 10, 20}),
+            result_to_aggregate_mapping=expected_result_mapping,
+            runner_binding_mode="immutable_digest",
+            policy_binding_mode="living_state",
+        )
+        per_module = {
+            _API_MODULE: dict(
+                runner_repository_path=_API_RUNNER_DST,
+                policy_repository_path=_API_POLICY_DST,
+            ),
+            _WEB_MODULE: dict(
+                runner_repository_path=_WEB_RUNNER_DST,
+                policy_repository_path=_WEB_POLICY_DST,
+            ),
+        }
+        eleven_fields = {
+            "module_id", "runner_repository_path", "argv_mode",
+            "policy_repository_path", "child_schema_version",
+            "capability_contract_version", "evidence_mode",
+            "accepted_process_exits", "result_to_aggregate_mapping",
+            "runner_binding_mode", "policy_binding_mode",
+        }
+        assert set(fresh.RegistryEntry.__dataclass_fields__) == eleven_fields
+        for module_id, specific in per_module.items():
+            entry = fresh._REGISTRY[module_id]
+            assert entry.module_id == module_id
+            for field, value in {**expected_common, **specific}.items():
+                assert getattr(entry, field) == value, (module_id, field)
+
+    def test_the_dispatcher_local_living_state_set_carries_both_policies(
+            self) -> None:
+        """The companion wiring G1 depends on but the plan row does not
+        separately name: THIS file's own ``_LIVING_STATE_DSTS`` (distinct
+        from ``bootstrap/_scaffold/lockfile.py``'s constant of the same
+        name -- see this file's comment on it) must carry both policy
+        destinations, added in the SAME commit as the registry entries, per
+        that constant's own standing rule. Without this, ``_bind_policy``'s
+        living_state branch refuses BOTH entries unconditionally (`not in
+        this dispatcher's authoritative living-state set`), and the
+        registry admission would construct cleanly but never actually run.
+        """
+        fresh = _load_fresh(
+            "cairn_security_verification_g1_living_state_fresh")
+        assert fresh._LIVING_STATE_DSTS == frozenset(
+            {_API_POLICY_DST, _WEB_POLICY_DST})
+
+    def test_each_entry_constructs_with_exactly_the_eleven_fields(
+            self) -> None:
+        """G2(i): each of this scope's two entries constructs cleanly from
+        exactly its own eleven admitted fields -- tried directly, not
+        inferred from the module import having already succeeded."""
+        fresh = _load_fresh(
+            "cairn_security_verification_g2_construct_fresh")
+        for module_id in (_API_MODULE, _WEB_MODULE):
+            entry = fresh._REGISTRY[module_id]
+            kwargs = {
+                f: getattr(entry, f)
+                for f in fresh.RegistryEntry.__dataclass_fields__
+            }
+            rebuilt = fresh.RegistryEntry(**kwargs)
+            assert rebuilt == entry
+
+    @pytest.mark.parametrize("bad_key", [
+        "principal", "scope", "twelfth_field",
+    ])
+    def test_a_twelfth_field_on_either_entry_is_refused_by_attempting_it(
+            self, bad_key: str) -> None:
+        """G2(ii), tried against THESE two entries' own eleven-field shape
+        -- not inferred from the dataclass being frozen, and not a repeat
+        of T44(a)'s synthetic widget-security shape."""
+        fresh = _load_fresh(
+            "cairn_security_verification_g2_twelfth_field_fresh")
+        for module_id in (_API_MODULE, _WEB_MODULE):
+            entry = fresh._REGISTRY[module_id]
+            base = {
+                f: getattr(entry, f)
+                for f in fresh.RegistryEntry.__dataclass_fields__
+            }
+            base[bad_key] = "malicious"
+            with pytest.raises(TypeError) as exc:
+                fresh.RegistryEntry(**base)
+            assert bad_key in str(exc.value), (module_id, bad_key)
+
+
+class TestChunkGArgvVectorValidation:
+    """G-1's acceptance criterion: the dispatcher can reach ``local`` and
+    cannot reach ``deployed-passive`` -- refused at registry construction,
+    never at the child."""
+
+    def test_a_deployed_passive_argv_is_refused_at_construction(self) -> None:
+        """G-1 hazard perturbation, run against the SOURCE-OWNED
+        constructor directly: patching a registry entry's ``argv_mode`` to
+        the ``deployed-passive`` shape is refused by ``__post_init__``, so
+        it never reaches ``_run_child`` / the child process. The plan's own
+        perturbation ("patch the registry entry's argv_mode in a tmp_path
+        copy") is exercised here at the unit the validation actually lives
+        in; TestChunkGRealFacadeThroughRealDispatcher's tests below cover
+        the shipped, un-patched real entries, which never carry this shape
+        in the first place."""
+        with pytest.raises(ValueError) as exc:
+            _entry(argv_mode=("deployed-passive", "--authorize-base-url",
+                               "https://example.invalid"))
+        assert "argv_mode" in str(exc.value)
+
+    @pytest.mark.parametrize("bad_argv", [
+        ("local",),  # the OLD, pre-fix one-token vector
+        ("local", "--authorize-base-url"),
+        (),
+        ("--child-document",),
+        ("local", "--child-document", "extra-token"),
+        ("deployed-passive",),
+    ])
+    def test_every_non_admitted_argv_vector_is_refused(
+            self, bad_argv: tuple) -> None:
+        """The closed set has exactly one member; every neighbor shape --
+        including the OLD one-token ``("local",)`` vector this chunk
+        replaces -- is refused the same way, at the same place."""
+        with pytest.raises(ValueError) as exc:
+            _entry(argv_mode=bad_argv)
+        assert "argv_mode" in str(exc.value)
+
+    def test_the_admitted_vector_itself_constructs_cleanly(self) -> None:
+        """The reciprocal of the two hazard tests above: the one admitted
+        vector is not itself refused."""
+        entry = _entry(argv_mode=("local", "--child-document"))
+        assert entry.argv_mode == ("local", "--child-document")
+
+
+class TestChunkGDeclaredCapabilitySet:
+    """Change 2: the declared, source-owned capability set replacing the
+    ``-security`` name-suffix heuristic."""
+
+    def test_the_declared_set_is_not_a_name_suffix_heuristic(self) -> None:
+        """The measured defect this replaces: ``content-security`` is
+        default-on, matches the OLD ``-security`` suffix, and has no
+        registry entry. It must be EXCLUDED from selection now, and the
+        two real capabilities must be INCLUDED without relying on their
+        names ending in ``-security`` (they do, but that is not why they
+        are selected -- only declaration is)."""
+        assert "content-security" not in mod._DECLARED_CAPABILITY_MODULES
+        lock = {"modules": ["content-security", _API_MODULE]}
+        assert mod._selected_capability_ids(lock) == [_API_MODULE]
+
+    def test_a_declared_installed_capability_with_no_registry_entry_stays_visible(  # noqa: E501
+            self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The property Change 2 exists to protect, forced directly since
+        both REAL declared capabilities are now admitted and so cannot
+        demonstrate it: a module that IS in
+        `_DECLARED_CAPABILITY_MODULES`, IS selected by the lockfile, and
+        has NO admitted `_REGISTRY` entry must still be SELECTED and still
+        report INCOMPLETE (T3's contract) -- never silently dropped.
+        *Deletion mutant:* narrow `_selected_capability_ids` to
+        `installed & set(_REGISTRY)` instead of
+        `installed & _DECLARED_CAPABILITY_MODULES`; this node goes red
+        because the module vanishes from the selected roster entirely
+        (`ids == []`) rather than reporting INCOMPLETE."""
+        monkeypatch.setattr(
+            mod, "_DECLARED_CAPABILITY_MODULES",
+            frozenset({"made-up-declared-security"}))
+        lock = {"modules": ["made-up-declared-security"]}
+        ids = mod._selected_capability_ids(lock)
+        assert ids == ["made-up-declared-security"]
+        assert "made-up-declared-security" not in mod._REGISTRY
+        leg = mod._evaluate_capability(ids[0], Path("/nonexistent"), {})
+        assert leg["aggregate"] == mod.INCOMPLETE
+        assert leg["child_launched"] is False
+
+
+class TestChunkGRealFacadeThroughRealDispatcher:
+    """The end-to-end wiring both prior reviews missed: the REAL facades
+    driven by the REAL dispatcher, never a synthetic fixture child and
+    never the facade CLI invoked directly in place of the dispatcher."""
+
+    def test_a_real_capability_alone_reveals_the_child_details_schema_mismatch(  # noqa: E501
+            self, tmp_path: Path) -> None:
+        """The required real-facade-through-real-dispatcher test --
+        **and a characterization, not the guard G2's row anticipated,
+        because of what it found.** Read this docstring before treating a
+        green run here as "the real pair works end to end" -- it proves
+        the OPPOSITE for the child's `details` field, and that is the
+        node's actual value.
+
+        With G-1's argv-vector fix landed, the dispatcher's child DOES
+        launch, DOES emit valid UTF-8 JSON, and every identity field
+        (`schema`, `capability`, `contract`, `evidence_mode`) matches the
+        registry entry -- proving the argv splice this chunk exists to fix
+        is correct. But the aggregate is **DEGRADED**, not the INCOMPLETE
+        the facade itself reports, because of a SEPARATE, pre-existing,
+        previously-undetected contract mismatch this end-to-end run is what
+        exposes: `templates/modules/team-gated/_security_net/report.py`'s
+        `child_document(..., details: dict, ...)` and both facades' `_emit`
+        always build `details` as a JSON OBJECT (`{"capability", "findings",
+        "notes", ...}`), while `run_security_verification.py`'s own
+        `_evaluate_capability` requires `isinstance(details, str)` and
+        DEGRADES with `"child details is not a string"` otherwise. Measured
+        directly: `python scripts/api_access_security.py local
+        --child-document` on a stock unfilled-stub install prints
+        `"details": {"capability": "api-access-security", "findings": [],
+        "notes": [...]}`.  Neither side is this deviation's to redesign
+        (Change 1/2/3's scope is the argv vector, the capability set, and
+        the two registry rows) -- this is the STOP-and-report finding the
+        task's end-to-end instruction anticipated might surface. **Its
+        practical consequence:** as shipped right now, NEITHER admitted
+        capability can EVER report CLEAN, FINDINGS, or INCOMPLETE through
+        the dispatcher, regardless of the capability's own actual evidence
+        -- every real leg that reaches the child-launch stage degrades on
+        this check. Only a leg that fails EARLIER (a binding failure, before
+        the child ever launches) reports DEGRADED for its own, unrelated
+        reason.
+        """
+        target = _g_scaffold(
+            tmp_path, ["security-verification", _API_MODULE],
+            target_name="g-api-alone")
+        assert (target / _API_RUNNER_DST).is_file()
+        assert (target / _API_POLICY_DST).is_file()
+
+        proc = _run_dispatcher_local(target)
+        obj = _machine_object(proc)
+        [leg] = obj["legs"]
+        assert leg["module_id"] == _API_MODULE
+        assert leg["child_launched"] is True
+        assert leg["evidence_mode"] == "loopback"
+
+        # The independent oracle: the same facade, invoked directly. Its
+        # child document PARSES and every identity field matches -- the
+        # G-1 argv-splice fix is what makes even this much true.
+        _fproc, child_doc = _run_facade_child_document(
+            target, _API_RUNNER_DST)
+        assert child_doc["schema"] == "cairn.security.capability-result.v1"
+        assert child_doc["capability"] == _API_MODULE
+        assert child_doc["contract"] == "1"
+        assert child_doc["evidence_mode"] == "loopback"
+        assert child_doc["result"] == "INCOMPLETE"
+        assert isinstance(child_doc["details"], dict), (
+            "if this ever becomes a str, the facade side of the mismatch "
+            "has changed and this node's characterization is stale")
+
+        # The characterized mismatch: the dispatcher's aggregate is NOT what
+        # the child reported, because `details` fails the dispatcher's own
+        # `isinstance(..., str)` requirement.
+        assert proc.returncode == 20, proc.stdout + proc.stderr
+        assert obj["aggregate"] == "DEGRADED"
+        assert leg["aggregate_label"] == "DEGRADED"
+        assert leg["aggregate_label"] != child_doc["result"], (
+            "the schema mismatch this node characterizes appears to be "
+            "fixed -- re-read the docstring and rewrite this node against "
+            "the resolved contract, the same discipline the former T33 "
+            "characterization used")
+        assert "details is not a string" in leg["detail"]
+
+    def test_the_other_real_capability_alone_hits_the_same_mismatch(
+            self, tmp_path: Path) -> None:
+        """Same characterization as the api-access-security node, run
+        against web-hosting-security -- confirming the mismatch is systemic
+        (both facades share `_security_net/report.py`'s `child_document`),
+        not an artifact of one facade's own code."""
+        target = _g_scaffold(
+            tmp_path, ["security-verification", _WEB_MODULE],
+            target_name="g-web-alone")
+        proc = _run_dispatcher_local(target)
+        obj = _machine_object(proc)
+        [leg] = obj["legs"]
+        assert leg["module_id"] == _WEB_MODULE
+        assert leg["child_launched"] is True
+
+        _fproc, child_doc = _run_facade_child_document(
+            target, _WEB_RUNNER_DST)
+        assert child_doc["capability"] == _WEB_MODULE
+        assert child_doc["result"] == "INCOMPLETE"
+        assert isinstance(child_doc["details"], dict)
+
+        assert proc.returncode == 20, proc.stdout + proc.stderr
+        assert obj["aggregate"] == "DEGRADED"
+        assert leg["aggregate_label"] == "DEGRADED"
+        assert "details is not a string" in leg["detail"]
+
+    def test_both_real_capabilities_together_both_hit_the_mismatch(
+            self, tmp_path: Path) -> None:
+        """G2's "both together" row, characterized rather than guarded for
+        the same reason as the two single-capability nodes above: both
+        selected, both legs launch their real child, and -- because the
+        `details`-schema mismatch is not specific to either facade -- both
+        degrade the same way, with `_build_report` correctly keeping the
+        two legs distinct rather than collapsing them (T32's property,
+        reconfirmed here over real legs)."""
+        target = _g_scaffold(
+            tmp_path,
+            ["security-verification", _API_MODULE, _WEB_MODULE],
+            target_name="g-both")
+        proc = _run_dispatcher_local(target)
+        assert proc.returncode == 20, proc.stdout + proc.stderr
+        obj = _machine_object(proc)
+        assert obj["aggregate"] == "DEGRADED"
+        assert obj["evidence_count"] == 2
+        by_module = {leg["module_id"]: leg for leg in obj["legs"]}
+        assert set(by_module) == {_API_MODULE, _WEB_MODULE}
+        for leg in by_module.values():
+            assert leg["aggregate_label"] == "DEGRADED"
+            assert leg["child_launched"] is True
+            assert "details is not a string" in leg["detail"]
+
+    def test_a_binding_failure_still_precedes_and_differs_from_the_details_mismatch(  # noqa: E501
+            self, tmp_path: Path) -> None:
+        """G2's precedence row (`20 > 10 > 5 > 0`) cannot currently be
+        demonstrated end to end with REAL legs: the `details`-schema
+        mismatch characterized above means a real leg that reaches the
+        child-launch stage can now ONLY resolve to DEGRADED, whatever the
+        capability's own evidence actually is -- there is no live path to a
+        real CLEAN, FINDINGS, or INCOMPLETE aggregate to show precedence
+        against. T15 remains the exhaustive, synthetic proof that
+        `_build_report`'s `max()` respects `20 > 10 > 5 > 0` over every
+        ordered pair; this node instead shows the one real-leg distinction
+        still available -- a binding failure (digest mismatch) refuses
+        BEFORE the child launches, for its own named reason, while the
+        details-mismatch failure happens AFTER a real launch, for a
+        different named reason -- and confirms the two are not collapsed
+        into one leg despite sharing an aggregate level."""
+        target = _g_scaffold(
+            tmp_path,
+            ["security-verification", _API_MODULE, _WEB_MODULE],
+            target_name="g-precedence")
+        runner_path = target / _WEB_RUNNER_DST
+        data = bytearray(runner_path.read_bytes())
+        data[0] ^= 0xFF
+        runner_path.write_bytes(bytes(data))
+
+        proc = _run_dispatcher_local(target)
+        assert proc.returncode == 20, proc.stdout + proc.stderr
+        obj = _machine_object(proc)
+        assert obj["aggregate"] == "DEGRADED"
+        by_module = {leg["module_id"]: leg for leg in obj["legs"]}
+        # The untampered leg: launches, degrades on the details mismatch.
+        assert by_module[_API_MODULE]["aggregate_label"] == "DEGRADED"
+        assert by_module[_API_MODULE]["child_launched"] is True
+        assert "details is not a string" in by_module[_API_MODULE]["detail"]
+        # The tampered leg: refused at binding, never launches -- a
+        # DIFFERENT reason, at a DIFFERENT point in the pipeline.
+        assert by_module[_WEB_MODULE]["aggregate_label"] == "DEGRADED"
+        assert by_module[_WEB_MODULE]["child_launched"] is False
+        assert "digest mismatch" in by_module[_WEB_MODULE]["detail"]
+
+    def test_no_real_capability_selected_is_not_applicable(
+            self, tmp_path: Path) -> None:
+        """G2's "no capability selected" row, using this section's own
+        explicit-module install rather than a preset (TestUniversality's
+        rewritten T33 covers the preset form)."""
+        target = _g_scaffold(
+            tmp_path, ["security-verification"], target_name="g-none")
+        proc = _run_dispatcher_local(target)
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert proc.stdout.splitlines()[0] == (
+            "NOT APPLICABLE: no selected local security capability")
+        obj = _machine_object(proc)
+        assert obj["aggregate"] == "NOT_APPLICABLE"
+        assert obj["evidence_count"] == 0
+        assert obj["legs"] == []
