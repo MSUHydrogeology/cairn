@@ -23,13 +23,15 @@ to need one. Chunks, acceptance criteria, verification evidence.
 replaced it rather than defended it. Distinct from rejected: the idea survived,
 the proposal did not.
 
-**Append-only** — a rule about proposals and post-implementation plans: never
-edit a prior section, append a revising one. The record must show what was
-believed *at each point*, not a tidied final state.
+**Append-only** — the rule that you add to a proposal rather than editing what
+is already there. Like a bound lab notebook: you can write a correction on the
+next page, but you do not erase the earlier entry. The record has to show what
+you believed *at the time*, not a cleaned-up version.
 
-**Inline-revised** — the opposite rule, for strategy notes: fold a review in and
-delete it, leaving a clean artifact. The deliberation lives in `git log`. Same
-words (`reviewed`, `revised`) as a proposal, opposite handling.
+**Inline-revised** — the opposite rule, used for exploratory notes: take the
+review's point, edit the note, and delete the review. Like a working draft
+rather than a notebook. Confusingly, both this and append-only use the words
+`reviewed` and `revised` — they mean opposite things about what you keep.
 
 **Archive** — the closed end of the lifecycle. An archived artifact is history:
 read it for context, do not edit it, and never mine it for metrics.
@@ -43,12 +45,14 @@ same agent type in a fresh session.
 Floor: **a different agent type, or a human**. This floor is what "structural
 independence" means in practice.
 
-**Structural independence** — independence derived from something checkable —
-a different model architecture, or a different person — rather than from social
-distance. Weaker than it sounds in one specific way: the record makes
-independence *inspectable*, not *authenticated*.
+**Structural independence** — independence you can point at, rather than take
+on trust: a different AI model, or a different person. Journals ask whether a
+referee is too close to the author, which is a judgement call. This is not.
+One honest limit: the record shows *who was named* as reviewer; nothing proves
+they were who they said.
 
-**Dual-Review** — the two tiers together. One of Cairn's two differentiators.
+**Dual-Review** — the two tiers together. This is Cairn's central mechanism;
+the written record exists to serve it.
 
 **Code review** — the review of an implementation, by someone who is not the
 implementer. A plan cannot archive until one has occurred.
@@ -70,8 +74,8 @@ Implementation, or a reviewer tier; name yours before substantive work.
 
 ## The tree and the tooling
 
-**`dev/`** — the coordination tree: proposals, plans, strategy notes, roadmap
-boards. Scaffolding for building software, not the output.
+**`dev/`** — the folder holding proposals, plans, notes, and roadmap boards.
+Scaffolding for building software, not the point of it.
 
 **Strategy note** — Stage-0 exploration. Written *before* you are ready to
 propose, and not a commitment.
@@ -94,22 +98,22 @@ upstream to the methodology.
 **Work-intent** — a claim on files you are about to edit, so concurrent agents
 do not collide. Advisory, and it fires.
 
-**Twin** — a file Cairn both ships to adopters and uses itself, kept
-byte-identical. A parity test enforces it.
+**Twin** — a file Cairn both ships to you and uses on itself. The two copies
+must stay exactly identical, and a test checks that they do.
 
 ## Verification
 
-**Verification boundaries** — three jobs, deliberately not paid for at once:
-**A** scoped runs during implementation, **B** one full suite on a clean tree
-before code review, **C** independent falsification by the reviewer. Copying B's
-command is not C.
+**Verification boundaries** — three separate testing jobs, deliberately not
+paid for all at once: quick targeted runs while building, one full run on a
+clean tree before review, and the reviewer's own attempt to break it. Re-running
+someone else's test command is not the third one.
 
 **Claim check** — the checker that flags broken repository paths and
 out-of-bounds line citations before commit. A discipline aid, not a gate.
 
-**Drift gate** — a check that fails when documentation falls behind the thing it
-describes. The pattern exists because hand-maintained descriptions of moving
-targets go stale by construction.
+**Drift gate** — a check that fails when the documentation no longer matches
+what it describes. It exists because any hand-written summary of something that
+keeps changing will eventually be wrong, and usually without anyone noticing.
 
 **Verify before asserting** — the standing rule that a load-bearing claim is
 checked against the tree, not recalled. Most of Cairn's own worst findings have

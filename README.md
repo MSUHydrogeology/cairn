@@ -74,11 +74,22 @@ commits clean, and stopping at the points where a person should decide. You do
 not have to know all of it in advance — the review is what checks they actually
 did it.
 
-That is the honest framing, too. Cairn is **opinionated** about engineering
-practice, and the opinions are written down in [`doctrine/`](doctrine/) where
-you can read them and disagree. Bringing in a disciplined team means adopting
-somebody's idea of discipline; this way you can see exactly whose, and what it
-says.
+And it is yours to change. Cairn is **opinionated** about engineering practice,
+but the opinions arrive as plain text in your repository, not as a black box:
+
+- **Edit the rules.** The doctrine your agents follow is a file you own. If a
+  rule does not fit your project, change it.
+- **Fill in your own.** The templates ship with deliberate blanks for your
+  project's conventions, and one folder is yours entirely — Cairn never writes
+  to it.
+- **Your changes survive updates.** Pulling a newer Cairn merges rather than
+  overwrites, so local edits are not silently reverted.
+- **Send the good ones back.** If a change you made turns out to be generally
+  useful, there is a channel for returning it upstream.
+
+Bringing in a disciplined team means adopting somebody's idea of discipline.
+This way you can see exactly whose, read what it says, and disagree in
+writing.
 
 ---
 
@@ -97,8 +108,10 @@ says.
 - **Nothing locks you in.** The whole system is plain text files kept under
   version control. You can change AI tools, or programming languages, without
   changing how you work.
-- **Sized to your project.** A solo script and a fifteen-year model do not get
-  the same treatment. You start light and add only what your work earns.
+- **Sized to your project, and yours to change.** A solo script and a
+  fifteen-year model do not get the same treatment. You start light, add only
+  what your work earns, and rewrite any rule that does not fit — the doctrine
+  is a file in your repository, not a setting in someone's product.
 - **Nothing to install but Python, and nothing leaves your machine.** No
   accounts, no service, no data sent anywhere.
 

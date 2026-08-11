@@ -14,13 +14,13 @@ the answer is "nothing much," it says so.
 architectural decision and its context — popularised by Michael Nygard around
 2011 and now common in software teams.
 
-**Overlap.** Substantial. ADRs and Cairn proposals are both durable,
-version-controlled, decision-shaped documents that live beside the code.
+**Overlap.** Substantial. Both are lasting documents about a decision, kept in
+version control beside the code they concern.
 
-**The difference.** An ADR is usually written *after* the decision, to explain
-it. A Cairn proposal is written *before* the work, and something has to happen
-to it — an independent review, a response, a recorded decision — before
-implementation begins. An ADR is a record. A proposal is a gate.
+**The difference.** A decision record is usually written *after* the decision,
+to explain it. A Cairn proposal is written *before* the work, and something has
+to happen to it — an independent read, a reply, a decision — before anyone
+starts building. A decision record documents. A proposal has to be got past.
 
 If your team keeps ADRs and is happy, you already have most of the value Cairn's
 record provides. The part you do not have is the review tier.
@@ -33,17 +33,16 @@ discussion, a decision by a named authority.
 
 **Overlap.** Large, and Cairn's lifecycle is openly modelled on this shape.
 
-**The difference.** Two, both about scale. These processes are sized for
-*language- or ecosystem-level* changes, where the cost of a written round is
-small against the blast radius. Cairn applies the same shape to ordinary
-day-to-day changes in one repository, which only works if the apparatus stays
-cheap — and keeping it cheap is a standing design problem, not a solved one.
-Second, Cairn's reviewers are usually AI agents, which makes reviewer
-independence a question of *model architecture* rather than of institutional
-affiliation.
+**The difference.** Two, both about scale. Those processes are built for
+changes that affect thousands of people, where a written round of review is
+cheap next to the consequences of getting it wrong. Cairn applies the same
+shape to ordinary day-to-day changes in one repository — which only works if
+the process stays light. Keeping it light is a live problem, not a solved one.
+Second, Cairn's reviewers are usually AI models, so independence means *a
+different model* rather than someone at a different institution.
 
-If you already run a proposal process, Cairn's lifecycle will feel familiar.
-Read it as that process instrumented for a human working with agents.
+If you already run something like this, Cairn's version will feel familiar.
+Read it as the same idea, sized for one scientist working with agents.
 
 ## The lab notebook
 
@@ -89,40 +88,41 @@ wrong thing to build" is a cheap finding.
 
 ## Agile, Scrum, and the rest
 
-**Overlap.** Little that is specific. Cairn says nothing about iteration
-length, estimation, standups, or team roles beyond who reviews what.
+**Overlap.** Little that is specific. Cairn says nothing about sprint length,
+estimation, stand-ups, or team roles beyond who reviews what.
 
-**The difference.** Cairn is upstream of process frameworks and orthogonal to
-them. It governs how one change is argued, reviewed, and recorded, not how work
-is scheduled. You can run it inside Scrum, inside Kanban, or inside no framework
-at all.
+**The difference.** Cairn is about one change at a time — how it is argued,
+checked, and recorded — not about how work is scheduled or divided. It sits
+underneath whichever way you organise, and works the same if you organise no
+particular way at all.
 
 ## Multi-agent AI frameworks
 
-**What they are.** Systems that orchestrate several AI agents — debate,
-role specialisation, message-passing protocols.
+**What they are.** Systems that run several AI agents together — having them
+debate, giving each a speciality, passing messages between them.
 
 **Overlap.** Cairn has multiple agents in named roles, which looks similar from
 the outside.
 
 **The difference.** Cairn's agents do not talk to each other. They read and
-write files in git, and coordination happens through those artifacts. That is a
-deliberate choice with a real cost — no real-time orchestration — and a real
-payoff: no server, no persistent agent identity, and any model that can read and
-write files can participate. It is also why swapping vendors does not change the
-method.
+write files in your repository, and that is the whole coordination mechanism.
+The cost is real: nothing happens in real time, and no agent knows what another
+is doing except by reading what it wrote. The payoff is also real — there is no
+server to run, nothing to keep alive between sessions, and any AI tool that can
+read and write files can take part. It is why changing tools does not change how
+you work.
 
 ## So what is actually distinctive?
 
 Stripped of everything shared:
 
-1. **The review happens before the code exists**, when the premise is still
-   cheap to challenge.
-2. **Reviewer independence is structural** — a different model architecture, or
-   a human — rather than institutional, so it is checkable.
-3. **What would falsify the change is committed in advance.**
-4. **The record lives in the repository**, not in a chat platform's history, and
-   replays from `git log`.
+1. **The review happens before the code exists**, when saying "that is the
+   wrong thing to build" is still cheap.
+2. **You can check that the reviewer was independent** — a different AI model,
+   or a person — rather than taking it on trust.
+3. **What would show the change to be wrong is written down first.**
+4. **The whole exchange stays in your repository**, not in a chat history you
+   cannot search a year later.
 
 Each of these exists somewhere in the practices above. The combination, applied
 to ordinary changes in a scientific codebase worked on by AI agents, is what
