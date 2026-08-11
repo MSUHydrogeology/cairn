@@ -169,6 +169,76 @@ suppressed the category-D count soft-flag.  The count soft-flag was
 retired 2026-06-05; a stray ``claim-check-allow-count`` comment is now
 silently ignored.)
 
+**The typed-declaration registry (document-wide, exact).**  A marker
+block is also a small **document registry**: each exact backticked path
+*listed* in the block may recur anywhere else in the same document
+without needing a second, document-wide HTML directive.  Registry
+entries are **literal paths, never globs**, they exempt only the
+**exact** path (never a sibling, a descendant, or a look-alike prefix),
+and every token the registry exempts is reported together with the
+declaration that authorized it.
+
+What counts as an entry:
+
+* on the **marker line itself**, every backticked token (the compact
+  ``Proposed paths: `a.md`, `b.md``` form); and
+* on a **continuation row**, the row's *first* backticked token only --
+  a list or table row lists one path and then explains it, so a path
+  named later in that row's prose is a reference, not a second
+  declaration.
+
+A token carrying a placeholder (``<slug>``, a brace) declares nothing --
+it is an illustrative form, exactly as elsewhere in this checker.  A
+path-shaped token carrying a **glob wildcard** is *malformed*: the
+registry is literal by contract, so the entry grants no document-wide
+authority (fail closed).  A path declared **twice inside one block** is
+a duplicate and likewise grants nothing.  The same path declared in two
+*different* blocks is not a duplicate -- an append-only record whose
+revision section restates its proposed paths is doing the right thing.
+
+**Liveness (lifecycle artifacts only).**  An exemption is meant to be
+temporary debt, so on a **non-terminal proposal or plan** -- a file at
+exactly ``dev/proposals/<name>.md`` or ``dev/plans/<name>.md`` (a
+``_``-prefixed authoring template is not an artifact) -- each declaration
+must still be doing work:
+
+* a typed registry entry must authorize at least one exemption
+  **outside its own block**; an entry whose path has materialized (or
+  which nothing outside the block cites) is a hard finding;
+* a ``claim-check-allow`` glob that suppresses at least one report is
+  ``effective``; one that suppresses nothing is ``unused`` -- a hard
+  directive finding.
+
+Two classes are deliberately **non-failing migration diagnostics**
+rather than hard findings, because their staleness was created by this
+mechanism landing and not by the artifact's author:
+
+* ``resolved-by-archive`` -- every occurrence the glob used to suppress
+  now resolves through the exact lifecycle archive rule above; and
+* ``resolved-by-registry`` -- every such occurrence is now authorized by
+  a typed registry entry in the same document.
+
+Each is reported with the artifact, the directive line, the glob, and
+what now resolves it, so the migration that retires it has an exact
+inventory -- and it exits clean.
+
+**Grandfathering follows immutability, not directory.**  Liveness never
+changes the exit code for an artifact nobody may rewrite: any file under
+``dev/proposals/archive/`` or ``dev/plans/archive/``, a proposal whose
+status is ``accepted`` / ``rejected`` / ``superseded``, or a plan whose
+status is ``archived``.  Those still *receive* the diagnostics.  The
+status is parsed strictly -- exactly one ``**Status**: <value>`` line in
+the artifact's header (above its first ``##`` heading), naming a
+terminal value -- and anything else (missing, duplicated, unrecognized)
+**fails closed into liveness** rather than silently inheriting the
+grandfather.
+
+Every other Markdown surface -- doctrine, strategy, modules, the
+changelog, templates, examples -- keeps its existing behavior: the
+registry works there, and liveness does not run.  Those surfaces have
+different mutability rules and are out of this contract's scope by
+declaration.
+
 Usage::
 
     python scripts/claim_check.py <file>                  # check one file
@@ -226,9 +296,17 @@ _PLACEHOLDER_CHARS = ('<', '>', '*', '{', '}')
 # 2026-05-21 External-repo paths extension.
 _MARKER_LINE_RE = re.compile(
     r'^\s*(?:(?:[-*+]|\d+[.)])\s+)?'
-    r'(?:proposed|untracked|external-repo)\s+paths?:',
+    r'(?P<kind>proposed|untracked|external-repo)\s+paths?:',
     re.IGNORECASE,
 )
+
+#: Display form for each marker keyword, used when a report names the
+#: declaration that authorized an exemption.
+_MARKER_KIND_LABEL = {
+    'proposed': 'Proposed paths',
+    'untracked': 'Untracked paths',
+    'external-repo': 'External-repo paths',
+}
 
 # Document-scoped path-exemption directive.  A standalone HTML-comment
 # line `<!-- claim-check-allow: <glob>[, <glob>...] -->` declares one
@@ -254,10 +332,44 @@ class Flag:
     """One claim-check finding."""
 
     line: int
-    kind: str        # 'path' | 'line-bounds' | 'directive'
-    severity: str    # 'hard' | 'soft'
+    kind: str        # 'path' | 'line-bounds' | 'directive' | 'declaration'
+    #: ``'hard'`` (non-zero exit) | ``'soft'`` (advisory, no producer today)
+    #: | ``'info'`` (a non-failing diagnostic -- migration items and the
+    #: liveness reports a grandfathered artifact receives without failing).
+    severity: str
     token: str
     message: str
+
+
+@dataclass(frozen=True)
+class Declaration:
+    """One typed path declaration -- an entry in a document's registry.
+
+    ``kind`` is the marker keyword (``'proposed'`` / ``'untracked'`` /
+    ``'external-repo'``), ``path`` the exact literal repo-relative path as
+    written, ``line`` the row that declared it, and ``block`` the line
+    number of the governing marker line (so "an occurrence outside its own
+    block" is decidable, and two blocks declaring the same path are not
+    duplicates).
+    """
+
+    line: int
+    block: int
+    kind: str
+    path: str
+    #: True when the governing marker line has at least one continuation
+    #: row -- i.e. the declaration is part of a *registry block*, the form
+    #: the liveness obligation is written for.  A standalone marker line
+    #: ("Proposed path: `x` -- because ...", mid-prose) is the mechanism's
+    #: original line-local use: it exempts its own line and there is
+    #: nothing about it to retire, so it carries no liveness obligation.
+    registry_block: bool = False
+
+    @property
+    def label(self) -> str:
+        """How a report names this declaration (R2 exact reporting)."""
+        kind = _MARKER_KIND_LABEL.get(self.kind, self.kind)
+        return f'`{kind}:` declaration of `{self.path}` (line {self.line})'
 
 
 @dataclass
@@ -273,6 +385,14 @@ class CheckResult:
     #: ``(token, glob)`` for each would-be-hard path / line-bounds flag
     #: suppressed by a valid ``claim-check-allow`` directive glob.
     exempted: list[tuple[str, str]] = field(default_factory=list)
+    #: ``(token, declaration label)`` for each would-be-hard flag
+    #: suppressed by a typed registry declaration -- every exempted token
+    #: reported *with the declaration that authorized it*.
+    declared: list[tuple[str, str]] = field(default_factory=list)
+    #: Non-failing ``severity='info'`` findings: migration items
+    #: (``resolved-by-archive`` / ``resolved-by-registry``) and the
+    #: liveness reports a grandfathered artifact receives without failing.
+    diagnostics: list[Flag] = field(default_factory=list)
 
 
 def _strip_html_comments(line: str, in_comment: bool) -> tuple[str, bool]:
@@ -406,15 +526,20 @@ def _is_placeholder(token: str) -> bool:
     return ' ' in token or any(ch in token for ch in _PLACEHOLDER_CHARS)
 
 
-def _is_marker_line(text: str) -> bool:
-    """True for a ``Proposed path:`` / ``Untracked path:`` marker line.
+def _marker_line_kind(text: str) -> str | None:
+    """The marker keyword of a ``Proposed path:`` / ``Untracked path:`` /
+    ``External-repo path:`` line, lowercased, or ``None``.
 
     A marker line's backticked repo-path and line-bounds tokens are
-    deliberate forward / out-of-tree references -- exempt from the
-    hard checks.  See ``_MARKER_LINE_RE`` and the module docstring's
-    "Marker lines" paragraph.
+    deliberate forward / out-of-tree references -- exempt from the hard
+    checks -- and, since the typed registry landed, they are also the
+    document's declarations, which is why the *kind* is returned rather
+    than a bare boolean.  See ``_MARKER_LINE_RE`` and the module
+    docstring's "Marker lines" and "typed-declaration registry"
+    paragraphs.
     """
-    return _MARKER_LINE_RE.match(text) is not None
+    match = _MARKER_LINE_RE.match(text)
+    return match.group('kind').lower() if match is not None else None
 
 
 def _is_marker_block_continuation(text: str) -> bool:
@@ -433,6 +558,224 @@ def _is_marker_block_continuation(text: str) -> bool:
     if re.match(r'^([-*+]|\d+[.)])\s+', stripped):
         return True
     return stripped.startswith('`')
+
+
+def _walk_marker_context(text: str):
+    """Yield ``(lineno, line, kind, block, is_marker)`` per scannable line.
+
+    ``kind`` is the marker keyword governing this line -- set on a marker
+    line *and* on each of its continuation rows -- or ``None`` when the
+    line is outside any marker block; ``block`` is the governing marker
+    line's number (0 outside a block).
+
+    This is the **single** implementation of the marker-block walk: both
+    the scan (which exempts a block's own tokens) and the registry parser
+    (which turns those tokens into document-wide declarations) consume it,
+    so the two can never disagree about where a block starts and ends.
+    """
+    in_block = False
+    kind: str | None = None
+    block = 0
+    prev_lineno: int | None = None
+    for lineno, line in scannable_lines(text):
+        marker_kind = _marker_line_kind(line)
+        is_marker = marker_kind is not None
+        contiguous = prev_lineno is not None and lineno == prev_lineno + 1
+        continuation = (
+            in_block and contiguous and _is_marker_block_continuation(line)
+        )
+        if is_marker:
+            kind = marker_kind
+            block = lineno
+        elif not continuation:
+            kind = None
+            block = 0
+        governing = kind if (is_marker or continuation) else None
+        yield lineno, line, governing, (block if governing else 0), is_marker
+        in_block = is_marker or continuation
+        prev_lineno = lineno
+
+
+def parse_typed_declarations(
+    text: str,
+) -> tuple[list[Declaration], list[Flag]]:
+    """Parse *text*'s marker blocks into a document registry.
+
+    Returns ``(entries, problems)``.  ``entries`` are the literal path
+    declarations, each exempting *only* that exact path anywhere else in
+    the document.  ``problems`` are the fail-closed cases, reported as
+    ``declaration``-kind flags:
+
+    * a **malformed** entry -- a path-shaped token carrying a glob
+      wildcard, when the registry is literal by contract; and
+    * a **conflicting** entry -- the same path declared under two
+      different marker keywords, which asserts two incompatible reasons
+      (a path that will be created is not a path that is never tracked).
+      The path gets no registry authority at all: the checker refuses to
+      pick a reason rather than guessing one.
+
+    Re-declaring the same path under the **same** keyword is idempotent,
+    not a duplicate: it grants exactly the authority the first entry
+    already granted.  That is what an append-only record does when a
+    revision section restates its proposed paths, and what prose does
+    when a marker line's own sentence names its path again.
+
+    Entry extraction: every backticked token on the marker line itself
+    (the compact one-line list form), but only the *first* token of a
+    continuation row, because such a row lists one path and then explains
+    it -- a path named later in the row's prose is a reference, not a
+    second declaration.  Placeholder tokens declare nothing.
+    """
+    entries: list[Declaration] = []
+    problems: list[Flag] = []
+    first_seen: dict[str, tuple[int, str]] = {}
+    conflicted: set[str] = set()
+    blocks_with_rows: set[int] = set()
+    for lineno, line, kind, block, is_marker in _walk_marker_context(text):
+        if kind is None:
+            continue
+        if not is_marker:
+            blocks_with_rows.add(block)
+        tokens = [m.group(1).strip() for m in _BACKTICK_RE.finditer(line)]
+        if not is_marker:
+            tokens = tokens[:1]
+        for token in tokens:
+            if not token:
+                continue
+            path = _token_path_part(token)
+            if '/' in path and any(
+                ch in path for ch in _GLOB_WILDCARD_CHARS
+            ):
+                problems.append(Flag(
+                    lineno, 'declaration', 'hard', token,
+                    f'malformed typed declaration `{token}`: a registry '
+                    f'entry is a literal path, not a glob -- it exempts '
+                    f'nothing beyond its own block',
+                ))
+                continue
+            if _is_placeholder(token):
+                continue  # illustrative form -- declares nothing
+            prior = first_seen.get(path)
+            if prior is not None:
+                if prior[1] != kind:
+                    conflicted.add(path)
+                    problems.append(Flag(
+                        lineno, 'declaration', 'hard', token,
+                        f'conflicting typed declarations for `{path}`: '
+                        f'`{_MARKER_KIND_LABEL.get(kind, kind)}:` here, '
+                        f'`{_MARKER_KIND_LABEL.get(prior[1], prior[1])}:` at '
+                        f'line {prior[0]} -- two incompatible reasons, so '
+                        f'the path gets no registry authority',
+                    ))
+                continue  # same keyword: idempotent, already registered
+            first_seen[path] = (lineno, kind)
+            entries.append(
+                Declaration(line=lineno, block=block, kind=kind, path=path)
+            )
+    kept = [
+        Declaration(
+            line=e.line, block=e.block, kind=e.kind, path=e.path,
+            registry_block=e.block in blocks_with_rows,
+        )
+        for e in entries if e.path not in conflicted
+    ]
+    return kept, problems
+
+
+# --- Lifecycle liveness scope and the immutability (grandfather) predicate ---
+
+#: A liveness-scope artifact: exactly ``dev/proposals/<name>.md`` or
+#: ``dev/plans/<name>.md``.  Nothing nested (``archive/...`` has a second
+#: separator and does not match) and no ``_``-prefixed name -- ``_template.md``
+#: is the authoring template, not an artifact with a lifecycle status.
+_LIFECYCLE_DOC_RE = re.compile(
+    r'^dev/(?P<family>proposals|plans)/(?P<name>(?!_)[^/]+\.md)$'
+)
+
+#: Anything at or under one of these prefixes is an immutable archived
+#: artifact, grandfathered by *location* with no status parse at all.
+_LIFECYCLE_ARCHIVE_PREFIXES = ('dev/proposals/archive/', 'dev/plans/archive/')
+
+#: The **terminal** status token of each lifecycle family -- deliberately
+#: *only* the terminal ones.  This is an immutability predicate, not a
+#: status vocabulary: the state machine and the full recognized-state set
+#: live in the lifecycle planner, and this shipped, standard-library-only
+#: checker must not carry a second copy of them.  Everything this predicate
+#: does not recognize -- a non-terminal status, a typo, a missing or
+#: duplicated field -- fails closed *into* liveness rather than inheriting
+#: the grandfather, so the set can only ever be too small, never too
+#: permissive.
+_TERMINAL_STATUS: dict[str, frozenset[str]] = {
+    'proposals': frozenset({'accepted', 'rejected', 'superseded'}),
+    'plans': frozenset({'archived'}),
+}
+
+_STATUS_LINE_RE = re.compile(
+    r'^\*\*Status\*\*:\s*(?P<status>[A-Za-z][A-Za-z-]*)\s*$'
+)
+_H2_RE = re.compile(r'^##\s')
+
+
+def parse_header_status(text: str) -> str | None:
+    """The artifact's strictly-parsed header status, or ``None``.
+
+    Strict means: **exactly one** ``**Status**: <value>`` line among the
+    scannable lines of the *header* -- the region above the first ``##``
+    heading, which is where both authoring templates put the field.  A
+    ``**Status**:`` line inside an appended revision section is a
+    historical restatement, not the artifact's current status, so it is
+    not a candidate; and zero or several candidates in the header yield
+    ``None`` (the caller treats that as "not grandfathered").
+    """
+    found: list[str] = []
+    for _lineno, line in scannable_lines(text):
+        if _H2_RE.match(line):
+            break
+        match = _STATUS_LINE_RE.match(line.strip())
+        if match is not None:
+            found.append(match.group('status').lower())
+    return found[0] if len(found) == 1 else None
+
+
+@dataclass(frozen=True)
+class _LivenessScope:
+    """Whether, and how, liveness applies to the document being scanned.
+
+    ``family`` is ``'proposals'`` / ``'plans'``; ``grandfathered`` is True
+    for an artifact nobody may rewrite (archived by location, or terminal
+    by strictly-parsed status), in which case the liveness findings are
+    reported as non-failing diagnostics instead of hard flags.
+    """
+
+    family: str
+    grandfathered: bool
+
+
+def liveness_scope(doc_rel: str | None, text: str) -> _LivenessScope | None:
+    """The liveness scope for the document at *doc_rel*, or ``None``.
+
+    ``None`` means liveness does not run at all: every Markdown surface
+    that is not a lifecycle artifact keeps its existing behavior, by
+    declaration (those surfaces have their own mutability rules and are
+    out of this contract's scope).
+    """
+    if not doc_rel:
+        return None
+    rel = doc_rel.replace('\\', '/')
+    for prefix in _LIFECYCLE_ARCHIVE_PREFIXES:
+        if rel.startswith(prefix):
+            return _LivenessScope(
+                family=prefix.split('/')[1], grandfathered=True,
+            )
+    match = _LIFECYCLE_DOC_RE.match(rel)
+    if match is None:
+        return None
+    family = match.group('family')
+    status = parse_header_status(text)
+    return _LivenessScope(
+        family=family,
+        grandfathered=status in _TERMINAL_STATUS[family],
+    )
 
 
 #: Standard framework runtime paths that are *gitignored or generated by
@@ -746,15 +1089,67 @@ def _token_path_part(token: str) -> str:
     return m.group('path') if m else token
 
 
+def _archive_resolution_target(path: str, repo_root: Path) -> str | None:
+    """The archived file a resolving lifecycle token went *through*.
+
+    ``None`` when *path* is not a lifecycle token, does not resolve, or
+    resolves at its own active location -- so a caller can tell "this
+    only resolves because of the exact archive rule" from "this resolves
+    on its own".
+    """
+    resolution = _lifecycle_archive_resolve(path, repo_root)
+    if resolution is None or resolution.duplicate:
+        return None
+    if resolution.resolved is None or (repo_root / path).is_file():
+        return None
+    try:
+        return resolution.resolved.relative_to(repo_root).as_posix()
+    except ValueError:  # pragma: no cover -- resolved is built from repo_root
+        return resolution.resolved.as_posix()
+
+
+def _is_checkable_claim(path: str, top_level: set[str]) -> bool:
+    """True when *path* is something this checker could ever hard-flag.
+
+    A declaration for a path the checker never resolves (its first
+    segment is not a real top-level entry -- the ordinary genuine
+    ``External-repo`` case -- or it is a default-exempt framework runtime
+    path) can never be observed doing work, so liveness reports it rather
+    than failing an author for a claim the tool does not check.
+    """
+    return (
+        path.split('/', 1)[0] in top_level and not _is_default_exempt(path)
+    )
+
+
+def _as_info(flag: Flag) -> Flag:
+    """The same finding as a non-failing diagnostic."""
+    return Flag(flag.line, flag.kind, 'info', flag.token, flag.message)
+
+
 def _scan(
     text: str, repo_root: Path, *, external_allowed: bool = False,
-) -> tuple[list[Flag], list[Flag], list[tuple[str, str]]]:
-    """Core scan -- returns ``(hard, soft, exempted)``.
+    doc_rel: str | None = None,
+) -> tuple[
+    list[Flag], list[Flag], list[tuple[str, str]],
+    list[tuple[str, str]], list[Flag],
+]:
+    """Core scan -- ``(hard, soft, exempted, declared, diagnostics)``.
 
-    A would-be-hard path / line-bounds flag whose token matches a valid
-    ``claim-check-allow`` glob (and whose path does NOT resolve locally)
-    is suppressed and recorded in ``exempted`` as ``(token, glob)``.  A
-    *too-broad* glob is itself a hard flag and exempts nothing.
+    A would-be-hard path / line-bounds flag is suppressed when either
+    exemption mechanism authorizes it and the path does NOT resolve
+    locally: a typed registry declaration of that **exact** path
+    (recorded in ``declared`` with the declaration that authorized it),
+    or a valid ``claim-check-allow`` glob (recorded in ``exempted`` as
+    ``(token, glob)``).  The registry is consulted first, so a glob kept
+    alive only by a path its own document already declares shows up as a
+    migration item rather than as load-bearing.  A *too-broad* glob is
+    itself a hard flag and exempts nothing.
+
+    ``doc_rel`` is the document's repo-relative path, and is what makes
+    liveness decidable (which artifact, and is it immutable).  Without it
+    -- :func:`check_text` callers that pass only text -- liveness does not
+    run and behavior is exactly as before.
 
     ``soft`` is always empty: the only soft-flag producer (the category-D
     count flag) was retired 2026-06-05.  The list is kept so the
@@ -772,6 +1167,7 @@ def _scan(
 
     # Document-scoped exemption globs (validated; bad ones hard-flag).
     allow_globs: list[str] = []
+    glob_lines: dict[str, int] = {}
     hard: list[Flag] = []
     for lineno, glob in parse_allow_directives(text):
         err = allow_glob_error(glob)
@@ -779,58 +1175,227 @@ def _scan(
             hard.append(Flag(lineno, 'directive', 'hard', glob, err))
         else:
             allow_globs.append(glob)
+            glob_lines.setdefault(glob, lineno)
+
+    # The document registry: typed declarations, exact literal paths.
+    # A malformed or duplicate entry is absent from ``registry`` -- it
+    # fails closed, granting no document-wide authority -- and is
+    # reported below.
+    entries, decl_problems = parse_typed_declarations(text)
+    registry: dict[str, Declaration] = {}
+    for entry in entries:
+        registry.setdefault(entry.path, entry)
 
     # ``soft`` has no producer since the category-D count flag was
     # retired; kept for the historical two-tuple ``check_text`` contract.
     soft: list[Flag] = []
     exempted: list[tuple[str, str]] = []
-    in_marker_block = False
-    prev_lineno: int | None = None
-    for lineno, line in scannable_lines(text):
-        marker_line = _is_marker_line(line)
-        contiguous = prev_lineno is not None and lineno == prev_lineno + 1
-        marker_continuation = (
-            in_marker_block
-            and contiguous
-            and _is_marker_block_continuation(line)
+    declared: list[tuple[str, str]] = []
+    diagnostics: list[Flag] = []
+    # Liveness bookkeeping, collected while scanning so no second pass can
+    # disagree with the first about what actually got suppressed.
+    glob_effective: set[str] = set()
+    glob_by_archive: dict[str, str] = {}
+    glob_by_registry: dict[str, Declaration] = {}
+    live_entries: set[str] = set()
+
+    for lineno, line, block_kind, _block, _marker in _walk_marker_context(
+        text
+    ):
+        # A marker block's own rows stay exempt from the hard checks (and
+        # an occurrence there never makes its own declaration live).
+        if block_kind is not None or external_allowed:
+            continue
+        for match in _BACKTICK_RE.finditer(line):
+            token = match.group(1).strip()
+            if not token or _is_placeholder(token):
+                continue
+            if _LINE_CITATION_RE.match(token):
+                flag = check_line_citation(
+                    token, lineno, repo_root, top_level)
+            else:
+                flag = check_path_token(
+                    token, lineno, repo_root, top_level)
+            path_part = _token_path_part(token)
+            matched = next(
+                (g for g in allow_globs
+                 if fnmatch.fnmatchcase(path_part, g)),
+                None,
+            )
+            if flag is None:
+                # The token resolves on its own.  If a directive glob
+                # still covers it, that glob no longer suppresses
+                # anything -- and *why* decides its class below: an
+                # occurrence the exact archive rule now resolves is a
+                # redundancy this mechanism created, not stale debt.
+                if matched is not None and matched not in glob_effective:
+                    target = _archive_resolution_target(path_part, repo_root)
+                    if target is not None:
+                        glob_by_archive.setdefault(matched, target)
+                continue
+            # Neither mechanism may silence a failure on a path that
+            # exists locally -- e.g. an out-of-range line-bounds citation
+            # into a real file, exactly the stale-anchor class claim_check
+            # is meant to catch.
+            resolves = (repo_root / path_part).exists()
+            entry = registry.get(path_part)
+            if entry is not None and not resolves:
+                declared.append((token, entry.label))
+                live_entries.add(entry.path)
+                if matched is not None:
+                    glob_by_registry.setdefault(matched, entry)
+                continue
+            if matched is not None and not resolves:
+                exempted.append((token, matched))
+                glob_effective.add(matched)
+                continue
+            hard.append(flag)
+
+    # --- Liveness -----------------------------------------------------
+    # Scope: only a lifecycle artifact is evaluated, and an immutable one
+    # (archived, or terminal by strictly-parsed status) receives the same
+    # findings as non-failing diagnostics.  Every other Markdown surface
+    # keeps its existing behavior by declaration.
+    scope = liveness_scope(doc_rel, text)
+    fails = scope is not None and not scope.grandfathered
+    severity = 'hard' if fails else 'info'
+    sink = hard if fails else diagnostics
+
+    # A malformed / duplicate declaration has already failed closed (it
+    # grants nothing).  It is reported on every surface -- an authoring
+    # defect is not a scope question -- but only a mutable lifecycle
+    # artifact fails on it, exactly as for the classes below.
+    for problem in decl_problems:
+        (hard if fails else diagnostics).append(
+            problem if fails else _as_info(problem)
         )
-        if not (marker_line or marker_continuation or external_allowed):
-            for match in _BACKTICK_RE.finditer(line):
-                token = match.group(1).strip()
-                if not token or _is_placeholder(token):
-                    continue
-                if _LINE_CITATION_RE.match(token):
-                    flag = check_line_citation(
-                        token, lineno, repo_root, top_level)
-                else:
-                    flag = check_path_token(
-                        token, lineno, repo_root, top_level)
-                if flag is not None:
-                    path_part = _token_path_part(token)
-                    matched = next(
-                        (g for g in allow_globs
-                         if fnmatch.fnmatchcase(path_part, g)),
-                        None,
-                    )
-                    # The document-scoped directive exempts only
-                    # *unresolved-path* flags (the external / proposed
-                    # case it exists for).  It must NOT silence a failure
-                    # on a path that exists locally -- e.g. an out-of-range
-                    # line-bounds citation into a real file, which is
-                    # exactly the stale-anchor class claim_check is meant
-                    # to catch.
-                    resolves = (repo_root / path_part).exists()
-                    if matched is not None and not resolves:
-                        exempted.append((token, matched))
-                    else:
-                        hard.append(flag)
-        in_marker_block = marker_line or marker_continuation
-        prev_lineno = lineno
-    return hard, soft, exempted
+
+    if scope is None:
+        return hard, soft, exempted, declared, diagnostics
+
+    grandfather_note = (
+        '' if fails else
+        ' (reported only: this artifact is immutable, so unused metadata '
+        'does not change the exit code)'
+    )
+    # DEPRECATION WINDOW -- the judgement, stated where it is made.
+    #
+    # A glob can stop suppressing anything for two very different
+    # reasons, and only one of them is the author's debt:
+    #
+    #   * the author's forward reference materialized, or the glob was
+    #     never load-bearing -- `unused`, a hard finding, which is the
+    #     staleness this contract exists to retire; or
+    #   * THIS change set made it redundant -- the exact lifecycle
+    #     archive rule now resolves the token, or the document's own
+    #     typed registry now authorizes it.
+    #
+    # The second class is a scheduling artifact.  Hard-failing it would
+    # turn every artifact that papered over an archive move red the
+    # moment the resolver landed -- the interaction the accepted
+    # proposal's round-1 review measured -- and would assign that debt to
+    # whoever happens to own the citing document rather than to whoever
+    # archived the cited one.  So both redundancy classes report as
+    # non-failing migration items, naming the artifact, the directive
+    # line, the glob, and what now resolves it: an exact inventory for
+    # the metadata migration that retires them.
+    #
+    # The window is bounded by that migration, not by a clock.  Nothing
+    # here expires on a date: a checker that turns red on a calendar day
+    # with no change to the tree would be unreproducible, and this file
+    # ships to adopters whose migrations are their own.  The accepted
+    # contract names `resolved-by-archive`; `resolved-by-registry` is the
+    # same argument applied to the registry landing in the same change
+    # set, and is called out as such in the implementation record.
+    seen_globs: set[str] = set()
+    for glob in allow_globs:
+        if glob in seen_globs:
+            continue
+        seen_globs.add(glob)
+        lineno = glob_lines[glob]
+        if glob in glob_effective:
+            continue  # load-bearing -- its suppressions are reported above
+        if glob in glob_by_archive:
+            diagnostics.append(Flag(
+                lineno, 'directive', 'info', glob,
+                f'migration item: claim-check-allow glob `{glob}` is now '
+                f'`resolved-by-archive` -- every occurrence it suppressed '
+                f'resolves through the exact lifecycle archive rule '
+                f'(`{glob_by_archive[glob]}`).  Retire the glob with the '
+                f'metadata migration; this is not a stale-debt finding.',
+            ))
+            continue
+        if glob in glob_by_registry:
+            diagnostics.append(Flag(
+                lineno, 'directive', 'info', glob,
+                f'migration item: claim-check-allow glob `{glob}` is now '
+                f'`resolved-by-registry` -- {glob_by_registry[glob].label} '
+                f'authorizes every occurrence it suppressed.  Retire the '
+                f'glob with the metadata migration; this is not a '
+                f'stale-debt finding.',
+            ))
+            continue
+        sink.append(Flag(
+            lineno, 'directive', severity, glob,
+            f'unused claim-check-allow glob `{glob}`: it suppresses no '
+            f'report in this document{grandfather_note}',
+        ))
+
+    for entry in entries:
+        if entry.path in live_entries:
+            continue
+        if not entry.registry_block:
+            # A standalone marker line -- the mechanism's original
+            # line-local use, mid-prose: "Proposed path: `x`, because ...".
+            # Its declaration is load-bearing for its OWN line, so an
+            # author cannot retire it, and demanding that the document
+            # cite the path a second time to justify it is an obligation
+            # with no legal discharge: deleting the marker hard-flags the
+            # very line it explains.  The liveness obligation belongs to a
+            # *registry block* -- the form the accepted contract writes it
+            # for ("a compact marker block becomes a document registry")
+            # -- so a bare marker line is reported, never failed.  Named as
+            # a divergence from the literal contract text in the
+            # implementation record, with the two measured instances.
+            continue
+        if not _is_checkable_claim(entry.path, top_level):
+            diagnostics.append(Flag(
+                entry.line, 'declaration', 'info', entry.path,
+                f'{entry.label} authorizes nothing, and cannot: this '
+                f'checker never resolves `{entry.path}`, so liveness is '
+                f'not evaluable for it',
+            ))
+            continue
+        archived = _archive_resolution_target(entry.path, repo_root)
+        if archived is not None:
+            diagnostics.append(Flag(
+                entry.line, 'declaration', 'info', entry.path,
+                f'migration item: {entry.label} is now '
+                f'`resolved-by-archive` -- the exact lifecycle archive '
+                f'rule resolves it (`{archived}`).  Retire the '
+                f'declaration with the metadata migration; this is not a '
+                f'stale-debt finding.',
+            ))
+            continue
+        if (repo_root / entry.path).exists():
+            sink.append(Flag(
+                entry.line, 'declaration', severity, entry.path,
+                f'{entry.label} is stale: the path has materialized, so '
+                f'the declaration exempts nothing{grandfather_note}',
+            ))
+            continue
+        sink.append(Flag(
+            entry.line, 'declaration', severity, entry.path,
+            f'{entry.label} is unused: nothing outside its own block '
+            f'cites it{grandfather_note}',
+        ))
+
+    return hard, soft, exempted, declared, diagnostics
 
 
 def check_text(
     text: str, repo_root: Path, *, external_allowed: bool = False,
+    doc_rel: str | None = None,
 ) -> tuple[list[Flag], list[Flag]]:
     """Scan *text* and return ``(hard_flags, soft_flags)``.
 
@@ -838,6 +1403,12 @@ def check_text(
     two-tuple contract.  The document-scoped ``claim-check-allow``
     exemptions (and the report of which tokens they cleared) are
     surfaced through :class:`CheckResult` via :func:`check_file`.
+
+    ``doc_rel`` -- the document's repo-relative path -- is optional and
+    defaults to ``None``, in which case liveness does not run: a caller
+    holding only text cannot say which artifact it is, and liveness is
+    defined per lifecycle artifact.  :func:`check_file` always supplies
+    it.
 
     Raises ``NotADirectoryError`` when *repo_root* is not a
     directory.  An unresolvable root yields an empty top-level set,
@@ -851,8 +1422,8 @@ def check_text(
     describes an external repo whose relative paths must not be resolved
     against the local tree.
     """
-    hard, soft, _exempted = _scan(
-        text, repo_root, external_allowed=external_allowed,
+    hard, soft, _exempted, _declared, _diagnostics = _scan(
+        text, repo_root, external_allowed=external_allowed, doc_rel=doc_rel,
     )
     return hard, soft
 
@@ -880,6 +1451,19 @@ def file_is_external(
     )
 
 
+def _repo_relative(path: Path, repo_root: Path) -> str | None:
+    """*path* as a POSIX path relative to *repo_root*, or ``None``.
+
+    ``None`` for a file outside the root (or an unresolvable one): such a
+    file cannot be a lifecycle artifact of *this* repository, so liveness
+    must not run against it.
+    """
+    try:
+        return path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except (ValueError, OSError):
+        return None
+
+
 def check_file(
     path: Path, repo_root: Path, *, external_allow: list[str] | None = None,
 ) -> CheckResult:
@@ -890,16 +1474,20 @@ def check_file(
     one, the hard repo-path / line-bounds resolution is skipped.
 
     The result also carries any path tokens suppressed by the
-    document-scoped ``claim-check-allow`` directive (``exempted``), so
-    the run can report exactly which would-be-flags were waived for audit.
+    document-scoped ``claim-check-allow`` directive (``exempted``) or by a
+    typed registry declaration (``declared``, each naming the declaration
+    that authorized it), so the run can report exactly which would-be-flags
+    were waived for audit -- plus the non-failing liveness ``diagnostics``.
     """
     external = file_is_external(path, repo_root, external_allow or [])
     text = path.read_text(encoding='utf-8', errors='replace')
-    hard, soft, exempted = _scan(
+    hard, soft, exempted, declared, diagnostics = _scan(
         text, repo_root, external_allowed=external,
+        doc_rel=_repo_relative(path, repo_root),
     )
     return CheckResult(
         path=path, hard_flags=hard, soft_flags=soft, exempted=exempted,
+        declared=declared, diagnostics=diagnostics,
     )
 
 
@@ -985,6 +1573,23 @@ def main(argv: list[str] | None = None) -> int:
                 f'  {rel}: exempted `{token}` via claim-check-allow '
                 f'glob `{glob}`'
             )
+    if result.declared:
+        print(
+            f'claim_check: {rel} -- {len(result.declared)} path(s) '
+            f'exempted by a typed declaration:'
+        )
+        for token, label in result.declared:
+            print(f'  {rel}: exempted `{token}` via {label}')
+    if result.diagnostics:
+        # Non-failing: migration items and the liveness reports an
+        # immutable artifact receives without failing.  On STDOUT, for the
+        # same auditability reason as the exemption report above.
+        print(
+            f'claim_check: {rel} -- {len(result.diagnostics)} '
+            f'diagnostic(s) (reported, not failing):'
+        )
+        for flag in result.diagnostics:
+            print(_format_flag(rel, flag))
     if not result.hard_flags and not result.soft_flags:
         print(f'claim_check: {rel} -- OK, no claim-check flags.')
 

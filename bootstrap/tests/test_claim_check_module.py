@@ -656,3 +656,435 @@ class TestLifecycleArchiveResolution:
         )
         hard, _soft = cc.check_text("see `templates/foo.md`", tmp_path)
         assert [f.token for f in hard] == ["templates/foo.md"]
+
+
+# ---------------------------------------------------------------------------
+# Chunk D3/D4 -- the typed-declaration registry and liveness (accepted
+# `claim-check-exemption-hygiene` proposal, Section 2 / Revision 1 R3).
+#
+# These are the two D5 cells left by the D1/D2/D5 commit (`4723107`):
+# **registry exactness** and **liveness**.  Liveness is only decidable per
+# artifact, so every node here goes through `check_file` with the document
+# written *inside* the fixture repo -- `check_text`, which takes text and no
+# path, deliberately does not evaluate liveness at all.
+# ---------------------------------------------------------------------------
+
+
+def _make_registry_repo(root: Path) -> Path:
+    """A synthetic repo with both lifecycle families, their `archive/`
+    siblings, and the ordinary top-level dirs the fixtures cite."""
+    (root / "AGENTS.md").write_text("root file\n")
+    (root / "dev" / "proposals" / "archive").mkdir(parents=True)
+    (root / "dev" / "plans" / "archive").mkdir(parents=True)
+    (root / "dev" / "measurement").mkdir(parents=True)
+    (root / "scripts").mkdir()
+    (root / "bootstrap" / "tests").mkdir(parents=True)
+    (root / "docs").mkdir()
+    return root
+
+
+def _artifact(root: Path, rel: str, body: str) -> Path:
+    """Write *body* to *rel* inside the fixture repo and return the path."""
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
+#: A non-terminal plan header -- `executing` is not a terminal status, so
+#: liveness applies with its hard disposition.
+_PLAN_HEADER = "# Plan: fixture\n\n**Status**: executing\n\n"
+
+
+def _check(cc: ModuleType, root: Path, rel: str, body: str):
+    return cc.check_file(_artifact(root, rel, body), root)
+
+
+class TestTypedRegistryExactness:
+    """D3: a marker block is a document registry of **literal** paths --
+    document-wide, exact, and reported with the authorizing declaration."""
+
+    def test_declared_path_is_exempt_where_it_recurs_outside_its_block(
+        self, cc, tmp_path,
+    ):
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/future.py` -- created by chunk A.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            "Chunk A lands `scripts/future.py` and chunk B `scripts/other.py`.\n"
+        ))
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+        assert [t for t, _label in result.declared] == [
+            "scripts/future.py", "scripts/other.py",
+        ]
+
+    def test_the_exemption_names_the_declaration_that_authorized_it(
+        self, cc, tmp_path,
+    ):
+        # "claim-check reports every token it exempts together with the
+        # declaration that authorized it" (proposal Section 2).
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Untracked paths:\n"
+            "- `scripts/local.py` -- gitignored on purpose.\n"
+            "- `scripts/other.py` -- also local.\n"
+            "\n"
+            "The runner reads `scripts/local.py` at start-up, then\n"
+            "`scripts/other.py`.\n"
+        ))
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+        labels = [label for tok, label in result.declared
+                  if tok == "scripts/local.py"]
+        assert len(labels) == 1
+        assert "Untracked paths:" in labels[0]
+        assert "`scripts/local.py`" in labels[0]
+        assert "line 6" in labels[0], labels[0]
+
+    @pytest.mark.parametrize("cited", [
+        "scripts/future_extra.py",      # look-alike prefix
+        "scripts/future.py.bak",        # look-alike suffix
+        "scripts/sub/future.py",        # same basename, different dir
+        "scripts/future.py/inner.py",   # a descendant of the declared path
+    ])
+    def test_declaration_exempts_only_the_exact_path(self, cc, tmp_path, cited):
+        # "it does not let one declared path exempt a sibling or
+        # descendant" (proposal Section 2).
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/future.py` -- created by chunk A.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            f"Chunk A also touches `{cited}`.\n"
+            "It lands `scripts/future.py` and `scripts/other.py` too.\n"
+        ))
+        assert [f.token for f in result.hard_flags] == [cited], [
+            f.message for f in result.hard_flags
+        ]
+
+    def test_a_row_declares_its_leading_token_not_its_prose(self, cc, tmp_path):
+        # A list row lists one path and then explains it: a path named
+        # later in the row's prose is a reference, not a declaration.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/future.py` -- installed as `scripts/installed.py`.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            "Chunk A lands `scripts/future.py`, `scripts/other.py`, and\n"
+            "then `scripts/installed.py`.\n"
+        ))
+        assert [f.token for f in result.hard_flags] == [
+            "scripts/installed.py"
+        ], [f.message for f in result.hard_flags]
+
+    def test_the_marker_line_itself_declares_every_token_on_it(
+        self, cc, tmp_path,
+    ):
+        # The compact one-line form must keep working document-wide.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths: `scripts/a.py`, `scripts/b.py`\n"
+            "- `scripts/c.py` -- and a row, so this is a registry block.\n"
+            "\n"
+            "Chunk A lands `scripts/a.py`, `scripts/b.py` and `scripts/c.py`.\n"
+        ))
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+        assert sorted({t for t, _ in result.declared}) == [
+            "scripts/a.py", "scripts/b.py", "scripts/c.py",
+        ]
+
+    def test_a_glob_entry_is_malformed_and_grants_nothing(self, cc, tmp_path):
+        # "Registry entries are literal paths, not globs" -- fail closed.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/gen_*.py` -- one per generator.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            "Chunk A lands `scripts/gen_a.py` and `scripts/other.py`.\n"
+        ))
+        messages = [f.message for f in result.hard_flags]
+        assert any("malformed typed declaration" in m for m in messages), messages
+        assert any("scripts/gen_a.py" in m for m in messages), messages
+        # ...and the well-formed sibling entry still works.
+        assert [t for t, _ in result.declared] == ["scripts/other.py"]
+
+    def test_same_keyword_redeclaration_is_idempotent_not_a_duplicate(
+        self, cc, tmp_path,
+    ):
+        # An append-only record whose revision section restates its proposed
+        # paths is doing the right thing -- it must not fail.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/future.py` -- created by chunk A.\n"
+            "\n"
+            "## Revision 1\n"
+            "\n"
+            "Proposed paths:\n"
+            "- `scripts/future.py` -- still created by chunk A.\n"
+            "\n"
+            "Chunk A lands `scripts/future.py`.\n"
+        ))
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+
+    def test_conflicting_keywords_for_one_path_fail_closed(self, cc, tmp_path):
+        # Two incompatible reasons for the same path: the checker refuses to
+        # pick one, so the path gets no registry authority at all.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/future.py` -- created by chunk A.\n"
+            "\n"
+            "Untracked paths:\n"
+            "- `scripts/future.py` -- never committed.\n"
+            "\n"
+            "Chunk A lands `scripts/future.py`.\n"
+        ))
+        messages = [f.message for f in result.hard_flags]
+        assert any("conflicting typed declarations" in m for m in messages), messages
+        # ...and the recurrence outside both blocks is NOT exempted.
+        assert result.declared == []
+        assert any("does not resolve" in m for m in messages), messages
+
+    def test_registry_never_silences_a_flag_on_a_path_that_exists(
+        self, cc, tmp_path,
+    ):
+        # R2 parity with the allow-directive: an out-of-range line-bounds
+        # citation into a REAL file is the stale-anchor class claim_check
+        # exists to catch, and no declaration may waive it.
+        _make_registry_repo(tmp_path)
+        _write_lines(tmp_path / "scripts" / "real.py", 5)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/real.py` -- rewritten by chunk A.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            "The guard is at `scripts/real.py:99`, and chunk B lands\n"
+            "`scripts/other.py`.\n"
+        ))
+        bounds = [f for f in result.hard_flags if f.kind == "line-bounds"]
+        assert [f.token for f in bounds] == ["scripts/real.py:99"], [
+            f.message for f in result.hard_flags
+        ]
+        assert "exceeds" in bounds[0].message
+        # The same fixture also exercises liveness from the other side: a
+        # declaration whose path exists is itself stale.
+        assert [f.token for f in result.hard_flags if f.kind == "declaration"] \
+            == ["scripts/real.py"]
+
+
+class TestLiveness:
+    """D4: on a non-terminal lifecycle artifact an exemption must still be
+    doing work; an immutable artifact is grandfathered; and a redundancy
+    *this change* created reports as a migration item, never a hard flag."""
+
+    def test_unused_glob_hard_fails_on_a_non_terminal_plan(self, cc, tmp_path):
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", (
+            "<!-- claim-check-allow: scripts/nothing.py -->\n" + _PLAN_HEADER
+            + "Body with no citation of that path at all.\n"
+        ))
+        assert [f.kind for f in result.hard_flags] == ["directive"]
+        assert "unused claim-check-allow glob" in result.hard_flags[0].message
+        assert "scripts/nothing.py" in result.hard_flags[0].message
+
+    def test_archive_redundant_glob_is_a_non_failing_migration_item(
+        self, cc, tmp_path,
+    ):
+        # The [C1] node: Section 1's resolver makes a glob redundant, and
+        # Section 3's liveness must NOT then hard-fail it.  Both halves in
+        # one node -- effective before the archived file exists, a reported
+        # migration item after -- so the transition itself is the oracle.
+        _make_registry_repo(tmp_path)
+        body = (
+            "<!-- claim-check-allow: dev/plans/moved.md -->\n" + _PLAN_HEADER
+            + "Sequenced after `dev/plans/moved.md`.\n"
+        )
+        before = _check(cc, tmp_path, "dev/plans/host.md", body)
+        assert before.hard_flags == [], [f.message for f in before.hard_flags]
+        assert before.exempted == [("dev/plans/moved.md", "dev/plans/moved.md")]
+
+        (tmp_path / "dev" / "plans" / "archive" / "moved.md").write_text("x\n")
+        after = _check(cc, tmp_path, "dev/plans/host.md", body)
+        assert after.hard_flags == [], [f.message for f in after.hard_flags]
+        assert after.exempted == []
+        assert [f.severity for f in after.diagnostics] == ["info"]
+        assert "resolved-by-archive" in after.diagnostics[0].message
+        assert "dev/plans/archive/moved.md" in after.diagnostics[0].message
+        assert after.diagnostics[0].line == 1  # the directive's own line
+
+    def test_registry_redundant_glob_is_a_non_failing_migration_item(
+        self, cc, tmp_path,
+    ):
+        # The same argument applied to the registry landing in the same
+        # change set: the declaration now authorizes what the glob used to.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", (
+            "<!-- claim-check-allow: scripts/future.py -->\n" + _PLAN_HEADER
+            + "Proposed paths:\n"
+            "- `scripts/future.py` -- created by chunk A.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            "Chunk A lands `scripts/future.py` and chunk B `scripts/other.py`.\n"
+        ))
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+        assert result.exempted == []
+        assert len(result.diagnostics) == 1
+        assert result.diagnostics[0].severity == "info"
+        assert "resolved-by-registry" in result.diagnostics[0].message
+
+    def test_a_materialized_declaration_hard_fails(self, cc, tmp_path):
+        # "A proposed entry whose local path has materialized is unused"
+        # (Revision 1 R3).
+        _make_registry_repo(tmp_path)
+        (tmp_path / "scripts" / "landed.py").write_text("# landed\n")
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/landed.py` -- created by chunk A.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            "Chunk A lands `scripts/landed.py`, chunk B `scripts/other.py`.\n"
+        ))
+        assert [f.kind for f in result.hard_flags] == ["declaration"]
+        assert "has materialized" in result.hard_flags[0].message
+        assert result.hard_flags[0].token == "scripts/landed.py"
+
+    def test_a_declaration_nothing_outside_its_block_cites_hard_fails(
+        self, cc, tmp_path,
+    ):
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Proposed paths:\n"
+            "- `scripts/orphan.py` -- created by chunk A.\n"
+            "- `scripts/other.py` -- created by chunk B.\n"
+            "\n"
+            "Chunk B lands `scripts/other.py`.\n"
+        ))
+        assert [f.token for f in result.hard_flags] == ["scripts/orphan.py"]
+        assert "nothing outside its own block" in result.hard_flags[0].message
+
+    def test_a_standalone_marker_line_carries_no_liveness_obligation(
+        self, cc, tmp_path,
+    ):
+        # The mechanism's original line-local use, mid-prose.  Its
+        # declaration is load-bearing for its OWN line, so demanding a
+        # second citation is an obligation with no legal discharge:
+        # deleting the marker hard-flags the very line it explains.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
+            "Record location and format -- append-only JSONL.\n"
+            "Proposed path: `dev/measurement/events.jsonl`. This mirrors the\n"
+            "shape already in production.\n"
+        ))
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+        assert result.diagnostics == [], [
+            f.message for f in result.diagnostics
+        ]
+
+    def test_an_archived_artifact_reports_but_does_not_fail(self, cc, tmp_path):
+        # "Archive immutability wins over cosmetic cleanup" -- grandfathered
+        # by LOCATION, with no status parse at all.
+        _make_registry_repo(tmp_path)
+        result = _check(cc, tmp_path, "dev/plans/archive/old.md", (
+            "<!-- claim-check-allow: scripts/nothing.py -->\n"
+            "# Plan: old\n\n**Status**: executing\n\n"
+            "Body with no citation of that path at all.\n"
+        ))
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+        assert [f.severity for f in result.diagnostics] == ["info"]
+        assert "unused claim-check-allow glob" in result.diagnostics[0].message
+        assert "immutable" in result.diagnostics[0].message
+
+    @pytest.mark.parametrize("status", ["accepted", "rejected", "superseded"])
+    def test_terminal_status_grandfathers_a_non_archived_proposal(
+        self, cc, tmp_path, status,
+    ):
+        # [C3]: grandfather on immutability, not on directory -- a proposal
+        # still sitting in `dev/proposals/` is immutable once terminal.
+        _make_registry_repo(tmp_path)
+        result = _check(
+            cc, tmp_path, "dev/proposals/2026-01-01-a-b.md",
+            "<!-- claim-check-allow: scripts/nothing.py -->\n"
+            f"# p\n\n**Status**: {status}\n\nNo citation here.\n",
+        )
+        assert result.hard_flags == [], [f.message for f in result.hard_flags]
+        assert [f.severity for f in result.diagnostics] == ["info"]
+
+    def test_a_plans_terminal_status_is_archived_not_accepted(
+        self, cc, tmp_path,
+    ):
+        # The families do not share a terminal vocabulary: `accepted` is a
+        # proposal status, so a PLAN carrying it is not grandfathered.
+        _make_registry_repo(tmp_path)
+        accepted = _check(cc, tmp_path, "dev/plans/host.md", (
+            "<!-- claim-check-allow: scripts/nothing.py -->\n"
+            "# Plan\n\n**Status**: accepted\n\nNo citation here.\n"
+        ))
+        assert [f.severity for f in accepted.hard_flags] == ["hard"]
+        archived = _check(cc, tmp_path, "dev/plans/host2.md", (
+            "<!-- claim-check-allow: scripts/nothing.py -->\n"
+            "# Plan\n\n**Status**: archived\n\nNo citation here.\n"
+        ))
+        assert archived.hard_flags == []
+
+    @pytest.mark.parametrize("header", [
+        "# p\n\nNo status line at all.\n",                       # missing
+        "# p\n\n**Status**: accepted\n**Status**: rejected\n",    # duplicate
+        "# p\n\n**Status**: acceptd\n",                           # typo
+        "# p\n\n## Section\n\n**Status**: accepted\n",            # not header
+    ])
+    def test_a_missing_duplicate_or_unrecognized_status_cannot_claim_the_grandfather(
+        self, cc, tmp_path, header,
+    ):
+        # "A missing, duplicate, or unrecognized lifecycle status does not
+        # silently gain grandfathering" (Revision 1 R3).  Fail closed INTO
+        # liveness.
+        _make_registry_repo(tmp_path)
+        result = _check(
+            cc, tmp_path, "dev/proposals/2026-01-01-a-b.md",
+            "<!-- claim-check-allow: scripts/nothing.py -->\n" + header
+            + "\nNo citation of that path.\n",
+        )
+        assert [f.kind for f in result.hard_flags] == ["directive"], [
+            f.message for f in result.hard_flags
+        ]
+
+    def test_liveness_does_not_run_on_a_non_lifecycle_surface(
+        self, cc, tmp_path,
+    ):
+        # R4's scope fence: strategy / doctrine / module / changelog /
+        # template surfaces keep their existing behavior by declaration.
+        _make_registry_repo(tmp_path)
+        for rel in ("docs/notes.md", "dev/plans/_template.md",
+                    "dev/proposals/_template.md"):
+            result = _check(cc, tmp_path, rel, (
+                "<!-- claim-check-allow: scripts/nothing.py -->\n"
+                "# doc\n\n**Status**: executing\n\nNo citation here.\n"
+            ))
+            assert result.hard_flags == [], (rel, [
+                f.message for f in result.hard_flags
+            ])
+            assert result.diagnostics == [], (rel, [
+                f.message for f in result.diagnostics
+            ])
+
+    def test_check_text_without_a_path_does_not_evaluate_liveness(
+        self, cc, tmp_path,
+    ):
+        # Liveness is defined per artifact; a caller holding only text
+        # cannot say which artifact it is, so the two-tuple contract keeps
+        # exactly its old behavior.
+        _make_registry_repo(tmp_path)
+        body = (
+            "<!-- claim-check-allow: scripts/nothing.py -->\n" + _PLAN_HEADER
+            + "No citation here.\n"
+        )
+        hard, _soft = cc.check_text(body, tmp_path)
+        assert hard == [], [f.message for f in hard]
+        hard_scoped, _ = cc.check_text(
+            body, tmp_path, doc_rel="dev/plans/host.md")
+        assert [f.kind for f in hard_scoped] == ["directive"]
