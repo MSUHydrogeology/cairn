@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: proposed
+**Status**: revised
 **Touches**: `templates/modules/default-on/lifecycle-metrics.md`;
 `templates/modules/default-on/_lifecycle_metrics/` and its `tools/` twin;
 `bootstrap/tests/test_lifecycle_metrics*.py`
@@ -300,3 +300,111 @@ the manifest/Metric-Contract/helper/test dependency graph would satisfy this
 review. No Security Review is indicated by the current retirement-only scope;
 an append-only event writer proposed under Part 3 should receive its own
 untrusted-input, concurrency, and failure-atomicity preflight.
+
+## Response -- Claude -- 2026-08-11
+
+Two External reviews, reaching different verdicts on different commits:
+Antigravity ACCEPT with no findings (`be7f80c`), Codex REVISE with four
+(`1e65dd7`). **I accept all four of Codex's findings.** Each was reproduced
+here before acceptance rather than taken on the reviewer's word, and E3
+falsifies a sentence at the centre of the proposal.
+
+**[E1] Accepted.** Confirmed: `snapshot.py:39` labels the CSV output
+`stability_tier: 'contract'`, and no `schema` or `version` field exists
+anywhere in the manifest. The review is right that I confused *visible
+breakage* with *versioning* — a script that crashes has been told something,
+but not in a form it can branch on. Adopted as written.
+
+**[E2] Accepted.** "It may belong in its own proposal" left two incompatible
+plans valid, which is not a decidable proposal. Taking the recommended
+closure: Parts 1 and 2 plus the schema boundary are this proposal's scope, and
+emit-at-transition is deferred to a named follow-up.
+
+**[E3] Accepted, and it falsifies my sentence.** Reproduced with two fixture
+proposals identical but for a duplicated `## Review` heading — same reviewer,
+same date, no separate commit:
+
+| fixture | `review_rounds` |
+|---|---|
+| one review section | 1 |
+| the same section, written twice | 2 |
+
+So "an event either happened or it did not; writing more cannot inflate it" is
+**false** for the columns I proposed keeping. `review_rounds` is a count of
+headings. The honest claim is narrower: the retained columns are *materially
+harder and costlier* to inflate than a finding count, not immune. They are
+lifecycle proxies read out of prose, and only the deferred event architecture
+turns them into events. Corrected below.
+
+**[E4] Accepted.** Confirmed the surfaces: `_review_yield_counts` at
+`subsystems.py:154` parses Response prose, `METRIC_CONTRACT_MAP` at
+`snapshot.py:96` carries three review-yield entries, and
+`test_reference_scripts.py:294-295` asserts `total_findings == 2` and
+`findings_p1 == 1`. Removing eight CSV keys while leaving those in place would
+retire the output and keep the machinery.
+
+**On the two verdicts.** They reviewed different commits, so the gap is not
+purely depth. But Codex ran fixtures and Antigravity did not, and the finding
+that mattered most — E3 — was only reachable by running one. Recorded as a
+data point on what a review costs to be worth having, not as a complaint.
+
+## Revised proposal -- Claude -- 2026-08-11
+
+Supersedes the Proposal section above where they conflict.
+
+### Scope, now decided
+
+**In:** retirement of the eight prose-scraped columns, the doctrine change, and
+the output-schema boundary that makes the retirement machine-readable.
+
+**Out, deferred to a named follow-up:** emit-at-transition. It needs an event
+owner, record location and format, append and transaction semantics, schema
+identity, and a backfill boundary — none of which should be handed to a plan
+author as an open choice. It gets its own proposal, and per E4's closing note
+its own untrusted-input, concurrency, and failure-atomicity preflight.
+
+### 1. Retire the eight columns, and the machinery behind them
+
+Remove from routine emission: `total_findings`, `findings_p1/p2/p3`, and the
+four `review_yield_*` columns.
+
+Retirement binds through the whole dependency graph, not the CSV keys alone.
+The plan names a disposition for each of: the column lists, the three
+`METRIC_CONTRACT_MAP` review-yield entries, `_review_yield_counts` and its
+prose parsing, the snapshot manifest that derives its contract from the column
+lists, the module prose advertising the subsystem, and
+`test_reference_scripts.py`'s finding-column assertions. Each is deleted from
+routine extraction, or moved behind the bounded study path. **A test asserting
+only that keys are absent from output is insufficient** and would leave dead or
+still-advertised prose measurement behind.
+
+### 2. Version the break
+
+The current output is labelled a contract and carries no version. Assign the
+post-retirement output a **new schema identity**, exposed through `--manifest`
+and in the persisted snapshot header, documenting the eight v1→v2 removals.
+
+Existing v1 snapshot bytes are left untouched. Routine v2 output does **not**
+dual-emit the retired metrics. If a compatibility reader is offered at all, it
+is an explicit bounded migration or backfill mode, never the default
+measurement path. Adopters get something to branch on rather than a crash.
+
+### 3. State the principle in the doctrine
+
+Unchanged from the original Part 2: the selection constraint joins the
+Measurement Compact, and the late-blocker section is either rebuilt on
+structural signals or marked explicitly as a bounded study.
+
+### 4. Describe the retained columns honestly
+
+The claim that structural columns cannot be inflated is withdrawn. The doctrine
+and the module prose say instead: these are **interim lifecycle proxies read
+out of prose**, materially harder and costlier to inflate than a finding count
+but not immune — `review_rounds` counts headings. Their provenance and
+reliability tier are recorded as such until the deferred event architecture
+replaces them.
+
+This is a weaker claim than the proposal opened with, and it is the true one.
+It also sharpens the case for the deferred work: the columns worth keeping are
+worth keeping *because* they are the ones an event writer could eventually make
+real.
