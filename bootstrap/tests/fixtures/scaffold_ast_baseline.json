@@ -80,7 +80,7 @@
     "type": "Assign"
   },
   "Assign:_DEFAULT_ON_MODULES": {
-    "digest": "79ae883be0136a90",
+    "digest": "a4d8c89ca14f122a",
     "span": [
       83,
       93
@@ -160,7 +160,7 @@
     "type": "AnnAssign"
   },
   "Assign:_LIVING_STATE_DSTS": {
-    "digest": "dc478efb072ed310",
+    "digest": "8b7ceb939c3633d6",
     "span": [
       73,
       84
@@ -232,7 +232,7 @@
     "type": "Assign"
   },
   "Assign:_MODULE_MAPPINGS": {
-    "digest": "df43d4d75f55a3e5",
+    "digest": "0f42fa9a794a77da",
     "span": [
       298,
       576
@@ -1160,7 +1160,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:main": {
-    "digest": "d3dc4b4e5ea6e4fd",
+    "digest": "7949d4cd31efe362",
     "span": [
       188,
       718
@@ -1176,7 +1176,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:merge_module_into_slot": {
-    "digest": "815551a4e7d805b3",
+    "digest": "431cc08ef171c24e",
     "span": [
       258,
       345
@@ -1240,7 +1240,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:run_module_merge_pass": {
-    "digest": "9957a011e2b9f892",
+    "digest": "cbe98d0832d1c69d",
     "span": [
       450,
       488
@@ -1288,7 +1288,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "50a36da0df30225e",
+    "digest": "72e335276655da6a",
     "span": [
       1478,
       1650

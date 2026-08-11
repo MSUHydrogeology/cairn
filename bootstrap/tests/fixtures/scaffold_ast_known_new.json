@@ -14,6 +14,9 @@
   "Assign:_CANONICAL": [
     "dc872acc5f39cc99"
   ],
+  "Assign:_CAPABILITY_NOTICE_MODULES": [
+    "6dd42988714849e8"
+  ],
   "Assign:_ENGINE_PROFILE_SCHEMA": [
     "588c35a3528adc47"
   ],
@@ -110,8 +113,14 @@
   "FunctionDef:_yaml_load": [
     "272bc70fc9fe77c8"
   ],
+  "FunctionDef:apply_module_merges": [
+    "67aaed81bfc5c3c9"
+  ],
   "FunctionDef:assert_always_on_complete": [
     "91498717e24d21d1"
+  ],
+  "FunctionDef:capability_install_notice_lines": [
+    "88af82a8ce5a1d5e"
   ],
   "FunctionDef:duplicate_destinations": [
     "2e5bae277e1e3f93"
@@ -124,6 +133,12 @@
   ],
   "FunctionDef:missing_required_tokens": [
     "d16142634e09ec07"
+  ],
+  "FunctionDef:module_merge_directives": [
+    "dc44c50f0289d5b6"
+  ],
+  "FunctionDef:resolve_slot_merge": [
+    "d8f87188c146a75e"
   ],
   "FunctionDef:strip_conditional_regions": [
     "99de9adbb9523ac9"
@@ -140,11 +155,11 @@
   "FunctionDef:verify_within_root": [
     "8d998b82d8a9cfab"
   ],
-  "Import:062120524f01": [
-    "062120524f011ff2"
-  ],
   "Import:080e5955857c": [
     "080e5955857cc60c"
+  ],
+  "Import:168e8cb7d9af": [
+    "168e8cb7d9af10d9"
   ],
   "Import:1bd25b1faa92": [
     "1bd25b1faa92dbdc"
@@ -161,9 +176,6 @@
   "Import:2f50860721a3": [
     "2f50860721a34038"
   ],
-  "Import:347ce2a1a722": [
-    "347ce2a1a722e521"
-  ],
   "Import:38c41a014270": [
     "38c41a014270161d"
   ],
@@ -172,6 +184,9 @@
   ],
   "Import:4b497a0c2216": [
     "4b497a0c22160a92"
+  ],
+  "Import:4b6bfb2b8707": [
+    "4b6bfb2b87076195"
   ],
   "Import:4f4228beb075": [
     "4f4228beb075e7cc"
@@ -190,9 +205,6 @@
   ],
   "Import:84ab4fbddb0a": [
     "84ab4fbddb0a5186"
-  ],
-  "Import:84d1f0778a37": [
-    "84d1f0778a37d587"
   ],
   "Import:866a97c0a29d": [
     "866a97c0a29d398d"
@@ -235,6 +247,9 @@
   ],
   "Import:e448e389dff2": [
     "e448e389dff2a196"
+  ],
+  "Import:e904d83928f4": [
+    "e904d83928f465c5"
   ],
   "Import:f0a8b732f682": [
     "f0a8b732f682850e"
