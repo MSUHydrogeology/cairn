@@ -180,15 +180,40 @@ One column named in the original sixteen, `human_review`, is **not** in the
 live schema; `external_tier_review` remains. Treat any analysis written
 against the old column list as needing a re-check.
 
-**A live reliability question on the plan side.** Of 38 plans, `code_review_rounds`
-reports **0 for 28 of them**, while 36 are archived -- and Cairn's plan-archive
-precondition holds that a plan cannot archive until a code review has occurred.
-Every archived plan does carry a heading matching *code review*. So either the
-extractor counts rounds by a marker convention most plans predate, or the
-precondition is satisfied in a form the metric cannot see. This is checkable and
-unresolved; until it is resolved, `code_review_rounds` should not be read as
-evidence about review coverage. It is exactly the failure mode the metric
-contract's *reliability tier* field exists to record.
+**Both plan-side review-round columns are broken, and the cause is a
+heading-level mismatch.** `code_review_rounds` reports 0 for 28 of 38 plans and
+`plan_review_rounds` is worse. This is a **metric defect, not a process
+defect** -- the reviews happened, are dated, and are present in every archived
+plan. The extractor cannot see them.
+
+`parse.py` requires an **h3** heading on the same line as a date:
+
+```python
+_CODE_REVIEW_HEADING_RE = re.compile(r'### (?:[a-z]+ )?code review\b', re.I)
+_PLAN_REVIEW_HEADING_RE = re.compile(r'### (?:[a-z]+ )?plan review\b', re.I)
+```
+
+The corpus convention is **h2**. Measured across the 36 archived plans:
+
+| heading | dated, at h2 (missed) | counted |
+|---|---|---|
+| code review | **33** | 11 |
+| plan review | **95** | 2 |
+
+All 36 archived plans carry a code-review heading; **10** carry one the
+extractor counts. So Cairn's plan-archive precondition -- a plan cannot archive
+until a code review has occurred -- is being satisfied; the column that would
+*evidence* it simply misses the dominant form.
+
+Two consequences. **Neither column is usable as review-coverage evidence
+today**, and any analysis or snapshot built on them understates review activity
+by roughly an order of magnitude on the plan-review side. And the fix is not
+purely mechanical: relaxing the pattern to accept `##` is a one-line change to
+a module Cairn *ships to adopters*, and it **changes the values of every
+historical snapshot** -- so it needs a proposal that decides whether past
+snapshots are re-derived, annotated, or left as a documented discontinuity.
+That is a measurement-boundary problem of exactly the kind this note's
+methodological cautions already name.
 
 **Per-plan: still 6 columns** -- `stem`, `status`, `plan_review_rounds`,
 `code_review_rounds`, `paired_proposal`, `paired_proposal_reliability`.
