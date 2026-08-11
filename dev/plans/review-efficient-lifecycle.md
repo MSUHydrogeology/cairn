@@ -47,6 +47,74 @@ cost four of each — roughly twenty-eight. That arithmetic is the case for
 consolidation; if this plan ever grows a *per-chunk* review, it has lost its
 reason to exist.
 
+## Maintainer interventions — the complete list
+
+**Read this before executing anything.** Everything in this plan is agent work
+**except** what is listed here. This section is the single authoritative
+enumeration: if a stop is not in this table, it is not a stop, and an
+implementing agent does not invent one. Conversely, no chunk elsewhere in this
+plan may introduce a Maintainer stop without adding a row here.
+
+This exists because the stops were previously scattered across nine locations
+(the sequence block, three chunk rows, a tier note, the restart cases, Chunk I's
+own section). That is survivable for a human reading top-to-bottom and is
+**not** survivable for an autonomous or parallel run, where the cost of missing
+one is an unauthorized ceremony rather than a paused agent.
+
+### Precondition — must be true before the first implementation commit
+
+| # | Condition | State as of 2026-08-11 |
+|---|---|---|
+| **M0** | The three security plans are **archived** — `api-web-security-modules`, `release-security-bar`, `security-verification-activation` — per the Maintainer's 2026-08-10 sequencing statement | **NOT MET.** `release-security-bar` is archived; `api-web-security-modules` and `security-verification-activation` are both live at `**Status**: open`, and both were being actively committed to on 2026-08-11 |
+
+M0 is a **precondition, not a ceremony** — nobody has to *do* anything at it
+except confirm it. But it gates the first implementation commit, and it is
+currently false, so an execution run starting now would breach the plan's own
+fence on commit one. It is also a live-collision hazard: those two plans are
+another session's in-flight work.
+
+### Scheduled stops — exactly two in the whole A → P6d run
+
+| # | Stop | Where | What the Maintainer does | What an agent must not do |
+|---|---|---|---|---|
+| **M1** | Re-anchor ceremony | **Chunk I**, after every A–H byte is stable **and** the Code review has landed | Performs `bootstrap/REANCHOR_RUNBOOK.md` once for the whole batch | Perform it, absorb it into another chunk, or self-service the frozen set. Chunk I's own words: *"No agent performs or absorbs this."* |
+| **M2** | Pilot activation | **P6d**, after Boundary B2 | Lands the data-only commit introducing the immutable activation record | Land the activation record, or enable the pilot by any other route. **No code lands at activation** — if a P6d commit contains code, it is wrong |
+
+Everything from **A through H, P1–P8's implementation, B1, and B2** is agent
+work requiring no Maintainer contact.
+
+### Conditional stops — reached only if a specific thing happens
+
+| # | Trigger | Action |
+|---|---|---|
+| **M3** | Implementation needs to change `_resolve_interpreter` (`tools/lifecycle.py:414`), its schema, validation order, fallback disposition, warning visibility, or any subprocess use of the resolved path | **Stop for a new Security Review.** P4 is fenced off this surface; it is a protected trust root named in `AGENTS.md` |
+| **M4** | A discovery needs its own contract | Raise it to the Maintainer as a **scope question**. Do not open a sub-plan — no chunk in this plan opens one |
+| **M5** | A correction lands inside the gate inventory after the ceremony | Restarts **M1**. See the restart cases in `## Sequence`; they are not re-stated here |
+| **M6** | The pilot completes its 60-day / six-plan window | The **promotion Decision** — then and only then does **P7** execute. Structurally out of reach for this execution run |
+
+### Standing, and not specific to this plan
+
+**Pushing.** Always the Maintainer's, without exception, per `AGENTS.md`. The
+plan authorizes the change; it never authorizes publishing it.
+
+### One gate reduced on 2026-08-11, recorded rather than done quietly
+
+The tier note previously read *"P6b/P6d/P7 are Maintainer-gated."* **P6b is no
+longer gated.** It authors `dev/collaboration_agreement.md`'s pilot section —
+pause conditions, evidence report shape, and a *description of* the Maintainer
+promotion Decision. Describing a Decision is not taking one. P6b ships inside
+the reviewed range and therefore carries Boundary B1 and the independent Code
+review like every other authored surface, which is the control that actually
+applies to it.
+
+This is a **post-SHIP change to a reviewed contract**, made at the Maintainer's
+explicit request to minimize interventions, and it is flagged here rather than
+absorbed silently. Neither External round 7 nor Security round 6 named P6b
+among the gates their clearance rests on — Security named immutable pilot
+activation (**M2**), the frozen-file ceremony (**M1**), and the conditional P7
+review (**M6**), all three of which are untouched. If the Maintainer disagrees,
+restoring the gate is a one-line revert of this paragraph and the tier note.
+
 **Two Boundary B records, named as two.** The opened plan budgeted one, which
 contradicted the accepted order this plan's own Chunk I cites: the re-anchor
 rewrites `bootstrap/tests/fixtures/gate_manifest.json`, a fixture inside the
@@ -60,8 +128,8 @@ contract, which is implemented today. This plan uses it; it does not wait on
 its own deliverables to verify itself.
 
 **No chunk opens a sub-plan.** A discovery that needs its own contract is
-raised to the Maintainer as a scope question, not converted into another
-planning artifact. Chunk count is not ceremony; review passes are.
+raised to the Maintainer as a scope question (fence **M4**), not converted
+into another planning artifact. Chunk count is not ceremony; review passes are.
 
 ## Bootstrap attestation — retired 2026-08-10, before it was ever used
 
@@ -224,11 +292,11 @@ H   migration + source-proposal archive            [commit pending]
 --- stable bytes ---------------------------------------------------
 B1  Boundary B on the pre-review commit            [record]
 CR  independent Code review over that range        [review]
-I   Maintainer re-anchor of the reviewed frozen set[Maintainer]
+I   Maintainer re-anchor of the reviewed frozen set[M1]
 B2  Boundary B + closeout on post-ceremony commit  [record]
 --- pilot ----------------------------------------------------------
-P6d pilot ACTIVATION (data-only, Maintainer-gated)  [record]
-P7  post-pilot promotion / retirement              [conditional; own evidence]
+P6d pilot ACTIVATION (data-only, Maintainer-gated)  [M2]
+P7  post-pilot promotion / retirement              [M6; own evidence]
 ```
 
 Only *activation* is post-ceremony. The pilot engine, its state schema, its
@@ -240,7 +308,7 @@ Restart cases, split rather than generalized:
    executable-template or fixture bytes restarts `B1` **and** independent Code
    review;
 3. any correction inside the gate inventory additionally restarts the
-   Maintainer ceremony `I`; and
+   Maintainer ceremony `I` (fence **M5**); and
 4. P6d activation and P7 outcomes follow their own phase evidence above — they
    never inherit `B1`/`CR`/`I`/`B2` by position.
 
@@ -408,19 +476,19 @@ are chunks, not another planning artifact.
 | P1 | `tools/lifecycle_planner.py` + twin, both authoring templates + twins | `Assurance path: standard \| high-assurance` declaration, the mandatory high-assurance trigger set, and the four-field review basis (`Reviewed commit`, `Target`, `Prior findings`, `Assurance path`) required across proposal, plan, and Code-review records |
 | P2 | same, plus `doctrine/dual-review.md` | proposal `Plan readiness: READY \| DISTINCT REVIEW REQUIRED`, exact accepted-commit binding, standard-plan inheritance, expansion invalidation, and the high-assurance refusal. **Semantic triggers are author declarations, not inferences**: scientific-assumption and undeclared cross-surface risk are declared by the author and surfaced to proposal review and `review-brief`; the tooling checks that the record exists and binds, never the truth of the classification |
 | P3 | both authoring templates + twins, planner predicates | complete current-contract revision plus its mandatory `Withdrawn / superseded commitments` ledger |
-| P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run`. **Fenced**: P4 does not modify `_resolve_interpreter` (`tools/lifecycle.py:414`), its schema, validation order, fallback disposition, warning visibility, or any subprocess use of the resolved path — the protected local interpreter binding named in `AGENTS.md`. Pinned by a focused exact-function-byte / AST sentinel test. If implementation needs such a change, **stop for a new Security Review**. Both commands stay read-only and execute no artifact content; human output passes through the **same** terminal encoder as F2. **The planner owns it**: the encoder lives in `tools/lifecycle_planner.py` (and its installed twin), and `tools/lifecycle.py` reaches it by the **same A3 contained-loader contract** — fixed `spec_from_file_location`, no ambient `sys.path`, no `tools/__init__.py`, no CLI import with side effects. This adds no install-manifest row: both files already install as siblings under `tools/`. The existing `_safe_field` (`tools/lifecycle.py:113`) is **not** this rule — it translates a fixed escape table and truncates; it applies neither `str.isprintable()` nor `_DISPLAY_UNSAFE_RANGES` — and is replaced, not wrapped. Machine output is versioned ASCII-safe JSON. Control-character, invisible-range, delimiter, malformed-record and mutation-sentinel tests, **plus the full A6 loader matrix for this second consumer** (decoy path, leaf and parent symlink, out-of-root, partial-import cleanup, clean retry) and byte/parity checks for every installed twin |
+| P4 | `tools/lifecycle.py` + installed twin | deterministic `review-brief`; expanded `closeout --dry-run`. **Fenced**: P4 does not modify `_resolve_interpreter` (`tools/lifecycle.py:414`), its schema, validation order, fallback disposition, warning visibility, or any subprocess use of the resolved path — the protected local interpreter binding named in `AGENTS.md`. Pinned by a focused exact-function-byte / AST sentinel test. If implementation needs such a change, **stop for a new Security Review** (fence **M3**). Both commands stay read-only and execute no artifact content; human output passes through the **same** terminal encoder as F2. **The planner owns it**: the encoder lives in `tools/lifecycle_planner.py` (and its installed twin), and `tools/lifecycle.py` reaches it by the **same A3 contained-loader contract** — fixed `spec_from_file_location`, no ambient `sys.path`, no `tools/__init__.py`, no CLI import with side effects. This adds no install-manifest row: both files already install as siblings under `tools/`. The existing `_safe_field` (`tools/lifecycle.py:113`) is **not** this rule — it translates a fixed escape table and truncates; it applies neither `str.isprintable()` nor `_DISPLAY_UNSAFE_RANGES` — and is replaced, not wrapped. Machine output is versioned ASCII-safe JSON. Control-character, invisible-range, delimiter, malformed-record and mutation-sentinel tests, **plus the full A6 loader matrix for this second consumer** (decoy path, leaf and parent symlink, out-of-root, partial-import cleanup, clean retry) and byte/parity checks for every installed twin |
 | P5 | planner + `bootstrap/tests/test_lifecycle_contract.py` | the bound `Contract non-expansion: VERIFIED \| NOT VERIFIED` attestation with its `Basis:` line; `NOT VERIFIED` blocks. Validates presence and binding shape only — the parent is explicit that the semantic claim stays human |
 | P6a | `tools/lifecycle.py` + twin, `dev/measurement/pilot-activation.md`, `dev/measurement/pilot-events.md` | **pilot engine, inside the reviewed range**, split so no authority input is a mutable last-writer-wins file. (1) An **immutable tracked activation record** naming `machinery_sha` = the reviewed **B2** commit; the *enabling* commit is derived from Git as the commit that first introduced this exact record, so nothing is self-referential, and `activation_date` is that commit's author date. (2) An **append-only tracked event ledger** — one event per counted plan stem or pause, each bound to its source artifact and commit — from which counts, pauses, and the report are **derived**, never stored. Six-plan rule = distinct plan stems reaching `ready-to-archive` under the contract; 60-day window from the derived activation date inclusive. Every writer: repository containment, regular non-symlink leaf **and** parent, closed bounded schema, atomic replace-or-append with an expected-old check, clean refusal on race or `OSError`. Malformed or unknown-version **refuses**; it never defaults to inactive |
-| P6b | `dev/collaboration_agreement.md` + twin | the pilot's human contract: pause conditions, evidence report shape, and the Maintainer promotion Decision at the boundary |
+| P6b | `dev/collaboration_agreement.md` + twin | the pilot's human contract: pause conditions, evidence report shape, and a description of the Maintainer promotion Decision at the boundary. **Agent-authored**, inside the reviewed range — describing the Decision is not taking it; the Decision itself is M6 |
 | P6c | `bootstrap/tests/test_lifecycle_contract.py` | pilot mutations: absent record, wrong schema version, altered prior event, duplicate or conflicting stem, symlink redirection of leaf or parent, interrupted write, stale writer / lost update, boundary-day arithmetic, pause set and cleared, and the exact activation-binding oracle (a record whose `machinery_sha` is not the B2 commit, and a derived-enabling-commit mismatch, both refuse) |
-| P6d | `dev/measurement/pilot-activation.md` | **activation only** — the data-only, Maintainer-gated commit introducing the immutable activation record after B2, enabling already-reviewed machinery. No code lands at activation |
-| P7 | `doctrine/`, both authoring templates + twins, `docs/workflow-role.md`, `docs/getting-started.md`, `docs/tool-usage.md`, `templates/skills/_lib/` | **conditional** post-pilot `promote` / `revise` / `retire`, each with distinct behavior, plus the three-layer canonical / self-hosted / shipped-template parity contract. Executes only after the Maintainer's promotion Decision |
+| P6d | `dev/measurement/pilot-activation.md` | **activation only (M2)** — the data-only, Maintainer-gated commit introducing the immutable activation record after B2, enabling already-reviewed machinery. No code lands at activation |
+| P7 | `doctrine/`, both authoring templates + twins, `docs/workflow-role.md`, `docs/getting-started.md`, `docs/tool-usage.md`, `templates/skills/_lib/` | **conditional** post-pilot `promote` / `revise` / `retire`, each with distinct behavior, plus the three-layer canonical / self-hosted / shipped-template parity contract. Executes only after the Maintainer's promotion Decision (M6) |
 | P8 | `bootstrap/tests/test_lifecycle_contract.py` | end-to-end standard-READY and high-assurance-refusal fixtures, plus a **row-level assurance matrix**: missing / duplicate / unknown `Assurance path` values (all refuse — **never default to `standard`**); every mechanically recognizable protected-surface trigger; uncertainty resolving **high**; high-assurance and `DISTINCT REVIEW REQUIRED` inheritance refusal; changed proposal / review / Decision SHAs; every named expansion dimension; unresolved findings; stale Boundary B; malformed or missing non-expansion `Basis:`; and a downgrade admitted only through a structurally valid Maintainer Decision |
 
 **Tier: Opus for P1--P3, P5 and P6a** (contract authorship on records every
 future artifact inherits, plus the pilot state schema). **Sonnet for P4, P6c
 and P8** (CLI surface, mutations and fixtures against a fixed contract, all
-oracle-rich). **P6b/P6d/P7 are Maintainer-gated.**
+oracle-rich). **P6d and P7 are Maintainer-gated (M2, M6); P6b is not** — see `## Maintainer interventions`, which is the only authoritative list.
 
 **Phase separation, inside this plan.** P6a--P6c ship *before* H/B1, so the
 pilot capability is inside the reviewed range and carries the plan's Code
@@ -431,7 +499,7 @@ changes any executable, test, template or fixture byte — takes a fresh
 Boundary B and an independent Code review, and if it changes a frozen path,
 another Maintainer ceremony. P7 is not assumed docs-only.
 
-### Chunk I — Maintainer re-anchor
+### Chunk I — Maintainer re-anchor  *(fence **M1**)*
 
 Per `lifecycle-status-vocabulary` R8: after every executable, test, template
 and frozen byte across A–H is stable **and** the single code review has landed,
