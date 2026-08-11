@@ -1615,3 +1615,134 @@ class TestPassBodyBoundaries:
         before = {s.line_no: s.body for s in art.sections}
         planner._pass_headings(art)
         assert {s.line_no: s.body for s in art.sections} == before
+
+
+# B3 -- Code-review disposition: exact `Answers:` binding, and the deliberate
+# asymmetry against B2's Plan-review group rule.
+
+
+_CR_HEAD = "## Code review -- Ann -- 2026-08-01\n\nbody\n\n"
+
+
+def _cr(tmp_path, body, **kw):
+    return planner.code_review_binding_violations(_plan_art(tmp_path, body, **kw))
+
+
+class TestCodeReviewAnswersBinding:
+    """Accepted `code-review-blindness` R2'' as sharpened by its Revision 3.
+
+    Six refusal directions, each with its **own** message, because they send a
+    reader to different places: an `unmatched` binding reads as "that reviewer
+    never existed" while a `malformed` one means the value never parsed.
+    Collapsing them would make the second look like the first.
+    """
+
+    def test_an_exact_binding_is_clean(self, tmp_path):
+        assert _cr(tmp_path, _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann -- 2026-08-01\n")) == []
+
+    def test_a_missing_binding_refuses(self, tmp_path):
+        out = _cr(tmp_path, _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\nno field\n"))
+        assert len(out) == 1 and "missing 'Answers:'" in out[0]
+
+    def test_a_duplicate_binding_refuses(self, tmp_path):
+        out = _cr(tmp_path, _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann -- 2026-08-01\nAnswers: Ann -- 2026-08-01\n"))
+        assert len(out) == 1 and "duplicate 'Answers:'" in out[0]
+
+    def test_a_malformed_value_refuses_as_malformed(self, tmp_path):
+        out = _cr(tmp_path, _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann, sometime\n"))
+        assert len(out) == 1 and "malformed 'Answers:'" in out[0]
+
+    def test_an_unmatched_binding_refuses(self, tmp_path):
+        out = _cr(tmp_path, _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Zed -- 2026-08-01\n"))
+        assert len(out) == 1 and "matches no Code-review pass" in out[0]
+
+    def test_an_ambiguous_binding_refuses(self, tmp_path):
+        """Revision 3: exactly one match. Two identical headings are legal
+        markdown, so the binding -- not the heading -- is what refuses."""
+        out = _cr(tmp_path, _CR_HEAD + _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann -- 2026-08-01\n"))
+        assert len(out) == 1 and "ambiguous" in out[0]
+
+    def test_a_response_before_its_target_refuses(self, tmp_path):
+        out = _cr(tmp_path, (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann -- 2026-08-03\n\n"
+            "## Code review -- Ann -- 2026-08-03\n\nbody\n"))
+        assert len(out) == 1 and "AFTER this Response" in out[0]
+
+    def test_round_is_omitted_iff_the_target_omits_it(self, tmp_path):
+        """R2'': `(round N)` omitted iff the target omits it. A round-less value
+        must not bind a numbered pass, or one Response silently answers a pass
+        it does not name."""
+        out = _cr(tmp_path, (
+            "## Code review -- Ann -- 2026-08-01 (round 2)\n\nbody\n\n"
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann -- 2026-08-01\n"))
+        assert len(out) == 1 and "matches no Code-review pass" in out[0]
+        assert _cr(tmp_path, (
+            "## Code review -- Ann -- 2026-08-01 (round 2)\n\nbody\n\n"
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann -- 2026-08-01 (round 2)\n")) == []
+
+    def test_a_mid_line_answers_in_prose_is_not_a_field(self, tmp_path):
+        """The field is full-line anchored. Otherwise a Response discharges a
+        pass by *talking about* answering it."""
+        out = _cr(tmp_path, _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "He Answers: Ann -- 2026-08-01 eventually\n"))
+        assert len(out) == 1 and "missing 'Answers:'" in out[0]
+
+
+class TestTheTwoRecordTypesDisagreeOnPurpose:
+    """B4's opposing falsifiers. A Plan review is answered as a **round** (one
+    Response dispositions the group); a Code review's findings are answered
+    **individually** (each Response names its pass). Identical document shapes,
+    opposite correct answers -- so weakening either rule toward the other
+    reddens here and not silently elsewhere.
+    """
+
+    TWO_PASSES_ONE_RESPONSE_CR = (
+        "## Code review -- Ann -- 2026-08-01\n\nb\n\n"
+        "## Code review -- Cid -- 2026-08-05\n\nb\n\n"
+        "## Response to code review -- Bob -- 2026-08-06\n\n"
+        "Answers: Cid -- 2026-08-05\n")
+
+    TWO_PASSES_ONE_RESPONSE_PLAN = (
+        "## Plan review -- Ann -- 2026-08-01\n\n"
+        "**Tier**: Internal\n**Findings**: raised\n\n"
+        "## Plan review -- Cid -- 2026-08-05\n\n"
+        "**Tier**: Internal\n**Findings**: raised\n\n"
+        "## Response to plan review -- Bob -- 2026-08-06\n\nanswered\n")
+
+    def test_code_review_binds_only_the_named_pass(self, tmp_path):
+        """Weakening B3 into B2's group rule reddens this node."""
+        art = _plan_art(tmp_path, self.TWO_PASSES_ONE_RESPONSE_CR)
+        got = {r: planner.code_review_pass_is_dispositioned(art, ln)
+               for ln, r, _d, _n in planner._code_review_pass_lines(art)}
+        assert got == {"Ann": False, "Cid": True}
+
+    def test_plan_review_dispositions_the_whole_group(self, tmp_path):
+        """Weakening B2 into B3's exact binding -- or back to the pre-286f07d
+        positional ceiling -- reddens this node."""
+        art = _plan_art(tmp_path, self.TWO_PASSES_ONE_RESPONSE_PLAN)
+        got = {sec.name: planner._has_disposition(art, sec)
+               for sec, _ in planner._pass_headings(art)}
+        assert got == {"Ann": True, "Cid": True}
+
+    def test_a_binding_defect_dispositions_nothing(self, tmp_path):
+        """Fail-closed: the alternative is a malformed binding clearing a pass
+        it may not even name."""
+        art = _plan_art(tmp_path, _CR_HEAD + (
+            "## Response to code review -- Bob -- 2026-08-02\n\n"
+            "Answers: Ann, sometime\n"))
+        assert planner.code_review_pass_is_dispositioned(art, 10) is False

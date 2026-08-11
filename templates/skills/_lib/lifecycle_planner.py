@@ -1307,6 +1307,176 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     )
 
 
+# === Chunk B, B3: Code-review disposition -- exact `Answers:` binding ========
+#
+# **The two record types take deliberately OPPOSITE rules, and that is the
+# point of splitting B2 from B3.**
+#
+#   * a *Plan* review is answered as a **round**, so one Response dispositions
+#     the whole group of passes above it (the group rule landed at `286f07d`,
+#     preserved verbatim by B2 above);
+#   * a *Code* review's findings are answered **individually**, so each Response
+#     must name exactly which pass it answers.
+#
+# Collapsing these into one generic "a disposition after the later pass may
+# satisfy the earlier" assertion is what produced the contradiction the plan's
+# Chunk B records: an implementer following the collapsed sentence would have
+# restored the false ceiling the Maintainer had just directed away.  So the two
+# predicates are separate functions with separate tests, and B4 requires a
+# falsifier in each direction so neither can be weakened *into* the other
+# unnoticed.
+#
+# Contract: accepted `code-review-blindness` **R2''** ("the exact grammar",
+# which replaces R2's ordering and binding clauses) as sharpened by that
+# proposal's Revision 3 -- the binding must resolve to **exactly one** prior raw
+# heading; zero or multiple matches refuse.
+
+#: A conforming Code-review pass heading, matched against the **raw line**.
+_CODE_REVIEW_PASS_RE = re.compile(
+    r"^## Code review -- (?P<reviewer>[^\n]+?) -- "
+    r"(?P<date>\d{4}-\d{2}-\d{2})(?: \(round (?P<round>\d+)\))?$")
+
+#: A Response that carries a binding.
+_RESPONSE_TO_CODE_REVIEW_RE = re.compile(
+    r"^## Response to code review -- (?P<author>[^\n]+?) -- "
+    r"(?P<date>\d{4}-\d{2}-\d{2})(?: \(round (?P<round>\d+)\))?$")
+
+#: R2'': **one full-line anchored field**.  Anchored on purpose -- an
+#: ``Answers:`` appearing mid-sentence in prose is not a field, and treating it
+#: as one would let a Response discharge a pass by talking about answering it.
+_ANSWERS_LINE_RE = re.compile(r"^Answers:[ \t]*(?P<value>\S.*?)[ \t]*$", re.M)
+
+#: The binding value's own shape.  Checked separately from matching so a
+#: malformed value refuses **as malformed** rather than silently failing to match
+#: any heading -- the two are different defects and the second reads as "the
+#: reviewer never existed", which sends a reader looking in the wrong place.
+_ANSWERS_VALUE_RE = re.compile(
+    r"^(?P<reviewer>.+?) -- (?P<date>\d{4}-\d{2}-\d{2})"
+    r"(?: \(round (?P<round>\d+)\))?$")
+
+
+def _code_review_pass_lines(art: Artifact) -> List[Tuple[int, str, str, Optional[str]]]:
+    """``(line_no, reviewer, date, round_or_None)`` per conforming pass heading.
+
+    Read off the **raw lines**, for the same reason `_pass_headings` does it:
+    a heading rebuilt from parsed fields silently drops a ``(<role>)``
+    parenthetical, and every comparison against it then misses.
+    """
+    out: List[Tuple[int, str, str, Optional[str]]] = []
+    for i, raw in enumerate(art.text.split("\n")):
+        m = _CODE_REVIEW_PASS_RE.match(raw)
+        if m:
+            out.append((i + 1, m.group("reviewer"), m.group("date"),
+                        m.group("round")))
+    return out
+
+
+def _response_to_code_review_lines(art: Artifact) -> List[Tuple[int, int]]:
+    """``(line_no, end_line)`` per Response-to-code-review section.
+
+    Bounded by the next level-<=2 heading, which is the same boundary rule B1
+    unified for pass bodies -- so a Response cannot reach into the section below
+    it to find a binding it does not carry.
+    """
+    lines = art.text.split("\n")
+    starts = [i + 1 for i, raw in enumerate(lines)
+              if _RESPONSE_TO_CODE_REVIEW_RE.match(raw)]
+    h2 = sorted({i + 1 for i, raw in enumerate(lines)
+                 if raw.startswith("## ") or raw.startswith("# ")})
+    out: List[Tuple[int, int]] = []
+    for start in starts:
+        end = len(lines)
+        for b in h2:
+            if b > start:
+                end = b - 1
+                break
+        out.append((start, end))
+    return out
+
+
+def code_review_binding_violations(art: Artifact) -> List[str]:
+    """Every ``Answers:`` binding defect in *art* (B3).
+
+    Six refusal directions, each named separately in the message so a reader is
+    sent to the right place: **missing**, **duplicate**, **malformed**,
+    **unmatched**, **ambiguous**, and **precedes its target**.  R2'' lists the
+    first four; Revision 3 adds *ambiguous* by requiring exactly one match; the
+    last is R2''s "A Response positioned before its target refuses".
+    """
+    lines = art.text.split("\n")
+    passes = _code_review_pass_lines(art)
+    v: List[str] = []
+    for start, end in _response_to_code_review_lines(art):
+        label = f"'{lines[start - 1].lstrip('# ').strip()}'"
+        body = "\n".join(lines[start:end])
+        found = _ANSWERS_LINE_RE.findall(body)
+        if not found:
+            v.append(f"{label}: missing 'Answers:' binding -- a Code-review "
+                     "Response must name the exact pass it answers")
+            continue
+        if len(found) > 1:
+            v.append(f"{label}: duplicate 'Answers:' binding "
+                     f"({len(found)} lines) -- exactly one is required")
+            continue
+        value = found[0]
+        m = _ANSWERS_VALUE_RE.match(value)
+        if not m:
+            v.append(f"{label}: malformed 'Answers:' value {value!r} -- "
+                     "expected '<reviewer> -- <YYYY-MM-DD>[ (round N)]'")
+            continue
+        # `(round N)` omitted iff the target omits it: a value carrying no round
+        # matches only unnumbered passes, and vice versa.  Anything looser would
+        # let one Response bind to a pass it does not name.
+        targets = [
+            ln for ln, reviewer, date, rnd in passes
+            if reviewer == m.group("reviewer")
+            and date == m.group("date")
+            and rnd == m.group("round")
+        ]
+        if not targets:
+            v.append(f"{label}: 'Answers: {value}' matches no Code-review pass "
+                     "in this artifact")
+            continue
+        if len(targets) > 1:
+            v.append(f"{label}: 'Answers: {value}' is ambiguous -- it matches "
+                     f"{len(targets)} Code-review passes (lines "
+                     f"{', '.join(str(t) for t in targets)})")
+            continue
+        if targets[0] > start:
+            v.append(f"{label}: 'Answers: {value}' targets a pass at line "
+                     f"{targets[0]}, which is AFTER this Response at line "
+                     f"{start} -- a Response cannot answer a later pass")
+    return v
+
+
+def code_review_pass_is_dispositioned(art: Artifact, pass_line: int) -> bool:
+    """Is the Code-review pass at *pass_line* answered by an exact binding?
+
+    **Not** the plan-review group rule: a Response bound to a *later* pass never
+    satisfies an earlier one, which is the asymmetry B4 pins in both directions.
+    A Response with any binding defect dispositions nothing -- refusing is the
+    fail-closed direction, since the alternative is a malformed binding clearing
+    a pass it may not even name.
+    """
+    if code_review_binding_violations(art):
+        return False
+    lines = art.text.split("\n")
+    passes = _code_review_pass_lines(art)
+    for start, end in _response_to_code_review_lines(art):
+        found = _ANSWERS_LINE_RE.findall("\n".join(lines[start:end]))
+        if len(found) != 1:
+            continue
+        m = _ANSWERS_VALUE_RE.match(found[0])
+        if not m:
+            continue
+        for ln, reviewer, date, rnd in passes:
+            if (ln == pass_line and reviewer == m.group("reviewer")
+                    and date == m.group("date") and rnd == m.group("round")
+                    and ln < start):
+                return True
+    return False
+
+
 def _near_miss_headings(art: Artifact) -> List[str]:
     """Every heading that begins `Plan review` but is **not** an S1 pass.
 
