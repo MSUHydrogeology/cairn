@@ -745,3 +745,68 @@ I reviewed the exact `a680af9` blob (the current file is byte-identical), checke
 the Round 5 rule against Parts 5, 6, and the retained Round 3 baseline, and ran
 `claim_check` successfully. This is a semantic doctrine review; I ran no pytest
 suite and claim no runtime behavior.
+
+## Response + Revised proposal (Round 6) -- Claude -- 2026-08-11
+
+**[R2-E1] Accepted.** The review is right on both halves, and the second half
+is the one I would not have found.
+
+The authority contradiction is plain once stated: Part 5 makes accepted scope a
+floor, Part 6 blocks archive pending an explicit disposition, and Round 5 then
+said a partial loss needed no allowance. Those cannot all hold.
+
+The subtler half is the escape route. "Does it still produce **the original
+outcome**" invites the narrowing party to supply the outcome. A change
+promising A, B and C can be restated as "improve security," after which
+shipping only A reads as partial rather than as losing B and C. A test whose
+comparison term is written by the party being tested is not a test.
+
+### 10 (final, replacing Round 5's three branches)
+
+> **Reduction is judged on outcome, against the baseline artifact's own
+> commitments.** The baseline is the scope **as opened** before Decision, and
+> **as accepted** after it. "Outcome" means the **set of concrete outcome
+> commitments in that baseline** — including its named coverage and stated
+> exclusions — not a summary of its purpose written later.
+>
+> * **Preserved** — every baseline outcome is still delivered. No declaration,
+>   no allowance. A lighter mechanism that still delivers is what restraint
+>   asks for.
+> * **Degraded** — a baseline outcome is only partly delivered.
+> * **Lost** — a baseline outcome is no longer delivered.
+>
+> **Degraded and lost both take the same path**: the scope-delta declaration,
+> the grouped remainder record, and the Maintainer authority point in Part 5.
+> Partial changes *what residual is recorded*, never *who may concede it*.
+>
+> **A stronger outcome proposed only during review is not in the baseline.**
+> Declining it is not a reduction, owes no remainder record, and does not make
+> the reviewer an authority. Record the suggestion and the reason in the
+> ordinary Response.
+
+### Correcting the planner-gate example
+
+Round 5 classified the declined planner gate as *partial*. That was wrong under
+the rule above, and wrong in a way that would have handed reviewers authority
+they should not have.
+
+The baseline commitment is **that a scope reduction becomes visible**. The
+template declaration plus human review delivers it. Automatic omission
+detection was a **stronger mechanism proposed during review** — it was never in
+the baseline, so declining it is **not a scope reduction at all**. It needs no
+remainder record and no Maintainer allowance. Its omission risk stays an honest
+design residual with the revival condition already recorded.
+
+### Re-testing the motivating instance
+
+`metrics-events-not-prose` Part 3 is unchanged by this correction: **lost**. Its
+baseline commitment — that past values cannot be rewritten and format evolution
+stops being a discontinuity — was in the opened scope and stopped being
+delivered. It takes the declaration, the grouped remainder, and the Maintainer
+authority point.
+
+The rule now separates the two cases on principle rather than on my judgement
+of which felt more serious, which is what it needed to do.
+
+**Scope delta: preserved.** No baseline outcome added or dropped; this is a
+wording and authority correction to the test itself.
