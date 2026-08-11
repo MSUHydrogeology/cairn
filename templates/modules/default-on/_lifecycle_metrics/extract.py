@@ -351,8 +351,15 @@ def _purge_planner_module() -> None:
 
 def _validated_planner_path() -> Path:
     """The sibling planner path, or a clean refusal.  Never raises ``OSError``."""
-    here = Path(__file__).resolve()
-    root = here.parents[1]
+    # Derived from the **unresolved** ``__file__`` on purpose.  An earlier
+    # version resolved first and *then* asked whether the parent was a symlink
+    # -- which can never be true of an already-resolved path.  That guard was
+    # dead by construction: no real symlink could reach it, and the only way to
+    # observe it firing was to monkeypatch ``Path.is_symlink``.  A guard
+    # documented as live that cannot fire is worse than no guard, because it
+    # reads as protection.  Found by A6's loader matrix, not by review.
+    raw = Path(__file__).absolute()
+    root = raw.parent.parent
     path = root / 'lifecycle_planner.py'
     try:
         if root.is_symlink():
@@ -369,6 +376,11 @@ def _validated_planner_path() -> Path:
                 f'reads the lifecycle vocabulary from the planner and keeps no '
                 f'local copy.  This is the expected refusal at the template '
                 f'source location, where no planner is installed alongside.')
+        # Containment compares **resolved forms on both sides**.  Comparing the
+        # unresolved path against its own resolution would refuse any legitimate
+        # checkout living under a symlinked ancestor -- macOS's
+        # ``/tmp -> /private/tmp`` is exactly that shape -- which is a false
+        # refusal dressed as a security check, not a protection.
         if path.resolve().parent != root.resolve():
             raise VocabularyUnavailable(
                 f'{path} resolves outside the expected {root} root')

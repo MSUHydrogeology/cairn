@@ -74,6 +74,16 @@ import importlib.util as _importlib_util
 _HERE = Path(__file__).resolve().parent
 _CAIRN_ROOT = _HERE.parent
 
+#: The same two directories **unresolved**, for the symlink guards only.
+#: ``_HERE`` above is resolved, so ``_HERE.is_symlink()`` can never be true --
+#: a guard asking that question of a resolved path is dead by construction and
+#: only reachable by monkeypatching ``Path.is_symlink``.  The contained loaders
+#: below therefore derive their symlink checks from these, and compare
+#: *resolved* forms on both sides for containment.  Found by Chunk A6's loader
+#: matrix; the same defect existed in both consumers.
+_HERE_RAW = Path(__file__).absolute().parent
+_CAIRN_ROOT_RAW = _HERE_RAW.parent
+
 # ---------------------------------------------------------------------------
 # The suppression whitelist -- contained loader
 # ---------------------------------------------------------------------------
@@ -96,8 +106,12 @@ _CAIRN_ROOT = _HERE.parent
 #
 # What was here before, and why each part mattered:
 #
-#   * a bare ``assert`` on the spec -- which ``python -O`` strips, turning what
-#     looks like a guard into an ``AttributeError`` traceback on the next line;
+#   * a bare ``assert`` on the spec.  Measured rather than assumed, and it was
+#     **not** the ``python -O`` hazard it looks like: ``spec_from_file_location``
+#     returns a valid spec for a *missing* ``.py`` file and returns ``None`` only
+#     for an unrecognised extension, which a hardcoded ``.py`` path cannot reach.
+#     So that assert was unreachable and ``-O`` changed nothing -- it was
+#     decoration, which is its own hazard: it read as the guard that was missing;
 #   * no symlink or containment checks at all, on the one file in this tool
 #     whose only purpose is suppression.  A symlinked leaf, a symlinked
 #     ``scripts/``, or a path resolving out of the tree was executed unchecked;
@@ -125,18 +139,18 @@ _SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 
 def _validated_whitelist_path() -> Path:
     """The whitelist path, or a clean refusal.  Never raises ``OSError``."""
-    path = _HERE / "transition_lint_whitelist.py"
+    path = _HERE_RAW / "transition_lint_whitelist.py"
     try:
-        if _HERE.is_symlink():
+        if _HERE_RAW.is_symlink():
             raise WhitelistUnavailable(
-                f"the containing directory {_HERE} is a symlink")
+                f"the containing directory {_HERE_RAW} is a symlink")
         if path.is_symlink():
             raise WhitelistUnavailable(f"{path} is a symlink")
         if not path.is_file():
             raise WhitelistUnavailable(f"no whitelist at {path}")
-        if path.resolve().parent != _HERE.resolve():
+        if path.resolve().parent != _HERE_RAW.resolve():
             raise WhitelistUnavailable(
-                f"{path} resolves outside the expected {_HERE} root")
+                f"{path} resolves outside the expected {_HERE_RAW} root")
         with path.open("rb"):
             pass
     except OSError as exc:
@@ -270,7 +284,7 @@ def _purge_planner_module() -> None:
 
 def _validated_planner_path() -> Path:
     """The planner path, or a clean refusal.  Never raises `OSError`."""
-    path = _CAIRN_ROOT / "tools" / "lifecycle_planner.py"
+    path = _CAIRN_ROOT_RAW / "tools" / "lifecycle_planner.py"
     tools_dir = path.parent
     try:
         if tools_dir.is_symlink():
