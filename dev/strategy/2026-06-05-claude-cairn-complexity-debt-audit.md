@@ -1,380 +1,338 @@
-<!-- Migrated 2026-06-12 from modflow_tools dev/strategy/ (Cairn's development home before self-hosting). Authored from modflow_tools' vantage; some path cites and "current state" reflect that origin and are being adapted to Cairn. Preserved as Cairn's living deliberation record -- see dev/strategy/MIGRATION.md. -->
-<!-- claim-check-allow: templates/modules/team-gated/intent.py, templates/modules/default-on/onboarding_activate.py, templates/modules/default-on/claim_check.py, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle.py, templates/core/dev/proposals/_template.md, templates/core/dev/plans/_template.md, scripts/quality_gate.py -->
-<!-- ^ Cairn-repo paths (~/Code/cairn); bootstrap/ + doctrine/ tokens don't
-     resolve locally and aren't flagged (first segment not a local top-level
-     dir). scripts/quality_gate.py IS a local-resolving first segment, so it is
-     allow-listed explicitly. -->
-<!-- claim-check-allow-count: 4865 lines, 2021 lines, 2035 lines, 1767 lines, 1173 lines, 876 lines, 823 lines, 766 lines, 776 lines, 821 lines, 800 lines, 14982 lines, 5464 lines, 449 lines, 225 lines, 1583 lines, 600 lines, 1000 lines, 12 files, 59, 50, 49, 39, 23, 18, 29 -->
-<!-- ^ point-in-time line counts of ~/Code/cairn (and one modflow_tools-local
-     count, `2035 lines` / `49` = the lifecycle_metrics v2 fork), computed
-     2026-06-05 via the `wc -l` / `grep -cE '^(def |class )'` commands cited in
-     Method; the 2026-08-10 re-measure below is a separately dated snapshot. -->
+<!-- Opened 2026-06-05 (migrated 2026-06-12 from modflow_tools dev/strategy/,
+     Cairn's development home before self-hosting). Rewritten top-down
+     2026-08-11: the original line-count instrument and the ledgers built on it
+     are retired, not archived -- see "Why the previous instrument was retired".
+     Strategy notes are inline-revised, so the arc lives in git log. -->
 
-# Cairn complexity-debt audit
+# Cairn complexity — a measured instrument, and what it finds
 
 **Author**: Claude (Strategy & Research Agent)
-**Model**: Opus 4.8 (1M context); 2026-08-10 re-measure by Opus 5
-**Date**: 2026-06-05
-**Re-measured**: 2026-08-10 — **the original program is complete**; all five
-recommendations landed and the gate was never tripped. A *second* ledger opens
-below, because the debt did not disappear so much as move down one level.
-**Status**: revised
-**Type**: comparative-research
-**Surfaces this would feed**: the original program's five items, all now
-shipped (see *Program status*); a new `upgrade.py` split scoping; a
-`lifecycle.py` promotion from watch-tier to split-tier (its documented trigger
-has fired); a test-redundancy pass, which the original audit deferred and the
-current ratio reopens.
+**Model**: Opus 4.8 (2026-06-05 original); Opus 5 (2026-08-11 rewrite)
+**Date**: 2026-06-05, rewritten 2026-08-11
+**Status**: draft (the rewrite has not been reviewed; prior conclusions retired)
+**Type**: design-exploration
+**Surfaces this would feed**: a proposal to ship the measurement script as a
+Cairn tool; a re-scoped split queue (the previous queue is withdrawn below); the
+cost-validation study that would tell Cairn whether any of this work pays.
 
 ---
 
 ## The question
 
-**2026-06-05.** While splitting `bootstrap/scaffold.py`, is Cairn carrying
-*other* accumulated complexity debt worth addressing — and if so, where, and is
-it a bounded program or a sprawling cleanup?
+**What should Cairn measure to know where complexity is actually costing it
+something?**
 
-**The finding: the debt is concentrated, not pervasive.** It is a handful of
-over-grown monolithic `.py` tools plus lifecycle-template bloat; everything else
-is clean. That makes remediation a **bounded, sequenceable** program — finite
-and orderable, though each split is a heavy refactor and the program is *gated*
-on the first one proving out — not an open-ended audit-and-fix.
+Not "which file is biggest." That question has an easy answer and a useless
+one. The question that matters is where the project is *paying interest* — and
+that requires an instrument that can tell a large-but-flat file from a
+small-but-tangled one, and can tell a file being actively fought with from one
+that has been stable for a month.
 
-**2026-08-10.** Two months and a large security-hardening arc later, the
-re-measure asks the follow-on question the original could not: *did the bounded
-program stay bounded, and did the criterion hold up?*
+The previous version of this note answered the easy question. It built a ledger
+from line counts and top-level `def` counts, screened files by size, and
+convicted them by reading their symbol names. That instrument produced a
+plausible queue, and the queue was wrong in ways this rewrite can now
+demonstrate — so the instrument is retired and rebuilt here.
 
-**The answer to both is yes, and it is worth stating plainly because the
-project's own record has been underselling it** (the 2026-07-08 broad look
-flagged exactly this — "the strategy record still presents the completed
-complexity-debt cleanup as pending"). All five recommendations shipped. The
-cost model was not falsified, so the gate on items 2–4 never had to bite. Most
-strikingly, the *criterion* predicted the seams: the subsystems this audit
-named by symbol-name clustering are, almost verbatim, the module names the
-splits actually landed on.
+## Why the previous instrument was retired
 
-**But the debt did not vanish — it descended.** Three members of the packages
-the splits produced are now individually larger than the monoliths this audit
-convicted, and the largest is `bootstrap/_scaffold/upgrade.py` at 2,353 lines,
-which the broad look independently flagged as *"outside the debt ledger."* That
-is this note's job to fix: the second ledger below puts it inside.
+Three defects, in ascending order of seriousness. They are recorded because
+each one shaped the replacement, not as a post-mortem for its own sake.
 
-## Method (so the findings are falsifiable)
+**1. It measured volume, not complexity.** Lines and top-level `def` count are
+size proxies. A file of forty flat, independent functions is easier to work in
+than a six-hundred-line file with depth-8 nesting and one shared mutable path.
+The old instrument ranked them the wrong way round, and its central table
+sorted by a number that answers no question anyone has.
 
-Read-only scan of `~/Code/cairn`, re-runnable. The 2026-06-05 pass and the
-2026-08-10 re-measure use the **same commands**, so the two snapshots are
-comparable:
+**2. Its "symptom" was a reading, not a measurement — and its validation was
+close to circular.** The old note was careful to say size only *screens* and
+that responsibility spread *convicts*. Good instinct. But it operationalized
+responsibility spread by **clustering symbol names by hand**, which measures
+naming discipline, not coupling. The note then offered, as its headline
+evidence, that this method "predicted the seams" of two later splits. It did —
+but the names and the splits share an author lineage and a naming convention,
+so name-clustering predicting where that author would cut is very nearly a
+tautology. It demonstrated that the codebase is consistently named. It did not
+validate the criterion. **Treating that as validation was the note's largest
+error**, because it licensed a queue nobody re-checked.
 
-* Composition + largest files: `git ls-files '*.py' | xargs wc -l | sort -rn`.
-* Monolith signal: `grep -cE '^(def |class )' <file>` (top-level symbols per file)
-  + sampling the symbol names for responsibility spread.
-* Test-to-code ratio: `bootstrap/tests` vs `bootstrap` non-test line sums.
-* Hygiene: `grep -rInE 'TODO|FIXME|HACK|XXX|DEPRECAT'`.
-* Duplication: `git ls-files '*.py' | sed 's#.*/##' | sort | uniq -d`.
-* Template bloat: heading + `cairn:slot` counts in the `_template.md` files.
-* Fork measurement (2026-06-05 only, the one non-`~/Code/cairn` probe): the
-  modflow_tools **v2 keep-ours fork** of `lifecycle_metrics.py` at
-  **2035 ln / 49 defs**.
+**3. It had no cost side, so it had no stopping rule.** "Debt" implies
+interest. The old note never asked what any monolith actually cost — in review
+findings, revision rounds, or rework — and so could not say when the work was
+done. The symptom of that gap is visible in the record: a program declared
+*bounded and complete* immediately regenerated a second ledger of the same
+shape. That was not a discovery. That was an instrument with no zero.
 
-**Added at the re-measure**, because two of the new findings could not be
-established by counting alone:
+**What survives.** The screen/convict two-stage shape is right; only the
+convicting step was wrong. The bounded-program discipline — order by value,
+gate follow-ons on the first one proving the cost model — is right, and is
+reused below. And the trust-boundary factor was right but *underweighted*: on a
+trust root, complexity is a **reviewability** property, which is a security
+property, not an aesthetic one.
 
-* **Twin parity**, checked rather than assumed: `cmp` over six representative
-  shipped↔self-hosted pairs, *and* a read of the test that enforces it
-  (`bootstrap/tests/test_notice_install.py`) to see whether its target list is
-  hand-maintained or derived.
-* **Subsystem reads** for the two files the size screen newly flags
-  (`bootstrap/_scaffold/upgrade.py`, `tools/lifecycle.py`), since this audit's
-  own criterion says size screens but only responsibility spread convicts.
+## Method
 
-**What would falsify the second ledger:** if a subsystem read of `upgrade.py`
-showed one cohesive pipeline rather than separable clusters, its row drops to
-*watch* regardless of its 2,353 lines — exactly as `lifecycle_metrics` v1's
-766 lines were screened out in 2026-06-05 for being a single linear ETL.
+Four instruments, all standard-library Python plus `git`, all re-runnable. The
+script is ~110 lines and currently lives outside the tree; productionizing it is
+Recommendation 1.
 
-## Program status — the 2026-06-05 ledger, closed
+1. **Function-level shape.** Per module-level function: line span and maximum
+   nesting depth (`ast`, counting `If`/`For`/`While`/`With`/`Try`). Per file:
+   function count, and **concentration** = share of all function lines held by
+   the largest three.
+2. **Measured separability.** Build the intra-file call graph among
+   module-level functions (`ast.Call` resolved by name), take connected
+   components, and count components with ≥2 members as candidate subsystems.
+   This replaces name-reading with something reproducible.
+3. **Churn.** `git log` commit counts per file, in a bounded recent window.
+4. **Hotspot.** `recent churn × concentration × max nesting` — the
+   churn-weighted priority that says *stable complexity is cheap; complexity
+   you keep touching is not.*
 
-Measured 2026-08-10. Every "before" figure is this note's original snapshot.
+Plus **change coupling**: co-change frequency between file pairs over a 60-day
+window, normalized by each file's own churn.
 
-| # | Item | Before | After | Status |
-|---|---|---|---|---|
-| 1 | `bootstrap/scaffold.py` | 4,865 ln | **143 ln / 5 defs** launcher + `bootstrap/_scaffold/` (10 modules, 8,651 ln) | **shipped** |
-| 2 | `intent.py` | 2,021 ln / 59 defs | **139 ln / 3 defs** facade + `_intent/` (7 modules) | **shipped** |
-| 3 | `onboarding_activate.py` | 1,767 ln / 50 defs | **88 ln / 1 def** facade + `_onboarding/` (8 modules) | **shipped** |
-| 4 | Lifecycle templates | 776 + 821 ln | **417 ln** (24 headings, 4 slots) + **327 ln** (18 headings, 3 slots) | **shipped**, with a relocation caveat below |
-| 5 | `lifecycle_metrics` split-then-fold-up | 766 ln / 29 defs (v1); 2,035 ln / 49 defs (fork) | **69 ln / 1 def** facade + `_lifecycle_metrics/` (9 modules, 2,020 ln) | **shipped** |
+### Limits, stated up front
 
-**The criterion predicted the seams.** This is the result most worth keeping,
-because it is what makes the method reusable rather than a one-off:
+Every one of these is a proxy, and two of them bit during this pass:
 
-* For `intent.py` the audit named five separable subsystems — *record I/O ·
-  identity/session · conflict-check · CLI · git-hook install*. The realized
-  package is `record_io.py`, `identity.py`, `conflict.py`, `cli.py`,
-  `hooks.py`, plus `shared.py`.
-* For `onboarding_activate.py` it named three — *slot/preset parse ·
-  trigger-eval · prompt render*. The realized package is `slotparse.py`,
-  `triggers.py`, `prompts.py`, plus `activation.py`, `cli.py`, `security.py`,
-  `shared.py`.
+* **The churn window is nearly the whole repository.** History begins
+  2026-05-19; this pass ran 2026-08-11. A first attempt used a 90-day window,
+  which is the entire project — so "recent churn" equalled "all churn" and
+  carried no recency signal at all. The tables below use **30 days**. Any
+  future run must re-check this: the window has to be short relative to the
+  history, and Cairn's history is still short.
+* **`--follow` inherits rename history.** `upgrade.py` and `cli.py` report
+  ~90+ all-time commits because `--follow` traces them back through the
+  `scaffold.py` split. All-time churn is therefore **not comparable** between
+  pre- and post-split files. Only the windowed figure is used for ranking.
+* **The call graph is name-resolved.** It matches `ast.Call` nodes by
+  identifier or attribute name, so it over-matches same-named methods and
+  misses dynamic dispatch. More importantly, **a single shared helper collapses
+  everything into one component**, so a low component count is weak evidence of
+  cohesion. It is strong evidence *against* a confident high count — which is
+  the use it is put to below.
+* **Concentration is uninterpretable without function count.** A file with two
+  module-level functions scores 1.00 trivially. Read the two columns together.
+* **Nesting depth is a crude stand-in** for cognitive complexity — no
+  cyclomatic count, no boolean-operator weighting.
 
-A symbol-name clustering pass, done read-only in an afternoon, anticipated the
-module boundaries of two heavy refactors. That is evidence for the
-**separable-subsystems** criterion over the line-count screen, and it is the
-part of this audit worth folding up.
+**What would falsify the ranking:** the cost study in Recommendation 2. If
+findings-per-change shows no relationship to hotspot rank, this instrument is
+measuring shape that nobody pays for, and it should be retired the same way its
+predecessor was.
 
-**The gate held.** Items (2)–(4) were gated on the scaffold-split landing *and
-proving the template affordable*. It did, and the launcher/facade topology it
-established was reused three more times. The cost model was never falsified, so
-the follow-ons never had to be re-justified from symptoms.
+## Findings
 
-**Item 4's relocation caveat.** The thinning met its stated goal — the
-templates lost 46% and 60% of their lines and are now form-shaped (4 and 3
-slots) rather than teaching-shaped. It also honoured the audit's specific
-warning: rather than dumping the teaching into `doctrine/lifecycle.md` and
-"manufacturing the monster doctrine document this audit credits Cairn for not
-having," the work created the two destination pages the audit specified,
-`doctrine/proposals.md` and `doctrine/plans.md`. But the mass moved rather than
-shrank, and the doctrine corpus no longer sits in the band this audit praised:
-`doctrine/plans.md` is now **836 lines**, the largest file in the corpus, where
-2026-06-05's largest was 449. Below the 1,000-line threshold the audit feared,
-but well outside the 225–449 band it called well-distributed. The 2026-07-08
-broad look independently found ~900 words of lifecycle rules **duplicated**
-between `proposals.md` and `plans.md`, against Cairn's own one-home rule —
-which is the likeliest source of the excess.
+### The ranking (30-day churn window, 2026-08-11, files ≥400 lines)
 
-## The criterion — a size screen, a symptom convicts
+`conc` = top-3 function-line share · `nest` = max nesting · `subs` = call-graph
+components with ≥2 members · `30d` = commits in window · `hot` = 30d × conc × nest
 
-*(Unchanged from 2026-06-05, and validated by the outcome above.)*
+| # | File | ln | fns | conc | nest | subs | 30d | hot |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `bootstrap/_scaffold/lockfile.py` | 633 | 12 | 0.69 | **8** | 2 | 5 | **27.7** |
+| 2 | `bootstrap/_scaffold/cli.py` | 753 | **2** | 1.00 | 4 | 1 | 6 | 24.0 |
+| 3 | `bootstrap/_scaffold/config.py` | 1769 | 17 | 0.65 | 5 | 2 | 7 | 22.6 |
+| 4 | `tools/lifecycle_planner.py` | 1728 | 46 | 0.28 | 5 | 2 | 13 | 18.2 |
+| 5 | `bootstrap/security_check.py` | 1099 | 33 | 0.29 | 5 | **3** | 8 | 11.6 |
+| … | | | | | | | | |
+| 11 | `bootstrap/_scaffold/install.py` | 1848 | 34 | 0.34 | 4 | **4** | 5 | 6.8 |
+| 14 | `bootstrap/_scaffold/upgrade.py` | **2353** | 37 | 0.40 | 4 | **1** | 4 | 6.3 |
+| 15 | `tools/lifecycle.py` | 1412 | 44 | 0.25 | 4 | 2 | 6 | 6.0 |
 
-Line- and def-count are a **screen**, not the verdict. The split-worthy symptom
-is **responsibility spread**, defined concretely so it is not an aesthetic call:
-count a file's **separable subsystems** — clusters of symbols on distinct domain
-boundaries, low-coupled to each other, each liftable into its own module behind
-a narrow interface. This deliberately does *not* count verbs-within-one-domain
-(a single pipeline's parse/validate/format facets are **one** responsibility,
-not three). The bar: size co-occurring with **≥3 separable subsystems**.
+### F1 — The two files the size screen never looked at are the top two hotspots
 
-Two secondary factors *raise the priority* of a file that already clears the bar
-but never promote one on their own:
+**`lockfile.py` is 633 lines** — far below any threshold the old instrument
+would have noticed — and carries **nesting depth 8, the deepest in the
+repository**, with 69% of its function lines in three functions. It is also the
+integrity record: the artifact `verify_integrity` reads to decide whether an
+adopter's tree has been tampered with. Depth-8 control flow on the file that
+decides a trust question is a **reviewability** problem before it is a
+complexity one.
 
-* **Fork-divergence** — a file `modflow_tools` keeps-ours-forks costs more to
-  carry un-split, so an upstream split also unblocks the un-fork. A payoff
-  multiplier, not a trigger: a *cohesive* fork stays watch.
-* **Trust-boundary concentration** — `scaffold.py` was the install/upgrade trust
-  boundary no single reviewer holds at once. **`upgrade.py` has inherited that
-  property**, which is why its row below is the priority one.
+**`cli.py` is 753 lines in two module-level functions.** Not "top-three
+dominate" — there are only two. This is the purest mega-function surface in the
+engine, and the old instrument's `def`-count screen actively hid it: a low
+function count read as *simple*.
 
-**Counting caveat (load-bearing, and it still binds):** the def figures are
-*top-level* symbols via `grep -cE '^(def |class )'`. A non-anchored count that
-also catches indented methods inflates each ~15–20% — the two must never be
-mixed across rows, or the tier boundary dissolves into an artifact of the regex.
+### F2 — The previous queue is falsified on both its headline rows
 
-## The second ledger (2026-08-10) — where the debt went
+This note's own prior version, committed 2026-08-10, is the thing being
+corrected:
 
-### N1 — The split relocated three monoliths rather than eliminating them
+* **`upgrade.py` was ranked the headline split** on 2,353 lines and a claimed
+  **"≥6 separable subsystems."** That figure came from reading name prefixes.
+  The measured call graph does not support it — the module-level functions form
+  **one** connected component, and the file ranks **14th** by hotspot with the
+  *lowest recent churn* of the top-15. It is the largest file in the engine and
+  close to the least troublesome by every measure that isn't size. Its long
+  functions (`_compute_upgrade`, 341 ln) are a real finding; "six subsystems
+  waiting to be lifted" was not.
+* **`lifecycle.py` was promoted from watch to split-tier** because its line and
+  `def` counts grew ~20%. It ranks **15th**, with the **lowest concentration of
+  any large file (0.25)** — i.e. it grew by adding *more, smaller* functions,
+  which is what healthy growth looks like. The promotion is withdrawn.
 
-`bootstrap/_scaffold/` is a genuine package with a narrow launcher, but three of
-its members are individually at or above the size that convicted the originals:
+The old trigger fired on growth. Growth in a well-decomposed file is not debt,
+and an instrument that cannot tell those apart will keep generating queues.
 
-| File | Lines | defs | Separable subsystems | Verdict |
-|---|---|---|---|---|
-| `bootstrap/_scaffold/upgrade.py` | 2,353 | 38 | **≥6** — root/profile resolution · upgrade computation (`FilePlan`, `_compute_upgrade`) · reporting · staging · lockfile init/finalize · module + collision adoption (four distinct `_cmd_*` entry points) · apply | **split** |
-| `bootstrap/_scaffold/install.py` | 1,848 | 34 | not yet read | **screen — read before convicting** |
-| `bootstrap/_scaffold/config.py` | 1,769 | 20 | not yet read | **screen — read before convicting** |
+### F3 — Separability and pain are different axes, and the old note conflated them
 
-`upgrade.py` is **larger than `intent.py` was when this audit convicted it**
-(2,021 ln), carries the same multi-`_cmd_*` CLI cluster that formed one of
-`intent.py`'s five seams, and sits on the install/upgrade trust boundary. The
-broad look reached the same file by a different route, recording *"upgrade.py
-mega-functions outside the debt ledger."* This note's second ledger is where it
-now lives.
+`install.py` has the **most** candidate subsystems (4) of any file measured —
+it is the most genuinely *separable* file in the engine. It also ranks 11th by
+hotspot: low concentration, moderate nesting, modest churn. It is easy to split
+and there is little reason to.
 
-The two rows marked *screen* are stated honestly as unconvicted: they clear the
-size screen but this pass did not do the symbol-clustering read, and under this
-audit's own criterion size alone does not convict.
+`lockfile.py` has 2 components and is the top hotspot. Hard to split, and it is
+where the cost is.
 
-### N2 — The `lifecycle.py` watch-tier trigger has fired
+**Separability tells you whether a split is cheap. Hotspot tells you whether it
+is worth doing.** A queue ordered by the first is a queue ordered by
+convenience.
 
-2026-06-05 kept `tools/lifecycle.py` at **watch** on the size gap, with a
-documented promotion trigger: *"promote it if a third separable subsystem
-appears or the fan-out-healing cluster grows."*
+### F4 — Change coupling finds nothing hidden, which is a real result
 
-Both conditions are met. It has grown from **1,173 ln / 39 defs to 1,412 ln /
-46 defs**, and the fan-out-healing cluster — the specific thing the trigger
-named — is now six functions (`_skill_symlinks_available`,
-`_assert_fanout_contained`, `_seed_skill_gitignore`, `_heal_skill_symlink`,
-`_heal_skill_copy`, `_heal_skills_fanout`). A symbol read shows at least five
-separable subsystems: interpreter / trust-root resolution
-(`_probe_interpreter`, `_resolve_interpreter`) · skills fan-out healing ·
-handoff locking (`HandoffLock`, `_pid_alive`, `_designation_marker_present`) ·
-session-start reporting · session-end orchestration with three subprocess
-runners.
+Over 60 days and 88 commits touching Python, the only strong co-change pairs
+are **shipped↔self-hosted twins**:
 
-**This is the audit's own trigger firing on schedule, which is the mechanism
-working.** `lifecycle.py` moves from watch to split-tier. It also carries the
-**local interpreter binding** — an executable trust root named in `AGENTS.md`'s
-high-risk surfaces — so a split here takes a Security Review, and it is a
-*twin* (below), so both copies move together.
+| co-change | pair |
+|---|---|
+| 92% (12×) | `templates/skills/_lib/lifecycle_planner.py` ↔ `tools/lifecycle_planner.py` |
+| 80% (4×) | `scripts/claim_check.py` ↔ `templates/modules/default-on/claim_check.py` |
+| 57% (4×) | `templates/skills/_lib/lifecycle.py` ↔ `tools/lifecycle.py` |
 
-### N3 — New standalone monoliths outside the original ledger
+These are *by construction* — a byte-parity test enforces them, deriving its
+pairs from the installer's own manifest. Below them, nothing crosses the
+threshold. **There is no logical module smeared across unrelated files**, which
+is the inverse debt a size-only instrument is structurally blind to and which a
+split-heavy program might plausibly have created. The architecture is clean on
+this axis; the instrument earns its keep by being able to say so.
 
-None existed at 2026-06-05; all are products of the security arc.
+The twins do swamp the signal, so change coupling is low-yield for Cairn until
+it can exclude manifest twins by construction.
 
-| File | Lines | defs | Note |
-|---|---|---|---|
-| `run_portable_security_sweeps.py` | 1,858 | 49 | executable trust root (`AGENTS.md`); shipped/self-hosted twin |
-| `tools/lifecycle_planner.py` | 1,728 | 50 | twin |
-| `templates/modules/team-gated/run_security_audit.py` | 1,327 | 41 | — |
+### F5 — The trust surfaces cluster at the top, and that should drive priority
 
-These are screened, not convicted. Two carry security trust-root status, which
-raises the cost of splitting them *and* the cost of not splitting them; that
-tension is the open question below.
+Four of the top five hotspots are trust-relevant: `lockfile.py` (integrity
+record), `config.py` (profile parsing — its deepest function is
+`_minimal_yaml_parse`, the fallback parser an independent review separately
+flagged as diverging from the real parser), `cli.py` (the engine's entry
+point), and `security_check.py` (3 subsystems, the scan surface).
 
-### N4 — The test ratio has roughly doubled, and the deferral should be revisited
+That is not a coincidence to note in passing. On a trust root, the question
+complexity actually poses is *can one reviewer hold the path from untrusted
+input to a dangerous sink in their head?* — and depth-8 nesting on the
+integrity record is a direct answer of "no." **Trust-boundary concentration
+should be the primary ordering factor, not a secondary multiplier.**
 
-2026-06-05: `bootstrap/tests/` at 14,982 lines against 5,464 lines of non-test
-engine code — **~2.7×**, judged *"high but justified"* for a security-critical
-install/upgrade engine, with a redundancy pass *"eventually worthwhile, not
-urgent."*
+## What this instrument still cannot see
 
-2026-08-10: **54,421 vs 10,361 lines — ~5.25×.** The engine did not quite
-double (1.9×); the test surface grew 3.6×. The largest single Python file in the
-repository is now a test (`bootstrap/tests/test_portable_security_sweeps.py`,
-2,356 ln), and four more test files exceed 1,500 lines.
+It measures *shape* and *activity*. It does not measure **cost**, and cost is
+the whole justification for the word "debt."
 
-This does not convict the test surface — an install engine that writes into
-other people's repositories earns heavy assurance, and much of the growth is the
-security arc's perturbation and confidentiality suites, which are the expensive
-kind precisely because they are non-vacuous. But *"eventually worthwhile, not
-urgent"* was a judgement made at 2.7×. At 5.25× it is worth re-deciding rather
-than inheriting, and Cairn already ships the instrument
-(`scripts/quality_gate.py --sub redundancy`).
+Cairn is unusually well-positioned to close this, and has not: `lifecycle_metrics`
+already extracts review findings, revision counts, and time-to-decision per
+proposal, and every plan's commits are discoverable by subject stem. The join
+is available and unrun:
 
-### N5 — "No internal duplication" has inverted in form, but the substance is answered
+> for each archived plan → its commits (`git log --grep='^<stem>:'`) → the files
+> those commits touched → **findings and revision rounds per surface**.
 
-The audit's duplication probe returned nothing in June; it now returns ~38
-duplicate basenames. **The metric has become uninformative rather than the
-property having decayed**, and the distinction matters:
+That yields the number this note has never had: *does changing a
+high-complexity surface actually cost more review?* It also yields a real test
+of the completed split program — post-split changes to `_scaffold/` should show
+lower findings-per-change than pre-split changes to `scaffold.py`, or the
+program did not pay for itself.
 
-* **Intra-package name reuse** — `cli.py`, `config.py`, `shared.py` in three
-  different private packages. Normal, correct, and a direct consequence of the
-  splits this audit recommended.
-* **Deliberate shipped↔self-hosted twins** — Cairn self-hosts the tools it
-  ships. Six representative pairs were `cmp`-checked this pass:
-  `run_portable_security_sweeps.py`, `lifecycle.py`, `lifecycle_planner.py`,
-  `claim_check.py`, `link_check.py`, `content_scan.py`. **All six byte-identical.**
+Until that runs, every ranking here — including the corrected one — is a
+hypothesis about where cost lives, not a measurement of it.
 
-The broad look's concern here — *"nothing automated keeps the 13
-shipped/installed payload copies from diverging"* — is **better answered than
-that wording suggests**, and the reason is worth recording. The parity test
-(`test_every_self_hosted_twin_stays_byte_identical_to_its_source`) does not
-iterate a hand-written list: it derives its pairs from
-`install_manifest(modules=None)` — *the installer's own manifest*. That is
-precisely the lesson the broad look named as a fold-up candidate ("any
-scanner's target list should be generated from the same list the installer
-uses"), already implemented here. A twin added to the manifest is covered
-without anyone remembering to add it.
+## Options
 
-*Limit of this finding:* the parity test covers `scripts/` and `tools/` twins
-of manifest `.py` sources. Non-`.py` payload copies and any shipped file
-outside the manifest are not in its scope, so "13 copies" is not fully
-discharged by this one test — narrowed, not closed.
+1. **Retire complexity auditing entirely** until something hurts. Defensible:
+   no incident traces to any file on this list, and the security and lifecycle
+   work in flight is higher-stakes. Cost: the trust-surface reviewability
+   finding (F5) goes unaddressed, and that one is about review integrity.
+2. **Ship the instrument, act on nothing yet.** Make the measurement
+   reproducible and re-run it at release boundaries; let evidence accumulate
+   before opening any split.
+3. **Ship the instrument and run the cost study**, then let the two together
+   decide the queue. Slower to a first refactor, but it is the only path that
+   produces a stopping rule.
+4. **Act on the current ranking now** — take `lockfile.py` and `cli.py` on
+   their hotspot scores. Fastest, and repeats the previous instrument's
+   mistake: acting on an unvalidated proxy.
 
-### N6 — Hygiene has degraded from excellent to merely good
+## Recommendation
 
-**6 → 34** `TODO|FIXME|HACK|XXX|DEPRECAT` marker lines across tracked files
-(22 in `.md`, 12 in `.py`). Still low for a repository of this size, and the
-`.md` share is largely doctrine *discussing* deprecation rather than deferred
-work. But a ~6× rise means the 2026-06-05 characterization ("hygiene is
-excellent — only 6 marker lines in the entire repo") should not be quoted
-forward without this re-measure.
+**Option 3, in three steps, and no split opens until step 2 reports.**
 
-### N7 — Ambient growth, no action implied
+1. **Ship the measurement as a Cairn tool** (~110 lines, stdlib-only, so it
+   sits inside the dependency budget). It belongs beside `quality_gate.py` as a
+   *report*, not a gate — there is no defensible threshold to fail a build on,
+   and inventing one would repeat the line-count error at higher cost. Fix the
+   window relative to history at runtime rather than hardcoding 30 days.
+2. **Run the cost study** described above. It is a join over data Cairn already
+   produces, and it is the only thing that can falsify the ranking or retire
+   the whole inquiry. This is the highest-value item in the note.
+3. **Then, and only then, open at most one split** — chosen by hotspot ×
+   trust-surface × measured cost, not by size. On present evidence that is
+   `lockfile.py`, and the framing is reviewability of the integrity record, not
+   its line count.
 
-Module docs **26 → 31** (the orphan-inventory suggestion from 2026-06-05 is
-still un-run and still worth an hour). `CHANGELOG.md` **1,583 → 2,400** lines —
-normal accretion, not debt, as before. Doctrine **12 → 16 files**, 5,547 lines
-total.
+**Withdrawn, explicitly:** the `upgrade.py` split (its "≥6 subsystems" was a
+reading the measurement contradicts), the `lifecycle.py` promotion to
+split-tier (it is among the healthiest large files), and the `install.py` /
+`config.py` "screened, pending a symbol read" rows — symbol reads are the
+method being retired. `config.py` returns on its own merits at rank 3.
 
-## Recommendation — a second bounded program, same shape, gated the same way
+**Two smaller items, independent of the above:** the `_minimal_yaml_parse`
+depth (F5) is worth a targeted look as a *correctness* question rather than a
+complexity one, since an independent review already flagged its behaviour. And
+`doctrine/plans.md` at 836 lines — corpus-largest, with ~900 words duplicated
+against `proposals.md` — is a one-home violation to fix as such, not a size
+target to hit.
 
-The 2026-06-05 program's structure is the right one to reuse, because it
-worked: order by value, gate the follow-ons on the first one proving the cost
-model, and let the criterion — not the line count — decide what is on the list.
-
-1. **Split `bootstrap/_scaffold/upgrade.py`** (the headline; ≥6 subsystems,
-   larger than the largest file this audit originally convicted, on the
-   install/upgrade trust boundary). It reuses the topology the scaffold-split
-   established, and it is the row the broad look independently asked for.
-   Carries the scaffold-split's full ceremony: Security Review and source-motion
-   AST attestation.
-2. **Promote `tools/lifecycle.py` to split-tier and scope it** — its documented
-   watch trigger has fired. Both twins move together; the interpreter-binding
-   trust root puts a Security Review on it.
-3. **Read `install.py` and `config.py` before deciding.** A subsystem read is
-   cheap; a split is not. Either they convict and join the queue, or they are
-   recorded as screened-and-cleared so the next re-measure does not re-litigate
-   them.
-4. **Re-decide the test-redundancy pass at 5.25×** rather than inheriting a
-   deferral made at 2.7×. Bounded: run `--sub redundancy`, read the output,
-   decide. This is an hour, not a program.
-5. **Resolve the `doctrine/plans.md` overshoot** — 836 lines, corpus-largest,
-   with ~900 words duplicated against `proposals.md`. This is a doctrine
-   re-home, not code, and the duplication is the likeliest cause; it should be
-   fixed as a one-home violation rather than as a size target.
-
-**The same two honesty caveats bind.** *Cost:* each of (1)–(2) is a
-high-blast-radius refactor with two Security Reviews and AST attestation —
-budget one scaffold-split apiece. *Gate:* (2) does not open until (1) lands and
-re-proves the template on a file that is itself a package member, which is a
-structurally different case from splitting a top-level monolith and may cost
-more. If (1) runs over budget, (2)–(3) are re-justified from symptoms, not
-auto-triggered by this note.
-
-**One thing this program should not do.** It should not treat the second
-ledger as evidence that the first program failed. Four of the five 2026-06-05
-items removed real responsibility spread, and the fifth eliminated an adopter
-fork. Package members growing after a split is the ordinary consequence of
-continued feature work landing in the right module — which is what a good split
-buys. The lesson is that a split is not terminal, and a debt ledger needs a
-**re-measure cadence**, which is the fold-up candidate below.
+**The stopping rule this note previously lacked:** the queue is empty when
+findings-per-change on the remaining surfaces is indistinguishable from the
+repository baseline. Without that number, any ledger regenerates forever — as
+the last one did, within a day of being declared complete.
 
 ## Open questions for the maintainer
 
-1. **Appetite + order.** Confirm `upgrade.py` first, then `lifecycle.py`?
-   *(Recommended: as listed — `upgrade.py` is both the largest and the one an
-   independent review already named.)*
-2. **The security-tool monoliths (N3).** `run_portable_security_sweeps.py` and
-   `lifecycle_planner.py` clear the size screen, but two are executable trust
-   roots where churn itself is a risk. Screen-and-hold, or scope a subsystem
-   read? *(Recommended: hold. A trust root's stability has value the line count
-   does not see; revisit only if a third subsystem appears, the same trigger
-   discipline that just worked for `lifecycle.py`.)*
-3. **Test redundancy at 5.25×.** Run the pass now, or hold until a split makes
-   a cluster obviously redundant? *(Recommended: run the instrument and read
-   the output now — it is cheap — but do not commit to acting on it.)*
-4. **Re-measure cadence.** Should this note carry a standing re-measure trigger
-   (a release boundary, or a fixed interval) rather than being re-run
-   opportunistically? *(Recommended: yes — at each release cut, alongside the
-   pre-release sweep, which already exists as the natural host.)*
+1. **Appetite.** Option 3 (instrument + cost study, no split yet), or Option 1
+   (retire the inquiry until something hurts)? *(Recommended: 3 — but 1 is a
+   real answer, and better than the status quo of queues nobody validates.)*
+2. **Does the instrument ship?** As a report beside `quality_gate.py`, or does
+   it stay a scratch tool re-run by hand at release boundaries? *(Recommended:
+   ship it as a report — an instrument nobody can re-run is how the last
+   ledger went two months without anyone noticing it had inverted.)*
+3. **Trust-surface priority.** Promote trust-boundary concentration to the
+   primary ordering factor? *(Recommended: yes. It reframes complexity work as
+   review integrity, which is a thing Cairn already claims to care about, and
+   it is the finding on this list with an actual argument behind it.)*
+4. **Is `lockfile.py`'s depth-8 nesting a security review item now**, ahead of
+   any refactor? *(Recommended: yes, and cheaply — one reviewer reading the
+   integrity path end to end and reporting whether they could hold it.)*
 
 ## Fold-up note
 
-The remediations remain **Cairn-internal** — refactors of Cairn's own engine
-and tools plus a doctrine re-home. Two findings from the re-measure are
-**methodology-general** and are fold-up candidates, each needing its own
-proposal under the one-incident-is-not-doctrine rate-limit gate:
+The remediations are Cairn-internal. Three findings are methodology-general and
+are fold-up candidates, each needing its own proposal under the
+one-incident-is-not-doctrine rate-limit gate:
 
-* **The separable-subsystems criterion is predictive, not just descriptive.**
-  A read-only symbol-clustering pass named the module boundaries that two
-  heavy refactors later landed on. That is a cheap, transferable technique for
-  deciding *whether and where* to split — and it is stronger than the
-  line-count screens most complexity guidance offers, because it produces the
-  seam, not just the verdict.
-* **A debt ledger needs a re-measure cadence, or it silently inverts.** This
-  note sat for two months reading as "pending" while its program had in fact
-  completed, and simultaneously stopped covering the largest file in the
-  engine. Both failures have the same cause: a point-in-time audit with no
-  scheduled re-run. The generalizable rule is that a complexity ledger is a
-  *living* instrument tied to a release boundary, not a one-shot report — which
-  also argues this note's own `Type:` should eventually become
-  `living-reference`.
+* **Name-clustering is not evidence when the namer and the splitter share an
+  author.** The general rule: a predictor validated only against work by the
+  same author, under the same conventions, is validated against its own
+  assumptions. This generalizes well past complexity auditing — it is the same
+  structure as the shared-blind-spot argument that motivates Cairn's External
+  review tier, applied to a measurement rather than a review.
+* **A debt ledger without a cost side has no stopping rule and will
+  regenerate.** Demonstrated here twice: a bounded program completed, and the
+  next ledger opened the following day.
+* **On a trust boundary, complexity is a reviewability property.** The metric
+  that matters is whether one reviewer can hold the untrusted-input-to-sink
+  path, not the file's length. Cairn already ties decision authority to
+  comprehension; this is that same principle applied to code review.

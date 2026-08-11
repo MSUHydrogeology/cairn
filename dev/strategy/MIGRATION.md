@@ -51,9 +51,13 @@ claim-path checking. Track that here.
   into `archive/`. That leaves three of the original four *vantage*-directive
   docs live: `human-ai-team-development-framework`,
   `team-productivity-metrics`, and `pre-release-sweep`.
-  (`complexity-debt-audit` also carries `claim-check-allow` directives, but
-  they are Cairn-repo path and count exemptions, not vantage ones — it is
-  "clean" in this section's sense, as recorded above.)
+* **2026-08-11 — `complexity-debt-audit` rejoined normal claim-path
+  checking.** Its top-down rewrite drops every `claim-check-allow` directive:
+  the Cairn-repo path and count exemptions it used to carry are gone, because
+  the rewrite cites only locally-resolving paths and dates its snapshots
+  instead of exempting counts. Verified by `claim_check.py` (OK, no flags) and
+  `grep -c claim-check-allow` returning 0. It was already vantage-clean; it is
+  now directive-free.
 
 ## Retroactive-review exemption
 
