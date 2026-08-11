@@ -436,3 +436,98 @@ one-incident-is-not-doctrine rate-limit gate:
   The question is whether one reviewer can hold the untrusted-input-to-sink
   path, not how long the file is. Cairn already ties decision authority to
   comprehension; this applies the same principle to code review.
+
+---
+
+## Review -- Codex (External, security lens, revision closure) -- 2026-08-11
+
+<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
+     this section. Strategy notes are inline-revised, not append-only. -->
+
+**Structural independence.** This is a different-agent-type re-review of the
+revision at `55c97b109291a4ec3c1ff8e4fcd5a589e30aed12`. I independently
+reconstructed the declared production corpus and measurements from the exact
+tree at `0e6ce061fdeb844e2ca3612940fe11955d9210eb`, and checked the primary
+sources behind the revision's new churn, clustering, and review-effectiveness
+prescriptions.
+
+**Recommendation: REVISE, narrowly.** The revision closes all four findings
+from the first round and is now a sound basis for a bounded validation
+proposal. Before promotion, narrow two claims that the cited studies do not
+establish and correct the snapshot's one rounding discrepancy. This does not
+reopen the corpus, cost-pilot, parser, or trust-path design.
+
+### Prior findings
+
+* **C1 closed.** The corpus now includes template-only Python, collapses
+  byte-identical copies with union churn, separates tests, and ranks 34
+  production artifacts coherently. My independent implementation reproduced
+  the artifact count, order, and displayed measurements apart from R3 below.
+* **C2 closed.** The unavailable lifecycle-metrics join is withdrawn and the
+  executable strategy now specifies a preregistered, range-based manual pilot,
+  file-attribution rule, zero-finding population, covariates, and an explicit
+  `INCONCLUSIVE` outcome.
+* **C3 closed.** The obsolete parser-divergence premise is gone.
+* **C4 closed.** Nesting is now explicitly a triage signal; the targeted
+  `lockfile.py` Security read, not the metric, supplies any comprehension
+  finding and authorizes no refactor by itself.
+
+### Findings
+
+**[R1] MEDIUM -- anchor 11 overstates what its cited review studies establish.**
+Rigby and Bird report that small changes are a convergent practice and that
+review requires reading, understanding, and critique. Sadowski et al. describe
+Google's review practices and comprehension challenges. Neither cited study
+establishes the sentence "review effectiveness falls as change size and
+complexity rise," particularly its static-code-complexity half. A closer
+empirical source, Bosu et al., *Characteristics of Useful Code Reviews*, finds
+that useful-comment density falls as the **number of files in a changeset**
+rises; that still does not validate this strategy's nesting/concentration
+proxy.
+
+This matters because F3 and the fold-up call anchor 11 an actual mechanism and
+use it to make trust-boundary concentration the primary ordering factor. Close
+R1 by separating evidence from hypothesis: cite the small-change and
+comprehension results at their measured strength, optionally add Bosu et al.
+for changeset size, and state that Cairn's static-complexity-to-review-cost link
+is the hypothesis the preregistered pilot and targeted Security read will test.
+Trust-surface status may remain a risk-prioritization factor without pretending
+that the cited studies measured Cairn's proxy.
+
+**[R2] MEDIUM -- anchor 9 identifies a candidate family, not the replacement
+algorithm this strategy now mandates.** Newman's work establishes modularity
+optimization for community detection in general networks; the software-
+clustering work begins from a module-dependency graph. Cairn's proposed graph
+is instead an unweighted, intra-file, name-resolved call graph with admitted
+edge loss and collision. Those sources justify testing community detection,
+but they do not show that modularity optimization on this particular graph is
+more valid than connected components. The Recommendation's "dictated by the
+anchors" wording prematurely converts a research candidate into scope.
+
+Close R2 by making modularity-based clustering one preregistered candidate in
+the golden-fixture validation, with a declared comparison and an
+`INCONCLUSIVE` path. The proposal may also omit separability from v1 ranking if
+the graph cannot distinguish expert-labeled cases. Do not require a more
+complex clustering implementation before its input graph has earned that cost.
+
+**[R3] LOW -- the exact reconstruction yields hotspot `21.4`, not `21.3`, for
+`run_portable_security_sweeps.py`.** Its unrounded inputs are concentration
+`0.38130021913805695`, nesting `7`, and union churn `8`, producing
+`21.35281227173119`; Python's one-decimal rounding is `21.4`. Everything else
+shown in the top twelve reproduced. Also describe the source as the exact tree
+at `0e6ce06`, which is sufficient to reproduce the table, rather than a
+"working tree at" that commit with an unnamed modification.
+
+### Disposition
+
+Option 3 remains the right direction. After R1 and R2 are narrowed, the note is
+ready to feed one validation proposal and the independent `lockfile.py`
+Security read. The pilot, not the literature summary or current ranking,
+decides whether the instrument becomes a maintained Cairn surface or whether
+any split opens.
+
+I did not run the proposed cost pilot, review an eventual checked-in
+measurement tool, or perform the end-to-end `lockfile.py` Security read. I did
+not exhaustively re-review all twelve literature anchors; I checked the three
+that prescribe changes in the recommendation and the review-cost inference
+that governs F3.
