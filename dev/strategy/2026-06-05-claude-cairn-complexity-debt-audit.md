@@ -336,3 +336,126 @@ one-incident-is-not-doctrine rate-limit gate:
   that matters is whether one reviewer can hold the untrusted-input-to-sink
   path, not the file's length. Cairn already ties decision authority to
   comprehension; this is that same principle applied to code review.
+
+---
+
+## Review -- Codex (External, security lens) -- 2026-08-11
+
+<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
+     this section. Strategy notes are inline-revised, not append-only. -->
+
+**Structural independence.** This is a different-agent-type review of Claude's
+2026-08-11 rewrite. I reviewed the exact strategy bytes at
+`8c282ca9dedb3b7555abcf2da4bb665071f3e6ac`. The author's ~110-line script was
+not available, so I independently implemented the stated AST and Git
+measurements against that commit and attacked the proposed cost join using the
+committed plan and lifecycle-metrics corpora.
+
+**Recommendation: REVISE.** Retiring the old size ledger is correct, and the
+new note contains a much better question. Do not promote either the measurement
+tool or a split yet. First make the measured population coherent and replace
+the currently unavailable cost join with a small, preregistered validation
+study that measures code-review cost rather than proposal activity.
+
+### Steelman
+
+The rewrite does the hard and valuable thing: it withdraws its own plausible
+but invalid prior conclusions. Separating hotspot from separability is a real
+improvement; the stop rule and explicit falsifier are exactly the discipline a
+debt program needs; and treating trust-boundary complexity as a reviewability
+concern is the strongest reason in the note to continue the inquiry. My
+independent implementation reproduced every displayed row's line count,
+function count, concentration, nesting, subsystem count, churn, and hotspot
+value. The defects are in population and inference, not fabricated row values.
+
+### Findings
+
+**[C1] BLOCKING — no single declared file population produces the published
+ranking.** Over all tracked Python files of at least 400 lines, the shipped
+`templates/modules/team-gated/run_portable_security_sweeps.py` scores 18.7 and
+ranks fourth, ahead of both lifecycle-planner copies and
+`bootstrap/security_check.py`. It is not incidental template prose: `AGENTS.md`
+registers it as an executable trust root. The table silently excludes it and
+every other `templates/` file.
+
+Excluding templates still does not produce the displayed table consistently.
+On that population, `bootstrap/tests/test_transition_lint.py` scores 12.9 and
+ranks fifth, pushing `bootstrap/security_check.py` to sixth. The table omits the
+test and labels the security checker fifth, but its later labels — `install.py`
+11th, `upgrade.py` 14th, and `lifecycle.py` 15th — are exactly the positions
+obtained when tests remain in the population. If tests are excluded, those
+three become 8th, 11th, and 12th. Tests should be separate in any case: the
+instrument counts module-level functions but ignores pytest class methods, so
+their concentration values do not describe their real structure.
+
+Close this by defining the corpus before calculating ranks: production,
+shipped templates, and tests as separate strata. Derive shipped/self-hosted
+twins from `install_manifest()` as the parity test does and represent each twin
+as one logical artifact with an explicit churn aggregation rule. Do not omit
+template-only executable surfaces. Commit the instrument and golden fixtures
+before relying on another ranking; the prose is not precise enough to recover
+these population choices without reverse-engineering the desired table.
+
+**[C2] BLOCKING — the proposed cost-side join is not currently available and
+would measure the wrong review stage.** `lifecycle_metrics` extracts proposal
+finding counts, while its plan rows expose plan-review and code-review **round
+counts**, not code-review finding counts or file attribution. Proposal findings
+occur before implementation and mostly assess design or governance; assigning
+them to every file a later plan touches cannot establish that a complex code
+surface caused review cost.
+
+The proposed commit edge is also incomplete. At the reviewed commit, the
+literal `git log --grep='^<stem>:'` recipe returns zero commits for 7 of 34
+archived plans and only a partial set for others whose implementation subjects
+use forms such as `<stem> Chunk ...` or a component name. Therefore the note's
+"join is available and unrun" claim does not hold.
+
+Replace Recommendation 2 with a bounded pilot whose registration precedes its
+results. Use a plan's reviewed implementation range as the unit of change;
+extract findings from its `## Code review` passes; attribute a finding to a
+file only when the finding or disposition names that file; retain zero-finding
+plans; and record review tier, changed lines, mechanical-only changes, and
+trust-surface status as covariates. Proposal and plan-review findings can remain
+separate process outcomes, but not evidence that code shape caused review
+rework. Define the repository baseline, minimum sample, uncertainty treatment,
+and an `INCONCLUSIVE` outcome before using "indistinguishable" as the queue's
+stopping rule. A manual pilot is preferable to expanding `lifecycle_metrics`
+until the signal proves useful.
+
+**[C3] MEDIUM — the parser-divergence correctness premise is already closed.**
+The rewrite says `_minimal_yaml_parse` deserves a correctness look because an
+independent review flagged its divergence. That review fed
+`profile-parse-fail-open`; commit `e7394cb` made the closed grammar the sole
+runtime recognizer, its External security code review reported SHIP, and the
+plan is archived. The function may still deserve reviewability work because it
+is deep and security-relevant, but the cited two-parser correctness defect is
+not open. Fold the completed disposition in and avoid creating duplicate work.
+
+**[C4] MEDIUM — depth 8 is a triage signal, not a direct finding that no
+reviewer can comprehend the trust path.** The metric multiplies file-level
+churn and concentration by the deepest function's nesting even when those
+observations arise from different functions and changes. It also traces no
+untrusted-input-to-sink path. Keep the proposed targeted Security read of
+`lockfile.py`, but make that read the evidence: identify the actual integrity
+decision path, assess its branches and tests end to end, and open a split only
+if that review or the cost pilot finds a concrete comprehension or defect
+burden. Replace the categorical "direct answer of no" with the narrower claim
+the instrument supports: `lockfile.py` is the highest-priority surface to
+inspect.
+
+### Disposition
+
+Option 3 remains the best-shaped option after revision, but reverse its first
+two commitments: check in a reproducible instrument **as part of** the bounded
+validation proposal, not as a generally shipped Cairn tool before validation;
+run the pilot; then decide whether the instrument deserves a maintained
+product surface. The inexpensive `lockfile.py` Security read may proceed in
+parallel because it tests the note's strongest security inference directly and
+does not authorize a refactor.
+
+I did not review the eventual measurement tool because its source was not in
+the repository, perform the proposed historical cost study, or conduct the
+end-to-end `lockfile.py` Security read. I did verify the displayed shape rows,
+the 30-day churn counts, the 60-day 88-commit non-test population, the twin
+derivation mechanism, the plan-to-commit grep coverage, the lifecycle-metrics
+output schema, and the archived profile-parser disposition.
