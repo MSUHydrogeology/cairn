@@ -74,7 +74,10 @@ The violation was never a property of this plan. `_has_disposition` bounded a
 were answered in one Response — the normal shape for `required(A + B)` — the
 first pass of every pair was overtaken before its Response landed, and
 append-only forbade inserting one between two landed reviews. Nine rounds
-accrued five permanent violations, and three of those rounds (H2/T3, J1/K1,
+accrued **four** permanent violations — External rounds 2–5, re-derived by
+executing the pre- and post-`286f07d` modules over the 37-plan corpus; round 1
+was answered before the first Security pass and never became one — and three of
+those rounds (H2/T3, J1/K1,
 L1/M1+L2) were spent perfecting a governance override for a defect in the
 checker rather than in the artifact.
 
@@ -270,10 +273,34 @@ oracle for "is this the right vocabulary boundary."
 
 ### Chunk B — canonical pass boundaries
 
+**Pre-landed baseline — `286f07d`, and this chunk does not re-open it.** The
+group-Response rule shipped at the Maintainer's explicit direction *before* this
+plan reached `executing`: an exact `## Response to plan review` discharges the
+group of Plan-review passes above it and after the previous Response. An earlier
+draft of B2 required the **opposite** — "a disposition after the later pass must
+not satisfy the earlier" — which the landed code contradicts by construction. An
+implementer following that sentence would have restored the false ceiling the
+Maintainer had just directed away. The split below is the fix.
+
+**The two record types need opposite rules, and that is deliberate.** They are
+not the same problem: a Plan review is answered as a *round*, so grouping is
+correct; a Code review's findings are answered *individually*, so the accepted
+`code-review-blindness` amendment requires exact `Answers:` binding. Collapsing
+them into one generic "disposition after later pass" assertion is what produced
+the conflict.
+
 | # | File | Change |
 |---|---|---|
-| B1 | `tools/lifecycle_planner.py` + twin | build every selected pass body **and** every next-pass ceiling from one ordered set of raw conforming boundaries of both kinds, unioned with H1/H2 |
-| B2 | `bootstrap/tests/test_lifecycle_contract.py` | pin both mutations: a later pass's `**Tier**`/`**Findings**` must not enter the earlier body; a disposition after the later pass must not satisfy the earlier |
+| B1 | `tools/lifecycle_planner.py` + twin | build every selected pass body **and** every next-pass ceiling from one ordered set of raw conforming boundaries of both kinds, unioned with H1/H2. Raw conforming boundaries stay canonical for every pass ***body***, both record types — this half is unchanged and is orthogonal to disposition |
+| B2 | same | **Plan-review disposition — the landed group rule, preserved.** An exact `## Response to plan review` after a pass discharges it; `### Sharpening` stays scoped to its own pass. No re-derivation: B2 pins `286f07d`'s behavior, it does not redesign it |
+| B3 | same | **Code-review disposition — exact `Answers:` binding**, per the accepted `code-review-blindness` R2/R4. A Response bound to a later pass must **not** satisfy an earlier one; malformed, ambiguous, absent, or wrong-pass bindings refuse |
+| B4 | `bootstrap/tests/test_lifecycle_contract.py` | the body mutation (a later pass's `**Tier**`/`**Findings**` must not enter the earlier body) **plus two opposing disposition mutations**, so weakening either side reddens **independently**: make Plan-review disposition positional again → the group node reddens; make Code-review disposition grouped or positional → the `Answers:`-binding node reddens |
+
+**Why B4 is four mutations and not one.** A single generic assertion cannot
+cover two rules that point in opposite directions — it would necessarily be
+wrong about one of them, which is exactly how the conflict arose. Each direction
+gets its own falsifier so that a future implementer cannot satisfy the suite by
+weakening one rule toward the other.
 
 **Tier: Opus.** Reproduced red today — a later unparseable S1 heading has its
 attestation lines swallowed and reported as the earlier pass's duplicates.
@@ -474,7 +501,14 @@ implementation parent rather than carrying these figures forward.
   2. **B2**, on the post-ceremony commit after Chunk I, because the re-anchor
      rewrites `bootstrap/tests/fixtures/gate_manifest.json` inside the reviewed
      range and the runbook itself runs the suite zero times.
-* Boundary C: one code review over the B1 range.
+* Boundary C: one code review over the B1 range — **and that range must begin
+  at or before `286f07d`**, not at this plan's first implementation commit.
+  `286f07d` landed before the `executing` transition, but Chunk B now *depends*
+  on it: B2 pins its behavior rather than deriving it. A reviewed range that
+  starts after it would leave the gate change this plan relies on outside the
+  only independent review it ever gets. Use `286f07d^..<B1 commit>` or an
+  equivalently exact range that provably contains those bytes, and name the
+  commit explicitly in **both** Boundary B ledgers.
 * **Restart rule — canonical text lives in `## Sequence` and is not restated
   here.** This section previously carried an unqualified summary ("a corrective
   byte after the ceremony restarts B2 only") that contradicted it and would have
@@ -2106,3 +2140,92 @@ classification. The Maintainer's authorization is accepted as stated.
 **Not covered**: A--H implementation bytes, full-suite behavior, actual final
 Code review, pilot observations, or re-anchor execution. Return O1 only. This
 pass is blocking and does not clear the External Security Review obligation.
+
+## Response to plan review -- Claude -- 2026-08-11 (round 6 + Security round 5)
+
+**Obligations answered**: both passes above — External round 6 ([N1], [N2]) and
+External Security Review round 5 ([O1]). One Response, one group, per the rule
+`286f07d` landed.
+
+**Disposition: 3 accepted, 0 declined.** [N1] and [O1] are the same defect
+through two lenses and are fixed by one change; [N2] is a number, and I
+re-derived it rather than accepting it.
+
+### [N1] / [O1] — accepted. Chunk B did contradict the landed rule.
+
+Verified textually rather than taken on report. B2 read, verbatim:
+
+> a disposition after the later pass must not satisfy the earlier
+
+`286f07d` makes exactly that disposition satisfy exactly that pass. The two
+cannot both hold, and an implementer following B2 would have restored the false
+ceiling the Maintainer had just directed away — while the suite went green,
+because B2's own mutation would have pinned the wrong direction.
+
+Both reviews independently identified the right fix, and it is now in Chunk B:
+**split by record type**, because the two types genuinely need opposite rules.
+A Plan review is answered as a *round*, so grouping is correct. A Code review's
+findings are answered *individually*, so `code-review-blindness` R2/R4 requires
+exact `Answers:` binding. The generic assertion was wrong precisely because one
+sentence cannot describe two opposite directions.
+
+* **B1** keeps raw conforming boundaries canonical for every pass *body*, both
+  record types — unchanged, and orthogonal to disposition.
+* **B2** pins the landed group rule for Plan-review Responses; `### Sharpening`
+  stays scoped to its own pass. It **pins** `286f07d`, it does not redesign it.
+* **B3** carries the Code-review exact `Answers:` binding, with malformed,
+  ambiguous, absent and wrong-pass bindings all refusing.
+* **B4** carries the body mutation **plus two opposing disposition mutations**,
+  so weakening either rule toward the other reddens independently. [O1] asked
+  for this specifically and it is the part most likely to be quietly dropped: a
+  single falsifier would let a future implementer collapse the two rules again.
+
+**The review-range gap is accepted and closed in `## Verification`.** [O1] is
+right that this is the sharper half. Chunk B now *depends* on bytes that landed
+before this plan's `executing` transition, so a Code-review range starting at
+B1 would leave the gate change the plan relies on outside the only independent
+review it ever receives. Boundary C's target now must begin at or before
+`286f07d` — `286f07d^..<B1 commit>` or a provably equivalent range — and the
+commit is named in both Boundary B ledgers.
+
+**The structural residual [O1] names is accepted as stated and not papered
+over**: an empty or semantically incomplete exact Response still satisfies the
+parser. That was already true of an immediately-positioned Response; the tool
+attests record *shape*, never whether the author answered the prose. Git review
+remains the semantic channel. Grouping widens the blast radius of that residual
+from one pass to a round, and that is the honest cost of removing the deadlock.
+
+### [N2] — accepted, and re-derived; the corrected number is four.
+
+Executed rather than reasoned. Loading the pre- and post-`286f07d` planner
+modules and running each over the 37-plan corpus, **only this artifact changes**,
+and the unsatisfied raised passes are:
+
+| rule | unsatisfied passes |
+|---|---|
+| pre-`286f07d` | rounds **2, 3, 4, 5**, plus round 6 and Security round 5 |
+| post-`286f07d` | round 6 and Security round 5 only |
+
+So the rule change closed **four**, matching [N2] exactly — and confirming its
+mechanism: round 1 was answered before the first Security pass, so it never
+became a violation, and no Security pass ever did. The operative account now
+says four.
+
+**Two figures, and why they differ from the review's `4 -> 0`.** Measured today
+the corpus reads **6 → 2**, not 4 → 0. Both are correct at their own commit: the
+review measured at `7f5682b`/`3005c39`, before its own two passes existed; the
+two passes above are themselves undispositioned raised passes, and *this
+Response* is what closes them. The rule-attributable delta is **four** either
+way. Recording it because a later reader comparing the two numbers would
+otherwise have to rediscover why they disagree.
+
+Per [N2], the append-only historical Response that says "five rounds, five
+violations" stays as written. It was wrong when written; the record shows what
+was believed at each point, and only the operative account is corrected.
+
+### What this Response does not do
+
+It does not clear either obligation. Both passes declare themselves blocking,
+the plan stays `open`, and `required(External + External Security Review)` still
+wants a clearing pass on each track. No implementation commit is authorized by
+this Response.
