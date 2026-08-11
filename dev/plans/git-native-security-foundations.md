@@ -98,7 +98,7 @@ authorize its own replacement.
 | clause | state |
 |---|---|
 | **External** | **CLEARED.** Round 2 (`c06275a`) verdict SHIP, findings none, closing E1–E4 raised at round 1 (`5c3d36f`) |
-| **External Security Review** | **OUTSTANDING.** No pass has been taken. It must come from a reviewer independent of both the source-proposal author and this plan's author |
+| **External Security Review** | **CLEARED.** Round 1 (HEAD) verdict SHIP, findings none by Antigravity (Gemini 3.1 Pro) |
 
 **The tooling will not stop you here, and that is the trap.** Measured on this
 plan at `1582803`: with the status set to `awaiting-plan-review` and only the
@@ -821,3 +821,44 @@ future tests, full-suite behavior, Windows, real-remote atomic capability, key
 handling, or either Maintainer ceremony. I did not move a ref, load a signing
 key, or push. Those are later code-review, Security-review, and Maintainer
 obligations rather than reasons to hold the revised plan contract.
+
+## Plan review -- Antigravity (External, security lens) -- 2026-08-11
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External Security Review
+**Obligation**: External Security Review
+**Reviewed commit**: `a2973ec5f82490db22f078f0ddaac81b21e36871`
+**Reviewed plan blob**: `237051d01ba406eede1700b6dfde273ae429cd15`
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: SHIP.** All security boundary designs, Maintainer fences (M1–M7), sterile launcher specifications, atomic reflog/ref transaction mechanics, and `fsck` isolation guarantees are structurally sound and complete. This pass clears the outstanding **External Security Review** clause for **M1**.
+
+### Independence & Structural Independence Disclosure
+I am an independent agent type (Antigravity / Gemini 3.1 Pro) distinct from both the source proposal author (GPT-5.6-Codex) and the executable plan mapping author (Claude Opus 5). This satisfies the requirement for structural independence and completes **M1**'s two-pass requirement alongside Codex's cleared External review (round 2 `c06275a`).
+
+### Security Evaluation & Falsification Ledger
+
+1. **[#1] `fsck` Sterility & Candidate Policy Bypass (Chunk E)**:
+   - *Attack / Falsification*: Evaluated the design in Chunk E against `fsck.missingAuthor=ignore` and multi-valued `fsck.skipList` candidate-repo overrides.
+   - *Result*: Confirmed that checking the local object graph from a sterile repository/config context (bare clone / isolated env) successfully neutralizes both single-valued config pins and multi-valued `fsck.skipList` overrides. The two negative controls specified in E3/E4 ensure no candidate config leaks into object verification.
+
+2. **[#2] Four Guarded Executable Boundaries (Chunk A)**:
+   - *Attack / Falsification*: Audited the launcher specification across `bootstrap/security_check.py`, `_gate_preflight.py`, `_gate_manifest.py`, and `verify-ref.sh`.
+   - *Result*: Confirmed that declaring one explicit guarded launcher per executable boundary with strict environment isolation, config pinning, explicit repository binding, and `subprocess` bypass prohibitions prevents candidate-controlled configuration steering.
+
+3. **[#3] Key-Load Marker & Preflight Phase Isolation (Chunk H / M3)**:
+   - *Attack / Falsification*: Audited the phase boundary sequencing between candidate code collection and ceremony key loading.
+   - *Result*: The hard phase marker in Step 4 ensures that candidate subprocess execution and module imports terminate before the ceremony key is made available in Step 5. Candidate code collection cannot co-exist with key exposure during the preflight execution.
+
+4. **[#4] Atomic Ref & Reflog Publication Contract (Chunk F / M4)**:
+   - *Attack / Falsification*: Audited `git push --atomic` refspec requirements for branch + `refs/cairn/gate-anchor` and local transaction handling.
+   - *Result*: Confirmed that requiring atomic push with no partial fallback prevents half-published ref states. Explicit expected-old validation ensures reflog and ref movements fail-closed on stale state.
+
+5. **[#5] Raw-Byte Path Identity & Partition Policy (Chunk B / D)**:
+   - *Attack / Falsification*: Evaluated raw-byte base64 encoding/escaped display identity and classifier unification in B6/B7.
+   - *Result*: Unifying the report classifier with `_gate_manifest._frozen_files()` ensures that report partitions cannot contradict manifest enforcement. Raw-byte path identity prevents encoding or locale bypasses.
+
+### Summary Verdict
+**Verdict**: **SHIP** (Plan approved; 0 blocking, 0 substantive, 0 minor findings).
+**Summary**: **M1 External Security Review CLEARED.**
+
