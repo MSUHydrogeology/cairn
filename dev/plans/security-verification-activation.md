@@ -3306,3 +3306,77 @@ the installed `AGENTS.md` should contain.
   new `FROZEN-MODIFIED` row is this pass's), **and pushing** all remain
   Maintainer work. **Nothing was pushed.**
 * **The reciprocal plan `api-web-security-modules` was not touched.**
+
+## Maintainer-authorized deviations to the dispatcher -- Anthony Kendall -- 2026-08-11
+
+Three changes landed in this plan's own artifact,
+`templates/modules/default-on/run_security_verification.py`, authorized by the
+Maintainer after the reciprocal plan's Chunk G could not land as written. The full
+reasoning, the measurements, and the verification record live in
+`api-web-security-modules`'s sections *"Maintainer authorization of two
+deviations -- 2026-08-11"* and *"Implementation verification -- Claude --
+2026-08-11 (Chunk G and the details contract)"*. Recorded here because **this plan
+owns the changed surface** and its reviewers never saw these changes.
+
+**Authorization, quoted verbatim and visually isolated.** The first two were
+selections from enumerated options; the third was typed:
+
+> Widen argv_mode to a vector (Recommended)
+
+> Explicit capability-ID set (Recommended)
+
+> Let's go ahead and fix the issue right now
+
+**What changed in this plan's artifact.**
+
+1. **`RegistryEntry.argv_mode` is no longer `str`.** It is `tuple[str, ...]`,
+   spliced into the child argv, and validated at construction against a
+   one-member frozenset `{("local", "--child-document")}`. This is a
+   **registry-schema change** -- exactly the class this plan's Chunk A designates
+   high-risk and Security-Review-bearing -- and widening the admitted set later is
+   a source edit carrying its own review. The single-token form made **both**
+   reciprocal capabilities structurally unreachable: no value of a one-token
+   `argv_mode` could elicit the facades' machine-readable output.
+   **`argv_mode` had no validation at all before this**, despite an acceptance
+   criterion naming a deletion mutant for it; that mutant could not fail, and now
+   can.
+2. **`_selected_capability_ids` no longer matches on the `-security` name
+   suffix.** It intersects the installed roster with a source-owned frozenset of
+   declared capability module IDs, **deliberately not** with `_REGISTRY`, so a
+   *declared, installed, unadmitted* capability still reports INCOMPLETE instead
+   of vanishing. The suffix heuristic made a stock `solo-greenfield` install exit
+   **5 (INCOMPLETE)** because default-on `content-security` matched it with no
+   admitted entry; measured after, **exit 0 (NOT APPLICABLE)**. This is the defect
+   Chunk D characterized rather than resolved, and it is now resolved -- it also
+   falsified the source proposal's Decision language about the no-capability
+   runtime effect being nil.
+3. **The dispatcher's own `_LIVING_STATE_DSTS` is populated** with the two policy
+   paths. This is a **different constant** from the engine's
+   `bootstrap/_scaffold/lockfile.py` set that the reciprocal plan's row F2
+   widened; conflating them is easy and was in fact conflated in the implementing
+   brief. Populating only the engine's would have let the two registry entries
+   construct and then DEGRADE at policy binding on every run.
+
+**What was NOT changed, and why it matters.** The dispatcher's
+`isinstance(details, str)` requirement was **left intact**. It is the documented,
+tested channel property -- the only path a child's text reaches the operator's
+report, control-sanitized, with raw child stdout never relayed. The facades and
+the engine's `child_document` were changed to conform instead. Relaxing it to
+accept a nested object would have reopened a reviewed sanitization boundary for
+serialization convenience.
+
+**Verification, in one line, with the detail cross-referenced.** Full
+`bootstrap/tests --quality-gate-shuffle-seed=0` on 3.13.13: **2904 passed, 3
+failed**, the three being `test_ast_attest` x2 (pre-existing at clean HEAD) and
+`test_verify_ref::test_candidate_gpg_ssh_program_never_executes` (needs a GPG
+secret key). The end-to-end seam is now covered by
+`TestChunkGRealFacadeThroughRealDispatcher` -- a real facade through a real
+dispatcher subprocess -- which is the test whose absence let three defects hide at
+this interface.
+
+**Owed, not satisfied.** A **Security Review** for the registry-schema change (1)
+and for the capability-selection change (2). The Maintainer's authorization
+discharged the fences; no agent writes its own Security Review. Fence #2, the AST
+re-anchor, is still Maintainer-run; **fence #3 was never entered and self-cleared**
+(`run_oracle` compares against `HEAD`, and the three nodes were red only while
+Chunk B sat uncommitted).

@@ -4124,3 +4124,196 @@ the figure above forward.
   in Cairn's own tree** -- Cairn selects neither capability, so neither path exists
   here, and F2's behaviour can only ever be exercised by a scaffold into a
   temporary target. The same blind-path shape as `[RB5-6]`.
+
+## Maintainer authorization of two deviations -- Anthony Kendall -- 2026-08-11
+
+Chunk G could not land as written. An implementing agent stopped and reported
+rather than improvising, and the Maintainer authorized two changes that go beyond
+the accepted plan. Both are **deviations**, recorded here because the plan's
+reviewers never saw them.
+
+**Authorization, quoted verbatim and visually isolated.** Two were selections
+from enumerated options; the third was typed:
+
+> Widen argv_mode to a vector (Recommended)
+
+> Explicit capability-ID set (Recommended)
+
+> Let's go ahead and fix the issue right now
+
+**What each answered.** The first was chosen from three options for resolving the
+argv-token mismatch below, the second from four options for the default-install
+INCOMPLETE below, each with the consequence of every option stated. The third
+authorized fixing the `details` contract mismatch rather than archiving with it
+recorded. Scribed by Claude (Implementation).
+
+### Deviation 1 -- the argv-token mismatch, and why Chunk G could not land as written
+
+Chunk G is described in this plan as adding **"two data rows"** to a registry.
+It could not. Measured at `04e8609`'s parent:
+
+* The dispatcher built its child argv as
+  `[sys.executable, "-I", str(runner_path), entry.argv_mode]` -- **one** trailing
+  token, with `argv_mode` typed `str`.
+* Both facades emit the machine-readable child document only when invoked with
+  **two** tokens, `local` **and** `--child-document`; the JSON is gated on
+  `if child:` where `child` comes from that flag.
+
+No single string satisfies both: bare `local` prints human-readable text the
+dispatcher cannot parse, and `"local --child-document"` as one token is rejected
+by argparse. **There was no value of `argv_mode` that made either capability
+reachable.** The tell was in the dispatcher's own docstring, which called the
+field *"the registry vector"* while typing it as a single string.
+
+`argv_mode` is now `tuple[str, ...]`, spliced with `*entry.argv_mode`, validated
+at construction against a deliberately **one-member** frozenset
+`{("local", "--child-document")}` -- the same idiom `runner_binding_mode` already
+uses, so widening it is a source edit and a registry-schema change with its own
+Security Review. **This validation did not previously exist at all**:
+`__post_init__` checked the three binding modes and the policy-path agreement rule
+and never `argv_mode`, so acceptance criterion **G-1's named deletion mutant
+("remove the argv-mode validation") could not fail.** It can now.
+
+### Deviation 2 -- the `-security` suffix heuristic made a stock install exit 5
+
+`_selected_capability_ids` treated any installed module whose **name ends in
+`-security`** as a declared capability. `content-security` is **default-on**,
+matches that suffix, and has no admitted registry entry -- so a stock
+`solo-greenfield` install reported **INCOMPLETE (exit 5) with nothing wrong**.
+This falsified the accepted Decision's statement that the no-capability runtime
+effect is nil, and the heuristic was wrong in the other direction too
+(`portable-security-sweeps` ends in `-sweeps` and would never match).
+
+Replaced with a source-owned `frozenset` of declared capability module IDs,
+returning `installed & declared`. **Deliberately NOT filtered through
+`_REGISTRY`**: the case that must stay visible is *declared, installed,
+unadmitted* -> INCOMPLETE. Filtering on registry membership would have been a
+one-line fix that silently deleted that fail-closed signal. Measured with a real
+install: **before 5 (INCOMPLETE), after 0 (NOT APPLICABLE).**
+
+### Deviation 3 -- the child `details` contract: dict on one side, string on the other
+
+A third mismatch at the same seam, found only by running the real facade through
+the real dispatcher. The facades and the engine's `child_document` built `details`
+as a JSON **object**; the dispatcher required `isinstance(details, str)` and
+returned `_degraded_leg(..., "child details is not a string")` otherwise. So
+**every leg that reached child-launch DEGRADED**, and neither capability could
+report CLEAN, FINDINGS or INCOMPLETE regardless of its actual evidence.
+
+Neither side was wrong by accident. The dispatcher's string-only `details` is a
+documented, tested security property -- it is the **only** channel a child's text
+reaches the operator's report, control-sanitized against forged terminal escapes,
+with raw child stdout never relayed at any aggregate level. **The facades
+conformed; the dispatcher was not relaxed.** A new `render_details` in the engine
+collapses findings, refusal and notes into one `scrub_terminal`-ed string, and
+`child_document` scrubs again on the way in.
+
+### The pattern, which matters more than any of the three
+
+**Three defects at one interface, none caught by either plan's review.** Both
+reviews passed because each side tested itself: the activation tests drive a
+**synthetic** runner, the facade tests invoke the CLI **directly**. Nothing
+exercised the real pair until someone tried to wire them together. The corrective
+is not a fourth patch but the end-to-end test that now exists
+(`TestChunkGRealFacadeThroughRealDispatcher`) -- a real facade, through a real
+dispatcher subprocess, asserting the aggregate equals what the child reported.
+
+## Implementation verification -- Claude -- 2026-08-11 (Chunk G and the details contract)
+
+**Commits.** `04e8609` (argv vector, declared capability set, G1/G2) and `fd0eb21`
+(the `details` string contract and its sweep coverage). Interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13),
+`PYTHONDONTWRITEBYTECODE=1`. Cairn has no CI.
+
+**G3 is STRUCK**, determined by reading the file rather than assumed:
+`templates/core/AGENTS.md` carries the general *"and every registry entry"*
+clause, not a literal enumeration, which is exactly the condition G3 names for
+being struck. No template was edited.
+
+**A constant this plan's brief conflated.** There are **two** separate constants
+named `_LIVING_STATE_DSTS` -- the engine's in `bootstrap/_scaffold/lockfile.py`,
+which row F2 widened, and the **dispatcher's own**, which is a different constant
+in a different file. Populating only the first would have let G1's two entries
+construct successfully and then DEGRADE at policy binding on every run. Both are
+now populated.
+
+**The seam, measured end to end** (real scaffold install, real dispatcher
+subprocess, real facade child):
+
+| Scenario | Aggregate | Exit | Note |
+|---|---|---|---|
+| api-access alone | INCOMPLETE | 5 | leg detail carries `unconfigured` |
+| web-hosting alone | INCOMPLETE | 5 | leg detail carries `unconfigured` |
+| both | INCOMPLETE | 5 | both legs INCOMPLETE |
+| web-hosting digest tampered, api untouched | DEGRADED | 20 | api leg genuinely INCOMPLETE (child launched), web leg DEGRADED at binding (no child) -- **precedence 20 > 5 demonstrated against real legs for the first time** |
+
+In every case `leg["aggregate_label"] == child_doc["result"]`, checked against an
+independent oracle (the facade invoked directly). Before `fd0eb21` all four
+DEGRADED.
+
+**A new sink, swept.** `bootstrap/tests/test_security_finding_confidentiality.py`
+had **zero** references to the dispatcher; its sinks were the runner's own stdout,
+stderr, report file and temp dir. Routing child text into the dispatcher's
+aggregate report created an unswept sink, so the sweep was extended to cover it
+through a real dispatcher run. Liveness proven by mutating `render_details` to
+append a raw marker while keeping the child's JSON valid: the marker reaches
+`dispatcher:stdout` and a clean-style absence assertion against that install
+raises. The mutation was applied to a `tmp_path` copy via the existing
+`engine_edits` mechanism, never to the repository tree.
+
+**A regression an existing guard caught.** The first `render_details` draft
+prepended `result_line(result)`, which reddened the pre-existing
+`test_b6_the_dispatcher_document_and_the_human_summary_are_disjoint` -- B-6
+requires the human result-line prefix never appear in dispatcher-mode stdout so
+the two output modes stay unconfusable. Fixed before commit; the child document
+already carries `result` in its own field.
+
+**Suites.** Five affected suites 320/320. Full `bootstrap/tests
+--quality-gate-shuffle-seed=0`: **2904 passed, 3 failed** in 424.61s -- the three
+being `test_ast_attest` x2 (pre-existing at clean HEAD) and
+`test_verify_ref::test_candidate_gpg_ssh_program_never_executes` (needs a GPG
+secret key). `quality_gate --sub neutrality --sub redundancy`: redundancy
+`fail=0`, neutrality `fail=93` pre-existing with none of the touched files in the
+failure list.
+
+**AST delta: zero.** `test_ast_attest` watches `bootstrap/_scaffold/` only, and
+none of `fd0eb21`'s seven files are in that package -- verified empirically by a
+stash round-trip yielding an identical 7-symbol CHANGED set. `04e8609` likewise
+added no new CHANGED symbol. The 7 are concurrent-stream drift; **the baseline was
+not re-anchored**, and the Maintainer's run should derive the whole expected set
+at that time rather than carry any figure from this record.
+
+### A lasting truth this work uncovered -- the positive path is structurally unreachable through the dispatcher
+
+Not a defect introduced here, and **not fixed**: neither capability can report
+CLEAN or FINDINGS through the dispatcher, ever, by current design.
+
+`_read_credentials` runs for **local** mode as well as deployed, reading
+`os.environ` for each principal in the policy section, and refuses
+`E_CREDENTIAL_ABSENT` if any is missing. The dispatcher's `_CHILD_ENV_ALLOWLIST`
+is a closed set -- `PATH`, `HOME`, `LANG`, `TMPDIR`/`TEMP`/`TMP`, a few Windows
+names, plus an `LC_` prefix rule -- which admits **no** credential name. Likewise
+`SSL_CERT_FILE` is absent, so web-hosting's mandatory HTTPS leg cannot trust a
+test certificate through the dispatcher.
+
+So through the dispatcher these capabilities are a **presence-and-configuration
+check**, not an evidence gatherer: they can report *unconfigured*, *refused*, or
+*degraded*, never *passed*. That sits oddly beside their registry entries
+declaring `evidence_mode: loopback`, which implies loopback evidence is
+obtainable. Resolving it is a design question about what the dispatcher's role is
+for a credentialed capability -- weakening the allowlist would be a real security
+regression and was correctly refused -- so it is routed rather than patched.
+
+### Known omissions and follow-ups
+
+* **Security Reviews owed, not satisfied**, for row F2 and for all three
+  deviations above. The Maintainer's authorizations discharged the fences; no
+  agent writes its own Security Review.
+* **The dispatcher-role question above** needs a proposal, not a patch.
+* **D1/D2's live planted-marker scenarios could not be replicated verbatim**
+  against the new dispatcher sink, because the env allowlist makes their
+  credential-and-fixture scenario structurally unreachable there. Addressed with a
+  render-layer mutant plus the reused marker set on the reachable leg; named here
+  rather than claimed as equivalent.
+* **The AST re-anchor** (fence #2) and a **scoped lockfile re-finalize** for
+  `dev/modules/security-verification.md` remain Maintainer-run.
