@@ -23,6 +23,7 @@ from pathlib import Path
 
 import pytest
 
+from bootstrap.tests import _gate_manifest as G
 from bootstrap.tests import _gate_preflight as P
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -2247,3 +2248,144 @@ class TestObjectFormatAwareWidth:
         with pytest.raises(P.PreflightError) as exc:
             P._object_id_width(repo=plain)
         assert "refusing rather than assuming" in str(exc.value)
+
+
+# ---------------------------------------------------------------------------
+# Chunk B: the canonical range-review report.  B5 pins the report's own
+# properties; B7 pins that its classes agree with the manifest policy.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def _live_report():
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
+                          capture_output=True, text=True).stdout.strip()
+    anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
+                            capture_output=True, text=True).stdout.strip()
+    return P.range_review_report(anchor, head, branch="master",
+                                 expected_old=head)
+
+
+class TestRangeReviewReport:
+
+    def test_the_digest_is_deterministic(self, _live_report):
+        again = P.range_review_report(
+            _live_report["anchor"], _live_report["candidate_head"],
+            branch=_live_report["branch"],
+            expected_old=_live_report["expected_old"])
+        assert P.range_report_digest(again) == P.range_report_digest(_live_report)
+
+    def test_every_path_is_in_exactly_one_class(self, _live_report):
+        # Perturbation: let `_classify_path` return the first hit without the
+        # multiply-classified guard, and add a path to two registries.  Red.
+        assert sum(_live_report["counts"].values()) == len(_live_report["paths"])
+        assert set(_live_report["by_class"]) == set(P._RANGE_CLASSES)
+
+    def test_outside_coverage_is_listed_in_full_not_counted(self, _live_report):
+        listed = _live_report["by_class"]["outside-coverage"]
+        assert len(listed) == _live_report["counts"]["outside-coverage"]
+
+    def test_path_identity_is_raw_bytes_round_tripped(self, _live_report):
+        import base64
+        for entry in _live_report["paths"]:
+            raw = base64.b64decode(entry["bytes_b64"])
+            assert P._display_path(raw) == entry["display"]
+
+    def test_the_display_is_ascii_only(self, _live_report):
+        for entry in _live_report["paths"]:
+            entry["display"].encode("ascii")   # raises if it is not
+
+    def test_a_display_that_is_not_a_rendering_of_its_bytes_refuses(self):
+        with pytest.raises(P.PreflightError):
+            P._verify_display(b"real/path.py", "something/else.py")
+
+    @pytest.mark.parametrize("raw,expected", [
+        (b"plain.py", "plain.py"),
+        (b"with space.py", "with space.py"),
+        (b"nl\nin-name", "nl\\x0ain-name"),
+        (b"\xc3\xa9.py", "\\xc3\\xa9.py"),
+        (b"back\\slash", "back\\x5cslash"),
+    ])
+    def test_the_escaping_is_total_and_reversible_in_shape(self, raw, expected):
+        # A newline in a path must not be able to forge a record boundary in
+        # anything a human reads, and a non-UTF-8 byte must not decode away.
+        assert P._display_path(raw) == expected
+
+    def test_ordering_is_by_raw_bytes(self, _live_report):
+        import base64
+        raws = [base64.b64decode(e["bytes_b64"]) for e in _live_report["paths"]]
+        assert raws == sorted(raws)
+
+    @pytest.mark.parametrize("field", [
+        "anchor", "candidate_head", "anchor_tree", "candidate_tree",
+        "branch", "expected_old", "manifest_schema", "manifest_sha256",
+        "schema",
+    ])
+    def test_the_digest_moves_when_any_bound_field_moves(self, _live_report, field):
+        import copy
+        mutated = copy.deepcopy(_live_report)
+        mutated[field] = str(mutated[field]) + "-mutated"
+        assert P.range_report_digest(mutated) != P.range_report_digest(_live_report)
+
+    def test_the_digest_moves_when_a_path_or_class_moves(self, _live_report):
+        import copy
+        mutated = copy.deepcopy(_live_report)
+        assert mutated["paths"], "fixture must carry at least one path"
+        mutated["paths"][0]["class"] = "frozen" if \
+            mutated["paths"][0]["class"] != "frozen" else "outside-coverage"
+        assert P.range_report_digest(mutated) != P.range_report_digest(_live_report)
+
+    def test_signature_counts_are_diagnostics_not_a_verdict(self, _live_report):
+        # R1-A: unsigned intermediate commits are the normal agent-work format.
+        # Their presence must not be an authorization signal anywhere.
+        sig = _live_report["signatures"]
+        assert set(sig) == {"total", "good", "unsigned", "other"}
+        assert sig["good"] + sig["unsigned"] + sig["other"] == sig["total"]
+
+
+class TestReportAgreesWithManifestPolicy:
+    """B7 -- the cross-contract corpus.
+
+    B5 proves a *partition*.  It cannot prove the partition is **right**: a
+    total-but-wrong classification would bind a misdescription with a perfect
+    digest, and the Maintainer would sign an accurate-looking report of the
+    wrong facts.
+    """
+
+    def test_the_classifier_consumes_the_manifest_source(self, _live_report):
+        frozen = set(G._frozen_files(P._REPO))
+        cascade = set(G.CASCADE_MUTABLE)
+        phase = set(G.PHASE_SPLIT_TARGETS)
+        for entry in _live_report["paths"]:
+            rel = entry["display"]
+            if entry["class"] == "frozen":
+                assert rel in frozen, rel
+            elif entry["class"] == "cascade-mutable":
+                assert rel in cascade, rel
+            elif entry["class"] == "phase-mutable":
+                assert rel in phase, rel
+            elif entry["class"] == "manifest-artifact":
+                assert rel == G._MANIFEST_REL, rel
+            else:
+                assert rel not in frozen | cascade | phase, (
+                    f"{rel} is in a manifest registry but reported "
+                    f"outside-coverage -- the report and the policy disagree")
+
+    def test_a_known_frozen_file_classifies_as_frozen(self):
+        frozen = sorted(G._frozen_files(P._REPO))
+        assert frozen, "the manifest must pin something"
+        got = P._classify_path(frozen[0], set(frozen), set(G.CASCADE_MUTABLE),
+                               set(G.PHASE_SPLIT_TARGETS), G._MANIFEST_REL)
+        assert got == "frozen"
+
+    def test_the_manifest_artifact_classifies_as_itself(self):
+        got = P._classify_path(G._MANIFEST_REL, set(), set(), set(),
+                               G._MANIFEST_REL)
+        assert got == "manifest-artifact"
+
+    def test_a_multiply_classified_path_refuses(self):
+        # The dangerous case: a path in two registries would otherwise take
+        # whichever branch happened to be first.
+        with pytest.raises(P.PreflightError) as exc:
+            P._classify_path("dup.py", {"dup.py"}, {"dup.py"}, set(), "m.json")
+        assert "multiply classified" in str(exc.value)

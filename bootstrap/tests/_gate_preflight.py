@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import base64
 import hashlib
 import json
 import os
@@ -74,6 +75,16 @@ EVIDENCE_SCHEMA = 1
 _READ_ONLY_GIT = frozenset({
     "rev-parse", "rev-list", "log", "show", "cat-file", "ls-files",
     "ls-tree", "diff", "merge-base", "for-each-ref", "status",
+    # `diff-tree` added by plan `git-native-security-foundations`, Chunk B, for
+    # the range-review report's endpoint path set.  Safe here for reasons that
+    # are checkable rather than assumed: it cannot write; it is invoked only
+    # with `--name-only`, so no content is generated and neither a textconv
+    # driver nor an external diff can run; `diff.external` is pinned empty and
+    # `core.useReplaceRefs` false in `_STERILE_CONFIG` above; and `--no-renames`
+    # is passed so rename detection cannot merge an add and a delete into one
+    # entry the classifier never sees.  This is a *widening of a security
+    # allowlist* and is recorded as such.
+    "diff-tree",
     # `archive` was here and is deliberately gone: it is attribute-aware, so a
     # candidate `.gitattributes` could hide a tracked file from the materialized
     # tree (FUR3). `raw_tree` reads `ls-tree` + `cat-file` instead, and removing
@@ -785,6 +796,198 @@ def _is_ancestor(ancestor: str, descendant: str, *, repo: Path = _REPO) -> bool:
             f"could not decide whether {ancestor[:12]} is an ancestor of "
             f"{descendant[:12]}: {(p.stderr or '').strip()!r}")
     return p.returncode == 0
+
+
+# --------------------------------------------------------------------------
+# the canonical range-review report (Chunk B; proposal Revision 1, R1-A)
+# --------------------------------------------------------------------------
+#
+# `_SIGNING_EPOCH` refused a ceremony whose range carried unsigned intermediate
+# commits.  That control was *candidate-editable* -- the epoch lives in this
+# file's own bytes -- and it blocked the ordinary agent-commit workflow, so
+# operations disabled it.  A control the real workflow contradicts is not a
+# control.
+#
+# The replacement is not three counts.  It is one **canonical, digest-bound
+# report** of the exact state being authorized: every changed path from the
+# anchor tree to the candidate tree, each in exactly one class, with the
+# complete sorted list per class.  The Maintainer signs a checkpoint whose
+# message carries that digest, so the signature binds the *reviewed report*,
+# not merely the tip commit.
+#
+# It does not claim every intermediate commit was reviewed.  It makes the state
+# being authorized bounded and inspectable.  Signature counts travel as
+# **diagnostics**, never as an authorization verdict.
+
+RANGE_REPORT_SCHEMA = "cairn-range-review/v1"
+
+#: Exhaustive and mutually exclusive by construction.  A path in none of the
+#: first four is `outside-coverage`, reported **in full** rather than counted:
+#: "how many paths nobody classified" is not something a Maintainer can review.
+_RANGE_CLASSES = ("frozen", "cascade-mutable", "phase-mutable",
+                  "manifest-artifact", "outside-coverage")
+
+
+def _display_path(raw: bytes) -> str:
+    """A deterministic ASCII-only rendering of a raw path.
+
+    Git path identity is **raw bytes**.  Every decoding step -- locale,
+    filesystem encoding, `core.quotePath`, a terminal -- is a place two
+    different paths can render alike, so the report binds the bytes and carries
+    this only for a human to read.
+    """
+    out = []
+    for b in raw:
+        if 0x20 <= b < 0x7F and b != 0x5C:
+            out.append(chr(b))
+        else:
+            out.append("\\x%02x" % b)
+    return "".join(out)
+
+
+def _verify_display(raw: bytes, display: str) -> None:
+    """Refuse a report whose display is not a pure rendering of its bytes."""
+    if _display_path(raw) != display:
+        raise PreflightError(
+            "range-report display is not a rendering of the bound bytes: "
+            f"{display!r}")
+
+
+def _resolve_tree(ref: str, *, repo: Path = _REPO) -> str:
+    """The tree id of *ref*, validated at the repository's own id width."""
+    p = _git("rev-parse", "--verify", "--end-of-options", f"{ref}^{{tree}}",
+             repo=repo)
+    tree = (p.stdout or "").strip()
+    if p.returncode != 0 or len(tree) != _object_id_width(repo=repo) or any(
+            c not in "0123456789abcdef" for c in tree):
+        raise PreflightError(
+            f"ref does not resolve to a tree: {ref!r} "
+            f"({(p.stderr or '').strip()})")
+    return tree
+
+
+def _changed_paths(anchor_tree: str, candidate_tree: str, *,
+                   repo: Path = _REPO) -> list[bytes]:
+    """Raw changed paths between two exact trees.
+
+    The option set is fixed and load-bearing: `--no-renames` so a rename cannot
+    collapse an add and a delete into one entry the classifier never sees; `-z`
+    so a path containing a newline cannot forge a record boundary.
+    """
+    p = _git("diff-tree", "-r", "--no-commit-id", "--name-only", "-z",
+             "--no-renames", anchor_tree, candidate_tree,
+             repo=repo, want_bytes=True)
+    if p.returncode != 0:
+        raise PreflightError(
+            f"could not enumerate {anchor_tree}..{candidate_tree}: "
+            f"{os.fsdecode(p.stderr or b'').strip()}")
+    return [tok for tok in (p.stdout or b"").split(b"\0") if tok]
+
+
+def _classify_path(rel: str, frozen: set, cascade: set, phase: set,
+                   manifest_rel: str) -> str:
+    """Exactly one class per path, from the **manifest's** own policy.
+
+    B6: the source is `_gate_manifest`'s -- `_frozen_files()` plus the mutable
+    registries plus the manifest artifact -- not a second definition here.  A
+    report that partitions perfectly but disagrees with the policy that later
+    decides HOLD would bind a misdescription with a perfect digest.
+    """
+    hits = [name for name, member in (
+        ("manifest-artifact", rel == manifest_rel),
+        ("cascade-mutable", rel in cascade),
+        ("phase-mutable", rel in phase),
+        ("frozen", rel in frozen),
+    ) if member]
+    if len(hits) > 1:
+        raise PreflightError(f"path is multiply classified {hits!r}: {rel!r}")
+    return hits[0] if hits else "outside-coverage"
+
+
+def _signature_census(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
+    """Signed / unsigned / foreign-signed counts -- **diagnostics only**.
+
+    Deliberately not a verdict.  Unsigned intermediate commits are the normal
+    agent-work format under R1-A; the authorization is the Maintainer's
+    signature on the checkpoint, not a property of the range.
+    """
+    p = _git("log", "--format=%G?", f"{anchor}..{head}", repo=repo)
+    if p.returncode != 0:
+        raise PreflightError(
+            f"could not census signatures over {anchor}..{head}: "
+            f"{(p.stderr or '').strip()}")
+    codes = [ln.strip() for ln in (p.stdout or "").splitlines() if ln.strip()]
+    return {
+        "total": len(codes),
+        "good": sum(1 for c in codes if c == "G"),
+        "unsigned": sum(1 for c in codes if c == "N"),
+        "other": sum(1 for c in codes if c not in ("G", "N")),
+    }
+
+
+def range_review_report(anchor: str, head: str, *, branch: str,
+                        expected_old: str, repo: Path = _REPO) -> dict:
+    """The one canonical report `apply` re-derives and the checkpoint binds."""
+    frozen = set(G._frozen_files(repo))
+    cascade = set(G.CASCADE_MUTABLE)
+    phase = set(G.PHASE_SPLIT_TARGETS)
+    manifest_rel = G._MANIFEST_REL
+
+    anchor_tree = _resolve_tree(anchor, repo=repo)
+    candidate_tree = _resolve_tree(head, repo=repo)
+
+    entries: list[dict] = []
+    seen: set = set()
+    for raw in _changed_paths(anchor_tree, candidate_tree, repo=repo):
+        if raw in seen:
+            raise PreflightError(
+                f"duplicate path in the changed set: {_display_path(raw)!r}")
+        seen.add(raw)
+        rel = raw.decode("utf-8", errors="surrogateescape")
+        display = _display_path(raw)
+        _verify_display(raw, display)
+        entries.append({
+            "bytes_b64": base64.b64encode(raw).decode("ascii"),
+            "display": display,
+            "class": _classify_path(rel, frozen, cascade, phase, manifest_rel),
+        })
+
+    # Ordering is by RAW BYTES, never the display or a decoded string: two
+    # distinct byte sequences can render alike, and a digest over a
+    # locale-dependent order is not canonical.
+    entries.sort(key=lambda e: base64.b64decode(e["bytes_b64"]))
+
+    by_class = {name: [e["display"] for e in entries if e["class"] == name]
+                for name in _RANGE_CLASSES}
+    manifest_bytes = (repo / manifest_rel).read_bytes()
+
+    return {
+        "schema": RANGE_REPORT_SCHEMA,
+        "anchor": anchor,
+        "candidate_head": head,
+        "anchor_tree": anchor_tree,
+        "candidate_tree": candidate_tree,
+        "branch": branch,
+        "expected_old": expected_old,
+        "manifest_schema": G.SCHEMA,
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "paths": entries,
+        "by_class": by_class,
+        "counts": {name: len(by_class[name]) for name in _RANGE_CLASSES},
+        "signatures": _signature_census(anchor, head, repo=repo),
+    }
+
+
+def range_report_digest(report: dict) -> str:
+    """SHA-256 over the canonical JSON form.
+
+    `sort_keys` + no whitespace + ASCII-only: the digest must not move because
+    a dict was built in a different order or a path rendered under a different
+    locale.
+    """
+    blob = json.dumps(report, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=True).encode("ascii")
+    return hashlib.sha256(blob).hexdigest()
 
 
 # --------------------------------------------------------------------------
