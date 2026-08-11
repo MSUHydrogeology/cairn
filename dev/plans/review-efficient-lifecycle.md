@@ -20,7 +20,7 @@ executing jointly with its three accepted amendments —
 and [`lifecycle-status-vocabulary`](../proposals/2026-08-10-codex-lifecycle-status-vocabulary.md).
 All four are `accepted`, and three of them state in their own accepted text
 that they open no standalone plan. This is that plan.
-**Status**: awaiting-plan-review
+**Status**: executing
 **Plan review**: required(**External** + **External Security Review**) — the
 strongest tier among the four sources, and under `lifecycle-status-vocabulary`
 R3 the `+` means **two obligations and two distinct passes**. **No
