@@ -516,6 +516,7 @@ class Artifact:
         self.sections: List[Section] = []
         self.has_followups_migrated = False
         self.has_fidelity_signoff = False
+        self.has_substantive_code_review = False
 
 
 #: ``## Review -- Reviewer A (External Reviewer) -- 2026-06-08``.  The
@@ -749,9 +750,17 @@ def _read_artifact(path: Path) -> Artifact:
     art.author = _parse_field(text, "Author")
     art.plan_review = _parse_field(text, "Plan review")
     art.sections = _parse_sections(text)
+    # Markdown emphasis is tolerated around the label.  The repository's own
+    # house style writes ``**Dispositions:**``, which the original unbolded-only
+    # pattern rejected -- so this precondition reported "no Dispositions block"
+    # against 12 archived plans that each carried one, including the plan that
+    # introduced the vocabulary.  A precondition that fails a correct record is
+    # the same defect class as one that passes an empty one: it is not testing
+    # the property it names.
     art.has_followups_migrated = bool(
         re.search(
-            r"^\s*(?:Follow-ups migrated to|Dispositions)\s*:",
+            r"^\s*[*_]{0,2}\s*(?:Follow-ups migrated to|Dispositions)"
+            r"\s*[*_]{0,2}\s*:",
             text,
             re.MULTILINE,
         )
@@ -759,7 +768,41 @@ def _read_artifact(path: Path) -> Artifact:
     art.has_fidelity_signoff = bool(
         re.search(r"Fidelity sign-off|loop-fidelity", text, re.IGNORECASE)
     )
+    art.has_substantive_code_review = _has_substantive_code_review(text)
     return art
+
+
+#: A ``## Code review`` section counts as *substantive* only if it carries one of
+#: the two markers the plan template itself demands of a real reviewer: the
+#: ``**Model**:`` identity line, or a dated ``Code review -- <reviewer> --
+#: YYYY-MM-DD`` heading.  **Why this exists:** the archive precondition used to be
+#: satisfied by the section's mere *presence*, and every plan scaffolded from
+#: ``dev/plans/_template.md`` ships that section pre-written as a placeholder
+#: ("*Filled in after implementation commits land*") -- so the gate could never
+#: fail, and two plans archived on 2026-08-11 with no code review at all while it
+#: reported success.  A check that returns success without testing the property it
+#: names is worse than no check, because it is silent (``AGENTS.md`` > *Verifying
+#: claims*).
+#:
+#: This tests for a *marker*, not for review quality -- an author who writes the
+#: marker without reviewing still passes.  It moves the gate from "impossible to
+#: fail" to "requires a deliberate false statement", which is the honest limit of
+#: a text scanner; the residual is recorded in ``dev/PLANNING.md`` **[SP8-9]**.
+#: ALL ``## Code review`` sections are examined, not just the first: a plan may
+#: carry a placeholder section and a real reviewer's section further down.
+_CODE_REVIEW_SECTION_RE = re.compile(
+    r"^## Code review.*?(?=^## |\Z)", re.MULTILINE | re.DOTALL)
+_REVIEW_MODEL_RE = re.compile(r"^\*\*Model\*\*:", re.MULTILINE)
+_REVIEW_DATED_RE = re.compile(
+    r"^#{2,3} Code review\s*--\s*\S+.*\d{4}-\d{2}-\d{2}", re.MULTILINE)
+
+
+def _has_substantive_code_review(text: str) -> bool:
+    """True when some ``## Code review`` section carries a reviewer marker."""
+    for section in _CODE_REVIEW_SECTION_RE.findall(text):
+        if _REVIEW_MODEL_RE.search(section) or _REVIEW_DATED_RE.search(section):
+            return True
+    return False
 
 
 # --- the state machines (mirror doctrine/lifecycle-contract.md) --------------
@@ -1230,6 +1273,15 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                     "status is 'archived' but no '## Code review' section is "
                     "present (a plan never archives until code review occurred)."
                 )
+            elif not art.has_substantive_code_review:
+                v.append(
+                    "status is 'archived' but its '## Code review' section(s) "
+                    "carry no reviewer marker -- no '**Model**:' identity line "
+                    "and no dated 'Code review -- <reviewer> -- YYYY-MM-DD' "
+                    "heading. The section's PRESENCE is not evidence a review "
+                    "occurred: the plan template ships it pre-written, so this "
+                    "gate is otherwise impossible to fail."
+                )
             if not art.has_followups_migrated:
                 v.append(
                     "status is 'archived' but no 'Dispositions:' block "
@@ -1319,9 +1371,11 @@ def _gating_preconditions(art: Artifact, target: str,
                           "append a '## Code review' pass (reviewer is not the "
                           "implementing agent); append-only."))
         elif target == "archived":
-            gates.append((_has_kind(art, "Code review"),
-                          "a '## Code review' has occurred (archive commit is "
-                          "distinct from the implementing commits)"))
+            gates.append((art.has_substantive_code_review,
+                          "a '## Code review' has occurred and carries a "
+                          "reviewer marker ('**Model**:' or a dated 'Code "
+                          "review -- <reviewer> -- YYYY-MM-DD' heading); the "
+                          "template's placeholder section does not count"))
             gates.append((True,
                           "every deferred follow-up carries a recorded "
                           "disposition in a 'Dispositions:' block."))

@@ -1195,3 +1195,130 @@ def test_c9c_every_manifest_entry_is_re_derived_by_the_generator():
                 f"_LEGACY_PASSES[{stem!r}][{dig!r}] admits {count} pass(es) but "
                 f"the generator finds {found} in the tree -- a fabricated or "
                 "stale manifest entry")
+
+
+# ---------------------------------------------------------------------------
+# The archive preconditions must test the property they name (2026-08-11).
+#
+# Two defects, in opposite directions, both found after two plans archived with
+# no code review while the gate reported success:
+#   * `## Code review` was satisfied by the section's PRESENCE. Every plan
+#     scaffolded from dev/plans/_template.md ships that section pre-written as a
+#     placeholder, so the gate could never fail.
+#   * `Dispositions:` was matched by an unbolded-only pattern, so the
+#     repository's own `**Dispositions:**` house style was reported ABSENT --
+#     falsely flagging 12 archived plans that each carried a block.
+# A precondition that cannot fail and one that fails a correct record are the
+# same defect: neither tests the property it names.
+# ---------------------------------------------------------------------------
+
+_PLACEHOLDER_REVIEW = (
+    "## Code review\n\n*Filled in after implementation commits land.*\n"
+)
+
+
+def test_the_template_placeholder_code_review_is_not_substantive():
+    """The exact section dev/plans/_template.md ships must NOT satisfy the
+    archive precondition -- otherwise the gate is impossible to fail."""
+    assert planner._has_substantive_code_review(_PLACEHOLDER_REVIEW) is False
+
+
+def test_the_shipped_plan_template_itself_would_not_pass_the_gate():
+    """Measured against the real template, not a hand-written imitation: if
+    this ever passes, the placeholder has acquired a reviewer marker and the
+    gate is back to being unfailable."""
+    template = (CAIRN_ROOT / "dev" / "plans" / "_template.md").read_text(
+        encoding="utf-8"
+    )
+    assert planner._has_substantive_code_review(template) is False
+
+
+def test_a_model_line_makes_a_code_review_substantive():
+    body = "## Code review\n\n**Model**: some-model-id\n\nFindings.\n"
+    assert planner._has_substantive_code_review(body) is True
+
+
+def test_a_dated_reviewer_heading_makes_a_code_review_substantive():
+    body = "## Code review -- Reviewer A (External) -- 2026-08-10\n\nFindings.\n"
+    assert planner._has_substantive_code_review(body) is True
+
+
+def test_every_code_review_section_is_examined_not_only_the_first():
+    """A plan may carry the placeholder AND a real reviewer's section further
+    down. Examining only the first section reports the real review as absent --
+    the exact error made while measuring this defect's own blast radius."""
+    body = (
+        _PLACEHOLDER_REVIEW
+        + "\n## Code review -- Reviewer A (External) -- 2026-08-10\n\nFindings.\n"
+    )
+    assert planner._has_substantive_code_review(body) is True
+
+
+def _plan_on_disk(tmp_path, body: str):
+    """A real plan file, read through the planner's own reader -- so these
+    tests exercise the parse path the CLI uses, not a hand-built object."""
+    d = tmp_path / "dev" / "plans"
+    d.mkdir(parents=True, exist_ok=True)
+    f = d / "some-plan.md"
+    f.write_text(body, encoding="utf-8")
+    return planner._read_artifact(f)
+
+
+_ARCHIVED_HEAD = (
+    "# Plan: some-plan\n\n**Status**: archived\n**Author**: Someone\n\n"
+)
+
+
+def test_an_archived_plan_with_only_the_placeholder_is_a_violation(tmp_path):
+    """End to end through the reader, not just the helper."""
+    art = _plan_on_disk(
+        tmp_path,
+        _ARCHIVED_HEAD + "**Dispositions:**\n\n* x -> accept\n\n"
+        "Fidelity sign-off: someone\n\n" + _PLACEHOLDER_REVIEW,
+    )
+    assert art.has_substantive_code_review is False
+    joined = " ".join(planner._conformance_violations(art, planner.IdentityModel(frozenset(), frozenset())))
+    assert "reviewer marker" in joined, joined
+
+
+def test_the_same_plan_conforms_once_a_real_review_is_appended(tmp_path):
+    """The mutant for the test above: add the marker, the violation clears.
+    Without this pair, a always-violating checker would look correct."""
+    art = _plan_on_disk(
+        tmp_path,
+        _ARCHIVED_HEAD + "**Dispositions:**\n\n* x -> accept\n\n"
+        "Fidelity sign-off: someone\n\n" + _PLACEHOLDER_REVIEW
+        + "\n## Code review -- Reviewer A (External) -- 2026-08-10\n\nFindings.\n",
+    )
+    assert art.has_substantive_code_review is True
+    joined = " ".join(planner._conformance_violations(art, planner.IdentityModel(frozenset(), frozenset())))
+    assert "reviewer marker" not in joined, joined
+
+
+def test_dispositions_is_recognized_in_the_repository_house_style(tmp_path):
+    """`**Dispositions:**` is what every plan in dev/plans/archive/ actually
+    writes; an unbolded-only pattern reported 12 of them as having no block."""
+    for form in (
+        "**Dispositions:**",
+        "Dispositions:",
+        "*Dispositions:*",
+        "**Follow-ups migrated to:**",
+        "Follow-ups migrated to: dev/PLANNING.md",
+    ):
+        d = tmp_path / "dev" / "plans"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "p.md"
+        f.write_text(f"# Plan\n\n**Status**: archived\n\n{form}\n", encoding="utf-8")
+        art = planner._read_artifact(f)
+        assert art.has_followups_migrated is True, f"rejected: {form!r}"
+
+
+def test_dispositions_absence_is_still_detected(tmp_path):
+    """The loosened pattern must not become unfailable in its turn."""
+    for form in ("no block here", "Dispositions are recorded elsewhere"):
+        d = tmp_path / "dev" / "plans"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / "p.md"
+        f.write_text(f"# Plan\n\n**Status**: archived\n\n{form}\n", encoding="utf-8")
+        art = planner._read_artifact(f)
+        assert art.has_followups_migrated is False, f"accepted: {form!r}"
