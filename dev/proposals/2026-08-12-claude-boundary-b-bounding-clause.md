@@ -511,3 +511,442 @@ reviewer's own satisfiers.
 
 **Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
 
+
+## Code review -- Claude (Internal) -- 2026-08-12
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+**Tier**: **Internal** — fresh session, **same agent type as the implementer**.
+This is the Internal *floor*, not External, and it does not satisfy an External
+obligation. The proposal's §6 asked for exactly this tier and this scope.
+**Reviewed commit**: `8d9e3517aa2466cb4ce178d4b8415a82363b24c4`, diffed against
+its own parent `6701cb310f3a50d04cbb0c6b7a7b2636efb07170` (other agents
+committed concurrently; `e249424`, `be73851`, `137e48a` are excluded).
+**Reviewed proposal blob**: `b76ec7cfd4741d6141cda0941f25ce13ea897ff8`
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.x).
+
+**Verdict**: Accept-with-followups
+
+The clause is right, the six surfaces are faithfully delivered, and the fence
+*text* says what the Decision accepted. What is weaker than it reads is the
+**guard**: it catches deletion on every surface and catches nothing else, while
+its docstrings and §2 claim more. And one accepted term — the already-open-plan
+applicability rule — landed nowhere an agent will read it.
+
+### Method (independent falsification, not a re-run)
+
+I did not re-run the implementer's commands as my evidence. I extracted
+`8d9e351` and its parent into two isolated trees (`git archive | tar -x`) and
+ran **35 mutations of my own choosing** against the guard, restoring after each.
+I differenced the gate output across the commit boundary rather than reading the
+implementer's figure. Independently reproduced: guard **13 → 36** nodes
+(parent test file in the commit tree: `13 passed`; landed: `36 passed`).
+`quality_gate --sub neutrality --sub redundancy` is **byte-for-byte identical at
+parent and at commit** (`neutrality fail=93 info=21`, `redundancy fail=0
+info=2`) — so the "pre-existing and unchanged" claim is verified by difference,
+which the commit body asserted but did not show.
+
+*Not attributable to this commit*: `test_scope_reduction_trap.py::
+test_the_two_planner_twins_stay_byte_identical` fails in the working tree today.
+The twins are **byte-identical at `8d9e351`** (both
+`cb72165be4223df0a62d4db2b12e7f2d656b74ea680eee1ec7d813b4e3d2aaa4`); the failure
+comes from another agent's uncommitted edits to both planner files. Recorded so
+it is not misfiled against this change.
+
+### The four §6 checks
+
+**1. The fence holds — on the text, yes.** All five governing/template surfaces
+carry the refusal, and it reads as a refusal rather than a checklist: "Bounded
+mode **refuses**, and the full suite runs, whenever…" plus "**Uncertainty
+resolves to `full`** — the fence is a refusal rule, not a checklist to argue
+past." Contract surfaces are enumerated (install contract, fidelity/gate
+manifest, lockfile schema, published `scaffold.py --manifest`) and
+trust-ceremony surfaces are pulled in by reference to the governing file's
+high-risk list, which keeps the fence open-ended rather than a closed
+enumeration — the failure mode Round 1 rejected alternative (c) for. Two leaks
+in the *mechanism* rather than the wording are [F3] and [F6] below.
+
+**2. The twins stayed parallel — `AGENTS.md` yes, plan templates unguarded.**
+`test_installed_operational_rule_is_project_general` still means something: I
+leaked `python -m pytest bootstrap/tests` into the adopter fence (**L1**) and,
+separately, into adopter prose *outside* the fence (**L3**) — **both red**. The
+adopter copy correctly generalises (`the project's install contract, manifests,
+or lockfile schema`; `configured full suite`; `configured interpreter/runtime`)
+while Cairn's names `scaffold.py --manifest` and Python 3.13.x. Semantically
+parallel, lexically different, as accepted. The plan-template pair is **not**
+covered by any equivalent guard — see [F5].
+
+**3. The six triggers stayed six — in fact yes, by the guard no.** I read both
+lists: `doctrine/dual-review.md:212-219` and `doctrine/plans.md:340-347` are six
+items, identical, and `FULL RUN REQUIRED` routes to trigger 1 by invalidation
+exactly as accepted. No seventh trigger was added. But the *guard* over that
+outcome does not exist — see [F2].
+
+**4. The executing plan stayed untouched — yes; the rule protecting it did not
+land — no.** `git log 8d9e351^..8d9e351 -- dev/plans/review-efficient-lifecycle.md`
+is empty; its line 559 still reads "Boundary B **twice**, same command pair each
+time", and its budget table still says `| Boundary B | **2** |`. Untouched,
+confirmed. The applicability rule is **absent from every landed surface** — see
+[F1].
+
+### Findings
+
+#### [F1 -- P1] The already-open-plan applicability rule landed nowhere it governs
+
+`grep` for `already-open`, `already open`, `plans already open`, `written
+verification contract`, `keeps the verification contract` across all six landed
+surfaces (`AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/plans.md`,
+`doctrine/dual-review.md`, both plan templates) returns **no match on any
+surface**. The rule exists only in this proposal's §3.
+
+This is an accepted term, not an inference: the Decision's summary lists
+"**Adopter & In-Flight Parallelism**: … Already-open/executing plans preserve
+their written verification contracts unless explicitly revised." §3 states it as
+a block-quoted rule and calls the `review-efficient-lifecycle` case "a
+commitment, not an aside."
+
+Why it matters now rather than theoretically: **two plans are `executing`** —
+`review-efficient-lifecycle` and `git-native-security-foundations`. An agent
+orienting at session start reads `AGENTS.md`, not an accepted proposal in
+`dev/proposals/`. What that agent now finds is a permission ("run the **full
+suite unless** the plan's reviewed mapping bounds the change's effects
+confidently") with **no in-flight carve-out attached to it**. Per
+`docs/DOCUMENTATION_PLAN.md`'s own layering, a prescription that binds behaviour
+belongs in the governing/doctrine layer; the deliberation layer records why.
+This one is only in the deliberation layer, so it is recorded but not operative.
+
+Mitigating, and the reason this is P1 rather than blocking: `AGENTS.md` >
+*Git and commit workflow* already treats departure from an accepted plan as a
+deviation, and `review-efficient-lifecycle` writes its command pair out
+literally, so bounding it would require overriding explicit plan text. The
+protection exists — just not in the form the Decision named.
+
+*Satisfier*: one sentence in `doctrine/plans.md` > Boundary B, echoed in both
+`AGENTS.md` copies — "A plan already open when this rule took effect keeps the
+verification contract written in it; bounded mode becomes available to it only
+through that plan's own append-only revision under the deviation rule." Or an
+explicit Maintainer `wontfix` recording that the deviation rule is deemed
+sufficient. **I have not made this edit** — reporting, not fixing.
+
+#### [F2 -- P2] "The six triggers stay six" is asserted against the test's own literal
+
+`test_full_run_required_routes_to_the_existing_first_trigger` closes with
+`assert len(FRESH_RUN_TRIGGERS) == 6`. `FRESH_RUN_TRIGGERS` is a tuple literal
+defined at the top of the *same test file*. That assertion reads a constant the
+test itself owns; **no doctrine edit can ever make it fail.** The companion,
+`test_plan_and_review_doctrine_share_fresh_run_triggers`, asserts the six tokens
+are *present* in both files — it says nothing about a seventh.
+
+Demonstrated, not argued. Three mutations, all **GREEN (36 passed)**:
+* **T1** — added a seventh trigger to `doctrine/dual-review.md` only.
+* **T2** — added a seventh trigger to `doctrine/plans.md` only (which also
+  *desynchronises the two doctrine copies*, the thing the paired test is named
+  for).
+* **T3** — changed the prose "any of these **six** triggers" to "**seven**".
+
+Control: **T4**, deleting trigger 2, is **red**. So the pairing catches removal
+and is blind to addition and to the count itself.
+
+This matters because §2 of the accepted revision rests an argument on it: "The
+six triggers stay six and stay identical across `doctrine/plans.md` and
+`doctrine/dual-review.md`, which is what
+`test_plan_and_review_doctrine_share_fresh_run_triggers` pins." It does not pin
+that. `AGENTS.md` > *Verifying claims* is explicit that "the document states
+what that trigger actually verifies: a tool that returns success without testing
+the claimed property is a worse defect than no tool, because it is silent."
+
+*Satisfier*: count the enumerated items in each doctrine file (e.g. regex the
+`^N. ` run under "A fresh full-suite run…" / "A fresh full-suite run replaces
+reuse…") and assert the count is 6 and the two extractions are equal — then the
+constant is derived from doctrine rather than declared beside it.
+
+#### [F3 -- P2] `test_bounded_guard_detects_a_removed_fence` is a tautology
+
+```python
+text = _read(SELF_AGENTS).replace("trust-ceremony surface", "surface")
+normalized = " ".join(text.split())
+assert "trust-ceremony surface" not in normalized
+```
+
+The assertion is unconditionally true for **any** input: the token was just
+replaced with a string that cannot contain it. Its own docstring says "Without
+this pair an always-passing token check would look correct" — the test is itself
+the always-passing check it warns about.
+
+Demonstrated: **X2** — I truncated `AGENTS.md` to the empty string and ran this
+node alone. **`1 passed`.**
+
+This is the third instance of this shape shipped in this repository in three
+days, and it deviates from the *correct* pattern already established three times
+in the same file: `test_operational_guard_detects_removed_full_fallback`,
+`test_record_schema_guard_detects_removed_reviewed_range`, and
+`test_review_reuse_guard_detects_unconditional_reuse` each mutate, then feed the
+mutant **through the violation function**, and assert the violation is
+*reported*. The new one asserts on the mutated string directly and never invokes
+the thing under test.
+
+**It removes no coverage** — `test_bounded_boundary_b_contract_reaches_every_surface`
+is the real guard and it genuinely fires (F1–F5, P1, P2 below all red). The
+defect is that the file now contains a node that *claims* mutation coverage and
+supplies none, which is precisely what makes this class hard to catch.
+
+*Satisfier*: rewrite it in the file's own established shape — extract the
+obligation check into a helper taking `text`, mutate, and assert the helper
+*reports* the missing obligation.
+
+#### [F4 -- P2] The fence binds only a record that declares itself bounded
+
+Boundary C's new obligation is conditional on the implementer's own declaration:
+"**On a bounded record** the reviewer records `**Bounding**: …`." Nothing in the
+landed text says a Boundary B record **lacking** the `Boundary B mode` field is
+invalid. Trigger 1 fires on "no valid Boundary B record exists", and validity is
+nowhere defined to require the field.
+
+So the fence has a silent path around it that is not a fence-wording problem:
+an implementer runs a mapped subset, writes a record listing the commands they
+ran and omitting the mode field, and it is indistinguishable from every
+pre-2026-08-12 record in the tree. No adjudication is triggered, because nothing
+declared itself bounded. The adjudication — the thing that makes the saving
+depend on someone who captures nothing — is opt-in by the party who captures the
+saving.
+
+Both plan templates do say "The record uses these exact fields" with
+`Boundary B mode` listed first, so a template-following author will include it.
+That is a strong mitigation for plans scaffolded from the template and no
+mitigation at all for the two plans already executing.
+
+*Satisfier*: one clause in `doctrine/plans.md` — "A Boundary B record without a
+`Boundary B mode` field is not a valid record (trigger 1)." That closes the
+silent path without adding a seventh trigger and without a tool gate.
+
+#### [F5 -- P3] No project-generality guard on the adopter plan template
+
+`test_installed_operational_rule_is_project_general` covers
+`templates/core/AGENTS.md` and nothing else. `templates/core/dev/plans/_template.md`
+gained new fence prose in this commit and has no equivalent guard.
+`_plan_template_violations` applies the **same** token set to both templates, so
+it cannot detect divergence in the Cairn-specific direction.
+
+Demonstrated: **L2** — I replaced the adopter template's generalised fence with
+Cairn's own wording (`the published `scaffold.py --manifest``, `Python 3.13.x`,
+`python -m pytest bootstrap/tests`, `python scripts/quality_gate.py`). **GREEN,
+36 passed.** The neutrality gate does not catch this either — it looks for
+*vendor* names, not Cairn-only paths.
+
+The commit is correct as landed; the exposure is new because this commit is what
+put Cairn-adjacent fence content into that file's neighbourhood.
+
+*Satisfier*: extend the `cairn_only` tuple check to `ADOPTER_PLAN_TEMPLATE`,
+adding `scaffold.py --manifest`.
+
+#### [F6 -- P3] "Any high-risk surface the governing file names" + uncertainty→full may swallow the clause
+
+`AGENTS.md`'s high-risk list includes **vendor-neutrality** ("Doctrine and
+templates must name no AI model/vendor"). Read strictly, *every* doctrine or
+template prose edit "touches" that surface — which, combined with "uncertainty
+resolves to `full`", fences the most common class of change Cairn actually makes
+out of bounded mode. Including the motivating worked instance: `scope-reduction-trap`
+was "prose across roughly a dozen files plus two string literals", so under the
+landed fence it plausibly resolves to `full` — the outcome the proposal set out
+to prevent.
+
+The natural reading — "high-risk surface" means its *mechanism or contract*, per
+`AGENTS.md`'s own framing of that list as "Security-Review + proposal triggers"
+— is defensible and probably intended. But the landed text supplies no
+disambiguator, and the fail-closed rule pushes a careful agent toward the strict
+reading. This is not a defect in the fence's tightness; it is the opposite risk,
+and it makes the clause weaker than the argument for it.
+
+*Satisfier*: qualify to "a change to a high-risk surface's mechanism or
+contract (the changes that trigger a Security Review)", or add one worked
+example of an eligible change. Cheapest disposition is a Maintainer `wontfix`
+noting the natural reading governs.
+
+#### [F7 -- P3] Slot placement is correct but unpinned
+
+The fence sits inside `<!-- cairn:slot verification-commands -->` in both
+templates (`dev/plans/_template.md:246-289`;
+`templates/core/dev/plans/_template.md:238-277`) — correct, since the slot is
+what a scaffolded plan inherits. `_BOUNDED_OBLIGATIONS` is checked against the
+**whole file**, so the placement is not held. Demonstrated: **S1/S2** — I moved
+the fence outside the slot end marker in each template. **Both GREEN.** The same
+file already demonstrates the right pattern: `_plan_template_violations` scopes
+`reviewed mapping` / `full suite` / the record fields to the slot.
+
+### Mutation ledger — 35 mutations, chosen by me
+
+**Held (red) — 15.** These are the ones that make the guard worth having:
+| # | Mutation | Result |
+|---|---|---|
+| F1–F5 | Delete the fence from **each** of the five surfaces, one at a time | red on every surface |
+| P1 | Drop only `trust-ceremony surface`, keep `contract surface` (Cairn `AGENTS.md`) | red |
+| P2 | Drop only `contract surface`, keep trust-ceremony (adopter `AGENTS.md`) | red |
+| A1–A3 | Delete the adjudication paragraph from `dual-review.md`, Cairn `AGENTS.md`, adopter `AGENTS.md`, one at a time | red on each |
+| A5 | Weaken `**invalidates**` → `is noted against` | red |
+| L1 | Leak `bootstrap/tests` into the adopter fence | red |
+| L3 | Leak Cairn commands into adopter prose **outside** the fence | red |
+| D3 | Delete the `**Boundary B mode**` record-schema bullet | red |
+| T4 | Delete trigger 2 | red |
+| X1 | Blank the entire Boundary B bullet | red (5 failures) |
+
+Partial-phrase and single-surface deletion are genuinely covered — that is the
+strongest thing I can say for this guard, and I could not defeat it by any
+deletion I tried, on any surface, at any granularity.
+
+**Defeated (green) — 12 substantive.** Grouped by what they show:
+* *Unscoped token search* — **H1**: delete the fence body from Boundary B, then
+  satisfy all four obligations from a **trailing glossary heading** appended at
+  end of file that explicitly obliges no one. 36 passed.
+* *Semantic inversion with tokens intact* — **I1** `Uncertainty resolves to
+  `bounded`` (the fail-closed direction reversed, and the pinned token is
+  `"Uncertainty resolves to"` **without its value**); **I2** "Bounded mode **is
+  available**… even when the change touches [a contract surface]"; **I3** bounded
+  becomes the default in `doctrine/plans.md`; **I4** the mode field made
+  optional; **D1/D2** the mode bullet reduced to "The phrase Boundary B mode is
+  optional and carries no obligation."
+* *Adjudication gutted* — **A4**: "after challenging at least one named surface,
+  mapped test, or stated omission" → "after **confirming the field is
+  present**", i.e. the exact anti-pattern the same sentence forbids. Green.
+  **A6**: "the reviewer additionally records" → "may, at their discretion,
+  record". Green.
+* *Trigger count* — **T1/T2/T3** ([F2]).
+* *Slot placement* — **S1/S2** ([F7]).
+* *Adopter generality* — **L2** ([F5]).
+* *Tautology* — **X2** ([F3]).
+
+**Green by design, and correct** — **W1** (whole clause reflowed onto one line)
+and **W2** (a hard wrap inserted *inside* the `Boundary B mode` token). The
+`" ".join(text.split())` normalisation makes the guard wrap-insensitive, which
+is the right property for a prose guard and is worth recording as tested rather
+than assumed.
+
+**Calibration.** Most of the inversions are outside what any token-presence
+guard can reach, and the docstring is honest that it asserts "the *obligation*,
+not one exact sentence, so a rewording passes and a deletion fails" — that is an
+accurate description of what it does. §2 declining a tool gate is also right, and
+I am not asking for one. The three I count as defects are the ones where a
+*document claims* coverage the code does not supply ([F2], [F3]) or where the
+established in-file pattern was available and not used ([F7]).
+
+### Scope fidelity — clean
+
+The revert is complete and nothing else rode along. Verified by enumerating
+**every deleted line** in the commit (`git diff 8d9e351^ 8d9e351 | grep '^-[^-]'`):
+11 deletions, all inside the Boundary B / Boundary C regions of the six named
+surfaces. No deletion anywhere else in any file.
+
+Every pinned token from the accepted terms' "every existing pinned token
+survives unchanged" survives, checked individually at `8d9e351`:
+* `Falsification (targeted, after broad verification)` — present, ×1
+* `Copying the implementation's broad command does not satisfy` — present, ×1
+* `broad command is not a falsification ledger` — present in **both**
+  `AGENTS.md` copies
+* `distrust or falsify the broad result` — present in both doctrine copies
+  (`dual-review.md:219`, `plans.md:347`)
+* every `_operational_violations`, `_record_violations`, `_review_violations`,
+  `RECORD_FIELDS` token — all 13 pre-existing nodes pass unchanged.
+
+The commit body's self-report of the scope correction is accurate and the
+correction is complete.
+
+### Cross-document sweep
+
+`grep -rln "Boundary B"` outside `dev/` returns exactly the four governing/
+doctrine surfaces, the guard test, and the two `lifecycle_planner.py` twins. The
+planner hits are a single blocking-verdict message string ("land a replacement
+Boundary B record over the corrected range") that is **mode-agnostic** and needs
+no edit; the planner does **not** parse `## Implementation verification` fields
+at all (`grep` for `Implementation verification|Tested commit|Reviewed range` in
+`tools/lifecycle_planner.py`: no hits), so the new field adds no executable
+obligation. That is consistent with §2's "no tool gate is proposed" and is
+correctly stated as a v1 omission in the guard file's module docstring. No
+seventh surface was missed.
+
+Remaining unconditional-B phrasing lives only in archived proposals and
+`dev/plans/archive/verification-evidence-boundaries.md`, which are historical
+records and correctly untouched.
+
+`claim_check` on this proposal: **OK, no flags** (and I verified the checker
+actually flags — injecting a deliberately non-existent proposal path into a
+scratch copy produced the expected hard flag, so the clean result is a real
+result rather than a silent tool). Note that §3's
+citation `dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md` now
+resolves under `archive/`: that proposal was archived at `6701cb3` (08:42),
+*after* the Round-2 revision was committed at `3f95bb1` (07:39). Correct when
+written, append-only, no defect.
+
+### The honest question: is the fence tight enough?
+
+Arguing it rather than assuming it. **Against a change that declares itself
+bounded, yes.** The enumeration covers the four contract surfaces by name; the
+trust-ceremony half is open-ended by reference to the high-risk list, so it
+inherits the scaffold/merge engine, the local interpreter binding, and the
+portable-sweep trust root without re-enumerating them — the fence ages better
+than Round 1's rejected alternative (c). Ambiguity about whether a surface is
+covered is resolved by an explicit fail-closed rule stated twice. I could not
+construct a plausible contract-touching change that reads as clearly eligible.
+
+**The leak is not in the enumeration; it is in who opens the gate.** [F4]: the
+fence and the adjudication both trigger on the implementer's own `bounded`
+declaration. An implementer who runs less and simply does not write the field
+produces a record shaped exactly like every record written before this change,
+and no trigger fires. The apparatus asks the party who captures the saving to
+raise their own hand. §2 argued — correctly — that mechanising *"does the
+bounding hold?"* would manufacture the clean-pass trap, because the question is
+semantic. But *"is the mode field present?"* is not semantic; it is the formal
+half, it is exactly what §2 concedes a tool could confirm, and it is the half
+that is currently unbound. One sentence making a field-less record invalid
+closes it inside the existing six triggers.
+
+**And the opposite risk is live too.** [F6]: under a strict reading of "any
+high-risk surface the governing file names", plus uncertainty→full, doctrine and
+template prose changes — Cairn's dominant change class, and the motivating worked
+instance — may be fenced out. The clause could be safe and simultaneously
+inapplicable to the work that prompted it.
+
+So: tight enough that a contract-touching change should not slip in *by
+argument*; not yet tight enough that one can slip in *by silence*. That is a
+one-clause gap, not a design fault, and the direction of the change is right.
+
+### Can this proposal archive?
+
+**Not yet.** [F1] is an accepted term of the Decision with no landed home, and
+two plans are executing under it right now. Archive once [F1] is dispositioned
+— either the sentence lands in `doctrine/plans.md` + both `AGENTS.md` copies, or
+the Maintainer records an explicit `wontfix` that the existing deviation rule is
+deemed sufficient. [F2] and [F3] are guard-integrity defects that should be
+dispositioned before archive (both are small test edits, neither changes
+doctrine). [F4]–[F7] are legitimate follow-ups and do not block.
+
+### Coverage
+
+**Covered, with falsifiable citations**: the four §6 checks (fence wording on all
+five surfaces; twin parallelism via L1/L3 red and L2 green; trigger identity read
+at `dual-review.md:212-219` / `plans.md:340-347`; `review-efficient-lifecycle`
+untouched per empty `git log` on that path); 35 self-chosen mutations with
+per-mutation results (15 red, 12 defeated, 2 green-by-design, 6 no-op/anchor
+misses re-aimed and re-run); guard node count reproduced independently (13 → 36);
+neutrality/redundancy differenced across the commit boundary rather than
+re-reported; complete deletion enumeration for scope fidelity; every pinned token
+re-checked individually; cross-document sweep including the two `lifecycle_planner.py`
+twins and the planner's record-parsing surface; claim-checker trigger verified by
+injection rather than assumed; sweep lenses 1 (claims), 4 (fail-closed), 5
+(cross-document consistency), 6 (drift), 7 (lifecycle placement), 8 (scope), 9
+(satisfier named on every finding).
+
+**Not covered / low confidence**: (a) sweep lens 2 (production path exercised by
+tests) and lens 3 (design completeness) are **N/A by declaration** — the guard
+file's docstring states it does not parse filled verification records or select
+tests, and I confirmed the planner has no such parser, so there is no production
+path to exercise; (b) I did **not** clear a full `bootstrap/tests` run against
+this commit — my isolated tree is not a git repository, so 18 failures + 18
+errors appeared in `test_gate_preflight.py`, `test_oracle.py`,
+`test_security_check.py`, `test_lifecycle_contract.py` and
+`test_upgrade_module_additions.py`, all git-dependent and all harness artifacts;
+I verified none of them are in `test_verification_boundaries.py` or any
+doc/template-pinning test, but the broad result is **not** clean evidence and I
+am not offering it as such; (c) I did not attempt to estimate how often bounded
+mode will actually be claimed, so [F6]'s practical severity is judgement, not
+measurement; (d) I did not review the two superseded proposals for whether their
+own archived text should be annotated — no annotation convention exists in this
+tree for cross-proposal supersession, so I raise it as an observation without a
+finding.
