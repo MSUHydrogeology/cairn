@@ -167,8 +167,8 @@ A  the sterile launcher + repository-pinned hashing   [commit ab51587]
 B  the canonical range-review report                  [commit ca4b4cf]
 C  checkpoint construction bound to the report digest [commit 068745b]
 E  fsck at the two acquisition boundaries             [commit 02b0c59]
-D  manifest v2  (blocked: see Sequencing)             [commit pending]
-F  reflogs, atomic publication, runbook text          [commit pending]
+D  manifest v2  (unblocked: one ceremony)             [commit 4365205]
+F  reflogs, atomic publication, runbook text          [commit 721161a]
 G  the security/provenance documentation surface      [commit 4889d8e]
 --- stable bytes -----------------------------------------------------
 B1 Boundary B on the stable pre-review commit         [record]
@@ -1082,3 +1082,64 @@ words, and v1 is retained.
 
 **A, B, C, E and G are unaffected and stay landed.** D re-opens with the four
 findings above as inputs; F and H were already held.
+
+## Chunk F landed -- Claude -- 2026-08-12
+
+`721161a`. **D is also landed** (`4365205`, the corrected rebuild after
+`77ae814` was reverted at `aca6fe9` under M5), so the Sequence block above is
+updated for both. Every agent-executable chunk in this plan is now committed.
+
+**F1 needed less than expected and more than recorded.** `--create-reflog`
+itself survived the D revert and re-landed inside `4365205`; what was missing
+was the *fixed ceremony reason* F1 also asks for. It is now
+`_gate_preflight._CEREMONY_REFLOG_REASON`, a module constant rather than a
+caller argument, and it is written by `-m`, which `update-ref` applies to every
+update in a `--stdin` transaction (verified directly against git before
+wiring, not assumed from the flag's documentation).
+
+**F2/F3 land as a new Phase 5 plus a fifth Phase 4 step.** The runbook had no
+publication phase at all, which is why the split-state hazard had nowhere to be
+written down. Phase 5 records one atomic push with explicit refspecs, the
+absence of a two-push fallback, `ls-remote` read-back, and the explicit anchor
+fetch refspec a fresh clone needs. Phase 4 step 5 retires
+`refs/cairn/gate-authorization` by its exact expected-old value and names a
+failed deletion **unresolved ceremony residue** rather than cleanup success.
+
+Per the one-ceremony decision above, all of this is written for a **single**
+procedure.
+
+**What the F4 tests do and do not establish.** They exercise the publication
+mechanism against a local bare remote: an atomic push publishes both refs; one
+rejected ref moves neither; the same setup *without* `--atomic` leaves the
+branch published and the anchor stale, which is the counterfactual that keeps
+the flag from being cargo. A local bare remote accepts things a real forge may
+refuse — hooks, protected branches, ref-namespace policy — so this is
+**necessary and not sufficient**. **[TRU-7] stays open**; M4 closes it with a
+probe or the first supervised push against the real remote.
+
+**Reflog discipline is asserted, not merely commented.** The tests read reflogs
+as recovery and sequencing information only. That no decision predicate consumes
+one is held by an `ast` walk over every git call in the module — the first
+version of that test read the source as text and fired on the help string that
+tells an operator custom refs carry no reflog, which is exactly the
+prose-versus-code false positive the loader tests already record.
+
+**Perturbation record**, since these are contract tests and a contract test that
+cannot fail is decoration: dropping `-m`, dropping `--create-reflog`, dropping
+`--atomic` from the runbook push block, and adding `gate-authorization` to a
+push refspec each fail a named test.
+
+**No Cairn ref moved**, per R1-F step 1.
+
+### What remains
+
+| | | |
+|---|---|---|
+| **B1** | Boundary B on the stable pre-review commit | agent, next |
+| **CR** | independent External Code review | not the implementing agent |
+| **SR** | focused exact-byte External Security Review | **M2** |
+| **H** | the exact-byte bootstrap ceremony | **M3, M4** |
+
+Boundary C's reviewed range must include `da3e296` per R1-4. **M7 arms now**:
+any byte change after M2's exact-byte review invalidates that disposition, so
+the bytes reviewed at SR are the bytes H executes.
