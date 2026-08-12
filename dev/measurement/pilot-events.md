@@ -128,6 +128,35 @@ expected-old check: a second writer that raced loses cleanly and records
 nothing rather than overwriting. Commit the file in the same turn — the
 ledger is durable because it is tracked, not because it is on disk.
 
+## Not recorded here yet — a named gap, not a silent one
+
+Two items in the accepted parent proposal's report requirements
+([`2026-08-10-codex-review-efficient-lifecycle`](../proposals/2026-08-10-codex-review-efficient-lifecycle.md))
+are **not** restated by the plan revision's superseding `P6-R` cell, and this
+schema therefore does not carry them:
+
+* **The eligible / ineligible split.** The proposal counts "six eligible
+  **standard** plans", says high-assurance work "remains ineligible and does not
+  fill the sample", and requires the report to record "eligible and ineligible
+  plans". No `plan-counted` field records a plan's assurance path, so the
+  derived report cannot split the sample: whoever records an event applies the
+  eligibility rule, and this ledger does not preserve the basis for it.
+* **Broad-suite executions and elapsed time**, likewise in the proposal's list
+  and not in the revision's.
+
+The revision's own list is narrower — the report "still measures review input,
+removed transitions, escaped findings, Maintainer prompts and pauses" — and that
+is exactly what the engine derives today. Whether the narrowing was intended is
+a Maintainer's call, not an implementer's, so the difference is recorded here
+rather than closed by guesswork.
+
+Closing either is a `cairn-pilot-event/2` schema bump; the version field exists
+for that, and an unknown version refuses rather than being half-read. The
+assurance split additionally needs a **public** single source for the
+assurance-path vocabulary — `tools/lifecycle_planner.py` declares it privately
+today, and a second declaration in the CLI would fork a vocabulary the way the
+single-runtime-vocabulary rule forbids for statuses.
+
 ## Events
 
 *None yet.* The window opens at P6d; this ledger ships with the machinery so
