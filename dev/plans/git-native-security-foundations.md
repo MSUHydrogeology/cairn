@@ -2269,3 +2269,70 @@ substance; it is now two commands instead of one paused one, both recorded in
 `bootstrap/REANCHOR_RUNBOOK.md` (*Phase 0 pre-flight*, *Phase 0 transition
 mode*, and *Phase 0 stage 2*). The prohibition is untouched: no author or
 implementing agent performs it.
+
+## M4 remote capability probe -- Anthony Kendall (Maintainer) -- 2026-08-12
+
+**[TRU-7] is answered: the real remote accepts `refs/cairn/*`.**
+
+**Who did what.** The Maintainer ran every command against `origin`
+(`git@github.com:MSUHydrogeology/cairn-scientist-ai-teams.git`). No agent
+pushed, per R1-D. Claude supplied the commands and scribed this record from the
+Maintainer's reported output.
+
+**Run early, deliberately.** M4 sits after M3 in the sequence, but the
+*capability* question is the one open item that could have invalidated the
+design rather than merely failed a step: if the host refused the namespace, the
+anchor would need a different transport, and that is a thing to learn **before**
+signing a checkpoint and moving a trust root, not after. Nothing in the plan
+requires the probe to wait for the ceremony.
+
+### Method
+
+A throwaway ref was pushed into the ceremony's own namespace, read back, and
+deleted. It pointed at `be7f80ce4d24c74f6c152acff8bd12a60af8c582` — the commit
+`origin/master` already named — so the push **transferred no objects** and tested
+ref acceptance alone.
+
+```
+git push origin be7f80c…:refs/cairn/capability-probe
+git ls-remote origin 'refs/cairn/*'
+git push origin :refs/cairn/capability-probe
+git ls-remote origin 'refs/cairn/*'
+```
+
+### Result
+
+The push was accepted and the ref was visible on the remote. The read-back also
+surfaced something stronger than the probe itself: **two refs are already
+published in that namespace**, both matching this checkout exactly.
+
+| Ref | Remote | Local |
+|---|---|---|
+| `refs/cairn/gate-anchor` | `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3` | same |
+| `refs/cairn/release-bar-audit` | `7e931ccf71dc269f72af8cb521efb8923e72235c` | same |
+| `refs/cairn/gate-authorization` | **absent** | absent |
+
+So publication into `refs/cairn/*` is not hypothetical for this remote — it has
+happened and is in sync. Two consequences for the ceremony:
+
+* Phase 5's push will **update** an existing `refs/cairn/gate-anchor` rather than
+  create it, which is the better-exercised path.
+* `gate-authorization`'s absence on the remote is the closed-refspec list
+  behaving as the runbook describes, confirmed rather than assumed.
+
+After deletion, `ls-remote` returned exactly the two rows above. **The remote was
+left clean**; no probe ref survives in the namespace the ceremony publishes into.
+
+### What this does not establish
+
+* **`--atomic` across two refs was not directly exercised.** The probe pushed one
+  ref at a time. The namespace was the unknown and it is closed; `--atomic` is a
+  standard advertised capability, but this record should not be read as having
+  measured it. A two-throwaway-ref atomic rehearsal remains available and cheap.
+* **Nothing about the ceremony itself.** No checkpoint was constructed, no key
+  loaded, and `refs/cairn/gate-anchor` was not moved — it reads
+  `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3` locally and remotely, as it has
+  since 2026-08-03.
+* **M4 is not discharged.** M4 is the *supervised publication* of branch and
+  anchor together. This closes its [TRU-7] precondition; the publication itself
+  still follows M3.
