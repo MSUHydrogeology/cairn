@@ -143,9 +143,19 @@ def _pub(priv: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def lab(tmp_path_factory) -> Lab:
+def lab(tmp_path_factory):
     """The genuine world: one maintainer key, one rostered principal, one
-    candidate repository carrying a genuine signed ``v0.3.0``."""
+    candidate repository carrying a genuine signed ``v0.3.0``.
+
+    Session-scoped, and therefore **read-only to tests**: many nodes below read
+    ``lab.candidate`` directly and several ``copytree`` or clone it, so a ref
+    written into it by one test is inherited by every test the collector runs
+    afterwards.  The teardown assertion is that rule's enforcer, and it is not
+    decorative: reinstating the tag write ``message_forged_mirror`` used to do
+    makes it fail even when this file runs alone, which is precisely the state
+    that used to pass here while colliding with ``HOSTILE_TAG`` under a
+    shuffled collector.  Build per-test refs in a copy.
+    """
     world = Lab(tmp_path_factory.mktemp("verify_ref_lab"))
     world.maint = world.keypair("maint")
     world.attacker = world.keypair("attacker")
@@ -161,7 +171,14 @@ def lab(tmp_path_factory) -> Lab:
     world.git(cand, "tag", "lw", "HEAD")                       # ref -> commit
     world.git(cand, "tag", "-a", "unsigned", "-m", "annotated, unsigned")
     world.candidate = cand
-    return world
+
+    refs_at_setup = world.git(cand, "show-ref").stdout
+    yield world
+    assert world.git(cand, "show-ref").stdout == refs_at_setup, (
+        "a test mutated the session-scoped candidate repository's refs; that "
+        "leaks into every later test that reads, copies, or clones it (and "
+        "makes failures depend on collection order). Build per-test refs in a "
+        "copy -- see ``message_forged_mirror``.")
 
 
 @pytest.fixture()
@@ -1379,15 +1396,23 @@ def message_forged_mirror(lab: Lab, tmp_path: Path) -> Path:
     name the payload asserts -- and that lie lives in the half of the object the
     attacker writes.
     """
-    # ``-f``: ``lab`` is session-scoped, so this fixture runs once per test and
-    # would otherwise fail on the second with "tag already exists".
-    lab.git(lab.candidate, "tag", "-s", "-f", "v0.6.0", "-m",
-            FORGED_NAME_MESSAGE)
+    # The forged tag is written into a PER-TEST copy, never into
+    # ``lab.candidate``: ``lab`` is session-scoped, so a tag created there
+    # outlives this fixture and is inherited by every later test that copies or
+    # clones the candidate.  It did: ``v0.6.0`` here is the same name as
+    # ``HOSTILE_TAG``, and under a shuffled collector that put this fixture
+    # first, ``_hostile_candidate``'s ``sign_tag`` died on "tag already exists".
+    # The copy carries the candidate's ``.git/config``, so ``-s`` still signs
+    # with the genuine, rostered maintainer key -- the property this vector
+    # needs.
+    source = tmp_path / "forged-src"
+    shutil.copytree(lab.candidate, source)
+    lab.git(source, "tag", "-s", "v0.6.0", "-m", FORGED_NAME_MESSAGE)
     forged_obj = lab.git(
-        lab.candidate, "rev-parse", "refs/tags/v0.6.0").stdout.strip()
+        source, "rev-parse", "refs/tags/v0.6.0").stdout.strip()
     dest = tmp_path / "forged.git"
     subprocess.run(
-        ["git", "clone", "-q", "--bare", str(lab.candidate), str(dest)],
+        ["git", "clone", "-q", "--bare", str(source), str(dest)],
         check=True, capture_output=True, text=True, env=lab.env,
     )
     lab.git(dest, "update-ref", "refs/tags/v0.7.0", forged_obj)
