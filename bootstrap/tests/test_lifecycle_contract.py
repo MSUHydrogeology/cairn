@@ -776,15 +776,23 @@ _BASIS_LINES = ("**Reviewed commit**: " + "0123456789abcdef" * 2 + "01234567\n"
 
 def _plan_art(tmp_path: Path, body: str, *, status: str = "executing",
               plan_review: str = "required(External)",
-              stem: str = _GATE_STEM):
-    """Parse a plan fixture into an Artifact (the predicate's input)."""
+              stem: str = _GATE_STEM, header_extra: str = ""):
+    """Parse a plan fixture into an Artifact (the predicate's input).
+
+    *header_extra* (P5) is one or more extra header lines, placed where a plan's
+    metadata block lives -- above the first `##`.  Empty by default, and the
+    interpolation is `\\n{header_extra}\\n`, so every pre-P5 caller writes the
+    same bytes it always did.  P5 needs the *header* specifically: its trigger
+    field is a header declaration, and a fixture that could only put the field in
+    the body could not test that boundary.
+    """
     d = tmp_path / "dev" / "plans"
     d.mkdir(parents=True, exist_ok=True)
     path = d / f"{stem}.md"
     path.write_text(
         f"# {stem}\n\n"
         f"**Status**: {status}\n"
-        f"**Plan review**: {plan_review}\n\n"
+        f"**Plan review**: {plan_review}\n{header_extra}\n"
         f"## Scope\n\nx\n\n{body}",
         encoding="utf-8")
     return planner._read_artifact(path)
@@ -3060,3 +3068,596 @@ class TestP1AuthoringTemplates:
                     "templates/core/dev/plans/_template.md"):
             text = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
             assert planner._has_code_review_marker(text) is False, rel
+
+
+# ---------------------------------------------------------------------------
+# Chunk P5 -- the `Contract non-expansion` attestation.
+#
+# Contract, from BOTH governing sources.  The accepted
+# `review-efficient-lifecycle` parent, "Standard-path plan-readiness
+# inheritance": *"For an inherited plan, code review must include this exercised
+# backstop"* -- `Contract non-expansion: VERIFIED | NOT VERIFIED` plus a `Basis:`
+# line binding `proposal=`, `plan=` and `changed-paths=`; *"`NOT VERIFIED` is
+# blocking. This remains a semantic human/agent review; the parser validates the
+# record and bindings but does not pretend to prove prose equivalence."*  The
+# amendment (`code-review-blindness`) bounds it: this chunk *"validates its
+# presence and binding shape when the plan declares inheritance, and treats `NOT
+# VERIFIED` as blocking. It does not attempt to validate the semantic claim"*,
+# and its **R6** excludes "Semantic verification of `Contract non-expansion`".
+#
+# WHY THESE FIXTURES ARE SYNTHETIC, AND WHY THAT IS THE POINT.  The rule fires
+# only when a plan declares `Inherited proposal basis:`, and that declaration is
+# **P2-R's** deliverable, which `## Sequence` puts AFTER P5.  So the trigger set
+# in this repository is empty (measured below, and asserted as a standing node),
+# and a rule whose trigger set is empty is indistinguishable from a rule that
+# works -- the silent-tool defect `AGENTS.md` > *Verifying claims* names: "a tool
+# that returns success without testing the claimed property is a worse defect
+# than no tool, because it is silent".  "No corpus plan triggers it and the suite
+# is green" is therefore NOT evidence here.  Every refusal direction below is
+# exercised against a plan fixture that DOES declare inheritance.
+#
+# Each node carries a single-property falsifier -- a mutation applied to
+# `templates/skills/_lib/lifecycle_planner.py`, the copy this module LOADS, then
+# reverted -- recorded in the plan's implementation-verification section rather
+# than asserted here.  The only thing that runs these nodes is a person typing
+# `python -m pytest bootstrap/tests`; Cairn has no CI.
+# ---------------------------------------------------------------------------
+
+_P5_STEM = "p5-fixture"          # deliberately in NEITHER legacy manifest
+
+#: A plausible P2-R declaration value.  P5 never parses it -- the field's value
+#: grammar is P2-R's -- so its only job here is to be present.
+_P5_INHERITED = "review=" + "c" * 40 + "; proposal=" + "d" * 40
+_P5_DECLARATION = f"**Inherited proposal basis**: {_P5_INHERITED}"
+
+_P5_PROPOSAL_SHA = "a" * 40
+_P5_PLAN_SHA = "b" * 40
+_P5_BASIS = (f"proposal={_P5_PROPOSAL_SHA}; plan={_P5_PLAN_SHA}; "
+             "changed-paths=abc1234^..def5678")
+_P5_FIELD = "Contract non-expansion"
+
+
+def _p5_backstop(*, value: str | None = "VERIFIED",
+                 basis: str | None = _P5_BASIS,
+                 attestation_line: str | None = None,
+                 basis_line: str | None = None) -> str:
+    """The two-line backstop, each half independently omittable or replaceable.
+
+    `value=None` / `basis=None` omit that half; `attestation_line` /
+    `basis_line` replace the whole rendered line, which is how the emphasis,
+    fold and duplicate nodes vary exactly one property.
+    """
+    out = ""
+    if attestation_line is not None:
+        out += attestation_line + "\n"
+    elif value is not None:
+        out += f"{_P5_FIELD}: {value}\n"
+    if basis_line is not None:
+        out += basis_line + "\n"
+    elif basis is not None:
+        out += f"Basis: {basis}\n"
+    return out
+
+
+def _p5_violations(tmp_path: Path, *, trailer: str = "",
+                   declaration: str | None = _P5_DECLARATION,
+                   state: str = "archived", stem: str = _P5_STEM,
+                   plan_review: str = "not required(P5 fixture)",
+                   **pass_kw) -> list:
+    """The one predicate over an inheritance-declaring plan at archive.
+
+    `plan_review` defaults to `not required(...)` for the reason `_cr_violations`
+    documents: that is [R3-E1]'s executed bypass shape, so every node here also
+    asserts the Code-review half is reached without the declaration's help.
+    """
+    art = _plan_art(tmp_path, _code_review_pass(trailer=trailer, **pass_kw),
+                    status=state, plan_review=plan_review, stem=stem,
+                    header_extra="" if declaration is None else declaration)
+    return planner.review_record_violations(art, state)
+
+
+def _p5_field_violations(v: list) -> list:
+    """Only the findings this chunk owns, so a node cannot pass on someone
+    else's refusal.
+
+    `Answers:` is excluded explicitly: `code_review_binding_violations` also
+    says "binding", and a helper that counted its findings as P5's would let a
+    node pass on a defect P5 never detected.
+    """
+    return [m for m in v
+            if "Answers:" not in m
+            and (_P5_FIELD in m or "Basis:" in m or "binding" in m)]
+
+
+def test_p5_the_fixture_stem_is_in_neither_legacy_manifest():
+    """The premise every node below rests on."""
+    assert _P5_STEM not in planner._LEGACY_CODE_REVIEW_RECORDS
+    assert _P5_STEM not in planner._LEGACY_PASSES
+    assert _P5_STEM not in planner._LEGACY_UNDECLARED_BASIS
+
+
+class TestP5InheritanceTrigger:
+    """The ONE trigger: a plan header declaring `Inherited proposal basis:`."""
+
+    def test_a_plan_declaring_no_inheritance_owes_no_attestation(self, tmp_path):
+        """The parent's clause is "for an inherited plan".  A complete,
+        clearing, NON-inherited pass carrying no backstop at all is silent --
+        which is also the blast-radius property: every plan in this tree is this
+        plan, so P5 reddens nothing that was green."""
+        assert _p5_violations(tmp_path, declaration=None) == []
+
+    def test_declaring_inheritance_makes_the_backstop_owed(self, tmp_path):
+        """The rule FIRES.  Same pass, same state, one header line different."""
+        v = _p5_violations(tmp_path)
+        assert any(_P5_FIELD in m for m in v), v
+        assert any("Basis:" in m for m in v), v
+
+    @pytest.mark.parametrize("declaration", [
+        f"**Inherited proposal basis**: {_P5_INHERITED}",
+        f"Inherited proposal basis: {_P5_INHERITED}",
+        f"__Inherited proposal basis__: {_P5_INHERITED}",
+    ])
+    def test_every_emphasis_spelling_of_the_declaration_triggers(
+            self, tmp_path, declaration):
+        """The field NAME is the contract; the emphasis is not.  The revision
+        writes it unbolded, this tree's house style bolds every header field, and
+        one matcher (`_code_review_field_re`) admits both -- so a plan is not
+        exempted from the backstop by its author's markdown habits."""
+        assert _p5_field_violations(
+            _p5_violations(tmp_path, declaration=declaration)), declaration
+
+    @pytest.mark.parametrize("value", ["", "garbage", "review=only-one-half",
+                                       "proposal=" + "e" * 40])
+    def test_a_malformed_or_empty_declaration_still_triggers(
+            self, tmp_path, value):
+        """**Presence, not well-formedness -- and the direction is deliberate.**
+        Requiring a parseable value before the backstop is owed would let a
+        half-written declaration buy silence on the backstop, which is the wrong
+        way to fail.  The value's own grammar (both sub-fields, parseable commit
+        ids) is P2-R's obligation and refuses there; P5 never reads it."""
+        v = _p5_violations(
+            tmp_path, declaration=f"**Inherited proposal basis**: {value}")
+        assert _p5_field_violations(v), (value, v)
+
+    def test_the_declaration_is_read_from_the_header_only(self, tmp_path):
+        """Not tidiness -- a live artifact depends on it.  The plan that
+        SPECIFIES this field quotes it inside an appended revision section, so a
+        whole-text search would make that plan declare inheritance about itself
+        and fire this gate on the artifact that defines it."""
+        art = _plan_art(
+            tmp_path,
+            "## Maintainer-directed contract revision -- 2026-08-11\n\n"
+            "```text\nInherited proposal basis: review=<commit>\n```\n\n"
+            f"Inherited proposal basis: {_P5_INHERITED}\n\n"
+            + _code_review_pass(),
+            status="archived", plan_review="not required(x)", stem=_P5_STEM)
+        assert planner._declares_inheritance(art) is False
+        assert planner.review_record_violations(art, "archived") == []
+
+    def test_the_plan_that_specifies_the_field_does_not_declare_it(self):
+        """The live instance of the node above, asserted against the real tree:
+        `review-efficient-lifecycle.md` writes the literal field name five times
+        and must still not be an inherited plan."""
+        path = CAIRN_ROOT / "dev" / "plans" / "review-efficient-lifecycle.md"
+        text = path.read_text(encoding="utf-8")
+        assert "Inherited proposal basis" in text, (
+            "this node's premise moved -- the plan no longer quotes the field")
+        assert planner._declares_inheritance(
+            planner._read_artifact(path)) is False
+
+    def test_the_retired_parent_spelling_is_not_the_trigger(self, tmp_path):
+        """A RESIDUAL, pinned rather than hidden.  The accepted parent folded the
+        fact into the plan-review field -- `Plan review: inherited(<review
+        commit>; proposal=<accepted commit>)` -- and the 2026-08-11
+        Maintainer-directed revision replaced that with the two-field shape.  P5
+        keys on the field the revision names, so the retired spelling triggers
+        nothing here.  Refusing the retired spelling AT the `Plan review:` field
+        is the `Plan review` vocabulary's business (P2-R / Chunk E), not this
+        block's; this node exists so that gap is visible in a test rather than
+        discovered by an author who used the parent's wording."""
+        art = _plan_art(
+            tmp_path, _code_review_pass(), status="archived",
+            plan_review=f"inherited({_P5_PLAN_SHA}; proposal={_P5_PROPOSAL_SHA})",
+            stem=_P5_STEM)
+        assert planner._declares_inheritance(art) is False
+        assert not _p5_field_violations(
+            planner.review_record_violations(art, "archived"))
+
+    def test_a_proposal_is_never_an_inherited_plan(self, tmp_path):
+        """"For an inherited *plan*".  A proposal has no plan-review basis to
+        inherit, and its status vocabulary never reaches an archive-effective
+        state, so the kind guard is stated rather than left to that accident."""
+        repo = _make_repo(tmp_path)
+        _write_proposal(repo, "p.md", status="proposed")
+        path = repo / "dev" / "proposals" / "p.md"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "**Status**: proposed",
+                f"**Status**: proposed\n{_P5_DECLARATION}", 1),
+            encoding="utf-8")
+        assert planner._declares_inheritance(
+            planner._read_artifact(path)) is False
+
+    def test_the_live_corpus_declares_no_inheritance(self):
+        """**The empty trigger set, recorded as a measurement rather than left
+        as an accident.**  Zero plans -- live or archived -- declare inheritance
+        today, because P2-R has not shipped the declaration.  When it does, this
+        node reddens, and that is the signal to check that the plan it lands on
+        carries the backstop.  Until then it is the standing proof that P5's
+        blast radius is exactly zero, and the reason every other node here is
+        synthetic."""
+        declaring = []
+        for fam in ("plans", "plans/archive"):
+            base = CAIRN_ROOT / "dev" / fam
+            if not base.is_dir():
+                continue
+            for path in sorted(base.glob("*.md")):
+                if path.name in ("_template.md", "README.md"):
+                    continue
+                if planner._declares_inheritance(planner._read_artifact(path)):
+                    declaring.append(path.name)
+        assert declaring == [], (
+            "a plan now declares inheritance -- confirm its Code review carries "
+            f"'{_P5_FIELD}' with a well-formed 'Basis:' line: {declaring}")
+
+
+class TestP5AttestationVocabulary:
+    """Presence, uniqueness, the closed vocabulary, and the blocking value."""
+
+    def test_a_complete_backstop_is_silent(self, tmp_path):
+        """The mutant guard for every refusal node below: with the declaration,
+        the attestation and a well-formed `Basis:` line the record is complete,
+        so a check that always violates is caught here."""
+        assert _p5_violations(tmp_path, trailer=_p5_backstop()) == []
+
+    def test_the_attestation_is_required(self, tmp_path):
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(value=None))
+        assert any(f"missing '{_P5_FIELD}:'" in m for m in v), v
+
+    def test_a_duplicate_attestation_refuses_even_when_the_values_agree(
+            self, tmp_path):
+        """Agreement is a judgement a conformance backstop must not make --
+        `_parse_one_field`'s rule, applied to this field."""
+        v = _p5_violations(
+            tmp_path, trailer=_p5_backstop() + f"{_P5_FIELD}: VERIFIED\n")
+        assert any("duplicate" in m and _P5_FIELD in m for m in v), v
+
+    @pytest.mark.parametrize("value", [
+        "NOT VERIFIED", "not verified", "NOT VERIFIED.",
+        "NOT VERIFIED, the plan added a public path",
+    ])
+    def test_not_verified_is_blocking(self, tmp_path, value):
+        """*"`NOT VERIFIED` is blocking."*  Case-insensitive and tolerant of a
+        trailing clause, because the reviewer writing this line is the same
+        author writing `**Verdict: SHIP.**` four lines above it."""
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(value=value))
+        assert any("BLOCKING" in m for m in v), (value, v)
+
+    @pytest.mark.parametrize("value", [
+        "MAYBE", "PARTIAL", "VERIFIED-ish", "verified with caveats",
+        "VERIFIED but actually NOT VERIFIED", "SHIP", "",
+    ])
+    def test_an_out_of_vocabulary_value_refuses_and_never_defaults(
+            self, tmp_path, value):
+        """No condition yields a silent pass and there is no default.  An empty
+        value is in this list on purpose: a bare `Contract non-expansion:` is the
+        shape a half-written record has, and reading it as `VERIFIED` would
+        invert the contract at the point it was written to protect."""
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(value=value))
+        assert _p5_field_violations(v), (value, v)
+        assert not any("BLOCKING" in m for m in v), (
+            f"{value!r} was read as the blocking token rather than refused as "
+            "out-of-vocabulary")
+
+    @pytest.mark.parametrize("line", [
+        f"**{_P5_FIELD}: VERIFIED.**",
+        f"**{_P5_FIELD}**: VERIFIED",
+        f"__{_P5_FIELD}: VERIFIED__",
+    ])
+    def test_the_house_bold_wrapped_form_is_accepted(self, tmp_path, line):
+        """This tree's house form wraps the label AND the value in one bold span
+        (`**Verdict: SHIP.**` -- 30 of the 38 corpus passes).  Emphasis is
+        stripped from the field scope first, which is `_parse_verdict`'s existing
+        rule, so the dominant spelling of a brand-new field is not refused."""
+        assert _p5_violations(
+            tmp_path, trailer=_p5_backstop(attestation_line=line)) == [], line
+
+    def test_the_backstop_below_the_first_h3_does_not_count(self, tmp_path):
+        """R2's field scope, unchanged: a field parked under an H3 is not a
+        field.  That is what makes the scope a contract rather than a search --
+        and it means a reviewer cannot satisfy the backstop from inside a
+        `### Coverage` subsection."""
+        v = _p5_violations(tmp_path,
+                           trailer="### Coverage\n\n" + _p5_backstop())
+        assert any(f"missing '{_P5_FIELD}:'" in m for m in v), v
+        assert any("missing 'Basis:'" in m for m in v), v
+
+    @pytest.mark.parametrize("state", ["open", "executing", "review"])
+    def test_the_backstop_is_owed_only_at_an_archive_effective_state(
+            self, tmp_path, state):
+        """It is a CODE-review obligation, so it arrives when the Code-review
+        half is consulted -- at `ready-to-archive` / `archived` -- not the moment
+        a plan declares inheritance.  An inherited plan still executing owes
+        nothing here."""
+        assert _p5_violations(tmp_path, state=state,
+                              trailer=_p5_backstop(value=None,
+                                                   basis=None)) == []
+
+    @pytest.mark.parametrize("state", ["ready-to-archive", "archived"])
+    def test_both_archive_effective_states_owe_it(self, tmp_path, state):
+        v = _p5_violations(tmp_path, state=state,
+                           trailer=_p5_backstop(value=None, basis=None))
+        assert _p5_field_violations(v), (state, v)
+
+
+class TestP5BasisBindingShape:
+    """The three bindings' SHAPE -- never their truth (amendment R6)."""
+
+    def test_the_basis_line_is_required(self, tmp_path):
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(basis=None))
+        assert any("missing 'Basis:'" in m for m in v), v
+
+    def test_a_duplicate_basis_line_refuses(self, tmp_path):
+        """Two bindings in one record is an ambiguity a backstop must not
+        resolve by picking one."""
+        v = _p5_violations(
+            tmp_path, trailer=_p5_backstop() + f"Basis: {_P5_BASIS}\n")
+        assert any("duplicate 'Basis:'" in m for m in v), v
+
+    def test_an_empty_basis_value_refuses(self, tmp_path):
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(basis_line="Basis:"))
+        assert any("empty 'Basis:'" in m for m in v), v
+
+    @pytest.mark.parametrize("dropped", ["proposal", "plan", "changed-paths"])
+    def test_each_binding_is_required_on_its_own(self, tmp_path, dropped):
+        basis = "; ".join(
+            part for part in (f"proposal={_P5_PROPOSAL_SHA}",
+                              f"plan={_P5_PLAN_SHA}",
+                              "changed-paths=abc1234^..def5678")
+            if not part.startswith(dropped + "="))
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(basis=basis))
+        assert any(f"no '{dropped}=' binding" in m for m in v), (dropped, v)
+
+    def test_a_duplicate_binding_refuses_even_when_the_two_agree(self, tmp_path):
+        v = _p5_violations(
+            tmp_path,
+            trailer=_p5_backstop(basis=_P5_BASIS
+                                 + f"; plan={_P5_PLAN_SHA}"))
+        assert any("duplicate 'plan=' binding" in m for m in v), v
+
+    @pytest.mark.parametrize("key", ["proposal", "plan"])
+    @pytest.mark.parametrize("bad", [
+        "abc1234", "0123456789abcdef", "A" * 40, "0123456789ABCDEF" * 2 + "0123",
+        "g" * 40, "a" * 39, "a" * 41, "HEAD", "v1.2.3",
+    ])
+    def test_an_abbreviated_or_non_hex_commit_is_not_a_full_binding(
+            self, tmp_path, key, bad):
+        """The parent asks for a *full* commit twice ("accepted full commit",
+        "reviewed full commit"), and an abbreviation is the one thing a BINDING
+        may not be: abbreviations collide, and a colliding binding names two
+        commits.  Deliberately stricter than the file's own `_COMMIT_ID_RE`,
+        which admits 7-40 hex because it reads prose, not bindings."""
+        basis = _P5_BASIS.replace(
+            f"{key}=" + (_P5_PROPOSAL_SHA if key == "proposal"
+                         else _P5_PLAN_SHA),
+            f"{key}={bad}")
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(basis=basis))
+        assert any("not a FULL commit id" in m for m in v), (key, bad, v)
+
+    def test_a_backticked_commit_id_is_accepted(self, tmp_path):
+        """The house style backticks commit ids -- `_COMMIT_ID_RE`'s own comment
+        says "usually backticked" -- so refusing the tree's own spelling would be
+        a gratuitous refusal of a correct binding."""
+        basis = (f"proposal=`{_P5_PROPOSAL_SHA}`; plan=`{_P5_PLAN_SHA}`; "
+                 "changed-paths=`abc1234^..def5678`")
+        assert _p5_violations(tmp_path, trailer=_p5_backstop(basis=basis)) == []
+
+    @pytest.mark.parametrize("changed", [
+        "abc1234^..def5678", "286f07d^..286f07d",
+        "dev/plans/x.md > manifest", "the 41 paths listed in section 3",
+        "HEAD~4..HEAD",
+    ])
+    def test_changed_paths_is_free_text(self, tmp_path, changed):
+        """The parent admits "reviewed range or manifest" -- two different
+        notations -- so a pattern narrow enough to validate one would refuse the
+        other.  Non-emptiness is the whole contract here."""
+        basis = (f"proposal={_P5_PROPOSAL_SHA}; plan={_P5_PLAN_SHA}; "
+                 f"changed-paths={changed}")
+        assert _p5_violations(
+            tmp_path, trailer=_p5_backstop(basis=basis)) == [], changed
+
+    def test_an_empty_binding_value_refuses(self, tmp_path):
+        basis = (f"proposal={_P5_PROPOSAL_SHA}; plan={_P5_PLAN_SHA}; "
+                 "changed-paths=")
+        v = _p5_violations(tmp_path, trailer=_p5_backstop(basis=basis))
+        assert any("empty 'changed-paths=' binding" in m for m in v), v
+
+    def test_the_parents_own_wrapped_rendering_is_accepted(self, tmp_path):
+        """The contract as the parent RENDERS it -- wrapped, with
+        `changed-paths=` on an indented second line.  A tool that refused the
+        block it quotes would teach authors to distrust it."""
+        trailer = _p5_backstop(basis=None) + (
+            f"Basis: proposal={_P5_PROPOSAL_SHA}; plan={_P5_PLAN_SHA};\n"
+            "       changed-paths=abc1234^..def5678\n")
+        assert _p5_violations(tmp_path, trailer=trailer) == []
+
+    def test_the_fold_absorbs_only_an_indented_binding_continuation(
+            self, tmp_path):
+        """Maximally tight, so the fold can only absorb what it is for.  An
+        UNINDENTED continuation is a new line, not a fold, and the binding it
+        carries is therefore missing -- which refuses rather than silently
+        half-parsing."""
+        trailer = _p5_backstop(basis=None) + (
+            f"Basis: proposal={_P5_PROPOSAL_SHA}; plan={_P5_PLAN_SHA};\n"
+            "changed-paths=abc1234^..def5678\n")
+        v = _p5_violations(tmp_path, trailer=trailer)
+        assert any("no 'changed-paths=' binding" in m for m in v), v
+
+    def test_the_fold_cannot_swallow_the_next_field(self, tmp_path):
+        """The continuation must begin with a binding key, so no other field,
+        heading or prose line can be absorbed into the value -- the hazard a
+        looser "any indented line" fold would create.
+
+        **`proposal=` is written LAST on purpose, and the ordering is what makes
+        this node a falsifier.**  The final binding absorbs everything to the end
+        of the value, so it is the only position where a loosened fold becomes
+        observable: swallowed text lands in a *commit* binding and refuses as
+        "not a FULL commit id".  With `proposal=` first, the swallowed text would
+        land in free-text `changed-paths=` instead, and this node would pass under
+        both the tight and the loose pattern -- proving nothing while looking like
+        a check.  (Measured: written that way, the loosening mutation survived.)
+        """
+        trailer = ("Basis: changed-paths=abc1234^..def5678; "
+                   f"plan={_P5_PLAN_SHA}; proposal={_P5_PROPOSAL_SHA}\n"
+                   f"    {_P5_FIELD}: VERIFIED\n")
+        v = _p5_violations(tmp_path, trailer=trailer)
+        # The indented attestation was NOT folded into `Basis:` -- but nor is an
+        # indented line a field, so the attestation is still missing, and that
+        # is the ONLY finding: the `Basis:` line itself parsed cleanly.
+        assert len(v) == 1, v
+        assert f"missing '{_P5_FIELD}:'" in v[0], v
+
+    def test_a_missing_separator_between_bindings_still_parses_three(
+            self, tmp_path):
+        """Read with `finditer` rather than by splitting on `;`, so the likeliest
+        real typo -- a separator lost at a line fold -- parses into three
+        bindings instead of reporting `changed-paths` as absent and sending the
+        author looking for a binding they wrote."""
+        basis = (f"proposal={_P5_PROPOSAL_SHA} plan={_P5_PLAN_SHA} "
+                 "changed-paths=abc1234^..def5678")
+        assert _p5_violations(tmp_path, trailer=_p5_backstop(basis=basis)) == []
+
+    def test_text_before_the_first_binding_refuses(self, tmp_path):
+        v = _p5_violations(
+            tmp_path,
+            trailer=_p5_backstop(basis="see the manifest, " + _P5_BASIS))
+        assert any("before its first binding" in m for m in v), v
+
+    def test_a_basis_naming_none_of_the_bindings_refuses(self, tmp_path):
+        v = _p5_violations(
+            tmp_path, trailer=_p5_backstop(basis="the reviewed range"))
+        assert any("names none of the three required bindings" in m
+                   for m in v), v
+
+
+def _p5_legacy_pass() -> tuple[str, str]:
+    """A ``(stem, raw heading)`` pair the Code-review legacy manifest admits.
+
+    Resolved from the live tree rather than hard-coded, which does two things: it
+    proves the enumeration still points at a real record, and it keeps a
+    reviewer's byline (every one of them a vendor name) out of this file.  Stems
+    carrying a blocking legacy verdict are skipped --
+    `_legacy_disposition_violations` adds findings of its own and would blur this
+    node's single property.
+    """
+    for stem, digests in sorted(planner._LEGACY_CODE_REVIEW_RECORDS.items()):
+        if stem in planner._LEGACY_CODE_REVIEW_DISPOSITIONS:
+            continue
+        for fam in ("plans", "plans/archive"):
+            path = CAIRN_ROOT / "dev" / fam / f"{stem}.md"
+            if not path.is_file():
+                continue
+            for raw in path.read_text(encoding="utf-8").split("\n"):
+                dig = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+                if dig in digests and planner._CODE_REVIEW_PASS_RE.match(raw):
+                    return stem, raw
+    return "", ""
+
+
+class TestP5Placement:
+    """Where the check sits, and what it refuses to claim."""
+
+    def test_the_backstop_is_checked_before_the_legacy_fence(self, tmp_path):
+        """P1's ordering rule, applied to this obligation.
+        `_LEGACY_CODE_REVIEW_RECORDS` grandfathers records written before the
+        Code-review schema existed, and its `return` is an EARLY return -- so a
+        check placed after it is swallowed for every admitted record.  A plan
+        declaring `Inherited proposal basis:` necessarily post-dates P2-R, so no
+        legacy record can honestly claim this exemption; putting the check first
+        costs nothing today and removes a laundering path from the file."""
+        stem, heading = _p5_legacy_pass()
+        assert stem and heading, (
+            "no legacy Code-review pass resolved from the manifest -- this "
+            "node's premise is gone, re-derive `_LEGACY_CODE_REVIEW_RECORDS`")
+        body = f"{heading}\n\nthe reading.\n\n"
+        clean = planner.review_record_violations(
+            _plan_art(tmp_path, body, status="archived",
+                      plan_review="not required(x)", stem=stem), "archived")
+        assert clean == [], (
+            "the legacy fence no longer exempts this record, so the node cannot "
+            f"isolate P5's placement: {clean}")
+        inherited = planner.review_record_violations(
+            _plan_art(tmp_path, body, status="archived",
+                      plan_review="not required(x)", stem=stem,
+                      header_extra=_P5_DECLARATION), "archived")
+        assert _p5_field_violations(inherited), inherited
+
+    def test_both_gate_surfaces_report_the_same_p5_finding(self, tmp_path):
+        """S12 -- one predicate, both call sites.  `scan` (via
+        `_conformance_violations`) and `next --to archived` (via
+        `_gating_preconditions`) must reach the same finding: wiring only the
+        first is the exact defect [R3-E1] executed on the Code-review half."""
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        body = _code_review_pass(trailer=_p5_backstop(value=None))
+        archived = _plan_art(tmp_path, body, status="archived",
+                             plan_review="not required(x)", stem=_P5_STEM,
+                             header_extra=_P5_DECLARATION)
+        ready = _plan_art(tmp_path, body, status="ready-to-archive",
+                          plan_review="not required(x)", stem=_P5_STEM,
+                          header_extra=_P5_DECLARATION)
+        expected = planner.review_record_violations(archived, "archived")
+        assert _p5_field_violations(expected), expected
+        # Containment, not equality: `_conformance_violations` on an `archived`
+        # plan also reports the two archive preconditions (Dispositions, the
+        # loop-fidelity sign-off), which are not review-record findings.  What
+        # this node owns is that P5's findings reach BOTH surfaces verbatim.
+        reported = planner._conformance_violations(archived, identity)
+        for msg in expected:
+            assert msg in reported, (msg, reported)
+        gates = planner._gating_preconditions(ready, "archived", identity)
+        record_gates = [g for g in gates if "the review record conforms" in g[1]]
+        assert len(record_gates) == 1, gates
+        met, desc = record_gates[0]
+        assert met is False
+        for msg in expected:
+            assert msg in desc
+
+    def test_a_verified_claim_is_accepted_without_any_semantic_check(
+            self, tmp_path):
+        """**The exclusion, asserted as behavior.**  The amendment's R6 excludes
+        "Semantic verification of `Contract non-expansion`", and the parent is
+        explicit that this "remains a semantic human/agent review; the parser
+        validates the record and bindings but does not pretend to prove prose
+        equivalence."
+
+        So a `VERIFIED` naming two well-formed commit ids that exist in no
+        repository, over a plan whose scope obviously expanded, is SILENT.  That
+        is not a gap in P5 -- it is P5's contract, and this node exists so a
+        later reader cannot mistake the silence for a check that ran.  The
+        honest reach of the tool is: the record exists, its vocabulary is closed,
+        and its bindings are shaped like bindings."""
+        basis = ("proposal=" + "f" * 40 + "; plan=" + "0" * 40
+                 + "; changed-paths=no/such/range")
+        assert _p5_violations(tmp_path, trailer=_p5_backstop(basis=basis)) == []
+
+    def test_the_full_commit_pattern_is_stricter_than_the_prose_pattern(self):
+        """Two commit-id patterns in one file is a smell unless the difference is
+        deliberate, so it is pinned: `_COMMIT_ID_RE` reads prose and admits an
+        abbreviation; `_FULL_COMMIT_RE` reads a binding and does not."""
+        assert planner._COMMIT_ID_RE.search("abc1234")
+        assert planner._FULL_COMMIT_RE.match("abc1234") is None
+        assert planner._FULL_COMMIT_RE.match("a" * 40)
+        assert planner._FULL_COMMIT_RE.match("A" * 40) is None
+
+    def test_the_p5_block_reaches_no_git_and_no_other_artifact(self):
+        """A source-level fence on the exclusion above.  Semantic verification
+        would need either git or the proposal's bytes; neither is reachable from
+        this block, so a later widening has to add the reach explicitly rather
+        than arrive by edit."""
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        start = src.index("def _declares_inheritance(")
+        end = src.index("def review_record_violations(")
+        block = src[start:end]
+        for forbidden in ("_git_readonly", "subprocess", "read_text",
+                          "_repo_root", "Popen"):
+            assert forbidden not in block, forbidden

@@ -1575,9 +1575,16 @@ def _code_review_field_re(name: str) -> "re.Pattern[str]":
         r"(?P<value>.*?)[ \t]*$", re.M)
 
 
+#: One matcher per field name, from the one matcher factory.  P5 adds its three
+#: names here rather than compiling a fourth pattern of its own: `Contract
+#: non-expansion` and `Basis` are read from a Code-review pass's field scope, and
+#: `Inherited proposal basis` from a plan header, but all three are the same
+#: emphasis-optional full-line field shape, so they are the same matcher.
 _REVIEW_FIELD_RE = {
     name: _code_review_field_re(name)
-    for name in _REVIEW_BASIS_FIELDS + ("Model", "Verdict", "Findings")
+    for name in _REVIEW_BASIS_FIELDS + (
+        "Model", "Verdict", "Findings",
+        "Contract non-expansion", "Basis", "Inherited proposal basis")
 }
 
 #: Emphasis markers, deleted before the verdict line is read.  The house form in
@@ -1891,6 +1898,13 @@ def _code_review_violations(art: Artifact) -> List[str]:
         # states: an exemption keyed on the heading would otherwise swallow the
         # date contract, which is how the replaced dated epoch failed.
         v.append(f"{label}: {date_violation}")
+    # P5 -- also BEFORE the fence, and for the same reason P1's basis check sits
+    # before `_LEGACY_PASSES`' `continue`.  `_LEGACY_CODE_REVIEW_RECORDS`
+    # grandfathers records written before the Code-review schema existed; a plan
+    # declaring `Inherited proposal basis:` necessarily post-dates P2-R, so no
+    # legacy record can honestly claim this exemption and placing the check
+    # first costs nothing while removing a laundering path from the file.
+    v.extend(_non_expansion_violations(art, line_no, label))
     if legacy[line_no]:
         return v + _legacy_disposition_violations(art, stem, line_no, label)
 
@@ -2335,6 +2349,278 @@ def _is_legacy(stem: str, dig: str, seen: Dict[str, int],
     table = _LEGACY_PASSES if manifest is None else manifest
     admitted = table.get(stem, {}).get(dig, 0)
     return seen.get(dig, 0) <= admitted
+
+
+# === P5 -- the `Contract non-expansion` attestation (binds into C) ===========
+#
+# The accepted `review-efficient-lifecycle` parent, "Standard-path
+# plan-readiness inheritance":
+#
+#     For an inherited plan, code review must include this exercised backstop:
+#
+#         Contract non-expansion: VERIFIED | NOT VERIFIED
+#         Basis: proposal=<accepted full commit>; plan=<reviewed full commit>;
+#                changed-paths=<reviewed range or manifest>
+#
+#     `VERIFIED` attests that the plan and implementation introduced no
+#     undeclared scope item, invariant, public path, failure disposition, trust
+#     boundary, or ceremony.  `NOT VERIFIED` is blocking.  This remains a
+#     semantic human/agent review; the parser validates the record and bindings
+#     but does not pretend to prove prose equivalence.
+#
+# The amendment (`code-review-blindness`, "Contract non-expansion") bounds what
+# this chunk may do: it *"validates its **presence and binding shape** when the
+# plan declares inheritance, and treats `NOT VERIFIED` as blocking. It does not
+# attempt to validate the semantic claim"*, and its **R6** lists "Semantic
+# verification of `Contract non-expansion`" as a deliberate exclusion.
+#
+# So the whole of P5 is: PRESENCE, the closed VOCABULARY, and the three
+# bindings' SHAPE.  Nothing here reads the plan's prose, compares contracts, or
+# forms an opinion about whether the attested claim is true -- and no future
+# widening of this block may, without returning to the proposal boundary.
+#
+# **What P5 deliberately does NOT do, and where it lives instead.**  It does not
+# check that `Basis: proposal=<X>` *equals* the commit the plan's own
+# `Inherited proposal basis` names.  That cross-artifact equality is a real
+# check and it is **P2-R's and P8-R's** ("changed review or accepted-proposal
+# SHA refuses" -- the Maintainer-directed contract revision's required test
+# matrix), which own the inheritance field's value grammar.  P5 lands *before*
+# P2 in `## Sequence`, so hard-coding a second, earlier reading of that grammar
+# here is how the two would come to disagree.  P5 therefore keys on the field's
+# PRESENCE and never parses its value.
+
+
+#: The plan-side declaration that makes a plan *inherited* -- the ONE trigger
+#: for everything in this block.
+#:
+#: **This name is the Maintainer-directed contract revision's, not the accepted
+#: parent's, and the difference is load-bearing.**  The parent folded the whole
+#: fact into the plan-review field:
+#:
+#:     Plan review: inherited(<review commit>; proposal=<accepted commit>)
+#:
+#: The 2026-08-11 revision split it in two, so the plan "carries both facts
+#: separately":
+#:
+#:     Plan review: required(Internal)
+#:     Inherited proposal basis: review=<full External-review commit>;
+#:                                 proposal=<full accepted commit>
+#:
+#: P2-R implements that field.  P5 keys on it by name so the two chunks meet at
+#: one key rather than inventing a second spelling of "this plan is inherited";
+#: `Plan review: inherited(...)` is NOT a trigger here, because the revision
+#: removed it and a plan under the current contract declares `required(Internal)`
+#: instead -- which is indistinguishable from an ordinary non-inherited plan.
+_INHERITANCE_FIELD = "Inherited proposal basis"
+
+#: The attestation and its binding line, both read from the Code-review pass's
+#: field scope (`_code_review_pass_body` -- the body above the pass's first H3,
+#: the same scope every other mandatory field is read from).
+_NON_EXPANSION_FIELD = "Contract non-expansion"
+_NON_EXPANSION_BASIS_FIELD = "Basis"
+
+#: Closed, two values, and **no default**: an absent attestation is a violation
+#: rather than an implied `VERIFIED`, for the reason `assurance_declaration_
+#: violations` states about its own vocabulary -- a silent default inverts the
+#: contract at exactly the point it was written to protect.
+_NON_EXPANSION_VALUES = ("VERIFIED", "NOT VERIFIED")
+_NON_EXPANSION_BLOCKING = "NOT VERIFIED"
+
+#: The three bindings, in the parent's order (which is the reported order).
+_NON_EXPANSION_BINDINGS = ("proposal", "plan", "changed-paths")
+
+#: A **full** commit id, which is what the parent asks for twice ("accepted full
+#: commit", "reviewed full commit").  Deliberately stricter than `_COMMIT_ID_RE`
+#: (`[0-9a-f]{7,40}`, which admits an abbreviation): an abbreviated id is the one
+#: thing a *binding* may not be, because abbreviations collide and a colliding
+#: binding names two commits.  Lowercase only -- git emits lowercase, and the
+#: file's existing commit-id pattern is lowercase for the same reason.
+_FULL_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+
+#: Where one binding starts.  Read with `finditer` rather than by splitting on
+#: `;`, so `proposal=X; plan=Y changed-paths=Z` -- a missing separator at a line
+#: fold, the likeliest real typo -- still parses into three bindings instead of
+#: reporting `changed-paths` as absent.  `\b` cannot match inside
+#: `changed-paths=` (it contains no `plan=` or `proposal=` substring).
+_BASIS_BINDING_KEY_RE = re.compile(r"\b(proposal|plan|changed-paths)=")
+
+#: A **folded continuation** of the `Basis:` line: the parent's own rendering of
+#: the contract wraps, putting `changed-paths=` on an indented second line, and a
+#: reviewer who copies that block verbatim must not be refused by the tool that
+#: quotes it.  Maximally tight, so the fold can only ever absorb what it is for:
+#: the line must be indented AND begin with one of the three binding keys, so no
+#: other field, heading, or prose line can be swallowed into the value.
+_BASIS_FOLD_RE = re.compile(r"^[ \t]+(?:proposal|plan|changed-paths)=")
+
+
+def _declares_inheritance(art: Artifact) -> bool:
+    """Does this plan declare an inherited proposal basis?  **Presence only.**
+
+    Three deliberate narrownesses, each of which is a safety property:
+
+    * **Plans only.**  The parent's clause is "for an inherited plan"; a
+      proposal has no plan-review basis to inherit.
+
+    * **Header-bounded** (`_iter_header_lines`, the same bound
+      `assurance_declaration_violations` uses).  Not tidiness: the plan that
+      *specifies* this field quotes it inside an appended revision section, so a
+      whole-text search would make that plan declare inheritance about itself and
+      fire this gate on the artifact that defines it.  A field is a header
+      declaration or it is prose.
+
+    * **Presence, not well-formedness.**  A malformed or empty declaration still
+      triggers -- which is the fail-closed direction, because the alternative
+      (requiring a parseable value before the attestation is owed) lets a
+      half-written declaration buy silence on the backstop.  The value's own
+      grammar is P2-R's obligation and refuses there; P5 does not read it.
+    """
+    if art.kind != "plan":
+        return False
+    header = "\n".join(_iter_header_lines(art.text))
+    return _REVIEW_FIELD_RE[_INHERITANCE_FIELD].search(header) is not None
+
+
+def _basis_value(body: str) -> Tuple[Optional[str], Optional[str]]:
+    """The `Basis:` line's value from one field scope -> ``(value, violation)``.
+
+    Presence, uniqueness and non-emptiness -- the three directions
+    `_single_field_violations` reports -- and then the fold (`_BASIS_FOLD_RE`).
+    Uniqueness is over the field scope, so a second `Basis:` line refuses as a
+    duplicate rather than being silently ignored: two bindings in one record is
+    an ambiguity a backstop must not resolve by picking one.
+    """
+    pattern = _REVIEW_FIELD_RE[_NON_EXPANSION_BASIS_FIELD]
+    lines = _split_lines(body)
+    hits = [i for i, line in enumerate(lines) if pattern.match(line)]
+    if not hits:
+        return None, f"missing '{_NON_EXPANSION_BASIS_FIELD}:' line"
+    if len(hits) > 1:
+        return None, (f"duplicate '{_NON_EXPANSION_BASIS_FIELD}:' line "
+                      f"({len(hits)} lines)")
+    i = hits[0]
+    value = pattern.match(lines[i]).group("value").strip()
+    for continuation in lines[i + 1:]:
+        if not _BASIS_FOLD_RE.match(continuation):
+            break
+        value += " " + continuation.strip()
+    if not value:
+        return None, f"empty '{_NON_EXPANSION_BASIS_FIELD}:' value"
+    return value, None
+
+
+def _basis_binding_violations(value: str, label: str) -> List[str]:
+    """The three bindings' **shape**, over one already-folded `Basis:` value.
+
+    Shape means: each of the three keys appears exactly once, carries a
+    non-empty value, and -- for the two that the parent calls *full commits* --
+    that value is 40 lowercase hex digits.  It does **not** mean the commits
+    exist, are reachable, or say what the record claims: this function never
+    touches git, and the parent is explicit that the semantic claim stays human.
+
+    `changed-paths` is free text on purpose -- the parent admits "reviewed range
+    or manifest", two different notations, and a pattern narrow enough to
+    validate one would refuse the other.
+    """
+    matches = list(_BASIS_BINDING_KEY_RE.finditer(value))
+    expected = ", ".join(f"{k}=" for k in _NON_EXPANSION_BINDINGS)
+    if not matches:
+        return [f"{label}: '{_NON_EXPANSION_BASIS_FIELD}: {value}' names none "
+                f"of the three required bindings ({expected})"]
+    v: List[str] = []
+    if value[:matches[0].start()].strip():
+        v.append(f"{label}: '{_NON_EXPANSION_BASIS_FIELD}:' carries text before "
+                 f"its first binding ({value[:matches[0].start()].strip()!r}) "
+                 f"-- the value is exactly the three bindings ({expected})")
+    found: Dict[str, str] = {}
+    for n, match in enumerate(matches):
+        end = matches[n + 1].start() if n + 1 < len(matches) else len(value)
+        key = match.group(1)
+        if key in found:
+            v.append(f"{label}: duplicate '{key}=' binding in "
+                     f"'{_NON_EXPANSION_BASIS_FIELD}:' -- exactly one is "
+                     "required, even when the two agree")
+            continue
+        found[key] = value[match.end():end].strip().strip(";").strip()
+    for key in _NON_EXPANSION_BINDINGS:
+        if key not in found:
+            v.append(f"{label}: '{_NON_EXPANSION_BASIS_FIELD}:' names no "
+                     f"'{key}=' binding -- all three are required ({expected})")
+            continue
+        raw = found[key]
+        if not raw:
+            v.append(f"{label}: empty '{key}=' binding value")
+        elif key != "changed-paths" \
+                and not _FULL_COMMIT_RE.match(raw.strip("`")):
+            v.append(f"{label}: '{key}={raw}' is not a FULL commit id -- the "
+                     "binding is 40 lowercase hex digits (an abbreviation can "
+                     "collide, and a colliding binding names two commits)")
+    return v
+
+
+def _non_expansion_violations(art: Artifact, line_no: int,
+                              label: str) -> List[str]:
+    """P5 -- the backstop over the latest Code-review pass of an *inherited* plan.
+
+    Silent for every plan that does not declare inheritance, which today is
+    **every plan in this tree** (measured: zero `Inherited proposal basis`
+    declarations corpus-wide).  That is the honest state of a rule whose trigger
+    P2-R has not yet shipped, and it is exactly the condition under which a rule
+    that does nothing is indistinguishable from a rule that works
+    (`AGENTS.md` > *Verifying claims*: "a tool that returns success without
+    testing the claimed property is a worse defect than no tool, because it is
+    silent").  The answer is not to weaken the trigger but to prove the rule
+    fires: `bootstrap/tests/test_lifecycle_contract.py` carries synthetic
+    inheritance-declaring fixtures that exercise every refusal direction below.
+
+    **Emphasis is stripped from the field scope first**, which is
+    `_parse_verdict`'s rule and is applied here for its reason: this tree's house
+    form wraps the label *and* the value in one bold span (`**Verdict: SHIP.**`,
+    30 of the 38 corpus passes), and the reviewer writing this attestation is the
+    same author writing that line four lines above it.  `_VERDICT_CLAUSE_RE`
+    likewise tolerates trailing prose after a clause break, but only after one,
+    so `VERIFIED but actually NOT VERIFIED` is out of vocabulary and refuses.
+    """
+    if not _declares_inheritance(art):
+        return []
+    body = _EMPHASIS_RE.sub("", _code_review_pass_body(art, line_no))
+    v: List[str] = []
+    owed = (f"an inherited plan (one declaring '{_INHERITANCE_FIELD}:') owes "
+            f"the exercised backstop: '{_NON_EXPANSION_FIELD}: "
+            f"{' | '.join(_NON_EXPANSION_VALUES)}' plus its "
+            f"'{_NON_EXPANSION_BASIS_FIELD}:' line")
+    found = _REVIEW_FIELD_RE[_NON_EXPANSION_FIELD].findall(body)
+    if not found:
+        v.append(f"{label}: missing '{_NON_EXPANSION_FIELD}:' -- {owed}")
+    elif len(found) > 1:
+        v.append(f"{label}: duplicate '{_NON_EXPANSION_FIELD}:' "
+                 f"({len(found)} lines) -- exactly one is required, even when "
+                 "the values agree")
+    else:
+        raw = _VERDICT_CLAUSE_RE.match(found[0]).group(0).strip()
+        canonical = next(
+            (value for value in _NON_EXPANSION_VALUES
+             if raw.casefold() == value.casefold()), None)
+        if canonical is None:
+            v.append(f"{label}: unrecognized '{_NON_EXPANSION_FIELD}' value: "
+                     f"{raw!r} -- the vocabulary is closed "
+                     f"({' | '.join(_NON_EXPANSION_VALUES)}) and has no default")
+        elif canonical == _NON_EXPANSION_BLOCKING:
+            v.append(
+                f"{label} attests '{_NON_EXPANSION_FIELD}: "
+                f"{_NON_EXPANSION_BLOCKING}', which is BLOCKING: the plan or "
+                "implementation introduced an undeclared scope item, invariant, "
+                "public path, failure disposition, trust boundary or ceremony. "
+                "Inheritance is invalid -- return the change to the proposal "
+                "boundary (or obtain the distinct plan review the proposal's "
+                "readiness names) before this state.")
+    value, problem = _basis_value(body)
+    if problem:
+        v.append(f"{label}: {problem} -- {owed}, bound as "
+                 f"'{_NON_EXPANSION_BASIS_FIELD}: "
+                 f"{'; '.join(k + '=<...>' for k in _NON_EXPANSION_BINDINGS)}'")
+    else:
+        v.extend(_basis_binding_violations(value, label))
+    return v
 
 
 def review_record_violations(art: Artifact,
