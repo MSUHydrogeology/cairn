@@ -4,7 +4,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-12-claude-ceremony-handshake-and-first-use.md`,
 accepted as revised at Round 2 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-12`).
-**Status**: open
+**Status**: awaiting-plan-review
 **Plan review**: required(**External Security Review**) — set by the proposal.
 An Internal read missed both defects this corrects, and an Internal read missed
 [M2-1] in the parent plan. A same-agent-type reader is not the instrument for
