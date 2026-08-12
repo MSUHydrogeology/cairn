@@ -5811,10 +5811,21 @@ class TestP3BothGateSurfacesAgree:
 
     def test_the_same_predicate_object_serves_both(self):
         """One implementation, two call sites -- S12's rule.  A sibling copy is
-        how the two surfaces end up disagreeing about the same record."""
+        how the two surfaces end up disagreeing about the same record.
+
+        **Three call sites since Chunk F, and the property is unchanged.**  The
+        two GATE surfaces (`_conformance_violations`, `_gating_preconditions`)
+        are still the only ones that can refuse a transition; the third is the
+        derived board's `_board_declaration_violations`, a *read-only display*
+        consumer that classifies an already-decided violation into a stable
+        reason code.  It calls this predicate rather than re-deciding what a
+        declaration defect is, which is the rule this node exists to protect --
+        so the count moved and the invariant did not.  The `def ... == 1` line
+        above is the half that pins "one implementation"; this line pins that
+        every consumer goes through it."""
         src = _PLANNER_PATH.read_text(encoding="utf-8")
         assert src.count("def current_contract_violations(") == 1
-        assert src.count("current_contract_violations(art)") == 2
+        assert src.count("current_contract_violations(art)") == 3
 
 
 class TestP3TheRealContractIsTheORACLE:

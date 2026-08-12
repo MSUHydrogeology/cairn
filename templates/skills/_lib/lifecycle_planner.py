@@ -81,6 +81,9 @@ Run:
     python tools/lifecycle_planner.py next dev/plans/<file>.md --to executing
     python tools/lifecycle_planner.py scan
     python tools/lifecycle_planner.py guard
+    python tools/lifecycle_planner.py board --compact
+    python tools/lifecycle_planner.py board --format json
+    python tools/lifecycle_planner.py board --explain <artifact-stem>
 """
 from __future__ import annotations
 
@@ -1239,6 +1242,87 @@ RECOGNIZED_STATES = tuple(dict.fromkeys(
     PROPOSAL_STATES + PLAN_STATES
     + HISTORICAL_PROPOSAL_STATES + HISTORICAL_PLAN_STATES
 ))
+
+# === Chunk F: the `Next owner` column, as central data =======================
+#
+# R1 and R2 each declare a `Next owner` per status, and B1 requires the board's
+# `owner` field to come from *"the central lifecycle vocabulary"*.  Nothing here
+# read that column before, so the board would otherwise have had to carry a
+# consumer-local role table -- the exact thing B3 forbids (*"contains no
+# consumer-local status, role, tier, verdict, or closeout vocabulary"*).  It
+# lives beside the state tuples for the same reason those are data: adding a
+# state and forgetting its owner is then one missing dict key, not a silent
+# fallback.
+#
+# **One spelling, not two.**  The tokens below are hyphenated rather than R1/R2's
+# prose ("independent proposal reviewer"), because the compact row and the JSON
+# contract must carry the *same* value -- B2 makes JSON "full field values" of
+# the same projection, and two spellings of one vocabulary is the drift the
+# single-source rule exists to prevent.  Each entry names its R1/R2 phrase.
+NEXT_OWNER_TERMINAL = "terminal"
+
+#: A status whose only reading is a PENDING-RETIREMENT (H1) legacy token that
+#: R7 maps to **more than one** successor state, so its next owner is genuinely
+#: not derivable.  Naming that is honest; picking one of the candidates would be
+#: the board guessing, which B1 forbids for `status` and which is no better here.
+NEXT_OWNER_UNRESOLVED = "unresolved"
+
+#: No `**Status**:` line, or a token outside `RECOGNIZED_STATES`.
+NEXT_OWNER_UNKNOWN = "unknown"
+
+PROPOSAL_NEXT_OWNERS = {
+    "awaiting-review": "proposal-reviewer",   # independent proposal reviewer
+    "revising": "proposal-author",            # proposal author
+    "awaiting-decision": "maintainer",        # Human Maintainer
+    "accepted": NEXT_OWNER_TERMINAL,
+    "rejected": NEXT_OWNER_TERMINAL,
+    "superseded": NEXT_OWNER_TERMINAL,
+    # PENDING-RETIREMENT (H1).  `proposed` has exactly one R7 successor
+    # (`awaiting-review`); `reviewed` maps to `revising|awaiting-decision` and
+    # `revised` to `awaiting-review|awaiting-decision`, whose owners differ.
+    "proposed": "proposal-reviewer",
+    "reviewed": NEXT_OWNER_UNRESOLVED,
+    "revised": NEXT_OWNER_UNRESOLVED,
+}
+
+PLAN_NEXT_OWNERS = {
+    "awaiting-plan-review": "plan-reviewer",   # required plan reviewer
+    "revising-plan": "plan-author",            # plan author
+    "ready-to-implement": "implementation",    # Implementation
+    "implementing": "implementation",          # Implementation
+    "awaiting-code-review": "code-reviewer",   # independent code reviewer
+    "revising-code": "implementation",         # Implementation
+    "ready-to-archive": "implementation",      # Implementation
+    "archived": NEXT_OWNER_TERMINAL,
+    # PENDING-RETIREMENT (H1).  `open` -> `awaiting-plan-review` and
+    # `executing` -> `implementing` are each one R7 successor; `review` maps to
+    # three (`awaiting-code-review|revising-code|ready-to-archive`) whose owners
+    # are not the same, so it resolves to `unresolved` until H1 rewrites it.
+    "open": "plan-reviewer",
+    "executing": "implementation",
+    "review": NEXT_OWNER_UNRESOLVED,
+}
+
+#: The closed owner vocabulary -- what `board --owner` accepts and what any row
+#: may carry.  Derived from the two tables so a new entry cannot be filterable
+#: in one place and unknown in the other.
+NEXT_OWNERS = tuple(dict.fromkeys(
+    tuple(PROPOSAL_NEXT_OWNERS.values()) + tuple(PLAN_NEXT_OWNERS.values())
+    + (NEXT_OWNER_UNKNOWN,)
+))
+
+
+def next_owner(kind: str, status: str) -> str:
+    """R1/R2's `Next owner` for one artifact kind + status.
+
+    Fail-closed: an absent or unrecognized status is `unknown`, never the owner
+    of some neighbouring state.  A recognized status missing from its table is
+    also `unknown` -- that is a real gap in this file, and reporting it as a
+    plausible owner would hide it.
+    """
+    table = PROPOSAL_NEXT_OWNERS if kind == "proposal" else PLAN_NEXT_OWNERS
+    return table.get(status, NEXT_OWNER_UNKNOWN)
+
 
 # Internal aliases, retained so this module's own call sites are unchanged.
 _PROPOSAL_STATES = PROPOSAL_STATES
@@ -5275,6 +5359,972 @@ def cmd_guard(args: argparse.Namespace) -> int:
     return 0
 
 
+# =============================================================================
+# Chunk F -- the derived orientation board (B0-B4, B7)
+# =============================================================================
+#
+# Source contract: accepted proposal
+# `dev/proposals/archive/2026-08-10-codex-lifecycle-status-vocabulary.md`.  The
+# operative board clauses are **not** all in one revision, and reading the wrong
+# one builds the wrong tool, so the resolution is recorded here:
+#
+#   B0  Revision 2                     purpose + authority boundary
+#   B1  Revision 3 ("B1 replacement")  rows, incl. `active_intent`
+#   B2  Revision 2                     `--format json`, filters, `--explain`
+#   B3  Revision 2 + Revision 3 add.   one parser/pass/no cache + the provider
+#   B4  Revision 4 ("final")           the terminal encoder
+#   B7  Rev 2 + Rev 3 add. + Rev 4     the falsifiers
+#
+# Revision 3 says it *"retains R0--R11 and Revision 2 except for the exact B1,
+# B3, B4, B6, B7, and B8 changes below"*, and its B3/B7/B8 headings say
+# **addition**, not replacement -- so Revision 2's B3 ("one parser, one pass, no
+# cache") is still binding and the provider clause is stacked on top of it.
+# Revision 4 *"replaces Revision 3's B4 and the corresponding Unicode bullet in
+# B7"* and nothing else.
+#
+# What the board IS (B0): a read-only projection over the same parser and
+# predicates `scan`, `next` and closeout use.  What it is NOT: a roadmap, a
+# queue, a priority engine, a review attestation, or a source of lifecycle
+# truth.  Nothing is written and nothing is cached; every invocation derives
+# fresh output and names the HEAD it observed.
+
+# --- B4 (Revision 4) -- the one terminal encoder ------------------------------
+
+#: The board's serialization guard, **not** a detector policy.  Its population
+#: covers the union represented by content scan's `_ZERO_WIDTH`, `_BIDI`,
+#: `_LINE_SEPARATORS`, `_IGNORABLE_RANGES`, `_NONCHARACTER_RANGES`, `_TAG_RANGE`
+#: and `_ASCII_GUARD` -- duplicated deliberately, because the board must not
+#: import the *conditional* content scanner at runtime (it is not installed in
+#: every adopter tree).  The duplication is admitted only with the **one-way**
+#: drift guard in `bootstrap/tests/test_lifecycle_board.py`: the board may escape
+#: more than the scanner flags, and may never emit raw a code point the scanner
+#: recognizes.  So a newly added printable invisible reddens that test until this
+#: table follows it, and narrowing a detector cannot quietly weaken this output.
+#:
+#: **Numeric endpoints only -- no invisible source character is embedded raw.**
+#: That is a contract clause, not a style preference: a table written with
+#: literal members would make this file carry the very code points it exists to
+#: escape (the same reason content scan holds its own ranges numerically).
+#:
+#: Rows mirror the scanner's own row identities rather than being merged into the
+#: fewest possible spans, so a reader can check coverage row-against-row.
+_DISPLAY_UNSAFE_RANGES: Tuple[Tuple[int, int], ...] = (
+    (0x00AD, 0x00AD),      # SOFT HYPHEN -- also content scan's _ASCII_GUARD
+    (0x034F, 0x034F),      # COMBINING GRAPHEME JOINER (Mn -- printable!)
+    (0x061C, 0x061C),      # ARABIC LETTER MARK
+    (0x115F, 0x1160),      # HANGUL CHOSEONG / JUNGSEONG FILLER (Lo -- printable!)
+    (0x17B4, 0x17B5),      # KHMER VOWEL INHERENT AQ / AA
+    (0x180B, 0x180F),      # MONGOLIAN free variation selectors + vowel separator
+    (0x200B, 0x200F),      # ZWSP..RLM (zero-width set + LRM/RLM)
+    (0x2028, 0x2029),      # LINE / PARAGRAPH SEPARATOR
+    (0x202A, 0x202E),      # bidi embeddings / overrides
+    (0x2060, 0x206F),      # WORD JOINER, invisible operators, isolates
+    (0x3164, 0x3164),      # HANGUL FILLER (Lo -- printable!)
+    (0xFDD0, 0xFDEF),      # noncharacters in Arabic Presentation Forms-A
+    (0xFE00, 0xFE0F),      # VARIATION SELECTOR-1..16 (Mn -- printable!)
+    (0xFEFF, 0xFEFF),      # ZERO WIDTH NO-BREAK SPACE / BOM
+    (0xFFA0, 0xFFA0),      # HALFWIDTH HANGUL FILLER (Lo -- printable!)
+    (0xFFF0, 0xFFF8),      # reserved
+    (0xFFFE, 0xFFFF),      # plane-0 noncharacters
+    (0x1BCA0, 0x1BCA3),    # SHORTHAND FORMAT letters
+    (0x1D173, 0x1D17A),    # MUSICAL SYMBOL BEGIN BEAM..END PHRASE
+    (0x1FFFE, 0x1FFFF), (0x2FFFE, 0x2FFFF), (0x3FFFE, 0x3FFFF),
+    (0x4FFFE, 0x4FFFF), (0x5FFFE, 0x5FFFF), (0x6FFFE, 0x6FFFF),
+    (0x7FFFE, 0x7FFFF), (0x8FFFE, 0x8FFFF), (0x9FFFE, 0x9FFFF),
+    (0xAFFFE, 0xAFFFF), (0xBFFFE, 0xBFFFF), (0xCFFFE, 0xCFFFF),
+    (0xDFFFE, 0xDFFFF),
+    (0xE0000, 0xE0FFF),    # the Tag block (a shadow ASCII alphabet) + VS-17..256
+    (0xEFFFE, 0xEFFFF), (0xFFFFE, 0xFFFFF), (0x10FFFE, 0x10FFFF),
+)
+
+#: Derived from the table, never written as a literal, so it cannot go stale:
+#: every covered code point is at or above this, so the range walk below is
+#: skipped for anything under it with an identical hit set.
+_DISPLAY_UNSAFE_FLOOR = min(lo for lo, _hi in _DISPLAY_UNSAFE_RANGES)
+
+#: The compact projection's syntax.  A field value that contained one of these
+#: raw could add a column or a row -- B4 clause 3.  They are escaped by the same
+#: encoder as everything else, so there is no second escaping rule to keep in
+#: step.  (`\n`/`\r`/`\t` are already non-printable, hence redundant with clause
+#: 1; naming them here makes the delimiter property assertable on its own.)
+_BOARD_FIELD_DELIMITER = "|"
+_BOARD_ROW_DELIMITER = "\n"
+_DISPLAY_SYNTAX_CHARS = frozenset(
+    (_BOARD_FIELD_DELIMITER, _BOARD_ROW_DELIMITER, "\\", "\r", "\t"))
+
+
+def _display_unsafe_code_point(code_point: int) -> bool:
+    """Is *code_point* in `_DISPLAY_UNSAFE_RANGES`?  (B4 clause 2.)"""
+    if code_point < _DISPLAY_UNSAFE_FLOOR:
+        return False
+    for low, high in _DISPLAY_UNSAFE_RANGES:
+        if low <= code_point <= high:
+            return True
+    return False
+
+
+def _escape_code_point(char: str) -> str:
+    """One printable-ASCII code-point escape.  ANSI ESC never survives raw."""
+    code_point = ord(char)
+    if code_point < 0x100:
+        return f"\\x{code_point:02x}"
+    if code_point < 0x10000:
+        return f"\\u{code_point:04x}"
+    return f"\\U{code_point:08x}"
+
+
+def encode_display(value: str) -> str:
+    """B4 (Revision 4) -- the **one** terminal encoder, verbatim.
+
+    For each represented code point emit a printable ASCII code-point escape
+    when any of these is true:
+
+    1. ``str.isprintable()`` is false;
+    2. the code point belongs to `_DISPLAY_UNSAFE_RANGES`; or
+    3. it is a row delimiter, field delimiter, backslash, or other syntax
+       character whose raw form could alter the compact representation.
+
+    Clause 1 alone was the *rejected* design ([F1] in the source proposal): the
+    combining grapheme joiner, the Hangul fillers and the variation selectors are
+    `Mn`/`Lo`, so ``isprintable()`` calls them printable while they are invisible
+    on a terminal.  Clause 2 is what closes that residual, and it is why the
+    range table exists at all rather than a category sweep.
+
+    Filenames, lifecycle metadata, Git labels and optional intent fields all pass
+    through here -- one encoder, so there is no second path with a weaker rule.
+    Ordinary printable scientific text is untouched: ASCII space, precomposed
+    accented letters, Greek and CJK all survive readable.
+    """
+    out: List[str] = []
+    for char in value:
+        if (not char.isprintable()
+                or char in _DISPLAY_SYNTAX_CHARS
+                or _display_unsafe_code_point(ord(char))):
+            out.append(_escape_code_point(char))
+        else:
+            out.append(char)
+    return "".join(out)
+
+
+# --- B3 (Revision 3 addition) -- the optional work-intent provider -----------
+
+#: The versioned machine contract `tools/_intent/cli.py` emits for `list
+#: --format json`.  The board consumes **only** this; it never scrapes the human
+#: form, and a mismatch is a provider error rather than a best-effort parse.
+INTENT_LIST_SCHEMA = "cairn-intent-list/1"
+
+#: The launcher the board looks for beside itself.  Never imported: the intent
+#: engine is a *team-gated* module and the board is default-on, so an import
+#: would make the default-on planner depend on an optional module (B8 forbids
+#: exactly that).  A bounded subprocess keeps the dependency one-way.
+_INTENT_LAUNCHER_NAME = "intent.py"
+
+#: One bounded query per board, under a wall-clock ceiling.  A hung provider
+#: must degrade to a labelled `error` row, never wedge an orientation command.
+_INTENT_QUERY_TIMEOUT = 10.0
+
+INTENT_AVAILABLE = "available"
+INTENT_NOT_INSTALLED = "not-installed"
+INTENT_ERROR = "error"
+
+#: Stable reason codes.  Each named failure mode in the accepted contract gets
+#: its **own** code -- "the provider broke" is not a disposition an operator can
+#: act on, and collapsing them is how a timeout comes to look like a schema bug.
+INTENT_REASON_CODES = (
+    "launcher-symlink",          # the leaf is a symlink (any target)
+    "launcher-out-of-directory",  # resolves outside the expected tools/ dir
+    "launcher-not-regular",      # present but not a regular file
+    "no-interpreter",            # sys.executable is unusable
+    "spawn-failed",              # OSError starting the child
+    "timeout",                   # exceeded _INTENT_QUERY_TIMEOUT
+    "nonzero-exit",              # the provider exited non-zero
+    "malformed-json",            # stdout is not JSON, or not an object
+    "schema-mismatch",           # wrong or absent schema version
+    "invalid-record",            # a missing or wrongly-typed field
+    "duplicate-id",              # two records share a claim id
+    "invalid-path",              # a file entry is not a safe relative path
+)
+
+_INTENT_RECORD_TEXT_FIELDS = ("id", "agent", "ts", "action")
+
+
+def _intent_launcher() -> Tuple[Optional[Path], Optional[str], str]:
+    """Locate the provider launcher -> ``(path, reason_code, detail)``.
+
+    The full accepted containment clause: *"The planner locates only a regular,
+    non-symlinked `tools/intent.py` beside itself, refuses an out-of-directory
+    resolution"*.
+
+    **The candidate is derived from the UNRESOLVED ``__file__``**, and that is
+    the load-bearing part (the lesson of `94bda8b`): a resolved path is never a
+    symlink, so deriving from `Path(__file__).resolve()` would make the symlink
+    refusal below **dead by construction** -- it would be a guard that can never
+    fire, which is worse than no guard because it reads as protection.
+    Containment is then compared between **resolved** forms, so a symlinked
+    *ancestor* -- macOS's `/tmp -> private/tmp` is the one every test run hits --
+    is not a false refusal.
+
+    A missing launcher is `not-installed` (``(None, None, ...)``), which is not
+    an error: the coordination module is optional by contract.  Everything else
+    that is *present but wrong* is an error with its own code.
+    """
+    here = Path(__file__).parent
+    candidate = here / _INTENT_LAUNCHER_NAME
+    # Order matters: `is_symlink` is the only check that sees a *broken* symlink,
+    # and it must run before `is_file` (which follows the link and would report a
+    # broken one as simply absent -- laundering a planted symlink into
+    # `not-installed`).
+    if candidate.is_symlink():
+        return None, "launcher-symlink", (
+            f"{_INTENT_LAUNCHER_NAME} beside the planner is a symlink; the "
+            "provider launcher must be a regular file in the expected directory")
+    if not candidate.exists():
+        return None, None, "no work-intent launcher beside the planner"
+    if not candidate.is_file():
+        return None, "launcher-not-regular", (
+            f"{_INTENT_LAUNCHER_NAME} beside the planner is not a regular file")
+    try:
+        resolved = candidate.resolve()
+        expected = here.resolve()
+    except OSError as exc:
+        return None, "launcher-out-of-directory", f"cannot resolve: {exc}"
+    if resolved.parent != expected:
+        return None, "launcher-out-of-directory", (
+            f"{_INTENT_LAUNCHER_NAME} resolves to {resolved} whose parent is not "
+            f"the expected directory {expected}")
+    return candidate, None, str(candidate)
+
+
+def _intent_argv(launcher: Path) -> List[str]:
+    """The **fixed** argv, isolated mode, versioned JSON.  No shell, ever.
+
+    ``-I`` is Python's isolated mode: no `sys.path[0]` injection, no user site
+    directory, and `PYTHON*` environment variables ignored -- so the child cannot
+    be redirected by ambient state into importing something else.  The subcommand
+    and format are literals; no artifact content, filename, or filter value ever
+    reaches this list, so there is nothing for a crafted artifact to influence.
+    """
+    return [sys.executable, "-I", str(launcher), "list", "--format", "json"]
+
+
+def _intent_valid_relative_path(value: object) -> bool:
+    """Is *value* a safe repo-relative POSIX path, as the engine normalizes?
+
+    Refuses: a non-string, an empty string, a NUL, a backslash, an absolute or
+    drive-qualified path, and any empty / `.` / `..` component.  A path is the
+    **key** the board joins claims to artifacts on, so a traversal component here
+    is a wrong-row hazard, not a cosmetic defect.  Display safety is *not* this
+    predicate's job -- `encode_display` owns that, and one rule per concern is
+    what keeps either from being weakened to satisfy the other.
+    """
+    if not isinstance(value, str) or not value:
+        return False
+    if "\x00" in value or "\\" in value:
+        return False
+    if value.startswith("/"):
+        return False
+    if len(value) > 1 and value[1] == ":":
+        return False
+    return all(part not in ("", ".", "..") for part in value.split("/"))
+
+
+def _intent_validate(payload: object) -> Tuple[Optional[str], str,
+                                               List[Dict[str, object]]]:
+    """Validate the whole payload BEFORE any record is used.
+
+    *"Complete field, type and path validation of every record before any is
+    used"* -- so this returns either a reason code and no records, or no reason
+    code and every record.  A partial accept would let one crafted entry poison
+    the rows that validated, which is the shape the contract forbids by
+    requiring the all-or-nothing form.
+    """
+    if not isinstance(payload, dict):
+        return "malformed-json", "provider output is not a JSON object", []
+    if payload.get("schema") != INTENT_LIST_SCHEMA:
+        return "schema-mismatch", (
+            f"provider declares schema {payload.get('schema')!r}; this board "
+            f"reads {INTENT_LIST_SCHEMA!r} only"), []
+    claims = payload.get("claims")
+    if not isinstance(claims, list):
+        return "invalid-record", "'claims' is not a list", []
+    out: List[Dict[str, object]] = []
+    seen_ids: Set[str] = set()
+    for index, record in enumerate(claims):
+        if not isinstance(record, dict):
+            return "invalid-record", f"claim {index} is not an object", []
+        for field in _INTENT_RECORD_TEXT_FIELDS:
+            value = record.get(field)
+            if not isinstance(value, str) or not value:
+                return "invalid-record", (
+                    f"claim {index} field {field!r} is missing or not a "
+                    "non-empty string"), []
+        stem = record.get("stem", "")
+        if stem is not None and not isinstance(stem, str):
+            return "invalid-record", f"claim {index} field 'stem' is not text", []
+        files = record.get("files")
+        if not isinstance(files, list) or not files:
+            return "invalid-record", (
+                f"claim {index} field 'files' is missing or not a non-empty "
+                "list"), []
+        for entry in files:
+            if not _intent_valid_relative_path(entry):
+                return "invalid-path", (
+                    f"claim {index} carries an unsafe file entry {entry!r}"), []
+        claim_id = str(record.get("id"))
+        if claim_id in seen_ids:
+            return "duplicate-id", (
+                f"two active claims share id {claim_id!r}; the provider's "
+                "reduction is not authoritative"), []
+        seen_ids.add(claim_id)
+        out.append({
+            "id": claim_id,
+            "agent": str(record.get("agent")),
+            "ts": str(record.get("ts")),
+            "action": str(record.get("action")),
+            "stem": str(stem or ""),
+            "files": [str(entry) for entry in files],
+        })
+    return None, "", out
+
+
+def query_intent_provider(root: Path) -> Dict[str, object]:
+    """**One** bounded query for the whole board (B3, Revision 3 addition).
+
+    Returns ``{"state", "reason", "detail", "claims", "calls"}``.  `state` is one
+    of `available` / `not-installed` / `error`; `calls` is the number of
+    subprocesses actually started, which is what the board's
+    one-subprocess-per-board property is asserted against.
+
+    Every distinct failure mode in the accepted contract gets its own reason
+    code, and **no** failure mode is allowed to read as "nobody holds a claim":
+    that is the one inference the board must never make, because it would turn a
+    broken provider into a green light to edit a file another session owns.
+    """
+    result: Dict[str, object] = {
+        "state": INTENT_NOT_INSTALLED, "reason": None, "detail": "",
+        "claims": [], "calls": 0,
+    }
+    launcher, reason, detail = _intent_launcher()
+    if reason is not None:
+        result.update(state=INTENT_ERROR, reason=reason, detail=detail)
+        return result
+    if launcher is None:
+        result["detail"] = detail
+        return result
+    if not sys.executable:
+        result.update(state=INTENT_ERROR, reason="no-interpreter",
+                      detail="the running interpreter is not resolvable, so the "
+                             "provider cannot be invoked in isolated mode")
+        return result
+    try:
+        result["calls"] = 1
+        proc = subprocess.run(
+            _intent_argv(launcher), cwd=str(root), capture_output=True,
+            text=True, check=False, shell=False, env=_git_env(),
+            timeout=_INTENT_QUERY_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        result.update(state=INTENT_ERROR, reason="timeout",
+                      detail=f"provider exceeded {_INTENT_QUERY_TIMEOUT:g}s")
+        return result
+    except OSError as exc:
+        result.update(state=INTENT_ERROR, reason="spawn-failed",
+                      detail=f"cannot start the provider: {exc}")
+        return result
+    if proc.returncode != 0:
+        result.update(state=INTENT_ERROR, reason="nonzero-exit",
+                      detail=f"provider exited {proc.returncode}")
+        return result
+    try:
+        payload = json.loads(proc.stdout)
+    except ValueError as exc:
+        result.update(state=INTENT_ERROR, reason="malformed-json",
+                      detail=f"provider stdout is not JSON: {exc}")
+        return result
+    reason, detail, claims = _intent_validate(payload)
+    if reason is not None:
+        result.update(state=INTENT_ERROR, reason=reason, detail=detail)
+        return result
+    result.update(state=INTENT_AVAILABLE, claims=claims)
+    return result
+
+
+def _intent_index(claims: List[Dict[str, object]]) -> Dict[str, List[Dict]]:
+    """``normalized path -> claims touching it``, built once for the whole board."""
+    index: Dict[str, List[Dict]] = {}
+    for claim in claims:
+        for entry in claim.get("files", []):  # type: ignore[union-attr]
+            index.setdefault(str(entry), []).append(claim)
+    return index
+
+
+# --- B1 (Revision 3) -- the row contract -------------------------------------
+
+#: The versioned top-level JSON schema (B2).  Bumped, never widened silently.
+BOARD_SCHEMA_VERSION = "cairn-lifecycle-board/1"
+
+#: B1's documented stable field order, verbatim and in order.  `owner` and
+#: `active_intent` are two fields and never collapse into one: a claim is
+#: *someone is editing this*, an owner is *whose move it is*, and merging them
+#: would let a claim read as authority.
+BOARD_FIELDS = ("kind", "artifact", "status", "owner", "active_intent",
+                "review", "evidence", "blocked_by", "validity", "source")
+
+#: Rows sort by artifact kind then filename stem (B1).  Kind order is declared
+#: rather than alphabetical so it matches the order `scan` walks the tree in.
+BOARD_KIND_ORDER = ("proposal", "plan")
+
+BOARD_ABSENT = "-"
+BOARD_VALID = "valid"
+
+#: `validity`'s stable reason codes.  Classification is by **condition**, not by
+#: matching the wording of a violation message: a message-matching classifier
+#: silently degrades to "unrecognized" the moment a predicate rewords itself,
+#: and the fail-safe direction has to be preserved deliberately.  Whether a row
+#: is invalid at all is decided by `_conformance_violations` alone, so a
+#: predicate this classifier does not know about still lands the row on `other`
+#: -- never on `valid`.
+BOARD_REASON_CODES = (
+    BOARD_VALID,
+    "unreadable",          # the parser refused the file outright
+    "status-vocabulary",   # missing status, or a token outside the vocabulary
+    "status-evidence",     # an R6 status/evidence contradiction
+    "declaration",         # a P1/P2/P3 declaration or binding defect
+    "blocked-by",          # R4's optional field, malformed
+    "review-floor",        # the mandatory '**Plan review**:' line is absent
+    "other",               # flagged by a predicate this table does not name
+)
+
+BOARD_SOURCE_HEAD = "HEAD"
+BOARD_SOURCE_DIRTY = "WT-dirty"
+BOARD_SOURCE_UNTRACKED = "WT-untracked"
+
+#: B4: *"The board treats a Git failure as an explicit unbound-source condition;
+#: it does not silently label working-tree content as HEAD."*  This is a label,
+#: not an exit condition -- an unborn HEAD is a legitimate repository state, and
+#: the honest report is "I cannot bind these bytes to a commit", loudly, in every
+#: row.
+BOARD_SOURCE_UNBOUND = "WT-unbound"
+
+BOARD_SOURCES = (BOARD_SOURCE_HEAD, BOARD_SOURCE_DIRTY, BOARD_SOURCE_UNTRACKED,
+                 BOARD_SOURCE_UNBOUND)
+
+_BOARD_SKIP_NAMES = ("_template.md", "README.md")
+
+
+def _board_artifact_paths(root: Path) -> List[Tuple[str, Path]]:
+    """``(kind, path)`` for every active direct child, excluding templates.
+
+    Direct children only, and no archive tree: B1 scopes the board to *"active
+    direct child of `dev/proposals/` and `dev/plans/`, excluding templates and
+    archived trees"*.  Archived records are immutable history; a board that
+    listed them would be an audit, which `scan --include-archive` already is.
+    """
+    out: List[Tuple[str, Path]] = []
+    for kind, folder in (("proposal", "proposals"), ("plan", "plans")):
+        base = root / "dev" / folder
+        if not base.is_dir():
+            continue
+        for path in sorted(base.glob("*.md")):
+            if path.name in _BOARD_SKIP_NAMES:
+                continue
+            out.append((kind, path))
+    return sorted(out, key=lambda item: (BOARD_KIND_ORDER.index(item[0])
+                                         if item[0] in BOARD_KIND_ORDER else 99,
+                                         item[1].stem))
+
+
+def _board_git_state(root: Path) -> Tuple[Optional[str], bool, Set[str], Set[str]]:
+    """Repository state in a **bounded batch** -> ``(head, bound, dirty, new)``.
+
+    B3: *"Repository state is obtained in a bounded batch, not through one Git
+    subprocess per row."*  Two invocations, whatever the row count: one
+    ``rev-parse`` for the observed HEAD and one pathspec-limited ``status`` for
+    the difference set.  Machine-delimited (`-z`) so no filename needs unquoting,
+    and fixed arguments so no artifact content reaches the command line.
+
+    `bound` is False when either call fails; the caller then labels every row
+    `WT-unbound` rather than asserting HEAD.
+    """
+    head_out = _git_readonly(["rev-parse", "HEAD"], root)
+    if head_out is None:
+        return None, False, set(), set()
+    head = head_out.strip()
+    status = _git_readonly(
+        ["status", "--porcelain", "-z", "--untracked-files=all", "--",
+         "dev/proposals", "dev/plans"], root)
+    if status is None:
+        return head, False, set(), set()
+    dirty: Set[str] = set()
+    new: Set[str] = set()
+    entries = status.split("\x00")
+    index = 0
+    while index < len(entries):
+        entry = entries[index]
+        index += 1
+        if len(entry) < 4:
+            continue
+        code, path = entry[:2], entry[3:]
+        # A rename/copy entry is followed by its source path as a separate
+        # NUL-terminated field; consume it so it is not misread as a status code.
+        if "R" in code or "C" in code:
+            index += 1
+        if code == "??":
+            new.add(path)
+        else:
+            dirty.add(path)
+    return head, True, dirty, new
+
+
+def _board_source_label(rel: str, bound: bool, dirty: Set[str],
+                        new: Set[str]) -> str:
+    if not bound:
+        return BOARD_SOURCE_UNBOUND
+    if rel in new:
+        return BOARD_SOURCE_UNTRACKED
+    if rel in dirty:
+        return BOARD_SOURCE_DIRTY
+    return BOARD_SOURCE_HEAD
+
+
+def _board_declaration_violations(art: Artifact) -> List[str]:
+    """The P1/P2/P3 declaration predicates for *art*, through their own names.
+
+    No new predicate and no copied rule -- this is a call list, so the board's
+    `declaration` reason code cannot drift away from what `scan` reports.
+    """
+    if art.kind == "proposal":
+        return (assurance_declaration_violations(art)
+                + proposal_review_basis_violations(art)
+                + plan_readiness_violations(art)
+                + current_contract_violations(art))
+    return plan_inheritance_violations(art)
+
+
+def _board_validity(art: Artifact,
+                    identity: "IdentityModel") -> Tuple[str, List[str]]:
+    """``(reason_code, every violation)`` for one artifact.
+
+    Two separable jobs, deliberately: *whether* the row is invalid comes from
+    `_conformance_violations` -- the same predicate `scan` prints -- and the
+    *code* comes from re-asking the constituent predicates by name.  A new
+    predicate therefore cannot make a row read `valid`; the worst it can do is
+    land it on `other`, which is a visible "look at this" rather than silence.
+    """
+    violations = _conformance_violations(art, identity)
+    if not violations:
+        return BOARD_VALID, []
+    states = PROPOSAL_STATES if art.kind == "proposal" else PLAN_STATES
+    if art.status not in states and not (art.kind == "plan" and not art.status):
+        return "status-vocabulary", violations
+    if status_evidence_violations(art, art.status):
+        return "status-evidence", violations
+    if _board_declaration_violations(art):
+        return "declaration", violations
+    if blocked_by_violations(art):
+        return "blocked-by", violations
+    if art.kind == "plan" and not art.plan_review:
+        return "review-floor", violations
+    return "other", violations
+
+
+def _board_review_summary(art: Artifact) -> str:
+    """B1's `review` -- *"declared obligations and mechanically supported
+    completion"*.
+
+    A plan's obligations come from `normalize_required_obligations`, and
+    "mechanically supported" is asked of the **shared** predicate, not of a
+    second reading: `review_record_violations(art, "implementing")` evaluates the
+    Plan-review half only, because that function keys its Code-review half on
+    `CODE_REVIEW_EFFECTIVE_STATES` and `implementing` is not one.  So this
+    isolates the half it needs without a private copy of the clearing rule.
+
+    A proposal declares no obligations of its own -- R1 makes its readiness rest
+    on *"at least one proposal review at the Internal floor or above"* -- so the
+    field reports that record's own two closed fields.  `flagged` is deliberately
+    not `blocking`: B1 forbids compressing a finding into a verdict, and the
+    board is reporting that the predicate said something, not judging what.
+    """
+    if art.kind == "proposal":
+        line_no, tier, findings, _problems = _latest_proposal_review(art)
+        if line_no is None:
+            return "no-review"
+        if tier is None or findings is None:
+            return "fields-unreadable"
+        return f"{tier}/{findings}"
+    if not art.plan_review:
+        return "undeclared"
+    if not art.plan_review.lower().startswith("required"):
+        return "not-required"
+    obligations, problem = normalize_required_obligations(art.plan_review)
+    if problem:
+        return "declaration-invalid"
+    flagged = review_record_violations(art, "implementing")
+    return (f"required({len(obligations)})/"
+            + ("flagged" if flagged else "clear"))
+
+
+def _board_evidence_summary(art: Artifact) -> str:
+    """B1's `evidence` -- latest applicable review / Boundary B / Code review /
+    closeout, as short ``key=value`` tokens.
+
+    Every value is read from a record that exists; an absent record contributes
+    no token rather than a reassuring default.  `cr=` carries the shared
+    `_parse_verdict` classification, so a blocking pass reads `blocking` here and
+    cannot be summarized into a clearing one.
+    """
+    parts: List[str] = []
+    if art.kind == "proposal":
+        reviews = _reviewers(art)
+        if reviews:
+            parts.append("rev=" + (reviews[-1].date or "undated"))
+        decisions = _decisions(art)
+        if decisions:
+            parts.append("dec=" + (decisions[-1].date or "undated"))
+        return " ".join(parts) if parts else BOARD_ABSENT
+    passes = _pass_headings(art)
+    if passes:
+        parts.append("plan-rev=" + (passes[-1][0].date or "undated"))
+    stable = _stable_evidence_records(art)
+    if stable:
+        parts.append("bnd=" + stable[-1][1])
+    code_passes = _code_review_pass_lines(art)
+    if code_passes:
+        line_no, _reviewer, date, _round = code_passes[-1]
+        verdict, _problem = _parse_verdict(_code_review_pass_body(art, line_no))
+        parts.append(f"cr={verdict or 'unreadable'}@{date}")
+    elif any(kind == "container" for _l, _r, kind in _code_review_records(art)):
+        parts.append("cr=container-only")
+    parts.append("close="
+                 + ("ok" if not _closeout_violations(art, art.status) else "unmet"))
+    return " ".join(parts) if parts else BOARD_ABSENT
+
+
+def _board_blocked_by(art: Artifact) -> str:
+    """R4's exact optional blocker metadata, or `-`.  Never a state transition.
+
+    Read from the header region through the same field pattern
+    `blocked_by_violations` uses, so the board displays exactly what that
+    predicate judges.  A duplicated field shows as `ambiguous` rather than
+    picking one of two lines that may disagree.
+    """
+    if art.kind != "plan":
+        return BOARD_ABSENT
+    header = "\n".join(_iter_header_lines(art.text))
+    found = _REVIEW_FIELD_RE[_BLOCKED_BY_FIELD].findall(header)
+    if not found:
+        return BOARD_ABSENT
+    if len(found) > 1:
+        return "ambiguous"
+    return found[0].strip() or BOARD_ABSENT
+
+
+def _board_active_intent(rel: str, provider: Dict[str, object],
+                         index: Dict[str, List[Dict]]) -> str:
+    """B1's `active_intent`: a claimant summary, `-`, `multiple:<n>`, or a state.
+
+    *"It never turns missing intent coverage into an assertion that no one holds
+    a claim."*  So `not-installed` and `error` are their own values and are
+    **not** collapsed into `-`; only a working provider that found nothing may
+    say `-`.  Multiple claims stay visible as a count rather than
+    last-writer-wins.
+    """
+    state = provider.get("state")
+    if state == INTENT_NOT_INSTALLED:
+        return INTENT_NOT_INSTALLED
+    if state == INTENT_ERROR:
+        return INTENT_ERROR
+    hits = index.get(rel, [])
+    if not hits:
+        return BOARD_ABSENT
+    if len(hits) > 1:
+        return f"multiple:{len(hits)}"
+    return str(hits[0].get("agent"))
+
+
+def board_rows(root: Path, identity: "IdentityModel",
+               provider: Dict[str, object]) -> Tuple[List[Dict[str, str]],
+                                                     Dict[str, object]]:
+    """Every board row plus the header facts.  One parse per artifact, no cache.
+
+    Returns ``(rows, header)``.  Each row's values are the **full** field values
+    (B2's automation contract); the compact renderer is what escapes them for a
+    terminal.  Structural trouble never removes a row: an unreadable artifact
+    still appears, with `validity` = `unreadable`, because *"one malformed record
+    cannot hide the rest of the board"*.
+    """
+    head, bound, dirty, new = _board_git_state(root)
+    index = _intent_index(provider.get("claims") or [])  # type: ignore[arg-type]
+    rows: List[Dict[str, str]] = []
+    details: Dict[str, List[str]] = {}
+    for kind, path in _board_artifact_paths(root):
+        rel = path.relative_to(root).as_posix()
+        source = _board_source_label(rel, bound, dirty, new)
+        active_intent = _board_active_intent(rel, provider, index)
+        try:
+            art = _read_artifact(path)
+        except (PlannerError, OSError, ValueError) as exc:
+            # **Three exception families, and the widening is deliberate.**
+            # `_read_artifact` raises `PlannerError` for an absent file, but it
+            # also calls `read_text`, which raises `UnicodeDecodeError` (a
+            # `ValueError`) on a file that is not valid UTF-8 and `OSError` on an
+            # unreadable one.  Catching only `PlannerError` let a single
+            # undecodable artifact abort the whole command with a traceback --
+            # exactly the *"one malformed record cannot hide the rest of the
+            # board"* failure B3 forbids.  Found by this chunk's own test, not
+            # reasoned about afterwards.
+            rows.append({
+                "kind": kind, "artifact": path.stem, "status": BOARD_ABSENT,
+                "owner": NEXT_OWNER_UNKNOWN, "active_intent": active_intent,
+                "review": BOARD_ABSENT, "evidence": BOARD_ABSENT,
+                "blocked_by": BOARD_ABSENT, "validity": "unreadable",
+                "source": source,
+            })
+            details[path.stem] = [str(exc)]
+            continue
+        validity, violations = _board_validity(art, identity)
+        details[path.stem] = violations
+        rows.append({
+            "kind": kind,
+            "artifact": path.stem,
+            "status": art.status or BOARD_ABSENT,
+            "owner": next_owner(kind, art.status),
+            "active_intent": active_intent,
+            "review": _board_review_summary(art),
+            "evidence": _board_evidence_summary(art),
+            "blocked_by": _board_blocked_by(art),
+            "validity": validity,
+            "source": source,
+        })
+    header = {
+        "head": head,
+        "source_bound": bound,
+        "worktree_differs": bool(dirty or new),
+        "intent_provider": provider.get("state"),
+        "intent_reason": provider.get("reason"),
+        "intent_detail": provider.get("detail"),
+        "details": details,
+    }
+    return rows, header
+
+
+# --- B2 -- filters, compact rendering, JSON, and focused inspection ----------
+
+
+def _board_usage(message: str) -> int:
+    """Fail closed on an unusable filter, with the accepted vocabulary named."""
+    print(f"{_PREFIX} USAGE ERROR: {message}", file=sys.stderr)
+    return 2
+
+
+def _board_filter(rows: List[Dict[str, str]],
+                  args: argparse.Namespace) -> List[Dict[str, str]]:
+    out = rows
+    if args.status is not None:
+        out = [row for row in out if row["status"] == args.status]
+    if args.owner is not None:
+        out = [row for row in out if row["owner"] == args.owner]
+    if args.invalid_only:
+        out = [row for row in out if row["validity"] != BOARD_VALID]
+    return out
+
+
+def _board_compact(rows: List[Dict[str, str]], header: Dict[str, object]) -> None:
+    """The human- and token-efficient projection.  Every value is encoded."""
+    _emit_section("lifecycle board")
+    _emit("head: " + encode_display(str(header["head"] or "unavailable"))
+          + " | source: "
+          + ("bound" if header["source_bound"] else "UNBOUND (git unavailable)")
+          + " | lifecycle files differ from HEAD: "
+          + ("yes" if header["worktree_differs"] else "no"))
+    intent_line = "intent coverage: " + encode_display(
+        str(header["intent_provider"]))
+    if header["intent_reason"]:
+        intent_line += (" (" + encode_display(str(header["intent_reason"])) + ": "
+                        + encode_display(str(header["intent_detail"])) + ")")
+    elif header["intent_provider"] == INTENT_NOT_INSTALLED:
+        intent_line += " -- no claim is authoritative from this board"
+    _emit(intent_line)
+    _emit(_BOARD_FIELD_DELIMITER.join(BOARD_FIELDS))
+    for row in rows:
+        _emit(_BOARD_FIELD_DELIMITER.join(
+            encode_display(row[field]) for field in BOARD_FIELDS))
+    _emit("")
+    _emit(f"{len(rows)} row(s). The artifact is authoritative; this is a derived "
+          "view. Read the row you need, then that artifact and its cited "
+          "evidence -- not every active record.")
+
+
+def _board_json(rows: List[Dict[str, str]], header: Dict[str, object]) -> None:
+    """The automation contract: versioned, ASCII-safe, never string-interpolated.
+
+    `ensure_ascii=True` and `sort_keys=True` make the payload byte-deterministic
+    for a given tree, and the standard-library encoder is the only thing that
+    ever touches the syntax -- no field value is formatted into JSON by hand.
+    """
+    payload = {
+        "schema": BOARD_SCHEMA_VERSION,
+        "head": header["head"],
+        "source_bound": header["source_bound"],
+        "worktree_differs": header["worktree_differs"],
+        "intent_provider": header["intent_provider"],
+        "intent_reason": header["intent_reason"],
+        "intent_detail": header["intent_detail"],
+        "fields": list(BOARD_FIELDS),
+        "rows": rows,
+        "invalid_count": sum(1 for row in rows
+                             if row["validity"] != BOARD_VALID),
+    }
+    print(json.dumps(payload, ensure_ascii=True, sort_keys=True, indent=2))
+
+
+def _board_explain(stem: str, rows: List[Dict[str, str]],
+                   header: Dict[str, object], root: Path,
+                   identity: "IdentityModel",
+                   provider: Dict[str, object]) -> int:
+    """B2 -- expand ONE row into the evidence and unmet predicates `next`/`scan`
+    already have.
+
+    *"An absent or ambiguous stem refuses rather than selecting the nearest
+    name."*  Both refusals are here and neither guesses: nothing matched, or more
+    than one thing did.  It cites headings and field values, never a review body.
+    """
+    matches = [row for row in rows if row["artifact"] == stem]
+    if not matches:
+        raise PlannerError(
+            f"no active artifact has the stem {stem!r} -- the board refuses to "
+            "select the nearest name. Run the board without --explain and copy "
+            "an exact 'artifact' value.")
+    if len(matches) > 1:
+        kinds = ", ".join(sorted(row["kind"] for row in matches))
+        raise PlannerError(
+            f"the stem {stem!r} is ambiguous ({len(matches)} rows: {kinds}) -- "
+            "the board refuses rather than choosing one.")
+    row = matches[0]
+    _emit_section(f"board --explain {encode_display(stem)}")
+    for field in BOARD_FIELDS:
+        _emit(f"{field}: {encode_display(row[field])}")
+
+    details = header["details"]  # type: ignore[index]
+    problems = details.get(stem, []) if isinstance(details, dict) else []
+    _emit_section("conformance (the same predicates `scan` reports)")
+    if problems:
+        for message in problems:
+            _emit(f"VIOLATION: {encode_display(message)}")
+    else:
+        _emit("current state is structurally sound.")
+
+    path = None
+    for kind, candidate in _board_artifact_paths(root):
+        if candidate.stem == stem and kind == row["kind"]:
+            path = candidate
+            break
+    if path is not None:
+        try:
+            art = _read_artifact(path)
+        except (PlannerError, OSError, ValueError):
+            art = None
+        if art is not None:
+            _emit_section("cited records (headings and declared fields only)")
+            _emit(f"artifact: {encode_display(str(path.relative_to(root)))}")
+            for section in _reviewers(art) + _decisions(art):
+                _emit(f"  {encode_display(section.kind)} -- "
+                      f"{encode_display(section.name or '(unattributed)')} -- "
+                      f"{encode_display(section.date or '(undated)')} "
+                      f"(line {section.line_no})")
+            for line_no, date in _stable_evidence_records(art):
+                _emit(f"  Implementation verification -- {encode_display(date)} "
+                      f"(line {line_no})")
+            _emit_section("unmet predicates per legal next transition")
+            legal = _legal_transitions(art)
+            if not legal:
+                _emit("(terminal state -- no status transition)")
+            for target in legal:
+                _emit(f"-> {target}")
+                for met, description in _gating_preconditions(art, target,
+                                                              identity):
+                    _emit(f"     [{'ok ' if met else 'MISSING'}] "
+                          f"{encode_display(description)}")
+
+    _emit_section("intersecting work-intent claims")
+    state = provider.get("state")
+    if state != INTENT_AVAILABLE:
+        _emit(f"provider {encode_display(str(state))}"
+              + (f" ({encode_display(str(provider.get('reason')))}: "
+                 f"{encode_display(str(provider.get('detail')))})"
+                 if provider.get("reason") else "")
+              + " -- no claim is authoritative from this board; it does NOT mean "
+                "nobody holds one.")
+    else:
+        rel = None
+        if path is not None:
+            rel = path.relative_to(root).as_posix()
+        hits = _intent_index(
+            provider.get("claims") or [])   # type: ignore[arg-type]
+        for claim in (hits.get(rel, []) if rel else []):
+            _emit(f"  id={encode_display(str(claim.get('id')))}")
+            _emit(f"    agent={encode_display(str(claim.get('agent')))}")
+            _emit(f"    ts={encode_display(str(claim.get('ts')))}")
+            _emit(f"    action={encode_display(str(claim.get('action')))}")
+            _emit("    files="
+                  + ", ".join(encode_display(str(f))
+                              for f in claim.get("files", [])))
+        if not (hits.get(rel, []) if rel else []):
+            _emit("  (no active claim intersects this artifact)")
+        _emit("")
+        _emit("a claim is not authority: it changes no status, owner, validity, "
+              "priority, or review readiness.")
+    return 0
+
+
+def cmd_board(args: argparse.Namespace) -> int:
+    """B0 -- the derived orientation board.  Read-only, uncached, HEAD-labelled.
+
+    Exit status: non-zero when any rendered row is structurally invalid or the
+    optional provider is in `error`, **after** rendering every safely renderable
+    row -- *"one malformed record cannot hide the rest of the board"*.  A
+    Git-unavailable tree is labelled `WT-unbound` in every row and is not by
+    itself an error: an unborn HEAD is a legitimate state, and the honest report
+    is the label.
+    """
+    if args.compact and args.format == "json":
+        return _board_usage(
+            "--compact and '--format json' name different projections; pass one")
+    fmt = "json" if args.format == "json" else "compact"
+    if args.status is not None and args.status not in RECOGNIZED_STATES:
+        return _board_usage(
+            f"unknown --status {args.status!r}; the vocabulary is closed: "
+            + ", ".join(RECOGNIZED_STATES))
+    if args.owner is not None and args.owner not in NEXT_OWNERS:
+        return _board_usage(
+            f"unknown --owner {args.owner!r}; the vocabulary is closed: "
+            + ", ".join(NEXT_OWNERS))
+
+    root = _repo_root()
+    identity = _load_identity_model(root)
+    provider = query_intent_provider(root)
+    rows, header = board_rows(root, identity, provider)
+    selected = _board_filter(rows, args)
+
+    if args.explain is not None:
+        status = _board_explain(args.explain, rows, header, root, identity,
+                               provider)
+    elif fmt == "json":
+        _board_json(selected, header)
+        status = 0
+    else:
+        _board_compact(selected, header)
+        status = 0
+
+    if status:
+        return status
+    if any(row["validity"] != BOARD_VALID for row in selected):
+        return 1
+    if provider.get("state") == INTENT_ERROR:
+        return 1
+    return 0
+
+
 # --- argument parsing --------------------------------------------------------
 
 
@@ -5319,6 +6369,42 @@ def build_parser() -> argparse.ArgumentParser:
              "staged dev/ docs). Warns; never blocks.",
     )
     p_guard.set_defaults(func=cmd_guard)
+
+    p_board = sub.add_parser(
+        "board",
+        help="Derived orientation board over the active lifecycle artifacts: "
+             "one compact row each (or --format json). Read-only, uncached, "
+             "and never a source of lifecycle truth.",
+    )
+    p_board.add_argument(
+        "--compact", action="store_true",
+        help="The human- and token-efficient projection (the default).",
+    )
+    p_board.add_argument(
+        "--format", choices=("compact", "json"), default="compact",
+        metavar="{compact,json}",
+        help="'json' emits the versioned automation contract with full field "
+             "values; 'compact' (default) is the terminal projection.",
+    )
+    p_board.add_argument(
+        "--status", default=None, metavar="STATE",
+        help="Exact declared-status filter. An unrecognized value is a usage "
+             "error, never an empty board.",
+    )
+    p_board.add_argument(
+        "--owner", default=None, metavar="OWNER",
+        help="Exact next-owner filter. An unrecognized value is a usage error.",
+    )
+    p_board.add_argument(
+        "--invalid-only", action="store_true",
+        help="Only rows whose validity is not 'valid'.",
+    )
+    p_board.add_argument(
+        "--explain", default=None, metavar="ARTIFACT",
+        help="Expand one row (by exact filename stem) into its cited records "
+             "and unmet predicates. An absent or ambiguous stem refuses.",
+    )
+    p_board.set_defaults(func=cmd_board)
 
     return parser
 

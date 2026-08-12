@@ -13,6 +13,7 @@ from __future__ import annotations
 import pathlib
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -103,8 +104,37 @@ def _cmd_release(args) -> int:
     return 0
 
 
+#: The versioned machine contract for ``list --format json`` (Chunk F, B3
+#: addition + B8).  **The schema string is the compatibility fence**: a consumer
+#: reads this exact value or refuses, so widening the payload shape means bumping
+#: the version rather than hoping every reader copes.  The derived lifecycle
+#: board is the first consumer and refuses anything else outright.
+LIST_JSON_SCHEMA = "cairn-intent-list/1"
+
+#: The exact record fields the JSON form publishes, in a fixed order.  A closed,
+#: enumerated projection rather than the raw log record: the log is append-only
+#: and may carry fields a future version adds, and passing those through
+#: unfiltered would make the "versioned" claim false the first time one appears.
+_LIST_JSON_FIELDS = ("id", "agent", "ts", "action", "stem", "files")
+
+
 def _cmd_list(args) -> int:
-    """``intent list`` -- print active intents (optionally filtered)."""
+    """``intent list`` -- print active intents (optionally filtered).
+
+    Two projections of **one** reduction: the long-standing human form, and
+    ``--format json``, the versioned machine contract.  Both read the same
+    ``active_intents`` / ``conflict_check`` result, so the JSON form cannot come
+    to disagree with the human one about which claims are active -- and claim /
+    release semantics, the conflict rules, the log schema, the hooks and module
+    activation are all untouched by it (B8: this addition is *"solely to add the
+    versioned JSON `list` output"*).
+
+    The JSON form is deterministic and ASCII-safe: records sort by id, keys sort,
+    and ``ensure_ascii=True`` means no raw non-ASCII byte reaches a consumer's
+    terminal through this path.  An empty result is an empty ``claims`` list with
+    the schema still present -- never the human "no active intents" sentence,
+    which a machine reader would have to guess at.
+    """
     log_path = (
         Path(args.log_path) if args.log_path is not None else INTENTS_LOG_PATH
     )
@@ -114,6 +144,8 @@ def _cmd_list(args) -> int:
         )
     else:
         actives = active_intents(log_path=log_path)
+    if getattr(args, "format", "text") == "json":
+        return _emit_list_json(actives)
     if not actives:
         sys.stdout.write("intent: no active intents.\n")
         return 0
@@ -127,6 +159,37 @@ def _cmd_list(args) -> int:
         )
         if active.get("stem"):
             sys.stdout.write(f"  stem={active.get('stem')!r}\n")
+    return 0
+
+
+def _emit_list_json(actives) -> int:
+    """Render the active set as the versioned ``cairn-intent-list/1`` payload.
+
+    Every value is coerced to the type the schema promises -- text for the five
+    scalar fields, a list of text for ``files`` -- because the log is a
+    hand-appendable JSONL file and a reader that trusted its types would be
+    trusting a file any editor can corrupt.  A record whose ``files`` is not a
+    list contributes an empty list rather than a crash: the human form already
+    tolerates that shape, and refusing here would make one malformed historical
+    line hide every live claim.
+    """
+    claims = []
+    for active in actives:
+        files = active.get("files")
+        claims.append({
+            "id": str(active.get("id") or ""),
+            "agent": str(active.get("agent") or ""),
+            "ts": str(active.get("ts") or ""),
+            "action": str(active.get("action") or ""),
+            "stem": str(active.get("stem") or ""),
+            "files": [str(entry) for entry in files]
+            if isinstance(files, list) else [],
+        })
+    claims.sort(key=lambda claim: claim["id"])
+    payload = {"schema": LIST_JSON_SCHEMA, "claims": claims}
+    sys.stdout.write(
+        json.dumps(payload, ensure_ascii=True, sort_keys=True, indent=2) + "\n"
+    )
     return 0
 
 
@@ -465,6 +528,15 @@ def _build_parser():
         help=(
             "Filter to active intents whose file sets intersect these paths. "
             "Space- or comma-separated (or a mix)."
+        ),
+    )
+    p_list.add_argument(
+        "--format", choices=("text", "json"), default="text",
+        metavar="{text,json}",
+        help=(
+            f"'json' emits the versioned {LIST_JSON_SCHEMA} machine contract "
+            "(deterministic, ASCII-safe); 'text' (default) is the unchanged "
+            "human form."
         ),
     )
     p_list.set_defaults(func=_cmd_list)
