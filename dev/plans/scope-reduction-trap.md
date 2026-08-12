@@ -1384,3 +1384,44 @@ The gate works and this artifact is grandfathered. My four-way probe was
 consistent with both explanations and I chose the wrong one instead of grepping
 for the artifact's own stem.
 
+### D5 closed -- Claude -- 2026-08-12
+
+The last open finding from the clearing pass. Both planner twins were held under
+another agent's `chunk P5` claim when the rest of D1-D7 landed; the claim has
+since released and the twins are free.
+
+**The defect, confirmed still present at HEAD before the fix.** The scaffold told
+the author *"Omit entirely when every opened outcome is still delivered"* on the
+line directly above `**Scope delta**: preserved | degraded | lost`, while both
+proposal templates said *"you may state `preserved`"*. Adjacent lines
+contradicting each other, so the field meant different things depending on which
+sentence the author read.
+
+Both scaffolds now say what the templates say. Twins byte-identical.
+
+**And D5's other half, which was the more important one**: *nothing guarded the
+grammar* — the clearing pass showed all six surfaces could be reverted together
+and the suite stayed green. Three guards added: every template prints the agreed
+values; both **emitted** scaffolds print them (through `_scaffold`, not by
+grepping source — the block is built from adjacent literals); and neither
+scaffold contains the contradiction.
+
+**Verified against the clearing pass's own mutations**, not mutations I chose:
+
+| Mutation | Before | After |
+|---|---|---|
+| revert the grammar on **all six** surfaces | 83 passed | **6 failed** |
+| restore the "omit entirely" contradiction on one twin | 83 passed | **1 failed** |
+
+Mapped set (31 modules, recorded command): **1559 passed, 3 failed**. All three
+reproduce at clean `HEAD` without this change, with identical node ids — two
+`TestLoaderContainmentMatrix` nodes from another agent's in-flight work, and
+`test_detached_checkout_excludes_an_ignored_pytest_override`, already homed on
+the board at `e150b7d`. None is attributable here. `check_cairn` OK (173);
+redundancy `fail=0`; neutrality `fail=93`, unchanged.
+
+**All seven D-findings are now closed.** What the plan still owes before archive
+is an independent pass: the code review's verdict was `REVISE`, and both
+Sharpenings answering it are mine. Doctrine is explicit that a blocking verdict
+is answered by a later independent pass, never by the author's own response.
+

@@ -317,6 +317,67 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
     )
 
 
+#: The one declaration grammar, across every surface that prints it. C8
+#: unified six surfaces on `preserved | degraded | lost`; the clearing pass
+#: (D5) then found the planner scaffolds still telling the author to "omit
+#: entirely when preserved" one line above a list offering `preserved`, and
+#: NOTHING pinned the grammar -- reverting all six stayed green.
+_DECLARATION_VALUES = "**Scope delta**: preserved | degraded | lost"
+
+_GRAMMAR_TEMPLATES = (
+    "dev/proposals/_template.md",
+    "templates/core/dev/proposals/_template.md",
+    "dev/plans/_template.md",
+    "templates/core/dev/plans/_template.md",
+)
+
+
+@pytest.mark.parametrize("rel", _GRAMMAR_TEMPLATES)
+def test_every_template_prints_the_same_declaration_grammar(rel: str) -> None:
+    assert _DECLARATION_VALUES in _normalized(rel), (
+        f"{rel} no longer prints the agreed declaration grammar "
+        f"{_DECLARATION_VALUES!r}. Six surfaces print this; if they drift, an "
+        f"author meets one vocabulary while the doctrine defines another."
+    )
+
+
+@pytest.mark.parametrize("kind,status,target", _SCAFFOLDED_TRANSITIONS,
+                         ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
+def test_the_scaffolds_print_the_same_declaration_grammar(
+        kind: str, status: str, target: str) -> None:
+    """Through `_scaffold`, because the block is built from adjacent literals."""
+    art = planner.Artifact(path=Path(f"some-{kind}.md"), kind=kind, text="")
+    art.status = status
+    _, _, blocks = planner._scaffold(art, target, "2026-08-12")
+    emitted = " ".join("\n".join(blocks).split())
+    assert _DECLARATION_VALUES in emitted, (
+        f"the {kind} -> {target} scaffold prints a different declaration "
+        f"grammar than the templates do."
+    )
+
+
+@pytest.mark.parametrize("kind,status,target", _SCAFFOLDED_TRANSITIONS,
+                         ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
+def test_the_scaffolds_do_not_contradict_the_offered_values(
+        kind: str, status: str, target: str) -> None:
+    """The exact D5 defect, pinned.
+
+    A scaffold that offers `preserved` in its value list and tells the author
+    to omit the block when preserved contradicts itself in adjacent lines. The
+    author follows one or the other, so the field means different things in
+    different records -- which is the failure the unified grammar removed.
+    """
+    art = planner.Artifact(path=Path(f"some-{kind}.md"), kind=kind, text="")
+    art.status = status
+    _, _, blocks = planner._scaffold(art, target, "2026-08-12")
+    emitted = " ".join("\n".join(blocks).split()).lower()
+    assert "omit entirely" not in emitted, (
+        f"the {kind} -> {target} scaffold tells the author to omit the block "
+        f"when preserved while offering `preserved` as a value. The templates "
+        f"say `preserved` may be stated; the scaffold must not disagree."
+    )
+
+
 def test_the_two_planner_twins_stay_byte_identical() -> None:
     """The scaffold change had to land in both copies or adopters get neither."""
     a = (CAIRN_ROOT / "tools/lifecycle_planner.py").read_bytes()
