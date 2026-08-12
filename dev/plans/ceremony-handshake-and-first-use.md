@@ -1684,3 +1684,86 @@ TRU-7 against a real remote, exercise Windows or a SHA-256-format repository,
 or audit Git/OpenSSH cryptography. The accepted evidence-stage host-access,
 key-holder-not-process, and no-nonce replay residuals remain accurately
 described and were not re-litigated.
+
+## Response to the code review (M2 retake) -- Claude -- 2026-08-12
+
+**[M2-R1] accepted. Not disputed, and the reproduction is exactly right.**
+
+The transition loader validated the review manifest **against itself** — rows
+well-formed, paths sorted and unique, digests matching the bytes it extracted
+for those paths — and never compared the member set against a fixed list. So a
+manifest that dropped a member or added one parsed cleanly, extracted cleanly,
+and **started Python**. The first exact-set comparison was
+`revalidate_transition()`, inside the candidate bytes the loader had already
+selected and run.
+
+The reviewer's framing is the part worth keeping: that is fail-closed for ref
+movement and still wrong, because *a check performed by the candidate cannot
+establish that the candidate was safe to start*. That is the one property this
+loader exists to provide.
+
+**And it survived because a comment stood in for a control.** The line
+`# The extracted set must be EXACTLY the declared set` sat immediately above the
+`$PY` invocation, describing a check that was not there. Every reader — me, and
+an earlier review — took the comment for the mechanism.
+
+### The correction
+
+* **Nine literal paths, in `LC_ALL=C` order, in the fixed loader**, compared to
+  the parsed set **before** candidate resolution, extraction, or Python.
+* **Compared with the shell's own string equality** — no `cmp`, no `diff` — so
+  **no utility is admitted to the residual trust set**. Of the two routes the
+  review offered, this is the one that adds nothing to trust; the runbook states
+  that explicitly rather than leaving it inferable.
+* The misleading comment is replaced by one that says what happened.
+* The prose paragraph claiming the loader established the member set is
+  corrected in place with the finding named, since it asserted the property
+  before the code supplied it.
+
+### The evidence the review asked for
+
+`test_a_wrong_member_SET_starts_no_interpreter`, parametrized over
+**extra-member** and **missing-member**, replaces `$PY` with a **marker
+wrapper** and requires the marker to be absent. Absence of a `Traceback` is not
+evidence that no interpreter ran — that is how this passed before, and the node
+says so. Both manifests are internally consistent: correctly sorted, uniquely
+pathed, correctly hashed against a real commit, so only the fixed-set comparison
+can reject them.
+
+`test_the_marker_interpreter_probe_is_live` guards it: on an **honest** manifest
+the marker must appear, so "refused early" cannot be confused with "never wired
+up".
+
+**Mutation-checked.** Removing the comparison reproduces the review's result
+verbatim, in both directions:
+
+```text
+extra-member:   candidate Python STARTED before the fixed member set was checked
+missing-member: candidate Python STARTED before the fixed member set was checked
+```
+
+### `_LOADED_MODULES` now represents the artifact it tests
+
+It carried the **seven** importable modules while the authority closure contains
+**nine** — `bootstrap/REANCHOR_RUNBOOK.md` (the instruction source, FUR7's own
+subject) and `dev/.cairn/allowed_signers` (the roster the checkpoint signature is
+verified against) were absent. Neither is imported, and not being imported is
+exactly why their absence would not have announced itself.
+
+It is now **derived from `declared_authority_closure()`** rather than retyped, so
+the two cannot drift apart again, and
+`test_the_loader_covers_the_whole_authority_closure` asserts equality with the
+closure while keeping the original importable-subset property.
+
+### What this response does not claim
+
+* It does **not** close M2. These bytes differ from the reviewed
+  `baa84b29353c946e2353f2b959e0b340da8c6cab`, so the recorded nine-file hash set
+  in that review no longer describes them and a fresh exact-byte pass is owed.
+* It does **not** arm M7, authorize M3, or discharge this plan's
+  independent-read obligation.
+* The loader still cannot establish **its own** authenticity. It remains an M2
+  out-of-band trust input; the fixed member set makes it say what it always
+  claimed, not more.
+
+**Boundary B is owed again** on these bytes.

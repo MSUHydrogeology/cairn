@@ -1632,15 +1632,14 @@ class TestThreeCommandIntegration:
 
 #: The first-use hash set the loader verifies against. Recorded by the
 #: Maintainer at Chunk G step M2; the fixtures compute their own.
-_LOADED_MODULES = (
-    "bootstrap/tests/_gate_preflight.py",
-    "bootstrap/tests/_gate_manifest.py",
-    "bootstrap/tests/_gate_reanchor.py",
-    "bootstrap/tests/_gate_transition.py",
-    "bootstrap/tests/_oracle_activation.py",
-    "bootstrap/tests/_oracle.py",
-    "bootstrap/tests/_oracle_trust.py",
-)
+#:
+#: **All nine authority-closure members, not the seven importable modules.**
+#: Security review [M2-R1]: this helper carried only the Python modules while
+#: M2's authority closure also contains `REANCHOR_RUNBOOK.md` and
+#: `dev/.cairn/allowed_signers`, so the tests exercised a checklist narrower
+#: than the artifact they claimed to test. Derived from
+#: `declared_authority_closure()` rather than retyped, so the two cannot drift.
+_LOADED_MODULES = tuple(sorted(P.declared_authority_closure()))
 
 
 def _recorded_hashes(repo: Path, ref: str = P._ANCHOR_REF) -> str:
@@ -2686,6 +2685,103 @@ class TestTransitionLoaderSelectsTheSource:
         # probe nor the package read may have run.
         assert "STAGE 1 CAN SIGN" not in r.stderr
         assert not (tmp_path / "pkg.json").exists()
+
+    @pytest.mark.parametrize("shape", ["extra-member", "missing-member"])
+    def test_a_wrong_member_SET_starts_no_interpreter(self, tmp_path, shape):
+        """Security review [M2-R1], with the evidence it asked for.
+
+        The loader validated the manifest against *itself* — rows well-formed,
+        paths sorted and unique, digests matching the bytes it extracted for
+        those paths — and never compared the member set against a fixed list.
+        A manifest that dropped a member or added one therefore parsed cleanly,
+        extracted cleanly, and **started Python**; the first exact-set check was
+        `revalidate_transition()` inside the candidate bytes the loader had
+        already selected and run. Fail-closed for ref movement, and still wrong:
+        a check performed by the candidate cannot establish that the candidate
+        was safe to start.
+
+        **The interpreter is replaced by a marker wrapper**, because the absence
+        of a traceback is not evidence that no interpreter ran — that was
+        precisely how this passed before. The manifests below are internally
+        consistent: correctly sorted, uniquely pathed, and correctly hashed, so
+        nothing but the fixed-set comparison can reject them.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        resolved = _signed_commit(repo, "reviewed authority change")
+
+        marker = tmp_path / "PYTHON_STARTED"
+        wrapper = tmp_path / "py-wrapper"
+        wrapper.write_text(
+            f"#!/bin/sh\ntouch {shlex.quote(str(marker))}\n"
+            f"exec {shlex.quote(sys.executable)} \"$@\"\n")
+        wrapper.chmod(0o755)
+
+        import hashlib
+        members = []
+        for rel in sorted(P.declared_authority_closure()):
+            blob = subprocess.run(
+                ["git", "-C", str(repo), "cat-file", "blob", f"{resolved}:{rel}"],
+                capture_output=True).stdout
+            members.append((hashlib.sha256(blob).hexdigest(), rel))
+        if shape == "extra-member":
+            extra = "bootstrap/tests/_unreviewed_extra.py"
+            _write(repo, extra, "SNEAKED = True\n")
+            resolved = _signed_commit(repo, "an unreviewed extra member")
+            # Re-hash against the new commit so only the SET is wrong.
+            members = []
+            for rel in sorted(set(P.declared_authority_closure()) | {extra}):
+                blob = subprocess.run(
+                    ["git", "-C", str(repo), "cat-file", "blob",
+                     f"{resolved}:{rel}"], capture_output=True).stdout
+                members.append((hashlib.sha256(blob).hexdigest(), rel))
+        else:
+            members = [m for m in members
+                       if m[1] != "bootstrap/REANCHOR_RUNBOOK.md"]
+
+        text = _review_manifest(repo, resolved, members=members)
+        script = self._script(repo, tmp_path / "mf.txt", resolved)
+        (tmp_path / "mf.txt").write_text(text, encoding="utf-8")
+        script = script.replace(shlex.quote(sys.executable),
+                                shlex.quote(str(wrapper)))
+        assert str(wrapper) in script, "the marker interpreter was not injected"
+
+        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                           capture_output=True, text=True, check=False)
+
+        assert r.returncode != 0, "a wrong member set was accepted"
+        assert not marker.exists(), (
+            f"{shape}: candidate Python STARTED before the fixed member set was "
+            f"checked -- the loader deferred the exact-set comparison to the "
+            f"bytes it had already run\n{r.stderr[-800:]}")
+        assert "not the authority closure" in r.stderr, r.stderr[-800:]
+
+    def test_the_marker_interpreter_probe_is_live(self, tmp_path):
+        """Guards the node above. If the wrapper were never invoked on an
+        HONEST manifest either, that test would pass while proving nothing."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        resolved = _signed_commit(repo, "reviewed authority change")
+        marker = tmp_path / "PYTHON_STARTED"
+        wrapper = tmp_path / "py-wrapper"
+        wrapper.write_text(
+            f"#!/bin/sh\ntouch {shlex.quote(str(marker))}\n"
+            f"exec {shlex.quote(sys.executable)} \"$@\"\n")
+        wrapper.chmod(0o755)
+
+        (tmp_path / "mf.txt").write_text(_review_manifest(repo, resolved),
+                                         encoding="utf-8")
+        script = self._script(repo, tmp_path / "mf.txt", resolved)
+        script = script.replace(shlex.quote(sys.executable),
+                                shlex.quote(str(wrapper)))
+        with _n4_precondition(tmp_path / "maint"):
+            subprocess.run(["bash", "-c", script], cwd=str(repo),
+                           capture_output=True, text=True, check=False)
+
+        assert marker.exists(), (
+            "the marker interpreter never ran even on an honest manifest, so "
+            "the probe above cannot distinguish 'refused early' from 'never "
+            "wired up'")
 
     def test_stage2_actually_receives_the_transition_flags_it_declares(self):
         """A declared flag that no call site consumes is [M2-1] again.
@@ -4358,15 +4454,24 @@ class TestLoaderTrustBoundary:
         assert _run("git", "rev-parse", P._ANCHOR_REF,
                     cwd=repo).stdout.strip() == before
 
-    def test_the_loader_covers_the_whole_import_closure(self, tmp_path):
-        """A module missing from the recorded set would be absent at import
-        time -- fail-closed, but only if the set is actually complete."""
-        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        declared = {r for r in P.declared_authority_closure()
-                    if r.endswith(".py")}
-        assert declared == set(_LOADED_MODULES), (
+    def test_the_loader_covers_the_whole_authority_closure(self):
+        """The recorded set is the AUTHORITY closure, not the import closure.
+
+        A module missing from the recorded set would be absent at import time --
+        fail-closed, but only if the set is complete. Security review [M2-R1]
+        found the set narrower than that: it held the seven importable modules
+        while the authority closure also contains `REANCHOR_RUNBOOK.md` (the
+        instruction source, and FUR7's subject) and `dev/.cairn/allowed_signers`
+        (the roster the checkpoint's signature is verified against). Neither is
+        imported, and neither being imported is exactly why their absence would
+        not have announced itself.
+        """
+        declared = set(P.declared_authority_closure())
+        assert set(_LOADED_MODULES) == declared, (
             f"the loader's recorded set and the authority closure disagree: "
             f"{declared ^ set(_LOADED_MODULES)}")
+        # The original property, kept: every importable member is still there.
+        assert {r for r in declared if r.endswith(".py")} <= set(_LOADED_MODULES)
 
     def test_git_dir_in_the_environment_cannot_redirect_the_loader(self,
                                                                    tmp_path):

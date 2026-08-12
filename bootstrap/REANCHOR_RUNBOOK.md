@@ -251,6 +251,7 @@ die() { echo "REFUSE: $1" >&2; exit 1; }
 
 REVIEWED_OID=""
 PROVENANCE=""
+GOT_PATHS=""
 SCHEMA_SEEN=0
 : > "$T/members.sha256" || exit 1
 : > "$T/paths" || exit 1
@@ -305,6 +306,11 @@ while IFS= read -r line || [ -n "$line" ]; do
         esac
         echo "$2  $3" >> "$T/members.sha256" || exit 1
         echo "$3" >> "$T/paths" || exit 1
+        # Accumulated in the shell, for the fixed-set comparison below. The
+        # loop runs in THIS shell (redirect, not pipe), so the variable
+        # survives it.
+        GOT_PATHS="$GOT_PATHS$3
+"
         ;;
     ""|\#*) : ;;
     *)  die "unknown row type $1" ;;
@@ -320,6 +326,39 @@ done < "$REVIEW_MANIFEST"
 # AND duplicates. `sort -c -u` fails on either.
 LC_ALL=C "$SORT" -c -u "$T/paths" 2>/dev/null \
     || die "member paths are not in unique LC_ALL=C sorted order"
+
+# ---- THE EXPECTED SET IS FIXED HERE, and compared BEFORE anything else -----
+# Security review [M2-R1]. Everything above validates the manifest against
+# ITSELF -- rows well-formed, paths sorted and unique, digests matching the
+# bytes extracted for those paths. None of it establishes WHICH FILES the
+# checker consists of, so a manifest that dropped a member or added one parsed
+# cleanly, extracted cleanly, and started Python; the first exact-set comparison
+# was `revalidate_transition()` INSIDE the candidate bytes the loader had
+# already selected and run. Reproduced in both directions with a marker
+# interpreter: `python_started=True`.
+#
+# That is fail-closed for ref movement and still wrong. A later check performed
+# BY the candidate cannot establish that the candidate was safe to start; that
+# is the bootstrap property this loader exists to provide, and only a fixed,
+# reviewed, out-of-band list can provide it.
+#
+# The list is literal and in LC_ALL=C order. It is compared with the shell's own
+# string equality -- no `cmp`, no `diff` -- so **no utility is added to the
+# residual trust set** by this check. It costs one shell variable and is
+# byte-for-byte.
+EXPECTED_PATHS='bootstrap/REANCHOR_RUNBOOK.md
+bootstrap/tests/_gate_manifest.py
+bootstrap/tests/_gate_preflight.py
+bootstrap/tests/_gate_reanchor.py
+bootstrap/tests/_gate_transition.py
+bootstrap/tests/_oracle.py
+bootstrap/tests/_oracle_activation.py
+bootstrap/tests/_oracle_trust.py
+dev/.cairn/allowed_signers
+'
+[ "$GOT_PATHS" = "$EXPECTED_PATHS" ] \
+    || die "the review manifest is not the authority closure -- the member set \
+differs from the nine paths recorded in this loader"
 
 # ---- bind the candidate ONCE ----------------------------------------------
 # Resolved once, to a full object id, and every later read uses that id. A
@@ -341,8 +380,9 @@ done < "$T/members.sha256"
 ( cd "$T" && "$SHASUM" -a 256 -c members.sha256 ) \
     || die "extracted bytes do not match the reviewed manifest"
 
-# The extracted set must be EXACTLY the declared set: the manifest cannot admit
-# a subset and leave an unreviewed member to be resolved from somewhere else.
+# The extracted set was established as EXACTLY the fixed nine above, before any
+# of this ran. That comment used to sit here with no check behind it, which is
+# how [M2-R1] survived: a claim in a comment is not a control.
 # STAGE 1 ONLY, as in steady state. The transition changes which bytes run,
 # not the two-stage protocol.
 "$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
@@ -357,6 +397,16 @@ TRANSITION
 Python about to run is byte-identical to a set a named external review approved,
 at one resolved commit id, with no member added, dropped, reordered or
 duplicated — and that **no Python starts at all** if any of that fails.
+
+**The member set is fixed here, not taken from the manifest.** This paragraph
+made the claim above before the code supported it (security review [M2-R1]): the
+loader validated the manifest against itself and left the exact-set comparison
+to `revalidate_transition()`, which runs *inside* the candidate Python the loader
+had already started. The nine expected paths are now literal in the block and
+compared before candidate resolution, extraction or Python — because a check
+performed by the candidate cannot establish that the candidate was safe to run.
+The comparison uses the shell's own string equality, so **the residual trust set
+is unchanged**: no comparison utility was admitted to it.
 
 It does **not** establish its own authenticity. The fixed loader text remains an
 **M2 out-of-band trust input**, exactly like the steady-state block: a loader
