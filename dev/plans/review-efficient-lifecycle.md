@@ -2909,3 +2909,52 @@ Amendments A and B are the surfaces that read should attack first.
 `lifecycle_planner scan` returns to **all artifacts sound** with this Response
 landed — the 7/8 the reviewer honestly reported was their own raised finding
 awaiting disposition, which is the mechanism working, not a defect.
+
+## Carried-forward obligations -- Claude (Implementation) -- 2026-08-12
+
+Two things surfaced during execution that belong to a **later** chunk and would
+otherwise be lost between agents. Recorded here so the eventual Code review can
+check them off rather than rediscover them.
+
+### [CF1] P2 owes the report's eligible/ineligible split (a dependency, not a cut)
+
+Chunk **P6a** (`8bf1154`) implements the five measures `P6-R` names — review
+input, removed transitions, escaped findings, Maintainer prompts, pauses. The
+accepted parent's fuller list also has the report record *"eligible and
+ineligible plans"*, and P6a's implementer flagged, correctly, that its derived
+report **cannot** split them: no `plan-counted` event records the plan's
+assurance path.
+
+**This is a sequencing dependency on P2, not a scope reduction, and the
+distinction is checkable.** Splitting eligible from ineligible requires a
+*plan's* assurance path, and a plan **has** none to read: Chunk P1 pinned that
+absence deliberately —
+`test_lifecycle_contract.py::test_a_plan_carries_no_artifact_level_declaration`,
+whose docstring states *"the plan carries the inheritance metadata instead (P2's
+cell)"*. A plan's assurance path is resolvable only through P2's inheritance
+chain (plan → `Inherited proposal basis` → the accepted proposal's declaration).
+So the input does not exist yet. Nothing accepted is dropped and **no
+`Scope delta` allowance is required**; the measure is owed by the chunk that
+supplies its input.
+
+The same shape has now occurred three times in this plan — P1's blocking half
+behind C's enumeration, P5's trigger behind P2's inheritance metadata, and this.
+The `## Sequence` order is dependency-ordered for the *chunks* but not for the
+*fields those chunks require*, which is worth one line in the Code review.
+
+**P2 obligation.** Record the counted plan's assurance path on the event, via the
+`cairn-pilot-event/2` bump P6a already provisioned (its unknown-version refusal
+path is tested), and make the report split eligible from ineligible. P6a
+deliberately did **not** fork the assurance vocabulary or reach for the private
+`_ASSURANCE_PATHS` to close this early; either would have created a second
+vocabulary, which is the defect Chunk A exists to prevent.
+
+### [CF2] A stale comment in the planner, owed to whoever next edits it
+
+`tools/lifecycle_planner.py` (and its twin) still says *"Two consumers live
+OUTSIDE this file's package"* and lists two. There are now **three**: Chunk P6a
+added `tools/lifecycle.py` as a third contained-loader consumer, and extended
+`_AUDITED_CONSUMER_SOURCES` from three sources to five accordingly. P6a could not
+fix the comment because P1/P5 held that file. A comment that miscounts the
+consumers of a single-source vocabulary is exactly the drift Chunk A's audit
+exists to catch, so it should not survive to the Code review.
