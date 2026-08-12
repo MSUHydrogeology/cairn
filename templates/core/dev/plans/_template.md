@@ -37,6 +37,20 @@ hashes are updated in place. Review findings and the archive record are
 **append-only**. See `doctrine/plans.md` > "Mutability rule" for the
 full mutable-in-place vs. append-only split.
 
+**A plan answers plan review in its cells, not in a contract revision.** This
+is the one place the plan's rule is the *opposite* of the proposal's, so it is
+stated rather than left to be inferred. A proposal Response appends a complete
+current-contract revision carrying a mandatory
+`### Withdrawn / superseded commitments` ledger; a plan does not. **Before
+implementation**, fold plan-review corrections straight into the mutable
+operative cells — scope, the chunk rows, acceptance criteria, verification —
+and let the appended `## Response to plan review` be a finding-disposition
+table that *points at* those cells. Do not reproduce replacement cells in an
+amendment ledger: the plan's cells are the live contract, so a second copy of
+them would immediately be a second answer to the same question. **Once
+execution of a chunk begins**, the append-only sequence-revision rules take
+over and a correction is appended, not folded.
+
 **The plan is Stage 2 of the Registered Report** (see
 `doctrine/lifecycle.md` > "The lifecycle as a Registered Report"):
 the plan and its code review check the implementation and the evidence

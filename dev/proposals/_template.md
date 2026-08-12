@@ -429,6 +429,14 @@ correctness, security, scientific-validity, or scope finding whenever you find
 one. A later review does not silently inherit an earlier reviewer's claims — it
 either verifies them or names them as not covered.
 
+**Reviewing a revision, verify its withdrawal ledger.** When `Target:` names a
+complete current-contract revision, one part of the read is a comparison no tool
+can perform for you: read that revision against the **previously reviewed**
+contract, and confirm its `### Withdrawn / superseded commitments` ledger
+accounts for every commitment the earlier contract carried and this one does
+not. The conformance check can only see that the heading is there with a written
+value; whether the ledger is *true* is this pass's finding to make.
+
 **Plan readiness — the finding a derived plan may inherit.** An **External**
 reviewer who has read a *complete* current contract may record, beside the basis
 above:
@@ -527,9 +535,44 @@ For each numbered critique, write one disposition token from the
 grammar above plus a one-sentence rationale. No silent dropping.
 Brief is fine; precision matters more than length.
 
-If accepted critiques substantially change the proposal, write a short
-"## Revised proposal" section above this and update `Status:` to
-`revised`.
+**Append one complete current contract with the Response, every time.** A
+Response disposes findings; it does not restate the design, so on its own it
+leaves the next reviewer to reassemble the contract out of the whole history —
+which is the repeated reading this rule exists to remove. So beside this
+Response append one **complete current-contract revision** —
+`## Revised proposal`, or `## Revision <n>` — and set `Status:` to `revised`.
+Not a delta and not a diff: one self-contained statement of scope and
+exclusions, invariants, failure dispositions, public paths, evidence, omissions
+and deferred work, plus the mandatory ledger:
+
+    ### Withdrawn / superseded commitments
+    * <earlier commitment, the replacement or withdrawal, and the reason>
+
+**The heading is mandatory even when its value is `None`.** Write `* None`
+rather than leaving the section empty or omitting it: a revision that quietly
+drops an earlier commitment is exactly what this one heading exists to make
+visible, and only a written `None` distinguishes "nothing was withdrawn" from
+"nobody checked".
+
+The **newest reviewed** complete revision is what the Decision and the
+implementation bind. Every earlier section stays as immutable history — you are
+appending a new contract, never editing the old one.
+
+Three mechanical facts, each of which the lifecycle conformance check enforces:
+
+* **A Response with no revision refuses.** Either order is fine — the revision
+  may sit above or below the Response — and no ratio of revisions to rounds is
+  required.
+* **Each revision carries exactly one ledger, with a written value.** A bare
+  heading refuses; so do two ledgers in one contract, because two cannot both be
+  the complete account.
+* **The ledger is a real `###` heading at the left margin.** The block above is
+  indented, which makes it an example rather than a heading; a copy inside a
+  fenced block is not a heading either. Un-indent it when you use it.
+
+And what the check cannot do is *read*: it never judges whether the revision is
+genuinely complete, and it never verifies that the ledger is true. Both are the
+reviewer's, per the comparison named in the `## Review` section above.
 
 **Scope delta — declare it when the revision narrows what this proposal
 will deliver.** Judge the narrowing against the **scope as opened**, not

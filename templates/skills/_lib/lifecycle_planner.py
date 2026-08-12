@@ -3531,6 +3531,304 @@ def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
     return value, []
 
 
+# === P3 -- the complete current contract and its withdrawal ledger ===========
+#
+# The accepted `review-efficient-lifecycle` parent, "Bounded current contracts"
+# (`dev/proposals/archive/2026-08-10-codex-review-efficient-lifecycle.md`,
+# Revision 1 -- the operative revision; no later section replaces it):
+#
+#     After a proposal review Response, the author appends one complete current
+#     contract containing scope, exclusions, invariants, failure dispositions,
+#     public paths, evidence, omissions, deferred work, and the heading below:
+#
+#         ### Withdrawn / superseded commitments
+#         * <earlier commitment, replacement or withdrawal, and reason>
+#
+#     The heading is mandatory even when its value is `None`.  A reviewer
+#     compares the complete revision to the previously reviewed contract and
+#     verifies this ledger.  The newest reviewed complete revision is operative
+#     for Decision and implementation; all earlier sections remain immutable
+#     history.
+#
+# TWO obligations, and they are checked separately because they fail separately:
+#
+#   A. a proposal that carries a `## Response` carries a complete current-contract
+#      revision at all; and
+#   B. every such revision carries the ledger heading, with a written value.
+#
+# WHY B IS PER-REVISION AND A IS NOT PAIRED PER-RESPONSE.  The contract attaches
+# the heading to the revision -- "one complete current contract ... and the
+# heading below" -- so B is a property of each revision and is checked there.  A
+# is deliberately *not* a 1:1 Response-to-revision pairing, and that restraint is
+# measured rather than lazy: across the 39 proposals in this tree that carry a
+# revision, the revision sits ABOVE its Response in 6 of them and below in the
+# rest (the proposal template's own instruction is *"write a short `## Revised
+# proposal` section above this"*), and the counts diverge -- `resp=2 rev=1` is the
+# single most common shape.  The contract fixes neither an order nor a ratio, so a
+# per-Response pairing rule would be this checker inventing a contract clause,
+# which is the drift `AGENTS.md` > *Verifying claims* forbids in the other
+# direction.  Position-agnostic presence is what the accepted text supports.
+#
+# WHAT IS NOT CHECKED, stated where a reader will look for it, because a gate
+# whose reach is over-read is worse than a narrow one:
+#
+#   * **That the contract is COMPLETE.**  Whether the revision really states
+#     scope, exclusions, invariants, failure dispositions, public paths, evidence,
+#     omissions and deferred work is a reading, not a pattern.  The contract
+#     assigns it: *"A reviewer compares the complete revision to the previously
+#     reviewed contract."*
+#   * **That the ledger is TRUE.**  A revision that silently drops a commitment
+#     and writes `* None` passes here.  The ledger's job is to make a drop
+#     *visible to the reviewer who compares*; no scanner can compare two prose
+#     contracts, and pretending otherwise would be the silent tool.
+#   * **Which revision is operative.**  "Newest reviewed" depends on which
+#     revision a review pass read, which no repository byte records.
+#
+# GRANDFATHERING IS `_is_immutable`, AND NEEDS NO ENUMERATION.  Measured at this
+# chunk's implementation parent (`6f2b01c`): 53 proposals carry a `## Response` or
+# a revision section, 1 carries the ledger, and **all 52 that do not are already
+# immutable** -- 51 by archive location and `2026-08-11-claude-metrics-events-not-
+# prose.md` by its terminal `accepted` status.  The 15 archived proposals with a
+# Response and no revision section at all are likewise immutable to the last one.
+# So unlike P1 and C, this obligation ships with **no legacy manifest**: there is
+# nothing live for one to hold, and a manifest with no entries is a maintenance
+# burden pretending to be a control.  The consequence is that the live trigger set
+# is EMPTY, which is why every refusal below is proven on a synthetic fixture and
+# `test_the_live_corpus_owes_no_ledger_today` records the emptiness as a
+# measurement that reddens the day it stops being true.
+
+
+#: A real (unfenced) ATX heading: hashes at column 0, then the text.  Column 0 is
+#: markdown's own rule and it is load-bearing here -- both authoring templates
+#: teach every field and heading in a 4-space indented block, which is a code
+#: block, not a heading, so the scaffold cannot satisfy the requirement it
+#: teaches.
+_ATX_HEADING_RE = re.compile(r"^(?P<hashes>#{1,6})[ \t]+(?P<text>.*?)[ \t]*$")
+
+#: The two H2 record kinds this block reads, matched on the NORMALIZED heading
+#: text (emphasis stripped, ASCII whitespace collapsed, casefolded) rather than on
+#: raw bytes, because the corpus writes both separators -- `## Response -- <author>
+#: (author) -- <date>` and the same line with em-dashes are the same record kind,
+#: and an em-dash is not a contract difference.
+#:
+#: `Response` covers every live spelling -- `## Response`, `## Response to review`,
+#: `## Response to the External security review` (measured: 30 distinct heading
+#: lines across the corpus, all of them opening with the word).  `Revised
+#: proposal|Revision` likewise covers all 39 revision headings, including
+#: `## Revised proposal, round 3 -- ...` and `## Revision after the [I2]
+#: direction -- ...`.  Word-anchored, so `## Revisiting the loader` is not a
+#: revision.
+_RESPONSE_NORM_RE = re.compile(r"response\b")
+_CURRENT_CONTRACT_NORM_RE = re.compile(r"(?:revised proposal|revision)\b")
+
+#: The ledger heading, exactly as the accepted contract prints it, and the H3
+#: level it prints it at.
+_LEDGER_HEADING = "Withdrawn / superseded commitments"
+_LEDGER_LEVEL = 3
+
+#: Whitespace around the slash is normalized away before the comparison, so
+#: `### Withdrawn/superseded commitments` conforms.  Tolerant on FORMATTING,
+#: strict on WORDS and LEVEL: a word variant or a wrong level is reported as a
+#: near miss with the offending line quoted (S8's rule, reused), never silently
+#: accepted and never left as a bare "missing" for the author to guess at.
+_LEDGER_SLASH_RE = re.compile(r"[ \t]*/[ \t]*")
+
+#: The near-miss key: the two words every plausible misspelling of this heading
+#: retains.  Same trick as `_INHERITANCE_NEAR_MISS_RE` -- recognize the
+#: neighbourhood, then quote the heading that did not count.
+_LEDGER_NEAR_MISS_WORDS = ("withdrawn", "superseded")
+
+#: The ledger's VALUE, one of two shapes: a written `None`, or at least one
+#: entry.  A bare heading refuses -- `_has_disposition_attestation` closed exactly
+#: this defect for the archive block (*"An empty label refuses -- which is what
+#: the previous predicate accepted"*), and the contract's own words are that the
+#: heading is mandatory *even when its value is `None`*, which requires the value
+#: to be written rather than inferred from silence.
+#:
+#: Read over the span's lines with fence DELIMITERS skipped but fenced content
+#: kept, which is the opposite tolerance from the heading search above and is the
+#: safe direction for each: a heading inside a fence must not CLEAR the
+#: requirement, while a real ledger a plan-author column-aligned inside a fence
+#: must not FAIL it (`_mask_examples` records two archived records that do exactly
+#: that).
+_LEDGER_NONE_RE = re.compile(r"^[ \t]*(?:[-*+][ \t]+)?(?:\*\*|__)?none\b", re.I)
+_LEDGER_ENTRY_RE = re.compile(r"^[ \t]*(?:[-*+][ \t]+|\d+[.)][ \t]+)\S")
+
+
+def _iter_unfenced_lines(text: str):
+    """``(line_no, line)`` for every line OUTSIDE a fenced code block.
+
+    A ``###`` inside a ```` ``` ````/``~~~`` fence is literal text, not a heading
+    -- markdown's own rule -- and finding headings is this block's whole job.  It
+    matters for a measured reason rather than a theoretical one: the accepted
+    contract quotes the ledger heading inside a ```text fence **in the same
+    section as its real one**, and both authoring templates now quote it too.  A
+    raw search would read the specification as the record: a false CLEAR, which is
+    the silent-tool defect `AGENTS.md` > *Verifying claims* names.
+
+    **Deliberately not folded into `_has_isolated_blockquote`**, which walks
+    fences with its own loop.  That predicate's `prev_blank` state machine treats
+    the fence *delimiter* as a non-blank line, which a caller-side iterator cannot
+    express, and rewriting a Decision-gating predicate is not this chunk's cell.
+    """
+    in_fence = False
+    for i, line in enumerate(_split_lines(text)):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            yield i + 1, line
+
+
+def _heading_records(text: str) -> List[Tuple[int, int, str, str]]:
+    """``(line_no, level, raw_heading, normalized_text)`` per real heading.
+
+    Read off the raw lines rather than `art.sections`, for two reasons that both
+    bite: `_parse_sections` filters on `_KNOWN_KINDS`, which does not contain
+    `revision`, so `## Revision 1 -- complete current contract` parses to nothing
+    at all; and it is not fence-aware.  `_proposal_review_records` reads raw lines
+    for the same class of reason.
+    """
+    out: List[Tuple[int, int, str, str]] = []
+    for line_no, line in _iter_unfenced_lines(text):
+        m = _ATX_HEADING_RE.match(line)
+        if m is None:
+            continue
+        norm = _ASCII_WS_RE.sub(
+            " ", _strip_emphasis_chars(m.group("text"))).strip().casefold()
+        out.append((line_no, len(m.group("hashes")), line.strip(), norm))
+    return out
+
+
+def _is_ledger_heading(level: int, norm: str) -> bool:
+    """True for a conforming ledger heading: H3, and the exact word sequence."""
+    return (level == _LEDGER_LEVEL
+            and _LEDGER_SLASH_RE.sub(" / ", norm) == _LEDGER_HEADING.casefold())
+
+
+def _is_ledger_near_miss(norm: str) -> bool:
+    """True for a heading in the ledger's neighbourhood that did not conform."""
+    return all(word in norm for word in _LEDGER_NEAR_MISS_WORDS)
+
+
+def _span_end(headings: List[Tuple[int, int, str, str]],
+              line_no: int, level: int, floor: int) -> int:
+    """The first line AFTER *line_no* that closes a heading's span.
+
+    Closed by the next real heading of equal-or-shallower depth, or by *floor*
+    (the enclosing span's end).  Same rule `_parse_sections` uses for bodies, on
+    the fence-aware heading list.
+    """
+    for other_line, other_level, _raw, _norm in headings:
+        if other_line > line_no and other_level <= level:
+            return min(other_line, floor)
+    return floor
+
+
+def _ledger_value_is_written(text: str, start: int, end: int) -> bool:
+    """True when the ledger's span carries a written value: `None`, or an entry.
+
+    Fence delimiters are skipped and fenced content is kept -- the tolerance
+    `_LEDGER_NONE_RE` documents.
+    """
+    for line in _split_lines(text)[start:end - 1]:
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            continue
+        if _LEDGER_NONE_RE.match(line) or _LEDGER_ENTRY_RE.match(line):
+            return True
+    return False
+
+
+def current_contract_violations(art: Artifact) -> List[str]:
+    """P3 -- the complete current-contract revision and its withdrawal ledger.
+
+    Public because **both** gate surfaces consume it, the rule P1's and P2's
+    predicates already follow: wiring only `scan` leaves `next` presence-only, and
+    the loose surface is the one an author drives ([R3-E1]).
+
+    Silent for a plan (the contract's next paragraph gives the plan the opposite
+    rule -- *"Its appended Response is a finding-disposition table that ... does
+    not reproduce replacement cells in an amendment ledger"*), silent for an
+    immutable proposal, and silent for a proposal with no Response yet: the
+    obligation arrives with the Response, which is the transition that lands the
+    revision.
+    """
+    if art.kind != "proposal" or _is_immutable(art):
+        return []
+    headings = _heading_records(art.text)
+    responses = [(n, raw) for n, lvl, raw, norm in headings
+                 if lvl == 2 and _RESPONSE_NORM_RE.match(norm)]
+    if not responses:
+        return []
+    revisions = [(n, raw) for n, lvl, raw, norm in headings
+                 if lvl == 2 and _CURRENT_CONTRACT_NORM_RE.search(norm)]
+    if not revisions:
+        return [
+            f"'{responses[-1][1]}' has landed but the proposal carries no "
+            f"complete current-contract revision -- after a proposal review "
+            f"Response the author appends ONE complete current contract (scope, "
+            f"exclusions, invariants, failure dispositions, public paths, "
+            f"evidence, omissions, deferred work) as a '## Revised proposal' or "
+            f"'## Revision <n>' section, because the newest reviewed complete "
+            f"revision is what the Decision and the implementation bind.  A "
+            f"Response that disposes findings without restating the contract "
+            f"leaves the next reviewer to reassemble it from the history, which "
+            f"is the repeated reading this contract exists to remove."]
+    lines_total = len(_split_lines(art.text)) + 1
+    v: List[str] = []
+    for line_no, raw in revisions:
+        end = _span_end(headings, line_no, 2, lines_total)
+        found = [(n, lvl, h, norm) for n, lvl, h, norm in headings
+                 if line_no < n < end]
+        conforming = [(n, h) for n, lvl, h, norm in found
+                      if _is_ledger_heading(lvl, norm)]
+        if len(conforming) > 1:
+            v.append(
+                f"'{raw}': duplicate '### {_LEDGER_HEADING}' "
+                f"({len(conforming)} headings, lines "
+                f"{', '.join(str(n) for n, _h in conforming)}) -- one complete "
+                f"contract carries ONE ledger; two cannot both be the complete "
+                f"account of what this revision withdrew.")
+            continue
+        if not conforming:
+            # The heading that CLOSED the span is a near-miss candidate too, and
+            # it is the most likely mistake of all: `## Withdrawn / superseded
+            # commitments` written at H2 both misses the level AND terminates the
+            # revision it was meant to sit inside, so without this the author gets
+            # a bare "missing" for a heading they can see on the page.
+            closer = [(n, lvl, h, norm) for n, lvl, h, norm in headings
+                      if n == end]
+            near = [h for n, lvl, h, norm in found + closer
+                    if _is_ledger_near_miss(norm) and not _is_ledger_heading(
+                        lvl, norm)]
+            hint = ("" if not near else
+                    "  The nearest heading is " + "; ".join(
+                        repr(h) for h in near) + f", which does not count: the "
+                    f"ledger is an H3 ('### ') and its wording is exact.")
+            v.append(
+                f"'{raw}': no '### {_LEDGER_HEADING}' heading -- the ledger is "
+                f"MANDATORY in every complete current-contract revision, and the "
+                f"heading is required EVEN WHEN its value is 'None'.  Append "
+                f"'### {_LEDGER_HEADING}' with one bullet per earlier commitment "
+                f"(the replacement or withdrawal, and the reason), or a single "
+                f"'* None'.  A revision that quietly drops a commitment is the "
+                f"failure this ledger exists to make visible to the reviewer who "
+                f"compares it with the previously reviewed contract." + hint)
+            continue
+        ledger_line = conforming[0][0]
+        ledger_end = _span_end(headings, ledger_line, _LEDGER_LEVEL, end)
+        if not _ledger_value_is_written(art.text, ledger_line, ledger_end):
+            v.append(
+                f"'{raw}': '### {_LEDGER_HEADING}' at line {ledger_line} carries "
+                f"no written value -- the heading is mandatory even when the "
+                f"value is 'None', which means 'None' is WRITTEN rather than "
+                f"inferred from an empty section.  Give it one bullet per "
+                f"withdrawn or superseded commitment, or a single '* None'.")
+    return v
+
+
 def review_record_violations(art: Artifact,
                              effective_state: Optional[str] = None
                              ) -> List[str]:
@@ -4078,6 +4376,12 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
         # the field is present; what it refuses is a present one that cannot be
         # read as exactly one of the two closed values.
         v.extend(plan_readiness_violations(art))
+        # P3 -- the complete current-contract revision and its withdrawal ledger.
+        # Unconditional on status for the reason P1's pair is: the obligation
+        # arrives with the Response, not at some later state, and an author who
+        # discovered the refusal only at the transition would already have asked a
+        # reviewer to read a contract that was never restated.
+        v.extend(current_contract_violations(art))
         # E2 -- R6's proposal contradictions, on the shared predicate `next` and
         # (at P4) `closeout` consume.  Placed here so a status/evidence
         # contradiction is reported beside the declarations it depends on.
@@ -4226,7 +4530,12 @@ def _gating_preconditions(art: Artifact, target: str,
                 (plan_readiness_violations(art),
                  "any '## Review' record's 'Plan readiness:' finding reads as "
                  "exactly one of READY | DISTINCT REVIEW REQUIRED (optional "
-                 "field; no default)")):
+                 "field; no default)"),
+                (current_contract_violations(art),
+                 "a proposal that has answered a review carries a complete "
+                 "current-contract revision, and every such revision carries its "
+                 f"mandatory '### {_LEDGER_HEADING}' ledger with a written value "
+                 "(even when that value is 'None')")):
             detail = "" if not problems else "  UNMET: " + "; ".join(problems)
             gates.append((not problems, name + detail))
         if target in ("awaiting-review", "reviewed"):
@@ -4253,8 +4562,9 @@ def _gating_preconditions(art: Artifact, target: str,
                     "the only closed one a proposal review carries (conformance "
                     "only: the tool reads the declaration, never the critique)"))
             gates.append((True,
-                          "append a '## Response' (+ optional '## Revised "
-                          "proposal'); append-only."))
+                          "append a '## Response' AND the complete "
+                          "current-contract revision it owes (with its "
+                          f"'### {_LEDGER_HEADING}' ledger); append-only."))
         elif target == "awaiting-decision":
             # E2 / R6 bullet 2 with R1's replacement text.  No instruction gate:
             # this transition appends nothing -- the clearing REVIEW is what
@@ -4515,8 +4825,6 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "accept with modification / reject / defer):\n\n"
                 "* **[R1]** <accept|accept with modification|reject|defer> -- "
                 "<rationale>\n\n"
-                "<If accepted critiques substantially change the proposal, add a "
-                "'## Revised proposal' section and set Status: revised.>\n\n"
                 "<Scope delta -- ONLY if this revision narrows what the "
                 "proposal will deliver, judged against the scope AS OPENED. "
                 "State `preserved` if you want the record to show you "
@@ -4526,12 +4834,27 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "**Removed scope**\n\n"
                 "* <unit> -- source section; reason; revival/closure "
                 "condition.\n\n"
-                "**Disposition/home**: <where the grouped remainder lives>"
+                "**Disposition/home**: <where the grouped remainder lives>\n\n"
+                "## Revised proposal -- " + date + "\n\n"
+                "<ONE complete current contract, MANDATORY with every Response "
+                "-- not only when the critiques were substantial. "
+                "Self-contained rather than a delta: scope and exclusions, "
+                "invariants, failure dispositions, public paths, evidence, "
+                "omissions, deferred work. The NEWEST reviewed revision is what "
+                "the Decision and the implementation bind; every earlier "
+                "section stays as immutable history.>\n\n"
+                "### " + _LEDGER_HEADING + "\n\n"
+                "* <earlier commitment, the replacement or withdrawal, and the "
+                "reason -- or a single '* None'. The heading is MANDATORY even "
+                "when its value is None: only a written None distinguishes "
+                "'nothing was withdrawn' from 'nobody checked'.>"
             )
             manifest = [
                 "Status: reviewed -> revised",
-                "append '## Response' (+ optional '## Revised proposal'); "
-                "append-only.",
+                "append '## Response' AND the complete current-contract "
+                f"revision with its '### {_LEDGER_HEADING}' ledger -- the "
+                "revision is MANDATORY, and the conformance check refuses a "
+                "Response without one; append-only.",
                 "the Scope-delta block is OMITTED unless the revision narrows "
                 "an outcome the proposal opened with; declining a reviewer's "
                 "proposed expansion is not a reduction. THE TOOL DOES NOT "

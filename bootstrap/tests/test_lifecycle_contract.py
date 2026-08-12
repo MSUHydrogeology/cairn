@@ -5318,3 +5318,604 @@ class TestP2AuthoringTemplates:
             art = planner.Artifact(path, "plan",
                                    path.read_text(encoding="utf-8"))
             assert planner._declares_inheritance(art) is False, rel
+
+
+# ---------------------------------------------------------------------------
+# Chunk P3 -- the complete current contract and its withdrawal ledger.
+#
+# Contract, verbatim from the accepted `review-efficient-lifecycle` parent,
+# "Bounded current contracts" (Revision 1 -- the operative revision; the archived
+# proposal carries no later `R*` section that replaces it):
+#
+#     After a proposal review Response, the author appends one complete current
+#     contract containing scope, exclusions, invariants, failure dispositions,
+#     public paths, evidence, omissions, deferred work, and the heading below:
+#
+#         ### Withdrawn / superseded commitments
+#         * <earlier commitment, replacement or withdrawal, and reason>
+#
+#     The heading is mandatory even when its value is `None`.  A reviewer compares
+#     the complete revision to the previously reviewed contract and verifies this
+#     ledger.  The newest reviewed complete revision is operative for Decision and
+#     implementation; all earlier sections remain immutable history.
+#
+# WHY THESE FIXTURES ARE SYNTHETIC, AND WHY THAT IS THE POINT.  Measured at this
+# chunk's implementation parent: 53 proposals in this tree carry a `## Response`
+# or a revision section, exactly **one** carries the ledger, and **all 52 that do
+# not are already immutable** -- so the live trigger set is EMPTY.  A rule whose
+# trigger set is empty is indistinguishable from a rule that does nothing: the
+# silent-tool defect `AGENTS.md` > *Verifying claims* names ("a tool that returns
+# success without testing the claimed property is a worse defect than no tool,
+# because it is silent").  "No corpus proposal triggers it and the suite is green"
+# is therefore not evidence here.  Every refusal direction below is exercised
+# against a synthetic proposal that DOES carry a Response, plus two nodes that
+# hold the emptiness itself: `test_the_live_corpus_owes_no_ledger_today` reddens
+# the day a real proposal first triggers, and
+# `test_every_pre_ledger_proposal_is_covered_by_immutability_alone` re-derives the
+# claim that no legacy manifest is needed instead of trusting it.
+#
+# Each node carries a single-property falsifier -- a mutation applied to
+# `templates/skills/_lib/lifecycle_planner.py`, the copy this module LOADS, then
+# reverted -- recorded in the plan's implementation-verification section rather
+# than asserted here.  The only thing that runs these nodes is a person typing
+# `python -m pytest bootstrap/tests`; Cairn has no CI.
+# ---------------------------------------------------------------------------
+
+_P3_LEDGER = "### Withdrawn / superseded commitments"
+_P3_ENTRY = "* the earlier six-plan pilot -- superseded by six-or-60-days; reason"
+_P3_REVISION = "## Revised proposal -- Revision 2"
+_P3_RESPONSE = "## Response -- Author A (Strategy) -- 2026-08-11"
+
+
+def _p3_prop(tmp_path: Path, body: str, *, status: str = "revised",
+             stem: str = "p3-fixture", archived: bool = False):
+    """A live proposal carrying *body* below its header -> the parsed artifact.
+
+    `archived=True` puts it under `dev/proposals/archive/` instead, which is the
+    other half of `_is_immutable` and is exercised as such.
+    """
+    base = tmp_path / "dev" / "proposals"
+    if archived:
+        base = base / "archive"
+    base.mkdir(parents=True, exist_ok=True)
+    path = base / f"{stem}.md"
+    path.write_text(
+        f"# {stem}\n\n"
+        "**Author**: Author A (Strategy)\n"
+        f"**Status**: {status}\n"
+        "**Assurance path**: standard\n\n"
+        "## Context\n\nWhy.\n\n"
+        f"{body}",
+        encoding="utf-8")
+    return planner._read_artifact(path)
+
+
+def _p3_body(*, response: str | None = _P3_RESPONSE,
+             revision: str | None = _P3_REVISION,
+             ledger: str | None = _P3_LEDGER,
+             value: str | None = _P3_ENTRY,
+             revision_first: bool = False,
+             trailer: str = "") -> str:
+    """One Response + one revision + its ledger, each part independently removable.
+
+    Every refusal node below varies exactly one of them, so no node can pass for
+    a reason a sibling node's fixture happens to supply.
+    """
+    resp = "" if response is None else f"{response}\n\n**[R1]** accept.\n\n"
+    rev = ""
+    if revision is not None:
+        rev = f"{revision}\n\nThe complete current contract.\n\n"
+        if ledger is not None:
+            rev += f"{ledger}\n\n"
+            if value is not None:
+                rev += f"{value}\n\n"
+    parts = (rev, resp) if revision_first else (resp, rev)
+    return "".join(parts) + trailer
+
+
+def _p3(tmp_path: Path, **kw) -> list:
+    """The one public predicate, over a body built by `_p3_body`."""
+    prop_kw = {k: kw.pop(k) for k in ("status", "stem", "archived")
+               if k in kw}
+    return planner.current_contract_violations(
+        _p3_prop(tmp_path, _p3_body(**kw), **prop_kw))
+
+
+class TestP3TheContractClears:
+    """The positive cases -- and the mutant guard for every refusal below."""
+
+    def test_a_response_with_a_complete_revision_and_a_ledger_clears(
+            self, tmp_path):
+        """The guard that catches a predicate which always violates.  If this
+        node ever fails, no refusal node below is evidence of anything."""
+        assert _p3(tmp_path) == []
+
+    @pytest.mark.parametrize("value", [
+        "* None", "* none", "None", "none.", "* **None** -- nothing withdrawn.",
+    ])
+    def test_a_ledger_whose_value_is_none_clears(self, tmp_path, value):
+        """*"The heading is mandatory even when its value is `None`."*  Written
+        `None` is the whole point: it distinguishes "nothing was withdrawn" from
+        "nobody checked", so the spellings an author actually reaches for all
+        clear."""
+        assert _p3(tmp_path, value=value) == []
+
+    def test_a_revision_placed_ABOVE_its_response_clears(self, tmp_path):
+        """Order-agnostic, and this is a measured restraint rather than laziness.
+        The proposal template's own long-standing instruction was *"write a short
+        '## Revised proposal' section above this"*, 6 archived proposals follow it,
+        and the accepted contract fixes no order.  A position rule here would
+        refuse correct records for a reason no contract states."""
+        assert _p3(tmp_path, revision_first=True) == []
+
+    @pytest.mark.parametrize("heading", [
+        "## Response -- Author A -- 2026-08-11",
+        "## Response — Author A (author) — 2026-08-11",
+        "## Response to review -- Author A -- 2026-08-11",
+        "## Response to the External security review -- A -- 2026-08-11",
+        "## Response and revision -- Author A (author) -- 2026-08-11",
+        "## Response + Revised proposal (Round 4) -- Author A -- 2026-08-11",
+    ])
+    def test_every_live_response_spelling_is_the_same_record(
+            self, tmp_path, heading):
+        """All six shapes are real corpus headings, including the em-dash
+        separator and the two COMBINED forms that are a Response and a revision in
+        one section.  Matching is on the normalized heading text, so an em-dash is
+        not a contract difference -- and the combined forms satisfy the revision
+        obligation from the same line, which is why they are here rather than in
+        the refusal class."""
+        combined = "revis" in heading.lower()
+        assert _p3(tmp_path, response=heading,
+                   revision=None if combined else _P3_REVISION,
+                   ledger=None if combined else _P3_LEDGER,
+                   trailer=(f"{_P3_LEDGER}\n\n{_P3_ENTRY}\n" if combined else "")
+                   ) == []
+
+    @pytest.mark.parametrize("spelling", [
+        "### Withdrawn / superseded commitments",
+        "### Withdrawn/superseded commitments",
+        "###   Withdrawn  /  superseded   commitments",
+        "### **Withdrawn / superseded commitments**",
+        "### withdrawn / superseded commitments",
+    ])
+    def test_formatting_variation_in_the_heading_is_tolerated(
+            self, tmp_path, spelling):
+        """Tolerant on FORMATTING, strict on WORDS and LEVEL.  Slash spacing,
+        emphasis, run-together whitespace and case are not contract differences;
+        refusing them would be this checker inventing a house style."""
+        assert _p3(tmp_path, ledger=spelling) == []
+
+    def test_a_proposal_that_has_answered_nothing_is_silent(self, tmp_path):
+        """The obligation ARRIVES with the Response.  A proposal still awaiting
+        its first review owes no contract revision, and this is the whole reason
+        the gate can be unconditional on status."""
+        assert _p3(tmp_path, response=None, revision=None,
+                   status="awaiting-review") == []
+
+    def test_a_plan_is_silent_because_its_rule_is_the_opposite(self, tmp_path):
+        """The contract's very next paragraph gives the plan the inverse rule:
+        *"Its appended Response is a finding-disposition table that ... does not
+        reproduce replacement cells in an amendment ledger."*  A plan carrying a
+        `## Response to plan review` must therefore not be asked for a ledger."""
+        plans = tmp_path / "dev" / "plans"
+        plans.mkdir(parents=True, exist_ok=True)
+        path = plans / "p3-plan.md"
+        path.write_text(
+            "# p3-plan\n\n**Status**: executing\n"
+            "**Plan review**: required(Internal)\n\n"
+            "## Scope\n\nx\n\n"
+            "## Response to plan review -- Author A -- 2026-08-11\n\n"
+            "**[R1]** accept, folded into the chunk row.\n",
+            encoding="utf-8")
+        art = planner._read_artifact(path)
+        assert planner.current_contract_violations(art) == []
+
+
+class TestP3TheRevisionIsMandatory:
+    """Obligation A -- a Response without a complete current contract refuses."""
+
+    def test_a_response_with_no_revision_refuses(self, tmp_path):
+        v = _p3(tmp_path, revision=None)
+        assert len(v) == 1, v
+        assert "carries no complete current-contract revision" in v[0], v
+
+    def test_the_refusal_quotes_the_response_it_answered(self, tmp_path):
+        """The author is told WHICH record created the obligation, not that
+        'something is missing' -- S8's rule, reused."""
+        v = _p3(tmp_path, revision=None)
+        assert _P3_RESPONSE in v[0], v
+
+    def test_the_refusal_names_the_eight_contents_of_a_complete_contract(
+            self, tmp_path):
+        """A refusal that says 'add a revision' without saying what a complete
+        contract contains hands the author a puzzle instead of a rule."""
+        v = _p3(tmp_path, revision=None)
+        for named in ("scope", "exclusions", "invariants",
+                      "failure dispositions", "public paths", "evidence",
+                      "omissions", "deferred work"):
+            assert named in v[0], named
+
+    @pytest.mark.parametrize("heading", [
+        "## Revised proposal",
+        "## Revised proposal -- 2026-08-11",
+        "## Revised proposal, round 2 -- content-free findings -- 2026-08-11",
+        "## Revised proposal (Round 5) -- expiry mechanics -- 2026-08-11",
+        "## Revision 1 -- complete current contract",
+        "## Revision after the [I2] direction -- Author A -- 2026-08-11",
+    ])
+    def test_every_live_revision_spelling_satisfies_the_obligation(
+            self, tmp_path, heading):
+        """Six real corpus spellings.  Measured across the 53 proposals that carry
+        a Response or a revision: 44 distinct H2 headings match this matcher and
+        every one of them is genuinely a revision record -- no false positive in
+        the tree -- which is what makes a `revision`-anywhere match safe here."""
+        assert _p3(tmp_path, revision=heading) == []
+
+    def test_a_similar_but_different_word_is_not_a_revision(self, tmp_path):
+        """Word-anchored: `## Revisiting the loader` is prose, not a contract."""
+        v = _p3(tmp_path, revision="## Revisiting the loader contract")
+        assert any("no complete current-contract revision" in m for m in v), v
+
+
+class TestP3TheLedgerIsMandatory:
+    """Obligation B -- every revision carries exactly one ledger, with a value."""
+
+    def test_a_revision_with_no_ledger_refuses(self, tmp_path):
+        v = _p3(tmp_path, ledger=None)
+        assert len(v) == 1, v
+        assert f"no '{_P3_LEDGER}' heading" in v[0], v
+        assert "MANDATORY" in v[0] and "'None'" in v[0], v
+
+    def test_the_refusal_quotes_the_revision_that_owes_it(self, tmp_path):
+        v = _p3(tmp_path, ledger=None)
+        assert _P3_REVISION in v[0], v
+
+    def test_a_bare_ledger_heading_refuses(self, tmp_path):
+        """The empty-label defect, closed here as `_has_disposition_attestation`
+        closed it for the archive block: a heading with nothing under it is a
+        check passing on its own scaffold.  *"Mandatory even when its value is
+        `None`"* means the `None` is WRITTEN, not inferred from silence."""
+        v = _p3(tmp_path, value=None)
+        assert len(v) == 1, v
+        assert "carries no written value" in v[0], v
+
+    def test_a_duplicate_ledger_in_one_revision_refuses(self, tmp_path):
+        """Two ledgers cannot both be the complete account of one revision --
+        `_parse_one_field`'s rule (a duplicate refuses even when the values
+        agree), applied to a heading."""
+        v = _p3(tmp_path, trailer=f"{_P3_LEDGER}\n\n* None\n")
+        assert len(v) == 1, v
+        assert "duplicate" in v[0], v
+
+    def test_each_revision_needs_its_OWN_ledger(self, tmp_path):
+        """Per-revision, not per-artifact: the contract attaches the heading to
+        the complete contract, so an earlier revision's ledger cannot serve a
+        later one.  Both refusals are reported, each quoting its own revision."""
+        body = (_p3_body()
+                + "## Revised proposal -- Revision 3\n\nThe next contract.\n\n"
+                + "## Revised proposal -- Revision 4\n\nAnd the next.\n")
+        art = _p3_prop(tmp_path, body)
+        v = planner.current_contract_violations(art)
+        assert len(v) == 2, v
+        assert any("Revision 3" in m for m in v), v
+        assert any("Revision 4" in m for m in v), v
+        assert not any("Revision 2" in m for m in v), v
+
+
+class TestP3WhatIsNotAHeading:
+    """The false-CLEAR channels -- each measured on real bytes, not imagined."""
+
+    def test_a_ledger_quoted_inside_a_fence_does_not_satisfy_it(self, tmp_path):
+        """**The channel that exists in this tree.**  The accepted contract
+        quotes the ledger heading inside a ```text fence *in the same section as
+        its real one*, so a raw byte search finds two headings in that artifact
+        where markdown has one.  A fenced `###` is literal text; counting it would
+        let a proposal satisfy the requirement by QUOTING the specification."""
+        fenced = ("```text\n" + _P3_LEDGER + "\n* <entry>\n```")
+        v = _p3(tmp_path, ledger=None, trailer="")
+        assert len(v) == 1, v
+        art = _p3_prop(tmp_path, _p3_body(ledger=None) + fenced + "\n")
+        v2 = planner.current_contract_violations(art)
+        assert len(v2) == 1, v2
+        assert f"no '{_P3_LEDGER}' heading" in v2[0], v2
+
+    def test_an_indented_ledger_does_not_satisfy_it(self, tmp_path):
+        """Both authoring templates teach the heading in a 4-space indented
+        block, which is a code block rather than a heading.  That is what keeps a
+        scaffolded proposal from clearing the requirement it teaches -- the
+        column-0 rule is markdown's own."""
+        art = _p3_prop(tmp_path,
+                       _p3_body(ledger=None) + "    " + _P3_LEDGER + "\n")
+        v = planner.current_contract_violations(art)
+        assert len(v) == 1, v
+        assert f"no '{_P3_LEDGER}' heading" in v[0], v
+
+    def test_prose_discussing_the_ledger_is_not_the_ledger(self, tmp_path):
+        """P2 proved the header bound is load-bearing rather than cosmetic: this
+        plan and the archived contract both DISCUSS the heading in prose, and a
+        whole-text search makes the artifact that specifies a field declare it
+        about itself.  A heading match needs the hashes at the margin."""
+        prose = (f"The revision owes a `{_P3_LEDGER}` heading, and its value may "
+                 f"be None.\n")
+        art = _p3_prop(tmp_path, _p3_body(ledger=None) + prose)
+        v = planner.current_contract_violations(art)
+        assert len(v) == 1, v
+
+
+class TestP3NearMisses:
+    """S8's rule reused: quote the heading that did not count."""
+
+    @pytest.mark.parametrize("heading", [
+        "## Withdrawn / superseded commitments",
+        "#### Withdrawn / superseded commitments",
+    ])
+    def test_a_wrong_LEVEL_heading_is_quoted_as_a_near_miss(
+            self, tmp_path, heading):
+        v = _p3(tmp_path, ledger=heading)
+        assert len(v) == 1, v
+        assert "nearest heading is" in v[0] and heading in v[0], v
+        assert "the ledger is an H3" in v[0], v
+
+    @pytest.mark.parametrize("heading", [
+        "### Withdrawn / superseded commitment",
+        "### Superseded / withdrawn commitments",
+        "### Withdrawn and superseded work",
+    ])
+    def test_a_WORD_variant_is_quoted_as_a_near_miss(self, tmp_path, heading):
+        """Keyed on the two words every plausible misspelling retains, the trick
+        `_INHERITANCE_NEAR_MISS_RE` already uses: recognize the neighbourhood,
+        then quote the line, instead of leaving a bare 'missing' behind."""
+        v = _p3(tmp_path, ledger=heading)
+        assert len(v) == 1, v
+        assert "nearest heading is" in v[0] and heading in v[0], v
+
+    def test_an_unrelated_heading_produces_no_near_miss_hint(self, tmp_path):
+        """The hint must not fire on every H3 in the revision, or it stops
+        pointing at anything."""
+        v = _p3(tmp_path, ledger="### Evidence and omissions")
+        assert len(v) == 1, v
+        assert "nearest heading is" not in v[0], v
+
+
+class TestP3Grandfathering:
+    """`_is_immutable`, in both directions and in the fail-closed direction."""
+
+    @pytest.mark.parametrize("status", ["accepted", "rejected", "superseded"])
+    def test_a_terminal_proposal_is_silent(self, tmp_path, status):
+        """The 52 pre-ledger proposals are append-only: a requirement that
+        reached them would be a permanent red on text nobody may edit.  The one
+        LIVE member of that population is grandfathered by exactly this arm -- its
+        status is `accepted` while it still sits in `dev/proposals/`."""
+        assert _p3(tmp_path, revision=None, ledger=None, status=status) == []
+
+    def test_an_archived_proposal_is_silent(self, tmp_path):
+        """The other 51, grandfathered by location."""
+        assert _p3(tmp_path, revision=None, status="revised",
+                   archived=True) == []
+
+    @pytest.mark.parametrize("header", [
+        "",                                       # no Status line at all
+        "**Status**: revised\n**Status**: accepted",   # duplicate
+        "**Status**: whatever-this-is",           # unrecognized
+    ])
+    def test_a_missing_duplicate_or_UNKNOWN_status_falls_INTO_the_rule(
+            self, tmp_path, header):
+        """`_strict_header_status` returns None for all three, and None means NOT
+        grandfathered.  The direction matters: an artifact whose status cannot be
+        read must owe the obligation, never inherit the exemption -- otherwise
+        deleting a Status line is how you escape the gate."""
+        base = tmp_path / "dev" / "proposals"
+        base.mkdir(parents=True, exist_ok=True)
+        path = base / "p3-status.md"
+        path.write_text(
+            f"# p3-status\n\n{header}\n\n## Context\n\nx\n\n"
+            + _p3_body(revision=None),
+            encoding="utf-8")
+        v = planner.current_contract_violations(planner._read_artifact(path))
+        assert len(v) == 1, (header, v)
+
+    def test_p3_ships_no_legacy_manifest(self):
+        """The fence on the claim in the block's own comment.  P1 and C needed
+        enumerated grandfather manifests; P3 does not, because immutability covers
+        the whole pre-ledger population (re-derived by the node below).  If a
+        later change needs one, it has to add it deliberately rather than
+        arrive by edit -- and a manifest that appears here without a re-derivation
+        is exactly the stale-data defect [CF4] recorded."""
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        start = src.index("# === P3 -- the complete current contract")
+        end = src.index("def review_record_violations(")
+        block = src[start:end]
+        for forbidden in ("_LEGACY", "_is_legacy(", "hashlib", "_git_readonly",
+                          "subprocess", "read_text", "write_text", "open("):
+            assert forbidden not in block, forbidden
+
+
+def _p3_all_proposals():
+    """Every proposal artifact in this tree, live and archived."""
+    for fam in ("proposals", "proposals/archive"):
+        base = CAIRN_ROOT / "dev" / fam
+        if not base.is_dir():
+            continue
+        for path in sorted(base.glob("*.md")):
+            if path.name in ("_template.md", "README.md"):
+                continue
+            yield planner._read_artifact(path)
+
+
+def test_the_live_corpus_owes_no_ledger_today():
+    """**The empty trigger set, recorded as a measurement rather than left as an
+    accident.**  No artifact in this tree -- live or archived -- is refused by
+    this contract today: the one proposal that carries a ledger conforms, and
+    every proposal that does not is immutable.  When a live proposal first lands a
+    Response, this node reddens, and that is the signal to check that the
+    revision it landed with carries its ledger.  Until then it is the standing
+    proof that P3's blast radius is exactly zero, and the reason every other node
+    above is synthetic."""
+    flagged = {art.path.name: planner.current_contract_violations(art)
+               for art in _p3_all_proposals()
+               if planner.current_contract_violations(art)}
+    assert flagged == {}, flagged
+
+
+def test_every_pre_ledger_proposal_is_covered_by_immutability_alone(
+        monkeypatch):
+    """The claim P3 ships on, re-derived instead of trusted.
+
+    With grandfathering switched off, the obligation is measured over the whole
+    corpus; every artifact it reaches must be immutable.  Written as a monkeypatch
+    of the one predicate rather than as a second implementation of the rule,
+    because a hand-written second oracle is free to drift from the shipped one --
+    which is the failure mode a "measured" claim is supposed to prevent.
+    """
+    arts = list(_p3_all_proposals())
+    owing, uncovered = [], []
+    monkeypatch.setattr(planner, "_is_immutable", lambda art: False)
+    for art in arts:
+        if planner.current_contract_violations(art):
+            owing.append(art.path.name)
+    monkeypatch.undo()
+    for name in owing:
+        art = next(a for a in arts if a.path.name == name)
+        if not planner._is_immutable(art):
+            uncovered.append(name)
+    assert uncovered == [], (
+        "a MUTABLE proposal owes a ledger it cannot have -- P3 would need a "
+        f"legacy manifest, or that artifact needs the heading: {uncovered}")
+    assert len(owing) >= 40, (
+        "the pre-ledger population collapsed, which means the obligation stopped "
+        f"reaching the records it was measured against: {len(owing)}")
+
+
+class TestP3BothGateSurfacesAgree:
+    """[R3-E1]'s rule: a predicate wired to one surface leaves the other loose,
+    and the loose surface is the one an author drives."""
+
+    def test_scan_reports_the_refusal(self, tmp_path):
+        art = _p3_prop(tmp_path, _p3_body(ledger=None))
+        identity = planner._load_identity_model(tmp_path)
+        v = planner._conformance_violations(art, identity)
+        assert any(f"no '{_P3_LEDGER}' heading" in m for m in v), v
+
+    @pytest.mark.parametrize("target", ["awaiting-review", "revised",
+                                        "awaiting-decision", "accepted"])
+    def test_every_forward_transition_reports_it_unmet(self, tmp_path, target):
+        """Reported on EVERY forward transition, because the obligation does not
+        begin at some later state: an author who met the refusal only at the
+        Decision would already have asked a reviewer to read a contract that was
+        never restated."""
+        art = _p3_prop(tmp_path, _p3_body(ledger=None), status="revised")
+        identity = planner._load_identity_model(tmp_path)
+        gates = planner._gating_preconditions(art, target, identity)
+        hits = [d for met, d in gates if not met and "ledger" in d]
+        assert hits, (target, [d for _m, d in gates])
+
+    def test_the_same_predicate_object_serves_both(self):
+        """One implementation, two call sites -- S12's rule.  A sibling copy is
+        how the two surfaces end up disagreeing about the same record."""
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        assert src.count("def current_contract_violations(") == 1
+        assert src.count("current_contract_violations(art)") == 2
+
+
+class TestP3TheRealContractIsTheORACLE:
+    """The strongest available oracle: the accepted contract's own bytes."""
+
+    def test_the_accepted_contract_clears_when_it_is_made_live(self, tmp_path):
+        """`2026-08-10-codex-review-efficient-lifecycle.md` is the one artifact in
+        the tree that satisfies this rule, and it satisfies it while ALSO quoting
+        the heading inside a fence four lines above the real one.  Re-homed as a
+        live proposal it must clear -- which tests the fence discrimination and
+        the whole predicate against real prose rather than a fixture built to
+        pass."""
+        src = (CAIRN_ROOT / "dev" / "proposals" / "archive"
+               / "2026-08-10-codex-review-efficient-lifecycle.md")
+        text = src.read_text(encoding="utf-8")
+        assert text.count(_P3_LEDGER + "\n") == 2, (
+            "the fixture's premise moved: the source no longer carries one fenced "
+            "quote of the heading and one real one")
+        base = tmp_path / "dev" / "proposals"
+        base.mkdir(parents=True, exist_ok=True)
+        path = base / src.name
+        path.write_text(
+            text.replace("**Status**: accepted", "**Status**: revised", 1),
+            encoding="utf-8")
+        art = planner._read_artifact(path)
+        assert planner._is_immutable(art) is False
+        assert planner.current_contract_violations(art) == []
+        found = [h for _n, lvl, h, norm in planner._heading_records(art.text)
+                 if planner._is_ledger_heading(lvl, norm)]
+        assert found == [_P3_LEDGER], found
+
+
+class TestP3AuthoringTemplates:
+    """P3's template half, pinned per surface in P1's and P2's idiom.
+
+    The plan's acceptance criteria require each documentation surface to be
+    *confirmed* updated ("drift gates catch drift, not absence"), and an author
+    refused by a gate who finds no instruction in the template has been handed a
+    puzzle instead of a rule.  **Both sides of every pair**, for the reason
+    `scope-reduction-trap`'s Chunk B established the hard way.
+    """
+
+    SURFACES = {
+        "dev/proposals/_template.md": {
+            # Needles sit inside ONE physical line: the templates are hard-wrapped,
+            # so a phrase that reads continuously on the page can straddle a
+            # newline, and a straddling needle fails for a formatting reason.
+            "the revision is mandatory, not conditional":
+                "one complete current contract with the Response, every time",
+            "the ledger heading, verbatim": _P3_LEDGER,
+            "None must be written": "only a written `None` distinguishes",
+            "the newest revision is what binds": "newest reviewed",
+            "earlier sections stay history": "immutable history",
+            "the H3-at-the-margin rule": "at the left margin",
+            "the reviewer verifies the ledger": "verify its withdrawal ledger",
+            "what the checker cannot do": "it never verifies that the ledger is",
+        },
+        "dev/plans/_template.md": {
+            "the plan's rule is the opposite":
+                "not in a contract revision",
+            "no ledger on a plan": "ledger; a plan does not",
+            "corrections fold into the cells":
+                "fold plan-review corrections straight into the mutable",
+            "and stop folding once a chunk starts":
+                "execution of a chunk begins",
+        },
+    }
+
+    @pytest.mark.parametrize("rel", sorted(SURFACES))
+    @pytest.mark.parametrize("shipped", [False, True])
+    def test_each_surface_carries_the_contract(self, rel, shipped):
+        path = CAIRN_ROOT / (f"templates/core/{rel}" if shipped else rel)
+        text = path.read_text(encoding="utf-8")
+        missing = [name for name, needle in self.SURFACES[rel].items()
+                   if needle not in text]
+        assert not missing, (path, missing)
+
+    @pytest.mark.parametrize("rel", ["dev/proposals/_template.md",
+                                     "templates/core/dev/proposals/_template.md"])
+    def test_the_scaffolded_proposal_template_carries_no_real_ledger(self, rel):
+        """The template teaches the heading by QUOTING it, so the quoted grammar
+        must not become a heading in every proposal copied from it.  This node is
+        what keeps the example indented as the template is edited -- un-indent it
+        and a scaffolded proposal would clear a requirement it never met."""
+        path = CAIRN_ROOT / rel
+        text = path.read_text(encoding="utf-8")
+        assert _P3_LEDGER in text, rel
+        found = [h for _n, lvl, h, norm in planner._heading_records(text)
+                 if planner._is_ledger_heading(lvl, norm)]
+        assert found == [], (rel, found)
+
+    def test_the_emitted_revised_scaffold_clears_its_own_gate(self, tmp_path):
+        """A scaffold that emits text its own checker refuses is worse than no
+        scaffold: the tool would hand the author a violation.  The `revised`
+        block previously said the revision was *optional* -- the pre-contract
+        wording -- and this node is why that could not survive."""
+        art = _p3_prop(tmp_path, "", status="reviewed")
+        _f, _t, blocks = planner._scaffold(art, "revised", "2026-08-11")
+        pasted = _p3_prop(tmp_path, blocks[0] + "\n", status="revised",
+                          stem="p3-scaffolded")
+        assert planner.current_contract_violations(pasted) == []
+        joined = " ".join(blocks)
+        assert "optional '## Revised proposal'" not in joined, joined
+        assert _P3_LEDGER in blocks[0], blocks[0]
