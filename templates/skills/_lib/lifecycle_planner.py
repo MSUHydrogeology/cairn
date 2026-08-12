@@ -1535,11 +1535,25 @@ CODE_REVIEW_CLEARING_VERDICTS = ("SHIP", "Accept", "Accept-with-followups",
                                  "PASS")
 CODE_REVIEW_BLOCKING_VERDICTS = ("REVISE", "Request changes", "BLOCK")
 
-#: The four-field review basis a Code-review pass inherits from the accepted
-#: parent (`review-efficient-lifecycle` > "Every review names a bounded
-#: target"), plus R2's three attestation lines.  Order is the reported order.
-_CODE_REVIEW_BASIS_FIELDS = ("Reviewed commit", "Target", "Prior findings")
+#: The three free-text fields of the review basis -- the ones whose *presence*
+#: is the whole contract, with no closed vocabulary to check the value against.
+#: `Assurance path` is the fourth and is handled by `_parse_one_field`, because
+#: it alone has a vocabulary (`_ASSURANCE_PATHS`).
+#:
+#: Chunk C introduced these as `_CODE_REVIEW_BASIS_FIELDS`, wired to the
+#: Code-review record only.  P1 renames them because the accepted parent's
+#: "Bounded current contracts" is explicit that the basis is *not* Code-review
+#: property: *"Every proposal, plan, and code review records"* these four lines.
+#: One tuple, three record kinds, one shared checker (`_review_basis_violations`)
+#: -- so a future field cannot be added to one kind and forgotten in the others.
+#: Order is the reported order.
+_REVIEW_BASIS_FREE_FIELDS = ("Reviewed commit", "Target", "Prior findings")
 _ASSURANCE_PATHS = ("standard", "high-assurance")
+
+#: The complete four-field basis, in the order the accepted parent writes it.
+#: Used for the refusal message, so a reader is told the whole contract rather
+#: than only the one field they happened to omit.
+_REVIEW_BASIS_FIELDS = _REVIEW_BASIS_FREE_FIELDS + ("Assurance path",)
 
 
 def _code_review_field_re(name: str) -> "re.Pattern[str]":
@@ -1561,10 +1575,9 @@ def _code_review_field_re(name: str) -> "re.Pattern[str]":
         r"(?P<value>.*?)[ \t]*$", re.M)
 
 
-_CODE_REVIEW_FIELD_RE = {
+_REVIEW_FIELD_RE = {
     name: _code_review_field_re(name)
-    for name in _CODE_REVIEW_BASIS_FIELDS
-    + ("Assurance path", "Model", "Verdict", "Findings")
+    for name in _REVIEW_BASIS_FIELDS + ("Model", "Verdict", "Findings")
 }
 
 #: Emphasis markers, deleted before the verdict line is read.  The house form in
@@ -1705,13 +1718,23 @@ def _record_boundaries(art: Artifact) -> List[int]:
     `_HEADER_RE`, so before this it did not terminate the Plan-review pass above
     it, and that pass's body ran straight through it -- swallowing its
     attestation lines and reporting them as the *earlier* pass's duplicates.
+
+    P1 adds the proposal `## Review` record as a third kind, on the same
+    argument and with the same measured safety: those lines occur only in
+    proposals and plan passes only in plans, so no plan pass body changes by a
+    byte -- and where a proposal review heading *is* parseable by `_HEADER_RE` it
+    was already a level-2 Section and already a boundary.  What it adds is the
+    heading `_HEADER_RE` cannot parse (a `(Round 2)` with a capital R is enough),
+    which before this did not terminate the record above it.
     """
     lines = art.text.split("\n")
     return sorted(
         {sec.line_no for sec in art.sections if sec.level <= 2}
         | {i + 1 for i, raw in enumerate(lines) if _S1_PASS_RE.match(raw)}
         | {i + 1 for i, raw in enumerate(lines)
-           if _CODE_REVIEW_PASS_RE.match(raw)})
+           if _CODE_REVIEW_PASS_RE.match(raw)}
+        | {i + 1 for i, raw in enumerate(lines)
+           if _PROPOSAL_REVIEW_RECORD_RE.match(raw)})
 
 
 #: Any ``## Code review`` H2 heading at all.  The set difference against
@@ -1750,7 +1773,7 @@ def _code_review_pass_body(art: Artifact, line_no: int) -> str:
 
 def _parse_verdict(body: str) -> Tuple[Optional[str], Optional[str]]:
     """R2' -- ``(clearing|blocking, violation)`` from one pass's field scope."""
-    found = _CODE_REVIEW_FIELD_RE["Verdict"].findall(_EMPHASIS_RE.sub("", body))
+    found = _REVIEW_FIELD_RE["Verdict"].findall(_EMPHASIS_RE.sub("", body))
     if not found:
         return None, "missing Verdict"
     if len(found) > 1:
@@ -1872,23 +1895,15 @@ def _code_review_violations(art: Artifact) -> List[str]:
         return v + _legacy_disposition_violations(art, stem, line_no, label)
 
     body = _code_review_pass_body(art, line_no)
-    for field in _CODE_REVIEW_BASIS_FIELDS + ("Model",):
-        found = _CODE_REVIEW_FIELD_RE[field].findall(body)
-        if not found:
-            v.append(f"{label}: missing '{field}:' -- the four-field review "
-                     "basis plus '**Model**:' is mandatory before the pass's "
-                     "first H3")
-        elif len(found) > 1:
-            v.append(f"{label}: duplicate '{field}:' ({len(found)} lines)")
-        elif not found[0].strip():
-            v.append(f"{label}: empty '{field}:' value")
-    _path, path_violation = _parse_one_field(
-        body, _CODE_REVIEW_FIELD_RE["Assurance path"], _ASSURANCE_PATHS,
-        "Assurance path")
+    # P1: the four-field basis is now ONE shared checker across all three record
+    # kinds (`_review_basis_violations`).  `**Model**:` stays here because it is
+    # R2's Code-review-only attestation, not part of the parent's basis.
+    v.extend(_review_basis_violations(body, label))
+    v.extend(_single_field_violations(body, "Model", label))
     _find, findings_violation = _parse_one_field(
-        body, _CODE_REVIEW_FIELD_RE["Findings"], _FINDINGS, "Findings")
+        body, _REVIEW_FIELD_RE["Findings"], _FINDINGS, "Findings")
     verdict, verdict_violation = _parse_verdict(body)
-    for problem in (path_violation, findings_violation, verdict_violation):
+    for problem in (findings_violation, verdict_violation):
         if problem:
             v.append(f"{label}: {problem}")
     if verdict == "blocking":
@@ -1938,6 +1953,345 @@ def _legacy_disposition_violations(art: Artifact, stem: str, line_no: int,
             "'scripts/gen_legacy_code_review_passes.py --report')"]
 
 
+# === P1 -- the four-field basis across all three record kinds ================
+#
+# The accepted `review-efficient-lifecycle` parent, "Bounded current contracts":
+#
+#     Every proposal, plan, and code review records:
+#         Reviewed commit: <full commit id>
+#         Target: <complete current-contract section, operative plan sections,
+#                  or code range>
+#         Prior findings: <ids being closed, or none>
+#         Assurance path: <standard | high-assurance>
+#
+# Chunk C wired all four for the **Code-review** record.  This block extends the
+# identical requirement to the **Plan-review** pass and the proposal
+# **`## Review`** record, and adds the artifact-level `Assurance path:`
+# declaration from the parent's "Assurance paths" section.
+#
+# What the tool does and does not claim (unchanged from R1 and restated because
+# this block is where a reader will look for it): it checks that the record
+# EXISTS and BINDS.  It never checks that the declared assurance path is the
+# *true* classification of the change -- the five high-assurance triggers are
+# **author declarations, not inferences**, taught in the authoring templates.  A
+# scanner cannot know whether a change touches a scientific assumption.
+
+
+#: Any proposal `## Review` record heading.
+#:
+#: **Deliberately permissive where `_S1_PASS_RE` is strict, and the asymmetry is
+#: the safety property.**  A strict `-- <reviewer> -- YYYY-MM-DD` grammar would
+#: turn every other review heading into a *near miss*: invisible to this check,
+#: yet still counted by `_reviewers()`, which is what satisfies the "status is
+#: 'reviewed' but no '## Review' section is present" floor.  That combination is
+#: an escape hatch -- write the heading slightly off-grammar and the basis
+#: obligation disappears while the presence floor stays satisfied.  So **any**
+#: H2 heading opening `## Review -- ` is a record and owes the basis.  Live
+#: proof that the strict shape would under-reach: this repository's own review
+#: headings include `(External)` role parentheticals, `(Round 2)` with a capital
+#: R, and `(round 4, closure read)`; none matches an `_S1_PASS_RE`-shaped rule.
+#:
+#: The required ` -- ` is what keeps `## Reviewer brief` (a real heading in three
+#: proposals here) out, and `## Response to ...` never begins `## Review`.
+_PROPOSAL_REVIEW_RECORD_RE = re.compile(r"^## Review -- \S.*$")
+
+
+#: **Grandfathering follows immutability, not directory.**  This is the shape
+#: Chunk D4 landed in `scripts/claim_check.py` for the same problem, reused here
+#: rather than re-invented -- its accepted contract
+#: (`claim-check-exemption-hygiene` R3) states it as: any file under
+#: `dev/proposals/archive/` or `dev/plans/archive/`; a proposal whose strictly
+#: parsed status is `accepted` / `rejected` / `superseded`; or a plan whose
+#: strictly parsed status is `archived`.
+#:
+#: **Why immutability rather than an enumeration of the whole corpus.**  The
+#: basis fields did not exist when any existing record was written, and every
+#: one of those records is append-only: they *cannot* be retrofitted, so a
+#: requirement that reaches them is a permanent red on text nobody may edit.
+#: `scan` (live-only) is the enforcement surface and is kept at "all artifacts
+#: sound"; `scan --include-archive` is a strict historical audit that already
+#: reports most of the corpus as violating and never was a clean surface.
+#: Demanding the basis of archived material would add noise to the audit and
+#: require rewriting immutable history, which the lifecycle forbids outright.
+def _is_archived_by_location(path: Path) -> bool:
+    """``dev/{proposals,plans}/archive/<name>.md`` -- immutable by location.
+
+    Checked on the two path components rather than on a repo-relative string, so
+    it holds for a fixture under a `tmp_path` root exactly as it holds here.
+    """
+    return (path.parent.name == "archive"
+            and path.parent.parent.name in ("proposals", "plans"))
+
+
+#: A STRICT status line: exactly the bolded header field, one bare token.
+#: Deliberately narrower than `_parse_status`, which is documented as
+#: "best-effort" and takes the first of up to 60 lines.  The two are not
+#: redundant and must not be merged: `_parse_status` answers "what does this
+#: artifact declare", and every conformance check depends on its tolerance.  This
+#: one answers "may this artifact be rewritten", where tolerance is a hazard --
+#: so it can only ever *refuse* to grandfather, never wrongly grant.
+_STRICT_STATUS_LINE_RE = re.compile(
+    r"^\*\*Status\*\*:[ \t]*(?P<status>[A-Za-z][A-Za-z-]*)[ \t]*$")
+
+
+def _strict_header_status(text: str) -> Optional[str]:
+    """The artifact's strictly parsed header status, or ``None``.
+
+    Strict means **exactly one** `**Status**: <token>` line in the *header* --
+    the region above the first `##` heading, which is where both authoring
+    templates put the field.  A `**Status**:` line inside an appended revision
+    section is a historical restatement, not the artifact's current status, so it
+    is not a candidate; zero or several candidates in the header yield ``None``.
+
+    ``None`` means "not grandfathered".  A missing, duplicate, or unrecognized
+    status therefore falls through *into* the requirement rather than silently
+    inheriting the exemption -- the fail-closed direction D4's contract names.
+    """
+    found: List[str] = []
+    for line in _split_lines(text):
+        if line.startswith("## "):
+            break
+        m = _STRICT_STATUS_LINE_RE.match(line.strip())
+        if m is not None:
+            found.append(m.group("status").lower())
+    return found[0] if len(found) == 1 else None
+
+
+def _is_immutable(art: Artifact) -> bool:
+    """True when nobody may rewrite *art* -- archived, or terminal by status."""
+    if _is_archived_by_location(art.path):
+        return True
+    terminal = (PROPOSAL_TERMINAL_STATES if art.kind == "proposal"
+                else PLAN_TERMINAL_STATES)
+    return _strict_header_status(art.text) in terminal
+
+
+#: The commit at which the two enumerations below were derived, pinned and named
+#: so a reader can reproduce the population instead of trusting the literals.
+#: Records appearing after it conform to the forward schema or violate -- the
+#: contract is forward-only, exactly as R3' requires of the Chunk C manifest.
+_BASIS_BASELINE_COMMIT = "50a32237c54cbce437b0834c48bd9c5645b9cd7a"
+
+#: S9(a)-shaped legacy population for the **basis requirement specifically**.
+#: ``stem -> {raw-heading digest: occurrence count}`` -- `_LEGACY_PASSES`' shape,
+#: so `_is_legacy`'s k-th-occurrence anti-replay rule applies unchanged: an
+#: appended heading byte-identical to an admitted one is occurrence ``n + 1`` and
+#: is refused.
+#:
+#: **This is deliberately NOT `_LEGACY_PASSES`.**  That enumeration exempts a
+#: pass from S2/S3/S7 (Tier, Findings, disposition).  Every record below already
+#: satisfies S2/S3/S7 today, so folding them into `_LEGACY_PASSES` would *weaken*
+#: the gate for those records while appearing to do nothing but grandfather. A
+#: separate manifest, scoped to the one obligation it grandfathers, is what keeps
+#: each exemption saying only what it means.
+#:
+#: **Why it is eight entries and not seventy-two.**  A whole-corpus measurement
+#: gives ~72 non-conforming records; the immutability predicate above removes
+#: every archived and terminal one, because they are unrewritable history rather
+#: than ongoing evidence.  What remains is the live, still-mutable population:
+#: three artifacts, eight records.  The enumeration is small **by design, not by
+#: omission** -- `_is_immutable` is the predicate that does the rest of the work,
+#: and it is tested directly.
+#:
+#: **Hand-authored, and no generator.**  Chunk C3 built a generator over a named
+#: baseline for its 38 records, plus an independently-typed second derivation as
+#: the oracle, because nobody can eyeball a 38-entry table.  Eight entries in
+#: three artifacts is not that problem: a second shipped script, a
+#: baseline-drift test and a re-derivation oracle would be more machinery than
+#: the thing they guard. The derivation is instead reproducible by hand --
+#: `sha256(raw heading line)[:16]` for each heading a reader can see in the three
+#: named artifacts -- and `test_lifecycle_contract.py` pins every entry against
+#: the live tree, so a fabricated or stale entry reddens.
+#:
+#: The exemption is **per record, not per field**: it covers the whole basis for
+#: that record, matching `_is_legacy`'s existing all-or-nothing semantics for
+#: `_LEGACY_PASSES`.  Splitting it per field would need per-field manifest data
+#: to grandfather records whose bytes are append-only and will not change.
+_LEGACY_UNDECLARED_BASIS: Dict[str, Dict[str, int]] = {
+    "2026-08-11-claude-metrics-events-not-prose": {
+        "04c2c82a6198aa71": 1, "53a6ad2464a1ed3d": 1,
+        "74b964a83d4a67fc": 1, "f1310df1e0793824": 1},
+    "2026-08-12-claude-boundary-b-bounding-clause": {"f6e019917a9e1926": 1},
+    "git-native-security-foundations": {
+        "2a402faafe63d5ef": 1, "84ac2b7fb1d624af": 1},
+    "review-efficient-lifecycle": {
+        "59f58c6aaced549e": 1, "8dd3a11df9f938af": 1},
+}
+
+#: The artifact-level counterpart: live proposals that carried no
+#: `**Assurance path**:` header declaration at `_BASIS_BASELINE_COMMIT`.
+#:
+#: **A stem set, not digest+count, and the divergence is the point.**  The
+#: obligation here is a property of the *artifact*, not of a heading, so there is
+#: no heading to digest and no occurrence to count -- forcing the record shape
+#: onto it would be shape-matching rather than design.  A stem cannot be replayed
+#: for the reason a digest can: a stem is a file path, and claiming this
+#: exemption for new work would mean authoring it *as* one of these artifacts.
+#:
+#: This set only ever **shrinks**.  Adding the header line to a live proposal is
+#: legal (the header is mutable metadata -- `**Status**:` already flips in
+#: place), so each entry becomes dead the moment its artifact declares, and
+#: deleting it then is the maintenance.  It grandfathers **absence only**: a
+#: declaration that is present but duplicated or out-of-vocabulary refuses here
+#: exactly as it would anywhere else.
+_LEGACY_UNDECLARED_ASSURANCE_PATH = frozenset({
+    "2026-08-11-claude-metrics-events-not-prose",
+    "2026-08-12-claude-boundary-b-bounding-clause",
+})
+
+
+def _single_field_violations(body: str, field: str, label: str) -> List[str]:
+    """Presence / uniqueness / non-emptiness of one field, as three violations.
+
+    Factored out of the Code-review loop so the basis checker and the
+    Code-review-only `**Model**:` check cannot drift into reporting the same
+    defect in two different sentences.
+    """
+    found = _REVIEW_FIELD_RE[field].findall(body)
+    if not found:
+        return [f"{label}: missing '{field}:' -- the four-field review basis "
+                f"({' / '.join(_REVIEW_BASIS_FIELDS)}) is mandatory before the "
+                "record's first H3"]
+    if len(found) > 1:
+        return [f"{label}: duplicate '{field}:' ({len(found)} lines)"]
+    if not found[0].strip():
+        return [f"{label}: empty '{field}:' value"]
+    return []
+
+
+def _review_basis_violations(body: str, label: str) -> List[str]:
+    """The four-field review basis over ONE record's field scope.
+
+    *body* is already narrowed to the field scope by the caller (the record body
+    up to its first H3 -- see `_record_field_scope`).  Every one of the three
+    fail-closed directions `_parse_one_field` documents applies: absent,
+    out-of-vocabulary, and repeated **even when the repeated values agree**.
+    """
+    v: List[str] = []
+    for field in _REVIEW_BASIS_FREE_FIELDS:
+        v.extend(_single_field_violations(body, field, label))
+    _path, problem = _parse_one_field(
+        body, _REVIEW_FIELD_RE["Assurance path"], _ASSURANCE_PATHS,
+        "Assurance path")
+    if problem:
+        v.append(f"{label}: {problem}")
+    return v
+
+
+def _record_field_scope(lines: List[str], line_no: int,
+                        boundaries: List[int]) -> str:
+    """One record's body, cut at its first H3 -- the field scope R2 names.
+
+    The H3 cut is not tidiness and was measured on real records: a review pass
+    routinely carries a `### 4. Verdict & Archive Readiness` or `### Coverage`
+    subsection that *repeats* its own attestations, so reading the whole body
+    reports a pass's own summary as a **duplicate field**.  It also means a field
+    parked below an H3 does not count, which is what makes the scope a contract
+    rather than a search.
+    """
+    body = _pass_body(lines, line_no, boundaries)
+    cut = _FIRST_H3_RE.search(body)
+    return body[:cut.start()] if cut else body
+
+
+def _proposal_review_records(art: Artifact) -> List[Tuple[int, str]]:
+    """``(line_no, raw_heading)`` per proposal `## Review` record, in document
+    order.
+
+    Read off the **raw lines** for the reason `_pass_headings` documents at
+    length: a heading rebuilt out of parsed fields silently drops a `(<role>)`
+    parenthetical, and then every digest comparison misses -- which would leave
+    the enumeration inert while appearing to work.
+    """
+    return [(i + 1, raw) for i, raw in enumerate(art.text.split("\n"))
+            if _PROPOSAL_REVIEW_RECORD_RE.match(raw)]
+
+
+def proposal_review_basis_violations(art: Artifact) -> List[str]:
+    """P1 -- the review basis over a proposal's `## Review` records.
+
+    Public because **both** gate surfaces consume it: `_conformance_violations`
+    (what `scan` reports) and `_gating_preconditions` (what `next --to <target>`
+    reports).  Wiring only the first is the exact defect [R3-E1] executed on the
+    Code-review half -- one surface tightens, the other stays presence-only, and
+    the loose one is the one an author drives.
+    """
+    if _is_immutable(art):
+        return []
+    stem = art.path.stem
+    lines = art.text.split("\n")
+    boundaries = _record_boundaries(art)
+    seen: Dict[str, int] = {}
+    v: List[str] = []
+    for line_no, raw in _proposal_review_records(art):
+        dig = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+        seen[dig] = seen.get(dig, 0) + 1
+        if _is_legacy(stem, dig, seen, _LEGACY_UNDECLARED_BASIS):
+            continue
+        v.extend(_review_basis_violations(
+            _record_field_scope(lines, line_no, boundaries),
+            f"'{raw.strip()}'"))
+    return v
+
+
+def assurance_declaration_violations(art: Artifact) -> List[str]:
+    """P1 -- the proposal's artifact-level `Assurance path:` declaration.
+
+    The accepted parent's "Assurance paths": *"A proposal-worthy change declares
+    `standard` or `high-assurance`."*  It is the **proposal** that declares --
+    the plan carries the inheritance metadata instead, which is P2's cell.
+
+    **It never defaults to `standard`.**  Missing, duplicated and
+    out-of-vocabulary all refuse; the parent is explicit that *"Uncertainty
+    resolves to `high-assurance`"*, so a silent `standard` default would invert
+    the contract at precisely the point it was written to protect.
+
+    Order is load-bearing: the field is parsed FIRST, and grandfathering is
+    consulted only for the **absence** case.  A grandfathered artifact that later
+    adds a malformed declaration is reporting a defect in text it just wrote, not
+    inheriting a legacy absence -- and the header is mutable, so that case is
+    reachable.
+    """
+    if art.kind != "proposal":
+        return []
+    header = "\n".join(
+        line for line in _iter_header_lines(art.text))
+    pattern = _REVIEW_FIELD_RE["Assurance path"]
+    _value, problem = _parse_one_field(
+        header, pattern, _ASSURANCE_PATHS, "Assurance path")
+    if problem is None:
+        return []
+    if not pattern.search(header):
+        # ABSENCE -- the only condition grandfathering reaches.
+        if _is_immutable(art) \
+                or art.path.stem in _LEGACY_UNDECLARED_ASSURANCE_PATH:
+            return []
+        return [
+            "no '**Assurance path**:' declaration in the header -- a "
+            "proposal-worthy change declares 'standard' or 'high-assurance' "
+            "(add '**Assurance path**: standard' or '**Assurance path**: "
+            "high-assurance' beside '**Status**:'). There is NO default: "
+            "uncertainty about whether a high-assurance trigger applies "
+            "resolves to 'high-assurance', so an absent declaration cannot be "
+            "read as 'standard'."]
+    return [f"'**Assurance path**:' {problem} -- the vocabulary is closed "
+            f"({' | '.join(_ASSURANCE_PATHS)}) and has no default; uncertainty "
+            "resolves to 'high-assurance'."]
+
+
+def _iter_header_lines(text: str):
+    """The header region: every line above the first `##` heading.
+
+    Both authoring templates put the metadata block there, and bounding the read
+    is what stops a `**Assurance path**:` line quoted inside an appended review
+    or revision section from being read as the artifact's own declaration.
+    """
+    for line in _split_lines(text):
+        if line.startswith("## "):
+            return
+        yield line
+
+
 def _near_miss_headings(art: Artifact) -> List[str]:
     """Every heading that begins `Plan review` but is **not** an S1 pass.
 
@@ -1973,6 +2327,10 @@ def _is_legacy(stem: str, dig: str, seen: Dict[str, int],
     sibling `_is_legacy_code_review` would put two implementations of one
     anti-replay rule in the file, and the next person to fix a bug in one of
     them would not know to fix the other.
+
+    P1 adds a **third** enumeration through the same argument
+    (`_LEGACY_UNDECLARED_BASIS`), which is what the default argument was built
+    for: one anti-replay rule, now three scoped populations.
     """
     table = _LEGACY_PASSES if manifest is None else manifest
     admitted = table.get(stem, {}).get(dig, 0)
@@ -2021,6 +2379,9 @@ def review_record_violations(art: Artifact,
 
     seen: Dict[str, int] = {}
     satisfied = False
+    immutable = _is_immutable(art)
+    lines = art.text.split("\n")
+    boundaries = _record_boundaries(art)
     for sec, dig in _pass_headings(art):
         seen[dig] = seen.get(dig, 0) + 1
         # S1 IS CHECKED BEFORE THE S9 FENCE, and the order is load-bearing.
@@ -2034,6 +2395,17 @@ def review_record_violations(art: Artifact,
         ok_date, date_violation = _parse_pass_date(sec.date)
         if date_violation:
             v.append(f"'{sec.kind} -- {sec.name}': {date_violation}")
+        # P1 -- the four-field basis, checked BEFORE the `_LEGACY_PASSES` fence
+        # below and against its OWN enumeration, for the same reason S1 is.
+        # `_LEGACY_PASSES` exempts a pass from S2/S3/S7 only; every pass this
+        # requirement newly reaches already satisfies S2/S3/S7, so letting that
+        # fence's `continue` swallow the basis check would weaken the gate for
+        # those records while looking like grandfathering.
+        if not immutable and not _is_legacy(stem, dig, seen,
+                                            _LEGACY_UNDECLARED_BASIS):
+            v.extend(_review_basis_violations(
+                _record_field_scope(lines, sec.line_no, boundaries),
+                f"'{sec.kind} -- {sec.name} -- {sec.date}'"))
         if _is_legacy(stem, dig, seen):
             # Exempt from S2/S3/S7; satisfies the floor by presence, as the
             # Maintainer accepted these records before the schema existed.
@@ -2096,6 +2468,14 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
             )
         elif s not in _PROPOSAL_STATES:
             v.append(f"unknown proposal status {s!r}")
+        # P1 -- the artifact-level declaration and the review basis, on the same
+        # predicates `_gating_preconditions` consumes (S12's one-predicate rule
+        # applied to the proposal side).  Unconditional on status: the accepted
+        # parent has a proposal-worthy change declare its assurance path, and a
+        # review record owes its basis whenever it exists -- neither obligation
+        # arrives at some later state.
+        v.extend(assurance_declaration_violations(art))
+        v.extend(proposal_review_basis_violations(art))
         if s in ("reviewed", "revised", "accepted", "rejected", "superseded"):
             revs = _reviewers(art)
             if not revs:
@@ -2231,6 +2611,21 @@ def _gating_preconditions(art: Artifact, target: str,
         for r in revs
     )
     if art.kind == "proposal":
+        # P1 -- the SAME two predicates `_conformance_violations` uses, so the
+        # two gate surfaces cannot drift.  Reported on every forward transition
+        # because neither obligation begins at some later state, and because a
+        # gate wired to only one surface is the defect [R3-E1] executed on the
+        # Code-review half: the loose surface is the one an author drives.
+        for problems, name in (
+                (assurance_declaration_violations(art),
+                 "the header declares '**Assurance path**: standard | "
+                 "high-assurance' (no default; uncertainty resolves high)"),
+                (proposal_review_basis_violations(art),
+                 "every '## Review' record carries the four-field review basis "
+                 "(Reviewed commit / Target / Prior findings / Assurance path) "
+                 "before its first H3")):
+            detail = "" if not problems else "  UNMET: " + "; ".join(problems)
+            gates.append((not problems, name + detail))
         if target == "reviewed":
             gates.append((True,
                           "append a '## Review' (reviewer fills their own "

@@ -108,6 +108,58 @@ deferred follow-up must carry a recorded disposition before archiving —
 `defer` — the acceptable `defer` homes, the required `Dispositions:`
 commit-body form, and guidance on deferred-follow-up wording.
 
+## Assurance paths — declare one, and know which triggers are mandatory
+
+Every proposal declares an **assurance path** in its header, `standard` or
+`high-assurance`. The declaration decides which independent boundaries the
+change receives, so it is stated once, in the metadata block, and never left to
+be inferred from the topic.
+
+`high-assurance` is **mandatory** when the change affects:
+
+* a security trust boundary, credential, executable path, untrusted-input
+  parser, network boundary, or protected surface named in `AGENTS.md`;
+* a scientific assumption, transformation, unit/CRS convention, numerical
+  method, or data-selection rule that can change reported results;
+* a destructive migration, data-loss risk, public compatibility break, or
+  release/trust ceremony;
+* governing doctrine or lifecycle enforcement; or
+* a concern escalated by a reviewer or the Maintainer.
+
+**Uncertainty resolves to `high-assurance`.** An author may escalate freely; a
+*downgrade* requires a recorded Maintainer Decision. There is no default value
+and no silent `standard`: an absent declaration is a finding, not an ordinary
+change.
+
+**These are author declarations, not inferences, and no tool can check them.**
+The lifecycle planner verifies that the declaration exists and is in vocabulary;
+it cannot know whether your change touches a scientific assumption or a trust
+boundary. That judgement is yours, it is recorded in your own words, and a
+reviewer checks it the way they check any other claim in the proposal.
+
+<!-- cairn:slot assurance-path-triggers -->
+Cairn's own mandatory high-assurance surfaces, each named in `AGENTS.md` >
+"High-risk surfaces" and each already a Security-Review trigger:
+
+* the **scaffold / merge engine** (`bootstrap/scaffold.py` →
+  `bootstrap/_scaffold/`) — untrusted module/profile parsing, path handling,
+  and writes into a target tree;
+* the **install contract** — the fidelity manifest, the gate manifest, the
+  lockfile schema, and the published `scaffold.py --manifest`;
+* the **local interpreter binding** — `dev/.cairn/local-env.json`, its reader,
+  and every call site that executes the path it returns;
+* the **portable-sweep executable trust root** —
+  `run_portable_security_sweeps.py`, its resolve/revalidate pair, and
+  `portable_security_policy.json`;
+* **governing doctrine and lifecycle enforcement** — anything under
+  `doctrine/`, the lifecycle planner's gate predicates, or the authoring
+  templates themselves.
+
+Plus the two non-surface triggers: the **by-file license split**, and the
+**vendor-neutrality boundary** (a model/vendor name reaching doctrine or a
+shipped template).
+<!-- cairn:end assurance-path-triggers -->
+
 ## Count claims — the three-kind precision / `as_of` discipline
 
 See `doctrine/proposals.md` > "Count claims" for the three-kind discipline
@@ -122,6 +174,7 @@ See `doctrine/proposals.md` > "Count claims" for the three-kind discipline
 **Model**: {{your actual running model — query and state it; don't copy a label from an old template or archive}}
 **Date opened**: {{YYYY-MM-DD}}
 **Status**: proposed
+**Assurance path**: {{standard | high-assurance — the mandatory trigger set is above under "Assurance paths"; there is NO default and uncertainty resolves to high-assurance}}
 **Touches**: {{the files / surfaces this changes}}
 **Related**: {{roadmap links, prior proposals, commits, issues}}
 **Plan review**: {{if non-trivial — required(<tier>) | not required(<rationale>); ratified at Decision}}
@@ -360,6 +413,21 @@ rethought — and the recovery for each.
 ## Review -- {{reviewer}} -- {{YYYY-MM-DD}}
 
 **Model**: <your actual running model or tier when known; "unknown" if not. Do not copy-paste old model labels from past templates or archives; query and state your running model identity.>
+
+**The four-field review basis is mandatory**, on its own lines, above this
+pass's first `###` heading (a field below an H3 does not count). It names the
+bounded target this pass actually read:
+
+    Reviewed commit: <full commit id>
+    Target: <the complete current-contract section this pass reviewed>
+    Prior findings: <ids being closed, or none>
+    Assurance path: <standard | high-assurance>
+
+The basis is a **default navigation target, not a prohibition on examining
+history**: open any earlier section a current claim depends on, and raise a new
+correctness, security, scientific-validity, or scope finding whenever you find
+one. A later review does not silently inherit an earlier reviewer's claims — it
+either verifies them or names them as not covered.
 
 Proposal reviews are written into the proposal file by default.
 Chat comments can help the conversation, but they are not the durable

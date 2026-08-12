@@ -271,11 +271,31 @@ snippets that diverged from their source) catch **drift**, not
 **absence** of new doc updates. Confirm each doc named in Acceptance
 was actually updated; the gates don't enforce that.
 
+**The four-field review basis is mandatory in every plan-review pass.** Its
+first four lines name the bounded target that pass actually read:
+
+    Reviewed commit: <full commit id>
+    Target: <the operative plan sections this pass reviewed>
+    Prior findings: <ids being closed, or none>
+    Assurance path: <standard | high-assurance>
+
+They sit above the pass's first `###` heading -- a field parked below an H3 does
+not count -- and the emphasis is optional, because the field name is the
+contract. `Assurance path` restates the source proposal's declaration rather
+than re-deciding it. The basis is a default navigation target, not permission to
+ignore relevant history: a reviewer reads any earlier section a current claim
+depends on, and a correctness, security, scientific-validity, or scope defect is
+blocking whenever it is found.
+
 <!-- Each review pass is its own dated H2 section, appended below this
      comment as:
 
        ## Plan review -- <reviewer> -- YYYY-MM-DD
 
+       Reviewed commit: <full commit id>
+       Target: <the operative plan sections this pass reviewed>
+       Prior findings: <ids being closed, or none>
+       Assurance path: <standard | high-assurance>
        **Tier**: <Internal|External>
        **Findings**: <none|raised>
 
@@ -324,6 +344,18 @@ was actually updated; the gates don't enforce that.
 "Code review" for the full doctrine: falsification ledger, coverage
 line, reviewer identity (not the implementing agent), and the
 append-only rule.
+
+Each pass is its own dated H2 section, `## Code review -- <reviewer> --
+YYYY-MM-DD[ (round N)]`, and opens with the mandatory review basis on its own
+lines above the pass's first `###` heading:
+
+    Reviewed commit: <full commit id>
+    Target: <the code range this pass reviewed>
+    Prior findings: <ids being closed, or none>
+    Assurance path: <standard | high-assurance>
+
+Then the reviewer identity line, the verdict, and the findings declaration. A
+field parked below an H3 does not count toward the basis.
 
 Before reusing Boundary B, verify its Tested commit, Reviewed range, path
 validity, pre/post clean state, command results, and non-pass disposition.

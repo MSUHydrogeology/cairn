@@ -81,13 +81,22 @@ def _make_repo(tmp_path: Path) -> Path:
 
 
 def _write_proposal(repo: Path, name: str, *, status: str, author: str = "Claude",
-                    body: str = "") -> Path:
+                    body: str = "", assurance: str | None = "standard") -> Path:
+    """A proposal on disk.
+
+    P1 added `**Assurance path**:` to the default header for the same reason it
+    was added to `_pass_block`: after P1 a *conforming* proposal declares one, so
+    a fixture omitting it no longer means "a clean proposal".  `assurance=None`
+    omits the line, which is how the new nodes exercise the refusal.
+    """
     path = repo / "dev" / "proposals" / name
+    declaration = "" if assurance is None else f"**Assurance path**: {assurance}\n"
     text = (
         f"# {name}\n\n"
         f"**Author**: {author} (Strategy)\n"
         f"**Date opened**: 2026-05-01\n"
         f"**Status**: {status}\n"
+        f"{declaration}"
         f"**Plan review**: required — Internal\n\n"
         "## Context\n\nx\n"
         f"{body}"
@@ -710,20 +719,59 @@ _GATE_STEM = "gate-fixture"   # deliberately NOT a key in `_LEGACY_PASSES`
 def _pass_block(*, reviewer: str = "R", date: str = "2026-05-01",
                 tier: str | None = "External", findings: str | None = "none",
                 sharpening: bool = False, level: str = "##",
-                response: bool = False) -> str:
+                response: bool = False,
+                commit: str | None = "0123456789abcdef" * 2 + "01234567",
+                target: str | None = "chunks A-C",
+                prior: str | None = "none",
+                assurance: str | None = "standard",
+                bold_basis: bool = True,
+                trailer: str = "") -> str:
     """One review pass in the S1/S2 shape, with each part independently
-    omittable so a node can vary exactly one property."""
+    omittable so a node can vary exactly one property.
+
+    **P1 added the four basis fields to the DEFAULT output**, and that is a
+    deliberate change to a shared fixture rather than a convenience: after P1 a
+    conforming Plan-review pass *is* one that carries the basis, so a fixture
+    whose default omitted it would no longer mean "a conforming pass" and the ~30
+    nodes built on it would be asserting against a record the contract refuses.
+    Each field stays independently omittable so the new nodes can vary exactly
+    one, the same shape `_code_review_pass` uses for the Code-review record.
+    """
     out = f"{level} Plan review -- {reviewer} -- {date}\n\n"
+    mark = "**" if bold_basis else ""
+    for name, value in (("Reviewed commit", commit), ("Target", target),
+                        ("Prior findings", prior),
+                        ("Assurance path", assurance)):
+        if value is not None:
+            out += f"{mark}{name}{mark}: {value}\n"
     if tier is not None:
         out += f"**Tier**: {tier}\n"
     if findings is not None:
         out += f"**Findings**: {findings}\n"
     out += "\nthe reading.\n\n"
+    if trailer:
+        out += trailer
     if sharpening:
         out += "### Sharpening\n\nthe disposition.\n\n"
     if response:
         out += "## Response to plan review -- A -- 2026-05-02\n\nthe reply.\n\n"
     return out
+
+
+#: The four-field review basis, in the bolded house spelling.
+#:
+#: Added by P1 to the three hand-written pass bodies below.  Each of those nodes
+#: tests exactly ONE property -- a synthesized Section's body, an unparseable
+#: heading's boundary, the `_LEGACY_PASSES` count fence -- and the basis is
+#: orthogonal to all three, so the fields are SUPPLIED rather than the
+#: assertions loosened.  In the legacy-fence node that is more than convenience:
+#: it makes the scoping of the two exemptions visible in the fixture itself, by
+#: showing a pass that `_LEGACY_PASSES` exempts from Tier/Findings still owing
+#: the basis its own separate manifest governs.
+_BASIS_LINES = ("**Reviewed commit**: " + "0123456789abcdef" * 2 + "01234567\n"
+                "**Target**: chunks A-C\n"
+                "**Prior findings**: none\n"
+                "**Assurance path**: standard\n")
 
 
 def _plan_art(tmp_path: Path, body: str, *, status: str = "executing",
@@ -854,7 +902,8 @@ def test_cr1_a_reviewer_field_with_literal_parens_is_still_a_conforming_pass(
     count. A synthesized Section must carry a correct body: the `**Tier**:`
     and `**Findings**:` lines below must still be read from it."""
     body = ("## Plan review -- Jane (Lab) Smith -- 2026-05-01\n\n"
-           "**Tier**: External\n**Findings**: none\n")
+           + _BASIS_LINES
+           + "**Tier**: External\n**Findings**: none\n")
     assert _violations(tmp_path, body) == []
 
 
@@ -1175,7 +1224,12 @@ def test_c9b_re_appending_an_admitted_heading_is_refused_at_count_plus_one(
     # has a check that no change to the S2/S3 messages can move.
     for k in range(1, n + 2):
         assert planner._is_legacy(stem, dig, {dig: k}) is (k <= n), k
-    legacy = f"{heading}\n\nan old-format record, no Tier/Findings lines.\n\n"
+    # The basis lines are present and the Tier/Findings lines are not: that is
+    # precisely the scoping this node now also witnesses.  `_LEGACY_PASSES`
+    # exempts this pass from S2/S3/S7; it does NOT exempt it from P1's basis,
+    # which has its own manifest and does not name this stem.
+    legacy = (f"{heading}\n\n" + _BASIS_LINES
+              + "\nan old-format record, no Tier/Findings lines.\n\n")
     # Exactly n occurrences: all admitted, and they satisfy the floor by
     # presence exactly as they did before the schema existed.
     assert _violations(tmp_path, legacy * n, stem=stem) == []
@@ -1631,10 +1685,12 @@ class TestPassBodyBoundaries:
 
     BODY = (
         "## Plan review -- Alice -- 2026-08-01\n\n"
-        "**Tier**: Internal\n"
+        + _BASIS_LINES
+        + "**Tier**: Internal\n"
         "**Findings**: none\n\n"
         + UNPARSEABLE + "\n\n"
-        "**Tier**: External\n"
+        + _BASIS_LINES
+        + "**Tier**: External\n"
         "**Findings**: none\n"
     )
 
@@ -2380,3 +2436,627 @@ def _real_headings(stem: str) -> list[str]:
                     or line.startswith("## Implementation disposition")
                     or line.startswith("## Archive record")]
     raise AssertionError(f"no artifact for stem {stem!r}")
+
+
+# ===========================================================================
+# P1 -- the four-field review basis across all three record kinds, the
+# artifact-level `Assurance path:` declaration, and the immutability predicate
+# that grandfathers pre-contract records.
+#
+# Contract: accepted `review-efficient-lifecycle`, "Bounded current contracts"
+# (*"Every proposal, plan, and code review records"* the four fields) and
+# "Assurance paths" (*"A proposal-worthy change declares `standard` or
+# `high-assurance`"*, *"Uncertainty resolves to `high-assurance`"*).  Chunk C
+# wired all four for the Code-review record; these nodes cover the two record
+# kinds C did not reach plus the artifact-level declaration.
+#
+# Every node below was observed RED by mutating
+# `templates/skills/_lib/lifecycle_planner.py` -- the copy this file LOADS --
+# then restored byte-exactly.  The mutations and the observed failures are
+# recorded in the plan's implementation-verification section, not asserted here.
+# The only thing that runs these nodes is a person typing
+# `python -m pytest bootstrap/tests`; Cairn has no CI.
+# ===========================================================================
+
+_P1_STEM = "p1-fixture"        # deliberately in NO manifest
+
+
+def _prop_art(tmp_path: Path, body: str = "", *, status: str = "reviewed",
+              assurance: str | None = "standard", stem: str = _P1_STEM,
+              archived: bool = False, extra_header: str = ""):
+    """A proposal on disk, parsed through the planner's own reader.
+
+    `archived=True` writes it under `dev/proposals/archive/`, which is the
+    location half of the immutability predicate.
+    """
+    d = tmp_path / "dev" / "proposals" / ("archive" if archived else "")
+    d.mkdir(parents=True, exist_ok=True)
+    path = d / f"{stem}.md"
+    declaration = "" if assurance is None else f"**Assurance path**: {assurance}\n"
+    path.write_text(
+        f"# {stem}\n\n"
+        f"**Author**: Author A (Strategy)\n"
+        f"**Status**: {status}\n"
+        f"{declaration}{extra_header}"
+        f"\n## Context\n\nx\n\n{body}",
+        encoding="utf-8")
+    return planner._read_artifact(path)
+
+
+def _prop_review(*, reviewer: str = "Reviewer A (External)",
+                 date: str = "2026-08-11", suffix: str = "",
+                 commit: str | None = "0123456789abcdef" * 2 + "01234567",
+                 target: str | None = "the complete current contract",
+                 prior: str | None = "none",
+                 assurance: str | None = "standard",
+                 bold_basis: bool = True, trailer: str = "") -> str:
+    """One proposal `## Review` record, each field independently omittable."""
+    out = f"## Review -- {reviewer} -- {date}{suffix}\n\n"
+    mark = "**" if bold_basis else ""
+    for name, value in (("Reviewed commit", commit), ("Target", target),
+                        ("Prior findings", prior),
+                        ("Assurance path", assurance)):
+        if value is not None:
+            out += f"{mark}{name}{mark}: {value}\n"
+    return out + "\nthe reading.\n\n" + trailer
+
+
+def _prop_basis(tmp_path: Path, body: str, **kw) -> list:
+    return planner.proposal_review_basis_violations(
+        _prop_art(tmp_path, body, **kw))
+
+
+def _decl(tmp_path: Path, **kw) -> list:
+    return planner.assurance_declaration_violations(_prop_art(tmp_path, **kw))
+
+
+class TestPlanReviewBasis:
+    """The basis on the **Plan-review** pass -- the record kind C did not reach.
+
+    C wired the identical four fields to the Code-review pass only, and the
+    accepted parent is explicit that the basis belongs to all three kinds.
+    """
+
+    @pytest.mark.parametrize("field,kwargs", [
+        ("Reviewed commit", {"commit": None}),
+        ("Target", {"target": None}),
+        ("Prior findings", {"prior": None}),
+        ("Assurance path", {"assurance": None}),
+    ])
+    def test_each_basis_field_is_required_on_its_own(
+            self, tmp_path, field, kwargs):
+        v = _violations(tmp_path, _pass_block(**kwargs))
+        assert any(field in msg for msg in v), (field, v)
+
+    def test_a_complete_pass_is_silent(self, tmp_path):
+        """The mutant-catcher for every node above: with all four basis fields
+        plus Tier and Findings the record is complete, so an always-violating
+        check is caught rather than read as strictness."""
+        assert _violations(tmp_path, _pass_block()) == []
+
+    def test_both_emphasis_spellings_are_accepted(self, tmp_path):
+        """The field NAME is the contract, the emphasis is not -- the accepted
+        parent writes the basis unbolded, every real pass in `dev/plans/` bolds
+        it, and refusing either spelling would refuse correct records."""
+        assert _violations(tmp_path, _pass_block(bold_basis=True)) == []
+        assert _violations(tmp_path, _pass_block(bold_basis=False)) == []
+
+    def test_a_duplicate_basis_field_refuses_even_when_the_values_agree(
+            self, tmp_path):
+        body = _pass_block().replace(
+            "**Target**: chunks A-C\n",
+            "**Target**: chunks A-C\n**Target**: chunks A-C\n")
+        v = _violations(tmp_path, body)
+        assert any("duplicate 'Target:'" in m for m in v), v
+
+    def test_an_empty_basis_value_refuses(self, tmp_path):
+        v = _violations(tmp_path, _pass_block(prior=""))
+        assert any("empty 'Prior findings:'" in m for m in v), v
+
+    def test_basis_fields_below_the_first_h3_do_not_count(self, tmp_path):
+        """The field scope is the record body up to its first H3, for the reason
+        C measured on real records: a pass repeats its own attestations in a
+        `### Coverage`-style subsection, so whole-body reading turns a pass's own
+        summary into a duplicate.  The same cut means a field parked below an H3
+        does not satisfy the obligation."""
+        v = _violations(tmp_path, _pass_block(
+            commit=None,
+            trailer="### Coverage\n\n**Reviewed commit**: abc1234\n\n"))
+        assert any("missing 'Reviewed commit:'" in m for m in v), v
+
+    @pytest.mark.parametrize("value", ["medium", "high assurance", "Standard "])
+    def test_an_out_of_vocabulary_assurance_path_refuses(self, tmp_path, value):
+        """`Standard ` with a trailing space is INCLUDED on purpose: the matcher
+        strips trailing whitespace, so this one must CLEAR -- it is the
+        false-refusal direction of the same check."""
+        v = _violations(tmp_path, _pass_block(assurance=value))
+        if value.strip().casefold() in planner._ASSURANCE_PATHS:
+            assert v == [], (value, v)
+        else:
+            assert any("unrecognized Assurance path" in m for m in v), (value, v)
+
+    def test_the_legacy_passes_exemption_does_not_swallow_the_basis(
+            self, tmp_path):
+        """**The scoping property, and the reason a second manifest exists.**
+
+        `_LEGACY_PASSES` exempts a pass from S2/S3/S7.  Every pass P1's basis
+        newly reaches already satisfies S2/S3/S7, so folding those records into
+        `_LEGACY_PASSES` would have *weakened* the gate while looking like
+        grandfathering.  This node reproduces that: a pass whose heading IS in
+        `_LEGACY_PASSES`, in a live (mutable) plan, is still refused for a
+        missing basis field -- and the S2 exemption still holds for Tier.
+        """
+        stem = "review-gate-enforcement"
+        heading = "## Plan review -- Codex (External) -- 2026-08-05"
+        dig = hashlib.sha256(heading.encode("utf-8")).hexdigest()[:16]
+        assert dig in planner._LEGACY_PASSES[stem], "fixture precondition"
+        assert dig not in planner._LEGACY_UNDECLARED_BASIS.get(stem, {})
+        body = f"{heading}\n\nno Tier, no Findings, and no basis.\n\n"
+        v = _violations(tmp_path, body, stem=stem)
+        assert any("missing 'Target:'" in m for m in v), v
+        # ... and the S2/S3 exemption is untouched: no Tier violation is raised.
+        assert not any("missing Tier" in m for m in v), v
+
+
+class TestProposalReviewBasis:
+    """The basis on the proposal `## Review` record -- the third record kind."""
+
+    @pytest.mark.parametrize("field,kwargs", [
+        ("Reviewed commit", {"commit": None}),
+        ("Target", {"target": None}),
+        ("Prior findings", {"prior": None}),
+        ("Assurance path", {"assurance": None}),
+    ])
+    def test_each_basis_field_is_required_on_its_own(
+            self, tmp_path, field, kwargs):
+        v = _prop_basis(tmp_path, _prop_review(**kwargs))
+        assert any(field in msg for msg in v), (field, v)
+
+    def test_a_complete_record_is_silent(self, tmp_path):
+        assert _prop_basis(tmp_path, _prop_review()) == []
+
+    def test_a_proposal_with_no_review_record_owes_nothing(self, tmp_path):
+        """The obligation attaches to a record that exists; it is not a second
+        presence floor (`_conformance_violations` already owns that one)."""
+        assert _prop_basis(tmp_path, "", status="proposed") == []
+
+    @pytest.mark.parametrize("suffix", [
+        " (Round 2)",                 # capital R -- `_HEADER_RE` cannot parse it
+        " (round 4, closure read)",   # annotated round -- ditto
+        "",
+    ])
+    def test_an_off_grammar_heading_is_still_a_record_and_owes_the_basis(
+            self, tmp_path, suffix):
+        """**The escape hatch this closes, measured on real headings.**
+
+        A strict `-- <reviewer> -- YYYY-MM-DD` grammar (the `_S1_PASS_RE` shape)
+        would make each suffix above a *near miss*: invisible to the basis check
+        while still counted by `_reviewers()`, which is what satisfies the
+        "status is 'reviewed' but no '## Review' section is present" floor.  Then
+        writing the heading slightly off-grammar drops the basis obligation and
+        keeps the presence floor.  All three suffixes occur in this repository's
+        own proposals, so the permissive rule is not hypothetical.
+        """
+        v = _prop_basis(tmp_path, _prop_review(suffix=suffix, target=None))
+        assert any("missing 'Target:'" in m for m in v), (suffix, v)
+
+    def test_a_reviewer_brief_heading_is_not_a_review_record(self, tmp_path):
+        """`## Reviewer brief` is a real heading in three proposals here. The
+        required ` -- ` after `Review` is what keeps it out; without that the
+        section would be handed an obligation it has no way to discharge."""
+        assert _prop_basis(
+            tmp_path, "## Reviewer brief\n\nwhat to attack first.\n\n") == []
+
+    def test_a_response_heading_is_not_a_review_record(self, tmp_path):
+        assert _prop_basis(
+            tmp_path,
+            "## Response -- Author A -- 2026-08-11\n\nthe reply.\n\n") == []
+
+    def test_a_later_record_does_not_lend_its_basis_to_an_earlier_one(
+            self, tmp_path):
+        """The boundary half: P1 adds the proposal review heading to
+        `_record_boundaries`, so an incomplete record's field scope stops at the
+        next record instead of running through it and borrowing its fields.
+        The second heading here carries `(Round 2)`, which `_HEADER_RE` cannot
+        parse -- exactly the shape that was invisible as a boundary before."""
+        body = (_prop_review(target=None, prior=None, assurance=None)
+                + _prop_review(suffix=" (Round 2)"))
+        v = _prop_basis(tmp_path, body)
+        assert any("missing 'Target:'" in m for m in v), v
+        assert any("missing 'Prior findings:'" in m for m in v), v
+        assert any("missing Assurance path" in m for m in v), v
+
+    def test_both_gate_surfaces_report_it(self, tmp_path):
+        """S12 applied to the proposal side: `_conformance_violations` (what
+        `scan` reports) and `_gating_preconditions` (what `next --to` reports)
+        consume the SAME predicate.  Wiring only the first is the defect [R3-E1]
+        executed on the Code-review half -- the loose surface is the one an
+        author drives."""
+        art = _prop_art(tmp_path, _prop_review(target=None))
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        conformance = planner._conformance_violations(art, identity)
+        assert any("missing 'Target:'" in m for m in conformance), conformance
+        for target in planner._legal_transitions(art):
+            gates = planner._gating_preconditions(art, target, identity)
+            unmet = [desc for met, desc in gates if not met]
+            assert any("four-field review basis" in d for d in unmet), (
+                target, gates)
+
+
+class TestAssurancePathDeclaration:
+    """The artifact-level declaration, which **never defaults to `standard`**."""
+
+    def test_a_missing_declaration_refuses_and_names_the_no_default_rule(
+            self, tmp_path):
+        v = _decl(tmp_path, assurance=None)
+        assert len(v) == 1, v
+        assert "no '**Assurance path**:' declaration" in v[0]
+        # The message must carry the rule, not just the absence: an author told
+        # only "missing field" will reach for the smaller of two values.
+        assert "NO default" in v[0] and "high-assurance" in v[0]
+
+    @pytest.mark.parametrize("value", ["standard", "high-assurance"])
+    def test_both_declared_values_clear(self, tmp_path, value):
+        assert _decl(tmp_path, assurance=value) == []
+
+    @pytest.mark.parametrize("value", ["medium", "high assurance", "unknown",
+                                       "standard | high-assurance"])
+    def test_an_out_of_vocabulary_declaration_refuses(self, tmp_path, value):
+        v = _decl(tmp_path, assurance=value)
+        assert any("unrecognized Assurance path" in m for m in v), (value, v)
+
+    def test_a_duplicate_declaration_refuses(self, tmp_path):
+        v = _decl(tmp_path, assurance="standard",
+                  extra_header="**Assurance path**: high-assurance\n")
+        assert any("duplicate Assurance path" in m for m in v), v
+
+    def test_a_duplicate_refuses_even_when_the_values_agree(self, tmp_path):
+        """Agreement is a judgement a conformance backstop must not make -- and
+        here it would be choosing which of two declarations governs review
+        allocation."""
+        v = _decl(tmp_path, assurance="standard",
+                  extra_header="**Assurance path**: standard\n")
+        assert any("duplicate Assurance path" in m for m in v), v
+
+    def test_a_declaration_inside_a_review_record_does_not_satisfy_the_header(
+            self, tmp_path):
+        """The header region is bounded at the first `##`.  Without that bound,
+        the `Assurance path:` line every review record now carries would satisfy
+        the artifact's own declaration -- so the obligation would be discharged
+        by a *reviewer's* record rather than by the author, and a proposal with
+        no reviews yet could never be made to satisfy it at all.
+
+        Measured on a real artifact while implementing P1: a first grep for
+        `Assurance path` in `2026-08-11-claude-metrics-events-not-prose.md`
+        matched line 186, inside its first `## Review` record, and read as a
+        header declaration until the bound was checked.
+        """
+        v = _decl(tmp_path, assurance=None, body=_prop_review())
+        assert any("no '**Assurance path**:' declaration" in m for m in v), v
+
+    def test_a_plan_carries_no_artifact_level_declaration(self, tmp_path):
+        """It is the **proposal** that declares: the accepted parent says *"A
+        proposal-worthy change declares"*, and the plan carries the inheritance
+        metadata instead (P2's cell).  Pinned as an absence so a later chunk that
+        moves the obligation onto plans does so deliberately."""
+        art = _plan_art(tmp_path, _pass_block())
+        assert planner.assurance_declaration_violations(art) == []
+
+    def test_both_gate_surfaces_report_it(self, tmp_path):
+        art = _prop_art(tmp_path, _prop_review(), assurance=None)
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        conformance = planner._conformance_violations(art, identity)
+        assert any("Assurance path" in m for m in conformance), conformance
+        for target in planner._legal_transitions(art):
+            unmet = [desc for met, desc
+                     in planner._gating_preconditions(art, target, identity)
+                     if not met]
+            assert any("Assurance path" in d for d in unmet), (target, unmet)
+
+
+class TestImmutabilityGrandfather:
+    """The predicate that keeps the enumeration at nine entries instead of ~72.
+
+    Shape reused from Chunk D4's `scripts/claim_check.py` (accepted
+    `claim-check-exemption-hygiene` R3): archived by **location**, or terminal by
+    a **strictly parsed** status -- and everything it does not recognize falls
+    through *into* the requirement rather than inheriting the exemption.
+    """
+
+    def test_an_archived_proposal_is_grandfathered_by_location(self, tmp_path):
+        art = _prop_art(tmp_path, _prop_review(commit=None, target=None,
+                                               prior=None, assurance=None),
+                        assurance=None, archived=True, status="proposed")
+        assert planner._is_immutable(art) is True
+        assert planner.proposal_review_basis_violations(art) == []
+        assert planner.assurance_declaration_violations(art) == []
+
+    @pytest.mark.parametrize("status", ["accepted", "rejected", "superseded"])
+    def test_a_terminal_proposal_is_grandfathered_by_status(
+            self, tmp_path, status):
+        art = _prop_art(tmp_path, _prop_review(target=None), assurance=None,
+                        status=status)
+        assert planner._is_immutable(art) is True
+        assert planner.proposal_review_basis_violations(art) == []
+        assert planner.assurance_declaration_violations(art) == []
+
+    @pytest.mark.parametrize("status", ["proposed", "reviewed", "revised"])
+    def test_a_live_proposal_is_not_grandfathered(self, tmp_path, status):
+        art = _prop_art(tmp_path, _prop_review(target=None), assurance=None,
+                        status=status)
+        assert planner._is_immutable(art) is False
+        assert planner.proposal_review_basis_violations(art) != []
+        assert planner.assurance_declaration_violations(art) != []
+
+    def test_an_archived_plan_is_grandfathered_by_status(self, tmp_path):
+        """A plan's terminal token is `archived`, and the basis half must go
+        silent even though the record is missing every field."""
+        body = "## Plan review -- R -- 2026-05-01\n\n**Tier**: External\n" \
+               "**Findings**: none\n"
+        art = _plan_art(tmp_path, body, status="archived")
+        assert planner._is_immutable(art) is True
+        assert not [m for m in planner.review_record_violations(art)
+                    if "review basis" in m or "Assurance path" in m]
+
+    @pytest.mark.parametrize("header,why", [
+        ("", "missing status"),
+        ("**Status**: accepted\n**Status**: accepted\n", "duplicate status"),
+        ("**Status**: acceptedish\n", "unrecognized token"),
+        ("**Status**:accepted\n", "no space -- still a strict match"),
+        ("Status: accepted\n", "unbolded -- not the header field"),
+    ])
+    def test_a_non_strict_status_does_not_gain_the_grandfather(
+            self, tmp_path, header, why):
+        """D4's fail-closed rule: *"A missing, duplicate, or unrecognized
+        lifecycle status does not silently gain grandfathering."*  The set can
+        only ever be too small, never too permissive.
+
+        `**Status**:accepted` is the one case that DOES grandfather -- the strict
+        matcher makes the space optional -- and it is parametrized here so the
+        node states which direction each spelling falls in rather than asserting
+        a blanket refusal.
+        """
+        d = tmp_path / "dev" / "proposals"
+        d.mkdir(parents=True, exist_ok=True)
+        path = d / f"{_P1_STEM}.md"
+        path.write_text(f"# t\n\n{header}\n## Context\n\nx\n", encoding="utf-8")
+        art = planner._read_artifact(path)
+        expected = header.strip() == "**Status**:accepted"
+        assert planner._is_immutable(art) is expected, why
+
+    def test_a_status_line_below_the_first_h2_is_not_the_header_status(
+            self, tmp_path):
+        """An appended revision section restating `**Status**:` is historical
+        text, not the artifact's current status -- so it cannot buy immunity."""
+        d = tmp_path / "dev" / "proposals"
+        d.mkdir(parents=True, exist_ok=True)
+        path = d / f"{_P1_STEM}.md"
+        path.write_text(
+            "# t\n\n**Status**: reviewed\n\n## Revision 1\n\n"
+            "**Status**: accepted\n", encoding="utf-8")
+        art = planner._read_artifact(path)
+        assert planner._strict_header_status(art.text) == "reviewed"
+        assert planner._is_immutable(art) is False
+
+
+class TestBasisLegacyEnumerations:
+    """The two pinned enumerations: no fabricated entry, and no replay."""
+
+    def test_the_baseline_commit_is_a_real_full_length_commit(self):
+        """A pinned baseline nobody can resolve is a claim, not a pin."""
+        sha = planner._BASIS_BASELINE_COMMIT
+        assert re.fullmatch(r"[0-9a-f]{40}", sha), sha
+        proc = subprocess.run(
+            ["git", "-C", str(CAIRN_ROOT), "cat-file", "-t", sha],
+            capture_output=True, text=True)
+        assert proc.returncode == 0 and proc.stdout.strip() == "commit", proc
+
+    def test_every_basis_manifest_entry_resolves_in_the_live_tree(self):
+        """Subset direction: a fabricated or stale entry reddens.
+
+        Not an equality check, deliberately, for the reason C's own manifest node
+        states: a record appended after the baseline legitimately exists and
+        legitimately is not in the manifest, so equality would redden on the next
+        review that lands.
+        """
+        for stem, digests in sorted(planner._LEGACY_UNDECLARED_BASIS.items()):
+            path = _p1_live_artifact(stem)
+            assert path is not None, (
+                f"_LEGACY_UNDECLARED_BASIS names {stem!r}, which is not a LIVE "
+                "artifact -- an archived one is already covered by "
+                "`_is_immutable`, so the entry would be dead weight")
+            lines = path.read_text(encoding="utf-8").split("\n")
+            seen: dict[str, int] = {}
+            for raw in lines:
+                if (planner._S1_PASS_RE.match(raw)
+                        or planner._PROPOSAL_REVIEW_RECORD_RE.match(raw)):
+                    d = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+                    seen[d] = seen.get(d, 0) + 1
+            for dig, count in sorted(digests.items()):
+                assert seen.get(dig, 0) >= count, (
+                    f"_LEGACY_UNDECLARED_BASIS[{stem!r}][{dig!r}] admits "
+                    f"{count} record(s); the tree has {seen.get(dig, 0)} -- a "
+                    "fabricated or stale entry")
+
+    def test_every_basis_manifest_entry_is_still_needed(self):
+        """An entry whose record now carries the basis is dead weight, and the
+        docstring says the enumerations only shrink.  Asserted as a *warning
+        surface* rather than a hard requirement would be untestable, so it is
+        asserted directly: if this reddens, delete the entry."""
+        for stem, digests in sorted(planner._LEGACY_UNDECLARED_BASIS.items()):
+            path = _p1_live_artifact(stem)
+            assert path is not None, stem
+            art = planner._read_artifact(path)
+            assert planner._is_immutable(art) is False, (
+                f"{stem} is now immutable -- `_is_immutable` covers it and the "
+                "manifest entry is dead weight; delete it")
+            lines = art.text.split("\n")
+            bounds = planner._record_boundaries(art)
+            still_needed = set()
+            for i, raw in enumerate(lines):
+                d = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+                if d not in digests:
+                    continue
+                if not (planner._S1_PASS_RE.match(raw)
+                        or planner._PROPOSAL_REVIEW_RECORD_RE.match(raw)):
+                    continue
+                scope = planner._record_field_scope(lines, i + 1, bounds)
+                if planner._review_basis_violations(scope, "x"):
+                    still_needed.add(d)
+            assert still_needed == set(digests), (
+                f"{stem}: these entries no longer grandfather anything and are "
+                f"dead weight -- delete them: "
+                f"{sorted(set(digests) - still_needed)}")
+
+    def test_the_declaration_exemption_names_only_live_undeclared_proposals(self):
+        for stem in sorted(planner._LEGACY_UNDECLARED_ASSURANCE_PATH):
+            path = CAIRN_ROOT / "dev" / "proposals" / f"{stem}.md"
+            assert path.is_file(), (
+                f"_LEGACY_UNDECLARED_ASSURANCE_PATH names {stem!r}, which is "
+                "not a live proposal -- delete the entry")
+            art = planner._read_artifact(path)
+            assert planner._is_immutable(art) is False, (
+                f"{stem} is terminal -- `_is_immutable` already covers it")
+            header = "\n".join(planner._iter_header_lines(art.text))
+            assert not planner._REVIEW_FIELD_RE["Assurance path"].search(header), (
+                f"{stem} now declares an assurance path in its header -- the "
+                "exemption is dead weight; delete it")
+
+    def test_the_basis_exemption_is_refused_at_occurrence_count_plus_one(self):
+        """The anti-replay half.  Re-appending a heading byte-identical to an
+        admitted one is occurrence `n + 1` and is not admitted -- the same
+        k-th-occurrence rule `_LEGACY_PASSES` uses, reached through
+        `_is_legacy`'s `manifest` argument rather than a second implementation.
+        """
+        checked = 0
+        for stem, digests in sorted(planner._LEGACY_UNDECLARED_BASIS.items()):
+            for dig, n in sorted(digests.items()):
+                for k in range(1, n + 2):
+                    assert planner._is_legacy(
+                        stem, dig, {dig: k},
+                        planner._LEGACY_UNDECLARED_BASIS) is (k <= n), (
+                            stem, dig, k)
+                checked += 1
+        assert checked == 9, (
+            "the enumeration changed size; re-derive it against "
+            "`_BASIS_BASELINE_COMMIT` and update this figure deliberately "
+            f"(found {checked})")
+
+    def test_the_two_basis_manifests_are_not_the_same_table(self):
+        """`_LEGACY_UNDECLARED_BASIS` must not become an alias for
+        `_LEGACY_PASSES`: the two grandfather different obligations, and merging
+        them would silently widen whichever is consulted."""
+        assert planner._LEGACY_UNDECLARED_BASIS is not planner._LEGACY_PASSES
+        assert planner._LEGACY_UNDECLARED_BASIS != planner._LEGACY_PASSES
+
+
+def _p1_live_artifact(stem: str):
+    """The LIVE artifact for *stem*, or None -- never the archived sibling."""
+    for fam in ("proposals", "plans"):
+        path = CAIRN_ROOT / "dev" / fam / f"{stem}.md"
+        if path.is_file():
+            return path
+    return None
+
+
+def test_the_live_corpus_is_sound_under_the_p1_contract():
+    """The blast-radius assertion, as a standing node.
+
+    P1's whole risk is reddening a live artifact nobody may edit.  `scan`
+    (live-only) is the enforcement surface named in the plan's acceptance
+    criteria, and it must stay at all-artifacts-sound with P1 landed -- which is
+    what the immutability predicate plus the two enumerations buy.
+    """
+    identity = planner._load_identity_model(CAIRN_ROOT)
+    bad = {}
+    for fam in ("proposals", "plans"):
+        for path in sorted((CAIRN_ROOT / "dev" / fam).glob("*.md")):
+            if path.name in ("_template.md", "README.md"):
+                continue
+            art = planner._read_artifact(path)
+            v = planner._conformance_violations(art, identity)
+            if v:
+                bad[path.name] = v
+    assert bad == {}, bad
+
+
+class TestP1AuthoringTemplates:
+    """P1's template half, pinned per surface rather than assumed.
+
+    The plan's acceptance criteria require each documentation surface to be
+    *confirmed* updated: "drift gates catch drift, not absence."  These four
+    files are where the contract is taught, and the tooling half is worthless
+    without them -- an author who is refused by the gate and finds no instruction
+    in the template has been handed a puzzle instead of a rule.
+    """
+
+    #: (path, obligation-name -> substring that must be present)
+    SURFACES = {
+        "dev/proposals/_template.md": {
+            "the header declaration": "**Assurance path**:",
+            "the mandatory trigger set": "`high-assurance` is **mandatory** when",
+            "uncertainty resolves high": "Uncertainty resolves to `high-assurance`",
+            "declarations are not inferences":
+                "author declarations, not inferences",
+            "the review basis in the Review section":
+                "The four-field review basis is mandatory",
+            "all four field names": "Prior findings: <ids being closed, or none>",
+        },
+        "dev/plans/_template.md": {
+            "the basis in the plan-review pass scaffold":
+                "Reviewed commit: <full commit id>",
+            "the H3 scope rule": "does not count",
+            "the basis in the Code-review section":
+                "Target: <the code range this pass reviewed>",
+        },
+    }
+
+    @pytest.mark.parametrize("rel", sorted(SURFACES))
+    @pytest.mark.parametrize("shipped", [False, True])
+    def test_each_surface_carries_the_contract(self, rel, shipped):
+        """Both sides of every pair: the self-hosted copy under `dev/` and the
+        shipped copy under `templates/core/`.  Chunk B of `scope-reduction-trap`
+        edited a shipped source and not its installed twin, leaving the unsound
+        text live in the copy Cairn itself reads -- checking one side is how that
+        happens."""
+        path = CAIRN_ROOT / (f"templates/core/{rel}" if shipped else rel)
+        text = path.read_text(encoding="utf-8")
+        missing = [name for name, needle in self.SURFACES[rel].items()
+                   if needle not in text]
+        assert not missing, (path, missing)
+
+    def test_the_shipped_proposal_template_carries_an_unfilled_trigger_slot(self):
+        """The two `_template.md` copies are **not** byte-identical twins, by
+        design: the shipped copy carries fill-slots and Cairn's copy is the
+        filled instance.  P1's new slot must follow that pattern rather than
+        shipping Cairn's own protected-surface roster to every adopter.
+        """
+        shipped = (CAIRN_ROOT / "templates/core/dev/proposals/_template.md"
+                   ).read_text(encoding="utf-8")
+        ours = (CAIRN_ROOT / "dev/proposals/_template.md"
+                ).read_text(encoding="utf-8")
+        opener = "<!-- cairn:slot assurance-path-triggers -->"
+        for text, label in ((shipped, "shipped"), (ours, "self-hosted")):
+            assert text.count(opener) == 1, label
+            assert text.count("<!-- cairn:end assurance-path-triggers -->") == 1, \
+                label
+        shipped_slot = shipped.split(opener, 1)[1].split("<!-- cairn:end", 1)[0]
+        our_slot = ours.split(opener, 1)[1].split("<!-- cairn:end", 1)[0]
+        assert "Fill with your" in shipped_slot, shipped_slot
+        assert "An unfilled slot is a review finding" in shipped_slot
+        # Cairn's copy is FILLED: no instruction text, and it names real surfaces.
+        assert "Fill with your" not in our_slot, our_slot
+        assert "bootstrap/_scaffold" in our_slot, our_slot
+
+    def test_the_plan_template_placeholder_still_cannot_satisfy_the_gate(self):
+        """P1 adds text to `## Code review` in the plan template, and the archive
+        precondition is keyed on a *reviewer marker* inside that section.  Adding
+        a `**Model**:` line at line start -- or a dated reviewer heading -- would
+        make the shipped placeholder satisfy the gate, which is the exact defect
+        `archive-precondition-substance` closed after two plans archived with no
+        code review while the gate reported success.
+        """
+        for rel in ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"):
+            text = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
+            assert planner._has_code_review_marker(text) is False, rel
