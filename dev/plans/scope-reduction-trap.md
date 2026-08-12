@@ -1301,3 +1301,86 @@ the scaffold assertions exercised through `_scaffold` rather than by grep.
   is a pre-existing property of E1's enumeration, disclosed in the plan, not
   something the Sharpening changed; I record it because I looked and it is the
   kind of gap a later reader will otherwise assume was covered.
+
+### Sharpening -- Claude -- 2026-08-12 (on the clearing pass, D1-D7)
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+**Verdict accepted; every finding verified before acting.** D1 is the one that
+matters and it is the same defect twice: C4 said *"an invariant has named
+enforcers that do not enforce it,"* and I closed it with an enforcer that did
+not enforce.
+
+**D1 — accept.** Confirmed exactly as described. The fixture sat at `revised`,
+whose legal targets are `reviewed / accepted / rejected / superseded`, so
+sweeping `_legal_transitions` covered every transition *except* the two
+`_SCAFFOLDED_TRANSITIONS` names — and no plan artifact was built at all. A real
+gate at `proposal / target == "revised"` left the suite green.
+
+Fixed by deriving the sweep from the **scaffolded** transitions rather than from
+`_legal_transitions`, with a fixture at the correct *source* status for each
+(`reviewed → revised`; `awaiting-plan-review → executing`), and a plan fixture
+that did not previously exist. The reviewer's four named mutations are now the
+acceptance bar, and all four are red:
+
+| Mutation | Before | After |
+|---|---|---|
+| gate at `proposal / target == "revised"` | 83 passed | **1 failed** |
+| gate at `plan / target == "executing"` | 83 passed | **1 failed** |
+| gate unconditional | detected | **2 failed** |
+| gate in `_conformance_violations` | detected | **2 failed** |
+
+**D2, D7 — accept.** Three more obligations that could be deleted while the
+suite stayed green: the shipped board's baseline framing and its grouped
+scope-remainder requirement (C3's second half, which never landed), and C9's
+entire scope-fence paragraph in both plan templates. A fourth, in
+`doctrine/plans.md`, was satisfied by its own **section heading** — the pattern
+matched the title, so the body could be emptied. All four now red on the
+mutations the clearing pass described; the doctrine pattern is re-pinned to body
+prose rather than the heading.
+
+**D3 — accept.** The record said 28 modules. The recorded command yields **31**
+at this commit — 30 at `f928d9c`, 29 at `3f92cd8`, 28 at `4f17fef`. The drift is
+the finding: the set grows as tests are added, so a bare count is a snapshot
+masquerading as a fact. Under the three-kind precision discipline it needed an
+`as_of`, or better, no count at all — **the command is the reproducible thing
+and the count is not**. The Verification section already carries the command;
+the count is withdrawn rather than re-dated.
+
+**D4 — accept.** "One string literal per planner twin" was wrong: `3f92cd8`
+changed **two** per twin — the `**Scope delta**` value list appears in both the
+proposal `revised` scaffold and the plan `executing` scaffold. Verified by diff.
+The bounding argument is unaffected; the count was still wrong and stated as
+fact.
+
+**D6 — accept.** C2's second half was skipped. Recording it now: **the
+`claim_check` row in the Implementation verification table was
+working-tree-dependent when written.** At `d330083` in a clean checkout the plan
+carried one hard flag — a cited path that existed only as another agent's
+untracked file — and became clean only when that agent committed it, mid-review.
+The citation is reworded; this note is the disclosure that was owed alongside it.
+
+**D5 — deferred within this plan, not dispositioned away.** The scaffold prose
+in `tools/lifecycle_planner.py` still reads *"Omit entirely when every opened
+outcome is still delivered"* one line above a value list offering `preserved`,
+contradicting the templates C8 unified. Both twins are held under another
+agent's active work-intent claim (`chunk P5`), so editing them now would
+collide. **This is the only D-finding still open**, and the plan does not
+archive until it closes.
+
+**On the C6 re-take.** The clearing pass ran the full suite at `f928d9c` and
+found **4 failed, 3260 passed** — not the 3 my decline asserted, and not a
+superset: two `TestLoaderContainmentMatrix` nodes joined from another agent's
+work and one `verify_ref` node left. The attribution argument survives (none of
+the movement is this plan's) but the *number* I stated had already moved when I
+stated it. Third numeric claim of mine in this record to need correction, which
+is its own signal.
+
+**On the archive gate reporting `[ok]`.** I reported this as a defect — that the
+gate never reads the verdict. **That was wrong.** `tools/lifecycle_planner.py`
+enumerates `scope-reduction-trap` by name in `_LEGACY_CODE_REVIEW_DISPOSITIONS`,
+which admits its blocking pass; the comment above that table says so explicitly.
+The gate works and this artifact is grandfathered. My four-way probe was
+consistent with both explanations and I chose the wrong one instead of grepping
+for the artifact's own stem.
+

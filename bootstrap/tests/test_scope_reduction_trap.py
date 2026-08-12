@@ -93,6 +93,12 @@ _PLAN_TEMPLATE = {
         r"AS ACCEPTED|scope as accepted",
     "a reviewer cannot self-authorize the removal":
         r"cannot create that authority",
+    # D7 (clearing pass): C9 added the floor rule to the `## Scope` fence,
+    # where plan-open happens. The whole paragraph was deletable and stayed
+    # green -- the pre-existing plan-review comment matched the same patterns.
+    # This one is specific to the fence's own framing.
+    "the fence bounds this pass, not the accepted proposal":
+        r"fence bounds this pass",
 }
 
 _BOARD_TAXONOMY = {
@@ -106,6 +112,13 @@ _BOARD_TAXONOMY = {
     "only the Maintainer may concede a baseline outcome":
         r"only the Maintainer may concede|[Nn]either author nor reviewer may "
         r"concede",
+    # D2 (clearing pass): C3's satisfier had two halves and only the authority
+    # half landed. Each of these could be deleted from the shipped board while
+    # the suite stayed green.
+    "the baseline is the artifact's own commitments, both stages":
+        r"as \*?opened\*?.{0,80}as \*?accepted\*?|outcome test in",
+    "the remainder is one grouped record per source artifact":
+        r"grouped\s+scope-remainder record",
 }
 
 _TEAM_GATED_MODULE = {
@@ -166,8 +179,12 @@ _DOCTRINE_PROPOSALS = {
 }
 
 _DOCTRINE_PLANS = {
-    "accepted scope is a floor":
-        r"[Aa]ccepted scope is a \*{0,2}floor",
+    # NOT r"accepted scope is a floor" -- that is the section HEADING at
+    # doctrine/plans.md:342, so the obligation was satisfied by its own title
+    # while the body could be emptied (D7). Pin body prose instead.
+    "accepted scope is a floor, stated in the body":
+        r"proposal's scope is the authority the plan drains|deviated from "
+        r"approved scope",
     "sequencing is free, removal is not":
         r"[Ss]equencing is free; removal is not|Sequencing may move work",
     "a plan reviewer cannot self-authorize":
@@ -307,75 +324,112 @@ def test_the_two_planner_twins_stay_byte_identical() -> None:
     assert a == b, "lifecycle_planner twins have drifted"
 
 
-_REVISED_PROPOSAL_WITHOUT_A_DECLARATION = """# Proposal: something
+#: A proposal at `reviewed`, i.e. one transition BEFORE the `-> revised`
+#: scaffold that carries the declaration. The source status matters: an
+#: artifact already at `revised` has legal targets
+#: `reviewed/accepted/rejected/superseded`, so sweeping `_legal_transitions`
+#: from there covers every transition EXCEPT the one under test. That was the
+#: defect in the first version of this fence (clearing pass, D1) -- the same
+#: named-enforcer-that-does-not-enforce shape it was written to close.
+_PROPOSAL_AWAITING_REVISION = """# Proposal: something
 
 **Author**: Someone
-**Status**: revised
+**Status**: reviewed
 
 ## Context
 
-A revision landed that quietly dropped an outcome, and declared nothing.
+A revision is about to land that quietly drops an outcome, declaring nothing.
 
 ## Review -- Reviewer A (External) -- 2026-08-10
 
 **[R1]** This is too large.
-
-## Response -- Someone -- 2026-08-10
-
-* **[R1]** accept -- removed the second half.
-
-## Revised proposal -- Someone -- 2026-08-10
-
-Build only the first half.
 """
 
+#: The plan half. Round 3 declined the gate for BOTH scaffolded transitions,
+#: so both need a fixture; the first version of this fence built no plan
+#: artifact at all.
+_PLAN_AWAITING_EXECUTION = """# Plan: something
 
-def test_the_planner_does_not_gate_on_a_missing_declaration(tmp_path) -> None:
-    """The declined planner gate, pinned as an absence.
+**Status**: awaiting-plan-review
+**Plan review**: required(Internal)
 
-    Round 3 of the source proposal declined a transition gate on the
-    declaration and the Maintainer accepted that disposition. The reason is
-    worth keeping in front of whoever reads this next: a formal check can
-    confirm a declaration *exists*, never that it is *true*. It would catch
-    forgetting and not evading -- and would make evading easier, by giving a
-    quiet cut a green check to sit behind.
+## Scope
 
-    So this asserts the *absence* of enforcement, not its presence. If someone
-    later adds the gate, this test fails and sends them to the proposal's
-    recorded revival condition instead of letting it arrive unremarked.
+Carries less than the accepted proposal, and declares nothing.
+
+## Plan review -- Reviewer A -- 2026-08-10
+
+**Tier**: Internal
+**Findings**: none
+
+### Sharpening -- Someone -- 2026-08-10
+
+Narrowed chunk B away.
+"""
+
+#: (kind, subdirectory, filename, source status, scaffolded target).
+#: These targets are exactly `_SCAFFOLDED_TRANSITIONS` above -- the two places
+#: the declaration is offered, and therefore the only two a gate could be
+#: attached to and still bite. Deriving the sweep from `_legal_transitions`
+#: instead is what let a real gate pass unnoticed.
+_FENCE_FIXTURES = (
+    ("proposal", "proposals", "2026-08-10-someone-something.md",
+     _PROPOSAL_AWAITING_REVISION, "revised"),
+    ("plan", "plans", "some-plan.md",
+     _PLAN_AWAITING_EXECUTION, "executing"),
+)
+
+
+@pytest.mark.parametrize("kind,subdir,name,body,target", _FENCE_FIXTURES,
+                         ids=[f"{k}->{t}" for k, _, _, _, t in _FENCE_FIXTURES])
+def test_the_planner_does_not_gate_on_a_missing_declaration(
+        tmp_path, kind: str, subdir: str, name: str, body: str,
+        target: str) -> None:
+    """The declined planner gate, pinned as an absence -- on the transitions
+    that actually scaffold the declaration.
+
+    Round 3 of the source proposal declined a transition gate and the
+    Maintainer accepted that disposition. The reason is worth keeping in front
+    of whoever reads this next: a formal check can confirm a declaration
+    *exists*, never that it is *true*. It would catch forgetting and not
+    evading -- and would make evading easier, by handing a quiet cut a green
+    check to sit behind.
+
+    So this asserts the *absence* of enforcement. If someone later adds the
+    gate, this fails and sends them to the recorded revival condition rather
+    than letting it arrive unremarked.
     """
-    d = tmp_path / "dev" / "proposals"
+    d = tmp_path / "dev" / subdir
     d.mkdir(parents=True)
-    f = d / "2026-08-10-someone-something.md"
-    f.write_text(_REVISED_PROPOSAL_WITHOUT_A_DECLARATION, encoding="utf-8")
+    f = d / name
+    f.write_text(body, encoding="utf-8")
 
     art = planner._read_artifact(f)
+    assert art.kind == kind, f"fixture parsed as {art.kind!r}, not {kind!r}"
     identity = planner.IdentityModel(frozenset(), frozenset())
 
-    # BOTH refusal surfaces, not just one. `_conformance_violations` reports
-    # structural unsoundness; `_gating_preconditions` reports a transition as
-    # MISSING. The code review (C4) showed that pinning only the first leaves
-    # a gate added to the second entirely green -- an invariant whose named
-    # enforcers do not enforce it, which is the failure this repository keeps
-    # rediscovering.
+    # Both refusal surfaces. `_conformance_violations` reports structural
+    # unsoundness; `_gating_preconditions` reports a transition as MISSING.
+    # Pinning only the first left a gate on the second entirely green (C4);
+    # pinning the second over the WRONG targets left it green again (D1).
     surfaces = {
         "_conformance_violations":
             planner._conformance_violations(art, identity),
-    }
-    for target in planner._legal_transitions(art):
-        surfaces[f"_gating_preconditions(-> {target})"] = [
+        f"_gating_preconditions(-> {target})": [
             desc for _met, desc
             in planner._gating_preconditions(art, target, identity)
-        ]
+        ],
+    }
 
     for surface, messages in surfaces.items():
         joined = " ".join(messages).lower()
         assert "scope delta" not in joined and "scope-remainder" not in joined, (
-            f"the lifecycle planner now refuses a transition over the "
-            f"scope-delta declaration, via {surface}. That gate was declined "
-            f"in the accepted proposal (Round 3) because a presence check "
-            f"cannot establish semantic truth -- it catches forgetting and "
-            f"not evading, and hands a quiet cut a green check to sit "
-            f"behind. Reviving it takes a new proposal against the recorded "
-            f"revival condition: authors omitting the declaration in practice."
+            f"the lifecycle planner now refuses the {kind} -> {target} "
+            f"transition over the scope-delta declaration, via {surface}. "
+            f"That gate was declined in the accepted proposal (Round 3) "
+            f"because a presence check cannot establish semantic truth -- it "
+            f"catches forgetting and not evading, and hands a quiet cut a "
+            f"green check to sit behind. Reviving it takes a new proposal "
+            f"against the recorded revival condition: authors omitting the "
+            f"declaration in practice."
         )
