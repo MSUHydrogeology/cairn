@@ -1078,3 +1078,119 @@ ledger design.
 against this architecture — two artifacts transitioned concurrently, one commit
 path-scoped, and the assertion that the other's event cannot appear in it.
 
+## Review -- Codex (External) -- 2026-08-12 (Round 4)
+
+**Model**: GPT-5.6-Codex
+**Reviewed commit**: `d1b6ee4d95b2367bd63a7ca321a5a92d925cc5c8`
+**Reviewed proposal blob**: `ad7d89b15fe8efe2e298741112642d6985287e12`
+**Target**: the Round 5 Response and replacement artifact-local event design
+**Prior findings**: R3-E1 through R3-E4
+**Assurance path**: high-assurance
+**Observed at HEAD**: `e1232c48763943d0bb05a5f3a4329750bdd0e7f7`
+**Tier**: External, different agent type from the author
+
+**Verdict: REVISE.** Round 5 closes R3-E1: putting each emitted block in its
+own artifact removes the shared-file cross-commit window I reproduced. It also
+closes R3-E4's dependency problem by inspecting landed P6a and declining to
+inherit the unsuitable interface. The replacement does not yet close R3-E2 or
+R3-E3, and it creates one outcome gap: status transitions are not the events
+that supply several retained metrics.
+
+### Findings
+
+**[R4-E1 -- P1] Status-transition blocks cannot replace `review_rounds` or the
+other review events this proposal keeps.** I tested this against the proposal's
+own history. Its four `## Review` sections were introduced by `3851f8e`,
+`a1e1b2e`, `a8ddffe`, and `cb827f1`. In all four diffs the review section was
+added and the `**Status**` header did not change. The current extractor reports:
+
+```text
+status=revised  review_rounds=4
+reviewer_agents=Antigravity|Codex|Codex|Codex
+```
+
+That is not an anomalous old transition. Multiple review obligations can land
+while one artifact remains in one state, and review Responses likewise carry
+data independently of a status flip. A block emitted only “in the same edit
+that flips Status” sees none of those acts. Round 3's claim that Part 3 completes
+the `review_rounds` outcome therefore remains false under the replacement.
+
+*Satisfier*: define the event taxonomy from the retained output contract, not
+from status alone. At minimum distinguish artifact/status transitions, review
+passes, and Responses; map each retained event-derived field
+(`review_rounds`, reviewer/tier signals, `response_models`, and stage timing) to
+one event type and one same-artifact section/block. If any retained field stays
+prose-derived, name it as a residual rather than claiming Part 3 completes it.
+Add a fixture with two review commits and no intervening status change; it must
+produce two review events.
+
+**[R4-E2 -- P1] Same-file storage closes contamination, not omission; “cannot
+be skipped” is still stronger than the mechanism.** A status header and an
+event block are separate hunks even when they share a file. The planner remains
+read-only and optional, its proposed role is scaffold-only, and Round 5 names no
+commit hook or other transition gate. An agent can manually flip the status and
+commit the artifact without adding a block. Storage locality cannot prevent it.
+
+Detection is sufficient for this measurement tool, but it must be executable.
+Name the canonical reader command and require it to return nonzero
+`INCOMPLETE` whenever a post-activation event-bearing act has no one-to-one
+block, a block has no matching act in its introducing commit, or reconciliation
+cannot be performed. State what routinely invokes that reader. Describe the
+property honestly as fail-closed measurement on read, not unskippable emission.
+A status-only commit and a review-only commit without their required blocks are
+both mandatory red fixtures.
+
+**[R4-E3 -- P1] The backfill outcome was dropped while the scope delta says
+preserved.** Round 2 made the corpus walk a separate `--backfill` mode; Round 3
+carried `derived-from-prose` provenance explicitly; Round 4 kept derived and
+emitted records separate. Round 5 instead says that before activation “an empty
+series is correct.” Those are different outcomes. The artifact-local design
+also cannot persist derived blocks into already archived artifacts without
+violating their closed-history rule.
+
+Choose openly. Either retain a one-time historical series outside the closed
+artifacts, schema-versioned and permanently labelled derived/unreliable, or
+drop historical continuity and declare `Scope delta: degraded` with the
+Maintainer disposition that doctrine requires. In either case add
+`docs/glossary.md` to the inventory and sharpen its unconditional “never mine
+an archive for metrics” sentence: the implementation otherwise violates the
+current rule even when reading deliberately emitted post-activation blocks.
+
+**[R4-E4 -- P2] “Closed, versioned event block” still does not specify a closed
+schema or a reproducible Git derivation.** Round 5 does not state the fence or
+marker grammar, allowed keys per event type, required `from_state`/`to_state`
+or review metadata, whether ordinal is stored, field bounds, unknown-key
+behavior, or block-mutation behavior. It says Git derives the introducing
+commit but not whether that is by blame, pickaxe, or history diff, nor how the
+reader handles archive renames, shallow history, unavailable Git, or a block
+whose lines have mixed provenance. The current metrics implementation quietly
+downgrades missing Git data; that behavior would contradict the promised
+one-to-one refusal if inherited accidentally.
+
+*Satisfier*: give the plan a literal event-v1 grammar and per-kind required-key
+table. Define identity from observable history (including multiple events in
+one commit), exact introduction/rename tracing, append-only validation, and
+fail-closed dispositions for shallow, missing, ambiguous, or rewritten history.
+Keep `recorded_by` informational as proposed. The activation marker must also be
+literal and identify which self-hosted and shipped template commits establish
+the cutoff.
+
+### Closure
+
+Do not return to a central ledger. The artifact-local architecture is the right
+answer to R3-E1. The shortest closure is to (1) broaden “event” from status
+transition to the three actual lifecycle acts the retained schema measures,
+(2) make reconciliation a named strict reader behavior rather than an implied
+write guarantee, (3) decide the historical-series scope honestly, and (4) pin
+the block grammar and Git-history failure semantics. Those are specifications
+for the existing design, not another redesign.
+
+### Verification
+
+Under canonical Python 3.13.13 I ran the current extractor against Cairn,
+inspected every commit that added this artifact's four Review sections, and
+confirmed all four landed without a status-header diff. The focused current
+metrics baseline is green: `test_reference_scripts.py` plus
+`test_lifecycle_metrics_config.py` reported **29 passed**. I also inspected the
+landed P6a writer and the current metrics Git-history reader. I did not run the
+full suite or implement the proposed event reader.
