@@ -167,3 +167,167 @@ H  the ceremony                                                 [Maintainer]
 | **N3** | M3 / M4 — the ceremony | Unchanged from the parent plan; no agent performs any of it |
 
 Everything else is agent work.
+
+## Plan review -- Codex -- 2026-08-12
+
+**Model**: GPT-5 Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Reviewed commit**: `e31abde3420aaf945829c99972dd2d90f1fb968d`
+**Reviewed plan blob**: `f1fd273255b51d5aa4e5b6f2989f3a0cbac6b289`
+**Target**: whether Chunks A-E form one executable security contract closing
+proposal findings S1-S4 and parent findings M2-2/M2-3
+**Prior findings**: S1, S2, S3, S4; inherited M2-2 and M2-3
+**Assurance path**: high-assurance
+**Findings**: raised
+**Disposition**: REVISE
+
+### Sharpening
+
+**Scope delta**: preserved. Keep all accepted outcomes and the two-invocation
+direction. The revisions below settle authority-transfer details the current
+chunk rows defer; none removes or postpones an accepted outcome.
+
+The plan maps the accepted two-invocation direction well, closes the live
+prospective-manifest mismatch explicitly, and puts public-path negative controls
+where the parent implementation lacked them. Four details remain open at the
+exact points where authority crosses processes. They must be settled in the
+plan before Chunk A; leaving them to implementation would repeat the failure
+mode this plan exists to correct.
+
+### [E1] BLOCKING -- the supported key channel is still unnamed and the current host defeats the implied one
+
+D1-D2 say the supported channel will be named during implementation. That is the
+security design, not an implementation detail. On this checkout,
+`user.signingkey` names `/Users/kendal30/.ssh/cairn_signing.pub`, and a
+same-user-readable private sibling exists. I reproduced the mechanism with a
+throwaway key: under `env -i`, `HOME=/nonexistent`, and no `SSH_AUTH_SOCK`,
+`ssh-keygen -Y sign -f testkey.pub` still succeeded by finding the adjacent
+private key. No real ceremony key was invoked. Therefore removing the agent
+socket and cleaning the environment does not establish acceptance criterion 4
+on the host this ceremony will use.
+
+**Required revision.** Name the supported operational channel now. The smallest
+workable contract is: the ceremony private key is encrypted at rest and not
+loaded into any agent during stage 1; stage 1 has no agent socket, performs a
+fixed non-interactive signing probe through the exact configured public-key
+path, and requires failure; only after package confirmation does the Maintainer
+load or authorize that same key in a newly available agent channel for stage 2.
+If the current key cannot meet that precondition, the ceremony stops before
+stage 1. Record this as a Maintainer precondition/fence, because code cannot
+make a readable unencrypted private key unavailable to another process running
+as the same user.
+
+D5 tests this with a throwaway key that models the exact channel -- private key
+unavailable during stage 1, then agent-only during stage 2 -- and proves the
+negative control by making the private sibling readable and observing stage 1
+refuse the environment rather than report the boundary sound. The probe must be
+non-interactive and timeout-bounded; a passphrase prompt is not a refusal.
+
+This remains sequencing, not containment. Earlier candidate code may persist
+and attack the later agent under the accepted residual. The revision need not
+claim otherwise.
+
+### [E2] BLOCKING -- the package has no exact byte, digest, or filesystem contract
+
+C1 places the “package digest” inside the package it digests. Unless a field is
+excluded, that is recursive; if it is excluded, the plan has not named the
+canonical domain. More importantly, D1-D3 never specify how stage 1 writes the
+artifact or how stage 2 receives the independently confirmed digest. A strict
+field schema alone does not prevent a symlink target, partial write, replacement
+between hash and parse, duplicate JSON keys, or stage 2 comparing the adjacent
+self-digest that the proposal expressly rejected.
+
+**Required revision.** Make the package digest external to the package:
+SHA-256 over the exact file bytes stage 1 wrote. Stage 1 creates a new regular
+file atomically/exclusively with restrictive mode, refuses symlinked parents or
+leafs and a pre-existing destination, closes it, prints that digest, and exits.
+Stage 2 takes an explicit package path plus
+`--confirm-package-sha256 <digest>`; no digest read from the package can satisfy
+confirmation. It opens without following symlinks, bounds size, reads once into
+memory, hashes those bytes before parsing, and thereafter uses only that buffer.
+The strict JSON decoder rejects duplicate keys as well as unknown/missing keys.
+
+Define canonical report bytes separately (the existing sorted compact JSON is
+reasonable), and make the package carry their digest plus the exact prospective
+manifest bytes/digest. Stage 2 re-derives the report with the **prospective**
+manifest digest, rebuilds the authoritative manifest, and compares exact bytes.
+The checkpoint message binds the external package digest, report digest,
+prospective manifest digest, and candidate tree. C6 gains write/replace/symlink,
+duplicate-key, size, exact-byte and adjacent-self-digest negatives, all through
+the public stage-2 path with neither ref moving.
+
+### [E3] BLOCKING -- pre-Python source verification is divided across an unspecified loader and the code it is meant to authenticate
+
+A1-A2 require whole-set verification before Python starts, but B2 leaves the
+review-manifest schema unspecified and A3 assigns candidate binding and several
+set refusals to `_gate_preflight.py`, which runs only **after** those candidate
+bytes have been selected and executed. A Python re-check is useful defense in
+depth; it cannot be the control that establishes which Python was safe to run.
+
+**Required revision.** Put the complete source-selection predicate in the fixed
+loader contract. The Maintainer-recorded review manifest must have one concrete,
+shell-parseable, bounded format with a schema/version, the full candidate commit
+OID, bounded review provenance, and the authority closure in one fixed canonical
+path order. The loader rejects malformed rows, wrong order, duplicates,
+missing/extra paths, control characters, non-lowercase/non-64-digit digests and
+anything except the declared member set. It resolves the candidate once to a
+full commit OID, requires equality with the reviewed OID, and extracts every
+blob by that OID -- never by a moving ref. Only after all extracted bytes match
+does it start the checker and pass the same OID and manifest digest for
+defense-in-depth revalidation.
+
+The fixed loader text itself remains an M2 out-of-band trust input; it cannot
+bootstrap its own authenticity. E1/E2's literal-block tests must execute the
+transition loader from an old anchor whose checker lacks the new mode, mutate
+each parser/set condition, and prove no Python process starts on failure. A4's
+current “anchored checker cannot reach transition mode” node is necessary but
+does not cover these pre-execution failures by itself.
+
+### [E4] BLOCKING -- D6 leaves an accepted outcome and the no-roster disposition to the implementer
+
+The Maintainer accepted the Round-2 proposal unamended after the durable-record
+question was surfaced. D6 nevertheless asks implementation to choose either
+writing the admitted set or declaring a narrowing. An implementing agent cannot
+authorize that scope reduction, and a `Scope delta` written after acceptance
+would record the loss rather than authorize it.
+
+**Required revision.** Preserve opening outcome A3: write the complete ordered
+`path -> SHA-256` admitted authority set and its review-manifest digest in the
+checkpoint message. Nine rows are a reasonable audit cost for the trust root;
+the digest supplies compact binding and the rows make the record independently
+readable. Replace D6's branch with that decision and add message read-back plus
+single-row mutation tests before any ref movement.
+
+B3 also names an old-anchor-with-no-roster case without giving it behavior or a
+test. This plan need not invent a second bootstrap ceremony: specify a hard
+refusal with a named route to a separately reviewed Maintainer bootstrap, and
+test that neither the candidate roster nor the out-of-band review manifest is
+accepted as a fallback. Current Cairn has an anchored roster, so this is a
+fail-closed edge, not work required for N3.
+
+### Mapping and verification
+
+Acceptance criteria 1, 2, 5, 6, 7 and 8 have direct chunk homes. Criteria 3 and
+4 become executable once E4 and E1 are applied. The full Boundary B reading is
+correct: both the trust-ceremony and manifest surfaces hit the hard refusal
+fence, so bounded mode is unavailable. No implementation chunk authorizes a
+real Cairn-ref move or real ceremony-key load; fixture transactions and
+throwaway signing remain ordinary tests.
+
+Move `SR` before A in the sequence diagram so its displayed order agrees with
+the binding ordering paragraph. In N2, say the Maintainer **obtains** the M2
+retake; the independent reviewer performs it. Those are record corrections,
+not additional findings.
+
+### Verification and bounds
+
+`claim_check.py` reports no flags and `lifecycle_planner.py next` reports the
+unreviewed plan structurally sound. I verified the Boundary B hard-refusal text,
+mapped every acceptance criterion to its chunk, inspected the current Git
+signing configuration and key-path shape, and executed the no-agent signing
+probe with a disposable Ed25519 key; it succeeded, reproducing E1's mechanism.
+
+I did not use the real ceremony key, move a Cairn ref, run a ceremony, modify
+implementation bytes, or run the full suite. The latter is an implementation
+Boundary B obligation, not evidence for a pre-implementation plan review.
