@@ -1910,3 +1910,49 @@ never reads the verdict *and* the grandfathering explanation in the previous
 Sharpening: at this tree state the exemption no longer applies, because the
 latest pass is a real blocking verdict rather than the enumerated legacy one.
 
+### Maintainer decision -- the two gates -- 2026-08-12
+
+**Both stand.** Authorization, quoted verbatim:
+
+> "We are finishing up this plan, I don't think that leaving them standing works
+> because they rot. Let's let both stand for now."
+
+Decided rather than deferred, on the Maintainer's reasoning that an unresolved
+cross-plan question rots.
+
+**The boundary, stated so it is not accidental:**
+
+* **A presence check is forbidden** — no transition may refuse because a
+  `Scope delta` declaration is *missing*. Round 3's reason holds: a tool can see
+  whether the box is ticked, never whether the tick is honest, so it catches
+  forgetfulness, misses evasion, and supplies cover for evasion by turning the
+  transition green.
+* **An authorization check is permitted** — refusing a declaration that *exists*
+  and declares a loss but carries no Maintainer allowance is enforcing **who may
+  concede an outcome**, not the paperwork. The accepted rule's own words:
+  *"partial changes what residual is recorded, never who may concede it."*
+  Authority is the part that cannot be recovered after the fact.
+
+### Correction, and why the guard is not written yet
+
+I reported to the Maintainer that `review-efficient-lifecycle`'s Amendment B
+**had landed** `_declared_reduction` and `plan_inheritance_violations`. **That
+was wrong.** Verified: `git show HEAD:tools/lifecycle_planner.py` contains
+neither. They exist only in the shared working tree, inside that agent's ~773
+uncommitted lines. I read the file, saw the code, and said "landed" when I meant
+"present in my tree" — the same conflation behind this record's other errors.
+
+So the decision above is recorded and the guard is **owed, not written**. A test
+pinning those functions today would pass for me and fail in any clean checkout,
+and would break if that agent revises the design before committing — which is
+ordinary mid-plan behaviour, not a hazard on their side.
+
+**What is owed once those functions are committed:** extend the fence in
+`bootstrap/tests/test_scope_reduction_trap.py` to assert the boundary in *both*
+directions — no surface refuses on a missing declaration, **and** the
+authorization check is present, so neither half can drift away silently. The
+existing fence already holds the first half and is committed; it is correct as
+it stands and needs no change now.
+
+**Trigger:** the commit that lands `plan_inheritance_violations`.
+
