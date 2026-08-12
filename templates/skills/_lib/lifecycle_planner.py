@@ -4897,11 +4897,13 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 f"revision with its '### {_LEDGER_HEADING}' ledger -- the "
                 "revision is MANDATORY, and the conformance check refuses a "
                 "Response without one; append-only.",
-                "the Scope-delta block is OMITTED unless the revision narrows "
-                "an outcome the proposal opened with; declining a reviewer's "
-                "proposed expansion is not a reduction. THE TOOL DOES NOT "
-                "CHECK THIS -- no transition refuses on a missing or malformed "
-                "declaration; review is the enforcement.",
+                "state `preserved` if you want the record to show you checked; "
+                "only `degraded` and `lost` require the Removed-scope block. "
+                "Declining a reviewer's proposed expansion is not a reduction. "
+                "NO TRANSITION REFUSES ON A MISSING DECLARATION -- forgetting "
+                "it is not caught, and whether a declaration is TRUE is review's "
+                "call. A declared `degraded`/`lost` WITHOUT the Maintainer's "
+                "isolated allowance blockquote in the same record DOES refuse.",
                 "one commit for this transition.",
             ]
             return ("reviewed/revised", "revised", [block] + manifest)
@@ -4969,8 +4971,10 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "accepted scope is a FLOOR: a Sharpening that removes an "
                 "accepted outcome needs the Maintainer's explicit disposition "
                 "under the deviation gate. A plan reviewer cannot create that "
-                "authority by calling the remainder 'out of scope'. THE TOOL "
-                "DOES NOT CHECK THIS.",
+                "authority by calling the remainder 'out of scope'. A declared "
+                "`degraded`/`lost` without that allowance recorded as an "
+                "isolated blockquote DOES refuse; a MISSING declaration does "
+                "not, and whether a declaration is TRUE is review's call.",
                 "for a review-required plan, the '## Plan review' section (+ "
                 "Sharpening if findings) must have landed first; plan-open and "
                 "first-implementation commits stay distinct.",

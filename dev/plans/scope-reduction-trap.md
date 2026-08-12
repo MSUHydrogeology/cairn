@@ -1956,3 +1956,71 @@ it stands and needs no change now.
 
 **Trigger:** the commit that lands `plan_inheritance_violations`.
 
+### E1 landed, and the two-gate guard written -- Claude -- 2026-08-12
+
+The contention cleared: `chunk P2` and `P3` committed, both twins byte-identical
+at `HEAD`, no active claims, and the Maintainer confirmed the other agent is
+paused. Both owed items landed together.
+
+**E1 — the manifest half of D5.** Both scaffolds' manifests now match their block
+prose and, more importantly, are **true**. The old text said "THE TOOL DOES NOT
+CHECK THIS" flatly; that is no longer accurate, so each manifest now states the
+split: a *missing* declaration is uncaught, a *declared* `degraded`/`lost`
+without its allowance **does** refuse, and whether a declaration is **true**
+stays review's call.
+
+**The two-gate guard, written against measured behaviour rather than my reading
+of it.** I probed `_declared_reduction` before pinning anything, and the probe
+corrected me twice:
+
+| Input | Result |
+|---|---|
+| absent declaration | yields nothing |
+| `preserved` | yields nothing |
+| `degraded` / `lost` without allowance | `(value, allowed=False)` |
+| `degraded` with an isolated blockquote | `(value, allowed=True)` |
+
+That is exactly the boundary the Maintainer decided, and it is pinned in both
+directions: an absent or `preserved` declaration must keep yielding nothing (the
+**forbidden** presence check), and a declared loss must keep reporting its
+allowance state (the **permitted** authorization check).
+
+### Two corrections to what I told the Maintainer about the conflict
+
+1. **I overstated the tension.** `_declared_reduction`'s own docstring cites
+   `doctrine/dual-review.md` > "The counterweight" and quotes this plan's rule
+   verbatim — *"No tool refuses a transition on a missing or malformed
+   declaration"* — as the reason a `preserved`, absent or unrecognized value
+   yields nothing. The other implementer encoded the boundary deliberately. I
+   escalated as a conflict between two accepted proposals something whose
+   author had already reconciled them in code.
+2. **The refusal is dormant.** `plan_inheritance_violations` is gated on
+   `_declares_inheritance`, and its docstring records that **zero of 94
+   artifacts** in this tree declare it. So the check currently fires on nothing.
+   The Maintainer's decision remains right and is now pinned; the urgency I
+   attached to it was not.
+
+Pinning `_declared_reduction` rather than `plan_inheritance_violations` follows
+from that dormancy: the predicate carries the rule, the caller carries a
+population that is presently empty. A guard on the caller would have tested the
+population.
+
+### Verification
+
+| Mutation | Result |
+|---|---|
+| the **declined** presence check arrives (`preserved` becomes refusable) | **1 failed** |
+| the **permitted** authorization signal is lost (`allowed` forced `True`) | **2 failed** |
+| the manifest returns to the flat "DOES NOT CHECK THIS" claim | **1 failed** |
+
+105 nodes, was 100. Twins byte-identical. Mapped set (31 modules `as_of` this
+commit): **1752 passed, 3 failed** — the three known pre-existing node ids, all
+reproduced at clean `HEAD` earlier and none attributable here. `check_cairn`
+reports **1 issue**, at `dev/plans/git-native-security-foundations.md:2183`, in
+another agent's file and untouched by this change. Neutrality `fail=93`,
+redundancy `fail=0`, both unchanged.
+
+**All seven D-findings and all five E-findings are now closed.** What remains
+before archive is one independent pass over these corrections — the code
+review's verdict is still `REVISE`, and every Sharpening answering it is mine.
+

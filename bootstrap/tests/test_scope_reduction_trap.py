@@ -310,18 +310,20 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
         f"the {kind} -> {target} scaffold offers the declaration without the "
         f"grouped remainder block it requires."
     )
-    # E1 and the manifest-truthfulness correction are BLOCKED on contention:
-    # both planner twins carry ~773 lines of another agent's uncommitted
-    # `chunk P2` work, so editing them would put my bytes in their commit or
-    # theirs in mine. Until that clears, this pins the claim the manifest still
-    # makes. It is currently FALSE -- `plan_inheritance_violations` does refuse
-    # a declared reduction lacking its allowance -- and the assertion is left
-    # here deliberately so the falsehood cannot be forgotten.
-    assert "DOES NOT CHECK" in emitted, (
-        f"the {kind} -> {target} manifest no longer states that nothing "
-        f"enforces the declaration. NOTE: that statement is now inaccurate and "
-        f"is owed a correction once the planner twins are free -- see the "
-        f"second clearing pass, E1."
+    # The manifest must tell the author WHICH HALF is mechanical, and the
+    # distinction is what must survive -- not either sentence. It used to say
+    # "THE TOOL DOES NOT CHECK THIS" flatly; Amendment B then landed a refusal
+    # for a declared loss carrying no Maintainer allowance, so the flat claim
+    # became false (second clearing pass, E1) and was corrected here.
+    lowered = emitted.lower()
+    assert "missing declaration" in lowered, (
+        f"the {kind} -> {target} manifest no longer says that a MISSING "
+        f"declaration goes uncaught. A scaffold implying full enforcement "
+        f"invites the reader to trust it as a gate."
+    )
+    assert "refuse" in lowered, (
+        f"the {kind} -> {target} manifest no longer says what DOES refuse. "
+        f"Understating the mechanism misleads as much as overstating it."
     )
 
 
@@ -387,6 +389,73 @@ def test_the_scaffolds_do_not_contradict_the_offered_values(
         f"the {kind} -> {target} scaffold tells the author to omit the block "
         f"when preserved while offering `preserved` as a value. The templates "
         f"say `preserved` may be stated; the scaffold must not disagree."
+    )
+
+
+def _reduction_probe(tmp_path, body: str):
+    """`_declared_reduction` over a minimal plan carrying *body* in a Sharpening."""
+    d = tmp_path / "dev" / "plans"
+    d.mkdir(parents=True, exist_ok=True)
+    f = d / "some-plan.md"
+    f.write_text(
+        "# Plan: x\n\n**Status**: executing\n\n"
+        "## Plan review -- R -- 2026-08-10\n\n"
+        "### Sharpening -- S -- 2026-08-10\n\n" + body,
+        encoding="utf-8")
+    return planner._declared_reduction(planner._read_artifact(f))
+
+
+#: (label, body, expected) -- the boundary the Maintainer decided on 2026-08-12
+#: ("let both stand"), pinned in BOTH directions on the predicate that carries
+#: it. `plan_inheritance_violations` consumes this and is gated on
+#: `_declares_inheritance`, which no artifact in the tree declares yet, so the
+#: refusal is dormant; pinning the predicate tests the rule rather than the
+#: current population.
+_BOUNDARY_CASES = (
+    # FORBIDDEN half -- a presence check. Neither an absent declaration nor a
+    # `preserved` one may yield anything to refuse on. Round 3 declined this:
+    # a tool sees whether the box is ticked, never whether the tick is honest.
+    ("absent", "Nothing declared here.\n", []),
+    ("preserved", "**Scope delta**: preserved\n", []),
+    # PERMITTED half -- an authorization check. A declared loss carries its
+    # allowance or it does not, and that is about WHO MAY CONCEDE, which is the
+    # part that cannot be recovered afterwards.
+    ("degraded without allowance",
+     "**Scope delta**: degraded\n\n**Removed scope**\n\n* b\n",
+     [("degraded", False)]),
+    ("degraded with allowance",
+     "**Scope delta**: degraded\n\n> \"drop chunk B\"\n\n**Removed scope**\n\n* b\n",
+     [("degraded", True)]),
+    ("lost without allowance",
+     "**Scope delta**: lost\n", [("lost", False)]),
+)
+
+
+@pytest.mark.parametrize("label,body,expected", _BOUNDARY_CASES,
+                         ids=[c[0] for c in _BOUNDARY_CASES])
+def test_the_declared_reduction_boundary_holds(tmp_path, label: str, body: str,
+                                               expected) -> None:
+    """A presence check stays forbidden; an authorization check stays permitted.
+
+    Two accepted proposals meet here. `scope-reduction-trap` Round 3 declined a
+    gate that refuses on a *missing* declaration. `review-efficient-lifecycle`
+    Amendment B landed one that refuses a *declared* loss carrying no
+    Maintainer allowance. The Maintainer decided on 2026-08-12 that both stand,
+    because they answer different questions -- paperwork versus authority.
+
+    This pins that boundary so neither half drifts: if a later change makes an
+    absent or `preserved` declaration yield something refusable, the forbidden
+    gate has arrived; if a declared loss stops reporting its allowance state,
+    the permitted one has been lost.
+    """
+    got = [(value, allowed) for _line, value, allowed
+           in _reduction_probe(tmp_path, body)]
+    assert got == expected, (
+        f"the declared-reduction boundary moved for {label!r}: expected "
+        f"{expected}, got {got}. An absent or `preserved` declaration must "
+        f"yield nothing (the declined presence check); a declared "
+        f"`degraded`/`lost` must report whether its Maintainer allowance is "
+        f"present (the permitted authorization check)."
     )
 
 
