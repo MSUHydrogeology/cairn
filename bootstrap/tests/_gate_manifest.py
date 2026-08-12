@@ -212,11 +212,21 @@ def _git(*args: str, repo: Path,
     # refusal; here the correct behaviour for a non-repository is to *report*
     # that (`_object_format` returns None), so the binding is a config pin
     # rather than a raise.
+    # [M2-5]: resolve the start path before ceiling it. `GIT_CEILING_DIRECTORIES`
+    # is compared against the *logical* path, so a symlink pointing at a nested
+    # non-repository directory escaped the ceiling entirely and discovered the
+    # target repository -- measured by the security review against the previous
+    # version of this line, which set the ceiling from the unresolved parent.
+    start = Path(repo).resolve()
     return subprocess.run(
-        ["git", "-C", str(repo), *overrides, *args],
+        ["git", "-C", str(start), *overrides, *args],
         capture_output=True, text=not want_bytes, check=False,
-        env={**_sterile_env(), "GIT_CEILING_DIRECTORIES": str(Path(repo).parent),
-             "GIT_DISCOVERY_ACROSS_FILESYSTEM": "0"},
+        env={**_sterile_env(),
+             "GIT_CEILING_DIRECTORIES": str(start.parent),
+             "GIT_DISCOVERY_ACROSS_FILESYSTEM": "0",
+             # [M2-4]'s pin applies to this boundary too: it is documented
+             # read-only and had the same optional-index-write behaviour.
+             "GIT_OPTIONAL_LOCKS": "0"},
     )
 
 

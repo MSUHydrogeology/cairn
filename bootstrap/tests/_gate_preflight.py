@@ -246,6 +246,14 @@ def _sterile_env(index: str | None = None) -> dict[str, str]:
     """
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env["GIT_TERMINAL_PROMPT"] = "0"
+    # Security review [M2-4]. `_READ_ONLY_GIT` keeps content- and ref-writing
+    # subcommands behind `_git_write`, but "read-only" was a claim about
+    # subcommands, not about the repository: `git status` refreshes cached stat
+    # data through an *optional* index lock, so a public `check` changed
+    # `.git/index` bytes and mtime while leaving the worktree clean. Measured,
+    # not theorised. Optional locks off makes the read boundary read-only in
+    # fact; git skips the refresh write rather than failing.
+    env["GIT_OPTIONAL_LOCKS"] = "0"
     if index is not None:
         env["GIT_INDEX_FILE"] = index
     return env
@@ -1599,7 +1607,9 @@ def verify_message_binds_report(message: str, *, digest: str, tree: str,
 def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
                   last_legitimate_anchor: str | None = None,
                   manifest: dict | None = None,
-                  manifest_sha256: str | None = None) -> dict:
+                  manifest_sha256: str | None = None,
+                  branch: str | None = None,
+                  expected_old: str | None = None) -> dict:
     """The derived description of what a blessing would do.
 
     Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
@@ -1624,13 +1634,28 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     erroneous = (report.facts["anchor"]
                  if last_legitimate_anchor
                  and last_legitimate_anchor != report.facts["anchor"] else None)
+    # [M2-1]: derive the canonical report HERE, so the message that gets signed
+    # binds it. This was the whole point of Chunks B and C, and neither reached
+    # this line -- `range_report_digest` defaulted to None and every real
+    # ceremony signed "range-report digest : (not bound)". The machinery existed,
+    # was tested in isolation, and was dead to authorization.
+    the_report = (range_review_report(
+                      report.facts["anchor"], report.facts["head"],
+                      branch=branch, expected_old=expected_old, repo=repo)
+                  if branch and expected_old else None)
+    report_digest = range_report_digest(the_report) if the_report else None
+    candidate_tree = (_resolve_tree(report.facts["head"], repo=repo)
+                      if the_report else None)
+
     message = draft_message(
         observed_anchor=report.facts["anchor"],
         checked_head=report.facts["head"],
         manifest_sha256=bound_sha,
         authority_hashes=report.facts["authority_hashes"],
         scope=scope, last_legitimate_anchor=last_legitimate_anchor,
-        erroneous_ref=erroneous)
+        erroneous_ref=erroneous,
+        range_report_digest=report_digest,
+        candidate_tree=candidate_tree)
     return {
         "schema": BUNDLE_SCHEMA,
         "checked_head": report.facts["head"],
@@ -1638,6 +1663,9 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
         "last_legitimate_anchor": last_legitimate_anchor,
         "manifest": new,
         "manifest_sha256": bound_sha,
+        "range_report": the_report,
+        "range_report_digest": report_digest,
+        "candidate_tree": candidate_tree,
         "message": message,
         "message_sha256": _sha256_bytes(message.encode()),
         "authority_hashes": report.facts["authority_hashes"],
@@ -1902,9 +1930,40 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
     manifest_bytes = (json.dumps(committed_manifest, indent=2, sort_keys=True)
                       .encode() + b"\n")
     committed_sha256 = _sha256_bytes(manifest_bytes)
+    branch_old = _resolve(branch, repo=repo)
     plan = blessing_plan(report, evidence, repo=repo,
                          manifest=committed_manifest,
-                         manifest_sha256=committed_sha256)
+                         manifest_sha256=committed_sha256,
+                         branch=branch, expected_old=branch_old)
+
+    # [M2-1], the governing path. Three separate obligations, none of which the
+    # reviewed bytes performed:
+    #
+    #   PRESENT  -- the complete report, not a count. The Maintainer authorizes
+    #               a state; a digest alone is not a state they can read.
+    #   RE-DERIVE -- immediately before construction, from the same refs, and
+    #               refuse on any drift. `rederive_and_bind` has done exactly
+    #               this since Chunk C and had no caller.
+    #   BIND     -- the digest and candidate tree must be in the exact signed
+    #               message, checked before a signature exists.
+    if plan["range_report_digest"] is None:
+        raise PreflightError(
+            "no range-review report was derived; the checkpoint would bind no "
+            "reviewed classification, which is the state [M2-1] found")
+
+    out.write("\n--- range-review report (the authorized state) ---\n")
+    out.write(json.dumps(plan["range_report"], indent=2, sort_keys=True) + "\n")
+    out.write(f"range-report digest: {plan['range_report_digest']}\n")
+    out.write(f"candidate tree     : {plan['candidate_tree']}\n")
+
+    rederive_and_bind(report.facts["anchor"], report.facts["head"],
+                      branch=branch, expected_old=branch_old,
+                      confirmed_digest=plan["range_report_digest"], repo=repo)
+
+    verify_message_binds_report(
+        plan["message"], digest=plan["range_report_digest"],
+        tree=plan["candidate_tree"], head=report.facts["head"],
+        anchor=report.facts["anchor"])
 
     # R1-F steps 4-5. Everything above this line may execute candidate code;
     # nothing below it may. `_construct_signed_commit` is the first operation

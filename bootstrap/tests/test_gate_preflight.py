@@ -716,8 +716,14 @@ class TestSterileGitLauncher:
         monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
         monkeypatch.setenv("GIT_EXTERNAL_DIFF", "/bin/sh")
         env = P._sterile_env()
-        assert not [k for k in env if k.startswith("GIT_")
-                    and k != "GIT_TERMINAL_PROMPT"]
+        # The two GIT_* the ceremony sets on purpose. Named rather than
+        # prefix-matched: the point of this test is that nothing INHERITED
+        # survives, and a loose filter would let an inherited one through under
+        # a plausible name. `GIT_OPTIONAL_LOCKS` was added for [M2-4].
+        deliberate = {"GIT_TERMINAL_PROMPT", "GIT_OPTIONAL_LOCKS"}
+        assert not [k for k in env
+                    if k.startswith("GIT_") and k not in deliberate]
+        assert env["GIT_OPTIONAL_LOCKS"] == "0"
 
     def test_the_index_is_threaded_not_exported(self, monkeypatch):
         """Mutating os.environ leaked the temporary index into every unrelated
@@ -1730,6 +1736,154 @@ class TestKeyLoadPhaseSentinel:
         assert result["new_anchor"], "the ceremony did not complete"
         assert P._phase == P._PHASE_SEALED, (
             "apply returned with candidate execution still permitted")
+
+
+class TestReadBoundaryIsRepositoryReadOnly:
+    """Security review [M2-4]. `_READ_ONLY_GIT` bounds *subcommands*; it said
+    nothing about whether the repository is written. `git status` refreshes
+    cached stat data through an optional index lock, so a public `check`
+    changed `.git/index` bytes while leaving the worktree clean."""
+
+    def test_a_read_invocation_does_not_mutate_the_index(self, tmp_path):
+        repo = _repo(tmp_path)
+        _write(repo, "a.txt", "x\n")
+        _commit(repo, "base")
+        index = repo / ".git" / "index"
+        # Touch without changing bytes: exactly what provokes the stat refresh.
+        (repo / "a.txt").touch()
+        before = index.read_bytes()
+
+        P._git("status", "--porcelain", repo=repo)
+
+        assert index.read_bytes() == before, (
+            "a documented read-only invocation rewrote .git/index")
+
+    def test_the_pin_is_on_the_boundary_not_the_call_site(self):
+        assert P._sterile_env().get("GIT_OPTIONAL_LOCKS") == "0", (
+            "the pin must live in the shared child environment; a per-call "
+            "flag is one forgotten call site away from the defect")
+
+
+class TestManifestLauncherResistsSymlinkedStartPaths:
+    """Security review [M2-5]. `GIT_CEILING_DIRECTORIES` is compared against the
+    *logical* path, so a symlink to a nested non-repository directory escaped
+    the ceiling and discovered the target repository -- the first fix for [IC6]
+    set the ceiling from the unresolved parent and was evadable."""
+
+    def test_a_symlinked_non_repository_does_not_discover_its_target(
+            self, tmp_path):
+        outer = tmp_path / "outer"
+        outer.mkdir()
+        _run("git", "init", "-q", ".", cwd=outer)
+        nested = outer / "nested"
+        nested.mkdir()
+        link = tmp_path / "link"
+        link.symlink_to(nested)
+
+        assert G._object_format(link) is None, (
+            "the symlinked start path escaped the ceiling and answered with "
+            "the repository it points into")
+
+    def test_a_real_repository_still_reports_its_format(self, tmp_path):
+        repo = tmp_path / "real"
+        repo.mkdir()
+        _run("git", "init", "-q", ".", cwd=repo)
+        assert G._object_format(repo) in G._OBJECT_FORMAT_WIDTH, (
+            "resolving the start path must not break the honest case")
+
+
+class TestRangeReportIsOnTheGoverningPath:
+    """Security review [M2-1]. The range machinery existed, its isolated tests
+    passed, and **nothing on the `apply` path called it** -- every real ceremony
+    signed `range-report digest : (not bound)`.
+
+    The review was explicit that helper-level mutation tests do not satisfy this
+    finding, so these nodes replace the entry points with raisers and drive a
+    **real** `apply`, which is the exact probe that found it.
+    """
+
+    def _prepared(self, tmp_path, monkeypatch):
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        manifest = {**P.rederive_static_manifest(head, repo=repo),
+                    "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                                   "skip_xfail_marked": []},
+                    "interpreter": {"version": "3.13.13"}}
+        monkeypatch.setattr(P, "gather_evidence",
+                            lambda *a, **k: _fake_evidence(head, manifest))
+        return repo, anchor, head
+
+    def test_a_real_ceremony_signs_a_bound_digest(self, tmp_path, monkeypatch):
+        repo, anchor, head = self._prepared(tmp_path, monkeypatch)
+
+        result = P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+
+        body = _run("git", "log", "-1", "--format=%B", result["new_anchor"],
+                    cwd=repo).stdout
+        assert "(not bound)" not in body, (
+            f"the signed checkpoint binds nothing:\n{body}")
+        digest = re.search(r"range-report digest : ([0-9a-f]{64})", body)
+        assert digest, f"no range-report digest in the signed message:\n{body}"
+        tree = _run("git", "rev-parse", f"{head}^{{tree}}",
+                    cwd=repo).stdout.strip()
+        assert tree in body, "the candidate tree is not bound"
+
+    @pytest.mark.parametrize("entry_point", [
+        "range_review_report",
+        "range_report_digest",
+        "rederive_and_bind",
+        "verify_message_binds_report",
+    ])
+    def test_removing_any_entry_point_fails_the_public_path(
+            self, tmp_path, monkeypatch, entry_point):
+        """The reviewer's own falsification, kept as a regression.
+
+        Each of these was replaced with a raiser and a real `apply` still
+        signed and advanced both refs. If that is ever true again, the report is
+        decorative and the signature authorizes something narrower than the
+        plan claims.
+        """
+        repo, anchor, head = self._prepared(tmp_path, monkeypatch)
+        before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+
+        def raiser(*a, **k):
+            raise AssertionError(f"{entry_point} must be on the apply path")
+
+        monkeypatch.setattr(P, entry_point, raiser)
+
+        with pytest.raises((AssertionError, P.PreflightError)):
+            P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() == before, (
+            "the anchor moved despite a missing binding entry point")
+
+    def test_report_drift_between_confirmation_and_construction_refuses(
+            self, tmp_path, monkeypatch):
+        """`rederive_and_bind` is the control; this proves it is reachable and
+        load-bearing rather than merely present."""
+        repo, anchor, head = self._prepared(tmp_path, monkeypatch)
+        real = P.rederive_and_bind
+
+        def drifted(*a, **k):
+            k["confirmed_digest"] = "0" * 64
+            return real(*a, **k)
+
+        monkeypatch.setattr(P, "rederive_and_bind", drifted)
+        with pytest.raises(P.RangeReportDrift):
+            P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+
+    def test_the_full_report_is_presented_not_just_its_digest(
+            self, tmp_path, monkeypatch):
+        """The Maintainer authorizes a *state*. A digest alone is not one."""
+        repo, anchor, head = self._prepared(tmp_path, monkeypatch)
+        buf = io.StringIO()
+
+        P.apply_now(repo=repo, confirmed=True, out=buf)
+
+        printed = buf.getvalue()
+        assert "range-review report" in printed
+        assert P.RANGE_REPORT_SCHEMA in printed, (
+            "the complete report must be shown, not summarised")
 
 
 class TestApplyCommitsTheAuthoritativeManifest:
