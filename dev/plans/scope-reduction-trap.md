@@ -2024,3 +2024,432 @@ redundancy `fail=0`, both unchanged.
 before archive is one independent pass over these corrections — the code
 review's verdict is still `REVISE`, and every Sharpening answering it is mine.
 
+## Code review -- Claude (Internal, third clearing pass) -- 2026-08-12
+
+**Reviewed commit**: `c53e706`, reached through `6dde057`, `8ad50ed`, `e33f77d`,
+`3789f8d` and `aa4015f`, each diffed against **its own parent** so the other
+agents' interleaved commits are excluded rather than trusted.
+**Target**: whether D1-D7 and E1-E5 are genuinely closed, and whether the
+corrections introduced anything new. Not a fresh end-to-end read of the change
+and not a re-audit of C1-C11; those passes landed on 2026-08-11 and 2026-08-12
+and I repeated neither.
+**Prior findings**: D1-D7 from `## Code review -- Claude (Internal) -- 2026-08-12`
+and E1-E5 from `## Code review -- Claude (Internal, second clearing pass) --
+2026-08-12`, both verdict `REVISE`. Dispositioned by the author across the
+Sharpenings at `6dde057`, `8ad50ed`, `e33f77d` and `aa4015f`, with the
+Maintainer's two-gate decision scribed at `3789f8d`.
+**Assurance path**: standard
+**Model**: Claude Opus 5 (`claude-opus-5`)
+**Findings**: raised
+
+**Tier — stated honestly.** Fresh session, same agent type as the author and as
+all three prior reviewers: the **Internal** floor, *not* External. What this pass
+supplies is the structural property doctrine requires — a blocking verdict
+answered by a **later independent pass** rather than by the implementer's own
+Sharpening. It supplies no cross-type assurance on the distribution's judgement
+calls; those have had none since the proposal, and nothing here changes that.
+
+**Verdict**: REVISE
+
+**Ten of the twelve findings are genuinely closed, and I closed them by attack
+with mutations I chose rather than the ones in the Sharpening tables.** D1's and
+E2's two named gate placements now redden; so does a gate at `proposal ->
+accepted`, the coverage E2 showed had been traded away. D2 and D7 bite per
+obligation on both copies of every paired surface. I re-derived the match site of
+all **84** parametrized obligation patterns against the raw bytes with my own
+whitespace offset map: **zero** land on a heading line, so D7's
+heading-satisfaction defect is closed independently of the previous pass's
+measurement. E3's seventh surface reddens on its own. E4's wording is corrected.
+E1's *textual* half is closed on every copy: I called `_scaffold` on **both**
+twins for **all three** source statuses that reach the two scaffolded targets and
+read the block and the manifest, and no "omit entirely" or "OMITTED unless the
+revision narrows" survives anywhere in the tree.
+
+Two things block, and they are the same shape this record has now produced five
+times — **a surface that names an enforcement, and the enforcement is not
+there**. This time it is not a guard that fails to see a defect; it is the
+author-facing scaffold **affirmatively telling the author that a check exists
+which does not** (F1), and the newest guard failing to pin the boundary it was
+written to pin, in both directions (F2).
+
+### Findings
+
+**[F1 -- P1] The E1 fix replaced a false manifest claim with a differently false
+one, on the surface Chunk C exists for — and the new one fails open.**
+
+E1 was right that "THE TOOL DOES NOT CHECK THIS" had become false. The
+replacement, live in both twins at `c53e706`, tells the author:
+
+* proposal `-> revised` (`tools/lifecycle_planner.py:4906`): *"A declared
+  `degraded`/`lost` WITHOUT the Maintainer's isolated allowance blockquote in the
+  same record DOES refuse."*
+* plan `-> executing` (`tools/lifecycle_planner.py:4976`): *"A declared
+  `degraded`/`lost` without that allowance recorded as an isolated blockquote
+  DOES refuse."*
+
+**Nothing refuses.** `_declared_reduction` (`tools/lifecycle_planner.py:3334`)
+has exactly **one** caller in the tree — `tools/lifecycle_planner.py:3518`,
+inside `plan_inheritance_violations` (`:3368`). That function returns `[]` on its
+first statement when `art.kind != "plan"`, and returns before the
+`_declared_reduction` loop when `not _declares_inheritance(art)`.
+
+Measured at `c53e706`, canonical interpreter, no mutation — artifacts built under
+`dev/proposals/` and `dev/plans/` and read through `planner._read_artifact`:
+
+| Artifact | `_declared_reduction` | `plan_inheritance_violations` | transitions refusing on it |
+|---|---|---|---|
+| proposal at `reviewed`, `**Scope delta**: lost`, no blockquote | `[(8, 'lost', False)]` | `[]` | **none** — `revised`, `accepted`, `rejected`, `superseded` all clean |
+| plan at `executing`, `**Scope delta**: lost`, no blockquote | `[(10, 'lost', False)]` | `[]` | **none** — `review`, `awaiting-code-review` both clean |
+
+So the proposal-side claim is **categorically** false: no proposal can refuse on
+this, ever, because the only consumer discards non-plans on entry. That is the
+side E1 itself singled out — *"the proposal side is where a pre-Decision
+narrowing is declared"*. The plan-side claim is true only for a plan declaring an
+inherited proposal basis, which `plan_inheritance_violations`' own docstring
+measures at **zero of 94 artifacts** in this tree.
+
+**The record knows and the author is not told.** `aa4015f`'s commit body asserts
+*"a declared degraded/lost without its allowance refuses"* and then, four
+paragraphs later, *"The refusal is DORMANT."* The plan record and the test module
+docstring both carry the dormancy. The scaffold — the surface Chunk C justified
+itself on, *the declaration where the author is typing* — carries only the
+unqualified positive.
+
+**The direction of the error is what makes this P1.** The old claim was
+conservatively false: it understated the tool, and an author who believed it
+would still do the work themselves. The new one is permissively false: it tells
+an author narrowing their own scope that the tool will stop an unauthorized
+concession. Round 3's decline, the Maintainer's 2026-08-12 decision, and this
+module's own fence assertion all name that exact hazard in the same words — a
+check that *"hands a quiet cut a green check to sit behind."* The scaffold now
+manufactures the green check in prose.
+
+**The guard cannot see it.** `test_the_emitted_scaffold_carries_the_declaration`
+asserts `"refuse" in lowered` under the message *"the manifest no longer says
+what DOES refuse"* — but on the proposal side that substring is already supplied
+by *"NO TRANSITION REFUSES ON A MISSING DECLARATION"*, the sentence that says the
+opposite. Deleting the entire "DOES refuse" claim from the proposal manifest in
+both twins leaves **105 passed**.
+
+*Satisfier*: **doc** — qualify the positive half to the population it actually
+governs (a plan declaring an inherited proposal basis; today none), or drop it
+and keep only what is true on both sides; and **test** — assert the manifest's
+positive claim against the predicate's reach rather than against the substring
+`refuse`.
+
+**[F2 -- P1] The two-gate boundary guard does not pin the boundary in either
+direction.** `test_the_declared_reduction_boundary_holds` is the answer to the
+Maintainer's decision, and its docstring claims: *"if a later change makes an
+absent or `preserved` declaration yield something refusable, the forbidden gate
+has arrived; if a declared loss stops reporting its allowance state, the
+permitted one has been lost."* I chose nine mutations of `_declared_reduction`
+and `_has_isolated_blockquote` independently of the record. **Eight leave all 105
+nodes green.** Each applied to **both** twins and reverted after; worktree
+verified clean by `git status --short` before and after every one.
+
+| Mutation | Boundary half attacked | Result |
+|---|---|---|
+| an **unrecognized** value becomes refusable (`preserved` still exempt) | forbidden | **105 passed** |
+| value match made case-sensitive (`Lost` / `LOST` stop being read) | permitted | **105 passed** |
+| emphasis stripping dropped (house form `**Scope delta: lost.**`) | permitted | **105 passed** |
+| trailing-period strip dropped (`**Scope delta**: lost.`) | permitted | **105 passed** |
+| allowance scoping widened from the record to the **whole artifact** | permitted | **105 passed** |
+| fenced-code exemption dropped in `_has_isolated_blockquote` | permitted | **105 passed** |
+| **isolation** requirement dropped (any `>` line counts) | permitted | **105 passed** |
+| only the **first** declaration in an artifact reported | permitted | **105 passed** |
+| allowance scoping narrowed to the declaration line alone | permitted | 1 failed — detected |
+
+The first row is the serious one: it is **the declined presence check arriving**,
+through the value-parsing path rather than the gate-placement path the fence
+watches. Under it, the template's own unfilled prompt — `**Scope delta**:
+preserved | degraded | lost`, the literal string `_scaffold` hands every author —
+yields `('lost', False)` and becomes refusable. That is precisely what
+`_declared_reduction`'s docstring says its `value is None` branch exists to
+prevent, and nothing pins it.
+
+Rows two to four matter because the forms they break are **live**: I confirmed
+the predicate today correctly reads `**Scope delta: lost.**` (the house form that
+bolds label and value together), `*degraded*`, `Lost`, `LOST` and `lost.`. Each
+of those normalizations can be removed silently, and the permitted authorization
+check then sees nothing to authorize.
+
+The five parametrized cases pin value-in / value-out for two lowercase bare
+spellings plus blockquote-present / blockquote-absent. Nothing pins parsing,
+nothing pins record scoping, nothing pins isolation — the three properties the
+guard's own prose names.
+
+This is the fourth guard in this record whose stated property exceeds what it
+asserts (C4 → D1 → E1 → here), and it was written in direct response to a
+Maintainer decision, so it is the one most likely to be cited later as
+settling the question.
+
+*Satisfier*: **test** — drive the boundary through the parsing and scoping
+surfaces (an unrecognized value and the unfilled prompt must yield nothing; the
+house/emphasis/case/period forms must yield their value; an allowance in a
+different record and a non-isolated or fenced `>` must not authorize).
+
+**[F3 -- P2] E2 was closed on two of its three parts, and the part left out is
+the one E2 said was not acceptable to leave.** The two named placements are
+genuinely fixed — I verified the controls rather than reading the table: gates at
+`proposal -> revised` (1 failed), `plan -> executing` (2 failed), `proposal ->
+accepted` (1 failed) and unconditional (3 failed) all redden, and the third
+fixture reaches the `open -> executing` route. But E2's finding had a third
+component: three evasions it recorded as pre-existing, closing with *"what is not
+acceptable is the current docstring, which claims the absence is pinned."*
+Confirmed still open at `c53e706`, each gate body identical and only its
+condition or wording changed:
+
+| Real refusal on a missing declaration | Result |
+|---|---|
+| gate worded without "scope delta" / "scope-remainder" | **105 passed** |
+| gate worded as "declares its reduction (preserved \| degraded \| lost)" | **105 passed** |
+| refusal by **withholding** the scaffolded target from `_legal_transitions` | **105 passed** |
+| gate at `plan -> archived` (also on E2's list) | **105 passed** |
+
+E2 offered exactly two acceptable resolutions — assert on gate state, or
+`wontfix` with the residual disclosed in the module docstring. Neither landed:
+the fence still greps gate prose, `_FENCE_FIXTURES` is still a hand-list of
+three, and a grep of the test module for `residual|wontfix|worded|phrase|evade|
+unpinned` returns nothing disclosing any of it. The fence docstring still reads
+*"If someone later adds the gate, this fails."* The Sharpening records `**E2** |
+`accept` — coverage restored *and* extended, not `wontfix`.`
+
+Worth naming plainly: this is the **same mechanism the implementer diagnosed in
+themselves at E1** — *"I paraphrase a finding before fixing it, and the paraphrase
+drops parts"* — recurring one section later, on the finding immediately after it.
+The correction they adopted (work from the reviewer's literal quoted text, item
+by item) was applied to E1 and not to E2.
+
+*Satisfier*: **doc** — take E2's own cheaper option and state the residual in the
+module docstring; or **test**.
+
+**[F4 -- P2] The review-loop trap statement's first paragraph is unguarded on
+both copies, including the shipped one adopters receive.** Deleting it from
+`dev/agent_collaboration.md` and `templates/core/dev/agent_collaboration.md`
+together leaves **105 passed**; deleting it from either alone does too. What
+leaves with it: the asymmetry that makes narrowing cheap, *"treat a proposed
+reduction with the same skepticism as a clean pass"*, the reviewer's obligation
+to state **what is lost** and **why the narrower change still reaches the
+cause**, *"'this is too large' is not a finding"*, and the author's
+specify-don't-cut default.
+
+The cause is the shape D7 was about. `_REVIEW_LOOP` carries five obligations;
+four of them live in the *second* paragraph, and the fifth, `names the trap`
+(`r"scope-reduction trap"`), is satisfied on its own by the trailing pointer
+`(see doctrine/dual-review.md > "Review expectations — the scope-reduction
+trap")`. My match-site map shows the two sites 21 lines apart on both copies.
+
+Those three obligations are pinned elsewhere only in `doctrine/dual-review.md` —
+which this module's own docstring says *"is **not** installed into an adopter
+tree"*, the entire reason the module exists. So for an adopter they are pinned
+nowhere. Chunk D's acceptance criterion was *"the two `agent_collaboration.md`
+statements say the same thing"*; they can both stop saying half of it silently.
+No prior pass reached this surface's first paragraph.
+
+*Satisfier*: **test** — one obligation per claim in that paragraph (the
+asymmetry, the reviewer's what-is-lost duty, the specify default), and a `names
+the trap` pattern that the citation alone does not satisfy.
+
+**[F5 -- P3] E5's `defer` was taken by the implementer, and no ledger row records
+it.** `doctrine/dual-review.md` lens 9: *"a finding whose satisfier is none of the
+five ... is the `defer` case, and `defer` is the Maintainer's call."* The
+Sharpening records `**E5** | `defer` — see below; it belongs to another plan.`
+with no authorization quoted, and `## Lifecycle disposition ledger` still carries
+only its original three rows — nothing for D1-D7 or E1-E5. The planner reports
+the same gap independently: `next` on this plan lists `[MISSING] every deferred
+follow-up carries a recorded disposition` among the unmet archive gates. E5's
+author framed it as *"observation, not a finding against this plan"*, which
+mitigates the substance but does not move who may take the token.
+
+*Satisfier*: **doc** — Maintainer confirmation and a ledger row.
+
+**[F6 -- P3] The new guard couples this plan's suite to an in-flight plan's
+predicate, with no ownership note.** `test_the_declared_reduction_boundary_holds`
+pins `_declared_reduction`, owned by `review-efficient-lifecycle`, whose
+`**Status**` is `executing`. The implementer named this hazard themselves before
+the decision — *"would break if that agent revises the design before committing —
+which is ordinary mid-plan behaviour, not a hazard on their side"* — and
+committing chunks P2/P3 removed the *contention*, not the *coupling*. If that
+plan revises the predicate before it archives, this plan's node goes red under
+the wrong plan's name, and the module docstring names the boundary and the
+Maintainer decision but not the owner.
+
+*Satisfier*: **doc** — one sentence naming the owning plan in the docstring.
+
+### What I probed and could not defeat
+
+Given this record's history a clean row is a claim about my probe, not about the
+code, so I name the attack rather than the conclusion.
+
+* **E1's textual half, through `_scaffold` rather than by grep.** I loaded
+  **both** twins as separate modules and emitted the full `[block] + manifest`
+  for all three `(kind, status) -> target` combinations that reach the two
+  scaffolded targets — proposal `reviewed -> revised`, plan
+  `awaiting-plan-review -> executing`, plan `open -> executing`. All six emissions
+  offer `preserved | degraded | lost` in the block and describe `preserved` the
+  same way in the manifest. A whole-tree grep for `OMITTED` and `omit entirely`
+  finds no scope-delta occurrence outside this plan's own record, the guard's
+  assertion string, and an unrelated sentence in `doctrine/session-routines.md`.
+  D5's block half and E1's manifest half are both closed as *text*; F1 is about
+  what the replacement text asserts, not about the contradiction returning.
+* **The heading-satisfaction class, re-derived from scratch.** I built my own
+  normalized-offset map (mirroring `re.sub(r"\s+", " ", ...)`) and mapped every
+  one of the **84** parametrized patterns back to a raw line. **0** land on a
+  heading. **22** have more than one match site; I read all 22 and all but the
+  ones behind F4 are alternations matching twice inside a single paragraph, or
+  the deliberate `Removed scope` / `Disposition/home` pair. The two that span
+  genuinely different sections in `dev/plans/_template.md` and its twin
+  (`accepted scope is a floor` at L135 and L379) are the D7 case, and the
+  placement-specific `fence bounds this pass` obligation now covers it: deleting
+  the C9 paragraph from either template alone reddens 1.
+* **D2 and D7 per obligation.** Shipped board loses the grouped
+  scope-remainder record alone: 1 failed. `doctrine/proposals.md` reverted to
+  `degraded | lost` alone (E3): 1 failed. C9's fence paragraph deleted from each
+  plan template separately: 1 failed each.
+* **The record's own three mutations, reproduced.** `aa4015f`'s Verification
+  table claims 1 / 2 / 1 failures for the arriving presence check, the lost
+  authorization signal, and the manifest reverting. I re-ran all three: **1, 2,
+  1**. The numbers in this round's record are right.
+* **The predicate's live behaviour, twelve inputs.** `_declared_reduction`
+  correctly reads the house form, emphasised, capitalised, upper-case and
+  trailing-period spellings; correctly yields nothing for the unfilled prompt and
+  for an unrecognized value; correctly refuses to count a `>` inside a code fence
+  or without a preceding blank line; and correctly does **not** reach a
+  blockquote in a different heading-bounded record. Two behaviours are disclosed
+  design rather than defects: a single blockquote authorizes *every* declaration
+  in its record, and any isolated blockquote counts — the docstring says
+  structure is attested, never authenticity. The predicate is sound; F2 is about
+  the guard over it.
+* **Twin parity and the scope fence.** `cmp` says the twins are byte-identical.
+  `_conformance_violations` still carries no scope-delta refusal, and the fence's
+  four control placements redden, so the declined gate has not arrived by any
+  route I found other than the parsing path in F2.
+* **The known standing failures, confirmed rather than accepted.** The mapped set
+  (31 modules, the recorded grep, re-derived) gives **3 failed / 1752 passed** in
+  158.95 s at `c53e706` in a pristine worktree — the record's figures exactly, and
+  the three node ids are the three named. I then ran those three nodes alone at
+  `3789f8d`, before this plan's last two commits: **3 failed**, same ids. With the
+  two earlier passes' measurements at `f928d9c` and `8ad50ed`, they are
+  pre-existing and none is attributable here.
+* **`check_cairn`'s one issue, confirmed not ours.** `1 issue across 174 files`,
+  at `dev/plans/git-native-security-foundations.md:2183`, a broken link target in
+  another plan's file that this change never touched. `claim_check` on this plan:
+  clean. Neutrality `fail=93 info=21`, redundancy `fail=0 info=2` — unchanged.
+* **Tree state.** `git status --short` showed no modified tracked files at the
+  start of this pass and none at the end; the three untracked paths (`.claude/`,
+  `dev/measurement/collision_log.md`, `dev/measurement/snapshots/`) predate it.
+  The tree HEAD advanced from `c53e706` to `4de1132` mid-pass with four commits
+  belonging to `ceremony-handshake-and-first-use`; their diff touches two
+  Markdown files in that plan's own lifecycle and **no** surface in `_SURFACES`,
+  neither planner twin, and not this plan, so the reviewed range is unaffected.
+
+### Verification
+
+All under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), the
+canonical interpreter. Two detached worktrees at `c53e706`: one pristine, used
+for the mapped run and the standing gates; one for mutation, `git status
+--short` asserted clean before and after every mutation by the harness itself,
+which restores from an in-memory copy and aborts on a dirty tree.
+
+| Probe | Result |
+|---|---|
+| Baseline `bootstrap/tests/test_scope_reduction_trap.py` at `c53e706` | 105 passed (was 100 at `3789f8d`, 98 at `8ad50ed`, 83 at `f928d9c`) |
+| Mapped set (31 modules, recorded grep re-derived), `--quality-gate-shuffle-seed=0` | 3 failed, 1752 passed, 158.95 s — the three known ids |
+| Those three node ids alone at `3789f8d` | 3 failed — pre-existing, not this plan's |
+| `_scaffold` emitted from **both** twins × 3 source statuses, block + manifest | no "omit entirely", no "OMITTED unless", no "DOES NOT CHECK" (E1 text closed) |
+| Proposal at `reviewed` declaring `lost`, no blockquote — all 4 legal targets | **0 refusals**; `plan_inheritance_violations` → `[]` (F1) |
+| Plan at `executing` declaring `lost`, no blockquote — all legal targets | **0 refusals** (F1) |
+| Callers of `_declared_reduction` in the tree | exactly one, inside `plan_inheritance_violations` (F1) |
+| Delete the proposal-side "DOES refuse" claim from both twins | **105 passed** (F1) |
+| Delete the plan-side "DOES refuse" claim from both twins | 1 failed |
+| 9 boundary mutations of `_declared_reduction` / `_has_isolated_blockquote` | **8 of 9 leave 105 passed** (F2) |
+| Unrecognized value made refusable — unfilled prompt under mutation | yields `('lost', False)`; **105 passed** (F2) |
+| 12 live-form inputs to `_declared_reduction`, unmutated | all correct — the predicate is sound |
+| Fence controls: `proposal -> revised` / `plan -> executing` / `proposal -> accepted` / unconditional | 1 / 2 / 1 / 3 failed — D1 and E2's two placements closed |
+| Gate worded off the two pinned phrases (two spellings) | **105 passed** each (F3) |
+| Refusal by withholding the target in `_legal_transitions` | **105 passed** (F3) |
+| Gate at `plan -> archived` | **105 passed** (F3) |
+| Test module grepped for any residual disclosure | none (F3) |
+| Delete review-loop paragraph 1, both copies / dev copy alone | **105 passed** both (F4) |
+| Match-site map of all 84 patterns | 0 on a heading; 22 multi-site, all read |
+| `doctrine/proposals.md` reverted to `degraded \| lost` alone | 1 failed (E3 closed) |
+| C9 fence paragraph deleted, each plan template separately | 1 failed each (D7 closed) |
+| Shipped board loses the grouped scope-remainder record alone | 1 failed (D2 closed) |
+| `aa4015f`'s own three mutations, re-run | 1 / 2 / 1 failed — record correct |
+| Planner twins at `c53e706` | byte-identical (`cmp`) |
+| `tools/lifecycle_planner.py next` on this plan | refuses `-> archived` on the blocking verdict, plus two further unmet gates |
+| `scripts/check_cairn.py` | 1 issue across 174 files — `git-native-security-foundations.md:2183`, another plan's |
+| `scripts/claim_check.py` on this plan | clean |
+| `scripts/quality_gate.py --sub neutrality --sub redundancy` | neutrality fail=93 info=21; redundancy fail=0 info=2 — unchanged |
+
+**On archiving, beyond this verdict.** Two archive gates are unmet independently
+of any code-review verdict, and a clearing pass alone would not move them:
+`## Lasting-truth migration` still reads *"Filled in at archive time."*, so the
+loop-fidelity sign-off names no implementing commit; and the deferred-follow-up
+dispositions gate is unmet, which F5 is one instance of. Whoever clears this plan
+should expect to land those in the same round.
+
+### Coverage
+
+**Covered, with falsifiable citations** — every one of D1-D7 and E1-E5 checked
+against the landed bytes or by execution, never from a Sharpening table, and
+every mutation chosen by me: E1 by emitting both twins' full scaffolds across all
+three source statuses and by tracing every caller of the predicate the new text
+describes (**open**, F1); E2 by four control placements plus four evasions
+(placements closed, disclosure **open**, F3); E3 by a single-surface revert; E4
+by reading the corrected wording; E5 by locating its disposition and the ledger
+(**open**, F5); D1 by the four gate controls; D2 and D7 by per-obligation
+deletion on both copies of every paired surface plus an independently rebuilt
+match-site map of all 84 patterns; D3 by re-deriving the 31-module grep and
+running it; D4 by the record's own diff; D5 by the whole-tree omission sweep; D6
+by locating the disclosure. Sweep roster worked in full: **claims** (every figure
+in `aa4015f` re-derived; the scaffold's new refusal claim probed against the code
+rather than accepted, which is F1); **production path** (the scaffold through
+`_scaffold` on both twins, the gates through `_gating_preconditions` /
+`_conformance_violations` / `_legal_transitions`, the predicate through
+`_read_artifact` on real files); **design completeness** (twelve live input forms,
+absent / unrecognized / unfilled-prompt / multiple-declaration / different-record
+edges — F2); **fail-closed** (F1 and F2 are both surfaces that report success
+while the property they name is absent, and F1 fails *open* in the author's
+direction); **cross-document consistency** (F4's shipped/self-hosted pair, the
+whole-tree grammar and omission sweeps); **drift** (`aa4015f`'s commit body
+against the landed bytes — it contains both the claim and its own contradiction);
+**lifecycle placement** (the archive gate re-run, and the two further unmet gates
+recorded above); **scope** (the cross-plan coupling, F6); and **a named satisfier
+on every finding**.
+
+**Not covered / low confidence** —
+
+* **This is an Internal read** — same agent type as the author and as all three
+  prior reviewers. It supplies independence of *session* and of *prior within
+  this plan*, not of *type*. The distribution's judgement calls —
+  `preserved`-owes-nothing as the default, the grouped record's shape, the
+  three-value grammar — have had no cross-type read at any point in this plan.
+  Four Internal passes are not a substitute for one External one, and the fact
+  that each pass has found real P1 defects the last missed is the argument for
+  that, not against it.
+* **I did not re-read the change end to end**, and did not re-audit C1-C11. My
+  scope was D1-D7, E1-E5 and what the corrections introduced. If the 2026-08-11
+  pass missed an enumerated Part 9 surface, I would not have found it — though
+  F4 is a case of exactly that kind surfacing late, which lowers my confidence
+  that the distribution audit is complete.
+* **F2's table is an enumeration and I have no argument that it is exhaustive.**
+  I found eight evading mutations; a ninth I did not think of may exist. That is
+  why F2's satisfier asks for coverage of the parsing and scoping *surfaces*
+  rather than a longer list of mutations.
+* **I did not run the full suite.** The executable delta across this plan's
+  commits is string literals inside `_scaffold` plus two file-reading test
+  modules, which I confirmed by inspecting the planner hunks; I ran the 31-module
+  mapped set instead. If that bounding is wrong my run does not catch it.
+* **The three mapped-set failures are attributed, not root-caused.** I confirmed
+  they reproduce before this plan's last two commits and that their assertions
+  concern `__pycache__` paths, which no string literal in `_scaffold` can cause.
+  I did not bisect them.
+* **I could not defeat the predicate itself**, only the guard over it. If
+  `_declared_reduction` has a defect, `review-efficient-lifecycle`'s own review
+  is where it should surface; I probed twelve input forms and found none.
+* **Nothing here tests the rule in use.** No author has met this declaration and
+  behaved differently. Four review passes have now been spent on whether the
+  guards guard, and none on whether the rule works — the proposal's own residual,
+  untouched.
+
