@@ -2945,10 +2945,19 @@ class TestBasisLegacyEnumerations:
                         planner._LEGACY_UNDECLARED_BASIS) is (k <= n), (
                             stem, dig, k)
                 checked += 1
-        assert checked == 9, (
+        assert checked == 8, (
             "the enumeration changed size; re-derive it against "
             "`_BASIS_BASELINE_COMMIT` and update this figure deliberately "
             f"(found {checked})")
+        # 9 -> 8 on 2026-08-12, deliberately.  `2026-08-12-claude-boundary-b-
+        # bounding-clause` was `revised` at `_BASIS_BASELINE_COMMIT` and so
+        # legitimately needed an entry; `df8478b` scribed its Decision to
+        # `accepted`, which is terminal, so `_is_immutable` now covers it and the
+        # entry became dead weight.  Deleting it is the maintenance this class
+        # exists to force -- `test_every_basis_manifest_entry_is_still_needed`
+        # reddened until it was gone, and this figure is the second half of the
+        # same guard.  Entries only ever leave.
+
 
     def test_the_two_basis_manifests_are_not_the_same_table(self):
         """`_LEGACY_UNDECLARED_BASIS` must not become an alias for

@@ -2138,7 +2138,6 @@ _LEGACY_UNDECLARED_BASIS: Dict[str, Dict[str, int]] = {
     "2026-08-11-claude-metrics-events-not-prose": {
         "04c2c82a6198aa71": 1, "53a6ad2464a1ed3d": 1,
         "74b964a83d4a67fc": 1, "f1310df1e0793824": 1},
-    "2026-08-12-claude-boundary-b-bounding-clause": {"f6e019917a9e1926": 1},
     "git-native-security-foundations": {
         "2a402faafe63d5ef": 1, "84ac2b7fb1d624af": 1},
     "review-efficient-lifecycle": {
@@ -2163,7 +2162,6 @@ _LEGACY_UNDECLARED_BASIS: Dict[str, Dict[str, int]] = {
 #: exactly as it would anywhere else.
 _LEGACY_UNDECLARED_ASSURANCE_PATH = frozenset({
     "2026-08-11-claude-metrics-events-not-prose",
-    "2026-08-12-claude-boundary-b-bounding-clause",
 })
 
 
