@@ -310,10 +310,18 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
         f"the {kind} -> {target} scaffold offers the declaration without the "
         f"grouped remainder block it requires."
     )
+    # E1 and the manifest-truthfulness correction are BLOCKED on contention:
+    # both planner twins carry ~773 lines of another agent's uncommitted
+    # `chunk P2` work, so editing them would put my bytes in their commit or
+    # theirs in mine. Until that clears, this pins the claim the manifest still
+    # makes. It is currently FALSE -- `plan_inheritance_violations` does refuse
+    # a declared reduction lacking its allowance -- and the assertion is left
+    # here deliberately so the falsehood cannot be forgotten.
     assert "DOES NOT CHECK" in emitted, (
         f"the {kind} -> {target} manifest no longer states that nothing "
-        f"enforces the declaration. Saying so is the point: a scaffold that "
-        f"looks like a gate invites the reader to trust it as one."
+        f"enforces the declaration. NOTE: that statement is now inaccurate and "
+        f"is owed a correction once the planner twins are free -- see the "
+        f"second clearing pass, E1."
     )
 
 
@@ -325,6 +333,10 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
 _DECLARATION_VALUES = "**Scope delta**: preserved | degraded | lost"
 
 _GRAMMAR_TEMPLATES = (
+    # The canonical statement FIRST -- it is the surface the other six were
+    # unified onto, and it was the one the first version of this guard left
+    # unpinned (second clearing pass, E3). Reverting it alone stayed green.
+    "doctrine/proposals.md",
     "dev/proposals/_template.md",
     "templates/core/dev/proposals/_template.md",
     "dev/plans/_template.md",
@@ -433,11 +445,26 @@ Narrowed chunk B away.
 #: the declaration is offered, and therefore the only two a gate could be
 #: attached to and still bite. Deriving the sweep from `_legal_transitions`
 #: instead is what let a real gate pass unnoticed.
+#: A plan on the `not required` path, which reaches `executing` straight from
+#: `open` -- `_scaffold` returns ("open/awaiting-plan-review", "executing"), so
+#: the review-required fixture alone left that route unswept (E2).
+_PLAN_NO_REVIEW_REQUIRED = """# Plan: something
+
+**Status**: open
+**Plan review**: not required(single commit, single area)
+
+## Scope
+
+Carries less than the accepted proposal, and declares nothing.
+"""
+
 _FENCE_FIXTURES = (
     ("proposal", "proposals", "2026-08-10-someone-something.md",
      _PROPOSAL_AWAITING_REVISION, "revised"),
     ("plan", "plans", "some-plan.md",
      _PLAN_AWAITING_EXECUTION, "executing"),
+    ("plan", "plans", "some-other-plan.md",
+     _PLAN_NO_REVIEW_REQUIRED, "executing"),
 )
 
 
@@ -473,14 +500,21 @@ def test_the_planner_does_not_gate_on_a_missing_declaration(
     # unsoundness; `_gating_preconditions` reports a transition as MISSING.
     # Pinning only the first left a gate on the second entirely green (C4);
     # pinning the second over the WRONG targets left it green again (D1).
+    # The scaffolded target AND every other legal target. The first version of
+    # this fence swept `_legal_transitions` and missed the scaffolded ones
+    # (D1); the fix swept only the scaffolded ones and lost the rest, so a gate
+    # at `proposal -> accepted` went undetected (E2). Both, or neither is
+    # covered.
+    targets = {target, *planner._legal_transitions(art)}
     surfaces = {
         "_conformance_violations":
             planner._conformance_violations(art, identity),
-        f"_gating_preconditions(-> {target})": [
-            desc for _met, desc
-            in planner._gating_preconditions(art, target, identity)
-        ],
     }
+    for tgt in sorted(targets):
+        surfaces[f"_gating_preconditions(-> {tgt})"] = [
+            desc for _met, desc
+            in planner._gating_preconditions(art, tgt, identity)
+        ]
 
     for surface, messages in surfaces.items():
         joined = " ".join(messages).lower()
