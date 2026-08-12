@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-12
-**Status**: revised
+**Status**: accepted
 **Touches**: `AGENTS.md` ("Verification boundaries" bullet); `doctrine/plans.md`
 (Boundary B, line 259 onward); `templates/core/dev/plans/_template.md` and
 `dev/plans/_template.md` (the `cairn:slot verification-commands` block)
@@ -495,3 +495,19 @@ checks the fence holds, the twins stayed parallel, the six triggers stayed six,
 and the executing plan stayed untouched. External is not proposed: this Round-2
 revision *is* the External round's product, and re-running it would review the
 reviewer's own satisfiers.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-12
+
+**ACCEPTED as revised (Round 2).** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, please scribe my acceptance of boundary-b-bounding-clause as revised"
+
+**Summary of accepted terms (Round 2)**:
+- **Boundary B Bounding Clause**: Boundary B runs the full integration suite unless the plan's reviewed mapping bounds the change's effects confidently, in which case it runs that mapping plus every standing gate for touched surfaces.
+- **Hard Refusal Fence**: Bounded mode strictly refuses (forcing a full run) for any changes touching contract surfaces (install contract, manifests, lockfile schema) or trust-ceremony surfaces.
+- **Adjudicated Handoff**: Requires `**Boundary B mode**: full | bounded` in `## Implementation verification` and independent code review adjudication `**Bounding**: ACCEPTED | FULL RUN REQUIRED`. Marking `FULL RUN REQUIRED` invalidates the bounded record and triggers a full run.
+- **Adopter & In-Flight Parallelism**: Updates both `AGENTS.md` and `templates/core/AGENTS.md` (adopter copy project-general). Already-open/executing plans preserve their written verification contracts unless explicitly revised.
+- **Contract Precedence**: Narrowly supersedes the unconditionality clauses of `verification-evidence-boundaries` and `review-efficient-lifecycle`.
+
+**Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
+
