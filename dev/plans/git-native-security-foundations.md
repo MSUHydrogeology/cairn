@@ -1293,3 +1293,368 @@ is in a file this plan touched** (they are fixtures, `docs/`, `doctrine/` and
 * **H is unrun**, and **M2** precedes it.
 * Boundary C is the reviewer's, not mine, and its range must include `da3e296`
   per R1-4.
+
+## Code review -- Claude (Internal) -- 2026-08-12
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+**Tier**: Internal
+**Obligation**: **Boundary C** — verify the Boundary B record against the reviewed
+range, then falsify independently. It does **not** discharge **M2**, the focused
+exact-byte External Security Review, which the Maintainer has said they will
+perform personally. Cross-type External code review is discontinued, so this
+fresh-session same-agent-type read is the only structurally-independent read the
+landed diff will get before M2. That is the Internal floor, and I am naming it
+rather than letting the absence of an External pass read as one.
+**Reviewed range**: the chunk commits `ab51587` (A), `ca4b4cf` (B), `068745b` (C),
+`02b0c59` (E), `4889d8e` (G), `4365205` (D), `721161a` + `ebac63b` (F), ending at
+`ebac63b`. `d6de829`, `bf6529b` and `4ad1c11` were confirmed record-only (each
+touches `dev/plans/git-native-security-foundations.md` and nothing else).
+`da3e296` was included — see **[IC7]** for what that citation actually is.
+**Environment**: `git clone --shared` of this repository, checked out at
+`ebac63b`, `4889d8e` and `da23dbc` in three separate clones, because the live
+tree carries other sessions' uncommitted edits to frozen files. Canonical
+interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13` (**Python 3.13.13**).
+**Findings**: raised — **[IC1]** blocking, **[IC2]** substantive, **[IC3]**–**[IC6]**
+substantive-to-minor, **[IC7]** record-hygiene.
+**Verdict: REVISE.** The engineering in this range is careful and most of its
+contract tests have real teeth — I broke four of them deliberately and each fired.
+But the plan's **first acceptance criterion is not met on the public path**, and I
+measured that rather than inferred it: `check` against the real anchor emits **588
+`refuse`-level SIGNING findings** and prints `PRE-FLIGHT REFUSED`. Sending **M2** —
+the scarcest fence in this plan — at bytes that cannot complete **H** spends it on
+the wrong question.
+
+Finding numbers are `[ICn]` deliberately: `CR1` already names a finding from an
+earlier review that this module's code comments cite, and reusing it would
+collide in a file people grep.
+
+### Part 1 — the Boundary B record, re-derived
+
+I did not accept the record's attributions. Each contested one was re-run.
+
+| claim | how I tested it | result |
+|---|---|---|
+| `ebac63b` is the final implementation commit | `git show --stat` on `d6de829`, `bf6529b`, `4ad1c11` | **True.** All three touch only the plan file |
+| the reviewed bytes are still current | `git log ebac63b..HEAD --` and `git status --short --` over all nine surfaces this plan touches | **True.** No commit after `ebac63b` touches them; the live working tree is clean on every one |
+| failures #1/#2 (`TestLoaderContainmentMatrix`) are not this plan's | ran them in a clone at **`da23dbc`** — before both `4365205` (D) and `721161a` (F) | **Confirmed.** Both fail there. The record's attribution is right and its diagnosis is incomplete: the assertion delta is a stray `tools/__pycache__/lifecycle_planner.cpython-313.pyc`, i.e. the *same* `__pycache__`-in-the-repo family as failure #3, not a loader-content problem |
+| failure #3 is homed | opened the named artifact: `dev/PLANNING.md:890` carries the `[VER]` entry and the quoted Maintainer authorization at `:912` | **Confirmed** — checked by opening it, not by the path resolving |
+| failure #4 is a pre-existing order-dependent defect reproducing at `4889d8e` | ran `test_security_check.py test_verify_ref.py` at `4889d8e` | **First attempt did not reproduce it** — under `-p no:randomly` only failure #3 fired. That was *my* error, not the record's: the record's run used `--quality-gate-shuffle-seed=0`. Re-run with that flag on the same two files at the same commit, `test_mutation_verifying_inside_the_candidate_runs_the_forger` fails exactly as recorded. **Attribution confirmed, and the order-dependence claim is confirmed with it** |
+| failure #5 is a clone artifact | ran `test_gate_preflight.py` + `test_gate_manifest.py` in my own clone at `ebac63b` | **Confirmed.** 204 passed, 1 failed, and the one failure is `test_check_runs_against_the_live_repo_and_reports` with `ref does not resolve to a commit: 'refs/cairn/gate-anchor'` |
+| neutrality is a standing condition | ran `quality_gate.py --sub neutrality --sub redundancy` at `ebac63b` | **Confirmed exactly**: exit 1, `neutrality fail=93 info=21`, `redundancy fail=0 info=2`. I listed the 31 distinct files carrying the 93; **none** is a surface this plan touched |
+| no Cairn ref moved (R1-F step 1) | `git for-each-ref refs/cairn`, the loose-ref file mtimes, and the absence of `.git/logs/refs/cairn/` | **Confirmed.** `refs/cairn/gate-anchor` is still `e45e1fc` with an mtime of 2026-08-03 16:47 — before this plan opened. `refs/cairn/gate-authorization` does not exist |
+
+**The record is accurate.** Its five attributions hold, including the one I
+initially failed to reproduce. That is worth stating plainly, because the rest of
+this review is adversarial and the ledger deserves not to be damned by proximity.
+
+**Fresh-full-run decision: no, and here is the reasoning.** `AGENTS.md` requires a
+fresh full run on missing or stale evidence, unexplained non-pass outcomes, newly
+discovered coupling, changed implementation/test/executable-template/fixture bytes,
+a stronger trust-ceremony rule, or concrete doubt. Evidence is present and
+re-derived; every non-pass is explained and I re-derived four of the five; no byte
+in the reviewed surfaces has changed since `ebac63b`; I found no new coupling. And
+decisively: **every defect below is green in the full suite by construction** —
+that is what each one *is*. Re-running Boundary B's broad command would have
+returned 3280 passes and told me nothing. So I spent the budget on targeted
+execution instead: 206 nodes in the two central test files, the two-file pairs at
+two earlier commits, eight source/document perturbations, three executed probes
+against the real modules, and one run of the public `check` path against the real
+repository.
+
+### Part 2 — findings
+
+#### [IC1] BLOCKING — acceptance criterion 1 is not met on the public path, and `_SIGNING_EPOCH` is not "no longer decisive"
+
+The `Progress verification -- Claude -- 2026-08-11` record says:
+
+> `_SIGNING_EPOCH` is still present and **no longer decisive**. Chunk B replaced
+> what it did; removing the constant belongs with F/H, where the ceremony that
+> reads it is rewritten.
+
+I ran the public path. It is decisive.
+
+```
+python bootstrap/tests/_gate_preflight.py check --repo <clone at ebac63b>
+```
+
+with `refs/cairn/gate-anchor` fetched into the clone, produces **588
+`[REFUSE] SIGNING: commit … at/after the signing epoch is not validly signed
+(status N)`** findings and ends `PRE-FLIGHT REFUSED -- do not bless this state`.
+The reported facts are `commits_in_range: 774`, `checked: 774`,
+`grandfathered: 0`, `epoch: a07fac88…` — the epoch is an ancestor of the *anchor*,
+so the entire blessed range is post-epoch and nothing is grandfathered.
+
+The mechanism is all still there and all still live:
+
+* `_gate_preflight.py:71` — `_SIGNING_EPOCH = "a07fac88…"`.
+* `_gate_preflight.py:706-760` — `check_signatures` resolves it, and emits
+  `report.add("SIGNING", "refuse", …)` per unsigned post-epoch commit.
+* `_gate_preflight.py:171-172` — `Finding.blocking` is `True` for `refuse`.
+* `_gate_preflight.py:1794-1796` — `apply_now` raises `PreflightError("the
+  read-only checks refuse this state; nothing was written")` on `report.blocked`.
+
+Set against acceptance criterion 1: *"**No range-signature refusal.** Unsigned
+agent commits are the normal format; authorization occurs only at a signed
+checkpoint. **Proven on the public path with a mixed range.**"* The public path
+produces 588 range-signature refusals, and the criterion is not proven anywhere:
+Chunk C4's first mapped case — *"unsigned and mixed intermediate ranges reaching
+a valid checkpoint"* — **has no test**. `068745b` added five tests, all about
+message binding and re-derivation. What the suite does contain is
+`TestSigningTripwire::test_unsigned_commit_after_the_epoch_refuses`
+(`test_gate_preflight.py:273`), which pins the behaviour criterion 1 retires, and
+twelve further `_SIGNING_EPOCH` monkeypatch sites — the plan said the six existing
+ones "go with it"; there are now **thirteen**.
+
+The module's own prose has already moved on without the code:
+`_gate_preflight.py:811-819` says the epoch control "*was* candidate-editable …
+and it blocked the ordinary agent-commit workflow, so operations disabled it. A
+control the real workflow contradicts is not a control." That comment describes
+the retirement as complete, thirty lines below the check that still performs it.
+`bootstrap/REANCHOR_RUNBOOK.md:225-226` — a Chunk F surface — still documents the
+epoch refusal as a live mechanical trigger.
+
+**The scope question this raises, which is the Maintainer's and not mine.** Chunk
+B's contract retires `_SIGNING_EPOCH` outright. The 2026-08-11 record deferred
+that to "F/H". **F has landed and did not do it**, and H's chunk table is H1 (the
+runbook's fixed manual commands) and H2 (the key-load sentinel) — neither removes
+it, and the `What remains` table lists only B1/CR/SR/H. So an accepted-scope
+outcome now has **no remaining home**. Under `AGENTS.md` > *Removal counts as a
+deviation, in both directions*, that needs a declared `Scope delta` and the
+Maintainer's explicit allowance, not a deferral that quietly runs out of chunks.
+
+**One honest caveat, so this is not overstated.** The same `check` run also emits
+four `[REVIEW]` findings (three `CLOSURE: authority member differs from the
+anchor`, one `AUTHORITY: Stage-B authority module changed since the anchor`), and
+`Finding.blocking` is `True` for `review` too. Those are the first-use bootstrap
+condition routing to the manual runbook — by design, and predating this plan. They
+mean `apply` would refuse at **H** even with the epoch gone, which surfaces a
+question the plan does not answer: R1-F step 5 says the *reviewed preflight*
+constructs the checkpoint, but the reviewed preflight blocks on findings a
+re-anchor necessarily produces. I could not resolve from the plan whether **H**
+runs `apply` or the manual Phase 0 steps 1-4. Per `AGENTS.md` on comprehension,
+I am recording that as a pause rather than guessing.
+
+#### [IC2] SUBSTANTIVE — Chunk D's Git-native identity never reaches the artifact the ceremony commits, and what the checker declares "checker-derived" it skips rather than replaces
+
+The Maintainer's disposition of D's revival rests on this sentence from the
+re-landing record: *"the trusted side supplies `mode` and `oid`, which are **never
+accepted from the candidate**."* That is true of the **comparison** and false of
+the **artifact**.
+
+* `_gate_preflight.py:1809` — `apply` commits `evidence["manifest"]` verbatim:
+  `manifest_bytes = json.dumps(evidence["manifest"], indent=2,
+  sort_keys=True).encode() + b"\n"`. The re-derivation in
+  `rederive_static_manifest` is computed, compared, and **discarded**; not one of
+  its Git-native fields reaches `bootstrap/tests/fixtures/gate_manifest.json`.
+* `gather_evidence` (`:1090-1128`) always runs `produce` with `cwd=<raw tree>`, a
+  directory with no `.git` — deliberately. So `_object_format` returns `None`,
+  and `produce` (`_gate_manifest.py:386-414`) emits **bare sha256 strings and no
+  `object_format`**. The manifest the ceremony anchors is therefore v2-labelled
+  and v1-shaped.
+* Consequence in `verify` (`_gate_manifest.py:553-555`): `pinned_fmt` is `None`,
+  so `live_blobs` stays `{}` and the `FROZEN-MODE` / `FROZEN-OID` comparisons
+  (`:578-593`) never run. The untracked-gate-file rule at `:594-616` is gated on
+  `if live_blobs and …`, so it never fires either. **After a ceremony, every
+  Git-native check D1/D3 added is dead against the anchored manifest.**
+
+And because `check_static_manifest` (`:1266-1310`) *skips* the checker-derived
+fields rather than substituting its own, a candidate-supplied value rides through
+unexamined into the signed artifact. Executed against the real repository at
+`ebac63b`:
+
+```
+honest  (sha256-only, as produce really emits):        blocked=False
+hostile (object_format="sha256" in a sha1 repo,
+         mode="100755", oid="0"*64 on a frozen entry): blocked=False
+```
+
+The hostile manifest asserts an object format the repository does not have and a
+mode and oid for a frozen file that are simply invented — and `apply` would commit
+those bytes and bind them with the checkpoint signature. The blast radius is
+fail-closed rather than a bypass (a future `verify` HOLDs on `OBJECT-FORMAT`,
+which is a durable denial of the gate rather than a hole in it, and omitting the
+field is the silent-downgrade direction). But it falsifies the sentence the
+disposition was granted on, and **no test asserts the shape of the manifest
+`apply` writes.**
+
+The fix is small and is not mine to make: have `apply` build the committed
+manifest from `ours` for the checker-derived fields instead of passing the
+candidate's dict through.
+
+#### [IC3] SUBSTANTIVE — `verify()` fails open, silently, when the target's object format cannot be determined
+
+`_gate_manifest.py:555-569`. When the manifest pins an `object_format` and
+`_object_format(repo)` returns `None`, neither branch fires: no HOLD, no note, and
+`live_blobs` stays empty, so every mode/oid comparison is skipped. Contrast the
+adjacent path — an *unrecognised* format raises and becomes a HOLD. Absence is
+treated more leniently than strangeness.
+
+Executed, on a synthetic target with one frozen file:
+
+```
+A. intact repo, unchanged                     -> rc=0  OK
+B. mode flipped 100644 -> 100755              -> rc=1  HOLD  FROZEN-MODE
+C. the SAME mode-flipped tree, .git removed   -> rc=0  OK — gate integrity intact
+```
+
+Case C reports success on the exact state case B holds on, with no note that half
+the verification did not run. With `--trusted-repo` the anchor object is resolved
+from the trusted clone (`:473-475`), so the target's `.git` is not needed for
+anchoring either — the whole verification proceeds and reports OK. `AGENTS.md`
+names this shape directly: *"a tool that returns success without testing the
+claimed property is a worse defect than no tool, because it is silent."*
+
+Strictness is not below v1 here, so acceptance criterion 4 survives on its letter.
+D3's contract — *"`verify` computes both and compares both plus mode"* — does not.
+
+#### [IC4] SUBSTANTIVE — the `ast` walk holding "no decision predicate reads reflog content" is evadable by the module's own dominant idiom
+
+`test_gate_preflight.py:2611-2642` walks every `_git` / `_git_write` / `_run_git`
+call and flags `-g`, `--walk-reflogs` or `@{` — but only in arguments that are
+`ast.Constant` strings. Measured over `_gate_preflight.py`: **29** such calls carry
+**25** argument expressions that are not constant strings — 17 `Name`, **7
+`JoinedStr`**, 1 `Starred`. The f-string revision is the module's *normal* way of
+writing a revision (`:356` `f"{ref}^{{commit}}"`, `:864` `f"{ref}^{{tree}}"`,
+`:920` `f"{anchor}..{head}"`), and `@{` is one character away from `^{`.
+
+Perturbation, inserted as a decision predicate in the module:
+
+```python
+prev = _git("rev-parse", f"{ref}@{{1}}", repo=repo)
+hist = _git("log", f"-g", "--format=%gs", ref, repo=repo)
+```
+
+**All 8 reflog tests pass.** The identical predicate written with plain literals
+fails `test_no_git_call_passes_a_reflog_reading_argument`. So the guard covers
+exactly the shape nobody would use and misses the shape everybody uses. Note that
+`f"-g"` alone evades it: a placeholder-free f-string is still a `JoinedStr` in the
+AST.
+
+The complementary allowlist test does not cover this. `reflog` is absent from both
+allowlists, but `log` and `rev-parse` are present — and the evading test's own
+docstring says so: *"`git log -g` and an `@{N}` revision read reflog data through
+subcommands that **are** allowed."* The ast walk is the sole defence against
+precisely the two shapes it cannot see.
+
+I verified the property itself still holds today: no `@{`, `-g` or
+`--walk-reflogs` appears anywhere in `_gate_preflight.py`. This is a guard that
+would not fire on the future change it exists to catch, not a live defect.
+
+#### [IC5] MINOR — the "no two-push fallback" property is section-scoped where the analogous absence property is file-scoped
+
+`test_no_partial_push_fallback_is_offered` reads only
+`_runbook_section("\n## Phase 5")`. Its sibling
+`test_the_authorization_ref_appears_in_NO_push_or_fetch_block` deliberately reads
+the **whole file**, and says why: *"a later-added block is exactly where that
+would reappear."* That reasoning applies verbatim to the two-push fallback and was
+not applied.
+
+Perturbation: I appended a `## Recovery appendix` before `## Audit trail`
+containing
+
+```
+git push origin refs/heads/<branch>:refs/heads/<branch>
+git push origin refs/cairn/gate-anchor:refs/cairn/gate-anchor
+```
+
+**All 11 `TestRunbookPublicationText` tests pass.** A future session adds a
+troubleshooting section, the suite stays green, and a Maintainer following the
+recorded steps reproduces by hand the split state `--atomic` exists to prevent —
+which is the exact hazard F2 was written for.
+
+#### [IC6] MINOR — `_gate_manifest`'s guarded boundary has no repository binding, and `_object_format`'s docstring is false as a result
+
+A2's ownership table names five properties per boundary: sterile environment,
+config pins, **repository binding**, read/write allowlist, and a direct-subprocess
+prohibition. `_gate_manifest._git` (`:190-205`) has four of the five. There is no
+equivalent of `_gate_preflight._require_worktree_root`, whose docstring spells out
+why: *"`git -C <path>` **discovers upward** … a `$TMPDIR` inside a checkout is
+enough."*
+
+`_object_format` documents itself as returning *"`None` when *repo* is not one"*.
+Executed:
+
+```
+_object_format(<plain tempdir>)                  -> None
+_object_format(<non-repo dir inside a repo>)     -> 'sha1'
+```
+
+The path where this bites is the one D was rebuilt around: `produce`'s repository
+is `raw_tree`'s `tempfile.mkdtemp()`. With `TMPDIR` under a checkout, `produce`
+would read *that* repository's object format and *that* repository's HEAD tree,
+and stamp its modes and oids into the candidate manifest. Downstream that is
+fail-closed today (the sha256 comparison diverges and `check_static_manifest`
+refuses) — but combined with **[IC2]**, wrong-repository `mode`/`oid` values are in
+the class of fields nothing compares.
+
+#### [IC7] RECORD — "per R1-4" cites another proposal's revision item, and the obligation it names is already discharged
+
+The plan says twice (`:1143`, `:1294-1295`) that Boundary C's range must include
+`da3e296` "per R1-4". This proposal's Revision 1 items are **R1-A, R1-B, R1-C,
+R1-D and R1-F** — there is no R1-4. `R1-4` is
+`2026-08-11-claude-archive-precondition-substance`'s Revision-1 item 4
+(`dev/proposals/archive/2026-08-11-claude-archive-precondition-substance.md:749`),
+and it binds *that* plan's code review, which
+discharged it: `dev/plans/archive/archive-precondition-substance.md:299-307`
+records an External code review over `da3e296`..`a450dd7`, verdict SHIP, with
+`da3e296` named as its first evaluated item. `da3e296` touches
+`test_lifecycle_contract.py` and the two planner twins — no surface this plan
+edits.
+
+I included `da3e296` in my range regardless, because verifying the instruction was
+cheaper than arguing it. It changed nothing. But a plan that imports another
+plan's obligation number teaches a later reader to look for an R1-4 that does not
+exist here, and this file is the durable record.
+
+### Part 3 — the falsification ledger, including what did not break
+
+Recorded in full, because a review that only lists its hits is a review whose
+misses you cannot audit.
+
+| # | attempt | result |
+|---|---|---|
+| P1 | drop `-m _CEREMONY_REFLOG_REASON` from `_advance_both_refs` | **fired** — `test_a_successful_transaction_identifies_the_ceremony_in_BOTH_reflogs` |
+| P2 | drop `--create-reflog` | **fired** — two named tests |
+| P3 | drop `--atomic` from the runbook's Phase 5 push block | **fired** — `test_publication_is_one_atomic_push_with_explicit_refspecs` |
+| P4 | add `gate-authorization` to the Phase 5 push refspec | **fired** — `test_the_authorization_ref_appears_in_NO_push_or_fetch_block` |
+| P5 | insert a reflog-reading decision predicate using f-string arguments | **did NOT fire** → **[IC4]** |
+| P5c | the same predicate with plain string literals (positive control) | fired — confirming the guard's coverage is exactly "positional string literals" |
+| P6 | add a non-atomic two-push recovery appendix outside Phase 5 | **did NOT fire** → **[IC5]** |
+| P7 | run Chunk E's `fsck` inside the candidate repo instead of the sterile bare clone | **fired** — *both* `test_a_candidate_severity_downgrade_cannot_hide_corruption` and `test_a_candidate_skiplist_cannot_hide_corruption`. E3's insistence on two independent controls is doing real work |
+| P8 | feed `check_static_manifest` a manifest asserting `object_format`, `mode` and `oid` | **not refused** → **[IC2]** |
+| P9 | `verify` a mode-flipped tree with the target's `.git` removed | **reported OK** → **[IC3]** |
+| P10 | `_object_format` on a non-repository directory nested inside a repository | returned `'sha1'` → **[IC6]** |
+| P11 | run the public `check` against the real anchor and range | 588 SIGNING refusals → **[IC1]** |
+| P12 | search `_gate_preflight.py` for any live `@{`, `-g` or `--walk-reflogs` | **none** — the reflog property holds today; **[IC4]** is about the guard, not a live breach |
+| P13 | check whether any Cairn ref moved in the range | **none moved** — R1-F step 1 holds |
+
+Perturbations were applied in a throwaway clone and reverted immediately; the
+working tree was confirmed clean after each. Nothing in the repository was
+modified by this review except this section.
+
+### What this pass covered, and what it did not
+
+**Covered**: the Boundary B record against the reviewed range, with four of its
+five attributions re-derived at earlier commits; the Chunk F reflog, atomic
+publication and runbook-text contracts, executed and perturbed; the reflog-read
+`ast` walk, falsified; Chunk D's v2 producer, verifier, evidence path and
+checker-derived boundary, executed against both an honest and a hostile manifest;
+Chunk E's two negative controls, perturbed; the ref-movement prohibition; the
+neutrality standing condition; and the public `check` path against the real
+repository.
+
+**Not covered**: the exact-byte hash set and the fixed bootstrap invocation —
+those are **M2**, which this does not touch or shrink; the key-load sentinel (H2),
+which is unwritten; any real-remote capability, so **[TRU-7]** is untouched;
+Windows; and the full suite, which I decided against for the reasons in Part 1.
+**I moved no ref, loaded no key, and pushed nothing.** The only ref I created was
+`refs/cairn/gate-anchor` inside my own throwaway clone, fetched read-only from the
+live repository, which was not written to.
+
+**What I would want to see before this goes to M2.** A disposition on **[IC1]** —
+either the epoch comes out and criterion 1 gets the test C4 promised, or the
+criterion is amended with the Maintainer's allowance. **[IC2]** wants a decision
+too, because it is the second time this plan's evidence-trust boundary has moved
+without a reviewed contract. **[IC3]**–**[IC6]** are ordinary fixes and could ride
+along. **[IC7]** is a one-line correction. M2 reviewing bytes that still carry
+**[IC1]** would review the wrong bytes, and **M7** arms the moment it lands.
