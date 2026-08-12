@@ -1767,3 +1767,58 @@ closure while keeping the original importable-subset property.
   claimed, not more.
 
 **Boundary B is owed again** on these bytes.
+
+## Implementation verification -- Claude -- 2026-08-12 (re-run 3)
+
+**Supersedes the records above.** The [M2-R1] response changed the recorded
+transition loader and the tests.
+
+**Boundary B mode**: **full** — Hard Refusal Fence, trust-ceremony surfaces.
+**Tested SHA**: `d306baa`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — 3.13.13.
+**Tree state**: fresh `git clone --shared` at `d306baa`; `git status
+--porcelain` empty before **and** after.
+
+| # | Command | Outcome |
+|---|---------|---------|
+| 1 | `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **4176 passed, 4 failed, 1 skipped** in 567.11s (9m27s) |
+| 2 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | **93 neutrality FAIL**, redundancy `fail=0` |
+
+**The count moved by more than this plan's work, and the difference is not
+mine.** 4008 → 4176 is **+168**, where this response added **+3**
+(`test_gate_preflight.py` 320 → 323). The remaining **+165** are
+`bootstrap/tests/test_lifecycle_board.py`, landed by a concurrent session at
+`19334ce` (*review-efficient-lifecycle: Chunk F — the derived lifecycle board*),
+measured by collecting that file alone. Recorded because a suite figure that
+moves by an unexplained 165 is the kind of number a later reader would either
+trust wrongly or have to re-derive.
+
+### Non-pass disposition
+
+The **same four**, unchanged across all four Boundary B runs in this plan, each
+reproduced at `a63da58` before any of this work and — for the three
+`__pycache__` nodes — in the main working tree:
+
+* `TestPublicCli::test_check_runs_against_the_live_repo_and_reports` — clone
+  artifact; a `--shared` clone carries no `refs/cairn/gate-anchor`.
+* `test_detached_checkout_excludes_an_ignored_pytest_override` and both
+  `TestLoaderContainmentMatrix` parameters — one pre-existing defect, `.pyc`
+  writes counted as working-tree mutation; all green under
+  `PYTHONDONTWRITEBYTECODE=1`.
+
+### Quality gate
+
+93 FAILs, **set byte-identical** to `a63da58`. No FAIL names a path this
+response touched, checked against `git diff --name-only baa84b2..d306baa`.
+
+### What is owed, and what these bytes are not
+
+* **M2 is not closed.** The exact-byte review recorded its nine-file hash set
+  against `baa84b2`; `bootstrap/REANCHOR_RUNBOOK.md` and
+  `bootstrap/tests/test_gate_preflight.py` have both changed since, so that set
+  no longer describes these bytes. A fresh exact-byte pass is owed.
+* **M7 is not armed**, **M3 is not authorized**, and this plan's
+  independent-read obligation is **not discharged**.
+* **N4** remains the Maintainer's, and unestablished.
+* `refs/cairn/gate-anchor` is still `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3`,
+  mtime **2026-08-03 16:47**. No key loaded, no ceremony run, nothing pushed.
