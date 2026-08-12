@@ -1168,8 +1168,14 @@ def _two_stage(repo: Path, monkeypatch, *, out=None, package_dir=None,
                    review_manifest=review_manifest,
                    reviewed_candidate=reviewed_candidate)
     P._phase = P._PHASE_CANDIDATE     # stage 2 is a fresh process in reality
+    # The transition flags go to BOTH stages, as the runbook records them.
+    # Stage 2 refuses a package that authorizes a transition when it is not
+    # itself told about one -- otherwise it would sign a checkpoint recording
+    # "steady state" for a run that changed the authority closure.
     return P.apply_now(repo=repo, package=str(pkg_path),
-                       confirmed_package_sha256=one["package_sha256"], out=out)
+                       confirmed_package_sha256=one["package_sha256"], out=out,
+                       review_manifest=review_manifest,
+                       reviewed_candidate=reviewed_candidate)
 
 
 def _stub_report(repo, head):
@@ -2410,6 +2416,244 @@ class TestTransitionLoaderSelectsTheSource:
                 f"`stage2` declares --{flag.replace('_', '-')} but never passes "
                 f"it to apply_now; the revalidation it exists to trigger is "
                 f"unreachable through the public path")
+
+
+class TestTheCheckpointCarriesTheAdmittedSet:
+    """Chunk D7/D8 and plan review [E4].
+
+    The opening A3 question was whether the checkpoint records the admitted
+    authority set itself or only binds its digest. The Maintainer accepted the
+    proposal with that open, and D6 required a decision rather than a lapse:
+    **the set is written**. A digest binds cryptographically and is unreadable,
+    and the review manifest is an out-of-band artifact that may not survive --
+    so digest-only leaves a future reader able to prove that *a* set was
+    admitted and unable to see which bytes.
+
+    These nodes run entirely on the constructed message, before any ref moves.
+    """
+
+    _ADMITTED = {
+        "bootstrap/tests/_gate_manifest.py": "a" * 64,
+        "bootstrap/tests/_gate_preflight.py": "b" * 64,
+        "bootstrap/tests/_oracle.py": "c" * 64,
+    }
+
+    def _message(self, admitted=None, *, digest="d" * 64, provenance="ESR 1"):
+        return P.draft_message(
+            observed_anchor="0" * 40, checked_head="1" * 40,
+            manifest_sha256="e" * 64, authority_hashes={"x.py": "sha256:" + "f" * 64},
+            scope={}, admitted_authority=(self._ADMITTED if admitted is None
+                                          else admitted),
+            review_provenance=provenance, review_digest=digest)
+
+    def test_the_complete_set_reads_back_out_of_the_message(self):
+        """The durability claim, executed. Not "the rows look right" -- the set
+        is recovered from the message text and compared with what went in."""
+        recovered = P.parse_admitted_authority(self._message())
+        assert recovered == self._ADMITTED, (
+            "the admitted set did not survive a round trip through the "
+            "checkpoint message; the record is a pointer, not a record")
+
+    def test_the_rows_are_written_in_sorted_path_order(self):
+        """Order is part of the record: an unordered set read back by a future
+        auditor cannot be compared against anything without re-sorting, and a
+        stable order is what makes two checkpoints diffable."""
+        message = self._message(dict(reversed(list(self._ADMITTED.items()))))
+        rows = [ln for ln in message.splitlines() if ln.startswith("    ")
+                and ln.strip().split("  ")[0].isalnum()]
+        paths = [ln.strip().split("  ", 1)[1] for ln in rows]
+        assert paths == sorted(self._ADMITTED), paths
+
+    def test_the_review_manifest_digest_is_bound_alongside_the_rows(self):
+        """D7. The rows say what was admitted; the digest says which reviewed
+        artifact admitted it. Without it, two different reviews of the same
+        bytes are indistinguishable in the durable record."""
+        assert "d" * 64 in self._message()
+        assert "(not bound)" in self._message(digest=None)
+
+    @pytest.mark.parametrize("victim", sorted(_ADMITTED))
+    def test_a_single_row_mutation_changes_the_message(self, victim):
+        """D8. Every row is load-bearing, one at a time.
+
+        A block that is signed as a whole can still be decorative: if the
+        message were assembled from a count and a provenance string, mutating
+        one member's digest would leave the signed bytes identical and the
+        anchored record would attest to a set it does not describe. So each row
+        is mutated on its own and required to move the message.
+        """
+        honest = self._message()
+        tampered = dict(self._ADMITTED)
+        tampered[victim] = "9" * 64
+        mutated = self._message(tampered)
+
+        assert mutated != honest, (
+            f"changing the admitted digest for {victim} did not change the "
+            f"message; that row is not covered by the signature")
+        recovered = P.parse_admitted_authority(mutated)
+        assert recovered[victim] == "9" * 64
+        assert {k: v for k, v in recovered.items() if k != victim} == \
+            {k: v for k, v in self._ADMITTED.items() if k != victim}, (
+            "a single-row mutation disturbed the other rows")
+
+    def test_dropping_a_row_is_caught_by_the_declared_count(self):
+        """Truncation is the mutation that reads as success.
+
+        A short block still parses: it just yields a smaller set that looks
+        complete. The count is written in the header and checked against the
+        rows recovered, so a dropped row is a refusal rather than a quieter
+        answer.
+        """
+        message = self._message()
+        lines = message.splitlines()
+        victim = next(i for i, ln in enumerate(lines)
+                      if ln.startswith("    a" * 1) and "  " in ln.strip())
+        del lines[victim]
+        with pytest.raises(P.PreflightError) as exc:
+            P.parse_admitted_authority("\n".join(lines))
+        assert "admitted members" in str(exc.value)
+
+    def test_steady_state_is_a_distinct_answer_from_an_empty_set(self):
+        """`None` means "nothing changed", not "nothing was admitted". A
+        steady-state checkpoint that read back as `{}` would be indistinguishable
+        from a transition that admitted no members -- which cannot happen, and
+        must not be representable."""
+        steady = self._message({}, digest=None, provenance=None)
+        assert P.parse_admitted_authority(steady) is None
+        assert "steady state -- no closure change" in steady
+
+    def test_the_set_reaches_the_message_through_a_real_two_stage_run(
+            self, tmp_path, monkeypatch):
+        """The [M2-1] question asked of D7: what calls this?
+
+        Every node above builds the message directly. That is exactly the shape
+        that let a canonical range report be derived, digested, tested -- and
+        never bound by the governing path. So this one drives the real ceremony
+        in transition mode and reads the set back out of the **committed
+        checkpoint**, which is the only place it counts.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        # A real closure change, or the transition refuses with no delta ([S3]).
+        changed = {"bootstrap/tests/_oracle.py"}
+        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        head = _signed_commit(repo, "authority change")
+        manifest = tmp_path / "review.txt"
+        manifest.write_text(_review_manifest(repo, head), encoding="utf-8")
+
+        # The real producer needs more repository than this fixture carries; the
+        # evidence stage has its own coverage. Everything the node is about --
+        # the transition, the message, the committed checkpoint -- stays real.
+        evidence_manifest = {
+            **P.rederive_static_manifest(head, repo=repo),
+            "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                           "skip_xfail_marked": []},
+            "interpreter": {"version": "3.13.13"}}
+        monkeypatch.setattr(
+            P, "gather_evidence",
+            lambda *a, **k: _fake_evidence(head, evidence_manifest))
+
+        result = _two_stage(repo, monkeypatch, review_manifest=str(manifest),
+                            reviewed_candidate=head)
+
+        message = _run("git", "log", "-1", "--format=%B",
+                       cwd=repo).stdout
+        recovered = P.parse_admitted_authority(message)
+        assert recovered, "the committed checkpoint records no admitted set"
+        import hashlib
+        assert hashlib.sha256(manifest.read_bytes()).hexdigest() in message, (
+            "the checkpoint does not bind the review manifest's digest")
+        expected = P.parse_review_manifest(
+            manifest.read_text(encoding="utf-8"))["members"]
+        assert recovered == expected
+        assert changed <= set(recovered), (
+            "a file whose authority bytes changed is absent from the admitted "
+            "set the checkpoint records")
+
+
+class TestTheClosureCheckAdmitsOnlyTheReviewedSet:
+    """The rule that makes the transition reachable, and its negatives.
+
+    Before this, `check_authority_closure` refused on *any* closure change while
+    `revalidate_transition` refused when the closure was *unchanged*. The two
+    conditions are complements, so a reviewed-authority transition could never
+    complete: every real one died at the checks with a CLOSURE finding, and the
+    machinery Chunks A and B built was unreachable through the governing path.
+    Nothing failed, because nothing had ever run a transition end to end.
+
+    Making it reachable means relaxing a refusal on a high-risk surface, so the
+    admission is asserted here directly rather than inferred from the ceremony
+    passing: exact digest, right path, nothing else.
+    """
+
+    def _changed(self, tmp_path):
+        """An anchor, and a worktree whose closure member genuinely differs."""
+        repo, anchor = _closure_repo(tmp_path)
+        rel = "bootstrap/tests/_oracle.py"
+        _write(repo, rel, "# a reviewed change\n")
+        _commit(repo, "authority change")
+        live = (repo / rel).read_bytes()
+        import hashlib
+        return repo, anchor, rel, hashlib.sha256(live).hexdigest()
+
+    def _closure(self, repo, anchor, admitted):
+        report = P.Report()
+        P.check_authority_closure(anchor, report, repo=repo,
+                                  admitted_authority=admitted)
+        return report
+
+    def test_without_an_admitted_set_a_changed_member_refuses(self, tmp_path):
+        """Steady state is unchanged: this is the control the relaxation must
+        not have weakened, and it is asserted first for that reason."""
+        repo, anchor, rel, _sha = self._changed(tmp_path)
+        report = self._closure(repo, anchor, None)
+        assert report.blocked
+        assert any(rel in f.message and f.level == "review"
+                   for f in _findings(report, "CLOSURE"))
+
+    def test_the_exact_reviewed_digest_admits_the_member(self, tmp_path):
+        repo, anchor, rel, sha = self._changed(tmp_path)
+        report = self._closure(repo, anchor, {rel: sha})
+        assert not report.blocked, [f.message for f in report.findings]
+        noted = [f for f in _findings(report, "CLOSURE") if f.level == "note"]
+        assert any(rel in f.message for f in noted), (
+            "an admitted member must still be RECORDED, not silently passed")
+
+    def test_a_wrong_digest_for_the_right_path_still_refuses(self, tmp_path):
+        """The admission is over bytes, not over path membership. A reviewed set
+        that names the file but not the bytes in front of us admits nothing."""
+        repo, anchor, rel, _sha = self._changed(tmp_path)
+        report = self._closure(repo, anchor, {rel: "9" * 64})
+        assert report.blocked
+        assert any(f.level == "review" for f in _findings(report, "CLOSURE"))
+
+    def test_admitting_one_member_does_not_admit_another(self, tmp_path):
+        """Per-path, not per-transition. A set that admits one changed member
+        must leave every other member held to the anchor."""
+        repo, anchor, rel, sha = self._changed(tmp_path)
+        other = "bootstrap/tests/_oracle_trust.py"
+        _write(repo, other, "# an unreviewed change\n")
+        _commit(repo, "a second, unreviewed authority change")
+
+        report = self._closure(repo, anchor, {rel: sha})
+
+        assert report.blocked
+        refused = [f.message for f in _findings(report, "CLOSURE")
+                   if f.level == "review"]
+        assert any(other in m for m in refused), refused
+        assert not any(rel in m for m in refused), refused
+
+    def test_a_prefixed_digest_is_not_accepted_as_a_bare_one(self, tmp_path):
+        """The format bug that made this unreachable a second way.
+
+        `revalidate_transition` compared `_sha256_bytes` -- which is
+        `sha256:`-prefixed -- against the manifest's bare hex, so **no member
+        ever matched** and the transition would have refused every closure it
+        was handed. Two independent unreachability defects in one path is what
+        happens when a mode is never executed end to end.
+        """
+        repo, anchor, rel, sha = self._changed(tmp_path)
+        report = self._closure(repo, anchor, {rel: f"sha256:{sha}"})
+        assert report.blocked, (
+            "a prefixed digest must not match; the manifest format is bare hex")
 
 
 class TestTransitionRefusesWithoutADelta:

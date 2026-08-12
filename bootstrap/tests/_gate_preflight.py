@@ -546,6 +546,19 @@ def _sha256_bytes(data: bytes) -> str:
     return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
+def _sha256_hex(data: bytes) -> str:
+    """Bare lowercase hex -- the review manifest's digest format.
+
+    Kept distinct from :func:`_sha256_bytes` rather than stripping its prefix at
+    each site. The manifest's rows are produced by `shasum -a 256` in the fixed
+    loader and parsed under A3's "64 lowercase hex digits" rule, so bare hex is
+    that artifact's format and the prefixed form is this module's internal one.
+    Comparing across the two silently never matches, which is exactly what
+    `revalidate_transition` did to every member it checked.
+    """
+    return hashlib.sha256(data).hexdigest()
+
+
 # --------------------------------------------------------------------------
 # the preflight-authority closure (plan finding GPR1)
 # --------------------------------------------------------------------------
@@ -612,14 +625,35 @@ def _imported_local_modules() -> set[str]:
 
 
 def check_authority_closure(anchor: str, report: Report, *,
-                            repo: Path = _REPO) -> None:
+                            repo: Path = _REPO,
+                            admitted_authority: dict | None = None) -> None:
     """Compare every closure member's working-tree bytes to the anchor's blob.
 
     Any member changed, missing, extra, symlinked, or absent from the index
     returns ``review`` -- non-zero, no bundle, routed to the manual exact-byte
     procedure. The old anchored checker must not be able to bless a candidate
     that changes its own successor or the next invocation.
+
+    ``admitted_authority`` is the **revalidated** reviewed-authority transition
+    set, and it is the one thing that makes a changed member acceptable.
+
+    **Why this parameter has to exist.** Without it the transition was
+    unreachable end to end, by construction rather than by accident:
+    :func:`revalidate_transition` refuses when the closure is *unchanged*
+    ([S3]), and this function refused whenever it *changed*. The two conditions
+    are complements, so every real transition died here -- at the checks, with a
+    CLOSURE finding -- and the transition machinery Chunks A and B built could
+    never run. It is the [M2-1] shape once more: built, unit-tested, and dead to
+    the governing path.
+
+    The admission is deliberately narrow. A member is admitted only when its
+    **live bytes** hash to the digest the reviewed manifest names *for that
+    path*; anything else still returns ``review``. That digest was independently
+    checked against the candidate's anchored blob in `revalidate_transition`, so
+    two separate bindings have to agree before a byte change passes, and the set
+    is written into the checkpoint message (D7) rather than merely consulted.
     """
+    admitted = admitted_authority or {}
     declared = declared_authority_closure()
     index = _index_entries(repo=repo)
 
@@ -640,14 +674,24 @@ def check_authority_closure(anchor: str, report: Report, *,
                        f"{rel}")
             continue
         anchored = _blob_at(anchor, rel, repo=repo)
+        # Bare hex, to compare against the review manifest's own format.
+        live_sha = _sha256_hex(live.read_bytes())
+        if anchored is not None and live_sha == _sha256_hex(anchored):
+            continue
+        # Changed, or new to the closure. Either is admissible ONLY against the
+        # revalidated reviewed set, and only byte-for-byte.
+        if admitted.get(rel) == live_sha:
+            report.add("CLOSURE", "note",
+                       f"authority member admitted by the reviewed transition: "
+                       f"{rel} ({live_sha[:12]})")
+            continue
         if anchored is None:
             report.add("CLOSURE", "review",
                        f"authority member absent from the anchor -- first use "
                        f"requires the manual exact-byte bootstrap: {rel}")
             continue
-        if _sha256_bytes(live.read_bytes()) != _sha256_bytes(anchored):
-            report.add("CLOSURE", "review",
-                       f"authority member differs from the anchor: {rel}")
+        report.add("CLOSURE", "review",
+                   f"authority member differs from the anchor: {rel}")
 
     extra = sorted(_imported_local_modules() - set(declared))
     for rel in extra:
@@ -856,6 +900,23 @@ def parse_review_manifest(text: str) -> dict:
                 (rel, digest) for digest, rel in members)}
 
 
+def read_review_manifest(path: str | Path) -> tuple[dict, str]:
+    """Read the out-of-band review manifest and digest **the file's bytes**.
+
+    The digest is taken here, over the raw bytes, and not inside
+    :func:`parse_review_manifest` over a re-encoded string. The Maintainer
+    confirms this artifact with `shasum -a 256 <file>`; a digest computed over
+    anything but the file's own bytes would be a different number from the one
+    they hold, and a provenance value nobody can reproduce is worse than none --
+    it reads as verified.
+
+    [E4]/D7: the checkpoint binds this digest, so the durable record names
+    *which* review admitted the authority set, not merely that some review did.
+    """
+    raw = Path(path).read_bytes()
+    return parse_review_manifest(raw.decode("utf-8")), _sha256_bytes(raw)
+
+
 def revalidate_transition(manifest: dict, reviewed_candidate: str, head: str,
                           *, anchor: str, repo: Path = _REPO) -> dict:
     """Re-check the loader's own conclusions. Defence in depth; see above.
@@ -895,7 +956,8 @@ def revalidate_transition(manifest: dict, reviewed_candidate: str, head: str,
         blob = _blob_at(reviewed_candidate, rel, repo=repo)
         if blob is None:
             raise ReviewManifestError(f"candidate has no blob at {rel}")
-        actual = _sha256_bytes(blob)
+        # Bare hex on both sides: the manifest's rows come from `shasum -a 256`.
+        actual = _sha256_hex(blob)
         if actual != expected:
             raise ReviewManifestError(
                 f"{rel} is {actual[:12]} in the candidate, review manifest "
@@ -1112,9 +1174,7 @@ def _signature_census(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
 
 def range_review_report(anchor: str, head: str, *, branch: str,
                         expected_old: str, repo: Path = _REPO,
-                        prospective_manifest: bytes | None = None,
-                  admitted_authority: dict | None = None,
-                  review_provenance: str | None = None) -> dict:
+                        prospective_manifest: bytes | None = None) -> dict:
     """The one canonical report `apply` re-derives and the checkpoint binds."""
     frozen = set(G._frozen_files(repo))
     cascade = set(G.CASCADE_MUTABLE)
@@ -1681,7 +1741,16 @@ _WRITE_GIT = frozenset({
 })
 
 
-def _admitted_rows(admitted: dict | None, provenance: str | None) -> str:
+#: The exact strings the admitted-authority block is delimited by. They are
+#: constants because :func:`parse_admitted_authority` reads them back, and a
+#: record whose writer and reader disagree about its framing is not a record.
+_ADMITTED_HEADER = "  admitted authority  : "
+_ADMITTED_ROW = "    "
+_ADMITTED_NONE = "  admitted authority  : (steady state -- no closure change)"
+
+
+def _admitted_rows(admitted: dict | None, provenance: str | None,
+                   review_digest: str | None) -> str:
     """The complete admitted authority set, as ordered `path -> sha256` rows.
 
     Plan review [E4] and opening outcome A3. The digest alone binds
@@ -1690,14 +1759,71 @@ def _admitted_rows(admitted: dict | None, provenance: str | None) -> str:
     review manifest is an out-of-band artifact that may not survive. Nine rows
     is a reasonable audit cost for a trust root, and it is the difference
     between a durable record and a durable pointer to one.
+
+    D7 binds the **review-manifest digest** alongside them, which answers the
+    other half: the rows say what was admitted, the digest says which reviewed
+    artifact admitted it. Rows without the digest would let two different
+    reviews of the same bytes be indistinguishable in the record.
     """
     if not admitted:
-        return "  admitted authority  : (steady state -- no closure change)"
-    rows = [f"  admitted authority  : {len(admitted)} members, "
+        return _ADMITTED_NONE
+    # The digest line comes BEFORE the header so that the member rows are the
+    # unbroken block immediately following it. `parse_admitted_authority` reads
+    # rows until the first non-row line; anything interleaved would truncate the
+    # set it recovers, and a set that reads back short is worse than one that
+    # fails to read at all.
+    rows = [f"  review manifest     : {review_digest or '(not bound)'}",
+            f"{_ADMITTED_HEADER}{len(admitted)} members, "
             f"review: {provenance or '(unrecorded)'}"]
     for rel, digest in sorted(admitted.items()):
-        rows.append(f"    {digest}  {rel}")
+        rows.append(f"{_ADMITTED_ROW}{digest}  {rel}")
     return "\n".join(rows)
+
+
+def parse_admitted_authority(message: str) -> dict | None:
+    """Read the admitted authority set back out of a checkpoint message.
+
+    D8. The claim the rows exist to support is that a later reader can recover
+    *which bytes* were admitted from the anchored record alone -- so that claim
+    has to be executable, not merely plausible from looking at the text. If the
+    set can only be recovered by a human squinting at a commit message, it is a
+    durable pointer again, just a longer one.
+
+    Returns ``None`` for a steady-state checkpoint, which is a distinct answer
+    from an empty set: nothing was admitted because nothing changed.
+    """
+    lines = message.splitlines()
+    for i, line in enumerate(lines):
+        if line == _ADMITTED_NONE:
+            return None
+        if not line.startswith(_ADMITTED_HEADER):
+            continue
+        declared = line[len(_ADMITTED_HEADER):].split(" members,", 1)[0]
+        try:
+            count = int(declared)
+        except ValueError:
+            raise PreflightError(
+                f"admitted-authority header does not declare a count: {line!r}")
+        members: dict[str, str] = {}
+        for row in lines[i + 1:]:
+            if not row.startswith(_ADMITTED_ROW):
+                break
+            digest, _, rel = row[len(_ADMITTED_ROW):].partition("  ")
+            if not rel:
+                raise PreflightError(f"malformed admitted row: {row!r}")
+            if rel in members:
+                raise PreflightError(f"duplicate admitted row for {rel}")
+            members[rel] = digest
+        # The declared count is checked against the rows recovered. A truncated
+        # block would otherwise read back as a smaller set that looks complete.
+        if len(members) != count:
+            raise PreflightError(
+                f"the checkpoint declares {count} admitted members and carries "
+                f"{len(members)} rows")
+        if sorted(members) != list(members):
+            raise PreflightError("admitted rows are not in sorted path order")
+        return members
+    return None
 
 
 def draft_message(*, observed_anchor: str, checked_head: str,
@@ -1707,7 +1833,8 @@ def draft_message(*, observed_anchor: str, checked_head: str,
                   range_report_digest: str | None = None,
                   candidate_tree: str | None = None,
                   admitted_authority: dict | None = None,
-                  review_provenance: str | None = None) -> str:
+                  review_provenance: str | None = None,
+                  review_digest: str | None = None) -> str:
     """The commit message, built from values the checker computed.
 
     The runbook's audit trail requires the authorized verifier hashes, both
@@ -1747,7 +1874,7 @@ Scope blessed -- derived at check time from the observed state:
   superseded anchor P : {last_legitimate_anchor or observed_anchor}
   checked HEAD        : {checked_head}
   candidate tree      : {candidate_tree or '(not bound)'}
-{_admitted_rows(admitted_authority, review_provenance)}
+{_admitted_rows(admitted_authority, review_provenance, review_digest)}
   range-report digest : {range_report_digest or '(not bound)'}
   new anchor P        : this commit
   prospective manifest: {manifest_sha256}
@@ -2076,7 +2203,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
                   expected_old: str | None = None,
                   prospective_manifest: bytes | None = None,
                   admitted_authority: dict | None = None,
-                  review_provenance: str | None = None) -> dict:
+                  review_provenance: str | None = None,
+                  review_digest: str | None = None) -> dict:
     """The derived description of what a blessing would do.
 
     Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
@@ -2125,7 +2253,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
         range_report_digest=report_digest,
         candidate_tree=candidate_tree,
         admitted_authority=admitted_authority,
-        review_provenance=review_provenance)
+        review_provenance=review_provenance,
+        review_digest=review_digest)
     return {
         "schema": BUNDLE_SCHEMA,
         "checked_head": report.facts["head"],
@@ -2365,20 +2494,34 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
     repo = _require_worktree_root(repo)
     key = require_stage1_cannot_sign(signing_key, out=out)
 
+    # The transition is revalidated BEFORE the checks, and before candidate code
+    # runs. Both orderings are load-bearing.
+    #
+    # Before the checks, because the closure check has to know which byte
+    # changes an external review admitted -- placed after, it refused every real
+    # transition and the mode was unreachable (see `check_authority_closure`).
+    # Before `gather_evidence`, because there is no reason to execute candidate
+    # code for a transition whose manifest does not hold up.
+    transition = review_digest = None
+    if review_manifest is not None:
+        parsed, review_digest = read_review_manifest(review_manifest)
+        transition = revalidate_transition(
+            parsed, reviewed_candidate, _resolve("HEAD", repo=repo),
+            anchor=_resolve(_ANCHOR_REF, repo=repo), repo=repo)
+        out.write(f"transition revalidated against the review manifest "
+                  f"({transition['provenance']}, {len(transition['members'])} "
+                  f"members, digest {review_digest[:12]})\n")
+
     evidence = gather_evidence("HEAD", repo=repo, out=out)
-    report = check(repo=repo, evidence=evidence)
+    report = check(repo=repo, evidence=evidence,
+                   admitted_authority=(transition["members"] if transition
+                                       else None))
     _render(report, out)
     if report.blocked:
         raise PreflightError(
             "the read-only checks refuse this state; nothing was written")
 
     head, anchor = report.facts["head"], report.facts["anchor"]
-    transition = None
-    if review_manifest is not None:
-        transition = revalidate_transition(
-            parse_review_manifest(Path(review_manifest).read_text(
-                encoding="utf-8")),
-            reviewed_candidate, head, anchor=anchor, repo=repo)
 
     branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
                   repo=repo).stdout.strip()
@@ -2405,6 +2548,7 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
         "range_report_digest": range_report_digest(the_report),
         "review_manifest": ({"provenance": transition["provenance"],
                              "candidate": transition["candidate"],
+                             "digest": review_digest,
                              "members": transition["members"]}
                             if transition else None),
         "prospective_manifest_b64": base64.b64encode(manifest_bytes).decode(),
@@ -2527,27 +2671,54 @@ def apply_now(*, repo: Path = _REPO,
     evidence["manifest_sha256"] = _sha256_bytes(
         json.dumps(evidence["manifest"], indent=2, sort_keys=True).encode()
         + b"\n")
-    report = check(repo=repo, evidence=evidence)
+    # Transition-mode revalidation, ahead of the checks for the same reason as
+    # in stage 1: the closure check cannot admit a reviewed byte change it has
+    # not been told about. Defence in depth ([E3]) -- the loader has already
+    # selected and started these bytes, so this cannot establish that the
+    # selection was sound. It restates the loader's conclusions from inside so a
+    # loader edited laxer than its recorded text is caught, and so the parsed
+    # values are available to bind into the checkpoint.
+    transition = None
+    if review_manifest is not None:
+        parsed, review_digest = read_review_manifest(review_manifest)
+        if pkg["review_manifest"] is None:
+            raise PackageError(
+                "stage 2 was given a review manifest for a package stage 1 "
+                "produced in steady state; the two stages disagree about "
+                "whether this is a reviewed-authority transition")
+        if review_digest != pkg["review_manifest"].get("digest"):
+            raise PackageError(
+                f"the review manifest here digests to {review_digest[:12]}; "
+                f"the package was authorized against "
+                f"{str(pkg['review_manifest'].get('digest'))[:12]}. Stage 2 "
+                f"must be handed the same out-of-band artifact stage 1 saw.")
+        transition = revalidate_transition(
+            parsed, reviewed_candidate, _resolve("HEAD", repo=repo),
+            anchor=_resolve(_ANCHOR_REF, repo=repo), repo=repo)
+        out.write(f"transition revalidated against the review manifest "
+                  f"({transition['provenance']})\n")
+    elif pkg["review_manifest"] is not None:
+        # The converse, and the one that actually matters. Stage 1 selected a
+        # reviewed-authority transition; dropping the flag at stage 2 would
+        # sign a checkpoint whose message records "steady state -- no closure
+        # change" for a run that changed the closure. The admitted set would be
+        # absent from the durable record while the ref moved anyway, which is
+        # the [E4] failure with a signature on top.
+        raise PackageError(
+            "the package authorizes a reviewed-authority transition, but "
+            "stage 2 was given no --transition-from-review. A transition "
+            "cannot be signed as steady state.")
+
+    report = check(repo=repo, evidence=evidence,
+                   admitted_authority=(transition["members"] if transition
+                                       else None))
     _render(report, out)
     if report.blocked:
         raise PreflightError(
             "the read-only checks refuse this state; nothing was written")
 
     head, anchor = report.facts["head"], report.facts["anchor"]
-
-    # Transition-mode revalidation. Defence in depth ([E3]) -- the loader has
-    # already selected and started these bytes, so this cannot establish that
-    # the selection was sound. It restates the loader's conclusions from inside
-    # so a loader edited laxer than its recorded text is caught, and so the
-    # parsed values are available to bind into the checkpoint.
-    transition = None
-    if review_manifest is not None:
-        transition = revalidate_transition(
-            parse_review_manifest(Path(review_manifest).read_text(
-                encoding="utf-8")),
-            reviewed_candidate, head, anchor=anchor, repo=repo)
-        out.write(f"transition revalidated against the review manifest "
-                  f"({transition['provenance']})\n")
+    if transition:
         report.facts["transition"] = {
             "candidate": transition["candidate"],
             "provenance": transition["provenance"],
@@ -2590,7 +2761,9 @@ def apply_now(*, repo: Path = _REPO,
                          admitted_authority=(
                              (pkg.get("review_manifest") or {}).get("members")),
                          review_provenance=(
-                             (pkg.get("review_manifest") or {}).get("provenance")))
+                             (pkg.get("review_manifest") or {}).get("provenance")),
+                         review_digest=(
+                             (pkg.get("review_manifest") or {}).get("digest")))
 
     # [M2-1], the governing path. Three separate obligations, none of which the
     # reviewed bytes performed:
@@ -2654,7 +2827,8 @@ def apply_now(*, repo: Path = _REPO,
 
 def check(*, repo: Path = _REPO, evidence: dict | None = None,
           trusted_repo: str | None = None,
-          trusted_ref: str = "HEAD") -> Report:
+          trusted_ref: str = "HEAD",
+          admitted_authority: dict | None = None) -> Report:
     """Run every read-only check. Returns a :class:`Report`; raises only on a
     condition that must not be summarised into a finding."""
     report = Report()
@@ -2667,7 +2841,8 @@ def check(*, repo: Path = _REPO, evidence: dict | None = None,
     report.facts["head"] = head
 
     check_anchor_position(anchor, head, report, repo=repo)
-    check_authority_closure(anchor, report, repo=repo)
+    check_authority_closure(anchor, report, repo=repo,
+                            admitted_authority=admitted_authority)
     check_authority_modules(anchor, report, repo=repo)
     check_frozen_surface(report, repo=repo)
     check_signatures(anchor, head, report, repo=repo)
