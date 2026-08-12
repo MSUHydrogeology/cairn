@@ -772,3 +772,114 @@ commit. I did not re-run the full Boundary B suite: the bytes are unchanged, the
 record's evidence reproduced exactly where I challenged it, and `AGENTS.md`
 reserves a fresh full run for missing or stale evidence — which this is not. I
 did not review the interleaved `scope-reduction-trap` work.
+
+## Response to code review -- Claude -- 2026-08-12
+
+**Disposition: all five findings accepted. None disputed.** Both blocking
+findings were reproduced before being fixed, and each fix was mutation-checked
+by reverting it and confirming the new nodes fail.
+
+### [C1] — the signed record came from the package, not the revalidated set
+
+**Accepted, and it is the worst defect in the range.** `apply_now` handed
+`transition["members"]` to the checks and `pkg["review_manifest"]["members"]` to
+the message, so enforcement was honest while the **durable record was whatever
+the package said** — and `read_package` validated only the top-level field set,
+leaving the inner dict entirely unchecked.
+
+What this failed at is the plan's own [E4]/D7 outcome: the checkpoint exists to
+say *which bytes* an external review admitted. A record that a tampered package
+can write says nothing.
+
+Four changes, in the order they matter:
+
+1. **The message is built from `transition`** — the set that passed
+   `revalidate_transition` (whole-closure match, every member's digest checked
+   against the candidate's own blob). It was already in hand at the call site.
+2. **Stage 1 and stage 2 must agree.** `members`, `provenance` and `candidate`
+   in the package are compared against the revalidated values and a mismatch
+   **refuses**. Overriding silently would have been enough to make the record
+   correct; refusing also tells an operator their package is tampered or stale.
+3. **`read_package` validates the inner dict**: field set, member digests as 64
+   lowercase hex, string types, and **control characters in paths and values** —
+   the newline that forged a row.
+4. **`draft_message` round-trips its own output** before returning: if
+   `parse_admitted_authority` does not recover exactly the set that went in, it
+   refuses. That closes the framing class at the writer, at the last moment
+   before a signature exists — after which the checkpoint is signed, verified,
+   anchored, and unreadable.
+
+**Why the existing mutation node missed it, which is the more useful finding.**
+Criterion 7's parametrized test runs stage 1 in **steady state**, so
+`review_manifest` is `None` and only the `None -> dict` direction was exercised.
+Every field *inside* the dict went unmutated. `_transition_ready` now produces a
+real transition-mode package and
+`test_the_admitted_set_inside_the_package_cannot_forge_the_record` replays the
+reviewer's own five tampers with the package re-digested.
+`test_the_signed_record_is_the_revalidated_set_not_the_packages` asserts the
+positive half by reading the committed checkpoint.
+
+### [C2] — the recorded transition stage 2 ran the anchored checker
+
+**Accepted.** The runbook said *"replace the final command in the block above"*,
+and that block extracts from `refs/cairn/gate-anchor`. So stage 1 ran the
+candidate's checker and stage 2 ran the old one — the old authority vouching for
+its replacement, which the runbook's own transition section names as the
+property the ceremony exists to deny. It failed closed, but only after the key
+was loaded.
+
+The transition's stage 2 is now a **complete recorded block** (`STAGE2T`) that
+extracts by `$RESOLVED` and verifies against the reviewed candidate's own
+checklist. An instruction to edit one line of a nearby block is what produced
+this; the duplication is deliberate and is stated as such in the runbook.
+
+**The fixture was also wrong, and that is the part worth keeping.** The reviewer
+identified `_ceremony_repo`'s byte-identical checker bytes as the [M2-2]
+pre-aligned shape — which **B4 of this plan explicitly forbids**, and I used it
+anyway. The end-to-end node now starts from a candidate whose authority bytes
+genuinely differ, and reverting the extraction to the anchor makes it fail with
+the loader's real `shasum` refusal rather than passing.
+
+### [C3] — the Boundary B record overstated the neutrality attribution
+
+**Accepted; correcting my own record rather than editing it.** The
+`## Implementation verification` section above says the 93 neutrality FAILs
+"are all in `templates/`". **That is false**: 65 are in `templates/`, 14 in
+`docs/`, 9 in `doctrine/`, 5 in `bootstrap/`.
+
+The load-bearing claims in that row are unaffected and the reviewer
+independently re-verified both: the FAIL set is byte-identical to `a63da58`, and
+its intersection with the paths this range touched is empty. The error was in
+the decorative summary, which is exactly where an unchecked claim is easiest to
+write — I generalized from the visible tail of the output instead of counting.
+
+### [C4] — two parsers, one artifact, two answers
+
+**Accepted.** `raw.split()` ignores leading whitespace, so the Python side
+classified an indented row by its first word and then took `provenance` by
+slicing at a fixed offset — while the loader's `${line#provenance }` does not
+match an indented prefix and kept the whole line. Both sides now **refuse** a
+row with leading whitespace, which is the fix that cannot drift: A2 declares one
+concrete bounded format, and an indented row is not in it. Tested on both sides
+in one node — the Python parser directly, the recorded loader by execution.
+
+### [C5] — the probe was fail-open on its own success case
+
+**Accepted.** `probe_cannot_sign` required exit 0 **and** a `.sig` at one of two
+guessed paths, so an `ssh-keygen` that signed while writing its output elsewhere
+was reported as *cannot sign*. That is the unsafe direction from the one control
+whose entire purpose is to refuse. Exit 0 now means the channel is open; the
+`.sig` presence only refines the diagnostic. Both directions are tested, so the
+fix did not invert into refusing every ceremony.
+
+### On the range's composition
+
+The reviewer notes the range interleaves six `scope-reduction-trap` commits,
+separately reviewed, which the Boundary B record does not distinguish. Correct,
+and worth stating plainly: `4877ab9..a4a3b24` is a *branch* range, not this
+plan's commit set. This plan's commits are the ones named in the Sequence block
+plus `a4a3b24`, `f2adcd9` and the response commit below.
+
+**Boundary B is re-run**, because these fixes change implementation, test and
+recorded-ceremony bytes — `AGENTS.md` requires a fresh full run on changed
+bytes, and the record below supersedes the one above.

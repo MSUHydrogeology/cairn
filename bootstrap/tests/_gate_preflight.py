@@ -850,6 +850,17 @@ def parse_review_manifest(text: str) -> dict:
         if any(ch not in "\t" and (ord(ch) < 32 or ord(ch) == 127)
                for ch in raw):
             raise ReviewManifestError("control character in the review manifest")
+        # Code review [C4]: the two parsers of this one artifact disagreed here.
+        # `raw.split()` ignores leading whitespace, so an indented row was
+        # classified by its first word -- but `provenance` is then taken by
+        # slicing `raw` at a fixed offset, which on an indented row yields a
+        # different string than the loader's `${line#provenance }` produces.
+        # Rejecting the row outright is the fix that cannot drift: the format is
+        # declared "one concrete, bounded format" (A2), and an indented row is
+        # not in it. The loader rejects it identically.
+        if raw[:1].isspace():
+            raise ReviewManifestError(
+                f"review manifest row has leading whitespace: {raw!r}")
         parts = raw.split()
         kind = parts[0]
         if kind == "schema":
@@ -1877,7 +1888,7 @@ def draft_message(*, observed_anchor: str, checked_head: str,
             recovery += (
                 f"The ref currently reads {erroneous_ref}, which this run "
                 f"treats as erroneous rather than\nas the prior state.\n")
-    return f"""\
+    message = f"""\
 gate-anchor: supervised trust-root re-establishment (REANCHOR_RUNBOOK Phase 0)
 
 Regenerates {_MANIFEST_REL} over the reviewed tree at
@@ -1905,6 +1916,21 @@ Produced under the canonical interpreter. The pre-flight ran read-only from the
 anchored checker; the review, the decision, this commit and the ref advance are
 the Maintainer's own acts, per REANCHOR_RUNBOOK's Maintainer-only constraint.
 """
+    # Code review [C1]: the writer must be able to read its own record back.
+    #
+    # The admitted set is written as delimited rows, so a member path carrying a
+    # newline forges an extra row -- and the forged message still signs, still
+    # verifies, and only fails to parse LATER, when an auditor tries to read the
+    # anchored checkpoint. Checking the round trip here turns every framing
+    # failure (forged row, truncation, a path that mimics the header) into a
+    # refusal BEFORE a signature exists, which is the only point at which it is
+    # still cheap.
+    if parse_admitted_authority(message) != (admitted_authority or None):
+        raise PreflightError(
+            "the admitted authority set does not read back out of the message "
+            "this ceremony would sign; the durable record would not be "
+            "recoverable from the checkpoint")
+    return message
 
 
 # --- Chunk C: the checkpoint binds the reviewed report ---------------------
@@ -2048,9 +2074,20 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
             return (False, "the signing probe timed out; a probe that hangs "
                            "has not answered, and a passphrase prompt is not "
                            "a refusal")
-        if r.returncode == 0 and (payload.with_suffix(".sig").exists()
-                                  or Path(str(payload) + ".sig").exists()):
-            return (False, "a signature was produced")
+        # Code review [C5]: exit 0 alone means the key channel is OPEN.
+        #
+        # This used to require a locatable `.sig` as well, so an `ssh-keygen`
+        # that succeeded while writing its output somewhere this code did not
+        # look was reported as "cannot sign" -- fail-OPEN, on the probe whose
+        # entire job is to refuse. The safe reading of a successful signing
+        # command is that signing succeeded; where the artifact landed is a
+        # detail, not the verdict.
+        if r.returncode == 0:
+            found = (payload.with_suffix(".sig").exists()
+                     or Path(str(payload) + ".sig").exists())
+            return (False, "a signature was produced" if found else
+                    "ssh-keygen reported success; no .sig was found where "
+                    "expected, which is treated as signing having worked")
         return (True, (r.stderr or "").strip()[-300:] or "signing failed")
 
 
@@ -2210,6 +2247,56 @@ def read_package(path: Path, *, confirmed_sha256: str) -> dict:
         raise PackageError(
             f"package fields do not match the schema: {len(missing)} missing "
             f"{missing}, {len(extra)} unexpected {extra}")
+
+    # Code review [C1]: the INNER shape, which nothing checked.
+    #
+    # The top-level field set was validated and `review_manifest`'s contents
+    # were not, so a non-dict reached `.get(...)` and surfaced as an uncaught
+    # AttributeError -- a traceback rather than a `[REFUSE ]`, on the one code
+    # path that moves the trust root. The values are no longer *trusted* (the
+    # checkpoint is built from the revalidated transition), but a package that
+    # is malformed must still be refused as malformed rather than crashing.
+    rm = pkg["review_manifest"]
+    if rm is not None:
+        if not isinstance(rm, dict):
+            raise PackageError(
+                f"package review_manifest is {type(rm).__name__}, not an "
+                f"object or null")
+        rm_expected = {"provenance", "candidate", "digest", "members"}
+        rm_missing = sorted(rm_expected - set(rm))
+        rm_extra = sorted(set(rm) - rm_expected)
+        if rm_missing or rm_extra:
+            raise PackageError(
+                f"package review_manifest fields do not match the schema: "
+                f"{len(rm_missing)} missing {rm_missing}, "
+                f"{len(rm_extra)} unexpected {rm_extra}")
+        if not isinstance(rm["members"], dict) or not rm["members"]:
+            raise PackageError(
+                "package review_manifest carries no member set; a transition "
+                "with nothing admitted is not a transition")
+        for rel, digest in rm["members"].items():
+            if not isinstance(rel, str) or not isinstance(digest, str):
+                raise PackageError(
+                    f"package review_manifest member {rel!r} is malformed")
+            if len(digest) != 64 or any(c not in "0123456789abcdef"
+                                        for c in digest):
+                raise PackageError(
+                    f"package review_manifest names a non-sha256 digest for "
+                    f"{rel!r}")
+            # Control characters -- a newline forges an extra row when the set
+            # is written into the checkpoint message.
+            if any(ord(c) < 0x20 or ord(c) == 0x7F for c in rel):
+                raise PackageError(
+                    f"package review_manifest member path contains a control "
+                    f"character: {rel!r}")
+        for field in ("provenance", "candidate", "digest"):
+            if not isinstance(rm[field], str):
+                raise PackageError(
+                    f"package review_manifest {field} is not a string")
+            if any(ord(c) < 0x20 or ord(c) == 0x7F for c in rm[field]):
+                raise PackageError(
+                    f"package review_manifest {field} contains a control "
+                    f"character")
     return pkg
 
 
@@ -2696,7 +2783,7 @@ def apply_now(*, repo: Path = _REPO,
     # selection was sound. It restates the loader's conclusions from inside so a
     # loader edited laxer than its recorded text is caught, and so the parsed
     # values are available to bind into the checkpoint.
-    transition = None
+    transition = review_digest = None
     if review_manifest is not None:
         parsed, review_digest = read_review_manifest(review_manifest)
         if pkg["review_manifest"] is None:
@@ -2713,6 +2800,18 @@ def apply_now(*, repo: Path = _REPO,
         transition = revalidate_transition(
             parsed, reviewed_candidate, _resolve("HEAD", repo=repo),
             anchor=_resolve(_ANCHOR_REF, repo=repo), repo=repo)
+
+        # The two stages must agree about what is being admitted. The checkpoint
+        # is built from `transition` regardless ([C1]), so a mismatch can no
+        # longer forge the record -- but a package whose admitted set differs
+        # from the one stage 2 just revalidated is tampered or stale, and
+        # refusing says so instead of quietly overriding it.
+        for field in ("members", "provenance", "candidate"):
+            if pkg["review_manifest"][field] != transition[field]:
+                raise PackageError(
+                    f"the package's review_manifest {field} does not match "
+                    f"what stage 2 revalidated from the out-of-band artifact; "
+                    f"the two stages disagree about what is being admitted")
         out.write(f"transition revalidated against the review manifest "
                   f"({transition['provenance']})\n")
     elif pkg["review_manifest"] is not None:
@@ -2776,12 +2875,31 @@ def apply_now(*, repo: Path = _REPO,
                          manifest_sha256=committed_sha256,
                          branch=branch, expected_old=branch_old,
                          prospective_manifest=manifest_bytes,
-                         admitted_authority=(
-                             (pkg.get("review_manifest") or {}).get("members")),
-                         review_provenance=(
-                             (pkg.get("review_manifest") or {}).get("provenance")),
-                         review_digest=(
-                             (pkg.get("review_manifest") or {}).get("digest")))
+                         # Code review [C1]: the DURABLE RECORD comes from the
+                         # revalidated transition, never from the package.
+                         #
+                         # These read `pkg["review_manifest"]` before, while the
+                         # checks above were given `transition["members"]`. So
+                         # enforcement was honest and the signed message was
+                         # whatever the package said -- and `read_package`
+                         # validates only the top-level field set, so the inner
+                         # dict was entirely unchecked. A package re-digested
+                         # after tampering (the confirmation then matches
+                         # perfectly) signed nine false rows with every check
+                         # green, and dropping the `members` key signed
+                         # "steady state -- no closure change" over a real
+                         # closure change -- verbatim the failure the refusal
+                         # above exists to prevent.
+                         #
+                         # `transition` is the set that passed
+                         # `revalidate_transition`: whole-closure match, each
+                         # member's digest checked against the candidate's own
+                         # blob. It was already in hand at this call site.
+                         admitted_authority=(transition["members"]
+                                             if transition else None),
+                         review_provenance=(transition["provenance"]
+                                            if transition else None),
+                         review_digest=review_digest)
 
     # [M2-1], the governing path. Three separate obligations, none of which the
     # reviewed bytes performed:

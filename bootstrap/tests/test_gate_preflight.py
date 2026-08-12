@@ -1663,11 +1663,31 @@ def _stage2_block() -> str:
     accept a recorded-but-never-executed procedure.
     """
     text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    section = text.split("### Phase 0 stage 2")[1].split("\n## ")[0]
+    section = text.split("### Phase 0 stage 2")[1].split(
+        "\n#### Stage 2 in transition mode")[0].split("\n## ")[0]
     blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
     matching = [b for b in blocks if "STAGE2" in b]
     assert len(matching) == 1, (
         f"expected exactly one recorded stage-2 block, found {len(matching)}")
+    return matching[0]
+
+
+def _stage2_transition_block() -> str:
+    """The transition's OWN complete stage-2 block.
+
+    Selected separately because it *is* separate: code review [C2] found the
+    runbook telling the operator to "replace the final command" of the
+    steady-state block, which left the extraction reading
+    `refs/cairn/gate-anchor`. Stage 1 then ran the candidate's checker and stage
+    2 the old one -- the old authority vouching for its replacement, after the
+    key was loaded.
+    """
+    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    section = text.split("#### Stage 2 in transition mode")[1].split("\n### ")[0]
+    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
+    matching = [b for b in blocks if "STAGE2T" in b]
+    assert len(matching) == 1, (
+        f"expected exactly one transition stage-2 block, found {len(matching)}")
     return matching[0]
 
 
@@ -1704,13 +1724,27 @@ def _recorded(repo: Path) -> dict[str, str]:
     return values
 
 
-def _substitute(block: str, repo: Path, *, hashes: bool = True) -> str:
+def _substitute(block: str, repo: Path, *, hashes: bool = True,
+                candidate: str | None = None) -> str:
+    """Fill the Maintainer-recorded placeholders in a recorded block.
+
+    ``candidate`` supplies the transition's own checklist: the reviewed
+    candidate's bytes, recorded at that OID. It is a separate placeholder from
+    the first-use set on purpose -- a transition's stage 2 extracts by the
+    reviewed OID and must verify against **that** commit's hashes, and reusing
+    the anchor's set is exactly the [C2] confusion in a different key.
+    """
     for placeholder, value in _recorded(repo).items():
         if placeholder in block:
             block = block.replace(placeholder, shlex.quote(value))
-    assert "<maintainer-recorded" not in block.replace(
-        "<maintainer-recorded-first-use-hashes>", ""), (
+    residual = block.replace("<maintainer-recorded-first-use-hashes>", "") \
+                    .replace("<maintainer-recorded-reviewed-candidate-hashes>", "")
+    assert "<maintainer-recorded" not in residual, (
         f"an unrecorded placeholder survived substitution:\n{block}")
+    if candidate is not None:
+        assert "<maintainer-recorded-reviewed-candidate-hashes>" in block
+        block = block.replace("<maintainer-recorded-reviewed-candidate-hashes>",
+                              _recorded_hashes(repo, candidate))
     if hashes:
         assert "<maintainer-recorded-first-use-hashes>" in block
         block = block.replace("<maintainer-recorded-first-use-hashes>",
@@ -1842,6 +1876,29 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         # would defeat the transition loader's resolve-once discipline (A4).
         assert "never re-resolved here" in section
 
+    def test_the_transition_stage2_extracts_from_the_candidate_not_the_anchor(
+            self):
+        """Code review [C2], as a property of the recorded text.
+
+        A transition's stage 2 must extract by the reviewed candidate OID. The
+        runbook previously said "replace the final command" of the steady-state
+        block, whose extraction reads `refs/cairn/gate-anchor` -- so stage 1 ran
+        the candidate's checker and stage 2 ran the old one. That is the old
+        authority vouching for its replacement, and it fails closed only *after*
+        the ceremony key has been loaded.
+        """
+        block = _stage2_transition_block()
+        assert 'cat-file blob "$RESOLVED:$path"' in block, (
+            "the transition's stage 2 does not extract by the reviewed OID")
+        assert "refs/cairn/gate-anchor" not in block, (
+            "the transition's stage 2 extracts from the anchor -- the old "
+            "authority would vouch for its own replacement")
+        # Its checklist must be the CANDIDATE's, not the first-use set: hashes
+        # from the anchor would pass while the wrong bytes ran.
+        assert "<maintainer-recorded-reviewed-candidate-hashes>" in block
+        assert "<maintainer-recorded-first-use-hashes>" not in block
+        assert '"$SHASUM" -a 256 -c RECORDED.sha256' in block
+
     def test_the_recorded_transition_ceremony_runs_end_to_end(self, tmp_path):
         """The transition's own two-stage ceremony, executed from the document.
 
@@ -1873,19 +1930,18 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert pkg.exists(), "the recorded transition stage 1 wrote no package"
 
         confirmed = hashlib.sha256(pkg.read_bytes()).hexdigest()
-        script = _substitute(_stage2_block(), repo)
+        # The transition's OWN recorded block, verbatim -- not the steady-state
+        # one with its last command edited. That edit was [C2].
+        script = _substitute(_stage2_transition_block(), repo, hashes=False,
+                             candidate=resolved)
         script = script.replace("<the-64-hex-digest-you-verified-in-step-1>",
                                 shlex.quote(confirmed))
         script = script.replace(
-            'stage2 --repo "$CHECKOUT" \\\n           --package "$PACKAGE" \\\n'
-            '           --confirm-package-sha256 "$CONFIRMED"',
-            'stage2 --repo "$CHECKOUT" \\\n           --package "$PACKAGE" \\\n'
-            '           --confirm-package-sha256 "$CONFIRMED" \\\n'
-            f'           --transition-from-review {shlex.quote(str(manifest))} \\\n'
-            f'           --reviewed-candidate {shlex.quote(resolved)}')
-        assert "--transition-from-review" in script, (
-            "the stage-2 block's recorded command changed shape; this test's "
-            "substitution no longer applies and would silently run steady state")
+            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
+            shlex.quote(str(manifest)))
+        script = script.replace(
+            "<the-full-commit-oid-the-transition-loader-resolved-and-printed>",
+            shlex.quote(resolved))
 
         r2 = subprocess.run(["bash", "-c", script], cwd=str(repo),
                             capture_output=True, text=True, check=False)
@@ -2420,6 +2476,33 @@ class TestTransitionLoaderSelectsTheSource:
         assert code.count("rev-parse --verify --end-of-options") == 1, (
             "the candidate is resolved exactly once")
 
+    def test_both_parsers_reject_a_row_with_leading_whitespace(self, tmp_path):
+        """Code review [C4]. One artifact, two parsers, two answers.
+
+        `raw.split()` ignores leading whitespace so the Python side classified
+        an indented row by its first word, then took `provenance` by slicing at
+        a fixed offset -- while the loader's `${line#provenance }` does not
+        match an indented prefix and kept the whole line. Two readings of one
+        recorded artifact is the condition an out-of-band trust input cannot
+        have, whichever value is "right".
+
+        Both sides now refuse it, and both are checked here: the Python
+        revalidation directly, and the recorded loader by execution.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        text = _review_manifest(repo, head).replace("provenance ",
+                                                    "   provenance ", 1)
+
+        with pytest.raises(P.ReviewManifestError, match="leading whitespace"):
+            P.parse_review_manifest(text)
+
+        mf = tmp_path / "indented.txt"
+        mf.write_text(text, encoding="utf-8")
+        r = self._run(repo, text, head, tmp_path)
+        assert r.returncode != 0, (
+            "the loader accepted an indented row the revalidation refuses")
+        assert "leading whitespace" in r.stderr, r.stderr[-500:]
+
     def test_the_anchored_steady_state_loader_has_no_transition_mode(self):
         """[S1] as a test. The anchored checker cannot contain a mode added to
         its successor, so the steady-state block must not offer one -- if it
@@ -2919,7 +3002,10 @@ class TestAuthorizationPackage:
             "expected_old": "b" * 40,
             "range_report": {"schema": P.RANGE_REPORT_SCHEMA},
             "range_report_digest": "d" * 64,
-            "review_manifest": {"provenance": "review 2026-08-12"},
+            "review_manifest": {"provenance": "review 2026-08-12",
+                                "candidate": "b" * 40, "digest": "d" * 64,
+                                "members": {"bootstrap/tests/_oracle.py":
+                                            "a" * 64}},
             "prospective_manifest_b64": "e30=",
             "prospective_manifest_sha256": "e" * 64,
             "collection": {"node_count": 1},
@@ -3085,6 +3171,131 @@ class TestAuthorizationPackage:
                 _run("git", "rev-parse", P._ANCHOR_REF,
                      cwd=repo).stdout.strip()) == before
 
+    def _transition_ready(self, tmp_path, monkeypatch):
+        """A package produced in TRANSITION mode, and the pieces to replay it.
+
+        Code review [C1]: the parametrized mutation node above runs stage 1 in
+        **steady state**, so `review_manifest` is `None` and only the
+        `None -> dict` direction was ever exercised. Every field *inside* that
+        dict -- the admitted set that the checkpoint writes down -- went
+        unmutated, which is how a forged set reached a signed message.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        resolved = _signed_commit(repo, "reviewed authority change")
+        manifest = tmp_path / "review.txt"
+        manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
+        evidence_manifest = {
+            **P.rederive_static_manifest(resolved, repo=repo),
+            "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                           "skip_xfail_marked": []},
+            "interpreter": {"version": "3.13.13"}}
+        monkeypatch.setattr(
+            P, "gather_evidence",
+            lambda *a, **k: _fake_evidence(resolved, evidence_manifest))
+        monkeypatch.setattr(P, "require_stage1_cannot_sign",
+                            lambda *a, **k: {"key_path": "(stubbed)"})
+        pkg_path = tmp_path / "pkg.json"
+        P.stage1(repo=repo, package_out=pkg_path, out=io.StringIO(),
+                 review_manifest=str(manifest), reviewed_candidate=resolved)
+        return repo, resolved, manifest, pkg_path
+
+    def _replay(self, repo, pkg_path, body, manifest, resolved):
+        import hashlib
+        pkg_path.unlink()
+        pkg_path.write_bytes(body)
+        P._phase = P._PHASE_CANDIDATE
+        return P.apply_now(
+            repo=repo, package=str(pkg_path), out=io.StringIO(),
+            confirmed_package_sha256=hashlib.sha256(body).hexdigest(),
+            review_manifest=str(manifest), reviewed_candidate=resolved)
+
+    @pytest.mark.parametrize("tamper", [
+        "falsify-digests", "drop-members", "members-not-a-dict",
+        "newline-in-path", "forge-provenance",
+    ])
+    def test_the_admitted_set_inside_the_package_cannot_forge_the_record(
+            self, tmp_path, monkeypatch, tamper):
+        """[C1]. The package is re-digested, so the confirmation matches.
+
+        This is the exact probe the code review ran. Before the fix, three of
+        these signed a checkpoint: falsified digests wrote nine false rows with
+        every check green, dropping `members` signed
+        "steady state -- no closure change" over a real closure change, and a
+        newline in a path forged an extra row. The fourth raised an uncaught
+        AttributeError -- a traceback instead of a refusal, on the one path that
+        moves the trust root.
+        """
+        repo, resolved, manifest, pkg_path = self._transition_ready(
+            tmp_path, monkeypatch)
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+        pkg = json.loads(pkg_path.read_bytes())
+        rm = pkg["review_manifest"]
+
+        if tamper == "falsify-digests":
+            rm["members"] = {k: "9" * 64 for k in rm["members"]}
+        elif tamper == "drop-members":
+            del rm["members"]
+        elif tamper == "members-not-a-dict":
+            rm["members"] = ["not", "a", "dict"]
+        elif tamper == "newline-in-path":
+            k = sorted(rm["members"])[0]
+            rm["members"][f"{k}\n    {'0' * 64}  forged/path.py"] = \
+                rm["members"].pop(k)
+        elif tamper == "forge-provenance":
+            rm["provenance"] = "an external review that never happened"
+
+        body = (json.dumps(pkg, indent=2, sort_keys=True) + "\n").encode()
+        with pytest.raises(P.PreflightError):
+            self._replay(repo, pkg_path, body, manifest, resolved)
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before, (
+            f"a package tampered with {tamper!r} moved a ref")
+
+    def test_the_signed_record_is_the_revalidated_set_not_the_packages(
+            self, tmp_path, monkeypatch):
+        """The positive half of [C1]: which object actually reaches the message.
+
+        Refusing a mismatch is good, but the load-bearing property is *whose*
+        set gets written down. Asserted by reading the committed checkpoint of
+        an honest run and comparing it with the out-of-band artifact, which is
+        the only source stage 2 revalidated against.
+        """
+        repo, resolved, manifest, pkg_path = self._transition_ready(
+            tmp_path, monkeypatch)
+        body = pkg_path.read_bytes()
+        self._replay(repo, pkg_path, body, manifest, resolved)
+
+        message = _run("git", "log", "-1", "--format=%B", cwd=repo).stdout
+        recovered = P.parse_admitted_authority(message)
+        expected = P.parse_review_manifest(
+            manifest.read_text(encoding="utf-8"))["members"]
+        assert recovered == expected
+        import hashlib
+        assert hashlib.sha256(manifest.read_bytes()).hexdigest() in message
+
+    def test_the_message_writer_refuses_a_set_it_cannot_read_back(self):
+        """The writer-side guard, isolated from the package path.
+
+        `draft_message` round-trips its own output before returning. A member
+        path that forges a row makes the emitted record unrecoverable, and the
+        only cheap moment to notice is before a signature exists -- afterwards
+        the checkpoint is signed, verified, anchored, and unparseable.
+
+        The refusal may come from either half of the round trip: the parser's
+        own count check fires first on a forged row (two rows, one declared),
+        and the equality comparison catches everything the parser accepts. What
+        matters is that no message is returned.
+        """
+        with pytest.raises(P.PreflightError):
+            P.draft_message(
+                observed_anchor="0" * 40, checked_head="1" * 40,
+                manifest_sha256="e" * 64, authority_hashes={}, scope={},
+                admitted_authority={f"a.py\n    {'0' * 64}  forged.py": "b" * 64},
+                review_provenance="ESR", review_digest="d" * 64)
+
     def test_no_boolean_confirmation_path_exists_anywhere_in_the_module(self):
         """Acceptance criterion 8, asserted on the module rather than the CLI.
 
@@ -3223,6 +3434,48 @@ class TestKeyChannelProbe:
                         "-f", str(key), "-C", name], check=True,
                        capture_output=True)
         return key
+
+    def test_a_successful_ssh_keygen_with_no_sig_file_counts_as_CAN_sign(
+            self, tmp_path, monkeypatch):
+        """Code review [C5]. The probe was fail-OPEN on its own success case.
+
+        It required exit 0 **and** a `.sig` at one of two guessed paths. An
+        `ssh-keygen` that signed but wrote its output elsewhere therefore
+        reported *cannot sign* — the unsafe direction, from the one control
+        whose entire purpose is to refuse. A signing command that returns
+        success has signed; where the artifact landed is a detail.
+        """
+        import subprocess as _sp
+        real = _sp.run
+
+        def fake(cmd, *a, **k):
+            if cmd and str(cmd[0]).endswith("ssh-keygen"):
+                return _sp.CompletedProcess(cmd, 0, "", "")   # success, no .sig
+            return real(cmd, *a, **k)
+
+        monkeypatch.setattr(P.subprocess, "run", fake)
+        P._phase = P._PHASE_CANDIDATE
+        cannot, detail = P.probe_cannot_sign(str(tmp_path / "k.pub"))
+        assert cannot is False, (
+            "ssh-keygen reported success and the probe called it a refusal")
+        assert "success" in detail
+
+    def test_a_failing_ssh_keygen_still_counts_as_cannot_sign(
+            self, tmp_path, monkeypatch):
+        """The other direction, so the [C5] fix did not simply invert into
+        refusing every ceremony."""
+        import subprocess as _sp
+        real = _sp.run
+
+        def fake(cmd, *a, **k):
+            if cmd and str(cmd[0]).endswith("ssh-keygen"):
+                return _sp.CompletedProcess(cmd, 1, "", "no such key")
+            return real(cmd, *a, **k)
+
+        monkeypatch.setattr(P.subprocess, "run", fake)
+        P._phase = P._PHASE_CANDIDATE
+        cannot, detail = P.probe_cannot_sign(str(tmp_path / "k.pub"))
+        assert cannot is True and "no such key" in detail
 
     def test_a_readable_private_sibling_means_stage_1_CAN_sign(self, tmp_path):
         """[E1] reproduced as a regression. This is the state the old design

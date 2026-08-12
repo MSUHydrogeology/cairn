@@ -261,6 +261,13 @@ while IFS= read -r line || [ -n "$line" ]; do
     case $line in
         *[![:print:][:space:]]*) die "control character in the review manifest" ;;
     esac
+    # Leading whitespace is rejected on both sides. `set -- $line` ignores it
+    # while `${line#provenance }` does not, so an indented row parsed as one
+    # kind here and carried a different value than the Python revalidation
+    # derived -- two parsers of one artifact disagreeing (code review [C4]).
+    case $line in
+        " "*|"	"*) die "row has leading whitespace" ;;
+    esac
     set -- $line
     case $1 in
     schema)
@@ -522,22 +529,74 @@ saw** — it compares the file's digest against the one recorded in the package 
 so the file named here must be byte-identical to the one the transition loader
 was given, not a re-export of it.
 
-Replace the final command in the block above with:
+**And it extracts from the CANDIDATE, not from the anchor.** This is the whole
+subsection's reason for existing as a complete block rather than a one-line
+substitution. The steady-state stage 2 above extracts from
+`refs/cairn/gate-anchor`; a transition's stage 2 must extract by the reviewed
+candidate OID, exactly as its stage 1 did. Getting this wrong means stage 1 runs
+the candidate's checker and stage 2 runs the **old** one — which is precisely
+"asking the old authority to vouch for its replacement", the property this
+ceremony exists to deny. It fails closed (the old checker refuses the new
+closure) but it fails *after the key is loaded*, which is the worst place to
+discover it.
+
+Code review [C2] found this runbook saying "replace the final command in the
+block above". It is written out in full below for that reason: an instruction to
+edit one line of a nearby block produced a ceremony that ran the wrong bytes.
 
 ```
+<maintainer-recorded-env> -i \
+    PATH=/usr/bin:/bin \
+    HOME=<maintainer-recorded-home> \
+    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
+    /bin/sh <<'STAGE2T'
+CHECKOUT=<absolute-path-of-the-checkout-to-bless>
+ENV=<maintainer-recorded-env>
+GIT=<maintainer-recorded-git>
+PY=<maintainer-recorded-interpreter>
+MKTEMP=<maintainer-recorded-mktemp>
+MKDIR=<maintainer-recorded-mkdir>
+SHASUM=<maintainer-recorded-shasum>
+PACKAGE=<absolute-path-of-the-authorization-package>
+CONFIRMED=<the-64-hex-digest-you-verified-in-step-1>
+REVIEW_MANIFEST=<absolute-path-of-the-maintainer-recorded-review-manifest>
+RESOLVED=<the-full-commit-oid-the-transition-loader-resolved-and-printed>
+
+T=$("$MKTEMP" -d) || exit 1
+
+sterile_git() {
+    "$ENV" -i HOME=/nonexistent \
+        "$GIT" --no-replace-objects \
+               -c core.useReplaceRefs=false \
+               -c core.hooksPath=/dev/null \
+               -c core.fsmonitor=false \
+               -C "$CHECKOUT" "$@"
+}
+
+# BY THE REVIEWED OID, never by a ref -- the same rule as the transition
+# loader's own extraction (A4).
+: > "$T/RECORDED.sha256" || exit 1
+while read -r sum path; do
+    [ -n "$path" ] || continue
+    "$MKDIR" -p "$T/${path%/*}" || exit 1
+    sterile_git cat-file blob "$RESOLVED:$path" > "$T/$path" || exit 1
+    echo "$sum  $path" >> "$T/RECORDED.sha256"
+done <<'MEMBERS'
+<maintainer-recorded-reviewed-candidate-hashes>
+MEMBERS
+
+( cd "$T" && "$SHASUM" -a 256 -c RECORDED.sha256 ) || {
+    echo "REFUSE: extracted bytes do not match the reviewed candidate set" >&2
+    exit 1
+}
+
 "$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
     stage2 --repo "$CHECKOUT" \
            --package "$PACKAGE" \
            --confirm-package-sha256 "$CONFIRMED" \
            --transition-from-review "$REVIEW_MANIFEST" \
            --reviewed-candidate "$RESOLVED"
-```
-
-adding to that block's recorded values:
-
-```
-REVIEW_MANIFEST=<absolute-path-of-the-maintainer-recorded-review-manifest>
-RESOLVED=<the-full-commit-oid-the-transition-loader-resolved-and-printed>
+STAGE2T
 ```
 
 `RESOLVED` is **recorded from stage 1's output, never re-resolved here**. A ref
