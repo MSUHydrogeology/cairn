@@ -277,7 +277,7 @@ P5  Contract non-expansion attestation             [DONE 772c14d; CF2 840d807]
 D   claim-check archive resolution + registry      [DONE 4723107 D1/D2/D5; 6869022 D3/D4]
 E   status vocabulary, transitions, conformance    [DONE ec6139e E1/E2/E3]
 P2  plan readiness, inheritance, expansion refusal [DONE b00ab89 P2-R + [CF1]]
-P3  current-contract revision + withdrawal ledger  [commit pending]
+P3  current-contract revision + withdrawal ledger  [DONE b3d17a5; CF5 filed]
 P4  review-brief + closeout --dry-run              [commit pending]
 P6a pilot engine + state schema (in reviewed range)[DONE 8bf1154]
 P6b pilot human contract                           [commit pending]
@@ -3052,3 +3052,62 @@ defect `AGENTS.md` > *Verifying claims* forbids. The branch is instead kept unde
 test through the inverted `lifecycle_without_counted_state` fixture. If a later
 reviewer disagrees, the removal is a small edit to two byte-identical files plus
 the four nodes that exercise it.
+
+### [CF5] `doctrine/proposals.md` still calls the revision optional -- owed to G -- Claude (Implementation) -- 2026-08-12
+
+P3 (`b3d17a5`) landed the accepted parent's "Bounded current contracts" clause in
+the **tool** and in **both authoring templates plus their twins**, which is
+exactly the surface list P3's cell names. It did **not** touch `doctrine/`,
+because P3's cell does not name it and Chunk **G** does (`G-R`: *"Teach the
+proposal-centered default immediately in canonical, self-hosted and shipped
+operational surfaces"*), backed by the accepted three-layer distribution matrix,
+whose *Published canonical method* row names `doctrine/proposals.md` by name.
+
+**This is a sequencing dependency on G, not a scope reduction, and no `Scope
+delta` allowance is required** -- every outcome P3's cell committed to shipped.
+But it leaves a live contradiction that the Code review should check off rather
+than rediscover. Three exact locations in `doctrine/proposals.md` still carry the
+pre-contract, *conditional* wording:
+
+* line 36 -- *"the author appends a `## Response` and, **where needed**, a `##
+  Revised proposal`"*. The contract has no "where needed": one complete current
+  contract follows every Response.
+* line 71 -- *"Commit on **appending a Response and any "Revised proposal"
+  section**"*. "any" reads as optional for the same reason.
+* line 504 -- *"If accepted critiques substantially change the proposal, write a
+  short "## Revised proposal" section"*. This is the sentence P3 **replaced** in
+  all four template copies; the doctrine copy of it survives.
+
+**Why leaving it is safe, stated rather than assumed.** The contradiction runs in
+the loud direction: doctrine is *permissive* and the tool *refuses*, so an author
+who follows the stale doctrine is stopped by a refusal that names the exact
+heading to add and quotes what a complete contract contains. The failure mode is
+a puzzled author, not a silent gap -- the inverse (doctrine strict, tool
+permissive) is the one that would have to be fixed immediately.
+
+**Also corrected inside P3, and named because it edits another chunk's text.**
+Two live locations in `tools/lifecycle_planner.py` told the author the revision
+was optional, and a scaffold that emits text its own gate refuses is worse than
+no scaffold: the `revised` transition's pasteable block (*"If accepted critiques
+substantially change the proposal, add a '## Revised proposal' section"*) and
+Chunk E's `revising -> awaiting-review` gate description (*"append a '##
+Response' (+ optional '## Revised proposal')"*). Both now emit the mandatory
+form, the scaffold emits the ledger with it, and
+`test_the_emitted_revised_scaffold_clears_its_own_gate` pins the property that
+the tool never hands an operator a violation. E's neighbouring
+`_STATUS_MOVES_WITH` entry already said *"'## Response' + complete
+current-contract revision commit"*, so E had the rule right in one of its two
+locations -- the same one-fixed-one-missed shape [H1]/[T4] named.
+
+**One thing P3 decided rather than left ambiguous, for the Code review to
+attack.** The contract says *"After a proposal review Response, the author
+appends one complete current contract"* and fixes neither an **order** nor a
+**ratio**. P3 therefore checks position-agnostic *presence* -- a Response
+requires at least one revision somewhere in the artifact -- and does **not** pair
+revisions to Responses one-for-one. That restraint is measured, not lazy: of the
+39 proposals in this tree that carry a revision, 6 place it **above** its
+Response (which is what the proposal template's own long-standing instruction
+told authors to do), and `resp=2 rev=1` is the single most common shape. A
+pairing rule would have refused correct records for a rule no accepted text
+states. The residual is that a proposal with five Responses and one round-1
+revision clears; closing it needs a contract sentence, not a tighter regex.
