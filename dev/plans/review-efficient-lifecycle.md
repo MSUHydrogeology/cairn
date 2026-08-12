@@ -276,7 +276,7 @@ C   Code-review record schema + legacy manifest    [DONE C3 0935a09; C1/C2/C4/C5
 P5  Contract non-expansion attestation             [DONE 772c14d; CF2 840d807]
 D   claim-check archive resolution + registry      [DONE 4723107 D1/D2/D5; 6869022 D3/D4]
 E   status vocabulary, transitions, conformance    [DONE ec6139e E1/E2/E3]
-P2  plan readiness, inheritance, expansion refusal [commit pending]
+P2  plan readiness, inheritance, expansion refusal [DONE b00ab89 P2-R + [CF1]]
 P3  current-contract revision + withdrawal ledger  [commit pending]
 P4  review-brief + closeout --dry-run              [commit pending]
 P6a pilot engine + state schema (in reviewed range)[DONE 8bf1154]
@@ -2948,6 +2948,42 @@ path is tested), and make the report split eligible from ineligible. P6a
 deliberately did **not** fork the assurance vocabulary or reach for the private
 `_ASSURANCE_PATHS` to close this early; either would have created a second
 vocabulary, which is the defect Chunk A exists to prevent.
+
+**Discharged at `b00ab89` (P2).** The vocabulary is now public
+(`ASSURANCE_PATHS`, plus `ASSURANCE_NOT_INHERITED` for a plan that declares no
+chain) and read through the same contained loader as `PLAN_STATES`; the schema is
+`cairn-pilot-event/2` with a mandatory `assurance_path` on every `plan-counted`
+event, **derived** by the CLI from the plan through P2-R's chain rather than
+typed -- and a plan that declares a chain the planner cannot resolve refuses the
+write. `pilot-report` prints the split. **One thing was deliberately not
+decided**: the counted-stem quota still counts distinct stems, because the
+accepted parent ("high-assurance work ... does not fill the sample") and the
+2026-08-11 revision ("standard and high-assurance proposals may both receive
+`READY`") pull opposite ways on *whose* plans fill the six. Re-deciding the
+denominator is a Maintainer's call, so the report prints the tension whenever the
+sample holds an ineligible stem, and `dev/measurement/pilot-events.md` records it.
+
+### [CF4] Two P1 legacy-manifest entries went stale mid-chunk -- Claude (Implementation) -- 2026-08-12
+
+Not P2's, not caused by P2, and left rather than absorbed. Another session's
+Decision commit `d1b61b2` flipped
+`dev/proposals/2026-08-11-claude-metrics-events-not-prose.md` to `accepted`,
+which makes it **terminal and therefore immutable** -- so `_is_immutable` now
+covers it and P1's two scoped grandfather entries for that stem are dead weight.
+P1's own guard-on-the-guard says exactly what to do (*"if this reddens, delete the
+entry"*), and it reddens now:
+`test_lifecycle_contract.py::TestBasisLegacyEnumerations::test_every_basis_manifest_entry_is_still_needed`
+and `::test_the_declaration_exemption_names_only_live_undeclared_proposals`.
+
+Both nodes fail identically against **HEAD's** planner over the same tree, so
+this is a stale-data finding, not a P2 regression. The repair is deleting the
+stem's entry from `_LEGACY_UNDECLARED_BASIS` and from
+`_LEGACY_UNDECLARED_ASSURANCE_PATH` -- which *tightens* the gate and changes no
+behavior, since immutability already covers the artifact. It is left to the
+chunk that owns those enumerations (or the Code review) because deleting another
+chunk's committed grandfather data as a side effect of P2 is the deviation-shaped
+choice, and the triggering event was a concurrent session's Decision rather than
+anything in this cell.
 
 ### [CF2] A stale comment in the planner, owed to whoever next edits it
 
