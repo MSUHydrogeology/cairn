@@ -287,8 +287,20 @@ which commit.
 4. **Create the one fixed designated gate ref at `P`:**
 
    ```
-   git update-ref refs/cairn/gate-anchor <P-sha>
+   git update-ref --create-reflog -m "cairn: supervised gate re-anchor" \
+       refs/cairn/gate-anchor <P-sha>
    ```
+
+   `--create-reflog` is not optional and not tidiness. Custom refs carry **no**
+   reflog by default, which is how a mis-set anchor once became unrecoverable —
+   the prior value was written down nowhere, so "put it back" had nothing to put
+   back. This command creates the ref, so it is the one place where omitting the
+   flag means the ref has no reflog *for its whole life*: every later transaction
+   appends to a log that starts here. The reason string is the same fixed one the
+   checker writes (`_gate_preflight._CEREMONY_REFLOG_REASON`), so anchor movement
+   is labelled identically whether a human or the ceremony performed it.
+
+   The reflog remains a **local, mutable diagnostic** — see *Audit trail*.
 
 **Why this is not circular / self-authorizing.** The verifier code is pinned by a
 commit the Maintainer authored and reviewed out-of-band (step 1's recorded
@@ -317,6 +329,13 @@ For each candidate `C` to promote:
    ```
    git update-ref refs/cairn/gate-authorization <A-sha>
    ```
+
+   No `--create-reflog` here, deliberately, and the asymmetry with the anchor
+   above is the reason: this ref is ceremony-local and is deleted in step 5, and
+   `update-ref -d` removes a ref's reflog with it. A log that cannot outlive the
+   thing it documents buys no recoverability — and a *surviving* authorization
+   reflog would be worse than none, since it is a readable record of grants that
+   is trivially confused for the grants themselves.
 
    Stage B refuses any `A` that is not a one-parent commit on `P`, or whose diff
    from `P` exceeds those two files — so `A` cannot smuggle candidate content.

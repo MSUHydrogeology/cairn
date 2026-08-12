@@ -2808,6 +2808,44 @@ def _fenced(section: str) -> list[str]:
 
 class TestRunbookPublicationText:
 
+    def test_the_anchor_is_created_with_a_reflog_and_the_fixed_reason(self):
+        """The runbook's own `update-ref` is where the anchor's reflog begins.
+
+        Custom refs carry no reflog by default, so the *creating* command is the
+        one place where omitting the flag means the ref has none for its whole
+        life -- every later transaction appends to a log that starts there. This
+        was a real gap: the recorded command was bare while the code it hands off
+        to was careful, which is the FUR shape (a fix the recorded steps do not
+        carry is not a fix).
+
+        The reason is compared against the module constant rather than a literal,
+        so the recorded command and the checker cannot drift into labelling the
+        same anchor two different ways.
+        """
+        section = _runbook_section("\n### Phase 0 pre-flight")
+        creations = [b for b in _fenced(section)
+                     if "update-ref" in b and P._ANCHOR_REF in b]
+        assert len(creations) == 1, (
+            f"expected one recorded anchor-creation command, found "
+            f"{len(creations)}")
+        create = creations[0]
+        assert "--create-reflog" in create
+        assert P._CEREMONY_REFLOG_REASON in create, (
+            f"the recorded command must label the anchor with "
+            f"{P._CEREMONY_REFLOG_REASON!r}, the reason the checker writes")
+
+    def test_the_authorization_ref_is_created_without_a_reflog(self):
+        """The deliberate asymmetry, asserted so it reads as a decision rather
+        than an oversight: `update-ref -d` removes a ref's reflog with it, so a
+        log on a ref that is always deleted buys nothing."""
+        section = _runbook_section("\n## Phase 4")
+        creations = [b for b in _fenced(section)
+                     if "update-ref" in b and "gate-authorization" in b
+                     and " -d " not in b]
+        assert len(creations) == 1
+        assert "--create-reflog" not in creations[0]
+        assert "ceremony-local" in section
+
     def test_publication_is_one_atomic_push_with_explicit_refspecs(self):
         blocks = _fenced(_runbook_section("\n## Phase 5"))
         pushes = [b for b in blocks if "push" in b]
