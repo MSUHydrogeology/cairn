@@ -4,7 +4,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-12-claude-ceremony-handshake-and-first-use.md`,
 accepted as revised at Round 2 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-12`).
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(**External Security Review**) — set by the proposal.
 An Internal read missed both defects this corrects, and an Internal read missed
 [M2-1] in the parent plan. A same-agent-type reader is not the instrument for
@@ -49,6 +49,7 @@ narrowing is declared.
 ## Sequence
 
 ```
+SR External Security Review of the plan                         [DONE 4877ab9]
 A  source selection: the transition extracts candidate bytes   [commit pending]
 B  the reviewed-authority transition + roster continuity        [commit pending]
 C  the authorization package, schema and validation             [commit pending]
@@ -56,8 +57,7 @@ D  the two-invocation protocol + key-channel preflight          [commit pending]
 E  runbook rewrite + the R1-F amendment                         [commit pending]
 --- stable bytes ---------------------------------------------------
 B1 Boundary B on the stable pre-review commit                   [record]
-SR External Security Review of the plan                         [before A]
-M2 the parent plan's exact-byte retake, ONE only                [Maintainer]
+M2 the parent plan's exact-byte retake, ONE only  (obtained by) [Maintainer]
 H  the ceremony                                                 [Maintainer]
 ```
 
@@ -74,14 +74,24 @@ H  the ceremony                                                 [Maintainer]
 
 **No chunk moves a Cairn ref, loads a key, or runs a ceremony.**
 
-### Chunk A — source selection ([S1], R2)
+### Chunk A — source selection, in the loader ([S1], [E3], R2)
+
+**[E3] moved this chunk's centre of gravity.** The predicate that decides *which
+Python is safe to run* cannot live in that Python. `_gate_preflight.py` runs only
+after the candidate bytes have been selected and executed, so a Python re-check
+is defence in depth and **never the establishing control**.
 
 | # | File | Change |
 |---|------|--------|
-| A1 | `bootstrap/REANCHOR_RUNBOOK.md` | a transition run extracts the **candidate commit's** exact closure bytes via sterile plumbing; steady-state runs extract from the anchor. The two modes are **explicit**, never inferred |
-| A2 | same | the whole set is verified against the out-of-band review manifest **before Python starts** |
-| A3 | `bootstrap/tests/_gate_preflight.py` | bind the exact candidate commit; refuse unresolved, symbolic, moving, partial, duplicate or extra-member sets |
-| A4 | `bootstrap/tests/test_gate_preflight.py` | each refusal above, executed; and a test that the anchored checker **cannot** reach transition mode, which is the [S1] defect stated as a test |
+| A1 | `bootstrap/REANCHOR_RUNBOOK.md` | the **complete source-selection predicate** lives in the fixed loader. A transition run extracts the **candidate commit's** closure; steady-state runs extract from the anchor; the two modes are **explicit**, never inferred |
+| A2 | same | the review manifest has **one concrete, shell-parseable, bounded format**: schema/version, the **full candidate commit OID**, bounded review provenance, and the authority closure in one **fixed canonical path order** |
+| A3 | same | the loader **rejects** malformed rows, wrong order, duplicates, missing or extra paths, control characters, non-lowercase or non-64-digit digests, and any member outside the declared set |
+| A4 | same | it resolves the candidate **once** to a full commit OID, requires equality with the reviewed OID, and extracts every blob **by that OID — never by a moving ref**. Only after all extracted bytes match does Python start |
+| A5 | `bootstrap/tests/_gate_preflight.py` | receives the same OID and manifest digest for **defence-in-depth revalidation**, explicitly documented as not the establishing control |
+| A6 | `bootstrap/tests/test_gate_preflight.py` | **literal-block tests execute the transition loader from an old anchor whose checker lacks the new mode**, mutate each parser and set condition, and prove **no Python process starts** on failure. The "anchored checker cannot reach transition mode" node is kept and is explicitly **not sufficient alone** |
+
+The fixed loader text remains an **M2 out-of-band trust input**; it cannot
+bootstrap its own authenticity, and this plan does not claim it does.
 
 ### Chunk B — the reviewed-authority transition ([S3], R1)
 
@@ -89,31 +99,56 @@ H  the ceremony                                                 [Maintainer]
 |---|------|--------|
 | B1 | `bootstrap/tests/_gate_preflight.py` | the transition applies whenever the closure changes and **refuses with no delta**; it is not named "first use" anywhere |
 | B2 | same | the review manifest has one named trust end: a Maintainer-recorded out-of-band artifact with a strict schema. **Never** read from the candidate; expected values **never** recomputed from it |
-| B3 | same | the transition signature verifies against the roster **from the old anchor**. An old anchor with no roster is a distinct, named bootstrap case — never a fallback to the candidate's roster |
+| B3 | same | the transition signature verifies against the roster **from the old anchor**. An old anchor with **no** roster is a **hard refusal** naming a route to a separately reviewed Maintainer bootstrap — not a second ceremony invented here ([E4]) |
+| B3a | `bootstrap/tests/test_gate_preflight.py` | the no-roster case refuses, and **neither the candidate roster nor the out-of-band review manifest** is accepted as a fallback. A fail-closed edge; Cairn has an anchored roster today, so this is not work required for N3 |
 | B4 | `bootstrap/tests/test_gate_preflight.py` | fixtures start from the **old anchor's** authority bytes. `_ceremony_repo()`'s pre-aligned closure is what hid [M2-2] and is **not admissible** here |
 
-### Chunk C — the authorization package ([S2], R3)
+### Chunk C — the authorization package ([S2], [E2], R3)
+
+**[E2] found the digest recursive.** C1 previously put the package digest
+*inside* the package it digests. The digest is now **external**: SHA-256 over the
+**exact file bytes stage 1 wrote**. A digest read from inside the package can
+never satisfy confirmation — that is the adjacent-self-digest the proposal
+already rejected, reappearing one layer down.
 
 | # | File | Change |
 |---|------|--------|
-| C1 | `bootstrap/tests/_gate_preflight.py` | one closed, **versioned** package binding: observed anchor; candidate HEAD and tree; branch and expected-old; the complete canonical range report; the reviewed authority manifest and provenance; the candidate-only `collection`/`interpreter` evidence; the **exact prospective authoritative-manifest bytes and digest**; the package digest |
-| C2 | same | stage 2 rejects unknown, missing and duplicate fields; re-derives every Git/static field; rebuilds the authoritative manifest and compares **exact bytes** |
-| C3 | same | the accepted executable-only field list is **closed and asserted** — `collection` and `interpreter`, nothing else |
-| C4 | same | **R3-d**: the range report's `manifest_sha256` becomes the **prospective** manifest's. This is the live defect in `2df83d2` |
-| C5 | same | the checkpoint binds **both** the package/report digest **and** the exact prospective manifest digest |
-| C6 | `bootstrap/tests/test_gate_preflight.py` | mutate **every package field and the schema itself**; stale refs and a substituted prospective manifest must move **neither ref** |
-| C7 | `bootstrap/tests/_gate_preflight.py` | retract the "trusts no handoff artifact" claim in prose where it appears, and replace it with the narrower true one: no adjacent self-digest authenticates a file |
+| C1 | `bootstrap/tests/_gate_preflight.py` | one closed, **versioned** package binding: observed anchor; candidate HEAD and tree; branch and expected-old; the complete canonical range report **and its digest**; the reviewed authority manifest and provenance; the candidate-only `collection`/`interpreter` evidence; and the **exact prospective authoritative-manifest bytes and digest**. **No self-digest field** |
+| C2 | same | **stage 1 write contract**: create a new regular file **atomically and exclusively** with restrictive mode; refuse a symlinked parent or leaf and a pre-existing destination; close; print the external digest; exit |
+| C3 | same | **stage 2 read contract**: explicit package path plus `--confirm-package-sha256 <digest>`; open **without following symlinks**; bound size; read **once** into memory; hash those bytes **before parsing**; use only that buffer thereafter |
+| C4 | same | the strict JSON decoder rejects **duplicate keys** as well as unknown and missing ones |
+| C5 | same | **canonical report bytes are defined separately** (sorted compact JSON); the report's `manifest_sha256` is the **prospective** manifest's — the live defect in `2df83d2` |
+| C6 | same | the accepted executable-only field list is **closed and asserted** — `collection` and `interpreter`, nothing else |
+| C7 | same | stage 2 re-derives every Git/static field, rebuilds the authoritative manifest, and compares **exact bytes** |
+| C8 | same | the checkpoint binds the **external package digest**, the report digest, the prospective manifest digest, **and** the candidate tree |
+| C9 | `bootstrap/tests/test_gate_preflight.py` | negatives through the **public stage-2 path**, neither ref moving: write/replace/symlink, duplicate keys, oversize, exact-byte mismatch, and an **adjacent self-digest** offered as confirmation |
+| C10 | `bootstrap/tests/_gate_preflight.py` | retract the "trusts no handoff artifact" prose and replace it with the narrower true claim: no adjacent self-digest authenticates a file |
 
-### Chunk D — two invocations and the key channel ([S4], R4)
+### Chunk D — two invocations and the named key channel ([S4], [E1], R4)
+
+**[E1] is confirmed and it changes what code can promise.** Reproduced with a
+disposable Ed25519 key (no ceremony key used): under `env -i`,
+`HOME=/nonexistent` and **no `SSH_AUTH_SOCK`**, `ssh-keygen -Y sign -f key.pub`
+**succeeded**, finding the private sibling next to the public key. This
+checkout's `user.signingkey` has exactly that shape. So unsetting the agent
+socket establishes nothing, and **acceptance criterion 4 is not achievable by
+code alone**: nothing a program does can make a readable unencrypted private key
+unavailable to another process running as the same user.
 
 | # | File | Change |
 |---|------|--------|
-| D1 | `bootstrap/tests/_gate_preflight.py` | stage 1: fixed clean environment, supported key channel **absent**, emits the package, prints marker and digest, exits |
-| D2 | same | the contract **names the supported key channel** and defines a preflight proving stage 1 cannot sign through it |
-| D3 | same | stage 2: separately hash-verified bytes, refuses every candidate-executing operation, validates the package, signs, verifies, expected-old transaction |
-| D4 | same | **no boolean confirmation path survives** — `--confirm-supervised-reanchor` is removed, not deprecated |
-| D5 | `bootstrap/tests/test_gate_preflight.py` | stage 1 **attempts a real signing operation and must fail**; stage 2 performs and verifies one. Observing an environment variable is the proxy failure the proposal warned about and then committed |
-| D6 | this plan + `bootstrap/tests/_gate_preflight.py` | decide the **A3 durable-record question** from the Decision: write the admitted set alongside its digest, or declare the narrowing with a `Scope delta` |
+| D1 | this plan + `bootstrap/REANCHOR_RUNBOOK.md` | **N4, a Maintainer precondition/fence**: the ceremony private key is **encrypted at rest** and **not loaded into any agent** during stage 1. If the current key cannot meet this, **the ceremony stops before stage 1** |
+| D2 | `bootstrap/tests/_gate_preflight.py` | stage 1 runs with **no agent socket** and performs a **fixed, non-interactive, timeout-bounded signing probe through the exact configured public-key path**, requiring **failure**. A passphrase prompt is **not** a refusal |
+| D3 | same | stage 1 emits the package, prints marker and external digest, exits. It never holds the key |
+| D4 | same | stage 2 starts from **separately hash-verified** bytes, refuses every candidate-executing operation, validates the package, signs, verifies, and performs the expected-old transaction |
+| D5 | same | **no boolean confirmation path survives** — `--confirm-supervised-reanchor` is removed, not deprecated |
+| D6 | `bootstrap/tests/test_gate_preflight.py` | a throwaway key modelling the exact channel: private key unavailable in stage 1, agent-only in stage 2. **Negative control**: make the private sibling readable and require stage 1 to **refuse the environment** rather than report the boundary sound |
+| D7 | `bootstrap/tests/_gate_preflight.py` | the checkpoint message carries the **complete ordered `path -> SHA-256` admitted authority set** and the review-manifest digest ([E4]) |
+| D8 | `bootstrap/tests/test_gate_preflight.py` | message **read-back** and **single-row mutation** tests, before any ref movement |
+
+**Still sequencing, not containment.** Earlier candidate code may persist and
+attack the later agent under the accepted residual. This plan does not claim
+otherwise.
 
 ### Chunk E — the runbook and the amendment (R4-e)
 
@@ -132,11 +167,14 @@ H  the ceremony                                                 [Maintainer]
    the out-of-band manifest.
 3. **The old anchor's roster verifies the transition signature**, with the
    no-roster case named separately.
-4. **Stage 1 cannot sign.** Proven by attempting a real signing operation and
-   requiring failure — not by reading an environment variable.
+4. **Stage 1 cannot sign**, proven by a non-interactive timeout-bounded probe
+   through the configured key path requiring failure — **on top of** the **N4**
+   Maintainer precondition, without which no code can establish it.
 5. **Stage 2 executes no candidate code** and accepts only the closed
    executable-only field list.
-6. **The checkpoint binds the prospective manifest**, not the worktree copy.
+6. **The checkpoint binds the prospective manifest**, not the worktree copy, and
+   carries the **complete admitted authority set** as ordered `path -> SHA-256`
+   rows plus the review-manifest digest.
 7. **Every package field and the schema are mutation-tested**, and a substituted
    prospective manifest moves neither ref.
 8. **No boolean confirmation path exists** anywhere in the module.
@@ -163,8 +201,9 @@ H  the ceremony                                                 [Maintainer]
 | # | Stop | What the Maintainer does |
 |---|---|---|
 | **N1** | Plan review, before Chunk A | Obtains the **External Security Review** the proposal requires |
-| **N2** | The parent plan's M2 retake | One only, on the final bytes |
+| **N2** | The parent plan's M2 retake | **Obtains** one only, on the final bytes; an independent reviewer performs it |
 | **N3** | M3 / M4 — the ceremony | Unchanged from the parent plan; no agent performs any of it |
+| **N4** | **Key-channel precondition, before stage 1** | Confirms the ceremony key is **encrypted at rest and in no agent**. [E1] proved code cannot establish this: a readable private sibling signs under `env -i` with no agent socket. If unmet, **the ceremony does not start** |
 
 Everything else is agent work.
 
@@ -331,3 +370,88 @@ probe with a disposable Ed25519 key; it succeeded, reproducing E1's mechanism.
 I did not use the real ceremony key, move a Cairn ref, run a ceremony, modify
 implementation bytes, or run the full suite. The latter is an implementation
 Boundary B obligation, not evidence for a pre-implementation plan review.
+
+## Response to the plan review -- Claude -- 2026-08-12
+
+**All four findings accepted. None disputed.** The disposition is right: every
+one sits exactly where authority crosses a process boundary, which is the part I
+deferred to implementation and should not have.
+
+| finding | disposition |
+|---|---|
+| **[E1]** | **Accepted.** Reproduced independently. Chunk D rewritten; **N4** added as a Maintainer fence |
+| **[E2]** | **Accepted.** Chunk C rewritten around an **external** digest and a filesystem contract |
+| **[E3]** | **Accepted.** Chunk A's predicate moved into the **loader**; the Python check is demoted to defence in depth |
+| **[E4]** | **Accepted.** D6's branch **deleted**; outcome A3 is preserved outright, and B3's no-roster case gets behaviour and a test |
+
+**Scope delta**: **preserved**, and now more defensibly than before — [E4]
+removed the one branch that could have degraded an accepted outcome.
+
+### [E1] — I reproduced it, and it invalidates something I wrote
+
+With a disposable Ed25519 key and **no ceremony key involved**: under `env -i`,
+`HOME=/nonexistent`, and no `SSH_AUTH_SOCK`, `ssh-keygen -Y sign -f <pub>`
+**succeeded**, finding the private sibling beside the public key. Exit 0,
+signature written.
+
+So proposal item **B1** — "the candidate stage runs with the signing key channel
+absent (`SSH_AUTH_SOCK` unset)" — describes a boundary that **does not exist on
+this host**, and acceptance criterion 4 was unachievable as I wrote it. The
+reviewer's framing is the correct one: **code cannot make a readable unencrypted
+private key unavailable to another process running as the same user.** The
+boundary has to be a Maintainer precondition (**N4**) that code *probes*, never
+one code *establishes*.
+
+This is the second time in this plan family I have written an environment-variable
+check as though it were a property. [S4] warned me in those words — *"observing an
+environment variable alone is the proxy failure the proposal warns against"* — and
+the revision I wrote in response still carried it.
+
+### [E2] — the digest was recursive, and I did not see it
+
+C1 placed the package digest inside the package it digests. Either it is excluded
+and the canonical domain was never named, or it is included and the definition is
+circular. Now external: SHA-256 over the exact bytes stage 1 wrote, with a
+filesystem contract (atomic exclusive create, symlink refusal, hash-before-parse,
+duplicate-key rejection) and an explicit negative for an **adjacent self-digest
+offered as confirmation** — the very thing the proposal rejected, reappearing one
+layer down where I did not look for it.
+
+### [E3] — the establishing control cannot live in the thing it authenticates
+
+A3 assigned candidate binding and set refusals to `_gate_preflight.py`, which
+runs *after* those bytes are chosen and executed. The complete predicate now
+lives in the loader contract, with a bounded shell-parseable manifest format and
+extraction **by resolved OID, never by a moving ref**; the Python check is kept
+and explicitly labelled defence in depth. A6 requires the literal-block tests to
+run the transition loader from an old anchor whose checker lacks the mode, and to
+prove **no Python process starts** on failure.
+
+### [E4] — an implementing agent cannot authorize a scope reduction
+
+D6 offered implementation a choice between preserving outcome A3 and declaring a
+narrowing. That was wrong on its face: the Maintainer accepted the Round-2
+proposal *unamended after the question was surfaced*, and a `Scope delta` written
+afterwards records a loss rather than authorizing one. The branch is deleted. The
+checkpoint carries the **complete ordered `path -> SHA-256` admitted set** plus
+the review-manifest digest, with read-back and single-row mutation tests.
+
+I raised this concern myself before the Decision and then wrote a chunk that
+would have let it be resolved by whoever happened to implement it. Surfacing a
+scope question does not discharge it.
+
+### Record corrections applied
+
+`SR` now precedes `A` in the sequence block, matching the binding ordering
+paragraph; **N2** says the Maintainer *obtains* the M2 retake, which an
+independent reviewer performs.
+
+### What this pass did not cover
+
+The reviewer did not run the full suite, and says so: that is an implementation
+Boundary B obligation, not evidence for a pre-implementation plan review. No real
+key was used, no Cairn ref moved, no ceremony run, nothing pushed — by the
+reviewer or by me. My own reproduction of [E1] used a disposable key in a
+throwaway directory, since deleted.
+
+**Status → ready-to-implement**, with **N4** standing before any stage-1 work.
