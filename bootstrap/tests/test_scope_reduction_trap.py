@@ -53,8 +53,18 @@ _GOVERNING = {
 }
 
 _REVIEW_LOOP = {
-    "names the trap":
-        r"scope-reduction trap",
+    # X4 (External review): Codex deleted the reviewer-duty and specify-default
+    # sentences from BOTH copies and saw 105 green, because neither obligation
+    # was named here. `names the trap` was additionally satisfied by the
+    # trailing `doctrine/dual-review.md` citation alone, so the paragraph could
+    # go while the pointer to it stayed.
+    "names the trap in its own prose, not only in a citation":
+        r"mirror: the scope-reduction trap|scope-reduction trap\.\*\*",
+    "the reviewer must state what is lost and why the rest still reaches":
+        r"what is\s+lost.{0,120}reaches the cause",
+    "specify by default; say why if you cut instead":
+        r"why specifying it was rejected|resolves an \*?underspecified\*? "
+        r"finding by removing",
     "the test is bound to the baseline artifact, both stages":
         r"as opened.{0,120}as accepted",
     "preserved owes nothing":
@@ -139,6 +149,32 @@ _TEAM_GATED_MODULE = {
         r"\*{0,2}Maintainer'?.{0,4}s?\*{0,2} explicit allowance",
 }
 
+#: X1 (External review): the canonical rule requires each remainder entry to
+#: carry FOUR things -- source section, reason, **a disposition**, and a revival
+#: or closure condition. All four templates and both emitted scaffolds asked for
+#: three, plus a group-level `Disposition/home` naming only a location. A home
+#: is not a disposition, and `doctrine/lifecycle.md` blocks archive on each
+#: entry independently, so the distributed record could not satisfy the gate it
+#: was written to feed.
+_PER_ENTRY_DISPOSITION_SURFACES = (
+    "dev/proposals/_template.md",
+    "templates/core/dev/proposals/_template.md",
+    "dev/plans/_template.md",
+    "templates/core/dev/plans/_template.md",
+)
+
+
+@pytest.mark.parametrize("rel", _PER_ENTRY_DISPOSITION_SURFACES)
+def test_each_remainder_entry_asks_for_its_own_disposition(rel: str) -> None:
+    text = _normalized(rel)
+    assert re.search(r"disposition\*{0,2}:?\s*\(?<?accept", text), (
+        f"{rel} no longer asks each removed unit for its own disposition. A "
+        f"group-level home is a location, not a decision, and each entry blocks "
+        f"archive independently -- an author following this shape would produce "
+        f"a record that cannot satisfy the archive precondition."
+    )
+
+
 _DOCTRINE_CANONICAL = {
     "states the asymmetry that makes narrowing cheap":
         r"costs the reviewer nothing|never be shown wrong",
@@ -158,6 +194,11 @@ _DOCTRINE_CANONICAL = {
         r"not in the baseline",
     "the grouped remainder blocks archive":
         r"blocks\*{0,2}\s*\*{0,2}archive",
+    # Codex deleted the words "a disposition" from this sentence and the whole
+    # suite stayed green (External review, X1). It is the source every
+    # author-facing shape derives from.
+    "each entry carries four things, including a disposition":
+        r"source section, the reason, a disposition, and a revival",
     "the counterweight against reading this as anti-restraint":
         r"[Cc]ut ceremony.{0,20}[Dd]o not cut reach",
     "states why it is not mechanized":
@@ -551,8 +592,22 @@ _FENCE_FIXTURES = (
 def test_the_planner_does_not_gate_on_a_missing_declaration(
         tmp_path, kind: str, subdir: str, name: str, body: str,
         target: str) -> None:
-    """The declined planner gate, pinned as an absence -- on the transitions
-    that actually scaffold the declaration.
+    """A bounded regression check over KNOWN gate placements -- not a proof
+    that no presence gate exists.
+
+    **What this does not do** (External review, X3): it collects gate and
+    violation messages and rejects the phrases `scope delta` / `scope-remainder`.
+    A gate worded off those phrases evades it -- Codex added a real unmet
+    `proposal -> revised` gate described as "the narrowing record is complete"
+    and the whole suite stayed green. Refusal by withholding a target from
+    `_legal_transitions`, and a gate on `plan -> archived`, also remain outside
+    it. Proving the negative universal is not realistically reachable by adding
+    more banned phrases, and pretending otherwise is worse than the gap: it
+    invites a reader to trust a check that cannot deliver.
+
+    So this is a regression check on the placements known to matter, and the
+    real enforcement of the declined gate is review reading review -- the same
+    answer Round 3 gave for why the gate was declined at all.
 
     Round 3 of the source proposal declined a transition gate and the
     Maintainer accepted that disposition. The reason is worth keeping in front

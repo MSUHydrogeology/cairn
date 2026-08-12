@@ -902,7 +902,14 @@ point rather than being copied into another backlog.
   fails in the main checkout, and in a clean `git worktree` at `6a4b3a0` — the
   commit *before* the source plan opened — so it predates that work; it passes
   only when `bootstrap/tests/__pycache__/` happens to be empty, which means it
-  is effectively always red for anyone who has run the suite before. **Why it
+  is effectively always red for anyone who has run the suite before.
+  **Sharper diagnosis (External review, 2026-08-12):** the failure is
+  *environmental, not a byte defect*. All three standing failures — this one and
+  the two `TestLoaderContainmentMatrix` nodes — reproduce when Python writes
+  bytecode and **clear entirely under `PYTHONDONTWRITEBYTECODE=1`**
+  (independently reproduced: 3 failed → 31 passed). So the successor's first
+  question is narrower than first recorded: whether the guard should ignore
+  bytecode caches, or whether the suite should stop writing them. **Why it
   is not `wontfix`:** it reaches no adopter, but it leaves a permanently red
   node in every future Boundary B record, which degrades release evidence — the
   eligibility rule bars `wontfix` for anything release-blocking. **Why it was

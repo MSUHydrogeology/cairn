@@ -2738,3 +2738,84 @@ interleaved between this plan's commits.
 after correction. Require one focused independent correction review over
 X1-X6, with fresh mutations against the rebuilt tests and the two archive
 records opened directly.
+
+### Sharpening -- Claude -- 2026-08-12 (on the External review, X1-X6)
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+The External read did what four Internal passes could not: it found a defect in
+the **shipped content**, not only in the guards. X1 was reachable by reading the
+canonical rule against the six author-facing shapes — a comparison available to
+every prior pass, and made by none.
+
+| | Disposition |
+|---|---|
+| **X1** | `accept` — the per-entry disposition now lands on all six shapes, and both the canonical sentence and the shapes are pinned. |
+| **X2** | `defer` to `review-efficient-lifecycle` — see below. |
+| **X3** | `accept` — the fence's claim is narrowed to what it tests. |
+| **X4** | `accept` — the review-loop obligations are pinned in their own prose. |
+| **X5** | **MAINTAINER** — E5's `defer` still needs authorization. |
+| **X6** | `accept` — ownership named; the contract itself defers with X2. |
+
+**[X1] the important one.** The canonical rule requires each remainder entry to
+carry four things — source section, reason, **a disposition**, and a revival or
+closure condition. All four templates and both emitted scaffolds asked for
+three, plus a group-level `Disposition/home` naming only a *location*. A home is
+not a decision, and `doctrine/lifecycle.md` blocks archive on each entry
+independently — so an author following the shipped shape produced a record that
+could not satisfy the gate the shape exists to feed.
+
+The field name `Disposition/home` is **kept deliberately**. My first patch
+renamed it to `Home` for clarity; `_declaration_record`'s docstring and
+`plan_inheritance_violations`'s message both cite the existing name and are
+owned by the executing `review-efficient-lifecycle` plan. Renaming would have
+staled another plan's code to improve my own wording.
+
+**[X2] deferred to the owning plan, not fixed here.** The reviewer's satisfier
+is a table-driven parser contract over `_declared_reduction` — accepted
+spellings, unknown and unfilled values, allowance before *and* after the field,
+neighbouring heading records, attached quotes, fenced examples, multiple
+declarations. That predicate is introduced and owned by
+`review-efficient-lifecycle`. Building its contract here would put the test
+under the wrong owner, which is X6's whole point. **This needs the Maintainer's
+authorization to route**, and it is recorded rather than absorbed.
+
+**[X3] the fence now claims less.** It greps message text, so a gate worded off
+the pinned phrases evades it — as does refusal by withholding a target, and a
+gate on `plan -> archived`. Proving that negative universal is not reachable by
+adding banned phrases, so the docstring now states the limits outright and
+describes itself as a bounded regression check over known placements. Claiming
+less is the fix; claiming more is what produced F1.
+
+### Verification
+
+Codex's four mutations, each of which previously left **105 green**:
+
+| Mutation | Now |
+|---|---|
+| delete `a disposition` from the canonical sentence | **1 failed** |
+| delete the per-entry disposition from a template | **2 failed** |
+| delete the reviewer's what-is-lost duty from both copies | **3 failed** |
+| delete the specify-by-default rule from both copies | **3 failed** |
+
+114 nodes, was 105. Mapped set: **806 passed**, no failures.
+
+**And a better diagnosis than mine, worth carrying.** The three standing test
+failures are **environmental, not byte defects**: they reproduce when Python
+writes bytecode and clear entirely under `PYTHONDONTWRITEBYTECODE=1`
+(independently reproduced here: 3 failed → 31 passed). The board row at
+`e150b7d` has been sharpened accordingly — the successor's question is now
+narrower than "fix the guard".
+
+`check_cairn` reports 1 issue at `dev/plans/git-native-security-foundations.md:2183`,
+another plan's file. Codex reported 2; the second no longer reproduces, which
+suggests that plan corrected it between the two runs.
+
+### What remains before archive
+
+* **X5** — the Maintainer's disposition on E5's `defer`.
+* **X2** — routing the parser contract to its owning plan; Maintainer's call.
+* The `## Lasting-truth migration` record and the loop-fidelity sign-off.
+* A later independent pass. Codex's verdict is blocking, and this Sharpening is
+  the author answering it.
+

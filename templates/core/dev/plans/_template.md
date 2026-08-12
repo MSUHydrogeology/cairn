@@ -380,9 +380,13 @@ blocking whenever it is found.
        **Scope delta**: preserved | degraded | lost
 
        **Removed scope**
-       * <unit> -- source section; reason; revival/closure condition.
+       * <unit> -- source section; reason; disposition (accept | guard |
+         wontfix | defer); revival/closure condition.
 
        **Disposition/home**: <where the grouped remainder lives>
+
+     Each entry needs its OWN disposition: a shared home is a location, not a
+     decision, and each entry blocks archive independently.
 
      State `preserved` if you want the record to show you checked; only
      `degraded` and `lost` require the block above -- a lighter mechanism that still delivers is what

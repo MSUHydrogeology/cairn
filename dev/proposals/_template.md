@@ -588,9 +588,15 @@ for. You may state `preserved` so the record shows you checked; only
 
 **Removed scope**
 * <unit> -- source section: <where it was committed to>; reason: <why>;
-  revival/closure condition: <what would bring it back>.
+  **disposition**: <accept | guard (<path>::<node>) | wontfix (<why>) |
+  defer (Maintainer's quoted authorization)>; revival/closure condition:
+  <what would bring it back>.
 
 **Disposition/home**: <where the grouped remainder now lives>
+
+Each entry needs its **own** disposition -- a shared home is a location, not a
+decision, and `doctrine/lifecycle.md` blocks archive on each entry
+independently.
 ```
 
 Three rules make this worth writing rather than ritual:
