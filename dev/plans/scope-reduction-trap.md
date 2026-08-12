@@ -940,3 +940,364 @@ machinery for *do not cut reach*, and a slogan for *cut ceremony*. Recorded as
 an observation for whoever revisits the counterweight, not as a finding this
 plan will fix.
 
+## Code review -- Claude (Internal) -- 2026-08-12
+
+**Reviewed commit**: `f928d9c`, reached through the three Sharpening commits
+`3f92cd8`, `86da18a` and `f928d9c`, each diffed against **its own parent** so the
+other agents' commits interleaved in that range are excluded rather than trusted.
+**Target**: the Sharpening and what it claims to have fixed — the dispositions on
+C1-C11, the Maintainer's C11 disposition, and the declined C6 re-take. Not a
+fresh end-to-end read of the change; that pass landed on 2026-08-11 and I did not
+repeat it.
+**Prior findings**: C1-C11 from `## Code review -- Claude (Internal) -- 2026-08-11`,
+verdict `REVISE`. C1-C10 dispositioned by the author at `3f92cd8`, C11 by the
+Maintainer at `86da18a`, the C6 re-take declined at `f928d9c`.
+**Assurance path**: standard
+**Model**: Claude Opus 5 (`claude-opus-5`)
+**Findings**: raised
+
+**Tier — stated honestly.** Fresh-session, same-agent-type: the **Internal**
+floor, *not* External. What this pass does supply is the one structural property
+the doctrine requires here — a blocking verdict answered by a **later independent
+pass** rather than by the implementer's own Sharpening. What it does not supply is
+cross-type assurance on the distribution's judgement calls; those have had none
+since the proposal, and nothing here changes that.
+
+**Verdict: REVISE.**
+
+I tried to break each disposition rather than read the table. Most hold. **C1 is
+genuinely fixed** — the installed and shipped `dual-review` bodies agree again, the
+unrestricted `scope-cut` mapping is gone from the copy Cairn reads, and the pair is
+now a test surface that reddens **5** nodes if you revert it. **C7 is fixed at the
+canonical home**: gutting the trap section's body while keeping its heading turns
+**11** nodes red where it used to turn **0**. **C3's authority half bites** — both
+of the mutations that produced it now redden 2 nodes each. C5 records a real
+generating command, C10's stale directive is gone, and C11's authorization is
+quoted verbatim and isolated in both the record and the commit.
+
+One accepted finding did not close, and it is the same finding. **C4 said an
+invariant had named enforcers that do not enforce it. The guard added for C4 has
+that same defect**: the fence sweeps `_gating_preconditions` only over the legal
+targets of a proposal fixture whose status is already `revised`, so the two
+transitions the mechanism is actually about — `proposal reviewed -> revised` and
+`plan awaiting-plan-review -> executing`, the exact pair `_SCAFFOLDED_TRANSITIONS`
+enumerates — are never swept. The 2026-08-11 review's own M7 mutation, applied
+verbatim to both twins, still passes **83 of 83**, and produces **zero** new
+failures across the whole cited enforcer set (386 nodes). The declined planner gate
+can still come back at the surface an author reads, with a green suite and a
+`wontfix` row in the disposition ledger pointing at the test node that was supposed
+to catch it. That row would be written into an archived plan, which is not re-read.
+
+Five dispositions closed only partly: C3's grouped-record half was never
+implemented (D2), C5's figure still does not reproduce from its own command (D3),
+C8 left the author-facing scaffold on the old grammar (D5), C2's second half was
+skipped (D6), and C9's fix plus one C7 obligation are unguarded (D7). None
+re-opens the rule and all are cheap. Only D1 blocks.
+
+### Findings
+
+**[D1 -- P1] The C4 guard does not fire on the mutation that produced C4.**
+`test_the_planner_does_not_gate_on_a_missing_declaration` now sweeps
+`_gating_preconditions` as well as `_conformance_violations` — but it sweeps it
+over `planner._legal_transitions(art)` for a fixture,
+`_REVISED_PROPOSAL_WITHOUT_A_DECLARATION`, whose `**Status**` is already
+`revised`. Those legal targets are `reviewed`, `accepted`, `rejected`,
+`superseded`. **`revised` is not among them**, and no plan artifact is
+constructed at all. So the sweep covers every transition except the two the
+declaration exists for.
+
+Measured at `f928d9c`, canonical interpreter, each mutation applied to **both**
+planner twins and reverted after:
+
+| Gate added to | Test result |
+|---|---|
+| `_gating_preconditions`, `proposal` / `target == "revised"` (C4's M7, verbatim) | **83 passed** — undetected |
+| the same mutation, whole cited enforcer set (`test_scope_reduction_trap`, `test_lifecycle_cli`, `test_lifecycle_contract`, `test_transition_lint`, `test_lifecycle_vocabulary`) | 2 failed / 384 passed — **both pre-existing**, 0 new |
+| `_gating_preconditions`, `plan` / `target == "executing"` | **83 passed** — undetected |
+| `_gating_preconditions`, `proposal` / `target == "accepted"` | 1 failed — detected |
+| `_gating_preconditions`, unconditional on any proposal target | 1 failed — detected |
+| `_conformance_violations`, unconditional | 1 failed — detected |
+
+The two detected rows are why the Sharpening's perturbation looked convincing: a
+gate placed anywhere *except* where the mechanism lives does redden the fence.
+
+Two corroborating details. The Sharpening records the composite perturbation as
+*"8 failed, including 4 on `dev/modules/dual-review.md` where the old suite
+produced 0."* Reconstructing that composite as described — revert the installed
+twin, cut the shipped board's authority sentence, add the scope-delta gate to
+`_gating_preconditions` in both twins — I get **6 failed, 5 of them on
+`dev/modules/dual-review.md`**, and the gate component contributes **0**. And the
+lifecycle disposition ledger homes the `wontfix` in this node: *"and
+`test_the_planner_does_not_gate_on_a_missing_declaration`, which fails if the gate
+returns"*. It does not, for the returning gate that matters.
+
+Under `AGENTS.md` > *Verifying claims* — *"a tool that returns success without
+testing the claimed property is a worse defect than no tool, because it is
+silent"* — this is the blocking one.
+
+*Satisfier*: **test** — parametrize the fence over the artifact states that reach
+the scaffolded transitions (a `reviewed` proposal and an `awaiting-plan-review`
+plan at minimum; the `(kind, status)` cross-product is stronger), so the swept set
+is derived from `_SCAFFOLDED_TRANSITIONS` rather than from one fixture's accident
+of status.
+
+**[D2 -- P2] C3's satisfier had two halves and one landed.** The 2026-08-11
+satisfier reads: *"give every surface that states the authority rule the `only the
+Maintainer may concede` obligation, **and every surface that states the grouped
+record the `one grouped record` obligation**."* The first half landed and bites —
+I re-ran both of C3's mutations and each now reddens 2 nodes. The second half did
+not: `_BOARD_TAXONOMY` carries three obligations and none of them is the grouped
+record.
+
+Mutation, against the landed tree: from the shipped board's `accept` bullet
+(`templates/core/dev/PLANNING.md`) I deleted the baseline definition, the
+`**Scope delta**` declaration, the grouped scope-remainder record and the
+Maintainer's-allowance clause, keeping only *"Neither author nor reviewer may
+concede a baseline outcome."* Result: **83 passed**. That paragraph is the one
+`99451d2` says had to be written self-containedly *"because that path dangles once
+installed"*, and most of it can still leave the adopter's copy silently.
+
+*Satisfier*: **test** — the shared-base-obligation shape C3 asked for, so the
+asymmetry cannot be reintroduced surface by surface.
+
+**[D3 -- P2] The mapped-set figure still does not reproduce from the record.** C5
+was fixed the right way — the Verification section now carries the literal grep
+instead of a description. Running that exact command in a clean checkout:
+
+* at `4f17fef` — **28** modules (matches the original record);
+* at `3f92cd8` (the Sharpening) — **29**;
+* at `86da18a` and `f928d9c` — **30**.
+
+The Sharpening records *"28 modules, excluding another agent's untracked one"* and
+the C6-decline records *"28 modules generated by the recorded command, which now
+includes `dual-review` and `scope_reduction`"*. Neither figure is derivable from
+the bytes it is attached to. The two additions are
+`bootstrap/tests/test_lifecycle_vocabulary.py` and
+`bootstrap/tests/test_claim_check_module.py` — other agents' modules that the
+recorded grep pulls into this plan's mapped set, and that were not run. Nothing
+about this plan turns on them, which is exactly why the figure should be dated
+rather than asserted: this is the third numeric claim in this record to need
+correction (`fail=0`, then `1 failed`, now `28`).
+
+*Satisfier*: **doc** — record the count with an `as_of` commit, or list the
+modules literally.
+
+**[D4 -- P3] "One string literal per planner twin" is two.** The C6-decline
+section and `f928d9c`'s commit body both bound the delta as *"prose plus one
+string literal per planner twin."* `3f92cd8` changes
+`**Scope delta**: degraded | lost` to `preserved | degraded | lost` at **two**
+sites in each twin — the proposal-revision scaffold and the plan-Sharpening
+scaffold, both inside `_scaffold`. The bounding argument is unaffected in
+substance (both are string literals in one function, no contract surface), and the
+sentence also silently omits the largest executable change in that range, the
++124-line rewrite of `bootstrap/tests/test_scope_reduction_trap.py`, which the
+mapped set does cover.
+
+*Satisfier*: **doc**.
+
+**[D5 -- P3] C8 unified the grammar everywhere except the surface Chunk C exists
+for.** All six live surfaces now print `preserved | degraded | lost` — I swept for
+stragglers and found none outside the archived proposal, which is append-only
+history. But the *prose around* the scaffold literal was not updated: the emitted
+block still reads *"Omit entirely when every opened outcome is still delivered"*
+and the manifest line still reads *"the Scope-delta block is OMITTED unless the
+revision narrows"*, while both proposal templates were changed to *"You may state
+`preserved` so the record shows you checked."* The scaffold is the surface Chunk C
+justified itself on — *the declaration where the author is typing* — and it is the
+one still telling the author to omit.
+
+Related: nothing guards the unified grammar. Reverting all six surfaces to
+`degraded | lost` leaves **83 passed**; the parity pattern is `\*\*Scope delta\*\*`
+and the scaffold assertion is `"**Scope delta**" in emitted`, so both match either
+form. That is the same blind spot C8 named, still open one layer down.
+
+*Satisfier*: **doc** (one sentence in each scaffold literal), optionally **test**.
+
+**[D6 -- P3] C2's second half was not done.** The satisfier read: *"reword the
+citation so the plan does not depend on another agent's tree state, **and note in
+the record that the row was working-tree-dependent**."* The rewording landed and I
+verified it — `scripts/claim_check.py` is clean on the plan in a clean checkout at
+`f928d9c`, and the Pre-run paragraph now cites `bootstrap/tests/` plus bare
+filenames. The note did not: the Implementation verification table still asserts
+`scripts/claim_check.py` → *"clean on both"* with no marker that the result as
+originally taken depended on another agent's untracked file. The only occurrence
+of the phrase in the file is inside the 2026-08-11 satisfier text.
+
+*Satisfier*: **doc**.
+
+**[D7 -- P3] The C9 fix is unguarded, and one C7 obligation is still pinned by a
+heading.** Two small residuals of the same shape:
+
+* Deleting the **entire** paragraph C9 added to both plan templates' `## Scope`
+  fence — *"The fence bounds this pass; it does not bound the accepted
+  proposal…"* — leaves **83 passed**, because `accepted scope is a floor` is
+  independently satisfied by the plan-review block's `SCOPE DELTA -- accepted
+  scope is a FLOOR` far below it. C9's whole point was *placement*, and placement
+  is what nothing checks.
+* In `doctrine/plans.md`, the `accepted scope is a floor` obligation is satisfied
+  by the **heading** `### Accepted scope is a floor — the scope fence is not a
+  licence to shrink`. Gutting that section's body while keeping the heading leaves
+  that node green — the exact construction C7 was raised about, surviving on one
+  of the four surfaces C7's fix covered. (The other three obligations in
+  `doctrine/plans.md` do redden, so the section is not unguarded, only that one
+  claim.)
+
+*Satisfier*: **doc** (say so) or **test** (scope the obligation to the section
+body).
+
+### What I probed and could not defeat
+
+A clean pass on any of these should have made me suspicious, so I am naming the
+attack rather than the conclusion.
+
+* **C1 — the twin drift.** `dev/modules/dual-review.md` and
+  `templates/modules/team-gated/dual-review.md` at `f928d9c` differ by exactly one
+  line, the shipped copy's `cairn-internal-ref-allow` header — the legitimate
+  difference the Sharpening's own correction describes. The installed copy now
+  carries the restricted `scope-cut` sentence, the trap, and the three-way outcome
+  test. Reverting it to its `4f17fef` bytes reddens **5** nodes on that path, where
+  the pre-Sharpening suite produced 0. I also swept `scope-cut` across every
+  shipped and self-hosted surface: six files carry it, and every occurrence of the
+  `scope-cut -> accept` mapping is now immediately followed by the restriction.
+* **The C1 fix did not create lockfile drift.** The lock entry at
+  `dev/.cairn/cairn-lock.yml` for that pair digests to neither the pre-fix nor the
+  post-fix content, so the entry was already adrift before this plan — consistent
+  with the 14 pre-existing mismatches the 2026-08-11 pass recorded. No new finding.
+* **C3's authority half.** Both of the 2026-08-11 mutations now bite: rewriting the
+  module's `degraded`/`lost` sentence to let author and reviewer settle it reddens
+  both module copies; cutting the concede sentence reddens both boards.
+* **C7 at the canonical home.** Replacing the body of *"Review expectations — the
+  scope-reduction trap"* with `TBD.` while keeping the heading reddens **all 11**
+  `doctrine/dual-review.md` obligations. Gutting the three added sections in
+  `doctrine/proposals.md`, `doctrine/plans.md` and `doctrine/lifecycle.md` reddens
+  11 more; the two survivors are the heading match in D7 and a `scope-cut`
+  sentence that legitimately also lives in `lifecycle.md`'s archive-precondition
+  text.
+* **Vacuity.** I re-ran the sweep myself rather than taking it: all **78**
+  parametrized patterns applied to the `6a4b3a0` bytes match **0** times. No node
+  is testing text that predates the change.
+* **Twin parity.** The planner twins are byte-identical, and a gate added to only
+  one would be caught by `test_the_two_planner_twins_stay_byte_identical` even
+  though D1's sweep would not.
+* **C11's attribution.** The authorization is quoted verbatim and visually
+  isolated in both the plan record and `86da18a`'s commit body, and the commit is
+  disposition-only (+30 lines, plan file alone). I did not re-litigate the
+  decision. I cannot verify the quoted fragment against the Maintainer's actual
+  words — no reviewer can — so I checked the form, which is correct.
+
+### On the declined C6 re-take
+
+**The bounding holds, and I ran the suite anyway.** Filtered to this plan's own
+commits, the delta from `4f17fef` to `f928d9c` is prose across four templates and
+the installed module, four string literals inside `_scaffold`, the test module,
+and the plan itself. No contract surface, no new executable path. I confirmed the
+attribution premise independently rather than accepting it:
+`bootstrap/tests/test_verify_ref.py` passes **71/71** in isolation at `f928d9c`,
+so those failures remain order-dependent and unattributable here.
+
+Two qualifications the record should carry. First, *"between `4f17fef` and
+`86da18a`"* is only true of this plan's commits; the **tree** between those two
+points also absorbed several other agents' large changes, so the sentence as
+written describes a filtered range while naming an unfiltered one. Second, the
+standing state has moved and is **not** a superset of the old one: at `f928d9c`,
+in a pristine detached worktree verified clean before and after, the full suite is
+**4 failed, 3260 passed, 1 skipped** in 500.6 s — not the 3 the 2026-08-11 pass
+established at `4f17fef` and `6a4b3a0`. Two nodes joined
+(`TestLoaderContainmentMatrix::…[transition_lint]` and `[metrics_extract]`, which
+also fail with `bootstrap/tests/test_lifecycle_vocabulary.py` run alone and belong
+to `review-efficient-lifecycle`), and one left
+(`test_verify_ref.py::test_mutation_verifying_inside_the_candidate_runs_the_forger`
+no longer fails). The other two are the disclosed `__pycache__` guard and the
+remaining order-dependent `verify_ref` node. None of the movement is this plan's.
+
+So the decline was defensible on attribution and I would not have blocked on it
+alone — but the figure it rests on is stale in a way the reasoning asserts it is
+not (*"the review already established the standing state as 3 pre-existing
+failures"*), and D3/D4 are the record defects it left behind.
+
+### Verification
+
+All under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), the
+canonical interpreter. Two detached worktrees at `f928d9c`: one pristine, used for
+the full run and nothing else; one for mutation, verified clean by
+`git status --short` before and after every mutation.
+
+| Probe | Result |
+|---|---|
+| Full suite at `f928d9c`, pristine worktree, `--quality-gate-shuffle-seed=0` | 4 failed, 3260 passed, 1 skipped, 500.6 s; worktree clean before and after |
+| `bootstrap/tests/test_verify_ref.py` alone at `f928d9c` | 71 passed |
+| `bootstrap/tests/test_lifecycle_vocabulary.py` alone at `f928d9c` | 2 failed, 28 passed — the same two node ids |
+| Baseline `bootstrap/tests/test_scope_reduction_trap.py` | 83 passed (78 parametrized + 5) |
+| Vacuity: 78 patterns vs `6a4b3a0` bytes | 0 matched |
+| C4's M7 verbatim, both twins | **83 passed** (D1) |
+| C4's M7, whole cited enforcer set | 2 failed / 384 passed — 0 new (D1) |
+| Plan-side gate (`plan -> executing`), both twins | **83 passed** (D1) |
+| Controls: gate at `-> accepted`, unconditional, or in `_conformance_violations` | 1 failed each — the fence does bite elsewhere |
+| Shipped board loses baseline + grouped record + allowance, keeps concede | **83 passed** (D2) |
+| C3 controls: concede sentence cut / rewritten, board pair and module pair | 2 failed each — C3's authority half bites |
+| Installed `dual-review` reverted to `4f17fef` | 5 failed on that surface (C1 closed) |
+| `doctrine/dual-review.md` trap body gutted, heading kept | 11 failed (C7 closed) |
+| Three added doctrine sections gutted, headings kept | 11 failed, 2 survivors (D7) |
+| C9 scope-fence paragraph deleted from both plan templates | **83 passed** (D7) |
+| C8 grammar reverted on all six surfaces | **83 passed** (D5) |
+| Sharpening's composite perturbation, reconstructed | 6 failed, 5 on the twin — record says 8 and 4 (D1) |
+| Recorded mapped-set command, clean checkouts | 28 / 29 / 30 at `4f17fef` / `3f92cd8` / `f928d9c` (D3) |
+| Installed vs shipped `dual-review` bodies | identical but for the shipped `cairn-internal-ref-allow` header |
+| Planner twins | byte-identical |
+| `scripts/claim_check.py` on the plan, clean checkout | clean (C2 closed) |
+| `**Scope delta**:` grammar sweep, whole tree | 6 live surfaces, all three-value; only the archived proposal differs (C8 closed) |
+| `scripts/check_cairn.py` | OK, 176 Markdown files, no issues — unchanged |
+| `scripts/quality_gate.py --sub neutrality --sub redundancy` | neutrality fail=93 info=21; redundancy fail=0 info=2 — unchanged |
+| `docs/glossary.md` E2 entries | all three present (*Outcome test*, *scope reduction*, *Scope-remainder record*) — but unpinned by any test |
+
+**One observation on the archive gate, not a finding against this plan.**
+`tools/lifecycle_planner.py next` on this plan at `f928d9c` reports the review
+record as `[ok]` for `-> archived` **despite the latest pass carrying a blocking
+verdict** — because `scope-reduction-trap` is enumerated in
+`_LEGACY_CODE_REVIEW_DISPOSITIONS`, which admits the blocking pass on the
+`### Sharpening -- Claude -- 2026-08-11` heading. That grandfathering belongs to
+`review-efficient-lifecycle`, and it is doing what it was written to do; the point
+worth recording is that on this plan the `[ok]` is an exemption, not a clearing.
+Once this section lands as the latest pass, the gate refuses on its own terms.
+
+### Coverage
+
+**Covered, with falsifiable citations** — every one of C1-C11 verified against the
+committed bytes or by execution, never from the disposition table: the twin drift
+by byte-diff at `f928d9c` plus a revert mutation (C1); the two record rewordings by
+clean-checkout re-runs of `claim_check` and by reading the landed lines (C2, C10);
+the three test gaps by re-running the original reviewer's own mutations and then
+building six more (C3 closed, C4 **not** closed — D1, D2); the mapped-set command
+by re-derivation at four commits (C5, D3); the doctrine pinning by gutting four
+section bodies (C7, D7); the declaration grammar by a whole-tree sweep and a
+revert mutation (C8, D5); the plan-template placement by deletion mutation (C9,
+D7); the C11 attribution by reading the record and the commit body (C11); the C6
+bounding by an independent full run in a pristine worktree plus isolation runs.
+Test construction re-checked from scratch: vacuity sweep 0/78, twin parity, and
+the scaffold assertions exercised through `_scaffold` rather than by grep.
+
+**Not covered / low confidence** —
+
+* **This is an Internal read**, same agent type as the author and as the 2026-08-11
+  reviewer. It supplies independence of *session*, not of *prior*. The
+  distribution's judgement calls — `preserved`-owes-nothing as the default, the
+  grouped record's shape, the three-value grammar C8 settled by author call rather
+  than escalation — have had no cross-type read at any point in this plan.
+* **I did not re-read the change end to end.** My scope was the Sharpening. If the
+  2026-08-11 pass missed an enumerated Part 9 surface, I would not have found it;
+  I took its distribution audit as given.
+* **I did not test the rule in use**, and neither did anything else. Nothing here
+  observes an author meeting the declaration and behaving differently. The
+  proposal's own residual stands untouched.
+* **The mutation worktree cannot prove a negative about placement.** My D1 table
+  enumerates six gate placements; a seventh I did not think of could also evade
+  the fence. The fix I recommend is to derive the swept set from
+  `_SCAFFOLDED_TRANSITIONS` rather than to enumerate placements at all.
+* **The two `test_lifecycle_vocabulary` failures are not root-caused**, only
+  isolated and attributed elsewhere by module ownership. Someone owns them; it is
+  not this plan.
+* **`docs/glossary.md` is not a test surface.** Its three E2 entries are present
+  and correct — I read them — but deleting them would leave the suite green. That
+  is a pre-existing property of E1's enumeration, disclosed in the plan, not
+  something the Sharpening changed; I record it because I looked and it is the
+  kind of gap a later reader will otherwise assume was covered.
