@@ -275,7 +275,7 @@ P1  assurance paths + four-field review basis      [DONE 76bc678]
 C   Code-review record schema + legacy manifest    [DONE C3 0935a09; C1/C2/C4/C5 36b0c53]
 P5  Contract non-expansion attestation             [DONE 772c14d; CF2 840d807]
 D   claim-check archive resolution + registry      [DONE 4723107 D1/D2/D5; 6869022 D3/D4]
-E   status vocabulary, transitions, conformance    [commit pending]
+E   status vocabulary, transitions, conformance    [DONE ec6139e E1/E2/E3]
 P2  plan readiness, inheritance, expansion refusal [commit pending]
 P3  current-contract revision + withdrawal ledger  [commit pending]
 P4  review-brief + closeout --dry-run              [commit pending]
@@ -2958,3 +2958,61 @@ added `tools/lifecycle.py` as a third contained-loader consumer, and extended
 fix the comment because P1/P5 held that file. A comment that miscounts the
 consumers of a single-source vocabulary is exactly the drift Chunk A's audit
 exists to catch, so it should not survive to the Code review.
+
+### [CF3] Chunk E's two residuals, both owed to H1 -- Claude (Implementation) -- 2026-08-12
+
+Chunk E landed the accepted vocabulary **additively** (`ec6139e`): the new tokens
+became legal, `open` / `executing` / `review` stayed legal, and
+`HISTORICAL_PLAN_STATES` stayed empty. That is **sequencing, not scope
+reduction** -- the accepted R2 text says *"Replace"*, and the replacement is
+Chunk H1's named job, *"rewrites the `Status:` of every active artifact"*, behind
+a dry-run inventory, blob-checked, admitted by a reviewer independent of the
+generator. Measured at E's parent: `git-native-security-foundations` and
+`review-efficient-lifecycle` declare `executing` and `scope-reduction-trap`
+declares `review`, two of the three another session's in-flight work, and *"all
+live artifacts sound"* is this plan's own acceptance criterion. A hard
+replacement at E would have reddened all three.
+
+Two specific obligations fall out of that, and neither is a cut:
+
+**(a) H1 retires the three tokens by MOVING them, not deleting them.** Every
+legacy arm in the planner's vocabulary block and both transition tables is marked
+`PENDING-RETIREMENT (H1)` as a grep target. The edit is: drop the three from
+`PLAN_STATES` / `PROPOSAL_STATES`, add them to `HISTORICAL_PLAN_STATES` /
+`HISTORICAL_PROPOSAL_STATES` (metrics must keep parsing pre-migration commits, per
+R7), and drop the legacy transition arms -- in the same commit that rewrites the
+artifacts, so the planner never contradicts the tree it scans.
+`TestTheLegacyTokensAreStillLegalUntilH1` in
+`bootstrap/tests/test_lifecycle_contract.py` is what reddens if the tuples move
+without the artifacts, and
+`test_the_counting_rule_still_fails_closed_if_the_token_ever_goes_away` in
+`bootstrap/tests/test_pilot_evidence.py` is the guard on the other direction.
+
+**(b) H1 owes R3's multi-obligation legacy mapping.** R3: *"Existing
+multi-obligation passes are append-only. Migration enumerates them by artifact,
+raw-heading digest, and occurrence count, then records which exact obligation
+each admitted pass satisfied ... The mapping is reviewed independently of the
+inventory generator."* E did **not** build that enumeration, because it belongs to
+migration by the clause's own words. The population is measured and small:
+**three archived plans** declare `required(External + External Security Review)`
+with no `**Obligation**:` line anywhere -- `api-web-security-modules`,
+`release-security-orchestration`, `verification-evidence-boundaries` -- and every
+one of their passes is already admitted by `_LEGACY_PASSES`, which E therefore
+treats as grandfathering the floor as a whole (its pre-E behaviour, preserved
+exactly). Both live `+` plans, by contrast, carry real per-pass `**Obligation**:`
+lines and resolve both clauses under the new rule, so nothing live depends on the
+grandfather.
+
+**A third item, declined rather than deferred, and recorded because declining is
+the deviation-shaped choice.** P6a's red-by-construction node
+(`8bf1154`) carried a two-part remedy in its docstring: *"replace this node with
+the positive one and delete the UNAVAILABLE branch's reason from the report"*. E
+did the first. It did **not** do the second: `templates/skills/_lib/lifecycle.py`
+and its twin are outside E's cell, and the `UNAVAILABLE` branch is a live
+fail-closed guard, not scaffolding -- item (a) above edits the very tuples it
+protects, so *"the vocabulary lost a token the engine needs"* stays reachable.
+Deleting it would leave three code paths with no test, which is the silent-tool
+defect `AGENTS.md` > *Verifying claims* forbids. The branch is instead kept under
+test through the inverted `lifecycle_without_counted_state` fixture. If a later
+reviewer disagrees, the removal is a small edit to two byte-identical files plus
+the four nodes that exercise it.
