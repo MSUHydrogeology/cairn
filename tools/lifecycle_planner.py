@@ -2325,9 +2325,6 @@ _BASIS_BASELINE_COMMIT = "50a32237c54cbce437b0834c48bd9c5645b9cd7a"
 #: `_LEGACY_PASSES`.  Splitting it per field would need per-field manifest data
 #: to grandfather records whose bytes are append-only and will not change.
 _LEGACY_UNDECLARED_BASIS: Dict[str, Dict[str, int]] = {
-    "2026-08-11-claude-metrics-events-not-prose": {
-        "04c2c82a6198aa71": 1, "53a6ad2464a1ed3d": 1,
-        "74b964a83d4a67fc": 1, "f1310df1e0793824": 1},
     "git-native-security-foundations": {
         "2a402faafe63d5ef": 1, "84ac2b7fb1d624af": 1},
     "review-efficient-lifecycle": {
@@ -2351,7 +2348,6 @@ _LEGACY_UNDECLARED_BASIS: Dict[str, Dict[str, int]] = {
 #: declaration that is present but duplicated or out-of-vocabulary refuses here
 #: exactly as it would anywhere else.
 _LEGACY_UNDECLARED_ASSURANCE_PATH = frozenset({
-    "2026-08-11-claude-metrics-events-not-prose",
 })
 
 

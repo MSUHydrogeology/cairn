@@ -2991,10 +2991,17 @@ class TestBasisLegacyEnumerations:
                         planner._LEGACY_UNDECLARED_BASIS) is (k <= n), (
                             stem, dig, k)
                 checked += 1
-        assert checked == 8, (
+        assert checked == 4, (
             "the enumeration changed size; re-derive it against "
             "`_BASIS_BASELINE_COMMIT` and update this figure deliberately "
             f"(found {checked})")
+        # 9 -> 8 -> 4 on 2026-08-12, deliberately, and TWICE for the same
+        # reason: a Decision landing in another session flips a proposal to a
+        # terminal status, `_is_immutable` starts covering it, and its entries
+        # become dead weight.  First `boundary-b-bounding-clause` (8308fdc),
+        # then `metrics-events-not-prose` (4 digests).  The enumeration is
+        # inherently transient and liquidates itself as artifacts close; that
+        # is the design, not drift.  Original note follows.
         # 9 -> 8 on 2026-08-12, deliberately.  `2026-08-12-claude-boundary-b-
         # bounding-clause` was `revised` at `_BASIS_BASELINE_COMMIT` and so
         # legitimately needed an entry; `df8478b` scribed its Decision to
