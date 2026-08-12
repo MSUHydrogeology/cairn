@@ -106,6 +106,8 @@ PY=<maintainer-recorded-interpreter>
 MKTEMP=<maintainer-recorded-mktemp>
 MKDIR=<maintainer-recorded-mkdir>
 SHASUM=<maintainer-recorded-shasum>
+SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
+PACKAGE_OUT=<absolute-path-for-the-authorization-package-must-not-exist>
 
 T=$("$MKTEMP" -d) || exit 1
 
@@ -140,8 +142,11 @@ HASHES
     exit 1
 }
 
+# STAGE 1 ONLY. This writes the authorization package and exits; it never
+# holds the signing key. Stage 2 is a separate invocation, below.
 "$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
-    apply --repo "$CHECKOUT" --confirm-supervised-reanchor
+    stage1 --repo "$CHECKOUT" --package-out "$PACKAGE_OUT" \
+           --signing-key "$SIGNING_KEY"
 LOADER
 ```
 
@@ -222,6 +227,8 @@ MKTEMP=<maintainer-recorded-mktemp>
 MKDIR=<maintainer-recorded-mkdir>
 SHASUM=<maintainer-recorded-shasum>
 SORT=<maintainer-recorded-sort>
+SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
+PACKAGE_OUT=<absolute-path-for-the-authorization-package-must-not-exist>
 
 T=$("$MKTEMP" -d) || exit 1
 
@@ -321,10 +328,13 @@ done < "$T/members.sha256"
 
 # The extracted set must be EXACTLY the declared set: the manifest cannot admit
 # a subset and leave an unreviewed member to be resolved from somewhere else.
+# STAGE 1 ONLY, as in steady state. The transition changes which bytes run,
+# not the two-stage protocol.
 "$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
-    apply --repo "$CHECKOUT" \
-          --transition-from-review "$REVIEW_MANIFEST" \
-          --reviewed-candidate "$RESOLVED"
+    stage1 --repo "$CHECKOUT" --package-out "$PACKAGE_OUT" \
+           --signing-key "$SIGNING_KEY" \
+           --transition-from-review "$REVIEW_MANIFEST" \
+           --reviewed-candidate "$RESOLVED"
 TRANSITION
 ```
 
@@ -396,6 +406,107 @@ than leaving it implied: `check` independently re-derives every *static*
 manifest field from raw commit objects and refuses on any difference. What stays
 trusted to this stage is the pytest **collection** — which cannot be derived
 from object bytes, and is the reason the stage exists.
+
+### Phase 0 stage 2 — confirm, then sign
+
+**Between the two stages, three things happen and none of them is automatic.**
+
+1. **Confirm the package digest independently.** Stage 1 printed one; compute it
+   yourself over the file it wrote and compare:
+
+   ```
+   <maintainer-recorded-shasum> -a 256 <absolute-path-of-the-authorization-package>
+   ```
+
+   Do **not** take a digest from inside the package. That is the adjacent
+   self-digest this ceremony refuses by construction, and stage 2 will refuse it
+   too — but the discipline is yours first.
+
+2. **Read the report the package carries.** The digest binds a *state*; the
+   state is what you are authorizing. A confirmed digest over an unread report
+   authorizes something you have not seen.
+
+3. **Make the ceremony key available — and only now.** Until this moment the
+   **N4 precondition** holds: the key is encrypted at rest and in no agent, and
+   stage 1 proved it could not sign. Loading it earlier collapses the boundary
+   the two stages exist to create.
+
+**Stage 2 extracts and verifies its own bytes.** It does *not* reuse stage 1's
+temp directory. Candidate code ran in stage 1 — that is what stage 1 is for —
+so anything stage 1 left on disk had a window in which candidate code was
+executing as the same user. Re-extracting under the same recorded hashes costs
+one extra pass and removes the whole class; inheriting `$T` would hand the
+signing stage bytes the candidate had an opportunity to rewrite. This is D4's
+"separately hash-verified bytes", and the duplication below is deliberate.
+
+```
+<maintainer-recorded-env> -i \
+    PATH=/usr/bin:/bin \
+    HOME=<maintainer-recorded-home> \
+    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
+    /bin/sh <<'STAGE2'
+# Same recorded values as stage 1, and recorded the same way: nothing is
+# discovered, and nothing is carried over from the previous invocation.
+CHECKOUT=<absolute-path-of-the-checkout-to-bless>
+ENV=<maintainer-recorded-env>
+GIT=<maintainer-recorded-git>
+PY=<maintainer-recorded-interpreter>
+MKTEMP=<maintainer-recorded-mktemp>
+MKDIR=<maintainer-recorded-mkdir>
+SHASUM=<maintainer-recorded-shasum>
+PACKAGE=<absolute-path-of-the-authorization-package>
+CONFIRMED=<the-64-hex-digest-you-verified-in-step-1>
+
+T=$("$MKTEMP" -d) || exit 1
+
+sterile_git() {
+    "$ENV" -i HOME=/nonexistent \
+        "$GIT" --no-replace-objects \
+               -c core.useReplaceRefs=false \
+               -c core.hooksPath=/dev/null \
+               -c core.fsmonitor=false \
+               -C "$CHECKOUT" "$@"
+}
+
+: > "$T/RECORDED.sha256" || exit 1
+while read -r sum path; do
+    [ -n "$path" ] || continue
+    "$MKDIR" -p "$T/${path%/*}" || exit 1
+    sterile_git cat-file blob "refs/cairn/gate-anchor:$path" > "$T/$path" || exit 1
+    echo "$sum  $path" >> "$T/RECORDED.sha256"
+done <<'HASHES'
+<maintainer-recorded-first-use-hashes>
+HASHES
+
+( cd "$T" && "$SHASUM" -a 256 -c RECORDED.sha256 ) || {
+    echo "REFUSE: extracted bytes do not match the reviewed first-use set" >&2
+    exit 1
+}
+
+"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
+    stage2 --repo "$CHECKOUT" \
+           --package "$PACKAGE" \
+           --confirm-package-sha256 "$CONFIRMED"
+STAGE2
+```
+
+**Stage 2 executes no candidate code.** It seals candidate execution before it
+derives anything, reads and hashes the package before parsing it, rebuilds the
+prospective manifest independently and compares **exact bytes**, and takes from
+stage 1 only `collection` and `interpreter` — the two fields static
+re-derivation cannot produce, which is the sole reason stage 1 exists.
+
+**Why two invocations rather than one paused process.** R1-F step 5 originally
+said the already-running process signs; that is **amended** here. A separate
+invocation means the signing process never had candidate code in it at any
+point, the protocol is scriptable without a controlling terminal, and stage 1's
+inability to sign is observable *before* stage 2 exists. The safety of a second
+invocation rests on the checker bytes being hash-verified on every run, which
+both loaders above already do.
+
+**Still sequencing, not containment.** Candidate code that ran in stage 1 shared
+this machine with the key that stage 2 loads, and may have left persistence
+neither stage can see. That residual is accepted and unchanged.
 
 ### The dated posture, and what ends it
 

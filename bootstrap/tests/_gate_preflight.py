@@ -1112,7 +1112,9 @@ def _signature_census(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
 
 def range_review_report(anchor: str, head: str, *, branch: str,
                         expected_old: str, repo: Path = _REPO,
-                        prospective_manifest: bytes | None = None) -> dict:
+                        prospective_manifest: bytes | None = None,
+                  admitted_authority: dict | None = None,
+                  review_provenance: str | None = None) -> dict:
     """The one canonical report `apply` re-derives and the checkpoint binds."""
     frozen = set(G._frozen_files(repo))
     cascade = set(G.CASCADE_MUTABLE)
@@ -1462,6 +1464,34 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
     }
 
 
+def _entry_base(entry) -> dict:
+    """Normalize a candidate manifest entry to the v2 dict shape.
+
+    **The v1 scalar is the live shape, not a legacy one.** `gather_evidence`
+    runs `produce` from a materialized raw tree with no repository, so it emits
+    `rel -> "<sha256>"` for every frozen file -- v2-labelled and v1-shaped, as
+    [IC2] recorded.
+
+    Losing this is what the first cut of :func:`authoritative_manifest` did:
+    it built the entry from `{}` whenever the candidate's side was not already a
+    dict and then overlaid only the checker-derived sub-keys, so **every**
+    committed entry read `{"mode": ..., "oid": ...}` and the content digest --
+    the field the gate actually compares -- was dropped from the artifact
+    anchored into the trust root. The end-to-end test could not see it: it
+    asserted `blessed == authoritative_manifest(...)`, the same function on both
+    sides of the equals sign, so it agreed with whatever the function did.
+
+    `sha256` stays the candidate's on purpose. It is not checker-derived; it is
+    checker-*compared*, and `check_static_manifest` has already refused the run
+    unless it equals the independent re-derivation.
+    """
+    if isinstance(entry, dict):
+        return dict(entry)
+    if isinstance(entry, str):
+        return {"sha256": entry}
+    return {}
+
+
 def authoritative_manifest(theirs: dict, ours: dict) -> dict:
     """The manifest the ceremony actually commits: the candidate's, with every
     checker-derived field **replaced** by the checker's own re-derivation.
@@ -1496,8 +1526,7 @@ def authoritative_manifest(theirs: dict, ours: dict) -> dict:
         rebuilt = {}
         for rel, entry in ours_field.items():
             if isinstance(entry, dict):
-                base = theirs_field.get(rel)
-                base = dict(base) if isinstance(base, dict) else {}
+                base = _entry_base(theirs_field.get(rel))
                 for sk in _CHECKER_DERIVED_SUBKEYS:
                     if sk in entry:
                         base[sk] = entry[sk]
@@ -1652,12 +1681,33 @@ _WRITE_GIT = frozenset({
 })
 
 
+def _admitted_rows(admitted: dict | None, provenance: str | None) -> str:
+    """The complete admitted authority set, as ordered `path -> sha256` rows.
+
+    Plan review [E4] and opening outcome A3. The digest alone binds
+    cryptographically and is **unreadable**: a later reader could verify *that*
+    a set was admitted without being able to see *which bytes*, because the
+    review manifest is an out-of-band artifact that may not survive. Nine rows
+    is a reasonable audit cost for a trust root, and it is the difference
+    between a durable record and a durable pointer to one.
+    """
+    if not admitted:
+        return "  admitted authority  : (steady state -- no closure change)"
+    rows = [f"  admitted authority  : {len(admitted)} members, "
+            f"review: {provenance or '(unrecorded)'}"]
+    for rel, digest in sorted(admitted.items()):
+        rows.append(f"    {digest}  {rel}")
+    return "\n".join(rows)
+
+
 def draft_message(*, observed_anchor: str, checked_head: str,
                   manifest_sha256: str, authority_hashes: dict,
                   scope: dict, last_legitimate_anchor: str | None = None,
                   erroneous_ref: str | None = None,
                   range_report_digest: str | None = None,
-                  candidate_tree: str | None = None) -> str:
+                  candidate_tree: str | None = None,
+                  admitted_authority: dict | None = None,
+                  review_provenance: str | None = None) -> str:
     """The commit message, built from values the checker computed.
 
     The runbook's audit trail requires the authorized verifier hashes, both
@@ -1697,6 +1747,7 @@ Scope blessed -- derived at check time from the observed state:
   superseded anchor P : {last_legitimate_anchor or observed_anchor}
   checked HEAD        : {checked_head}
   candidate tree      : {candidate_tree or '(not bound)'}
+{_admitted_rows(admitted_authority, review_provenance)}
   range-report digest : {range_report_digest or '(not bound)'}
   new anchor P        : this commit
   prospective manifest: {manifest_sha256}
@@ -1800,10 +1851,21 @@ class KeyChannelError(PreflightError):
     """Stage 1 could sign, so the N4 precondition does not hold."""
 
 
-def signing_key_path(repo: Path = _REPO) -> str:
-    """The configured signing key, read through the sterile launcher."""
-    p = _git("config", "--get", "user.signingkey", repo=repo)
-    return (p.stdout or "").strip()
+def signing_key_path(recorded: str | None) -> str:
+    """The supported key channel, **recorded, never discovered**.
+
+    An earlier version read `user.signingkey` through the sterile launcher, and
+    the read-only allowlist refused it -- correctly, since `git config` writes.
+    Widening a security allowlist for a convenience read would have been the
+    wrong trade; recording the path is the right one, and it is what the rest of
+    this ceremony already does. The runbook's discipline is explicit that
+    NOTHING is discovered: ambient discovery is how a substituted repository
+    once answered for the named one.
+
+    The key path is therefore an input to the ceremony, and it joins the
+    residual trust set alongside the other recorded absolute paths.
+    """
+    return (recorded or "").strip()
 
 
 def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
@@ -1847,13 +1909,15 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
         return (True, (r.stderr or "").strip()[-300:] or "signing failed")
 
 
-def require_stage1_cannot_sign(repo: Path = _REPO, *, out=sys.stderr) -> dict:
+def require_stage1_cannot_sign(recorded_key: str | None = None, *,
+                               out=sys.stderr) -> dict:
     """Stage 1's gate on the N4 precondition. Refuses if signing succeeds."""
-    key_path = signing_key_path(repo)
+    key_path = signing_key_path(recorded_key)
     if not key_path:
         raise KeyChannelError(
-            "no user.signingkey is configured, so the supported key channel is "
-            "unnamed and the N4 precondition cannot be probed")
+            "no signing key was recorded (--signing-key), so the supported "
+            "key channel is unnamed and the N4 precondition cannot be probed. "
+            "It is recorded rather than discovered, deliberately.")
     cannot, detail = probe_cannot_sign(key_path)
     if not cannot:
         raise KeyChannelError(
@@ -2010,7 +2074,9 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
                   manifest_sha256: str | None = None,
                   branch: str | None = None,
                   expected_old: str | None = None,
-                  prospective_manifest: bytes | None = None) -> dict:
+                  prospective_manifest: bytes | None = None,
+                  admitted_authority: dict | None = None,
+                  review_provenance: str | None = None) -> dict:
     """The derived description of what a blessing would do.
 
     Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
@@ -2057,7 +2123,9 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
         scope=scope, last_legitimate_anchor=last_legitimate_anchor,
         erroneous_ref=erroneous,
         range_report_digest=report_digest,
-        candidate_tree=candidate_tree)
+        candidate_tree=candidate_tree,
+        admitted_authority=admitted_authority,
+        review_provenance=review_provenance)
     return {
         "schema": BUNDLE_SCHEMA,
         "checked_head": report.facts["head"],
@@ -2277,7 +2345,92 @@ def _sync_worktree(repo: Path, manifest_bytes: bytes, blob: str) -> None:
     _git_write("update-index", "--refresh", repo=repo)
 
 
-def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
+def stage1(*, repo: Path = _REPO, package_out: Path,
+           signing_key: str | None = None,
+           review_manifest: str | None = None,
+           reviewed_candidate: str | None = None,
+           out=sys.stderr) -> dict:
+    """**Stage 1**: everything that executes candidate code, with the key away.
+
+    Proposal R4-a. This stage gathers evidence, runs the read-only checks,
+    derives the canonical range report and the prospective authoritative
+    manifest, writes one authorization package, prints the hard marker and the
+    package's external digest, and exits. **It never holds the signing key.**
+
+    Order is the contract: the key-channel probe runs FIRST, before any
+    candidate code, because the whole point is that candidate code and the key
+    are never simultaneously available. Probing afterwards would prove the
+    boundary held at a moment that no longer matters.
+    """
+    repo = _require_worktree_root(repo)
+    key = require_stage1_cannot_sign(signing_key, out=out)
+
+    evidence = gather_evidence("HEAD", repo=repo, out=out)
+    report = check(repo=repo, evidence=evidence)
+    _render(report, out)
+    if report.blocked:
+        raise PreflightError(
+            "the read-only checks refuse this state; nothing was written")
+
+    head, anchor = report.facts["head"], report.facts["anchor"]
+    transition = None
+    if review_manifest is not None:
+        transition = revalidate_transition(
+            parse_review_manifest(Path(review_manifest).read_text(
+                encoding="utf-8")),
+            reviewed_candidate, head, anchor=anchor, repo=repo)
+
+    branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
+                  repo=repo).stdout.strip()
+    if not branch.startswith("refs/heads/"):
+        raise PreflightError(f"HEAD is not on a branch ({branch!r})")
+    branch_old = _resolve(branch, repo=repo)
+
+    committed_manifest = authoritative_manifest(
+        evidence["manifest"], rederive_static_manifest(head, repo=repo))
+    manifest_bytes = (json.dumps(committed_manifest, indent=2, sort_keys=True)
+                      .encode() + b"\n")
+    the_report = range_review_report(anchor, head, branch=branch,
+                                     expected_old=branch_old, repo=repo,
+                                     prospective_manifest=manifest_bytes)
+
+    pkg = {
+        "schema": PACKAGE_SCHEMA,
+        "observed_anchor": anchor,
+        "candidate_head": head,
+        "candidate_tree": _resolve_tree(head, repo=repo),
+        "branch": branch,
+        "expected_old": branch_old,
+        "range_report": the_report,
+        "range_report_digest": range_report_digest(the_report),
+        "review_manifest": ({"provenance": transition["provenance"],
+                             "candidate": transition["candidate"],
+                             "members": transition["members"]}
+                            if transition else None),
+        "prospective_manifest_b64": base64.b64encode(manifest_bytes).decode(),
+        "prospective_manifest_sha256": _sha256_bytes(manifest_bytes),
+        "collection": evidence["manifest"].get("collection"),
+        "interpreter": evidence["manifest"].get("interpreter"),
+    }
+    digest = write_package(package_out, pkg)
+
+    seal_candidate_execution(out=out)
+    out.write(
+        f"\nSTAGE 1 COMPLETE. Package written to {package_out}\n"
+        f"  package sha256 : {digest}\n"
+        f"  report digest  : {pkg['range_report_digest']}\n"
+        f"  candidate tree : {pkg['candidate_tree']}\n\n"
+        f"Confirm the package digest above by an independent `shasum -a 256`,\n"
+        f"read the report it contains, THEN make the ceremony key available and\n"
+        f"run stage 2 with --confirm-package-sha256 <that digest>.\n"
+        f"Key channel probed unavailable in this stage: {key['key_path']}\n")
+    return {"package": str(package_out), "package_sha256": digest,
+            "range_report_digest": pkg["range_report_digest"]}
+
+
+def apply_now(*, repo: Path = _REPO,
+              package: str | None = None,
+              confirmed_package_sha256: str | None = None,
               review_manifest: str | None = None,
               reviewed_candidate: str | None = None,
               out=sys.stderr) -> dict:
@@ -2299,17 +2452,81 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
     values it derived. ``check`` remains available as a non-mutating preview; its
     output is a record for the operator to read, never an input here.
     """
-    if not confirmed:
+    if confirmed_package_sha256 is None:
         raise PreflightError(
-            "apply requires explicit Maintainer confirmation "
-            "(--confirm-supervised-reanchor); it moves the trust root")
+            "the signing stage requires the Maintainer's confirmation of the "
+            "exact stage-1 package digest (--confirm-package-sha256). The "
+            "boolean --confirm-supervised-reanchor was REMOVED, not "
+            "deprecated ([S4]/D4): a confirmation that cannot be wrong is not "
+            "a confirmation, and an up-front flag confirms nothing about the "
+            "state actually being authorized.")
     # Re-validated here and not only at the CLI boundary: this is the one
     # function that moves the trust root, so the repository it moves must be the
     # one the caller named, not one git discovered by walking upward (FUR5).
     repo = _require_worktree_root(repo)
 
-    out.write("apply: re-deriving everything; no handoff artifact is trusted\n")
-    evidence = gather_evidence("HEAD", repo=repo, out=out)
+    # ---- STAGE 2 ----------------------------------------------------------
+    # Proposal R4-c. The package is read, hashed and confirmed BEFORE anything
+    # else, and no candidate code runs in this process at all: the seal is set
+    # up front rather than midway, so a candidate-executing operation anywhere
+    # below refuses instead of merely being unreachable by inspection.
+    pkg = read_package(Path(package), confirmed_sha256=confirmed_package_sha256)
+    seal_candidate_execution(out=out)
+    out.write(f"stage 2: package confirmed {confirmed_package_sha256[:16]}...; "
+              f"candidate execution sealed before any derivation\n")
+
+    # R4-c, and it runs FIRST -- before the read-only checks, not after.
+    #
+    # A package authorizes ONE state. Every fact stage 1 recorded about where
+    # the repository stood is re-resolved here and required to be unchanged; a
+    # package is not a licence that follows the branch forward.
+    #
+    # The ordering is the finding. With this comparison placed after `check`,
+    # every stale-package scenario refused -- but refused *at the checks*, on a
+    # state that had already moved, so the comparison written to catch exactly
+    # this never executed. That is the [M2-1] shape: a control built, tested in
+    # isolation, and unreachable through the governing path. Here it is the
+    # first thing stage 2 decides, so a stale package is rejected as a stale
+    # package, with a diagnostic that says so.
+    branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
+                  repo=repo).stdout.strip()
+    if not branch.startswith("refs/heads/"):
+        raise PreflightError(
+            f"HEAD is not on a branch ({branch!r}); refusing to advance a "
+            f"detached HEAD")
+    for field, expected in (("observed_anchor", _resolve(_ANCHOR_REF, repo=repo)),
+                            ("candidate_head", _resolve("HEAD", repo=repo)),
+                            ("expected_old", _resolve(branch, repo=repo)),
+                            ("branch", branch)):
+        if pkg[field] != expected:
+            raise PackageError(
+                f"package {field} is {pkg[field]!r}; this repository is now "
+                f"{expected!r}. A stale package cannot authorize a moved state.")
+
+    # C7. Stage 2 rebuilds the manifest from its OWN static re-derivation plus
+    # the two fields C6 declares candidate-only, and never from the candidate's
+    # manifest -- which it does not have and must not need.
+    #
+    # This is what gives the exact-byte comparison below its teeth. Stage 1
+    # built the package's bytes from the *candidate's* manifest; stage 2 builds
+    # from a re-derivation with `collection` and `interpreter` grafted on. The
+    # two agree byte-for-byte **only if** the candidate contributed nothing else
+    # -- so C6's closed executable-only list stops being an assertion in a
+    # comment and becomes a property re-tested on every real run. A third
+    # candidate-only field appearing anywhere makes stage 2 refuse, which is the
+    # answer the plan review asked for: it fails, it does not silently trust.
+    static = rederive_static_manifest(pkg["candidate_head"], repo=repo)
+    evidence = {
+        "schema": EVIDENCE_SCHEMA,
+        "candidate_sha": pkg["candidate_head"],
+        "manifest": {**static,
+                     "collection": pkg["collection"],
+                     "interpreter": pkg["interpreter"]},
+        "interpreter": pkg["interpreter"]["version"],
+    }
+    evidence["manifest_sha256"] = _sha256_bytes(
+        json.dumps(evidence["manifest"], indent=2, sort_keys=True).encode()
+        + b"\n")
     report = check(repo=repo, evidence=evidence)
     _render(report, out)
     if report.blocked:
@@ -2338,12 +2555,6 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
             "changed": sorted(authority_closure_delta(
                 anchor, reviewed_candidate, repo=repo)),
         }
-    branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
-                  repo=repo).stdout.strip()
-    if not branch.startswith("refs/heads/"):
-        raise PreflightError(
-            f"HEAD is not on a branch ({branch!r}); refusing to advance a "
-            f"detached HEAD")
     _require_direct_ref(_ANCHOR_REF, repo=repo)
 
     # [IC2]: commit the checker's Git-native identity, not the candidate's.
@@ -2355,12 +2566,31 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
     manifest_bytes = (json.dumps(committed_manifest, indent=2, sort_keys=True)
                       .encode() + b"\n")
     committed_sha256 = _sha256_bytes(manifest_bytes)
+
+    # R3-a: rebuild independently and compare EXACT BYTES with the package's.
+    # A field-by-field comparison would accept a re-serialization that differs
+    # from what stage 1 measured, and the checkpoint binds bytes.
+    staged = base64.b64decode(pkg["prospective_manifest_b64"])
+    if staged != manifest_bytes:
+        raise PackageError(
+            "the prospective manifest rebuilt in stage 2 differs from the one "
+            "the package carries; the confirmed digest covers bytes that are "
+            "no longer what this ceremony would commit")
+    if pkg["prospective_manifest_sha256"] != committed_sha256:
+        raise PackageError("the package's prospective manifest digest is stale")
+    # The state comparison itself ran up front, before the checks. This is the
+    # value it established, re-resolved once and threaded onward so the
+    # transaction's expected-old is the one that was compared.
     branch_old = _resolve(branch, repo=repo)
     plan = blessing_plan(report, evidence, repo=repo,
                          manifest=committed_manifest,
                          manifest_sha256=committed_sha256,
                          branch=branch, expected_old=branch_old,
-                         prospective_manifest=manifest_bytes)
+                         prospective_manifest=manifest_bytes,
+                         admitted_authority=(
+                             (pkg.get("review_manifest") or {}).get("members")),
+                         review_provenance=(
+                             (pkg.get("review_manifest") or {}).get("provenance")))
 
     # [M2-1], the governing path. Three separate obligations, none of which the
     # reviewed bytes performed:
@@ -2391,11 +2621,6 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
         plan["message"], digest=plan["range_report_digest"],
         tree=plan["candidate_tree"], head=report.facts["head"],
         anchor=report.facts["anchor"])
-
-    # R1-F steps 4-5. Everything above this line may execute candidate code;
-    # nothing below it may. `_construct_signed_commit` is the first operation
-    # that loads the signing key, so the boundary sits immediately before it.
-    seal_candidate_execution(out=out)
 
     with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
         principals = parse_principals(roster_text)
@@ -2508,15 +2733,38 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("--candidate-ref", default="HEAD")
     e.add_argument("-o", "--output", default=None,
                    help="write the artifact here (default: stdout)")
+    s1 = sub.add_parser(
+        "stage1",
+        help="STAGE 1 -- executes candidate code with the key channel probed "
+             "unavailable; writes the authorization package and exits")
+    s1.add_argument("--repo", default=None, help=_REPO_HELP)
+    s1.add_argument("--signing-key", required=True,
+                    help="the RECORDED path to the ceremony signing key's "
+                         "public half. Recorded, never discovered -- the probe "
+                         "must target the channel the Maintainer names.")
+    s1.add_argument("--package-out", required=True,
+                    help="where to write the authorization package; must not "
+                         "already exist and must not be a symlink")
+    s1.add_argument("--transition-from-review", default=None,
+                    dest="review_manifest",
+                    help="TRANSITION MODE: the Maintainer's out-of-band review "
+                         "manifest (selection already happened in the loader)")
+    s1.add_argument("--reviewed-candidate", default=None,
+                    help="TRANSITION MODE: the commit OID the loader resolved")
+
     a = sub.add_parser(
-        "apply",
-        help="revalidate a bundle, construct and verify the commit, then move "
-             "the branch and gate anchor in ONE transaction -- Maintainer-only")
+        "stage2",
+        help="STAGE 2 -- no candidate code; validates the confirmed package, "
+             "constructs and verifies the checkpoint, then moves branch and "
+             "anchor in ONE transaction -- Maintainer-only")
     a.add_argument("--repo", default=None, help=_REPO_HELP)
-    a.add_argument("--confirm-supervised-reanchor", action="store_true",
-                   dest="confirmed",
-                   help="required; this is the only step that moves the trust "
-                        "root")
+    a.add_argument("--package", required=True,
+                   help="the authorization package stage 1 wrote")
+    a.add_argument("--confirm-package-sha256", required=True,
+                   dest="confirmed_package_sha256",
+                   help="the Maintainer's confirmation of the EXACT bytes "
+                        "stage 1 wrote. No digest inside the package can "
+                        "satisfy this.")
     a.add_argument("--transition-from-review", default=None,
                    dest="review_manifest",
                    help="TRANSITION MODE: the Maintainer's out-of-band review "
@@ -2547,16 +2795,37 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(text)
         return 0
 
-    if args.cmd == "apply":
+    if args.cmd in ("stage1", "stage2"):
+        # Checked for BOTH stages. Each stage revalidates the transition
+        # independently, so each can be given half a mode; a check on stage 1
+        # alone would let stage 2 sign a steady-state checkpoint for a run the
+        # loader selected in transition mode.
         if bool(args.review_manifest) != bool(args.reviewed_candidate):
             sys.stderr.write(
                 "[REFUSE ] transition mode needs both --transition-from-review "
                 "and --reviewed-candidate; one alone is not a mode\n")
             return 2
+
+    if args.cmd == "stage1":
         try:
-            result = apply_now(repo=repo, confirmed=args.confirmed,
-                               review_manifest=args.review_manifest,
-                               reviewed_candidate=args.reviewed_candidate)
+            result = stage1(repo=repo, package_out=Path(args.package_out),
+                            signing_key=args.signing_key,
+                            review_manifest=args.review_manifest,
+                            reviewed_candidate=args.reviewed_candidate)
+        except PreflightError as exc:
+            sys.stderr.write(f"[REFUSE ] {exc}\n")
+            return 2
+        json.dump(result, sys.stdout, indent=2, sort_keys=True)
+        sys.stdout.write("\n")
+        return 0
+
+    if args.cmd == "stage2":
+        try:
+            result = apply_now(
+                repo=repo, package=args.package,
+                confirmed_package_sha256=args.confirmed_package_sha256,
+                review_manifest=args.review_manifest,
+                reviewed_candidate=args.reviewed_candidate)
         except PreflightError as exc:
             sys.stderr.write(f"[REFUSE ] {exc}\n")
             return 2

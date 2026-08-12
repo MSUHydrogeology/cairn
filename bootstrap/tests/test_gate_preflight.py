@@ -12,6 +12,8 @@ a test claiming otherwise is worse than no test (security review SR7 / SR10):
 """
 from __future__ import annotations
 
+import ast
+import contextlib
 import io
 import json
 import re
@@ -998,9 +1000,9 @@ class TestApplyTakesNoArtifact:
     def test_apply_now_takes_only_the_closed_parameter_set(self):
         import inspect
         params = set(inspect.signature(P.apply_now).parameters)
-        assert params == {"repo", "confirmed", "out",
+        assert params == {"repo", "out", "package", "confirmed_package_sha256",
                           "review_manifest", "reviewed_candidate"}, (
-            f"apply's inputs are a closed set; got {sorted(params)}")
+            f"stage 2's inputs are a closed set; got {sorted(params)}")
 
     def test_the_review_manifest_carries_no_self_digest(self):
         """The narrowed claim, mechanised. A `digest` or `sha256` row naming the
@@ -1039,8 +1041,9 @@ class TestApplyTransaction:
     def test_refuses_without_explicit_confirmation(self, tmp_path):
         repo, anchor, head = _anchored_repo(tmp_path)
         before = self._refs(repo)
-        with pytest.raises(P.PreflightError, match="explicit Maintainer"):
-            P.apply_now(repo=repo, confirmed=False)
+        with pytest.raises(P.PreflightError,
+                           match="confirmation of the exact stage-1 package"):
+            P.apply_now(repo=repo)
         assert self._refs(repo) == before
 
     def test_write_path_allowlist_refuses_unenumerated_operations(self, tmp_path):
@@ -1077,6 +1080,96 @@ class TestApplyTransaction:
         assert self._refs(repo) == before
         assert _run("git", "status", "--porcelain", cwd=repo).stdout == "", (
             "an aborted transaction must leave no index or worktree residue")
+
+
+
+
+@contextlib.contextmanager
+def _n4_precondition(key: Path):
+    """Model the **N4** Maintainer precondition for a subprocess ceremony.
+
+    Stage 1 probes whether it can sign and refuses if it can. In-process tests
+    stub that probe; a test that executes the *recorded loader* cannot, because
+    the loader runs in a child. So the fixture has to make the precondition
+    genuinely true: the private half is moved aside for the duration of stage 1
+    and restored afterwards, which is exactly what the ceremony asks a
+    Maintainer to do -- key encrypted at rest or absent while candidate code
+    runs, available again only for stage 2.
+
+    Modelling it is the point. A fixture that left the private key readable
+    would be testing the loader against a state the ceremony forbids.
+    """
+    stash = key.with_suffix(".withheld")
+    key.rename(stash)
+    try:
+        yield
+    finally:
+        stash.rename(key)
+
+
+def _recorded_stage1(repo: Path, tmp_path: Path, script: str, *,
+                     env=None, prefix: str = ""):
+    """Run the recorded loader end-to-end under a genuine N4 precondition.
+
+    Every loader-boundary test drives the *runbook's own bytes* in a child
+    shell, so none of them can stub the key probe -- and since Chunk D the
+    recorded block ends at stage 1, which refuses outright if it can sign. The
+    precondition is therefore modelled for real (`_n4_precondition`) rather than
+    bypassed, which also keeps these nodes honest: they assert the loader's
+    integrity properties against the state the ceremony actually runs in.
+
+    Returns the completed process and the anchor as it stood before.
+    """
+    before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+    with _n4_precondition(tmp_path / "maint"):
+        r = subprocess.run(["bash", "-c", prefix + script], cwd=str(repo),
+                           capture_output=True, text=True, check=False,
+                           env=env)
+    return r, before
+
+
+def _assert_stage1_completed(repo: Path, r, before: str):
+    """What success means now that the recorded block stops at stage 1.
+
+    The old assertion was "the anchor advanced". Asserting that today would be
+    asserting that a stage holding no key had signed -- the exact inversion of
+    D3. So success is: the loader ran clean, a package exists, and **no ref
+    moved**.
+    """
+    assert r.returncode == 0, r.stderr[-2500:]
+    pkg = Path(str(repo.parent / "authorization-package.json"))
+    assert pkg.exists(), f"stage 1 wrote no package:\n{r.stderr[-1500:]}"
+    assert _run("git", "rev-parse", P._ANCHOR_REF,
+                cwd=repo).stdout.strip() == before, (
+        "stage 1 moved a ref; it holds no key and must move nothing")
+
+
+def _two_stage(repo: Path, monkeypatch, *, out=None, package_dir=None,
+               review_manifest=None, reviewed_candidate=None):
+    """Drive the real two-stage ceremony: stage 1 -> confirm -> stage 2.
+
+    The key-channel probe is stubbed to "cannot sign" because in a test
+    environment the ceremony key genuinely CAN sign -- that is [E1], and it has
+    its own dedicated tests with disposable keys. Stubbing it here keeps these
+    nodes about the protocol rather than about the host's key hygiene.
+
+    The confirmation digest is taken from stage 1's **return value**, which is
+    computed over the bytes it wrote -- never from inside the package.
+    """
+    monkeypatch.setattr(P, "require_stage1_cannot_sign",
+                        lambda *a, **k: {"key_path": "(stubbed)",
+                                         "probe": "stubbed"})
+    out = out if out is not None else io.StringIO()
+    pkg_dir = Path(package_dir) if package_dir else Path(repo).parent
+    pkg_path = pkg_dir / "authorization-package.json"
+    if pkg_path.exists():
+        pkg_path.unlink()
+    one = P.stage1(repo=repo, package_out=pkg_path, out=out,
+                   review_manifest=review_manifest,
+                   reviewed_candidate=reviewed_candidate)
+    P._phase = P._PHASE_CANDIDATE     # stage 2 is a fresh process in reality
+    return P.apply_now(repo=repo, package=str(pkg_path),
+                       confirmed_package_sha256=one["package_sha256"], out=out)
 
 
 def _stub_report(repo, head):
@@ -1120,8 +1213,7 @@ class TestApplySuccessPath:
     def test_success_signs_the_commit_and_leaves_a_clean_tree(
             self, tmp_path, monkeypatch):
         repo, anchor, head = self._prepared(tmp_path, monkeypatch)
-        res = P.apply_now(repo=repo, confirmed=True,
-                          out=__import__("io").StringIO())
+        res = _two_stage(repo, monkeypatch)
         new_head, new_anchor = self._refs(repo)
         assert new_head == new_anchor == res["new_anchor"]
 
@@ -1148,8 +1240,7 @@ class TestApplySuccessPath:
             lambda r, h, mb, msg: real(r, h, mb, "a different message\n"))
         before = self._refs(repo)
         with pytest.raises(P.PreflightError, match="reviewed message"):
-            P.apply_now(repo=repo, confirmed=True,
-                        out=__import__("io").StringIO())
+            _two_stage(repo, monkeypatch)
         assert self._refs(repo) == before
 
     def test_an_unsigned_commit_substitution_refuses(self, tmp_path,
@@ -1166,8 +1257,7 @@ class TestApplySuccessPath:
                 r, h, P._MANIFEST_REL, mb), "0" * 40))
         before = self._refs(repo)
         with pytest.raises(P.PreflightError, match="not validly signed|message"):
-            P.apply_now(repo=repo, confirmed=True,
-                        out=__import__("io").StringIO())
+            _two_stage(repo, monkeypatch)
         assert self._refs(repo) == before
 
     def test_blocked_checks_write_nothing(self, tmp_path, monkeypatch):
@@ -1175,8 +1265,7 @@ class TestApplySuccessPath:
         _write(repo, "bootstrap/tests/_gate_preflight.py", "# tampered\n")
         before = self._refs(repo)
         with pytest.raises(P.PreflightError, match="refuse this state"):
-            P.apply_now(repo=repo, confirmed=True,
-                        out=__import__("io").StringIO())
+            _two_stage(repo, monkeypatch)
         assert self._refs(repo) == before
 
 
@@ -1213,16 +1302,73 @@ class TestPublicPathCli:
         assert r2.returncode in (1, 2), "a fixture repo must not pass check"
         assert "Traceback" not in r2.stderr
 
-    def test_apply_refuses_without_confirmation_through_the_cli(self, tmp_path):
+    def test_the_single_stage_apply_and_its_boolean_are_gone_from_the_cli(
+            self, tmp_path):
+        """D5: **removed, not deprecated** -- and removed at the CLI surface.
+
+        The old shape was one `apply --confirm-supervised-reanchor` that ran
+        candidate code and signed in one process. A deprecation that still
+        parses is a path an operator can still take, so the assertion is that
+        argparse itself rejects both spellings. Whatever `apply_now` believes
+        internally, an unreachable subcommand is what makes the removal real.
+        """
         repo, anchor, head = _anchored_repo(tmp_path)
         before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
                   _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
-        r = self._cli("apply", "--repo", str(repo))
-        assert r.returncode == 2
-        assert "explicit Maintainer confirmation" in r.stderr
+
+        gone = self._cli("apply", "--repo", str(repo))
+        assert gone.returncode == 2
+        assert "invalid choice: 'apply'" in gone.stderr
+        assert "stage1" in gone.stderr and "stage2" in gone.stderr
+
+        # The digest confirmation is supplied so that the boolean is the ONLY
+        # thing argparse can object to -- otherwise the missing required flag
+        # masks it and this node would pass without testing the removal.
+        boolean = self._cli("stage2", "--repo", str(repo),
+                            "--package", str(tmp_path / "nope.json"),
+                            "--confirm-package-sha256", "0" * 64,
+                            "--confirm-supervised-reanchor")
+        assert boolean.returncode == 2
+        assert "unrecognized arguments: --confirm-supervised-reanchor" in \
+            boolean.stderr
+
         assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
                 _run("git", "rev-parse", P._ANCHOR_REF,
                      cwd=repo).stdout.strip()) == before
+
+    def test_stage2_refuses_without_the_package_digest_confirmation(
+            self, tmp_path):
+        """The confirmation is required by argparse, and it is over BYTES.
+
+        `required=True` is the mechanism, so the refusal happens before any
+        repository work -- which is the point: a confirmation prompt that
+        appears after the state has been read is a confirmation of nothing.
+        """
+        repo, anchor, head = _anchored_repo(tmp_path)
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+        r = self._cli("stage2", "--repo", str(repo),
+                      "--package", str(tmp_path / "nope.json"))
+        assert r.returncode == 2
+        assert "--confirm-package-sha256" in r.stderr
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before
+
+    def test_the_in_process_signing_entry_still_refuses_a_missing_confirmation(
+            self, tmp_path):
+        """Defence in depth: the CLI is not the only caller of `apply_now`.
+
+        argparse enforces the flag for operators; this node enforces it for the
+        function, so a future caller that bypasses `main` cannot sign without
+        naming the exact bytes it is authorizing.
+        """
+        repo, anchor, head = _anchored_repo(tmp_path)
+        with pytest.raises(P.PreflightError) as exc:
+            P.apply_now(repo=repo, package=str(tmp_path / "nope.json"),
+                        confirmed_package_sha256=None, out=io.StringIO())
+        assert "--confirm-package-sha256" in str(exc.value)
+        assert "REMOVED" in str(exc.value)
 
     def test_malformed_evidence_is_refused_through_the_cli(self, tmp_path):
         repo, _a, _h = _anchored_repo(tmp_path)
@@ -1230,6 +1376,51 @@ class TestPublicPathCli:
         bad.write_text("{not json")
         r = self._cli("check", "--repo", str(repo), "--evidence", str(bad))
         assert r.returncode == 2 and "not valid JSON" in r.stderr
+
+
+def _checker_cli(checker: Path, *args):
+    """Invoke an extracted checker as the ceremony does: sterile, by path."""
+    return subprocess.run(
+        [sys.executable, "-E", "-s", str(checker), *args],
+        capture_output=True, text=True, check=False)
+
+def _subprocess_ceremony(checker: Path, repo: Path, tmp_path: Path, *,
+              package=None):
+    """Stage 1 -> external confirmation -> stage 2, as real subprocesses.
+
+    The point of running it this way is that nothing can be stubbed. Stage 1
+    genuinely probes the key channel, so the N4 precondition is genuinely
+    established: the private half is withheld for the duration of stage 1
+    and restored only for stage 2 -- which is the ceremony's own
+    instruction, not a test convenience.
+
+    The confirmation digest is read from **stage 1's stdout**, computed by
+    stage 1 over the bytes it wrote. Taking it from inside the package would
+    be the CR1 defect exactly: value and digest from one editable file.
+    """
+    pkg = Path(package) if package else tmp_path / "authorization-package.json"
+    if pkg.exists():
+        pkg.unlink()
+    with _n4_precondition(tmp_path / "maint"):
+        one = _checker_cli(checker, "stage1", "--repo", str(repo),
+                        "--signing-key", str(tmp_path / "maint.pub"),
+                        "--package-out", str(pkg))
+    assert one.returncode == 0, one.stderr[-2500:]
+    staged = json.loads(one.stdout)
+    assert pkg.exists(), "stage 1 reported success and wrote no package"
+
+    # Independently digest the file, the way the runbook tells the
+    # Maintainer to: the confirmation must be over bytes on disk.
+    import hashlib
+    assert staged["package_sha256"] == hashlib.sha256(
+        pkg.read_bytes()).hexdigest(), (
+        "stage 1's reported digest is not the digest of what it wrote")
+
+    two = _checker_cli(checker, "stage2", "--repo", str(repo),
+                    "--package", str(pkg),
+                    "--confirm-package-sha256", staged["package_sha256"])
+    assert two.returncode == 0, two.stderr[-2500:]
+    return json.loads(two.stdout)
 
 
 class TestThreeCommandIntegration:
@@ -1276,10 +1467,7 @@ class TestThreeCommandIntegration:
         total = re.search(r'"total": (\d+)', r2.stderr)
         assert total and int(total.group(1)) >= 1, r2.stderr[-2500:]
 
-        r3 = self._cli(checker, "apply", "--repo", str(repo),
-                       "--confirm-supervised-reanchor")
-        assert r3.returncode == 0, r3.stderr[-2500:]
-        result = json.loads(r3.stdout)
+        result = _subprocess_ceremony(checker, repo, tmp_path)
 
         new_head = _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
         new_anchor = _run("git", "rev-parse", P._ANCHOR_REF,
@@ -1300,20 +1488,84 @@ class TestThreeCommandIntegration:
         blessed = json.loads(_run("git", "show",
                                   f"{result['new_anchor']}:{P._MANIFEST_REL}",
                                   cwd=repo).stdout)
-        expected = P.authoritative_manifest(
-            evidence["manifest"],
-            P.rederive_static_manifest(result["previous_head"], repo=repo))
-        assert blessed == expected
+
+        # Asserted as PROPERTIES of the committed bytes, not against a rebuild.
+        #
+        # The replacement for [IC2] was `blessed == authoritative_manifest(...)`
+        # -- the same function on both sides of the equals sign, so it agreed
+        # with whatever that function did and could not fail. It duly passed
+        # while every committed entry was `{"mode":..., "oid":...}` with the
+        # content digest dropped. A tautology is a worse defect than a missing
+        # test: it reports success.
+        prev = result["previous_head"]
+        tree = {}
+        for line in _run("git", "ls-tree", "-r", prev,
+                         cwd=repo).stdout.splitlines():
+            meta, rel = line.split("\t", 1)
+            mode, _kind, oid = meta.split()
+            tree[rel] = (mode, oid)
+        cand = evidence["manifest"]["frozen_files"]
+        assert blessed["frozen_files"], "the blessed manifest pins nothing"
+        for rel, entry in blessed["frozen_files"].items():
+            assert isinstance(entry, dict), f"{rel} is not a v2 entry: {entry!r}"
+            assert set(entry) >= {"sha256", "mode", "oid"}, (
+                f"{rel} is missing {sorted({'sha256', 'mode', 'oid'} - set(entry))}"
+                f" -- the trust root would carry an entry the gate cannot compare")
+            # The content digest is the CANDIDATE's, having survived the merge.
+            expected_sha = cand[rel]
+            expected_sha = (expected_sha["sha256"]
+                            if isinstance(expected_sha, dict) else expected_sha)
+            assert entry["sha256"] == expected_sha, rel
+            # Mode and oid are the CHECKER's, read from the real tree.
+            assert (entry["mode"], entry["oid"]) == tree[rel], rel
+        # And the field only the checker can derive is present.
+        assert blessed["object_format"] == G._object_format(repo)
+        assert blessed["collection"] == evidence["manifest"]["collection"]
 
     def test_a_second_run_refuses_because_the_state_moved(self, tmp_path):
         """Replay, honestly: no nonce, but the bound state no longer holds."""
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         checker = _extract_anchored(repo, tmp_path / "extract")
-        assert self._cli(checker, "apply", "--repo", str(repo),
-                         "--confirm-supervised-reanchor").returncode == 0
-        again = self._cli(checker, "apply", "--repo", str(repo),
-                          "--confirm-supervised-reanchor")
+        _subprocess_ceremony(checker, repo, tmp_path)
+
+        with _n4_precondition(tmp_path / "maint"):
+            again = self._cli(
+                checker, "stage1", "--repo", str(repo),
+                "--signing-key", str(tmp_path / "maint.pub"),
+                "--package-out", str(tmp_path / "second.json"))
         assert again.returncode == 2
+        assert not (tmp_path / "second.json").exists(), (
+            "a refused stage 1 left an authorization package behind")
+
+    def test_replaying_the_confirmed_package_after_the_state_moved_refuses(
+            self, tmp_path):
+        """The replay surface the two-stage split *creates*, closed.
+
+        Splitting the ceremony makes the authorization a durable file that
+        outlives the run that produced it -- something the single-stage shape
+        never had. The digest confirmation cannot catch this: the bytes are
+        untouched, so `--confirm-package-sha256` still passes. What must refuse
+        is R4-c's re-resolution of the state the package names, and the only way
+        to know it does is to replay a package whose digest is still perfectly
+        valid.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        checker = _extract_anchored(repo, tmp_path / "extract")
+        pkg = tmp_path / "authorization-package.json"
+        _subprocess_ceremony(checker, repo, tmp_path, package=pkg)
+
+        import hashlib
+        digest = hashlib.sha256(pkg.read_bytes()).hexdigest()
+        moved = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+
+        replay = self._cli(checker, "stage2", "--repo", str(repo),
+                           "--package", str(pkg),
+                           "--confirm-package-sha256", digest)
+        assert replay.returncode == 2
+        assert "stale package cannot authorize a moved state" in replay.stderr
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() == moved, (
+            "a replayed package moved the trust root a second time")
 
 
 # --------------------------------------------------------------------------
@@ -1395,6 +1647,24 @@ def _transition_block() -> str:
     return matching[0]
 
 
+def _stage2_block() -> str:
+    """The recorded stage-2 invocation, lifted verbatim from the runbook.
+
+    Same discipline as every other recorded block: the document is the ceremony.
+    A stage-2 script transcribed into Python could be written correct while the
+    recorded one stayed broken, which is FUR5 exactly -- and stage 2 is the
+    invocation that signs and moves the trust root, so it is the last place to
+    accept a recorded-but-never-executed procedure.
+    """
+    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    section = text.split("### Phase 0 stage 2")[1].split("\n## ")[0]
+    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
+    matching = [b for b in blocks if "STAGE2" in b]
+    assert len(matching) == 1, (
+        f"expected exactly one recorded stage-2 block, found {len(matching)}")
+    return matching[0]
+
+
 def _recorded(repo: Path) -> dict[str, str]:
     """The values a Maintainer records at first use. Nothing is discovered by
     the runbook itself -- that was FUR6 and FUR7 -- so the fixtures stand in for
@@ -1408,6 +1678,19 @@ def _recorded(repo: Path) -> dict[str, str]:
         "<maintainer-recorded-mkdir>": shutil.which("mkdir"),
         "<maintainer-recorded-shasum>": shutil.which("shasum"),
         "<maintainer-recorded-sort>": shutil.which("sort"),
+        # The fixture's own throwaway signing key. `_n4_precondition` withholds
+        # its private half for the duration of a stage-1 run, which is what the
+        # ceremony asks a Maintainer to do.
+        "<maintainer-recorded-signing-key-public-path>":
+            str(repo.parent / "maint.pub"),
+        # Per-fixture and deliberately NOT inside the repo: the package is a
+        # ceremony artifact, and writing it into the tree being blessed would
+        # make it part of the state it authorizes.
+        "<absolute-path-for-the-authorization-package-must-not-exist>":
+            str(repo.parent / "authorization-package.json"),
+        # Stage 2 names the same artifact, as an existing file this time.
+        "<absolute-path-of-the-authorization-package>":
+            str(repo.parent / "authorization-package.json"),
         "<maintainer-recorded-home>": os.environ.get("HOME", "/nonexistent"),
     }
     missing = [k for k, v in values.items() if not v]
@@ -1472,14 +1755,85 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         script = _runbook_ceremony_script(repo)
+        before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
 
-        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
-                           capture_output=True, text=True, check=False)
+        with _n4_precondition(tmp_path / "maint"):
+            r = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                               capture_output=True, text=True, check=False)
 
         assert r.returncode == 0, f"{script}\n---\n{r.stderr[-2500:]}"
-        new = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
-        assert new == _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
-        assert new != anchor, "the ceremony reported success without blessing"
+        # The recorded loader now ends at STAGE 1, so what success means has
+        # changed: a package exists and NO ref moved. Asserting the old
+        # "anchor advanced" would now be asserting that a stage which must not
+        # sign had signed.
+        pkg = Path(str(repo.parent / "authorization-package.json"))
+        assert pkg.exists(), f"stage 1 wrote no package:\n{r.stderr[-1500:]}"
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() == before, (
+            "stage 1 moved a ref; it holds no key and must move nothing")
+
+    def test_the_recorded_two_stage_ceremony_runs_end_to_end(self, tmp_path):
+        """Both recorded blocks, executed in order, with a real key handover.
+
+        The FUR5 lesson applied to the protocol that replaced the one FUR5
+        found: a recorded ceremony nobody has run is not a ceremony. Stage 1's
+        block and stage 2's block are both lifted from the runbook, and the
+        Maintainer's part between them -- confirm the digest independently, then
+        make the key available -- is performed rather than assumed.
+        """
+        import hashlib
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+        pkg = repo.parent / "authorization-package.json"
+        if pkg.exists():
+            pkg.unlink()
+
+        # --- stage 1: key withheld, no ref may move -----------------------
+        r1, _ = _recorded_stage1(repo, tmp_path, _runbook_ceremony_script(repo))
+        assert r1.returncode == 0, r1.stderr[-2500:]
+        assert pkg.exists(), "the recorded stage 1 wrote no package"
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() == before
+
+        # --- the Maintainer's step between the stages ---------------------
+        confirmed = hashlib.sha256(pkg.read_bytes()).hexdigest()
+        assert confirmed in r1.stderr, (
+            "stage 1 did not print the digest the operator is told to confirm")
+
+        # --- stage 2: key available, and it extracts its OWN bytes --------
+        script = _substitute(_stage2_block(), repo).replace(
+            "<the-64-hex-digest-you-verified-in-step-1>", shlex.quote(confirmed))
+        r2 = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                            capture_output=True, text=True, check=False)
+        assert r2.returncode == 0, f"{script}\n---\n{r2.stderr[-2500:]}"
+
+        new_anchor = _run("git", "rev-parse", P._ANCHOR_REF,
+                          cwd=repo).stdout.strip()
+        assert new_anchor != before, "the recorded stage 2 moved nothing"
+        assert new_anchor == _run("git", "rev-parse", "HEAD",
+                                  cwd=repo).stdout.strip()
+        assert _run("git", "log", "-1", "--format=%G?",
+                    cwd=repo).stdout.strip() == "G", "the checkpoint is unsigned"
+
+    def test_the_recorded_stage2_extracts_and_verifies_its_own_bytes(self):
+        """D4: stage 2 starts from **separately** hash-verified bytes.
+
+        Reusing stage 1's temp directory would be the tempting simplification,
+        and it is wrong for a specific reason: candidate code executed during
+        stage 1, as the same user, while that directory sat on disk. The signing
+        stage would then run bytes the candidate had a window to rewrite. So the
+        recorded block must carry its own extraction and its own checklist --
+        the duplication is the control.
+        """
+        block = _stage2_block()
+        assert "<maintainer-recorded-first-use-hashes>" in block, (
+            "stage 2 has no checklist of its own")
+        assert 'cat-file blob "refs/cairn/gate-anchor:$path"' in block, (
+            "stage 2 does not extract from the anchor itself")
+        assert '"$SHASUM" -a 256 -c RECORDED.sha256' in block, (
+            "stage 2 does not verify the bytes it is about to execute")
+        # And it must not simply inherit stage 1's directory by name.
+        assert "from-stage-1" not in block
 
     def test_the_extraction_directory_is_not_itself_a_repository(self, tmp_path):
         """The premise the FUR5 shape depends on: were `$T` a repository, the
@@ -1489,17 +1843,31 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         _extract_anchored(repo, extract)
         assert not (extract / ".git").exists()
 
-    def test_omitting_repo_refuses_diagnosably_and_moves_nothing(self, tmp_path):
+    @pytest.mark.parametrize("stage", ["stage1", "stage2"])
+    def test_omitting_repo_refuses_diagnosably_and_moves_nothing(self, tmp_path,
+                                                                 stage):
         """The exact FUR5 defect. It was fail-closed but undiagnosable: git's
-        bare `fatal: not a git repository` names neither the cause nor the fix."""
+        bare `fatal: not a git repository` names neither the cause nor the fix.
+
+        Both stages are covered because both are anchored invocations run from
+        the extraction directory, and each would have its own way of guessing a
+        target. The refusal happens before argument-specific work, so the
+        required flags below are placeholders pointing nowhere.
+        """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         checker = _extract_anchored(repo, tmp_path / "T")
         before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
                   _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
 
-        r = self._cli(checker, "apply", "--confirm-supervised-reanchor")
+        flags = (["--signing-key", str(tmp_path / "maint.pub"),
+                  "--package-out", str(tmp_path / "unwritten.json")]
+                 if stage == "stage1"
+                 else ["--package", str(tmp_path / "absent.json"),
+                       "--confirm-package-sha256", "0" * 64])
+        r = self._cli(checker, stage, *flags)
 
         assert r.returncode == 2
+        assert not (tmp_path / "unwritten.json").exists()
         assert "--repo <checkout>" in r.stderr
         assert "not a git repository" in r.stderr
         assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
@@ -1757,6 +2125,32 @@ class TestKeyLoadPhaseSentinel:
             f"the seal is at line {seal} and the key loads at {signing}; the "
             f"key must not be loadable while candidate code may still run")
 
+    def test_stage1_never_reaches_a_signing_call_at_all(self):
+        """D3: "it never holds the key" as a property of the source.
+
+        The ordering node above is about `apply_now`, where a seal precedes the
+        key. Stage 1 is a stronger claim -- not "seals first" but "does not
+        sign, ever" -- and ordering cannot express it. Asserted on the AST
+        because the runtime evidence for it is an *absence*, and a test that
+        merely observes stage 1 not signing on one path proves nothing about
+        the others.
+        """
+        import ast
+        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+            encoding="utf-8")
+        fn = next(n for n in ast.walk(ast.parse(src))
+                  if isinstance(n, ast.FunctionDef) and n.name == "stage1")
+        called = {getattr(n.func, "id", "") or getattr(n.func, "attr", "")
+                  for n in ast.walk(fn) if isinstance(n, ast.Call)}
+        for forbidden in ("_construct_signed_commit", "_sign", "apply_now",
+                          "_transact"):
+            assert forbidden not in called, (
+                f"stage 1 calls {forbidden}; the stage that runs candidate code "
+                f"must not be able to sign or move anything")
+        assert "require_stage1_cannot_sign" in called, (
+            "stage 1 does not probe the key channel; the refusal that makes "
+            "the boundary real would be absent")
+
     def test_the_ordering_holds_through_a_REAL_apply(self, tmp_path,
                                                      monkeypatch):
         """Executed end to end, not read off the source.
@@ -1786,9 +2180,19 @@ class TestKeyLoadPhaseSentinel:
         monkeypatch.setattr(P, "gather_evidence", traced_gather)
         monkeypatch.setattr(P, "seal_candidate_execution", traced_seal)
 
-        result = P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+        result = _two_stage(repo, monkeypatch)
 
-        assert order == ["candidate-execution", "seal"], order
+        # Two stages, so two seals -- and the shape carries the D3 contract.
+        # Candidate code runs exactly once, in stage 1, and every seal follows
+        # it; stage 2 seals with nothing executed in between. `_two_stage`
+        # resets the phase between the stages because stage 2 is a fresh
+        # process in reality, so the second seal is a real up-front seal and not
+        # a leftover from the first.
+        assert order == ["candidate-execution", "seal", "seal"], order
+        assert order.count("candidate-execution") == 1, (
+            f"candidate code executed more than once: {order}")
+        assert "candidate-execution" not in order[order.index("seal"):], (
+            f"candidate code ran after a seal: {order}")
         assert result["new_anchor"], "the ceremony did not complete"
         assert P._phase == P._PHASE_SEALED, (
             "apply returned with candidate execution still permitted")
@@ -1942,19 +2346,70 @@ class TestTransitionLoaderSelectsTheSource:
         assert "--transition-from-review" not in steady
         assert "REVIEW_MANIFEST" not in steady
 
-    def test_transition_mode_needs_both_flags_or_refuses(self, tmp_path):
-        """One flag alone is not a mode. A half-specified transition must not
-        fall back to steady state, which would run the ceremony with the
-        selection predicate silently skipped."""
+    @pytest.mark.parametrize("stage", ["stage1", "stage2"])
+    @pytest.mark.parametrize("half", ["candidate-only", "manifest-only"])
+    def test_transition_mode_needs_both_flags_or_refuses(self, tmp_path, stage,
+                                                        half):
+        """One flag alone is not a mode -- **on both stages**.
+
+        A half-specified transition must not fall back to steady state, which
+        would run the ceremony with the selection predicate silently skipped.
+
+        Both stages are covered because each revalidates the transition
+        independently (D4 defence in depth). Checking stage 1 alone would leave
+        stage 2 able to sign a *steady-state* checkpoint -- one whose message
+        records "no closure change" -- for a run the loader selected in
+        transition mode. The admitted authority set would simply be absent from
+        the durable record, which is the [E4] failure with extra steps.
+        """
         repo, anchor, head = _anchored_repo(tmp_path)
         checker = _REPO / "bootstrap/tests/_gate_preflight.py"
+        manifest = tmp_path / "review.txt"
+        manifest.write_text("unused -- the refusal precedes any read\n")
+        flags = (["--reviewed-candidate", head] if half == "candidate-only"
+                 else ["--transition-from-review", str(manifest)])
+        required = (["--signing-key", str(tmp_path / "k.pub"),
+                     "--package-out", str(tmp_path / "pkg.json")]
+                    if stage == "stage1"
+                    else ["--package", str(tmp_path / "pkg.json"),
+                          "--confirm-package-sha256", "0" * 64])
         r = subprocess.run(
-            [sys.executable, "-E", "-s", str(checker), "apply",
-             "--repo", str(repo), "--confirm-supervised-reanchor",
-             "--reviewed-candidate", head],
+            [sys.executable, "-E", "-s", str(checker), stage,
+             "--repo", str(repo), *required, *flags],
             capture_output=True, text=True, check=False)
         assert r.returncode == 2
         assert "one alone is not a mode" in r.stderr
+        # The refusal must precede the work, not follow it: neither the key
+        # probe nor the package read may have run.
+        assert "STAGE 1 CAN SIGN" not in r.stderr
+        assert not (tmp_path / "pkg.json").exists()
+
+    def test_stage2_actually_receives_the_transition_flags_it_declares(self):
+        """A declared flag that no call site consumes is [M2-1] again.
+
+        The `stage2` parser grew `--transition-from-review` and
+        `--reviewed-candidate` before `apply_now` was given them, so the
+        revalidation they exist to trigger was unreachable through the public
+        path -- built, tested in isolation, dead to the governing route. This
+        reads the dispatch source rather than the parser, because the parser
+        declaring them is precisely the state that looked correct.
+        """
+        tree = ast.parse(
+            (_REPO / "bootstrap/tests/_gate_preflight.py").read_text())
+        main = next(n for n in tree.body
+                    if isinstance(n, ast.FunctionDef) and n.name == "main")
+        calls = [n for n in ast.walk(main)
+                 if isinstance(n, ast.Call)
+                 and isinstance(n.func, ast.Name) and n.func.id == "apply_now"]
+        assert len(calls) == 1, (
+            f"`main` should reach the signing stage through exactly one "
+            f"`apply_now` call; found {len(calls)}")
+        passed = {kw.arg for kw in calls[0].keywords}
+        for flag in ("review_manifest", "reviewed_candidate"):
+            assert flag in passed, (
+                f"`stage2` declares --{flag.replace('_', '-')} but never passes "
+                f"it to apply_now; the revalidation it exists to trigger is "
+                f"unreachable through the public path")
 
 
 class TestTransitionRefusesWithoutADelta:
@@ -2270,10 +2725,10 @@ class TestKeyChannelProbe:
         sound."""
         key = self._keypair(tmp_path)
         monkeypatch.setattr(P, "signing_key_path",
-                            lambda repo=None: str(key.with_suffix(".pub")))
+                            lambda recorded=None: str(key.with_suffix(".pub")))
 
         with pytest.raises(P.KeyChannelError) as exc:
-            P.require_stage1_cannot_sign(repo=P._REPO, out=io.StringIO())
+            P.require_stage1_cannot_sign("recorded", out=io.StringIO())
 
         msg = str(exc.value)
         assert "STAGE 1 CAN SIGN" in msg
@@ -2283,9 +2738,9 @@ class TestKeyChannelProbe:
     def test_an_unnamed_key_channel_refuses(self, monkeypatch):
         """D2: the contract names the supported channel. An unnamed one cannot
         be probed, and an unprobeable precondition is not a precondition."""
-        monkeypatch.setattr(P, "signing_key_path", lambda repo=None: "")
+        monkeypatch.setattr(P, "signing_key_path", lambda recorded=None: "")
         with pytest.raises(P.KeyChannelError, match="unnamed"):
-            P.require_stage1_cannot_sign(repo=P._REPO, out=io.StringIO())
+            P.require_stage1_cannot_sign("recorded", out=io.StringIO())
 
     def test_the_probe_is_non_interactive_and_bounded(self):
         """A passphrase prompt is not a refusal -- left interactive, the
@@ -2398,7 +2853,7 @@ class TestRangeReportIsOnTheGoverningPath:
     def test_a_real_ceremony_signs_a_bound_digest(self, tmp_path, monkeypatch):
         repo, anchor, head = self._prepared(tmp_path, monkeypatch)
 
-        result = P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+        result = _two_stage(repo, monkeypatch)
 
         body = _run("git", "log", "-1", "--format=%B", result["new_anchor"],
                     cwd=repo).stdout
@@ -2434,7 +2889,7 @@ class TestRangeReportIsOnTheGoverningPath:
         monkeypatch.setattr(P, entry_point, raiser)
 
         with pytest.raises((AssertionError, P.PreflightError)):
-            P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+            _two_stage(repo, monkeypatch)
 
         assert _run("git", "rev-parse", P._ANCHOR_REF,
                     cwd=repo).stdout.strip() == before, (
@@ -2453,7 +2908,7 @@ class TestRangeReportIsOnTheGoverningPath:
 
         monkeypatch.setattr(P, "rederive_and_bind", drifted)
         with pytest.raises(P.RangeReportDrift):
-            P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+            _two_stage(repo, monkeypatch)
 
     def test_the_full_report_is_presented_not_just_its_digest(
             self, tmp_path, monkeypatch):
@@ -2461,7 +2916,7 @@ class TestRangeReportIsOnTheGoverningPath:
         repo, anchor, head = self._prepared(tmp_path, monkeypatch)
         buf = io.StringIO()
 
-        P.apply_now(repo=repo, confirmed=True, out=buf)
+        _two_stage(repo, monkeypatch, out=buf)
 
         printed = buf.getvalue()
         assert "range-review report" in printed
@@ -2508,6 +2963,45 @@ class TestApplyCommitsTheAuthoritativeManifest:
         merged = P.authoritative_manifest(theirs, ours)
         entry = merged["frozen_files"]["x.py"]
         assert "mode" not in entry and "oid" not in entry
+
+    def test_a_v1_scalar_entry_keeps_its_content_digest(self):
+        """The shape the real evidence stage actually emits.
+
+        Every other node in this class feeds a v2 dict, and that is precisely
+        how this got through: `gather_evidence` runs `produce` from a raw tree
+        with no repository, so it emits `rel -> "<sha256>"`, and the merge built
+        each entry from `{}` and overlaid only mode and oid. The committed
+        manifest carried no content digest for any frozen file -- the field the
+        gate actually compares -- while every test here passed.
+
+        A fixture that only exercises the shape the code finds convenient is not
+        coverage; it is a mirror.
+        """
+        theirs = {"frozen_files": {"x.py": "c" * 64}}      # v1: the live shape
+        ours = {"frozen_files": {"x.py": {"sha256": "c" * 64,
+                                          "mode": "100644", "oid": "a" * 40}}}
+
+        entry = P.authoritative_manifest(theirs, ours)["frozen_files"]["x.py"]
+
+        assert entry["sha256"] == "c" * 64, (
+            "the candidate's content digest was dropped; the anchored manifest "
+            "would pin nothing the gate can compare")
+        assert entry["mode"] == "100644" and entry["oid"] == "a" * 40
+
+    def test_the_merge_agrees_whether_the_candidate_is_v1_or_v2(self):
+        """C7's byte comparison depends on this and would silently fail without.
+
+        Stage 1 merges the candidate's v1-shaped manifest; stage 2 merges its
+        own v2-shaped re-derivation. The two must produce identical bytes or
+        every real ceremony refuses itself at the exact-byte check.
+        """
+        ours = {"frozen_files": {"x.py": {"sha256": "c" * 64,
+                                          "mode": "100644", "oid": "a" * 40}}}
+        from_v1 = P.authoritative_manifest({"frozen_files": {"x.py": "c" * 64}},
+                                           ours)
+        from_v2 = P.authoritative_manifest(json.loads(json.dumps(ours)), ours)
+        assert json.dumps(from_v1, sort_keys=True) == \
+            json.dumps(from_v2, sort_keys=True)
 
 
 class TestStaticManifestIsRederived:
@@ -2678,13 +3172,7 @@ class TestStaticManifestIsWiredIntoCheck:
             shell=True, capture_output=True, text=True)
         assert sneaked not in archived.stdout
 
-        r = subprocess.run(
-            [sys.executable, "-E", "-s", str(checker), "apply",
-             "--repo", str(repo), "--confirm-supervised-reanchor"],
-            capture_output=True, text=True, check=False)
-        assert r.returncode == 0, r.stderr[-2500:]
-
-        new = json.loads(r.stdout)["new_anchor"]
+        new = _subprocess_ceremony(checker, repo, tmp_path)["new_anchor"]
         blessed = json.loads(_run("git", "show", f"{new}:{P._MANIFEST_REL}",
                                   cwd=repo).stdout)
         assert sneaked in blessed["frozen_files"], (
@@ -2736,12 +3224,11 @@ class TestLoaderTrustBoundary:
         assert self._MARKER in ambient.stdout, (
             "the probe must actually substitute, or this proves nothing")
 
-        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
-                           capture_output=True, text=True, check=False)
+        r, before = _recorded_stage1(repo, tmp_path, script)
 
         assert not (repo / "PWNED").exists(), (
             "the loader executed substituted checker bytes")
-        assert r.returncode == 0, r.stderr[-2500:]
+        _assert_stage1_completed(repo, r, before)
 
     def test_a_tampered_recorded_hash_refuses_before_python_runs(self,
                                                                  tmp_path):
@@ -2790,16 +3277,19 @@ class TestLoaderTrustBoundary:
         _run("git", "init", "-q", ".", cwd=elsewhere)   # has no gate-anchor ref
 
         import os as _os
-        r = subprocess.run(
-            ["bash", "-c", script], cwd=str(repo), capture_output=True,
-            text=True, check=False,
+        r, before = _recorded_stage1(
+            repo, tmp_path, script,
             env={**_os.environ, "GIT_DIR": str(elsewhere / ".git")})
 
         assert r.returncode == 0, (
             f"GIT_DIR redirected the loader away from the named checkout: "
             f"{r.stderr[-1500:]}")
-        assert _run("git", "rev-parse", P._ANCHOR_REF,
-                    cwd=repo).stdout.strip() != anchor, "nothing was blessed"
+        # The package is what proves the loader reached the NAMED checkout: it
+        # can only be produced from a repository that has the gate-anchor ref,
+        # and `elsewhere` has none. The old form asserted the anchor had moved,
+        # which the recorded block no longer does -- and would now pass only if
+        # a keyless stage had signed.
+        _assert_stage1_completed(repo, r, before)
 
     def test_the_acquisition_command_resists_git_dir_redirection(self, tmp_path):
         """FUR7. The command that obtains the runbook is the instruction source:
@@ -2865,12 +3355,11 @@ class TestLoaderTrustBoundary:
                                capture_output=True, text=True)
         assert which.stdout.strip() == str(fake), which.stdout
 
-        r = subprocess.run(["bash", "-c", script], cwd=str(repo), env=env,
-                           capture_output=True, text=True, check=False)
+        r, before = _recorded_stage1(repo, tmp_path, script, env=env)
 
         assert not (repo / "PWNED").exists(), (
             "a replacement shasum rewrote the checker and vouched for it")
-        assert r.returncode == 0, r.stderr[-2500:]
+        _assert_stage1_completed(repo, r, before)
 
     def test_the_loader_invokes_every_utility_by_absolute_path(self):
         """The property behind both tests above, asserted on the recorded text:
@@ -2920,13 +3409,12 @@ class TestLoaderTrustBoundary:
             '  command echo "$@"\n'
             '}\n')
 
-        r = subprocess.run(["bash", "-c", hostile + script], cwd=str(repo),
-                           capture_output=True, text=True, check=False)
+        r, before = _recorded_stage1(repo, tmp_path, script, prefix=hostile)
 
         assert not pwned.exists(), (
             "an inherited shell function rewrote the checker and forged its "
             "checklist entry past the pinned verifier")
-        assert r.returncode == 0, r.stderr[-2500:]
+        _assert_stage1_completed(repo, r, before)
 
     def test_the_hostile_function_probe_is_live(self, tmp_path):
         """Guards the test above. If the inherited definition never took effect,
