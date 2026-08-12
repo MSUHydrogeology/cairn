@@ -153,3 +153,106 @@ requirement, an argument falsifiable in four file reads, no contract, schema, or
 trust boundary. Heavier ceremony would be the proposal contradicting itself, and
 `review-efficient-lifecycle`'s 2026-08-11 revision already made Internal the
 ordinary derived tier once the deliberative weight sits at the proposal.
+
+## Review -- Codex (External) -- 2026-08-12
+
+**Model**: GPT-5 Codex
+**Reviewed commit**: `1d05d82404ad4e65e49677062614e2658b59ce68`
+**Reviewed proposal blob**: `54db25f7d31a2754371672f1a67422ecf73f4a25`
+**Tier**: External, different agent type from the author
+
+**Verdict: REVISE.** The problem is real and the proposed direction is right:
+ordinary development is paying too many full-suite runs, and a clean,
+commit-bound execution of a competent reviewed mapping is useful integration
+evidence. I do not recommend restoring unconditional Boundary B. The revision
+needed is small but substantive: carry the bounded mode through every governing
+surface, make the independent reviewer adjudicate the bounding claim, and
+resolve the accepted contracts that currently promise the opposite.
+
+### Findings
+
+**[E1 -- P1] Two governing surfaces are missing, so the change would ship two
+different Boundary B contracts.** I reproduced the four cited reads and then
+searched the shipped and review-facing copies. `templates/core/AGENTS.md:263`
+still tells every adopter to run the configured full suite once. That is the
+installed governing rule, not a test detail. `doctrine/dual-review.md:189-214`
+also defines Boundary C as occurring after “broad verification,” tells the
+reviewer to inspect the “broad command,” and treats doubt about the “broad
+result” as the escalation trigger. Editing only the proposal's four named
+surfaces leaves adopters unconditional and leaves reviewers evaluating a record
+shape the revised Boundary B no longer necessarily produces.
+
+*Satisfier*: add `templates/core/AGENTS.md` and `doctrine/dual-review.md` to
+`Touches`, scope, implementation, and verification. Keep Cairn's and the
+installed `AGENTS.md` rules semantically parallel while retaining their
+project-specific command differences.
+
+**[E2 -- P1] “The reviewer attacks the argument” is not yet an executable
+handoff.** The implementer chooses the mapping, writes the bounding argument,
+and benefits from the cheaper path. Boundary C is the independent control, but
+the proposal does not require the code reviewer to record whether that argument
+was accepted. Under the current six triggers, a reviewer can simply accept the
+presence of a valid-looking record and proceed; “concrete doubt” is weaker than
+an affirmative adjudication of the new condition.
+
+Give the record an explicit mode, for example `Boundary B mode: full | bounded`.
+For `bounded`, require the record to name the touched surfaces, the reviewed
+mapping and standing gates, the reason effects are bounded, and the stated
+absence of any contract/trust-ceremony surface. Then require Boundary C to
+record `Bounding: ACCEPTED | FULL RUN REQUIRED`, after challenging at least one
+named mapping or omission. `FULL RUN REQUIRED` invalidates the bounded record
+until the full run lands. This is a short evidence field, not a new review
+round, and it makes the saving depend on independent judgement rather than
+self-exemption.
+
+**[E3 -- P1] The proposal silently reverses two accepted contracts and does not
+say which active plans may adopt the reversal.** The accepted
+`verification-evidence-boundaries` proposal says the complete run is the
+backstop for dependencies the plan did not know about. The accepted and now
+executing `review-efficient-lifecycle` contract says to retain that model
+unchanged and explicitly states that Boundary B runs broad integration. The new
+proposal cites the latter only for its review-allocation revision; it does not
+disclose or dispose of this direct conflict. Meanwhile, editing `AGENTS.md` and
+doctrine acts immediately, while editing templates acts prospectively, so an
+already-open plan can receive two answers unless applicability is stated.
+
+*Satisfier*: say explicitly that an accepted Decision here supersedes the
+unconditional-B clause of `verification-evidence-boundaries` and the cited
+Boundary B portions of `review-efficient-lifecycle`. Preserve an already-open
+plan's written verification contract unless it receives an explicit append-only
+plan revision under the deviation rule. In particular, this proposal must not
+silently rewrite `review-efficient-lifecycle` while that plan is executing.
+
+**[E4 -- P2] The triage and preflight describe an assurance-contract change as
+“no contract.”** Boundary B is itself a project-wide verification contract;
+the proposal changes what evidence permits code review to begin. Calling it no
+contract understates the reason proposal review matters and obscures the
+eligibility fence already present in the safeguard.
+
+This does not require a standalone implementation plan. “One bounded doctrine
+change, implemented atomically” can still justify `Plan review: not required`.
+Correct the accounting instead: name the verification-contract change, state
+that bounded mode refuses when a contract or trust-ceremony surface is present,
+and classify the assurance reduction honestly in the security preflight. A
+separate Security Review is unnecessary if that exclusion remains explicit;
+changes governed by stronger plan-specific or release ceremonies continue to
+use those commands.
+
+### Closure
+
+Keep the proposal small. One Response can close all four findings by expanding
+the surface list from four to six, adding the two Boundary B mode / Boundary C
+adjudication fields, stating prospective and in-flight precedence, and
+correcting the contract accounting. No corpus-wide study, new selector, parser,
+or additional review layer is needed.
+
+### Verification
+
+I reviewed the exact opening blob above; compared the live Boundary A/B/C text
+in `AGENTS.md`, `templates/core/AGENTS.md`, `doctrine/plans.md`, and
+`doctrine/dual-review.md`; checked both plan-template slots; read the worked
+`scope-reduction-trap` Boundary B record and its later re-take disposition; and
+traced the accepted `verification-evidence-boundaries` and executing
+`review-efficient-lifecycle` promises. The textual diagnosis reproduced. I did
+not run pytest because this proposal contains no implementation bytes and makes
+no runtime claim.
