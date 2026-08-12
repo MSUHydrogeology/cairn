@@ -55,7 +55,7 @@ B  the reviewed-authority transition + roster continuity        [DONE 72b14b1]
 C  the authorization package, schema and validation             [DONE 4816d0a]
 D  the two-invocation protocol + key-channel preflight    [DONE a63da58 +
                                                             b7087c7 d055daa]
-E  runbook rewrite + the R1-F amendment                         [commit pending]
+E  runbook rewrite + the R1-F amendment                         [DONE 95c2f47]
 --- stable bytes ---------------------------------------------------
 B1 Boundary B on the stable pre-review commit                   [record]
 M2 the parent plan's exact-byte retake, ONE only  (obtained by) [Maintainer]

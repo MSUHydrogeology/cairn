@@ -2973,6 +2973,144 @@ class TestAuthorizationPackage:
         with pytest.raises(OSError):
             P.read_package(link, confirmed_sha256=digest)
 
+    @pytest.mark.parametrize("field", sorted(
+        {"schema", "observed_anchor", "candidate_head", "candidate_tree",
+         "branch", "expected_old", "range_report", "range_report_digest",
+         "review_manifest", "prospective_manifest_b64",
+         "prospective_manifest_sha256", "collection", "interpreter"}))
+    def test_every_package_field_is_mutation_tested_through_stage_2(
+            self, tmp_path, monkeypatch, field):
+        """Acceptance criterion 7, and deliberately the hard form.
+
+        Each field is mutated **and the package re-digested**, so the
+        Maintainer's `--confirm-package-sha256` matches the tampered bytes
+        perfectly. That models the case the digest cannot help with: whoever
+        rewrote the file also supplied the digest the operator confirmed. What
+        must refuse is stage 2's own re-derivation of every field, one at a
+        time -- so no field is decorative, and none is trusted merely because it
+        arrived inside a confirmed artifact.
+
+        Running it through the public stage-2 path rather than `read_package`
+        is the [M2-1] discipline: a schema check that nothing consumes refuses
+        nothing.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        manifest = {**P.rederive_static_manifest(head, repo=repo),
+                    "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                                   "skip_xfail_marked": []},
+                    "interpreter": {"version": "3.13.13"}}
+        monkeypatch.setattr(P, "gather_evidence",
+                            lambda *a, **k: _fake_evidence(head, manifest))
+        monkeypatch.setattr(P, "require_stage1_cannot_sign",
+                            lambda *a, **k: {"key_path": "(stubbed)"})
+
+        pkg_path = tmp_path / "pkg.json"
+        P.stage1(repo=repo, package_out=pkg_path, out=io.StringIO())
+        honest = json.loads(pkg_path.read_bytes())
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+
+        tampered = dict(honest)
+        value = honest[field]
+        if isinstance(value, str):
+            tampered[field] = ("9" * len(value)) if value else "x"
+        elif isinstance(value, dict):
+            tampered[field] = {**value, "injected": "x"}
+        elif value is None:
+            tampered[field] = {"provenance": "forged", "members": {},
+                               "candidate": "9" * 40, "digest": "9" * 64}
+        else:
+            tampered[field] = "9" * 40
+        assert tampered[field] != value, f"{field} was not actually mutated"
+
+        pkg_path.unlink()
+        import hashlib
+        body = (json.dumps(tampered, indent=2, sort_keys=True) + "\n").encode()
+        pkg_path.write_bytes(body)
+        confirmed = hashlib.sha256(body).hexdigest()   # the operator's digest
+
+        P._phase = P._PHASE_CANDIDATE
+        with pytest.raises(P.PreflightError):
+            P.apply_now(repo=repo, package=str(pkg_path),
+                        confirmed_package_sha256=confirmed, out=io.StringIO())
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before, (
+            f"a package with a mutated {field!r} moved a ref")
+
+    def test_a_substituted_prospective_manifest_moves_neither_ref(
+            self, tmp_path, monkeypatch):
+        """Criterion 7's named case: the bytes that become the trust root.
+
+        `prospective_manifest_b64` is the one field whose contents are committed
+        verbatim, so a substitution here is a substitution of the anchored
+        artifact itself. Stage 2 rebuilds it independently and compares EXACT
+        bytes; a field-by-field comparison would accept a re-serialization that
+        differs from what stage 1 measured.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        manifest = {**P.rederive_static_manifest(head, repo=repo),
+                    "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                                   "skip_xfail_marked": []},
+                    "interpreter": {"version": "3.13.13"}}
+        monkeypatch.setattr(P, "gather_evidence",
+                            lambda *a, **k: _fake_evidence(head, manifest))
+        monkeypatch.setattr(P, "require_stage1_cannot_sign",
+                            lambda *a, **k: {"key_path": "(stubbed)"})
+        pkg_path = tmp_path / "pkg.json"
+        P.stage1(repo=repo, package_out=pkg_path, out=io.StringIO())
+        honest = json.loads(pkg_path.read_bytes())
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+
+        # A manifest that is well-formed and internally consistent -- its own
+        # digest field updated to match -- so only the independent rebuild can
+        # catch it.
+        import base64, hashlib
+        swapped = json.loads(base64.b64decode(honest["prospective_manifest_b64"]))
+        swapped["frozen_files"] = {}
+        body_m = (json.dumps(swapped, indent=2, sort_keys=True)).encode() + b"\n"
+        honest["prospective_manifest_b64"] = base64.b64encode(body_m).decode()
+        honest["prospective_manifest_sha256"] = P._sha256_bytes(body_m)
+
+        pkg_path.unlink()
+        body = (json.dumps(honest, indent=2, sort_keys=True) + "\n").encode()
+        pkg_path.write_bytes(body)
+
+        P._phase = P._PHASE_CANDIDATE
+        with pytest.raises(P.PreflightError):
+            P.apply_now(repo=repo, package=str(pkg_path), out=io.StringIO(),
+                        confirmed_package_sha256=hashlib.sha256(body).hexdigest())
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before
+
+    def test_no_boolean_confirmation_path_exists_anywhere_in_the_module(self):
+        """Acceptance criterion 8, asserted on the module rather than the CLI.
+
+        The CLI node proves argparse rejects the flag. This one proves there is
+        nothing left for a future parser to re-expose: no parameter, no
+        attribute, no constant. "Removed, not deprecated" is a claim about the
+        module, and a check scoped to the command line would pass over a
+        dormant keyword argument that one line of parser code would revive.
+        """
+        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+            encoding="utf-8")
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.arg):
+                assert "confirm_supervised" not in node.arg, (
+                    f"a boolean confirmation parameter survives: {node.arg}")
+            if isinstance(node, ast.Name):
+                assert "confirm_supervised" not in node.id, node.id
+        # The flag string may appear only where the removal is explained.
+        for i, line in enumerate(src.splitlines(), 1):
+            if "confirm-supervised-reanchor" in line:
+                assert "REMOVED" in src[max(0, src.index(line) - 400):
+                                        src.index(line) + 400], (
+                    f"line {i} mentions the removed flag outside an "
+                    f"explanation of its removal")
+
     def test_writing_over_an_existing_path_refuses(self, tmp_path):
         dest = tmp_path / "pkg.json"
         dest.write_text("prior", encoding="utf-8")

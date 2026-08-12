@@ -2798,6 +2798,36 @@ def apply_now(*, repo: Path = _REPO,
             "no range-review report was derived; the checkpoint would bind no "
             "reviewed classification, which is the state [M2-1] found")
 
+    # CLOSE THE HANDSHAKE: what the Maintainer read must be what gets signed.
+    #
+    # The two-stage protocol's entire value is that a human reads the report in
+    # the package and confirms its digest before the key is loaded. Stage 2
+    # re-derives its own report -- correctly, since a package must not be
+    # authority -- but re-deriving and then never comparing means the Maintainer
+    # could authorize report R while stage 2 signs R'. In practice the state
+    # comparison above makes them agree; "in practice" is exactly the reasoning
+    # that produced [M2-1], where the machinery was right and unreached.
+    #
+    # Both halves are checked, because they fail differently. The package must
+    # be internally consistent -- the body the Maintainer READ has to be the
+    # body its stated digest covers, or the digest they confirmed described
+    # something else. And the package's report must equal stage 2's own.
+    if range_report_digest(pkg["range_report"]) != pkg["range_report_digest"]:
+        raise PackageError(
+            "the package's range report does not hash to the digest the "
+            "package states; the report presented for reading and the digest "
+            "confirmed against it are not the same object")
+    if pkg["range_report_digest"] != plan["range_report_digest"]:
+        raise PackageError(
+            f"the report the Maintainer authorized digests to "
+            f"{pkg['range_report_digest'][:12]}; stage 2 re-derives "
+            f"{plan['range_report_digest'][:12]}. The checkpoint would bind a "
+            f"state nobody read.")
+    if pkg["candidate_tree"] != plan["candidate_tree"]:
+        raise PackageError(
+            f"the package names candidate tree {pkg['candidate_tree'][:12]}; "
+            f"this commit's tree is {str(plan['candidate_tree'])[:12]}")
+
     out.write("\n--- range-review report (the authorized state) ---\n")
     out.write(json.dumps(plan["range_report"], indent=2, sort_keys=True) + "\n")
     out.write(f"range-report digest: {plan['range_report_digest']}\n")
