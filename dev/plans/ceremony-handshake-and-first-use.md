@@ -1448,3 +1448,71 @@ Not this plan's to fix.
 
 **Boundary B is owed again** on these bytes, and both blocking findings' answers
 need an independent read.
+
+## Implementation verification -- Claude -- 2026-08-12 (re-run 2)
+
+**Supersedes both records above.** The security-review response changed the
+signing path, the recorded ceremony and the tests, so a fresh full run is owed.
+
+**Boundary B mode**: **full** — the Hard Refusal Fence covers trust-ceremony
+surfaces, and this range changes the signing path itself.
+
+**Tested SHA**: `f30a921`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — 3.13.13.
+**Tree state**: fresh `git clone --shared` at `f30a921`; `git status
+--porcelain` empty before **and** after.
+
+| # | Command | Outcome |
+|---|---------|---------|
+| 1 | `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **4008 passed, 4 failed, 1 skipped** in 550.41s (9m10s) |
+| 2 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | **93 neutrality FAIL**, redundancy `fail=0` |
+
+`4008` is `3998` plus the ten nodes the security-review response added.
+
+### Non-pass disposition
+
+The **same four**, unchanged across all three runs, each already reproduced at
+`a63da58` — before any of this range — and, for the three `__pycache__` nodes,
+in the main working tree:
+
+* `TestPublicCli::test_check_runs_against_the_live_repo_and_reports` — clone
+  artifact; a `--shared` clone carries no `refs/cairn/gate-anchor`.
+* `test_detached_checkout_excludes_an_ignored_pytest_override` and both
+  `TestLoaderContainmentMatrix` parameters — one pre-existing defect: `.pyc`
+  writes counted as working-tree mutation. All green under
+  `PYTHONDONTWRITEBYTECODE=1`. Outside this plan's surfaces, flagged not fixed.
+
+### Quality gate
+
+93 FAILs, **set byte-identical** to `a63da58` (`diff` of sorted FAIL lines
+empty). Distribution counted: `templates/` 65, `docs/` 14, `doctrine/` 9,
+`bootstrap/` 5 — all five of the last being
+`bootstrap/tests/fixtures/skills/README.md`. **No FAIL names a path this range
+touched**, checked against `git diff --name-only 4877ab9..f30a921`.
+
+### Known omissions — unchanged
+
+* **[TRU-7]** unmeasured (M4 only).
+* The **host-persistence residual** is unchanged; the two-stage split is
+  sequencing, not containment. [S1] was a *removable execution path* in addition
+  to that residual, and is now removed; the residual itself is not reduced.
+* **N4 cannot be established by code.** [E1] stands. Stage 1 now refuses an
+  unprobeable channel, which narrows the ways the probe can be satisfied
+  vacuously — it does not make the probe into an enforcement.
+* Tests model N4 by withholding the private half: a fixture standing in for a
+  Maintainer act, not evidence the act occurred.
+
+### Standing claims, re-checked
+
+* `refs/cairn/gate-anchor` still `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3`,
+  mtime **2026-08-03 16:47**; `.git/logs/refs/cairn/` does not exist.
+* **No ceremony key loaded, no ceremony run, nothing pushed.**
+
+### What is owed before Chunk H
+
+1. An **independent read of the [S1]/[S2] answers**. The security review that
+   found them read `6e7ed4a`; nothing has reviewed `f30a921`. The signing path
+   is the one surface where an unreviewed fix is least acceptable.
+2. The **N4 precondition** (Maintainer): ceremony key encrypted at rest and
+   loaded into no agent for the duration of stage 1.
+3. Then **one** M2 retake under M7, then M3/M4.
