@@ -152,6 +152,15 @@ _STERILE_CONFIG: dict[str, str] = {
     "gpg.format": "ssh",
     "diff.external": "",
     "core.pager": "cat",
+    # Security review [S1]. `gpg.ssh.defaultKeyCommand` names a program Git runs
+    # to obtain a signing key when `user.signingKey` is unset -- so a repository
+    # under candidate control could name a script and have Git EXECUTE it, in
+    # stage 2, after `seal_candidate_execution`. Reproduced: the script ran and
+    # wrote a marker; construction then failed on the invalid key it returned,
+    # but the execution had already happened. Pinned empty, alongside the
+    # selector itself (`user.signingKey`, set per-invocation at the one call
+    # site that signs).
+    "gpg.ssh.defaultKeyCommand": "",
 }
 
 #: Index modes accepted for a frozen-surface member: regular file only.
@@ -2039,6 +2048,69 @@ def signing_key_path(recorded: str | None) -> str:
     return (recorded or "").strip()
 
 
+def validate_signing_key(recorded: str | None) -> tuple[str, str]:
+    """Resolve the recorded key to ``(absolute path, SHA256 fingerprint)``.
+
+    Security review **[S1]**. Before this, a recorded path that did not exist
+    was handed straight to :func:`probe_cannot_sign`, `ssh-keygen` failed with
+    "no such file", and the failure was classified as **"stage 1 cannot sign"**.
+    So the strongest-sounding control in the ceremony could be satisfied by
+    aiming it at nothing — and stage 2, which received no key identity at all,
+    then signed with whatever key Git found in repository configuration.
+
+    A missing, non-absolute, symlinked, non-regular or unparseable key is
+    therefore **unprobeable**, which is a third answer distinct from both
+    "cannot sign" and "can sign": the question was never asked. It refuses.
+
+    The fingerprint is what makes the two stages talk about the same key. It is
+    derived from the public half only, so computing it neither needs nor touches
+    private material.
+    """
+    # Guarded like the signing probe next to it. `ssh-keygen -l` reads a public
+    # key at a pinned absolute path and is not candidate code, so an exemption
+    # would have been arguable -- but the key-load sentinel's rule is that
+    # *every* subprocess route refuses after the marker, and a rule with no
+    # exemptions stays true more reliably than one with a growing list. Nothing
+    # validates a key after the seal in any case: both stages do it first.
+    refuse_if_sealed("the signing-key validation probe")
+    key_path = signing_key_path(recorded)
+    if not key_path:
+        raise KeyChannelError(
+            "no signing key was recorded (--signing-key), so the supported "
+            "key channel is unnamed and the N4 precondition cannot be probed. "
+            "It is recorded rather than discovered, deliberately.")
+    p = Path(key_path)
+    if not p.is_absolute():
+        raise KeyChannelError(
+            f"the recorded signing key {key_path!r} is not an absolute path; "
+            f"a relative key path resolves against a working directory the "
+            f"ceremony does not control")
+    if p.is_symlink():
+        raise KeyChannelError(
+            f"the recorded signing key {key_path} is a symlink; the probed "
+            f"channel and the signing channel must be the same file, and a "
+            f"link can be repointed between the stages")
+    if not p.is_file():
+        raise KeyChannelError(
+            f"the recorded signing key {key_path} does not exist or is not a "
+            f"regular file, so the key channel is UNPROBEABLE. This is not "
+            f"'stage 1 cannot sign': a probe aimed at a path that is not there "
+            f"fails for the wrong reason and proves nothing about the key the "
+            f"ceremony would actually use.")
+    r = subprocess.run([_resolved_binary("ssh-keygen", _SSH_KEYGEN),
+                        "-l", "-f", key_path],
+                       capture_output=True, text=True, check=False,
+                       stdin=subprocess.DEVNULL)
+    fields = (r.stdout or "").split()
+    fingerprint = next((f for f in fields if f.startswith("SHA256:")), None)
+    if r.returncode != 0 or not fingerprint:
+        raise KeyChannelError(
+            f"the recorded signing key {key_path} does not parse as a public "
+            f"key ({(r.stderr or '').strip()[:200]}), so the channel is "
+            f"UNPROBEABLE")
+    return key_path, fingerprint
+
+
 def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
     """Attempt a real signing operation. **Success is the failure case.**
 
@@ -2048,8 +2120,11 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
     probe exists to prove is unavailable. `< /dev/null` plus a timeout turns
     that into a definite negative.
 
-    Returns ``(cannot_sign, detail)``. This is a probe of a precondition, not
-    an enforcement of one.
+    Returns ``(cannot_sign, detail, timed_out)``. This is a probe of a
+    precondition, not an enforcement of one. ``timed_out`` is separate from
+    ``cannot_sign`` because a hung probe answered **neither** question, and
+    reporting it as either one tells the operator something this run did not
+    establish ([D4]).
     """
     # Guarded like every other launcher in this module. The probe runs `ssh-keygen`
     # at a pinned absolute path, not candidate code, so exempting it would have
@@ -2071,9 +2146,13 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
                 stdin=subprocess.DEVNULL, capture_output=True, text=True,
                 timeout=KEY_PROBE_TIMEOUT_S, env=child, check=False)
         except subprocess.TimeoutExpired:
+            # [D4]: reported as its own outcome, not folded into "can sign".
+            # The caller still refuses -- an unanswered probe is not a pass --
+            # but it no longer tells the operator the channel is open when
+            # nothing established that.
             return (False, "the signing probe timed out; a probe that hangs "
                            "has not answered, and a passphrase prompt is not "
-                           "a refusal")
+                           "a refusal", True)
         # Code review [C5]: exit 0 alone means the key channel is OPEN.
         #
         # This used to require a locatable `.sig` as well, so an `ssh-keygen`
@@ -2087,20 +2166,30 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
                      or Path(str(payload) + ".sig").exists())
             return (False, "a signature was produced" if found else
                     "ssh-keygen reported success; no .sig was found where "
-                    "expected, which is treated as signing having worked")
-        return (True, (r.stderr or "").strip()[-300:] or "signing failed")
+                    "expected, which is treated as signing having worked",
+                    False)
+        return (True, (r.stderr or "").strip()[-300:] or "signing failed",
+                False)
 
 
 def require_stage1_cannot_sign(recorded_key: str | None = None, *,
                                out=sys.stderr) -> dict:
-    """Stage 1's gate on the N4 precondition. Refuses if signing succeeds."""
-    key_path = signing_key_path(recorded_key)
-    if not key_path:
+    """Stage 1's gate on the N4 precondition. Refuses if signing succeeds.
+
+    Security review [S1]: the key is **validated before it is probed**, and the
+    fingerprint returned here is what binds stage 2 to this same key.
+    """
+    key_path, fingerprint = validate_signing_key(recorded_key)
+    cannot, detail, timed_out = probe_cannot_sign(key_path)
+    if timed_out:
+        # [D4]: a hung probe answered nothing, so saying "CAN SIGN" asserts
+        # something this run did not establish. Refusing is still right --
+        # an unanswered question about the key channel is not a pass.
         raise KeyChannelError(
-            "no signing key was recorded (--signing-key), so the supported "
-            "key channel is unnamed and the N4 precondition cannot be probed. "
-            "It is recorded rather than discovered, deliberately.")
-    cannot, detail = probe_cannot_sign(key_path)
+            f"the key-channel probe through {key_path} did not answer within "
+            f"{KEY_PROBE_TIMEOUT_S}s ({detail}). A probe that hangs has "
+            f"established nothing in either direction, so the ceremony stops "
+            f"rather than assuming the answer it did not get.")
     if not cannot:
         raise KeyChannelError(
             f"STAGE 1 CAN SIGN through {key_path} ({detail}). The N4 "
@@ -2109,8 +2198,9 @@ def require_stage1_cannot_sign(recorded_key: str | None = None, *,
             f"code while the key is reachable. Code cannot make a readable "
             f"private key unavailable to a same-user process; the ceremony "
             f"stops here.")
-    out.write(f"key-channel probe: stage 1 cannot sign through {key_path}\n")
-    return {"key_path": key_path, "probe": detail}
+    out.write(f"key-channel probe: stage 1 cannot sign through {key_path}\n"
+              f"key fingerprint (bound into the package): {fingerprint}\n")
+    return {"key_path": key_path, "fingerprint": fingerprint, "probe": detail}
 
 
 # --------------------------------------------------------------------------
@@ -2241,7 +2331,8 @@ def read_package(path: Path, *, confirmed_sha256: str) -> dict:
     expected = {"schema", "observed_anchor", "candidate_head", "candidate_tree",
                 "branch", "expected_old", "range_report", "range_report_digest",
                 "review_manifest", "prospective_manifest_b64",
-                "prospective_manifest_sha256"} | set(PACKAGE_EXECUTABLE_ONLY)
+                "prospective_manifest_sha256",
+                "signing_key_fingerprint"} | set(PACKAGE_EXECUTABLE_ONLY)
     missing, extra = sorted(expected - set(pkg)), sorted(set(pkg) - expected)
     if missing or extra:
         raise PackageError(
@@ -2382,7 +2473,7 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
 # --------------------------------------------------------------------------
 
 def _git_write(*args: str, repo: Path = _REPO, stdin: str | None = None,
-               want_bytes: bool = False,
+               want_bytes: bool = False, config: dict | None = None,
                index: str | None = None) -> subprocess.CompletedProcess:
     """The **only** repository-writing path, with its own enumerated allowlist.
 
@@ -2402,7 +2493,7 @@ def _git_write(*args: str, repo: Path = _REPO, stdin: str | None = None,
             f"apply may only run {sorted(_WRITE_GIT)}; refused "
             f"{(args[0] if args else '<none>')!r}")
     return _run_git(args, repo=repo, stdin=stdin, want_bytes=want_bytes,
-                    index=index)
+                    index=index, config=config)
 
 
 def _require_direct_ref(ref: str, *, repo: Path = _REPO) -> None:
@@ -2421,7 +2512,7 @@ def _require_direct_ref(ref: str, *, repo: Path = _REPO) -> None:
 
 
 def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
-                             message: str) -> str:
+                             message: str, *, signing_key: str) -> str:
     """Build ``N = HEAD's tree + the reviewed manifest``, with the reviewed
     message, **signed**.
 
@@ -2462,8 +2553,15 @@ def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
         tree = wt.stdout.strip()
         if wt.returncode != 0 or not tree:
             raise PreflightError(f"write-tree failed: {wt.stderr.strip()}")
+        # [S1]: name the key EXPLICITLY. A bare `-S` makes Git choose the signer
+        # from `user.signingKey`, which is repository configuration -- so the
+        # commit that becomes the trust root was signed by whichever key the
+        # candidate's own config named. Pinning it per-invocation puts the
+        # selector out of the repository's reach, alongside
+        # `gpg.ssh.defaultKeyCommand` in `_STERILE_CONFIG`.
         ct = _git_write("commit-tree", tree, "-p", head, "-S", "-F", "-",
-                        repo=repo, stdin=message)
+                        repo=repo, stdin=message,
+                        config={"user.signingKey": signing_key})
         new = ct.stdout.strip()
         if ct.returncode != 0 or len(new) != _object_id_width(repo=repo):
             raise PreflightError(
@@ -2477,7 +2575,8 @@ def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
 
 def verify_constructed(repo: Path, new: str, head: str, *,
                        manifest_sha256: str, message: str,
-                       principals: set, roster_path: Path) -> None:
+                       principals: set, roster_path: Path,
+                       expected_fingerprint: str | None = None) -> None:
     """Verify the constructed commit **from the commit object**, before any ref
     moves: exact parent, exact changed path, exact manifest blob digest, exact
     message, valid signature, pinned principal (code review CR2)."""
@@ -2505,9 +2604,10 @@ def verify_constructed(repo: Path, new: str, head: str, *,
             "constructed commit does not carry the reviewed message -- the "
             "audit trail would be lost")
 
-    sig = _git("log", "-1", "--format=%G?%x09%GS", new, repo=repo,
+    sig = _git("log", "-1", "--format=%G?%x09%GS%x09%GF", new, repo=repo,
                config={"gpg.ssh.allowedSignersFile": str(roster_path)})
-    status, _, signer = (sig.stdout or "").strip().partition("\t")
+    status, _, rest = (sig.stdout or "").strip().partition("\t")
+    signer, _, fingerprint = rest.partition("\t")
     if status != "G":
         raise PreflightError(
             f"constructed commit is not validly signed (status {status or '?'})"
@@ -2516,6 +2616,21 @@ def verify_constructed(repo: Path, new: str, head: str, *,
     if signer not in principals:
         raise PreflightError(
             f"constructed commit is signed by an unpinned principal {signer!r}")
+    # [S1]: identity AND authorization, not one standing in for the other.
+    #
+    # The principal check asks "is this signer on the anchored roster"; it says
+    # nothing about *which* rostered key signed. A second rostered key therefore
+    # passed the whole verification triple. The fingerprint check asks the other
+    # question: is this the key stage 1 probed and the package bound. Both are
+    # needed -- a roster member who is not the probed key means the N4
+    # precondition was established for a key that did not sign.
+    if expected_fingerprint is not None and fingerprint != expected_fingerprint:
+        actual = fingerprint or "(no fingerprint reported)"
+        raise PreflightError(
+            f"constructed commit is signed by {actual}, not by the key this "
+            f"ceremony probed and bound into the package "
+            f"({expected_fingerprint}). The probed channel and the signing "
+            f"channel must be the same key.")
 
 
 def _advance_both_refs(repo: Path, branch: str, new: str, *,
@@ -2658,6 +2773,11 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
                             if transition else None),
         "prospective_manifest_b64": base64.b64encode(manifest_bytes).decode(),
         "prospective_manifest_sha256": _sha256_bytes(manifest_bytes),
+        # [S1]: the identity of the key stage 1 probed. Stage 2 re-derives this
+        # from the key IT was given and refuses on any difference, which is what
+        # makes "the probed key is the signing key" a checked property rather
+        # than an assumption spanning two processes.
+        "signing_key_fingerprint": key["fingerprint"],
         "collection": evidence["manifest"].get("collection"),
         "interpreter": evidence["manifest"].get("interpreter"),
     }
@@ -2680,10 +2800,39 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
 def apply_now(*, repo: Path = _REPO,
               package: str | None = None,
               confirmed_package_sha256: str | None = None,
+              signing_key: str | None = None,
               review_manifest: str | None = None,
               reviewed_candidate: str | None = None,
               out=sys.stderr) -> dict:
-    """Re-derive everything, then bless -- **no handoff artifact is trusted**.
+    """Validate the confirmed package, re-derive everything derivable, then bless.
+
+    **Security review [S2] retired the old claim in this docstring.** It used to
+    say "no handoff artifact is trusted" and "there is no authority-bearing
+    file". That described the removed single-process design, and it is false of
+    this one: stage 2 necessarily consumes the authorization package and takes
+    its ``collection`` and ``interpreter`` fields, which static Git reads cannot
+    derive. Leaving it in place was worse than an ordinary stale comment --
+    security documentation shipped inside the deciding executable, contradicting
+    the protocol an operator is asked to trust. Chunk C10 required the
+    retraction; this is it.
+
+    **The invariant that is actually true**, and the one to hold this code to:
+
+    * **No adjacent self-digest authenticates a file.** A digest carried inside
+      the artifact it describes is a corruption check, not tamper evidence --
+      value and digest come from the same editable JSON, which code review CR1
+      falsified by re-hashing a tampered manifest and having it anchored.
+    * **The Maintainer's out-of-band confirmation authenticates the exact
+      package bytes.** ``--confirm-package-sha256`` is over the file stage 1
+      wrote, computed independently by the operator. That is the authority
+      boundary, and it is deliberately a human one.
+    * **Stage 2 re-derives every derivable field** and compares exact bytes,
+      so the package's contribution is bounded to the closed executable-only
+      pair.
+
+    What the confirmation cannot do is protect an operator who confirms an
+    attacker-supplied digest without reading the report it covers. That is the
+    boundary's nature, not a gap in it.
 
     Code review CR1 established that a bundle carrying its own digests is a
     corruption check, not tamper evidence: both value and digest come from the
@@ -2696,10 +2845,12 @@ def apply_now(*, repo: Path = _REPO,
     checker produced these bytes" -- the same key-holder-not-process limit
     :func:`check_signatures` documents).
 
-    So there is no authority-bearing file. ``apply`` runs the evidence stage and
-    the read-only checks itself, keeps the result in memory, and constructs from
-    values it derived. ``check`` remains available as a non-mutating preview; its
-    output is a record for the operator to read, never an input here.
+    That history is why the package's digest is **external** rather than
+    adjacent. It is not why this paragraph used to conclude "there is no
+    authority-bearing file" ([S2]) -- there is one, and it is the package; what
+    it is not is *self*-authenticating.
+    ``check`` remains available as a non-mutating preview, and its output is a
+    record for the operator to read, never an input here.
     """
     if confirmed_package_sha256 is None:
         raise PreflightError(
@@ -2720,6 +2871,27 @@ def apply_now(*, repo: Path = _REPO,
     # up front rather than midway, so a candidate-executing operation anywhere
     # below refuses instead of merely being unreachable by inspection.
     pkg = read_package(Path(package), confirmed_sha256=confirmed_package_sha256)
+
+    # [S1]: stage 2 is told WHICH KEY, and checks it is the one stage 1 probed.
+    #
+    # Stage 2 previously received no key identity at all and signed with a bare
+    # `-S`, so Git selected the signer from repository `user.signingKey`. The
+    # consequence was demonstrable: point stage 1 at a nonexistent path (which
+    # `validate_signing_key` now refuses outright) and stage 2 would sign with a
+    # different, usable key and pass the whole verification triple, because the
+    # principal check asks only whether the signer is rostered.
+    #
+    # Validated here rather than trusted from the package: the fingerprint in
+    # the package is a claim by stage 1, and this re-derivation from the file
+    # stage 2 was handed is what turns it into an agreement between two
+    # processes about one key.
+    stage2_key, stage2_fpr = validate_signing_key(signing_key)
+    if stage2_fpr != pkg["signing_key_fingerprint"]:
+        raise PackageError(
+            f"stage 2 was given a key with fingerprint {stage2_fpr}; the "
+            f"package was authorized against {pkg['signing_key_fingerprint']}. "
+            f"The key stage 1 probed and the key stage 2 would sign with must "
+            f"be the same key.")
     seal_candidate_execution(out=out)
     out.write(f"stage 2: package confirmed {confirmed_package_sha256[:16]}...; "
               f"candidate execution sealed before any derivation\n")
@@ -2964,11 +3136,13 @@ def apply_now(*, repo: Path = _REPO,
     with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
         principals = parse_principals(roster_text)
         new, manifest_blob = _construct_signed_commit(
-            repo, head, manifest_bytes, plan["message"])
+            repo, head, manifest_bytes, plan["message"],
+            signing_key=stage2_key)
         verify_constructed(repo, new, head,
                            manifest_sha256=committed_sha256,
                            message=plan["message"], principals=principals,
-                           roster_path=roster_path)
+                           roster_path=roster_path,
+                           expected_fingerprint=pkg["signing_key_fingerprint"])
     out.write(f"constructed, signed and verified {new[:12]}\n")
 
     ok, detail = _advance_both_refs(repo, branch, new, branch_old=head,
@@ -3059,7 +3233,8 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--bundle-out", default=None,
                    help="write the derived blessing plan here as a RECORD to "
                         "read (requires --evidence). It is not an input to "
-                        "`apply`, which trusts no handoff artifact.")
+                        "the signing stage, which takes its authorization "
+                        "from a package confirmed by external digest ([S2]).")
     c.add_argument("--last-legitimate-anchor", default=None,
                    help="recovery only: the Maintainer-supplied last "
                         "legitimately blessed anchor. Nothing can derive this "
@@ -3102,6 +3277,10 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--repo", default=None, help=_REPO_HELP)
     a.add_argument("--package", required=True,
                    help="the authorization package stage 1 wrote")
+    a.add_argument("--signing-key", required=True,
+                   help="the SAME recorded public-key path stage 1 probed. "
+                        "Stage 2 re-derives its fingerprint and refuses unless "
+                        "it matches the one bound into the package ([S1]).")
     a.add_argument("--confirm-package-sha256", required=True,
                    dest="confirmed_package_sha256",
                    help="the Maintainer's confirmation of the EXACT bytes "
@@ -3166,6 +3345,7 @@ def main(argv: list[str] | None = None) -> int:
             result = apply_now(
                 repo=repo, package=args.package,
                 confirmed_package_sha256=args.confirmed_package_sha256,
+                signing_key=args.signing_key,
                 review_manifest=args.review_manifest,
                 reviewed_candidate=args.reviewed_candidate)
         except PreflightError as exc:

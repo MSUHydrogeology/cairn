@@ -1322,3 +1322,129 @@ disposable `git clone --shared` against per-fixture throwaway keypairs, and the
 probe files were kept outside the repository tree. I did not re-run the full
 Boundary B suite: the bytes are unchanged and the record's evidence reproduced
 everywhere I challenged it.
+
+## Response to the security code review -- Claude -- 2026-08-12
+
+**Disposition: [S1], [S2], [D1]–[D4] all accepted. None disputed.** Both
+blocking findings are real and both reproductions are correct.
+
+### [S1] — the probed key was not the signing key
+
+**Accepted, and it is the most serious defect found in this plan.** The
+implementation carried the key path into `stage1` only. Stage 2 received no key
+identity, signed with a bare `-S`, and Git therefore selected the signer from
+repository `user.signingKey`. Both reproductions hold:
+
+* a **nonexistent** recorded path made `ssh-keygen` fail for the wrong reason,
+  which the probe classified as *cannot sign* — so the ceremony's strongest
+  control was satisfied by being aimed at nothing;
+* `gpg.ssh.defaultKeyCommand` was unpinned, so repository configuration could
+  name a **program** for Git to execute — inside stage 2, after the seal.
+
+The reviewer is right that this is not the N4 residual. N4 says code cannot
+prove a valid key's private half is unreachable to every same-user process.
+This was the tool probing one channel, calling a channel that does not exist
+safe, and then letting the repository choose a different one. Both are inside
+this tool's boundary.
+
+Six changes, all of them required together:
+
+1. **`validate_signing_key`** — a missing, relative, symlinked, non-regular or
+   unparseable key is **UNPROBEABLE**, a third answer distinct from both "can
+   sign" and "cannot sign": the question was never asked. It refuses.
+2. **A canonical fingerprint** (`ssh-keygen -l` over the public half) is derived
+   in stage 1 and written into the package.
+3. **Stage 2 takes `--signing-key`**, re-derives the fingerprint from the file
+   it was handed, and refuses unless it equals the package's. The two stages now
+   have to be talking about one key rather than assuming it across processes.
+4. **`commit-tree` names the key explicitly** (`user.signingKey` pinned
+   per-invocation) instead of a bare `-S`.
+5. **`gpg.ssh.defaultKeyCommand` is pinned empty** in `_STERILE_CONFIG`, out of
+   repository reach.
+6. **`verify_constructed` checks the signature's fingerprint** as well as the
+   anchored principal. The reviewer's point that these are different questions
+   is exactly right: the roster asks *may this signer authorize*, the
+   fingerprint asks *is this the key we probed*. A second rostered key passed
+   the whole triple before.
+
+**The test that codified the unsafe classification is gone.**
+`test_a_failing_ssh_keygen_still_counts_as_cannot_sign` used `"no such key"` as
+its failure text, making a missing key and a locked key one verdict. It now uses
+a real locked-key failure and is named for it. New nodes cover the unprobeable
+inputs, a nonexistent stage-1 path failing before candidate code runs, stage 2
+refusing a different key, and the key-command never executing after the seal.
+
+### [S2] — the executable still described the removed design
+
+**Accepted.** `apply_now` claimed "no handoff artifact is trusted" and "there is
+no authority-bearing file"; `check --bundle-out` help repeated it. Chunk C10
+required the retraction and I retracted it in the runbook only. The reviewer is
+right that this is worse than an ordinary stale comment: it is security
+documentation inside the deciding executable, contradicting the protocol.
+
+Both now state C10's actual invariant — no *adjacent self-digest* authenticates
+a file; the Maintainer's out-of-band confirmation authenticates the exact
+package bytes; stage 2 re-derives every derivable field — and name the limit the
+reviewer named, that confirmation cannot help an operator who confirms a digest
+without reading the report. `test_the_retired_no_handoff_artifact_claim_cannot_return`
+pins it over both the module source and the public `--help`, because the help
+repeated it independently.
+
+### [D1] — my [C4] fix relocated the divergence
+
+**Accepted, and this one is instructive.** The loader's check ran *before* its
+blank/comment case while Python's ran *after*, so an indented comment, a
+whitespace-only line and a trailing line of spaces were refused by one side and
+accepted by the other — the same "one artifact, two parsers" condition, inverted.
+And it would have aborted a ceremony with `REFUSE: row has leading whitespace`
+about a trailing blank line, in a hand-recorded file, at the worst moment.
+
+Fixed in the direction the reviewer indicated: the loader now tests `$1` first,
+so both sides agree on **what counts as a row** before either judges its shape.
+The test covers all six shapes in both directions rather than the one case.
+
+### [D2] — a false sentence in my own response
+
+**Accepted.** The response claimed the end-to-end node "now starts from a
+candidate whose authority bytes genuinely differ" and that the pre-alignment was
+corrected. Neither is true: that node's setup is byte-for-byte unchanged, and
+the `_oracle.py` delta predates the review. What actually made the mutation fail
+is that stage 2's checklist is now the candidate's. **Correcting the record
+rather than editing it** — this is the second time in this plan I have described
+a fix more broadly than I made it, which is worth naming as a pattern rather
+than an incident.
+
+The coverage gap the reviewer identified underneath it is now closed:
+`test_a_transition_in_which_the_CHECKER_ITSELF_differs` runs a full recorded
+transition in which `bootstrap/tests/_gate_preflight.py` itself differs between
+anchor and candidate — the case that motivates the mode, previously proven only
+by a hand-built probe that was not kept. Reverting stage 2's extraction to the
+anchor now fails **three** nodes including that one.
+
+### [D3] — an undefined recorded value on the signing stage
+
+**Accepted.** `<maintainer-recorded-reviewed-candidate-hashes>` is now defined
+in prose: the whole declared authority closure at the reviewed candidate, the
+same checklist the transition loader used, produced once at review time and
+reused — not regenerated between the stages, since a set regenerated after stage
+1 is a set nobody reviewed. The reviewer's framing is the right one: "fails
+closed" is not the standard for a recorded value on the stage that signs, and
+FUR6/FUR7 were both undefined-recorded-value defects.
+
+### [D4] — the timeout branch asserted what it had not established
+
+**Accepted.** `probe_cannot_sign` now returns `timed_out` separately, and
+`require_stage1_cannot_sign` refuses with a message saying the probe did not
+answer — rather than "STAGE 1 CAN SIGN", which a hung probe never established.
+
+### On the concurrent-session collision
+
+The verification pass records that commit `1609280` swept an in-progress review
+section into it, corrected in `a8c5490`. Worth carrying somewhere durable: the
+rules in `AGENTS.md` address the shared **index**, and path-scoped commits make
+that hazard structurally impossible. This was the shared **working tree** — two
+sessions appending to one file — which path-scoping does not address at all.
+Not this plan's to fix.
+
+**Boundary B is owed again** on these bytes, and both blocking findings' answers
+need an independent read.

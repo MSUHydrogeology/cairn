@@ -261,14 +261,22 @@ while IFS= read -r line || [ -n "$line" ]; do
     case $line in
         *[![:print:][:space:]]*) die "control character in the review manifest" ;;
     esac
-    # Leading whitespace is rejected on both sides. `set -- $line` ignores it
-    # while `${line#provenance }` does not, so an indented row parsed as one
-    # kind here and carried a different value than the Python revalidation
-    # derived -- two parsers of one artifact disagreeing (code review [C4]).
-    case $line in
-        " "*|"	"*) die "row has leading whitespace" ;;
-    esac
     set -- $line
+    # Leading whitespace is rejected on both sides -- but only for lines that
+    # are ROWS. Code review [D1]: an earlier version ran this check before the
+    # blank/comment case below, so an indented comment, a whitespace-only line
+    # and a trailing line of spaces were refused here and accepted by the Python
+    # revalidation. That relocated the [C4] divergence rather than removing it,
+    # and it made an ordinary editor artifact -- a trailing line containing a
+    # space -- abort the ceremony with a message about a row that does not
+    # exist. Testing `$1` first means both sides agree on what counts as a row
+    # before either judges its shape.
+    case $1 in
+        ""|\#*) : ;;
+        *) case $line in
+               " "*|"	"*) die "row has leading whitespace" ;;
+           esac ;;
+    esac
     case $1 in
     schema)
         [ $# -eq 2 ] || die "malformed schema row"
@@ -463,6 +471,7 @@ MKDIR=<maintainer-recorded-mkdir>
 SHASUM=<maintainer-recorded-shasum>
 PACKAGE=<absolute-path-of-the-authorization-package>
 CONFIRMED=<the-64-hex-digest-you-verified-in-step-1>
+SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
 
 T=$("$MKTEMP" -d) || exit 1
 
@@ -493,7 +502,8 @@ HASHES
 "$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
     stage2 --repo "$CHECKOUT" \
            --package "$PACKAGE" \
-           --confirm-package-sha256 "$CONFIRMED"
+           --confirm-package-sha256 "$CONFIRMED" \
+           --signing-key "$SIGNING_KEY"
 STAGE2
 ```
 
@@ -529,6 +539,19 @@ saw** — it compares the file's digest against the one recorded in the package 
 so the file named here must be byte-identical to the one the transition loader
 was given, not a re-export of it.
 
+**What `<maintainer-recorded-reviewed-candidate-hashes>` is.** Code review [D3]
+found this placeholder introduced with no definition, on the stage that signs.
+It is the **same checklist the transition loader used**: one
+`<sha256>  <path>` line for every member of the review manifest — that is, the
+**whole declared authority closure at the reviewed candidate**, not a subset and
+not the seven modules the loader happens to import. Produce it exactly once, at
+review time, and reuse those bytes here; do not regenerate it between the
+stages, because a set regenerated after stage 1 is a set nobody reviewed.
+
+Every mis-reading fails closed — a short set fails on import, a wrong set fails
+`shasum -c` — but "fails closed" is not the standard for a recorded value on the
+signing stage. FUR6 and FUR7 were both undefined-recorded-value defects.
+
 **And it extracts from the CANDIDATE, not from the anchor.** This is the whole
 subsection's reason for existing as a complete block rather than a one-line
 substitution. The steady-state stage 2 above extracts from
@@ -561,6 +584,7 @@ PACKAGE=<absolute-path-of-the-authorization-package>
 CONFIRMED=<the-64-hex-digest-you-verified-in-step-1>
 REVIEW_MANIFEST=<absolute-path-of-the-maintainer-recorded-review-manifest>
 RESOLVED=<the-full-commit-oid-the-transition-loader-resolved-and-printed>
+SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
 
 T=$("$MKTEMP" -d) || exit 1
 
@@ -594,6 +618,7 @@ MEMBERS
     stage2 --repo "$CHECKOUT" \
            --package "$PACKAGE" \
            --confirm-package-sha256 "$CONFIRMED" \
+           --signing-key "$SIGNING_KEY" \
            --transition-from-review "$REVIEW_MANIFEST" \
            --reviewed-candidate "$RESOLVED"
 STAGE2T

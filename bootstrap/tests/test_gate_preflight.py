@@ -71,6 +71,14 @@ def _closure_repo(tmp_path: Path) -> tuple[Path, str]:
     return repo, anchor
 
 
+def _blob_sha(repo: Path, commit: str, rel: str) -> str:
+    """The SHA-256 of a path's bytes at a commit, read from the object store."""
+    import hashlib
+    blob = subprocess.run(["git", "-C", str(repo), "cat-file", "blob",
+                           f"{commit}:{rel}"], capture_output=True, check=True)
+    return hashlib.sha256(blob.stdout).hexdigest()
+
+
 def _findings(report: P.Report, code: str) -> list[P.Finding]:
     return [f for f in report.findings if f.code == code]
 
@@ -709,11 +717,14 @@ class TestSterileGitLauncher:
         read-only guard."""
         import inspect
         src = inspect.getsource(P)
-        assert src.count("subprocess.run(") == 3, (
-            "expected exactly three: the git launcher; the evidence stage's "
-            "explicitly non-authoritative producer call; and the key-channel "
-            "signing probe (Chunk D), which runs the pinned `ssh-keygen` and "
-            "is itself guarded by `refuse_if_sealed`. This count is an "
+        assert src.count("subprocess.run(") == 4, (
+            "expected exactly four: the git launcher; the evidence stage's "
+            "explicitly non-authoritative producer call; the key-channel "
+            "signing probe (Chunk D); and the key-channel VALIDATION probe "
+            "added by security review [S1], which runs `ssh-keygen -l` over "
+            "the public half to derive the fingerprint that binds the two "
+            "stages to one key. The last two run the pinned `ssh-keygen` and "
+            "are both guarded by `refuse_if_sealed`. This count is an "
             "inventory, not a formality -- raise it only alongside the "
             "justification for the new launcher.")
 
@@ -1001,8 +1012,13 @@ class TestApplyTakesNoArtifact:
         import inspect
         params = set(inspect.signature(P.apply_now).parameters)
         assert params == {"repo", "out", "package", "confirmed_package_sha256",
+                          "signing_key",
                           "review_manifest", "reviewed_candidate"}, (
             f"stage 2's inputs are a closed set; got {sorted(params)}")
+        # `signing_key` was added by security review [S1]. Stage 2 previously
+        # received no key identity at all, so Git chose the signer from
+        # repository configuration -- a closed input set that omits the identity
+        # of the key that signs is closed around the wrong thing.
 
     def test_the_review_manifest_carries_no_self_digest(self):
         """The narrowed claim, mechanised. A `digest` or `sha256` row naming the
@@ -1107,6 +1123,19 @@ def _n4_precondition(key: Path):
         stash.rename(key)
 
 
+def _stub_key(tmp_path: Path) -> dict:
+    """Stub the key-channel PROBE while keeping the key IDENTITY real.
+
+    Security review [S1] binds one validated fingerprint across both stages, so
+    a stub that invented a key path would make every node using it blind to the
+    binding. The probe is stubbed because in a test environment the key
+    genuinely can sign -- that is [E1], covered by its own disposable-key nodes.
+    """
+    key_pub = str(Path(tmp_path) / "maint.pub")
+    _path, fingerprint = P.validate_signing_key(key_pub)
+    return {"key_path": key_pub, "fingerprint": fingerprint, "probe": "stubbed"}
+
+
 def _recorded_stage1(repo: Path, tmp_path: Path, script: str, *,
                      env=None, prefix: str = ""):
     """Run the recorded loader end-to-end under a genuine N4 precondition.
@@ -1156,8 +1185,17 @@ def _two_stage(repo: Path, monkeypatch, *, out=None, package_dir=None,
     The confirmation digest is taken from stage 1's **return value**, which is
     computed over the bytes it wrote -- never from inside the package.
     """
+    # The PROBE is stubbed (in a test environment the key genuinely can sign --
+    # that is [E1], with its own disposable-key nodes). The key IDENTITY is not:
+    # security review [S1] binds one validated fingerprint across both stages,
+    # so the stub reports the fixture key's real fingerprint and stage 2
+    # re-derives it from the same file. Stubbing the identity too would make
+    # every node here blind to the binding it exists to carry.
+    key_pub = str(Path(repo).parent / "maint.pub")
+    _path, fingerprint = P.validate_signing_key(key_pub)
     monkeypatch.setattr(P, "require_stage1_cannot_sign",
-                        lambda *a, **k: {"key_path": "(stubbed)",
+                        lambda *a, **k: {"key_path": key_pub,
+                                         "fingerprint": fingerprint,
                                          "probe": "stubbed"})
     out = out if out is not None else io.StringIO()
     pkg_dir = Path(package_dir) if package_dir else Path(repo).parent
@@ -1174,6 +1212,7 @@ def _two_stage(repo: Path, monkeypatch, *, out=None, package_dir=None,
     # "steady state" for a run that changed the authority closure.
     return P.apply_now(repo=repo, package=str(pkg_path),
                        confirmed_package_sha256=one["package_sha256"], out=out,
+                       signing_key=key_pub,
                        review_manifest=review_manifest,
                        reviewed_candidate=reviewed_candidate)
 
@@ -1243,7 +1282,8 @@ class TestApplySuccessPath:
         real = P._construct_signed_commit
         monkeypatch.setattr(
             P, "_construct_signed_commit",
-            lambda r, h, mb, msg: real(r, h, mb, "a different message\n"))
+            lambda r, h, mb, msg, **kw: real(r, h, mb, "a different message\n",
+                                            **kw))
         before = self._refs(repo)
         with pytest.raises(P.PreflightError, match="reviewed message"):
             _two_stage(repo, monkeypatch)
@@ -1259,7 +1299,7 @@ class TestApplySuccessPath:
             # signature (and message) checks -- the ones under test. The
             # unsigned helper returns only a commit id; the real one now also
             # returns the manifest blob id for the direct index install.
-            lambda r, h, mb, msg: (P.R._construct_anchor_commit(
+            lambda r, h, mb, msg, **kw: (P.R._construct_anchor_commit(
                 r, h, P._MANIFEST_REL, mb), "0" * 40))
         before = self._refs(repo)
         with pytest.raises(P.PreflightError, match="not validly signed|message"):
@@ -1332,6 +1372,7 @@ class TestPublicPathCli:
         # masks it and this node would pass without testing the removal.
         boolean = self._cli("stage2", "--repo", str(repo),
                             "--package", str(tmp_path / "nope.json"),
+                            "--signing-key", str(tmp_path / "maint.pub"),
                             "--confirm-package-sha256", "0" * 64,
                             "--confirm-supervised-reanchor")
         assert boolean.returncode == 2
@@ -1409,8 +1450,8 @@ def _subprocess_ceremony(checker: Path, repo: Path, tmp_path: Path, *,
         pkg.unlink()
     with _n4_precondition(tmp_path / "maint"):
         one = _checker_cli(checker, "stage1", "--repo", str(repo),
-                        "--signing-key", str(tmp_path / "maint.pub"),
-                        "--package-out", str(pkg))
+                           "--signing-key", str(tmp_path / "maint.pub"),
+                           "--package-out", str(pkg))
     assert one.returncode == 0, one.stderr[-2500:]
     staged = json.loads(one.stdout)
     assert pkg.exists(), "stage 1 reported success and wrote no package"
@@ -1423,8 +1464,9 @@ def _subprocess_ceremony(checker: Path, repo: Path, tmp_path: Path, *,
         "stage 1's reported digest is not the digest of what it wrote")
 
     two = _checker_cli(checker, "stage2", "--repo", str(repo),
-                    "--package", str(pkg),
-                    "--confirm-package-sha256", staged["package_sha256"])
+                       "--package", str(pkg),
+                       "--signing-key", str(tmp_path / "maint.pub"),
+                       "--confirm-package-sha256", staged["package_sha256"])
     assert two.returncode == 0, two.stderr[-2500:]
     return json.loads(two.stdout)
 
@@ -1566,6 +1608,7 @@ class TestThreeCommandIntegration:
 
         replay = self._cli(checker, "stage2", "--repo", str(repo),
                            "--package", str(pkg),
+                           "--signing-key", str(tmp_path / "maint.pub"),
                            "--confirm-package-sha256", digest)
         assert replay.returncode == 2
         assert "stale package cannot authorize a moved state" in replay.stderr
@@ -1953,6 +1996,77 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
             manifest.read_text(encoding="utf-8"))["members"], (
             "the recorded transition ceremony did not record its admitted set")
 
+    def test_a_transition_in_which_the_CHECKER_ITSELF_differs(self, tmp_path):
+        """Code review [D2]: the case that motivates transition mode at all.
+
+        Every other transition node changes `_oracle.py`. But the reason the
+        mode exists is that a candidate may change **the checker that decides**
+        — `_gate_preflight.py` — and the old anchor must not be the thing that
+        vouches for its own replacement. No node ran that; the reviewer had to
+        construct it by hand to find [C2], and the probe was not kept. This
+        keeps it.
+
+        The candidate's checker is modified in a way that is real (the bytes
+        differ, the closure delta is real, both loaders' checklists must match
+        the candidate) while staying executable, because the whole point is that
+        the *candidate's* checker is what runs in both stages.
+        """
+        import hashlib
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        rel = "bootstrap/tests/_gate_preflight.py"
+        original = (repo / rel).read_text(encoding="utf-8")
+        (repo / rel).write_text(
+            original + "\n# reviewed change to the checker itself ([D2])\n",
+            encoding="utf-8")
+        resolved = _signed_commit(repo, "a reviewed change to the checker")
+        assert _blob_sha(repo, anchor, rel) != _blob_sha(repo, resolved, rel), (
+            "the fixture must genuinely differ, or this proves nothing")
+
+        manifest = tmp_path / "review.txt"
+        manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
+
+        loader = _substitute(_transition_block(), repo, hashes=False)
+        loader = loader.replace("<candidate-ref-or-oid-to-transition-to>",
+                                shlex.quote(resolved))
+        loader = loader.replace(
+            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
+            shlex.quote(str(manifest)))
+        pkg = repo.parent / "authorization-package.json"
+        if pkg.exists():
+            pkg.unlink()
+        with _n4_precondition(tmp_path / "maint"):
+            r1 = subprocess.run(["bash", "-c", loader], cwd=str(repo),
+                                capture_output=True, text=True, check=False)
+        assert r1.returncode == 0, f"{r1.stderr[-3000:]}"
+        assert pkg.exists()
+
+        confirmed = hashlib.sha256(pkg.read_bytes()).hexdigest()
+        script = _substitute(_stage2_transition_block(), repo, hashes=False,
+                             candidate=resolved)
+        for placeholder, value in (
+                ("<the-64-hex-digest-you-verified-in-step-1>", confirmed),
+                ("<absolute-path-of-the-maintainer-recorded-review-manifest>",
+                 str(manifest)),
+                ("<the-full-commit-oid-the-transition-loader-resolved-and-printed>",
+                 resolved)):
+            script = script.replace(placeholder, shlex.quote(value))
+        r2 = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                            capture_output=True, text=True, check=False)
+        assert r2.returncode == 0, f"{r2.stderr[-3000:]}"
+
+        new_anchor = _run("git", "rev-parse", P._ANCHOR_REF,
+                          cwd=repo).stdout.strip()
+        assert new_anchor != anchor
+        assert _run("git", "log", "-1", "--format=%G?",
+                    cwd=repo).stdout.strip() == "G"
+        # And the newly anchored checker is the CANDIDATE's, not the old one.
+        assert _blob_sha(repo, new_anchor, rel) == _blob_sha(repo, resolved, rel)
+        recovered = P.parse_admitted_authority(
+            _run("git", "log", "-1", "--format=%B", cwd=repo).stdout)
+        assert rel in recovered, (
+            "the checker's own change is not in the admitted set the "
+            "checkpoint records")
+
     def test_the_recorded_stage2_extracts_and_verifies_its_own_bytes(self):
         """D4: stage 2 starts from **separately** hash-verified bytes.
 
@@ -2001,6 +2115,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
                   "--package-out", str(tmp_path / "unwritten.json")]
                  if stage == "stage1"
                  else ["--package", str(tmp_path / "absent.json"),
+                       "--signing-key", str(tmp_path / "maint.pub"),
                        "--confirm-package-sha256", "0" * 64])
         r = self._cli(checker, stage, *flags)
 
@@ -2490,18 +2605,40 @@ class TestTransitionLoaderSelectsTheSource:
         revalidation directly, and the recorded loader by execution.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        text = _review_manifest(repo, head).replace("provenance ",
-                                                    "   provenance ", 1)
+        honest = _review_manifest(repo, head)
 
-        with pytest.raises(P.ReviewManifestError, match="leading whitespace"):
-            P.parse_review_manifest(text)
+        # Code review [D1]: the first fix relocated the divergence instead of
+        # removing it. The loader's check ran BEFORE its blank/comment case and
+        # Python's ran after, so three shapes that are not rows at all -- an
+        # indented comment, a whitespace-only line, a trailing line of spaces --
+        # were refused by one side and accepted by the other. All six shapes are
+        # pinned here, in both directions, so neither side can drift alone.
+        cases = {
+            "honest": (honest, True),
+            "indented provenance": (
+                honest.replace("provenance ", "   provenance ", 1), False),
+            "tab-indented member": (
+                honest.replace("\nmember ", "\n\tmember ", 1), False),
+            "indented comment": (honest + "   # a note\n", True),
+            "whitespace-only line": (honest + "   \n", True),
+            "trailing line of spaces": (honest + "  ", True),
+        }
+        for name, (text, should_pass) in cases.items():
+            if should_pass:
+                P.parse_review_manifest(text)          # must not raise
+            else:
+                with pytest.raises(P.ReviewManifestError,
+                                   match="leading whitespace"):
+                    P.parse_review_manifest(text)
 
-        mf = tmp_path / "indented.txt"
-        mf.write_text(text, encoding="utf-8")
-        r = self._run(repo, text, head, tmp_path)
-        assert r.returncode != 0, (
-            "the loader accepted an indented row the revalidation refuses")
-        assert "leading whitespace" in r.stderr, r.stderr[-500:]
+            r = self._run(repo, text, head, tmp_path)
+            loader_ok = "review manifest" not in r.stderr \
+                and "leading whitespace" not in r.stderr
+            assert loader_ok == should_pass, (
+                f"{name}: the loader and the Python revalidation disagree "
+                f"about whether this is an acceptable manifest "
+                f"(loader_ok={loader_ok}, python_ok={should_pass})\n"
+                f"{r.stderr[-500:]}")
 
     def test_the_anchored_steady_state_loader_has_no_transition_mode(self):
         """[S1] as a test. The anchored checker cannot contain a mode added to
@@ -2537,6 +2674,7 @@ class TestTransitionLoaderSelectsTheSource:
                      "--package-out", str(tmp_path / "pkg.json")]
                     if stage == "stage1"
                     else ["--package", str(tmp_path / "pkg.json"),
+                          "--signing-key", str(tmp_path / "maint.pub"),
                           "--confirm-package-sha256", "0" * 64])
         r = subprocess.run(
             [sys.executable, "-E", "-s", str(checker), stage,
@@ -3010,6 +3148,7 @@ class TestAuthorizationPackage:
             "prospective_manifest_sha256": "e" * 64,
             "collection": {"node_count": 1},
             "interpreter": {"version": "3.13.13"},
+            "signing_key_fingerprint": "SHA256:" + "A" * 43,
         }
 
     def test_round_trip(self, tmp_path):
@@ -3088,7 +3227,7 @@ class TestAuthorizationPackage:
         monkeypatch.setattr(P, "gather_evidence",
                             lambda *a, **k: _fake_evidence(head, manifest))
         monkeypatch.setattr(P, "require_stage1_cannot_sign",
-                            lambda *a, **k: {"key_path": "(stubbed)"})
+                            lambda *a, **k: _stub_key(tmp_path))
 
         pkg_path = tmp_path / "pkg.json"
         P.stage1(repo=repo, package_out=pkg_path, out=io.StringIO())
@@ -3118,7 +3257,8 @@ class TestAuthorizationPackage:
         P._phase = P._PHASE_CANDIDATE
         with pytest.raises(P.PreflightError):
             P.apply_now(repo=repo, package=str(pkg_path),
-                        confirmed_package_sha256=confirmed, out=io.StringIO())
+                        confirmed_package_sha256=confirmed, out=io.StringIO(),
+                        signing_key=str(tmp_path / "maint.pub"))
         assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
                 _run("git", "rev-parse", P._ANCHOR_REF,
                      cwd=repo).stdout.strip()) == before, (
@@ -3142,7 +3282,7 @@ class TestAuthorizationPackage:
         monkeypatch.setattr(P, "gather_evidence",
                             lambda *a, **k: _fake_evidence(head, manifest))
         monkeypatch.setattr(P, "require_stage1_cannot_sign",
-                            lambda *a, **k: {"key_path": "(stubbed)"})
+                            lambda *a, **k: _stub_key(tmp_path))
         pkg_path = tmp_path / "pkg.json"
         P.stage1(repo=repo, package_out=pkg_path, out=io.StringIO())
         honest = json.loads(pkg_path.read_bytes())
@@ -3166,7 +3306,8 @@ class TestAuthorizationPackage:
         P._phase = P._PHASE_CANDIDATE
         with pytest.raises(P.PreflightError):
             P.apply_now(repo=repo, package=str(pkg_path), out=io.StringIO(),
-                        confirmed_package_sha256=hashlib.sha256(body).hexdigest())
+                        confirmed_package_sha256=hashlib.sha256(body).hexdigest(),
+                        signing_key=str(tmp_path / "maint.pub"))
         assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
                 _run("git", "rev-parse", P._ANCHOR_REF,
                      cwd=repo).stdout.strip()) == before
@@ -3194,7 +3335,7 @@ class TestAuthorizationPackage:
             P, "gather_evidence",
             lambda *a, **k: _fake_evidence(resolved, evidence_manifest))
         monkeypatch.setattr(P, "require_stage1_cannot_sign",
-                            lambda *a, **k: {"key_path": "(stubbed)"})
+                            lambda *a, **k: _stub_key(tmp_path))
         pkg_path = tmp_path / "pkg.json"
         P.stage1(repo=repo, package_out=pkg_path, out=io.StringIO(),
                  review_manifest=str(manifest), reviewed_candidate=resolved)
@@ -3208,6 +3349,7 @@ class TestAuthorizationPackage:
         return P.apply_now(
             repo=repo, package=str(pkg_path), out=io.StringIO(),
             confirmed_package_sha256=hashlib.sha256(body).hexdigest(),
+            signing_key=str(pkg_path.parent / "maint.pub"),
             review_manifest=str(manifest), reviewed_candidate=resolved)
 
     @pytest.mark.parametrize("tamper", [
@@ -3295,6 +3437,44 @@ class TestAuthorizationPackage:
                 manifest_sha256="e" * 64, authority_hashes={}, scope={},
                 admitted_authority={f"a.py\n    {'0' * 64}  forged.py": "b" * 64},
                 review_provenance="ESR", review_digest="d" * 64)
+
+    def test_the_retired_no_handoff_artifact_claim_cannot_return(self):
+        """Security review [S2] / Chunk C10.
+
+        `apply_now` claimed "no handoff artifact is trusted" and "there is no
+        authority-bearing file" long after stage 2 began consuming the
+        authorization package and taking its `collection` and `interpreter`
+        fields. That is not stale history in a deliberation record -- it is
+        security documentation shipped inside the deciding executable,
+        describing a design that no longer exists and contradicting the protocol
+        the operator is being asked to trust.
+
+        Pinned over the module source AND the public `--help`, because the CLI
+        help repeated it independently and a check scoped to one would pass
+        while the other kept saying it.
+        """
+        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+            encoding="utf-8")
+        retired = ("no handoff artifact is trusted",
+                   "trusts no handoff artifact",
+                   "there is no authority-bearing file")
+        for phrase in retired:
+            # Allowed only where the retraction itself is being explained.
+            for i, line in enumerate(src.splitlines(), 1):
+                if phrase in line:
+                    window = "\n".join(src.splitlines()[max(0, i - 12):i + 12])
+                    assert "[S2]" in window or "used to" in window, (
+                        f"line {i} asserts {phrase!r} outside an explanation of "
+                        f"its retraction")
+
+        for cmd in ("check", "stage2"):
+            r = subprocess.run(
+                [sys.executable, "-E", "-s",
+                 str(_REPO / "bootstrap/tests/_gate_preflight.py"), cmd, "-h"],
+                capture_output=True, text=True, check=False)
+            for phrase in retired:
+                assert phrase not in r.stdout, (
+                    f"`{cmd} --help` still tells the operator {phrase!r}")
 
     def test_no_boolean_confirmation_path_exists_anywhere_in_the_module(self):
         """Acceptance criterion 8, asserted on the module rather than the CLI.
@@ -3455,27 +3635,170 @@ class TestKeyChannelProbe:
 
         monkeypatch.setattr(P.subprocess, "run", fake)
         P._phase = P._PHASE_CANDIDATE
-        cannot, detail = P.probe_cannot_sign(str(tmp_path / "k.pub"))
+        cannot, detail, _to = P.probe_cannot_sign(str(tmp_path / "k.pub"))
         assert cannot is False, (
             "ssh-keygen reported success and the probe called it a refusal")
         assert "success" in detail
 
-    def test_a_failing_ssh_keygen_still_counts_as_cannot_sign(
+    def test_a_locked_key_still_counts_as_cannot_sign(
             self, tmp_path, monkeypatch):
-        """The other direction, so the [C5] fix did not simply invert into
-        refusing every ceremony."""
+        """The other direction, so the [C5] fix did not invert into refusing
+        every ceremony.
+
+        Security review [S1] flagged the earlier version of this node: it used
+        `"no such key"` as the failure text, which **codified the unsafe
+        classification** — a key that is not there and a key whose private half
+        is locked away produced the same verdict. Only the second is the N4
+        precondition holding. The first is now refused upstream by
+        `validate_signing_key` as *unprobeable*, and this node uses a real
+        locked-key failure so it can no longer be read as blessing the other.
+        """
         import subprocess as _sp
         real = _sp.run
 
         def fake(cmd, *a, **k):
             if cmd and str(cmd[0]).endswith("ssh-keygen"):
-                return _sp.CompletedProcess(cmd, 1, "", "no such key")
+                return _sp.CompletedProcess(
+                    cmd, 1, "", "Load key: incorrect passphrase supplied")
             return real(cmd, *a, **k)
 
         monkeypatch.setattr(P.subprocess, "run", fake)
         P._phase = P._PHASE_CANDIDATE
-        cannot, detail = P.probe_cannot_sign(str(tmp_path / "k.pub"))
-        assert cannot is True and "no such key" in detail
+        cannot, detail, _to = P.probe_cannot_sign(str(tmp_path / "k.pub"))
+        assert cannot is True and "passphrase" in detail
+
+    @pytest.mark.parametrize("bad", ["missing", "relative", "symlink",
+                                     "not-a-key", "directory"])
+    def test_an_unprobeable_key_is_a_third_answer_and_refuses(
+            self, tmp_path, bad):
+        """Security review [S1]. "Unprobeable" is not "cannot sign".
+
+        The reproduction: point stage 1 at a **nonexistent** public-key path.
+        `ssh-keygen` fails with "no such file", the probe classified that as
+        *cannot sign*, and the strongest-sounding control in the ceremony was
+        satisfied by being aimed at nothing. Stage 2 — which then received no
+        key identity at all — signed with whatever key repository config named.
+
+        A probe that fails for the wrong reason has established nothing, so
+        every input that cannot be probed is refused before probing.
+        """
+        real = tmp_path / "real.pub"
+        target = {
+            "missing": str(tmp_path / "nope.pub"),
+            "relative": "relative/key.pub",
+            "symlink": str(tmp_path / "link.pub"),
+            "not-a-key": str(tmp_path / "junk.pub"),
+            "directory": str(tmp_path),
+        }[bad]
+        if bad == "symlink":
+            real.write_text("ssh-ed25519 AAAA test\n")
+            Path(target).symlink_to(real)
+        elif bad == "not-a-key":
+            Path(target).write_text("this is not a public key\n")
+
+        with pytest.raises(P.KeyChannelError) as exc:
+            P.validate_signing_key(target)
+        assert "UNPROBEABLE" in str(exc.value) or "absolute" in str(exc.value) \
+            or "symlink" in str(exc.value), str(exc.value)
+
+    def test_a_nonexistent_stage1_key_cannot_reach_construction(
+            self, tmp_path, monkeypatch):
+        """[S1] through the public path: the refusal precedes everything.
+
+        The point is not merely that `validate_signing_key` raises — it is that
+        the ceremony stops before candidate code runs, before a package exists,
+        and therefore before anything stage 2 could act on.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        before = (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                  _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+        ran = []
+        monkeypatch.setattr(P, "gather_evidence",
+                            lambda *a, **k: ran.append("candidate") or {})
+
+        with pytest.raises(P.KeyChannelError):
+            P.stage1(repo=repo, package_out=tmp_path / "pkg.json",
+                     signing_key=str(tmp_path / "absent.pub"),
+                     out=io.StringIO())
+
+        assert ran == [], "candidate code ran for an unprobeable key channel"
+        assert not (tmp_path / "pkg.json").exists()
+        assert (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF,
+                     cwd=repo).stdout.strip()) == before
+
+    def test_stage_2_refuses_a_different_key_than_stage_1_probed(
+            self, tmp_path, monkeypatch):
+        """[S1]'s core: the two stages must be talking about one key.
+
+        Stage 2 previously received no key identity, so a *different* key —
+        rostered, and therefore passing the pinned-principal check — could sign
+        the commit that becomes the trust root. The fingerprint bound into the
+        package is what makes that a checked property rather than an assumption
+        spanning two processes.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        manifest = {**P.rederive_static_manifest(head, repo=repo),
+                    "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                                   "skip_xfail_marked": []},
+                    "interpreter": {"version": "3.13.13"}}
+        monkeypatch.setattr(P, "gather_evidence",
+                            lambda *a, **k: _fake_evidence(head, manifest))
+        key_pub = str(tmp_path / "maint.pub")
+        _p, fpr = P.validate_signing_key(key_pub)
+        monkeypatch.setattr(P, "require_stage1_cannot_sign",
+                            lambda *a, **k: {"key_path": key_pub,
+                                             "fingerprint": fpr,
+                                             "probe": "stubbed"})
+        pkg_path = tmp_path / "pkg.json"
+        P.stage1(repo=repo, package_out=pkg_path, out=io.StringIO())
+        before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+
+        # A second, entirely valid key -- the shape that passed before.
+        other = self._keypair(tmp_path, name="other")
+        import hashlib
+        body = pkg_path.read_bytes()
+        P._phase = P._PHASE_CANDIDATE
+        with pytest.raises(P.PackageError, match="same key"):
+            P.apply_now(repo=repo, package=str(pkg_path), out=io.StringIO(),
+                        confirmed_package_sha256=hashlib.sha256(body).hexdigest(),
+                        signing_key=str(other.with_suffix(".pub")))
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() == before
+
+    def test_a_repository_key_command_never_executes_after_the_seal(
+            self, tmp_path):
+        """[S1]'s second consequence: repository config could run a PROGRAM.
+
+        `gpg.ssh.defaultKeyCommand` names a command Git executes to obtain a
+        signing key when `user.signingKey` is unset. Under candidate control
+        that is arbitrary execution inside stage 2, *after* the point the code
+        declares candidate execution sealed. Codex reproduced it: the script ran
+        and wrote a marker before construction failed on the key it returned.
+
+        Both halves are now closed — the command is pinned empty in
+        `_STERILE_CONFIG`, and the signer is named explicitly — so this asserts
+        the marker is never written.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        marker = tmp_path / "KEYCMD_RAN"
+        script = tmp_path / "keycmd.sh"
+        script.write_text(f"#!/bin/sh\ntouch {shlex.quote(str(marker))}\n"
+                          f"echo 'ssh-ed25519 AAAAinvalid'\n")
+        script.chmod(0o755)
+        _run("git", "config", "gpg.ssh.defaultKeyCommand", str(script), cwd=repo)
+        _run("git", "config", "--unset", "user.signingkey", cwd=repo)
+
+        P._phase = P._PHASE_CANDIDATE
+        P.seal_candidate_execution(out=io.StringIO())
+        with contextlib.suppress(P.PreflightError):
+            P._construct_signed_commit(
+                repo, head, b'{"m": 1}\n', "probe message\n",
+                signing_key=str(tmp_path / "maint.pub"))
+
+        assert not marker.exists(), (
+            "repository configuration executed a program inside stage 2, after "
+            "candidate execution was declared sealed")
 
     def test_a_readable_private_sibling_means_stage_1_CAN_sign(self, tmp_path):
         """[E1] reproduced as a regression. This is the state the old design
@@ -3483,7 +3806,7 @@ class TestKeyChannelProbe:
         key = self._keypair(tmp_path)
         assert key.exists(), "the private sibling is present and readable"
 
-        cannot, detail = P.probe_cannot_sign(
+        cannot, detail, _to = P.probe_cannot_sign(
             str(key.with_suffix(".pub")),
             env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin"})
 
@@ -3499,7 +3822,7 @@ class TestKeyChannelProbe:
         pub = key.with_suffix(".pub")
         key.unlink()          # models 'encrypted at rest / not loaded'
 
-        cannot, _ = P.probe_cannot_sign(
+        cannot, _d, _to = P.probe_cannot_sign(
             str(pub), env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin"})
 
         assert cannot is True
@@ -3548,7 +3871,7 @@ class TestKeyChannelProbe:
             raise sp.TimeoutExpired(cmd="ssh-keygen", timeout=1)
 
         monkeypatch.setattr(P.subprocess, "run", hang)
-        cannot, detail = P.probe_cannot_sign("/nonexistent.pub")
+        cannot, detail, _to = P.probe_cannot_sign("/nonexistent.pub")
         assert cannot is False, "a timeout must not read as 'cannot sign'"
         assert "timed out" in detail
 
