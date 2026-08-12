@@ -707,9 +707,13 @@ class TestSterileGitLauncher:
         read-only guard."""
         import inspect
         src = inspect.getsource(P)
-        assert src.count("subprocess.run(") == 2, (
-            "expected exactly two: the launcher, and the evidence stage's "
-            "explicitly non-authoritative producer call")
+        assert src.count("subprocess.run(") == 3, (
+            "expected exactly three: the git launcher; the evidence stage's "
+            "explicitly non-authoritative producer call; and the key-channel "
+            "signing probe (Chunk D), which runs the pinned `ssh-keygen` and "
+            "is itself guarded by `refuse_if_sealed`. This count is an "
+            "inventory, not a formality -- raise it only alongside the "
+            "justification for the new launcher.")
 
     def test_git_env_channels_are_dropped(self, monkeypatch):
         monkeypatch.setenv("GIT_DIR", "/somewhere/else/.git")
@@ -2214,6 +2218,107 @@ class TestReportBindsTheProspectiveManifest:
         assert with_pros["manifest_sha256"] != without["manifest_sha256"], (
             "the prospective manifest must change the bound identity, or the "
             "parameter is decorative")
+
+
+class TestKeyChannelProbe:
+    """Chunk D / plan review [E1]. The probe must attempt a REAL signing
+    operation and require failure. Observing `SSH_AUTH_SOCK` is the proxy
+    failure the proposal warned against and then committed -- twice.
+
+    Every key here is disposable and generated in `tmp_path`. **No ceremony key
+    is ever touched.**
+    """
+
+    def _keypair(self, tmp_path, name="probe", passphrase=""):
+        key = tmp_path / name
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", passphrase,
+                        "-f", str(key), "-C", name], check=True,
+                       capture_output=True)
+        return key
+
+    def test_a_readable_private_sibling_means_stage_1_CAN_sign(self, tmp_path):
+        """[E1] reproduced as a regression. This is the state the old design
+        called 'the key channel absent'."""
+        key = self._keypair(tmp_path)
+        assert key.exists(), "the private sibling is present and readable"
+
+        cannot, detail = P.probe_cannot_sign(
+            str(key.with_suffix(".pub")),
+            env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin"})
+
+        assert cannot is False, (
+            "the probe must report that signing SUCCEEDED here -- an unset "
+            "agent socket does not make an adjacent private key unavailable")
+        assert "signature was produced" in detail
+
+    def test_without_the_private_key_stage_1_cannot_sign(self, tmp_path):
+        """The precondition holding: the public key is present, the private
+        half is not reachable."""
+        key = self._keypair(tmp_path)
+        pub = key.with_suffix(".pub")
+        key.unlink()          # models 'encrypted at rest / not loaded'
+
+        cannot, _ = P.probe_cannot_sign(
+            str(pub), env={"HOME": "/nonexistent", "PATH": "/usr/bin:/bin"})
+
+        assert cannot is True
+
+    def test_the_negative_control_refuses_rather_than_reporting_soundness(
+            self, tmp_path, monkeypatch):
+        """[E1]'s exact requirement: make the private sibling readable and
+        require stage 1 to REFUSE THE ENVIRONMENT -- not to report the boundary
+        sound."""
+        key = self._keypair(tmp_path)
+        monkeypatch.setattr(P, "signing_key_path",
+                            lambda repo=None: str(key.with_suffix(".pub")))
+
+        with pytest.raises(P.KeyChannelError) as exc:
+            P.require_stage1_cannot_sign(repo=P._REPO, out=io.StringIO())
+
+        msg = str(exc.value)
+        assert "STAGE 1 CAN SIGN" in msg
+        assert "the ceremony stops here" in msg
+        assert "N4" in msg, "the refusal must name the precondition it enforces"
+
+    def test_an_unnamed_key_channel_refuses(self, monkeypatch):
+        """D2: the contract names the supported channel. An unnamed one cannot
+        be probed, and an unprobeable precondition is not a precondition."""
+        monkeypatch.setattr(P, "signing_key_path", lambda repo=None: "")
+        with pytest.raises(P.KeyChannelError, match="unnamed"):
+            P.require_stage1_cannot_sign(repo=P._REPO, out=io.StringIO())
+
+    def test_the_probe_is_non_interactive_and_bounded(self):
+        """A passphrase prompt is not a refusal -- left interactive, the
+        ceremony waits for a human to supply the very thing being tested."""
+        import inspect
+        src = inspect.getsource(P.probe_cannot_sign)
+        assert "stdin=subprocess.DEVNULL" in src
+        assert "timeout=KEY_PROBE_TIMEOUT_S" in src
+        assert "TimeoutExpired" in src, "a hang must be a definite negative"
+
+    def test_a_timeout_is_not_treated_as_inability_to_sign(self, tmp_path,
+                                                           monkeypatch):
+        """The dangerous direction. A probe that times out has not proven the
+        key unreachable; reporting `cannot_sign=True` there would turn a hang
+        into a clean bill of health."""
+        import subprocess as sp
+
+        def hang(*a, **k):
+            raise sp.TimeoutExpired(cmd="ssh-keygen", timeout=1)
+
+        monkeypatch.setattr(P.subprocess, "run", hang)
+        cannot, detail = P.probe_cannot_sign("/nonexistent.pub")
+        assert cannot is False, "a timeout must not read as 'cannot sign'"
+        assert "timed out" in detail
+
+    def test_the_probe_does_not_claim_containment(self):
+        """The residual stays accurately described. This is sequencing."""
+        import inspect
+        src = inspect.getsource(P) if hasattr(P, "__file__") else ""
+        text = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+            encoding="utf-8")
+        marker = text.split("# the key channel (Chunk D")[1][:2000]
+        assert "NOT CONTAINMENT" in marker.upper()
 
 
 class TestReadBoundaryIsRepositoryReadOnly:

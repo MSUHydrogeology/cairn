@@ -1769,6 +1769,105 @@ def verify_message_binds_report(message: str, *, digest: str, tree: str,
 
 
 # --------------------------------------------------------------------------
+# the key channel (Chunk D; plan review [E1], proposal R4)
+# --------------------------------------------------------------------------
+#
+# [E1] falsified the design this replaces. The proposal said stage 1 runs with
+# "the signing key channel absent (`SSH_AUTH_SOCK` unset)". Reproduced with a
+# disposable key: under `env -i`, `HOME=/nonexistent` and NO `SSH_AUTH_SOCK`,
+# `ssh-keygen -Y sign -f key.pub` SUCCEEDED, because it found the private
+# sibling next to the public key. This checkout's `user.signingkey` has exactly
+# that shape.
+#
+# So an unset variable is **evidence, never the property**, and the property is
+# not one code can establish: nothing a program does makes a readable
+# unencrypted private key unavailable to another process running as the same
+# user. The boundary is therefore a **Maintainer precondition (N4)** -- the
+# ceremony key encrypted at rest and in no agent during stage 1 -- and what code
+# does is *probe* it and refuse when the probe succeeds.
+#
+# This remains SEQUENCING, NOT CONTAINMENT. Candidate code that ran earlier on
+# the same uncompartmented machine may persist and attack the later agent under
+# the accepted residual.
+
+#: How long the probe may take. A probe that hangs is a probe that has not
+#: answered, and an interactive passphrase prompt is not a refusal -- it is the
+#: ceremony waiting for a human to make the key available.
+KEY_PROBE_TIMEOUT_S = 10
+
+
+class KeyChannelError(PreflightError):
+    """Stage 1 could sign, so the N4 precondition does not hold."""
+
+
+def signing_key_path(repo: Path = _REPO) -> str:
+    """The configured signing key, read through the sterile launcher."""
+    p = _git("config", "--get", "user.signingkey", repo=repo)
+    return (p.stdout or "").strip()
+
+
+def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
+    """Attempt a real signing operation. **Success is the failure case.**
+
+    Non-interactive and timeout-bounded: `ssh-keygen` prompts for a passphrase
+    on an encrypted key, and a prompt is not a refusal -- left interactive, the
+    ceremony would sit waiting for the operator to supply exactly the thing the
+    probe exists to prove is unavailable. `< /dev/null` plus a timeout turns
+    that into a definite negative.
+
+    Returns ``(cannot_sign, detail)``. This is a probe of a precondition, not
+    an enforcement of one.
+    """
+    # Guarded like every other launcher in this module. The probe runs `ssh-keygen`
+    # at a pinned absolute path, not candidate code, so exempting it would have
+    # been defensible -- but a rule with one exemption stays true more reliably
+    # than a rule with a growing list, and the probe has no business running
+    # after the key-load seal in any case.
+    refuse_if_sealed("the key-channel signing probe")
+    child = dict(env or os.environ)
+    child.pop("SSH_AUTH_SOCK", None)          # evidence, not the property
+    child["SSH_ASKPASS_REQUIRE"] = "never"    # no GUI prompt path either
+    child["DISPLAY"] = ""
+    with tempfile.TemporaryDirectory(prefix="cairn-keyprobe-") as td:
+        payload = Path(td) / "probe"
+        payload.write_bytes(b"cairn key-channel probe\n")
+        try:
+            r = subprocess.run(
+                [_SSH_KEYGEN, "-Y", "sign", "-f", key_path, "-n", "git",
+                 str(payload)],
+                stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                timeout=KEY_PROBE_TIMEOUT_S, env=child, check=False)
+        except subprocess.TimeoutExpired:
+            return (False, "the signing probe timed out; a probe that hangs "
+                           "has not answered, and a passphrase prompt is not "
+                           "a refusal")
+        if r.returncode == 0 and (payload.with_suffix(".sig").exists()
+                                  or Path(str(payload) + ".sig").exists()):
+            return (False, "a signature was produced")
+        return (True, (r.stderr or "").strip()[-300:] or "signing failed")
+
+
+def require_stage1_cannot_sign(repo: Path = _REPO, *, out=sys.stderr) -> dict:
+    """Stage 1's gate on the N4 precondition. Refuses if signing succeeds."""
+    key_path = signing_key_path(repo)
+    if not key_path:
+        raise KeyChannelError(
+            "no user.signingkey is configured, so the supported key channel is "
+            "unnamed and the N4 precondition cannot be probed")
+    cannot, detail = probe_cannot_sign(key_path)
+    if not cannot:
+        raise KeyChannelError(
+            f"STAGE 1 CAN SIGN through {key_path} ({detail}). The N4 "
+            f"precondition -- the ceremony key encrypted at rest and loaded "
+            f"into no agent -- does not hold, so this stage would run candidate "
+            f"code while the key is reachable. Code cannot make a readable "
+            f"private key unavailable to a same-user process; the ceremony "
+            f"stops here.")
+    out.write(f"key-channel probe: stage 1 cannot sign through {key_path}\n")
+    return {"key_path": key_path, "probe": detail}
+
+
+# --------------------------------------------------------------------------
 # the authorization package (Chunk C; plan review [E2], proposal R3)
 # --------------------------------------------------------------------------
 
