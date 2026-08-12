@@ -752,6 +752,126 @@ def parse_principals(text: str) -> set[str]:
     return principals
 
 
+REVIEW_MANIFEST_SCHEMA = "cairn-review-manifest/v1"
+
+
+class ReviewManifestError(PreflightError):
+    """The out-of-band review manifest is malformed or does not match."""
+
+
+def parse_review_manifest(text: str) -> dict:
+    """Re-parse the Maintainer's out-of-band review manifest.
+
+    **This is defence in depth and never the establishing control.** The
+    complete source-selection predicate lives in the fixed loader
+    (`REANCHOR_RUNBOOK.md`, *Phase 0 transition mode*), which runs *before* any
+    Python — including this function — exists in the process. By the time this
+    executes, the bytes it would judge have already been selected and are
+    already running. Plan review finding **[E3]**: a Python re-check cannot
+    establish which Python was safe to run.
+
+    It is kept because a second, independent implementation of the same
+    predicate catches a loader that was edited to be laxer than its recorded
+    text, and because the parsed values are what the checkpoint message binds.
+    """
+    reviewed_oid = provenance = None
+    schema_seen = False
+    members: list[tuple[str, str]] = []
+    for raw in text.splitlines():
+        if not raw.strip() or raw.lstrip().startswith("#"):
+            continue
+        if any(ch not in "\t" and (ord(ch) < 32 or ord(ch) == 127)
+               for ch in raw):
+            raise ReviewManifestError("control character in the review manifest")
+        parts = raw.split()
+        kind = parts[0]
+        if kind == "schema":
+            if len(parts) != 2 or parts[1] != REVIEW_MANIFEST_SCHEMA:
+                raise ReviewManifestError(f"unknown manifest schema: {raw!r}")
+            schema_seen = True
+        elif kind == "candidate":
+            if reviewed_oid is not None:
+                raise ReviewManifestError("duplicate candidate row")
+            if len(parts) != 2 or len(parts[1]) not in (40, 64) \
+                    or any(c not in "0123456789abcdef" for c in parts[1]):
+                raise ReviewManifestError(f"malformed candidate row: {raw!r}")
+            reviewed_oid = parts[1]
+        elif kind == "provenance":
+            if provenance is not None:
+                raise ReviewManifestError("duplicate provenance row")
+            provenance = raw[len("provenance "):]
+            if not provenance or len(provenance) > 120:
+                raise ReviewManifestError("provenance is empty or over 120 chars")
+        elif kind == "member":
+            if len(parts) != 3 or len(parts[1]) != 64 \
+                    or any(c not in "0123456789abcdef" for c in parts[1]):
+                raise ReviewManifestError(f"malformed member row: {raw!r}")
+            rel = parts[2]
+            if rel.startswith("/") or ".." in rel:
+                raise ReviewManifestError(f"member path is not relative: {rel!r}")
+            members.append((parts[1], rel))
+        else:
+            raise ReviewManifestError(f"unknown row type {kind!r}")
+
+    if not schema_seen:
+        raise ReviewManifestError("no schema row")
+    if reviewed_oid is None:
+        raise ReviewManifestError("no candidate row")
+    if provenance is None:
+        raise ReviewManifestError("no provenance row")
+    if not members:
+        raise ReviewManifestError("no member rows")
+
+    paths = [rel for _, rel in members]
+    if paths != sorted(paths):
+        raise ReviewManifestError("member paths are not in sorted order")
+    if len(set(paths)) != len(paths):
+        raise ReviewManifestError("duplicate member paths")
+
+    return {"schema": REVIEW_MANIFEST_SCHEMA, "candidate": reviewed_oid,
+            "provenance": provenance, "members": dict(
+                (rel, digest) for digest, rel in members)}
+
+
+def revalidate_transition(manifest: dict, reviewed_candidate: str, head: str,
+                          *, repo: Path = _REPO) -> dict:
+    """Re-check the loader's own conclusions. Defence in depth; see above.
+
+    Three facts, each of which the loader already established and each of which
+    is cheap to state again from inside: the reviewed candidate is the commit
+    being blessed, the declared member set is exactly the authority closure, and
+    every member's anchored-candidate bytes hash to the reviewed digest.
+    """
+    if reviewed_candidate != head:
+        raise ReviewManifestError(
+            f"the reviewed candidate {reviewed_candidate[:12]} is not the "
+            f"commit being blessed ({head[:12]})")
+    if manifest["candidate"] != reviewed_candidate:
+        raise ReviewManifestError(
+            "the review manifest names a different candidate than the loader "
+            "resolved")
+
+    declared = set(declared_authority_closure())
+    named = set(manifest["members"])
+    if named != declared:
+        missing, extra = sorted(declared - named), sorted(named - declared)
+        raise ReviewManifestError(
+            f"the review manifest is not the authority closure: "
+            f"{len(missing)} missing {missing[:3]}, "
+            f"{len(extra)} unexpected {extra[:3]}")
+
+    for rel, expected in sorted(manifest["members"].items()):
+        blob = _blob_at(reviewed_candidate, rel, repo=repo)
+        if blob is None:
+            raise ReviewManifestError(f"candidate has no blob at {rel}")
+        actual = _sha256_bytes(blob)
+        if actual != expected:
+            raise ReviewManifestError(
+                f"{rel} is {actual[:12]} in the candidate, review manifest "
+                f"names {expected[:12]}")
+    return manifest
+
+
 def check_signatures(anchor: str, head: str, report: Report, *,
                      repo: Path = _REPO) -> None:
     """**Retired.** Kept as an explicit no-op record, not as a check.
@@ -1876,6 +1996,8 @@ def _sync_worktree(repo: Path, manifest_bytes: bytes, blob: str) -> None:
 
 
 def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
+              review_manifest: str | None = None,
+              reviewed_candidate: str | None = None,
               out=sys.stderr) -> dict:
     """Re-derive everything, then bless -- **no handoff artifact is trusted**.
 
@@ -1913,6 +2035,25 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
             "the read-only checks refuse this state; nothing was written")
 
     head, anchor = report.facts["head"], report.facts["anchor"]
+
+    # Transition-mode revalidation. Defence in depth ([E3]) -- the loader has
+    # already selected and started these bytes, so this cannot establish that
+    # the selection was sound. It restates the loader's conclusions from inside
+    # so a loader edited laxer than its recorded text is caught, and so the
+    # parsed values are available to bind into the checkpoint.
+    transition = None
+    if review_manifest is not None:
+        transition = revalidate_transition(
+            parse_review_manifest(Path(review_manifest).read_text(
+                encoding="utf-8")),
+            reviewed_candidate, head, repo=repo)
+        out.write(f"transition revalidated against the review manifest "
+                  f"({transition['provenance']})\n")
+        report.facts["transition"] = {
+            "candidate": transition["candidate"],
+            "provenance": transition["provenance"],
+            "members": len(transition["members"]),
+        }
     branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
                   repo=repo).stdout.strip()
     if not branch.startswith("refs/heads/"):
@@ -2090,6 +2231,14 @@ def main(argv: list[str] | None = None) -> int:
                    dest="confirmed",
                    help="required; this is the only step that moves the trust "
                         "root")
+    a.add_argument("--transition-from-review", default=None,
+                   dest="review_manifest",
+                   help="TRANSITION MODE: the Maintainer's out-of-band review "
+                        "manifest. Selection already happened in the fixed "
+                        "loader; this is defence-in-depth revalidation.")
+    a.add_argument("--reviewed-candidate", default=None,
+                   help="TRANSITION MODE: the commit OID the loader resolved "
+                        "once and extracted by. Never re-resolved here.")
     args = ap.parse_args(argv)
 
     try:
@@ -2113,8 +2262,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cmd == "apply":
+        if bool(args.review_manifest) != bool(args.reviewed_candidate):
+            sys.stderr.write(
+                "[REFUSE ] transition mode needs both --transition-from-review "
+                "and --reviewed-candidate; one alone is not a mode\n")
+            return 2
         try:
-            result = apply_now(repo=repo, confirmed=args.confirmed)
+            result = apply_now(repo=repo, confirmed=args.confirmed,
+                               review_manifest=args.review_manifest,
+                               reviewed_candidate=args.reviewed_candidate)
         except PreflightError as exc:
             sys.stderr.write(f"[REFUSE ] {exc}\n")
             return 2

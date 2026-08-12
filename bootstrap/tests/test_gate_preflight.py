@@ -975,13 +975,40 @@ def _anchored_repo(tmp_path: Path):
 
 
 class TestApplyTakesNoArtifact:
-    """CR1's structural answer: there is nothing to tamper with."""
+    """CR1's structural answer, **narrowed** by security review [S2]/[E2].
 
-    def test_apply_now_accepts_no_bundle_or_digest(self):
+    The original claim was "apply reads no handoff artifact". That cannot
+    survive a signing stage which executes no candidate code: `collection` and
+    `interpreter` are exactly the fields static re-derivation cannot produce, so
+    a no-candidate-execution signer must consume stage-1 data. The claim was
+    retracted rather than defended.
+
+    What remains true, and is what CR1 actually falsified: **no adjacent
+    self-digest authenticates a file.** A bundle carrying its own digest beside
+    its own values is worthless -- re-hashing a tampered manifest agreed with
+    itself. Authority comes from outside the artifact: for the review manifest,
+    from a recorded external review; for the stage-1 package, from a digest the
+    Maintainer confirms over the exact bytes written.
+    """
+
+    def test_apply_now_takes_only_the_closed_parameter_set(self):
         import inspect
         params = set(inspect.signature(P.apply_now).parameters)
-        assert params == {"repo", "confirmed", "out"}, (
-            f"apply must take no handoff artifact; got {sorted(params)}")
+        assert params == {"repo", "confirmed", "out",
+                          "review_manifest", "reviewed_candidate"}, (
+            f"apply's inputs are a closed set; got {sorted(params)}")
+
+    def test_the_review_manifest_carries_no_self_digest(self):
+        """The narrowed claim, mechanised. A `digest` or `sha256` row naming the
+        manifest itself would be exactly the shape CR1 falsified, reappearing in
+        the new artifact."""
+        m = P.parse_review_manifest(
+            "schema cairn-review-manifest/v1\n"
+            "candidate " + "a" * 40 + "\n"
+            "provenance external security review 2026-08-12\n"
+            "member " + "b" * 64 + " bootstrap/tests/_gate_preflight.py\n")
+        assert set(m) == {"schema", "candidate", "provenance", "members"}, (
+            "the review manifest must carry no field that vouches for itself")
 
     def test_the_bundle_parser_is_gone(self):
         assert not hasattr(P, "parse_bundle"), (
@@ -1331,12 +1358,36 @@ def _runbook_block(containing: str) -> str:
     testing the wrong one the next time a block is added.
     """
     text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    section = text.split("### Phase 0 pre-flight")[1].split("\n## ")[0]
+    # Bounded at the transition-mode subsection as well as the next `##`.
+    # Chunk A added a SECOND loader that also contains `_gate_preflight.py`,
+    # so without this bound the "exactly one" assertion below fires -- which is
+    # the helper working correctly, and is why it is bounded rather than
+    # loosened to "the first match".
+    section = (text.split("### Phase 0 pre-flight")[1]
+                   .split("\n### Phase 0 transition mode")[0]
+                   .split("\n## ")[0])
     blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
     matching = [b for b in blocks if containing in b]
     assert len(matching) == 1, (
         f"expected exactly one Phase 0 block containing {containing!r}, "
         f"found {len(matching)}")
+    return matching[0]
+
+
+def _transition_block() -> str:
+    """The Chunk A transition loader, lifted verbatim from the runbook.
+
+    Same discipline as `_runbook_block`: the recorded steps ARE the ceremony, so
+    the script under test comes out of the document rather than being
+    transcribed into Python where it could be written correct while the recorded
+    steps stayed broken.
+    """
+    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    section = text.split("### Phase 0 transition mode")[1].split("\n## ")[0]
+    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
+    matching = [b for b in blocks if "TRANSITION" in b]
+    assert len(matching) == 1, (
+        f"expected exactly one transition loader block, found {len(matching)}")
     return matching[0]
 
 
@@ -1352,6 +1403,7 @@ def _recorded(repo: Path) -> dict[str, str]:
         "<maintainer-recorded-mktemp>": shutil.which("mktemp"),
         "<maintainer-recorded-mkdir>": shutil.which("mkdir"),
         "<maintainer-recorded-shasum>": shutil.which("shasum"),
+        "<maintainer-recorded-sort>": shutil.which("sort"),
         "<maintainer-recorded-home>": os.environ.get("HOME", "/nonexistent"),
     }
     missing = [k for k, v in values.items() if not v]
@@ -1736,6 +1788,169 @@ class TestKeyLoadPhaseSentinel:
         assert result["new_anchor"], "the ceremony did not complete"
         assert P._phase == P._PHASE_SEALED, (
             "apply returned with candidate execution still permitted")
+
+
+# ---------------------------------------------------------------------------
+# Chunk A: source selection lives in the LOADER, not in the code it selects.
+#
+# Plan review [E3]: `_gate_preflight.py` runs only AFTER the candidate bytes
+# have been chosen and executed, so a Python check cannot establish which Python
+# was safe to run. These nodes therefore execute the runbook's own transition
+# block and assert on what happens BEFORE any interpreter starts.
+# ---------------------------------------------------------------------------
+
+
+def _review_manifest(repo: Path, oid: str, *, members=None,
+                     schema="cairn-review-manifest/v1",
+                     provenance="external security review 2026-08-12") -> str:
+    """A well-formed manifest over the candidate's real closure bytes."""
+    import hashlib
+    rows = [f"schema {schema}", f"candidate {oid}", f"provenance {provenance}"]
+    if members is None:
+        members = []
+        for rel in sorted(P.declared_authority_closure()):
+            blob = subprocess.run(
+                ["git", "-C", str(repo), "cat-file", "blob", f"{oid}:{rel}"],
+                capture_output=True).stdout
+            members.append((hashlib.sha256(blob).hexdigest(), rel))
+    rows += [f"member {d} {r}" for d, r in members]
+    return "\n".join(rows) + "\n"
+
+
+class TestTransitionLoaderSelectsTheSource:
+
+    def _script(self, repo: Path, manifest_path: Path, candidate: str) -> str:
+        block = _transition_block()
+        block = block.replace("<candidate-ref-or-oid-to-transition-to>",
+                              shlex.quote(candidate))
+        block = block.replace(
+            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
+            shlex.quote(str(manifest_path)))
+        return _substitute(block, repo, hashes=False)
+
+    def _run(self, repo, manifest_text, candidate, tmp_path):
+        mf = tmp_path / "review-manifest.txt"
+        mf.write_text(manifest_text, encoding="utf-8")
+        script = self._script(repo, mf, candidate)
+        return subprocess.run(["bash", "-c", script], cwd=str(repo),
+                              capture_output=True, text=True, check=False)
+
+    def test_the_recorded_transition_loader_parses_a_good_manifest(
+            self, tmp_path):
+        """The loader's own bytes, executed. It will refuse later for ceremony
+        reasons this fixture cannot satisfy; what this asserts is that it gets
+        *past source selection* on a well-formed manifest."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        r = self._run(repo, _review_manifest(repo, head), head, tmp_path)
+        assert "REFUSE:" not in r.stderr, (
+            f"a well-formed manifest was refused at selection:\n{r.stderr[-1500:]}")
+
+    @pytest.mark.parametrize("mutation,expect", [
+        ("schema", "unknown manifest schema"),
+        ("order", "sorted order"),
+        ("duplicate", "sorted order"),
+        ("digest_case", "lowercase hex"),
+        ("digest_len", "64 characters"),
+        ("control", "control character"),
+        ("no_candidate", "no candidate row"),
+        ("no_provenance", "no provenance row"),
+        ("long_provenance", "120 characters"),
+        ("absolute_path", "not repository-relative"),
+        ("wrong_oid", "review manifest names"),
+        ("bad_digest", "do not match the reviewed manifest"),
+    ])
+    def test_each_rejection_refuses_before_any_python_starts(
+            self, tmp_path, mutation, expect):
+        """[E3]'s core requirement. Every one of these is a *selection* failure,
+        so the correct outcome is not "the checker refused" -- it is that **no
+        interpreter ran at all**."""
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        rows = _review_manifest(repo, head).splitlines()
+
+        def member_rows():
+            return [i for i, r in enumerate(rows) if r.startswith("member ")]
+
+        if mutation == "schema":
+            rows[0] = "schema cairn-review-manifest/v2"
+        elif mutation == "order":
+            m = member_rows()
+            rows[m[0]], rows[m[-1]] = rows[m[-1]], rows[m[0]]
+        elif mutation == "duplicate":
+            rows.append(rows[member_rows()[0]])
+        elif mutation == "digest_case":
+            i = member_rows()[0]
+            parts = rows[i].split()
+            rows[i] = f"member {parts[1].upper()} {parts[2]}"
+        elif mutation == "digest_len":
+            i = member_rows()[0]
+            parts = rows[i].split()
+            rows[i] = f"member {parts[1][:63]} {parts[2]}"
+        elif mutation == "control":
+            rows[2] = "provenance review\x07bell"
+        elif mutation == "no_candidate":
+            rows = [r for r in rows if not r.startswith("candidate ")]
+        elif mutation == "no_provenance":
+            rows = [r for r in rows if not r.startswith("provenance ")]
+        elif mutation == "long_provenance":
+            rows[2] = "provenance " + ("x" * 121)
+        elif mutation == "absolute_path":
+            i = member_rows()[0]
+            parts = rows[i].split()
+            rows[i] = f"member {parts[1]} /etc/passwd"
+        elif mutation == "wrong_oid":
+            rows[1] = "candidate " + ("a" * 40)
+        elif mutation == "bad_digest":
+            i = member_rows()[0]
+            parts = rows[i].split()
+            rows[i] = f"member {'0' * 64} {parts[2]}"
+
+        text = "\n".join(rows) + "\n"
+        if mutation == "control":
+            text = text.replace("\\x07", "\x07")
+
+        r = self._run(repo, text, head, tmp_path)
+
+        assert r.returncode != 0, f"the mutation was accepted:\n{r.stdout[-800:]}"
+        assert expect in r.stderr, (
+            f"expected {expect!r} in the refusal, got:\n{r.stderr[-1200:]}")
+        assert "Traceback" not in r.stderr, (
+            "a Python interpreter started on a selection failure; selection "
+            "must refuse before any interpreter runs")
+
+    def test_the_loader_extracts_by_resolved_oid_not_by_a_moving_ref(self):
+        """A ref read twice is two answers wearing one name. Asserted on the
+        recorded text, since the property is which *expression* is used."""
+        block = _transition_block()
+        code = "\n".join(ln for ln in block.splitlines()
+                          if ln.strip() and not ln.lstrip().startswith("#"))
+        assert 'cat-file blob "$RESOLVED:$path"' in code, (
+            "extraction must use the once-resolved OID")
+        assert 'cat-file blob "$CANDIDATE' not in code, (
+            "extraction must never read through the candidate ref")
+        assert code.count("rev-parse --verify --end-of-options") == 1, (
+            "the candidate is resolved exactly once")
+
+    def test_the_anchored_steady_state_loader_has_no_transition_mode(self):
+        """[S1] as a test. The anchored checker cannot contain a mode added to
+        its successor, so the steady-state block must not offer one -- if it
+        did, the old authority would be vouching for its replacement."""
+        steady = _runbook_block("_gate_preflight.py")
+        assert "--transition-from-review" not in steady
+        assert "REVIEW_MANIFEST" not in steady
+
+    def test_transition_mode_needs_both_flags_or_refuses(self, tmp_path):
+        """One flag alone is not a mode. A half-specified transition must not
+        fall back to steady state, which would run the ceremony with the
+        selection predicate silently skipped."""
+        repo, anchor, head = _anchored_repo(tmp_path)
+        checker = _REPO / "bootstrap/tests/_gate_preflight.py"
+        r = subprocess.run(
+            [sys.executable, "-E", "-s", str(checker), "apply",
+             "--repo", str(repo), "--confirm-supervised-reanchor",
+             "--reviewed-candidate", head],
+            capture_output=True, text=True, check=False)
+        assert r.returncode == 2
+        assert "one alone is not a mode" in r.stderr
 
 
 class TestReadBoundaryIsRepositoryReadOnly:

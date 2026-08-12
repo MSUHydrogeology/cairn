@@ -155,14 +155,193 @@ runs before any Python executes, and its expected values come from the
 Maintainer's out-of-band review (step M2 below), never from the checkout.
 `shasum -a 256` is macOS/BSD; use `sha256sum -c` where that is what exists.
 
-`apply` re-derives everything itself and **trusts no handoff file**. It runs the
-evidence stage, then the read-only checks, then constructs and verifies a signed
-commit, then advances the branch and `refs/cairn/gate-anchor` in one expected-old
-transaction. `check` is available as a non-mutating preview; its output is a
-record to read, not an input.
+`apply` re-derives every field it can. **It does consume one handoff artifact**
+in the two-stage protocol below, and the narrower true claim is: *no adjacent
+self-digest authenticates a file.* The Maintainer confirms a package digest
+computed over the exact bytes stage 1 wrote, and stage 2 re-derives everything
+that is derivable. `check` is available as a non-mutating preview; its output is
+a record to read, not an input.
 
 There is **no flag that turns a refusal into a pass.** A refusal routes here, to
 the manual steps below.
+
+### Phase 0 transition mode — a reviewed authority change
+
+**Two modes, explicit, never inferred.** The block above is **steady state**: it
+extracts the checker from `refs/cairn/gate-anchor`, which is correct exactly when
+the anchor already pins the bytes that should run.
+
+It cannot be used when the authority closure itself is changing, and the reason
+is structural rather than incidental: **the anchored checker cannot contain a
+mode added to its successor.** Extracting from the anchor to run a transition is
+asking the old authority to vouch for its replacement, which is the property this
+whole ceremony exists to deny.
+
+So a transition run extracts from the **candidate commit**, and what makes that
+safe is not the candidate — it is an **out-of-band review manifest** recorded by
+the Maintainer from a completed exact-byte External Security Review. The
+selection predicate below is **complete in this loader**. The checker re-checks
+the same facts once it starts, but that re-check is *defence in depth and never
+the establishing control*: it runs after the bytes it would judge have already
+been chosen and executed.
+
+**The review manifest format.** One bounded, line-oriented file the Maintainer
+records out of band. It is never read from the candidate tree, and its expected
+values are never recomputed from the candidate.
+
+```
+schema cairn-review-manifest/v1
+candidate <full 64-hex commit OID, exactly as reviewed>
+provenance <one line, <=120 chars, no control characters>
+member <64-hex sha256> <path>
+member <64-hex sha256> <path>
+...
+```
+
+`member` rows are in **`LC_ALL=C` sorted path order** — canonical because it is
+independently derivable, so no hidden list decides what "correct order" means.
+Sorted order also makes duplicates and omissions detectable by the same check.
+
+```
+# TRANSITION MODE. Same clean-child-shell discipline as the steady-state loader
+# above -- see that block for why /bin/sh is literal, why every utility is
+# recorded by absolute path, and why the environment is emptied. Only the
+# SOURCE of the bytes and the verification that precedes them differ.
+<maintainer-recorded-env> -i \
+    PATH=/usr/bin:/bin \
+    HOME=<maintainer-recorded-home> \
+    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
+    /bin/sh <<'TRANSITION'
+CHECKOUT=<absolute-path-of-the-checkout-to-bless>
+CANDIDATE=<candidate-ref-or-oid-to-transition-to>
+REVIEW_MANIFEST=<absolute-path-of-the-maintainer-recorded-review-manifest>
+ENV=<maintainer-recorded-env>
+GIT=<maintainer-recorded-git>
+PY=<maintainer-recorded-interpreter>
+MKTEMP=<maintainer-recorded-mktemp>
+MKDIR=<maintainer-recorded-mkdir>
+SHASUM=<maintainer-recorded-shasum>
+SORT=<maintainer-recorded-sort>
+
+T=$("$MKTEMP" -d) || exit 1
+
+sterile_git() {
+    "$ENV" -i HOME=/nonexistent \
+        "$GIT" --no-replace-objects \
+               -c core.useReplaceRefs=false \
+               -c core.hooksPath=/dev/null \
+               -c core.fsmonitor=false \
+               -C "$CHECKOUT" "$@"
+}
+
+die() { echo "REFUSE: $1" >&2; exit 1; }
+
+# ---- parse and validate the review manifest -------------------------------
+# Every rejection below is a refusal BEFORE any Python starts. A malformed
+# manifest is not a manifest with a problem; it is an unreviewed input.
+[ -f "$REVIEW_MANIFEST" ] || die "review manifest is not a regular file"
+[ -L "$REVIEW_MANIFEST" ] && die "review manifest is a symlink"
+
+REVIEWED_OID=""
+PROVENANCE=""
+SCHEMA_SEEN=0
+: > "$T/members.sha256" || exit 1
+: > "$T/paths" || exit 1
+
+while IFS= read -r line || [ -n "$line" ]; do
+    # Control characters are rejected wholesale: a manifest is a recorded human
+    # artifact, and an embedded newline or escape is not a formatting quirk.
+    case $line in
+        *[![:print:][:space:]]*) die "control character in the review manifest" ;;
+    esac
+    set -- $line
+    case $1 in
+    schema)
+        [ $# -eq 2 ] || die "malformed schema row"
+        [ "$2" = "cairn-review-manifest/v1" ] || die "unknown manifest schema $2"
+        SCHEMA_SEEN=1
+        ;;
+    candidate)
+        [ $# -eq 2 ] || die "malformed candidate row"
+        [ -z "$REVIEWED_OID" ] || die "duplicate candidate row"
+        [ ${#2} -eq 40 ] || [ ${#2} -eq 64 ] || die "candidate OID is not a full object id"
+        case $2 in *[!0-9a-f]*) die "candidate OID is not lowercase hex" ;; esac
+        REVIEWED_OID=$2
+        ;;
+    provenance)
+        [ $# -ge 2 ] || die "malformed provenance row"
+        [ -z "$PROVENANCE" ] || die "duplicate provenance row"
+        PROVENANCE=${line#provenance }
+        [ ${#PROVENANCE} -le 120 ] || die "provenance exceeds 120 characters"
+        ;;
+    member)
+        [ $# -eq 3 ] || die "malformed member row"
+        [ ${#2} -eq 64 ] || die "member digest is not 64 characters"
+        case $2 in *[!0-9a-f]*) die "member digest is not lowercase hex" ;; esac
+        case $3 in
+            /*|*..*) die "member path is not repository-relative" ;;
+        esac
+        echo "$2  $3" >> "$T/members.sha256" || exit 1
+        echo "$3" >> "$T/paths" || exit 1
+        ;;
+    ""|\#*) : ;;
+    *)  die "unknown row type $1" ;;
+    esac
+done < "$REVIEW_MANIFEST"
+
+[ "$SCHEMA_SEEN" -eq 1 ] || die "no schema row"
+[ -n "$REVIEWED_OID" ] || die "no candidate row"
+[ -n "$PROVENANCE" ]   || die "no provenance row"
+[ -s "$T/paths" ]      || die "no member rows"
+
+# Sorted order is the canonical order, so this one check catches wrong order
+# AND duplicates. `sort -c -u` fails on either.
+LC_ALL=C "$SORT" -c -u "$T/paths" 2>/dev/null \
+    || die "member paths are not in unique LC_ALL=C sorted order"
+
+# ---- bind the candidate ONCE ----------------------------------------------
+# Resolved once, to a full object id, and every later read uses that id. A
+# moving ref read twice is two different answers wearing one name.
+RESOLVED=$(sterile_git rev-parse --verify --end-of-options "$CANDIDATE^{commit}") \
+    || die "candidate does not resolve to a commit"
+[ "$RESOLVED" = "$REVIEWED_OID" ] \
+    || die "candidate resolves to $RESOLVED, review manifest names $REVIEWED_OID"
+
+# ---- extract BY OID, never by ref -----------------------------------------
+while read -r sum path; do
+    [ -n "$path" ] || continue
+    "$MKDIR" -p "$T/${path%/*}" || exit 1
+    sterile_git cat-file blob "$RESOLVED:$path" > "$T/$path" \
+        || die "candidate $RESOLVED has no blob at $path"
+done < "$T/members.sha256"
+
+# ---- the decisive check, still before any Python ---------------------------
+( cd "$T" && "$SHASUM" -a 256 -c members.sha256 ) \
+    || die "extracted bytes do not match the reviewed manifest"
+
+# The extracted set must be EXACTLY the declared set: the manifest cannot admit
+# a subset and leave an unreviewed member to be resolved from somewhere else.
+"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
+    apply --repo "$CHECKOUT" \
+          --transition-from-review "$REVIEW_MANIFEST" \
+          --reviewed-candidate "$RESOLVED"
+TRANSITION
+```
+
+**What this loader establishes, and what it does not.** It establishes that the
+Python about to run is byte-identical to a set a named external review approved,
+at one resolved commit id, with no member added, dropped, reordered or
+duplicated — and that **no Python starts at all** if any of that fails.
+
+It does **not** establish its own authenticity. The fixed loader text remains an
+**M2 out-of-band trust input**, exactly like the steady-state block: a loader
+cannot bootstrap the trust in itself. `SORT` joins the recorded utilities in the
+residual trust set for the same reason the others are there.
+
+**Transition mode is not a flag to reach for.** It refuses when the closure has
+no delta, and every use costs a fresh exact-byte External Security Review of the
+new closure. That cost *is* the control — repeatable under new review authority
+is not the same thing as habitually available.
 
 **Residual trust set — where the chain actually ends.** **The loader's own
 inputs, which nothing above them can check:** the recorded absolute paths
