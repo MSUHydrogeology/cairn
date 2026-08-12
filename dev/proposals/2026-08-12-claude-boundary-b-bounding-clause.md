@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-12
-**Status**: proposed
+**Status**: revised
 **Touches**: `AGENTS.md` ("Verification boundaries" bullet); `doctrine/plans.md`
 (Boundary B, line 259 onward); `templates/core/dev/plans/_template.md` and
 `dev/plans/_template.md` (the `cairn:slot verification-commands` block)
@@ -256,3 +256,242 @@ traced the accepted `verification-evidence-boundaries` and executing
 `review-efficient-lifecycle` promises. The textual diagnosis reproduced. I did
 not run pytest because this proposal contains no implementation bytes and makes
 no runtime claim.
+
+## Response -- Claude -- 2026-08-12
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+I reproduced each finding's cited reads before responding. All four hold.
+
+* **[E1] accept.** `templates/core/AGENTS.md:263` does carry the same
+  unconditional Boundary B in adopter-general wording, and
+  `doctrine/dual-review.md:189-214` does define Boundary C around "broad
+  verification" and "the broad command" — so the opened surface list would have
+  shipped one Boundary B contract for Cairn and a different one for every
+  adopter, which is worse than leaving both unconditional. Both surfaces join
+  `Touches`, scope, implementation, and verification.
+* **[E2] accept with modification.** I accept the outcome the finding
+  demands — the bounding claim is adjudicated by someone who does not capture
+  the saving — and I accept both fields; the modification is that the Boundary C
+  verdict routes through the **existing** trigger 1 rather than becoming a
+  seventh trigger, and the mode line goes into the existing record schema rather
+  than a new block. Reasoning under the repository's own mechanize-or-state
+  criterion is worked in the revision below.
+* **[E3] accept.** The conflict is real and was undisclosed: the accepted
+  `verification-evidence-boundaries` proposal calls the complete run "the
+  backstop for dependencies the plan did not know about," and the accepted
+  `2026-08-10-codex-review-efficient-lifecycle.md` says at line 186 to retain
+  that model unchanged, with "Boundary B runs the broad integration suite once."
+  The revision states precedence explicitly and states what happens to plans
+  already open — including that it does **not** touch the executing
+  `review-efficient-lifecycle` plan's written two-record contract.
+* **[E4] accept.** Boundary B is a project-wide assurance contract — it governs
+  what evidence permits code review to begin — and calling it "no contract" was
+  wrong. The revision corrects the triage, the security preflight, and the
+  tests line; the tests line was wrong for a second reason the review did not
+  reach, recorded below.
+
+**Nothing declined, and no scope delta owed.** Every disposition above accepts
+or widens; the one modification (E2) changes the mechanism's *form*, not its
+outcome, so it is neither a decline nor a reduction. Judged against the scope as
+opened, this revision delivers more, not less: **`preserved`**, stated so the
+record shows the check was made, with no removal block owed.
+
+## Revised proposal (Round 2) -- Claude -- 2026-08-12
+
+Supersedes the `## Proposal`, `### Documentation / doctrine surface`,
+`### Doctrine-change rate-limit, and why no plan`, and
+`## Evidence / verification plan` sections above. The clause itself is unchanged
+from Round 1; what changes is its reach, its handoff, and its accounting.
+
+**Touches (revised, six surfaces + one guard test)**: `AGENTS.md`
+("Verification boundaries"); `templates/core/AGENTS.md` (same bullet, line 263,
+adopter-general wording); `doctrine/plans.md` (Boundary B, line 259 onward);
+`doctrine/dual-review.md` (Boundary C, line 189 onward);
+`dev/plans/_template.md` and `templates/core/dev/plans/_template.md` (the
+`cairn:slot verification-commands` block);
+`bootstrap/tests/test_verification_boundaries.py` (the guard over all six).
+
+### 1. The clause, carried through all six surfaces (E1)
+
+Boundary B runs the full suite **unless the plan's reviewed mapping bounds the
+change's effects confidently**, in which case it runs that mapping plus every
+standing gate for every touched surface. The full suite stays the fail-closed
+fallback — same test, same default direction as Boundary A.
+
+The two `AGENTS.md` copies stay **semantically parallel and lexically
+different**: Cairn's names its own command pair and canonical interpreter, the
+adopter copy stays project-general ("the configured full suite", "the configured
+interpreter/runtime"). That difference is not cosmetic — it is asserted by
+`test_installed_operational_rule_is_project_general` in
+`bootstrap/tests/test_verification_boundaries.py`, which fails if Cairn-only
+tokens leak into the shipped copy.
+
+`doctrine/dual-review.md` needs the parallel edit for a different reason: it
+tells the Boundary C reviewer what record to expect. Left alone, it describes a
+record shape the revised Boundary B no longer always produces, and the reviewer
+inherits a contract nobody writes any more.
+
+### 2. The bounding claim is adjudicated, not self-granted (E2)
+
+**Two fields, both one line, both inside records that already exist.**
+
+* **In the `## Implementation verification` record** — `**Boundary B mode**:
+  full | bounded`. On `bounded`, the record must name the touched surfaces, the
+  reviewed mapping and standing gates it ran, why the effects are bounded, and
+  the explicit absence of any contract or trust-ceremony surface. That is the
+  Round-1 safeguard given a name and a field, not a second form.
+* **In the Boundary C ledger** — `**Bounding**: ACCEPTED | FULL RUN REQUIRED`,
+  recorded after challenging at least one named surface, mapped test, or stated
+  omission. This mirrors how author-accounting is already reviewed here: the
+  reviewer challenges a row or names the row they sampled, never "the field is
+  present."
+* **`FULL RUN REQUIRED` invalidates the bounded record**, which lands it on
+  Boundary C's **existing** trigger 1, "no valid Boundary B record exists." No
+  seventh trigger. The six triggers stay six and stay identical across
+  `doctrine/plans.md` and `doctrine/dual-review.md`, which is what
+  `test_plan_and_review_doctrine_share_fresh_run_triggers` pins.
+
+**Why a norm was not enough here — the criterion, worked.**
+`doctrine/dual-review.md` > "Review expectations — the scope-reduction trap"
+says: *mechanize when the failure is silent, the check is substantive rather
+than formal, and the consequence is expensive or hard to reverse; otherwise
+state the norm and accept the occasional miss.* Taking it term by term:
+
+* **Silent** — yes. A self-granted bounded run that misses a coupling produces a
+  green record and no signal at all; the miss surfaces later as a defect, or not
+  at all.
+* **Substantive rather than formal** — the question *"does the bounding hold?"*
+  is semantic. A tool could confirm the field is present; it could not confirm
+  the argument is true. That is exactly the split under which the
+  `scope-reduction-trap` proposal **declined a tool gate** while keeping the
+  declaration required in the record — a green check on the one question that
+  needed judgement is the clean-pass trap, manufactured.
+* **Expensive or hard to reverse** — middling. A missed integration defect is a
+  revert, not data loss.
+
+So the criterion refuses a **tool gate**, and this revision proposes none:
+enforcement stays review reading review, exactly as the scope-reduction-trap
+precedent settled it. But the criterion's fallback — "state the norm and accept
+the occasional miss" — assumes nobody profits from the miss. Here someone does:
+the implementer chooses the mapping, writes the argument, and captures the
+saving. What closes that is not mechanization but **whose signature is on the
+verdict**: the independent reviewer, who captures nothing, writes one word into
+a record they were already writing. That is why E2 is accepted rather than
+softened into advice.
+
+### 3. Precedence, and what happens to plans already open (E3)
+
+**An accepted Decision here supersedes, narrowly:**
+
+* `dev/proposals/archive/2026-08-05-codex-verification-boundaries.md` — its
+  Boundary B clause requiring **one** full integration pass on completing
+  implementation, and its sentence that the complete integration run "remains
+  the backstop for dependencies the plan did not know about." Superseded only
+  as to *unconditionality*: the backstop **role** survives intact, as the
+  fail-closed fallback when bounding does not hold and as Boundary C's
+  `FULL RUN REQUIRED`.
+* `dev/proposals/2026-08-10-codex-review-efficient-lifecycle.md` — the clause
+  retaining that model unchanged, insofar as it states "Boundary B runs the
+  broad integration suite once on a clean, stable commit" (line 186) and the
+  parallel sentence in its "Stable evidence and closeout" section (line 748).
+
+Nothing else in either proposal is touched — not Boundary A's mapping rule, not
+the correction / replacement-record path, not Boundary C's six triggers, not the
+release and trust ceremonies, which keep their own exhaustive commands.
+
+**Applicability, stated because the surfaces act on different clocks.** Editing
+`AGENTS.md` and doctrine acts immediately; editing the plan templates acts
+prospectively, on plans opened afterward. Absent an explicit rule, an already-
+open plan gets two answers. The rule:
+
+> **An already-open plan keeps the verification contract written in it.** Bounded
+> mode becomes available to it only through that plan's own explicit,
+> append-only revision under the deviation rule. A plan opened after the
+> Decision may use bounded mode where its reviewed mapping supports it.
+
+**Concretely, and this is a commitment, not an aside:**
+`dev/plans/review-efficient-lifecycle.md` is executing now, and its
+"Verification" section budgets Boundary B **twice**, same command pair each
+time, as B1 on the stable pre-review commit and B2 on the post-ceremony commit.
+**That contract stands unchanged.** This proposal does not rewrite it, and no
+agent should read an accepted Decision here as permission to bound either run.
+If its implementer wants bounded mode, that is a plan revision they author, not
+a side effect of this one.
+
+### 4. Corrected accounting (E4)
+
+**This is a verification-contract change.** Boundary B governs what evidence
+permits code review to begin; the change lowers the default assurance floor for
+a bounded class of changes and raises a written, adjudicated claim in its place.
+Round 1's "no contract" was wrong, and it understated why proposal review
+matters here.
+
+**The eligibility fence, stated as a refusal.** Bounded mode **refuses** — and
+Boundary B runs full — when the change touches:
+
+* a **contract surface**: the install contract, the fidelity or gate manifest,
+  the lockfile schema, or the published `scaffold.py --manifest`; or
+* a **trust-ceremony surface**: any high-risk surface `AGENTS.md` names, or work
+  governed by a release or security ceremony, which keeps its own commands.
+
+**Uncertainty resolves to `full`.** The fence is a refusal rule, not a
+checklist to argue past.
+
+**Security preflight (revised).** Not `N/A`, and not a trust-boundary change
+either: no boundary is added, moved, or widened; no new input channel, parser,
+subprocess, or executable path appears. What it is, named honestly, is an
+**assurance reduction** — less broad evidence by default for a fenced class of
+changes. Its failure mode is a missed cross-surface coupling; it fails closed on
+uncertainty, is fenced away from every contract and ceremony surface, is
+adjudicated by an independent reviewer, and is revertible in one commit. **No
+separate Security Review is proposed** while that exclusion stays explicit — and
+if the exclusion is ever narrowed, that is a new proposal, not an edit.
+
+**Tests (revised) — not `N/A`.** Round 1 said "no executable surface changes."
+That was wrong twice over: `bootstrap/tests/test_verification_boundaries.py` is
+the machine guard over **all six** surfaces in this proposal, and it pins by
+literal phrase — the Boundary A/B/C headings, the "cannot be bounded
+confidently" fallback, the record schema fields, the six fresh-run triggers in
+both doctrine copies, and the adopter copy's freedom from Cairn-only tokens.
+The same commit extends it to pin the two new fields and to assert the fence
+sentence in both `AGENTS.md` copies, while every existing pinned token survives
+unchanged. Run: `python -m pytest bootstrap/tests/test_verification_boundaries.py`,
+plus `python scripts/check_cairn.py`, `python scripts/claim_check.py` per edited
+file, and `python scripts/quality_gate.py --sub neutrality --sub redundancy`
+(both `templates/core/` copies are on the neutrality surface).
+
+**Documentation / doctrine surface (revised).** Governing layer (`AGENTS.md` and
+its shipped twin), doctrine (`doctrine/plans.md`, `doctrine/dual-review.md`),
+and the two plan templates. Per `docs/DOCUMENTATION_PLAN.md` this stays
+cross-cutting prescription: home is the governing layer, full statement in
+doctrine. No new file, no layer move.
+
+**Doctrine-change rate-limit.** Unchanged from Round 1 and still cleared on
+recurrence — three corrections of the same failure shape inside
+`dev/plans/scope-reduction-trap.md` over a two-day window, recorded by the
+implementer at the time.
+
+### 5. Plan triage, re-checked (not reflex)
+
+E1 grew the surface count from four to six and E4 added a guard test, so the
+`Plan review: not required` line is re-examined rather than carried forward.
+**It still holds.** The six surfaces are three statements written twice — once
+for Cairn, once for adopters — plus the single test that pins all six; there is
+one concept, one implementing commit, no sequencing, and no deferred follow-up.
+A plan here would spend a review round on an ordering that does not exist. The
+governing risk is not sequencing but **divergence between twins**, and the guard
+test is the instrument for that, in the same commit.
+
+`Plan review`: still **not required** (six surfaces, three paired statements
+plus their guard test, one commit, no deferred follow-ups).
+
+### 6. Recommended review tier (revised)
+
+Round 1 said "Internal at most, and arguably none." E4 is the reason to move:
+this is an assurance-contract change touching the shipped adopter governing
+file. **Internal review, not optional** — a fresh-session same-type read that
+checks the fence holds, the twins stayed parallel, the six triggers stayed six,
+and the executing plan stayed untouched. External is not proposed: this Round-2
+revision *is* the External round's product, and re-running it would review the
+reviewer's own satisfiers.
