@@ -5979,3 +5979,163 @@ class TestClosedVocabularyValuesTolerateHouseStyle:
         value, problem = self._p("**Findings**: none -- but raised two concerns",
                                  planner._FINDINGS, "Findings")
         assert value is None and "contradictory" in problem
+
+
+# Amendment B's parser contract.  Owned HERE because P2 created
+# `_declaration_record`, `_declared_reduction` and `plan_inheritance_violations`;
+# the owner of a predicate owns its contract test.
+
+
+def _sd_art(tmp_path, body: str, *, status: str = "implementing", stem: str = "sd"):
+    d = tmp_path / "dev" / "plans"
+    d.mkdir(parents=True, exist_ok=True)
+    path = d / f"{stem}.md"
+    path.write_text(
+        f"# Plan: {stem}\n\n**Status**: {status}\n"
+        f"**Plan review**: required(Internal)\n\n{body}",
+        encoding="utf-8")
+    return planner._read_artifact(path)
+
+
+_ALLOWANCE = "> Maintainer: go ahead and drop chunk D.\n"
+
+
+class TestScopeDeltaParserContract:
+    """Amendment B's `Scope delta` reader, table-driven.
+
+    **Why this class exists.** The behaviour shipped with no contract test. An
+    External review of the sibling `scope-reduction-trap` plan changed
+    `_declaration_record` in **both** twins to begin at the declaration line
+    instead of its preceding heading -- silently revoking the authority of every
+    allowance written *above* its field -- and **745 tests passed**. Reproduced
+    here before writing this class. The only test that touched the predicate
+    lived under the sibling plan, which owns neither the symbol nor the risk.
+
+    **The policy this encodes is settled and is not re-opened here** (Maintainer
+    decision, 2026-08-12, recorded in `dev/plans/scope-reduction-trap.md`):
+
+    * a **presence** check is forbidden -- nothing may refuse because the
+      declaration is absent, unfilled or unrecognised. A tool sees whether the
+      box is ticked, never whether the tick is honest, so it catches forgetting,
+      misses evasion, and *supplies cover* for evasion by turning the transition
+      green. `doctrine/dual-review.md` > "The counterweight".
+    * an **authorization** check is permitted -- a declaration that exists and
+      declares a loss without a Maintainer allowance refuses, because *who may
+      concede an outcome* is the part that cannot be recovered afterwards.
+    """
+
+    # -- dimension 1 + 2: accepted spellings, and what must yield NOTHING ------
+
+    @pytest.mark.parametrize("value", ["degraded", "lost", "**lost**", "Lost",
+                                       "degraded.", "  lost  "])
+    def test_a_reduction_is_recognized_in_every_accepted_spelling(
+            self, tmp_path, value):
+        art = _sd_art(tmp_path, f"## R\n\n**Scope delta**: {value}\n")
+        assert [(v, a) for _l, v, a in planner._declared_reduction(art)] == [
+            (value.strip().rstrip(".").strip("*").casefold(), False)]
+
+    @pytest.mark.parametrize("value", [
+        "preserved", "", "preserved | degraded | lost", "mostly fine",
+        "PRESERVED", "none",
+    ])
+    def test_no_presence_check_exists_in_any_direction(self, tmp_path, value):
+        """The forbidden half. `preserved`, unfilled, the template's own prompt
+        line, and any unrecognised token all yield **nothing** -- so no
+        transition can refuse for a missing or malformed declaration."""
+        art = _sd_art(tmp_path, f"## R\n\n**Scope delta**: {value}\n")
+        assert planner._declared_reduction(art) == []
+
+    def test_an_absent_field_yields_nothing(self, tmp_path):
+        art = _sd_art(tmp_path, "## R\n\nno declaration at all\n")
+        assert planner._declared_reduction(art) == []
+
+    # -- dimension 3: allowance position relative to the field ----------------
+
+    def test_an_allowance_ABOVE_the_field_authorizes_it(self, tmp_path):
+        """The exact case the sibling's mutation revoked. The record is
+        heading-bounded, so position within it does not matter."""
+        art = _sd_art(tmp_path, f"## R\n\n{_ALLOWANCE}\n**Scope delta**: lost\n")
+        assert [a for _l, _v, a in planner._declared_reduction(art)] == [True]
+
+    def test_an_allowance_BELOW_the_field_authorizes_it(self, tmp_path):
+        art = _sd_art(tmp_path, f"## R\n\n**Scope delta**: lost\n\n{_ALLOWANCE}")
+        assert [a for _l, _v, a in planner._declared_reduction(art)] == [True]
+
+    # -- dimension 4: neighbouring heading records ----------------------------
+
+    def test_an_allowance_IN_A_NEIGHBOURING_RECORD_DOES_NOT_REACH(self, tmp_path):
+        """Both directions. "The record the declaration sits in" is the whole
+        rule: an allowance one heading away authorizes a different record, and
+        letting it leak would make any quoted Maintainer sentence anywhere in a
+        plan authorize every later reduction in it."""
+        below = _sd_art(tmp_path, f"## A\n\n**Scope delta**: lost\n\n## B\n\n{_ALLOWANCE}")
+        assert [a for _l, _v, a in planner._declared_reduction(below)] == [False]
+        above = _sd_art(tmp_path, f"## A\n\n{_ALLOWANCE}\n## B\n\n**Scope delta**: lost\n",
+                        stem="sd2")
+        assert [a for _l, _v, a in planner._declared_reduction(above)] == [False]
+
+    @pytest.mark.parametrize("heading", ["# H1", "### H3", "###### H6"])
+    def test_every_heading_level_bounds_the_record(self, tmp_path, heading):
+        art = _sd_art(tmp_path, f"## A\n\n{_ALLOWANCE}\n{heading}\n\n**Scope delta**: lost\n")
+        assert [a for _l, _v, a in planner._declared_reduction(art)] == [False]
+
+    # -- dimension 5: attached / non-isolated quotes ---------------------------
+
+    def test_a_quote_not_visually_isolated_does_not_authorize(self, tmp_path):
+        """`_has_isolated_blockquote` requires a blank line before the `>`. An
+        attached quote reads as continuing prose, not as a set-apart
+        authorization -- the same idiom `## Decision` uses."""
+        art = _sd_art(tmp_path, "## R\n\nsome prose\n> Maintainer: fine.\n\n"
+                                "**Scope delta**: lost\n")
+        assert [a for _l, _v, a in planner._declared_reduction(art)] == [False]
+
+    # -- dimension 6: fenced examples ------------------------------------------
+
+    def test_a_fenced_example_quote_does_not_authorize(self, tmp_path):
+        """A `>` inside a fence is a shell prompt, a diff or a doc example. This
+        matters on real bytes: the authoring templates and this plan both show
+        the allowance idiom inside fences."""
+        art = _sd_art(tmp_path, "## R\n\n```text\n\n> Maintainer: go ahead.\n```\n\n"
+                                "**Scope delta**: lost\n")
+        assert [a for _l, _v, a in planner._declared_reduction(art)] == [False]
+
+    def test_a_fenced_declaration_is_still_read(self, tmp_path):
+        """Stated as the honest limit, not asserted as a virtue: the field
+        matcher is line-based and does not skip fences, so a documented example
+        of the FIELD is read as a declaration. Harmless while the value shown is
+        the template's own unfilled prompt (which yields nothing), and recorded
+        here so a future reader is not surprised by it."""
+        art = _sd_art(tmp_path, "## R\n\n```text\n**Scope delta**: lost\n```\n")
+        assert [v for _l, v, _a in planner._declared_reduction(art)] == ["lost"]
+
+    # -- dimension 7: multiple declarations ------------------------------------
+
+    def test_two_declarations_in_one_record_share_its_allowance(self, tmp_path):
+        art = _sd_art(tmp_path, f"## R\n\n{_ALLOWANCE}\n**Scope delta**: lost\n\n"
+                                "**Scope delta**: degraded\n")
+        assert [(v, a) for _l, v, a in planner._declared_reduction(art)] == [
+            ("lost", True), ("degraded", True)]
+
+    def test_declarations_in_separate_records_are_judged_separately(self, tmp_path):
+        art = _sd_art(tmp_path, f"## A\n\n{_ALLOWANCE}\n**Scope delta**: lost\n\n"
+                                "## B\n\n**Scope delta**: degraded\n")
+        assert [(v, a) for _l, v, a in planner._declared_reduction(art)] == [
+            ("lost", True), ("degraded", False)]
+
+    # -- the consumer, and the dormancy fact ----------------------------------
+
+    def test_the_refusal_is_dormant_today_and_that_is_recorded_not_hidden(
+            self, tmp_path):
+        """`plan_inheritance_violations` returns `[]` for a non-plan and is
+        otherwise gated on `_declares_inheritance`, which measures **zero of the
+        live corpus**. So nothing refuses today on either plan's side. Not a
+        defect -- but a sibling manifest string once claimed otherwise and had to
+        be corrected, so the dormancy is pinned here rather than described."""
+        art = _sd_art(tmp_path, f"## R\n\n**Scope delta**: lost\n")
+        assert not planner._declares_inheritance(art)
+        assert planner.plan_inheritance_violations(art) == []
+        found = planner._declared_reduction(art)
+        assert [(v, a) for _l, v, a in found] == [("lost", False)]
+        # the reported line is the field's own, derived rather than hardcoded
+        lines = planner._split_lines(art.text)
+        assert lines[found[0][0] - 1].startswith("**Scope delta**:")
