@@ -222,9 +222,23 @@ from object bytes, and is the reason the stage exists.
 
 The trusted-contributor threat model is scoped to **Cairn's own trust root,
 single-maintainer, as of 2026-08-03** — not a standing assumption. One trigger is
-mechanical: `apply` refuses if any commit at or after the signing epoch is
-unsigned or signed by a key outside `dev/.cairn/allowed_signers`. **Two triggers
-are not mechanical, and live here because nothing can observe them:**
+mechanical: `apply` refuses to construct a checkpoint unless the commit it builds
+verifies against the **anchored** roster (`dev/.cairn/allowed_signers`) under a
+pinned verifier.
+
+**This used to say something stronger, and the weaker statement is the accurate
+one.** The earlier text claimed `apply` refuses if any commit at or after a
+*signing epoch* is unsigned or signed by an unpinned key. That per-commit range
+check was retired (plan `git-native-security-foundations`, Chunk B): the epoch
+constant lived in the checker's own bytes inside the tree being blessed, so a
+candidate could move it to grandfather its own commits, and it refused the
+ordinary unsigned-agent-commit workflow, which meant operators disabled it.
+Authorization is now the Maintainer's signature on a checkpoint binding the
+range-report digest. Signature counts over the range survive as **diagnostics**
+in the report and in `check`'s output — never as a verdict.
+
+**Two triggers are not mechanical, and live here because nothing can observe
+them:**
 
 1. **The ceremony is run on a checkout the Maintainer does not solely control.**
 2. **An adopter takes this mechanism** (it is Cairn-internal today; nothing under

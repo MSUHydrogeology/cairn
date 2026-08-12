@@ -255,179 +255,75 @@ def _signed_commit(repo: Path, message: str) -> str:
     return _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
 
 
-class TestSigningTripwire:
-    """Committer name/email are supplied unauthenticated by the committing
-    process, so the original equality check could be defeated by a second writer
-    exporting the Maintainer's strings. Signature status cannot be forged."""
 
-    def test_signed_by_a_pinned_key_is_silent(self, tmp_path, monkeypatch):
-        repo, _key, _signers = _signing_repo(tmp_path)
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
-        head = _signed_commit(repo, "work")
-        report = P.Report()
-        P.check_signatures(epoch, head, report, repo=repo)
-        assert _findings(report, "SIGNING") == []
-        assert report.facts["signing"]["checked"] >= 1
 
-    def test_unsigned_commit_after_the_epoch_refuses(self, tmp_path, monkeypatch):
-        repo, _key, _signers = _signing_repo(tmp_path)
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
-        head = _commit(repo, "unsigned work")
-        report = P.Report()
-        P.check_signatures(epoch, head, report, repo=repo)
-        assert any("not validly signed" in f.message and f.level == "refuse"
-                   for f in _findings(report, "SIGNING"))
+class TestUnsignedRangeReachesACheckpoint:
+    """Chunk C4 / acceptance criterion 1, which had no test until now.
 
-    def test_key_absent_from_the_pinned_roster_refuses(self, tmp_path,
-                                                       monkeypatch):
-        """A key git's own config would accept must still refuse.
+    *"No range-signature refusal. Unsigned agent commits are the normal format;
+    authorization occurs only at a signed checkpoint. Proven on the public path
+    with a mixed range."*
 
-        History worth keeping: the first version of this test was caught **vacuous**
-        by mutation testing -- with the outsider key simply missing from git's
-        roster, `%G?` was `U` and the check fired on signature *status*, leaving
-        the principal comparison unexercised. It was rewritten to give git a
-        roster containing both keys. The CR1 fix then changed the picture again:
-        now that the roster is supplied *by invocation* from the closure-verified
-        file, a key outside it can no longer reach `G` at all, so refusal comes
-        through the status branch by design. That is the stronger arrangement --
-        the principal comparison became defence-in-depth against roster-parse
-        divergence rather than the primary control -- and this test asserts the
-        security property (refusal) rather than which branch delivers it.
-        """
+    The suite used to pin the **opposite** behaviour (`TestSigningTripwire`,
+    deleted with the epoch it tested), so criterion 1 could be unmet with the
+    suite fully green -- and it was. These nodes are the criterion's proof, and
+    the first is deliberately a *mixed* range: all-unsigned would also pass
+    against a checker that simply skipped empty ranges.
+    """
+
+    def _mixed(self, tmp_path):
+        """anchor -> unsigned -> signed -> unsigned, i.e. genuinely mixed."""
         repo, key, signers = _signing_repo(tmp_path)
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
-
-        outsider = _keypair(tmp_path, "outsider")
-        maint_line = " ".join(key.with_suffix(".pub").read_text().split()[:2])
-        out_line = " ".join(outsider.with_suffix(".pub").read_text().split()[:2])
-        signers.write_text(f"m@example {maint_line}\noutsider@example {out_line}\n",
-                           encoding="utf-8")          # git would accept both
-        _write(repo, "dev/.cairn/allowed_signers", f"m@example {maint_line}\n")
-        _run("git", "config", "user.signingkey",
-             str(outsider.with_suffix(".pub")), cwd=repo)
-        _run("git", "config", "user.email", "outsider@example", cwd=repo)
-        head = _signed_commit(repo, "signed by a key the repo does not pin")
-
-        assert _run("git", "log", "-1", "--format=%G?", cwd=repo
-                    ).stdout.startswith("G"), (
-            "setup must produce a signature git's own config accepts, so the "
-            "refusal below is attributable to the pinned roster")
-
-        report = P.Report()
-        P.check_signatures(epoch, head, report, repo=repo)
-        assert _findings(report, "SIGNING")
-
-    def test_comma_separated_roster_principals_are_parsed(self, tmp_path):
-        """`allowed_signers` permits `a@x,b@y <key>`; `%GS` reports only the
-        matched principal. Parsing the field whole compared git's `a@x` against
-        the literal `a@x,b@y` and **falsely refused a legitimate signer** --
-        fail-closed, so not a hole, but a real correctness defect found while
-        re-deriving which branch CR1's fix left reachable."""
-        assert P.parse_principals(
-            "a@x,b@y ssh-ed25519 AAAAKEY\n# comment\nc@z ssh-ed25519 AAAA2\n"
-        ) == {"a@x", "b@y", "c@z"}
-
-    def test_spoofed_committer_metadata_does_not_defeat_it(self, tmp_path,
-                                                           monkeypatch):
-        """The exact GPR2 attack: a second writer setting the Maintainer's
-        committer strings. The old equality check passed; this must not."""
-        repo, _key, _signers = _signing_repo(tmp_path)
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
-        env = {**dict(__import__("os").environ),
-               "GIT_COMMITTER_NAME": "M", "GIT_COMMITTER_EMAIL": "m@example"}
-        _run("git", "-c", "user.name=Attacker", "-c", "user.email=evil@example",
-             "commit", "-q", "--allow-empty", "-m", "spoofed", cwd=repo, env=env)
+        anchor = _signed_commit(repo, "anchor")
+        _run("git", "commit", "-q", "--allow-empty", "-m", "agent work 1",
+             cwd=repo)
+        _signed_commit(repo, "an incidentally signed one")
+        _run("git", "commit", "-q", "--allow-empty", "-m", "agent work 2",
+             cwd=repo)
         head = _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
+        return repo, anchor, head
+
+    def test_a_mixed_range_produces_no_signing_finding(self, tmp_path):
+        repo, anchor, head = self._mixed(tmp_path)
         report = P.Report()
-        P.check_signatures(epoch, head, report, repo=repo)
-        assert _findings(report, "SIGNING"), (
-            "an unsigned commit carrying spoofed committer metadata must still "
-            "refuse -- this is the finding that falsified the original design")
 
-    def test_roster_location_cannot_be_redirected_via_git_config(
-            self, tmp_path, monkeypatch):
-        """Plan finding CR1, as a regression guard.
+        P.check_signatures(anchor, head, report, repo=repo)
 
-        Verifying the roster's *contents* through the authority closure is not
-        enough while its *location* is resolved through `.git/config` -- a
-        channel the candidate controls and the read-only snapshot cannot observe.
-        The attack never touches `dev/.cairn/allowed_signers`: it points git at a
-        roster of its own that names **the same principal string** with the
-        attacker's key, so `%G?` is `G` and `%GS` looks rostered while the pinned
-        file stays byte-identical and the closure check passes.
+        assert _findings(report, "SIGNING") == [], (
+            "an unsigned intermediate commit is the normal agent format; a "
+            "range-signature finding is the retired behaviour")
+        assert report.facts["signing"]["epoch"] is None
 
-        This test failed against the first implementation of `check_signatures`,
-        which let git resolve the roster itself.
-        """
-        repo, _key, signers = _signing_repo(tmp_path)
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
+    def test_the_range_is_actually_mixed(self, tmp_path):
+        """Non-vacuity. If the fixture were all-signed, the node above would
+        pass against a checker that still refused unsigned commits."""
+        repo, anchor, head = self._mixed(tmp_path)
+        codes = _run("git", "log", "--format=%G?", f"{anchor}..{head}",
+                     cwd=repo).stdout.split()
+        assert "N" in codes and "G" in codes, codes
 
-        pinned_before = (repo / "dev/.cairn/allowed_signers").read_bytes()
+    def test_the_census_still_counts_them_as_diagnostics(self, tmp_path):
+        """Retiring the verdict must not retire the information."""
+        repo, anchor, head = self._mixed(tmp_path)
+        census = P._signature_census(anchor, head, repo=repo)
+        assert census["total"] == 3
+        assert census["unsigned"] == 2
+        assert census["good"] == 1
 
-        attacker = _keypair(tmp_path, "attacker")
-        rogue = tmp_path / "attacker_roster"
-        rogue.write_text(
-            "m@example " + " ".join(
-                attacker.with_suffix(".pub").read_text().split()[:2]) + "\n",
+    def test_no_candidate_editable_epoch_constant_survives(self):
+        """R1's proof obligation, worded precisely: *no* candidate-editable
+        epoch exists after this change, so self-grandfathering is eliminated
+        rather than renamed. Asserted on the module's executable bytes, since
+        the retirement docstrings legitimately mention the old name."""
+        import ast as _ast
+        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
             encoding="utf-8")
-        _run("git", "config", "gpg.ssh.allowedSignersFile", str(rogue), cwd=repo)
-        _run("git", "config", "user.signingkey",
-             str(attacker.with_suffix(".pub")), cwd=repo)
-        head = _signed_commit(repo, "signed by an unrostered key")
-
-        # The pinned roster is untouched, so the authority closure is satisfied.
-        assert (repo / "dev/.cairn/allowed_signers").read_bytes() == pinned_before
-        # And git, left to itself, reports this as a good, rostered signature.
-        assert _run("git", "log", "-1", "--format=%G?%x09%GS",
-                    cwd=repo).stdout.startswith("G\tm@example")
-
-        report = P.Report()
-        P.check_signatures(epoch, head, report, repo=repo)
-        assert _findings(report, "SIGNING"), (
-            "a commit signed by a key absent from the PINNED roster must refuse, "
-            "even when .git/config points git at a roster that accepts it")
-
-    def test_pre_epoch_commits_are_grandfathered(self, tmp_path, monkeypatch):
-        """All 672 commits predating the epoch are unsigned; they must not fire."""
-        repo, _key, _signers = _signing_repo(tmp_path)
-        anchor = _commit(repo, "old unsigned")
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
-        report = P.Report()
-        P.check_signatures(anchor, epoch, report, repo=repo)
-        assert _findings(report, "SIGNING") == []
-        assert report.facts["signing"]["grandfathered"] == 0  # anchor..epoch
-
-    def test_roster_absent_from_the_anchor_is_fail_closed(self, tmp_path):
-        """The candidate's own copy is never a substitute for the anchor's."""
-        repo = _repo(tmp_path)
-        anchor = _commit(repo)
-        _write(repo, "dev/.cairn/allowed_signers", "m@example ssh-ed25519 AAAA\n")
-        _commit(repo, "candidate adds a roster after the anchor")
-        with pytest.raises(P.PreflightError, match="absent from the anchor"):
-            with P.anchored_roster(anchor, repo=repo):
-                pass
-
-    def test_roster_naming_no_principals_is_fail_closed(self):
-        with pytest.raises(P.PreflightError, match="no principals"):
-            P.parse_principals("# only a comment\n")
-
-    def test_roster_is_read_from_the_anchor_not_the_worktree(self, tmp_path):
-        """The ordering subtlety: a candidate that appends its own key to the
-        worktree roster must not influence which keys count."""
-        repo = _repo(tmp_path)
-        _write(repo, "dev/.cairn/allowed_signers", "m@example ssh-ed25519 AAAA\n")
-        anchor = _commit(repo, "anchor pins the roster")
-        _write(repo, "dev/.cairn/allowed_signers",
-               "m@example ssh-ed25519 AAAA\nevil@example ssh-ed25519 BBBB\n")
-        _commit(repo, "candidate appends its own key")
-        with P.anchored_roster(anchor, repo=repo) as (_path, text):
-            assert P.parse_principals(text) == {"m@example"}
+        for node in _ast.walk(_ast.parse(src)):
+            if isinstance(node, _ast.Name) and node.id == "_SIGNING_EPOCH":
+                raise AssertionError(
+                    f"a signing-epoch constant is live again at line "
+                    f"{node.lineno}; it is candidate-editable by construction")
+        assert not hasattr(P, "_SIGNING_EPOCH")
 
 
 # --------------------------------------------------------------------------
@@ -702,13 +598,12 @@ class TestSterileGitLauncher:
         made a commit signed by an unrostered key report `%G? = G` with a
         rostered-looking `%GS`."""
         repo, key, signers = _signing_repo(tmp_path)
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
+        head = _signed_commit(repo, "base")
 
         outsider = _keypair(tmp_path, "outsider")
         _run("git", "config", "user.signingkey",
              str(outsider.with_suffix(".pub")), cwd=repo)
-        head = _signed_commit(repo, "signed by an outsider")
+        forged = _signed_commit(repo, "signed by an outsider")
         _run("git", "config", "gpg.ssh.program",
              str(_fake_ssh_keygen(tmp_path / "fake-keygen")), cwd=repo)
 
@@ -716,10 +611,18 @@ class TestSterileGitLauncher:
         assert _run("git", "log", "-1", "--format=%G?",
                     cwd=repo).stdout.strip() == "G"
 
-        report = P.Report()
-        P.check_signatures(epoch, head, report, repo=repo)
-        assert any(f.level == "refuse" for f in _findings(report, "SIGNING")), (
-            "a forged verifier must not let an unrostered key through")
+        # Asserted on the LAUNCHER, which is this class's subject and is the
+        # single place every signature read passes through -- `check_signatures`
+        # was retired with the epoch (Chunk B), and routing this through
+        # `verify_constructed` instead would have short-circuited on its parent
+        # and changed-path checks and never reached a signature at all. A test
+        # that raises for the wrong reason is worse than no test here.
+        sig = P._git("log", "-1", "--format=%G?%x09%GS", forged, repo=repo,
+                     config={"gpg.ssh.allowedSignersFile": str(signers)})
+        status, _, signer = (sig.stdout or "").strip().partition("\t")
+        assert status != "G", (
+            f"the launcher honoured the candidate's gpg.ssh.program: "
+            f"status={status!r} signer={signer!r}")
 
     def test_a_configured_fsmonitor_does_not_execute(self, tmp_path):
         """FUR2. A monitor program ran during `git status` while git returned
@@ -940,22 +843,6 @@ class TestEvidenceStage:
 _CLOSURE_SRC = {rel: (_REPO / rel) for rel in P.declared_authority_closure()}
 
 
-def _pin_epoch_in_checker(repo: Path, epoch: str) -> None:
-    """Rewrite the fixture's *copy* of the checker to name a real in-repo epoch.
-
-    The epoch constant lives in the checker's own bytes on purpose, and a fixture
-    repository cannot contain Cairn's actual epoch commit. Since FUR4 an absent
-    epoch is a refusal rather than a silent grandfathering, so the ceremony
-    fixture pins its own. Exactly one 40-character constant differs from the real
-    file; the copy is what these tests execute, which is *also* the real
-    ceremony's shape -- the anchored bytes, not the checkout's.
-    """
-    rel = "bootstrap/tests/_gate_preflight.py"
-    src = (repo / rel).read_text(encoding="utf-8")
-    old = f'_SIGNING_EPOCH = "{P._SIGNING_EPOCH}"'
-    assert src.count(old) == 1, "epoch constant moved; update this fixture"
-    (repo / rel).write_text(src.replace(old, f'_SIGNING_EPOCH = "{epoch}"'),
-                            encoding="utf-8")
 
 
 def _extract_anchored(repo: Path, dest: Path) -> Path:
@@ -1015,7 +902,6 @@ def _ceremony_repo(tmp_path: Path):
     # (FUR4: an absent epoch now refuses instead of grandfathering everything),
     # so the fixture makes one and pins the checker copy to it before anchoring.
     epoch = _signed_commit(repo, "epoch")
-    _pin_epoch_in_checker(repo, epoch)
     anchor = _signed_commit(repo, "anchor")
     _run("git", "update-ref", P._ANCHOR_REF, anchor, cwd=repo)
     # NOT `code.py`: a root-level module shadowing a stdlib name breaks
@@ -1180,10 +1066,6 @@ class TestApplySuccessPath:
 
     def _prepared(self, tmp_path, monkeypatch):
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        # In-process, the executing constant is the real one; the fixture pinned
-        # only its own committed copy. The subprocess tests need no equivalent --
-        # they execute the anchored bytes, which carry the fixture's epoch.
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
         # Only the *executable* half is stubbed. Since FUR3 the static fields
         # are re-derived from raw objects and compared, so a wholly invented
         # manifest is refused -- correctly. What the real producer supplies and
@@ -1347,13 +1229,14 @@ class TestThreeCommandIntegration:
                        "--evidence", str(ev))
         assert r2.returncode == 0, r2.stderr[-2500:]
 
-        # The signing check must have verified something. Before FUR4 this
-        # fixture could not contain the real epoch, `_rev_list` swallowed the
-        # resulting error, and `checked` was 0 -- so the tripwire this whole
-        # integration test is supposed to exercise had never fired on a single
-        # commit. Zero here is indistinguishable from a check that does nothing.
-        checked = re.search(r'"checked": (\d+)', r2.stderr)
-        assert checked and int(checked.group(1)) >= 1, r2.stderr[-2500:]
+        # The signature CENSUS must have counted something. The range check it
+        # replaced is retired (Chunk B), so the old `"checked": >= 1` assertion
+        # went with it -- but its reasoning transfers exactly: a census that
+        # counted zero commits is indistinguishable from one that does nothing,
+        # and this integration test exists to catch precisely that.
+        assert '"retired"' in r2.stderr, r2.stderr[-2500:]
+        total = re.search(r'"total": (\d+)', r2.stderr)
+        assert total and int(total.group(1)) >= 1, r2.stderr[-2500:]
 
         r3 = self._cli(checker, "apply", "--repo", str(repo),
                        "--confirm-supervised-reanchor")
@@ -1612,73 +1495,6 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
 # grandfathered and no finding was emitted.
 # --------------------------------------------------------------------------
 
-class TestSigningRangeFailsClosed:
-
-    def test_rev_list_raises_rather_than_returning_empty(self, tmp_path):
-        repo = _repo(tmp_path)
-        _commit(repo, "c")
-        with pytest.raises(P.PreflightError) as exc:
-            P._rev_list("nosuchref..HEAD", repo=repo)
-        assert "unestablishable range" in str(exc.value)
-
-    def test_is_ancestor_raises_on_error_rather_than_reporting_no(self,
-                                                                  tmp_path):
-        repo = _repo(tmp_path)
-        head = _commit(repo, "c")
-        with pytest.raises(P.PreflightError) as exc:
-            P._is_ancestor("d" * 40, head, repo=repo)
-        assert "could not decide" in str(exc.value)
-
-    def test_missing_epoch_refuses_instead_of_grandfathering(self, tmp_path,
-                                                             monkeypatch):
-        """FUR4's reproduction, pinned: a missing epoch plus an unsigned commit
-        inside the blessed range reported `checked=0` and emitted no finding."""
-        repo, _key, _signers = _signing_repo(tmp_path)
-        anchor = _signed_commit(repo, "anchor")
-        head = _commit(repo, "unsigned work")          # inside anchor..HEAD
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", "c" * 40)   # absent object
-
-        report = P.Report()
-        P.check_signatures(anchor, head, report, repo=repo)
-
-        assert any(f.level == "refuse" and "not present in this repository"
-                   in f.message for f in _findings(report, "SIGNING"))
-        assert report.facts["signing"]["resolved"] is None
-
-    def test_epoch_off_the_head_line_refuses(self, tmp_path, monkeypatch):
-        """Present but unrelated: "at or after the epoch" then names no range
-        on the history being blessed, and the intersection is empty for a
-        reason that has nothing to do with the commits being safe."""
-        repo, _key, _signers = _signing_repo(tmp_path)
-        base = _signed_commit(repo, "base")
-        _run("git", "checkout", "-q", "-b", "side", cwd=repo)
-        sidelined = _signed_commit(repo, "sidelined")
-        _run("git", "checkout", "-q", "-", cwd=repo)
-        anchor = _signed_commit(repo, "anchor")
-        head = _commit(repo, "unsigned work")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", sidelined)
-
-        report = P.Report()
-        P.check_signatures(anchor, head, report, repo=repo)
-
-        assert any(f.level == "refuse" and "not an ancestor of HEAD"
-                   in f.message for f in _findings(report, "SIGNING"))
-        assert report.facts["signing"]["ancestor_of_head"] is False
-
-    def test_a_resolvable_epoch_still_reports_its_resolution(self, tmp_path,
-                                                             monkeypatch):
-        """The clean case, so the two refusals above are not vacuous."""
-        repo, _key, _signers = _signing_repo(tmp_path)
-        epoch = _signed_commit(repo, "epoch")
-        monkeypatch.setattr(P, "_SIGNING_EPOCH", epoch)
-        head = _signed_commit(repo, "work")
-
-        report = P.Report()
-        P.check_signatures(epoch, head, report, repo=repo)
-
-        assert _findings(report, "SIGNING") == []
-        assert report.facts["signing"]["resolved"] == epoch
-        assert report.facts["signing"]["ancestor_of_head"] is True
 
 
 # --------------------------------------------------------------------------

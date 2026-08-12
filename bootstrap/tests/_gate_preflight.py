@@ -21,10 +21,12 @@ before/after snapshot to notice (plan finding GPR4).
 **Threat model** -- trusted-contributor, scoped to Cairn's own trust root,
 single-maintainer, as of 2026-08-03, accepted by Maintainer Decision and amended
 at the same. Candidate code in this repository is assumed non-adversarial. The
-expiry tripwire is signature verification (:func:`check_signatures`), which
-authenticates the **key holder** -- not the human, and not the process. Every
-agent operating on this machine commits as the Maintainer and signs with the
-Maintainer's key, so this detects a second *person*, not a second *process*.
+expiry tripwire is the **checkpoint** signature -- verified against the anchored
+roster in :func:`apply_now`, not a per-commit census over the range, which
+:func:`check_signatures` records as retired. It authenticates the **key
+holder** -- not the human, and not the process. Every agent operating on this
+machine commits as the Maintainer and signs with the Maintainer's key, so this
+detects a second *person*, not a second *process*.
 """
 from __future__ import annotations
 
@@ -62,13 +64,16 @@ _MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
 _RUNBOOK_REL = "bootstrap/REANCHOR_RUNBOOK.md"
 _ALLOWED_SIGNERS_REL = "dev/.cairn/allowed_signers"
 
-#: The signing epoch (Maintainer-recorded, Decision amendment 2026-08-03).
-#: Commits at or after this one must be signed by a pinned key; earlier commits
-#: are grandfathered, because all 672 commits predating it are unsigned.
-#: This constant lives in the checker's own bytes on purpose -- the authority
-#: closure covers this file, so a candidate cannot advance the epoch to
-#: grandfather its own unsigned commits without being caught.
-_SIGNING_EPOCH = "a07fac88e6dcda08513cac28e6f1310999f1e577"
+#: **There is deliberately no signing epoch here.** A `_SIGNING_EPOCH` constant
+#: used to sit at this line and decide which commits were exempt from a
+#: per-commit signature requirement. It was retired by Chunk B of plan
+#: `git-native-security-foundations`, and the absence is load-bearing rather
+#: than incidental: the constant lived in the checker's own bytes, *inside the
+#: tree being blessed*, so a candidate could move it to grandfather its own
+#: unsigned commits. The old comment argued the authority closure caught that;
+#: it catches the edit, not the design -- an epoch a candidate can name at all
+#: is a self-grandfathering surface, so the fix is that no epoch exists.
+#: See :func:`check_signatures` for where authorization actually lives now.
 
 _CANONICAL_PY = (3, 13)
 
@@ -683,89 +688,46 @@ def parse_principals(text: str) -> set[str]:
 
 def check_signatures(anchor: str, head: str, report: Report, *,
                      repo: Path = _REPO) -> None:
-    """Every commit being blessed, at or after the epoch, must be signed by a
-    pinned key.
+    """**Retired.** Kept as an explicit no-op record, not as a check.
 
-    This replaces the committer name/email equality check the Decision originally
-    recorded. Those fields are supplied unauthenticated by the committing
-    process: a second writer setting ``GIT_COMMITTER_NAME``/``EMAIL`` to the
-    Maintainer's strings passed that check silently. Signature status does not
-    forge: ``N`` (unsigned) and ``U`` (signed by an unpinned key) both refuse.
+    This used to refuse any commit at or after a `_SIGNING_EPOCH` constant that
+    was not signed by a pinned key. Chunk B retired both, and the retirement is
+    the *point* rather than a relaxation:
+
+    * The epoch was **candidate-editable** -- it lived in this file's own bytes,
+      inside the tree being blessed -- so a candidate could move the line that
+      decided which of its commits were exempt. That is self-grandfathering, and
+      renaming the constant would not have removed it.
+    * It **contradicted the real workflow.** Unsigned agent commits are the
+      normal format (proposal R1-A); a range check refusing them refuses every
+      ordinary ceremony, so operations disable it, and a control that is
+      routinely disabled is not a control.
+
+    Authorization now happens in exactly one place: the Maintainer's signature
+    on a checkpoint whose message binds the canonical range-review report digest
+    (:func:`range_review_report`). That says *which state* was authorized, which
+    is the question a per-commit signature census never answered. The census
+    itself survives as **diagnostics** inside the report
+    (:func:`_signature_census`) and is never a verdict.
+
+    What it still does is **report the census**, and that is deliberate rather
+    than vestigial. Retiring a verdict must not retire the information: `check`
+    is the preview a Maintainer reads before authorizing, and dropping the
+    counts outright would have left that preview silent about signatures
+    altogether. `range_review_report` carries the same census into the digest a
+    checkpoint binds; this is the human-facing half.
+
+    The function stays so this docstring stays: the reasoning above is the sort
+    that gets silently re-litigated into a "restored" check by a later reader who
+    finds an absence and assumes an oversight.
     """
-    # Resolve the epoch explicitly, and prove it sits on the history being
-    # blessed, BEFORE enumerating anything (first-use review FUR4). Two distinct
-    # failures hid behind the old implicit use of the raw constant:
-    #   * absent object -- the epoch range came back empty via the fail-open
-    #     `_rev_list`, so every commit read as grandfathered and `checked` was 0;
-    #   * present but off the HEAD line -- "at or after the epoch" then names no
-    #     range on the history under consideration, and the intersection below is
-    #     empty for a reason that has nothing to do with the commits being safe.
-    # Resolving also normalises the constant to a full SHA, so it compares
-    # against `rev-list` output rather than relying on the literal being 40 hex.
-    try:
-        epoch = _resolve(_SIGNING_EPOCH, repo=repo)
-    except PreflightError as exc:
-        report.add("SIGNING", "refuse",
-                   f"the signing epoch {_SIGNING_EPOCH[:12]} is not present in "
-                   f"this repository ({exc}); the grandfathered range cannot be "
-                   f"established, so no commit can be shown to be exempt")
-        report.facts["signing"] = {"epoch": _SIGNING_EPOCH, "resolved": None}
-        return
-    if not _is_ancestor(epoch, head, repo=repo):
-        report.add("SIGNING", "refuse",
-                   f"the signing epoch {epoch[:12]} is not an ancestor of HEAD "
-                   f"{head[:12]}; 'at or after the epoch' names no range on the "
-                   f"history being blessed")
-        report.facts["signing"] = {"epoch": _SIGNING_EPOCH, "resolved": epoch,
-                                   "ancestor_of_head": False}
-        return
-
-    blessed = set(_rev_list(f"{anchor}..{head}", repo=repo))
-    post_epoch = set(_rev_list(f"{epoch}..{head}", repo=repo))
-    post_epoch.add(epoch)
-    to_check = blessed & post_epoch
-
-    # Supply the roster BY INVOCATION, never letting git resolve it through
-    # `.git/config` (plan finding CR1). Verifying the roster's *contents* via the
-    # authority closure is not enough while its *location* comes from a channel
-    # the candidate controls and the read-only snapshot cannot observe: an
-    # attacker who writes `gpg.ssh.allowedSignersFile` to a roster of their own
-    # -- naming the same principal string with their own key -- gets `%G?` = `G`
-    # and a rostered-looking `%GS` while `dev/.cairn/allowed_signers` sits
-    # byte-identical and passes the closure check. Reproduced before this fix.
-    # Command-line `-c` outranks repository config, so the trust chain reads:
-    # anchor object -> closure-verified roster blob -> keys, with `.git/config`
-    # off the path entirely.
-    unsigned, foreign = [], []
-    with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
-        principals = parse_principals(roster_text)
-        roster_cfg = {"gpg.ssh.allowedSignersFile": str(roster_path)}
-        for sha in sorted(to_check):
-            p = _git("log", "-1", "--format=%G?%x09%GS", sha, repo=repo,
-                     config=roster_cfg)
-            status, _, signer = (p.stdout or "").strip().partition("\t")
-            if status != "G":
-                unsigned.append((sha, status))
-            elif signer not in principals:
-                foreign.append((sha, signer))
-
-    for sha, status in unsigned:
-        report.add("SIGNING", "refuse",
-                   f"commit {sha[:12]} at/after the signing epoch is not "
-                   f"validly signed (status {status or '?'})")
-    for sha, signer in foreign:
-        report.add("SIGNING", "refuse",
-                   f"commit {sha[:12]} is signed by an unpinned principal "
-                   f"{signer!r}")
-
     report.facts["signing"] = {
-        "epoch": _SIGNING_EPOCH,
-        "resolved": epoch,
-        "ancestor_of_head": True,
-        "commits_in_range": len(blessed),
-        "checked": len(to_check),
-        "grandfathered": len(blessed - post_epoch),
-        "principals": sorted(principals),
+        "epoch": None,
+        "retired": "Chunk B -- authorization is the signed checkpoint binding "
+                   "the range-report digest; see the docstring",
+        # Diagnostics. Never read by a decision predicate, and deliberately not
+        # a finding: a `note` would still print as a check result.
+        "census": _signature_census(anchor, head, repo=repo),
     }
 
 
