@@ -67,6 +67,20 @@ _PRIVATE_PLANNER_NAME = "_lifecycle_cli_lifecycle_planner"
 COUNTED_STATE = "ready-to-archive"
 
 
+#: The minimal planner surface `_REQUIRED_EXPORTS` names.  P2 added three
+#: names to it ([CF1]: a counted plan's resolved assurance path), so a stub
+#: that declares only `PLAN_STATES` is now legitimately "missing an export"
+#: -- which is what `test_a_planner_missing_a_required_export_is_purged_not_
+#: cached` asserts.  These two nodes are about *other* loader properties, so
+#: they get a complete stub.
+def _stub_vocabulary(state: str = COUNTED_STATE) -> str:
+    return (f"PLAN_STATES = ('open', {state!r})\n"
+            "ASSURANCE_PATHS = ('standard', 'high-assurance')\n"
+            "ASSURANCE_NOT_INHERITED = 'not-inherited'\n"
+            "def resolve_plan_assurance_path(path):\n"
+            "    return 'standard', []\n")
+
+
 def _load(path: Path, name: str) -> ModuleType:
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader
@@ -219,20 +233,40 @@ def _event_text(*blocks: str) -> str:
     return header + "\n".join(blocks)
 
 
+#: The schema the subject reads, written here as an INDEPENDENT oracle -- these
+#: helpers do not import the subject's `_EVENT_SCHEMA`, so a version bump in the
+#: subject is a visible failure in this file rather than a silent agreement.
+#: Bumped to /2 by Chunk P2, which added the `assurance_path` key ([CF1]).
+EVENT_SCHEMA = "cairn-pilot-event/2"
+
+#: The eligible assurance path, and the closed set an event may carry -- likewise
+#: independent oracles.  The subject reads all three tokens from the planner
+#: through its contained loader; this file types them, so a fork or a rename in
+#: either place is a visible failure.
+ELIGIBLE_ASSURANCE = "standard"
+ASSURANCE_VALUES = ("standard", "high-assurance", "not-inherited")
+
+
 def _counted_block(subject: str, date: str, commit: str, *,
                    artifact: str = "dev/plans/p.md",
                    state: str = COUNTED_STATE,
+                   assurance: str | None = ELIGIBLE_ASSURANCE,
+                   schema: str = EVENT_SCHEMA,
                    high: int = 0, low: int = 0, prompts: int = 0,
                    bytes_: int = 100, removed: int = 1) -> str:
+    """One `plan-counted` block.  `assurance=None` OMITS the key, which is how
+    the /2 mandatory-key nodes exercise the refusal."""
+    assurance_row = "" if assurance is None else f"assurance_path: {assurance}\n"
     return (
         "```cairn-pilot-event\n"
-        "schema: cairn-pilot-event/1\n"
+        f"schema: {schema}\n"
         "kind: plan-counted\n"
         f"date: {date}\n"
         f"subject: {subject}\n"
         f"source_artifact: {artifact}\n"
         f"source_commit: {commit}\n"
         f"plan_state: {state}\n"
+        f"{assurance_row}"
         f"review_input_bytes: {bytes_}\n"
         f"transitions_removed: {removed}\n"
         f"escaped_findings_high: {high}\n"
@@ -245,7 +279,7 @@ def _counted_block(subject: str, date: str, commit: str, *,
 def _pause_block(subject: str, date: str, commit: str, *, kind: str = "pause-set",
                  severity: str = "high", artifact: str = "dev/plans/p.md") -> str:
     rows = [
-        "schema: cairn-pilot-event/1",
+        f"schema: {EVENT_SCHEMA}",
         f"kind: {kind}",
         f"date: {date}",
         f"subject: {subject}",
@@ -382,8 +416,7 @@ class TestVocabularyLoader:
             module._vocabulary()
         assert _PRIVATE_PLANNER_NAME not in sys.modules
         # Clean retry: the same loader succeeds once the planner is repaired.
-        planner.write_text(f"PLAN_STATES = ('open', {COUNTED_STATE!r})\n",
-                           encoding="utf-8")
+        planner.write_text(_stub_vocabulary(), encoding="utf-8")
         assert module._counted_plan_state() == COUNTED_STATE
 
     def test_a_poisoned_preexisting_sys_modules_entry_is_not_trusted(
@@ -392,7 +425,7 @@ class TestVocabularyLoader:
         tools.mkdir()
         shutil.copy(MODULE_PATH, tools / "lifecycle.py")
         (tools / "lifecycle_planner.py").write_text(
-            f"PLAN_STATES = ('open', {COUNTED_STATE!r})\n", encoding="utf-8")
+            _stub_vocabulary(), encoding="utf-8")
         module = _load(tools / "lifecycle.py", "lc_poisoned_entry")
         poison = ModuleType(_PRIVATE_PLANNER_NAME)
         poison.PLAN_STATES = ("whatever-the-attacker-wants",)
@@ -678,12 +711,24 @@ class TestEventLedger:
             lifecycle._parse_fenced_records(text, lifecycle._EVENT_FENCE, "x")
 
     def test_an_unknown_event_kind_refuses(self, lifecycle_ready) -> None:
-        record = {"schema": "cairn-pilot-event/1", "kind": "invented"}
+        record = {"schema": EVENT_SCHEMA, "kind": "invented"}
         with pytest.raises(lifecycle_ready.LifecycleError, match="unknown event kind"):
             lifecycle_ready._validate_event(record, "x", counted_state=COUNTED_STATE)
 
-    def test_an_unknown_event_schema_refuses(self, lifecycle_ready) -> None:
-        record = {"schema": "cairn-pilot-event/2", "kind": "pause-set"}
+    @pytest.mark.parametrize("schema", [
+        "cairn-pilot-event/1",   # the RETIRED version, superseded by P2's bump
+        "cairn-pilot-event/3",   # a future version this tool has never read
+        "cairn-pilot-event",     # unversioned
+        "cairn-pilot-activation/1",  # the other record's schema
+    ])
+    def test_an_unknown_event_schema_refuses(self, lifecycle_ready, schema) -> None:
+        """**Including `/1`, and that inclusion is the point.**  P6a wrote that
+        closing [CF1] *"is a `cairn-pilot-event/2` schema bump; the version field
+        exists for that, and an unknown version refuses rather than being
+        half-read."*  A `/1` block carries no `assurance_path`, so reading it as
+        `/2` would mean reading a record that never recorded the field -- the
+        half-read that provision exists to prevent."""
+        record = {"schema": schema, "kind": "pause-set"}
         with pytest.raises(lifecycle_ready.LifecycleError, match="unknown or missing"):
             lifecycle_ready._validate_event(record, "x", counted_state=COUNTED_STATE)
 
@@ -711,7 +756,8 @@ class TestEventLedger:
                      _counted_block("stem-a", "2026-02-06", head))
         with pytest.raises(lifecycle_ready.LifecycleError,
                            match="already counted with the same source commit"):
-            lifecycle_ready._read_events(repo, counted_state=COUNTED_STATE)
+            lifecycle_ready._read_events(repo, counted_state=COUNTED_STATE,
+                                         assurance_values=ASSURANCE_VALUES)
 
     def test_a_conflicting_stem_refuses(self, repo, lifecycle_ready) -> None:
         head = _head(repo)
@@ -725,7 +771,8 @@ class TestEventLedger:
                      _counted_block("stem-a", "2026-02-06", other))
         with pytest.raises(lifecycle_ready.LifecycleError,
                            match="already counted with a different source commit"):
-            lifecycle_ready._read_events(repo, counted_state=COUNTED_STATE)
+            lifecycle_ready._read_events(repo, counted_state=COUNTED_STATE,
+                                         assurance_values=ASSURANCE_VALUES)
 
     def test_a_duplicate_pause_set_refuses(self, repo) -> None:
         head = _head(repo)
@@ -1108,3 +1155,280 @@ def test_the_two_lifecycle_copies_are_byte_identical() -> None:
         f"{MODULE_PATH} and {TWIN_PATH} have diverged -- the installed twin "
         f"must be byte-identical to the shipped template"
     )
+
+
+# ---------------------------------------------------------------------------
+# [CF1] -- the resolved assurance path on the event, and the eligible /
+# ineligible split it makes derivable.
+#
+# Filed at `9d5cbea` in `dev/plans/review-efficient-lifecycle.md` >
+# `## Carried-forward obligations` > **[CF1]**: P6a implements the five measures
+# `P6-R` names, but the accepted parent's fuller list also has the report record
+# *"eligible and ineligible plans"*, and P6a's derived report **cannot** split
+# them -- no `plan-counted` event recorded the plan's assurance path, and a plan
+# HAS none to read until P2-R's inheritance chain resolves one.  Chunk P2 closes
+# it through the `cairn-pilot-event/2` bump P6a provisioned.
+# ---------------------------------------------------------------------------
+
+
+PROPOSAL_REL = "dev/proposals/2026-08-01-a-src.md"
+INHERITED_PLAN_REL = "dev/plans/inherited.md"
+FIXTURE_PROPOSAL_SHA = "1a" * 20
+FIXTURE_REVIEW_SHA = "2b" * 20
+
+
+def _write_inheritance_chain(root: Path, *, assurance: str) -> None:
+    """A proposal declaring *assurance* plus a plan that inherits its readiness.
+
+    Written as real files rather than mocked, because what [CF1] closes is a
+    *derivation*: the CLI resolves the value from the plan through the planner,
+    so a fixture that stubbed the answer would assert nothing about the chain.
+    """
+    _write(root, PROPOSAL_REL,
+           "# src\n\n**Author**: Author A (Strategy)\n"
+           "**Status**: accepted\n"
+           f"**Assurance path**: {assurance}\n\n"
+           "## Context\n\nx\n\n"
+           "## Review -- Reviewer A (External) -- 2026-08-05\n\n"
+           f"**Reviewed commit**: {FIXTURE_PROPOSAL_SHA}\n"
+           "**Target**: the complete current contract\n"
+           "**Prior findings**: none\n"
+           f"**Assurance path**: {assurance}\n"
+           "**Tier**: External\n**Findings**: none\n"
+           "**Plan readiness**: READY\n\n"
+           "## Decision -- Ada Lovelace (Maintainer) -- 2026-08-06\n\n"
+           "**Accepted**.\n\n> Accept.\n")
+    _write(root, INHERITED_PLAN_REL,
+           "# inherited\n\n"
+           f"**Source proposal**: [`src`](../proposals/2026-08-01-a-src.md)\n"
+           "**Status**: implementing\n"
+           "**Plan review**: required(Internal)\n"
+           f"**Inherited proposal basis**: review={FIXTURE_REVIEW_SHA}; "
+           f"proposal={FIXTURE_PROPOSAL_SHA}\n\n"
+           "## Scope\n\nx\n")
+
+
+class TestCF1AssurancePathOnTheEvent:
+    """The /2 field: closed vocabulary, mandatory, derived, never typed."""
+
+    def _ledger(self, repo: Path, *blocks: str) -> None:
+        _write(repo, EVENTS_REL, _event_text(*blocks))
+        _commit(repo, "ledger", EVENTS_REL)
+
+    def test_the_closed_set_comes_from_the_planner_not_from_this_file(
+            self, lifecycle_ready) -> None:
+        """The whole reason P6a left this open: *"a second declaration in the CLI
+        would fork a vocabulary the way the single-runtime-vocabulary rule forbids
+        for statuses."*  So the CLI reads all three tokens through its contained
+        loader, and its source carries no literal `'high-assurance'`."""
+        assert lifecycle_ready._assurance_values() == ASSURANCE_VALUES
+        src = MODULE_PATH.read_text(encoding="utf-8")
+        assert "'high-assurance'" not in src
+        assert '"high-assurance"' not in src
+        assert "ASSURANCE_PATHS" in lifecycle_ready._REQUIRED_EXPORTS
+
+    def test_the_field_is_mandatory_on_a_counted_event(
+            self, repo, lifecycle_ready) -> None:
+        self._ledger(repo, _counted_block("stem-a", "2026-02-05", _head(repo),
+                                          assurance=None))
+        with pytest.raises(lifecycle_ready.LifecycleError,
+                           match="missing mandatory key|assurance_path"):
+            lifecycle_ready._read_events(repo, counted_state=COUNTED_STATE,
+                                         assurance_values=ASSURANCE_VALUES)
+
+    @pytest.mark.parametrize("bad", ["medium", "standard-ish", "STANDARD",
+                                     "not_inherited"])
+    def test_a_value_outside_the_closed_set_refuses(
+            self, repo, lifecycle_ready, bad) -> None:
+        self._ledger(repo, _counted_block("stem-a", "2026-02-05", _head(repo),
+                                          assurance=bad))
+        with pytest.raises(lifecycle_ready.LifecycleError,
+                           match="assurance_path must be one of"):
+            lifecycle_ready._read_events(repo, counted_state=COUNTED_STATE,
+                                         assurance_values=ASSURANCE_VALUES)
+
+    def test_an_unconfirmable_vocabulary_refuses_rather_than_admitting(
+            self, repo, lifecycle_ready) -> None:
+        """The same direction the `plan_state` check takes: no vocabulary means
+        REFUSE, never admit against an unchecked token."""
+        self._ledger(repo, _counted_block("stem-a", "2026-02-05", _head(repo)))
+        with pytest.raises(lifecycle_ready.LifecycleError,
+                           match="cannot confirm it right now"):
+            lifecycle_ready._read_events(repo, counted_state=COUNTED_STATE,
+                                         assurance_values=None)
+
+    def test_there_is_no_assurance_path_flag(self, lifecycle_ready) -> None:
+        """DERIVED, not supplied.  A governance field a human types is an
+        author's claim; the CLI being the only writer is what lets the claim be
+        replaced by a derivation, exactly as it already is for `plan_state`."""
+        parser = lifecycle_ready.build_parser()
+        rendered = parser.format_help()
+        for sub in ("pilot-record",):
+            assert sub in rendered
+        with pytest.raises(SystemExit):
+            parser.parse_args(["pilot-record", "--kind", "plan-counted",
+                               "--subject", "s", "--source-artifact", "a",
+                               "--source-commit", "0" * 40,
+                               "--assurance-path", "standard"])
+
+    @pytest.mark.parametrize("assurance", ["standard", "high-assurance"])
+    def test_the_writer_derives_the_value_from_the_chain(
+            self, repo, lifecycle_ready, monkeypatch, capsys, assurance) -> None:
+        _write_inheritance_chain(repo, assurance=assurance)
+        head = _commit(repo, "the chain", PROPOSAL_REL, INHERITED_PLAN_REL)
+        self._ledger(repo)
+        monkeypatch.chdir(repo)
+        rc = lifecycle_ready.main([
+            "pilot-record", "--kind", "plan-counted", "--subject", "inherited",
+            "--source-artifact", INHERITED_PLAN_REL, "--source-commit", head,
+            "--date", "2026-02-05", "--review-input-bytes", "10",
+            "--transitions-removed", "1", "--maintainer-prompts", "0",
+        ])
+        assert rc == 0, capsys.readouterr()
+        events = lifecycle_ready._parse_fenced_records(
+            (repo / EVENTS_REL).read_text(encoding="utf-8"),
+            lifecycle_ready._EVENT_FENCE, "x")
+        assert events[0]["assurance_path"] == assurance
+
+    def test_a_plan_with_no_inheritance_chain_records_not_inherited(
+            self, repo, lifecycle_ready, monkeypatch, capsys) -> None:
+        """A POSITIVE resolved answer, not a default: the plan declares no chain,
+        so there is no proposal declaration to inherit."""
+        self._ledger(repo)
+        monkeypatch.chdir(repo)
+        rc = lifecycle_ready.main([
+            "pilot-record", "--kind", "plan-counted", "--subject", "stem-a",
+            "--source-artifact", "dev/plans/p.md", "--source-commit", _head(repo),
+            "--date", "2026-02-05", "--review-input-bytes", "10",
+            "--transitions-removed", "1", "--maintainer-prompts", "0",
+        ])
+        assert rc == 0, capsys.readouterr()
+        events = lifecycle_ready._parse_fenced_records(
+            (repo / EVENTS_REL).read_text(encoding="utf-8"),
+            lifecycle_ready._EVENT_FENCE, "x")
+        assert events[0]["assurance_path"] == "not-inherited"
+
+    def test_a_broken_chain_refuses_the_write_and_records_nothing(
+            self, repo, lifecycle_ready, monkeypatch, capsys) -> None:
+        """The direction that matters: a plan that DECLARES a chain the planner
+        cannot resolve refuses.  Recording `not-inherited` for it would be a quiet
+        lie about which population the sample came from."""
+        _write_inheritance_chain(repo, assurance="standard")
+        _write(repo, PROPOSAL_REL,
+               (repo / PROPOSAL_REL).read_text(encoding="utf-8").replace(
+                   "**Plan readiness**: READY",
+                   "**Plan readiness**: DISTINCT REVIEW REQUIRED", 1))
+        head = _commit(repo, "the chain", PROPOSAL_REL, INHERITED_PLAN_REL)
+        self._ledger(repo)
+        before = (repo / EVENTS_REL).read_bytes()
+        monkeypatch.chdir(repo)
+        rc = lifecycle_ready.main([
+            "pilot-record", "--kind", "plan-counted", "--subject", "inherited",
+            "--source-artifact", INHERITED_PLAN_REL, "--source-commit", head,
+            "--date", "2026-02-05", "--review-input-bytes", "10",
+            "--transitions-removed", "1", "--maintainer-prompts", "0",
+        ])
+        assert rc == 1
+        assert "cannot resolve the assurance path" in capsys.readouterr().err
+        assert (repo / EVENTS_REL).read_bytes() == before
+
+    def test_a_pause_event_carries_no_assurance_path(
+            self, repo, lifecycle_ready, monkeypatch) -> None:
+        """The field belongs to the counted-plan kind only -- the closed schema
+        refuses a key outside a kind's set, so this is also the negative."""
+        self._ledger(repo)
+        monkeypatch.chdir(repo)
+        rc = lifecycle_ready.main([
+            "pilot-record", "--kind", "pause-set", "--subject", "escaped-high",
+            "--severity", "high", "--source-artifact", "dev/plans/p.md",
+            "--source-commit", _head(repo),
+        ])
+        assert rc == 0
+        events = lifecycle_ready._parse_fenced_records(
+            (repo / EVENTS_REL).read_text(encoding="utf-8"),
+            lifecycle_ready._EVENT_FENCE, "x")
+        assert "assurance_path" not in events[0]
+
+
+class TestCF1TheEligibilitySplit:
+    """The report line the accepted parent asked for and P6a could not derive."""
+
+    def _activate(self, repo: Path, date: str = "2026-02-01") -> None:
+        _write(repo, ACTIVATION_REL, _activation_text(_machinery(repo)))
+        _commit(repo, "activate", ACTIVATION_REL, date=date)
+
+    def _ledger(self, repo: Path, *blocks: str) -> None:
+        _write(repo, EVENTS_REL, _event_text(*blocks))
+        _commit(repo, "ledger", EVENTS_REL)
+
+    def test_the_report_splits_eligible_from_ineligible(
+            self, repo, lifecycle_ready, monkeypatch, capsys) -> None:
+        self._activate(repo)
+        head = _head(repo)
+        self._ledger(
+            repo,
+            _counted_block("stem-a", "2026-02-05", head, assurance="standard"),
+            _counted_block("stem-b", "2026-02-06", head,
+                           assurance="high-assurance"),
+            _counted_block("stem-c", "2026-02-07", head,
+                           assurance="not-inherited"))
+        monkeypatch.chdir(repo)
+        lifecycle_ready.main(["pilot-report"])
+        out = capsys.readouterr().out
+        assert "eligible (standard): 1 [stem-a]" in out
+        assert "ineligible / outside the sample: 2 [stem-b, stem-c]" in out
+        assert "high-assurance: stem-b" in out
+        assert "not-inherited: stem-c" in out
+
+    def test_each_counted_row_names_its_assurance_path(
+            self, repo, lifecycle_ready, monkeypatch, capsys) -> None:
+        self._activate(repo)
+        self._ledger(repo, _counted_block("stem-a", "2026-02-05", _head(repo),
+                                          assurance="high-assurance"))
+        monkeypatch.chdir(repo)
+        lifecycle_ready.main(["pilot-report"])
+        rows = [l for l in capsys.readouterr().out.splitlines()
+                if "- stem-a" in l]
+        assert len(rows) == 1
+        assert rows[0].rstrip().endswith("high-assurance")
+
+    def test_an_all_eligible_sample_prints_no_tension_note(
+            self, repo, lifecycle_ready, monkeypatch, capsys) -> None:
+        self._activate(repo)
+        self._ledger(repo, _counted_block("stem-a", "2026-02-05", _head(repo)))
+        monkeypatch.chdir(repo)
+        lifecycle_ready.main(["pilot-report"])
+        out = capsys.readouterr().out
+        assert "eligible (standard): 1 [stem-a]" in out
+        assert "NOTE: the quota above counts DISTINCT stems" not in out
+
+    def test_the_quota_denominator_is_unchanged_and_the_tension_is_printed(
+            self, repo, lifecycle_ready, monkeypatch, capsys) -> None:
+        """**The restraint, asserted as behavior.**  The accepted parent says
+        high-assurance work "does not fill the sample"; the 2026-08-11 revision
+        lets high-assurance proposals inherit, which makes their plans part of the
+        population the policy affects.  Those two texts pull opposite ways on
+        WHOSE plans fill the six, and [CF1] asked only for the split -- so the
+        counted-stem quota stays exactly as P6a landed it and the tension is
+        PRINTED rather than resolved by an implementer."""
+        self._activate(repo)
+        head = _head(repo)
+        self._ledger(
+            repo,
+            _counted_block("stem-a", "2026-02-05", head, assurance="standard"),
+            _counted_block("stem-b", "2026-02-06", head,
+                           assurance="high-assurance"))
+        monkeypatch.chdir(repo)
+        lifecycle_ready.main(["pilot-report"])
+        out = capsys.readouterr().out
+        assert "counted plan stems: 2 / 6" in out
+        assert "NOTE: the quota above counts DISTINCT stems" in out
+        assert "a Maintainer's call" in out
+
+    def test_the_report_still_stores_nothing(
+            self, repo, lifecycle_ready, monkeypatch) -> None:
+        self._activate(repo)
+        self._ledger(repo, _counted_block("stem-a", "2026-02-05", _head(repo)))
+        monkeypatch.chdir(repo)
+        lifecycle_ready.main(["pilot-report"])
+        assert _git(repo, "status", "--porcelain") == ""

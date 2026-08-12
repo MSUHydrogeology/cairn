@@ -1528,7 +1528,20 @@ _PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
 #: What this consumer actually reads.  Checked before the module is cached, so a
 #: planner that loads but has lost an export is a refusal, not an
 #: `AttributeError` at the first counted plan.
-_REQUIRED_EXPORTS = ("PLAN_STATES",)
+#:
+#: **P2 adds three names, and every one of them is a vocabulary this file must not
+#: own.**  [CF1] of `review-efficient-lifecycle` requires a counted plan's
+#: resolved assurance path on its event so the report can split eligible from
+#: ineligible plans.  A plan carries no assurance declaration of its own -- P1
+#: pinned that absence -- so the value comes from P2-R's inheritance chain, which
+#: the planner owns end to end: `ASSURANCE_PATHS` is the closed vocabulary,
+#: `ASSURANCE_NOT_INHERITED` the resolved third answer for a plan that declares no
+#: chain, and `resolve_plan_assurance_path` the resolver.  Reading all three
+#: through this loader is what keeps the CLI from re-declaring either token --
+#: the second vocabulary the single-source rule forbids, and the reason P6a
+#: deliberately left this open rather than closing it early.
+_REQUIRED_EXPORTS = ("PLAN_STATES", "ASSURANCE_PATHS",
+                     "ASSURANCE_NOT_INHERITED", "resolve_plan_assurance_path")
 
 _planner_cache = None
 
@@ -1630,6 +1643,47 @@ def _vocabulary():
 _COUNTED_PLAN_STATE = "ready-to-archive"
 
 
+def _assurance_values() -> Tuple[str, ...]:
+    """The closed set an event's `assurance_path` may carry, from the vocabulary.
+
+    Two real assurance paths plus the resolved *not-inherited* answer, all three
+    read from `tools/lifecycle_planner.py`.  **Never assembled here from
+    literals** -- that would be the fork [CF1] exists to avoid, and it would
+    silently disagree with the planner the moment either changed.
+    """
+    planner = _vocabulary()
+    return tuple(planner.ASSURANCE_PATHS) + (planner.ASSURANCE_NOT_INHERITED,)
+
+
+def _resolved_assurance_path(root: Path, rel: str) -> str:
+    """[CF1] -- the assurance path of the plan at *rel*, or a clean refusal.
+
+    Derived, never typed.  The reason is the one the ledger's own record gives
+    for `plan_state`: a governance field a human types is an author's claim, and
+    the CLI is the only writer precisely so the claim can be replaced by a
+    derivation.  A plan that declares an inheritance chain the planner cannot
+    resolve **refuses** -- recording `not-inherited` for it would be a quiet lie
+    about which population the sample came from.
+    """
+    planner = _vocabulary()
+    path = root / rel
+    try:
+        if not path.is_file():
+            raise LifecycleError(
+                f"cannot resolve an assurance path: {rel} is not a file in this "
+                f"working tree -- a counted plan's assurance path is DERIVED "
+                f"from the plan, never supplied")
+    except OSError as exc:
+        raise LifecycleError(f"cannot inspect {rel}: {exc}") from None
+    value, problems = planner.resolve_plan_assurance_path(path)
+    if value is None:
+        joined = "; ".join(_safe_field(p) for p in problems) or "unknown"
+        raise LifecycleError(
+            f"cannot resolve the assurance path of {rel}: {joined} -- refusing "
+            f"to record a counted plan whose assurance basis does not resolve")
+    return value
+
+
 def _counted_plan_state() -> str:
     """The counted plan state, confirmed against the one runtime vocabulary.
 
@@ -1655,7 +1709,17 @@ _PILOT_EVENTS_REL = ("dev", "measurement", "pilot-events.md")
 _ACTIVATION_FENCE = "cairn-pilot-activation"
 _EVENT_FENCE = "cairn-pilot-event"
 _ACTIVATION_SCHEMA = "cairn-pilot-activation/1"
-_EVENT_SCHEMA = "cairn-pilot-event/1"
+
+#: **Bumped to /2 by P2 to close [CF1].**  P6a provisioned exactly this: *"Closing
+#: either is a `cairn-pilot-event/2` schema bump; the version field exists for
+#: that, and an unknown version refuses rather than being half-read."*  The bump
+#: adds one mandatory `plan-counted` key, `assurance_path`, so the derived report
+#: can split eligible from ineligible plans -- the accepted parent's requirement
+#: that P6a could not meet because no field carried the basis for it.  A `/1`
+#: block now refuses, which is safe *and measured*: the live ledger carries **zero
+#: events** (its `cairn-pilot-event` occurrences are all prose or inert
+#: in-fence examples), so nothing recorded is invalidated.
+_EVENT_SCHEMA = "cairn-pilot-event/2"
 
 #: Contract, not data.  "six eligible plans or 60 days, whichever comes first"
 #: is the accepted proposal's own rule; a record that could restate it would be
@@ -1679,7 +1743,8 @@ _EVENT_COMMON_KEYS = ("schema", "kind", "date", "subject", "source_artifact",
                       "source_commit")
 _EVENT_KEYS = {
     "plan-counted": _EVENT_COMMON_KEYS + (
-        "plan_state", "review_input_bytes", "transitions_removed",
+        "plan_state", "assurance_path", "review_input_bytes",
+        "transitions_removed",
         "escaped_findings_high", "escaped_findings_low", "maintainer_prompts",
         "note"),
     "pause-set": _EVENT_COMMON_KEYS + ("severity", "note"),
@@ -2095,12 +2160,21 @@ def _assert_machinery_binding(root: Path, record: dict, enabling: str,
 # --- the append-only event ledger --------------------------------------------
 
 
-def _validate_event(record: dict, where: str, *, counted_state: Optional[str]) -> dict:
+def _validate_event(record: dict, where: str, *, counted_state: Optional[str],
+                    assurance_values: Optional[Tuple[str, ...]] = None) -> dict:
     """Schema-validate one event block.  No git, no cross-event state.
 
     `counted_state` is the vocabulary-confirmed counted plan state, or `None`
     when the vocabulary could not supply it -- in which case a `plan-counted`
     event refuses instead of being accepted against an unchecked token.
+
+    `assurance_values` is the same arrangement for [CF1]'s `assurance_path`
+    field: the closed set comes from the planner, is computed **once** by the
+    caller, and `None` means the vocabulary could not supply it -- so a
+    `plan-counted` event refuses rather than being admitted against an unchecked
+    token.  Validation never re-DERIVES the value: the ledger is append-only
+    history, and a read that recomputed the field would make a past event's
+    meaning depend on the present working tree.
     """
     if record.get("schema") != _EVENT_SCHEMA:
         raise LifecycleError(
@@ -2158,6 +2232,18 @@ def _validate_event(record: dict, where: str, *, counted_state: Optional[str]) -
                 f"{where}: plan_state must be {counted_state!r} (the state the "
                 f"six-plan rule counts), got "
                 f"{_safe_field(record['plan_state'])!r}")
+        if assurance_values is None:
+            raise LifecycleError(
+                f"{where}: a plan-counted event names assurance_path "
+                f"{_safe_field(record['assurance_path'])!r}, and the single "
+                f"runtime vocabulary cannot confirm it right now -- refusing to "
+                f"admit a counted plan against an unchecked assurance token")
+        if record["assurance_path"] not in assurance_values:
+            raise LifecycleError(
+                f"{where}: assurance_path must be one of "
+                f"{list(assurance_values)} (the planner's closed vocabulary plus "
+                f"the resolved not-inherited answer), got "
+                f"{_safe_field(record['assurance_path'])!r}")
     return record
 
 
@@ -2218,7 +2304,9 @@ def _cross_check_events(events: List[dict], where: str) -> None:
             active.pop(subject)
 
 
-def _read_events(root: Path, *, counted_state: Optional[str]) -> Tuple[List[dict], List[str]]:
+def _read_events(root: Path, *, counted_state: Optional[str],
+                 assurance_values: Optional[Tuple[str, ...]] = None
+                 ) -> Tuple[List[dict], List[str]]:
     """The validated ledger, plus notes about its state.
 
     Returns `([], notes)` when the ledger file is absent -- that is a fact about
@@ -2236,15 +2324,20 @@ def _read_events(root: Path, *, counted_state: Optional[str]) -> Tuple[List[dict
     events = _parse_fenced_records(text, _EVENT_FENCE, rel)
     for event in events:
         _validate_event(event, f"{rel}:{event.get('_line', '?')}",
-                        counted_state=counted_state)
+                        counted_state=counted_state,
+                        assurance_values=assurance_values)
         _assert_event_bindings(root, event, f"{rel}:{event.get('_line', '?')}")
     _cross_check_events(events, rel)
-    notes.extend(_assert_append_only(root, rel, text, counted_state=counted_state))
+    notes.extend(_assert_append_only(root, rel, text,
+                                     counted_state=counted_state,
+                                     assurance_values=assurance_values))
     return events, notes
 
 
 def _assert_append_only(root: Path, rel: str, text: str, *,
-                        counted_state: Optional[str]) -> List[str]:
+                        counted_state: Optional[str],
+                        assurance_values: Optional[Tuple[str, ...]] = None
+                        ) -> List[str]:
     """Refuse a ledger whose committed events are not a prefix of the live ones.
 
     The altered-prior-event check, stated where it can actually be enforced:
@@ -2260,7 +2353,8 @@ def _assert_append_only(root: Path, rel: str, text: str, *,
     committed = _parse_fenced_records(head_text, _EVENT_FENCE, f"HEAD:{rel}")
     for event in committed:
         _validate_event(event, f"HEAD:{rel}:{event.get('_line', '?')}",
-                        counted_state=counted_state)
+                        counted_state=counted_state,
+                        assurance_values=assurance_values)
     live = _parse_fenced_records(text, _EVENT_FENCE, rel)
     if len(live) < len(committed):
         raise LifecycleError(
@@ -2341,6 +2435,64 @@ def _window_bounds(activation_date: str) -> Tuple[_dt.date, _dt.date]:
     return first, first + _dt.timedelta(days=_PILOT_WINDOW_DAYS - 1)
 
 
+#: The accepted parent's eligibility rule, quoted where it is applied: *"High
+#: assurance work remains ineligible and does not fill the sample."*  The
+#: eligible path is therefore `standard` -- but see `_eligibility_split` for the
+#: reason the QUOTA denominator is deliberately left alone.
+_ELIGIBLE_ASSURANCE_PATH = "standard"
+
+
+def _eligibility_split(counted: List[dict], stems: List[str]) -> List[str]:
+    """[CF1] -- the eligible / ineligible split the accepted parent requires.
+
+    The parent's report requirements include *"eligible and ineligible plans"*,
+    and P6a could not derive it: no `plan-counted` field carried a plan's
+    assurance path, because a plan HAS none until P2-R's inheritance chain
+    resolves one.  With `cairn-pilot-event/2` recording the resolved value, the
+    split is a grouping over the counted events.
+
+    **The quota denominator is NOT changed here, and that restraint is the
+    finding.**  The accepted parent says high-assurance work "does not fill the
+    sample"; the 2026-08-11 Maintainer-directed revision says standard *and*
+    high-assurance proposals may both receive `READY`, which makes high-assurance
+    plans part of the population the policy now affects.  Those two sentences pull
+    opposite ways on *whose* plans fill the six, and neither the revision nor
+    [CF1] resolves it -- [CF1] asks only that the report "split eligible from
+    ineligible".  Re-deciding the quota would be an implementer choosing between
+    two accepted texts, so the counted-stem count stays exactly as P6a landed it,
+    the split is reported beside it, and the tension is printed rather than
+    silently resolved.
+    """
+    by_path: dict = {}
+    for stem in stems:
+        event = next(e for e in counted if e["subject"] == stem)
+        by_path.setdefault(event.get("assurance_path", "?"), []).append(stem)
+    eligible = by_path.get(_ELIGIBLE_ASSURANCE_PATH, [])
+    ineligible = sorted(
+        stem for path, group in by_path.items()
+        if path != _ELIGIBLE_ASSURANCE_PATH for stem in group)
+    lines = [
+        f"  eligible ({_ELIGIBLE_ASSURANCE_PATH}): {len(eligible)} "
+        f"[{', '.join(_safe_field(s) for s in eligible) or 'none'}]",
+        f"  ineligible / outside the sample: {len(ineligible)} "
+        f"[{', '.join(_safe_field(s) for s in ineligible) or 'none'}]",
+    ]
+    for path, group in sorted(by_path.items()):
+        if path == _ELIGIBLE_ASSURANCE_PATH:
+            continue
+        lines.append(
+            f"    {_safe_field(path)}: "
+            f"{', '.join(_safe_field(s) for s in sorted(group))}")
+    if ineligible:
+        lines.append(
+            "  NOTE: the quota above counts DISTINCT stems, not eligible stems. "
+            "The accepted parent says high-assurance work does not fill the "
+            "sample; the 2026-08-11 revision lets high-assurance proposals "
+            "inherit. That tension is a Maintainer's call, so it is reported "
+            "here rather than resolved by the tool")
+    return lines
+
+
 def _derive_report(root: Path, *, today: Optional[_dt.date] = None
                    ) -> Tuple[List[str], List[str]]:
     """`(report_lines, incomplete_reasons)`.  Derives; stores nothing."""
@@ -2356,15 +2508,18 @@ def _derive_report(root: Path, *, today: Optional[_dt.date] = None
         "the policy it measures")
 
     counted_state: Optional[str] = None
+    assurance_values: Optional[Tuple[str, ...]] = None
     try:
         counted_state = _counted_plan_state()
+        assurance_values = _assurance_values()
     except MonitoringIncomplete as exc:
         incomplete.append(str(exc))
     except VocabularyUnavailable as exc:
         incomplete.append(f"the status vocabulary is unavailable: {exc}")
 
     activation = _read_activation(root)
-    events, notes = _read_events(root, counted_state=counted_state)
+    events, notes = _read_events(root, counted_state=counted_state,
+                                 assurance_values=assurance_values)
     for note in notes:
         lines.append(f"note: {note}")
 
@@ -2426,7 +2581,9 @@ def _derive_report(root: Path, *, today: Optional[_dt.date] = None
             lines.append(
                 f"  - {_safe_field(stem)}  {event['date']}  "
                 f"{_safe_field(event['source_artifact'])}  "
-                f"{event['source_commit'][:12]}")
+                f"{event['source_commit'][:12]}  "
+                f"{_safe_field(event.get('assurance_path', '?'))}")
+        lines.extend(_eligibility_split(counted, stems))
     if excluded:
         lines.append(
             f"events outside the window (excluded from every count): "
@@ -2515,12 +2672,16 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
     root = _repo_root()
     rel = "/".join(_PILOT_EVENTS_REL)
     counted_state: Optional[str] = None
+    assurance_values: Optional[Tuple[str, ...]] = None
+    assurance_path: Optional[str] = None
     if args.kind == "plan-counted":
         try:
             counted_state = _counted_plan_state()
         except MonitoringIncomplete as exc:
             raise LifecycleError(
                 f"refusing to record a counted plan: {exc}") from None
+        assurance_values = _assurance_values()
+        assurance_path = _resolved_assurance_path(root, args.source_artifact)
 
     record = {
         "schema": _EVENT_SCHEMA,
@@ -2532,6 +2693,11 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
     }
     if args.kind == "plan-counted":
         record["plan_state"] = counted_state or ""
+        # DERIVED, not supplied -- there is deliberately no `--assurance-path`
+        # flag, for the reason there is none for `plan_state`: a governance field
+        # a human types is an author's claim, and the whole point of the CLI being
+        # the only writer is that the claim can be replaced by a derivation.
+        record["assurance_path"] = assurance_path or ""
         record["review_input_bytes"] = str(args.review_input_bytes)
         record["transitions_removed"] = str(args.transitions_removed)
         record["escaped_findings_high"] = str(args.escaped_findings_high)
@@ -2544,7 +2710,8 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
     if args.note:
         record["note"] = args.note
 
-    _validate_event(record, f"{rel} (new event)", counted_state=counted_state)
+    _validate_event(record, f"{rel} (new event)", counted_state=counted_state,
+                    assurance_values=assurance_values)
     _assert_event_bindings(root, record, f"{rel} (new event)")
 
     path = _evidence_path(root, _PILOT_EVENTS_REL, must_exist=True)
@@ -2552,8 +2719,10 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
     existing = _parse_fenced_records(text, _EVENT_FENCE, rel)
     for event in existing:
         _validate_event(event, f"{rel}:{event.get('_line', '?')}",
-                        counted_state=counted_state)
-    _assert_append_only(root, rel, text, counted_state=counted_state)
+                        counted_state=counted_state,
+                        assurance_values=assurance_values)
+    _assert_append_only(root, rel, text, counted_state=counted_state,
+                        assurance_values=assurance_values)
     _cross_check_events(existing + [dict(record)], rel)
 
     block = _render_event_block(record)

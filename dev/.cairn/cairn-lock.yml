@@ -545,7 +545,7 @@
     {
       "base_hash": "sha256:a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed",
       "dst": "tools/lifecycle.py",
-      "hash": "sha256:30e9d96219f3ffcac7604b0318cec0d354f0cc69dad4078cbd9e721f7f26153c",
+      "hash": "sha256:a36fa04cecc8603ab23a3886000c1b6857d2b60cebfc1f1f472cb3c27b4879c9",
       "src": "skills/_lib/lifecycle.py",
       "verbatim": true
     },
@@ -559,7 +559,7 @@
     {
       "base_hash": "sha256:2b30639e4bf7c97037d2ba851d2487003f62f31824a98894c9fe0ca5b8c17263",
       "dst": "tools/lifecycle_planner.py",
-      "hash": "sha256:2628e2dae2c0e62948d4a48bf2882562e14ce3571c6d97c50ee104279a7f89ab",
+      "hash": "sha256:f7a07bf8d87c2dabaf95905c58b7f4f4b042dcb0330c2364fc24ecdbcf07b116",
       "src": "skills/_lib/lifecycle_planner.py",
       "verbatim": true
     },

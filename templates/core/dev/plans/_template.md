@@ -281,6 +281,37 @@ snippets that diverged from their source) catch **drift**, not
 **absence** of new doc updates. Confirm each doc named in Acceptance
 was actually updated; the gates don't enforce that.
 
+**Inherited plan readiness -- the two-field declaration.** When the source
+proposal's **External** review recorded `Plan readiness: READY`, this plan takes
+a fresh-context **Internal** plan review instead of a second
+different-agent-type round, and it says so in *two* header fields, not one:
+
+    **Plan review**: required(Internal)
+    **Inherited proposal basis**: review=<full External-review commit>;
+                                    proposal=<full accepted commit>
+
+`proposal=` is the proposal commit the Decision binds -- the same commit the
+readiness review recorded as its `Reviewed commit`. Both ids are full 40-character
+lowercase hex; an abbreviation can collide, and a colliding binding names two
+commits. Omit the field entirely when this plan does not inherit: a partial or
+misspelled declaration **refuses** and never reads as `READY`.
+
+**Inheritance reallocates the plan review; it never removes it.** Pairing an
+inherited basis with `not required(...)` would leave the plan no independent read
+at all, and refuses.
+
+**Seven things invalidate it, in both directions.** A new scope item, invariant,
+public path, failure disposition, trust boundary or ceremony -- declared as
+
+    **Contract expansion**: none | <dimension>[; <dimension>]
+
+-- and, equally, a **scope reduction** relative to the accepted proposal, declared
+through the `Scope delta` prompt below. Either one means this plan takes
+`required(<tier>)` and a distinct plan review before implementation continues; a
+reduction is admitted only by the Maintainer's recorded allowance. Both are
+**author declarations**: the checker binds the record, and whether the translation
+is faithful stays the reviewer's judgement.
+
 **The four-field review basis is mandatory in every plan-review pass.** Its
 first four lines name the bounded target that pass actually read:
 

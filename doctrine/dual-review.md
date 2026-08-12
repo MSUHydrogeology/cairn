@@ -168,6 +168,96 @@ adding a new tier. Internal-, External-, Code-, and
 domain-rotation-review floors all still apply when a
 Round-2 reviewer fills the role.
 
+## Plan-readiness inheritance — the record, and what a tool can check
+
+When an **External proposal review** has reviewed a complete current contract and
+records a readiness finding, the derived plan takes a fresh-context **Internal**
+plan review rather than a second different-agent-type round. That is the review
+*allocation*; this section is the **record** that makes it auditable, and the
+honest boundary of what a checker reaches.
+
+The proposal reviewer's finding sits in their own `## Review` record:
+
+```text
+Plan readiness: READY | DISTINCT REVIEW REQUIRED
+```
+
+`READY` means that exact contract fixes scope and exclusions, invariants, failure
+dispositions, public paths, omissions, test homes and standing gates,
+documentation and release-note surfaces, implementation areas and sequence, and
+any Maintainer fences or ceremonies. **`DISTINCT REVIEW REQUIRED` is a finding,
+not a default** — the reviewer saying consequential design necessarily remains
+for planning. It is not inferred from the topic, and a fresh-context Internal
+pass does not satisfy it.
+
+The record needs no separate basis line: the reviewed commit and the contract
+section it fixed are already the review record's own mandatory basis (`Reviewed
+commit`, `Target`). One vocabulary, not two.
+
+The derived plan then carries **both facts separately**:
+
+```text
+Plan review: required(Internal)
+Inherited proposal basis: review=<full External-review commit>;
+                            proposal=<full accepted commit>
+```
+
+`proposal=` names the proposal commit the Decision **binds** — the Maintainer's
+Decision binds the same commit without changing its contract — so it equals the
+`Reviewed commit` of the review that recorded the finding.
+
+**Inheritance reallocates the plan review; it never removes it.** A plan that
+declares an inherited basis and `not required(...)` has bought itself no
+independent read at all, which is the one combination this record exists to make
+impossible.
+
+### What invalidates readiness — seven things, in both directions
+
+A new **scope item**, **invariant**, **public path**, **failure disposition**,
+**trust boundary**, or **ceremony** invalidates inheritance: the plan takes
+`required(<tier>)` and stops until a distinct plan review lands. Those six all
+guard a translation that **adds**.
+
+The seventh guards the other direction, and it was the asymmetry worth naming: a
+**scope reduction or removed accepted outcome** relative to the proposal's
+committed scope invalidates readiness exactly as an addition does, unless a
+Maintainer-recorded `Scope delta` allowance admits it (the outcome test below).
+The Internal reviewer's charter — *it does not reopen the accepted design* — is
+precisely the posture in which a quiet narrowing reads as faithful translation,
+and under this allocation that reviewer is the only read most plans get before
+implementation.
+
+**Assurance path does not decide plan-review independence.** Standard and
+high-assurance proposals may both receive `READY` when their External review
+settled the complete contract. High assurance continues to govern verification,
+Security Review, scientific review, protected-surface handling, risk acceptance
+and ceremonies — it does not automatically purchase a second External read of a
+plan that only translates already-reviewed decisions. Where a high-assurance
+trigger keeps an independent backstop, it keeps it *outside* the plan: a named
+high-risk surface still takes a Security Review, and `recommend-and-decide`
+remains available to any reviewer who wants a second pass.
+
+### What a checker reaches, and what stays review's job
+
+A tool can bind this record: two full commit ids, a resolvable source proposal,
+the operative finding's value and tier, and equality between `proposal=` and the
+review's `Reviewed commit`. **A malformed or partial declaration refuses and
+never reads as `READY`** — including a wrong field name, which is otherwise
+silent by construction.
+
+Three things it cannot reach, stated so the silence is not mistaken for a check:
+
+* **which commit a review landed in.** A commit cannot contain its own id, so
+  `review=` is shape-checked and required to differ from `proposal=` (a review
+  lands after the commit it reviews) — its *identity* is not verifiable from
+  repository bytes.
+* **whether the translation is faithful.** Both delta directions are **author
+  declarations**; an undeclared expansion or reduction is invisible. That is the
+  same limit the counterweight below states for reductions, and it is why review,
+  not tooling, is the enforcement.
+* **whether the Internal pass was fresh-context.** No repository byte
+  distinguishes a fresh session from a continued one.
+
 ## Code review — the implementation side
 
 Proposal review tests the *idea*; code review tests the

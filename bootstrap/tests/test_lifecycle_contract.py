@@ -2624,7 +2624,7 @@ class TestPlanReviewBasis:
         strips trailing whitespace, so this one must CLEAR -- it is the
         false-refusal direction of the same check."""
         v = _violations(tmp_path, _pass_block(assurance=value))
-        if value.strip().casefold() in planner._ASSURANCE_PATHS:
+        if value.strip().casefold() in planner.ASSURANCE_PATHS:
             assert v == [], (value, v)
         else:
             assert any("unrecognized Assurance path" in m for m in v), (value, v)
@@ -3708,10 +3708,20 @@ class TestP5Placement:
         """A source-level fence on the exclusion above.  Semantic verification
         would need either git or the proposal's bytes; neither is reachable from
         this block, so a later widening has to add the reach explicitly rather
-        than arrive by edit."""
+        than arrive by edit.
+
+        **The end marker moved when P2-R landed, and the property did not.**  It
+        was `def review_record_violations(`, which stopped being P5's boundary the
+        moment P2's block was inserted between the two; it is now P2's own block
+        header.  P2 *does* read one other artifact -- that is the inheritance
+        chain the accepted parent asks for -- and it carries its own fence
+        (`test_the_p2_block_reaches_no_git`).  Re-pointing this marker rather than
+        deleting the node is what keeps P5's exclusion asserted instead of
+        quietly absorbed into a looser one."""
         src = _PLANNER_PATH.read_text(encoding="utf-8")
         start = src.index("def _declares_inheritance(")
-        end = src.index("def review_record_violations(")
+        end = src.index("# === P2-R -- plan-readiness inheritance")
+        assert start < end, "the P5 block no longer precedes the P2 block"
         block = src[start:end]
         for forbidden in ("_git_readonly", "subprocess", "read_text",
                           "_repo_root", "Popen"):
@@ -4548,3 +4558,756 @@ class TestTheR6PredicateIsShared:
         shared = planner.status_evidence_violations(art, "ready-to-archive")
         assert shared
         assert _e_conf(art) == shared
+
+
+# ===========================================================================
+# Chunk P2-R -- plan-readiness inheritance, the two-field shape.
+#
+# Source contract, in the order it binds:
+#   * accepted `dev/proposals/archive/2026-08-10-codex-review-efficient-lifecycle.md`
+#     > "Standard-path plan-readiness inheritance";
+#   * `dev/plans/review-efficient-lifecycle.md` > `## Maintainer-directed
+#     contract revision -- 2026-08-11` (cell **P2-R** + "Required test matrix"),
+#     which supersedes the original P2 cell where they conflict; and
+#   * that plan's `## Response to plan review -- Claude -- 2026-08-11`
+#     Amendments **A**-**D**.
+#
+# The matrix these nodes discharge, verbatim from the revision, plus the two
+# amendments that add to it:
+#   1. External proposal `READY` + exact Decision binding + Internal plan review
+#      clears, **for both standard and high-assurance fixtures**;
+#   2. the same proposal with no Internal plan review refuses;
+#   3. an Internal proposal review cannot supply the inherited External basis;
+#   4. changed review or accepted-proposal SHA refuses;
+#   5. `DISTINCT REVIEW REQUIRED` cannot be satisfied by the Internal plan pass;
+#   6. every declared expansion dimension still invalidates readiness;
+#   7. [Amendment B] a declared scope REDUCTION refuses, and a Maintainer-recorded
+#      `Scope delta` allowance is the only thing that admits it; and
+#   8. [Amendment D] a malformed or partially-specified `Inherited proposal basis`
+#      -- one sub-field, an unparseable id, or a wrong field name -- refuses and
+#      never defaults to `READY`.
+#
+# **What these nodes deliberately do NOT assert**, because the block does not
+# claim it: that `review=` names the commit the External review landed in (no
+# repository byte carries it -- see `test_the_p2_block_reaches_no_git`), that the
+# Internal pass was performed in a fresh context, or that an UNDECLARED expansion
+# or reduction is detected.  The last is the honest limit Amendment B lives with:
+# the trigger is an author declaration, exactly as P2's own cell requires of every
+# semantic trigger, and `doctrine/dual-review.md` > "The counterweight" already
+# says a formal check "would catch forgetting and not evading".
+# ===========================================================================
+
+_P2_PROPOSAL_STEM = "2026-08-01-author-p2-source"
+_P2_PLAN_STEM = "p2-fixture"
+#: Both fixture ids carry hex LETTERS, not only digits, so that the
+#: uppercase-refusal node below actually varies something -- a digits-only
+#: fixture makes `.upper()` a no-op and the node asserts nothing.
+_P2_PROPOSAL_SHA = "1a" * 20     # the reviewed-and-accepted proposal commit
+_P2_REVIEW_SHA = "2b" * 20       # the commit the External review landed in
+
+
+def _p2_tree(tmp_path: Path, *, readiness: str | None = "READY",
+             tier: str = "External", reviewed: str | None = _P2_PROPOSAL_SHA,
+             assurance: str = "standard",
+             extra_reviews: str = "",
+             inherited: str | None = None,
+             plan_review: str = "required(Internal)",
+             plan_header: str = "", plan_body: str = "",
+             source_line: str | None = None,
+             status: str = "implementing"):
+    """A proposal + a plan derived from it, both on disk, parsed -> the plan.
+
+    One helper for both sides because the contract is a *chain*: every node below
+    varies exactly one link of it.  `readiness=None` omits the finding,
+    `inherited=None` writes the well-formed declaration, `inherited=""` omits it.
+    """
+    props = tmp_path / "dev" / "proposals"
+    plans = tmp_path / "dev" / "plans"
+    props.mkdir(parents=True, exist_ok=True)
+    plans.mkdir(parents=True, exist_ok=True)
+    readiness_line = "" if readiness is None else f"**Plan readiness**: {readiness}\n"
+    commit_line = "" if reviewed is None else f"**Reviewed commit**: {reviewed}\n"
+    (props / f"{_P2_PROPOSAL_STEM}.md").write_text(
+        f"# {_P2_PROPOSAL_STEM}\n\n"
+        "**Author**: Author A (Strategy)\n"
+        "**Status**: accepted\n"
+        f"**Assurance path**: {assurance}\n\n"
+        "## Context\n\nx\n\n"
+        "## Review -- Reviewer A (External) -- 2026-08-05\n\n"
+        f"{commit_line}"
+        "**Target**: the complete current contract\n"
+        "**Prior findings**: none\n"
+        f"**Assurance path**: {assurance}\n"
+        f"**Tier**: {tier}\n"
+        "**Findings**: none\n"
+        f"{readiness_line}\n"
+        f"{extra_reviews}"
+        "## Decision -- Ada Lovelace (Maintainer) -- 2026-08-06\n\n"
+        "**Accepted**.\n\n> Accept as revised.\n",
+        encoding="utf-8")
+    if inherited is None:
+        inherited = (f"**Inherited proposal basis**: review={_P2_REVIEW_SHA}; "
+                     f"proposal={_P2_PROPOSAL_SHA}\n")
+    source = (f"**Source proposal**: [`src`](../proposals/{_P2_PROPOSAL_STEM}.md)\n"
+              if source_line is None else source_line)
+    path = plans / f"{_P2_PLAN_STEM}.md"
+    path.write_text(
+        f"# {_P2_PLAN_STEM}\n\n"
+        f"{source}"
+        f"**Status**: {status}\n"
+        f"**Plan review**: {plan_review}\n"
+        f"{inherited}{plan_header}\n"
+        f"## Scope\n\nx\n{plan_body}",
+        encoding="utf-8")
+    return planner._read_artifact(path)
+
+
+def _p2(tmp_path: Path, **kw) -> list:
+    """The one public predicate over the built chain."""
+    return planner.plan_inheritance_violations(_p2_tree(tmp_path, **kw))
+
+
+class TestP2TheChainClears:
+    """Matrix 1 -- the positive case, and the mutant guard for every refusal."""
+
+    @pytest.mark.parametrize("assurance", ["standard", "high-assurance"])
+    def test_external_ready_plus_exact_binding_clears_on_both_paths(
+            self, tmp_path, assurance):
+        """**Both fixtures, and the high-assurance one is the Maintainer's
+        decision made executable.**  The original P2 cell required a
+        high-assurance REFUSAL; the 2026-08-11 revision removed it in the
+        Maintainer's quoted words -- *"Standard and high-assurance proposals may
+        both receive `READY` when their External review settled the complete
+        contract."*  So this node is red against the pre-revision contract by
+        construction, which is the point: re-adding the assurance branch reddens
+        it."""
+        assert _p2(tmp_path, assurance=assurance) == []
+
+    def test_a_plan_declaring_no_inheritance_is_silent(self, tmp_path):
+        """Blast radius.  Every plan in this tree is this plan."""
+        assert _p2(tmp_path, inherited="") == []
+
+    def test_a_proposal_is_never_an_inherited_plan(self, tmp_path):
+        art = _prop_art(tmp_path, extra_header=_P5_DECLARATION + "\n")
+        assert planner.plan_inheritance_violations(art) == []
+
+    def test_the_folded_declaration_parses(self, tmp_path):
+        """The revision's own rendering of the field WRAPS, putting `proposal=`
+        on an indented second line.  A reviewer who copies that block verbatim
+        must not be refused by the tool that quotes it."""
+        folded = (f"**Inherited proposal basis**: review={_P2_REVIEW_SHA};\n"
+                  f"    proposal={_P2_PROPOSAL_SHA}\n")
+        assert _p2(tmp_path, inherited=folded) == []
+
+    @pytest.mark.parametrize("spelling", [
+        "**Inherited proposal basis**", "Inherited proposal basis",
+        "__Inherited proposal basis__",
+    ])
+    def test_every_emphasis_spelling_is_the_same_field(self, tmp_path, spelling):
+        line = (f"{spelling}: review={_P2_REVIEW_SHA}; "
+                f"proposal={_P2_PROPOSAL_SHA}\n")
+        assert _p2(tmp_path, inherited=line) == []
+
+
+class TestP2TheReadinessFinding:
+    """Matrix 3 and 5 -- whose finding may be inherited, and which value."""
+
+    def test_distinct_review_required_refuses(self, tmp_path):
+        """Matrix 5.  *"`DISTINCT REVIEW REQUIRED` still requires a separate plan
+        review at the tier named by the proposal/Decision."*  A fresh-context
+        Internal pass does not satisfy it, so the plan refuses even though it
+        carries one."""
+        v = _p2(tmp_path, readiness="DISTINCT REVIEW REQUIRED")
+        assert any("DISTINCT REVIEW REQUIRED" in m and "cannot inherit" in m
+                   for m in v), v
+
+    def test_an_internal_proposal_review_cannot_supply_the_basis(self, tmp_path):
+        """Matrix 3.  What inheritance *spends* is the different-agent-type read;
+        an Internal proposal review has none to spend."""
+        v = _p2(tmp_path, tier="Internal")
+        assert any("only an External proposal review" in m for m in v), v
+
+    def test_an_absent_finding_is_not_ready(self, tmp_path):
+        v = _p2(tmp_path, readiness=None)
+        assert any("records no 'Plan readiness:'" in m for m in v), v
+        assert any("never defaults to 'READY'" in m for m in v), v
+
+    @pytest.mark.parametrize("value", [
+        "ready", "READY-ish", "PROBABLY", "",
+        "READY but actually DISTINCT REVIEW REQUIRED",
+    ])
+    def test_an_unreadable_finding_refuses_and_never_defaults(
+            self, tmp_path, value):
+        """`ready` lowercase is admitted (case-insensitive, like every other
+        closed field here) -- the rest are not, and an empty value is in the list
+        on purpose: a bare `Plan readiness:` is the shape a half-written record
+        has, and reading it as `READY` would invert the contract."""
+        v = _p2(tmp_path, readiness=value)
+        if value == "ready":
+            assert v == []
+        else:
+            assert v, value
+
+    def test_the_latest_declaring_review_is_operative(self, tmp_path):
+        """A later review supersedes an earlier one, so an early `READY` cannot
+        be resurrected after a later pass withdrew readiness.  The parent:
+        *"A later review does not silently inherit an earlier"* basis."""
+        later = (
+            "## Review -- Reviewer B (External) -- 2026-08-07\n\n"
+            f"**Reviewed commit**: {_P2_PROPOSAL_SHA}\n"
+            "**Target**: the complete current contract\n"
+            "**Prior findings**: none\n"
+            "**Assurance path**: standard\n"
+            "**Tier**: External\n"
+            "**Findings**: none\n"
+            "**Plan readiness**: DISTINCT REVIEW REQUIRED\n\n")
+        v = _p2(tmp_path, extra_reviews=later)
+        assert any("DISTINCT REVIEW REQUIRED" in m for m in v), v
+
+    def test_a_duplicate_finding_in_one_record_refuses(self, tmp_path):
+        v = _p2(tmp_path, readiness="READY\n**Plan readiness**: READY")
+        assert any("2 times" in m or "duplicate" in m for m in v), v
+
+
+class TestP2TheExactBinding:
+    """Matrix 4 -- and the honest boundary of what "exact" can mean here."""
+
+    def test_a_changed_accepted_proposal_sha_refuses(self, tmp_path):
+        """The mechanical half of matrix 4.  `proposal=` must equal the
+        `Reviewed commit:` of the review that recorded `READY`: the Decision
+        *"binds the same proposal commit without changing its contract"*, so a
+        mismatch means the plan inherits readiness for bytes nobody declared
+        ready."""
+        v = _p2(tmp_path, reviewed="9" * 40)
+        assert any("must name the EXACT proposal commit" in m for m in v), v
+
+    def test_the_review_sha_is_shape_checked_not_identified(self, tmp_path):
+        """**The residual, asserted as behavior rather than left in prose.**  A
+        DIFFERENT well-formed `review=` clears, because no repository byte says
+        which commit a review landed in -- a commit cannot contain its own id.
+        This node exists so a later reader cannot mistake the silence for a check
+        that ran; closing it needs either git (rejected: silent degradation) or a
+        new record that carries the review's own commit."""
+        other = (f"**Inherited proposal basis**: review={'7' * 40}; "
+                 f"proposal={_P2_PROPOSAL_SHA}\n")
+        assert _p2(tmp_path, inherited=other) == []
+
+    def test_the_two_bindings_must_be_distinct(self, tmp_path):
+        """The one exactness property `review=` DOES carry: a review lands after
+        the commit it reviews, so one commit cannot be both."""
+        same = (f"**Inherited proposal basis**: review={_P2_PROPOSAL_SHA}; "
+                f"proposal={_P2_PROPOSAL_SHA}\n")
+        v = _p2(tmp_path, inherited=same)
+        assert any("SAME commit" in m for m in v), v
+
+    def test_a_review_record_with_no_readable_reviewed_commit_refuses(
+            self, tmp_path):
+        v = _p2(tmp_path, reviewed=None)
+        assert v, "an unbindable readiness record must not clear"
+
+
+class TestP2AmendmentDMalformedNeverMeansReady:
+    """Matrix 8 -- every shape Amendment D names, in its own words."""
+
+    @pytest.mark.parametrize("value", [
+        "review=" + _P2_REVIEW_SHA,                    # only one sub-field
+        "proposal=" + _P2_PROPOSAL_SHA,                # only the other
+        "review=zzz; proposal=" + _P2_PROPOSAL_SHA,    # unparseable id
+        "review=" + _P2_REVIEW_SHA + "; proposal=abc1234",   # abbreviated id
+        # UPPERCASE hex: git emits lowercase, and `_FULL_COMMIT_RE` is lowercase
+        # for the reason the file's other commit pattern is.  Spelled with a hex
+        # LETTER on purpose -- `_P2_REVIEW_SHA.upper()` would be a no-op, since
+        # the fixture sha is all digits, and the node would silently assert
+        # nothing.
+        "review=" + _P2_REVIEW_SHA + "; proposal=" + _P2_PROPOSAL_SHA.upper(),
+        "",                                            # present but empty
+        "garbage",                                     # names no binding
+        "see the proposal; review=" + _P2_REVIEW_SHA
+        + "; proposal=" + _P2_PROPOSAL_SHA,            # text before the first
+        "review=" + _P2_REVIEW_SHA + "; review=" + _P2_REVIEW_SHA
+        + "; proposal=" + _P2_PROPOSAL_SHA,            # duplicate binding
+    ])
+    def test_a_malformed_declaration_refuses(self, tmp_path, value):
+        v = _p2(tmp_path, inherited=f"**Inherited proposal basis**: {value}\n")
+        assert v, value
+        assert all("never defaults to 'READY'" in m for m in v), v
+
+    def test_a_duplicate_declaration_refuses(self, tmp_path):
+        line = (f"**Inherited proposal basis**: review={_P2_REVIEW_SHA}; "
+                f"proposal={_P2_PROPOSAL_SHA}\n")
+        v = _p2(tmp_path, inherited=line + line)
+        assert any("duplicate" in m for m in v), v
+
+    @pytest.mark.parametrize("label", [
+        "Inherited basis", "Inherited proposal", "inherited proposal basis",
+        "Inherited-proposal-basis",
+    ])
+    def test_a_wrong_field_name_refuses_rather_than_declaring_nothing(
+            self, tmp_path, label):
+        """Amendment D's third shape, and the one that needed a *detector*: a
+        near-miss field name is silent by construction, because a plan that fails
+        to declare inheritance simply is not an inherited plan.  Detected the way
+        S8 detects a near-miss review heading -- recognize the neighbourhood, then
+        quote the line that did not count."""
+        line = (f"**{label}**: review={_P2_REVIEW_SHA}; "
+                f"proposal={_P2_PROPOSAL_SHA}\n")
+        v = _p2(tmp_path, inherited=line)
+        assert any("near miss" in m for m in v), (label, v)
+
+    def test_an_unrelated_header_field_is_not_a_near_miss(self, tmp_path):
+        """The false-refusal direction of the node above."""
+        assert _p2(tmp_path, inherited="",
+                   plan_header="**Blocked by**: nothing\n") == []
+
+    def test_the_retired_parent_spelling_refuses(self, tmp_path):
+        """P5 filed this gap at P2-R by name.  It is a live bypass, not a
+        tidiness item: the plan-review floor is evaluated only for a value
+        beginning `required`, so the accepted parent's own wording bought a plan
+        NO plan-review obligation at all."""
+        v = _p2(tmp_path, inherited="",
+                plan_review=f"inherited({_P2_REVIEW_SHA}; "
+                            f"proposal={_P2_PROPOSAL_SHA})")
+        assert any("RETIRED spelling" in m for m in v), v
+
+    def test_inheritance_cannot_buy_no_plan_review(self, tmp_path):
+        """`not required(...)` beside an inheritance declaration is the one
+        combination that would leave a plan with no independent read.
+        Inheritance REALLOCATES the plan review; it does not remove it."""
+        v = _p2(tmp_path, plan_review="not required(doc-only)")
+        assert any("REALLOCATES" in m for m in v), v
+
+
+class TestP2TheSourceProposalChain:
+    """The chain out to the proposal, every link of which refuses when broken."""
+
+    @pytest.mark.parametrize("line,expect", [
+        ("", "no '**Source proposal**:' line"),
+        ("**Source proposal**: `some-bare-stem`\n", "names no '<stem>.md' file"),
+        ("**Source proposal**: ../proposals/no-such-file.md\n",
+         "in neither 'dev/proposals/'"),
+    ])
+    def test_an_unresolvable_pointer_refuses(self, tmp_path, line, expect):
+        v = _p2(tmp_path, source_line=line)
+        assert any(expect in m for m in v), (line, v)
+
+    def test_a_duplicate_pointer_refuses(self, tmp_path):
+        one = f"**Source proposal**: [`s`](../proposals/{_P2_PROPOSAL_STEM}.md)\n"
+        v = _p2(tmp_path, source_line=one + one)
+        assert any("duplicate '**Source proposal**:'" in m for m in v), v
+
+    def test_an_archived_proposal_resolves(self, tmp_path):
+        """The normal case in this tree: a plan's proposal is archived by the
+        time the plan executes, so both locations are searched."""
+        art = _p2_tree(tmp_path)
+        props = tmp_path / "dev" / "proposals"
+        archive = props / "archive"
+        archive.mkdir(parents=True, exist_ok=True)
+        (props / f"{_P2_PROPOSAL_STEM}.md").rename(
+            archive / f"{_P2_PROPOSAL_STEM}.md")
+        assert planner.plan_inheritance_violations(
+            planner._read_artifact(art.path)) == []
+
+    def test_a_symlinked_proposal_refuses(self, tmp_path):
+        art = _p2_tree(tmp_path)
+        props = tmp_path / "dev" / "proposals"
+        real = props / "elsewhere.md"
+        (props / f"{_P2_PROPOSAL_STEM}.md").rename(real)
+        (props / f"{_P2_PROPOSAL_STEM}.md").symlink_to(real)
+        v = planner.plan_inheritance_violations(planner._read_artifact(art.path))
+        assert any("symlink" in m for m in v), v
+
+
+class TestP2ExpansionInvalidatesReadiness:
+    """Matrix 6 -- every dimension the accepted parent names."""
+
+    @pytest.mark.parametrize("dimension", [
+        "scope item", "invariant", "public path", "failure disposition",
+        "trust boundary", "ceremony",
+    ])
+    def test_every_declared_expansion_dimension_refuses(self, tmp_path, dimension):
+        v = _p2(tmp_path,
+                plan_header=f"**Contract expansion**: {dimension}\n")
+        assert any("INVALIDATES inheritance" in m for m in v), (dimension, v)
+
+    def test_the_dimension_list_is_the_parents_six(self):
+        """Pinned against the accepted text, so a later edit that quietly drops
+        a dimension is a failing node rather than a narrower gate."""
+        assert planner._EXPANSION_DIMENSIONS == (
+            "scope item", "invariant", "public path", "failure disposition",
+            "trust boundary", "ceremony")
+
+    def test_a_declared_none_clears(self, tmp_path):
+        assert _p2(tmp_path, plan_header="**Contract expansion**: none\n") == []
+
+    def test_several_dimensions_in_one_declaration_refuse(self, tmp_path):
+        v = _p2(tmp_path,
+                plan_header="**Contract expansion**: invariant; public path\n")
+        assert any("invariant; public path" in m for m in v), v
+
+    def test_a_dimension_with_a_trailing_explanation_still_refuses(self, tmp_path):
+        v = _p2(tmp_path,
+                plan_header="**Contract expansion**: ceremony -- a second "
+                            "re-anchor\n")
+        assert any("INVALIDATES inheritance" in m for m in v), v
+
+    @pytest.mark.parametrize("value", ["vibes", "", "scope item; vibes"])
+    def test_an_unreadable_expansion_declaration_refuses(self, tmp_path, value):
+        """Present-but-unreadable is the one shape that must not buy silence."""
+        v = _p2(tmp_path, plan_header=f"**Contract expansion**: {value}\n")
+        assert v, value
+
+    def test_a_duplicate_expansion_declaration_refuses(self, tmp_path):
+        v = _p2(tmp_path, plan_header="**Contract expansion**: none\n"
+                                      "**Contract expansion**: none\n")
+        assert any("duplicate" in m for m in v), v
+
+    def test_the_declaration_is_header_bounded(self, tmp_path):
+        """Not tidiness, and the fixture shape is what makes it a falsifier.
+
+        The field matcher is full-line anchored, so a mention *inside* a sentence
+        was never a candidate -- quoting one would have tested nothing.  The real
+        hazard is a line-start restatement inside an appended section, which is
+        exactly how P5's identical bound became load-bearing: the plan that
+        specifies these fields quotes one at line start in an appended revision
+        section, and a whole-text read would make that plan declare an expansion
+        about itself.  So the fixture puts a conforming field line in the BODY."""
+        assert _p2(tmp_path,
+                   plan_body="\n## Response to plan review -- A -- 2026-08-08\n\n"
+                             "**Contract expansion**: invariant\n") == []
+
+
+class TestP2AmendmentBScopeReduction:
+    """Matrix 7 -- the seventh trigger, in the vocabulary that already exists."""
+
+    _SHARPENING = "\n### Sharpening -- Author A -- 2026-08-07\n\n"
+
+    @pytest.mark.parametrize("value", ["degraded", "lost"])
+    def test_a_declared_reduction_with_no_allowance_refuses(self, tmp_path, value):
+        """The asymmetry Amendment B closes.  The parent's six all guard a
+        translation that ADDS; this one guards the direction an Internal
+        reviewer's own charter ("it does not reopen the accepted design") makes
+        invisible -- a quiet narrowing reading as faithful translation."""
+        v = _p2(tmp_path,
+                plan_body=self._SHARPENING + f"**Scope delta**: {value}\n")
+        assert any("accepted scope is a FLOOR" in m for m in v), (value, v)
+
+    @pytest.mark.parametrize("value", ["degraded", "lost"])
+    def test_a_maintainer_recorded_allowance_admits_it(self, tmp_path, value):
+        """*"a recorded `Scope delta` allowance is the only thing that admits
+        it."*  Recorded the way every other Maintainer authority in this file is:
+        a visually-isolated verbatim blockquote, through the identical predicate a
+        `## Decision` uses.  Structure only -- the committing operator remains the
+        guarantor that the words were said (R1)."""
+        assert _p2(tmp_path,
+                   plan_body=self._SHARPENING + f"**Scope delta**: {value}\n\n"
+                             "> Drop chunk F; file the remainder.\n") == []
+
+    def test_the_allowance_must_sit_in_the_DECLARING_record(self, tmp_path):
+        """A blockquote somewhere else in the plan is not an allowance for this
+        reduction -- otherwise any quoted authorization anywhere would admit
+        every later cut."""
+        body = ("\n### Something else -- Author A -- 2026-08-06\n\n"
+                "> An authorization about an unrelated thing.\n"
+                + self._SHARPENING + "**Scope delta**: lost\n")
+        v = _p2(tmp_path, plan_body=body)
+        assert any("no Maintainer allowance in that record" in m for m in v), v
+
+    def test_preserved_owes_nothing(self, tmp_path):
+        """*"preserved -- every baseline outcome is still delivered.  No
+        declaration, no allowance, nothing owed."*"""
+        assert _p2(tmp_path,
+                   plan_body=self._SHARPENING
+                             + "**Scope delta**: preserved\n") == []
+
+    def test_the_templates_unfilled_prompt_is_inert(self, tmp_path):
+        """Both authoring templates and both planner scaffolds print
+        `**Scope delta**: preserved | degraded | lost` as a PROMPT.  A scaffolded
+        plan carrying the unfilled line must not refuse -- and
+        `doctrine/dual-review.md` > "The counterweight" is explicit that no tool
+        refuses on a missing or malformed declaration."""
+        assert _p2(tmp_path,
+                   plan_body=self._SHARPENING
+                             + "**Scope delta**: preserved | degraded | lost\n"
+                   ) == []
+
+    def test_an_absent_declaration_is_silent_and_that_is_the_honest_limit(
+            self, tmp_path):
+        """**The residual, asserted as behavior.**  A plan that quietly drops an
+        accepted outcome and declares nothing is INVISIBLE here.  That is not a
+        defect in this node -- it is the reach of an author-declared trigger, and
+        the reason `AGENTS.md` and `doctrine/dual-review.md` both put the
+        enforcement in review.  Recorded so nobody reads the silence as a check
+        that ran."""
+        assert _p2(tmp_path, plan_body="\n## Chunks\n\n(one chunk, quietly "
+                                       "dropping an accepted outcome)\n") == []
+
+
+class TestP2TheInternalPlanReviewIsStillRequired:
+    """Matrix 2 -- inheritance reallocates the read; it does not remove it."""
+
+    def test_no_conforming_internal_pass_refuses_at_an_implementing_state(
+            self, tmp_path):
+        art = _p2_tree(tmp_path, status="implementing")
+        v = planner.status_evidence_violations(art, "implementing")
+        assert any("no conforming pass satisfies it" in m for m in v), v
+
+    def test_a_conforming_internal_pass_clears_the_floor(self, tmp_path):
+        art = _p2_tree(tmp_path, status="implementing",
+                       plan_body="\n" + _pass_block(tier="Internal"))
+        assert planner.status_evidence_violations(art, "implementing") == []
+        assert planner.plan_inheritance_violations(art) == []
+
+    def test_an_external_pass_also_satisfies_the_internal_floor(self, tmp_path):
+        """Tiers are non-cumulative and `External >= Internal`; inheritance does
+        not forbid a stronger read than the default allocates."""
+        art = _p2_tree(tmp_path, status="implementing",
+                       plan_review="required(External)",
+                       plan_body="\n" + _pass_block(tier="External"))
+        assert planner.status_evidence_violations(art, "implementing") == []
+        assert planner.plan_inheritance_violations(art) == []
+
+
+class TestP2BothGateSurfacesAgree:
+    """S12 -- one predicate, two call sites, verbatim."""
+
+    def test_scan_and_next_report_the_same_finding(self, tmp_path):
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        art = _p2_tree(tmp_path, readiness="DISTINCT REVIEW REQUIRED",
+                       status="ready-to-implement")
+        expected = planner.plan_inheritance_violations(art)
+        assert expected
+        reported = planner._conformance_violations(art, identity)
+        for msg in expected:
+            assert msg in reported, (msg, reported)
+        gates = planner._gating_preconditions(art, "implementing", identity)
+        chain = [g for g in gates
+                 if "the inherited proposal basis binds" in g[1]]
+        assert len(chain) == 1, gates
+        met, desc = chain[0]
+        assert met is False
+        for msg in expected:
+            assert msg in desc
+
+    def test_no_inheritance_gate_is_offered_for_a_non_inherited_plan(
+            self, tmp_path):
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        art = _p2_tree(tmp_path, inherited="", status="ready-to-implement")
+        gates = planner._gating_preconditions(art, "implementing", identity)
+        assert not [g for g in gates
+                    if "the inherited proposal basis binds" in g[1]]
+
+    def test_the_proposal_side_shape_reaches_both_surfaces(self, tmp_path):
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        art = _prop_art(
+            tmp_path,
+            _prop_review(trailer="**Plan readiness**: PROBABLY\n"),
+            status="awaiting-decision")
+        expected = planner.plan_readiness_violations(art)
+        assert expected
+        assert all(m in planner._conformance_violations(art, identity)
+                   for m in expected)
+        gates = planner._gating_preconditions(art, "accepted", identity)
+        assert any(not met and any(m in desc for m in expected)
+                   for met, desc in gates), gates
+
+
+class TestP2LiveCorpusAndSourceFences:
+    """The measured blast radius, and the fences that keep it that way."""
+
+    def test_the_live_corpus_is_sound_under_the_p2_contract(self):
+        """Zero of the tree's artifacts declare inheritance, so P2 adds zero
+        findings.  Measured here rather than asserted in prose: when the first
+        real inherited plan lands, this node is where its chain is checked."""
+        offenders = {}
+        for fam in ("plans", "plans/archive", "proposals", "proposals/archive"):
+            base = CAIRN_ROOT / "dev" / fam
+            if not base.is_dir():
+                continue
+            for path in sorted(base.glob("*.md")):
+                if path.name in ("_template.md", "README.md"):
+                    continue
+                art = planner._read_artifact(path)
+                found = (planner.plan_inheritance_violations(art)
+                         + planner.plan_readiness_violations(art))
+                if found:
+                    offenders[path.name] = found
+        assert offenders == {}, offenders
+
+    def test_the_p2_block_reaches_no_git(self):
+        """The fence the block's own docstring promises.  P2 legitimately reads
+        ONE other artifact -- the source proposal, through `_read_artifact` --
+        because that chain is what the accepted parent asks for.  It reaches no
+        git, no subprocess and no raw `read_text`, so the `review=` residual
+        cannot be closed by an edit that nobody reviews."""
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        start = src.index("# === P2-R -- plan-readiness inheritance")
+        end = src.index("def review_record_violations(")
+        block = src[start:end]
+        for forbidden in ("_git_readonly", "subprocess", "_repo_root", "Popen",
+                          "read_text", "write_text", "open("):
+            assert forbidden not in block, forbidden
+        assert "_read_artifact(" in block, (
+            "the chain must resolve through the planner's own reader")
+
+    def test_one_binding_shape_rule_serves_both_fields(self):
+        """P5's `Basis:` line and P2's `Inherited proposal basis` are the same
+        grammar, so there is ONE implementation with the keys as a parameter --
+        the shape `_is_legacy` already uses for its three manifests.  A sibling
+        copy would put two implementations of one rule in the file."""
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        assert src.count("def _basis_binding_violations(") == 1
+        assert src.count("def _basis_value(") == 1
+
+    def test_the_p5_default_messages_are_unchanged_by_that_refactor(self):
+        """The guard on the generalization: P5's three-binding messages must read
+        exactly as they did before the keys became a parameter, or the refactor
+        silently rewrote a landed contract's refusals."""
+        v = planner._basis_binding_violations("nothing here", "L")
+        assert v == ["L: 'Basis: nothing here' names none of the three required "
+                     "bindings (proposal=, plan=, changed-paths=)"]
+        v = planner._basis_binding_violations("proposal=" + "a" * 40, "L")
+        assert any("all three are required" in m for m in v), v
+
+
+class TestP2CarriedForwardObligationCF1:
+    """[CF1] -- the plan-side assurance path the monitoring report needs."""
+
+    def test_the_vocabulary_is_public_and_unchanged(self):
+        """P6a's record: closing the split *"needs a **public** single source for
+        the assurance-path vocabulary -- `tools/lifecycle_planner.py` declares it
+        privately today, and a second declaration in the CLI would fork a
+        vocabulary."*  Published without changing a value."""
+        assert planner.ASSURANCE_PATHS == ("standard", "high-assurance")
+        assert not hasattr(planner, "_ASSURANCE_PATHS")
+        assert planner.ASSURANCE_NOT_INHERITED == "not-inherited"
+        assert planner.ASSURANCE_NOT_INHERITED not in planner.ASSURANCE_PATHS
+
+    @pytest.mark.parametrize("assurance", ["standard", "high-assurance"])
+    def test_the_chain_resolves_the_proposals_declaration(self, tmp_path,
+                                                          assurance):
+        art = _p2_tree(tmp_path, assurance=assurance)
+        assert planner.resolve_plan_assurance_path(art.path) == (assurance, [])
+
+    def test_a_plan_declaring_no_inheritance_resolves_to_not_inherited(
+            self, tmp_path):
+        """A POSITIVE answer, not a default: the plan declares no chain, so there
+        is no proposal declaration to inherit.  A plan carries no artifact-level
+        assurance path of its own -- P1 pinned that absence deliberately."""
+        art = _p2_tree(tmp_path, inherited="")
+        assert planner.resolve_plan_assurance_path(art.path) == (
+            planner.ASSURANCE_NOT_INHERITED, [])
+
+    def test_a_broken_chain_yields_no_value_and_the_reasons(self, tmp_path):
+        art = _p2_tree(tmp_path, readiness="DISTINCT REVIEW REQUIRED")
+        value, problems = planner.resolve_plan_assurance_path(art.path)
+        assert value is None
+        assert problems
+
+    def test_a_proposal_with_no_declaration_yields_no_value(self, tmp_path):
+        art = _p2_tree(tmp_path)
+        proposal = tmp_path / "dev" / "proposals" / f"{_P2_PROPOSAL_STEM}.md"
+        proposal.write_text(
+            proposal.read_text(encoding="utf-8").replace(
+                "**Assurance path**: standard\n\n## Context", "\n## Context", 1),
+            encoding="utf-8")
+        value, problems = planner.resolve_plan_assurance_path(art.path)
+        assert value is None
+        assert any("no default" in m for m in problems), problems
+
+    def test_a_proposal_is_not_a_plan(self, tmp_path):
+        art = _prop_art(tmp_path)
+        value, problems = planner.resolve_plan_assurance_path(art.path)
+        assert value is None
+        assert any("is not a plan" in m for m in problems), problems
+
+
+class TestP2AuthoringTemplates:
+    """P2's template half, pinned per surface in P1's idiom.
+
+    The plan's acceptance criteria require each documentation surface to be
+    *confirmed* updated ("drift gates catch drift, not absence"), and the reason
+    is sharper for this chunk than for most: every refusal P2 adds is one an
+    author can only avoid by knowing a grammar, and an author refused by a gate
+    who finds no instruction in the template has been handed a puzzle instead of
+    a rule.
+
+    **Both sides of every pair.**  Chunk B of `scope-reduction-trap` edited a
+    shipped source and not its installed twin, leaving unsound text live in the
+    copy Cairn itself reads -- checking one side is how that happens.
+    """
+
+    SURFACES = {
+        "dev/proposals/_template.md": {
+            "the readiness field": "**Plan readiness**: READY | DISTINCT REVIEW "
+                                   "REQUIRED",
+            "it is optional and has no default": "it has no default",
+            "distinct is a finding": "is a finding, not a fallback",
+            "only External may supply it": "Only an External pass may supply it",
+            # Needles are chosen to sit inside ONE physical line: the templates
+            # are hard-wrapped, so a phrase that reads continuously on the page
+            # can still straddle a newline, and a straddling needle would fail
+            # for a formatting reason rather than a contract one.
+            "assurance does not decide it": "does *not* decide this",
+        },
+        "dev/plans/_template.md": {
+            "the two-field shape": "**Inherited proposal basis**: review=",
+            "paired with an Internal floor": "**Plan review**: required(Internal)",
+            "which commit proposal= names":
+                "the proposal commit the Decision binds",
+            "full ids only": "full 40-character",
+            "reallocates rather than removes":
+                "reallocates the plan review; it never",
+            "the expansion declaration": "**Contract expansion**: none |",
+            "the seventh trigger": "a **scope reduction** relative to the",
+            "declarations are not inferences": "author declarations",
+        },
+    }
+
+    @pytest.mark.parametrize("rel", sorted(SURFACES))
+    @pytest.mark.parametrize("shipped", [False, True])
+    def test_each_surface_carries_the_contract(self, rel, shipped):
+        path = CAIRN_ROOT / (f"templates/core/{rel}" if shipped else rel)
+        text = path.read_text(encoding="utf-8")
+        missing = [name for name, needle in self.SURFACES[rel].items()
+                   if needle not in text]
+        assert not missing, (path, missing)
+
+    def test_the_doctrine_teaches_the_record_and_names_its_limits(self):
+        """`doctrine/dual-review.md` is P2's cell's own third surface.  The limits
+        are asserted alongside the mechanism on purpose: a doctrine section that
+        taught the record without naming what a checker cannot reach would invite
+        exactly the over-reading `AGENTS.md` > *Verifying claims* warns about."""
+        text = (CAIRN_ROOT / "doctrine/dual-review.md").read_text(encoding="utf-8")
+        for needle in (
+                "## Plan-readiness inheritance",
+                "Plan readiness: READY | DISTINCT REVIEW REQUIRED",
+                "Inherited proposal basis: review=",
+                "is a finding,\nnot a default",
+                "### What invalidates readiness",
+                "Assurance path does not decide plan-review independence",
+                "which commit a review landed in",
+                "whether the Internal pass was fresh-context"):
+            assert needle in text, needle
+
+    def test_the_plan_template_placeholder_still_cannot_satisfy_the_gate(self):
+        """P2 adds text near `## Plan review` in the plan template.  A stray
+        `**Model**:` line or a dated reviewer heading would make the shipped
+        placeholder satisfy the archive precondition -- the exact defect
+        `archive-precondition-substance` closed."""
+        for rel in ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"):
+            text = (CAIRN_ROOT / rel).read_text(encoding="utf-8")
+            assert planner._has_code_review_marker(text) is False, rel
+
+    def test_the_scaffolded_plan_template_declares_no_inheritance(self):
+        """The template teaches the field by QUOTING it, so the quoted grammar
+        must not make a scaffolded plan an inherited one.  The declaration is
+        header-bounded and the template's examples are indented inside prose --
+        this node is what keeps that true as the template is edited."""
+        for rel in ("dev/plans/_template.md",
+                    "templates/core/dev/plans/_template.md"):
+            path = CAIRN_ROOT / rel
+            assert "Inherited proposal basis" in path.read_text(encoding="utf-8")
+            art = planner.Artifact(path, "plan",
+                                   path.read_text(encoding="utf-8"))
+            assert planner._declares_inheritance(art) is False, rel

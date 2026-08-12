@@ -377,6 +377,36 @@ correctness, security, scientific-validity, or scope finding whenever you find
 one. A later review does not silently inherit an earlier reviewer's claims — it
 either verifies them or names them as not covered.
 
+**Plan readiness — the finding a derived plan may inherit.** An **External**
+reviewer who has read a *complete* current contract may record, beside the basis
+above:
+
+    **Plan readiness**: READY | DISTINCT REVIEW REQUIRED
+
+`READY` means that exact contract fixes scope and exclusions, invariants, failure
+dispositions, public paths, omissions, test homes and standing gates,
+documentation and release-note surfaces, implementation areas and sequence, and
+any Maintainer fences or ceremonies. The derived plan then takes a fresh-context
+**Internal** plan review rather than a second different-agent-type round, and
+binds this record by commit.
+
+Three things about the field, each of which a checker enforces:
+
+* **It is optional, and it has no default.** Omit it and the derived plan takes a
+  distinct plan review at its declared tier. A value outside the two tokens
+  refuses rather than reading as `READY`.
+* **`DISTINCT REVIEW REQUIRED` is a finding, not a fallback** — you saying
+  consequential design necessarily remains for planning. It is an explicit
+  judgement about *this* contract, never inferred from the topic.
+* **Only an External pass may supply it.** What inheritance spends is the
+  different-agent-type read; an Internal review has none to spend. The assurance
+  path does *not* decide this: a high-assurance proposal may record `READY` too,
+  and high assurance keeps governing verification, Security Review, protected
+  surfaces and ceremonies.
+
+The record needs no extra basis line — the reviewed commit and contract section
+are already the four fields above.
+
 Proposal reviews are written into the proposal file by default.
 Chat comments can help the conversation, but they are not the durable
 review record. Append the review as a new section in this file,
