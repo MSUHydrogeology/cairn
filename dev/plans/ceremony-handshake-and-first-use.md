@@ -1516,3 +1516,171 @@ touched**, checked against `git diff --name-only 4877ab9..f30a921`.
 2. The **N4 precondition** (Maintainer): ceremony key encrypted at rest and
    loaded into no agent for the duration of stage 1.
 3. Then **one** M2 retake under M7, then M3/M4.
+
+## Code review -- Codex -- 2026-08-12
+
+**Reviewer**: GPT-5 Codex, a different agent type from the Claude implementer.
+**Tier / obligation**: External Security code review and focused exact-byte
+External Security Review (parent-plan M2 retake).
+**Reviewed commit**: `baa84b29353c946e2353f2b959e0b340da8c6cab`.
+**Prior findings retested**: [S1], [S2], [D1]-[D4], and parent findings
+[M2-1]-[M2-5].
+**Assurance path**: high assurance.
+**Findings**: raised.
+
+**Verdict: REVISE -- the exact bytes are not fit to be blessed as Cairn's trust
+root.** The signing-key repair holds, and the Python backstop prevents either
+mutation below from moving a ref. But the fixed transition loader does not
+establish the exact reviewed authority closure before it starts candidate
+Python. This pass therefore closes neither this plan's independent-read
+obligation nor the parent plan's M2, does not authorize M3, and does not arm M7.
+
+### Finding
+
+**[M2-R1] HIGH / BLOCKING -- missing and extra authority members reach candidate
+Python before the fixed loader rejects them.** The runbook says the complete
+selection predicate lives in the fixed shell loader, that the extracted set is
+exactly the declared set, and that no Python starts if a member is added or
+dropped. The executable block parses each supplied `member`, checks that the
+supplied paths are sorted and unique, extracts those paths, verifies their
+supplied digests, and then invokes `$PY`. It never compares `$T/paths` with a
+fixed nine-path authority-closure list. The first exact-set comparison is
+`revalidate_transition()` inside the Python it has already selected.
+
+I reproduced both directions against the literal transition block in a
+disposable ceremony repository whose candidate genuinely changed
+`_oracle.py`. I replaced the recorded interpreter with a wrapper that created a
+marker before executing Python, removed the fixture's private key so the N4
+precondition held, and supplied correctly hashed, sorted manifests:
+
+```text
+extra: exit=2 python_started=True
+extra: [REFUSE ] the review manifest is not the authority closure: 0 missing [], 1 unexpected ['bootstrap/tests/_unreviewed_extra.py']
+missing: exit=2 python_started=True
+missing: [REFUSE ] the review manifest is not the authority closure: 1 missing ['bootstrap/REANCHOR_RUNBOOK.md'], 0 unexpected []
+```
+
+That is fail-closed for ref movement, but it is not the bootstrap property the
+plan requires. The candidate checker is allowed to execute before the fixed
+trust input has established which files comprise the checker. A later check by
+those candidate bytes cannot establish that those bytes were safe to start.
+
+**Required correction.** Put a literal, reviewed, LC_ALL=C-sorted list of all
+nine authority paths in the fixed transition loader and compare the parsed
+member paths to it byte-for-byte before candidate resolution, extraction, or
+Python. A new absolute comparison utility may be admitted to the recorded
+residual trust set, or the fixed shell may perform the comparison itself; in
+either case the runbook must state the resulting trust boundary exactly. Add
+missing-member and extra-member executions that use a marker interpreter and
+prove the marker remains absent. Checking for the absence of `Traceback` is not
+evidence that no interpreter started.
+
+The retained ceremony helper also needs to represent the artifact it claims to
+test. `_LOADED_MODULES` contains only the seven Python modules, while M2's
+authority closure also contains `bootstrap/REANCHOR_RUNBOOK.md` and
+`dev/.cairn/allowed_signers`. I temporarily expanded that helper to all nine and
+executed the transition ceremony, checker-itself-delta, and stage-2 flag tests;
+all three passed. That probe shows the recorded stage-2 command can carry the
+nine-file checklist, but the committed tests currently do not preserve the
+claim.
+
+### Controls that held
+
+The [S1] repair now binds one validated public-key fingerprint across both
+stages, pins `user.signingKey` on `commit-tree`, empties
+`gpg.ssh.defaultKeyCommand`, and verifies the constructed signature's
+fingerprint as well as its anchored principal. I independently verified that a
+missing stage-1 key refuses, candidate `defaultKeyCommand` is not executed, a
+candidate `user.signingKey` cannot override the explicit key, and a second key
+that is valid for the same anchored principal is still refused on fingerprint
+mismatch. [S2]'s obsolete no-handoff-artifact claim is gone.
+
+The pre-ref-move verification triple, anchored-roster read, read/write Git
+allowlists, and two-direct-ref expected-old transaction remain intact in the
+targeted governing tests. The transition loader still binds the candidate once
+to a full OID, extracts by that OID, and rejects malformed rows, duplicate or
+misordered paths, invalid digests, and digest mismatches before Python. None of
+those controls supplies the missing fixed expected-member set.
+
+### Exact bytes reviewed
+
+I hashed all nine worktree files in a clean detached clone at the reviewed
+commit and independently exercised the imported closure under Python 3.13.13:
+
+```text
+eac6b13debf88852c181a44535dd3ca54fbd5f75492c4a96edf672fe6b9abd25  bootstrap/REANCHOR_RUNBOOK.md
+b69e26e5b4d5c09073543f202131b65c3290b4fe926ad84d9988057feb493c55  bootstrap/tests/_gate_manifest.py
+31057e84943ff2edacf91fc9c53e7b750fc0e0b0e9db1a801f57c73aa808a34d  bootstrap/tests/_gate_preflight.py
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+55cd6796a2e73efcf822b73284c3610a7c71adf67ee065ae11f06036568423af  dev/.cairn/allowed_signers
+```
+
+These hashes identify the rejected byte set; they are **not** a first-use
+checklist to run. A correction to any member requires a fresh M2 hash set and
+review.
+
+### Exact manual bootstrap invocation reviewed
+
+The exact command surface reviewed is the literal transition Stage 1 and
+transition Stage 2 blocks in the runbook whose SHA-256 is recorded above, with
+this complete host parameterization:
+
+```text
+CHECKOUT=/Users/kendal30/Code/cairn
+CANDIDATE=HEAD
+REVIEW_MANIFEST=/private/tmp/cairn-m2-review-manifest.txt
+ENV=/usr/bin/env
+GIT=/opt/homebrew/bin/git
+PY=/Users/kendal30/conda_envs/lhm/bin/python3.13
+MKTEMP=/usr/bin/mktemp
+MKDIR=/bin/mkdir
+SHASUM=/usr/bin/shasum
+SORT=/usr/bin/sort
+HOME=/Users/kendal30
+SIGNING_KEY=/Users/kendal30/.ssh/cairn_signing.pub
+PACKAGE_OUT=/private/tmp/cairn-gate-authorization-package.json
+PACKAGE=/private/tmp/cairn-gate-authorization-package.json
+```
+
+The acquisition command reviewed, fully filled, is:
+
+```sh
+/usr/bin/env -i HOME=/nonexistent \
+    /opt/homebrew/bin/git --no-replace-objects \
+        -c core.useReplaceRefs=false \
+        -c core.hooksPath=/dev/null \
+        -c core.fsmonitor=false \
+        -C /Users/kendal30/Code/cairn \
+        cat-file blob refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md
+```
+
+`CANDIDATE=HEAD` is bound once by the loader and must equal the full OID in the
+out-of-band manifest. Stage 2's `CONFIRMED_SHA256` is necessarily the
+Maintainer-entered digest printed by Stage 1, not a value knowable at review
+time. This is an exact identification of the invocation under review by
+runbook hash plus substitutions, not permission to execute it: **do not run
+either transition block from this byte set.** There is no safe "filled-in
+command we will actually run" to record while [M2-R1] remains open.
+
+### Execution ledger and limits
+
+All review execution used
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13) with
+`PYTHONDONTWRITEBYTECODE=1` in a clean detached clone. The seven authority test
+files passed **423 tests in 117.61s**. Focused signing, transaction, transition,
+and authorization classes passed **101 tests in 41.07s**; anchored-invocation
+targeting passed **12 tests in 13.74s**. Collection reports **4013 tests**, which
+matches Boundary B's 4008 pass + 4 fail + 1 skip record. I did not repeat the
+full suite because the fresh Boundary B record targets these same implementation
+bytes; this review used independent targeted falsification.
+
+I did not load the Maintainer's real private key, move either Cairn ref, create
+the real authorization package or review manifest, run the ceremony, push, run
+TRU-7 against a real remote, exercise Windows or a SHA-256-format repository,
+or audit Git/OpenSSH cryptography. The accepted evidence-stage host-access,
+key-holder-not-process, and no-nonce replay residuals remain accurately
+described and were not re-litigated.
