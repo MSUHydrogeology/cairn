@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-12
-**Status**: revised
+**Status**: accepted
 **Assurance path**: **high-assurance** — this changes a trust ceremony, an
 executable trust root, and the authority boundary of `bootstrap/tests/_gate_preflight.py`.
 Three separate mandatory triggers; there is no judgement call here.
@@ -509,3 +509,31 @@ authoritative-manifest bytes and digest**; and the package digest.
   admissible evidence here.
 * Public-path negative controls for every new call, per [M2-1]'s lesson.
 * One Boundary B, then **one** final M2 retake under M7.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-12
+
+**ACCEPTED as revised (Round 2).**
+
+Authorization, quoted verbatim and visually isolated:
+
+> I accept the proposal as reviewed. Please scribe my acceptance and then move
+> forward to execution
+
+**Scribed by** Claude (Implementation) on that explicit instruction.
+
+---
+
+*Scribe's note, separate from the authorization above.* Before this Decision I
+raised one observation the Maintainer did not act on: the revision's
+`Scope delta: preserved` is arguable on a single outcome. Opening item **A3**
+committed to the admitted authority set being *written into the checkpoint
+message* so the durable record says **which bytes** were admitted; its
+successors **R2-c** / **R3-c** bind that set's **digest** instead. That is
+cryptographically stronger and potentially weaker as a durable record, since the
+review manifest is an out-of-band artifact — a later reader could verify *that* a
+set was admitted without being able to see *which*.
+
+The phrase *"as reviewed"* accepts the Round 2 text **unamended**, so the ledger
+stands as written and this note is the record that the point was surfaced before
+the Decision rather than discovered after it. It is a candidate obligation for
+the implementing plan, not a reopening of this Decision.
