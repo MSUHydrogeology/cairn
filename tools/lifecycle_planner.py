@@ -930,16 +930,29 @@ def _has_code_review_marker(text: str) -> bool:
 # "R5 replacement -- contained consumers and corpus boundary").  It mirrors
 # `doctrine/lifecycle-contract.md`, which stays the human contract.
 #
-# Two consumers live OUTSIDE this file's package and read the names below by
+# THREE consumers live OUTSIDE this file's package and read the names below by
 # loading this file through a contained fixed-path loader -- never through
 # ambient `sys.path`, and never by re-declaring a status literal of their own:
 #
 #   * `tools/_lifecycle_metrics/extract.py` + its installed twin
 #     (`templates/modules/default-on/_lifecycle_metrics/extract.py`);
-#   * `scripts/transition_lint.py` (repository-only).
+#   * `scripts/transition_lint.py` (repository-only);
+#   * `tools/lifecycle.py` + its installed twin
+#     (`templates/skills/_lib/lifecycle.py`) -- added by Chunk P6a at `8bf1154`,
+#     which copied the A3 loader contract rather than re-deriving it.  Its twin
+#     sits under `templates/skills/_lib/` beside this file's own twin, not under
+#     `templates/modules/default-on/` like the metrics consumer's; the two
+#     consumers ship through different install families, and only the paths
+#     differ, not the contract.
 #
-# `bootstrap/tests/test_lifecycle_vocabulary.py` audits both consumers' source
-# for local status enums and is observed red against a reintroduced one.
+# `bootstrap/tests/test_lifecycle_vocabulary.py` audits all three consumers'
+# source for local status enums and is observed red against a reintroduced one.
+# Its `_AUDITED_CONSUMER_SOURCES` is **five paths**, not three: each consumer
+# that ships as a twin is audited on BOTH sides, because editing one side and
+# not the other is the drift the audit exists to catch.  The count is pinned by
+# name in that module's own guard-on-the-guard, so this comment and the audit
+# cannot silently disagree about how many consumers there are -- which they did,
+# between P6a landing the third and this correction ([CF2]).
 #
 # Five declarations, each with exactly one job.  Keeping them as *data* is what
 # makes the next vocabulary change (`ready-to-implement` / `implementing` /
