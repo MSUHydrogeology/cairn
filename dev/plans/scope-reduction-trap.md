@@ -2506,3 +2506,235 @@ because the next read should be **External** — a different agent type, which i
 the tier this plan has not had since its proposal. That is the Maintainer's to
 run.
 
+## Code review -- Codex (External) -- 2026-08-12
+
+**Reviewed commit**: `8100256`, in a detached clone. I reviewed the complete
+landed distribution at those bytes and filtered this plan's commits by diffing
+each against its own parent; unrelated commits interleaved on `master` were not
+treated as part of the implementation.
+**Target**: the whole Part-9 distribution, with direct adjudication of F2-F6 and
+the three cross-type judgement calls requested in the briefing.
+**Prior findings**: F1-F6 from `## Code review -- Claude (Internal, third
+clearing pass) -- 2026-08-12`. F1 was corrected at `8100256`; F2-F6 were
+deliberately left for this External pass.
+**Assurance path**: standard
+**Model**: OpenAI Codex (GPT-5). The runtime exposes no more specific model
+identifier to this session.
+**Findings**: raised
+
+**Tier -- stated honestly.** External. I am a different agent type from the
+Claude author and Internal reviewers. I read the original D, E, and F findings
+at `50a3223`, `d74a47c`, and `8fd0aa5`, not only their later Sharpening
+summaries.
+
+**Verdict**: REVISE
+
+The doctrine is sound enough to keep. The implementation is not ready to
+archive: F2-F4 reproduce under mutations I chose independently, F5-F6 remain
+undisposed, and the end-to-end distribution omits a field required by the
+accepted grouped-remainder contract. F1 is closed: both emitted scaffolds now
+say only that missing or malformed declarations do not refuse, which matches
+the live caller chain.
+
+### Findings
+
+**[X1 -- P1] The author-facing grouped remainder loses the per-entry
+disposition required by the accepted contract.**
+
+The canonical rule says each removed unit carries source section, reason, a
+**disposition**, and a revival/closure condition
+(`doctrine/dual-review.md:520-530`). The proposal Decision repeats that shape.
+But all four templates and both emitted planner scaffolds ask each unit only for
+source, reason, and revival/closure condition, then provide one group-level
+`Disposition/home` line that asks only where the grouped record lives:
+
+* proposal templates: `dev/proposals/_template.md:587-593` and
+  `templates/core/dev/proposals/_template.md:535-541`;
+* plan templates: `dev/plans/_template.md:392-397` and
+  `templates/core/dev/plans/_template.md:380-385`;
+* emitted scaffolds: `tools/lifecycle_planner.py:4875-4879` and
+  `:4962-4966`, with the byte-identical shipped twin.
+
+A home is not a disposition. Two removed units can therefore be scaffolded
+with one destination and no `accept | guard | wontfix | defer` decision on
+either unit, even though `doctrine/lifecycle.md:493-496` says each entry
+blocks archive independently.
+
+The parity suite does not see the loss. My mutation deleted the words
+`a disposition` from the canonical per-entry sentence and all **105 tests
+passed**. The current bytes already omit that field from the six author-facing
+shapes, so this is not only missing mutation coverage; the distributed record
+is incomplete now.
+
+*Satisfier*: keep the grouped record, but make each item carry both its
+disposition and revival/closure condition, with the group-level home remaining
+separate if useful. Pin that item shape on all four templates and through both
+emitted scaffolds.
+
+**[X2 -- P1] F2 is confirmed: the boundary test checks selected values, not the
+record contract it claims to pin.**
+
+`test_the_declared_reduction_boundary_holds`
+(`bootstrap/tests/test_scope_reduction_trap.py:417-468`) has five cases. The
+production contract at `tools/lifecycle_planner.py:3312-3365` also depends on
+heading-bounded scope, allowance position, Markdown normalization, isolation,
+fence exclusion, and all declarations in a record.
+
+My mutation was not in F2's table: I changed `_declaration_record` in both
+twins to begin at the declaration rather than at its preceding heading. An
+isolated Maintainer quote **before** the declaration, but in the same record,
+then stopped authorizing it. The direct probe returned `False`, while all
+**105 tests passed**. The test therefore does not pin its own stated
+same-record rule.
+
+The policy boundary itself is coherent. A mandatory-presence gate proves only
+that a box was ticked, while a declared loss without the named authority is a
+structural authority failure. The problem is test ownership and coverage, not
+the Maintainer's decision.
+
+*Satisfier*: rebuild this as a table-driven parser contract covering accepted
+spellings, unknown and unfilled values, allowance before and after the field,
+neighboring heading records, attached/non-isolated quotes, fenced examples,
+and multiple declarations. The behavior belongs to
+`review-efficient-lifecycle`, which owns `_declared_reduction`; either move
+the contract there or name that ownership here and make the two plans'
+acceptance criteria agree.
+
+**[X3 -- P2] F3 is confirmed: the no-presence-gate fence inspects diagnostic
+words, not gate behavior.**
+
+The fence at `bootstrap/tests/test_scope_reduction_trap.py:549-608` collects
+messages, lowercases them, and rejects only `scope delta` or
+`scope-remainder`. I added a real unmet `proposal -> revised` gate whose
+description was `the narrowing record is complete`. A direct call returned
+`(False, ...)`; all **105 tests passed**.
+
+This negative universal is not realistically provable by adding more banned
+phrases. The cheaper and more honest resolution offered by E2 is the right one:
+retain the known-transition controls, but narrow the docstring to exactly what
+they test and disclose that differently worded gates, target withholding, and
+new transition routes remain outside the fence. Do not describe it as detecting
+any future presence gate.
+
+**[X4 -- P2] F4 is confirmed: the shipped review-loop can lose the reviewer's
+duty and the specify-don't-cut default while green.**
+
+The live obligations are at `dev/agent_collaboration.md:122-129` and the
+shipped twin at `templates/core/dev/agent_collaboration.md:100-107`.
+`_REVIEW_LOOP` at
+`bootstrap/tests/test_scope_reduction_trap.py:55-67` does not name either
+obligation. I deleted from both copies the sentences requiring the reviewer to
+state what is lost and why the narrower change reaches the cause, plus the
+author's duty to explain rejecting specification. All **105 tests passed**.
+
+*Satisfier*: extract the scope-reduction paragraph rather than searching the
+whole file, then pin the asymmetry, the reviewer's what-is-lost/why-it-still-
+reaches duty, and the specify-by-default rule. Make the trap-name assertion
+match that paragraph, so the trailing doctrine citation cannot satisfy it.
+
+**[X5 -- P3] F5 remains a Maintainer disposition, not an author or reviewer
+cleanup.**
+
+The record took `defer` on E5 without quoted Maintainer authorization and did
+not add it to the lifecycle disposition ledger. I agree with F5's authority
+reading. The Maintainer must either authorize the defer and its durable home or
+choose another disposition; this External review cannot manufacture that
+decision.
+
+**[X6 -- P3] F6 is real, and the correction should reduce ownership ambiguity
+rather than merely comment it.**
+
+The boundary test in this plan imports a private predicate introduced and still
+owned by the executing `review-efficient-lifecycle` plan. A future correction
+there can fail this plan's suite under the wrong owner. X2's parser-contract
+work should live with that predicate. If the test remains here, its docstring
+must name the owning plan and the owner must adopt the same cases before this
+plan archives.
+
+### Judgement calls
+
+**Planner boundary**: accept. Keep the presence check declined and the
+authorization check permitted. They answer different questions: semantic truth
+versus who may concede a declared loss. Do not imply that the authorization
+check governs proposals or ordinary plans today; F1's correction now avoids
+that overclaim.
+
+**`preserved` owes nothing**: accept. Requiring a declaration for every
+preserved change would add high-volume, low-information prose and would not make
+quiet reduction more detectable. Review remains responsible for comparing the
+landed scope with the baseline.
+
+**Grouped remainder**: accept the grouping, revise the item schema. One record
+per source artifact is the right answer to roadmap fragmentation, but each
+removed unit still needs its own disposition. X1 is a missing field, not an
+argument for returning to one roadmap row per unit.
+
+### Salvageability
+
+Do **not** revert the doctrine or the distributed review rule. The baseline-bound
+test, stage authority, `preserved` default, and grouped-record concept are
+coherent across the named Part-9 surfaces.
+
+Do stop patching the two guard tests by adding one more phrase or one more
+example. Rebuild the parser contract under its owning plan, demote the
+message-grep fence to an explicitly limited regression check, and add the
+per-entry disposition field. That is a bounded correction, not a wholesale
+restart.
+
+### Verification
+
+All execution used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13) in a detached clone at `8100256`. The clone was clean before the
+mutations and after every restore.
+
+| Probe | Result |
+|---|---|
+| Baseline `test_scope_reduction_trap.py` | 105 passed |
+| Mapped lifecycle/doc set: scope-reduction, lifecycle contract/CLI, core folders, doc governance, transition lint | 826 passed in 41.34 s |
+| Same-record quote-before-field mutation, both planner twins | direct allowance probe became `False`; 105 passed |
+| Generic unmet `proposal -> revised` presence gate | direct gate returned unmet; 105 passed |
+| Delete reviewer-duty + specify-default sentences from both review-loop copies | 105 passed |
+| Delete canonical per-entry `a disposition` requirement | 105 passed |
+| Three reported bytecode-sensitive standing nodes, ordinary environment | 3 failed, reproduced |
+| The same three nodes with `PYTHONDONTWRITEBYTECODE=1` | 3 passed |
+| `scripts/claim_check.py dev/plans/scope-reduction-trap.md` | clean |
+| `scripts/check_cairn.py` | **2** issues, not the reported 1: both in `git-native-security-foundations.md` (`:2183` plus a now-nonresolving pycache citation at `:1339`) |
+| neutrality / redundancy | `fail=93 info=21` / `fail=0 info=2` |
+| `lifecycle_planner.py next ... --to archived` | refuses on the blocking review plus missing dispositions and fidelity sign-off |
+
+The three standing pytest failures are environmental, not stable byte defects:
+they reproduce when Python writes bytecode and clear when bytecode writes are
+disabled. I did not attribute them to this plan.
+
+### Archive gates
+
+Two gates remain unmet independently of X1-X6:
+
+* `## Lasting-truth migration` is still the placeholder and names no
+  implementing commit or governing accepted section.
+* deferred-follow-up dispositions are incomplete, including X5/F5.
+
+A later clearing pass cannot archive until both records land.
+
+### Coverage
+
+**Covered, with falsifiable citations** -- claims (all reported counts above
+re-derived); production path (`_scaffold`, `_declared_reduction`,
+`_gating_preconditions`, and `next --to archived`); design completeness
+(all Part-9 distribution surfaces plus the installed module); fail-closed
+(three fresh green-surviving mutations); cross-document consistency (canonical,
+self-hosted, and shipped pairs); drift (each plan commit filtered against its
+own parent); lifecycle placement (the live archive preconditions); and scope
+(F5/F6 ownership and authority).
+
+**Not covered / low confidence** -- I did not run the full suite; the mapped
+826-node run bounds the executable/doc surfaces reviewed, while the three known
+nodes were run separately in both bytecode modes. I did not test whether real
+authors classify reductions truthfully; the proposal correctly leaves that as
+human judgement. I did not audit unrelated implementation in the commits
+interleaved between this plan's commits.
+
+**Second-round recommendation**: no additional broad External pass is needed
+after correction. Require one focused independent correction review over
+X1-X6, with fresh mutations against the rebuilt tests and the two archive
+records opened directly.
