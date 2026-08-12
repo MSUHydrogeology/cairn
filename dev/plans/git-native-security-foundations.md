@@ -1226,3 +1226,70 @@ change gets its executing read. Scope is settled here; bytes are not.
 
 **M7 is unaffected and still arms at M2** — any byte change after the
 exact-byte review invalidates that disposition.
+
+## Implementation verification -- Claude -- 2026-08-12
+
+**Boundary B.** Tested commit **`ebac63b`**, which is the final *implementation*
+commit — `d6de829` and `bf6529b` are record-only and touch no code, so the tested
+bytes are the bytes that go to review. Range since the last progress record:
+`4889d8e..ebac63b`, which interleaves this plan's D and F with another session's
+`review-efficient-lifecycle` and `scope-reduction-trap` work.
+
+**Environment.** A `git clone --shared` of the repository at `ebac63b`, because
+the live tree carries other sessions' uncommitted work. Canonical interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (**Python 3.13.13**).
+`git status --short` empty **before and after** both commands.
+
+| command | outcome | time |
+|---|---|---|
+| `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **5 failed, 3280 passed, 1 skipped** | 476.48 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | exit 1 — `neutrality fail=93 info=21`, `redundancy fail=0 info=2` | 1.10 s |
+
+**The first pytest run was discarded, and that is recorded rather than quietly
+dropped.** It reported the same five failures in 515.01 s, but another session
+was running its own full suite on the same machine throughout (observed at 52–64
+% CPU). An unexplained non-pass on a contended machine is not stable evidence, so
+the run above was queued behind theirs. The two runs agree exactly, which is
+itself the useful finding: the failures are **deterministic, not contention**.
+
+### Non-pass disposition — all five attributed, none caused by this plan
+
+| # | failure | attribution |
+|---|---|---|
+| 1 | `test_lifecycle_vocabulary.py::TestLoaderContainmentMatrix[transition_lint]` | **Not this plan.** The class does not exist at `4889d8e`; it arrives with `ca22f21` (`review-efficient-lifecycle` A6/A7), and the loaders it exercises were last touched by `36b0c53` / `da23dbc` — that plan's own work |
+| 2 | same, `[metrics_extract]` | as above |
+| 3 | `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override` | **Known, already homed** — `e150b7d`, Maintainer-authorized defer |
+| 4 | `test_verify_ref.py::test_mutation_verifying_inside_the_candidate_runs_the_forger` | **Pre-existing isolation defect.** See below |
+| 5 | `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports` | **Known** — a clone carries no `refs/cairn/gate-anchor`, which is precisely the property F5's new `test_a_clone_does_not_carry_the_anchor_without_an_explicit_refspec` asserts. Confirmation, not noise |
+
+**#4 was chased to a root cause rather than labelled flaky**, because
+`verify-ref.sh` is this plan's Chunk E2 and a hand-wave would have been
+self-serving. It fails inside the `_hostile_candidate` *setup*, not its
+assertions: `fatal: tag 'v0.6.0' already exists`. `lab` is a **session-scoped**
+fixture and `_hostile_candidate` copies `lab.candidate`, so once the shuffle
+order puts a polluting node first, the copy already carries `HOSTILE_TAG`.
+
+The attribution is decisive and cheap: the failure reproduces **at `4889d8e`** —
+before D and before F — from `test_security_check.py` + `test_verify_ref.py`,
+**two files this plan never touched**. Neither `test_verify_ref.py`,
+`verify-ref.sh` nor `conftest.py` changed anywhere in `4889d8e..ebac63b`. The
+trigger is collection order, which every added test in the repository perturbs.
+
+**It is a real defect and it is not this plan's to fix** — a session-scoped
+mutable fixture plus a shuffling collector is an order-dependent test, and it
+will keep moving. Surfaced for homing; no change made here.
+
+**Neutrality's 93 is a standing condition, not a regression.** Byte-identical
+`fail=93 info=21` at `93ccc29`, `4889d8e` and `ebac63b`, and **not one of the 93
+is in a file this plan touched** (they are fixtures, `docs/`, `doctrine/` and
+`_lifecycle_metrics`). Recorded as unchanged rather than as passing.
+
+### Known omissions
+
+* **[TRU-7] is unmeasured** against the real remote and only **M4** can measure
+  it. The F4 bare-remote tests establish the mechanism, not the capability.
+* **Publication itself is unrun** — Phase 5 is M4, and no Cairn ref has moved
+  (R1-F step 1).
+* **H is unrun**, and **M2** precedes it.
+* Boundary C is the reviewer's, not mine, and its range must include `da3e296`
+  per R1-4.
