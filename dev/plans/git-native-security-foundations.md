@@ -1143,3 +1143,54 @@ push refspec each fail a named test.
 Boundary C's reviewed range must include `da3e296` per R1-4. **M7 arms now**:
 any byte change after M2's exact-byte review invalidates that disposition, so
 the bytes reviewed at SR are the bytes H executes.
+
+## Chunk D re-landed -- Claude -- 2026-08-12
+
+**The withdrawal record above stops mid-story.** It ends *"D re-opens with the
+four findings above as inputs"*, and D did re-open and land — as **v2**, at
+`4365205`, before the F work. The Sequence block is updated, but a sequence line
+is not a record, and a reviewer reading this plan top-to-bottom would find M5
+fired, *"stop and retain v1"*, and then a tree carrying
+`SCHEMA = "cairn-gate-manifest/v2"`. The reasoning was written — into the commit
+body, which is a snapshot, not the deliberation record. It belongs here.
+
+**How the rebuild answered each of the four recorded inputs.**
+
+| M5 input | How `4365205` answers it |
+|---|---|
+| `produce()` must work with **no repository present** | `_object_format` returns `None` outside a repository — not a refusal (that breaks the isolation making the evidence trustworthy) and not a guess (`sha1` is the defect the chunk removes). Absence is reported as absence. An *unrecognised* format still raises |
+| Git-native identity from `rederive_static_manifest`, checker-derived | It is. `produce` outside a repository emits sha256-only entries and omits `object_format`; the trusted side supplies `mode` and `oid`, which are **never accepted from the candidate** |
+| Fields the candidate cannot supply must be **explicitly declared**, not relaxed away | `_CHECKER_DERIVED_FIELDS` and `_CHECKER_DERIVED_SUBKEYS` (`_gate_preflight.py:1157`, `:1163`). `test_only_collection_and_interpreter_stay_delegated` was not relaxed; the boundary tests now assert a **three-way** split — candidate-only, checker-only, compared — in both directions |
+| Hashing the **committed** blob means a dirty frozen file HOLDs | Accepted as correct, and it is why every chunk here was verified in a clone carrying only its own diff |
+
+**Now the part that is not tidy, stated plainly because a reviewer should not
+have to find it.** Two things about this re-landing are deviations under
+`AGENTS.md` > *Git and commit workflow*, and both are the Maintainer's call, not
+mine:
+
+1. **A chunk struck under a conditional fence was revived by its author.** M5's
+   terms are *"stop and retain v1. Record why."* The withdrawal record
+   anticipated re-opening, but M5 is a **Maintainer** stop and anticipating one's
+   own return is not the same as being sent back.
+2. **The corrected design carries a contract change neither plan review saw.**
+   Moving `mode`/`oid` to checker-derived is a change to the **evidence trust
+   boundary**. The withdrawal record said so itself — *"that is a change to the
+   evidence trust boundary, and it belongs in a reviewed contract rather than in
+   a debugging patch"* — and then it landed in the rebuild without one.
+
+**Both are arguably strengthenings**, and I think they are: deriving identity on
+the trusted side is strictly less trusting of the candidate than v1 was. That is
+an argument for the change, not authority to make it unreviewed, and *"it came
+out stronger"* is exactly the reasoning a fence exists to interrupt.
+
+**What partly covers this, and what does not.** **M2** reviews the *exact bytes*
+of `_gate_manifest.py` and `_gate_preflight.py` before the ceremony, so these
+changes do get an executing security read — they will not reach H unreviewed.
+What M2 does **not** do is ask whether the plan's scope should have grown this
+way; its subject is bytes, not scope. So the byte-level risk is covered and the
+**scope** question is open.
+
+**The Maintainer's options**, so this is a decision and not a report: accept the
+revival and the boundary change as within scope and let M2 carry the byte review;
+or send D back for a contract pass before CR/SR. **No further work should assume
+the first.**
