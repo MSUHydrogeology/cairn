@@ -7,8 +7,9 @@
 > two-stage re-anchor (`bootstrap/tests/_gate_reanchor.py`) is established and how
 > the supervised promotion is run. The *code* is reviewed and tested; **running
 > the steps below is the Maintainer's act** — an implementing agent must not
-> perform Phase 0 or Phase 4 (that is the forbidden "implementer blesses its own
-> verifier" self-authorization).
+> perform Phase 0, Phase 4 or Phase 5 (that is the forbidden "implementer
+> blesses its own verifier" self-authorization; Phase 5 is additionally the
+> standing rule that pushing is always the Maintainer's).
 
 The re-anchor is **two-stage** (round-4 contract): Stage A gathers executable but
 non-authoritative *evidence*; Stage B is data-only and *authoritative*. Stage B
@@ -352,12 +353,112 @@ For each candidate `C` to promote:
 4. **The new `N` is the next `P`.** Subsequent promotions resolve their prior gate
    state from the now-advanced `refs/cairn/gate-anchor`.
 
+5. **Retire the authorization ref, by its exact expected-old value.**
+
+   `refs/cairn/gate-authorization` is **ceremony-local**. It authorizes exactly
+   one promotion, it is **never published** (it does not appear in any push
+   refspec in Phase 5, and there is no configuration under which it is pushed),
+   and it is deleted once that promotion has advanced the anchor:
+
+   ```
+   git update-ref -d refs/cairn/gate-authorization <A-sha>
+   ```
+
+   **Naming `<A-sha>` is the whole point.** A bare `git update-ref -d
+   refs/cairn/gate-authorization` deletes whatever the ref happens to point at,
+   which is a different operation whenever the ref is not what this ceremony
+   left there — a concurrent or interrupted run's authorization, discarded
+   silently, with no record that the value removed was not the value promoted.
+   The expected-old form fails instead, and a failure here is information.
+
+   **A failed deletion is unresolved ceremony residue.** Report it that way and
+   stop: a live authorization ref is a standing grant to promote a specific
+   candidate, so leaving one behind is not untidiness, it is an authorization
+   that outlived its ceremony. It is never reported as cleanup success, never
+   retried with the expected-old value dropped, and never left for a later run
+   to trip over. Resolve it — determine what moved the ref and why — before the
+   next promotion.
+
+---
+
+## Phase 5 — publish, in one atomic push (M4)
+
+**The Maintainer's step, and no one else's.** `AGENTS.md` makes pushing always
+the Maintainer's; here the push is additionally *part of the authorization
+ceremony*, because an anchor nobody else can fetch has authorized nothing. No
+reviewer and no implementing agent pushes to `origin` on the Maintainer's
+behalf.
+
+**Step 1 — one push, both refs, explicit refspecs.**
+
+```
+<maintainer-recorded-git> -C <absolute-path-of-the-checkout-to-bless> \
+    push --atomic origin \
+        refs/heads/<branch>:refs/heads/<branch> \
+        refs/cairn/gate-anchor:refs/cairn/gate-anchor
+```
+
+* **`--atomic`** — the branch and the anchor are *one* fact. Without it git
+  publishes each ref it can and reports partial success, which leaves the remote
+  carrying a moved branch whose anchor still names the previous trust root. Every
+  fetcher then verifies new code against an anchor that never blessed it, and
+  nothing on the remote records that the pair was ever meant to be one update.
+* **Explicit refspecs.** Not `--all`, not `--mirror`, and not whatever
+  `push.default` resolves to: the ceremony names the two refs it publishes, so
+  the set is read off this page rather than out of a config file the ceremony
+  does not control. It is also what keeps `refs/cairn/gate-authorization`
+  unpublished — the ref is absent because the refspecs are a closed list, not
+  because something is expected to filter it out.
+
+**Step 2 — there is no two-push fallback.** If the atomic push is rejected,
+**stop and report incomplete publication.** Do not re-push ref-by-ref, do not
+push the branch "to at least get the code up", and do not `--force`. A rejection
+means the remote's state is not what this ceremony assumed, and the two-push
+recovery reproduces by hand exactly the split state `--atomic` exists to
+prevent. Diagnose the rejection against the remote's current refs, then re-run
+the ceremony from the point the diagnosis indicates.
+
+**Step 3 — verify against the remote, by reading it back.** The push's own exit
+status says the client believed it succeeded. Resolve both refs on the remote
+and record the object ids in the audit trail:
+
+```
+<maintainer-recorded-git> -C <absolute-path-of-the-checkout-to-bless> \
+    ls-remote origin refs/heads/<branch> refs/cairn/gate-anchor
+```
+
+Exactly two lines, both naming `N`. One line, or two that disagree, is
+incomplete publication under step 2 — not a partial success to be topped up.
+
+**Fresh clones need an explicit fetch refspec for the anchor.** `git clone`
+fetches `refs/heads/*` and `refs/tags/*`; `refs/cairn/*` is in neither, so a
+clone that looks complete has no anchor at all and the gate has nothing to
+verify against:
+
+```
+git clone <remote-url> <dir>
+git -C <dir> fetch origin '+refs/cairn/gate-anchor:refs/cairn/gate-anchor'
+```
+
+**Receiving the anchor proves availability, not authenticity.** The fetch says
+the remote had a ref by that name; it says nothing about who put it there. What
+makes the anchor trustworthy is the signature on the object it names, verified
+against the anchored roster — the same check the ceremony ran before publishing.
+A fetched anchor is verified, never assumed.
+
 ---
 
 ## Audit trail
 
 Each supervised run records, in commit messages / the plan execution log: the
 authorized verifier-module hashes (Phase 0 step 1), the prerequisite `P` SHA, the
-authorization `A` SHA, the candidate `C` SHA, and the resulting `N` SHA. The
-expected-old CAS is the single-use authority — the ref's own history is the replay
-ledger.
+authorization `A` SHA, the candidate `C` SHA, the resulting `N` SHA, and the two
+**remote** object ids read back in Phase 5 step 3. The expected-old CAS is the
+single-use authority — the ref's own history is the replay ledger.
+
+**The reflogs are a diagnostic, not part of this ledger.** Both refs carry a
+fixed ceremony reason (`_gate_preflight._CEREMONY_REFLOG_REASON`), which is what
+makes a mis-set anchor recoverable — the prior value is written down somewhere.
+But a reflog is local and mutable: whoever can write a ref can write its reflog,
+so it is never tamper evidence and never authentication. No decision predicate
+in the ceremony reads reflog content, and none may.

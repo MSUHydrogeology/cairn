@@ -2485,3 +2485,397 @@ class TestCheckpointBindsTheReport:
             P.verify_message_binds_report(msg, digest="9" * 64, tree="f" * 40,
                                           head="b" * 40, anchor="a" * 40)
         assert "does not bind" in str(exc.value)
+
+
+# ---------------------------------------------------------------------------
+# Chunk F: reflogs, and the atomic publication contract.
+#
+# Two failure shapes, one theme -- a partial result that reports as a whole one.
+#
+#   * A gate anchor that moves wrongly used to be UNRECOVERABLE, because custom
+#     refs carry no reflog by default: the prior value simply was not written
+#     down anywhere, so "put it back" had nothing to put back. `--create-reflog`
+#     with a fixed reason closes that, and these tests hold it closed on the
+#     *abort* path too -- an aborted transaction that leaves a reflog entry is
+#     a record of something that did not happen.
+#   * A non-atomic publication leaves the remote carrying a moved branch and a
+#     stale anchor, and `git push` reports the parts that worked. Every fetcher
+#     then verifies new code against an anchor that never blessed it.
+#
+# The reflog is a LOCAL, MUTABLE DIAGNOSTIC throughout. It is asserted here as
+# recovery and sequencing information, never as tamper evidence: anyone who can
+# write a ref can write its reflog. No decision predicate reads reflog content,
+# and the tests below assert none of them do.
+# ---------------------------------------------------------------------------
+
+
+def _reflog(repo: Path, ref: str) -> list[str]:
+    """The ref's reflog, newest first; `[]` when the ref has none.
+
+    Read with `log -g` rather than `reflog show` so a missing reflog is an
+    empty list instead of an error, which is the state the abort path must
+    leave behind.
+    """
+    r = _run("git", "log", "-g", "--format=%gs", ref, cwd=repo)
+    return r.stdout.splitlines() if r.returncode == 0 else []
+
+
+class TestCeremonyReflogs:
+    """F1/F4. Both refs record the ceremony on success; an abort records
+    nothing, because it did nothing."""
+
+    def _refs(self, repo: Path):
+        return (_run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip(),
+                _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip())
+
+    def _fresh(self, tmp_path):
+        """An anchored repo with both reflogs cleared, so what the transaction
+        writes is the only thing present afterwards."""
+        repo, anchor, head = _anchored_repo(tmp_path)
+        _run("git", "reflog", "expire", "--expire=all", "--all", cwd=repo)
+        return repo, anchor, head
+
+    def test_a_successful_transaction_identifies_the_ceremony_in_BOTH_reflogs(
+            self, tmp_path):
+        """The recovery property. A mis-set anchor is recoverable only if the
+        prior value was written down, and only if the entry that wrote it is
+        distinguishable from ordinary ref movement."""
+        repo, anchor, head = self._fresh(tmp_path)
+        target = P.R._construct_anchor_commit(
+            repo, head, P._MANIFEST_REL,
+            json.dumps(_FAKE_MANIFEST, indent=2, sort_keys=True).encode() + b"\n")
+
+        ok, detail = P._advance_both_refs(repo, "refs/heads/master", target,
+                                          branch_old=head, anchor_old=anchor)
+
+        assert ok, detail
+        for ref in ("refs/heads/master", P._ANCHOR_REF):
+            entries = _reflog(repo, ref)
+            assert entries, f"{ref} carries no reflog after the ceremony"
+            assert entries[0] == P._CEREMONY_REFLOG_REASON, (
+                f"{ref}@{{0}} is {entries[0]!r}, not the fixed ceremony reason")
+
+    def test_the_prior_anchor_is_recoverable_from_the_reflog(self, tmp_path):
+        """What the reflog is *for*, stated as a test rather than a comment:
+        the value the ceremony overwrote is still readable afterwards."""
+        repo, anchor, head = self._fresh(tmp_path)
+        target = P.R._construct_anchor_commit(
+            repo, head, P._MANIFEST_REL,
+            json.dumps(_FAKE_MANIFEST, indent=2, sort_keys=True).encode() + b"\n")
+        P._advance_both_refs(repo, "refs/heads/master", target,
+                             branch_old=head, anchor_old=anchor)
+
+        prior = _run("git", "rev-parse", f"{P._ANCHOR_REF}@{{1}}",
+                     cwd=repo).stdout.strip()
+        assert prior == anchor
+
+    def test_a_stale_expected_old_abort_writes_NEITHER_ref_NOR_either_reflog(
+            self, tmp_path):
+        """An abort that leaves a reflog entry records something that did not
+        happen -- and it is the reflog an operator reads when reconstructing
+        what the ceremony did.
+        """
+        repo, anchor, head = self._fresh(tmp_path)
+        target = P.R._construct_anchor_commit(
+            repo, head, P._MANIFEST_REL,
+            json.dumps(_FAKE_MANIFEST, indent=2, sort_keys=True).encode() + b"\n")
+        before = self._refs(repo)
+
+        ok, detail = P._advance_both_refs(repo, "refs/heads/master", target,
+                                          branch_old=head, anchor_old="c" * 40)
+
+        assert not ok and detail
+        assert self._refs(repo) == before
+        for ref in ("refs/heads/master", P._ANCHOR_REF):
+            assert P._CEREMONY_REFLOG_REASON not in _reflog(repo, ref), (
+                f"the aborted transaction left a ceremony entry on {ref}")
+
+    def test_the_reason_is_fixed_by_the_module_not_chosen_by_the_caller(self):
+        """A caller-supplied reason could label one ceremony as another, and
+        both refs would then disagree about what moved them."""
+        import inspect
+        sig = inspect.signature(P._advance_both_refs)
+        assert "reason" not in sig.parameters and "message" not in sig.parameters
+
+    def test_git_reflog_is_in_neither_allowlist(self):
+        """The cheapest half of the constraint, and the load-bearing one.
+
+        Every git invocation in the module is funnelled through `_git` or
+        `_git_write`, each gated on an enumerated subcommand set. `reflog` in
+        neither set means `git reflog` cannot run at all -- not by oversight, by
+        construction.
+        """
+        assert "reflog" not in P._READ_ONLY_GIT
+        assert "reflog" not in P._WRITE_GIT
+
+    def test_no_git_call_passes_a_reflog_reading_argument(self):
+        """The other half: `git log -g` and an `@{N}` revision read reflog data
+        through subcommands that *are* allowed.
+
+        Walked with `ast` rather than grepped, because the module's prose is
+        full of the word -- an earlier version of this test read the source as
+        text and fired on the help string that tells an operator custom refs
+        carry no reflog. Only argument expressions of an actual git call count.
+        """
+        import ast
+        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+            encoding="utf-8")
+        helpers = {"_git", "_git_write", "_run_git"}
+        offenders = []
+        for node in ast.walk(ast.parse(src)):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            name = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", "")
+            if name not in helpers:
+                continue
+            for arg in node.args:
+                if not (isinstance(arg, ast.Constant)
+                        and isinstance(arg.value, str)):
+                    continue
+                if arg.value == "-g" or arg.value == "--walk-reflogs" \
+                        or "@{" in arg.value:
+                    offenders.append((node.lineno, arg.value))
+        assert not offenders, (
+            f"a git call reads reflog data: {offenders}. The ceremony writes "
+            f"reflogs and must never let a predicate consume one -- whoever "
+            f"can write a ref can write its reflog.")
+
+
+class TestAtomicPublication:
+    """F4. The publication contract, exercised against a real bare remote.
+
+    Necessary but **not sufficient** to close [TRU-7]: a local bare remote
+    accepts what a real forge might refuse (hooks, protected branches, ref
+    namespace policy). M4 records a probe or the first supervised push against
+    the real remote. These tests establish the mechanism, not the capability.
+    """
+
+    def _publish(self, tmp_path):
+        """A repo with both ceremony refs advanced, and a bare remote behind."""
+        repo = _repo(tmp_path)
+        base = _commit(repo, "base")
+        _run("git", "update-ref", P._ANCHOR_REF, base, cwd=repo)
+
+        remote = tmp_path / "remote.git"
+        _run("git", "init", "-q", "--bare", str(remote), cwd=tmp_path)
+        _run("git", "remote", "add", "origin", str(remote), cwd=repo)
+        _run("git", "push", "-q", "origin",
+             "refs/heads/master:refs/heads/master",
+             f"{P._ANCHOR_REF}:{P._ANCHOR_REF}", cwd=repo)
+
+        new = _commit(repo, "candidate")
+        _run("git", "update-ref", P._ANCHOR_REF, new, cwd=repo)
+        return repo, remote, base, new
+
+    def _remote_refs(self, remote: Path):
+        return {ref: _run("git", "rev-parse", ref, cwd=remote).stdout.strip()
+                for ref in ("refs/heads/master", P._ANCHOR_REF)}
+
+    def _push(self, repo: Path, *extra: str):
+        return _run("git", "push", "--atomic", "origin",
+                    "refs/heads/master:refs/heads/master",
+                    f"{P._ANCHOR_REF}:{P._ANCHOR_REF}", *extra, cwd=repo)
+
+    def test_the_atomic_push_publishes_both_refs(self, tmp_path):
+        repo, remote, base, new = self._publish(tmp_path)
+        r = self._push(repo)
+        assert r.returncode == 0, r.stderr
+        assert self._remote_refs(remote) == {"refs/heads/master": new,
+                                             P._ANCHOR_REF: new}
+
+    def test_one_rejected_ref_moves_NEITHER_remote_ref(self, tmp_path):
+        """The property `--atomic` exists for.
+
+        The anchor is made non-fast-forward on the remote while the branch stays
+        perfectly pushable. Without `--atomic` git publishes the branch, reports
+        the anchor's rejection, and exits non-zero -- and the remote is left
+        with new code under the previous trust root. An operator reading only
+        "one ref failed" would then re-push the anchor and call it recovered,
+        having never seen that the split state existed.
+        """
+        repo, remote, base, new = self._publish(tmp_path)
+        divergent = _run("git", "commit-tree", f"{base}^{{tree}}", "-p", base,
+                         "-m", "remote-side divergence",
+                         cwd=repo).stdout.strip()
+        _run("git", "push", "-q", "-f", "origin",
+             f"{divergent}:{P._ANCHOR_REF}", cwd=repo)
+        before = self._remote_refs(remote)
+        assert before[P._ANCHOR_REF] == divergent
+
+        r = self._push(repo)
+
+        assert r.returncode != 0, "a non-fast-forward anchor must be rejected"
+        assert self._remote_refs(remote) == before, (
+            "the branch was published while the anchor was rejected: the "
+            "remote now carries new code under the previous trust root")
+
+    def test_without_atomic_the_split_state_is_real(self, tmp_path):
+        """The counterfactual, so the flag is not cargo.
+
+        Identical setup, `--atomic` dropped: the branch lands, the anchor does
+        not, and git exits non-zero having already published half the ceremony.
+        """
+        repo, remote, base, new = self._publish(tmp_path)
+        divergent = _run("git", "commit-tree", f"{base}^{{tree}}", "-p", base,
+                         "-m", "remote-side divergence",
+                         cwd=repo).stdout.strip()
+        _run("git", "push", "-q", "-f", "origin",
+             f"{divergent}:{P._ANCHOR_REF}", cwd=repo)
+
+        r = _run("git", "push", "origin",
+                 "refs/heads/master:refs/heads/master",
+                 f"{P._ANCHOR_REF}:{P._ANCHOR_REF}", cwd=repo)
+
+        assert r.returncode != 0
+        after = self._remote_refs(remote)
+        assert after["refs/heads/master"] == new
+        assert after[P._ANCHOR_REF] == divergent, (
+            "this test encodes the hazard; if it ever fails, git's non-atomic "
+            "semantics changed and the runbook's rationale needs rereading")
+
+    def test_a_clone_does_not_carry_the_anchor_without_an_explicit_refspec(
+            self, tmp_path):
+        """Why the runbook spells out the fetch refspec.
+
+        `git clone` fetches `refs/heads/*` and `refs/tags/*`. A clone that looks
+        complete has no anchor at all, so the gate has nothing to verify
+        against -- and the failure surfaces later, as a missing ref, far from
+        the clone that caused it.
+        """
+        repo, remote, base, new = self._publish(tmp_path)
+        assert self._push(repo).returncode == 0
+
+        clone = tmp_path / "clone"
+        _run("git", "clone", "-q", str(remote), str(clone), cwd=tmp_path)
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=clone).returncode != 0
+
+        _run("git", "fetch", "origin", f"+{P._ANCHOR_REF}:{P._ANCHOR_REF}",
+             cwd=clone)
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=clone).stdout.strip() == new
+
+    def test_the_authorization_ref_is_deleted_by_its_expected_old_value(
+            self, tmp_path):
+        """F3. A bare `-d` deletes whatever the ref points at, which is a
+        different operation whenever that is not what this ceremony left."""
+        repo, remote, base, new = self._publish(tmp_path)
+        auth = "refs/cairn/gate-authorization"
+        _run("git", "update-ref", auth, base, cwd=repo)
+
+        stale = _run("git", "update-ref", "-d", auth, new, cwd=repo)
+        assert stale.returncode != 0, "a stale expected-old deletion must fail"
+        assert _run("git", "rev-parse", auth, cwd=repo).stdout.strip() == base
+
+        exact = _run("git", "update-ref", "-d", auth, base, cwd=repo)
+        assert exact.returncode == 0, exact.stderr
+        assert _run("git", "rev-parse", auth, cwd=repo).returncode != 0
+
+    def test_the_authorization_ref_is_never_published(self, tmp_path):
+        """It authorizes one promotion. Published, it is a standing grant."""
+        repo, remote, base, new = self._publish(tmp_path)
+        auth = "refs/cairn/gate-authorization"
+        _run("git", "update-ref", auth, base, cwd=repo)
+
+        assert self._push(repo).returncode == 0
+
+        assert _run("git", "rev-parse", auth, cwd=remote).returncode != 0, (
+            "the ceremony's explicit refspecs published a ref outside them")
+
+
+# ---------------------------------------------------------------------------
+# F5. The runbook's publication text, tested as the recorded procedure.
+#
+# Same discipline as the Phase 0 loader tests above: a fix in code that the
+# recorded steps do not carry is not a fix. Phase 5 is not executable here --
+# it pushes to a real remote and that is M4's, not a test's -- so what is
+# asserted is the *text*: the contract a Maintainer reads off the page.
+# ---------------------------------------------------------------------------
+
+
+def _runbook_section(heading: str) -> str:
+    text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+        encoding="utf-8")
+    parts = text.split(heading)
+    assert len(parts) == 2, f"expected exactly one {heading!r} section"
+    return parts[1].split("\n## ")[0]
+
+
+def _fenced(section: str) -> list[str]:
+    return [b for i, b in enumerate(section.split("```")) if i % 2]
+
+
+class TestRunbookPublicationText:
+
+    def test_publication_is_one_atomic_push_with_explicit_refspecs(self):
+        blocks = _fenced(_runbook_section("\n## Phase 5"))
+        pushes = [b for b in blocks if "push" in b]
+        assert len(pushes) == 1, (
+            f"Phase 5 records {len(pushes)} push commands; the contract is one")
+        push = pushes[0]
+        assert "--atomic" in push
+        assert "refs/heads/<branch>:refs/heads/<branch>" in push
+        assert f"{P._ANCHOR_REF}:{P._ANCHOR_REF}" in push
+        for ambient in ("--all", "--mirror", "--tags"):
+            assert ambient not in push, (
+                f"{ambient} publishes a set the ceremony does not name")
+
+    def test_no_partial_push_fallback_is_offered(self):
+        section = _runbook_section("\n## Phase 5")
+        assert "no two-push fallback" in section.lower()
+        assert "incomplete publication" in section.lower()
+        assert "--force" not in "\n".join(_fenced(section)), (
+            "a forced push in the recorded steps is a recovery that "
+            "reproduces the split state by hand")
+
+    def test_publication_is_verified_by_reading_the_remote_back(self):
+        section = _runbook_section("\n## Phase 5")
+        blocks = _fenced(section)
+        assert any("ls-remote" in b for b in blocks), (
+            "the push's exit status is the client's belief; the contract "
+            "verifies against the remote")
+        assert "availability, not authenticity" in section
+
+    def test_the_fresh_clone_instructions_fetch_the_anchor_explicitly(self):
+        blocks = _fenced(_runbook_section("\n## Phase 5"))
+        fetches = [b for b in blocks if "fetch" in b]
+        assert fetches, "no fetch instructions for a fresh clone"
+        assert any(f"{P._ANCHOR_REF}:{P._ANCHOR_REF}" in b for b in fetches), (
+            "clone fetches refs/heads/* and refs/tags/* only; without an "
+            "explicit refspec a complete-looking clone has no anchor")
+
+    def test_the_authorization_ref_is_retired_by_expected_old_value(self):
+        section = _runbook_section("\n## Phase 4")
+        deletions = [b for b in _fenced(section)
+                     if "update-ref -d" in b and "gate-authorization" in b]
+        assert len(deletions) == 1, "expected one recorded retirement command"
+        assert "<A-sha>" in deletions[0], (
+            "a bare -d deletes whatever the ref points at")
+        assert "unresolved ceremony residue" in section.lower()
+
+    def test_the_authorization_ref_appears_in_NO_push_or_fetch_block(self):
+        """The absence property, over the whole runbook rather than one phase.
+
+        It is ceremony-local. Any push or fetch block that names it publishes a
+        standing authorization -- and a later-added block is exactly where that
+        would reappear, which is why this reads every block in the file.
+        """
+        text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        for block in _fenced(text):
+            if any(verb in block for verb in ("push", "fetch", "clone",
+                                              "ls-remote")):
+                assert "gate-authorization" not in block, (
+                    f"a publication block names the authorization ref:\n"
+                    f"{block}")
+
+    def test_phase_5_is_marked_maintainer_only(self):
+        section = _runbook_section("\n## Phase 5")
+        assert "M4" in section
+        assert "Maintainer" in section
+        text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        assert "Phase 5" in text.split("---")[0], (
+            "the header enumerates the phases an implementing agent must not "
+            "perform; Phase 5 is one of them")

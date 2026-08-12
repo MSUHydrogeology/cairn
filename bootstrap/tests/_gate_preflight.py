@@ -52,6 +52,12 @@ except ImportError:  # script import (the anchored invocation)
 _REPO = Path(__file__).resolve().parents[2]
 
 _ANCHOR_REF = "refs/cairn/gate-anchor"
+
+#: The one reflog reason every gate-anchor transaction writes, on **both** refs.
+#: Fixed here rather than passed in, so a ceremony cannot be mislabelled. Read
+#: by operators recovering a prior value; read by **no** decision predicate.
+_CEREMONY_REFLOG_REASON = "cairn: supervised gate re-anchor"
+
 _MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
 _RUNBOOK_REL = "bootstrap/REANCHOR_RUNBOOK.md"
 _ALLOWED_SIGNERS_REL = "dev/.cairn/allowed_signers"
@@ -1707,11 +1713,17 @@ def _advance_both_refs(repo: Path, branch: str, new: str, *,
     # default, which is how a mis-set anchor once became unrecoverable -- the
     # prior value simply was not written down anywhere.
     #
+    # The reason is a module constant, not a caller argument, so both refs carry
+    # the *same* identifying string and neither can be labelled to look like
+    # something it was not. It is written by `-m`, which `update-ref` applies to
+    # every update in the `--stdin` transaction.
+    #
     # A reflog is a **local, mutable diagnostic** for recovery and sequencing.
     # It is never tamper evidence and never authentication: anyone who can write
     # the ref can write its reflog. No decision predicate in this module reads
     # reflog content, and none may.
-    p = _git_write("update-ref", "--no-deref", "--create-reflog", "--stdin",
+    p = _git_write("update-ref", "--no-deref", "--create-reflog",
+                   "-m", _CEREMONY_REFLOG_REASON, "--stdin",
                    repo=repo, stdin=stdin)
     return p.returncode == 0, (p.stderr or p.stdout or "").strip()
 
