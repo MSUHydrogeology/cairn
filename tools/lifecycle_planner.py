@@ -589,10 +589,44 @@ def _parse_one_field(body: str, pattern: "re.Pattern[str]",
         return None, f"missing {field}"
     if len(found) > 1:
         return None, f"duplicate {field}"
-    raw = found[0].strip()
+
+    # **Emphasis is presentation, not vocabulary**, and the field NAME already
+    # says so: `_code_review_field_re` is emphasis-optional on the label.  The
+    # value was not, which made `**Assurance path**: **high-assurance**` -- the
+    # documented house form -- refuse.  `_parse_verdict` already strips emphasis
+    # for exactly this reason ("the house form in this tree wraps the label AND
+    # the value in one bold span ... 30 of the 38 corpus passes"); two parsers in
+    # one file disagreeing about one house style is the defect, and a real author
+    # tripped it.
+    raw = _EMPHASIS_RE.sub("", found[0]).strip()
     for canonical in vocabulary:
         if raw.casefold() == canonical.casefold():
             return canonical, None
+
+    # **A trailing rationale is admitted, guarded in BOTH directions.**  Authors
+    # write `high-assurance -- this changes a trust ceremony`, which is useful
+    # information; refusing it teaches them to delete the reason rather than to
+    # record it.  But truncating at a clause break alone would be *asymmetrically*
+    # unsafe: `standard -- actually high-assurance` would read as `standard`,
+    # the direction the contract explicitly forbids ("uncertainty resolves to
+    # high-assurance").  So the remainder must name no OTHER vocabulary token --
+    # the same guard `_parse_verdict` reaches for so `SHIP but actually BLOCK`
+    # cannot clear.
+    lead = _VALUE_CLAUSE_RE.match(raw).group(0).strip()
+    for canonical in vocabulary:
+        if lead.casefold() != canonical.casefold():
+            continue
+        rest = raw[len(lead):].casefold()
+        contradicting = [v for v in vocabulary
+                         if v.casefold() != canonical.casefold()
+                         and v.casefold() in rest]
+        if contradicting:
+            return None, (
+                f"contradictory {field} value: {raw!r} -- reads as "
+                f"{canonical!r} but its rationale also names "
+                f"{contradicting[0]!r}; state one value and argue for it in prose")
+        return canonical, None
+
     return None, f"unrecognized {field} value: {raw!r}"
 
 
@@ -1804,6 +1838,14 @@ _EMPHASIS_RE = re.compile(r"\*\*|__")
 #: character, never inside the token, so `SHIP but actually BLOCK` is
 #: out-of-vocabulary and refuses rather than parsing as `SHIP`.
 _VERDICT_CLAUSE_RE = re.compile(r"^[^.,;(/]*")
+
+#: The leading clause of a closed-vocabulary field value.  Wider than
+#: `_VERDICT_CLAUSE_RE` by the two dash forms this project actually writes --
+#: an em dash and `--` are Cairn's normal clause break, and the author whose
+#: proposal exposed this wrote `**high-assurance** -- <reason>`.  Truncation is
+#: only half the rule; see `_parse_one_field` for the contradiction guard that
+#: makes it safe in both directions.
+_VALUE_CLAUSE_RE = re.compile(r"^[^.,;(/—]*?(?=\s+--\s|\s*[.,;(/—]|$)")
 
 #: R2: the mandatory fields sit **before the pass's first H3**.  Not decoration:
 #: real passes carry a `### 4. Verdict & Archive Readiness` subsection that

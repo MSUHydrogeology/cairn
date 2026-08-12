@@ -5919,3 +5919,63 @@ class TestP3AuthoringTemplates:
         joined = " ".join(blocks)
         assert "optional '## Revised proposal'" not in joined, joined
         assert _P3_LEDGER in blocks[0], blocks[0]
+
+
+class TestClosedVocabularyValuesTolerateHouseStyle:
+    """A closed-vocabulary field reads the **value** the way the tree writes it.
+
+    Found by a live refusal, not by review: another session opened
+    `2026-08-12-claude-ceremony-handshake-and-first-use.md` declaring
+    `**Assurance path**: **high-assurance** -- <reason>`, adopting P1's new field
+    correctly in spirit, and the gate refused it.  Two parsers in one file
+    disagreed about one documented house style -- `_parse_verdict` strips
+    emphasis ("the house form ... wraps the label AND the value in one bold
+    span ... 30 of the 38 corpus passes") while `_parse_one_field` did not.
+    """
+
+    def _p(self, line, vocab=None, field="Assurance path"):
+        return planner._parse_one_field(
+            line, planner._REVIEW_FIELD_RE[field],
+            vocab or planner.ASSURANCE_PATHS, field)
+
+    def test_the_documented_house_style_clears(self):
+        """`**field**: **value**` is how this tree writes attestations."""
+        assert self._p("**Assurance path**: **high-assurance**") == (
+            "high-assurance", None)
+
+    def test_a_trailing_rationale_clears(self):
+        """Refusing it teaches authors to delete the reason rather than record
+        it.  Both dash forms, because both are Cairn's normal clause break."""
+        for line in ("**Assurance path**: **high-assurance** — a trust ceremony",
+                     "**Assurance path**: high-assurance -- a trust ceremony",
+                     "**Assurance path**: standard -- routine translation"):
+            value, problem = self._p(line)
+            assert problem is None, line
+            assert value in planner.ASSURANCE_PATHS
+
+    def test_a_rationale_naming_the_other_value_refuses(self):
+        """The **whole** reason truncation is guarded rather than free.
+
+        Truncating at a clause break alone is asymmetrically unsafe: it would
+        read `standard -- actually high-assurance` as `standard`, the direction
+        the accepted contract explicitly forbids ("uncertainty resolves to
+        `high-assurance`").  This is the same guard `_parse_verdict` reaches for
+        so `SHIP but actually BLOCK` cannot clear.
+        """
+        value, problem = self._p("**Assurance path**: standard -- actually high-assurance")
+        assert value is None
+        assert "contradictory" in problem and "high-assurance" in problem
+
+    def test_an_out_of_vocabulary_value_still_refuses(self):
+        """The vocabulary stays closed; only its presentation loosened."""
+        value, problem = self._p("**Assurance path**: mostly-fine")
+        assert value is None and "unrecognized" in problem
+
+    def test_the_rule_is_the_shared_one_not_an_assurance_special_case(self):
+        """`Findings` gets the identical treatment, including the guard -- the
+        fix belongs to every closed vocabulary this file reads, not to one."""
+        assert self._p("**Findings**: none -- nothing came up",
+                       planner._FINDINGS, "Findings") == ("none", None)
+        value, problem = self._p("**Findings**: none -- but raised two concerns",
+                                 planner._FINDINGS, "Findings")
+        assert value is None and "contradictory" in problem
