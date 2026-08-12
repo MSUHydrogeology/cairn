@@ -195,3 +195,162 @@ criteria unmeetable while leaving them recorded as met.
 Internal read passed over both the first time; a same-agent-type reader is not
 the right instrument for a protocol whose failure mode is "the mechanism exists
 but nothing calls it."
+
+## Review -- Codex (External Security Review) -- 2026-08-12
+
+**Model**: GPT-5 Codex
+**Tier**: External Security Review
+**Reviewed commit**: `973ec493aee1aea50360d96c886795f37a4101ad`
+**Reviewed proposal blob**: `eae8eb2f9158b80986e78eccbe83af2567142c95`
+**Target**: whether Parts A and B define an executable, non-circular replacement
+for M2-2 and M2-3
+**Prior findings**: none on this proposal; source findings M2-2 and M2-3
+**Assurance path**: high-assurance
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+**Verdict: REVISE.** The proposal correctly diagnoses both failures and the
+two-invocation direction is the better ceremony. It is not yet an executable
+security contract. Four gaps would permit a plan to reproduce the same pattern
+M2 found: strong helper properties with no complete governing path.
+
+### [S1] The old anchor cannot execute the proposed first-use mode
+
+Part A says `apply` gains a first-use mode, but does not say how those new bytes
+become the bytes that execute. The fixed loader currently extracts
+`_gate_preflight.py` and its closure from `refs/cairn/gate-anchor`. That is the
+old authority by definition. On the live repository I measured different
+SHA-256 values for the anchored and candidate checker
+(`f6dd89b8...34e6` versus `49254831...ee08`) and for the runbook
+(`e68b5641...ef06` versus `3b09ba66...5ec1`). The old checker cannot acquire a
+mode added only to its successor.
+
+The proposal's sentence that the loader already hash-verifies the checker on
+each invocation is true only after a source has been selected. It does not
+solve source selection. The revised contract must say that the first reviewed
+authority transition extracts the **candidate commit's exact closure bytes**
+through sterile Git plumbing, verifies the whole set against the independently
+recorded review manifest before Python starts, and then executes that verified
+copy. It must bind the exact candidate commit and refuse an unresolved,
+symbolic, moving, partial, duplicate, or extra-member set. Steady-state runs may
+continue extracting from the anchor; the two modes must not be implicit.
+
+The transport for the reviewed hash manifest also needs one named trust end.
+Do not read it from the candidate proposal or recompute expected values from the
+candidate. Name the Maintainer-recorded out-of-band artifact/input, its strict
+schema, and how the fixed loader receives it. The checkpoint should bind its
+content digest and review provenance, not unbounded free text.
+
+### [S2] Two invocations require a complete, digest-bound evidence handoff
+
+I recommend **two invocations**, but B3-B4 omit the fact that stage 2 cannot
+re-derive everything without executing candidate code. The current executable
+boundary deliberately delegates `collection` and `interpreter` to the
+candidate stage; the focused ownership test passed and confirms those are the
+two fields absent from static re-derivation. Therefore a no-candidate-execution
+signing process must consume stage-1 data. Calling the range report's digest the
+confirmation does not authenticate that missing data.
+
+There is a second concrete mismatch. In a real ceremony fixture, the current
+range report's `manifest_sha256` was
+`ca3d163b...356`, while the prospective authoritative manifest committed by
+the checkpoint was `sha256:be3b8d33...9808`. The report currently binds the
+manifest already in the candidate worktree, not the newly generated manifest
+whose collection stage 1 supplied. Reusing `rederive_and_bind()` as B3 proposes
+will faithfully reconfirm the wrong manifest identity unless this contract is
+changed.
+
+Define one closed, versioned **authorization package** emitted by stage 1. At
+minimum it binds the observed anchor, candidate HEAD/tree, branch and
+expected-old value; complete canonical range report; reviewed authority
+manifest and provenance; candidate-only collection/interpreter evidence; exact
+prospective authoritative-manifest bytes and digest; and the package digest.
+Stage 2 receives that package plus the Maintainer-confirmed package digest,
+rejects unknown/missing/duplicate fields, re-derives every Git/static field,
+rebuilds the authoritative manifest, and compares exact bytes. It may accept
+only the explicitly named executable-only fields from stage 1. The checkpoint
+message then binds both the package/report digest and the exact prospective
+manifest digest.
+
+This openly revises the current “no handoff artifact is trusted” claim. The
+right narrower statement is that no adjacent self-digest authenticates a file:
+the Maintainer confirms the complete package digest, and stage 2 independently
+re-derives every field it can. Tests must mutate each package field and its
+schema, not only the report helpers, and must prove stale refs or a substituted
+prospective manifest move neither ref.
+
+### [S3] “First use” is not mechanically one-time and strands later updates
+
+A4 refuses the mode when there is no authority delta. That prevents a no-op;
+it does not prevent reuse. After any later change to an authority member, the
+same delta condition returns and the mode becomes available again. This
+contradicts both A4's one-time framing and the proposal's signal that use more
+than once means the design is wrong.
+
+There are only two coherent contracts. Either make bootstrap eligibility a
+durable, machine-readable state that disappears after the first signed
+checkpoint, and separately define how a later reviewed checker/runbook/roster
+replacement is authorized; or name Part A honestly as the general
+**reviewed-authority transition** used whenever the closure changes, with first
+use as its initial instance. I recommend the latter. The same fundamental
+problem recurs on every authority update: the old checker cannot vouch for its
+successor. Require a fresh exact-byte External Security Review and whole-set
+hash manifest every time, and refuse the mode when there is no delta. This is
+repeatable under new review authority, not a habitual bypass.
+
+The contract must also state which roster verifies the transition signature.
+Continuity normally means the roster from the old anchor; if the old anchor has
+no roster, that is a distinct bootstrap case rather than a fallback to the
+candidate roster.
+
+### [S4] Key unavailability needs an operational precondition, not one variable
+
+B1 equates an unset `SSH_AUTH_SOCK` with an unavailable signing key. That holds
+only if the ceremony private key is agent-backed, absent from readable private
+key files or other agents, and not reachable through another configured signing
+command. This checkout currently names a public key path as `user.signingkey`,
+which is consistent with agent-backed signing but does not itself prove where
+the private key can be reached. The proposal must define the supported key
+channel and the preflight that proves stage 1 cannot sign through it. Tests
+should attempt a real signing operation in stage 1 and require failure, then
+perform and verify one in stage 2; observing an environment variable alone is
+the proxy failure the proposal warns against.
+
+The same-process comparison also overstates its disadvantage. Candidate code
+currently runs in a separate producer subprocess, not in the trusted parent's
+address space. Two invocations are still preferable: the signing process can
+start in a clean phase, the protocol is scriptable without a pty, and stage 1's
+key-channel failure can be observed before stage 2 exists. But its advantage is
+process-lifetime and key-channel separation, not removing candidate Python from
+an address space it never occupied.
+
+Revise R1-F explicitly to two invocations. Stage 1 must run under a fixed clean
+environment with the supported key channel absent, emit the complete package,
+print the marker and digest, and exit. After the Maintainer independently
+confirms that digest and enables the key channel, stage 2 starts from separately
+hash-verified checker bytes, refuses every candidate-executing operation,
+re-derives and validates the package, signs, verifies, and performs the
+expected-old transaction. No boolean confirmation path survives.
+
+### What held
+
+The proposal is right to reject a blanket closure bypass, a boolean
+confirmation, and the current prerequisite-commit workaround. Whole-set hash
+matching, durable checkpoint provenance, honest first-use fixtures, public-path
+negative controls, one Boundary B run, and one final M2 retake are the correct
+shape. The accepted host-persistence residual remains accurately described and
+does not need another policy round.
+
+### Verification and bounds
+
+I ran `claim_check.py` and `lifecycle_planner.py next`; both report the proposal
+clean and structurally sound. Under the canonical Python 3.13.13 interpreter I
+executed the candidate/static field-ownership test (**1 passed**), measured the
+old-anchor/candidate checker and runbook hashes independently, and constructed a
+real fixture report showing that its manifest digest differs from the
+prospective authoritative manifest digest.
+
+I did not load the real signing key, move a Cairn ref, run the full suite, test a
+pty, or build either proposed protocol. Those are implementation obligations
+after the four contracts above are settled. A revised proposal can close this
+round without another policy choice if it adopts the two-invocation protocol,
+the complete authorization package, and the general reviewed-authority
+transition described here.
