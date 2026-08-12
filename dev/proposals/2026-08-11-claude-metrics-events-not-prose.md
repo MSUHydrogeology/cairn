@@ -1409,3 +1409,124 @@ No implementation exists for the new event reader, so there is no runtime claim
 to execute in this round. I did not rerun the 29-test unchanged baseline or the
 full suite; Round 4 already established that baseline, and this pass is confined
 to the revised contract text.
+
+## Response + Revised proposal (Round 7) -- Claude -- 2026-08-12
+
+**[R5-E1] accept.** The finding is fair and the wording was the tell: I wrote
+"the plan is **bound** to these, not trusted with them" and then handed the plan
+the two choices that decide whether the design works. "Named exactly" followed
+by *which of blame / pickaxe / history-diff* is not a specification.
+
+The correctness consequence is the part I had missed. Identity as
+`(artifact path, block position)` **breaks at archive**: the path changes when
+the artifact moves to `archive/`, so the same event has one identity before the
+move and another after. Every derived series would discontinue at exactly the
+moment an artifact completes.
+
+**Scope delta: preserved.** Specification, not redesign — no baseline outcome
+added or dropped.
+
+### 1. The literal grammar
+
+The block is an **HTML comment**, so it is invisible in every rendered view of
+the artifact. That is deliberate: these live in files humans read, and a
+measurement record that clutters the deliberation surface would trade one kind
+of bloat for another.
+
+```markdown
+<!-- cairn-event-v1
+kind: transition
+from_state: reviewed
+to_state: revised
+-->
+```
+
+```markdown
+<!-- cairn-event-v1
+kind: review-pass
+tier: External
+reviewer: <reviewer name as written in the section heading>
+-->
+```
+
+```markdown
+<!-- cairn-event-v1
+kind: response
+model: <model identity as written in the Response's **Model** field>
+-->
+```
+
+**Closed key table.** Unknown key, unknown `kind`, unknown version token,
+missing required key, or a value outside its bounds **refuses** — never ignores,
+never defaults.
+
+| key | kinds | required | bounds |
+|---|---|---|---|
+| `kind` | all | yes | exactly one of `transition` / `review-pass` / `response` |
+| `from_state`, `to_state` | `transition` | yes | a declared lifecycle status for that artifact type |
+| `tier` | `review-pass` | yes | `Internal` / `External` / `Security` / `Code` |
+| `reviewer` | `review-pass` | yes | ≤120 chars, single line |
+| `model` | `response` | yes | ≤120 chars, single line |
+| `recorded_by` | all | no | ≤120 chars; **informational only** — barred from authority, identity and idempotency |
+
+The version token is the literal `cairn-event-v1`. `ordinal` is **not a key**;
+Round 6 settled that identity is computed by reading, and Round 7 settles what
+it is computed *from*.
+
+### 2. The history algorithm — history diff, chosen
+
+Not "one of three". The reader walks the artifact's **rename-aware history,
+oldest first**, and for each commit:
+
+1. parses the block sequence at that commit and at its parent;
+2. **requires the parent sequence to be an exact prefix** of the child's — any
+   reordering, edit, or deletion of an existing block is a mutation and
+   **refuses**;
+3. attributes **only the added suffix** to that commit;
+4. requires the **matching lifecycle act in the same diff** — a `transition`
+   block needs the `**Status**` change, a `review-pass` block needs the added
+   review section, a `response` block needs the added Response section;
+5. **refuses on ambiguous multi-parent attribution** — a merge commit is never
+   an introducing commit.
+
+The append-only prefix rule (2) is what makes post-hoc editing detectable rather
+than silent, and it is the same property the artifacts already promise humans.
+
+### 3. Identity that survives the archive move
+
+> **Identity is `(introducing full commit SHA, added-block index)`.**
+> Both values are **derived** by the algorithm above and **never stored**.
+
+The commit is immutable and the index is its position within that commit's added
+suffix, so several blocks introduced by one commit get stable distinct
+identities. Neither term mentions a path, which is precisely why the archive
+rename cannot discontinue a series — the same defect that killed
+`(artifact path, block position)`.
+
+### 4. Activation, with the paths named
+
+The four marker paths:
+
+* `dev/proposals/_template.md` and `templates/core/dev/proposals/_template.md`
+* `dev/plans/_template.md` and `templates/core/dev/plans/_template.md`
+
+**The per-kind cutoff is the commit that first adds the literal
+`cairn-event-v1` marker to the applicable *installed* template in that tree** —
+`dev/proposals/_template.md` for proposal-hosted events,
+`dev/plans/_template.md` for plan-hosted events. Cairn and an adopter therefore
+each derive their own cutoff from their own history, with no shared constant and
+no new activation record.
+
+**Missing, divergent, or multiply-introduced markers refuse.** Divergent means
+the two copies of a pair disagree on the marker; multiply-introduced means the
+marker was removed and re-added, leaving the cutoff ambiguous. Before its
+cutoff, an empty series is **correct**; across it, overlap refuses rather than
+double-counts.
+
+### 5. What remains the Maintainer's, unchanged
+
+Round 6's `Scope delta: degraded` on **historical continuity** is still open and
+still not mine: option (a) drop it, option (b) a one-time derived series outside
+the closed artifacts. My recommendation stays (a). The reviewer confirms this
+belongs in the Decision and should not trigger another design round once made.
+
