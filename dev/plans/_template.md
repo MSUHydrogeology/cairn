@@ -251,7 +251,14 @@ iterating. There is no permanent fast tier; if a substantive code surface has
 no reviewed mapping or cannot be bounded confidently, run the full suite.
 
 After the final implementation commit, Boundary B runs once against a clean,
-unchanged commit under the canonical interpreter:
+unchanged commit under the canonical interpreter. The default is the **full
+suite**; a plan whose reviewed mapping **bounds the change's effects
+confidently** may instead run that mapping plus every standing gate for every
+touched surface. Bounded mode **refuses** — run full — when the change touches a
+**contract surface** (install contract, fidelity or gate manifest, lockfile
+schema, published `scaffold.py --manifest`) or a **trust-ceremony surface**
+(any high-risk surface `AGENTS.md` names, or release/security ceremony work).
+**Uncertainty resolves to `full`.** The commands:
 
 * **Engine + seed-0 order coverage** — `python -m pytest bootstrap/tests
   --quality-gate-shuffle-seed=0`.
@@ -267,6 +274,9 @@ Only after that stable run, append a dated section named
 `Implementation verification -- <agent> -- YYYY-MM-DD` at H2. Do not place an
 empty heading in a new plan. The record uses these exact fields:
 
+* **Boundary B mode** — `full` | `bounded`. On `bounded`, also name the touched
+  surfaces, the reviewed mapping and standing gates run, why the effects are
+  bounded, and the explicit absence of any contract or trust-ceremony surface.
 * **Tested commit** — full SHA.
 * **Reviewed range** — base and tested endpoint.
 * **Interpreter/runtime** — canonical path and version.

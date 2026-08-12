@@ -198,6 +198,15 @@ for the review's own falsification ledger: changed public paths, negative or
 edge cases, cross-surface assumptions, and claims whose evidence is doubtful.
 Copying the implementation's broad command does not satisfy that ledger.
 
+**A Boundary B record may be `full` or `bounded`** (`doctrine/plans.md`). On a
+bounded record the reviewer additionally records
+`**Bounding**: ACCEPTED | FULL RUN REQUIRED`, after challenging at least one
+named surface, mapped test, or stated omission — the same standard applied to
+author-accounting here, where the reviewer challenges a row or names the one
+they sampled, never "the field is present". `FULL RUN REQUIRED` **invalidates**
+the bounded record, which lands it on trigger 1 below. It is not a seventh
+trigger.
+
 A fresh full-suite run is required when any of these six triggers applies:
 
 1. no valid Boundary B record exists;

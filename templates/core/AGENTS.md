@@ -261,14 +261,31 @@ roster is in `dev/agent_collaboration.md`.
     touched surface. If a substantive code surface has no reviewed mapping, or
     its effects cannot be bounded confidently, run the configured full suite.
   * **B — Integration (stable evidence).** After the final implementation commit
-    and before code review, run the configured full suite once against a clean,
-    unchanged commit under the project's configured interpreter/runtime. Append
+    and before code review, run against a clean, unchanged commit under the
+    project's configured interpreter/runtime. Run the **configured full suite
+    unless the plan's reviewed mapping bounds the change's effects
+    confidently**, in which case run that mapping plus every standing gate for
+    every touched surface — the same test and the same fail-closed direction as
+    Boundary A. **Bounded mode refuses**, and the full suite runs, whenever the
+    change touches a **contract surface** (the project's install contract,
+    manifests, or lockfile schema) or a **trust-ceremony surface** (any
+    high-risk surface this file names, or work under a release or security
+    ceremony). **Uncertainty resolves to `full`** — the fence is a refusal
+    rule, not a checklist to argue past. Record `**Boundary B mode**: full |
+    bounded`; on `bounded`, name the touched surfaces, the mapping and gates
+    run, why the effects are bounded, and the explicit absence of any contract
+    or trust-ceremony surface. Append
     the tested revision/range, runtime, clean pre/post state, commands, outcomes,
     timing, non-pass disposition, and known omissions to the plan as
     `## Implementation verification -- <agent> -- YYYY-MM-DD`.
   * **C — Falsification (independent).** The code reviewer verifies that record against
     the reviewed range, then runs independent targeted falsification; copying
-    Boundary B's broad command is not a falsification ledger. Missing or stale
+    Boundary B's broad command is not a falsification ledger. On a bounded record the
+    reviewer records `**Bounding**: ACCEPTED | FULL RUN REQUIRED` after
+    challenging at least one named surface, mapped test, or stated omission —
+    never "the field is present". `FULL RUN REQUIRED` **invalidates** the
+    bounded record, which lands it on the first trigger below; it adds no
+    seventh trigger. Missing or stale
     evidence, unexplained non-pass outcomes, newly discovered coupling, changed
     implementation/test/executable-template/fixture bytes, a stronger trust-
     ceremony rule, or concrete doubt requires a fresh full run.

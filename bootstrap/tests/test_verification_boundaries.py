@@ -180,6 +180,86 @@ def test_plan_and_review_doctrine_share_fresh_run_triggers() -> None:
         assert not [token for token in FRESH_RUN_TRIGGERS if token not in normalized], path
 
 
+#: The bounded-mode contract, from `2026-08-12-claude-boundary-b-bounding-clause`
+#: (accepted 2026-08-12). Boundary B stopped being unconditional; these are the
+#: obligations that make the cheaper path safe. Each surface is asserted for the
+#: *obligation*, not one exact sentence, so a rewording passes and a deletion
+#: fails.
+_BOUNDED_OBLIGATIONS = {
+    "the bounding clause itself": (
+        "bounds the change's effects confidently",
+    ),
+    "the fence refuses on contract and trust-ceremony surfaces": (
+        "contract surface",
+        "trust-ceremony surface",
+    ),
+    "uncertainty resolves to full": (
+        "Uncertainty resolves to",
+    ),
+    "the record declares its mode": (
+        "Boundary B mode",
+    ),
+}
+
+#: Every surface that must carry the bounded contract. The two `AGENTS.md`
+#: copies stay semantically parallel and lexically different -- Cairn names its
+#: own commands, the adopter copy stays project-general -- which is why this
+#: asserts obligations rather than shared literal prose.
+_BOUNDED_SURFACES = (
+    SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE,
+    SELF_PLAN_TEMPLATE, ADOPTER_PLAN_TEMPLATE,
+)
+
+
+@pytest.mark.parametrize("path", _BOUNDED_SURFACES,
+                         ids=lambda p: str(p.relative_to(ROOT)))
+@pytest.mark.parametrize("label,tokens", sorted(_BOUNDED_OBLIGATIONS.items()))
+def test_bounded_boundary_b_contract_reaches_every_surface(
+        path, label: str, tokens) -> None:
+    text = " ".join(_read(path).split())
+    missing = [tok for tok in tokens if tok not in text]
+    assert not missing, (
+        f"{path} no longer carries the bounded-Boundary-B obligation {label!r} "
+        f"(missing {missing}). Boundary B is conditional as of "
+        f"2026-08-12-claude-boundary-b-bounding-clause; a surface that loses "
+        f"the fence or the mode field ships a different contract than the rest."
+    )
+
+
+def test_bounded_guard_detects_a_removed_fence() -> None:
+    """The mutant for the test above: strip the fence, the guard must fire.
+
+    Without this pair an always-passing token check would look correct.
+    """
+    text = _read(SELF_AGENTS).replace("trust-ceremony surface", "surface")
+    normalized = " ".join(text.split())
+    assert "trust-ceremony surface" not in normalized
+
+
+def test_boundary_c_adjudicates_a_bounded_record() -> None:
+    """The saving must depend on an independent verdict, not self-exemption.
+
+    The implementer picks the mapping, writes the bounding argument, and
+    captures the saving; the reviewer captures nothing. That asymmetry is why
+    the contract requires an adjudication rather than only a declaration.
+    """
+    for path in (REVIEW_DOCTRINE, SELF_AGENTS, ADOPTER_AGENTS):
+        normalized = " ".join(_read(path).split())
+        assert "Bounding" in normalized and "FULL RUN REQUIRED" in normalized, path
+
+
+def test_full_run_required_routes_to_the_existing_first_trigger() -> None:
+    """`FULL RUN REQUIRED` invalidates the record; it is not a seventh trigger.
+
+    The six triggers are pinned identically across two doctrine files by
+    `test_plan_and_review_doctrine_share_fresh_run_triggers`. If adjudication
+    had added a seventh, that pairing would drift.
+    """
+    normalized = " ".join(_read(REVIEW_DOCTRINE).split())
+    assert "invalidates" in normalized
+    assert len(FRESH_RUN_TRIGGERS) == 6, FRESH_RUN_TRIGGERS
+
+
 def test_review_reuse_guard_detects_unconditional_reuse() -> None:
     text = _read(REVIEW_DOCTRINE)
     mutated = text.replace("no valid Boundary B record exists", "a record exists", 1)

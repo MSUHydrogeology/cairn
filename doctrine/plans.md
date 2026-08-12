@@ -259,8 +259,36 @@ manifests, and contracts whose plans name test coverage are not ordinary prose.
 ### Boundary B — Integration (one stable record)
 
 After the final implementation commit and before code review, the implementer
-runs the full project suite once against a clean, stable commit using the
-configured canonical interpreter/runtime. The plan receives an append-only
+runs against a clean, stable commit using the configured canonical
+interpreter/runtime. The default is the **full project suite**; a plan whose
+**reviewed mapping bounds the change's effects confidently** may instead run
+that mapping plus every standing gate for every touched surface. This is the
+same test and the same fail-closed direction Boundary A already uses — the full
+suite is the escalation, not a ceremony paid at every boundary.
+
+**The fence is a refusal, not a checklist.** Bounded mode refuses — and the
+full suite runs — whenever the change touches a **contract surface** (the
+install contract, the fidelity or gate manifest, the lockfile schema, the
+published install manifest) or a **trust-ceremony surface** (any high-risk
+surface the project's governing file names, or work under a release or security
+ceremony, which keeps its own exhaustive commands). **Uncertainty resolves to
+`full`.**
+
+**The bounding claim is written, then adjudicated.** The record carries
+`**Boundary B mode**: full | bounded`. On `bounded` it must also name the
+touched surfaces, the reviewed mapping and standing gates it ran, why the
+effects are bounded, and the explicit absence of any contract or trust-ceremony
+surface. Boundary C then records `**Bounding**: ACCEPTED | FULL RUN REQUIRED`.
+`FULL RUN REQUIRED` **invalidates** the bounded record, which lands it on
+trigger 1 ("no valid Boundary B record exists") — the six triggers stay six.
+
+Why the claim is adjudicated rather than merely stated: the implementer chooses
+the mapping, writes the argument, and captures the saving. A norm alone assumes
+nobody profits from the miss. No tool gate is proposed — a check could confirm
+the field is present, never that the argument is true, and a green check on the
+question that needed judgement is the clean-pass trap manufactured. What closes
+it is whose signature is on the verdict: an independent reviewer, who captures
+nothing. The plan receives an append-only
 record only after the run completes:
 
 ```markdown

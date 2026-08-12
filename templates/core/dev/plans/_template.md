@@ -242,15 +242,25 @@ standing non-test gate for the touched surface. Run that scope while iterating.
 There is no permanent fast tier; if a substantive code surface has no reviewed
 mapping or cannot be bounded confidently, run the configured full suite.
 
-After the final implementation commit, Boundary B runs the configured full
-suite and standing integration gates once against a clean, unchanged commit
-under the project's canonical interpreter/runtime. List those concrete commands
-here, including test outcomes and every plan-specific acceptance command.
+After the final implementation commit, Boundary B runs once against a clean,
+unchanged commit under the project's canonical interpreter/runtime. The default
+is the **configured full suite** plus standing integration gates; a plan whose
+reviewed mapping **bounds the change's effects confidently** may instead run
+that mapping plus every standing gate for every touched surface. Bounded mode
+**refuses** — run full — when the change touches a **contract surface** (the
+project's install contract, manifests, or lockfile schema) or a
+**trust-ceremony surface** (any high-risk surface the governing file names, or
+release/security ceremony work). **Uncertainty resolves to `full`.** List those
+concrete commands here, including test outcomes and every plan-specific
+acceptance command.
 
 Only after that stable run, append a dated section named
 `Implementation verification -- <agent> -- YYYY-MM-DD` at H2. Do not place an
 empty heading in a new plan. The record uses these exact fields:
 
+* **Boundary B mode** — `full` | `bounded`. On `bounded`, also name the touched
+  surfaces, the reviewed mapping and standing gates run, why the effects are
+  bounded, and the explicit absence of any contract or trust-ceremony surface.
 * **Tested commit** — full revision ID.
 * **Reviewed range** — base and tested endpoint.
 * **Interpreter/runtime** — canonical path and version.
