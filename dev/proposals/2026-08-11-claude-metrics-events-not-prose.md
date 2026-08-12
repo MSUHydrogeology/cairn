@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-11
-**Status**: revised
+**Status**: accepted
 **Touches**: `templates/modules/default-on/lifecycle-metrics.md`;
 `templates/modules/default-on/_lifecycle_metrics/` and its `tools/` twin;
 `tools/lifecycle.py` and its twin (the event writer, Round 4);
@@ -1529,4 +1529,57 @@ Round 6's `Scope delta: degraded` on **historical continuity** is still open and
 still not mine: option (a) drop it, option (b) a one-time derived series outside
 the closed artifacts. My recommendation stays (a). The reviewer confirms this
 belongs in the Decision and should not trigger another design round once made.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-12
+
+**ACCEPTED as revised (Round 7).** Authorization, quoted verbatim and visually
+isolated:
+
+> "I'm okay, please scribe it accepted as revised"
+
+The historical-continuity choice left open by Round 6's `Scope delta: degraded`
+was settled separately, in the same exchange:
+
+> "Drop historical continuity"
+
+**Summary of accepted terms (Round 7)**
+
+* **Part 1 — retire the prose-scraped columns.** Remove `total_findings`,
+  `findings_p1/p2/p3` and the four `review_yield_*` columns from routine
+  emission. Removal, not deprecation.
+* **Part 2 — state the principle in the module doctrine**, where the
+  Measurement Compact already lives: measure structural events as they occur;
+  a metric that rewards writing more is a defect to remove, not a signal to
+  tune.
+* **Part 3 — emit events at the act, in the artifact.** A closed, versioned
+  HTML-comment block appended to the transitioning artifact by the same edit
+  that performs the act. Three kinds — `transition`, `review-pass`, `response`
+  — mapped to the retained fields each supplies. No shared ledger: the
+  cross-commit contamination window reproduced at R3-E1 is unrepresentable when
+  no file is shared.
+* **Fail-closed measurement on read**, not unskippable emission. The extractor
+  is the canonical reader, exits nonzero `INCOMPLETE` on any unreconciled act
+  or block, and is the only path to a report. Two red fixtures pin it.
+* **Identity is `(introducing full commit, added-block index)`**, both derived
+  and never stored, so the archive rename cannot discontinue a series.
+  Rename-aware oldest-first history diff; the parent block sequence must be an
+  exact prefix of the child's; ambiguous multi-parent attribution refuses.
+* **Activation** is derived per tree from the commit that first adds the literal
+  `cairn-event-v1` marker to the applicable installed template. Missing,
+  divergent, or multiply-introduced markers refuse.
+* **Scope delta: `degraded`, allowed.** Historical continuity across the
+  activation boundary is **dropped** — option (a). No backfill mode ships and no
+  frozen snapshot is taken. The series begins at activation; before it, an
+  empty series is correct rather than missing.
+
+**Rationale for the `degraded` allowance**, recorded because the rule requires
+the Maintainer to allow a lost outcome explicitly rather than have it absorbed:
+the historical numbers are prose-derived, and one of their defects is already
+known and measured — `code_review_rounds` read 0 on 28 of 38 artifacts from a
+regex/template mismatch. A frozen number known to be wrong is worse than no
+number, because the caveat stays in the file while the number travels.
+
+**Scribed by** Claude (Opus 5) on explicit Maintainer instruction. This is a
+Decision-only commit: the status flips and this section is appended, nothing
+else.
 
