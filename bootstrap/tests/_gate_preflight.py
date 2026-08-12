@@ -1228,18 +1228,76 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
     }
 
 
+def authoritative_manifest(theirs: dict, ours: dict) -> dict:
+    """The manifest the ceremony actually commits: the candidate's, with every
+    checker-derived field **replaced** by the checker's own re-derivation.
+
+    Code review **[IC2]**. `apply` used to commit ``evidence["manifest"]``
+    verbatim, so the re-derivation was computed, compared, and then discarded --
+    not one Git-native field reached the anchored artifact. Because
+    `gather_evidence` runs `produce` from a materialized raw tree with no
+    ``.git``, the committed manifest was v2-labelled and v1-shaped, and every
+    mode/oid check Chunk D added was dead against it.
+
+    Replacing rather than skipping is the point. "Derived by the trusted side
+    and never accepted from the candidate" has to be true of the **artifact**,
+    not only of the comparison -- a value that is merely un-compared still ends
+    up inside the signed checkpoint.
+
+    What stays the candidate's is what only the candidate can know: the pytest
+    collection. That is the reason the evidence stage exists at all.
+    """
+    merged = dict(theirs)
+    for field in _CHECKER_DERIVED_FIELDS:
+        if field in ours:
+            merged[field] = ours[field]
+        else:
+            merged.pop(field, None)
+    for field in ("frozen_files", "cascade_mutable", "phase_mutable"):
+        ours_field = ours.get(field)
+        if not isinstance(ours_field, dict):
+            continue
+        theirs_field = theirs.get(field)
+        theirs_field = theirs_field if isinstance(theirs_field, dict) else {}
+        rebuilt = {}
+        for rel, entry in ours_field.items():
+            if isinstance(entry, dict):
+                base = theirs_field.get(rel)
+                base = dict(base) if isinstance(base, dict) else {}
+                for sk in _CHECKER_DERIVED_SUBKEYS:
+                    if sk in entry:
+                        base[sk] = entry[sk]
+                    else:
+                        base.pop(sk, None)
+                rebuilt[rel] = base
+            else:
+                rebuilt[rel] = theirs_field.get(rel, entry)
+        merged[field] = rebuilt
+    return merged
+
+
 def check_static_manifest(evidence: dict, head: str, report: Report, *,
                           repo: Path = _REPO) -> None:
     """Compare the candidate's manifest against the independent re-derivation."""
     ours = rederive_static_manifest(head, repo=repo)
     theirs = evidence.get("manifest") or {}
+
     for field, expected in sorted(ours.items()):
         got = theirs.get(field)
         if field in _CHECKER_DERIVED_FIELDS:
             # Git-native identity is derived HERE and never accepted from the
             # candidate: the evidence stage runs `produce` from a materialized
-            # raw tree with no repository, so it has no oids to offer and must
-            # not be trusted with any it did offer.
+            # raw tree with no repository, so it has no oids to offer.
+            #
+            # Skipping the comparison is safe only because
+            # :func:`authoritative_manifest` **replaces** these fields in the
+            # bytes `apply` commits ([IC2]). Before that, skipping meant a
+            # candidate-supplied value was neither compared nor overwritten, so
+            # it rode into the signed artifact unexamined. Refusing the mere
+            # presence of a value was tried and is wrong: `produce` legitimately
+            # emits full v2 when it runs inside a repository, so the assertion
+            # is not by itself evidence of anything. Replacement is what makes
+            # the provenance claim true, not refusal.
             continue
         if field == "frozen_files":
             # The candidate supplies content digests; compare exactly those.
@@ -1475,7 +1533,9 @@ def verify_message_binds_report(message: str, *, digest: str, tree: str,
 
 
 def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
-                  last_legitimate_anchor: str | None = None) -> dict:
+                  last_legitimate_anchor: str | None = None,
+                  manifest: dict | None = None,
+                  manifest_sha256: str | None = None) -> dict:
     """The derived description of what a blessing would do.
 
     Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
@@ -1486,7 +1546,9 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     """
     old = json.loads(_blob_at(report.facts["anchor"], _MANIFEST_REL,
                               repo=repo) or b"{}")
-    new = evidence["manifest"]
+    new = manifest if manifest is not None else evidence["manifest"]
+    bound_sha = (manifest_sha256 if manifest_sha256 is not None
+                 else evidence["manifest_sha256"])
     of, nf = old.get("frozen_files", {}), new.get("frozen_files", {})
     scope = {
         "modified": sum(1 for k in nf if k in of and nf[k] != of[k]),
@@ -1501,7 +1563,7 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     message = draft_message(
         observed_anchor=report.facts["anchor"],
         checked_head=report.facts["head"],
-        manifest_sha256=evidence["manifest_sha256"],
+        manifest_sha256=bound_sha,
         authority_hashes=report.facts["authority_hashes"],
         scope=scope, last_legitimate_anchor=last_legitimate_anchor,
         erroneous_ref=erroneous)
@@ -1510,8 +1572,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
         "checked_head": report.facts["head"],
         "observed_anchor": report.facts["anchor"],
         "last_legitimate_anchor": last_legitimate_anchor,
-        "manifest": evidence["manifest"],
-        "manifest_sha256": evidence["manifest_sha256"],
+        "manifest": new,
+        "manifest_sha256": bound_sha,
         "message": message,
         "message_sha256": _sha256_bytes(message.encode()),
         "authority_hashes": report.facts["authority_hashes"],
@@ -1767,16 +1829,25 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
             f"detached HEAD")
     _require_direct_ref(_ANCHOR_REF, repo=repo)
 
-    plan = blessing_plan(report, evidence, repo=repo)
-    manifest_bytes = (json.dumps(evidence["manifest"], indent=2, sort_keys=True)
+    # [IC2]: commit the checker's Git-native identity, not the candidate's.
+    # `evidence["manifest"]` used to go in verbatim, which made the whole
+    # re-derivation ceremonial -- computed, compared, discarded. The digest and
+    # the message follow the bytes, so the checkpoint binds what is anchored.
+    committed_manifest = authoritative_manifest(
+        evidence["manifest"], rederive_static_manifest(head, repo=repo))
+    manifest_bytes = (json.dumps(committed_manifest, indent=2, sort_keys=True)
                       .encode() + b"\n")
+    committed_sha256 = _sha256_bytes(manifest_bytes)
+    plan = blessing_plan(report, evidence, repo=repo,
+                         manifest=committed_manifest,
+                         manifest_sha256=committed_sha256)
 
     with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
         principals = parse_principals(roster_text)
         new, manifest_blob = _construct_signed_commit(
             repo, head, manifest_bytes, plan["message"])
         verify_constructed(repo, new, head,
-                           manifest_sha256=evidence["manifest_sha256"],
+                           manifest_sha256=committed_sha256,
                            message=plan["message"], principals=principals,
                            roster_path=roster_path)
     out.write(f"constructed, signed and verified {new[:12]}\n")

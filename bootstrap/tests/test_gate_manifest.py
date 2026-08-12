@@ -407,3 +407,35 @@ class TestV1V2Differential:
         # v1 compares content only, so the executable bit is invisible to it.
         assert _verdict(_as_v1(produced), target, man, sha) == 0
         assert _verdict(produced, target, man, sha) == 1
+
+    def test_the_same_mode_change_HOLDs_when_git_cannot_be_asked(
+            self, produced, tmp_path):
+        """Code review [IC3]. The silent-skip case, as a test.
+
+        Same tree, same tampering, `.git` removed. `_object_format` returns
+        None, and this used to reach *neither* branch: `live_blobs` stayed
+        empty, every mode/oid comparison was skipped, and `verify` printed
+        "OK -- gate integrity intact" over the exact state the node above HOLDs
+        on. Absence was treated more leniently than strangeness -- an
+        *unrecognised* format already HOLDs.
+
+        `AGENTS.md`: "a tool that returns success without testing the claimed
+        property is a worse defect than no tool, because it is silent."
+        """
+        import shutil, subprocess
+        target, man, sha = _target_tree(tmp_path, produced)
+        victim = target / "bootstrap/security_check.py"
+        victim.chmod(0o755)
+        subprocess.run(["git", "add", "-A"], cwd=target, check=True,
+                       capture_output=True)
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t",
+                        "commit", "-q", "-m", "chmod"], cwd=target, check=True,
+                       capture_output=True)
+        assert _verdict(produced, target, man, sha) == 1, "precondition"
+
+        shutil.rmtree(target / ".git")
+
+        assert _verdict(produced, target, man, sha) == 1, (
+            "with the manifest pinning an object format and the target's "
+            "unreadable, the pinned half of the contract is unverifiable -- "
+            "that is a HOLD, not an OK")

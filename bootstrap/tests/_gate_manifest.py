@@ -198,10 +198,25 @@ def _git(*args: str, repo: Path,
     overrides: list[str] = []
     for key, value in _STERILE_CONFIG.items():
         overrides += ["-c", f"{key}={value}"]
+    # Code review [IC6]: bind the invocation to *this* directory. `git -C <path>`
+    # **discovers upward**, so without this a non-repository directory nested
+    # anywhere under a checkout answers with that checkout -- and the path this
+    # bites is the one Chunk D was rebuilt around: `produce`'s repository is
+    # `raw_tree`'s `tempfile.mkdtemp()`, so a `TMPDIR` under a checkout would
+    # make `produce` read *that* repository's object format and HEAD tree and
+    # stamp its modes and oids into the candidate manifest.
+    #
+    # A2's ownership table names repository binding as one of five properties
+    # per guarded boundary; this launcher had the other four.
+    # `_gate_preflight._require_worktree_root` is the same idea enforced by
+    # refusal; here the correct behaviour for a non-repository is to *report*
+    # that (`_object_format` returns None), so the binding is a config pin
+    # rather than a raise.
     return subprocess.run(
         ["git", "-C", str(repo), *overrides, *args],
         capture_output=True, text=not want_bytes, check=False,
-        env=_sterile_env(),
+        env={**_sterile_env(), "GIT_CEILING_DIRECTORIES": str(Path(repo).parent),
+             "GIT_DISCOVERY_ACROSS_FILESYSTEM": "0"},
     )
 
 
@@ -558,11 +573,30 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
         except RuntimeError as exc:
             holds.append(f"OBJECT-FORMAT: {exc}")
             live_fmt = None
-        if live_fmt is not None and live_fmt != pinned_fmt:
+        if live_fmt is None:
+            # Code review [IC3]. This branch did not exist: when the format was
+            # merely *undeterminable*, neither arm fired, `live_blobs` stayed
+            # empty, and every mode/oid comparison below was skipped in silence
+            # -- so a mode-flipped tree that HOLDs with `.git` present reported
+            # "OK — gate integrity intact" with `.git` removed. Absence was
+            # treated more leniently than strangeness, which is backwards: an
+            # unrecognised format already HOLDs one line up.
+            #
+            # `AGENTS.md`: "a tool that returns success without testing the
+            # claimed property is a worse defect than no tool, because it is
+            # silent." The manifest pins a format; if we cannot read the
+            # target's, the pinned half of the contract is unverifiable and the
+            # answer is HOLD, not OK.
+            holds.append(
+                f"OBJECT-FORMAT: the manifest pins {pinned_fmt} but the "
+                f"target's object format cannot be determined ({repo} is not a "
+                f"repository, or git could not report it); the mode and oid "
+                f"comparisons cannot run, so gate integrity is unverified")
+        elif live_fmt != pinned_fmt:
             holds.append(
                 f"OBJECT-FORMAT: target is {live_fmt}, manifest pins "
                 f"{pinned_fmt} — refusing to compare object ids across formats")
-        elif live_fmt is not None:
+        else:
             try:
                 live_blobs = _tree_blobs(repo)
             except RuntimeError as exc:

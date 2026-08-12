@@ -1253,11 +1253,19 @@ class TestThreeCommandIntegration:
             "git", "log", "-1", "--format=%B", cwd=repo).stdout
         assert _run("git", "status", "--porcelain", cwd=repo).stdout == ""
 
-        # And the blessed manifest is the one the evidence stage produced.
+        # And the blessed manifest is the AUTHORITATIVE one -- the candidate's
+        # collection with every checker-derived field replaced by the checker's
+        # own re-derivation. This used to assert `blessed == evidence["manifest"]`,
+        # which is the defect code review [IC2] found: the re-derivation was
+        # computed, compared, and then discarded, so no Git-native field ever
+        # reached the anchored artifact.
         blessed = json.loads(_run("git", "show",
                                   f"{result['new_anchor']}:{P._MANIFEST_REL}",
                                   cwd=repo).stdout)
-        assert blessed == evidence["manifest"]
+        expected = P.authoritative_manifest(
+            evidence["manifest"],
+            P.rederive_static_manifest(result["previous_head"], repo=repo))
+        assert blessed == expected
 
     def test_a_second_run_refuses_because_the_state_moved(self, tmp_path):
         """Replay, honestly: no nonce, but the bound state no longer holds."""
@@ -1548,6 +1556,47 @@ class TestRawTreeMaterialization:
         with P.raw_tree(head, repo=repo) as tree:
             import os as _os
             assert _os.access(tree / "run.sh", _os.X_OK)
+
+
+class TestApplyCommitsTheAuthoritativeManifest:
+    """Code review [IC2]. The shape of the manifest `apply` writes had no test,
+    which is how "never accepted from the candidate" stayed true of the
+    comparison and false of the artifact for a whole chunk."""
+
+    def test_checker_derived_fields_come_from_the_checker(self):
+        theirs = {"collection": ["a"], "object_format": "sha256",
+                  "frozen_files": {"x.py": {"sha256": "c" * 64,
+                                            "mode": "100755", "oid": "0" * 40}}}
+        ours = {"object_format": "sha1",
+                "frozen_files": {"x.py": {"sha256": "c" * 64,
+                                          "mode": "100644", "oid": "a" * 40}}}
+
+        merged = P.authoritative_manifest(theirs, ours)
+
+        assert merged["object_format"] == "sha1", "the candidate's value won"
+        entry = merged["frozen_files"]["x.py"]
+        assert entry["mode"] == "100644" and entry["oid"] == "a" * 40
+        assert merged["collection"] == ["a"], (
+            "the collection is the one thing only the candidate can supply; "
+            "replacing it would defeat the purpose of the evidence stage")
+
+    def test_a_checker_derived_field_absent_from_ours_is_stripped(self):
+        """The raw-tree path: `produce` runs with no repository, so the checker
+        has no object format to offer. A candidate value must not survive by
+        default -- absence has to win, or the fallback is the candidate's."""
+        merged = P.authoritative_manifest(
+            {"object_format": "sha256", "collection": []}, {"collection": []})
+        assert "object_format" not in merged
+
+    def test_a_candidate_asserted_subkey_cannot_survive(self):
+        """The [IC2] probe, as a test: a hostile manifest inventing `mode` and
+        `oid` for a frozen entry must not reach the committed bytes."""
+        theirs = {"frozen_files": {"x.py": {"sha256": "c" * 64,
+                                            "mode": "100755", "oid": "0" * 64}}}
+        ours = {"frozen_files": {"x.py": {"sha256": "c" * 64}}}
+        merged = P.authoritative_manifest(theirs, ours)
+        entry = merged["frozen_files"]["x.py"]
+        assert "mode" not in entry and "oid" not in entry
 
 
 class TestStaticManifestIsRederived:
@@ -2437,6 +2486,38 @@ class TestCeremonyReflogs:
         src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
             encoding="utf-8")
         helpers = {"_git", "_git_write", "_run_git"}
+        needles = ("-g", "--walk-reflogs", "@{")
+
+        def literals(node):
+            """Every string this expression can contribute, statically.
+
+            Code review [IC4]: the first version inspected `ast.Constant` args
+            only. Measured over this module, 25 of the 29 argument expressions
+            in git calls are *not* constant strings -- 17 `Name`, 7 `JoinedStr`,
+            1 `Starred` -- and the f-string is the module's normal way of
+            writing a revision (`f"{ref}^{{commit}}"`). `@{` is one character
+            from `^{`, so the guard covered exactly the shape nobody uses and
+            missed the shape everybody uses. A placeholder-free `f"-g"` evaded
+            it too, being a `JoinedStr`.
+
+            Unresolvable expressions (a bare `Name`) cannot be judged here; the
+            allowlist is what bounds those, since `reflog` is in neither.
+            """
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                yield node.value
+            elif isinstance(node, ast.JoinedStr):
+                for part in node.values:
+                    yield from literals(part)
+            elif isinstance(node, ast.FormattedValue):
+                # The format spec and conversion cannot carry `@{`, but the
+                # surrounding JoinedStr parts can and are walked above.
+                return
+            elif isinstance(node, ast.BinOp):
+                yield from literals(node.left)
+                yield from literals(node.right)
+            elif isinstance(node, ast.Starred):
+                yield from literals(node.value)
+
         offenders = []
         for node in ast.walk(ast.parse(src)):
             if not isinstance(node, ast.Call):
@@ -2446,12 +2527,9 @@ class TestCeremonyReflogs:
             if name not in helpers:
                 continue
             for arg in node.args:
-                if not (isinstance(arg, ast.Constant)
-                        and isinstance(arg.value, str)):
-                    continue
-                if arg.value == "-g" or arg.value == "--walk-reflogs" \
-                        or "@{" in arg.value:
-                    offenders.append((node.lineno, arg.value))
+                for text in literals(arg):
+                    if text in ("-g", "--walk-reflogs") or "@{" in text:
+                        offenders.append((node.lineno, text))
         assert not offenders, (
             f"a git call reads reflog data: {offenders}. The ceremony writes "
             f"reflogs and must never let a predicate consume one -- whoever "
@@ -2676,12 +2754,36 @@ class TestRunbookPublicationText:
                 f"{ambient} publishes a set the ceremony does not name")
 
     def test_no_partial_push_fallback_is_offered(self):
+        """Scoped to the whole file, not to Phase 5.
+
+        Code review [IC5]: this read only Phase 5 while its sibling
+        `test_the_authorization_ref_appears_in_NO_push_or_fetch_block`
+        deliberately reads the whole file and says why -- *"a later-added block
+        is exactly where that would reappear."* That reasoning applies verbatim
+        here and had not been applied: a `## Recovery appendix` with a
+        ref-by-ref two-push passed all eleven of these tests, and a Maintainer
+        following the recorded steps would reproduce by hand the split state
+        `--atomic` exists to prevent.
+        """
         section = _runbook_section("\n## Phase 5")
         assert "no two-push fallback" in section.lower()
         assert "incomplete publication" in section.lower()
-        assert "--force" not in "\n".join(_fenced(section)), (
-            "a forced push in the recorded steps is a recovery that "
-            "reproduces the split state by hand")
+
+        text = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        for block in _fenced(text):
+            pushes = [ln for ln in block.splitlines()
+                      if "push" in ln and not ln.lstrip().startswith("#")]
+            assert len(pushes) <= 1, (
+                f"a recorded block issues {len(pushes)} pushes; publishing the "
+                f"two refs separately is the split state --atomic prevents:\n"
+                f"{block}")
+            for ln in pushes:
+                assert "--force" not in ln and " -f " not in ln, (
+                    f"a forced push in the recorded steps is a recovery that "
+                    f"reproduces the hazard by hand:\n{ln}")
+                assert "--atomic" in ln, (
+                    f"every recorded push publishes both refs atomically:\n{ln}")
 
     def test_publication_is_verified_by_reading_the_remote_back(self):
         section = _runbook_section("\n## Phase 5")
