@@ -8,8 +8,8 @@
 `templates/modules/default-on/_lifecycle_metrics/` and its `tools/` twin;
 `tools/lifecycle.py` and its twin (the event writer, Round 4);
 `bootstrap/tests/test_lifecycle_metrics*.py`; `bootstrap/tests/test_lifecycle_contract.py`
-**Depends on**: `review-efficient-lifecycle` P6a — the shared event-ledger
-contract this proposal extends, `[commit pending]` at Round 4
+**Depends on**: `review-efficient-lifecycle` P6a — landed at `8bf1154`;
+Round 5 **stops extending** its shared-ledger contract and says why
 **Related**: `dev/strategy/2026-05-20-claude-team-productivity-metrics.md`
 (the principle and the column triage); the guide star's Anchor 17 and
 "Restraint as design center"
@@ -944,3 +944,137 @@ contract and the always-installed lifecycle CLI, and executed the two-agent
 central-ledger Git reproduction above. I did not run the full pytest suite,
 because no implementation of this revision exists, and I did not test a
 replacement storage architecture.
+
+## Response + Revised proposal (Round 5) -- Claude -- 2026-08-12
+
+**All four findings accepted.** R3-E1 is fatal to Round 4's storage decision,
+and it was *reproduced in a real repository* rather than argued — which is the
+only reason I believe it, because I would have defended the design otherwise.
+
+| | Disposition |
+|---|---|
+| **R3-E1** | `accept` — the shared ledger is abandoned entirely, not patched. |
+| **R3-E2** | `accept` — the emission path is named, and made unforgettable by construction rather than by discipline. |
+| **R3-E3** | `accept` — identity, ordinal and the activation cutoff all become derivable; none is left for a plan author to invent. |
+| **R3-E4** | `accept` — P6a has since landed, so the dependency binds to bytes; the inventory is corrected. |
+
+**Scope delta: preserved.** Every baseline outcome still holds. The mechanism
+is replaced wholesale for the second time; nothing the proposal committed to
+solving has been dropped.
+
+### 1. Why the shared file cannot be rescued (R3-E1)
+
+The reproduction is decisive and I want to restate *why*, because the failure is
+not a race and no locking discipline reaches it. Two agents can append
+sequentially, each supplying the exact bytes it read, and both expected-old
+checks pass honestly. The damage happens later, at `git commit`, because Git
+commits the **current whole-file blob** — so a path-scoped commit naming plan A
+plus the ledger carries agent B's event too, while plan B stays uncommitted.
+Byte-level compare-and-swap operates on file contents; the invariant we need is
+about *commit membership*. They are different layers, and no amount of care at
+the lower one establishes a property of the higher one.
+
+That falsifies Round 4's load-bearing sentence — "the commit carrying the event
+is the transition commit by construction" — outright.
+
+### 2. The event lives in the artifact that transitioned
+
+Of the three shapes the review offered, this proposal takes the first: **a
+closed, versioned event block appended to the transitioning artifact itself**,
+in the same edit that flips `**Status**`.
+
+**Why this closes R3-E1 by construction rather than by care.** There is no
+shared file, so there is no shared window. A transition commit is path-scoped to
+the artifact it transitions; another agent's event lives inside *their* artifact,
+which is not in that path set. The cross-commit contamination is not made
+unlikely — it is unrepresentable.
+
+**The obvious objection, stated before a reviewer has to.** Cairn's own glossary
+says an archived artifact is history: *"read it for context, do not edit it, and
+never mine it for metrics."* Reading events out of artifacts looks like exactly
+that. The distinction is real and load-bearing: that rule bars **retrospective
+mining of prose for signals it was never designed to carry** — the practice that
+rewards writing more, which is this proposal's entire subject. A closed
+versioned block emitted *at the transition*, in a bounded schema, carries one
+designed signal and cannot be inflated by writing more of anything. If a future
+reader cannot tell those apart, the rule is what needs sharpening, not this.
+
+### 3. Emission, and what refuses (R3-E2)
+
+The committed `tools/lifecycle.py` has `session-start`, `session-end`,
+`pilot-report`, `pilot-record` — **no general transition command**, exactly as
+the review says. Round 4 named a writer that had nowhere to be invoked from.
+
+Round 5 needs no new command. **The block is written by the same edit that flips
+the status**, so emission is not a step an agent can skip while still performing
+the transition — the two are one edit to one file. A tool may scaffold it; none
+is required for it to happen.
+
+Reconciliation is defined in both directions, and both refuse:
+
+* every committed block must match the status transition in **its own commit**;
+* every post-activation status transition must have **exactly one** block.
+
+A committed status flip with no block is loud `INCOMPLETE`, never a shorter
+clean series — silence must never read as health. Repeated preview stays
+read-only; abandoned pre-commit bytes are uncounted because they were never
+committed.
+
+### 4. Identity, ordinal, activation — all derived, none invented (R3-E3)
+
+* **Identity** is `(artifact path, ordinal)`. Nothing else.
+* **Ordinal** is *a function of the file*: the count of preceding blocks in that
+  artifact. A retry cannot choose a different one, because it does not choose at
+  all — it reads. This is what Round 4 got wrong by making `ordinal` a field the
+  writer supplied.
+* **Source commit** is **derived by the reader** from Git — the commit that
+  introduced the block — and never stored. Same non-circular device P6a uses for
+  its activation record. Note this is *stricter* than P6a's events, which take
+  `source_commit` as a caller-supplied argument.
+* **Activation cutoff** is the commit that first introduced the block's schema
+  marker into the shipped templates, derived from Git. No new activation record
+  is created. An adopter's cutoff is the commit that installs it into their tree.
+  Before the cutoff an empty series is **correct**, not missing; overlap at the
+  boundary refuses rather than double-counts.
+* **`recorded_by`** is informational provenance only. It is neither unique nor
+  authenticated, and it is barred by contract from participating in authority or
+  idempotency — stated explicitly so no implementer reaches for it.
+
+### 5. The dependency, now bound to bytes (R3-E4)
+
+P6a **landed at `8bf1154`**, verified: `dev/measurement/pilot-events.md` exists
+and `cmd_pilot_record` is its only writer.
+
+So the dependency is no longer a promise — and reading the landed bytes changes
+the answer. **Part 3 no longer extends P6a's contract.** P6a's ledger is a
+single shared tracked file appended by a CLI, which is precisely the shape
+R3-E1 falsified, and its `source_commit` is a caller-supplied argument rather
+than a derived value. Round 4 inherited both properties by choosing to extend
+it. Round 5 does not.
+
+**What this proposal does *not* do**: reopen P6a. Its ledger serves a bounded
+pilot that counts distinct plan stems over a fixed window and then retires,
+which is a weaker correctness bar than a permanent metric. Whether its own
+commit-binding claim needs revisiting belongs to `review-efficient-lifecycle`
+and its Maintainer, not to this proposal. It is named here because Round 4
+built on it and a reader deserves to know why Round 5 stopped.
+
+### 6. Corrected inventory
+
+**Touches**, replacing the header list where they conflict: the
+`_lifecycle_metrics` package and its `tools/` twin; the proposal and plan
+templates, self-hosted and shipped (the block's schema marker and its scaffold);
+`tools/lifecycle_planner.py` and twin (mutation manifest naming the block —
+scaffold only, no gate); `bootstrap/tests/test_lifecycle_metrics*.py`;
+`bootstrap/tests/test_lifecycle_contract.py`; and new tests for cross-commit
+contamination, activation-boundary overlap, ordinal determinism under retry,
+and the missing-block `INCOMPLETE` path.
+
+**No longer touched**: `tools/lifecycle.py` and its twin, and the proposed
+`dev/measurement/lifecycle-events.md`. Both belonged to the abandoned shared-
+ledger design.
+
+**Required test, from R3-E1**: the two-agent cross-commit mutation, expressed
+against this architecture — two artifacts transitioned concurrently, one commit
+path-scoped, and the assertion that the other's event cannot appear in it.
+
