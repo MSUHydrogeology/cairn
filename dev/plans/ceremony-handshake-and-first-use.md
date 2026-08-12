@@ -883,3 +883,79 @@ plus `a4a3b24`, `f2adcd9` and the response commit below.
 **Boundary B is re-run**, because these fixes change implementation, test and
 recorded-ceremony bytes — `AGENTS.md` requires a fresh full run on changed
 bytes, and the record below supersedes the one above.
+
+## Implementation verification -- Claude -- 2026-08-12 (re-run)
+
+**Supersedes the record above.** The code-review response changed
+implementation, test and recorded-ceremony bytes, which `AGENTS.md` names as
+requiring a fresh full run. The earlier record stands as history, and its
+neutrality-attribution sentence is corrected in `## Response to code review`
+above ([C3]) rather than edited.
+
+**Boundary B mode**: **full**. Bounded mode is refused: trust-ceremony surfaces
+sit inside the `boundary-b-bounding-clause` Hard Refusal Fence.
+
+**Tested SHA**: `136f326`.
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — 3.13.13.
+**Tree state**: a fresh `git clone --shared` at `136f326`; `git status
+--porcelain` empty **both before and after** the run (verified, not assumed).
+
+| # | Command | Outcome |
+|---|---------|---------|
+| 1 | `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **3998 passed, 4 failed, 1 skipped** in 536.95s (8m57s) |
+| 2 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | **93 neutrality FAIL**, redundancy `fail=0` |
+
+`3998` is `3987` plus the eleven nodes the code-review response added.
+
+### Non-pass disposition — the same four, unchanged
+
+The four are **identical** to the previous run and carry the same attributions,
+each already reproduced at `a63da58` (before this range) and, for the three
+`__pycache__` nodes, in the main working tree:
+
+* `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports`
+  — clone artifact; a `--shared` clone has no `refs/cairn/gate-anchor`. Passes
+  in the main tree.
+* `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override`
+  and both `TestLoaderContainmentMatrix` parameters — one pre-existing defect:
+  `.pyc` writes counted as working-tree mutation. All green under
+  `PYTHONDONTWRITEBYTECODE=1`. Outside this plan's surfaces; left as found and
+  flagged.
+
+### Quality gate — the attribution stated correctly this time
+
+93 FAILs, **byte-identical in set** to `a63da58` (`diff` of the sorted FAIL
+lines is empty). The distribution, counted rather than eyeballed:
+
+| Tree | FAILs |
+|------|-------|
+| `templates/` | 65 |
+| `docs/` | 14 |
+| `doctrine/` | 9 |
+| `bootstrap/` | 5 |
+
+All five `bootstrap/` entries are `bootstrap/tests/fixtures/skills/README.md`
+(lines 15, 31, 35, 38) — a test fixture, not a ceremony surface. **No FAIL names
+any path this range touched**, checked mechanically against
+`git diff --name-only` rather than by reading.
+
+### Known omissions — unchanged
+
+* **[TRU-7]** unmeasured (M4 only).
+* The **host-persistence residual** is unchanged; the two-stage split is
+  sequencing, not containment.
+* **N4 cannot be established by code** ([E1] is reproducible). Tests model it by
+  genuinely withholding the private half — a fixture standing in for a
+  Maintainer act, not evidence the act occurred.
+* `test_gate_manifest.py` HOLDs whenever frozen gate files carry uncommitted
+  edits; it passed here because the clone was clean at a commit.
+
+### Standing claims, re-checked
+
+* `refs/cairn/gate-anchor` is still `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3`,
+  file mtime **2026-08-03 16:47**. `.git/logs/refs/cairn/` does not exist.
+* **No ceremony key loaded, no ceremony run, nothing pushed.**
+
+**Boundary C is owed on these bytes.** The prior code review read `a4a3b24`; its
+two blocking findings are answered above, and the answers have not themselves
+been independently read.
