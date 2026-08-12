@@ -1781,3 +1781,74 @@ byte-identical to the working tree, so no concurrent session has drifted them.
 That set and the review's ground rules were packaged for the Maintainer to hand
 to an External reviewer. **M7 arms when M2 lands**; the byte set must not move
 between now and then, by any session.
+
+## H2 landed, and Boundary B (3) -- Claude -- 2026-08-12
+
+**H2 was outstanding and nobody had noticed.** Found while checking M2 readiness,
+not by the plan tracking it: R1 requires **M2 to *execute* the key-load
+sentinel**, and there was no sentinel. Sending M2 as it stood would have spent
+the plan's scarcest fence on three quarters of its mandate, with acceptance
+criterion 8 — *"proven by sentinel, not by inspection"* — proven by nothing.
+
+**H2's table names only the test file, and a sentinel needs a subject**, so the
+mechanism landed with it at `1d392a2`: `seal_candidate_execution()` (irreversible
+module phase + a printed hard marker) and `refuse_if_sealed()` guarding the
+evidence stage and the candidate-producer launch, with `apply_now` sealing
+immediately before `_construct_signed_commit` — the first operation that loads
+the key. **Recorded in the code itself: this is sequencing, not containment.**
+
+The entry-point node walks the AST and requires **every** non-git
+`subprocess.run` to sit behind the guard rather than trusting a hand-kept list;
+ordering is asserted on the source *and* through a real end-to-end ceremony.
+Three perturbations fire: seal-after-key-load, unguarded producer, added unseal.
+
+**A defect I introduced and caught, recorded because of who made it.** Sealing is
+module state, so any node completing a real `apply` sealed the module for every
+later node in the file. That is the **same shared-mutable-state shape** as the
+`test_verify_ref.py` `lab` fixture fixed at `da26a88` — by me, hours earlier.
+Closed with a file-scoped autouse reset; file-scoped because the leak originates
+in tests *outside* the class that noticed it. Knowing a failure mode intimately
+did not prevent writing it again.
+
+### Boundary B, third take
+
+**Boundary B mode**: **full** — same Hard Refusal Fence reasoning as the previous
+record. Tested **`1d392a2`**, clean `--shared` clone, clean before and after,
+canonical `python3.13` (**3.13.13**), queued behind another session's suite.
+
+| command | outcome | time |
+|---|---|---|
+| `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **6 failed, 3643 passed, 1 skipped** | 481.98 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | `neutrality fail=93 info=21`, `redundancy fail=0 info=2` — unchanged | 1.1 s |
+
+**Six failures, all attributed, none this plan's.** The four from the previous
+record, plus **two new ones I bisected rather than assumed**:
+
+`test_lifecycle_contract.py::TestBasisLegacyEnumerations` —
+`test_the_declaration_exemption_names_only_live_undeclared_proposals` and
+`test_every_basis_manifest_entry_is_still_needed`. They pass at `c36c757` and
+fail from **`d1b61b2`** onward — another session's scribed Decision on
+`metrics-events-not-prose`. Accepting that proposal made it no longer a *live
+undeclared* proposal, so the exemption entry naming it is now stale and the test
+is correctly saying so. Unchanged across `d74a47c` and `1d392a2`; **not caused by
+H2**, which touches only `_gate_preflight.py` and `test_gate_preflight.py`.
+**That plan's owner has a small correction to make** — surfaced here, not fixed
+here.
+
+### M2 readiness
+
+The nine authority-closure files were re-hashed at `1d392a2` and confirmed
+byte-identical to the working tree. The handoff packet is regenerated against
+that commit, with two changes a reviewer should not have to infer:
+
+* **H2 is now the least-reviewed code in the set**, not the missing piece. It
+  landed after the Internal review, so `seal_candidate_execution` /
+  `refuse_if_sealed` and their tests have had **no independent read at all**.
+* **The sentinel's own limit is stated for the reviewer to attack**: its walk
+  covers `subprocess.run` only. `os.system`, `os.exec*`, `importlib`,
+  `multiprocessing` and atexit hooks are all routes to candidate execution the
+  enumeration would not see. That is a real bound on my test, not a claim of
+  coverage.
+
+**M7 arms when M2 lands.** The byte set must not move between now and then, by
+any session.
