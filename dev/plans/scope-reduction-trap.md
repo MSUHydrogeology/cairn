@@ -1425,3 +1425,369 @@ is an independent pass: the code review's verdict was `REVISE`, and both
 Sharpenings answering it are mine. Doctrine is explicit that a blocking verdict
 is answered by a later independent pass, never by the author's own response.
 
+
+## Code review -- Claude (Internal, second clearing pass) -- 2026-08-12
+
+**Reviewed commit**: `8ad50ed`, reached through `6dde057` and `8ad50ed`, each
+diffed against **its own parent** so the other agents' commits interleaved in
+that range are excluded rather than trusted.
+**Target**: whether D1-D7 are genuinely closed, and whether anything the two
+Sharpenings introduced is itself defective. Not a fresh end-to-end read of the
+change, and not a re-audit of C1-C11; those passes landed on 2026-08-11 and
+2026-08-12 and I repeated neither.
+**Prior findings**: D1-D7 from `## Code review -- Claude (Internal) -- 2026-08-12`,
+verdict `REVISE`. D1-D4, D6 and D7 dispositioned by the author at `6dde057`; D5
+at `8ad50ed`.
+**Assurance path**: standard
+**Model**: Claude Opus 5 (`claude-opus-5`)
+**Findings**: raised
+
+**Tier — stated honestly.** Fresh session, same agent type as the author and as
+both prior reviewers: the **Internal** floor, *not* External. What this pass
+supplies is the one structural property the doctrine requires here — a blocking
+verdict answered by a **later independent pass** rather than by the
+implementer's own Sharpening. It supplies no cross-type assurance on the
+distribution's judgement calls; those have had none since the proposal.
+
+**Verdict: REVISE.**
+
+**Five of the seven D-findings are genuinely closed, and I closed them by
+attack rather than by reading the table.** D2 and D7 bite individually, not just
+as the composite the clearing pass described: each new obligation reddens on its
+own, on **both** copies of the board and **both** plan templates, and the
+heading-satisfaction defect is gone — I re-derived the match site of all **84**
+parametrized patterns against the raw bytes and **none** now lands on a heading
+line. D3's corrected figure reproduces (the recorded grep yields **31** modules
+at `8ad50ed`) and D4's does too (`3f92cd8` changed exactly **two** `Scope delta`
+literal lines per twin). D6's disclosure landed. The D1 fix does close the two
+mutations that produced D1: a gate at `proposal / target == "revised"` and one at
+`plan / target == "executing"` each redden the fence now, where both left it at
+83 passed before.
+
+Three things are open. **D5 is not closed** — the Sharpening restated the finding
+without half of it, fixed the half it restated, and declared the whole thing
+closed; the contradiction D5 named by quotation is still in the emitted scaffold
+at `tools/lifecycle_planner.py:3808`, and the new guard passes over it (E1).
+**The D1 fix bought its coverage by trading some away**: a gate placement the
+*previous* fence caught now passes, and `_SCAFFOLDED_TRANSITIONS` does not
+contain one of the transitions its own scaffold serves (E2). And the grammar
+guard covers six of the **seven** live surfaces that print the declaration, the
+missing one being the canonical doctrine the other six were unified onto (E3).
+
+E1 is the blocking one. It is the fourth instance in this record of the same
+shape — *a guard that passes while the thing it names is absent* — and this time
+the guard was written against the reviewer's literal mutation string rather than
+against the property, which is why it cannot see the surviving half.
+
+### Findings
+
+**[E1 -- P1] D5 was narrowed, then declared closed; the contradiction it named
+is still emitted, and the new guard cannot see it.**
+
+The clearing pass's D5 named **two** contradictory pieces, both by quotation:
+
+> the emitted block still reads *"Omit entirely when every opened outcome is
+> still delivered"* **and the manifest line still reads *"the Scope-delta block
+> is OMITTED unless the revision narrows"***
+
+`8ad50ed` changed the first and left the second. At `8ad50ed`, both twins carry
+at line 3808:
+
+```
+"the Scope-delta block is OMITTED unless the revision narrows "
+"an outcome the proposal opened with; ..."
+```
+
+That string is in the manifest, and the manifest is part of what `_scaffold`
+hands the author — `blocks` is `[block] + manifest`, and this module's own
+`test_the_emitted_scaffold_carries_the_declaration` asserts on `"DOES NOT
+CHECK"`, a manifest string, through exactly that path. So the `proposal ->
+revised` scaffold still tells the author, ten lines apart:
+
+* *"State `preserved` if you want the record to show you checked; only
+  `degraded` and `lost` require the block below."* (the block, fixed)
+* *"the Scope-delta block is OMITTED unless the revision narrows an outcome the
+  proposal opened with"* (the manifest, unchanged)
+
+The `### D5 closed` section restates D5 as the block half alone and then asserts
+*"Both scaffolds now say what the templates say."* They do not. The plan-side
+manifest carries no omission claim, so this is the proposal side only — but the
+proposal side is where a pre-Decision narrowing is declared.
+
+The guard does not reach it. `test_the_scaffolds_do_not_contradict_the_offered_values`
+asserts one literal: `"omit entirely" not in emitted`. Measured at `8ad50ed`,
+canonical interpreter, mutation applied to **both** twins and reverted after:
+
+| Mutation | Test result |
+|---|---|
+| restore the contradiction verbatim (*"Omit entirely when every opened outcome is still delivered."*) | 1 failed — detected |
+| restore the same contradiction **reworded** (*"Leave the block out completely when every opened outcome is still delivered."*) | **98 passed** — undetected |
+| (no mutation) the manifest's *"is OMITTED unless the revision narrows"*, live at HEAD | **98 passed** — undetected |
+
+The Sharpening says the guards were *"verified against the clearing pass's own
+mutations, not mutations I chose."* That is honest, and it is also the mechanism
+of the defect: a guard fitted to the reviewer's mutation string tests the string,
+not the property, and the property is *the scaffold does not tell the author to
+omit a block it offers `preserved` for*.
+
+*Satisfier*: **doc** — bring the manifest line onto the templates' grammar; and
+**test** — assert the property over the whole emitted text (no omission
+instruction anywhere in `blocks` while `preserved` is an offered value), not one
+phrase.
+
+**[E2 -- P2] The D1 fix traded coverage: a placement the previous fence caught
+now passes, and `_SCAFFOLDED_TRANSITIONS` omits a transition its own scaffold
+serves.**
+
+The fence is now derived from `_SCAFFOLDED_TRANSITIONS`, exactly as D1's
+satisfier asked. Two consequences the Sharpening's table does not show.
+
+*First, `_SCAFFOLDED_TRANSITIONS` is incomplete on its own terms.* `_scaffold`'s
+plan branch returns `("open/awaiting-plan-review", "executing", ...)` — the same
+block is emitted from **two** source statuses, and `PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED`
+confirms `open -> executing` is the path a plan takes when plan review is *not*
+required. The constant names only `("plan", "awaiting-plan-review",
+"executing")`, and the fixture declares `**Plan review**: required(Internal)`. So
+the lighter-ceremony path — the one where no plan reviewer is watching — is
+unswept.
+
+*Second, the sweep is narrower than the one it replaced.* The old fence swept
+`_legal_transitions` from a `revised` fixture, which covered `-> accepted`. The
+new one does not.
+
+Measured at `8ad50ed` unless stated, each mutation applied to **both** twins and
+reverted after; the gate body is identical in every row, only its condition and
+message change:
+
+| Gate added to | Test result |
+|---|---|
+| `_gating_preconditions`, `proposal` / `target == "revised"` | 1 failed — detected (D1 closed) |
+| `_gating_preconditions`, `plan` / `target == "executing"` | 1 failed — detected (D1 closed) |
+| `_gating_preconditions`, unconditional | 2 failed — detected |
+| `_conformance_violations`, unconditional | 2 failed — detected |
+| `_gating_preconditions`, `plan` / `executing` / `art.status == "open"` | **98 passed** — undetected |
+| `_gating_preconditions`, `plan` / `executing` / plan review not required | **98 passed** — undetected |
+| `_gating_preconditions`, `proposal` / `target == "accepted"` | **98 passed** — undetected |
+| the same `-> accepted` gate against the **pre-`6dde057`** fence at `f928d9c` | 1 failed / 82 passed — **it used to be detected** |
+| `_gating_preconditions`, `plan` / `target == "archived"` | **98 passed** — undetected |
+| refusal via `_legal_transitions` — the scaffolded target withheld entirely when the declaration is absent | **98 passed** — undetected |
+| `_gating_preconditions`, `proposal` / `target == "revised"`, message worded without "scope delta" / "scope-remainder" | **98 passed** — undetected |
+| `_conformance_violations`, unconditional, same rewording | **98 passed** — undetected |
+
+The last three rows are **pre-existing**, not introduced by `6dde057`: the fence
+has always asserted on the *text of a gate's description* (`"scope delta" not in
+joined`) rather than on whether a gate is unmet, and it has never looked at
+`_legal_transitions`, which is the strongest way to refuse a transition — not
+offering it. I record them because the clearing pass's own closing note said the
+derived-set fix *"removes the enumeration problem"*. It does not; it moves it
+from a list of placements to a list of triples plus a list of message phrases.
+
+*Satisfier*: **test** — take the `(kind, status)` cross-product over every source
+status that reaches a scaffolded target (derive it from `PLAN_TRANSITIONS` /
+`PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED` / `PROPOSAL_TRANSITIONS` rather than
+hand-listing), and assert on *gate state* — that the set of unmet gates and
+conformance violations is unchanged between an artifact with and without a
+declaration — instead of grepping their prose. Or **wontfix** with the residual
+stated in the module docstring, which is cheaper and honest; what is not
+acceptable is the current docstring, which claims the absence is pinned.
+
+**[E3 -- P3] The grammar guard pins six of seven surfaces, and the missing one is
+the canonical source.** `_GRAMMAR_TEMPLATES` lists four templates and the two
+scaffolds are covered through `_scaffold`. A whole-tree sweep for
+`**Scope delta**` finds a **seventh** live surface printing the value list:
+`doctrine/proposals.md:523`. That is not incidental — this plan's own record
+(C8) says the six were unified *onto* doctrine's three-value grammar. Reverting
+`doctrine/proposals.md` alone to `degraded | lost` leaves **98 passed**; the
+six-surface revert the Sharpening's table records reddens **6**, and adding the
+seventh to that revert still reddens only **6**, so the doctrine surface
+contributes nothing. The `_DOCTRINE_PROPOSALS` obligation on that file is
+`r"\*\*Scope delta\*\*"`, which matches either grammar.
+
+*Satisfier*: **test** — add `doctrine/proposals.md` to `_GRAMMAR_TEMPLATES` (one
+line), or **doc** — say in the module docstring that the canonical grammar's own
+home is deliberately unpinned and why.
+
+**[E4 -- P3] "The count is withdrawn rather than re-dated," and a bare count
+appears one section later.** D3's disposition reads: *"the count is withdrawn
+rather than re-dated"* — and `### D5 closed` opens its verification with
+*"Mapped set (31 modules, recorded command)"*. The figure is **correct** (I ran
+the recorded grep at `8ad50ed` and got 31) and the section heading dates it, so
+this is a wording defect, not a false claim. It is worth one line because the
+stated remedy and the next paragraph disagree, and a later reader deciding how to
+record a count will find both.
+
+*Satisfier*: **doc**.
+
+**[E5 -- observation, not a finding against this plan] The fence is pinned to
+pending-retirement vocabulary, and would go vacuous silently.**
+`_SCAFFOLDED_TRANSITIONS` names `proposal reviewed -> revised`. At `8ad50ed`
+`PROPOSAL_STATES` carries both vocabularies — `awaiting-review / revising /
+awaiting-decision` alongside `proposed / reviewed / revised` — and `_scaffold`
+has branches for `reviewed`, `revised`, `awaiting-plan-review`, `executing`,
+`awaiting-code-review`, `review`, `archived`, and **none** for `revising`. That
+belongs to `review-efficient-lifecycle`, in flight, and is not this plan's to
+fix. The part that *is* this plan's to know: the fence never asserts that its
+transitions are legal, so when `reviewed -> revised` retires the two fence nodes
+keep passing against a transition that no longer exists. A one-line assertion
+that `target in planner._legal_transitions(art)` would make that retirement loud
+instead of silent.
+
+*Satisfier*: **test** (one assertion) or **defer**, homed on
+`review-efficient-lifecycle`.
+
+### What I probed and could not defeat
+
+Given this record's history, a clean row is a claim about my probe, not about the
+code, so I name the attack.
+
+* **D2 and D7, obligation by obligation.** I did not re-run the composite. On the
+  shipped board I deleted the grouped-remainder requirement *alone* (1 failed)
+  and the both-stages baseline framing *alone* (1 failed); the clearing pass's own
+  keep-only-concede mutation reddens 2. Cairn's own board reddens 2 on the
+  equivalent cut. C9's fence paragraph reddens 1 in **each** plan template
+  independently. Gutting `doctrine/plans.md`'s floor-section body while keeping
+  the heading reddens 1 — the exact construction D7 raised, now closed. Each new
+  pattern has exactly **one** occurrence in its file, so none is being satisfied
+  from a different section.
+* **The heading-satisfaction class, swept exhaustively rather than spot-checked.**
+  I re-derived the match site of every one of the **84** parametrized patterns
+  against the raw bytes with a whitespace offset map, and classified each: **0**
+  land on a heading line. 38 land inside a blockquote, a fenced code block, or
+  across a line wrap — all legitimate (the team-gated module states its rule *as*
+  a blockquote; the templates state the declaration *as* a code block; the
+  wrapping is what `_normalized` exists for). No table-of-contents entry or quoted
+  example satisfies any pattern.
+* **The twins, and what this plan ever touched in them.** `cmp` says
+  byte-identical at `8ad50ed`. Every planner hunk this plan has *ever* produced —
+  `ccffb77`, `3f92cd8`, `8ad50ed`, found by diffing each of the plan's fourteen
+  commits against its own parent — lands inside `_scaffold`. `_conformance_violations`
+  is byte-unchanged by this plan, as the Verification section claims. No
+  transition refuses on anything new: the planner's gate list for the two
+  scaffolded transitions is identical with and without a declaration.
+* **Partial and single-surface grammar drift.** Reverting one template alone
+  reddens 1; all four templates reddens 4; the two scaffold literals reddens 2;
+  all six reddens 6 — matching the Sharpening's figure once you revert **both**
+  literals per twin (there are two, per D4; a first-occurrence-only revert reddens
+  5, which is how I first mis-measured it). Whitespace and wrapping do not evade:
+  `_normalized` collapses runs, and the scaffold assertions go through `_scaffold`
+  rather than the source text.
+* **The mapped set, re-derived and re-run.** The recorded grep yields **31**
+  modules at `8ad50ed`; running them gives **3 failed, 1559 passed** in 160.1 s —
+  the Sharpening's figures, reproduced independently. The three are the node ids
+  the record names; the two `TestLoaderContainmentMatrix` failures are
+  *"loading the planner mutated the working tree"* (`__pycache__`), which no
+  string literal inside `_scaffold` can cause. Attribution elsewhere holds.
+* **The archive gate, re-checked because the record contains two contradictory
+  accounts of it.** `tools/lifecycle_planner.py next` on this plan at `8ad50ed`
+  now **refuses** `-> archived` and `-> ready-to-archive`, naming
+  `'## Code review -- Claude (Internal) -- 2026-08-12' carries a BLOCKING
+  verdict`. The clearing pass reported `[ok]`, the Sharpening explained it as
+  `_LEGACY_CODE_REVIEW_DISPOSITIONS` grandfathering; at the current tree state
+  neither is live — the gate reads the verdict and refuses. Whatever clears this
+  plan has to be a clearing verdict on a later pass.
+* **Standing gates.** `scripts/claim_check.py` on this plan: clean.
+  `scripts/check_cairn.py`: OK, 173 Markdown files, no issues.
+  `quality_gate --sub neutrality --sub redundancy`: neutrality `fail=93 info=21`,
+  redundancy `fail=0 info=2` — unchanged from the figures the record carries.
+
+### Verification
+
+All under `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), the
+canonical interpreter. Two detached worktrees at `8ad50ed`: one for the mapped
+run and the standing gates, one for mutation, `git status --short` clean before
+and after every mutation (the harness aborts on a dirty tree and restores from an
+in-memory copy). One additional swap of `f928d9c`'s test module into the
+mutation worktree, to measure the pre-fix fence against the same gate.
+
+| Probe | Result |
+|---|---|
+| Baseline `bootstrap/tests/test_scope_reduction_trap.py` at `8ad50ed` | 98 passed (83 at `f928d9c`; +7 at `6dde057`, +8 at `8ad50ed`) |
+| Mapped set (31 modules, recorded grep), `--quality-gate-shuffle-seed=0` | 3 failed, 1559 passed, 160.07 s — the three node ids the record names |
+| D1 controls: gate at `proposal -> revised` / `plan -> executing` | 1 failed each — **closed** |
+| D1 controls: gate unconditional / in `_conformance_violations` | 2 failed each — closed |
+| Gate at `plan open -> executing` (no-plan-review path) | **98 passed** (E2) |
+| Gate at `plan -> executing` when plan review not required | **98 passed** (E2) |
+| Gate at `proposal -> accepted`, at `8ad50ed` | **98 passed** (E2) |
+| The same gate against `f928d9c`'s fence | 1 failed / 82 passed — coverage lost (E2) |
+| Gate at `plan -> archived` | **98 passed** (E2) |
+| Refusal by withholding the target in `_legal_transitions` | **98 passed** (E2, pre-existing) |
+| Gate at `proposal -> revised`, message reworded off the two pinned phrases | **98 passed** (E2, pre-existing) |
+| `_conformance_violations` gate, same rewording | **98 passed** (E2, pre-existing) |
+| Scaffold contradiction restored verbatim / **reworded** | 1 failed / **98 passed** (E1) |
+| Manifest *"is OMITTED unless the revision narrows"*, live at HEAD, no mutation | **98 passed** (E1) |
+| `doctrine/proposals.md` reverted to `degraded \| lost` | **98 passed** (E3) |
+| Six-surface grammar revert (both literals per twin) / seven-surface | 6 failed / 6 failed (E3) |
+| One template reverted alone | 1 failed — the grammar guard bites per surface |
+| Shipped board: grouped-remainder alone / baseline framing alone / clearing pass's composite | 1, 1, 2 failed (D2 closed) |
+| Cairn's own board: equivalent composite | 2 failed (D2 closed) |
+| C9 fence paragraph deleted, each plan template separately | 1 failed each (D7 closed) |
+| `doctrine/plans.md` floor-section body gutted, heading kept | 1 failed (D7 closed) |
+| Match-site classification of all 84 parametrized patterns | 0 on a heading; 38 in blockquote / code fence / across a wrap, all legitimate |
+| Recorded mapped-set grep at `8ad50ed` | 31 modules (D3 correct) |
+| `3f92cd8` `Scope delta` literal lines changed per twin | 2 (D4 correct) |
+| Planner hunks across all 14 plan commits | all inside `_scaffold`; `_conformance_violations` byte-unchanged |
+| Planner twins at `8ad50ed` | byte-identical (`cmp`) |
+| `tools/lifecycle_planner.py next` on this plan | refuses `-> archived` on the blocking verdict |
+| `scripts/claim_check.py` on this plan | clean |
+| `scripts/check_cairn.py` | OK, 173 Markdown files, no issues |
+| `quality_gate --sub neutrality --sub redundancy` | neutrality fail=93 info=21; redundancy fail=0 info=2 — unchanged |
+
+### Coverage
+
+**Covered, with falsifiable citations** — every one of D1-D7 checked against the
+landed bytes or by execution, never from the Sharpening's tables, and every
+mutation chosen by me rather than copied from the record except where a row says
+otherwise: D1 by thirteen gate placements across three refusal surfaces including
+one measured against both versions of the fence (closed for its two named
+mutations, E2 for the rest); D2 and D7 by per-obligation deletion on both copies
+of every paired surface, plus an exhaustive match-site classification of all 84
+patterns for the heading defect; D3 by re-running the recorded grep; D4 by diffing
+`3f92cd8`; D5 by reading the emitted `blocks` and by a reworded-contradiction
+mutation (**open**, E1); D6 by locating the disclosure in the record; the
+Sharpenings' collateral by diffing every plan commit's planner hunks, `cmp` on the
+twins, and confirming the gate list is unchanged with and without a declaration.
+Sweep roster worked in full: claims (every figure in both Sharpenings re-derived),
+production path (the scaffold exercised through `_scaffold`, the gates through
+`_gating_preconditions` / `_conformance_violations` / `_legal_transitions`),
+design completeness (the `(kind, status)` cross-product, E2), fail-closed (E1 and
+E2 are both guards that return success without testing the property), cross-
+document consistency (the seventh grammar surface, E3), drift (commit bodies
+against landed bytes; the archive gate against two contradictory accounts of it),
+lifecycle placement (the gate now refuses on the verdict), scope (nothing
+expanded), and a named satisfier on every finding.
+
+**Not covered / low confidence** —
+
+* **This is an Internal read** — same agent type as the author and as both prior
+  reviewers. It supplies independence of *session* and of *prior within this
+  plan*, not of *type*. The distribution's judgement calls — `preserved`-owes-
+  nothing as the default, the grouped record's shape, the three-value grammar —
+  have had no cross-type read at any point in this plan, and nothing here changes
+  that.
+* **I did not re-read the change end to end**, and did not re-audit C1-C11. My
+  scope was D1-D7 and the two Sharpenings. If the 2026-08-11 pass missed an
+  enumerated Part 9 surface, I would not have found it.
+* **E2's table is still an enumeration.** I found five evading placements the
+  previous pass did not; I have no argument that a sixth does not exist. That is
+  precisely why E2's satisfier asks for an assertion on *gate state* rather than a
+  longer list — but I did not build it, so I cannot claim the space is closed.
+* **I did not run the full suite.** The plan's Boundary-B bounding argument — the
+  whole executable delta is string literals inside `_scaffold`, plus one
+  file-reading test module — held under my own inspection of all fourteen commits'
+  planner hunks, so I ran the 31-module mapped set instead. If that bounding is
+  wrong, my run does not catch it.
+* **The three mapped-set failures are attributed, not root-caused.** I read the
+  assertion text and satisfied myself that a string literal in `_scaffold` cannot
+  produce *"loading the planner mutated the working tree"*. I did not bisect them.
+* **Nothing here tests the rule in use.** No author has met this declaration and
+  behaved differently. The proposal's own residual is untouched, and three review
+  passes have now been spent on whether the guards guard rather than on whether
+  the rule works.
+
+**On archiving.** This plan cannot archive on this section. E1 is a blocking
+finding on a D-finding the record declares closed, and the planner already
+refuses `-> archived` on the standing blocking verdict. E1 and E3 are one-line
+fixes; E2's honest form may well be a `wontfix` with the residual moved out of
+the docstring's claim and into its disclosure. What clears this plan is a *later*
+independent pass over those corrections — not a response appended beneath this
+one.
