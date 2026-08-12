@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-12
-**Status**: accepted
+**Status**: accepted (implemented, archived 2026-08-12)
 **Touches**: `AGENTS.md` ("Verification boundaries" bullet); `doctrine/plans.md`
 (Boundary B, line 259 onward); `templates/core/dev/plans/_template.md` and
 `dev/plans/_template.md` (the `cairn:slot verification-commands` block)
