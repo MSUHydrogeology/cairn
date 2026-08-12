@@ -1953,6 +1953,104 @@ class TestTransitionLoaderSelectsTheSource:
         assert "one alone is not a mode" in r.stderr
 
 
+class TestTransitionRefusesWithoutADelta:
+    """Chunk B / plan finding [S3]. "First use" was never mechanically one-time
+    -- the delta condition recurs on every authority change -- so the mode is
+    named the **reviewed-authority transition** and is gated on the delta
+    itself, at the cost of a fresh external review each time."""
+
+    def _closure_repo(self, tmp_path, change: bool):
+        """An anchor and a candidate whose authority closures differ (or not).
+
+        Deliberately NOT `_ceremony_repo()`: its pre-aligned closure is what hid
+        [M2-2], so it is inadmissible for transition fixtures ([E4]/B4). This
+        builds the old-anchor state explicitly.
+        """
+        repo, anchor_sha = _closure_repo(tmp_path)
+        if change:
+            _write(repo, "bootstrap/tests/_oracle.py", "# changed\n")
+            head = _commit(repo, "authority change")
+        else:
+            _write(repo, "unrelated.txt", "x\n")
+            head = _commit(repo, "no authority change")
+        return repo, anchor_sha, head
+
+    def test_a_closure_change_is_a_delta(self, tmp_path):
+        repo, anchor, head = self._closure_repo(tmp_path, change=True)
+        delta = P.authority_closure_delta(anchor, head, repo=repo)
+        assert "bootstrap/tests/_oracle.py" in delta
+
+    def test_no_closure_change_is_no_delta(self, tmp_path):
+        repo, anchor, head = self._closure_repo(tmp_path, change=False)
+        assert P.authority_closure_delta(anchor, head, repo=repo) == {}
+
+    def test_the_transition_refuses_when_the_closure_is_unchanged(
+            self, tmp_path):
+        """The mode must not be available as a habitual flag."""
+        repo, anchor, head = self._closure_repo(tmp_path, change=False)
+        manifest = P.parse_review_manifest(
+            _review_manifest(repo, head))
+        with pytest.raises(P.ReviewManifestError) as exc:
+            P.revalidate_transition(manifest, head, head,
+                                    anchor=anchor, repo=repo)
+        assert "no reviewed transition to perform" in str(exc.value)
+        assert "not a flag" in str(exc.value)
+
+
+class TestRosterContinuityIsAHardRefusal:
+    """Chunk B3 / [E4]. Continuity means the OLD anchor's roster verifies a
+    transition. An anchor without one is a distinct bootstrap case, and neither
+    the candidate's roster nor the review manifest may stand in -- both are the
+    thing being authorized."""
+
+    def test_an_anchor_without_a_roster_refuses(self, tmp_path):
+        repo = _repo(tmp_path)
+        _write(repo, "x.txt", "x\n")
+        anchor = _commit(repo, "anchor with no roster")
+        with pytest.raises(P.PreflightError) as exc:
+            with P.anchored_roster(anchor, repo=repo):
+                pass
+        msg = str(exc.value)
+        assert "HARD REFUSAL" in msg and "not a fallback" in msg
+
+    def test_the_refusal_names_a_route_that_exists(self, tmp_path):
+        """`AGENTS.md`: a named trigger is checked by OPENING it. A refusal that
+        points at a procedure which is not there is worse than a bare one."""
+        repo = _repo(tmp_path)
+        _write(repo, "x.txt", "x\n")
+        anchor = _commit(repo, "anchor with no roster")
+        with pytest.raises(P.PreflightError) as exc:
+            with P.anchored_roster(anchor, repo=repo):
+                pass
+        runbook = (P._REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        assert "Phase 0 transition mode" in str(exc.value)
+        assert "## Phase 0 transition mode" in runbook or \
+               "### Phase 0 transition mode" in runbook, (
+            "the refusal names a runbook section that does not exist")
+
+    def test_a_worktree_roster_cannot_stand_in_for_a_missing_anchored_one(
+            self, tmp_path):
+        """The candidate's copy is not a substitute at any point -- including
+        when the anchor's is missing, which is exactly when it is tempting.
+
+        The roster is present and readable in the worktree throughout; the
+        anchor commit predates it. A fallback would find the file and succeed.
+        """
+        repo = _repo(tmp_path)
+        _write(repo, "x.txt", "x\n")
+        anchor = _commit(repo, "anchor with no roster")
+
+        _write(repo, "dev/.cairn/allowed_signers", "attacker AAAA\n")
+        _commit(repo, "roster appears in the worktree, after the anchor")
+        assert (repo / "dev/.cairn/allowed_signers").exists(), "precondition"
+
+        with pytest.raises(P.PreflightError) as exc:
+            with P.anchored_roster(anchor, repo=repo):
+                pass
+        assert "HARD REFUSAL" in str(exc.value)
+
+
 class TestReadBoundaryIsRepositoryReadOnly:
     """Security review [M2-4]. `_READ_ONLY_GIT` bounds *subcommands*; it said
     nothing about whether the repository is written. `git status` refreshes

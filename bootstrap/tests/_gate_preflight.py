@@ -721,10 +721,14 @@ def anchored_roster(anchor: str, *, repo: Path = _REPO):
     blob = _blob_at(anchor, _ALLOWED_SIGNERS_REL, repo=repo)
     if blob is None:
         raise PreflightError(
-            f"the pinned roster {_ALLOWED_SIGNERS_REL} is absent from the anchor "
-            f"{anchor[:12]} -- first use requires the manual exact-byte "
-            f"bootstrap (runbook steps M1-M5); the candidate's own copy is not "
-            f"a substitute")
+            f"the pinned roster {_ALLOWED_SIGNERS_REL} is absent from the "
+            f"anchor {anchor[:12]}. This is a HARD REFUSAL, not a fallback: "
+            f"continuity means the OLD anchor's roster verifies a transition, "
+            f"and an anchor without one is a distinct bootstrap case requiring "
+            f"a separately reviewed Maintainer procedure "
+            f"(REANCHOR_RUNBOOK.md > 'Phase 0 transition mode'). Neither the "
+            f"candidate's own roster nor the out-of-band review manifest is a "
+            f"substitute -- both are the thing being authorized.")
     tmpdir = tempfile.mkdtemp(prefix="cairn-preflight-roster-")
     path = Path(tmpdir) / "allowed_signers"
     path.write_bytes(blob)
@@ -757,6 +761,24 @@ REVIEW_MANIFEST_SCHEMA = "cairn-review-manifest/v1"
 
 class ReviewManifestError(PreflightError):
     """The out-of-band review manifest is malformed or does not match."""
+
+
+def authority_closure_delta(anchor: str, candidate: str, *,
+                            repo: Path = _REPO) -> dict[str, tuple]:
+    """Which authority-closure members differ between anchor and candidate.
+
+    The transition exists **because** the closure changed. With no delta there
+    is nothing for an external review to have reviewed, and running the mode
+    anyway would make it a flag rather than a ceremony -- plan finding [S3].
+    """
+    delta: dict[str, tuple] = {}
+    for rel in sorted(declared_authority_closure()):
+        old = _blob_at(anchor, rel, repo=repo)
+        new = _blob_at(candidate, rel, repo=repo)
+        if old != new:
+            delta[rel] = (None if old is None else _sha256_bytes(old),
+                          None if new is None else _sha256_bytes(new))
+    return delta
 
 
 def parse_review_manifest(text: str) -> dict:
@@ -834,7 +856,7 @@ def parse_review_manifest(text: str) -> dict:
 
 
 def revalidate_transition(manifest: dict, reviewed_candidate: str, head: str,
-                          *, repo: Path = _REPO) -> dict:
+                          *, anchor: str, repo: Path = _REPO) -> dict:
     """Re-check the loader's own conclusions. Defence in depth; see above.
 
     Three facts, each of which the loader already established and each of which
@@ -850,6 +872,14 @@ def revalidate_transition(manifest: dict, reviewed_candidate: str, head: str,
         raise ReviewManifestError(
             "the review manifest names a different candidate than the loader "
             "resolved")
+
+    delta = authority_closure_delta(anchor, reviewed_candidate, repo=repo)
+    if not delta:
+        raise ReviewManifestError(
+            "the authority closure is identical at the anchor and the "
+            "candidate, so there is no reviewed transition to perform. This "
+            "mode is not a flag: it exists only to carry a closure change that "
+            "an external review has approved. Use the steady-state loader.")
 
     declared = set(declared_authority_closure())
     named = set(manifest["members"])
@@ -2046,13 +2076,15 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
         transition = revalidate_transition(
             parse_review_manifest(Path(review_manifest).read_text(
                 encoding="utf-8")),
-            reviewed_candidate, head, repo=repo)
+            reviewed_candidate, head, anchor=anchor, repo=repo)
         out.write(f"transition revalidated against the review manifest "
                   f"({transition['provenance']})\n")
         report.facts["transition"] = {
             "candidate": transition["candidate"],
             "provenance": transition["provenance"],
             "members": len(transition["members"]),
+            "changed": sorted(authority_closure_delta(
+                anchor, reviewed_candidate, repo=repo)),
         }
     branch = _git("rev-parse", "--symbolic-full-name", "HEAD",
                   repo=repo).stdout.strip()
