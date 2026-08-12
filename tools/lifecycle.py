@@ -39,16 +39,27 @@ Two safety properties are load-bearing and are *not* negotiable defaults:
 `session-end` honors `--dry-run`: it prints the planned writes and exits
 writing nothing. `session-start` has no `--dry-run` -- it performs one
 write regardless, the idempotent skills fan-out self-heal (never anything
-else); see `cmd_session_start` below.
+else); see `cmd_session_start` below.  `pilot-record` also honors `--dry-run`
+(it prints the event block it would append and writes nothing).
+
+Two further subcommands carry the **monitoring-evidence** window for the
+review allocation -- `pilot-report` (derives, writes nothing) and
+`pilot-record` (the ledger's only writer).  They measure a policy that is
+already in force; an absent activation record means *no evidence yet*, never
+that the review policy is off.  See the section comment above
+``_validated_planner_path`` for the whole contract.
 
 Run:
     python tools/lifecycle.py session-start
     python tools/lifecycle.py session-end [--dry-run]
+    python tools/lifecycle.py pilot-report
+    python tools/lifecycle.py pilot-record --kind <kind> ... [--dry-run]
 """
 from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import importlib.util as _importlib_util
 import json
 import os
 import re
@@ -1395,6 +1406,1170 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
     return 0
 
 
+# --- monitoring evidence: the review-allocation window -----------------------
+#
+# Chunk P6a of `dev/plans/review-efficient-lifecycle.md`, as revised by that
+# plan's "Maintainer-directed contract revision -- 2026-08-11" (cell `P6-R`).
+#
+# **Direction first, because it is the one prohibition the revision states on
+# this code.**  The proposal-centered review allocation is ALREADY the default.
+# What these two subcommands measure is therefore a live policy, not a candidate
+# waiting for permission from its own pilot:
+#
+#     no activation record  ==  no monitoring evidence yet
+#     no activation record  !=  the review policy is disabled
+#
+# Nothing here may read the second line.  `P6-R`, verbatim: "No reader or writer
+# may treat absent monitoring activation as disabling the review policy."  The
+# token `promote` is retired (`M6-R`); the Decision at the monitoring boundary is
+# `retain | revise | retire`.
+#
+# **Two records, and the split is the security property** (the plan's Security
+# round 2, finding [T2], and round 1's [H3]).  A single mutable JSON state file
+# -- the shape this replaces -- is last-writer-wins, and "six plans reached the
+# boundary" is not a claim a last-writer-wins file can support:
+#
+#   * `dev/measurement/pilot-activation.md` -- an IMMUTABLE tracked activation
+#     record.  It names `machinery_sha` (the reviewed Boundary-B2 commit) and
+#     the evidence record that attests it.  It does **not** name the enabling
+#     commit or the activation date: both are DERIVED from git as the commit
+#     that first introduced this exact blob, and that commit's author date.
+#     Storing either would be self-referential -- a commit cannot contain its
+#     own id -- which is exactly the circularity [T2] refused.
+#   * `dev/measurement/pilot-events.md` -- an APPEND-ONLY tracked event ledger,
+#     one block per counted plan stem or pause, each bound to its source
+#     artifact and source commit.  Counts, pause state and the whole report are
+#     DERIVED from it and never stored: a stored count is a second authority
+#     that can disagree with the ledger.
+#
+# The quota and the window length are CONTRACT, so they are constants here.  A
+# data file that could restate them would be a record rewriting its own rule.
+#
+# **This file introduces neither record.**  The ledger ships with P6a carrying
+# zero events; the activation record is introduced later by P6d, the data-only
+# commit at Maintainer fence **M2**, because `machinery_sha` is the Boundary-B2
+# commit and that commit does not exist while P6a is being written.  Fabricating
+# a placeholder SHA here would put a false attestation in the tracked record.
+#
+# ---------------------------------------------------------------------------
+# The one runtime status vocabulary -- contained loader (third consumer)
+# ---------------------------------------------------------------------------
+#
+# `lifecycle-status-vocabulary` R5, as replaced by that proposal's "R5
+# replacement -- contained consumers and corpus boundary"; the same A3/A5
+# contract `scripts/transition_lint.py` and `tools/_lifecycle_metrics/
+# extract.py` implement.  The contract is restated here **per consumer** rather
+# than inherited by implication, because the containment is the security
+# property and a reader of this file must be able to check it without opening
+# either of the other two.
+#
+# Why this file needs the vocabulary at all: the six-plan rule counts distinct
+# plan stems that reached one named plan state.  Naming that state locally would
+# fork the vocabulary Chunk A exists to keep single -- so the state is a lookup
+# key validated against the planner, and `bootstrap/tests/
+# test_lifecycle_vocabulary.py` audits this file's source for a local enum.
+#
+# The rules, each implemented below:
+#   * the path is the SIBLING `lifecycle_planner.py`, derived from THIS file's
+#     own **unresolved** location -- never from ambient `sys.path`, and no
+#     `tools/__init__.py` is created to manufacture a package.  Unresolved is
+#     load-bearing: a resolved path can never be a symlink, so a guard asking
+#     that question of one is dead by construction (found by A6's loader matrix
+#     in both existing consumers, fixed at `94bda8b`);
+#   * before execution: refuse a missing or unreadable planner, a symlinked
+#     planner, a symlinked containing directory, and any planner whose
+#     resolution lands outside the expected root -- comparing **resolved** forms
+#     on both sides, so a checkout under a symlinked ancestor (macOS's
+#     `/tmp -> /private/tmp`) is not falsely refused;
+#   * a fixed private module name, registered in `sys.modules` before
+#     `exec_module` (some decorators resolve a loading module's own name
+#     through it), and purged with every child on failure;
+#   * cache only a FULLY initialized module carrying our completion sentinel --
+#     presence in `sys.modules` is not initialization;
+#   * a pre-existing entry under that name is never trusted merely for being
+#     present -- it passes the same identity checks or it is replaced;
+#   * every validation `OSError` is a clean refusal, never a traceback and
+#     never a fallback to a local literal.
+#
+# Both installed copies satisfy the sibling requirement: `tools/lifecycle.py`
+# beside `tools/lifecycle_planner.py`, and this file's byte-identical template
+# twin `templates/skills/_lib/lifecycle.py` beside `templates/skills/_lib/
+# lifecycle_planner.py`.  (Unlike `_lifecycle_metrics/extract.py`, whose twin
+# has no planner at its source location and therefore refuses there.)
+
+
+class VocabularyUnavailable(LifecycleError):
+    """The single status vocabulary could not be loaded *safely*.
+
+    A `LifecycleError` because it is actionable and fatal to whatever asked:
+    the alternative -- falling back to a local status literal -- is the exact
+    defect the single-vocabulary rule removes.
+    """
+
+
+class MonitoringIncomplete(RuntimeError):
+    """A monitoring derivation cannot be completed, and says why.
+
+    Distinct from `LifecycleError` on purpose.  `LifecycleError` is a refusal
+    (bad bytes, an unsafe path, a race); this is *"the evidence is not there
+    yet"* -- reported with its reason and a non-zero exit, and **never**
+    rendered as a clean report or as "the policy is off".
+    """
+
+
+#: Fixed private name.  Fixed so a poisoned entry is *detectable* at a known
+#: key; private so it cannot be mistaken for an importable module.
+_PLANNER_MODULE_NAME = "_lifecycle_cli_lifecycle_planner"
+
+#: Set by *this* loader only after `exec_module` returned AND every required
+#: export is present.
+_PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
+
+#: What this consumer actually reads.  Checked before the module is cached, so a
+#: planner that loads but has lost an export is a refusal, not an
+#: `AttributeError` at the first counted plan.
+_REQUIRED_EXPORTS = ("PLAN_STATES",)
+
+_planner_cache = None
+
+
+def _purge_planner_module() -> None:
+    """Drop the private module and every child registered under its name."""
+    prefix = _PLANNER_MODULE_NAME + "."
+    for name in [n for n in sys.modules
+                 if n == _PLANNER_MODULE_NAME or n.startswith(prefix)]:
+        sys.modules.pop(name, None)
+
+
+def _validated_planner_path() -> Path:
+    """The sibling planner path, or a clean refusal.  Never raises `OSError`."""
+    raw = Path(__file__).absolute()
+    root = raw.parent
+    path = root / "lifecycle_planner.py"
+    try:
+        if root.is_symlink():
+            raise VocabularyUnavailable(
+                f"the containing directory {root} is a symlink -- refusing to "
+                f"load the status vocabulary through it")
+        if path.is_symlink():
+            raise VocabularyUnavailable(
+                f"{path} is a symlink -- refusing to load the status "
+                f"vocabulary through it")
+        if not path.is_file():
+            raise VocabularyUnavailable(
+                f"no status vocabulary beside this tool at {path} -- the "
+                f"lifecycle CLI reads the plan-state vocabulary from the "
+                f"planner and keeps no local copy")
+        if path.resolve().parent != root.resolve():
+            raise VocabularyUnavailable(
+                f"{path} resolves outside the expected {root} root")
+        with path.open("rb"):
+            pass
+    except OSError as exc:
+        raise VocabularyUnavailable(
+            f"cannot read the status vocabulary at {path}: {exc}") from None
+    return path
+
+
+def _vocabulary():
+    """The planner module, loaded under containment and cached when complete."""
+    global _planner_cache
+    if _planner_cache is not None:
+        return _planner_cache
+    path = _validated_planner_path()
+
+    existing = sys.modules.get(_PLANNER_MODULE_NAME)
+    if existing is not None:
+        if (getattr(existing, _PLANNER_SENTINEL, False)
+                and getattr(existing, "__file__", None) == str(path)
+                and all(hasattr(existing, n) for n in _REQUIRED_EXPORTS)):
+            _planner_cache = existing
+            return existing
+        _purge_planner_module()
+
+    spec = _importlib_util.spec_from_file_location(_PLANNER_MODULE_NAME, path)
+    if spec is None or spec.loader is None:
+        raise VocabularyUnavailable(f"could not build an import spec for {path}")
+    module = _importlib_util.module_from_spec(spec)
+    sys.modules[_PLANNER_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException as exc:
+        _purge_planner_module()
+        raise VocabularyUnavailable(
+            f"the status vocabulary at {path} failed to load: {exc!r}") from None
+    missing = [n for n in _REQUIRED_EXPORTS if not hasattr(module, n)]
+    if missing:
+        _purge_planner_module()
+        raise VocabularyUnavailable(
+            f"the status vocabulary at {path} is missing {missing}")
+    setattr(module, _PLANNER_SENTINEL, True)
+    _planner_cache = module
+    return module
+
+
+#: The plan state the six-plan rule counts.  A **lookup key into the one runtime
+#: vocabulary, not a local vocabulary**: nothing uses it until
+#: `_counted_plan_state` has confirmed the planner declares it, so this file can
+#: never disagree with `tools/lifecycle_planner.py` about which states exist --
+#: it can only fail to find the one it needs.
+#:
+#: **It is absent from the vocabulary as this lands** -- measured 2026-08-12,
+#: `PLAN_STATES == ('open', 'awaiting-plan-review', 'executing', 'review',
+#: 'archived')`.  Chunk E of `review-efficient-lifecycle` introduces it (its E1
+#: row: the proposal and plan state tables).  Until then every counting
+#: derivation refuses and names the dependency.  It must never quietly count
+#: zero: a zero from an unavailable rule is indistinguishable from a working
+#: rule that found no plans, which is the silent-tool defect `AGENTS.md`
+#: forbids ("a tool that returns success without testing the claimed property
+#: is a worse defect than no tool, because it is silent").
+#:
+#: Deliberately NOT substituted by the nearest current state.  `review` is
+#: today's pre-`archived` state and would make the count *run*; it would also
+#: be counting a different thing than the contract says, silently.
+_COUNTED_PLAN_STATE = "ready-to-archive"
+
+
+def _counted_plan_state() -> str:
+    """The counted plan state, confirmed against the one runtime vocabulary.
+
+    Raises `MonitoringIncomplete` (not a refusal, not a silent zero) while the
+    vocabulary has no such state.
+    """
+    states = tuple(_vocabulary().PLAN_STATES)
+    if _COUNTED_PLAN_STATE not in states:
+        raise MonitoringIncomplete(
+            f"the six-plan counting rule keys on plan state "
+            f"'{_COUNTED_PLAN_STATE}', which the single runtime vocabulary does "
+            f"not declare yet (PLAN_STATES = {states}).  Chunk E of "
+            f"review-efficient-lifecycle introduces it; until it lands the plan "
+            f"count is UNAVAILABLE, which is not the same as zero")
+    return _COUNTED_PLAN_STATE
+
+
+# --- the two records: paths, bounded schemas, safe access --------------------
+
+_PILOT_ACTIVATION_REL = ("dev", "measurement", "pilot-activation.md")
+_PILOT_EVENTS_REL = ("dev", "measurement", "pilot-events.md")
+
+_ACTIVATION_FENCE = "cairn-pilot-activation"
+_EVENT_FENCE = "cairn-pilot-event"
+_ACTIVATION_SCHEMA = "cairn-pilot-activation/1"
+_EVENT_SCHEMA = "cairn-pilot-event/1"
+
+#: Contract, not data.  "six eligible plans or 60 days, whichever comes first"
+#: is the accepted proposal's own rule; a record that could restate it would be
+#: a record rewriting its rule.
+_PILOT_PLAN_QUOTA = 6
+_PILOT_WINDOW_DAYS = 60
+
+#: Pause thresholds, from the accepted proposal: "A high-severity escaped
+#: finding attributable to inheritance pauses the pilot immediately; two
+#: lower-severity examples do the same."  P6b authors the human contract; these
+#: are the numbers, here only so recorded findings that *meet* a pause condition
+#: cannot sit in the ledger with no pause surfaced.
+_PAUSE_HIGH_THRESHOLD = 1
+_PAUSE_LOW_THRESHOLD = 2
+
+_ACTIVATION_KEYS = ("schema", "machinery_sha", "machinery_record_path",
+                    "machinery_record_section")
+
+_EVENT_KINDS = ("plan-counted", "pause-set", "pause-cleared")
+_EVENT_COMMON_KEYS = ("schema", "kind", "date", "subject", "source_artifact",
+                      "source_commit")
+_EVENT_KEYS = {
+    "plan-counted": _EVENT_COMMON_KEYS + (
+        "plan_state", "review_input_bytes", "transitions_removed",
+        "escaped_findings_high", "escaped_findings_low", "maintainer_prompts",
+        "note"),
+    "pause-set": _EVENT_COMMON_KEYS + ("severity", "note"),
+    "pause-cleared": _EVENT_COMMON_KEYS + ("note",),
+}
+#: Absent is legal; present-but-malformed still refuses.  Everything else in a
+#: kind's key set is mandatory, and any key outside it refuses (closed schema).
+_EVENT_OPTIONAL_KEYS = ("note",)
+_EVENT_NUMERIC_KEYS = ("review_input_bytes", "transitions_removed",
+                       "escaped_findings_high", "escaped_findings_low",
+                       "maintainer_prompts")
+_PAUSE_SEVERITIES = ("high", "low")
+
+#: Bounds.  Every one of them refuses rather than truncates: a truncated
+#: governance record is a quiet lie about what was recorded.
+_PILOT_VALUE_LIMIT = 200
+_PILOT_MAX_BLOCKS = 200
+_PILOT_NUMERIC_MAX = 10 ** 9
+
+_PILOT_KEY_RE = re.compile(r"\A[a-z][a-z0-9_]{0,39}\Z")
+_PILOT_SHA_RE = re.compile(r"\A[0-9a-f]{40}\Z")
+_PILOT_DATE_RE = re.compile(r"\A\d{4}-\d{2}-\d{2}\Z")
+_PILOT_SUBJECT_RE = re.compile(r"\A[a-z0-9][a-z0-9._-]{0,79}\Z")
+_PILOT_PATH_RE = re.compile(r"\A[A-Za-z0-9][A-Za-z0-9._/-]{0,159}\Z")
+_PILOT_SECTION_RE = re.compile(r"\A[A-Za-z0-9][ -~]{0,159}\Z")
+_PILOT_NUMBER_RE = re.compile(r"\A(0|[1-9][0-9]{0,11})\Z")
+
+#: Values are printable ASCII only, and these three are excluded on top of that:
+#: a backslash so a value cannot survive one round-trip through this CLI's
+#: stream escaping as different bytes; a backtick so no value can open or close
+#: a fence; a pipe so a value can never be mistaken for a table cell.
+_PILOT_FORBIDDEN_IN_VALUE = ("\\", "`", "|")
+
+
+def _pilot_value_ok(value: str) -> bool:
+    """True if `value` is inside the bounded value grammar (never raises)."""
+    if not value or len(value) > _PILOT_VALUE_LIMIT:
+        return False
+    if any(ch in value for ch in _PILOT_FORBIDDEN_IN_VALUE):
+        return False
+    return all(0x20 <= ord(ch) <= 0x7E for ch in value)
+
+
+def _has_symlink_component_below(path: Path, root: Path) -> bool:
+    """True if `path` or any parent *up to but excluding* `root` is a symlink.
+
+    Root-bounded on purpose.  `_has_symlink_component` walks to the filesystem
+    root, which is right for the interpreter trust root (an absolute path that
+    may live anywhere) and wrong here: a legitimate checkout under a symlinked
+    ancestor -- macOS's `/tmp -> /private/tmp` -- would be refused as a tamper.
+    What must not be a symlink is the part of the path *this repository owns*.
+    """
+    root_resolved = root.resolve()
+    cur = path
+    while True:
+        # `root` itself is tested for identity BEFORE symlink-ness, and never
+        # for symlink-ness: a checkout reached through a symlinked ancestor is a
+        # normal way to work, and refusing it would be a false refusal dressed
+        # as a security check.
+        if cur == root or cur.resolve() == root_resolved:
+            return False
+        if cur.is_symlink():
+            return True
+        if cur.parent == cur:  # ran off the filesystem root: not under `root`
+            return False
+        cur = cur.parent
+
+
+def _evidence_path(root: Path, rel_parts: Tuple[str, ...], *,
+                   must_exist: bool) -> Path:
+    """A monitoring-record path, or a clean refusal.
+
+    Every writer *and* reader passes through here: repository containment, a
+    regular non-symlink leaf **and** parent, no symlink anywhere in the part of
+    the path this repository owns.  A reader is held to the writer's checks
+    because a redirected read is how a tampered record gets believed.
+    """
+    path = root.joinpath(*rel_parts)
+    _assert_within(path, root)
+    parent = path.parent
+    try:
+        if _has_symlink_component_below(path, root):
+            raise LifecycleError(
+                f"{path} is reached through a symlink -- refusing to read or "
+                f"write a monitoring record through one")
+        if not parent.is_dir():
+            raise LifecycleError(
+                f"{parent} is not a directory -- the monitoring records live "
+                f"in a tracked directory this tool never creates")
+        if path.exists() and not path.is_file():
+            raise LifecycleError(
+                f"{path} is not a regular file -- refusing")
+        if must_exist and not path.is_file():
+            raise LifecycleError(f"no such monitoring record: {path}")
+    except OSError as exc:
+        raise LifecycleError(f"cannot inspect {path}: {exc}") from None
+    return path
+
+
+def _read_text_strict(path: Path) -> str:
+    """Read a monitoring record as strict UTF-8, or refuse cleanly."""
+    try:
+        return path.read_bytes().decode("utf-8")
+    except OSError as exc:
+        raise LifecycleError(f"cannot read {path}: {exc}") from None
+    except UnicodeError as exc:
+        raise LifecycleError(
+            f"{path} is not valid UTF-8 ({exc}) -- refusing") from None
+
+
+def _parse_fenced_records(text: str, fence: str, where: str) -> List[dict]:
+    """Parse every ```<fence> block in `text` into a bounded key/value dict.
+
+    Strict by construction: the opening line is exactly ```<fence> at column 0,
+    the closing line is exactly ```, every body line is `key: value`, keys match
+    a narrow grammar and never repeat, values match the bounded value grammar,
+    and an unterminated block refuses.
+
+    **Only top-level blocks are data.**  A record's own prose header has to be
+    able to *document* the schema, and a documented example that the parser then
+    reads as a real event would be a record inventing its own contents.  So an
+    opening fence seen while inside any other fenced block is skipped: an
+    example shown inside a ```text block is inert by construction rather than by
+    the author remembering to disguise it.
+    """
+    open_line = "```" + fence
+    records: List[dict] = []
+    lines = _split_lines(text)
+    i = 0
+    while i < len(lines):
+        if lines[i] != open_line:
+            if lines[i].startswith("```"):
+                # Some other fenced block: skip to its close, so nothing inside
+                # it is ever read as data.  An unterminated one swallows the
+                # remainder, which is the fail-closed direction.
+                i += 1
+                while i < len(lines) and lines[i] != "```":
+                    i += 1
+            i += 1
+            continue
+        start = i + 1
+        j = start
+        while j < len(lines) and lines[j] != "```":
+            j += 1
+        if j >= len(lines):
+            raise LifecycleError(
+                f"{where}: unterminated ```{fence} block opened at line {i + 1}")
+        record: dict = {}
+        for offset, line in enumerate(lines[start:j]):
+            lineno = start + offset + 1
+            if ": " not in line and not line.endswith(":"):
+                raise LifecycleError(
+                    f"{where}:{lineno}: not a `key: value` line in a "
+                    f"```{fence} block")
+            key, _, value = line.partition(":")
+            value = value.strip()
+            if not _PILOT_KEY_RE.match(key):
+                raise LifecycleError(
+                    f"{where}:{lineno}: bad key {key!r} in a ```{fence} block")
+            if key in record:
+                raise LifecycleError(
+                    f"{where}:{lineno}: duplicate key {key!r} in one "
+                    f"```{fence} block")
+            if not _pilot_value_ok(value):
+                raise LifecycleError(
+                    f"{where}:{lineno}: value for {key!r} is outside the "
+                    f"bounded schema (printable ASCII, 1..{_PILOT_VALUE_LIMIT} "
+                    f"chars, no backslash / backtick / pipe)")
+            record[key] = value
+        record["_line"] = str(i + 1)
+        records.append(record)
+        if len(records) > _PILOT_MAX_BLOCKS:
+            raise LifecycleError(
+                f"{where}: more than {_PILOT_MAX_BLOCKS} ```{fence} blocks -- "
+                f"refusing to derive from an unbounded record")
+        i = j + 1
+    return records
+
+
+def _require_exact_keys(record: dict, expected: Tuple[str, ...],
+                        optional: Tuple[str, ...], where: str) -> None:
+    """Closed-schema check: no unknown key, no missing mandatory key."""
+    present = {k for k in record if not k.startswith("_")}
+    unknown = sorted(present - set(expected))
+    if unknown:
+        raise LifecycleError(
+            f"{where}: unknown key(s) {unknown} -- the schema is closed, so an "
+            f"unrecognized key refuses rather than being ignored")
+    missing = sorted(k for k in expected if k not in present and k not in optional)
+    if missing:
+        raise LifecycleError(f"{where}: missing mandatory key(s) {missing}")
+
+
+# --- git-derived facts (all through the one read-only `_git` helper) ----------
+
+
+def _git_ok(root: Path, args: List[str]) -> Optional[str]:
+    """`_git` output, or `None` when git exits non-zero.
+
+    For the questions where a non-zero exit is an *answer* ("no such object",
+    "not an ancestor") rather than a breakage.  Every caller turns `None` into
+    an explicit refusal or an explicit report line -- never into a default.
+    """
+    try:
+        return _git(args, root)
+    except LifecycleError:
+        return None
+
+
+def _blob_oid_at(root: Path, ref: str, rel: str) -> Optional[str]:
+    """The blob oid of `rel` at `ref`, or `None` if it is not there."""
+    out = _git_ok(root, ["rev-parse", "--verify", "--quiet", f"{ref}:{rel}"])
+    if out is None:
+        return None
+    out = out.strip()
+    return out if re.fullmatch(r"[0-9a-f]{40}", out) else None
+
+
+def _worktree_blob_oid(root: Path, path: Path) -> Optional[str]:
+    """The blob oid git would store for the working-tree bytes of `path`.
+
+    Compared against `_blob_oid_at` rather than comparing file *contents*: an
+    oid is a fixed-width hex string, so the comparison is byte-exact and
+    unaffected by the stream sanitizing `_git` applies to its output.
+    """
+    out = _git_ok(root, ["hash-object", "--", str(path)])
+    if out is None:
+        return None
+    out = out.strip()
+    return out if re.fullmatch(r"[0-9a-f]{40}", out) else None
+
+
+def _commit_exists(root: Path, sha: str) -> bool:
+    """True if `sha` names a commit object in this repository."""
+    out = _git_ok(root, ["cat-file", "-t", sha])
+    return bool(out) and out.strip() == "commit"
+
+
+def _is_strict_ancestor(root: Path, older: str, newer: str) -> bool:
+    """True if `older` is an ancestor of `newer` and not the same commit."""
+    if older == newer:
+        return False
+    return _git_ok(root, ["merge-base", "--is-ancestor", older, newer]) is not None
+
+
+def _introducing_commit(root: Path, rel: str, blob: str) -> Optional[str]:
+    """The earliest commit whose blob at `rel` is exactly `blob`.
+
+    This is the *enabling* commit, derived rather than stored: a commit cannot
+    contain its own id, so an `activation_sha` field naming the commit that
+    introduces the record is unsatisfiable ([T2]).  The path's own history is
+    walked oldest-first and the first exact-blob match wins, so the answer is
+    stable under later edits (a later edit is a different blob) and under
+    reverts to the same bytes (the *first* introduction is the activation).
+    """
+    log = _git_ok(root, ["log", "--reverse", "--format=%H", "--", rel])
+    if log is None:
+        return None
+    for sha in log.split():
+        if not re.fullmatch(r"[0-9a-f]{40}", sha):
+            continue
+        if _blob_oid_at(root, sha, rel) == blob:
+            return sha
+    return None
+
+
+def _author_date(root: Path, sha: str) -> Optional[str]:
+    """`sha`'s author date as `YYYY-MM-DD`, or `None`."""
+    out = _git_ok(root, ["log", "-1", "--format=%ad", "--date=short", sha])
+    if out is None:
+        return None
+    out = out.strip()
+    return out if _PILOT_DATE_RE.match(out) else None
+
+
+# --- the activation record ---------------------------------------------------
+
+
+def _read_activation(root: Path) -> Optional[dict]:
+    """The validated activation record, or `None` when there is not one yet.
+
+    `None` means **no monitoring evidence yet** and nothing else.  Malformed
+    bytes, an unknown schema version, an unsafe path, an uncommitted record or a
+    binding that does not hold all raise -- so the one thing this function can
+    never do is turn a broken record into "inactive".
+    """
+    rel = "/".join(_PILOT_ACTIVATION_REL)
+    path = root.joinpath(*_PILOT_ACTIVATION_REL)
+    if not path.exists() and not path.is_symlink():
+        return None
+    path = _evidence_path(root, _PILOT_ACTIVATION_REL, must_exist=True)
+    where = rel
+    records = _parse_fenced_records(_read_text_strict(path), _ACTIVATION_FENCE,
+                                    where)
+    if len(records) != 1:
+        raise LifecycleError(
+            f"{where}: expected exactly one ```{_ACTIVATION_FENCE} block, found "
+            f"{len(records)} -- an activation record with none is malformed, and "
+            f"one with several has no single authority")
+    record = records[0]
+    _require_exact_keys(record, _ACTIVATION_KEYS, (), where)
+    if record["schema"] != _ACTIVATION_SCHEMA:
+        raise LifecycleError(
+            f"{where}: unknown schema {record['schema']!r} -- this tool reads "
+            f"{_ACTIVATION_SCHEMA} and refuses anything else.  An unreadable "
+            f"activation record is NOT an inactive monitoring window and is "
+            f"NOT a disabled review policy")
+    if not _PILOT_SHA_RE.match(record["machinery_sha"]):
+        raise LifecycleError(
+            f"{where}: machinery_sha must be a full 40-character lowercase hex "
+            f"commit id, got {_safe_field(record['machinery_sha'])!r}")
+    if not _PILOT_PATH_RE.match(record["machinery_record_path"]) \
+            or ".." in record["machinery_record_path"].split("/"):
+        raise LifecycleError(
+            f"{where}: machinery_record_path must be a plain repository-"
+            f"relative path")
+    if not _PILOT_SECTION_RE.match(record["machinery_record_section"]):
+        raise LifecycleError(
+            f"{where}: machinery_record_section must be the exact heading text "
+            f"of the Boundary-B2 evidence section")
+
+    # Immutability is enforced against git, not asserted in prose: the tracked
+    # bytes and the working-tree bytes must be the same object.
+    head_blob = _blob_oid_at(root, "HEAD", rel)
+    if head_blob is None:
+        raise LifecycleError(
+            f"{where}: not tracked at HEAD -- the activation record is an "
+            f"immutable tracked record, and an uncommitted one has no enabling "
+            f"commit to derive.  Commit it (fence M2) or remove it")
+    live_blob = _worktree_blob_oid(root, path)
+    if live_blob != head_blob:
+        raise LifecycleError(
+            f"{where}: the working-tree bytes differ from the bytes committed "
+            f"at HEAD -- an immutable record was modified in place.  Refusing "
+            f"to derive a monitoring window from it")
+
+    enabling = _introducing_commit(root, rel, head_blob)
+    if enabling is None:
+        raise LifecycleError(
+            f"{where}: no commit in this path's history introduces exactly "
+            f"these bytes -- the enabling commit is derived, never stored, and "
+            f"it must exist")
+    date = _author_date(root, enabling)
+    if date is None:
+        raise LifecycleError(
+            f"{where}: cannot read the author date of the enabling commit "
+            f"{enabling}")
+
+    machinery = record["machinery_sha"]
+    if not _commit_exists(root, machinery):
+        raise LifecycleError(
+            f"{where}: machinery_sha {machinery} is not a commit in this "
+            f"repository")
+    if not _is_strict_ancestor(root, machinery, enabling):
+        raise LifecycleError(
+            f"{where}: machinery_sha {machinery} is not a strict ancestor of "
+            f"the derived enabling commit {enabling} -- the reviewed machinery "
+            f"must already be in history when the window opens")
+    _assert_machinery_binding(root, record, enabling, where)
+
+    return {
+        "path": rel,
+        "machinery_sha": machinery,
+        "machinery_record_path": record["machinery_record_path"],
+        "machinery_record_section": record["machinery_record_section"],
+        "enabling_commit": enabling,
+        "activation_date": date,
+    }
+
+
+def _assert_machinery_binding(root: Path, record: dict, enabling: str,
+                              where: str) -> None:
+    """Refuse a `machinery_sha` the named evidence record does not attest.
+
+    Without this the field is unfalsifiable -- any 40-hex ancestor would pass --
+    and P6c's oracle ("a record whose `machinery_sha` is not the B2 commit
+    refuses") would have nothing to observe.  So the record names the evidence
+    section that *does* attest the commit, and the section is read **at the
+    enabling commit**, where the record's own claim was fixed.
+    """
+    rel = record["machinery_record_path"]
+    section = record["machinery_record_section"]
+    body = _git_ok(root, ["show", f"{enabling}:{rel}"])
+    if body is None:
+        raise LifecycleError(
+            f"{where}: {rel} does not exist at the enabling commit {enabling} "
+            f"-- machinery_record_path must name a record that was in the tree "
+            f"when the window opened")
+    heading = "## " + section
+    lines = _split_lines(body)
+    try:
+        start = lines.index(heading)
+    except ValueError:
+        raise LifecycleError(
+            f"{where}: {rel} at {enabling} has no `{_safe_field(heading)}` "
+            f"section -- machinery_record_section must be an exact heading") \
+            from None
+    end = len(lines)
+    for offset, line in enumerate(lines[start + 1:], start=start + 1):
+        if line.startswith("## "):
+            end = offset
+            break
+    body_text = "\n".join(lines[start + 1:end])
+    machinery = record["machinery_sha"]
+    if machinery not in body_text and machinery[:12] not in body_text:
+        raise LifecycleError(
+            f"{where}: the `{_safe_field(section)}` section of {rel} at "
+            f"{enabling} does not name machinery_sha {machinery} -- the "
+            f"activation record claims a machinery commit its own cited "
+            f"evidence record does not attest")
+
+
+# --- the append-only event ledger --------------------------------------------
+
+
+def _validate_event(record: dict, where: str, *, counted_state: Optional[str]) -> dict:
+    """Schema-validate one event block.  No git, no cross-event state.
+
+    `counted_state` is the vocabulary-confirmed counted plan state, or `None`
+    when the vocabulary could not supply it -- in which case a `plan-counted`
+    event refuses instead of being accepted against an unchecked token.
+    """
+    if record.get("schema") != _EVENT_SCHEMA:
+        raise LifecycleError(
+            f"{where}: unknown or missing event schema "
+            f"{_safe_field(record.get('schema'))!r} -- this tool reads "
+            f"{_EVENT_SCHEMA} and refuses anything else")
+    kind = record.get("kind")
+    if kind not in _EVENT_KEYS:
+        raise LifecycleError(
+            f"{where}: unknown event kind {_safe_field(kind)!r} -- the closed "
+            f"set is {list(_EVENT_KINDS)}")
+    _require_exact_keys(record, _EVENT_KEYS[kind], _EVENT_OPTIONAL_KEYS, where)
+    if not _PILOT_DATE_RE.match(record["date"]):
+        raise LifecycleError(f"{where}: date must be YYYY-MM-DD")
+    try:
+        _dt.date.fromisoformat(record["date"])
+    except ValueError:
+        raise LifecycleError(
+            f"{where}: date {record['date']!r} is not a real calendar date") \
+            from None
+    if not _PILOT_SUBJECT_RE.match(record["subject"]):
+        raise LifecycleError(
+            f"{where}: subject must be a lowercase stem/token "
+            f"([a-z0-9][a-z0-9._-]*), got {_safe_field(record['subject'])!r}")
+    art = record["source_artifact"]
+    if (not _PILOT_PATH_RE.match(art) or ".." in art.split("/")
+            or art.startswith("/") or "//" in art):
+        raise LifecycleError(
+            f"{where}: source_artifact must be a plain repository-relative "
+            f"path, got {_safe_field(art)!r}")
+    if not _PILOT_SHA_RE.match(record["source_commit"]):
+        raise LifecycleError(
+            f"{where}: source_commit must be a full 40-character lowercase hex "
+            f"commit id")
+    for key in _EVENT_NUMERIC_KEYS:
+        if key in record and not _PILOT_NUMBER_RE.match(record[key]):
+            raise LifecycleError(
+                f"{where}: {key} must be a bounded non-negative integer "
+                f"(< 10^12, no sign, no leading zero)")
+        if key in record and int(record[key]) > _PILOT_NUMERIC_MAX:
+            raise LifecycleError(
+                f"{where}: {key} exceeds {_PILOT_NUMERIC_MAX}")
+    if kind == "pause-set" and record["severity"] not in _PAUSE_SEVERITIES:
+        raise LifecycleError(
+            f"{where}: severity must be one of {list(_PAUSE_SEVERITIES)}")
+    if kind == "plan-counted":
+        if counted_state is None:
+            raise LifecycleError(
+                f"{where}: a plan-counted event names plan_state "
+                f"{_safe_field(record['plan_state'])!r}, and the single runtime "
+                f"vocabulary cannot confirm it right now -- refusing to admit a "
+                f"counted plan against an unchecked status token")
+        if record["plan_state"] != counted_state:
+            raise LifecycleError(
+                f"{where}: plan_state must be {counted_state!r} (the state the "
+                f"six-plan rule counts), got "
+                f"{_safe_field(record['plan_state'])!r}")
+    return record
+
+
+def _assert_event_bindings(root: Path, event: dict, where: str) -> None:
+    """Refuse an event whose source binding does not resolve in this repository.
+
+    Checked on **every read**, not only at write time: the write-time check
+    protects the writer, and a hand-added block never went through it.  An event
+    citing a commit that does not exist, or an artifact that does not exist at
+    that commit, is not evidence and must not be counted.
+    """
+    if not _commit_exists(root, event["source_commit"]):
+        raise LifecycleError(
+            f"{where}: source_commit {event['source_commit']} is not a commit in "
+            f"this repository -- every event is bound to a real source commit")
+    if _blob_oid_at(root, event["source_commit"],
+                    event["source_artifact"]) is None:
+        raise LifecycleError(
+            f"{where}: {_safe_field(event['source_artifact'])} does not exist at "
+            f"{event['source_commit'][:12]} -- every event is bound to its "
+            f"source artifact AT its source commit")
+
+
+def _cross_check_events(events: List[dict], where: str) -> None:
+    """Reject duplicate/conflicting stems and impossible pause sequences.
+
+    Order matters, so this is one forward pass over the ledger as written: the
+    ledger is append-only, so its order *is* the history.
+    """
+    counted: dict = {}
+    active: dict = {}
+    for event in events:
+        line = event.get("_line", "?")
+        at = f"{where}:{line}"
+        kind = event["kind"]
+        subject = event["subject"]
+        if kind == "plan-counted":
+            prior = counted.get(subject)
+            if prior is not None:
+                detail = ("the same source commit" if prior == event["source_commit"]
+                          else f"a different source commit ({prior})")
+                raise LifecycleError(
+                    f"{at}: plan stem {subject!r} is already counted with "
+                    f"{detail} -- the six-plan rule counts DISTINCT stems, so a "
+                    f"duplicate or conflicting event refuses")
+            counted[subject] = event["source_commit"]
+        elif kind == "pause-set":
+            if subject in active:
+                raise LifecycleError(
+                    f"{at}: pause {subject!r} is already active (set at line "
+                    f"{active[subject]}) -- refusing a duplicate pause-set")
+            active[subject] = line
+        else:  # pause-cleared
+            if subject not in active:
+                raise LifecycleError(
+                    f"{at}: pause-cleared for {subject!r}, which is not active "
+                    f"-- refusing to clear a pause that was never set")
+            active.pop(subject)
+
+
+def _read_events(root: Path, *, counted_state: Optional[str]) -> Tuple[List[dict], List[str]]:
+    """The validated ledger, plus notes about its state.
+
+    Returns `([], notes)` when the ledger file is absent -- that is a fact about
+    an adopter tree (the ledger is Cairn's own record, not a shipped template),
+    and it is *reported*, never silently equated with "no events happened".
+    """
+    rel = "/".join(_PILOT_EVENTS_REL)
+    notes: List[str] = []
+    path = root.joinpath(*_PILOT_EVENTS_REL)
+    if not path.exists() and not path.is_symlink():
+        notes.append(f"no event ledger at {rel} (nothing has been recorded here)")
+        return [], notes
+    path = _evidence_path(root, _PILOT_EVENTS_REL, must_exist=True)
+    text = _read_text_strict(path)
+    events = _parse_fenced_records(text, _EVENT_FENCE, rel)
+    for event in events:
+        _validate_event(event, f"{rel}:{event.get('_line', '?')}",
+                        counted_state=counted_state)
+        _assert_event_bindings(root, event, f"{rel}:{event.get('_line', '?')}")
+    _cross_check_events(events, rel)
+    notes.extend(_assert_append_only(root, rel, text, counted_state=counted_state))
+    return events, notes
+
+
+def _assert_append_only(root: Path, rel: str, text: str, *,
+                        counted_state: Optional[str]) -> List[str]:
+    """Refuse a ledger whose committed events are not a prefix of the live ones.
+
+    The altered-prior-event check, stated where it can actually be enforced:
+    the committed version is the durable record, so every event it contains must
+    still be present, in the same order, with the same fields.  Prose *around*
+    the blocks is not authority and may be edited; an event may only be added
+    after the last one.
+    """
+    head_text = _git_ok(root, ["show", f"HEAD:{rel}"])
+    if head_text is None:
+        return [f"{rel} is not tracked at HEAD yet -- the append-only check "
+                f"against the committed record cannot run"]
+    committed = _parse_fenced_records(head_text, _EVENT_FENCE, f"HEAD:{rel}")
+    for event in committed:
+        _validate_event(event, f"HEAD:{rel}:{event.get('_line', '?')}",
+                        counted_state=counted_state)
+    live = _parse_fenced_records(text, _EVENT_FENCE, rel)
+    if len(live) < len(committed):
+        raise LifecycleError(
+            f"{rel}: the working tree has {len(live)} event(s) where HEAD has "
+            f"{len(committed)} -- events were removed from an append-only "
+            f"ledger")
+    for index, (old, new) in enumerate(zip(committed, live), start=1):
+        old_fields = {k: v for k, v in old.items() if not k.startswith("_")}
+        new_fields = {k: v for k, v in new.items() if not k.startswith("_")}
+        if old_fields != new_fields:
+            raise LifecycleError(
+                f"{rel}: event {index} differs from the version committed at "
+                f"HEAD -- a prior event was altered, and this ledger is "
+                f"append-only")
+    return []
+
+
+def _render_event_block(record: dict) -> str:
+    """One event block, keys in schema order.  Fixed order so appends diff."""
+    order = [k for k in _EVENT_KEYS[record["kind"]] if k in record]
+    lines = ["```" + _EVENT_FENCE]
+    lines.extend(f"{key}: {record[key]}" for key in order)
+    lines.append("```")
+    return "\n".join(lines) + "\n"
+
+
+def _append_event(root: Path, path: Path, text: str, block: str) -> None:
+    """Append one block with an expected-old check, atomically or not at all.
+
+    `os.replace` makes the *visible* transition atomic; the expected-old re-read
+    immediately before it narrows the read-modify-write window rather than
+    locking it.  Stated plainly because the honest claim matters: two writers
+    racing inside that window is *detected* here (the loser refuses and its
+    event is not recorded), and git is what makes the record durable.
+    """
+    expected_old = text.encode("utf-8")
+    separator = "" if text.endswith("\n") or not text else "\n"
+    new_text = text + separator + "\n" + block
+    tmp = path.with_name(f"{path.name}.tmp-{os.getpid()}-{secrets.token_hex(4)}")
+    try:
+        try:
+            with open(tmp, "xb") as handle:
+                handle.write(new_text.encode("utf-8"))
+                handle.flush()
+                os.fsync(handle.fileno())
+            current = path.read_bytes()
+            if current != expected_old:
+                raise LifecycleError(
+                    f"{path} changed while this event was being prepared -- "
+                    f"another writer got there first.  Nothing was written; "
+                    f"re-run and the new state will be re-read")
+            os.replace(tmp, path)
+        except OSError as exc:
+            raise LifecycleError(
+                f"cannot append to {path}: {exc} -- nothing was written") \
+                from None
+    finally:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
+# --- derivation: counts, pauses, the report ----------------------------------
+
+
+def _window_bounds(activation_date: str) -> Tuple[_dt.date, _dt.date]:
+    """The evidence window, inclusive on both ends.
+
+    `_PILOT_WINDOW_DAYS` **calendar days counted inclusively from the derived
+    activation date**, so the activation date is day 1 and the last day is
+    `activation_date + (window - 1)`.  Spelled out because off-by-one here
+    silently moves a Maintainer Decision by a day: with a 2026-01-01 activation
+    and a 60-day window, 2026-03-01 is the last in-window day and 2026-03-02 is
+    the first day past the deadline.
+    """
+    first = _dt.date.fromisoformat(activation_date)
+    return first, first + _dt.timedelta(days=_PILOT_WINDOW_DAYS - 1)
+
+
+def _derive_report(root: Path, *, today: Optional[_dt.date] = None
+                   ) -> Tuple[List[str], List[str]]:
+    """`(report_lines, incomplete_reasons)`.  Derives; stores nothing."""
+    lines: List[str] = []
+    incomplete: List[str] = []
+    now = today or _dt.date.today()
+
+    lines.append(
+        "review policy: ACTIVE -- the proposal-centered review allocation is "
+        "the default now")
+    lines.append(
+        "this report is monitoring EVIDENCE, not permission: it never gates "
+        "the policy it measures")
+
+    counted_state: Optional[str] = None
+    try:
+        counted_state = _counted_plan_state()
+    except MonitoringIncomplete as exc:
+        incomplete.append(str(exc))
+    except VocabularyUnavailable as exc:
+        incomplete.append(f"the status vocabulary is unavailable: {exc}")
+
+    activation = _read_activation(root)
+    events, notes = _read_events(root, counted_state=counted_state)
+    for note in notes:
+        lines.append(f"note: {note}")
+
+    if activation is None:
+        lines.append(
+            f"activation: NONE -- no {'/'.join(_PILOT_ACTIVATION_REL)}")
+        lines.append(
+            "meaning: no monitoring evidence window has opened yet (it opens at "
+            "P6d, the data-only commit at fence M2)")
+        lines.append(
+            "NOT meaning: the review policy is disabled.  Absent monitoring "
+            "activation says nothing about the policy, which is already in "
+            "force")
+        incomplete.append(
+            "no activation record, so there is no window, no counted plans and "
+            "no boundary -- absence of evidence, not evidence of a disabled "
+            "policy")
+    else:
+        first, last = _window_bounds(activation["activation_date"])
+        lines.append(f"activation record: {activation['path']}")
+        lines.append(
+            f"enabling commit: {activation['enabling_commit']} (DERIVED as the "
+            f"commit that first introduced this exact record)")
+        lines.append(
+            f"activation date: {activation['activation_date']} (DERIVED: that "
+            f"commit's author date)")
+        lines.append(
+            f"machinery_sha: {activation['machinery_sha']} (attested by "
+            f"{_safe_field(activation['machinery_record_path'])} > "
+            f"{_safe_field(activation['machinery_record_section'])})")
+        lines.append(
+            f"window: {first.isoformat()} .. {last.isoformat()} "
+            f"({_PILOT_WINDOW_DAYS} calendar days, both ends inclusive) -- "
+            f"{'ELAPSED' if now > last else 'OPEN'}")
+
+    in_window: List[dict] = []
+    excluded: List[dict] = []
+    for event in events:
+        if activation is None:
+            excluded.append(event)
+            continue
+        first, last = _window_bounds(activation["activation_date"])
+        when = _dt.date.fromisoformat(event["date"])
+        (in_window if first <= when <= last else excluded).append(event)
+
+    counted = [e for e in in_window if e["kind"] == "plan-counted"]
+    stems = sorted({e["subject"] for e in counted})
+    if counted_state is None:
+        lines.append(
+            f"counted plan stems: UNAVAILABLE / {_PILOT_PLAN_QUOTA} -- the "
+            f"counting rule's plan state is not in the vocabulary yet, so this "
+            f"count is not computable.  It is NOT zero")
+    else:
+        lines.append(
+            f"counted plan stems: {len(stems)} / {_PILOT_PLAN_QUOTA} "
+            f"(distinct stems reaching '{counted_state}')")
+        for stem in stems:
+            event = next(e for e in counted if e["subject"] == stem)
+            lines.append(
+                f"  - {_safe_field(stem)}  {event['date']}  "
+                f"{_safe_field(event['source_artifact'])}  "
+                f"{event['source_commit'][:12]}")
+    if excluded:
+        lines.append(
+            f"events outside the window (excluded from every count): "
+            f"{len(excluded)}")
+
+    active_pauses: dict = {}
+    for event in events:  # pause state is ledger-wide, not window-scoped
+        if event["kind"] == "pause-set":
+            active_pauses[event["subject"]] = event
+        elif event["kind"] == "pause-cleared":
+            active_pauses.pop(event["subject"], None)
+    if active_pauses:
+        for subject, event in sorted(active_pauses.items()):
+            lines.append(
+                f"PAUSE ACTIVE: {_safe_field(subject)} (severity "
+                f"{event['severity']}, set {event['date']}, "
+                f"{_safe_field(event['source_artifact'])})")
+    else:
+        lines.append("pauses: none active")
+
+    measures = {key: sum(int(e.get(key, "0")) for e in in_window)
+                for key in _EVENT_NUMERIC_KEYS}
+    lines.append(
+        f"measures in window: review-input bytes {measures['review_input_bytes']}; "
+        f"transitions removed {measures['transitions_removed']}; escaped "
+        f"findings high {measures['escaped_findings_high']} / low "
+        f"{measures['escaped_findings_low']}; Maintainer prompts "
+        f"{measures['maintainer_prompts']}")
+
+    if (measures["escaped_findings_high"] >= _PAUSE_HIGH_THRESHOLD
+            or measures["escaped_findings_low"] >= _PAUSE_LOW_THRESHOLD):
+        if not active_pauses:
+            incomplete.append(
+                f"recorded escaped findings meet a pause condition "
+                f"(>= {_PAUSE_HIGH_THRESHOLD} high or "
+                f">= {_PAUSE_LOW_THRESHOLD} low) but no pause is active -- "
+                f"record the pause or explain why the condition does not apply")
+
+    if activation is not None and counted_state is not None:
+        first, last = _window_bounds(activation["activation_date"])
+        quota_reached = len(stems) >= _PILOT_PLAN_QUOTA
+        deadline_reached = now > last
+        if quota_reached or deadline_reached:
+            reason = "six distinct plan stems" if quota_reached else "the 60-day deadline"
+            lines.append(
+                f"monitoring boundary: REACHED via {reason} -- the Maintainer's "
+                f"`retain | revise | retire` Decision is due (fence M6).  "
+                f"`promote` is a retired token and is not one of the choices")
+        else:
+            lines.append(
+                f"monitoring boundary: not reached "
+                f"({len(stems)}/{_PILOT_PLAN_QUOTA} stems, window open through "
+                f"{last.isoformat()})")
+    return lines, incomplete
+
+
+# --- subcommands: pilot-report / pilot-record --------------------------------
+
+
+def cmd_pilot_report(args: argparse.Namespace) -> int:
+    """Derive and print the monitoring-evidence report.  Writes nothing.
+
+    Exit codes are part of the contract: `0` a complete report, `3` a report
+    with at least one named unsatisfied dependency (no window yet, or a
+    counting rule the vocabulary cannot supply), `1` a refusal.  A `3` is never
+    "the policy is off" -- the reasons are printed, and each one is about
+    *evidence*.
+    """
+    root = _repo_root()
+    _emit_section("monitoring evidence -- review allocation")
+    lines, incomplete = _derive_report(root)
+    for line in lines:
+        _emit(line)
+    if incomplete:
+        for reason in incomplete:
+            _emit(f"INCOMPLETE: {reason}")
+        _emit("report: INCOMPLETE (exit 3) -- evidence missing, policy "
+              "unaffected")
+        return 3
+    _emit("report: complete")
+    return 0
+
+
+def cmd_pilot_record(args: argparse.Namespace) -> int:
+    """Append one event to the ledger.  The ledger's only writer."""
+    root = _repo_root()
+    rel = "/".join(_PILOT_EVENTS_REL)
+    counted_state: Optional[str] = None
+    if args.kind == "plan-counted":
+        try:
+            counted_state = _counted_plan_state()
+        except MonitoringIncomplete as exc:
+            raise LifecycleError(
+                f"refusing to record a counted plan: {exc}") from None
+
+    record = {
+        "schema": _EVENT_SCHEMA,
+        "kind": args.kind,
+        "date": args.date or _today(),
+        "subject": args.subject,
+        "source_artifact": args.source_artifact,
+        "source_commit": args.source_commit,
+    }
+    if args.kind == "plan-counted":
+        record["plan_state"] = counted_state or ""
+        record["review_input_bytes"] = str(args.review_input_bytes)
+        record["transitions_removed"] = str(args.transitions_removed)
+        record["escaped_findings_high"] = str(args.escaped_findings_high)
+        record["escaped_findings_low"] = str(args.escaped_findings_low)
+        record["maintainer_prompts"] = str(args.maintainer_prompts)
+    elif args.kind == "pause-set":
+        if not args.severity:
+            raise LifecycleError("pause-set requires --severity high|low")
+        record["severity"] = args.severity
+    if args.note:
+        record["note"] = args.note
+
+    _validate_event(record, f"{rel} (new event)", counted_state=counted_state)
+    _assert_event_bindings(root, record, f"{rel} (new event)")
+
+    path = _evidence_path(root, _PILOT_EVENTS_REL, must_exist=True)
+    text = _read_text_strict(path)
+    existing = _parse_fenced_records(text, _EVENT_FENCE, rel)
+    for event in existing:
+        _validate_event(event, f"{rel}:{event.get('_line', '?')}",
+                        counted_state=counted_state)
+    _assert_append_only(root, rel, text, counted_state=counted_state)
+    _cross_check_events(existing + [dict(record)], rel)
+
+    block = _render_event_block(record)
+    _emit_section("monitoring evidence -- record one event")
+    for line in _split_lines(block):
+        _emit(line)
+    if args.dry_run:
+        _emit(f"--dry-run: nothing written to {rel}")
+        return 0
+    _append_event(root, path, text, block)
+    _emit(f"appended to {rel} ({len(existing) + 1} event(s) now recorded)")
+    _emit("commit it: the ledger is durable because it is tracked, not because "
+          "it is on disk")
+    return 0
+
+
 # --- argument parsing --------------------------------------------------------
 
 
@@ -1404,7 +2579,9 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Deterministic backend for Cairn's session-start / session-end "
             "skills.  Orientation gather (plus one idempotent skills-fan-out "
-            "self-heal write) and reflection-only goodnight; no network."
+            "self-heal write) and reflection-only goodnight, plus the "
+            "monitoring-evidence report for the review allocation and its "
+            "append-only event recorder; no network."
         ),
     )
     sub = parser.add_subparsers(dest="subcommand", required=True)
@@ -1465,6 +2642,77 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_end.set_defaults(func=cmd_session_end)
 
+    p_report = sub.add_parser(
+        "pilot-report",
+        help="Derive the monitoring-evidence report for the review allocation "
+             "from the tracked activation record and event ledger. Writes "
+             "nothing. Exit 3 means evidence is missing -- never that the "
+             "review policy is off.",
+    )
+    p_report.set_defaults(func=cmd_pilot_report)
+
+    p_record = sub.add_parser(
+        "pilot-record",
+        help="Append one event (a counted plan stem, or a pause set/cleared) "
+             "to the append-only monitoring event ledger. The ledger's only "
+             "writer.",
+    )
+    p_record.add_argument(
+        "--kind", required=True, choices=list(_EVENT_KINDS),
+        help="Which event to record.",
+    )
+    p_record.add_argument(
+        "--subject", required=True,
+        help="The plan stem (for plan-counted) or the pause identifier (for "
+             "pause-set / pause-cleared).",
+    )
+    p_record.add_argument(
+        "--source-artifact", required=True,
+        help="Repository-relative path of the artifact this event is derived "
+             "from. Must exist at --source-commit.",
+    )
+    p_record.add_argument(
+        "--source-commit", required=True,
+        help="Full 40-character commit id this event is bound to.",
+    )
+    p_record.add_argument(
+        "--date", default=None,
+        help="Event date as YYYY-MM-DD. Default: today.",
+    )
+    p_record.add_argument(
+        "--severity", default=None, choices=list(_PAUSE_SEVERITIES),
+        help="Pause severity (pause-set only).",
+    )
+    p_record.add_argument(
+        "--review-input-bytes", type=int, default=0,
+        help="Measured review-input bytes for a counted plan.",
+    )
+    p_record.add_argument(
+        "--transitions-removed", type=int, default=0,
+        help="Lifecycle transitions the allocation removed on this plan.",
+    )
+    p_record.add_argument(
+        "--escaped-findings-high", type=int, default=0,
+        help="High-severity findings that escaped to a later boundary.",
+    )
+    p_record.add_argument(
+        "--escaped-findings-low", type=int, default=0,
+        help="Lower-severity findings that escaped to a later boundary.",
+    )
+    p_record.add_argument(
+        "--maintainer-prompts", type=int, default=0,
+        help="Maintainer decision prompts this plan required.",
+    )
+    p_record.add_argument(
+        "--note", default=None,
+        help="Optional one-line note (bounded, printable ASCII).",
+    )
+    p_record.add_argument(
+        "--dry-run", action="store_true",
+        help="Print the event block that would be appended and write nothing.",
+    )
+    p_record.set_defaults(func=cmd_pilot_record)
+
     return parser
 
 
@@ -1476,6 +2724,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     except LifecycleError as exc:
         print(f"{_PREFIX} ERROR: {exc}", file=sys.stderr)
         return 1
+    except MonitoringIncomplete as exc:
+        # Exit 3, uniformly, wherever it is raised: an unsatisfied monitoring
+        # dependency is neither a crash nor a clean run, and it is never
+        # "the review policy is disabled".
+        print(f"{_PREFIX} INCOMPLETE: {exc}", file=sys.stderr)
+        return 3
 
 
 if __name__ == "__main__":  # pragma: no cover

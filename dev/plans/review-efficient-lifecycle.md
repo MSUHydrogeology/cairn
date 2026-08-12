@@ -1,5 +1,5 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/lifecycle-contract.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, dev/plans/corpus-tier-cost.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
+<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, dev/measurement/pilot-activation.md, dev/plans/corpus-tier-cost.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
 <!-- The three paths above are forward references created by Chunks A, C and F.
      They are also registered under `Proposed paths:`; that marker exempts only
      its own contiguous bullet block, so this file-scoped directive covers the
@@ -210,7 +210,6 @@ an authority: each plan keeps its own scope, gates, and archive.
 Proposed paths:
 - `bootstrap/tests/test_lifecycle_board.py` — Chunk F's board CLI and encoder tests.
 - `dev/measurement/pilot-activation.md` — P6a's immutable activation record; introduced by P6d.
-- `dev/measurement/pilot-events.md` — P6a's append-only event ledger; counts and pauses are derived from it.
 - `dev/plans/corpus-tier-cost.md` — sibling plan for proposal 1; opened alongside this one.
 
 ## Scope

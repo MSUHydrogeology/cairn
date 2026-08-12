@@ -7,7 +7,7 @@ text, superseding the earlier ``### R5`` in the same file); plan
 
 ``tools/lifecycle_planner.py`` (and its byte-identical twin
 ``templates/skills/_lib/lifecycle_planner.py``) is the single runtime owner of
-the lifecycle status vocabulary.  Two consumers read it, each through its own
+the lifecycle status vocabulary.  Consumers read it, each through its own
 CONTAINED loader -- deliberately duplicated rather than shared, because a
 shared helper would need somewhere importable to live, which is the
 ambient-import problem the contract exists to close:
@@ -22,8 +22,19 @@ ambient-import problem the contract exists to close:
   ``_lifecycle_metrics_lifecycle_planner``, path derived as the *sibling*
   ``lifecycle_planner.py`` from ``Path(__file__).resolve().parents[1]``,
   RE-DERIVED on every call rather than cached.
+* ``tools/lifecycle.py`` (+ its byte-identical template twin
+  ``templates/skills/_lib/lifecycle.py``) -- added by Chunk P6a, which made the
+  lifecycle CLI a vocabulary consumer: its six-plan counting rule keys on one
+  plan state, so it reads ``PLAN_STATES`` through the same contained-loader
+  contract (private module name ``_lifecycle_cli_lifecycle_planner``, path
+  derived as the *sibling* ``lifecycle_planner.py`` from the **unresolved**
+  ``Path(__file__).absolute()``).  Its loader matrix and the counting rule's
+  fail-closed behavior live in ``bootstrap/tests/test_pilot_evidence.py``; what
+  lives *here* is its inclusion in the source audit below, because a local
+  status literal in a file this audit does not scan is a vocabulary fork Chunk
+  A's guarantee would not catch.
 
-That last difference is not cosmetic and this file's loader-matrix classes
+The extract.py difference is not cosmetic and this file's loader-matrix classes
 document where it matters: ``transition_lint.py`` caches ``_CAIRN_ROOT`` once
 at import, so a *later* symlinked ``tools/`` is a live, naturally
 constructible refusal.  ``extract.py`` recomputes ``Path(__file__).resolve()``
@@ -39,7 +50,7 @@ assertion.
 **Four groups of nodes:**
 
 1. ``TestSourceAudit`` -- AC bullet "no consumer-local status literal
-   survives": an AST scan of the three real consumer sources, run against the
+   survives": an AST scan of the five real consumer sources, run against the
    live repository files.  Observed red by a real, temporary, restored
    reintroduction of a local enum (see the implementing commit body for the
    exact command transcript -- pytest cannot itself mutate and restore a
@@ -80,6 +91,11 @@ TL_WHITELIST_SRC = REPO_ROOT / "scripts" / "transition_lint_whitelist.py"
 METRICS_PKG_SRC = REPO_ROOT / "tools" / "_lifecycle_metrics"
 METRICS_PKG_TEMPLATE_SRC = (
     REPO_ROOT / "templates" / "modules" / "default-on" / "_lifecycle_metrics"
+)
+#: The third consumer (Chunk P6a): the lifecycle CLI, in both copies.
+LIFECYCLE_CLI_SRC = REPO_ROOT / "tools" / "lifecycle.py"
+LIFECYCLE_CLI_TEMPLATE_SRC = (
+    REPO_ROOT / "templates" / "skills" / "_lib" / "lifecycle.py"
 )
 
 pytestmark = pytest.mark.skipif(
@@ -292,14 +308,25 @@ def _status_literal_assignments(source: str, vocab: frozenset) -> list[tuple[int
     return hits
 
 
-#: The three real consumer sources the audit scans.  Deliberately the exact
-#: three the plan names: transition_lint.py, the installed extract.py, and its
-#: template twin -- never the planner itself, which is the one file ALLOWED to
-#: declare the vocabulary.
+#: The five real consumer sources the audit scans: transition_lint.py, the
+#: installed extract.py and its template twin, and -- since Chunk P6a made the
+#: lifecycle CLI a vocabulary consumer for the six-plan counting rule -- the
+#: installed lifecycle.py and its template twin.  Never the planner itself,
+#: which is the one file ALLOWED to declare the vocabulary.
+#:
+#: **Why lifecycle.py joined.**  P6a's counting rule keys on one plan state.  A
+#: status literal written locally there would be a vocabulary fork in a file
+#: this audit did not scan -- the precise failure Chunk A exists to prevent, in
+#: the one consumer whose absence from this tuple would have made the guarantee
+#: quietly incomplete.  Its contained loader's own matrix lives in
+#: ``bootstrap/tests/test_pilot_evidence.py`` (``TestVocabularyLoader``), which
+#: is also where the counting rule's fail-closed behavior is pinned.
 _AUDITED_CONSUMER_SOURCES = (
     TL_SRC,
     METRICS_PKG_SRC / "extract.py",
     METRICS_PKG_TEMPLATE_SRC / "extract.py",
+    LIFECYCLE_CLI_SRC,
+    LIFECYCLE_CLI_TEMPLATE_SRC,
 )
 
 
@@ -318,17 +345,27 @@ class TestSourceAudit:
             "source rule (R5 replacement) is violated:\n" + "\n".join(violations)
         )
 
-    def test_the_audit_actually_scans_all_three_named_sources(self) -> None:
+    def test_the_audit_actually_scans_all_five_named_sources(self) -> None:
         # A guard on the guard: if a future edit narrows
         # _AUDITED_CONSUMER_SOURCES, the audit above would go quietly green
         # over fewer files without ever failing.  Pin the exact set by name.
         names = {p.name for p in _AUDITED_CONSUMER_SOURCES}
-        assert names == {"transition_lint.py", "extract.py"}
-        assert len(_AUDITED_CONSUMER_SOURCES) == 3
+        assert names == {"transition_lint.py", "extract.py", "lifecycle.py"}
+        assert len(_AUDITED_CONSUMER_SOURCES) == 5
+        assert len(set(_AUDITED_CONSUMER_SOURCES)) == 5, (
+            "each installed file and its template twin must be two distinct "
+            "paths, not the same file scanned twice"
+        )
         assert _AUDITED_CONSUMER_SOURCES[1] != _AUDITED_CONSUMER_SOURCES[2], (
             "the installed extract.py and its template twin must be two "
             "distinct paths, not the same file scanned twice"
         )
+        assert _AUDITED_CONSUMER_SOURCES[3] != _AUDITED_CONSUMER_SOURCES[4], (
+            "the installed lifecycle.py and its template twin must be two "
+            "distinct paths, not the same file scanned twice"
+        )
+        for path in _AUDITED_CONSUMER_SOURCES:
+            assert path.is_file(), f"audited source does not exist: {path}"
 
     def test_detector_ignores_a_same_valued_pair_nested_in_a_larger_literal(
         self, planner: ModuleType,

@@ -545,7 +545,7 @@
     {
       "base_hash": "sha256:a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed",
       "dst": "tools/lifecycle.py",
-      "hash": "sha256:96774aa399e773c4838ad029f429a6d80bb4ac9a4a8fc2ce60c848cc1ce24ae2",
+      "hash": "sha256:30e9d96219f3ffcac7604b0318cec0d354f0cc69dad4078cbd9e721f7f26153c",
       "src": "skills/_lib/lifecycle.py",
       "verbatim": true
     },
