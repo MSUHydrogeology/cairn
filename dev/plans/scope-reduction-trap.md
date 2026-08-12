@@ -878,3 +878,33 @@ narrows and drops it, that is a `lost` outcome against its accepted baseline —
 owing a declaration and the Maintainer's allowance under the rule this plan
 just landed. The protection is structural, not hopeful.
 
+### Sharpening addendum -- C11 disposed -- 2026-08-11
+
+**C11: accept (Maintainer-confirmed).** The team-gated `dual-review` module and
+its installed twin stay.
+
+Maintainer authorization, quoted verbatim:
+
+> "We definitely don't want to ship any self-contradicting"
+
+**What the disposition rests on**, since the framing changed between the review
+and the decision. The module is **not** an independent doctrinal authority: its
+header reads *"Adds to: the review section of `dev/agent_collaboration.md`"* and
+its body opens *"Merged into `dev/agent_collaboration.md`"*. It is a transplant
+whose canonical source is `doctrine/dual-review.md`, which Chunk A already
+changed, and whose destination file Part 9 **does** name.
+
+So the omission would not have produced a thinner distribution. It would have
+produced an **incoherent** one: an adopter with `dual-review` installed would
+receive a single `agent_collaboration.md` carrying the trap and the outcome test
+from Chunk D4, while the lens roster merged into that same file still mapped
+`scope-cut` → `accept` with no restriction. One file contradicting itself, which
+is the specific defect Part 8 exists to remove.
+
+**The reach does still extend beyond the enumeration**, and that is why it was
+put to the Maintainer rather than self-approved. Part 8 named three homes for
+the vocabulary reconciliation — `doctrine/dual-review.md`, the lifecycle
+disposition text, and the board's inline taxonomy — and the module is a fourth.
+An author who may widen scope under a rule about not narrowing it has defeated
+the rule's own symmetry; the deviation gate governs both directions or neither.
+
