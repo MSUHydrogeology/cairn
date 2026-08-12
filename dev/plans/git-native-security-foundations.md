@@ -1721,3 +1721,63 @@ Maintainer's External Security Review (M2) is the next gate, and re-running the
 suite before the review would date the evidence twice. **A fresh Boundary B is
 owed on the final pre-M2 commit**, and this paragraph is the marker that it has
 not been taken.
+
+## Implementation verification (2) -- Claude -- 2026-08-12
+
+**Boundary B, re-taken.** Supersedes the `4ad1c11` record, which described
+`ebac63b` and went stale when [IC1] and [IC2]–[IC6] landed. Tested commit
+**`e249424`** — the final implementation commit; nothing after it touches code.
+
+**Boundary B mode**: **full**. The `boundary-b-bounding-clause` proposal was
+accepted earlier the same day and permits a bounded run, but its **Hard Refusal
+Fence** excludes exactly this change: `_gate_preflight.py` and
+`_gate_manifest.py` are trust-ceremony and manifest surfaces. Its in-flight
+clause is independently decisive too — an executing plan keeps its written
+verification contract unless explicitly revised. The Maintainer raised waiving
+this run and, on those terms, did not.
+
+**Environment.** `git clone --shared` at `e249424`; `git status --short` empty
+**before and after**. Canonical interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (**Python 3.13.13**). Queued
+behind another session's suite rather than run concurrently — contention is what
+invalidated the first attempt of the previous Boundary B.
+
+| command | outcome | time |
+|---|---|---|
+| `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **4 failed, 3524 passed, 1 skipped** | 482.07 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | exit 1 — `neutrality fail=93 info=21`, `redundancy fail=0 info=2` (unchanged at `93ccc29`/`4889d8e`/`ebac63b`; none of the 93 in a surface this plan touches) | 1.10 s |
+
+### Non-pass disposition — four, all previously attributed
+
+| failure | attribution |
+|---|---|
+| `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override` | Known; homed at `e150b7d` under Maintainer-authorized defer |
+| `test_lifecycle_vocabulary.py::TestLoaderContainmentMatrix[transition_lint]` | `review-efficient-lifecycle`'s own; fails at `da23dbc`, before D and F |
+| same, `[metrics_extract]` | as above |
+| `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports` | Known clone artifact — a clone carries no `refs/cairn/gate-anchor`, the property F5's own test asserts |
+
+**Two things changed for the better since `4ad1c11`, and both are load-bearing.**
+
+* **The `test_verify_ref.py` order-dependent failure is gone.** It was the one
+  non-pass in the previous record that needed chasing rather than citing. Root
+  cause was a session-scoped fixture writing `v0.6.0` into the shared
+  `lab.candidate` while `HOSTILE_TAG` was the same string; fixed at `da26a88`,
+  outside this plan. Its absence here is the confirmation.
+* **The coverage gap I named before this run is closed.** `_oracle_activation.py`
+  imports both changed modules and had **not** been exercised against these
+  bytes by the scoped runs; the full suite covers it, with no failure. That gap
+  is the reason a bounded run would have been the wrong call even without the
+  fence.
+
+**Passing count moved 3280 → 3524.** That is other sessions' landed work plus
+this plan's new nodes (C4's `TestUnsignedRangeReachesACheckpoint`,
+`TestApplyCommitsTheAuthoritativeManifest`, and the [IC3] HOLD node), not a
+change in what is being verified here.
+
+### Ready for M2
+
+The nine authority-closure files were hashed at `e249424` and confirmed
+byte-identical to the working tree, so no concurrent session has drifted them.
+That set and the review's ground rules were packaged for the Maintainer to hand
+to an External reviewer. **M7 arms when M2 lands**; the byte set must not move
+between now and then, by any session.
