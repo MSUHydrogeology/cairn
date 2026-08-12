@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-12
-**Status**: proposed
+**Status**: revised
 **Assurance path**: **high-assurance** — this changes a trust ceremony, an
 executable trust root, and the authority boundary of `bootstrap/tests/_gate_preflight.py`.
 Three separate mandatory triggers; there is no judgement call here.
@@ -354,3 +354,158 @@ after the four contracts above are settled. A revised proposal can close this
 round without another policy choice if it adopts the two-invocation protocol,
 the complete authorization package, and the general reviewed-authority
 transition described here.
+
+## Response -- Claude -- 2026-08-12
+
+**All four findings accepted. None disputed.** The verdict is right: this was a
+diagnosis and a direction, not an executable security contract, and three of the
+four gaps are places where I stopped at the layer I could see.
+
+**[S1] is the one I should be most uncomfortable about.** I proposed adding a
+first-use mode to `apply` without asking *which `apply` runs*. The loader
+extracts the closure from `refs/cairn/gate-anchor` — the old authority by
+definition — so a mode that exists only in the candidate's checker can never
+execute. The reviewer measured the divergence (anchored `f6dd89b8…` vs candidate
+`49254831…`). My sentence about the loader hash-verifying each invocation is
+true and answers a different question: it validates bytes *after* a source is
+chosen and says nothing about choosing the source. Source selection was the
+whole problem and I treated it as solved.
+
+**[S2] identifies a live defect in already-landed code, not only in this
+proposal.** `range_review_report` binds
+`manifest_sha256 = sha256((repo / manifest_rel).read_bytes())` — the manifest
+**already in the worktree** — while `apply` commits
+`authoritative_manifest(...)`, a different artifact with a different digest.
+Confirmed by reading the source at `_gate_preflight.py:1007`. So the M2-1 fix I
+landed at `2df83d2` puts the report on the governing path and **binds the wrong
+manifest identity**, and `rederive_and_bind` would faithfully reconfirm it. The
+finding is right that reusing it unchanged makes the error durable.
+
+I am **not** patching that narrowly now. The binding contract is being redesigned
+in this round, and fixing it twice risks a second wrong answer; the code cannot
+run a ceremony in the meantime ([M2-2] blocks it) and ships to no adopter. It is
+recorded here so it cannot be lost, and it is an acceptance obligation below.
+
+**[S2] also forces me to retract a claim I have repeated.** "`apply` reads no
+handoff artifact" cannot survive two invocations, because `collection` and
+`interpreter` are exactly the fields static re-derivation cannot produce — which
+the ownership test asserts. A no-candidate-execution signer *must* consume
+stage-1 data. The honest narrower claim is the reviewer's: no adjacent
+self-digest authenticates a file; the Maintainer confirms a complete package
+digest and stage 2 re-derives everything it can.
+
+**[S3] is correct and my A4 was self-deceiving.** Refusing a no-op prevents a
+no-op. It does not prevent reuse: every later authority change re-creates the
+delta and re-opens the mode. Worse, I wrote a "signals the change is wrong" bullet
+saying use more than once means the design is wrong, while proposing a mechanism
+that would legitimately be used again. Adopting the reviewer's second option —
+name it the **reviewed-authority transition**, of which first use is the initial
+instance — because the underlying problem is permanent: *the old checker can never
+vouch for its successor.*
+
+**[S4] corrects an overstatement of mine.** I argued two invocations keep
+candidate Python out of the signing process's address space. It never was there —
+the candidate runs in a producer subprocess. The real advantages are
+process-lifetime and key-channel separation, and the recommendation stands on
+those. `SSH_AUTH_SOCK` is also a proxy, not the property: it shows one channel is
+absent, not that no channel can sign.
+
+**No policy choice is left open.** The reviewer's own note says this round closes
+if the revision adopts the two-invocation protocol, the authorization package,
+and the general reviewed-authority transition. It does.
+
+## Revised proposal (Round 2) -- Claude -- 2026-08-12
+
+Supersedes `## Proposal` in full, including its open question.
+
+### Withdrawn / superseded commitments
+
+| withdrawn | why | where it now lives |
+|---|---|---|
+| "First-use mode" as a one-time bootstrap (A1–A4) | [S3]: not mechanically one-time; the delta recurs on every authority change | Generalised to the **reviewed-authority transition**, R1 below |
+| The open same-process/two-invocation question | [S4]: settled, with the advantage restated correctly | R4 — two invocations, R1-F amended explicitly |
+| "`apply` trusts no handoff artifact" | [S2]: impossible once signing executes no candidate code | R3 — narrowed to "no adjacent self-digest authenticates a file" |
+| B3's bare reuse of `rederive_and_bind()` | [S2]: it reconfirms the worktree manifest, not the prospective one | R3 — the package binds the prospective manifest bytes and digest |
+
+**Scope delta**: preserved. Every outcome the opening proposal committed to is
+still delivered; the mechanisms are stricter and one is generalised.
+
+### R1 — the reviewed-authority transition (replaces "first use")
+
+The old checker cannot vouch for its successor. That is permanent, so the
+mechanism is **general**, not a bootstrap special case, and first use is its
+first instance.
+
+* **R1-a.** It applies whenever the authority closure changes, and **refuses
+  when there is no delta**.
+* **R1-b.** Every use requires a **fresh exact-byte External Security Review**
+  and a whole-set hash manifest for the new closure. Repeatable under new review
+  authority is not a habitual bypass — the cost is a full external review each
+  time, which is the point.
+* **R1-c.** The **transition signature is verified against the roster from the
+  old anchor.** Continuity is the default. An old anchor with no roster is a
+  *distinct* bootstrap case, named as such, never a fallback to the candidate's
+  roster.
+
+### R2 — source selection is part of the contract ([S1])
+
+* **R2-a.** A transition run extracts the **candidate commit's exact closure
+  bytes** through sterile Git plumbing, verifies the **whole set** against the
+  out-of-band review manifest **before Python starts**, and executes that
+  verified copy. Steady-state runs extract from the anchor. The two modes are
+  **explicit and never inferred**.
+* **R2-b.** It binds the **exact candidate commit** and refuses an unresolved,
+  symbolic, moving, partial, duplicate, or extra-member set.
+* **R2-c.** The review manifest has **one named trust end**: a
+  Maintainer-recorded out-of-band artifact with a strict schema, received by the
+  fixed loader. It is **never** read from the candidate proposal and its expected
+  values are **never** recomputed from the candidate. The checkpoint binds its
+  content digest and review provenance — not free text.
+
+### R3 — the authorization package ([S2])
+
+One closed, versioned artifact emitted by stage 1, binding at minimum: observed
+anchor; candidate HEAD and tree; branch and expected-old value; the complete
+canonical range report; the reviewed authority manifest and its provenance; the
+candidate-only `collection` / `interpreter` evidence; the **exact prospective
+authoritative-manifest bytes and digest**; and the package digest.
+
+* **R3-a.** Stage 2 receives the package **plus the Maintainer-confirmed package
+  digest**, rejects unknown, missing or duplicate fields, re-derives every
+  Git/static field, rebuilds the authoritative manifest, and compares **exact
+  bytes**.
+* **R3-b.** It accepts from stage 1 **only** the explicitly named
+  executable-only fields. That list is closed and asserted.
+* **R3-c.** The checkpoint message binds **both** the package/report digest
+  **and** the exact prospective manifest digest — the defect above, closed.
+* **R3-d.** The range report's `manifest_sha256` becomes the **prospective**
+  manifest's, not the worktree copy's.
+
+### R4 — two invocations, R1-F amended ([S4])
+
+* **R4-a.** **Stage 1** runs under a fixed clean environment with the supported
+  key channel **absent**, emits the package, prints the marker and digest, and
+  exits. It never holds the key.
+* **R4-b.** The contract **names the supported key channel** and defines a
+  preflight proving stage 1 cannot sign through it. An unset variable is
+  evidence, never the property.
+* **R4-c.** **Stage 2** starts from **separately hash-verified** checker bytes,
+  refuses every candidate-executing operation, validates the package, signs,
+  verifies, and performs the expected-old transaction.
+* **R4-d.** **No boolean confirmation path survives.**
+* **R4-e.** **R1-F step 5 is amended** from "the already-running process" to the
+  two-invocation protocol, openly and in the source proposal's own terms.
+
+### Evidence (supersedes the earlier plan)
+
+* Stage 1 **attempts a real signing operation and must fail**; stage 2 performs
+  and verifies one. Observing an environment variable is the proxy failure this
+  proposal warned about and then committed.
+* **Every package field and the schema itself** is mutated, not only the report
+  helpers; stale refs and a substituted prospective manifest must move **neither
+  ref**.
+* Transition-mode fixtures start from the **old anchor's** authority bytes.
+  `_ceremony_repo()`'s pre-aligned closure is what hid [M2-2] and is not
+  admissible evidence here.
+* Public-path negative controls for every new call, per [M2-1]'s lesson.
+* One Boundary B, then **one** final M2 retake under M7.
