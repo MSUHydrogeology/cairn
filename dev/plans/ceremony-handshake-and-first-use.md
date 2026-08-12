@@ -959,3 +959,359 @@ any path this range touched**, checked mechanically against
 **Boundary C is owed on these bytes.** The prior code review read `a4a3b24`; its
 two blocking findings are answered above, and the answers have not themselves
 been independently read.
+
+## Security code review -- Codex -- 2026-08-12
+
+**Disposition: REVISE.** I reviewed the exact ceremony bytes at `6e7ed4a`
+(`bootstrap/tests/_gate_preflight.py` in full, the Phase 0 runbook text, and the
+tests as evidence) and independently exercised the corrected implementation.
+The C1-C5 response repairs are real, the authorization package no longer
+authenticates itself, and the two-ref transaction behaves atomically. The bytes
+are nevertheless **not fit to bless as the trust root**: Stage 2 still permits
+repository Git configuration to choose and execute part of the signing path.
+
+### [S1] HIGH / BLOCKING -- the probed key is not bound to the signer, and candidate-configured code runs after the seal
+
+The plan requires a probe through the **exact configured public-key path** and
+then use of **that same key** in Stage 2 (D2, outcome 4, and review [E1]). The
+implementation carries the path only into `stage1`. Stage 2 receives no key
+identity, and `_construct_signed_commit` invokes `commit-tree ... -S` without a
+key id (`_gate_preflight.py:2465`). Git therefore selects the signer through
+ambient/repository `user.signingKey`. `_STERILE_CONFIG` pins `gpg.format` and
+`gpg.ssh.program`, but it pins neither that selector nor
+`gpg.ssh.defaultKeyCommand` (`:147-155`).
+
+I reproduced both unsafe consequences under Python 3.13.13 with disposable
+repositories and keys:
+
+1. `require_stage1_cannot_sign` accepted a nonexistent recorded public-key path
+   as proof that Stage 1 could not sign. Stage 2 then selected a different,
+   usable key from repository `user.signingKey`; the resulting signed commit
+   passed `verify_constructed`, including the pinned-principal check. The
+   existing `test_a_failing_ssh_keygen_still_counts_as_cannot_sign` codifies
+   this unsafe classification: "no such key" is treated the same as a valid
+   ceremony key whose private half is unavailable.
+2. With `user.signingKey` absent and repository
+   `gpg.ssh.defaultKeyCommand` set to a fixture script, calling
+   `_construct_signed_commit` after `seal_candidate_execution()` executed the
+   script and wrote a marker. Commit construction then refused because the
+   fixture returned an invalid key, but the security property had already
+   failed: candidate-selected code ran after the marker, inheriting the Stage 2
+   environment in which the signing channel may be available.
+
+This is **not** the accepted N4 residual. N4 says code cannot prove that a valid
+key's private material is unavailable to every same-user process, and that
+candidate code may have left persistence elsewhere on the host. Here the tool
+probes one named channel, calls a missing or malformed channel safe, and then
+deliberately lets repository configuration choose another channel and an
+executable command. Both are avoidable within this tool's boundary.
+
+**Required revision.** Make one validated public-key identity a protocol field
+across both stages. At minimum: refuse a missing, non-regular, non-absolute, or
+invalid public-key input as **unprobeable**; record a canonical fingerprint in
+the confirmed package; require Stage 2 to re-derive and match it; explicitly
+select that key for `commit-tree` rather than using bare `-S`; and verify the
+signature fingerprint as well as the anchored principal. Take
+`gpg.ssh.defaultKeyCommand` out of repository control and add public-path
+regressions proving that a configured command never executes after the seal and
+that a different or nonexistent Stage 1 path cannot reach construction. Keep
+the anchored-roster principal check; key identity and authorization are both
+needed.
+
+### [S2] MEDIUM / BLOCKING -- the executable still claims that it trusts no handoff artifact
+
+Chunk C10 explicitly requires the old claim to be retracted. The runbook now
+states the narrower truth, but `apply_now` still says **"no handoff artifact is
+trusted"** and **"there is no authority-bearing file"**
+(`_gate_preflight.py:2686-2702`), while `check --bundle-out` help repeats
+"`apply` ... trusts no handoff artifact" (`:3059-3062`). Those statements
+describe the removed single-process design. The current Stage 2 necessarily
+consumes the externally confirmed authorization package and takes its
+`collection` and `interpreter` fields as the two facts static Git reads cannot
+derive.
+
+This is not merely stale history in a deliberation artifact; it is security
+documentation shipped inside the deciding executable, and it contradicts the
+protocol an operator is being asked to trust. Replace both claims with C10's
+actual invariant: no adjacent self-digest authenticates a file; the Maintainer's
+out-of-band confirmation authenticates the exact package bytes, and Stage 2
+re-derives every derivable field. Add a test over the public help/source so the
+retired architecture cannot silently return.
+
+### What held under falsification
+
+* **CR1 is closed in the implemented handoff design.** The package has a strict
+  top-level and nested schema, carries no accepted self-digest, is confirmed
+  against an external digest over exact bytes, and Stage 2 independently
+  re-derives all fields except the declared `collection` and `interpreter`
+  pair. Editing the package alone is insufficient. This does not protect an
+  operator who confirms an attacker-supplied new digest without reading the
+  report; the human confirmation is intentionally the authority boundary.
+* **The C1-C5 response is implemented.** The durable transition record is built
+  from the revalidated manifest; the transition Stage 2 loader extracts the
+  candidate closure; both manifest parsers refuse leading whitespace; and an
+  exit-zero signing probe is now classified as an open channel.
+* **The pre-ref verification triple checks what it claims** for parent, sole
+  changed path, manifest bytes, exact message, signature validity, and anchored
+  principal. [S1] sits immediately before and inside that triple: a different
+  rostered key can pass it because no key identity connects the stages.
+* **The expected-old ref transaction held independently.** In a disposable
+  repository, a stale anchor old-value advanced neither branch nor anchor and
+  wrote no ceremony reflog entry; the matching old-values advanced both refs to
+  the same target in one transaction.
+* **The anchored roster is read from the old anchor**, and both Git allowlists
+  route through the common sterile launcher. The remaining config hole is the
+  signing selector/command in [S1], not a second Git launcher.
+
+### Verification and limits
+
+Canonical interpreter:
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13).
+`python -m pytest bootstrap/tests/test_gate_preflight.py -q` produced **309
+passed, 1 failed** in 79.15s. The one failure is the already-disclosed
+shared-clone artifact: the review clone does not fetch
+`refs/cairn/gate-anchor`, so the live-repository smoke test sees no anchor. I
+also ran the two independent signing-config attacks and the independent ref
+transaction probe described above.
+
+I did **not** run the full suite; the fresh Boundary B record at `136f326`
+already supplies the broad integration run, and this review used independent
+targeted falsification. I did not perform the Maintainer ceremony, use the real
+ceremony key, move Cairn's refs, test remote publication, or establish N4. I did
+not attempt to close the accepted same-host persistence residual; [S1] is a
+direct, removable execution path in addition to that residual.
+
+## Code review verification -- Claude (Boundary C) -- 2026-08-12
+
+**Model**: Claude Opus 5
+**Tier**: Internal
+**Reviewed commit**: `6e7ed4a`, in a fresh detached `git clone --shared`. Range
+`a4a3b24..6e7ed4a` — `136f326` (the C1–C5 fixes and the response) and `6e7ed4a`
+(the superseding Boundary B record).
+**Target**: whether the answers to `## Code review -- Claude (Boundary C) --
+2026-08-12` hold under the probes that produced the findings, and whether the
+superseding Boundary B record is accurate.
+**Prior findings**: [C1]–[C5] from that pass, all accepted by the author.
+**Assurance path**: high-assurance
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — 3.13.13.
+**Findings**: raised
+
+**Verdict**: Accept-with-followups
+
+**Both blocking findings are genuinely closed, and I re-ran the original probes
+against the fixed bytes rather than reading the new tests.** [C1] and [C2] are
+answered by mechanism, not by assertion. Four low findings remain, of which one
+is a false sentence in the response's own record; none of them can cause a wrong
+state to be blessed, and all fail closed. Two should be closed before Chunk H,
+because they sit on the ceremony's first-mover path.
+
+### [C1] — closed. Verified by replaying the original probes, and three more
+
+The five original tampers plus three I added, each with the package **re-digested**
+so `--confirm-package-sha256` matches the tampered bytes perfectly, driven through
+a real transition-mode two-stage run:
+
+| Tamper | Outcome |
+|---|---|
+| falsify every member digest | `PackageError` — stage 1/stage 2 disagreement |
+| drop `members` | `PackageError` — inner field set |
+| `members` not a dict | `PackageError` — no longer an `AttributeError` |
+| newline in a member path | `PackageError` — control character |
+| forge `provenance` | `PackageError` — disagreement |
+| forge `candidate` (mine) | `PackageError` — disagreement |
+| add one honest-looking extra member (mine) | `PackageError` — disagreement |
+| **reorder keys only, no value change** (mine, the negative control) | **completes**, and the signed record equals the out-of-band set |
+
+No ref moved in any refusing case, and every refusal is a `PreflightError`
+subclass, so the CLI emits `[REFUSE ]` rather than the traceback the old
+`members`-not-a-dict path produced. The last row matters as much as the others:
+a fix that refused everything would also have passed the first seven.
+
+**The positive property holds.** On an honest run the committed checkpoint's
+rows equal `parse_review_manifest(<the out-of-band file>)["members"]`, which is
+the only source stage 2 revalidated against.
+
+**No set can reach `draft_message` unrevalidated.** `blessing_plan` has two
+callers; the `check --bundle-out` preview passes no admitted set, and
+`apply_now` passes `transition[...]`. Replacing `revalidate_transition` with a
+raiser refuses the ceremony and moves no ref.
+
+**One genuine improvement worth naming.** At `a4a3b24`,
+`parse_admitted_authority` was the one new symbol *not* reached by a real
+ceremony — a reader with a unit test. The `draft_message` round trip puts it on
+the governing path: raisered, the ceremony now refuses.
+
+**And one honest limit on that guard.** Its *refusal* branch is not reachable
+through the ceremony. I instrumented `draft_message` and replayed the
+newline-in-a-path tamper: `read_package`'s control-character check fires first
+and `draft_message` is never called. Since `parse_review_manifest` also forbids
+control characters and splits member rows on whitespace, no forging path can
+reach the writer from either direction. That is defence in depth, correctly
+built and with its own named node — but change 3 in the response, not change 4,
+is the operative control, and the response reads as though change 4 were.
+
+### [C2] — closed in behaviour. Proven by the case that failed before
+
+The probe that produced the finding, re-run verbatim against `136f326`: a
+candidate that adds a member to its own `declared_authority_closure()`, driven
+through the recorded transition loader and the new `STAGE2T` block.
+
+* Before: stage 1 `rc=0`, stage 2 `rc=2`, `REFUSE: the review manifest is not
+  the authority closure: 0 missing [], 1 unexpected [...]`.
+* Now: stage 1 `rc=0`, stage 2 `rc=0`, the anchor advanced, `%G?` = `G`, and all
+  **10** admitted members recovered from the committed checkpoint.
+
+The new block is equivalent to the transition loader in the respects I checked
+by hand: same `env -i` / literal `/bin/sh` framing, same `sterile_git` with all
+four pinned options, extraction by `$RESOLVED` never by a ref, its own
+`shasum -a 256 -c` gate before any Python, and a refusal that exits before the
+interpreter starts. It carries no `die()` because nothing calls one.
+
+Two residuals, below as [D2] and [D3].
+
+### [C3] — closed, and the corrected figures verified independently
+
+Re-derived at `136f326`: 93 FAILs, distributed `templates/` 65, `docs/` 14,
+`doctrine/` 9, `bootstrap/` 5 — exactly the record's table, and 65+14+9+5 = 93.
+All five `bootstrap/` entries are `bootstrap/tests/fixtures/skills/README.md`;
+they fall on lines 15, 15, 31, 35 and 38, so the record's "lines 15, 31, 35, 38"
+is right (line 15 carries two tokens). The set is **byte-identical** to
+`a63da58`, and its intersection with the 16 files `4877ab9..6e7ed4a` touches is
+empty.
+
+### [C4] — only partially closed. The divergence is relocated, not removed
+
+The named case is fixed on both sides. But the loader's new
+`case $line in " "*|"\t"*) die` runs **before** its blank/comment case, while
+`parse_review_manifest`'s new `raw[:1].isspace()` check runs **after** its
+`if not raw.strip() or raw.lstrip().startswith("#"): continue`. Executed against
+both parsers, five mutations of one honest manifest:
+
+| Row | `parse_review_manifest` | recorded loader |
+|---|---|---|
+| honest manifest | accepts | accepts |
+| indented `provenance` (the tested case) | refuses | refuses |
+| tab-indented `member` | refuses | refuses |
+| **indented comment** (`   # a note`) | **accepts** | **refuses** |
+| **whitespace-only line** | **accepts** | **refuses** |
+| **trailing line of spaces** | **accepts** | **refuses** |
+
+Three of six still give two answers for one artifact — the exact condition [C4]
+named, now inverted. It is safe: the loader is the stricter side and runs first,
+so the ceremony stops before any Python. What it costs is the ceremony's own
+usability at its worst moment. A trailing line containing a space is an ordinary
+editor artifact in a hand-recorded out-of-band file, and it produces
+`REFUSE: row has leading whitespace` about a line that carries no row.
+
+The new node `test_both_parsers_reject_a_row_with_leading_whitespace` covers
+only the `provenance` case, so nothing pins the rest in either direction.
+
+**Direction.** Move the loader's check after its `""|\#*` case so the two agree
+on which lines are rows at all, or make the Python side check leading whitespace
+before it skips blanks and comments — but the trailing-blank case argues for the
+first.
+
+### [C5] — closed. Both directions tested, and it did not invert
+
+Exit 0 now means the channel is open regardless of where the `.sig` landed, and
+the honest failing case still reports "cannot sign". I confirmed both branches
+directly. Carried forward as [D4].
+
+### New findings
+
+**[D1] — see [C4] above.** The loader and the Python revalidation still disagree
+on three row shapes. Fails closed; owed before Chunk H, because it will be a
+Maintainer editing a recorded file by hand.
+
+**[D2] — the response's account of the fixture fix is not true.** It states that
+*"the end-to-end node now starts from a candidate whose authority bytes
+genuinely differ"* and that the reviewer-identified pre-alignment was corrected.
+Neither `_ceremony_repo` nor
+`test_the_recorded_transition_ceremony_runs_end_to_end`'s setup changed: the
+node's three setup lines are byte-for-byte what they were at `a4a3b24`, and the
+`_oracle.py` delta was already there before the review. What actually changed —
+and what makes the revert-to-anchor mutation fail — is that stage 2's checklist
+is now the **candidate's**, so anchor extraction no longer matches it. That is a
+real and sufficient fix; the sentence describing it is not.
+
+The pre-alignment I named is still present. No node in the suite runs a
+transition in which `bootstrap/tests/_gate_preflight.py` itself differs between
+anchor and candidate — the case that motivates transition mode, and the one my
+probe had to construct by hand to find [C2]. The text assertions in
+`test_the_transition_stage2_extracts_from_the_candidate_not_the_anchor` are
+tight enough to catch a straight revert, so this is a coverage gap rather than
+an open defect; but the behaviour is currently proven only by a probe that was
+not kept.
+
+**[D3] — `<maintainer-recorded-reviewed-candidate-hashes>` is introduced with no
+definition.** The new placeholder appears only inside the `STAGE2T` block; no
+prose in *Stage 2 in transition mode* says which paths it covers or how to
+produce it. The two plausible readings differ: the test harness records the
+**seven** loader modules, while the review manifest and the declared closure name
+**nine** members. Every mis-reading I could construct fails closed — the anchor's
+set mismatches under `shasum -c`, and a short set fails on import — but an
+undefined recorded value on the stage that signs is the class of gap FUR6/FUR7
+were about. Compare `<maintainer-recorded-first-use-hashes>`, which the parent
+plan's M2 step at least establishes.
+
+**[D4] — the key-probe timeout branch tells the operator something the probe did
+not establish.** A `TimeoutExpired` returns `cannot_sign = False`, so
+`require_stage1_cannot_sign` raises text beginning *"STAGE 1 CAN SIGN through
+<path>"* with the real reason in a parenthetical. Refusing is right; asserting
+that the channel is open is not — a hung probe answered nothing. Latent before
+[C5] and untouched by it, so it is now the one branch of that function whose
+message is wrong.
+
+### No new unreachable mechanism was introduced
+
+Each of the nine new or changed symbols was replaced with a raiser and a real
+transition ceremony driven through it: `revalidate_transition`,
+`read_review_manifest`, `parse_review_manifest`, `read_package`,
+`write_package`, `draft_message`, `parse_admitted_authority`, `_admitted_rows`,
+`authority_closure_delta`. All nine refuse and move no ref. The one guard whose
+refusal branch is unreachable through the ceremony is named under [C1] above,
+with its named node.
+
+### The superseding Boundary B record is accurate
+
+| Claim | Result |
+|---|---|
+| `3998 passed, 4 failed, 1 skipped` | `--collect-only` at `136f326` reports **4003**, exactly `3998 + 4 + 1` |
+| `3998` is `3987` plus eleven new nodes | Collection went `3992 -> 4003`, **+11** |
+| The same four non-passes, unchanged | All four reproduced node-for-node in a clean clone |
+| 93 neutrality FAILs, `redundancy fail=0` | Reproduced |
+| Set byte-identical to `a63da58` | Confirmed — `diff` of the sorted FAIL lines is empty |
+| The 65/14/9/5 distribution, and the five `bootstrap/` lines | Confirmed, counted |
+| No FAIL names a touched path | Confirmed against all 16 files in `4877ab9..6e7ed4a` |
+| Clean clone at `136f326`, before and after | Confirmed |
+| `refs/cairn/gate-anchor` still `e45e1fc…`, mtime 2026-08-03 16:47, no `.git/logs/refs/cairn/` | Confirmed |
+| 310 in `test_gate_preflight.py` | 309 pass in a clone plus the one clone-artifact node = 310 |
+
+One nit: the tested SHA is `136f326` while the range ends at `6e7ed4a`. That is
+the ordinary pattern — `6e7ed4a` adds only the record itself — but the record
+does not say the prose gates were run over its own bytes.
+
+### What is owed before Chunk H
+
+[D1] and [D3] both land on a human editing or recording a file by hand during
+the ceremony, which is where this plan family has repeatedly discovered that a
+recorded procedure had never been run. [D2] wants a correction to the response's
+record and, ideally, the missing node. [D4] is a one-line diagnostic.
+
+### Operational note on the lifecycle checker
+
+This section's heading is `## Code review verification`, which the lifecycle
+checker's `## Code review -- <reviewer> -- <date>` pattern does not match. The
+latest *conforming* pass therefore remains the `REVISE` one above, and archive
+stays blocked until a conforming pass carries a clearing verdict. That is the
+correct outcome — none of it is cleared by an author's response — but it should
+not be mistaken for the tool having failed to see this reading.
+
+### What this pass did not do
+
+No Cairn ref was moved, no ceremony key was loaded, no real ceremony was run,
+nothing was pushed, and no implementation byte was changed. Every probe ran in a
+disposable `git clone --shared` against per-fixture throwaway keypairs, and the
+probe files were kept outside the repository tree. I did not re-run the full
+Boundary B suite: the bytes are unchanged and the record's evidence reproduced
+everywhere I challenged it.
