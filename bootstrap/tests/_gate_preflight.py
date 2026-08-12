@@ -37,6 +37,7 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -1110,7 +1111,8 @@ def _signature_census(anchor: str, head: str, *, repo: Path = _REPO) -> dict:
 
 
 def range_review_report(anchor: str, head: str, *, branch: str,
-                        expected_old: str, repo: Path = _REPO) -> dict:
+                        expected_old: str, repo: Path = _REPO,
+                        prospective_manifest: bytes | None = None) -> dict:
     """The one canonical report `apply` re-derives and the checkpoint binds."""
     frozen = set(G._frozen_files(repo))
     cascade = set(G.CASCADE_MUTABLE)
@@ -1143,7 +1145,17 @@ def range_review_report(anchor: str, head: str, *, branch: str,
 
     by_class = {name: [e["display"] for e in entries if e["class"] == name]
                 for name in _RANGE_CLASSES}
-    manifest_bytes = (repo / manifest_rel).read_bytes()
+    # [E2]/C5, and the live defect security review [S2] found in `2df83d2`:
+    # this read the manifest **already in the worktree**, while `apply` commits
+    # `authoritative_manifest(...)` -- a different artifact with a different
+    # digest. So the report faithfully bound the wrong manifest identity, and
+    # `rederive_and_bind` reconfirmed it. The prospective bytes are passed in by
+    # the caller that knows them; falling back to the worktree copy is retained
+    # only for the read-only preview, and is labelled where it happens.
+    if prospective_manifest is not None:
+        manifest_bytes = prospective_manifest
+    else:
+        manifest_bytes = (repo / manifest_rel).read_bytes()
 
     return {
         "schema": RANGE_REPORT_SCHEMA,
@@ -1708,7 +1720,8 @@ class RangeReportDrift(PreflightError):
 
 def rederive_and_bind(anchor: str, head: str, *, branch: str,
                       expected_old: str, confirmed_digest: str,
-                      repo: Path = _REPO) -> dict:
+                      repo: Path = _REPO,
+                      prospective_manifest: bytes | None = None) -> dict:
     """Re-derive the report **in memory** and refuse any drift.
 
     R1-A: `apply` neither reads nor trusts a handoff file.  The report the
@@ -1721,7 +1734,8 @@ def rederive_and_bind(anchor: str, head: str, *, branch: str,
     invalidates the confirmation and requires a fresh derivation.
     """
     fresh = range_review_report(anchor, head, branch=branch,
-                                expected_old=expected_old, repo=repo)
+                                expected_old=expected_old, repo=repo,
+                                prospective_manifest=prospective_manifest)
     actual = range_report_digest(fresh)
     if actual != confirmed_digest:
         raise RangeReportDrift(
@@ -1754,12 +1768,150 @@ def verify_message_binds_report(message: str, *, digest: str, tree: str,
             f"Refusing before construction.")
 
 
+# --------------------------------------------------------------------------
+# the authorization package (Chunk C; plan review [E2], proposal R3)
+# --------------------------------------------------------------------------
+
+PACKAGE_SCHEMA = "cairn-authorization-package/v1"
+
+#: The ONLY fields stage 2 may take from stage 1 rather than re-derive.
+#: Closed and asserted: these are exactly what static re-derivation cannot
+#: produce, which is the entire reason the evidence stage exists. A third
+#: member appearing here without a matching change to
+#: `rederive_static_manifest` means something derivable is being delegated.
+PACKAGE_EXECUTABLE_ONLY = ("collection", "interpreter")
+
+#: 8 MiB. The package is a handful of digests, a path list and one manifest;
+#: a bounded read is what makes "hash the bytes, then parse them" affordable.
+PACKAGE_MAX_BYTES = 8 * 1024 * 1024
+
+
+class PackageError(PreflightError):
+    """The authorization package is malformed, unconfirmed, or does not match."""
+
+
+def _no_duplicate_keys(pairs):
+    seen = {}
+    for key, value in pairs:
+        if key in seen:
+            raise PackageError(f"duplicate key {key!r} in the package")
+        seen[key] = value
+    return seen
+
+
+def package_bytes(pkg: dict) -> bytes:
+    """Canonical serialization. Deterministic for the same content."""
+    return json.dumps(pkg, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=True).encode("ascii") + b"\n"
+
+
+def write_package(path: Path, pkg: dict) -> str:
+    """Write the package atomically and exclusively; return the **external**
+    digest over the exact bytes written.
+
+    **The digest is external on purpose** ([E2]). An earlier design put a
+    `package_digest` field *inside* the package it digests, which is either
+    recursive or silently excludes a field nobody named -- and either way it is
+    the adjacent self-digest CR1 falsified, one layer down. Authority comes from
+    a digest the Maintainer carries out of band, computed over bytes that
+    already exist.
+
+    `O_EXCL` on a fresh path, a restrictive mode, and a refusal on a symlinked
+    parent or leaf: a package written over something else, or through a link, is
+    not a package this ceremony produced.
+    """
+    path = Path(path)
+    if path.is_symlink():
+        raise PackageError(f"package destination {path} is a symlink")
+    if path.exists():
+        raise PackageError(f"package destination {path} already exists")
+    parent = path.parent
+    if parent.is_symlink():
+        raise PackageError(f"package parent {parent} is a symlink")
+
+    body = package_bytes(pkg)
+    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        os.write(fd, body)
+    finally:
+        os.close(fd)
+    # BARE lowercase hex, deliberately, not this module's `sha256:`-prefixed
+    # form. The Maintainer carries this digest out of band and compares it by
+    # eye against `shasum -a 256` output, which is bare. A prefix the operator
+    # has to mentally strip mid-ceremony is a place to make a mistake, and the
+    # ceremony's own recorded commands use `shasum` throughout.
+    return hashlib.sha256(body).hexdigest()
+
+
+def read_package(path: Path, *, confirmed_sha256: str) -> dict:
+    """Read, hash, confirm, then parse -- in that order.
+
+    Hashing before parsing is the point: what the Maintainer confirmed is a
+    sequence of bytes, so the bytes are what must be measured. Parsing first
+    and hashing a re-serialization would confirm a *rendering* of the file.
+
+    ``O_NOFOLLOW`` because a symlinked package is a file substituted between
+    the ceremony that wrote one and the ceremony that reads it; the size bound
+    because an unbounded read into memory is its own denial surface; and a
+    single read because a file re-read is a file that could change in between.
+    """
+    path = Path(path)
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(str(path), flags)
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            raise PackageError(f"package {path} is not a regular file")
+        if st.st_size > PACKAGE_MAX_BYTES:
+            raise PackageError(
+                f"package {path} is {st.st_size} bytes, over the "
+                f"{PACKAGE_MAX_BYTES} limit")
+        body = os.read(fd, PACKAGE_MAX_BYTES + 1)
+    finally:
+        os.close(fd)
+    if len(body) > PACKAGE_MAX_BYTES:
+        raise PackageError("package exceeds the size limit")
+
+    actual = hashlib.sha256(body).hexdigest()   # bare, matching `shasum`
+    if actual != confirmed_sha256:
+        raise PackageError(
+            f"package digest {actual} does not match the confirmed "
+            f"{confirmed_sha256}. The confirmation is over the exact bytes "
+            f"stage 1 wrote; no digest inside the package can satisfy it.")
+
+    try:
+        pkg = json.loads(body.decode("utf-8"),
+                         object_pairs_hook=_no_duplicate_keys)
+    except json.JSONDecodeError as exc:
+        raise PackageError(f"package is not valid JSON: {exc}") from None
+    if not isinstance(pkg, dict):
+        raise PackageError("package is not a JSON object")
+    if pkg.get("schema") != PACKAGE_SCHEMA:
+        raise PackageError(f"unknown package schema {pkg.get('schema')!r}")
+    if "package_digest" in pkg or "sha256" in pkg:
+        raise PackageError(
+            "the package carries a self-digest field; authority comes from the "
+            "externally confirmed digest, never from the artifact itself")
+
+    expected = {"schema", "observed_anchor", "candidate_head", "candidate_tree",
+                "branch", "expected_old", "range_report", "range_report_digest",
+                "review_manifest", "prospective_manifest_b64",
+                "prospective_manifest_sha256"} | set(PACKAGE_EXECUTABLE_ONLY)
+    missing, extra = sorted(expected - set(pkg)), sorted(set(pkg) - expected)
+    if missing or extra:
+        raise PackageError(
+            f"package fields do not match the schema: {len(missing)} missing "
+            f"{missing}, {len(extra)} unexpected {extra}")
+    return pkg
+
+
 def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
                   last_legitimate_anchor: str | None = None,
                   manifest: dict | None = None,
                   manifest_sha256: str | None = None,
                   branch: str | None = None,
-                  expected_old: str | None = None) -> dict:
+                  expected_old: str | None = None,
+                  prospective_manifest: bytes | None = None) -> dict:
     """The derived description of what a blessing would do.
 
     Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
@@ -1791,7 +1943,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     # was tested in isolation, and was dead to authorization.
     the_report = (range_review_report(
                       report.facts["anchor"], report.facts["head"],
-                      branch=branch, expected_old=expected_old, repo=repo)
+                      branch=branch, expected_old=expected_old, repo=repo,
+                      prospective_manifest=prospective_manifest)
                   if branch and expected_old else None)
     report_digest = range_report_digest(the_report) if the_report else None
     candidate_tree = (_resolve_tree(report.facts["head"], repo=repo)
@@ -2107,7 +2260,8 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
     plan = blessing_plan(report, evidence, repo=repo,
                          manifest=committed_manifest,
                          manifest_sha256=committed_sha256,
-                         branch=branch, expected_old=branch_old)
+                         branch=branch, expected_old=branch_old,
+                         prospective_manifest=manifest_bytes)
 
     # [M2-1], the governing path. Three separate obligations, none of which the
     # reviewed bytes performed:
@@ -2131,7 +2285,8 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
 
     rederive_and_bind(report.facts["anchor"], report.facts["head"],
                       branch=branch, expected_old=branch_old,
-                      confirmed_digest=plan["range_report_digest"], repo=repo)
+                      confirmed_digest=plan["range_report_digest"], repo=repo,
+                      prospective_manifest=manifest_bytes)
 
     verify_message_binds_report(
         plan["message"], digest=plan["range_report_digest"],

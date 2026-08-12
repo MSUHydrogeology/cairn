@@ -2051,6 +2051,171 @@ class TestRosterContinuityIsAHardRefusal:
         assert "HARD REFUSAL" in str(exc.value)
 
 
+class TestAuthorizationPackage:
+    """Chunk C / plan review [E2]. A strict field schema alone does not stop a
+    symlink target, a partial write, a replacement between hash and parse,
+    duplicate JSON keys, or stage 2 confirming against a digest carried *inside*
+    the artifact -- the adjacent self-digest CR1 falsified, one layer down."""
+
+    def _pkg(self):
+        return {
+            "schema": P.PACKAGE_SCHEMA,
+            "observed_anchor": "a" * 40, "candidate_head": "b" * 40,
+            "candidate_tree": "c" * 40, "branch": "refs/heads/master",
+            "expected_old": "b" * 40,
+            "range_report": {"schema": P.RANGE_REPORT_SCHEMA},
+            "range_report_digest": "d" * 64,
+            "review_manifest": {"provenance": "review 2026-08-12"},
+            "prospective_manifest_b64": "e30=",
+            "prospective_manifest_sha256": "e" * 64,
+            "collection": {"node_count": 1},
+            "interpreter": {"version": "3.13.13"},
+        }
+
+    def test_round_trip(self, tmp_path):
+        dest = tmp_path / "pkg.json"
+        digest = P.write_package(dest, self._pkg())
+        assert P.read_package(dest, confirmed_sha256=digest)["schema"] == \
+            P.PACKAGE_SCHEMA
+
+    def test_the_digest_is_over_the_bytes_written(self, tmp_path):
+        dest = tmp_path / "pkg.json"
+        digest = P.write_package(dest, self._pkg())
+        import hashlib
+        assert digest == hashlib.sha256(dest.read_bytes()).hexdigest()
+
+    def test_a_self_digest_field_is_refused(self, tmp_path):
+        """The [E2] shape stated directly: authority must never come from a
+        value the artifact carries about itself."""
+        dest = tmp_path / "pkg.json"
+        pkg = self._pkg()
+        pkg["package_digest"] = "f" * 64
+        digest = P.write_package(dest, pkg)
+        with pytest.raises(P.PackageError, match="self-digest"):
+            P.read_package(dest, confirmed_sha256=digest)
+
+    def test_a_wrong_confirmation_refuses(self, tmp_path):
+        dest = tmp_path / "pkg.json"
+        P.write_package(dest, self._pkg())
+        with pytest.raises(P.PackageError, match="does not match the confirmed"):
+            P.read_package(dest, confirmed_sha256="0" * 64)
+
+    def test_replacement_between_write_and_read_refuses(self, tmp_path):
+        """The substitution the external digest exists to catch."""
+        dest = tmp_path / "pkg.json"
+        digest = P.write_package(dest, self._pkg())
+        tampered = self._pkg()
+        tampered["candidate_head"] = "9" * 40
+        dest.unlink()
+        P.write_package(dest, tampered)
+        with pytest.raises(P.PackageError, match="does not match the confirmed"):
+            P.read_package(dest, confirmed_sha256=digest)
+
+    def test_a_symlinked_package_refuses(self, tmp_path):
+        real = tmp_path / "real.json"
+        digest = P.write_package(real, self._pkg())
+        link = tmp_path / "link.json"
+        link.symlink_to(real)
+        with pytest.raises(OSError):
+            P.read_package(link, confirmed_sha256=digest)
+
+    def test_writing_over_an_existing_path_refuses(self, tmp_path):
+        dest = tmp_path / "pkg.json"
+        dest.write_text("prior", encoding="utf-8")
+        with pytest.raises(P.PackageError, match="already exists"):
+            P.write_package(dest, self._pkg())
+
+    def test_writing_through_a_symlink_refuses(self, tmp_path):
+        target = tmp_path / "target.json"
+        link = tmp_path / "link.json"
+        link.symlink_to(target)
+        with pytest.raises(P.PackageError, match="symlink"):
+            P.write_package(link, self._pkg())
+
+    def test_duplicate_json_keys_refuse(self, tmp_path):
+        """A strict field set does not see duplicates -- the last value wins
+        silently in an ordinary decoder, so two packages can hash differently
+        and parse identically."""
+        dest = tmp_path / "pkg.json"
+        body = b'{"schema":"' + P.PACKAGE_SCHEMA.encode() + \
+               b'","schema":"other"}\n'
+        dest.write_bytes(body)
+        import hashlib
+        with pytest.raises(P.PackageError, match="duplicate key"):
+            P.read_package(dest,
+                           confirmed_sha256=hashlib.sha256(body).hexdigest())
+
+    def test_an_oversize_package_refuses(self, tmp_path):
+        dest = tmp_path / "pkg.json"
+        dest.write_bytes(b"x" * (P.PACKAGE_MAX_BYTES + 1))
+        import hashlib
+        with pytest.raises(P.PackageError, match="over the"):
+            P.read_package(dest, confirmed_sha256=hashlib.sha256(
+                dest.read_bytes()).hexdigest())
+
+    @pytest.mark.parametrize("field", [
+        "observed_anchor", "candidate_head", "candidate_tree", "branch",
+        "expected_old", "range_report", "range_report_digest",
+        "review_manifest", "prospective_manifest_b64",
+        "prospective_manifest_sha256", "collection", "interpreter",
+    ])
+    def test_every_missing_field_refuses(self, tmp_path, field):
+        dest = tmp_path / "pkg.json"
+        pkg = self._pkg()
+        del pkg[field]
+        digest = P.write_package(dest, pkg)
+        with pytest.raises(P.PackageError, match="missing"):
+            P.read_package(dest, confirmed_sha256=digest)
+
+    def test_an_unknown_field_refuses(self, tmp_path):
+        dest = tmp_path / "pkg.json"
+        pkg = self._pkg()
+        pkg["extra"] = 1
+        digest = P.write_package(dest, pkg)
+        with pytest.raises(P.PackageError, match="unexpected"):
+            P.read_package(dest, confirmed_sha256=digest)
+
+    def test_the_executable_only_list_is_closed(self):
+        """C3/C6. These are exactly the fields static re-derivation cannot
+        produce. A third member without a matching change to
+        `rederive_static_manifest` means something derivable is being
+        delegated to the candidate."""
+        assert P.PACKAGE_EXECUTABLE_ONLY == ("collection", "interpreter")
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
+                              capture_output=True, text=True).stdout.strip()
+        derived = set(P.rederive_static_manifest(head, repo=P._REPO))
+        for name in P.PACKAGE_EXECUTABLE_ONLY:
+            assert name not in derived, (
+                f"{name} IS statically re-derivable; delegating it to the "
+                f"candidate is unnecessary trust")
+
+
+class TestReportBindsTheProspectiveManifest:
+    """Chunk C5. The live defect security review [S2] found in `2df83d2`: the
+    report bound the manifest already in the worktree while `apply` committed a
+    different one, so `rederive_and_bind` reconfirmed the wrong identity."""
+
+    def test_the_prospective_bytes_win_over_the_worktree_copy(self):
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(P._REPO),
+                              capture_output=True, text=True).stdout.strip()
+        anchor = subprocess.run(["git", "rev-parse", "HEAD~3"], cwd=str(P._REPO),
+                                capture_output=True, text=True).stdout.strip()
+        prospective = b'{"prospective": true}\n'
+        import hashlib
+
+        with_pros = P.range_review_report(
+            anchor, head, branch="master", expected_old=head,
+            prospective_manifest=prospective)
+        without = P.range_review_report(
+            anchor, head, branch="master", expected_old=head)
+
+        assert with_pros["manifest_sha256"] == \
+            hashlib.sha256(prospective).hexdigest()
+        assert with_pros["manifest_sha256"] != without["manifest_sha256"], (
+            "the prospective manifest must change the bound identity, or the "
+            "parameter is decorative")
+
+
 class TestReadBoundaryIsRepositoryReadOnly:
     """Security review [M2-4]. `_READ_ONLY_GIT` bounds *subcommands*; it said
     nothing about whether the repository is written. `git status` refreshes
