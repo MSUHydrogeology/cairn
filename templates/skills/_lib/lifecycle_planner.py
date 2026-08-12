@@ -4900,10 +4900,9 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "state `preserved` if you want the record to show you checked; "
                 "only `degraded` and `lost` require the Removed-scope block. "
                 "Declining a reviewer's proposed expansion is not a reduction. "
-                "NO TRANSITION REFUSES ON A MISSING DECLARATION -- forgetting "
-                "it is not caught, and whether a declaration is TRUE is review's "
-                "call. A declared `degraded`/`lost` WITHOUT the Maintainer's "
-                "isolated allowance blockquote in the same record DOES refuse.",
+                "NO TRANSITION REFUSES ON A MISSING OR MALFORMED DECLARATION -- "
+                "review is the enforcement, including for whether a declaration "
+                "is TRUE.",
                 "one commit for this transition.",
             ]
             return ("reviewed/revised", "revised", [block] + manifest)
@@ -4971,10 +4970,10 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "accepted scope is a FLOOR: a Sharpening that removes an "
                 "accepted outcome needs the Maintainer's explicit disposition "
                 "under the deviation gate. A plan reviewer cannot create that "
-                "authority by calling the remainder 'out of scope'. A declared "
-                "`degraded`/`lost` without that allowance recorded as an "
-                "isolated blockquote DOES refuse; a MISSING declaration does "
-                "not, and whether a declaration is TRUE is review's call.",
+                "authority by calling the remainder 'out of scope'. NO "
+                "TRANSITION REFUSES ON A MISSING OR MALFORMED DECLARATION -- "
+                "review is the enforcement, including for whether a declaration "
+                "is TRUE.",
                 "for a review-required plan, the '## Plan review' section (+ "
                 "Sharpening if findings) must have landed first; plan-open and "
                 "first-implementation commits stay distinct.",

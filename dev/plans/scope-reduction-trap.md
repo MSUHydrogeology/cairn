@@ -2453,3 +2453,56 @@ on every finding**.
   guards guard, and none on whether the rule works — the proposal's own residual,
   untouched.
 
+### F1 corrected -- Claude -- 2026-08-12
+
+**F1 accepted, verified, and fixed. F2-F6 are left open deliberately — see the
+recommendation.**
+
+**Verified before acting.** `_declared_reduction` has exactly one caller
+(`tools/lifecycle_planner.py:3518`), inside `plan_inheritance_violations`, whose
+first statement returns `[]` for `art.kind != "plan"`. So on the **proposal**
+side — the side E1 was about — nothing refuses, categorically. The plan side is
+gated on `_declares_inheritance`, which no artifact declares.
+
+**What I did was worse than what I fixed.** The original manifest understated
+the mechanism and failed *closed*. Mine overstated it and fails **open**: it
+told an author narrowing their scope that a check would catch them. That is the
+"green check to sit behind" that Round 3's decline and the Maintainer's decision
+both name, manufactured by the person implementing the rule against it. And
+`aa4015f`'s own commit body carries both the claim and the words "The refusal is
+DORMANT" — I wrote the refutation beside the assertion and shipped both.
+
+**The correction** states only what is true: no transition refuses on a missing
+or malformed declaration, and review is the enforcement including for whether a
+declaration is true. D5's actual contradiction ("omit entirely" / "OMITTED
+unless") stays gone — that half of E1 was correct and is untouched.
+
+**The guard could not have caught this**, which is the more useful finding. It
+asserted `"refuse" in emitted` — satisfied by the words *"NO TRANSITION
+REFUSES"*. A guard whose pattern its own subject trivially satisfies tests
+nothing. Replaced with an assertion that the manifest must **not** claim a
+refusal, plus the caller-chain reasoning in the failure message so the next
+person restoring it has to check first. Mutation: restoring the false claim now
+fails 2 nodes, where it previously left 105 green.
+
+### Recommendation: stop the Internal cycle
+
+Four Internal passes have now each found real P1 defects the previous one
+missed, and F4 — a Chunk D surface enumerated in this plan's own scope — was
+reached by none of them. That is not convergence.
+
+My own record is worse: a P1 defect introduced in each of the last three
+correction rounds, and this one **actively harmful** rather than merely
+incomplete. F2's fix would require me to write more guard logic, which is
+precisely the thing failing.
+
+The third pass names the gap directly: *"the distribution's judgement calls have
+had no cross-type read since the proposal."* Every pass since has been
+same-agent-type. A fifth Internal round would sample the same blind spots a
+fifth time.
+
+**F2-F6 are therefore left open and undisposed**, not because they are wrong but
+because the next read should be **External** — a different agent type, which is
+the tier this plan has not had since its proposal. That is the Maintainer's to
+run.
+

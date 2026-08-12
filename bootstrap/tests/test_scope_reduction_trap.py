@@ -316,14 +316,23 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
     # for a declared loss carrying no Maintainer allowance, so the flat claim
     # became false (second clearing pass, E1) and was corrected here.
     lowered = emitted.lower()
-    assert "missing declaration" in lowered, (
+    assert re.search(r"missing(?: or malformed)? declaration", lowered), (
         f"the {kind} -> {target} manifest no longer says that a MISSING "
         f"declaration goes uncaught. A scaffold implying full enforcement "
         f"invites the reader to trust it as a gate."
     )
-    assert "refuse" in lowered, (
-        f"the {kind} -> {target} manifest no longer says what DOES refuse. "
-        f"Understating the mechanism misleads as much as overstating it."
+    # NOT "says what DOES refuse" -- that assertion was satisfied by the words
+    # "NO TRANSITION REFUSES", so it could never have caught the false claim it
+    # was meant to guard (third clearing pass, F1). Nothing refuses today: the
+    # only consumer of `_declared_reduction` returns early for proposals and is
+    # gated for plans on a field no artifact declares. The manifest must not
+    # claim otherwise -- a scaffold that promises a check an author can rely on
+    # is the "green check to sit behind" this proposal exists to prevent.
+    assert "does refuse" not in lowered, (
+        f"the {kind} -> {target} manifest claims something refuses on the "
+        f"scope declaration. Verify the caller chain before restoring that: "
+        f"`_declared_reduction`'s only consumer bails for proposals and is "
+        f"gated for plans on `_declares_inheritance`."
     )
 
 
