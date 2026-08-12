@@ -1593,6 +1593,20 @@ class TestMessagesClaimOnlyTheRecordShape:
 #:   it is recorded rather than silently tolerated: the planner reads artifact
 #:   text and cannot see git history, so closing it needs a contract this plan
 #:   does not have.  Routed as a scope question, not widened here.
+#:
+#:
+#: **Chunk E added exactly one row, and no new UNCHECKED CLAIM.**  That is the
+#: property `test_only_one_unchecked_claim_survives` exists to hold, and it held
+#: by construction: every new-vocabulary target's *substantive* gate goes through
+#: `_r6_gate`, so it carries a predicate rather than a `True`.  The one new row is
+#: an instruction about what to write next.
+#:
+#: The `implementing` target's commit-distinctness gate deliberately matches the
+#: **existing** UNCHECKED CLAIM row rather than adding a second: it is the same
+#: unverifiable claim (the planner reads artifact text and cannot see git
+#: history), re-worded to carry the accepted combined fast path's exception.  One
+#: claim, two targets, one row -- and the row's key is a prefix of both
+#: descriptions so neither can drop out of the inventory unnoticed.
 _UNCONDITIONAL_GATES = {
     "append a '## Review'": "INSTRUCTION",
     "append a '## Response'": "INSTRUCTION",
@@ -1601,6 +1615,8 @@ _UNCONDITIONAL_GATES = {
     "append a '## Code review' pass": "INSTRUCTION",
     "execution may combine with plan-open": "INSTRUCTION",
     "plan-open and first-implementation commits stay distinct": "UNCHECKED CLAIM",
+    # Chunk E -- the plan-side revision loop's disposition record.
+    "append a '## Response to plan review'": "INSTRUCTION",
 }
 
 
@@ -2365,7 +2381,37 @@ class TestCodeReviewIsReachedByBothPublicPaths:
         # `_code_of` normalizes through `ast.unparse`, which rewrites string
         # literals to single quotes -- so the expected spelling is the
         # normalized one, not the source's.
-        assert "review_record_violations(art, 'archived')" in gating, gating
+        #
+        # **Chunk E generalized the literal `'archived'` to `target`**, because R6
+        # bullet 8 requires `ready-to-archive` and `archived` to be judged by the
+        # *same* closeout predicate.  The property this node guards is unchanged
+        # and now stated more strongly: the gate calls the ONE predicate with an
+        # EXPLICIT effective state, and the two archive-effective targets share one
+        # branch so neither can be softened alone.
+        assert "review_record_violations(art, target)" in gating, gating
+        assert "elif target in ('ready-to-archive', 'archived')" in gating, gating
+
+    def test_the_two_archive_effective_targets_get_identical_gates(self, tmp_path):
+        """R6 bullet 8, as behaviour rather than as source text.
+
+        *"`archived` when the same closeout predicate would reject
+        `ready-to-archive`"* is one rule required to be shared, so a plan cannot
+        reach `ready-to-archive` on evidence that would not also let it reach
+        `archived`.  Asserted on a fixture that FAILS both, and on one that passes
+        both, so the node cannot be satisfied by two gates that happen to agree
+        while both being vacuously true.
+        """
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        for body, expect_met in ((_code_review_pass(verdict="REVISE"), False),
+                                 (_code_review_pass()
+                                  + _LT + "Dispositions: none\n\n" + _REAL_SIGNOFF,
+                                  True)):
+            art = _plan_art(tmp_path, body, status="review", stem=_CR_STEM,
+                            plan_review="not required(Chunk C fixture)")
+            ready = planner._gating_preconditions(art, "ready-to-archive", identity)
+            done = planner._gating_preconditions(art, "archived", identity)
+            assert ready == done, (ready, done)
+            assert all(met for met, _d in ready) is expect_met, ready
 
     def test_the_marker_predicate_still_has_a_consulted_home(self):
         """It is deleted as a *gate*, not as a predicate: inside the one
@@ -3670,3 +3716,835 @@ class TestP5Placement:
         for forbidden in ("_git_readonly", "subprocess", "read_text",
                           "_repo_root", "Popen"):
             assert forbidden not in block, forbidden
+
+
+# ===========================================================================
+# Chunk E -- the accepted status vocabulary, its transitions, R3's
+# multi-obligation plan review, R4's orthogonal `Blocked by`, and R6's eight
+# status/evidence contradictions.
+#
+# Source contract: accepted proposal
+# `dev/proposals/archive/2026-08-10-codex-lifecycle-status-vocabulary.md`,
+# Revision 4 -- operative clauses R1 (as replaced by "R1 replacement"), R2, R3,
+# R4 and R6.  Plan cell: `dev/plans/review-efficient-lifecycle.md` > Chunk E.
+#
+# **What Chunk E deliberately did NOT do, asserted here so it cannot drift into
+# happening by accident.**  The accepted text says *"Replace `open`,
+# `executing`, and `review`"*.  E made the new tokens legal and left the three
+# old ones legal, because all three are declared by live plans -- two of them
+# another session's -- and `scan` reporting every live artifact sound is one of
+# the plan's acceptance criteria.  The retirement is Chunk H1's named job, and
+# `TestTheLegacyTokensAreStillLegalUntilH1` is what makes the split visible
+# rather than a silent narrowing.
+# ===========================================================================
+
+_E_STEM = "e-fixture"          # deliberately in NEITHER legacy manifest
+
+#: A proposal `## Review` record in the post-P1 conforming shape, with the two
+#: closed fields E2 reads.  Each part independently omittable so a node can vary
+#: exactly one property.
+def _prop_review_pass(*, reviewer: str = "Reviewer A (External)",
+                      date: str = "2026-05-02", tier: str | None = "External",
+                      findings: str | None = "none",
+                      response: bool = False) -> str:
+    out = f"## Review -- {reviewer} -- {date}\n\n" + _BASIS_LINES
+    if tier is not None:
+        out += f"**Tier**: {tier}\n"
+    if findings is not None:
+        out += f"**Findings**: {findings}\n"
+    out += "\nthe reading.\n\n"
+    if response:
+        out += f"## Response -- Claude -- {date}\n\nthe reply.\n\n"
+    return out
+
+
+def _e_repo(tmp_path) -> Path:
+    """`_make_repo`, but idempotent within one `tmp_path`.
+
+    `_make_repo` hard-fails on a second call (`mkdir` without `exist_ok`), and
+    several nodes below legitimately need two artifacts in one tree to compare
+    them.  Reusing the tree is also closer to what the tool sees.
+    """
+    repo = tmp_path / "repo"
+    return repo if repo.is_dir() else _make_repo(tmp_path)
+
+
+def _e_prop(tmp_path, *, status: str, body: str = "", author: str = "Claude",
+            name: str = "p.md"):
+    path = _write_proposal(_e_repo(tmp_path), name, status=status, author=author,
+                           body=body)
+    return planner._read_artifact(path)
+
+
+def _e_conf(art) -> list:
+    return planner._conformance_violations(
+        art, planner.IdentityModel(frozenset(), frozenset()))
+
+
+def _e_gates(art, target) -> list:
+    return planner._gating_preconditions(
+        art, target, planner.IdentityModel(frozenset(), frozenset()))
+
+
+class TestTheAcceptedVocabularyIsDeclared:
+    """R1'/R2' -- the tokens themselves, as data (Chunk A1's seam, used)."""
+
+    def test_every_accepted_proposal_state_is_legal(self):
+        for state in ("awaiting-review", "revising", "awaiting-decision",
+                      "accepted", "rejected", "superseded"):
+            assert state in planner.PROPOSAL_STATES, state
+
+    def test_every_accepted_plan_state_is_legal(self):
+        for state in ("awaiting-plan-review", "revising-plan",
+                      "ready-to-implement", "implementing",
+                      "awaiting-code-review", "revising-code",
+                      "ready-to-archive", "archived"):
+            assert state in planner.PLAN_STATES, state
+
+    def test_the_terminal_classification_did_not_move(self):
+        """Every new state is non-terminal: the accepted tables add no terminal
+        state, and mis-classifying one would silently strand an artifact."""
+        assert planner.PROPOSAL_TERMINAL_STATES == (
+            "accepted", "rejected", "superseded")
+        assert planner.PLAN_TERMINAL_STATES == ("archived",)
+        for new in ("awaiting-review", "revising", "awaiting-decision"):
+            assert new in planner.PROPOSAL_NON_TERMINAL_STATES
+        for new in ("revising-plan", "ready-to-implement", "implementing",
+                    "awaiting-code-review", "revising-code",
+                    "ready-to-archive"):
+            assert new in planner.PLAN_NON_TERMINAL_STATES
+
+    def test_shape_b_covers_every_current_non_terminal_state(self):
+        """The accepted "R5 replacement": shape (b) *"considers every recognized
+        current non-terminal status plus the historical opening statuses"*.  The
+        set is derived, so this asserts the derivation rather than a literal."""
+        for state in (planner.PROPOSAL_NON_TERMINAL_STATES
+                      + planner.PLAN_NON_TERMINAL_STATES):
+            assert state in planner.SHAPE_B_STATUSES, state
+        for state in planner.PROPOSAL_TERMINAL_STATES + planner.PLAN_TERMINAL_STATES:
+            assert state not in planner.SHAPE_B_STATUSES, state
+
+    def test_every_declared_state_is_recognized_by_the_consumers(self):
+        for state in planner.PROPOSAL_STATES + planner.PLAN_STATES:
+            assert state in planner.RECOGNIZED_STATES, state
+
+
+class TestTheLegacyTokensAreStillLegalUntilH1:
+    """The sequencing decision, pinned as behaviour so it cannot drift silently.
+
+    Both directions matter.  If a later change retires the three tokens *without*
+    migrating the artifacts, the first two nodes redden.  When H1 *does* migrate
+    them, the third node is what tells the implementer that retiring the tokens
+    means moving them into the historical tuples -- not deleting them, because
+    metrics must keep parsing pre-migration commits.
+    """
+
+    @pytest.mark.parametrize("state", ["open", "executing", "review"])
+    def test_the_three_pending_retirement_plan_tokens_are_still_legal(self, state):
+        assert state in planner.PLAN_STATES, state
+        assert planner._legal_transitions.__module__  # the table is consulted
+
+    @pytest.mark.parametrize("state", ["proposed", "reviewed", "revised"])
+    def test_the_three_pending_retirement_proposal_tokens_are_still_legal(
+            self, state):
+        assert state in planner.PROPOSAL_STATES, state
+
+    def test_the_historical_tuples_are_still_empty_and_that_is_the_seam(self):
+        """A token becomes historical when the migration removes it from an active
+        artifact, not when a newer name for it exists.  Listing `executing` here
+        while a live plan declares it would make the planner contradict the tree
+        it scans."""
+        assert planner.HISTORICAL_PROPOSAL_STATES == ()
+        assert planner.HISTORICAL_PLAN_STATES == ()
+
+    def test_each_legacy_state_keeps_a_forward_path(self, tmp_path):
+        """The concrete hazard: a live plan whose token is still legal but whose
+        transition table lost its arm has no legal move at all."""
+        repo = _e_repo(tmp_path)
+        for state in ("open", "executing", "review"):
+            path = _write_plan(repo, f"{state}.md", status=state)
+            art = planner._read_artifact(path)
+            assert planner._legal_transitions(art), state
+
+
+class TestEveryLegalTransition:
+    """R1/R2's cycles, exhaustively, through the public `next` path."""
+
+    _PROPOSAL_CYCLE = [
+        ("", ["awaiting-review"]),
+        ("awaiting-review", ["revising", "awaiting-decision"]),
+        ("revising", ["awaiting-review"]),
+        ("awaiting-decision", ["accepted", "rejected", "superseded", "revising"]),
+        ("accepted", []),
+        ("rejected", []),
+        ("superseded", []),
+    ]
+
+    @pytest.mark.parametrize("status,expected", _PROPOSAL_CYCLE)
+    def test_the_proposal_cycle_matches_the_accepted_table(
+            self, tmp_path, status, expected):
+        art = _e_prop(tmp_path, status=status)
+        assert planner._legal_transitions(art) == expected
+
+    @pytest.mark.parametrize("status,expected", [
+        ("", ["awaiting-plan-review"]),
+        ("awaiting-plan-review", ["revising-plan", "ready-to-implement",
+                                  "executing"]),
+        ("revising-plan", ["awaiting-plan-review"]),
+        ("ready-to-implement", ["implementing"]),
+        ("implementing", ["awaiting-code-review"]),
+        ("awaiting-code-review", ["revising-code", "ready-to-archive"]),
+        ("revising-code", ["awaiting-code-review"]),
+        ("ready-to-archive", ["archived"]),
+        ("archived", []),
+    ])
+    def test_the_plan_cycle_matches_the_accepted_table(
+            self, tmp_path, status, expected):
+        repo = _make_repo(tmp_path)
+        path = _write_plan(repo, "x.md", status=status)
+        assert planner._legal_transitions(
+            planner._read_artifact(path)) == expected
+
+    def test_both_revision_loops_return_to_their_waiting_state(self, tmp_path):
+        """The two loops R2 names *"deliberately specific"*: a plan's design loop
+        and its implementation loop are distinct cycles, and neither exit leaks
+        into the other."""
+        repo = _e_repo(tmp_path)
+        design = planner._read_artifact(
+            _write_plan(repo, "d.md", status="revising-plan"))
+        code = planner._read_artifact(
+            _write_plan(repo, "c.md", status="revising-code"))
+        assert planner._legal_transitions(design) == ["awaiting-plan-review"]
+        assert planner._legal_transitions(code) == ["awaiting-code-review"]
+        # And the proposal loop, which is the third and returns to review.
+        prop = _e_prop(tmp_path, status="revising")
+        assert planner._legal_transitions(prop) == ["awaiting-review"]
+
+    def test_the_fast_path_opens_at_implementing_only_when_review_is_not_required(
+            self, tmp_path):
+        """R2's accepted fast path, and its fence.
+
+        *"the plan-open commit may record `implementing` directly; it must contain
+        the implementation evidence that makes the skipped `ready-to-implement`
+        state true."*  Offered from the not-yet-created state for a plan that owes
+        no distinct review -- and NEVER offered to a plan that declares
+        `required(...)` and has not cleared it, which is R6's refusal case.
+        """
+        repo = _e_repo(tmp_path)
+        free = planner._read_artifact(_write_plan(
+            repo, "free.md", status="", plan_review="not required(doc sync)"))
+        gated = planner._read_artifact(_write_plan(
+            repo, "gated.md", status="", plan_review="required(External)"))
+        assert planner._legal_transitions(free) == [
+            "ready-to-implement", "implementing"]
+        assert planner._legal_transitions(gated) == ["awaiting-plan-review"]
+        assert "implementing" not in planner._legal_transitions(gated)
+
+    def test_an_illegal_new_vocabulary_transition_is_refused(
+            self, tmp_path, monkeypatch, capsys):
+        repo = _e_repo(tmp_path)
+        _write_plan(repo, "x.md", status="awaiting-plan-review")
+        monkeypatch.chdir(repo)
+        rc = planner.main(["next", "dev/plans/x.md", "--to", "ready-to-archive"])
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "not a legal next transition" in out
+
+    def test_every_legal_target_has_a_scaffold_and_no_fallback_is_reached(
+            self, tmp_path, monkeypatch, capsys):
+        """The `_scaffold` fallback line is unreachable *given* the transition
+        table, and that claim is only true if every target has a branch.  Walked
+        over the whole table rather than the handful anyone happened to try."""
+        repo = _e_repo(tmp_path)
+        monkeypatch.chdir(repo)
+        for status in planner.PLAN_STATES + ("",):
+            path = _write_plan(repo, "w.md", status=status,
+                               plan_review="not required(x)")
+            art = planner._read_artifact(path)
+            for target in planner._legal_transitions(art):
+                status_from, status_to, blocks = planner._scaffold(
+                    art, target, "2026-05-01")
+                assert blocks, (status, target)
+                assert "no scaffold defined" not in " ".join(blocks), (
+                    status, target)
+                assert status_to == target or target in status_to, (status, target)
+        for status in planner.PROPOSAL_STATES + ("",):
+            art = _e_prop(tmp_path, status=status)
+            for target in planner._legal_transitions(art):
+                _f, _t, blocks = planner._scaffold(art, target, "2026-05-01")
+                assert "no scaffold defined" not in " ".join(blocks), (
+                    status, target)
+
+    def test_a_status_only_flip_refuses_to_scaffold_an_empty_commit(self, tmp_path):
+        """R4 -- *"Do not create empty commits merely to advance a label."*  Every
+        transition that appends no new section says whose commit carries it, so the
+        tool never hands an operator a section to paste that the contract forbids
+        them to commit alone."""
+        repo = _e_repo(tmp_path)
+        art = planner._read_artifact(
+            _write_plan(repo, "x.md", status="awaiting-code-review"))
+        for target in ("revising-code", "ready-to-archive"):
+            _f, _t, blocks = planner._scaffold(art, target, "2026-05-01")
+            joined = " ".join(blocks)
+            assert "NO new section is appended" in joined, target
+            assert "empty commits merely to advance a label" in joined, target
+            assert "CODE REVIEWER" in joined, target
+
+
+class TestMultiObligationPlanReview:
+    """R3 -- `required(A + B)` is two obligations and two distinct passes.
+
+    The defect this closes was live and silent at Chunk E's parent:
+    `normalize_required_tier('required(**External** + **External Security
+    Review**)')` returned `('external', None)`, so the second obligation was
+    *discarded* and one pass reported the floor satisfied.
+    """
+
+    _MULTI = "required(**External** + **External Security Review**)"
+
+    def _pass(self, obligation, *, tier="External", date="2026-05-01",
+              findings="none"):
+        block = _pass_block(reviewer=f"R{date[-2:]}", date=date, tier=tier,
+                            findings=findings)
+        if obligation is None:
+            return block
+        return block.replace("**Tier**:", f"**Obligation**: {obligation}\n**Tier**:")
+
+    def _v(self, tmp_path, body, review=None):
+        return _violations(tmp_path, body, stem=_E_STEM,
+                           plan_review=review or self._MULTI)
+
+    def test_the_declaration_resolves_to_two_obligations(self):
+        obligations, violation = planner.normalize_required_obligations(self._MULTI)
+        assert violation is None
+        assert obligations == (("External", "external"),
+                               ("External Security Review", "external"))
+
+    def test_the_single_obligation_schema_is_unchanged(self):
+        """R3: *"The current one-obligation schema remains unchanged."*  So a
+        one-clause plan needs no `**Obligation**:` line at all."""
+        assert planner.normalize_required_obligations("required(Internal)") == (
+            (("Internal", "internal"),), None)
+        assert planner.normalize_required_tier(self._MULTI) == ("external", None)
+
+    def test_one_pass_cannot_clear_two_clauses(self, tmp_path):
+        """The property R3 exists for, stated as the sharpest possible fixture: a
+        single pass whose `**Obligation**:` names *both* clauses verbatim."""
+        v = self._v(tmp_path, self._pass("External + External Security Review"))
+        assert len(v) == 2, v
+        for clause in ("External", "External Security Review"):
+            assert any(repr(clause) in m for m in v), (clause, v)
+
+    def test_two_passes_one_per_clause_clear_the_floor(self, tmp_path):
+        assert self._v(tmp_path, self._pass("External")
+                       + self._pass("External Security Review",
+                                    date="2026-05-02")) == []
+
+    def test_two_passes_naming_the_same_clause_leave_the_other_outstanding(
+            self, tmp_path):
+        v = self._v(tmp_path, self._pass("External")
+                    + self._pass("External", date="2026-05-02"))
+        assert len(v) == 1, v
+        assert "'External Security Review'" in v[0]
+
+    def test_a_missing_obligation_line_clears_nothing(self, tmp_path):
+        v = self._v(tmp_path, self._pass(None) + self._pass(None, date="2026-05-02"))
+        assert len(v) == 2, v
+
+    def test_a_duplicate_obligation_line_in_one_pass_clears_nothing(self, tmp_path):
+        both = self._pass("External").replace(
+            "**Obligation**: External\n",
+            "**Obligation**: External\n**Obligation**: External Security Review\n")
+        v = self._v(tmp_path, both + self._pass("External Security Review",
+                                                date="2026-05-02"))
+        assert len(v) == 1, v
+        assert "'External'" in v[0]
+
+    def test_an_undeclared_obligation_value_clears_nothing(self, tmp_path):
+        v = self._v(tmp_path, self._pass("Internal")
+                    + self._pass("External Security Review", date="2026-05-02"))
+        assert len(v) == 1, v
+        assert "'External'" in v[0]
+
+    def test_the_declared_tier_must_satisfy_the_named_obligation(self, tmp_path):
+        """R3: *"The existing `**Tier**:` value must satisfy the named
+        obligation"* -- so an `External Security Review` clause is not cleared by
+        an Internal-tier pass that names it."""
+        v = self._v(tmp_path, self._pass("External")
+                    + self._pass("External Security Review", tier="Internal",
+                                 date="2026-05-02"))
+        assert len(v) == 1, v
+        assert "'External Security Review'" in v[0]
+
+    def test_emphasis_and_whitespace_normalize_on_both_sides(self, tmp_path):
+        """R3: matched *"after the same emphasis and whitespace normalization used
+        by the tier parser"*.  One helper does both sides, so this is the node that
+        would catch them drifting apart."""
+        assert self._v(tmp_path, self._pass("**External**")
+                       + self._pass("__External   Security  Review__",
+                                    date="2026-05-02")) == []
+
+    @pytest.mark.parametrize("field,expected", [
+        ("required(External + )", "empty obligation clause"),
+        ("required(External + External)", "duplicate obligation clause"),
+        ("required(External + Bogus)", "unrecognized required tier"),
+        ("required(not External + External)", "unrecognized required tier"),
+    ])
+    def test_a_malformed_plus_declaration_fails_closed(self, field, expected):
+        obligations, violation = planner.normalize_required_obligations(field)
+        assert obligations == ()
+        assert expected in violation, violation
+
+    def test_a_malformed_declaration_is_reported_and_clears_nothing(self, tmp_path):
+        v = self._v(tmp_path, self._pass("External"),
+                    review="required(External + External)")
+        assert any("duplicate obligation clause" in m for m in v), v
+
+    def test_this_plans_own_record_resolves_both_clauses(self):
+        """**The live self-test.**  `review-efficient-lifecycle` declares exactly
+        this two-obligation tier and carries real `**Obligation**:` lines, so the
+        fix is evaluated against the record it was written for: both clearing
+        passes resolve, the Internal review of the Maintainer-directed revision
+        resolves to NO clause (its obligation names that revision section, not a
+        declared clause), and the artifact stays sound."""
+        path = CAIRN_ROOT / "dev" / "plans" / "review-efficient-lifecycle.md"
+        art = planner._read_artifact(path)
+        obligations, violation = planner.normalize_required_obligations(
+            art.plan_review)
+        assert violation is None
+        assert len(obligations) == 2, obligations
+        lines = art.text.split("\n")
+        boundaries = planner._record_boundaries(art)
+        bound = [planner._pass_obligation(
+            planner._record_field_scope(lines, sec.line_no, boundaries),
+            obligations) for sec, _dig in planner._pass_headings(art)]
+        assert set(bound) == {"External", "External Security Review", None}
+        assert bound.count(None) == 1, bound
+        assert planner.review_record_violations(art) == []
+
+
+class TestBlockedByIsNonAuthoritative:
+    """R4 -- *"The field never changes the legal state machine and never
+    substitutes for a status."*  Three negatives and two shape checks."""
+
+    def _plan(self, tmp_path, blocked, *, status="implementing"):
+        repo = _e_repo(tmp_path)
+        extra = "" if blocked is None else f"**Blocked by**: {blocked}\n"
+        path = repo / "dev" / "plans" / f"b{len(list((repo / 'dev' / 'plans').glob('*.md')))}.md"
+        path.write_text(
+            f"# b\n\n**Status**: {status}\n"
+            f"**Plan review**: not required(fixture)\n{extra}\n"
+            "## Scope\n\nx\n", encoding="utf-8")
+        return planner._read_artifact(path)
+
+    def test_absence_is_the_no_blocker_record_and_not_a_finding(self, tmp_path):
+        assert planner.blocked_by_violations(self._plan(tmp_path, None)) == []
+
+    def test_a_named_condition_is_accepted_without_being_verified(self, tmp_path):
+        """The tool cannot tell a falsifiable condition from prose, and says so
+        rather than pretending: any non-empty value passes the shape check."""
+        art = self._plan(tmp_path, "the 2026-09 release ceremony")
+        assert planner.blocked_by_violations(art) == []
+        art = self._plan(tmp_path, "vibes")
+        assert planner.blocked_by_violations(art) == []
+
+    def test_a_duplicate_field_refuses(self, tmp_path):
+        art = self._plan(tmp_path, "one\n**Blocked by**: two")
+        v = planner.blocked_by_violations(art)
+        assert len(v) == 1 and "duplicate" in v[0], v
+
+    def test_an_empty_value_refuses(self, tmp_path):
+        art = self._plan(tmp_path, "")
+        v = planner.blocked_by_violations(art)
+        assert len(v) == 1 and "empty" in v[0], v
+
+    def test_it_changes_no_legal_transition(self, tmp_path):
+        """The orthogonality, as behaviour: the same plan with and without a
+        blocker has the identical legal set and the identical gate verdicts."""
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        free = self._plan(tmp_path, None)
+        blocked = self._plan(tmp_path, "waiting on another plan")
+        assert planner._legal_transitions(free) == planner._legal_transitions(blocked)
+        for target in planner._legal_transitions(free):
+            assert (planner._gating_preconditions(free, target, identity)
+                    == planner._gating_preconditions(blocked, target, identity))
+
+    def test_it_never_reaches_the_transition_table(self):
+        """A source fence, because the property is the ABSENCE of a read: a later
+        edit that keys a transition on the blocker has to add the reach
+        explicitly rather than arrive by accident."""
+        for function in ("_legal_transitions", "_gating_preconditions"):
+            assert "Blocked by" not in _code_of(_PLANNER_PATH, function)
+            assert "blocked_by_violations" not in _code_of(_PLANNER_PATH, function)
+
+    def test_a_proposal_carrying_the_field_is_not_read_as_a_plan(self, tmp_path):
+        art = _e_prop(tmp_path, status="awaiting-review")
+        assert planner.blocked_by_violations(art) == []
+
+
+class TestR6ContradictionsThroughBothEntryPoints:
+    """R6's eight refusals, each through `scan`'s surface AND `next`'s.
+
+    R6: *"`scan`, `next`, and accepted closeout tooling consume shared
+    predicates."*  Every node below asserts the contradiction on
+    `_conformance_violations` (the current status, what `scan` reports) and on
+    `_gating_preconditions` (the requested target, what `next --to` reports), so
+    neither surface can be the loose one -- the defect [R3-E1] executed on the
+    Code-review half.
+    """
+
+    def _both(self, art, state, *, gate_hint: str):
+        """The predicate through both public surfaces, plus the shared function."""
+        shared = planner.status_evidence_violations(art, state)
+        scanned = [m for m in _e_conf(art) if m in shared]
+        gates = [(met, desc) for met, desc in _e_gates(art, state)
+                 if gate_hint in desc]
+        assert len(gates) == 1, (gate_hint, _e_gates(art, state))
+        return shared, scanned, gates[0]
+
+    # --- R6 bullet 1: proposal `revising` without a blocking review ----------
+
+    def test_revising_without_any_review_refuses(self, tmp_path):
+        art = _e_prop(tmp_path, status="revising")
+        shared, scanned, (met, desc) = self._both(
+            art, "revising", gate_hint="LATEST '## Review' declares")
+        assert any("no '## Review' record is present" in m for m in shared), shared
+        assert scanned == shared
+        assert met is False
+        assert "no '## Review' record is present" in desc
+
+    def test_revising_on_a_clearing_review_refuses(self, tmp_path):
+        art = _e_prop(tmp_path, status="revising",
+                      body=_prop_review_pass(findings="none"))
+        shared, scanned, (met, _d) = self._both(
+            art, "revising", gate_hint="LATEST '## Review' declares")
+        assert any("'Findings: none'" in m for m in shared), shared
+        assert scanned == shared and met is False
+
+    def test_revising_on_a_blocking_review_is_sound(self, tmp_path):
+        art = _e_prop(tmp_path, status="revising",
+                      body=_prop_review_pass(findings="raised"))
+        assert planner.status_evidence_violations(art, "revising") == []
+        assert _e_conf(art) == []
+        met = [m for m, d in _e_gates(art, "revising")
+               if "LATEST '## Review' declares" in d]
+        assert met == [True]
+
+    def test_revising_with_no_readable_findings_field_fails_closed(self, tmp_path):
+        art = _e_prop(tmp_path, status="revising",
+                      body=_prop_review_pass(findings=None))
+        assert planner.status_evidence_violations(art, "revising")
+
+    # --- R6 bullet 2: proposal `awaiting-decision` ---------------------------
+
+    def test_awaiting_decision_without_a_review_refuses(self, tmp_path):
+        art = _e_prop(tmp_path, status="awaiting-decision")
+        shared, scanned, (met, _d) = self._both(
+            art, "awaiting-decision", gate_hint="LATEST '## Review' is a clearing")
+        assert any("no '## Review' record is present" in m for m in shared), shared
+        assert scanned == shared and met is False
+
+    def test_awaiting_decision_on_a_blocking_review_refuses(self, tmp_path):
+        art = _e_prop(tmp_path, status="awaiting-decision",
+                      body=_prop_review_pass(findings="raised"))
+        shared, scanned, (met, _d) = self._both(
+            art, "awaiting-decision", gate_hint="LATEST '## Review' is a clearing")
+        assert any("'Findings: raised'" in m for m in shared), shared
+        assert scanned == shared and met is False
+
+    def test_awaiting_decision_on_the_authors_own_review_refuses(self, tmp_path):
+        """R1's replacement requires a review that *cleared the current
+        contract*; a self-review is not an independent read, and the tool reads
+        the byline (never the reviewer's identity)."""
+        art = _e_prop(tmp_path, status="awaiting-decision", author="Claude",
+                      body=_prop_review_pass(reviewer="Claude (Strategy)"))
+        shared = planner.status_evidence_violations(art, "awaiting-decision")
+        assert any("distinct from the proposal author" in m for m in shared), shared
+
+    def test_awaiting_decision_on_a_clearing_independent_review_is_sound(
+            self, tmp_path):
+        art = _e_prop(tmp_path, status="awaiting-decision",
+                      body=_prop_review_pass())
+        assert planner.status_evidence_violations(art, "awaiting-decision") == []
+        assert _e_conf(art) == []
+
+    @pytest.mark.parametrize("kw", [{"tier": None}, {"findings": None}])
+    def test_awaiting_decision_without_the_two_closed_fields_fails_closed(
+            self, tmp_path, kw):
+        art = _e_prop(tmp_path, status="awaiting-decision",
+                      body=_prop_review_pass(**kw))
+        assert planner.status_evidence_violations(art, "awaiting-decision")
+
+    # --- R6 bullet 3: plan `revising-plan` ----------------------------------
+
+    def _plan_at(self, tmp_path, status, body="",
+                 plan_review="required(External)"):
+        return _plan_art(tmp_path, body, status=status, stem=_E_STEM,
+                         plan_review=plan_review)
+
+    def test_revising_plan_without_a_pass_refuses(self, tmp_path):
+        art = self._plan_at(tmp_path, "revising-plan")
+        shared = planner.status_evidence_violations(art, "revising-plan")
+        assert any("no conforming '## Plan review" in m for m in shared), shared
+        assert [m for m in _e_conf(art) if m in shared] == shared
+        gates = [met for met, d in _e_gates(art, "revising-plan")
+                 if "LATEST conforming '## Plan review'" in d]
+        assert gates == [False]
+
+    def test_revising_plan_on_a_clearing_pass_refuses(self, tmp_path):
+        art = self._plan_at(tmp_path, "revising-plan",
+                            _pass_block(findings="none"))
+        shared = planner.status_evidence_violations(art, "revising-plan")
+        assert any("'Findings: none'" in m for m in shared), shared
+
+    def test_revising_plan_on_a_blocking_pass_is_sound(self, tmp_path):
+        art = self._plan_at(tmp_path, "revising-plan",
+                            _pass_block(findings="raised", sharpening=True))
+        assert planner.status_evidence_violations(art, "revising-plan") == []
+        gates = [met for met, d in _e_gates(art, "revising-plan")
+                 if "LATEST conforming '## Plan review'" in d]
+        assert gates == [True]
+
+    def test_revising_plan_does_not_demand_a_clearing_pass(self, tmp_path):
+        """The fence that keeps the state reachable: `revising-plan` is where a
+        blocking review puts a plan, so requiring the floor to be *cleared* there
+        would make the state unreachable by construction."""
+        assert "revising-plan" not in planner.PLAN_REVIEW_CLEARED_STATES
+        assert "awaiting-plan-review" not in planner.PLAN_REVIEW_CLEARED_STATES
+
+    # --- R6 bullet 4: `ready-to-implement` / `implementing` -----------------
+
+    @pytest.mark.parametrize("state", ["ready-to-implement", "implementing"])
+    def test_neither_implementation_state_survives_an_uncleared_floor(
+            self, tmp_path, state):
+        art = self._plan_at(tmp_path, state, "## Plan review\n\n(awaiting)\n")
+        shared = planner.status_evidence_violations(art, state)
+        assert any("no conforming pass satisfies it" in m for m in shared), shared
+        assert [m for m in _e_conf(art) if m in shared] == shared
+        gates = [met for met, d in _e_gates(art, state)
+                 if "every declared plan-review obligation is cleared" in d]
+        assert gates == [False]
+
+    @pytest.mark.parametrize("state", ["ready-to-implement", "implementing"])
+    def test_neither_implementation_state_survives_a_half_cleared_plus_floor(
+            self, tmp_path, state):
+        """The multi-obligation rule reaching R6 bullet 4: one External pass does
+        not admit implementation under a two-clause declaration."""
+        body = _pass_block(tier="External").replace(
+            "**Tier**:", "**Obligation**: External\n**Tier**:")
+        art = self._plan_at(
+            tmp_path, state, body,
+            plan_review="required(**External** + **External Security Review**)")
+        shared = planner.status_evidence_violations(art, state)
+        assert any("'External Security Review'" in m for m in shared), shared
+        gates = [met for met, d in _e_gates(art, state)
+                 if "every declared plan-review obligation is cleared" in d]
+        assert gates == [False]
+
+    @pytest.mark.parametrize("state", ["ready-to-implement", "implementing"])
+    def test_a_cleared_floor_admits_both_implementation_states(
+            self, tmp_path, state):
+        art = self._plan_at(tmp_path, state, _pass_block(tier="External"))
+        assert planner.status_evidence_violations(art, state) == []
+        assert _e_conf(art) == []
+
+    # --- R6 bullet 5: `awaiting-code-review` --------------------------------
+
+    _EVIDENCE = ("## Implementation verification -- Claude -- 2026-05-03\n\n"
+                 "the ledger.\n\n")
+
+    def test_awaiting_code_review_without_stable_evidence_refuses(self, tmp_path):
+        art = self._plan_at(tmp_path, "awaiting-code-review",
+                            _pass_block(tier="External"))
+        shared = planner.status_evidence_violations(art, "awaiting-code-review")
+        assert any("Implementation verification" in m for m in shared), shared
+        assert [m for m in _e_conf(art) if m in shared] == shared
+        gates = [met for met, d in _e_gates(art, "awaiting-code-review")
+                 if "Implementation verification" in d]
+        assert gates == [False]
+
+    def test_awaiting_code_review_with_stable_evidence_is_sound(self, tmp_path):
+        art = self._plan_at(tmp_path, "awaiting-code-review",
+                            _pass_block(tier="External") + self._EVIDENCE)
+        assert planner.status_evidence_violations(
+            art, "awaiting-code-review") == []
+
+    @pytest.mark.parametrize("heading", [
+        "## Implementation verification -- Claude\n\n",              # undated
+        "### Implementation verification -- Claude -- 2026-05-03\n\n",  # H3
+        "## Implementation verification -- Claude -- 2026-02-30\n\n",   # impossible
+        "## Implementation verifications -- Claude -- 2026-05-03\n\n",  # prefix
+    ])
+    def test_a_near_miss_evidence_heading_is_not_a_record(self, tmp_path, heading):
+        art = self._plan_at(tmp_path, "awaiting-code-review",
+                            _pass_block(tier="External") + heading + "x\n\n")
+        assert planner.status_evidence_violations(art, "awaiting-code-review")
+
+    def test_a_stale_evidence_record_does_not_return_a_plan_from_revising_code(
+            self, tmp_path):
+        """R2's word *"replacement"*, made checkable: the record that returns a
+        plan to `awaiting-code-review` must come AFTER the blocking pass, not be
+        the one that pass already read."""
+        stale = (_pass_block(tier="External") + self._EVIDENCE
+                 + _code_review_pass(verdict="REVISE", date="2026-05-04"))
+        fresh = stale + ("## Implementation verification -- Claude -- "
+                         "2026-05-05\n\nthe replacement.\n\n")
+        art_stale = self._plan_at(tmp_path, "awaiting-code-review", stale)
+        shared = planner.status_evidence_violations(
+            art_stale, "awaiting-code-review")
+        assert any("predates the latest" in m for m in shared), shared
+        art_fresh = self._plan_at(tmp_path, "awaiting-code-review", fresh)
+        assert planner.status_evidence_violations(
+            art_fresh, "awaiting-code-review") == []
+
+    # --- R6 bullet 6: `revising-code` ---------------------------------------
+
+    def test_revising_code_without_a_code_review_refuses(self, tmp_path):
+        art = self._plan_at(tmp_path, "revising-code",
+                            _pass_block(tier="External"))
+        shared = planner.status_evidence_violations(art, "revising-code")
+        assert any("no conforming '## Code review" in m for m in shared), shared
+        gates = [met for met, d in _e_gates(art, "revising-code")
+                 if "BLOCKING" in d]
+        assert gates == [False]
+
+    def test_revising_code_on_a_clearing_verdict_refuses(self, tmp_path):
+        art = self._plan_at(tmp_path, "revising-code",
+                            _pass_block(tier="External") + _code_review_pass())
+        shared = planner.status_evidence_violations(art, "revising-code")
+        assert any("CLEARING verdict" in m for m in shared), shared
+        assert [m for m in _e_conf(art) if m in shared] == shared
+
+    def test_revising_code_on_a_blocking_verdict_is_sound(self, tmp_path):
+        art = self._plan_at(
+            tmp_path, "revising-code",
+            _pass_block(tier="External") + _code_review_pass(verdict="REVISE"))
+        assert planner.status_evidence_violations(art, "revising-code") == []
+        gates = [met for met, d in _e_gates(art, "revising-code")
+                 if "BLOCKING" in d]
+        assert gates == [True]
+
+    def test_revising_code_with_no_readable_verdict_fails_closed(self, tmp_path):
+        art = self._plan_at(
+            tmp_path, "revising-code",
+            _pass_block(tier="External") + _code_review_pass(verdict=None))
+        assert planner.status_evidence_violations(art, "revising-code")
+
+    # --- R6 bullets 7 + 8: the shared closeout predicate --------------------
+
+    _CLOSEOUT = _LT + "Dispositions: none\n\n" + _REAL_SIGNOFF
+
+    def test_ready_to_archive_needs_the_latest_clearing_code_review(self, tmp_path):
+        art = self._plan_at(
+            tmp_path, "ready-to-archive",
+            _pass_block(tier="External")
+            + _code_review_pass(verdict="REVISE") + self._CLOSEOUT)
+        shared = planner.status_evidence_violations(art, "ready-to-archive")
+        assert any("BLOCKING verdict" in m for m in shared), shared
+
+    def test_ready_to_archive_needs_every_closeout_precondition(self, tmp_path):
+        art = self._plan_at(tmp_path, "ready-to-archive",
+                            _pass_block(tier="External") + _code_review_pass())
+        shared = planner.status_evidence_violations(art, "ready-to-archive")
+        assert any("Dispositions:" in m for m in shared), shared
+        assert any("loop-fidelity sign-off" in m for m in shared), shared
+        assert all("'ready-to-archive'" in m for m in shared
+                   if "status is" in m), shared
+
+    def test_ready_to_archive_and_archived_share_one_closeout_predicate(
+            self, tmp_path):
+        """R6 bullet 8 verbatim: *"`archived` when the same closeout predicate
+        would reject `ready-to-archive`"*.  Asserted as message-for-message
+        identity modulo the state name, so neither can be softened alone."""
+        body = _pass_block(tier="External") + _code_review_pass()
+        art = self._plan_at(tmp_path, "ready-to-archive", body)
+        ready = planner.status_evidence_violations(art, "ready-to-archive")
+        done = planner.status_evidence_violations(art, "archived")
+        assert ready and done
+        assert [m.replace("'ready-to-archive'", "'archived'") for m in ready] == done
+
+    def test_a_complete_record_admits_both_archive_effective_states(self, tmp_path):
+        body = (_pass_block(tier="External") + _code_review_pass()
+                + self._CLOSEOUT)
+        art = self._plan_at(tmp_path, "ready-to-archive", body)
+        assert planner.status_evidence_violations(art, "ready-to-archive") == []
+        assert planner.status_evidence_violations(art, "archived") == []
+
+
+class TestAReviewThatLeavesAnObligationOpenMovesNothing:
+    """R4/R6: *"A pass that leaves another obligation outstanding appends its
+    review record without manufacturing a status transition."*
+
+    The no-op case, which is the one an author is most likely to get wrong: the
+    first of two required passes has landed, the record legitimately grew, and the
+    status must stay where it is.
+    """
+
+    _MULTI = "required(**External** + **External Security Review**)"
+
+    def _one_of_two(self):
+        return _pass_block(tier="External").replace(
+            "**Tier**:", "**Obligation**: External\n**Tier**:")
+
+    def test_the_waiting_state_stays_sound_with_one_of_two_passes(self, tmp_path):
+        """`awaiting-plan-review` is not a violation while an obligation is
+        outstanding -- that is precisely what the state means."""
+        art = _plan_art(tmp_path, self._one_of_two(),
+                        status="awaiting-plan-review", stem=_E_STEM,
+                        plan_review=self._MULTI)
+        assert _e_conf(art) == []
+
+    def test_but_the_forward_transition_is_still_withheld(self, tmp_path):
+        art = _plan_art(tmp_path, self._one_of_two(),
+                        status="awaiting-plan-review", stem=_E_STEM,
+                        plan_review=self._MULTI)
+        for target in ("ready-to-implement", "executing"):
+            gates = _e_gates(art, target)
+            assert gates, target
+            assert not all(met for met, _d in gates), (target, gates)
+
+    def test_and_the_second_pass_is_what_moves_it(self, tmp_path):
+        body = self._one_of_two() + _pass_block(
+            reviewer="S", date="2026-05-02", tier="External").replace(
+            "**Tier**:", "**Obligation**: External Security Review\n**Tier**:")
+        art = _plan_art(tmp_path, body, status="awaiting-plan-review",
+                        stem=_E_STEM, plan_review=self._MULTI)
+        gates = _e_gates(art, "ready-to-implement")
+        assert all(met for met, _d in gates), gates
+
+
+class TestTheR6PredicateIsShared:
+    """R6: *"consume shared predicates rather than implement three
+    interpretations of readiness."*  Asserted structurally, because the property
+    is that no second interpretation EXISTS."""
+
+    def test_the_conformance_arm_delegates_rather_than_re_deciding(self):
+        body = _code_of(_PLANNER_PATH, "_conformance_violations")
+        assert "status_evidence_violations(art, s)" in body, body
+        # The two checks it used to make inline now live inside the shared
+        # predicate; a copy left behind here is the drift this asserts against.
+        assert "has_disposition_attestation" not in body, body
+        assert "has_fidelity_signoff" not in body, body
+        assert "review_record_violations(art)" not in body, body
+
+    def test_every_new_target_reaches_the_gate_through_one_helper(self):
+        gating = _code_of(_PLANNER_PATH, "_gating_preconditions")
+        for state in ("revising", "awaiting-decision", "revising-plan",
+                      "awaiting-code-review", "revising-code"):
+            assert f"_r6_gate(art, '{state}'" in gating, state
+
+    def test_the_closeout_predicate_has_exactly_one_definition(self):
+        src = _PLANNER_PATH.read_text(encoding="utf-8")
+        assert src.count("def _closeout_violations(") == 1
+        assert src.count("def status_evidence_violations(") == 1
+
+    def test_scan_reports_the_shared_predicate_verbatim(self, tmp_path):
+        """Not a re-worded summary: `scan`'s output must be the predicate's own
+        sentences, or an operator reading `scan` and an operator reading `next`
+        are told two different things about one record."""
+        art = _plan_art(tmp_path, _pass_block(tier="External"),
+                        status="ready-to-archive", stem=_E_STEM,
+                        plan_review="required(External)")
+        shared = planner.status_evidence_violations(art, "ready-to-archive")
+        assert shared
+        assert _e_conf(art) == shared

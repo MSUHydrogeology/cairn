@@ -101,8 +101,15 @@ def lifecycle_ready(tmp_path_factory) -> ModuleType:
     """The same subject beside a planner whose vocabulary HAS the counted state.
 
     A copy of the real planner with one appended line, not a hand-written stub:
-    the counting rule has to be exercised against the real vocabulary module,
-    since that is what it will read once Chunk E lands.
+    the counting rule has to be exercised against the real vocabulary module.
+
+    **Chunk E landed the token, so this fixture is now the same shape as the real
+    tree** (the appended line is a harmless duplicate -- the counting rule tests
+    membership).  It is kept rather than replaced by the plain module for one
+    reason: it is the fixture the ~15 window/count/pause nodes below already use,
+    and rewriting them to the plain module would be churn that touches every one
+    of them while changing nothing they assert.  The pair that *does* the work
+    post-E is this one and `lifecycle_without_counted_state` below.
     """
     tools = tmp_path_factory.mktemp("ready_tools")
     shutil.copy(MODULE_PATH, tools / "lifecycle.py")
@@ -113,6 +120,39 @@ def lifecycle_ready(tmp_path_factory) -> ModuleType:
         encoding="utf-8",
     )
     return _load(tools / "lifecycle.py", "cairn_lifecycle_pilot_ready")
+
+
+@pytest.fixture(scope="module")
+def lifecycle_without_counted_state(tmp_path_factory) -> ModuleType:
+    """The subject beside a planner whose vocabulary LACKS the counted state.
+
+    **The inverse of `lifecycle_ready`, and the reason the fail-closed path did
+    not become dead code when Chunk E landed.**
+
+    Before Chunk E the real vocabulary had no `ready-to-archive`, so the
+    fail-closed branch -- `MonitoringIncomplete`, the ``UNAVAILABLE / 6`` report
+    line, `pilot-record`'s refusal -- was exercised by the real tree and the
+    *positive* path needed a fixture.  Chunk E inverted that.  Deleting those
+    nodes would have left three live code paths in ``lifecycle.py`` with no test,
+    which is exactly the silent-tool defect `AGENTS.md` forbids; so the fixture is
+    inverted instead and every assertion is preserved verbatim.
+
+    It is not a hypothetical.  Chunk H1 edits these same tuples (it moves `open` /
+    `executing` / `review` into the historical sets), and a future rename or a
+    partially-applied vocabulary migration is precisely the condition the branch
+    exists to survive.  A copy of the real planner with the token filtered out --
+    not a stub -- so what is under test is the real module minus one entry.
+    """
+    tools = tmp_path_factory.mktemp("unready_tools")
+    shutil.copy(MODULE_PATH, tools / "lifecycle.py")
+    (tools / "lifecycle_planner.py").write_text(
+        PLANNER_PATH.read_text(encoding="utf-8")
+        + "\n\n# test-only: the counted state REMOVED from the real vocabulary,\n"
+        "# so the fail-closed counting path keeps a witness after Chunk E.\n"
+        f"PLAN_STATES = tuple(s for s in PLAN_STATES if s != {COUNTED_STATE!r})\n",
+        encoding="utf-8",
+    )
+    return _load(tools / "lifecycle.py", "cairn_lifecycle_pilot_unready")
 
 
 # --- scratch repository helpers ----------------------------------------------
@@ -362,35 +402,54 @@ class TestVocabularyLoader:
         assert module._counted_plan_state() == COUNTED_STATE
         assert sys.modules[_PRIVATE_PLANNER_NAME] is not poison
 
-    def test_the_counting_rule_fails_closed_while_the_vocabulary_lacks_the_state(
-            self) -> None:
-        """The live cross-chunk dependency on Chunk E, asserted as behavior.
+    def test_the_counting_rule_resolves_against_the_landed_vocabulary(self) -> None:
+        """**The positive node the red-by-construction one asked for.**
 
-        This is RED-by-construction the day Chunk E lands, which is the point:
-        the node that says "the token is absent" must stop passing when it is
-        present, or it becomes a lie the suite keeps telling.
+        Its predecessor asserted `COUNTED_STATE not in planner.PLAN_STATES` and
+        was red-by-construction the day Chunk E landed, with the remedy in its own
+        docstring: *"Chunk E has landed: replace this node with the positive one."*
+        This is that replacement, and it is the stronger direction -- it exercises
+        the counting rule against the REAL vocabulary module the shipped tool
+        loads, not against a fixture.
         """
         planner = _load(PLANNER_PATH, "planner_for_dependency_check")
-        assert COUNTED_STATE not in planner.PLAN_STATES, (
-            "Chunk E has landed: replace this node with the positive one and "
-            "delete the UNAVAILABLE branch's reason from the report")
-        with pytest.raises(lifecycle.MonitoringIncomplete) as excinfo:
-            lifecycle._counted_plan_state()
+        assert COUNTED_STATE in planner.PLAN_STATES, (
+            "Chunk E's vocabulary regressed: the six-plan counting rule keys on "
+            f"{COUNTED_STATE!r} and the single runtime vocabulary no longer "
+            "declares it")
+        assert lifecycle._counted_plan_state() == COUNTED_STATE
+
+    def test_the_counting_rule_still_fails_closed_if_the_token_ever_goes_away(
+            self, lifecycle_without_counted_state) -> None:
+        """The fail-closed branch, kept under test rather than left to rot.
+
+        Every assertion is the predecessor node's, verbatim; only the subject
+        changed, from the real planner (which lacked the token before Chunk E) to
+        a copy with the token filtered out.  Chunk H1 edits these same tuples, so
+        "the vocabulary lost a token the engine needs" stays a reachable state --
+        and an unavailable count must never quietly read as zero.
+        """
+        with pytest.raises(lifecycle_without_counted_state.MonitoringIncomplete) \
+                as excinfo:
+            lifecycle_without_counted_state._counted_plan_state()
         message = str(excinfo.value)
         assert COUNTED_STATE in message
         assert "Chunk E" in message
         assert "not the same as zero" in message
 
-    def test_the_counting_rule_resolves_once_the_vocabulary_declares_the_state(
-            self, lifecycle_ready) -> None:
-        assert lifecycle_ready._counted_plan_state() == COUNTED_STATE
-
-    def test_the_counted_state_is_never_substituted_by_a_current_state(self) -> None:
-        """`review` is today's pre-`archived` state and would make the count
-        *run* against a different rule.  The engine must not reach for it."""
+    def test_the_counted_state_is_never_substituted_by_another_state(self) -> None:
+        """`review` was the pre-`archived` state before Chunk E and would have
+        made the count *run* against a different rule.  The engine must key on the
+        contract's own state and no neighbour -- asserted against an independent
+        oracle (`COUNTED_STATE` is written in this file, never imported from the
+        subject), so a rename in the subject is a visible failure."""
         planner = _load(PLANNER_PATH, "planner_for_substitution_check")
         assert lifecycle._COUNTED_PLAN_STATE == COUNTED_STATE
-        assert lifecycle._COUNTED_PLAN_STATE not in planner.PLAN_STATES
+        assert lifecycle._COUNTED_PLAN_STATE != "review"
+        assert lifecycle._COUNTED_PLAN_STATE != "archived"
+        # And the neighbours it must not have drifted onto are still distinct
+        # states, so the assertion above is a real discrimination.
+        assert {"review", "archived"} <= set(planner.PLAN_STATES)
 
 
 # ---------------------------------------------------------------------------
@@ -771,10 +830,16 @@ class TestEventLedger:
         assert rc == 1
 
     def test_record_refuses_a_counted_plan_while_the_vocabulary_is_silent(
-            self, repo, monkeypatch, capsys) -> None:
+            self, repo, lifecycle_without_counted_state, monkeypatch,
+            capsys) -> None:
+        """Chunk E made the real vocabulary declare the state, so this refusal is
+        now exercised against a planner that lacks it.  Every assertion is the
+        pre-E node's -- including that the refusal writes NOTHING, which is the
+        half that matters: a refusing writer that still appends is worse than one
+        that fails loudly."""
         self._ledger(repo)
         monkeypatch.chdir(repo)
-        rc = lifecycle.main([
+        rc = lifecycle_without_counted_state.main([
             "pilot-record", "--kind", "plan-counted", "--subject", "stem-a",
             "--source-artifact", "dev/plans/p.md",
             "--source-commit", _head(repo),
@@ -784,6 +849,26 @@ class TestEventLedger:
         assert lifecycle._parse_fenced_records(
             (repo / EVENTS_REL).read_text(encoding="utf-8"),
             lifecycle._EVENT_FENCE, "x") == []
+
+    def test_record_now_accepts_a_counted_plan_against_the_landed_vocabulary(
+            self, repo, monkeypatch, capsys) -> None:
+        """The positive direction the refusal above cannot witness: with Chunk E
+        landed, the real tool records a counted plan and stamps the state it
+        resolved from the one runtime vocabulary."""
+        self._ledger(repo)
+        monkeypatch.chdir(repo)
+        rc = lifecycle.main([
+            "pilot-record", "--kind", "plan-counted", "--subject", "stem-a",
+            "--source-artifact", "dev/plans/p.md",
+            "--source-commit", _head(repo),
+        ])
+        assert rc == 0, capsys.readouterr().err
+        assert f"plan_state: {COUNTED_STATE}" in capsys.readouterr().out
+        records = lifecycle._parse_fenced_records(
+            (repo / EVENTS_REL).read_text(encoding="utf-8"),
+            lifecycle._EVENT_FENCE, "x")
+        assert len(records) == 1
+        assert records[0]["plan_state"] == COUNTED_STATE
 
     def test_a_lost_update_is_detected_and_writes_nothing(self, repo) -> None:
         """The expected-old check: a writer holding stale bytes never lands."""
@@ -851,16 +936,42 @@ class TestDerivedReport:
         assert "policy: INACTIVE" not in out
 
     def test_an_unavailable_count_is_reported_as_unavailable_not_zero(
-            self, repo, monkeypatch, capsys) -> None:
+            self, repo, lifecycle_without_counted_state, monkeypatch,
+            capsys) -> None:
+        """The distinction the report exists to preserve, still under test after
+        Chunk E: an uncomputable count reads ``UNAVAILABLE``, never ``0``, because
+        a zero from a broken rule is indistinguishable from a working rule that
+        found nothing.  Exercised against a planner lacking the token, since the
+        real one now has it."""
         _activate(repo)
         self._ledger(repo)
         monkeypatch.chdir(repo)
-        rc = lifecycle.main(["pilot-report"])
+        rc = lifecycle_without_counted_state.main(["pilot-report"])
         out = capsys.readouterr().out
         assert rc == 3
         assert "counted plan stems: UNAVAILABLE / 6" in out
         assert "It is NOT zero" in out
         assert "counted plan stems: 0 / 6" not in out
+
+    def test_the_landed_vocabulary_makes_the_count_computable_and_zero_is_real(
+            self, repo, monkeypatch, capsys) -> None:
+        """**What Chunk E changed in the report, asserted rather than described.**
+
+        With the token in the vocabulary the same repository and the same empty
+        ledger produce ``counted plan stems: 0 / 6``, the Chunk-E INCOMPLETE reason
+        is gone, and the zero now MEANS zero -- the rule ran and found no counted
+        plan.  The report still exits INCOMPLETE here, on the *other* reason (no
+        activation record in this fixture's window), which is why the exit code is
+        not the thing this node reads."""
+        _activate(repo)
+        self._ledger(repo)
+        monkeypatch.chdir(repo)
+        lifecycle.main(["pilot-report"])
+        out = capsys.readouterr().out
+        assert f"counted plan stems: 0 / 6 (distinct stems reaching " \
+               f"'{COUNTED_STATE}')" in out
+        assert "UNAVAILABLE" not in out
+        assert "Chunk E of review-efficient-lifecycle introduces it" not in out
 
     def test_the_window_is_sixty_days_inclusive_of_the_activation_date(
             self, repo, lifecycle_ready) -> None:
