@@ -4,7 +4,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-12-claude-ceremony-handshake-and-first-use.md`,
 accepted as revised at Round 2 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-12`).
-**Status**: ready-to-implement
+**Status**: review
 **Plan review**: required(**External Security Review**) — set by the proposal.
 An Internal read missed both defects this corrects, and an Internal read missed
 [M2-1] in the parent plan. A same-agent-type reader is not the instrument for
@@ -456,3 +456,71 @@ reviewer or by me. My own reproduction of [E1] used a disposable key in a
 throwaway directory, since deleted.
 
 **Status → ready-to-implement**, with **N4** standing before any stage-1 work.
+
+## Implementation verification -- Claude -- 2026-08-12
+
+**Boundary B mode**: **full**. Bounded mode is refused: this change touches
+trust-ceremony surfaces, which sit inside the `boundary-b-bounding-clause` Hard
+Refusal Fence. No bounding argument was attempted.
+
+**Tested SHA**: `a4a3b24` (range `4877ab9..a4a3b24`).
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — 3.13.13
+(conda-forge, Clang 19.1.7).
+**Tree state**: a fresh `git clone --shared` checked out at `a4a3b24`;
+`git status --porcelain` empty before the run and after it. The main working
+tree was not used, because other sessions hold uncommitted edits to frozen gate
+files there.
+
+### Commands and outcomes
+
+| # | Command | Outcome |
+|---|---------|---------|
+| 1 | `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **3987 passed, 4 failed, 1 skipped** in 475.22s (7m55s) |
+| 2 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | **93 neutrality FAIL, redundancy fail=0** (info=2) |
+
+### Non-pass disposition — all four failures attributed
+
+Each was reproduced at **`a63da58`**, the commit *before* this range's Chunk D
+part 2, in a separate clean clone. None is introduced here.
+
+| Node | Cause | Evidence |
+|------|-------|----------|
+| `test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports` | **Clone artifact.** A `git clone --shared` carries no `refs/cairn/gate-anchor`, so the CLI refuses with *"ref does not resolve to a commit"* instead of reaching the first-use bootstrap message | Fails in the clone at both `a63da58` and `a4a3b24`; **passes in the main working tree** |
+| `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override` | **Pre-existing.** The detached checkout comparison counts `bootstrap/tests/__pycache__/*.pyc` written during the session as `extra` paths | Fails at `a63da58` and in the main tree; **passes under `PYTHONDONTWRITEBYTECODE=1`** |
+| `test_lifecycle_vocabulary.py::TestLoaderContainmentMatrix::…[metrics_extract]` | **Pre-existing**, same cause: importing the planner writes `tools/__pycache__/lifecycle_planner.cpython-313.pyc`, which the node reads as *"loading the planner mutated the working tree"* | as above |
+| `…[transition_lint]` | **Pre-existing**, same cause | as above |
+
+The three `__pycache__` nodes are one defect, not three: two tests assert
+"no working-tree mutation" over a comparison that bytecode writes satisfy, so
+the result depends on whether the host writes `.pyc` files. Verified precisely:
+in a clean clone at `a4a3b24`, `PYTHONDONTWRITEBYTECODE=1` turns all of them
+green (**17 passed**). It is outside this plan's surfaces and is left as found,
+flagged rather than fixed.
+
+**Quality gate.** The 93 neutrality FAILs are **byte-identical in set** to the
+93 at `a63da58` (`diff` of the sorted FAIL lines is empty), and **not one names
+a path this range touched** — all are in `templates/`, a pre-existing condition
+recorded elsewhere. `redundancy` is clean.
+
+### Known omissions
+
+* **[TRU-7]** remains unmeasured; it is M4-only and out of scope here.
+* The **host-persistence residual** is unchanged and explicitly not closed —
+  the two-stage split is sequencing, not containment.
+* **N4 cannot be established by code.** [E1] is reproducible, so stage 1's probe
+  reports the key channel and does not close it. Every test that models N4 does
+  so by genuinely withholding the private half (`_n4_precondition`), which is a
+  fixture standing in for a Maintainer act, not a proof that the act happened.
+* `test_gate_manifest.py` HOLDs whenever frozen gate files carry uncommitted
+  edits. It passed in this run because the clone was clean at a commit.
+
+### Standing claims re-checked at the end of the range
+
+* **No Cairn ref moved.** `refs/cairn/gate-anchor` is still
+  `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3`, file mtime **2026-08-03 16:47** —
+  before the parent plan opened. `.git/logs/refs/cairn/` does not exist.
+* **No ceremony key was loaded**, and no ceremony was run. Every ceremony in the
+  test suite uses a disposable per-fixture keypair.
+* **Nothing was pushed.**
+
+**Boundary C is owed** — independent, and not by the implementing agent.
