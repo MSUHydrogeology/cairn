@@ -1335,3 +1335,77 @@ seventh round is needed the right response may be to split Parts 1–2 (settled
 since Round 1, blocked only by Part 3) from Part 3 (four architectures in four
 rounds). Recorded as an observation for the Maintainer, not as a request.
 
+## Review -- Codex (External) -- 2026-08-12 (Round 5)
+
+**Model**: GPT-5.6-Codex
+**Reviewed commit**: `65782ea331a8ccfb2b16fac462009ee78fc44c35`
+**Target**: the Round 6 Response and Revised proposal only
+**Prior findings**: R4-E1 through R4-E4
+**Assurance path**: high-assurance
+**Reviewed proposal blob**: `82234246a6e8957a2674f8f2c6249fc8e15876b9`
+**Tier**: External, different agent type from the author
+
+**Verdict: REVISE, one remaining binding.** R4-E1 closes: the three event kinds
+match the lifecycle acts rather than assuming every measurement-worthy act
+changes status. R4-E2 closes at the right strength: omission is not prevented,
+but every report must pass strict reconciliation and refuse incomplete evidence.
+R4-E3 is now honest and properly routed — the Maintainer must choose historical
+continuity option (a) or (b) in the Decision; the author cannot concede it.
+R4-E4 does not close because the section labelled “pinned” still delegates the
+load-bearing choices to the future plan.
+
+### Finding
+
+**[R5-E1 -- P1] The revision requires an exact grammar and exact Git algorithm
+without supplying either.** The first bullet says the plan is bound to a
+“literal fence and marker grammar,” but no literal marker or complete per-kind
+field grammar appears. The fourth says Git derivation “is named exactly” and
+then asks the plan to choose *which of blame / pickaxe / history-diff* performs
+it. The activation bullet likewise says the proposal names the applicable
+template commits, but names neither paths nor commits. These are the same open
+choices R4-E4 required the proposal to settle.
+
+There is a concrete correctness consequence. Identity is currently stated as
+`(artifact path, block position)`, but the artifact path changes at archive.
+Without the chosen rename/history algorithm, the same block has a live-path
+identity before archive and an archive-path identity afterward. The proposal
+also does not say how one commit containing several new blocks gets stable
+within-commit identities.
+
+*Satisfier — keep it compact and literal*:
+
+1. Print one exact fenced event-v1 block for each of `transition`,
+   `review-pass`, and `response`, followed by the closed required/optional key
+   table, bounds, and unknown-key/version refusal.
+2. Choose **history diff**, not “one of three”: walk the artifact's rename-aware
+   history oldest-first; for each event-bearing commit compare the parsed block
+   sequence with its parent; require the parent sequence to be an exact prefix;
+   attribute only the added suffix to that commit; and require the matching
+   lifecycle act in the same diff. Reject ambiguous multi-parent attribution.
+3. Define stable identity as `(introducing full commit, added-block index)`.
+   Both values are derived, never stored, and survive the archive rename.
+4. Name the four activation-marker paths — self-hosted and shipped proposal and
+   plan templates — and define the per-kind cutoff as the commit that first adds
+   the literal marker to the applicable installed template. Missing, divergent,
+   or multiply-introduced markers refuse.
+
+The already-listed shallow/unavailable/mixed-provenance/mutation refusals and
+red fixtures then pin this algorithm. An equivalent fully specified algorithm
+is acceptable; leaving the choice to the plan is not.
+
+### Closure
+
+No split is required, and I do not recommend reopening Parts 1–2 or the
+artifact-local storage decision. One literal grammar plus one history algorithm
+closes the only remaining author-owned finding. The historical-continuity choice
+belongs in the Maintainer's Decision and should not trigger another design
+round once it is made.
+
+### Verification
+
+I compared Round 6 with each R4 satisfier, inspected the exact `65782ea` diff,
+and checked the current extractor's Git reader and proposal/plan path lifecycle.
+No implementation exists for the new event reader, so there is no runtime claim
+to execute in this round. I did not rerun the 29-test unchanged baseline or the
+full suite; Round 4 already established that baseline, and this pass is confined
+to the revised contract text.
