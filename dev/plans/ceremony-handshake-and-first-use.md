@@ -524,3 +524,251 @@ recorded elsewhere. `redundancy` is clean.
 * **Nothing was pushed.**
 
 **Boundary C is owed** — independent, and not by the implementing agent.
+
+## Code review -- Claude (Boundary C) -- 2026-08-12
+
+**Model**: Claude Opus 5
+**Tier**: Internal
+**Reviewed commit**: `a4a3b24`, in a detached `git clone --shared`. Range
+`4877ab9..a4a3b24`, plus `f2adcd9`, which added the Boundary B record.
+**Target**: whether Chunks A–E deliver the eight acceptance criteria as
+executable controls on the governing path, and whether the Boundary B record
+holds against the reviewed range.
+**Prior findings**: [E1]–[E4] from `## Plan review -- Codex -- 2026-08-12`, all
+accepted in the author's response; the inherited [M2-1] / [M2-2] shapes from
+`dev/plans/git-native-security-foundations.md`; and the three unreachability
+defects this range corrected internally.
+**Assurance path**: high-assurance
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — 3.13.13.
+**Working tree**: a `git clone --shared` at `a4a3b24`, `git status --porcelain`
+empty before and after every probe. The main tree was used read-only, and only
+to confirm two of the Boundary B record's own claims.
+**Bounding**: not applicable — Boundary B ran `full`.
+**Findings**: raised
+
+**Verdict**: REVISE
+
+Two findings block. Both are the shape this plan family keeps producing — a
+control that is computed, compared, and then not the thing that governs — and
+both were found by executing a recorded transition ceremony end to end, not by
+reading. Everything the briefing asked me to attack hardest (the relaxed
+CLOSURE/AUTHORITY admission, the `_sha256_hex` split, the stage-2 report
+comparison, `_entry_base`) I could not break; the record below says so
+explicitly, because a review that reports only what it found does not tell the
+Maintainer what it cleared.
+
+**Scope note.** `4877ab9..a4a3b24` interleaves six `scope-reduction-trap`
+commits (`8fd0aa5`, `8100256`, `74e9055`, `2718e55`, `bbc6584`, `3c3f24f`) and
+their files. Those carry their own Internal and External code reviews in
+`dev/plans/scope-reduction-trap.md`; I filtered them out and did not re-review
+them.
+
+### [C1] BLOCKING — the signed admitted-authority record is taken from the package, not from the set stage 2 revalidated
+
+`apply_now` revalidates the review manifest itself and passes the result to the
+checks — `admitted_authority=transition["members"]`
+(`bootstrap/tests/_gate_preflight.py:2731`). It then builds the checkpoint
+message from a **different** source: the package's own copy,
+`(pkg.get("review_manifest") or {}).get("members")` and `.get("provenance")`
+(`bootstrap/tests/_gate_preflight.py:2779-2784`). `read_package` validates only
+the package's top-level field set (`:2204-2213`); the `review_manifest` inner
+dict is consumed unvalidated. Only its `digest` sub-field is cross-checked
+against the file (`:2707`).
+
+So enforcement is honest and the **record is not**. The durable rows the D7 /
+[E4] outcome exists to produce are whatever the package says they are.
+
+I drove the real two-stage transition ceremony four times, re-digesting the
+package each time so `--confirm-package-sha256` matched the tampered bytes — the
+case the digest cannot help with, and the one the plan's own criterion-7 node
+already models:
+
+* **Falsified rows.** Replacing every member digest with `9…9` left all checks
+  passing and signed a checkpoint whose nine `path -> SHA-256` rows are all
+  false. `parse_admitted_authority` reads them back cleanly.
+* **Dropped `members`.** Removing the key makes `.get("members")` return `None`,
+  and `_admitted_rows` (`:1786-1787`) then renders `_ADMITTED_NONE`. A real
+  transition that changed `bootstrap/tests/_oracle.py` signed
+  `admitted authority  : (steady state -- no closure change)`, signature `G`,
+  and the anchor advanced. That is verbatim the failure the comment at
+  `:2718-2728` says stage 2 prevents — *"the admitted set would be absent from
+  the durable record while the ref moved anyway, which is the [E4] failure with
+  a signature on top"* — reached through the inner dict instead of through the
+  missing flag.
+* **Non-dict `members`.** A list raises an uncaught `AttributeError: 'list'
+  object has no attribute 'items'` out of `_admitted_rows`. It fails closed, but
+  `main`'s `except PreflightError` does not catch it, so the CLI prints a
+  traceback instead of `[REFUSE ]`.
+* **A newline inside a member path.** The path text is interpolated into the
+  message unescaped and forges an extra row. The ceremony completes and moves
+  both refs; `parse_admitted_authority` then refuses the committed checkpoint —
+  *"the checkpoint declares 10 admitted members and carries 11 rows"*. The
+  signed record is unreadable by its own reader, and nothing in the ceremony
+  ever tries to read it back before signing.
+
+The reachability premise is the accepted residual, not a new one: the runbook
+and `SECURITY.md` both state that candidate code ran in stage 1 as the same user
+and *"may have left persistence neither stage can see"*. Rewriting the package
+file before the Maintainer's `shasum` is exactly that. The design's answer —
+*"there is no authority-bearing file"*, `apply_now`'s own docstring — holds for
+every other field and not for this one.
+
+Note also that `check_authority_closure`'s docstring currently claims the
+admitted set *"is written into the checkpoint message (D7) rather than merely
+consulted"* (`:653-654`). With C1 open that sentence is false: the set that was
+consulted and the set that was written are different objects.
+
+**Direction (not a fix — yours to choose).** `transition["members"]` and
+`transition["provenance"]` are already in hand at that call site and have passed
+`revalidate_transition`. Using them closes it outright. Whatever is chosen, the
+package's inner dict needs a strict shape check, and the ceremony should read
+its own drafted message back through `parse_admitted_authority` before signing —
+`verify_message_binds_report` already establishes that pattern for the report
+digest.
+
+**Why nothing caught it.** `test_every_package_field_is_mutation_tested_through_stage_2`
+runs stage 1 in **steady state** (`bootstrap/tests/test_gate_preflight.py:3008`),
+so `honest["review_manifest"]` is `None` and the mutation only exercises the
+`None -> dict` direction, which the separate steady-state/transition disagreement
+check already refuses. The one field that is a nested object, and the only one
+that feeds the durable record, is never mutated in the mode where it is live. So
+acceptance criterion 7 — *"every package field and the schema are
+mutation-tested"* — is met in form and not in substance.
+
+### [C2] BLOCKING — the recorded transition stage 2 runs the ANCHORED checker, so a closure-membership transition cannot complete
+
+`bootstrap/REANCHOR_RUNBOOK.md:180` states the reason transition mode exists:
+
+> the anchored checker cannot contain a mode added to its successor. Extracting
+> from the anchor to run a transition is asking the old authority to vouch for
+> its replacement, which is the property this whole ceremony exists to deny.
+
+The recorded stage-2 block extracts from the anchor —
+`cat-file blob "refs/cairn/gate-anchor:$path"` (`:475`) — and *"Stage 2 in
+transition mode"* (`:511`) replaces **only the final command**, adding the two
+flags. It changes neither the extraction source nor the checklist. A transition
+therefore runs stage 1 on the reviewed candidate's checker and stage 2 on the
+anchored one.
+
+Executed, with a candidate that adds one member to its own
+`declared_authority_closure()` — the runbook's own motivating case — both blocks
+lifted from the document exactly as the suite lifts them:
+
+* stage 1: `rc=0`, package written, no ref moved;
+* stage 2: `rc=2`, `REFUSE: the review manifest is not the authority closure:
+  0 missing [], 1 unexpected ['bootstrap/tests/_extra_authority.py']`.
+
+`revalidate_transition` compares the manifest's member set against the
+**executing** checker's `declared_authority_closure()` (`:946-953`), and the
+executing checker at stage 2 is the old one. It fails closed and no ref moves —
+but the stop lands after the Maintainer has loaded the ceremony key, which is
+precisely the position `test_the_recorded_transition_stage2_carries_both_flags`
+was written to prevent (*"a hard stop mid-ceremony with the key already
+loaded"*). The same applies to any transition that changes the checker's CLI:
+the currently anchored checker at `e45e1fc` has no `stage2` subcommand at all.
+
+**Why nothing caught it.** `test_the_recorded_transition_ceremony_runs_end_to_end`
+passes because `_ceremony_repo` copies the live repository's closure files into
+the fixture *and* anchors them, then mutates only `bootstrap/tests/_oracle.py`.
+The anchored and candidate checkers are byte-identical, so the fixture never
+constructs the one state a transition is defined by. That is the [M2-2] shape —
+a pre-aligned fixture through which the route under test never runs.
+
+**Direction.** Either the recorded transition stage 2 extracts by the same
+`RESOLVED` OID its stage 1 did (and the runbook says why that is safe), or the
+plan states explicitly that transition mode is limited to member-**byte** changes
+within a fixed closure and `revalidate_transition` says so in its refusal. The
+first matches the runbook's stated argument; the second contradicts it and would
+need the Maintainer's call. Either way the end-to-end node needs a fixture whose
+anchored checker differs from its candidate.
+
+### [C3] The Boundary B record's neutrality gloss is false as written
+
+The record says the 93 neutrality FAILs are *"all in `templates/`"*. Reproduced
+at `a4a3b24`: 65 are in `templates/`, 14 in `docs/`, 9 in `doctrine/`, and 5 in
+`bootstrap/tests/fixtures/skills/README.md`.
+
+The load-bearing half is true and I verified it independently: the FAIL set is
+**byte-identical** to the set at `a63da58` (93 lines, `diff` empty), and the
+intersection of the 31 distinct FAIL files with the 16 files this range touched
+is **empty**. So the disposition stands; the sentence offered as its reason does
+not, and a reader relying on it would conclude no `doctrine/` or `bootstrap/`
+path is implicated when 14 are.
+
+### [C4] The two implementations of the review-manifest predicate disagree on a `provenance` row with leading whitespace
+
+`parse_review_manifest` exists, by its own docstring, so that *"a second,
+independent implementation of the same predicate catches a loader that was
+edited to be laxer than its recorded text"*. On the row
+`"  provenance   external review 2026-08-12"` the two implementations both
+accept and produce different values: the Python side computes
+`raw[len("provenance "):]` (`:869`) and yields
+`'e   external review 2026-08-12'`; the recorded loader's `${line#provenance }`
+does not match the prefix and yields the whole line unchanged. Silently
+mangled rather than refused, and the mangled value is what reaches the signed
+checkpoint's admitted-authority header. Low impact — the manifest is a recorded
+Maintainer artifact and its digest is bound — but a second implementation that
+disagrees quietly is worse than a comment saying "re-check this by hand".
+
+### [C5] `probe_cannot_sign` is fail-open on `ssh-keygen` exit 0 without a `.sig`
+
+`_gate_preflight.py:2051-2054` returns "can sign" only when the exit status is 0
+**and** the signature file exists; every other combination returns "cannot
+sign". An `ssh-keygen` that exits 0 having written the signature elsewhere would
+be reported as an intact key boundary. The direction is wrong for a probe of
+acceptance criterion 4: a successful signing exit should be conclusive on its
+own. No test covers the combination.
+
+### Observation, not a finding — criterion 8's scope
+
+*"No boolean confirmation path exists anywhere in the module"* is met, and the
+AST node asserts it on `bootstrap/tests/_gate_preflight.py`. `_gate_reanchor.py`
+still exposes `--confirm-supervised-reanchor`, and `REANCHOR_RUNBOOK.md:703`
+still records it as the supervised CAS that advances `refs/cairn/gate-anchor` in
+Phase 4. That is a different mechanism and outside this plan, but criterion 8
+should not be read as a repository-wide property.
+
+### Falsification ledger — what I attacked and could not break
+
+Each of these was probed by execution, not by reading.
+
+| Target | Probe | Result |
+|---|---|---|
+| The relaxed CLOSURE admission | Enumerated every call site of `admitted_authority`; both stage entry points revalidate **before** `check`, and `main`'s `check` subcommand passes `None`. `revalidate_transition` pins `reviewed_candidate == HEAD`, `manifest["candidate"] == reviewed_candidate`, `named == declared` exactly, and every member's digest against the candidate's own blob — so an admission means "the live bytes are the reviewed candidate's bytes at that path" | **Narrow as claimed** |
+| `_sha256_hex` vs `_sha256_bytes` | Enumerated all 22 digest sites in the module. Both admission comparisons (`:678-683`, `:1318`) are bare-hex on both sides; every prefixed comparison is prefixed on both sides. `read_review_manifest` returns the prefixed form and is only ever compared against the package's copy of itself | **No crossing remains** |
+| Stage 2's report comparison | Both halves are checked (`:2815-2825`): the package must hash to the digest it states, and that digest must equal stage 2's own re-derivation. Digest equality over canonical `sort_keys`/`ensure_ascii` JSON implies report equality, and `read_package` rejects duplicate keys | **Binds read-to-signed** |
+| `_entry_base` / `authoritative_manifest` | Ran a real steady-state ceremony from the runbook's own two blocks and read the committed manifest **out of the checkpoint commit**, not by re-calling the function. Every `frozen_files` entry carries `sha256` **and** `mode` **and** `oid`; the worktree copy equals the committed blob byte-for-byte | **v1-scalar fix is real** |
+| "What calls this?" for every new symbol | Replaced each of 14 new/changed functions with a raiser and drove a real two-stage **transition** ceremony. 12 refused and moved no ref. `signing_key_path` is unreached only because the harness stubs `require_stage1_cannot_sign`; `parse_admitted_authority` is a reader with its own named node | **Reachability holds** |
+| `--confirm-supervised-reanchor` / single-stage `apply` | Gone from `_gate_preflight.py` by AST and by argparse; `apply_now`'s signature carries no boolean | **Removed, not hidden** |
+
+### Verification of the Boundary B record
+
+| Claim | Result |
+|---|---|
+| Interpreter 3.13.13 | Confirmed |
+| Clean clone, `git status --porcelain` empty | Confirmed |
+| `3987 passed, 4 failed, 1 skipped` | `--collect-only` reports **3992** collected at `a4a3b24`, which is exactly `3987 + 4 + 1` |
+| The four non-passes | All four reproduced node-for-node in a clean clone |
+| One is a clone artifact | Confirmed: `test_check_runs_against_the_live_repo_and_reports` **passes in the main working tree** |
+| Three are one `__pycache__` defect | Confirmed: `PYTHONDONTWRITEBYTECODE=1` gives **17 passed**, the record's own figure |
+| Neutrality 93 / redundancy 0 | Confirmed |
+| The 93 are set-identical to `a63da58` | Confirmed — `diff` of the sorted FAIL lines is empty |
+| "all are in `templates/`" | **False** — see [C3] |
+| No Cairn ref moved | Confirmed: `refs/cairn/gate-anchor` = `e45e1fc…`, file mtime 2026-08-03 16:47; `.git/logs/refs/cairn/` does not exist; the only other Cairn ref, `refs/cairn/release-bar-audit`, has mtime 2026-08-10, before this range |
+
+**Omissions the record does not name.** One: the range contains another plan's
+commits and files (the scope-reduction-trap set above), which the record's
+"tested SHA / range" line does not distinguish. Not a defect in the
+verification — a full suite covers both — but the record reads as though the
+range were this plan's work alone.
+
+### What this pass did not do
+
+No Cairn ref was moved, no ceremony key was loaded, no real ceremony was run,
+nothing was pushed, and no implementation byte was changed. Every probe ran in a
+disposable `git clone --shared` against per-fixture throwaway keypairs; the
+probe files were kept outside the repository tree and are not part of this
+commit. I did not re-run the full Boundary B suite: the bytes are unchanged, the
+record's evidence reproduced exactly where I challenged it, and `AGENTS.md`
+reserves a fresh full run for missing or stale evidence — which this is not. I
+did not review the interleaved `scope-reduction-trap` work.
