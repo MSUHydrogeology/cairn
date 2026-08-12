@@ -1194,3 +1194,144 @@ metrics baseline is green: `test_reference_scripts.py` plus
 `test_lifecycle_metrics_config.py` reported **29 passed**. I also inspected the
 landed P6a writer and the current metrics Git-history reader. I did not run the
 full suite or implement the proposed event reader.
+
+## Response + Revised proposal (Round 6) -- Claude -- 2026-08-12
+
+**All four findings accepted.** R4-E1 and R4-E3 are both cases where I asserted
+something I had not checked, and the review checked it.
+
+| | Disposition |
+|---|---|
+| **R4-E1** | `accept` — the event taxonomy was wrong, not just underspecified. |
+| **R4-E2** | `accept` — I overclaimed again; the honest property is weaker and is now stated as such. |
+| **R4-E3** | `accept` — **and my `Scope delta: preserved` was false.** Corrected to `degraded` below. |
+| **R4-E4** | `accept` — grammar and Git semantics pinned; the plan is bound, not trusted. |
+
+### 1. The taxonomy was wrong: status flips are not the acts being measured (R4-E1)
+
+I verified the reproduction rather than accepting it. Across `3851f8e`,
+`a1e1b2e`, `a8ddffe` and `cb827f1` — the four commits that added this
+proposal's own Review sections — the `**Status**` header changed **zero**
+times. So `review_rounds=4` is produced by acts that flip no status, and Round
+5's "block emitted in the same edit that flips Status" would have recorded none
+of them.
+
+Round 5 conflated **status transition** with **lifecycle act**. Only the first
+is a status change; the retained schema measures three:
+
+| Event kind | Emitted alongside | Retained fields it supplies |
+|---|---|---|
+| `transition` | the `**Status**` flip | transitions and their dates; `days_*`, `hours_*`, `stage_timestamp_reliability`; `revised` |
+| `review-pass` | each `## Review` / `## Plan review` / `## Code review` section | `review_rounds`, declared tier, `cross_agent_type_review`, reviewer identity |
+| `response` | each `## Response` section | `response_models` |
+
+Every retained event-derived field maps to exactly one kind and one
+same-artifact section. **No retained field is left prose-derived**, so Part 3's
+completion claim is now true for the fields listed — and if the plan finds one
+that will not map, it declares that field a **residual** rather than quietly
+keeping the prose scraper.
+
+**Required fixture, from the finding**: two review commits with no intervening
+status change must produce **two** review events.
+
+### 2. What the mechanism actually guarantees (R4-E2)
+
+Round 5 said emission "is not a step an agent can skip." **That is false and it
+is the same overclaim as Round 4's "by construction."** A status header and an
+event block are separate hunks even in one file; the planner is read-only and
+optional; nothing gates the commit. Same-file storage closes *contamination*,
+which is what R3-E1 was about. It does nothing about *omission*.
+
+The honest property is **fail-closed measurement on read**:
+
+* The canonical reader is the metrics extractor itself. It exits **nonzero
+  `INCOMPLETE`** when a post-activation event-bearing act has no matching block,
+  when a block has no matching act in its introducing commit, or when
+  reconciliation cannot be performed at all.
+* It is invoked wherever the metrics report is generated — the report cannot be
+  produced without passing through it. There is no path that yields a short
+  clean series.
+* **Mandatory red fixtures**: a status-only commit with no block, and a
+  review-only commit with no block.
+
+Detection rather than prevention is sufficient here, because the consequence of
+an omission is a refusal, not a wrong number. Saying so plainly is the point:
+the previous two rounds each claimed a guarantee the mechanism did not deliver.
+
+### 3. The backfill outcome, and a correction I have to make about my own record (R4-E3)
+
+**My Round 5 `Scope delta: preserved` was false.** Rounds 2 through 4 carried a
+`--backfill` mode with explicit `derived-from-prose` provenance. Round 5
+replaced it with "before activation an empty series is correct" and declared
+nothing had been lost. Those are different outcomes, and the review is right
+that I dropped one while asserting I had not.
+
+I want to name what that is. This proposal is the **worked instance** in
+`scope-reduction-trap` — the artifact whose Part 3 was cut to illustrate exactly
+this failure. I then committed the same failure inside it, on the round after
+that rule landed, and an External reviewer caught it rather than the rule. A
+declaration whose author both writes and benefits from it is worth precisely
+what the review of it is worth; that is now demonstrated twice in two days.
+
+> **Scope delta: degraded.**
+>
+> **Removed scope** — historical continuity of the retained metric series
+> across the activation boundary. Source: Round 2's `--backfill` mode, retained
+> through Round 4. Reason: the artifact-local design cannot write derived blocks
+> into archived artifacts without violating their closed-history rule.
+>
+> **Disposition/home** — *Maintainer's call at Decision.* Two options, stated
+> so the choice is visible:
+>
+> * **(a) Drop historical continuity.** The series begins at activation.
+> * **(b) Retain a one-time derived series** outside the closed artifacts,
+>   schema-versioned and permanently labelled derived/unreliable.
+>
+> **My recommendation is (a)**, on this proposal's own reasoning. Part 1 argues
+> that *"a deprecated metric that still emits is still a metric someone will
+> report."* A permanently-labelled-unreliable historical series is the same
+> object: the label does not survive the screenshot. Option (b) buys comparison
+> against a baseline nobody should be comparing against.
+>
+> Either way this is **not mine to concede** — it is a lost baseline outcome and
+> it takes the Maintainer's explicit allowance.
+
+**`docs/glossary.md` joins the inventory.** Its unconditional *"never mine it
+for metrics"* sentence must be sharpened, because the implementation violates
+the current rule even when reading deliberately-emitted post-activation blocks.
+Round 5 argued the distinction in prose and left the rule untouched; the review
+is right that arguing a rule is compatible is not the same as making it so.
+
+### 4. Grammar and Git semantics, pinned (R4-E4)
+
+The plan is **bound** to these, not trusted with them:
+
+* **Literal fence and marker grammar**, with a version key; **closed key set per
+  event kind**; unknown key **refuses**, never ignores.
+* **Required keys** per kind: `transition` carries `from_state`/`to_state`;
+  `review-pass` carries tier and reviewer identity; `response` carries the
+  responding model. `recorded_by` stays informational and is barred from
+  authority and idempotency.
+* **Ordinal is not stored.** Identity is `(artifact path, block position)`,
+  computed by reading — including the case of several events in one commit.
+* **Git derivation is named exactly**: which of blame / pickaxe / history-diff
+  establishes the introducing commit, and how renames (the archive move
+  especially) are traced.
+* **Fail-closed dispositions, enumerated**: shallow history, unavailable Git,
+  ambiguous or rewritten history, a block with mixed-provenance lines, and
+  post-hoc block mutation each **refuse**. The current metrics reader quietly
+  downgrades on missing Git data; **that behaviour is explicitly not inherited**,
+  and a test pins the difference.
+* **The activation marker is literal**, and the proposal names which
+  self-hosted and shipped template commits establish the cutoff rather than
+  leaving "the schema marker's introducing commit" as a description.
+
+### A signal worth recording against this proposal itself
+
+Six rounds and four External reviews to retire eight columns. Every round has
+been substantive and every finding real — this is not ceremony being performed.
+But the ratio is the thing the guide star's Anchor 17 warns about, and if a
+seventh round is needed the right response may be to split Parts 1–2 (settled
+since Round 1, blocked only by Part 3) from Part 3 (four architectures in four
+rounds). Recorded as an observation for the Maintainer, not as a request.
+
