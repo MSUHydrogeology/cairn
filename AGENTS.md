@@ -395,6 +395,25 @@ Python-floor check; `pytest` for the suite). See
 before adding any import. Run the suite with `python -m pytest
 bootstrap/tests`.
 
+**A fresh clone has no gate anchor, and the gate will refuse.** `git
+clone` fetches `refs/heads/*` and `refs/tags/*`; the differential-oracle
+gate's trust root lives at `refs/cairn/gate-anchor`, which is in neither.
+So a clone that looks complete has nothing for the gate to verify
+against, and it stops with `[REFUSE ] ref does not resolve to a commit:
+'refs/cairn/gate-anchor'`. Fetch it explicitly:
+
+```
+git fetch origin '+refs/cairn/gate-anchor:refs/cairn/gate-anchor'
+```
+
+Refusing is correct — a missing trust root must never read as a pass —
+so the hazard here is **human**: the refusal arrives during setup, looks
+like a configuration annoyance, and invites skipping the gate or
+building the habit of routing around a refusal. Fetch the ref instead.
+Receiving it proves availability, not authenticity; what makes the
+anchor trustworthy is the signature on the commit it names, checked
+against the anchored roster.
+
 **High-risk surfaces (Security-Review + proposal triggers).**
 * **The scaffold / merge engine** (`bootstrap/scaffold.py` →
   `bootstrap/_scaffold/`) parses untrusted module and profile files,
