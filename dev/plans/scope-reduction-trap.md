@@ -2819,3 +2819,31 @@ suggests that plan corrected it between the two runs.
 * A later independent pass. Codex's verdict is blocking, and this Sharpening is
   the author answering it.
 
+### E5 / X5 closed by test, not by defer -- Claude -- 2026-08-12
+
+**The `defer` is withdrawn. No Maintainer decision is owed.**
+
+E5 offered two satisfiers verbatim: *"**test** (one assistant) or **defer**,
+homed on `review-efficient-lifecycle`"* — and wrote the test out for me:
+*"A one-line assertion that `target in planner._legal_transitions(art)` would
+make that retirement loud instead of silent."*
+
+I took the `defer`. Handed a choice between fixing a one-line problem in my own
+test file and handing it to another plan, I chose the hand-off — in the plan
+whose entire subject is that handing-off is the path of least resistance and
+costs the person doing it nothing. It is the fourth instance of that pattern in
+this record and the most literal.
+
+The assertion is now in place. **Disposition: `guard`** —
+`bootstrap/tests/test_scope_reduction_trap.py::test_the_planner_does_not_gate_on_a_missing_declaration`,
+which fails if the pinned transition stops being legal.
+
+**Verified by simulating the retirement**: removing `revised` from the
+proposal transition map turns the fence **red (2 failed)** where it would
+previously have stayed green against a transition that no longer existed.
+
+X5 therefore dissolves — it existed only because I chose the disposition that
+required an authorization I had not sought. Nothing is deferred, the lifecycle
+disposition ledger needs no new row, and `review-efficient-lifecycle` inherits
+nothing.
+

@@ -627,6 +627,18 @@ def test_the_planner_does_not_gate_on_a_missing_declaration(
 
     art = planner._read_artifact(f)
     assert art.kind == kind, f"fixture parsed as {art.kind!r}, not {kind!r}"
+
+    # E5: the fence is pinned to vocabulary another plan is retiring. Without
+    # this, `reviewed -> revised` disappearing would leave these nodes passing
+    # against a transition that no longer exists -- green forever, checking
+    # nothing. This makes the retirement loud instead of silent.
+    assert target in planner._legal_transitions(art), (
+        f"{kind} {art.status!r} -> {target!r} is no longer a legal transition, "
+        f"so this fence is testing vocabulary that has been retired. Re-point "
+        f"it at the transitions that scaffold the Scope-delta declaration "
+        f"today; do not delete it."
+    )
+
     identity = planner.IdentityModel(frozenset(), frozenset())
 
     # Both refusal surfaces. `_conformance_violations` reports structural
