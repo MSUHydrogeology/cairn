@@ -2225,3 +2225,47 @@ before the next M2, or it reviews bytes with two known blocking gaps. The order
 is: Decision on the proposal → implement → Boundary B → **one** M2 → M3/M4.
 
 **Chunk H remains unrun and no Cairn ref has moved.**
+
+## R1-F step 5 amendment -- Claude -- 2026-08-12
+
+**Recorded openly, per the response above, rather than reinterpreted silently.**
+Chunk E4 of `ceremony-handshake-and-first-use` owes this entry; this is it.
+
+**What R1-F step 5 said.** The *reviewed preflight* -- the already-running
+process -- constructs the signed checkpoint. In practice that means a process
+that has executed candidate code pauses on a terminal, the Maintainer makes the
+key available to it, and that same process signs.
+
+**What it now is.** Two invocations. `stage1` runs candidate code with the key
+channel probed unavailable, writes one authorization package, prints its
+external digest, and exits. `stage2` is a separate process: it re-extracts and
+hash-verifies its own checker bytes, seals candidate execution before deriving
+anything, validates the package against the Maintainer's independently confirmed
+digest, and only then signs and moves the refs.
+
+**Why the wording had to change rather than be read charitably.** The goal R1-F
+states is that candidate code and the ceremony key are never simultaneously
+available. A paused process cannot deliver it: the candidate code already ran
+*in that process*, so "the key is loaded now" and "candidate code ran here"
+are true of the same address space. The two-invocation form delivers the stated
+goal; the recorded wording does not. Reinterpreting the words to mean what we
+wanted would have left the record claiming a property the procedure never had --
+which is the failure this plan family has repeated four times.
+
+**What the amendment does not claim.** It is **sequencing, not containment**.
+Candidate code that ran in stage 1 shared the machine with the key stage 2
+loads and may have left persistence neither stage can see. That residual is
+accepted and unchanged. Nor does it establish that stage 1 could not sign:
+**[E1]** is reproducible -- `ssh-keygen -Y sign` succeeds under `env -i` with no
+agent socket by finding the private sibling next to the public key -- so stage
+1's probe *reports* the key channel and cannot *close* it. Closing it is the
+**N4** Maintainer precondition: the ceremony key encrypted at rest and loaded
+into no agent during stage 1. If that precondition cannot be met, the ceremony
+stops before stage 1.
+
+**What this changes for M3.** M3's description above -- confirm reviewed hashes
+while the key is unavailable, then load the key and construct -- is unchanged in
+substance; it is now two commands instead of one paused one, both recorded in
+`bootstrap/REANCHOR_RUNBOOK.md` (*Phase 0 pre-flight*, *Phase 0 transition
+mode*, and *Phase 0 stage 2*). The prohibition is untouched: no author or
+implementing agent performs it.

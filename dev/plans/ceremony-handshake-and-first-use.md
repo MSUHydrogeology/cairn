@@ -50,10 +50,11 @@ narrowing is declared.
 
 ```
 SR External Security Review of the plan                         [DONE 4877ab9]
-A  source selection: the transition extracts candidate bytes   [commit pending]
-B  the reviewed-authority transition + roster continuity        [commit pending]
-C  the authorization package, schema and validation             [commit pending]
-D  the two-invocation protocol + key-channel preflight          [commit pending]
+A  source selection: the transition extracts candidate bytes    [DONE 141bd09]
+B  the reviewed-authority transition + roster continuity        [DONE 72b14b1]
+C  the authorization package, schema and validation             [DONE 4816d0a]
+D  the two-invocation protocol + key-channel preflight    [DONE a63da58 +
+                                                            b7087c7 d055daa]
 E  runbook rewrite + the R1-F amendment                         [commit pending]
 --- stable bytes ---------------------------------------------------
 B1 Boundary B on the stable pre-review commit                   [record]

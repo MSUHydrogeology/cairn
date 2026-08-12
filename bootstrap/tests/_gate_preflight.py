@@ -1290,22 +1290,40 @@ def check_anchor_position(anchor: str, head: str, report: Report, *,
 
 
 def check_authority_modules(anchor: str, report: Report, *,
-                            repo: Path = _REPO) -> None:
+                            repo: Path = _REPO,
+                            admitted_authority: dict | None = None) -> None:
     """The six Stage-B modules, recorded and compared (Phase 0 step 1).
 
     A change is **not** a silent pass and **not** an ordinary refusal: it is
     ``review`` -- those bytes need genuine out-of-band human review, which no
     checker can perform, and no bundle may be emitted on that path.
+
+    ``admitted_authority`` is that out-of-band human review, in the one form
+    this module can check: a reviewed manifest naming the exact bytes. It is
+    honoured here for the same reason as in :func:`check_authority_closure`, and
+    it has to be honoured in **both** -- these two checks read the same files and
+    either one refusing is enough to make a reviewed transition impossible.
+    Admitting in one and not the other is how a mode ends up half-reachable,
+    which is worse than unreachable: it looks like it works until the check that
+    still refuses is the one that fires.
     """
+    admitted = admitted_authority or {}
     recorded = {}
     for rel, abspath in R._authority_code_files():
         live = Path(abspath).read_bytes()
         recorded[rel] = _sha256_bytes(live)
         anchored = _blob_at(anchor, rel, repo=repo)
+        if anchored is not None and _sha256_bytes(anchored) == recorded[rel]:
+            continue
+        if admitted.get(rel) == _sha256_hex(live):
+            report.add("AUTHORITY", "note",
+                       f"Stage-B authority module admitted by the reviewed "
+                       f"transition: {rel}")
+            continue
         if anchored is None:
             report.add("AUTHORITY", "review",
                        f"Stage-B authority module absent from the anchor: {rel}")
-        elif _sha256_bytes(anchored) != recorded[rel]:
+        else:
             report.add("AUTHORITY", "review",
                        f"Stage-B authority module changed since the anchor -- "
                        f"REVIEW REQUIRED, out-of-band: {rel}")
@@ -2843,7 +2861,8 @@ def check(*, repo: Path = _REPO, evidence: dict | None = None,
     check_anchor_position(anchor, head, report, repo=repo)
     check_authority_closure(anchor, report, repo=repo,
                             admitted_authority=admitted_authority)
-    check_authority_modules(anchor, report, repo=repo)
+    check_authority_modules(anchor, report, repo=repo,
+                            admitted_authority=admitted_authority)
     check_frozen_surface(report, repo=repo)
     check_signatures(anchor, head, report, repo=repo)
 

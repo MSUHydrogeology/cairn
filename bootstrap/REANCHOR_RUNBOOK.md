@@ -508,6 +508,43 @@ both loaders above already do.
 this machine with the key that stage 2 loads, and may have left persistence
 neither stage can see. That residual is accepted and unchanged.
 
+#### Stage 2 in transition mode
+
+**A transition's stage 2 carries the same two flags its stage 1 did**, and it is
+a refusal, not a convention: a stage 2 given no `--transition-from-review` for a
+package that authorizes a transition **stops**. Otherwise it would sign a
+checkpoint whose message reads *"steady state — no closure change"* over a run
+that changed the authority closure, and the admitted set would be missing from
+the durable record while the ref moved anyway.
+
+Stage 2 also requires the review manifest to be **the same artifact stage 1
+saw** — it compares the file's digest against the one recorded in the package —
+so the file named here must be byte-identical to the one the transition loader
+was given, not a re-export of it.
+
+Replace the final command in the block above with:
+
+```
+"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
+    stage2 --repo "$CHECKOUT" \
+           --package "$PACKAGE" \
+           --confirm-package-sha256 "$CONFIRMED" \
+           --transition-from-review "$REVIEW_MANIFEST" \
+           --reviewed-candidate "$RESOLVED"
+```
+
+adding to that block's recorded values:
+
+```
+REVIEW_MANIFEST=<absolute-path-of-the-maintainer-recorded-review-manifest>
+RESOLVED=<the-full-commit-oid-the-transition-loader-resolved-and-printed>
+```
+
+`RESOLVED` is **recorded from stage 1's output, never re-resolved here**. A ref
+resolved a second time can name a different commit than the one the loader
+extracted and the review approved; that is the whole reason the transition
+loader resolves once and extracts by OID (A4).
+
 ### The dated posture, and what ends it
 
 The trusted-contributor threat model is scoped to **Cairn's own trust root,

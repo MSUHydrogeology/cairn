@@ -143,6 +143,41 @@ locale, filesystem decoding or terminal decides what a path *is*. The
 checkpoint's message carries the report digest, and the constructed commit
 object is re-read and checked before either ref moves.
 
+### The key channel: two invocations, and what that buys
+
+The re-anchor ceremony runs as **two separate processes**, not one paused one.
+
+* **Stage 1** executes candidate code — it produces the pytest collection, which
+  nothing else can derive — and writes a single authorization package naming the
+  exact state it observed. It **holds no signing key**, and it probes the
+  configured key path with a non-interactive, timeout-bounded signing attempt
+  that is **required to fail** before it will run anything.
+* Between the stages the Maintainer confirms the package's digest independently,
+  reads the report it carries, and *only then* makes the ceremony key available.
+* **Stage 2** re-extracts and hash-verifies its own checker bytes, seals
+  candidate execution before deriving anything, validates the package against
+  the confirmed digest, and signs. No candidate code runs in it at any point.
+
+**What this does not claim.** Three things, stated because the earlier
+single-process wording claimed protection at a strength it did not deliver:
+
+* **It is sequencing, not containment.** Candidate code that ran in stage 1
+  shared the machine with the key stage 2 loads and may have left persistence
+  neither stage can see. Splitting the processes removes the *simultaneity*, not
+  the residual.
+* **Stage 1's probe reports the key channel; it cannot close it.** A readable,
+  unencrypted private key next to its public half is findable by
+  `ssh-keygen -Y sign` even under `env -i` with no agent socket — so no program
+  running as that user can make the key unavailable to itself. The probe is
+  evidence, and a `REFUSE` when it *can* sign is a real stop, but the property
+  is established by the Maintainer keeping the key **encrypted at rest and
+  loaded into no agent** during stage 1. If that cannot be arranged, the
+  ceremony stops before stage 1 rather than proceeding with a weaker claim.
+* **The confirmed digest authenticates bytes, not a decision.** It proves stage
+  2 is acting on exactly the file stage 1 wrote. Whether the state that file
+  describes *should* be anchored is the Maintainer's reading of the report
+  inside it, which no digest can perform.
+
 ### Residuals, accepted and dated
 
 * **An unauthorized second person with write access can create an unsigned

@@ -1821,6 +1821,82 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert _run("git", "log", "-1", "--format=%G?",
                     cwd=repo).stdout.strip() == "G", "the checkpoint is unsigned"
 
+    def test_the_recorded_transition_stage2_carries_both_flags(self):
+        """E2. A transition's stage 2 has no recorded form without them.
+
+        This is the shape of gap that keeps recurring here: the transition
+        loader was updated to end at stage 1, and stage 2 got a recorded block
+        -- but only the steady-state one. A Maintainer running a real transition
+        would have reached the signing step with no recorded command for it, and
+        the flags are now a refusal rather than an option, so improvising would
+        have been a hard stop mid-ceremony with the key already loaded.
+        """
+        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        section = text.split("#### Stage 2 in transition mode")[1].split(
+            "\n### ")[0]
+        assert "--transition-from-review" in section
+        assert "--reviewed-candidate" in section
+        assert "REVIEW_MANIFEST=" in section and "RESOLVED=" in section
+        # And it must say where RESOLVED comes from: re-resolving a ref here
+        # would defeat the transition loader's resolve-once discipline (A4).
+        assert "never re-resolved here" in section
+
+    def test_the_recorded_transition_ceremony_runs_end_to_end(self, tmp_path):
+        """The transition's own two-stage ceremony, executed from the document.
+
+        The steady-state node above proves the protocol runs; this proves the
+        mode that actually motivated the plan runs, and that it runs *through
+        the recorded text* rather than through Python that agrees with itself.
+        """
+        import hashlib
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
+        resolved = _signed_commit(repo, "reviewed authority change")
+        manifest = tmp_path / "review-manifest.txt"
+        manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
+
+        loader = _substitute(_transition_block(), repo, hashes=False)
+        loader = loader.replace("<candidate-ref-or-oid-to-transition-to>",
+                                shlex.quote(resolved))
+        loader = loader.replace(
+            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
+            shlex.quote(str(manifest)))
+
+        pkg = repo.parent / "authorization-package.json"
+        if pkg.exists():
+            pkg.unlink()
+        with _n4_precondition(tmp_path / "maint"):
+            r1 = subprocess.run(["bash", "-c", loader], cwd=str(repo),
+                                capture_output=True, text=True, check=False)
+        assert r1.returncode == 0, f"{loader}\n---\n{r1.stderr[-3000:]}"
+        assert pkg.exists(), "the recorded transition stage 1 wrote no package"
+
+        confirmed = hashlib.sha256(pkg.read_bytes()).hexdigest()
+        script = _substitute(_stage2_block(), repo)
+        script = script.replace("<the-64-hex-digest-you-verified-in-step-1>",
+                                shlex.quote(confirmed))
+        script = script.replace(
+            'stage2 --repo "$CHECKOUT" \\\n           --package "$PACKAGE" \\\n'
+            '           --confirm-package-sha256 "$CONFIRMED"',
+            'stage2 --repo "$CHECKOUT" \\\n           --package "$PACKAGE" \\\n'
+            '           --confirm-package-sha256 "$CONFIRMED" \\\n'
+            f'           --transition-from-review {shlex.quote(str(manifest))} \\\n'
+            f'           --reviewed-candidate {shlex.quote(resolved)}')
+        assert "--transition-from-review" in script, (
+            "the stage-2 block's recorded command changed shape; this test's "
+            "substitution no longer applies and would silently run steady state")
+
+        r2 = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                            capture_output=True, text=True, check=False)
+        assert r2.returncode == 0, f"{script}\n---\n{r2.stderr[-3000:]}"
+
+        message = _run("git", "log", "-1", "--format=%B", cwd=repo).stdout
+        recovered = P.parse_admitted_authority(message)
+        assert recovered == P.parse_review_manifest(
+            manifest.read_text(encoding="utf-8"))["members"], (
+            "the recorded transition ceremony did not record its admitted set")
+
     def test_the_recorded_stage2_extracts_and_verifies_its_own_bytes(self):
         """D4: stage 2 starts from **separately** hash-verified bytes.
 
@@ -2654,6 +2730,81 @@ class TestTheClosureCheckAdmitsOnlyTheReviewedSet:
         report = self._closure(repo, anchor, {rel: f"sha256:{sha}"})
         assert report.blocked, (
             "a prefixed digest must not match; the manifest format is bare hex")
+
+
+class TestTheAuthorityModuleCheckAdmitsTheSameSet:
+    """The second gate on the same bytes, and why it must agree with the first.
+
+    `check_authority_closure` and `check_authority_modules` both refuse when a
+    Stage-B module differs from the anchor. Admitting a reviewed transition in
+    one and not the other leaves the mode **half**-reachable, which is worse
+    than unreachable: the ceremony looks like it works right up to the check
+    that still refuses, by which point stage 1 has run candidate code.
+
+    That is not hypothetical -- it is what happened. The closure admission alone
+    left the recorded transition ceremony refusing at AUTHORITY, and only
+    executing the recorded blocks end to end surfaced it.
+    """
+
+    def _repo_whose_anchor_differs(self, tmp_path):
+        """An anchor holding different bytes than the modules now executing."""
+        repo, anchor = _closure_repo(tmp_path)   # writes `# <rel>\n` stubs
+        return repo, anchor
+
+    def _authority(self, repo, anchor, admitted):
+        report = P.Report()
+        P.check_authority_modules(anchor, report, repo=repo,
+                                  admitted_authority=admitted)
+        return report
+
+    def _live_digests(self):
+        import hashlib
+        return {rel: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+                for rel, p in P.R._authority_code_files()}
+
+    def test_a_changed_module_refuses_without_an_admitted_set(self, tmp_path):
+        repo, anchor = self._repo_whose_anchor_differs(tmp_path)
+        report = self._authority(repo, anchor, None)
+        assert report.blocked
+        assert all(f.level == "review" for f in _findings(report, "AUTHORITY"))
+
+    def test_the_reviewed_set_admits_exactly_those_modules(self, tmp_path):
+        repo, anchor = self._repo_whose_anchor_differs(tmp_path)
+        report = self._authority(repo, anchor, self._live_digests())
+        assert not report.blocked, [f.message for f in report.findings]
+        assert _findings(report, "AUTHORITY"), (
+            "an admitted module must still be recorded as a note")
+        assert all(f.level == "note" for f in _findings(report, "AUTHORITY"))
+
+    def test_a_wrong_digest_still_refuses(self, tmp_path):
+        """Over bytes, not over path membership -- as in the closure check."""
+        repo, anchor = self._repo_whose_anchor_differs(tmp_path)
+        wrong = {rel: "9" * 64 for rel in self._live_digests()}
+        assert self._authority(repo, anchor, wrong).blocked
+
+    def test_admitting_one_module_leaves_the_others_refused(self, tmp_path):
+        repo, anchor = self._repo_whose_anchor_differs(tmp_path)
+        live = self._live_digests()
+        one = sorted(live)[0]
+        report = self._authority(repo, anchor, {one: live[one]})
+        assert report.blocked
+        refused = [f.message for f in _findings(report, "AUTHORITY")
+                   if f.level == "review"]
+        assert refused and not any(one in m for m in refused), refused
+
+    def test_both_checks_take_the_admitted_set(self):
+        """The property that keeps them from drifting apart again.
+
+        Asserted on the signatures rather than on behaviour: a future check that
+        reads the same files and forgets the parameter reintroduces exactly this
+        defect, and the failure mode is a half-reachable mode rather than a
+        visibly broken one.
+        """
+        import inspect
+        for fn in (P.check_authority_closure, P.check_authority_modules):
+            assert "admitted_authority" in inspect.signature(fn).parameters, (
+                f"{fn.__name__} cannot honour a reviewed transition; it will "
+                f"refuse every closure change the other check admits")
 
 
 class TestTransitionRefusesWithoutADelta:
