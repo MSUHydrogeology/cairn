@@ -131,7 +131,7 @@ ledger is durable because it is tracked, not because it is on disk.
 ## Not recorded here yet — a named gap, not a silent one
 
 Two items in the accepted parent proposal's report requirements
-([`2026-08-10-codex-review-efficient-lifecycle`](../proposals/2026-08-10-codex-review-efficient-lifecycle.md))
+([`2026-08-10-codex-review-efficient-lifecycle`](../proposals/archive/2026-08-10-codex-review-efficient-lifecycle.md))
 are **not** restated by the plan revision's superseding `P6-R` cell, and this
 schema therefore does not carry them:
 

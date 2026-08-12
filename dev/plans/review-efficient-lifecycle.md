@@ -13,11 +13,11 @@
 
 # Plan: one lifecycle contract, one evidence boundary
 
-**Source proposal**: [`review-efficient-lifecycle`](../proposals/2026-08-10-codex-review-efficient-lifecycle.md),
+**Source proposal**: [`review-efficient-lifecycle`](../proposals/archive/2026-08-10-codex-review-efficient-lifecycle.md),
 executing jointly with its three accepted amendments —
-[`claim-check-exemption-hygiene`](../proposals/2026-08-10-codex-claim-check-exemption-hygiene.md),
-[`code-review-blindness`](../proposals/2026-08-10-claude-code-review-blindness.md),
-and [`lifecycle-status-vocabulary`](../proposals/2026-08-10-codex-lifecycle-status-vocabulary.md).
+[`claim-check-exemption-hygiene`](../proposals/archive/2026-08-10-codex-claim-check-exemption-hygiene.md),
+[`code-review-blindness`](../proposals/archive/2026-08-10-claude-code-review-blindness.md),
+and [`lifecycle-status-vocabulary`](../proposals/archive/2026-08-10-codex-lifecycle-status-vocabulary.md).
 All four are `accepted`, and three of them state in their own accepted text
 that they open no standalone plan. This is that plan.
 **Status**: executing

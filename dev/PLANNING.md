@@ -356,19 +356,24 @@ board by design.
   Maintainer re-anchor, one archive. `git-native-security-foundations` and
   `corpus-tier-cost` stay separate.
 
-* **lifecycle-status-vocabulary** *(amendment proposal opened 2026-08-10)* --
+* **lifecycle-status-vocabulary** *(accepted 2026-08-10; **proposal archived
+  2026-08-12**)* --
   make proposal and plan status name the next responsible action: explicit
   review, revision, implementation, Decision, and archive-readiness states;
   orthogonal blocker metadata; evidence-backed transitions; and an
-  evidence-derived migration. If accepted, joins the
-  `review-efficient-lifecycle` implementation plan.
+  evidence-derived migration. Accepted and **executing inside** the
+  `review-efficient-lifecycle` plan (Chunks A, E, F); the archived proposal
+  remains the authoritative contract.
 
-* **claim-check-exemption-hygiene** *(amendment proposal opened 2026-08-10)* --
+* **claim-check-exemption-hygiene** *(accepted 2026-08-10; **proposal archived
+  2026-08-12**)* --
   keep claim-check's useful path discipline while retiring exemption clutter:
   resolve exact lifecycle archive moves, make typed path declarations reusable
   and auditable, fail stale active exemptions, and stop copying inert internal-
-  reference headers into Cairn's self-hosted deliberation artifacts. If
-  accepted, joins the `review-efficient-lifecycle` implementation plan.
+  reference headers into Cairn's self-hosted deliberation artifacts.
+  Accepted and **delivered** by the `review-efficient-lifecycle` plan's Chunk D
+  (`4723107` D1/D2/D5, `6869022` D3/D4); the archived proposal remains the
+  authoritative contract.
 
 * **Security program — clustered current view** *(living strategy opened
   2026-08-05)* — the canonical taxonomy, threat posture, sequencing rules and
