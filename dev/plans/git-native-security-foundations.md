@@ -1194,3 +1194,35 @@ way; its subject is bytes, not scope. So the byte-level risk is covered and the
 revival and the boundary change as within scope and let M2 carry the byte review;
 or send D back for a contract pass before CR/SR. **No further work should assume
 the first.**
+
+## Maintainer disposition: D's revival accepted -- 2026-08-12
+
+Authorization, quoted verbatim:
+
+> Accept the revival, yes.
+
+**What this dispositions, stated so the reading is visible and correctable
+rather than buried.** The question above was put as a binary — *accept the
+revival and the boundary change as within scope and let M2 carry the byte
+review*, or *send D back for a contract pass before CR/SR*. The quoted words
+select the first, which covers **both** items raised:
+
+1. the revival of a chunk struck under fence **M5**, and
+2. the evidence-trust-boundary change that came with the rebuild —
+   `mode`/`oid` derived by the checker and never accepted from the candidate.
+
+They are one disposition because they are one commit: `4365205` *is* the
+revival, and the boundary change is what it contains. There is no version of
+accepting the first while withholding the second.
+
+**M5 is discharged.** The fence fired correctly, the chunk was withdrawn
+correctly, and the return is now authorized by the role the fence reserves it
+for rather than by its author.
+
+**What this does not do.** It does not shrink **M2**: the exact bytes of
+`_gate_manifest.py` and `_gate_preflight.py` still take the focused exact-byte
+External Security Review before **H**, and that review is where the boundary
+change gets its executing read. Scope is settled here; bytes are not.
+
+**M7 is unaffected and still arms at M2** — any byte change after the
+exact-byte review invalidates that disposition.
