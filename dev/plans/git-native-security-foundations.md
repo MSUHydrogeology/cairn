@@ -1658,3 +1658,66 @@ too, because it is the second time this plan's evidence-trust boundary has moved
 without a reviewed contract. **[IC3]**–**[IC6]** are ordinary fixes and could ride
 along. **[IC7]** is a one-line correction. M2 reviewing bytes that still carry
 **[IC1]** would review the wrong bytes, and **M7** arms the moment it lands.
+
+## Response to the code review -- Claude -- 2026-08-12
+
+All seven findings accepted; none disputed. `f818e85` ([IC1]) and `be73851`
+([IC2]–[IC6]); [IC7] is corrected here, in place, because this plan is
+append-only.
+
+**The blocking one was mine twice over.** [IC1] is not just a missing removal —
+my own `Progress verification -- 2026-08-11` record asserted `_SIGNING_EPOCH`
+was *"no longer decisive"*, and that record is what let F land without doing the
+removal it promised F would carry. A false statement in the durable record is
+worse than the defect it described, because the next reader stops looking. The
+epoch is gone, and the comment standing where the constant did explains why the
+absence is load-bearing rather than an oversight.
+
+| finding | disposition |
+|---|---|
+| **[IC1]** | **Fixed.** Epoch deleted; `check_signatures` retired to a census reporter; `TestSigningTripwire` and `TestSigningRangeFailsClosed` deleted with all thirteen monkeypatch sites; C4's promised proof added as `TestUnsignedRangeReachesACheckpoint`, with a deliberately *mixed* range and a non-vacuity node. Public path measured: **602 SIGNING findings → 0** |
+| **[IC2]** | **Fixed.** `authoritative_manifest()` replaces checker-derived fields in the committed bytes; digest and message follow the bytes |
+| **[IC3]** | **Fixed.** Undeterminable object format now HOLDs |
+| **[IC4]** | **Fixed.** The walk resolves `JoinedStr`/`BinOp`/`Starred`; the reviewer's evasion now fires |
+| **[IC5]** | **Fixed**, file-scoped; the reviewer's recovery appendix now fires |
+| **[IC6]** | **Fixed** via `GIT_CEILING_DIRECTORIES` |
+| **[IC7]** | **Correct, and corrected below** |
+
+**[IC7] — the citation.** Both earlier sections say Boundary C's range must
+include `da3e296` *"per R1-4"*. **There is no R1-4 in this proposal**; its
+Revision-1 items are R1-A…R1-F. `R1-4` belongs to
+`2026-08-11-claude-archive-precondition-substance`, and it bound *that* plan's
+code review, which discharged it. Those two lines are in appended records and
+stay as written; **this note is the correction**, and a later reader should
+treat the phrase as a mis-citation carrying no obligation here. Including
+`da3e296` changed nothing.
+
+**One reviewer proposal I did not take, and why.** Alongside replacement I first
+made a candidate that *asserts* checker-derived fields refuse outright. It broke
+honest cases and is not in the commit: `produce` legitimately emits full v2 when
+it runs inside a repository, so the assertion is not by itself evidence of
+anything. Replacement is what makes the provenance claim true; refusal only
+added brittleness on top. Recorded because a stricter-looking option was
+available and rejected on purpose.
+
+**What is still open, and is not mine to close.**
+
+* **[IC1]'s caveat stands.** `check` still ends `PRE-FLIGHT REFUSED` on the real
+  repository — now from the first-use `CLOSURE`/`AUTHORITY` reviews, which are
+  blocking by design and predate this plan. The reviewer's question survives
+  unanswered: **R1-F step 5 says the reviewed preflight constructs the
+  checkpoint, but the reviewed preflight blocks on findings a first re-anchor
+  necessarily produces.** Whether **H** runs `apply` or the manual Phase 0
+  steps 1–4 is not derivable from this plan, and I am not guessing at the
+  ceremony's shape. **Maintainer input needed before H.**
+* **`dev/PLANNING.md:395`** carries the same stale epoch claim the runbook did.
+  It is a roadmap board, edited only at serialization points, so the correction
+  is recorded here for this plan's archive rather than taken now.
+* **M7 is unaffected** — it arms at M2, and every byte above landed before it.
+
+**Boundary B is stale.** The record at `4ad1c11` describes `ebac63b`; two
+implementation commits have landed since. It is **not re-run here** — the
+Maintainer's External Security Review (M2) is the next gate, and re-running the
+suite before the review would date the evidence twice. **A fresh Boundary B is
+owed on the final pre-M2 commit**, and this paragraph is the marker that it has
+not been taken.
