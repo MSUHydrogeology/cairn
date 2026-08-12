@@ -2134,3 +2134,94 @@ the source repository, fill the Maintainer placeholders, push, or run the
 SHA-256 repository, or a bind mount, and I did not repeat Boundary B's full
 suite. I did not audit Git or OpenSSH cryptographic implementations. All
 mutation and ref-writing probes ran only in disposable repositories.
+
+## Response to the External Security Review (M2) -- Claude -- 2026-08-12
+
+**All five findings accepted. None disputed. The disposition is correct and the
+bytes it reviewed should not have been blessed.**
+
+| finding | disposition |
+|---|---|
+| **[M2-1]** BLOCKING | **Fixed**, `2df83d2` |
+| **[M2-2]** BLOCKING | **Not fixed here** — proposed, see below |
+| **[M2-3]** BLOCKING | **Not fixed here** — proposed, see below |
+| **[M2-4]** substantive | **Fixed**, `2df83d2` |
+| **[M2-5]** substantive | **Fixed**, `2df83d2` |
+
+### [M2-1] is the worst defect this plan has produced, and it was mine
+
+Chunk B built the canonical range report. Chunk C built the digest binding. Both
+were tested in isolation and **neither was ever called by `apply`**.
+`draft_message` took its `None` default, so every real ceremony signed
+`range-report digest : (not bound)`. With the signing epoch retired by [IC1],
+that digest is the **sole** authorization control — so the mechanism this plan
+exists to build was decorative on the only path that matters.
+
+**I was one question away from finding it, twice.** During Chunk C I reasoned
+carefully about *where* `verify_message_binds_report` belonged and never asked
+whether a digest was being passed at all. Then the `## Progress verification`
+record asserted the checkpoint "binds the reviewed report". Both times the
+question was *is this wired?* and both times I answered a narrower one.
+
+The Internal review did not catch it either. It took an **executing external**
+read — which is exactly the argument for M2 existing, and an argument against
+the intuition that a careful same-type reader is an adequate substitute.
+
+Fixed by putting the report on the governing path: derived in `blessing_plan`,
+**presented in full** (a digest is not a state a Maintainer can read),
+**re-derived** immediately before construction through `rederive_and_bind` — a
+Chunk C function that had never had a caller — and the drafted message checked
+for the binding before any signature exists. A missing digest refuses.
+
+**The tests are the reviewer's own probe**, because the finding said in terms
+that helper-level mutation does not satisfy it: a parametrised node replaces
+each of the four entry points with a raiser and requires a **real** `apply` to
+fail with the anchor unmoved.
+
+### [M2-4] and [M2-5] — both were real, and [M2-5] falsified my own fix
+
+[M2-4]: "read-only" was a claim about *subcommands*, not about the repository.
+`GIT_OPTIONAL_LOCKS=0` now sits in the shared child environment, not at call
+sites — a per-call flag is one forgotten call site from the same defect.
+
+[M2-5] is the sharper one: it falsifies **[IC6]'s fix**, which I wrote hours
+earlier. `GIT_CEILING_DIRECTORIES` compares *logical* paths, so a symlink into a
+nested non-repository directory walked straight past the ceiling I had just
+added. The start path is now resolved before it is ceilinged or used. A fix that
+has itself been falsified is worth flagging to whoever reviews next.
+
+### [M2-2] and [M2-3] are not defects in an agreed design
+
+They are places where **no workable design exists**, which is why they are not
+patched here:
+`dev/proposals/2026-08-12-claude-ceremony-handshake-and-first-use.md`
+(high-assurance; review tier **External Security Review**, matching the tier
+that found them).
+
+* **[M2-2]** — the first-use circularity. Proposed: admit the CLOSURE/AUTHORITY
+  delta only against the **reviewed SHA-256 set M2 already records**, matched
+  whole, recorded in the checkpoint message, and inert when there is no delta.
+  Non-circular because the authority comes from outside both the old anchor and
+  the candidate.
+* **[M2-3]** — the handshake. Proposed: the candidate stage runs with the key
+  channel **absent**; the confirmation becomes the report **digest**, not a
+  boolean; tests observe key-channel state rather than call ordering.
+
+**One question the proposal deliberately does not decide**, because it changes
+what the Maintainer physically does: R1-F step 5 says the *already-running*
+process signs, which means a paused process on a terminal. The alternative —
+two invocations, where the signing process never held candidate code at all — is
+**stronger on the stated goal but contradicts accepted wording**. The proposal
+recommends amending R1-F openly rather than reinterpreting it silently.
+
+### Status
+
+**M7 has fired.** `2df83d2` changes three of the nine reviewed files, so the M2
+disposition is invalidated and a fresh M2 is owed on the replacement bytes. That
+was true the moment [M2-1] was fixed and is not a consequence of batching.
+
+**Sequencing, so no one spends the re-take early**: [M2-2] and [M2-3] must land
+before the next M2, or it reviews bytes with two known blocking gaps. The order
+is: Decision on the proposal → implement → Boundary B → **one** M2 → M3/M4.
+
+**Chunk H remains unrun and no Cairn ref has moved.**
