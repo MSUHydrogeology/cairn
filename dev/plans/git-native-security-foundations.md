@@ -1852,3 +1852,285 @@ that commit, with two changes a reviewer should not have to infer:
 
 **M7 arms when M2 lands.** The byte set must not move between now and then, by
 any session.
+
+## External Security Review -- Codex -- 2026-08-12 (M2)
+
+**Reviewer**: GPT-5 Codex, a different agent type from the Claude implementer.
+**Tier / obligation**: focused exact-byte External Security Review (M2).
+**Reviewed commit**: `1d392a205ce35727647d9d1ba51e011ed5852158`.
+**Disposition: REVISE -- the reviewed bytes are not fit to be blessed as the
+trust root.** Three blocking findings are on the public ceremony path. This
+review records the exact bytes and invocation it examined, but it does **not**
+authorize M3. Under M7, any correction to the nine-file set invalidates this
+disposition and requires a fresh M2 review of the replacement bytes.
+
+### Findings
+
+**[M2-1] BLOCKING -- `apply` never derives, presents, confirms, or binds the
+range-review report.** The range machinery exists and its isolated tests pass,
+but it is outside the governing path. `apply_now()` calls `gather_evidence()`,
+`check()`, `blessing_plan()`, and then signing; none calls
+`range_review_report()`, `range_report_digest()`, `rederive_and_bind()`, or
+`verify_message_binds_report()`. A real successful `apply` in the ceremony
+fixture produced and signed a checkpoint whose message said:
+
+```
+candidate tree      : (not bound)
+range-report digest : (not bound)
+```
+
+I then replaced all three range/binding entry points with functions that raise
+on invocation. The same real `apply` still signed the checkpoint and advanced
+both refs successfully. This is not a presentation defect: the report is dead
+to authorization. With the signing epoch retired, the plan and runbook say the
+Maintainer's signature over the range-report digest is the sole authorization
+control. The delivered signature does bind the constructed commit and its
+parent, so it still authenticates exact Git objects, but it does **not** bind
+the promised reviewed classification or prove that the Maintainer saw it.
+
+**Required correction**: put the canonical report on the actual `apply` path;
+present its complete content and digest before authorization; obtain the
+Maintainer's confirmation of that exact digest; re-derive it immediately before
+construction; place the digest and candidate tree in the exact signed message;
+and make the public-path test fail when any of those calls or fields is removed.
+Helper-level mutation tests do not satisfy this finding.
+
+**[M2-2] BLOCKING -- the fixed first-use invocation cannot reach the checkpoint
+construction it is recorded to perform.** In a disposable exact checkout at
+`1d392a2`, I installed the source repository's observed prior anchor
+`e45e1fcc84ded159ef910b6e7bde15f7b715a5b3` and ran both public paths. `check`
+returned `PRE-FLIGHT REFUSED` on the expected first-use `CLOSURE` and
+`AUTHORITY` differences. The exact `apply --confirm-supervised-reanchor` path
+then executed candidate collection and returned exit 2 on those same findings,
+before sealing, signing, or moving a ref. That is the real control flow, not a
+rendering-only refusal.
+
+The runbook's fallback steps manually generate and commit a manifest and move
+only the anchor ref. They do not construct and verify the new signed checkpoint
+or advance branch plus anchor in the reviewed expected-old transaction. If
+those steps first make the authority bytes equal, they have already performed
+the trust-root bootstrap by a different mechanism; running `apply` at that new
+`P` then has no candidate to bless and `anchor == HEAD` refuses. The runbook
+therefore offers no executable first-use route matching Chunk H / R1-F.
+
+**Required correction**: define one non-circular first-use route whose exact
+commands both admit the independently reviewed authority delta and perform the
+signed, pre-ref-move-verified, two-ref checkpoint transaction. Its tests must
+start with the old anchor's authority bytes, not with `_ceremony_repo()`'s
+already-aligned closure. The current bootstrap test passes because its fixture
+copies the new authority bytes into the anchor before invoking `apply`; it does
+not exercise first use.
+
+**[M2-3] BLOCKING -- the key-load marker is not the recorded human/key boundary.**
+The fixed loader supplies `HOME`, `SSH_AUTH_SOCK`, and
+`--confirm-supervised-reanchor` when the process starts. `apply_now()` accepts
+that pre-run flag, executes candidate evidence, prints the marker, and proceeds
+immediately to `commit-tree -S`; there is no post-report prompt, digest
+confirmation, pause, or key-load operation. During the candidate subprocess,
+`_scrubbed_environ()` does remove credential-shaped variables and substitutes a
+throwaway `HOME`; when that context exits, the original signing environment is
+restored **before** `check()` and before the marker. Thus the exact bytes do
+sequence the sole current candidate subprocess before signing, but they do not
+implement R1-F steps 3-5's stronger ceremony: Maintainer confirmation against
+the displayed report and marker while the key is unavailable, followed by key
+availability in the same already-running process.
+
+The seven H2 nodes prove module-state ordering and reject a later guarded
+`subprocess.run`; they do not prove key unavailability or a human confirmation
+at the boundary. Their AST walk also sees only literal `subprocess.run` calls.
+For these exact bytes that narrow enumeration is not itself an additional
+blocker -- no `os.system`, `os.exec*`, `importlib`, `multiprocessing`, or atexit
+candidate launcher exists, and M7 forces another review after any byte change --
+but the human/key transition it claims to guard is absent.
+
+**Required correction**: make the fixed invocation and code implement an actual
+two-stage handshake. The candidate-executing stage must finish with the key
+channel unavailable; the Maintainer must confirm the exact report digest after
+the marker; only then may the signing stage receive or activate the key. A
+single up-front boolean is not that confirmation. The public bootstrap test
+must observe key-channel state on both sides of the boundary.
+
+**[M2-4] SUBSTANTIVE -- `_git` is not read-only by construction.** I touched a
+tracked file without changing its bytes, hashed `.git/index`, ran public
+`check`, and hashed the index again. `check` returned its expected refusal, but
+the index bytes and mtime both changed; the worktree remained clean. Git
+`status` refreshed index stat data through an optional lock. The read/write
+allowlists correctly keep content/ref-writing subcommands behind `_git_write`,
+but the broader claim that every `_git` operation is repository-read-only is
+false. Pin `GIT_OPTIONAL_LOCKS=0` (or the equivalent command option) on the
+read boundary and add an index-byte before/after mutation probe. This is not an
+authority bypass, so it is subordinate to M2-1 through M2-3.
+
+**[M2-5] SUBSTANTIVE -- `_gate_manifest._git`'s repository ceiling is escapable
+through a symlinked start path.** In a temporary repository I created a symlink
+outside the repository pointing to a nested non-repository directory inside
+it. `_object_format(symlink)` returned `sha1`; it discovered the target
+repository despite `GIT_CEILING_DIRECTORIES` being set to the symlink's logical
+parent. I could not exercise a bind mount without privileged host changes.
+The current preflight path resolves and validates its repository root, and its
+raw evidence directory is a real `mkdtemp`, so this did not yield an M3 bypass.
+It does falsify the module's general claim that the ceiling binds Git to the
+directory named by every caller. Resolve and validate the start path, or refuse
+symlinked/non-root targets, and add the symlink probe.
+
+### Controls that held
+
+The construction path builds from a temporary index and verifies, before ref
+movement, the exact parent, sole changed path, manifest blob digest, message,
+signature validity, and anchored-roster principal. The roster is read from the
+anchor object, not the candidate worktree. Candidate repository config could
+not replace objects, redirect hooks, select a different signature verifier,
+activate fsmonitor, or inject `GIT_*` steering through the tested paths. The
+separate `_READ_ONLY_GIT` / `_WRITE_GIT` command allowlists held apart from the
+optional-index-write qualification in M2-4.
+
+The two-direct-ref `update-ref --stdin` transaction held its expected-old abort
+semantics in the focused tests: stale state moved neither ref nor reflog and did
+not touch the real index/worktree; success moved both direct refs and wrote the
+fixed reason. The authoritative-manifest replacement also held: Git-native
+mode/object identity came from checker re-derivation, while the candidate-owned
+collection/interpreter fields remained explicit. The v1/v2 differential corpus
+passed. These controls do not cure the dead authorization/report path.
+
+### Exact bytes reviewed
+
+I regenerated the authority closure by importing the exact checker under Python
+3.13.13 and hashing the blobs from `1d392a2`; I also compared each blob with the
+disposable checkout's worktree bytes. All nine matched:
+
+```
+910a507163196b1175e00b2535d11d956bbf823d8858b4366d2803c138dc511b  bootstrap/tests/_gate_preflight.py
+f75689e480f9b54b971bfafdf32b4086bb82b72cdab36557c6767b49de12a9d0  bootstrap/tests/_gate_manifest.py
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+3b09ba66916658c7c875965fa8efef7e509d3e2ead7208f68b48ddea7a375ec1  bootstrap/REANCHOR_RUNBOOK.md
+55cd6796a2e73efcf822b73284c3610a7c71adf67ee065ae11f06036568423af  dev/.cairn/allowed_signers
+```
+
+### Exact manual bootstrap invocation reviewed
+
+The placeholders remain deliberately unfilled. This is the exact fenced loader
+block from the reviewed runbook bytes:
+
+```sh
+# The whole loader is handed to a CLEAN CHILD SHELL. Pinning the utilities was
+# not enough: the block was still interpreted by the operator's inherited shell,
+# and an inherited `echo` function rewrote the extracted checker and wrote the
+# rewritten file's digest into the checklist, so the pinned absolute `shasum`
+# dutifully verified the wrong list and reported success (FUR9). Pinning `echo`
+# would not have closed it either -- `read`, `cd`, `[`, and the redirections are
+# the same class. One boundary removes inherited functions, aliases, startup
+# files and exported-function environment entries together.
+#
+# `PATH` is real here, unlike an earlier version of this block that set it only
+# inside the git child and then claimed it covered the utilities.
+# `HOME` is recorded because the signing backend needs it. `SSH_AUTH_SOCK` is
+# the single deliberate pass-through from the invoking shell, since an agent
+# socket is per-session and cannot be recorded; a wrong value can only make
+# signing FAIL, never pass, because the signature is verified against the
+# anchored roster with a pinned verifier.
+#
+# THE SHELL IS `/bin/sh`, LITERALLY -- do not substitute your own. This is not a
+# recorded value and not a preference: a non-interactive `/bin/sh` reads no
+# startup file, which is the entire reason the clean child is clean. The obvious
+# alternative on this host is the login default `/bin/zsh`, and `zsh` sources
+# `$HOME/.zshenv` even here -- non-interactive, under `env -i`, with the recorded
+# HOME -- which puts the operator's own command definitions straight back inside
+# the supposedly clean child. An earlier version left this as a recorded choice
+# while claiming the boundary removed startup files (FUR10).
+<maintainer-recorded-env> -i \
+    PATH=/usr/bin:/bin \
+    HOME=<maintainer-recorded-home> \
+    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
+    /bin/sh <<'LOADER'
+# Every value here is recorded by the Maintainer at first use. NOTHING is
+# discovered: ambient discovery is what let a substituted repository answer for
+# the named one, and an ambient `PATH` is what let a replacement `shasum` vouch
+# for bytes it had just rewritten (FUR8). Utilities are invoked by absolute
+# path, which no inherited shell function or alias can shadow.
+CHECKOUT=<absolute-path-of-the-checkout-to-bless>
+ENV=<maintainer-recorded-env>
+GIT=<maintainer-recorded-git>
+PY=<maintainer-recorded-interpreter>
+MKTEMP=<maintainer-recorded-mktemp>
+MKDIR=<maintainer-recorded-mkdir>
+SHASUM=<maintainer-recorded-shasum>
+
+T=$("$MKTEMP" -d) || exit 1
+
+# Object replacement, hooks and monitors are disabled BEFORE the first read, and
+# the environment is emptied so no GIT_* variable steers the loader.
+sterile_git() {
+    "$ENV" -i HOME=/nonexistent \
+        "$GIT" --no-replace-objects \
+               -c core.useReplaceRefs=false \
+               -c core.hooksPath=/dev/null \
+               -c core.fsmonitor=false \
+               -C "$CHECKOUT" "$@"
+}
+
+# `cat-file blob` reads raw object bytes. `git archive` was used here and is
+# attribute-aware, so a candidate `.gitattributes` could reshape what landed.
+# The heredoc feeds `while` by redirect, not by pipe: a pipe would run the loop
+# in a subshell where `exit 1` aborts nothing.
+: > "$T/RECORDED.sha256" || exit 1
+while read -r sum path; do
+    [ -n "$path" ] || continue
+    "$MKDIR" -p "$T/${path%/*}" || exit 1
+    sterile_git cat-file blob "refs/cairn/gate-anchor:$path" > "$T/$path" || exit 1
+    echo "$sum  $path" >> "$T/RECORDED.sha256"
+done <<'HASHES'
+<maintainer-recorded-first-use-hashes>
+HASHES
+
+# Decisive check: whatever route the bytes took, they must be the reviewed ones.
+( cd "$T" && "$SHASUM" -a 256 -c RECORDED.sha256 ) || {
+    echo "REFUSE: extracted bytes do not match the reviewed first-use set" >&2
+    exit 1
+}
+
+"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
+    apply --repo "$CHECKOUT" --confirm-supervised-reanchor
+LOADER
+```
+
+### Execution ledger
+
+All Python execution used
+`/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13), with
+`PYTHONDONTWRITEBYTECODE=1`, in a disposable `--shared` clone detached at
+`1d392a2`.
+
+* Required range-report mutation/report-policy/checkpoint classes, the v1/v2
+  differential corpus, all seven H2 sentinel nodes, and the literal runbook
+  bootstrap test passed. The initial mandated selection was **46 passed** in
+  10.30 s; a broader construction/config/transaction/publication sweep passed
+  **116 selected nodes**.
+* A real successful fixture ceremony signed a checkpoint and moved both refs;
+  its message carried both `(not bound)` values. Replacing the range-report,
+  re-derivation, and message-binding functions with raising sentinels still let
+  real `apply` succeed.
+* The first-use `check` and `apply` probes used the real observed prior anchor;
+  `apply` exited 2 after collection with `CLOSURE`/`AUTHORITY` review findings
+  and `[REFUSE] ... nothing was written`.
+* The index probe changed only file stat metadata before `check`; index bytes
+  and mtime changed, while `git status --porcelain` remained empty.
+* The symlink-ceiling probe returned a repository format through a logical path
+  whose parent was outside the discovered repository.
+
+### Residuals and exclusions
+
+I did not re-litigate the accepted trusted-contributor host-access residual,
+the key-holder-not-process limit of signing, replay without a nonce, or local
+write authority over `refs/cairn/gate-anchor`; none is misdescribed by this
+review. The evidence stage remains best-effort isolation, not containment.
+
+I did **not** load the Maintainer's real ceremony key, move either Cairn ref in
+the source repository, fill the Maintainer placeholders, push, or run the
+[TRU-7] real-remote atomic-capability probe. I did not exercise Windows, a real
+SHA-256 repository, or a bind mount, and I did not repeat Boundary B's full
+suite. I did not audit Git or OpenSSH cryptographic implementations. All
+mutation and ref-writing probes ran only in disposable repositories.
