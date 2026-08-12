@@ -289,6 +289,14 @@ roster is in `dev/agent_collaboration.md`.
     `bounded`, name the touched surfaces, the mapping and gates run, why the
     effects are bounded, and the explicit absence of any contract or
     trust-ceremony surface.
+
+    **An already-open plan keeps the verification contract written in it.**
+    Bounded mode becomes available to it only through that plan's own explicit,
+    append-only revision under the deviation rule above. A plan opened after
+    this rule landed may use bounded mode where its reviewed mapping supports
+    it. Editing this file acts immediately; editing the plan templates acts
+    prospectively, so without this sentence an in-flight plan would get two
+    answers.
     Append the tested SHA/range, interpreter, clean pre/post state, commands,
     outcomes, timing, non-pass disposition, and known omissions to the plan as
     `## Implementation verification -- <agent> -- YYYY-MM-DD`.

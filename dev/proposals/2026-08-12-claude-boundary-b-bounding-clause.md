@@ -950,3 +950,77 @@ measurement; (d) I did not review the two superseded proposals for whether their
 own archived text should be annotated — no annotation convention exists in this
 tree for cross-proposal supersession, so I raise it as an observation without a
 finding.
+
+### Sharpening -- Claude -- 2026-08-12
+
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+All three actionable findings accepted and fixed; F5-F7 dispositioned below.
+Every one verified before acting.
+
+**[F1] accept.** Confirmed: `grep` for the already-open-plan rule across all six
+landed surfaces returned **nothing**. It is an accepted term in the Decision
+("Already-open/executing plans preserve their written verification contracts
+unless explicitly revised") and I implemented every other term while dropping
+this one. It now lands in `AGENTS.md`, `templates/core/AGENTS.md` and
+`doctrine/plans.md`, with the reason stated: doctrine acts immediately, templates
+act prospectively, so an in-flight plan would otherwise get two answers about
+its own evidence obligation.
+
+**And the finding had a second half I found by testing the fix.** Having landed
+the rule, I mutated it away — and the suite stayed green at 37 passed. The rule
+was *text without a guard*, which is the same shape as F2 and F3. A parametrized
+guard over the three governing surfaces now fires on its deletion.
+
+**[F2] accept.** `assert len(FRESH_RUN_TRIGGERS) == 6` asserted the length of a
+tuple literal living in the same test file, so no doctrine edit could ever fail
+it — and §2 of the accepted revision rests an argument on exactly that guard.
+The count is now parsed from `doctrine/dual-review.md` itself. Verified against
+the reviewer's own defeating mutation: adding a seventh trigger to the doctrine
+now fails.
+
+**[F3] accept, and it is the one worth dwelling on.** The test read:
+
+```python
+text = _read(SELF_AGENTS).replace("trust-ceremony surface", "surface")
+assert "trust-ceremony surface" not in " ".join(text.split())
+```
+
+It asserts a token is absent from text it has just removed it from. It never
+calls the guard. It passes against an **empty file**. Its docstring says
+*"Without this pair an always-passing token check would look correct"* — which
+is precisely what it was.
+
+I wrote it in the same commit in which I perturbation-tested five obligations
+and reported all five red. The five were real; this one was theatre, and I did
+not notice because I wrote the mutation and the assertion together and they
+agreed with each other. Replaced with the mutate-then-assert-the-violation-
+function pattern this file already used three times, plus an explicit floor
+(`test_bounded_guard_is_not_satisfied_by_an_empty_file`) pinning the case the
+old version silently sat below.
+
+**[F4] wontfix, with the reason.** A record omitting `Boundary B mode` is
+indistinguishable from a pre-change record — true, and deliberate: the rule is
+prospective and F1's applicability sentence is what governs records written
+before it. Making a missing field invalid would retroactively invalidate every
+existing record.
+
+**[F5-F7] wontfix.** No generality guard on the adopter *plan* template (the
+`AGENTS.md` pair carries the one that matters, and the plan templates are
+already slot-differentiated by construction); possible over-fencing of doctrine
+prose (uncertainty resolving to `full` is the intended direction — over-fencing
+costs a full run, under-fencing costs the assurance the clause trades on); slot
+placement correct but unpinned.
+
+**Verification.** 40 nodes, was 13 at the start of this work and 36 at
+`8d9e351`. Mutations run for this Sharpening: a seventh trigger in the doctrine
+(**fails**, was green); `AGENTS.md` truncated to empty (**7 fail**, was green);
+the F1 rule deleted (**fails**, was green before the guard). `check_cairn` OK
+(174 files); redundancy `fail=0`; neutrality `fail=93`, unchanged and
+pre-existing; `claim_check` clean on all three edited surfaces.
+
+**On the reviewer's caution**: the working-tree failure in
+`test_scope_reduction_trap.py::test_the_two_planner_twins_stay_byte_identical`
+is another agent's uncommitted planner edits. Confirmed independently — the
+twins are byte-identical at `8d9e351` and at this commit.
+

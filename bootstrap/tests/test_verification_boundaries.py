@@ -7,6 +7,7 @@ select tests automatically; both are explicit v1 omissions.
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -226,14 +227,60 @@ def test_bounded_boundary_b_contract_reaches_every_surface(
     )
 
 
+def _bounded_violations(text: str) -> list[str]:
+    """Labels of the bounded-contract obligations absent from *text*."""
+    normalized = " ".join(text.split())
+    return [label for label, tokens in _BOUNDED_OBLIGATIONS.items()
+            if [tok for tok in tokens if tok not in normalized]]
+
+
 def test_bounded_guard_detects_a_removed_fence() -> None:
     """The mutant for the test above: strip the fence, the guard must fire.
 
-    Without this pair an always-passing token check would look correct.
+    This asserts the *violation function* reports the loss -- the pattern used
+    by `test_operational_guard_detects_removed_full_fallback` and
+    `test_review_reuse_guard_detects_unconditional_reuse` above. An earlier
+    version of this test asserted only that a token was absent from text it
+    had just removed it from, which passed even against an empty file: a
+    tautology wearing a mutant's docstring (Internal review 2026-08-12, F3).
     """
-    text = _read(SELF_AGENTS).replace("trust-ceremony surface", "surface")
-    normalized = " ".join(text.split())
-    assert "trust-ceremony surface" not in normalized
+    intact = _read(SELF_AGENTS)
+    assert _bounded_violations(intact) == []
+
+    mutated = intact.replace("trust-ceremony surface", "surface")
+    assert "the fence refuses on contract and trust-ceremony surfaces" in \
+        _bounded_violations(mutated)
+
+
+#: The three GOVERNING surfaces -- not the plan templates, which do not carry
+#: this rule. Kept separate from `_BOUNDED_SURFACES` for that reason.
+_APPLICABILITY_SURFACES = (SELF_AGENTS, ADOPTER_AGENTS, PLANS_DOCTRINE)
+
+
+@pytest.mark.parametrize("path", _APPLICABILITY_SURFACES,
+                         ids=lambda p: str(p.relative_to(ROOT)))
+def test_already_open_plans_keep_their_written_contract(path) -> None:
+    """An accepted term that first landed with no guard at all.
+
+    Editing doctrine acts immediately; editing the plan templates acts
+    prospectively. Without this rule an in-flight plan receives two answers
+    about its own evidence obligation -- and two plans were executing when the
+    clause landed. The rule was accepted in the Decision, shipped in the
+    implementing commit, and was still deletable without any test noticing
+    (Internal review 2026-08-12, F1, and the follow-up gap it exposed).
+    """
+    normalized = " ".join(_read(path).split())
+    assert "already-open plan keeps the verification contract" in normalized, (
+        f"{path} no longer states that an already-open plan keeps the "
+        f"verification contract written in it. Bounded mode then silently "
+        f"becomes available to plans whose reviewed mapping never contemplated "
+        f"it."
+    )
+
+
+def test_bounded_guard_is_not_satisfied_by_an_empty_file() -> None:
+    """The floor the old mutant test silently sat below."""
+    assert len(_bounded_violations("")) == len(_BOUNDED_OBLIGATIONS)
 
 
 def test_boundary_c_adjudicates_a_bounded_record() -> None:
@@ -257,7 +304,18 @@ def test_full_run_required_routes_to_the_existing_first_trigger() -> None:
     """
     normalized = " ".join(_read(REVIEW_DOCTRINE).split())
     assert "invalidates" in normalized
-    assert len(FRESH_RUN_TRIGGERS) == 6, FRESH_RUN_TRIGGERS
+
+    # Counted from the DOCTRINE, not from `FRESH_RUN_TRIGGERS` -- that tuple
+    # lives in this file, so asserting its length can never fail on a doctrine
+    # edit and the "six stay six" claim rested on nothing (Internal review
+    # 2026-08-12, F2). The list is the numbered items between the "six
+    # triggers" sentence and the paragraph that follows it.
+    body = re.search(
+        r"required when any of these six triggers applies:(.*?)\n\nReview-only",
+        _read(REVIEW_DOCTRINE), re.S)
+    assert body, "the six-trigger list is no longer in its documented shape"
+    numbered = re.findall(r"^\s*(\d+)\.", body.group(1), re.M)
+    assert numbered == ["1", "2", "3", "4", "5", "6"], numbered
 
 
 def test_review_reuse_guard_detects_unconditional_reuse() -> None:

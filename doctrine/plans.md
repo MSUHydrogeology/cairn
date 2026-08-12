@@ -288,7 +288,15 @@ nobody profits from the miss. No tool gate is proposed — a check could confirm
 the field is present, never that the argument is true, and a green check on the
 question that needed judgement is the clean-pass trap manufactured. What closes
 it is whose signature is on the verdict: an independent reviewer, who captures
-nothing. The plan receives an append-only
+nothing.
+
+**An already-open plan keeps the verification contract written in it.** Bounded
+mode becomes available to it only through that plan's own explicit, append-only
+revision under the deviation rule. A plan opened after this rule landed may use
+bounded mode where its reviewed mapping supports it. The reason the rule is
+needed at all: editing doctrine acts immediately while editing the plan
+templates acts prospectively, so an in-flight plan would otherwise receive two
+answers about its own evidence obligation. The plan receives an append-only
 record only after the run completes:
 
 ```markdown
