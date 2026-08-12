@@ -428,6 +428,64 @@ def _batch_blobs(shas: list[str], *, repo: Path = _REPO) -> list[bytes]:
     return blobs
 
 
+#: The key-load phase boundary (proposal R1-F steps 4-5; acceptance criterion 8).
+#:
+#: The ceremony runs in two phases and the order is the whole protection. While
+#: the signing key is unavailable, candidate code runs freely -- pytest
+#: collection, the candidate's own manifest producer, every candidate-executing
+#: check. The Maintainer then confirms against a hard marker, and only then is
+#: the key loaded. After that point **no candidate code may execute or be
+#: imported**, because a key that is loadable while candidate code runs is a key
+#: that candidate code may be able to use.
+#:
+#: This is a *sequencing* control, not containment, and the plan says so
+#: plainly: candidate code that ran earlier on the same uncompartmented machine
+#: may have left persistence that a later signing process cannot detect. What
+#: the boundary removes is **simultaneous intentional availability**. A separate
+#: evidence host or a hardware-presence key is the strengthening path, and
+#: neither exists today.
+_PHASE_CANDIDATE = "candidate-execution-permitted"
+_PHASE_SEALED = "sealed-key-may-load"
+
+#: Module state, not a parameter, deliberately: every candidate-executing entry
+#: point must observe the same boundary without the caller having to thread it,
+#: and a caller-supplied phase could simply be passed as "not sealed".
+_phase = _PHASE_CANDIDATE
+
+
+def seal_candidate_execution(*, out=sys.stderr) -> None:
+    """Cross the key-load boundary. Irreversible within a process.
+
+    There is deliberately **no unseal**. A reversible boundary is not a
+    boundary: the failure this exists to prevent is precisely a later stage
+    deciding it needs one more collection.
+    """
+    global _phase
+    _phase = _PHASE_SEALED
+    out.write(
+        "\n=== KEY-LOAD PHASE MARKER ==========================================\n"
+        "Candidate execution is now SEALED. No operation after this point may\n"
+        "execute or import candidate code -- not collection, not imports, not\n"
+        "hooks or filters, not a subprocess. The signing key may now load.\n"
+        "This is sequencing, NOT containment: code that ran before this line\n"
+        "shared this machine with the key that is about to load.\n"
+        "====================================================================\n")
+
+
+def refuse_if_sealed(operation: str) -> None:
+    """Guard every candidate-executing entry point.
+
+    Named operations rather than a bare flag check, so the refusal says *what*
+    tried to cross rather than only that something did.
+    """
+    if _phase == _PHASE_SEALED:
+        raise PreflightError(
+            f"{operation} would execute or import candidate code after the "
+            f"key-load phase marker; refusing. The ceremony seals candidate "
+            f"execution before the signing key loads, and that boundary does "
+            f"not reopen")
+
+
 @contextlib.contextmanager
 def raw_tree(commit: str, *, repo: Path = _REPO):
     """Materialize a commit's tree from raw objects, outside the repository.
@@ -1061,6 +1119,7 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
     distinct, explicitly non-authoritative command, and everything it emits is
     treated by ``check`` as untrusted input.
     """
+    refuse_if_sealed("the evidence stage")
     out.write(_EVIDENCE_RESIDUAL + "\n")
     candidate = _resolve(candidate_ref, repo=repo)
 
@@ -1081,6 +1140,11 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
             import os as _os  # noqa: PLC0415 -- local, not a closure dep
             env = {k: v for k, v in _os.environ.items()
                    if k not in ("PYTHONPATH", "PYTHONHOME")}
+            # Guarded again at the launch, not only at the function entry:
+            # the entry check protects the documented path, this protects the
+            # actual capability. A future caller reaching the producer by any
+            # other route still stops here.
+            refuse_if_sealed("launching the candidate's manifest producer")
             proc = subprocess.run(
                 [sys.executable, "-E", "-s",
                  "bootstrap/tests/_gate_manifest.py", "produce"],
@@ -1841,6 +1905,11 @@ def apply_now(*, repo: Path = _REPO, confirmed: bool = False,
     plan = blessing_plan(report, evidence, repo=repo,
                          manifest=committed_manifest,
                          manifest_sha256=committed_sha256)
+
+    # R1-F steps 4-5. Everything above this line may execute candidate code;
+    # nothing below it may. `_construct_signed_commit` is the first operation
+    # that loads the signing key, so the boundary sits immediately before it.
+    seal_candidate_execution(out=out)
 
     with anchored_roster(anchor, repo=repo) as (roster_path, roster_text):
         principals = parse_principals(roster_text)

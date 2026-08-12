@@ -12,6 +12,7 @@ a test claiming otherwise is worse than no test (security review SR7 / SR10):
 """
 from __future__ import annotations
 
+import io
 import json
 import re
 import os
@@ -1556,6 +1557,179 @@ class TestRawTreeMaterialization:
         with P.raw_tree(head, repo=repo) as tree:
             import os as _os
             assert _os.access(tree / "run.sh", _os.X_OK)
+
+
+@pytest.fixture(autouse=True)
+def _reset_key_load_phase():
+    """Reset the key-load phase around **every** test in this file.
+
+    The boundary is deliberately irreversible in production code -- `apply_now`
+    seals module state and there is no unseal -- which is correct for a CLI that
+    runs one ceremony per process, and leaks in a test session where many do.
+    Without this, any node that completes a real `apply` seals the module and
+    every later node inherits it.
+
+    That is exactly the shared-mutable-fixture defect fixed in
+    `test_verify_ref.py` the same day (`da26a88`), reintroduced here by the
+    author of that fix within hours. Hence file-scoped and autouse rather than
+    scoped to the sentinel class: the leak is caused by tests *elsewhere* in
+    this file, so a guard living only in the class that noticed it would not
+    hold.
+    """
+    P._phase = P._PHASE_CANDIDATE
+    yield
+    P._phase = P._PHASE_CANDIDATE
+
+
+# ---------------------------------------------------------------------------
+# Chunk H2: the key-load phase sentinel.
+#
+# Acceptance criterion 8 -- "no candidate execution after the key-load marker,
+# **proven by sentinel, not by inspection**". R1-F steps 4-5 put the ceremony in
+# two phases: candidate code runs freely while the signing key is unavailable,
+# the Maintainer confirms against a hard marker, and only then does the key
+# load. Nothing after that line may execute or import candidate code.
+#
+# THIS IS SEQUENCING, NOT CONTAINMENT, and these tests do not claim otherwise.
+# Candidate code that ran before the marker shared an uncompartmented machine
+# with the key that loads after it, and may have left persistence no later
+# process can see. What the boundary removes is *simultaneous intentional*
+# availability. A separate evidence host or a hardware-presence key is the
+# strengthening path; neither exists.
+# ---------------------------------------------------------------------------
+
+
+class TestKeyLoadPhaseSentinel:
+
+    def test_the_boundary_starts_open(self):
+        assert P._phase == P._PHASE_CANDIDATE
+        P.refuse_if_sealed("anything")          # must not raise
+
+    def test_sealing_refuses_the_evidence_stage(self, tmp_path):
+        repo, anchor, head = _anchored_repo(tmp_path)
+        P.seal_candidate_execution(out=io.StringIO())
+        with pytest.raises(P.PreflightError) as exc:
+            P.gather_evidence("HEAD", repo=repo, out=io.StringIO())
+        assert "after the key-load phase marker" in str(exc.value)
+
+    def test_every_candidate_executing_entry_point_is_guarded(self):
+        """The criterion says *every* entry point, so this enumerates them from
+        the source rather than trusting a list someone maintained by hand.
+
+        A subprocess launch is the capability that matters: collection, imports,
+        hooks and filters all reach candidate code through one. So every
+        `subprocess.run` in this module that is **not** the sterile git launcher
+        must sit behind `refuse_if_sealed`.
+        """
+        import ast
+        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+            encoding="utf-8")
+        tree = ast.parse(src)
+
+        guarded, unguarded = [], []
+        for fn in ast.walk(tree):
+            if not isinstance(fn, ast.FunctionDef):
+                continue
+            launches = [n for n in ast.walk(fn)
+                        if isinstance(n, ast.Call)
+                        and getattr(n.func, "attr", "") == "run"
+                        and getattr(getattr(n.func, "value", None), "id", "")
+                        == "subprocess"]
+            if not launches:
+                continue
+            if fn.name == "_run_git":
+                continue          # the sterile git launcher: fixed plumbing
+            calls = {getattr(n.func, "id", "") for n in ast.walk(fn)
+                     if isinstance(n, ast.Call)}
+            (guarded if "refuse_if_sealed" in calls else unguarded).append(
+                fn.name)
+
+        assert not unguarded, (
+            f"these functions launch a subprocess with no key-load guard: "
+            f"{unguarded}. Every route to candidate execution must refuse "
+            f"after the marker, not merely the documented one.")
+        assert guarded, "the enumeration found nothing; the walk is broken"
+
+    def test_the_marker_is_printed_where_a_human_will_see_it(self):
+        """The Maintainer confirms *against* the marker (R1-F step 4), so a
+        silent seal would remove the thing being confirmed."""
+        buf = io.StringIO()
+        P.seal_candidate_execution(out=buf)
+        printed = buf.getvalue()
+        assert "KEY-LOAD PHASE MARKER" in printed
+        assert "SEALED" in printed
+        assert "NOT containment" in printed, (
+            "the marker must not let a reader believe this contains anything")
+
+    def test_the_boundary_does_not_reopen(self):
+        """A reversible boundary is not one. The failure this exists to prevent
+        is a later stage deciding it needs one more collection."""
+        P.seal_candidate_execution(out=io.StringIO())
+        assert not any(
+            name for name in dir(P)
+            if "unseal" in name.lower() or "reopen" in name.lower()), (
+            "an unseal entry point exists; the boundary is reversible")
+        with pytest.raises(P.PreflightError):
+            P.refuse_if_sealed("a second collection")
+
+    def test_apply_seals_before_the_key_loads_not_after(self):
+        """Ordering is the whole control, so it is asserted on the source: the
+        seal must precede the first operation that loads the signing key."""
+        import ast
+        src = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
+            encoding="utf-8")
+        fn = next(n for n in ast.walk(ast.parse(src))
+                  if isinstance(n, ast.FunctionDef) and n.name == "apply_now")
+        seal = signing = None
+        for node in ast.walk(fn):
+            if not isinstance(node, ast.Call):
+                continue
+            name = getattr(node.func, "id", "")
+            if name == "seal_candidate_execution" and seal is None:
+                seal = node.lineno
+            if name == "_construct_signed_commit" and signing is None:
+                signing = node.lineno
+        assert seal is not None, "apply never seals candidate execution"
+        assert signing is not None, "apply never constructs the signed commit"
+        assert seal < signing, (
+            f"the seal is at line {seal} and the key loads at {signing}; the "
+            f"key must not be loadable while candidate code may still run")
+
+    def test_the_ordering_holds_through_a_REAL_apply(self, tmp_path,
+                                                     monkeypatch):
+        """Executed end to end, not read off the source.
+
+        Uses the full-ceremony fixture, so the run really constructs and signs
+        a checkpoint and moves both refs. The source-order node above can only
+        prove the call sites are in the right order; this proves the ordering
+        survives an actual ceremony -- and that the seal is reached at all,
+        which an early return would silently skip.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        manifest = {**P.rederive_static_manifest(head, repo=repo),
+                    "collection": {"node_count": 1, "node_ids": ["a.py::t"],
+                                   "skip_xfail_marked": []},
+                    "interpreter": {"version": "3.13.13"}}
+        order = []
+        real_seal = P.seal_candidate_execution
+
+        def traced_gather(*a, **k):
+            order.append("candidate-execution")
+            return _fake_evidence(head, manifest)
+
+        def traced_seal(*a, **k):
+            order.append("seal")
+            return real_seal(*a, **k)
+
+        monkeypatch.setattr(P, "gather_evidence", traced_gather)
+        monkeypatch.setattr(P, "seal_candidate_execution", traced_seal)
+
+        result = P.apply_now(repo=repo, confirmed=True, out=io.StringIO())
+
+        assert order == ["candidate-execution", "seal"], order
+        assert result["new_anchor"], "the ceremony did not complete"
+        assert P._phase == P._PHASE_SEALED, (
+            "apply returned with candidate execution still permitted")
 
 
 class TestApplyCommitsTheAuthoritativeManifest:
