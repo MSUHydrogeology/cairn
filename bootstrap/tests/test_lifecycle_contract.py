@@ -31,8 +31,10 @@ re-anchor).
 from __future__ import annotations
 
 import ast
+import datetime as dt
 import hashlib
 import importlib.util
+import os
 import re
 import subprocess
 import sys
@@ -6150,3 +6152,530 @@ class TestScopeDeltaParserContract:
         # the reported line is the field's own, derived rather than hardcoded
         lines = planner._split_lines(art.text)
         assert lines[found[0][0] - 1].startswith("**Scope delta**:")
+
+
+# ---------------------------------------------------------------------------
+# Chunk P6c -- the monitoring-evidence mutation matrix.
+#
+# The plan's `P6c` row (`dev/plans/review-efficient-lifecycle.md`) names ten
+# mutations and names *this* file as their home:
+#
+#     absent record, wrong schema version, altered prior event, duplicate or
+#     conflicting stem, symlink redirection of leaf or parent, interrupted
+#     write, stale writer / lost update, boundary-day arithmetic, pause set and
+#     cleared, and the exact activation-binding oracle (a record whose
+#     `machinery_sha` is not the B2 commit, and a derived-enabling-commit
+#     mismatch, both refuse)
+#
+# **The row is discharged mostly by delegation, and the delegation was measured
+# rather than believed.**  Chunk P6a put its own suite in a *new* file,
+# `bootstrap/tests/test_pilot_evidence.py`, which neither the P6a row nor the
+# P6c row names -- so nine of the ten cells already had a behavioural equivalent
+# somewhere the plan does not point at.  Re-expressing them here would not be
+# coverage; it would be two places to update and a false sense of breadth.  So
+# this section does three things instead:
+#
+#   1. **Checks the delegation.**  `_P6C_COVERAGE` names, per cell, the sibling
+#      node that carries it and the falsifier that was run to prove that node
+#      can actually fail.  `TestP6cTheCoverageMapResolves` reddens if a covering
+#      node is renamed or deleted, so this chunk's discharge cannot quietly
+#      become false while the suite stays green.
+#   2. **Closes the gaps the falsification run found.**  Every "already covered"
+#      claim was tested by mutating the property and watching the named node go
+#      red.  Three mutations SURVIVED -- nothing in the suite noticed -- and
+#      those three are the nodes written below.  This step is not optional
+#      diligence: three tests in this very plan (P2's [M16], P3's [M10], P4's
+#      two ASCII-safety nodes) passed their mutations because their fixture
+#      could not reach the property they claimed to test.
+#   3. **Pins the one mutation the design makes unconstructible**, as an
+#      executable assertion rather than a comment, so a later chunk that makes
+#      it constructible again is loud rather than silent.
+#
+# The falsification run, in full.  Each falsifier was applied to BOTH engine
+# copies and the whole sibling suite was run:
+#
+#   cell                          falsifier (in `lifecycle.py`)          result
+#   ----------------------------  -------------------------------------  ------
+#   absent record                 absent branch stops returning None     2 red
+#   absent record (direction)     "policy: ACTIVE" -> "policy: DISABLED" 1 red
+#   wrong schema version          activation / event schema check off    1 / 4 red
+#   altered prior event           field compare off / length check off   1 / 1 red
+#   duplicate or conflicting stem prior-stem lookup always misses        2 red
+#   symlink leaf or parent        `_evidence_path`'s symlink test off    3 red
+#   interrupted write (residue)   the temp-file `finally` removed        1 red
+#   interrupted write (OSError)   a failed write is swallowed            0 -- GAP
+#   stale writer / lost update    expected-old re-read check off         2 red
+#   boundary-day (window bounds)  inclusive window off by one            4 red
+#   boundary-day (deadline)       `now > last` -> `now >= last`          0 -- GAP
+#   boundary-day (OPEN/ELAPSED)   `now > last` -> `now >= last`          0 -- GAP
+#   pause set and cleared         clear-never-clears / dup set / clear
+#                                 without set                            1 / 1 / 1 red
+#   activation binding            attestation membership test off        2 red
+#   activation binding (section)  named section -> whole file            1 red
+#   activation binding (derived)  date / enabling commit not derived     13 / 24 red
+#   closed activation schema      `_require_exact_keys` call removed     2 red
+#
+# **The twin-mutation trap, named rather than trusted.**  The engine has two
+# byte-identical copies: `templates/skills/_lib/lifecycle.py` -- the one this
+# section and `test_pilot_evidence.py` both LOAD -- and its installed twin
+# `tools/lifecycle.py`.  A falsifier applied to only one is invisible, so every
+# one above was applied to both and restored from an out-of-tree snapshot
+# (never `git checkout`), verified with `shasum -a 256`.  Parity itself is the
+# sibling's `test_the_two_lifecycle_copies_are_byte_identical`, which is what
+# licenses reasoning about "the" implementation at all.
+#
+# **What is NOT here, and why.**  `dev/measurement/pilot-activation.md` does not
+# exist and is not created: it is P6d's, behind Maintainer fence **M2**,
+# data-only, and its `machinery_sha` is the Boundary-B2 commit, which does not
+# exist yet either.  Every activation record below is therefore synthetic, in a
+# scratch repository, exactly as the sibling's are.
+#
+# The only thing that runs any of this is a person typing
+# `python -m pytest bootstrap/tests`; Cairn has no CI.
+# ---------------------------------------------------------------------------
+
+#: The engine copy this section LOADS.  Named explicitly, because mutating the
+#: other one proves nothing about anything below.
+_LIFECYCLE_CLI_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "lifecycle.py"
+
+#: P6a's own suite -- the file the ten cells are mostly discharged in.  Read as
+#: source, never imported: this section checks that the covering nodes EXIST,
+#: not what they do.
+_P6C_SIBLING_SUITE = CAIRN_ROOT / "bootstrap" / "tests" / "test_pilot_evidence.py"
+
+
+def _load_lifecycle_cli() -> ModuleType:
+    """Load the engine beside its own planner, without registering it.
+
+    Unregistered on purpose: `sys.modules` is process-wide, and the sibling
+    suite loads the same file under its own name.  Loaded unconditionally, for
+    the reason this module's docstring gives for the planner -- it is a required
+    source artifact here, its absence is a real failure to surface, and a skip
+    marker would move these node-IDs out of COLLECTION-ADDED for the gate
+    manifest.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "cairn_lifecycle_cli_for_contract", _LIFECYCLE_CLI_PATH)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+cli = _load_lifecycle_cli()
+
+
+#: The ten cells of the `P6c` row, transcribed from the plan.  Written here so
+#: `TestP6cTheCoverageMapResolves` can assert the map covers all ten rather than
+#: whatever subset an implementer happened to fill in.
+_P6C_CELLS = (
+    "absent record",
+    "wrong schema version",
+    "altered prior event",
+    "duplicate or conflicting stem",
+    "symlink redirection of leaf or parent",
+    "interrupted write",
+    "stale writer / lost update",
+    "boundary-day arithmetic",
+    "pause set and cleared",
+    "the activation-binding oracle",
+)
+
+#: cell -> ((sibling node, the falsifier that reddened it), ...).  `HERE:`
+#: marks a node this chunk adds, in this file, because the falsifier for that
+#: half of the cell SURVIVED the sibling suite.
+_P6C_COVERAGE = {
+    "absent record": (
+        ("TestActivationRecord."
+         "test_absent_record_is_no_evidence_yet_not_a_disabled_policy",
+         "the absent branch stops returning None"),
+        ("TestDerivedReport."
+         "test_absent_activation_reports_no_evidence_and_never_a_disabled_policy",
+         "the report's standing 'review policy: ACTIVE' line flips to DISABLED"),
+    ),
+    "wrong schema version": (
+        ("TestActivationRecord."
+         "test_an_unknown_schema_version_refuses_and_never_reads_as_inactive",
+         "the activation schema-version check is neutered"),
+        ("TestEventLedger.test_an_unknown_event_schema_refuses",
+         "the event schema-version check is neutered (4 params red)"),
+    ),
+    "altered prior event": (
+        ("TestEventLedger.test_an_altered_prior_event_refuses",
+         "the committed-vs-live field comparison is neutered"),
+        ("TestEventLedger.test_a_removed_event_refuses",
+         "the events-were-removed length check is neutered"),
+    ),
+    "duplicate or conflicting stem": (
+        ("TestEventLedger.test_a_duplicate_stem_refuses",
+         "the prior-stem lookup always misses"),
+        ("TestEventLedger.test_a_conflicting_stem_refuses",
+         "the prior-stem lookup always misses"),
+    ),
+    "symlink redirection of leaf or parent": (
+        ("TestActivationRecord.test_a_symlinked_record_leaf_refuses",
+         "`_evidence_path` stops asking the symlink question"),
+        ("TestActivationRecord.test_a_symlinked_parent_directory_refuses",
+         "`_evidence_path` stops asking the symlink question"),
+        ("TestEventLedger.test_a_symlinked_ledger_refuses_before_any_write",
+         "`_evidence_path` stops asking the symlink question"),
+    ),
+    "interrupted write": (
+        ("TestEventLedger.test_no_temp_file_survives_a_refused_append",
+         "the temp-file `finally` clause is removed"),
+        ("HERE: TestP6cAnInterruptedAppendRefusesAndWritesNothing",
+         "a failed write is swallowed instead of refusing -- SURVIVED the "
+         "sibling suite, which is why this node exists"),
+    ),
+    "stale writer / lost update": (
+        ("TestEventLedger.test_a_lost_update_is_detected_and_writes_nothing",
+         "the expected-old re-read check is neutered"),
+    ),
+    "boundary-day arithmetic": (
+        ("TestDerivedReport."
+         "test_the_window_is_sixty_days_inclusive_of_the_activation_date",
+         "the inclusive-window off-by-one"),
+        ("TestDerivedReport.test_boundary_day_arithmetic",
+         "the inclusive-window off-by-one (day 61 param red)"),
+        ("HERE: TestP6cTheDeadlineBoundaryDay",
+         "`now > last` -> `now >= last`, in the deadline test and in the "
+         "OPEN/ELAPSED label -- BOTH SURVIVED the sibling suite"),
+    ),
+    "pause set and cleared": (
+        ("TestDerivedReport.test_a_pause_is_derived_from_the_ledger_and_cleared_by_it",
+         "a pause-cleared event no longer clears the derived state"),
+        ("TestEventLedger.test_a_duplicate_pause_set_refuses",
+         "the duplicate pause-set guard is neutered"),
+        ("TestEventLedger.test_clearing_a_pause_that_was_never_set_refuses",
+         "clearing a pause that was never set becomes a silent no-op"),
+    ),
+    "the activation-binding oracle": (
+        ("TestActivationRecord."
+         "test_the_machinery_binding_oracle_refuses_an_unattested_commit",
+         "the B2-attestation membership test is neutered"),
+        ("TestActivationRecord."
+         "test_the_binding_reads_the_named_section_not_the_whole_file",
+         "the binding reads the whole cited file, not the named section"),
+        ("TestActivationRecord.test_the_enabling_commit_and_date_are_derived_from_git",
+         "the activation date / the enabling commit stop being derived"),
+        ("TestActivationRecord.test_an_unknown_key_refuses",
+         "the `_require_exact_keys` call is removed -- the wiring the "
+         "unconstructibility pin below depends on"),
+        ("HERE: TestP6cTheDerivedEnablingCommitHasNoStoredCounterpart",
+         "UNCONSTRUCTIBLE: the enabling commit is derived and never stored, so "
+         "there is no second value for it to disagree with"),
+    ),
+}
+
+
+def _p6c_defined_nodes(path: Path) -> set:
+    """`{'Class.method', 'function', ...}` for one test module, by parse.
+
+    By parse rather than by import: importing the sibling would execute its
+    module-level engine load and its fixtures in this file's process for no
+    reason, and what is being checked is whether the NAME still exists.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    names = set()
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            for child in node.body:
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    names.add(f"{node.name}.{child.name}")
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            names.add(node.name)
+    return names
+
+
+class TestP6cTheCoverageMapResolves:
+    """The delegation, checked instead of asserted.
+
+    Without this, "cell N is covered in the sibling" is a sentence in a commit
+    message, and the day someone renames or deletes the covering node the claim
+    becomes false with the suite still green.  `AGENTS.md` > *Verifying claims*:
+    name the trigger, check what it checks, and open it.
+    """
+
+    def test_every_delegated_cell_names_a_node_that_still_exists(self):
+        defined = _p6c_defined_nodes(_P6C_SIBLING_SUITE)
+        missing = sorted(
+            f"{cell}: {node}"
+            for cell, entries in _P6C_COVERAGE.items()
+            for node, _falsifier in entries
+            if not node.startswith("HERE: ") and node not in defined)
+        assert missing == [], (
+            "P6c's coverage map names sibling nodes that no longer exist in "
+            f"{_P6C_SIBLING_SUITE.name}: {missing}.  If a node was RENAMED, "
+            "update this map (a renamed node still covers the cell).  If it was "
+            "DELETED, the P6c row's cell is no longer discharged and needs a "
+            "node here -- do not delete the map entry to make this pass.")
+
+    def test_the_map_covers_every_cell_the_p6c_row_names(self):
+        assert sorted(_P6C_COVERAGE) == sorted(_P6C_CELLS)
+
+    def test_each_cell_records_the_falsifier_that_proved_its_node_can_fail(self):
+        """A node name alone is not evidence.  Three tests in this plan passed
+        their mutations because their fixture could not reach the property they
+        claimed to test, so the map carries the falsifier beside every node."""
+        for cell, entries in _P6C_COVERAGE.items():
+            assert entries, cell
+            for node, falsifier in entries:
+                assert node and falsifier.strip(), (cell, node)
+
+    def test_the_three_gaps_this_chunk_closes_are_named_in_the_map(self):
+        """The `HERE:` entries are the falsifiers that SURVIVED.  Pinned so the
+        map cannot be quietly reduced to "everything was already covered"."""
+        here = sorted(node[len("HERE: "):]
+                      for entries in _P6C_COVERAGE.values()
+                      for node, _f in entries if node.startswith("HERE: "))
+        assert here == [
+            "TestP6cAnInterruptedAppendRefusesAndWritesNothing",
+            "TestP6cTheDeadlineBoundaryDay",
+            "TestP6cTheDerivedEnablingCommitHasNoStoredCounterpart",
+        ]
+        defined_here = _p6c_defined_nodes(Path(__file__).resolve())
+        for name in here:
+            assert any(n.startswith(name + ".") for n in defined_here), name
+
+
+# --- a scratch repository carrying an activation record ----------------------
+#
+# Minimal on purpose: only what `_derive_report` needs to reach the deadline
+# comparison.  It is NOT a fork of the sibling's fixture set -- no event ledger
+# (an absent ledger is a reported note, not a refusal), no vocabulary fixtures
+# (the loaded copy's own sibling planner declares the counted state post-E).
+
+
+_P6C_B2_SECTION = "Implementation verification -- test -- 2026-01-01"
+
+#: The activation record's stored keys, written HERE as an independent oracle:
+#: this file does not import the subject's `_ACTIVATION_KEYS` to build a record,
+#: so a schema change in the subject is a visible failure rather than a silent
+#: agreement.
+_P6C_ACTIVATION_KEYS = ("schema", "machinery_sha", "machinery_record_path",
+                        "machinery_record_section")
+
+#: The two facts `_read_activation` DERIVES from git and returns.  Neither may
+#: ever become a stored key -- that is the property the unconstructibility class
+#: below pins.
+_P6C_DERIVED_FACTS = ("enabling_commit", "activation_date")
+
+
+def _p6c_git(root: Path, *args: str, date: str | None = None) -> str:
+    env = None
+    if date is not None:
+        env = dict(os.environ)
+        env["GIT_AUTHOR_DATE"] = f"{date}T12:00:00+00:00"
+        env["GIT_COMMITTER_DATE"] = f"{date}T12:00:00+00:00"
+    return subprocess.run(["git", *args], cwd=str(root), check=True,
+                          capture_output=True, text=True,
+                          env=env).stdout.strip()
+
+
+def _p6c_repo(tmp_path: Path, *, activation_date: str = "2026-02-01",
+              extra_key: str = "") -> Path:
+    """A repo with a machinery commit, a B2 record naming it, and activation.
+
+    Returns the repo root.  The enabling commit and the activation date are
+    DERIVED by the subject from the third commit -- this helper never writes
+    either into the record, because there is nowhere to write them.
+    """
+    root = tmp_path.resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    _p6c_git(root, "init", "-q")
+    _p6c_git(root, "config", "user.email", "t@example.com")
+    _p6c_git(root, "config", "user.name", "Test")
+    _p6c_git(root, "config", "commit.gpgsign", "false")
+
+    (root / "README.md").write_text("base\n", encoding="utf-8")
+    _p6c_git(root, "add", "--", "README.md")
+    _p6c_git(root, "commit", "-q", "-m", "the reviewed machinery",
+             date="2026-01-01")
+    machinery = _p6c_git(root, "rev-parse", "HEAD")
+
+    plan = root / "dev" / "plans" / "p.md"
+    plan.parent.mkdir(parents=True, exist_ok=True)
+    plan.write_text(f"# Plan\n\n**Status**: executing\n\n"
+                    f"## {_P6C_B2_SECTION}\n\n"
+                    f"Tested SHA {machinery}, canonical interpreter.\n",
+                    encoding="utf-8")
+    _p6c_git(root, "add", "--", "dev/plans/p.md")
+    _p6c_git(root, "commit", "-q", "-m", "the B2 evidence record",
+             date="2026-01-02")
+
+    record = root / "dev" / "measurement" / "pilot-activation.md"
+    record.parent.mkdir(parents=True, exist_ok=True)
+    rows = ["schema: cairn-pilot-activation/1",
+            f"machinery_sha: {machinery}",
+            "machinery_record_path: dev/plans/p.md",
+            f"machinery_record_section: {_P6C_B2_SECTION}"]
+    if extra_key:
+        rows.append(extra_key)
+    record.write_text("# Monitoring-evidence activation\n\nProse.\n\n"
+                      "```cairn-pilot-activation\n" + "\n".join(rows) + "\n```\n",
+                      encoding="utf-8")
+    _p6c_git(root, "add", "--", "dev/measurement/pilot-activation.md")
+    _p6c_git(root, "commit", "-q", "-m", "P6d: activate the evidence window",
+             date=activation_date)
+    return root
+
+
+class TestP6cTheDeadlineBoundaryDay:
+    """Cell 8's other half: the day the 60-day deadline is *compared*.
+
+    The sibling covers the window's own arithmetic well -- `_window_bounds` and
+    four parametrized in/out days.  What no node reached is the comparison that
+    consumes those bounds: `now > last`, in two places (the monitoring-boundary
+    verdict and the window's OPEN/ELAPSED label).  Both were mutated to
+    `now >= last` and the whole sibling suite stayed green, because its only
+    deadline node stands a day past the boundary and its only OPEN node stands
+    fifty days inside it.  An off-by-one there moves a Maintainer Decision by a
+    day -- exactly the failure `_window_bounds`' own docstring says it is
+    spelled out to prevent.
+
+    Activation is 2026-02-01, so the window is 2026-02-01 .. 2026-04-01.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _purge_contained_planner(self):
+        """`_derive_report` loads the vocabulary under a fixed private name.
+
+        Purged either side so nothing this class caches leaks into another
+        module through the process-wide `sys.modules` -- the same hygiene the
+        sibling suite applies to the same key.
+        """
+        key = "_lifecycle_cli_lifecycle_planner"
+        def _purge():
+            for name in [k for k in sys.modules
+                         if k == key or k.startswith(key + ".")]:
+                sys.modules.pop(name, None)
+        _purge()
+        yield
+        _purge()
+
+    def test_the_last_in_window_day_is_open_and_the_boundary_is_not_reached(
+            self, tmp_path):
+        root = _p6c_repo(tmp_path)
+        lines, _incomplete = cli._derive_report(root, today=dt.date(2026, 4, 1))
+        report = "\n".join(lines)
+        assert "window: 2026-02-01 .. 2026-04-01" in report
+        assert "-- OPEN" in report
+        assert "ELAPSED" not in report
+        assert "monitoring boundary: not reached" in report
+        assert "REACHED" not in report
+
+    def test_the_first_day_past_the_window_is_elapsed_and_reaches_the_boundary(
+            self, tmp_path):
+        """The other side of the same edge.  Stated as its own node so the pair
+        is a real discrimination rather than one assertion that could be
+        satisfied by a comparison stuck in either direction."""
+        root = _p6c_repo(tmp_path)
+        lines, _incomplete = cli._derive_report(root, today=dt.date(2026, 4, 2))
+        report = "\n".join(lines)
+        assert "window: 2026-02-01 .. 2026-04-01" in report
+        assert "-- ELAPSED" in report
+        assert "monitoring boundary: REACHED via the 60-day deadline" in report
+
+
+class TestP6cAnInterruptedAppendRefusesAndWritesNothing:
+    """Cell 6's other half: the write that fails part-way, not the residue.
+
+    The sibling proves no temp file survives a *refused* append -- the
+    expected-old path, where the writer decides not to land.  The path where the
+    filesystem decides for it was not exercised at all: swallowing the `OSError`
+    entirely (`except OSError: pass`, so a failed append returns success and
+    records nothing) left the whole sibling suite green.  That is the worst
+    shape a writer can have here -- an event the operator believes was recorded
+    and that no derivation will ever count.
+
+    `_append_event` takes `root` but never reads it, so these need no
+    repository: what is under test is the atomic-or-nothing contract, not a git
+    binding.
+    """
+
+    @pytest.mark.parametrize("vanish", ["the ledger", "its directory"])
+    def test_a_write_that_fails_is_a_refusal_that_says_nothing_was_written(
+            self, tmp_path, vanish):
+        measurement = tmp_path / "dev" / "measurement"
+        measurement.mkdir(parents=True)
+        ledger = measurement / "pilot-events.md"
+        text = "# Event ledger\n\n## Events\n\n"
+        ledger.write_text(text, encoding="utf-8")
+
+        # The interruption: the target is gone by the time the append lands.
+        # Injected between the caller's read and `_append_event`'s own write,
+        # which is the window the expected-old re-read narrows but cannot close.
+        ledger.unlink()
+        if vanish == "its directory":
+            measurement.rmdir()
+
+        with pytest.raises(cli.LifecycleError) as excinfo:
+            cli._append_event(tmp_path, ledger, text,
+                              "```cairn-pilot-event\nschema: x\n```\n")
+        assert "nothing was written" in str(excinfo.value)
+        assert not ledger.exists()
+        if measurement.is_dir():
+            assert list(measurement.iterdir()) == [], (
+                "a failed append left residue in the records directory")
+
+
+class TestP6cTheDerivedEnablingCommitHasNoStoredCounterpart:
+    """Cell 10's second clause -- **unconstructible**, and pinned as such.
+
+    The `P6c` row asks for "a derived-enabling-commit mismatch" to refuse.  It
+    cannot be built, and the reason is a design property rather than an
+    omission: the enabling commit and the activation date are DERIVED from git
+    (the commit that first introduced the record's exact bytes, and that
+    commit's author date) and are **never stored**, so there is no second value
+    for the derived one to disagree with.  P6a's engine comment states the same
+    thing from the other side -- storing either "would be self-referential ... a
+    commit cannot contain its own id".
+
+    Writing a stored field here just to have something to break would have
+    *created* the defect the design avoids.  What is pinned instead is the
+    absence itself, in three directions, because an unconstructible mutation
+    stops being unconstructible the moment a later chunk adds a slot:
+
+    * the closed schema is exactly the four stored keys, checked against an
+      oracle written in this file rather than imported from the subject;
+    * neither derived fact appears among them; and
+    * a record that carries one is refused as an unknown key.
+
+    The two behavioural halves this argument rests on are the sibling's, and
+    both were falsified rather than assumed:
+    `test_the_enabling_commit_and_date_are_derived_from_git` (red when the date
+    or the introducing-commit lookup stops being derived) and
+    `test_an_unknown_key_refuses` (red when the closed-schema call is removed
+    from `_read_activation`).  `TestP6cTheCoverageMapResolves` is what keeps
+    those two citations honest.
+    """
+
+    def test_the_closed_activation_schema_is_exactly_the_four_stored_keys(self):
+        assert cli._ACTIVATION_KEYS == _P6C_ACTIVATION_KEYS, (
+            "the activation record's stored key set changed.  If a key was "
+            "added, check FIRST whether it can hold a fact the reader derives: "
+            "that is what makes a derived-vs-stored mismatch constructible "
+            "again, and it needs its own refusal test, not a wider oracle here.")
+
+    def test_no_stored_key_can_hold_a_fact_the_reader_derives(self):
+        assert set(cli._ACTIVATION_KEYS).isdisjoint(_P6C_DERIVED_FACTS)
+
+    @pytest.mark.parametrize("derived", _P6C_DERIVED_FACTS)
+    def test_a_record_that_stores_a_derived_fact_is_refused_at_the_door(
+            self, derived):
+        """The refusal that makes the mismatch unconstructible in practice, not
+        only by convention: even a well-formed record carrying the field is
+        rejected before any comparison could be made."""
+        record = {key: "x" for key in _P6C_ACTIVATION_KEYS}
+        record[derived] = "0" * 40
+        with pytest.raises(cli.LifecycleError, match="unknown key"):
+            cli._require_exact_keys(record, cli._ACTIVATION_KEYS, (), "where")
+
+    def test_the_refusal_reaches_a_real_record_and_not_only_the_predicate(
+            self, tmp_path):
+        """The wiring, end to end, on the one field the cell is about: an
+        activation record that stores `enabling_commit` refuses, so the derived
+        value never has a stored counterpart to be compared against."""
+        root = _p6c_repo(tmp_path, extra_key="enabling_commit: " + "0" * 40)
+        with pytest.raises(cli.LifecycleError, match="unknown key"):
+            cli._read_activation(root)
