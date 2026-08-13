@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `AGENTS.md` and `templates/core/AGENTS.md` (the comprehension-floor
 paragraph in `## Review`); a read-and-revise pass over 262 tagged comments and
 docstrings, sequenced per file owner
@@ -200,3 +200,37 @@ changes; the shipped `AGENTS.md` paragraph is the delivery.
   than a reconstructed rationale.
 * A reviewer finds the three-way cost split does not hold on a sample I did not
   read, which would mean the estimate, not just the sites, needs revising.
+
+## Review -- Antigravity (External) -- 2026-08-13
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External, different agent type from the author (Claude Opus 5)
+**Reviewed commit**: `e02f6a8b71d1949013f79b960f29cc9dd46928f7`
+**Reviewed proposal blob**: `fc55bbbff7a5283da42be02b4adb56c37ad3f412`
+**Assurance path**: high-assurance
+**Findings**: 4 raised (1 header/text contradiction, 1 un-tracked cleanup hazard, 1 placement mismatch, 1 fixture scope fence missing)
+**Verdict: REVISE.** The core principle ("comments explain the code, not the process") is sound and addresses a real Maintainer friction point. However, leaving 168 of 262 instances to opportunistic future edits creates an un-tracked backlog hazard, the header justification contradicts the text's multi-session deferral, placement inside `## Review` mis-routes a code-authoring rule, and a scope fence for test fixtures is missing.
+
+### Findings
+
+1. **[E1 -- Header Justification vs. Text Contradiction]**:
+   - Line 13 in the header asserts: `Plan review: not required(no plan — one paragraph plus a bounded, judgement-led revision pass; no sequencing beyond file ownership)`.
+   - However, lines 109–112 state that 94 occurrences in `_gate_preflight` are sequenced with an executing security plan, while the remaining 168 are deferred to *"whichever plan next touches each file."*
+   - *Required satisfier*: Correct the header text to reflect the actual execution strategy.
+
+2. **[E2 -- Un-Tracked Opportunistic Cleanup Hazard ("Whichever plan next touches each file")]**:
+   - Deferring 168 finding-tag removals to "whichever plan next touches each file" leaves the codebase with non-compliant comments indefinitely without a tracking mechanism or owner, violating Cairn's deferral discipline.
+   - *Required satisfier*: Either (a) execute the full 262-instance revision pass across all `.py` files in a single dedicated commit upon acceptance; OR (b) record the remaining 168 instances as a tracked item in `dev/PLANNING.md` with an explicit owner or trigger.
+
+3. **[E3 -- Placement Mismatch in AGENTS.md]**:
+   - The proposal places the new rule inside `AGENTS.md` > `## Review` > "Comprehension is a precondition...".
+   - *Issue*: Code comments and docstrings in Python files are **code-authoring conventions**, not review-deliberation rules. Placing it under `## Review` causes agents writing code to miss the rule.
+   - *Required satisfier*: Place the rule under code-authoring / development conventions in `AGENTS.md` (e.g. alongside `**Naming.**` or project conventions), and reference it from the comprehension floor paragraph if desired.
+
+4. **[E4 -- Missing Scope Fence for Test Fixtures and Generated Python Code]**:
+   - The proposal lists 262 occurrences across `.py` files, but does not explicitly fence out test fixtures, AST baseline JSON strings inside Python files, or scaffold generated templates.
+   - *Required satisfier*: Explicitly fence out generated test fixtures or AST baselines where modifying string literals would break fixture assertions or scaffold baselines.
+
+### Summary Verdict
+**Verdict**: **REVISE** (4 findings). Address E1–E4 in a short Response and Revised proposal.
+
