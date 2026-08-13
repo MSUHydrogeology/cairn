@@ -300,3 +300,150 @@ surface, so the `boundary-b-bounding-clause` Hard Refusal Fence applies.
    before the module is trusted)?
 4. Does adding a Maintainer-owned config file outside the repository widen the
    trust boundary more than the hand-substitution it replaces?
+
+## Review -- Codex (External Security) -- 2026-08-13
+
+**Model**: GPT-5 Codex
+**Reviewed commit**: `ac4f06672b48ba010c53fc06144d68e848729f58`
+**Target**: the proposed executable-ceremony architecture, its bootstrap
+preamble, Maintainer-owned values channel, authority-closure change, and the
+four open design questions
+**Prior findings**: none
+**Assurance path**: high-assurance
+**Findings**: raised
+
+**Verdict: REVISE.** The diagnosis is correct and the dedicated code artifact
+is the better direction. The current proposal does not yet define a complete
+trust chain or a complete human-runnable ceremony, though. Two of its proposed
+controls presently rely on the very material they are meant to authenticate,
+and one promised test asserts semantic coverage that a mechanical test cannot
+provide.
+
+### [E1] BLOCKING -- the preamble's own authority source is unresolved
+
+The preamble chooses the OID and path to extract, supplies the expected digest,
+and decides whether to execute the result. It is therefore executable authority,
+not merely documentation. If the Maintainer copies it from the candidate
+runbook, a candidate can change the preamble to extract a different path, use a
+digest it supplied, or skip verification. Authenticating only the ceremony
+artifact does not authenticate the instruction that performs that check. Reading
+the preamble from the anchor instead repeats the stale-transition failure the
+proposal correctly identifies.
+
+The proposal must choose one non-circular source. My recommendation is that M2
+produce and record, out of band, the **exact small launcher text**, the full
+reviewed candidate OID, the ceremony-artifact path, and its SHA-256. The
+Maintainer runs that M2-supplied launcher; the runbook may reproduce and explain
+it, but is not its authority source. An anchored, already-trusted launcher that
+can verify a reviewed successor is also sound, but it is a different design and
+must specify its own update path. In either design, the artifact digest and
+reviewed OID must not be read from the candidate or from the new values file.
+
+This does not eliminate an irreducible bootstrap. It makes that bootstrap short
+enough for a person to inspect and binds every changing value in it to the
+independent review. M2 must review the launcher as well as the shell artifact;
+any changed launcher or artifact byte invalidates the disposition.
+
+### [E2] BLOCKING -- “Maintainer-owned config” is not yet a data contract
+
+A shell ceremony that `source`s or `eval`s its config has simply created a new
+arbitrary-code channel before its checks. Even without code evaluation, missing
+keys, duplicates, control characters, relative paths, symlinked leaves or
+parents, unknown keys, and ambient fallbacks can change which checkout,
+interpreter, manifest, or key is used. The proposal promises refusal for only a
+subset and leaves the parser to the plan.
+
+Specify a closed, versioned, line-oriented data schema here. The ceremony must
+parse it without `source`, `eval`, command substitution, or shell expansion;
+reject missing, duplicate, unknown, malformed, relative, control-charactered,
+non-regular, or symlink-routed values; and never fall back to `PATH`, `HOME`,
+Git config, or another ambient value when a field is absent. File ownership and
+restrictive mode are worthwhile hygiene, but cannot distinguish a Maintainer
+from an agent running as the same OS user and must not be described as doing so.
+
+The artifact must print the complete effective non-secret configuration before
+Stage 1. The file must contain no passphrase or private-key material. The exact
+reviewed OID and artifact digest belong to the M2 launcher channel, not this
+mutable operational config. If the review-manifest path remains in the config,
+state plainly that changing the config can redirect that authority input and is
+inside the accepted same-user residual; “Maintainer-owned by construction” is
+not an enforcement.
+
+### [E3] BLOCKING -- the proposed workflow still leaves two agent-shaped gaps
+
+The proposal identifies that the current runbook never constructs the review
+manifest and never gives the Maintainer a command to inspect the package report,
+but the replacement does not assign either job. If a later agent must generate
+the manifest or improvise a JSON reader, the central objective has not been met.
+
+Define the end-to-end operator surface now. M2 should deliver a complete,
+ready-to-use review manifest whose candidate OID, provenance, member paths, and
+digests are the reviewer's output; the ceremony must validate it but must never
+derive its expected contents from the candidate. The trusted ceremony artifact
+must provide named commands for validating the values file, running Stage 1,
+rendering the exact package report in a bounded human-readable form, independently
+hashing the package, and running Stage 2 with the confirmed digest. The
+Maintainer may still type the passphrase or load the key at N4's boundary, but
+must not need an agent-authored temporary script, retyped hash row, or ad hoc
+package reader.
+
+An end-to-end disposable-repository test should begin with only the M2 outputs
+and a valid values file, execute the exact launcher and public stage commands,
+and finish with the expected two-ref transaction. A test helper that fills
+unrecorded placeholders would recreate the present defect inside the test.
+
+### [E4] SUBSTANTIVE -- semantic prose/module agreement is not mechanically testable as claimed
+
+The sentence “a prose claim with no counterpart in the module, or a module step
+the prose does not describe, fails a test” is stronger than the proposed
+mechanism can deliver. A test can compare closed identifiers, command schemas,
+or generated inventories. It cannot determine whether arbitrary explanatory
+prose accurately describes arbitrary shell behavior.
+
+Replace that invariant with an enforceable one: the code owns a closed,
+ordered procedure-step registry (stable IDs, stage, command, inputs, and
+security-relevant outcome), and the runbook cites every ID exactly once with no
+unknown IDs. Tests compare those structures and exercise every public command.
+The remaining semantic explanation is reviewed prose, not machine-attested
+equivalence. This preserves the useful drift signal without creating another
+control whose strength is stated at intent rather than delivery.
+
+### Rulings on the open questions
+
+1. **Use a dedicated POSIX shell artifact.** It beats values-plus-executable
+   Markdown because there is one hashable executable source, no Markdown block
+   extraction, and no 180-line paste. Keep the runbook explanatory. The exact
+   filename may wait for the plan; the artifact type should not.
+2. **One digest is enough to authenticate one exact artifact**, provided its
+   expected value, path, and OID arrive through M2 and the launcher checking it
+   is itself independently supplied. It does not authenticate the config,
+   external tools, shell, or host. The gain is reduced transcription and a
+   smaller human-held boundary, not elimination of trust roots.
+3. **The module cannot print its own bootstrap.** The executable launcher should
+   come from M2 (or a previously anchored launcher), while the runbook mirrors
+   it for explanation. Candidate runbook prose is not an authority channel.
+4. **The config creates a persistent writable trust input.** That is a wider
+   temporal surface than ephemeral hand entry, although under Cairn's current
+   same-user residual the same attacker generally controls both. Accept it only
+   with the strict parser, visible effective-values review, no secrets, and an
+   explicit statement that permissions do not separate agents from the
+   Maintainer.
+
+### Claims checked and residuals
+
+The usability diagnosis reproduces from the current runbook: the transition
+path contains repeated substitutions for the checkout, review manifest,
+interpreter, seven host utilities/channels, signing key, package, confirmed
+digest, resolved OID, and the nine-row candidate checklist. The local anchor and
+`origin/master` both name the supervised ceremony commit `cfaace9`; the local
+anchor reflog carries the fixed ceremony reason. I did not rely on the proposal's
+exact placeholder count because prose examples and executable placeholders are
+intermixed, but the claimed human-transcription burden is materially accurate.
+
+The accepted evidence-stage host-persistence residual, N4's human key boundary,
+key-holder-not-process limit, and replay-without-nonce posture are unchanged.
+This review does not ask the proposal to solve them. It asks the new operator
+surface not to silently enlarge or misdescribe them.
+
+**Plan readiness: DISTINCT REVIEW REQUIRED.** After a complete revision settles
+[E1]-[E4], the proposal needs another External Security read before Decision.
