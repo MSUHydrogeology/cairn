@@ -180,7 +180,7 @@ The landmarks worth recognising:
 (The `tools/` and `scripts/` files install *into your target repo*; they
 are not Cairn-tree paths.)
 
-The scaffold also reports **23 unfilled block slots** -- placeholders
+The scaffold also reports **24 unfilled block slots** -- placeholders
 your agent will fill during dogfood.  See
 [`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4 for the
 full filling pass.  For this quickstart we leave them: the trivial dogfood
