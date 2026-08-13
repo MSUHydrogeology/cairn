@@ -3425,3 +3425,69 @@ precondition therefore had to be checked as the cell requires, and it did not
 hold on first check — two other sessions held live intent claims on two of the
 four active artifacts, one of them writing an archive record. Those rows waited
 rather than being applied against moving blobs.
+
+## H1 is applied but not complete: the retirement waits on quiescence -- Claude (Implementation) -- 2026-08-13
+
+**What landed.** H2's metadata migration (`17cceb2`), the artifact rewrites for
+every row that could be applied (`42322f3`, `c4b9b04`), and the templates fix
+that H1 could not converge without (`ac8a9a8`).
+
+**What has not, and why it is the cell's own precondition rather than a cut.**
+The vocabulary retirement -- moving `open` / `executing` / `review` and
+`proposed` / `reviewed` / `revised` out of `PLAN_STATES` / `PROPOSAL_STATES` and
+into the historical tuples, with the legacy transition arms dropped -- is **not
+applied**. Chunk H's cell requires a quiet tree and says the precondition is
+*"a precondition to check at H, not a wait to schedule"*. It was checked, and it
+does not hold.
+
+**The evidence, measured rather than characterized.** Between 07:52 and 08:26 on
+2026-08-13, three other sessions landed twelve commits touching active lifecycle
+artifacts. Two artifacts moved *under an intent claim this session held*:
+
+* `2026-08-13-claude-test-names-outlive-their-plans` -- `proposed` -> `reviewed`
+  at `e02f6a8`, while claimed.
+* `2026-08-13-claude-finding-tags-are-not-reasons` -- rewritten to `reviewed` at
+  `618ec47`, discarding an uncommitted `awaiting-review` edit, while claimed.
+
+Both rows were therefore **refused**, which is exactly what H1's *"apply only
+admitted rows whose blobs still match"* requires. Intent claims are advisory
+coordination signals, not locks, and this is the first recorded case in this
+repository of that distinction costing a migration pass. It is a coordination
+fact, not a defect in either session.
+
+**Why the retirement must not be forced through anyway.** Both moves went *into*
+the legacy vocabulary via the legal legacy arm `proposed -> reviewed`. A session
+is actively driving artifacts through the tokens H1 retires. Retiring them mid-
+flight would strand that session with no legal forward move -- precisely the
+hazard Chunk E's sequencing decision was taken to avoid, and the reason
+`test_each_legacy_state_keeps_a_forward_path` exists.
+
+**What the retirement will cost when it runs, so the next implementer does not
+re-derive it.**
+
+* Both planner twins: the two state tuples, the three legacy `PROPOSAL_TRANSITIONS`
+  arms, the three legacy `PLAN_TRANSITIONS` arms plus `executing` as a target of
+  `awaiting-plan-review`, the `open` entry in
+  `PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED`, `PLAN_REVIEW_CLEARED_STATES` and
+  `_PROPOSAL_POST_REVIEW_STATES`, and both historical tuples.
+* **The legacy `PROPOSAL_NEXT_OWNERS` / `PLAN_NEXT_OWNERS` entries stay.**
+  `test_the_legacy_multi_successor_tokens_report_unresolved` pins them, and
+  historical tokens still occur on archived artifacts and in metrics. Retiring a
+  token removes it from the *current* vocabulary; it does not make the board
+  unable to render it.
+* `bootstrap/tests/test_lifecycle_contract.py` -- `TestTheLegacyTokensAreStillLegalUntilH1`
+  inverts, and `test_the_historical_tuples_are_still_empty_and_that_is_the_seam`
+  is the node that must flip rather than be deleted.
+* **A corpus measurement is mandatory, not optional.** `SHAPE_B_STATUSES` goes
+  **16 -> 12**: the current non-terminal sets lose `reviewed`, `revised`,
+  `executing` and `review`, while `proposed` and `open` re-enter through the
+  `OPENING_STATES`-in-historical filter. The comment above that tuple states
+  that a change reaching historical NON-opening tokens is **corpus-CHANGING and
+  re-runs that measurement**. So `test_transition_lint.py`'s pinned corpus
+  expectations must be re-measured, not assumed to hold -- four tokens leaving
+  the shape-(b) candidate set can only remove findings, and any that disappear
+  are pinned expectations that move.
+* This edit touches the **frozen** `bootstrap/tests/test_lifecycle_contract.py`,
+  and the single ceremony has already run (`cfaace9`), so it lands after the
+  anchor meant to cover it. See the Chunk I section above; the disposition is the
+  Maintainer's.
