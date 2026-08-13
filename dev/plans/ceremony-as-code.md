@@ -129,7 +129,7 @@ file for either branch.
 
 | # | File | Change |
 |---|------|--------|
-| B1a | same | **`cat` joins the schema as an executable field** ([Y1]) — absolute, regular, executable, symlink-free, under R7's identical rules. Accepted R7 lists seven executables; D7 added an eighth dependency, and an executable that is trusted but unbound can only be found through ambient `PATH`, which is the gap [X2] closed for `git` and `shasum`. This uses the accepted proposal's plan-review delegation |
+| B1a | `bootstrap/reanchor-values.example` | **`cat` joins the schema as an executable field** ([Y1]) — absolute, regular, executable, symlink-free, under R7's identical rules. Accepted R7 lists seven executables; D7 added an eighth dependency, and an executable that is trusted but unbound can only be found through ambient `PATH`, which is the gap [X2] closed for `git` and `shasum`. This uses the accepted proposal's plan-review delegation |
 | B1 | `bootstrap/reanchor-values.example` | the template, with every key from R7's table **except `review_manifest`, which R9 withdrew** — the launcher generates the manifest, so the values file must not name it. A comment names each value's security use |
 | B2 | `bootstrap/reanchor.sh` | the parser: **no `source`, no `eval`, no command substitution, no shell expansion**. R7's lexical grammar exactly |
 | B3 | same | every R7 refusal: unknown, duplicate, missing, malformed, relative, control character, wrong file type, missing executable bit, symlink at leaf **or any parent** — plus the rest of R7's grammar: no leading whitespace, trailing whitespace refuses, `#` only at column 0, 4096-byte line and 64 KiB file limits, UTF-8/LF |
@@ -166,7 +166,7 @@ file for either branch.
 | D11 | `bootstrap/tests/test_reanchor.py` | a **parity matrix**: for every R7 rule **and for `cat`**, the launcher reader and the artifact parser agree. **Neither accepts a value the other refuses** |
 | D12 | same | a **malicious `git`, `shasum` or `cat` value** in the values file leaves the marker interpreter **absent** — the reader refuses before any candidate byte runs |
 | D12a | same | an **absent or non-executable `cat`** refuses in the launcher's reader, before the snapshot is attempted |
-| D7 | `bootstrap/reanchor-launcher.template.sh` | **DECIDED — the hash-cross-checked in-memory snapshot.** Four steps, in order: (1) `SHASUM` the packet file and refuse unless it equals the instantiated digest; (2) snapshot with the trailing-byte-preserving idiom `v=$(cat "$PKT"; printf x); v=${v%x}`; (3) re-hash the snapshot (`printf '%s' "$v" \| SHASUM`) and **refuse unless it equals step 1's digest**; (4) parse **only** `$v`. Step 3 is what makes the design work: it *detects* any byte the shell could not carry |
+| D7 | `bootstrap/reanchor-launcher.template.sh` | **DECIDED — the hash-cross-checked in-memory snapshot.** Four steps, in order: (1) `SHASUM` the packet file and refuse unless it equals the instantiated digest; (2) snapshot with the trailing-byte-preserving idiom **through the validated field** — `v=$("$CAT" "$PKT"; printf x); v=${v%x}`, never a bare `cat`; (3) re-hash the snapshot (`printf '%s' "$v" \| SHASUM`) and **refuse unless it equals step 1's digest**; (4) parse **only** `$v`. Step 3 is what makes the design work: it *detects* any byte the shell could not carry |
 | D7a | same | **the packet format is NUL-free by definition**, and step 3 is what enforces it — a NUL makes the snapshot hash differ and the launcher refuses. Verified on this host: `a\0b` snapshots to 2 characters and is caught; `a\n\n` survives the idiom intact |
 | D7b | same | **trust-set delta**: `cat` joins the pre-candidate set (`printf` is a shell builtin; `SHASUM` is already there). The digest field is taken with `${d%% *}`, so **`cut` does not join**. `cat` is used **only through its values field** (B1a), never by bare name |
 | D8 | `bootstrap/tests/test_reanchor.py` | **hashed bytes == parsed bytes**, attacking D7's *exact* mechanism rather than an abstract helper: a trailing-LF-only difference must survive; an embedded NUL must **refuse at step 3**; a packet mutated between steps 1 and 2 must refuse at step 3 |
@@ -1305,3 +1305,35 @@ executable path invokes the already-tested snapshot idiom.
 
 **Recommendation**: apply Z1's two textual corrections, then the security plan
 review should clear without another broad pass.
+
+## Response to the narrow clearing review -- Claude -- 2026-08-13
+
+**[Z1] accepted; both corrections applied.** They are two textual defects with
+one shape: the contract *said* the binding and the cells did not *deliver* it —
+the same gap between statement and mechanism that this plan family has now
+found at every layer it has looked.
+
+**B1a's File cell said `same` while being the table's first row**, so it
+identified nothing and assigned the new schema field to no artifact. My
+insertion put the row above its own anchor. It now names
+`bootstrap/reanchor-values.example` explicitly.
+
+**D7's exact idiom still invoked bare `cat`** — `v=$(cat "$PKT"; printf x)` —
+directly contradicting D7b's own no-bare-name rule one row below it. An
+implementer following D7 would have bypassed the very binding [Y1] added, and
+D11–D12a would have tested a path the specification did not use. It now reads
+`v=$("$CAT" "$PKT"; printf x)`, through the validated field.
+
+That second one is worth naming plainly: **I wrote the rule and then wrote the
+counter-example underneath it, in the same edit.** The reviewer's earlier
+observation applies to my own work — a control's strength stated at intent
+rather than delivered — and the parity tests would have passed while the
+specified mechanism went around them.
+
+**Nothing else changed.** D11–D12a's parity matrix and pre-candidate negative
+controls are untouched, as the satisfier asked. The `/bin/sh` byte probes remain
+applicable: Z1 changes only *which validated path* invokes the already-tested
+idiom, not the idiom.
+
+**Disposition carried forward**: Y2, Y3 and the Boundary A account are closed by
+the reviewer; Y1 is closed by these two corrections. No broader pass is sought.
