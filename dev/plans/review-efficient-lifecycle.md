@@ -3640,3 +3640,68 @@ paragraph is the deviation record for departing from the cost list written
 above. Same reasoning, same disposition as the owner tables: retiring a token
 from the *current* vocabulary must not stop a consumer recognising it on an
 archived artifact.
+
+## Implementation verification -- Claude (Implementation) -- 2026-08-13
+
+**Boundary B mode**: full.
+
+Bounded mode was not available and would have refused twice over: this plan was
+opened before bounded mode existed, so under `AGENTS.md` it *"keeps the
+verification contract written in it"* and that contract names the full command
+pair; and the change dirties gate-manifest-frozen files, which is a contract
+surface where bounded mode refuses on its own terms. Uncertainty resolves to
+`full`.
+
+**Tested commit**: `3defdb78ef5f994fbe0fdb6062be562781af55c6` -- this plan's
+final implementation commit. Clean before and after (`git status --porcelain`
+empty but for the pre-existing untracked `.claude/`, `dev/measurement/
+collision_log.md`, `dev/measurement/snapshots/`).
+
+**Interpreter**: CPython 3.13.13, the canonical interpreter,
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`, `PYTHONDONTWRITEBYTECODE=1`.
+
+| command | outcome | timing |
+|---|---|---|
+| `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **4275 passed**, 0 failed, 3 warnings | 622.22s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | neutrality `fail=93 info=21`; redundancy `fail=0 info=2`; exit 0 | <1s |
+
+**The collection delta is accounted for exactly, not approximately.** The
+pre-change baseline on this tree was **4258 passed**; B1 is **4275**, +17 =
+`test_metrics_status_normalization.py`'s 16 nodes plus the one positive
+shape-(b) node added to `test_transition_lint.py`. No test was deleted or
+skipped to reach green. Neutrality's 93/21 and redundancy's 0/2 are the
+unchanged pre-existing baseline, not a new floor.
+
+**One honest discrepancy, recorded rather than smoothed.** The suite ran
+against `3defdb7`; another session committed `36808ea` and `11a8dde` during the
+622s run, so the **gate half executed with the working tree at `11a8dde`**. The
+two halves therefore did not observe byte-identical trees, and the gate figure
+is not asserted to have been produced at `3defdb7`.
+
+It is nonetheless sound for this plan, by measurement rather than by argument:
+`git diff --stat 3defdb7..11a8dde` is exactly one file,
+`dev/plans/ceremony-as-code.md` (+67/-2), another plan's deliberation record.
+**No gate scan root contains `dev/`** -- neutrality scans `doctrine`,
+`dimensions`, `bootstrap`, `scripts`, `on-ramp`, `docs`, `examples`; R1 scans
+`doctrine`, `dimensions`, `on-ramp`, `docs`; R6 scans `scripts`, `bootstrap`,
+`templates/modules` less `bootstrap/tests`. The one differing file is outside
+every root, so the gate could not have observed it and its result at `11a8dde`
+is identical to its result at `3defdb7`. Confirmed empirically: that path
+appears 0 times in the gate's output.
+
+The suite half is unaffected regardless -- it ran on `3defdb7`, which is the
+commit this plan's reviewed range ends at. The intervening commits belong to
+`ceremony-as-code` and are outside that range. As a cheap independent check that
+their content did not invalidate the corpus-reading node, `scan` reports all 4
+active artifacts sound and
+`test_the_live_corpus_is_sound_under_the_p1_contract` passes at `11a8dde`.
+
+**Known omissions.** No release ceremony was run (out of scope). The AST
+attestation baseline needs no re-anchor: `bootstrap/_scaffold/` is untouched.
+The **gate manifest does**, and that is fenced work for the Maintainer -- H1
+changed two frozen paths *after* the 2026-08-13 ceremony:
+`bootstrap/tests/test_lifecycle_contract.py` and
+`templates/modules/default-on/_lifecycle_metrics/extract.py`, plus the
+`FROZEN-NEW` `bootstrap/tests/test_metrics_status_normalization.py`. See the
+Chunk I section above; that re-anchor is the one archive precondition an
+implementing agent cannot discharge.
