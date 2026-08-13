@@ -3713,6 +3713,8 @@ implementing agent cannot discharge.
 **Prior findings**: none — this is the first code-review pass on this range. The author's `[CF1]`–`[CF9]` hand-off list was checked but is not a prior review's findings.
 **Assurance path**: standard
 **Tier**: Internal
+**Model**: Claude Opus 5 — five independent lenses, one adversarial verifier per finding, and the synthesis, all at the session model; none authored by the implementing agent.
+**Verdict**: SHIP
 **Findings**: raised — six MEDIUM, one LOW, one observation. No HIGH survived verification.
 **Bounding**: **not applicable.** The Boundary B record declares `**Boundary B mode**: full`, so there is no bounded record to accept or reject and no `ACCEPTED / FULL RUN REQUIRED` verdict is owed. I verified the declaration is *correct* rather than merely present: the change dirties gate-manifest-frozen paths (a contract surface, on which bounded mode refuses on its own terms — measured below at five paths, not the two the record names), and the plan was opened before bounded mode existed, so under `AGENTS.md` it keeps the verification contract written in it. Both of the record's stated reasons hold.
 
@@ -3862,6 +3864,8 @@ owner(proposal,proposed) proposal-reviewer   owner(plan,open) plan-reviewer   ow
 No HIGH survived verification, and the shipped behaviour of H1's central design is correct in both directions on direct probe. The six MEDIUMs are two kinds of debt, both cheap and both worth closing before archive rather than after: **three untested retentions** ([C1], [C2] — the second of which the plan itself predicted and prescribed a fix for, so closing it is arguably owed rather than optional) and **four inaccurate records** ([C3], [C4], [C5], [C6]) that would each mislead the next person to check them — one of which, [C5], mis-states a fenced Maintainer hand-off list by three paths.
 ## Response to code review -- Claude (Implementation) -- 2026-08-13
 
+Answers: Claude (Internal, delegated) -- 2026-08-13
+
 Eight findings, all against this agent's own work, all accepted. Six are closed in
 code at `fc67c29`; three are corrections to landed records and are made **here,
 by appending**, rather than by editing the sections they correct -- the record
@@ -3962,3 +3966,108 @@ tree was re-verified afterwards at `3af73b06`, identical to `3defdb7`.
 `test_the_live_corpus_is_sound_under_the_p1_contract`, reddened solely by another
 session's in-flight `dev/plans/comprehension-outlives-the-artifact.md`. Measured:
 `scan` names that artifact and zero others, and no violation names this plan.
+
+## Dispositions -- Claude (Implementation) -- 2026-08-13
+
+Every carried-forward obligation, with where it now lives. Two required the
+Maintainer; the rest were verified closed rather than asserted closed.
+
+**Dispositions:**
+
+Dispositions use the closed token set (`accept` / `guard` / `wontfix` / `defer`)
+that `claim_check` and the archive preflight actually read, rather than prose
+labels: *"closed"* and *"homed"* are not dispositions, and a block that reads
+well but parses as nothing is the defect this predicate exists to catch. It
+caught this one.
+
+| id | disposition | home / evidence |
+|---|---|---|
+| [CF1] | -> accept | discharged by P2 at `b00ab89` -- `cairn-pilot-event/2` carries a derived `assurance_path` and the report splits eligible from ineligible |
+| [CF2] | -> accept | the miscount is gone; the planner comment now reads *"THREE consumers live OUTSIDE this file's package"* (verified 2026-08-13) |
+| [CF3] (a) | -> accept | H1's retirement, `3defdb7` -- the six tokens moved to the historical tuples in the same change that migrated the last active artifact off them |
+| [CF3] (b) | -> wontfix | withdrawn by the Maintainer, 2026-08-13; authorization quoted verbatim below |
+| [CF3] third item | -> wontfix | declined at Chunk E and unchanged; the `UNAVAILABLE` branch stays a live fail-closed guard, kept under test via the inverted fixture |
+| [CF4] | -> accept | `TestBasisLegacyEnumerations` is 6 passed -- the two stale grandfather entries are gone (verified 2026-08-13) |
+| [CF5] | -> accept | closed by Chunk G, recorded at `12a0ddf` |
+| [CF6] | -> wontfix | not deferred work: a declaration that P4 published one line outside its own cell. It was inside the code review's range and drew no finding |
+| [CF7] | -> accept | corrected at `1a3ee85` |
+| [CF8] (1) | -> accept | quickstart slot tally refreshed at `27fde51` |
+| [CF8] (2) | -> wontfix | `verify_stems`' 2 issues are `dev/strategy/` stems, which the checker resolves only under `dev/proposals/` or `dev/plans/`. Measured before and after this plan's edits: identical count, so neither is this plan's to fix |
+| [CF9] | -> defer | homed to `dev/PLANNING.md` > Queued at `6c927ff`, at the Maintainer's instruction. Revival condition: the next change to `check_cairn`'s prefix set or to shipped-template citation policy |
+
+### [CF3](b) withdrawn -- Maintainer decision, 2026-08-13
+
+R3 required migration to enumerate the legacy multi-obligation passes in three
+**archived** plans and record which obligation each satisfied. The Maintainer
+withdrew that obligation. Authorization, quoted verbatim:
+
+> We never need to scan the archives. Those are a historical record, not an
+> active area. We can change our handling of future plans and proposals, and
+> don't have to go back and adjust the past.
+
+**This is a reduction of accepted scope, and it is labelled as one rather than
+absorbed** -- R3's clause is in the accepted contract, and an implementing agent
+may not drop it. It is dropped here only because the Maintainer, who holds that
+authority, spent it explicitly. The same principle was applied earlier in this
+plan when archived artifacts were exempted from retrofitting.
+
+**What is given up, stated plainly so the trade is visible.** The grandfather
+list (`_LEGACY_PASSES`) continues to admit those passes wholesale, without
+recording *why* any individual pass is acceptable. A later reader asking *"did
+that plan actually receive both reviews it declared, or was one pass counted for
+both?"* will not find the answer in the record. That question is now permanently
+unanswerable for `api-web-security-modules`,
+`release-security-orchestration` and `verification-evidence-boundaries`.
+
+**What is not given up.** Nothing live depends on it: both active `+` plans carry
+real per-pass `**Obligation**:` lines and resolve their clauses under the current
+rule, so the forward contract is intact and unweakened. The three affected plans
+are archived and immutable. The decision changes the handling of future
+artifacts, not the enforcement applied to them.
+
+### On the loop-fidelity sign-off
+
+Recorded separately below; the archive precondition asks for it by name.
+
+## Lasting-truth migration -- Claude (Implementation) -- 2026-08-13
+
+**Loop-fidelity sign-off, Decision to implementation.** The governing record is the
+**accepted** Revision 1 of `2026-08-10-codex-review-efficient-lifecycle` and the
+three contracts folded in with it, ratified at the Maintainer's Decision
+(`e42f01c`). Implementation ran `1c68926` (Chunk A1/A2) through **`3defdb7`**
+(H1's retirement), with the code review's corrections at `fc67c29`. Every chunk
+this plan accepted -- A through H, P1 through P6c -- shipped; nothing accepted
+was silently dropped, and the two places scope came under pressure were declared
+rather than absorbed.
+
+**Corrections forced by independent review, not found by the author.** This is
+the part worth recording, because it is the argument for the review tier
+existing at all:
+
+* The **plan review** rounds reshaped the chunk table before implementation
+  began (Amendments A--D, `## Response to plan review`).
+* The **code review** raised eight findings, all against the implementing
+  agent's own work, six of which it demonstrated rather than asserted. Four were
+  **inaccurate records** -- including a fenced Maintainer hand-off understated by
+  three paths, and a Boundary B row recording `exit 0` for a command that exits
+  `1`. None was found by the author.
+* Two of the three delegated **repair agents** returned defects instead of green
+  suites: one refused to loosen an assertion and reported a doctrine sentence
+  this agent had deleted while re-homing a template; the other flagged a test
+  passing on a substring of an error message this agent had introduced.
+
+**What this plan does not claim.** It does not claim the vocabulary is *right*,
+only that it is single-sourced, that retirement is enforced on active artifacts
+and silent on archived ones, and that both properties are mutation-verified. It
+does not claim the pilot machinery has been exercised by a real monitoring
+window -- P6d activation is Maintainer-gated and has not run. It does not claim
+adopter-side behaviour was exercised: no fresh adopter tree was scaffolded and
+driven through the retired vocabulary, and the code review recorded that gap in
+its own words. It does not claim coverage outside contract/vocabulary and
+verification-integrity is clean -- the reviewer said *"unestablished, not
+clean"*, and this sign-off does not upgrade that.
+
+**One accepted obligation was withdrawn, not delivered**: R3's legacy
+multi-obligation mapping over three archived plans, by the Maintainer's explicit
+2026-08-13 decision quoted verbatim in `## Dispositions`. It is named here so the
+sign-off does not read as "everything accepted shipped" when one thing did not.
