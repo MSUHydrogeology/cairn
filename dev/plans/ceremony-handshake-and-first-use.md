@@ -1822,3 +1822,156 @@ response touched, checked against `git diff --name-only baa84b2..d306baa`.
 * **N4** remains the Maintainer's, and unestablished.
 * `refs/cairn/gate-anchor` is still `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3`,
   mtime **2026-08-03 16:47**. No key loaded, no ceremony run, nothing pushed.
+
+## Code review -- Codex -- 2026-08-12
+
+**Model**: GPT-5 Codex
+**Tier / obligation**: External Security code review and the parent plan's
+focused exact-byte External Security Review (M2).
+**Reviewed commit**: `9a3a1cc0f411617c862f6b5ebbc15e1effba12b3`.
+**Target**: the exact nine-file authority closure, recorded transition
+invocations, M2-R1 repair, and retained signing/transaction controls.
+**Prior findings**: [M2-1]-[M2-5], [S1], [S2], [D1]-[D4], and [M2-R1].
+**Assurance path**: high-assurance
+**Findings**: none.
+
+**Verdict: SHIP.** The exact authority bytes are fit to be blessed as Cairn's
+trust root. This conforming pass discharges this plan's independent External
+Security read and the parent `git-native-security-foundations` plan's M2 with
+one review of the same bytes. M3 is authorized subject to N4: the Maintainer
+keeps the encrypted ceremony key unavailable through Stage 1, confirms and
+reads the package, then makes the key available for Stage 2. **M7 is armed now:**
+any byte change to the nine-file set below invalidates this disposition and
+requires another M2 before the ceremony.
+
+### M2-R1 retake
+
+The fixed transition loader now carries the nine expected paths literally in
+LC_ALL=C order and compares the shell-accumulated manifest paths against that
+string before candidate resolution, extraction, or Python. It uses shell string
+equality, so no new executable joins the bootstrap trust set.
+
+I repeated the prior independent attack against the literal runbook block with
+internally consistent, correctly hashed manifests and a marker interpreter:
+
+```text
+extra:   exit=1 python_started=False
+missing: exit=1 python_started=False
+```
+
+Both refuse at the fixed loader's authority-closure comparison. I then disabled
+only that equality check in the executed block; both mutations again reached
+`python_started=True` and were refused only by Python's later defence-in-depth
+check. The result is therefore attributable to the new establishing control,
+not to an unrelated early refusal. The retained tests use the same live marker
+negative control, and their checklist now covers all nine authority members
+rather than only the seven importable modules.
+
+### Controls that held
+
+The signing-key identity remains bound across stages by one validated public-key
+fingerprint; `commit-tree` receives the explicit key;
+`gpg.ssh.defaultKeyCommand` is pinned empty; and constructed-commit verification
+checks both the anchored principal and exact fingerprint. The range report is
+on the governing path and bound into the signed message. Before either ref
+moves, the constructed commit's parent, sole changed path, blob digest, message,
+signature validity, principal, and fingerprint are re-read and checked. The
+roster is read from the anchor object, the read/write Git allowlists remain
+separate, and stale expected-old state aborts both direct-ref updates and both
+reflogs.
+
+The handoff package remains externally digest-confirmed rather than
+self-authenticating, and Stage 2 re-derives every derivable field. The accepted
+host-persistence, key-holder-not-process, and no-nonce replay residuals are
+still accurately described; none is expanded by this repair.
+
+### Exact nine-file hash set
+
+These SHA-256 values were generated from a clean detached clone at the reviewed
+commit. They are the M2 authority set to use in the review manifest and both
+transition-stage checklists:
+
+```text
+d4fc2b642a5bc7d7868cb9e79cba1e036084cc2af3590970ab3a03b16021832e  bootstrap/REANCHOR_RUNBOOK.md
+b69e26e5b4d5c09073543f202131b65c3290b4fe926ad84d9988057feb493c55  bootstrap/tests/_gate_manifest.py
+31057e84943ff2edacf91fc9c53e7b750fc0e0b0e9db1a801f57c73aa808a34d  bootstrap/tests/_gate_preflight.py
+55a11326baae75d5a2f5f1696c5e6c4745ba537286415ba84bfcab26ab36b876  bootstrap/tests/_gate_reanchor.py
+e272b868eb640b9193daefe76c5fbe2d6a8f5225eb934b53e9c7febdbc680b9b  bootstrap/tests/_gate_transition.py
+17007480162b0f4a100a100714a05198ef4a21ee8e726f31fb60b296127d429d  bootstrap/tests/_oracle.py
+c719f770afe1b0ce5928923a7be2590666bc8f7935df2ad94eda95598be286e4  bootstrap/tests/_oracle_activation.py
+e1d6c7db5d72729e43040dedb69fa47c50a3fe36b7d284ad73c1285b8a027007  bootstrap/tests/_oracle_trust.py
+55cd6796a2e73efcf822b73284c3610a7c71adf67ee065ae11f06036568423af  dev/.cairn/allowed_signers
+```
+
+The review manifest uses those nine `member` rows in exactly that order, the
+schema `cairn-review-manifest/v1`, and this provenance line:
+
+```text
+provenance Codex External Security Review M2 2026-08-12
+```
+
+Its `candidate` row is the full lowercase OID of `HEAD` immediately before
+Stage 1. The review commit cannot contain its own future OID; the security
+binding is the exact nine-file hash set above, while the manifest and loader
+bind that set to the final ceremony `HEAD`. No authority byte may differ.
+
+### Exact invocation reviewed
+
+The exact command text is the transition Stage 1 and `STAGE2T` blocks in the
+reviewed runbook identified by hash `d4fc2b64...1832e`, with this host
+parameterization:
+
+```text
+CHECKOUT=/Users/kendal30/Code/cairn
+CANDIDATE=HEAD
+REVIEW_MANIFEST=/private/tmp/cairn-m2-review-manifest.txt
+ENV=/usr/bin/env
+GIT=/opt/homebrew/bin/git
+PY=/Users/kendal30/conda_envs/lhm/bin/python3.13
+MKTEMP=/usr/bin/mktemp
+MKDIR=/bin/mkdir
+SHASUM=/usr/bin/shasum
+SORT=/usr/bin/sort
+HOME=/Users/kendal30
+SIGNING_KEY=/Users/kendal30/.ssh/cairn_signing.pub
+PACKAGE_OUT=/private/tmp/cairn-gate-authorization-package.json
+PACKAGE=/private/tmp/cairn-gate-authorization-package.json
+```
+
+Both output paths were absent when reviewed. Stage 2 uses the full `RESOLVED`
+OID printed through Stage 1 and the independently computed 64-hex package digest
+as `CONFIRMED`; those two runtime outputs are the only values not knowable in
+advance. The exact acquisition command is:
+
+```sh
+/usr/bin/env -i HOME=/nonexistent \
+    /opt/homebrew/bin/git --no-replace-objects \
+        -c core.useReplaceRefs=false \
+        -c core.hooksPath=/dev/null \
+        -c core.fsmonitor=false \
+        -C /Users/kendal30/Code/cairn \
+        cat-file blob refs/cairn/gate-anchor:bootstrap/REANCHOR_RUNBOOK.md
+```
+
+Use the nine reviewed rows above for
+`<maintainer-recorded-reviewed-candidate-hashes>` in `STAGE2T`. Do not
+regenerate them between stages. The Stage 1 loader obtains the same values from
+the review manifest, and the two stages bind that manifest by its digest.
+
+### Execution ledger and limits
+
+All execution used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python
+3.13.13) with `PYTHONDONTWRITEBYTECODE=1` in a clean detached clone at
+`9a3a1cc`. The seven governing authority test files passed **426 tests in
+116.65s**; the clone remained clean. This includes the range-report governing
+path mutations, v1/v2 differential corpus, key-channel probes, literal
+transition loaders, full recorded transition, pre-ref-move verification, and
+two-ref/reflog abort tests. Boundary B independently records **4176 passed, 4
+failed, 1 skipped** on `d306baa`, whose only successor before this review is the
+prose verification record at `9a3a1cc`; I did not pay for a duplicate full run.
+
+I did not load or inspect the Maintainer's private key, move a Cairn ref, create
+the real package or review manifest, run the ceremony, push, exercise Windows or
+a SHA-256-format repository, or audit Git/OpenSSH cryptography. The Maintainer's
+real N4 act and package/report confirmation remain deliberately outside this
+review.
