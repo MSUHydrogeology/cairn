@@ -3273,3 +3273,88 @@ in G3's registry block -- a Cairn-only path in a surface that ships -- now
 `templates/core/AGENTS.md` instance dispositioned first (an inline
 `cairn-internal-ref:` marker, or transplanting the reference). It is a
 contract-surface change to a standing gate and wants its own cell.
+
+## Cross-cutting findings for the Code review -- Claude (Implementation) -- 2026-08-13
+
+Per-chunk evidence is in each chunk's commit body and its tests. **These five are
+patterns across chunks**, visible only from the coordinating seat, and they are
+recorded here because that seat's context does not survive a compaction. Each is
+a claim the Code review can check, not a summary to take on trust.
+
+### 1. `## Sequence` is dependency-ordered for CHUNKS but not for the FIELDS they need
+
+**Five instances**, each found by measurement before implementation, each resolved
+as sequencing (no accepted outcome dropped) rather than as scope reduction:
+
+| Chunk | Needed a field supplied by | Resolution |
+|---|---|---|
+| P1 | C's legacy enumeration | grandfather via `_is_immutable`, 72 -> 8 entries |
+| P5 | P2's `Inherited proposal basis` | trigger keyed, empty set proved by synthetic fixtures |
+| P6a | P2's assurance chain | report split deferred, filed **[CF1]**, discharged by P2 |
+| E | H1's status migration | vocabulary landed **additively**; retirement stays H1's |
+| P4 | F2's encoder | F resequenced before P4 |
+
+The plan orders chunks by dependency and its two load-bearing orderings hold. But
+a chunk can need a *field* a later chunk creates, and nothing in the artifact
+surfaces that. Worth one sentence in the doctrine the next plan inherits.
+
+### 2. A fixture that cannot reach the property it tests -- four occurrences
+
+P2's M16, P3's M10, P4's ASCII-safety nodes, and (in a different shape) the two
+gaps P6c found in P6a's suite. Every one **passed under the mutation it was
+written to catch**, and every one was found by mutation rather than by review:
+
+* M16 put the field mid-sentence where a full-line-anchored matcher never looks;
+* M10 wrote a heading at H2, which both missed the level *and terminated the
+  record it was meant to sit inside*;
+* P4 injected non-ASCII into fields no reported output carries;
+* P6c's cell 8: the sibling's only deadline node stood a day *past* the boundary
+  and its only OPEN node fifty days *inside* it, so the compared edge had **no
+  witness** -- two mutations of it left 97/97 green.
+
+The mutation discipline caught all four. **A green suite plus a written-down
+mutation is not evidence; the observed red is.** This is the strongest argument
+in the range for the per-node RED requirement.
+
+### 3. Three cross-session hazards, none of them defects in any one plan
+
+* **An uncommitted change to a shipped checker silently changes every other
+  session's gate output.** D3/D4's in-flight `claim_check.py` made this plan's
+  artifact read as red under one checker and clean under the committed one. I
+  only avoided a wrong conclusion by running both.
+* **A Decision landing elsewhere kills grandfather entries here.** Twice
+  (`8308fdc`, `6f2b01c`): another session flipped a proposal terminal,
+  `_is_immutable` began covering it, and P1's entries became dead weight --
+  reddening tests for whoever committed next. That is P1's design working (the
+  enumeration liquidates itself), but the toil lands on a stranger.
+* **Committed changes landing unfinalized.** Three `scope-reduction-trap` commits
+  changed the planner without a scoped finalize, so `verify_integrity` was red on
+  that path until Chunk F swept it current -- and F's finalize then recorded
+  their bytes under F's commit.
+
+### 4. A standing gate covers less than its name suggests
+
+`scripts/check_cairn.py`'s #58 loop-fidelity gate has
+`_CAIRN_INTERNAL_PREFIXES = ('doctrine/',)` -- **one prefix**. A `dev/**`,
+`bootstrap/**` or `dev/measurement/**` path leaking into a shipped
+`templates/core/**` surface is not caught. I asserted the opposite to two agents
+before measuring it. G confirmed it empirically, self-policed its own range with a
+throwaway checker (5 shipped files, 5 tokens, 0 leaks; one real defect caught
+pre-commit), and filed the widening as **[CF9]** rather than changing a standing
+gate as a side effect.
+
+### 5. A mutation harness must never restore with `git checkout`
+
+P4's driver did, against **uncommitted** work, and destroyed ~1000 lines on its
+first mutation. Restore from an in-memory or out-of-tree byte snapshot, with a
+pre-flight assertion that the snapshot still contains the chunk under test. P6c
+adopted that and verified 34 restores by digest.
+
+### Ceremony scope, re-measured as the plan requires
+
+Chunk I's cell states two manifest-pinned and two `FROZEN-NEW` paths and says to
+**re-measure at the implementation parent**. Measured 2026-08-12 over this plan's
+own commits only (the range also holds 54 commits from three other sessions):
+**5 frozen paths changed and 5 discovered `FROZEN-NEW`** -- ten, not four -- and it
+grew again with F, P4 and G. `bootstrap/_scaffold/` is untouched, so the **AST
+attestation baseline needs no re-anchor**; only the gate manifest does.
