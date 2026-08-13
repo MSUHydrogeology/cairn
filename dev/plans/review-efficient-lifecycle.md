@@ -3491,3 +3491,152 @@ re-derive it.**
   and the single ceremony has already run (`cfaace9`), so it lands after the
   anchor meant to cover it. See the Chunk I section above; the disposition is the
   Maintainer's.
+
+## H1 retirement: measured blast radius before implementing -- Claude (Implementation) -- 2026-08-13
+
+Five independent read-only sweeps plus one scratch-clone apply. **Measured, not
+predicted**: baseline `4257 passed, 1 skipped`; with the retirement applied to
+both planner twins and nothing else, **29 failed, 4228 passed**. The findings
+below are recorded before implementation because three of them are not
+discoverable from the `PENDING-RETIREMENT (H1)` markers, and two are scope
+questions rather than edits.
+
+### Two findings that are the Maintainer's call, not an implementer's
+
+**[H1-S1] The retirement deletes the `Scope delta` scaffold from every user
+path.** Enumerated across every legal transition's `_scaffold` output: today
+exactly two arms emit `**Scope delta**` -- proposal `reviewed -> revised` and
+plan `awaiting-plan-review -> executing`. **Both are legacy-only.** After a
+literal retirement, **zero** legal transitions emit it, so the surface where an
+author meets the scope-reduction rule *while typing* disappears. That is
+`scope-reduction-trap`'s central mechanism, and removing it is removing another
+plan's accepted scope -- the deviation `AGENTS.md` names, and precisely the
+narrowing its "a reviewer cannot create that authority" clause warns about.
+`test_scope_reduction_trap.py:572` planted an explicit tripwire for this and it
+fired exactly as designed; its message says *"Re-point it at the transitions that
+scaffold the declaration today; do not delete it."*
+**Disposition taken: PRESERVE, not delete.** The scaffold text moves to the
+live-vocabulary arms that carry the same authorial moment. Preserving is the
+non-narrowing default and is cheaply reversible; deleting is neither.
+
+**[H1-S2] After retirement no legal proposal transition emits a review
+scaffold at all.** `test_review_scaffold_carries_no_reviewer_attribution`
+(`test_lifecycle_contract.py:249`) pins that the tool never fills in a reviewer
+identity. Measured: today only `proposed -> reviewed` and `revised -> reviewed`
+emit the `<reviewer>` placeholder; post-retirement every proposal target is a
+status-move manifest or a Decision block.
+
+**A first reading of this said the property "survives on the plan side"; an
+independent reachability probe falsified that and it is corrected here rather
+than left standing.** `## Code review` is emitted **only** from
+`executing -> review`, which the retirement also retires, so the property would
+have **no surviving witness on either side**. The full post-retirement scaffold
+inventory is three sections -- `## Decision`, `## Implementation verification`,
+`## Lasting-truth migration` -- and no reviewer placeholder anywhere. Same
+disposition as [H1-S1]: re-point rather than delete.
+
+### Three sites the `PENDING-RETIREMENT (H1)` markers do not cover
+
+**[H1-D1] The metrics normalizer silently breaks R7's own guarantee.**
+`tools/_lifecycle_metrics/extract.py:340` declares
+`_REQUIRED_EXPORTS = ('PLAN_STATES',)` and `_plan_status_enum()` (:432) returns
+`PLAN_STATES` alone -- no historical tuple. `_normalize_plan_status` resolves by
+*prefix* over that enum, so measured:
+
+```
+'reviewed; awaiting code review'  ->  BASE 'review'   AFTER 'reviewed'   CHANGED
+'open' / 'executing' / 'review'   ->  unchanged (exact lead falls through)
+```
+
+Only the prefix case moves, which is why it is invisible: **no test anywhere
+references `_normalize_plan_status`, `_plan_status_enum`, or that input**, so the
+suite stays green while a longitudinal bucket splits in two. R7 requires metrics
+keep parsing pre-migration commits; this is the one clause the retirement would
+break. Fix is the enum plus the historical tuple (order-safe: no current token
+prefix-collides), in **both** twins -- and the template copy is **frozen**. A
+regression test lands with it; shipping the fix without one leaves the same
+silent hole.
+
+**[H1-D2] `_conformance_violations` calls archived artifacts malformed.**
+`tools/lifecycle_planner.py:4513` tests `s not in _PROPOSAL_STATES`, so after
+retirement an archived proposal at `revised` reports `unknown proposal status`.
+It must consult the historical tuples (or `RECOGNIZED_STATES`, whose docstring is
+*"every status any consumer may recognize"*).
+
+**[H1-D3] `test_pilot_evidence.py:502`** asserts
+`{"review","archived"} <= set(planner.PLAN_STATES)` -- unmarked, and red.
+
+### Coverage that goes silently absent (a green suite would hide all of it)
+
+* **Three fixture helpers default to a retired token** -- `_plan_art`
+  (`status="executing"`, 17 of 30 callers), `_prop_art` (`"reviewed"`, 10 of 11),
+  `_p3_prop` (`"revised"`, 6 of 6). Three one-line edits re-validate ~33 nodes
+  against the live vocabulary; leaving them exercises the P1/P3/C suites against
+  statuses no artifact may declare.
+* **Three owner-table entries end up covered by no test at all** --
+  `PROPOSAL_NEXT_OWNERS["proposed"]`, `PLAN_NEXT_OWNERS["open"]` and
+  `["executing"]`. `test_the_legacy_multi_successor_tokens_report_unresolved`
+  pins only 3 of the 6 legacy entries; the other coverage iterates
+  `PROPOSAL_STATES`/`PLAN_STATES` and stops visiting them. Deleting those three
+  would pass the suite -- so the retained entries need their own assertions.
+* **`test_every_shape_b_status_detects_a_baked_in_review`** resolves fixture kind
+  as `"proposal" if status in PROPOSAL_STATES else "plan"`, so post-retirement
+  `proposed` writes into `dev/plans/`. Still green (shape (b) is kind-blind), so
+  the drift is invisible.
+* **`_scaffold`'s four legacy branches** become unreachable via
+  `_legal_transitions` while three `test_scope_reduction_trap.py` nodes keep
+  calling them directly -- passing **vacuously**. That is the file's own
+  *"named enforcer that does not enforce"* shape.
+
+### Do not touch
+
+`bootstrap/tests/test_lifecycle_stage_patterns.py` (49 hits) uses `open`,
+`reviewed` and `revised` as **commit-subject stage names** -- a second vocabulary
+sharing four spellings with the status one, and 41 of the 66 gate-manifest node
+ids carrying a legacy token belong to it. Retirement must not touch it.
+
+### Corpus: neutral, by measurement
+
+`SHAPE_B_STATUSES` 16 -> 12 (`reviewed`, `revised`, `executing`, `review` leave;
+`proposed`, `open` re-enter through the historical-opening filter, which is the
+accepted R5 text *"plus the historical opening statuses"* -- a widening to all
+historical tokens would contradict it). `RECOGNIZED_STATES` membership is
+**unchanged at 20**; the tokens only move between its inputs. Every added
+lifecycle file across both pinned windows declares `proposed`, `open` or
+`awaiting-plan-review`, all of which survive, so **no pinned corpus expectation
+moves** -- checked against the rule that corpus counts *"are a finding to report
+if they move, never a number to update"*. The three
+`TestShapeBWideningAndAdvisory` nodes that do move are **fixture** assertions,
+not corpus ones, and invert.
+
+### [H1-D4] The plan's own cost list is wrong on one tuple, and following it would disable a real check
+
+The cost list above says to drop the legacy members of
+`_PROPOSAL_POST_REVIEW_STATES`. **That instruction is incorrect and is not
+followed.** The tuple's comment is a standing argument, not a retirement note:
+*"Both vocabularies, because the check is about the record and not about the
+token."*
+
+Measured on a self-reviewed proposal declaring `reviewed`:
+
+```
+BEFORE  - '## Review' at line 12 appears authored by the proposal author
+          ('Claude'); a review carries reviewer-authorship
+AFTER   - unknown proposal status 'reviewed'
+          (the reviewer-authorship finding is GONE)
+```
+
+So narrowing that tuple does not add a vocabulary message -- it **silently
+disables the reviewer-authorship independence check** for those artifacts. The
+failure mode actively invites the wrong repair: `scan` still exits 1, on the
+*unknown status* message, so an implementer who "fixes"
+`test_scan_flags_review_authored_by_proposal_author` by moving its fixture to
+`awaiting-decision` restores green while leaving the independence check
+unexercised. This is the highest-risk repair in H1 and the reason the retirement
+is not a mechanical find-and-replace.
+
+`_PROPOSAL_POST_REVIEW_STATES` therefore **keeps** its legacy members, and this
+paragraph is the deviation record for departing from the cost list written
+above. Same reasoning, same disposition as the owner tables: retiring a token
+from the *current* vocabulary must not stop a consumer recognising it on an
+archived artifact.
