@@ -1247,3 +1247,91 @@ change between the check and the execution.
 `Plan readiness: DISTINCT REVIEW REQUIRED` stands; the next pass need only read
 **R9** and its two knock-ons, since R7 and R8 were adjudicated closed and R6's
 remaining substance is unchanged.
+
+## Review -- Codex (External Security) -- 2026-08-13
+
+**Model**: GPT-5 Codex
+**Reviewed commit**: `6ced3330eb5726e5d3faa6e2c5cacfacc95c107b`
+**Target**: the complete Revision 3 contract at R9, its R7/R3 knock-ons, and the
+carried plan obligation; no earlier settled surface was reopened.
+**Prior findings**: R3-E1 from the immediately preceding External Security
+pass.
+**Assurance path**: high-assurance
+**Findings**: raised
+
+**Verdict: REVISE.** R9 closes R3-E1: the reviewed launcher now owns late
+binding, exact closure verification, manifest construction, artifact extraction,
+and the only transition into candidate code. One trust-input integrity check is
+still missing from the contract.
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+The operator path is now coherent. M2 can produce the OID-free material before
+the eventual candidate exists; one Maintainer command invokes reviewed code;
+that code resolves once, measures the candidate against M2's authority bytes,
+constructs the manifest itself, and starts Stage 1 only after every establishing
+check passes. The withdrawal ledger removes the three contradictory promises:
+Maintainer-composed manifests, reviewer-known future OIDs, and the mutable
+values-file manifest path. The Homebrew refresh obligation also preserves R7's
+security rule while acknowledging its recurring operational cost.
+
+### Finding
+
+**[R4-E1 -- BLOCKING] The authorization packet is an unauthenticated authority
+input, so the mutable-manifest residual moved rather than disappeared.**
+
+The packet supplies the closure digests, provenance, ceremony-artifact path, and
+ceremony-artifact digest. Those values decide which candidate bytes may execute.
+R9 says the packet is "the carrier, not a new trust root," but the launcher is
+only described as receiving and parsing a packet path. If the file's bytes are
+changed after M2 delivery, the attacker can replace the expected closure rows
+and artifact digest consistently; every R9 comparison then succeeds against the
+attacker's newly selected bytes. Controlling the launcher-created manifest path
+does not authenticate the packet from which that manifest is derived.
+
+This is the same accepted same-user mutation class previously disclosed for the
+review manifest, now one step earlier. Moving the path out of the values file
+prevents redirection through that config, but it does not make the packet's
+contents tamper-evident. The revision may retain and describe that residual, but
+it cannot say the residual "goes with" the removed key or that the packet is
+non-authoritative while trusting its values without an independent binding.
+
+**Recommended satisfier**: make the exact packet bytes an M2 output and embed
+their SHA-256 as a literal in the exact M2-reviewed launcher. At runtime the
+launcher opens the packet as a bounded regular symlink-free file, reads it once,
+hashes those bytes before parsing, compares with its embedded digest, and parses
+only the same in-memory buffer. M2 then delivers the paired launcher and packet;
+changing either invalidates the launcher digest or its packet check. This adds
+no candidate-OID freeze and asks the Maintainer to verify only the launcher's
+already-recorded digest.
+
+Whichever binding is chosen, the packet schema should also require the ceremony
+artifact path to identify exactly one closure row and its separate digest to
+equal that row. That keeps the artifact from becoming an accidentally admitted
+executable outside the closure the proposal says contains it.
+
+### Prior-finding adjudication
+
+* **R3-E1**: closed. The launcher performs all late binding and manifest work
+  before candidate execution, from one named Maintainer command.
+* **R7 knock-on**: closed. `review_manifest` correctly leaves the values schema;
+  all remaining R7 fields and refusals stand.
+* **Homebrew path obligation**: correctly placed in the plan. It does not weaken
+  the no-symlink executable rule.
+
+### Coverage and recommendation
+
+**Covered**: the complete packet-to-manifest dataflow, authority ownership,
+pre-candidate execution ordering, R3/R7 withdrawal consistency, invalidation
+semantics, and the carried setup obligation.
+
+**Not covered / low confidence**: no implementation exists, so I could not
+mutate a real packet, check single-read behavior, or prove the marker interpreter
+stays absent. R7, R8, the objective ruling, and prior residuals were not changed
+and were not re-reviewed.
+
+**Further review recommendation**: one final, packet-integrity-only External
+Security pass after R4-E1 is answered. If the packet is independently bound and
+the artifact row is closed as above, no broader proposal review is warranted.
