@@ -238,4 +238,27 @@ clause is gone; the trigger stands on its own.
 
 **Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
 
+### Withdrawn / superseded commitments
+
+Landed because `review-efficient-lifecycle`'s current-contract ledger became
+mandatory while this proposal was in review, and its corpus canary fired on this
+revision exactly as its docstring says it should. Three earlier commitments are
+superseded; none is withdrawn.
+
+* **"Verification owed at implementation: the citation's volume, issue and page
+  range should be checked before this lands."** → **superseded by E1.** The
+  check has been performed against the source rather than deferred, and the
+  citation now carries its DOI. Nothing is owed at implementation.
+* **The Anchor 17 pairing as a "Signals the change is wrong" bullet** →
+  **superseded by E3.** It moves into the doctrine text itself. A signal tells
+  you afterwards that you were wrong; it does not stop you, and comment bloat is
+  a failure worth preventing rather than detecting.
+* **The header's softening clause, "but a one-paragraph extension of an
+  existing anchor with two measured instances behind it"** → **superseded by
+  E4.** The `doctrine/` triage trigger stands on its own; a justification that
+  argues its own change is small is arguing against the trigger rather than
+  citing it.
+
+**Not withdrawn**: the extension's substance, its grounding, its scope, and the
+rate-limit argument are unchanged from Round 1.
 
