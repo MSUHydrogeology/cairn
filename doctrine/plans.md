@@ -95,7 +95,11 @@ implementing commit(s); it is the artifact of "review happened and
 the loop is closed." Bundling plan-archive into the implementing
 commit hides whether code review actually occurred.
 
-Code review's reviewer is **not the implementing agent**. Trivial
+Code review's reviewer is **not the implementing agent** — that is the floor,
+and a same-type agent in an independent context clears it. **External or
+Security code review is an explicit escalation** for implementation risk the
+proposal review did not resolve; it is not a default, and no change to the
+plan-review allocation silently upgrades a code review into one. Trivial
 accepts skip the plan entirely (per the triage rule below) and
 therefore do not encounter this precondition.
 
@@ -543,6 +547,35 @@ chunk-table cell edits that accepted findings motivate are inline,
 with a documenting Sharpening subsection.** See the Mutability rule
 above for the full inline-vs-append split.*
 
+### The default allocation — the proposal carries the deliberative weight
+
+**A plan review is Internal by default.** The proposal is the deliberative
+boundary: when an **External** proposal review has read a complete current
+contract and recorded `Plan readiness: READY`, the derived plan takes a
+fresh-context **Internal** plan review, not a second different-agent-type round.
+The plan declares both facts — `Plan review: required(Internal)` and the
+`Inherited proposal basis` binding — and `doctrine/dual-review.md` >
+"Plan-readiness inheritance" carries the record's exact shape, the seven things
+that invalidate it, and the honest boundary of what a checker reaches.
+
+Two consequences worth stating plainly, because both invert an older reflex:
+
+* **Assurance path does not decide plan-review independence.** A
+  high-assurance proposal may record `READY` exactly as a standard one may.
+  High assurance keeps governing verification, Security Review, scientific
+  review, protected-surface handling, risk acceptance and ceremonies; it does
+  not automatically buy a second External read of a plan that only translates
+  already-reviewed decisions.
+* **An External plan round is an explicit escalation, never an inferred
+  default.** It is chosen — by a proposal reviewer recording `DISTINCT REVIEW
+  REQUIRED`, by an invalidated inheritance, or by a reviewer or the Maintainer
+  deliberately spending one — not acquired by a plan being large or touching a
+  protected surface.
+
+**Inheritance reallocates the plan review; it never removes it.** A plan that
+declares an inherited basis and `not required(...)` has bought itself no
+independent read at all, and refuses.
+
 ### When to use it
 
 * **Maintainer-requested** ("I'd like a review or two before this moves
@@ -566,12 +599,14 @@ chunks are straightforward. Trivial accepts that skip the plan entirely
 
 **Internal-review floor** — same-agent-fresh-session is sufficient. The
 plan is a deliberation artifact (parallel to the proposal Review
-section's tier), not implementing code. The stricter cross-agent-type
-floor in Code review below applies to *implementation* review, not here.
+section's tier), not implementing code. The Code-review floor below
+(**not the implementing agent**) applies to *implementation* review, not here.
 
-Escalate to the External-review tier (different agent type or human)
-when the plan carries scientific or architectural risk not fully
-resolved during proposal review.
+Escalate to the External-review tier (different agent type or human) when
+consequential design necessarily remains for planning — which is the proposal
+reviewer's `DISTINCT REVIEW REQUIRED` finding, or a scientific or architectural
+risk the proposal review did not settle. Escalation is a *stated* judgement
+about this contract, not an inference from the plan's size or subject.
 
 ### Format
 

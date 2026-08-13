@@ -232,10 +232,39 @@ high-assurance proposals may both receive `READY` when their External review
 settled the complete contract. High assurance continues to govern verification,
 Security Review, scientific review, protected-surface handling, risk acceptance
 and ceremonies — it does not automatically purchase a second External read of a
-plan that only translates already-reviewed decisions. Where a high-assurance
-trigger keeps an independent backstop, it keeps it *outside* the plan: a named
-high-risk surface still takes a Security Review, and `recommend-and-decide`
-remains available to any reviewer who wants a second pass.
+plan that only translates already-reviewed decisions.
+
+#### Which triggers still keep an independent backstop, and which do not
+
+Inheritance removes the automatic second different-agent-type read of the *plan*
+for some high-assurance triggers and not others. The difference is stated here
+rather than left implicit, because a reader who assumes "high assurance" still
+buys a cross-type plan round would be wrong for three of the five categories:
+
+* **Security / trust-boundary.** Keeps an independent backstop, *outside* the
+  plan-review allocation entirely: a high-risk surface named in `AGENTS.md`
+  takes a Security Review on its own trigger, and a plan may fence a chunk to a
+  named authorization. Inheritance does not reach either mechanism.
+* **Scientific assumption**; **destructive migration, data-loss risk or
+  compatibility break**; **governing-doctrine or lifecycle-enforcement change.**
+  These now rest on the fresh-context Internal reviewer's judgement plus the
+  *optional* `recommend-and-decide` escalation below. There is no structural
+  requirement that a different agent type ever reads the sequencing.
+
+That is a real trade, made deliberately: the deliberative weight sits at the
+proposal, where an External reviewer read the complete contract, and a routine
+second cross-type read of a plan that only translates it was the cost being
+removed. What replaces the structural guarantee is a named affordance — any
+reviewer, author or Maintainer may spend a second independent pass through
+`recommend-and-decide`, and an Internal reviewer who finds consequential design
+still open records that as a finding rather than absorbing it.
+
+**A change to this allocation is itself in the third category.** Rewriting the
+review model is a governing-doctrine change, so it is reviewed under whatever
+allocation is in force when it is made — including the one it installs. That
+reflexivity is not a defect to be engineered away; it is a property to *name*, so
+a later reader sees which read the change actually received instead of inferring
+a stronger one.
 
 ### What a checker reaches, and what stays review's job
 
@@ -264,17 +293,26 @@ Proposal review tests the *idea*; code review tests the
 *implementation*. The plan-archive precondition (`lifecycle.md`)
 makes code review mandatory before a plan archives — the bright
 line that stops a fast implementation from closing its own loop.
-Code review's floor is stricter than Internal review's: **not the
-implementing agent**, because freshly written code is hard to spot
-mistakes in for someone carrying the same reasoning patterns.
+Code review's floor is **not the implementing agent** — freshly written code is
+hard to spot mistakes in for someone carrying the same reasoning patterns. That
+is the whole floor: a same-type agent in an independent context clears it, and
+so does a different agent type or a human. **An External or Security code review
+is an explicit escalation**, taken for implementation risk that proposal review
+did not resolve, and it is neither a default nor something a routing change
+silently upgrades into.
 
 The *entry*-side counterpart is the **plan-review precondition**
 (`lifecycle.md`): a review-required plan does not start implementation
 until its plan-review section lands. The `Plan review: required(<tier>)`
-line names the tier, and that tier is chosen on the same
-structural-independence axis as any other review here — an Internal-floor
-read for an ordinary plan, a different-agent-type External round for a
-high-risk or contract-touching one.
+line names the tier. **The default is Internal**, and the proposal is where the
+deliberative weight sits: when an External proposal review recorded
+`Plan readiness: READY` over a complete current contract, the derived plan takes
+a fresh-context Internal pass (the inheritance section above). A
+different-agent-type External plan round is the **explicit escalation** — chosen
+because the proposal reviewer recorded `DISTINCT REVIEW REQUIRED`, because
+readiness was invalidated, or because a reviewer or the Maintainer spent one
+deliberately — not a tier a plan acquires by being large or by touching a
+protected surface.
 
 ### Boundary C — Falsification (targeted, after broad verification)
 

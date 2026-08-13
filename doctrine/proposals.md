@@ -33,8 +33,10 @@ proposed  ->  reviewed  ->  revised  ->  accepted (stays in dev/proposals/)
 
 * **proposed** — the author opens the proposal.
 * **reviewed** — a reviewer appends a `## Review` section.
-* **revised** — the author appends a `## Response` and, where needed,
-  a `## Revised proposal`. Review and revision may repeat.
+* **revised** — the author appends a `## Response` **and one complete
+  current-contract revision** (`## Revised proposal`, or `## Revision <n>`).
+  The revision is mandatory with every Response, not conditional on how
+  much changed. Review and revision may repeat.
 * **accepted / rejected / superseded** — the Maintainer appends the
   `## Decision`. **The Decision commit does not archive an *accepted*
   proposal**: it stays in `dev/proposals/` and moves to `archive/`
@@ -68,9 +70,10 @@ changed at each round:
 
 * Commit on **opening** a proposal (status `proposed`).
 * Commit on **appending a Review** (status -> `reviewed`).
-* Commit on **appending a Response and any "Revised proposal"
-  section** (status -> `revised`). If multiple review rounds happen,
-  each Review / Response pair gets its own commit.
+* Commit on **appending a Response and its complete current-contract
+  revision** (status -> `revised`) — the two land together, because a
+  Response without a revision is not a legal `revised` state. If multiple
+  review rounds happen, each Review / Response pair gets its own commit.
 * Commit on **the Maintainer's Decision** (status -> `accepted` /
   `rejected` / `superseded`).
   * For `accepted` proposals, the Decision commit flips status
@@ -501,8 +504,85 @@ so a `<sha>` is referenceable):
 * **[F2]** accept (rewrote inline) — …
 * **[F3]** accept (followup commit `<sha>`) — …
 
-If accepted critiques substantially change the proposal, write a short
-"## Revised proposal" section and update `Status:` to `revised`.
+### Append one complete current contract with the Response, every time
+
+A Response disposes findings; it does not restate the design. On its own it
+leaves the next reviewer to reassemble the contract out of the whole history —
+the repeated reading this rule exists to remove. So beside every Response append
+one **complete current-contract revision** — `## Revised proposal`, or `##
+Revision <n>` — and update `Status:` to `revised`.
+
+Not a delta and not a diff: one self-contained statement of scope and
+exclusions, invariants, failure dispositions, public paths, evidence, omissions
+and deferred work, plus the mandatory ledger:
+
+    ### Withdrawn / superseded commitments
+    * <earlier commitment, the replacement or withdrawal, and the reason>
+
+**The ledger is a real `###` heading at the left margin.** The block above is
+indented, which makes it an example rather than a heading; a copy inside a
+fenced block is not a heading either. Un-indent it when you use it.
+
+**The heading is mandatory even when its value is `None`.** Write `* None`
+rather than leaving it empty or omitting it: a revision that quietly drops an
+earlier commitment is exactly what the heading exists to make visible, and only
+a written `None` distinguishes "nothing was withdrawn" from "nobody checked".
+
+The **newest reviewed** complete revision is what the Decision and the
+implementation bind. Every earlier section stays as immutable history — you are
+appending a new contract, never editing the old one.
+
+**It is not conditional on how much changed.** An earlier form of this rule said
+to write a revision "if accepted critiques substantially change the proposal",
+which made the completeness of the record depend on the author's own estimate of
+significance. The lifecycle conformance check now refuses a Response with no
+revision anywhere in the artifact, and refuses a revision whose ledger is absent,
+bare, or duplicated. Either order is fine — the revision may sit above or below
+its Response — and no ratio of revisions to rounds is required.
+
+What the check *cannot* do is read: it never judges whether the revision is
+genuinely complete, and it never verifies that the ledger is true. Both are the
+reviewer's, per the comparison in `doctrine/dual-review.md`.
+
+## Plan readiness — the finding a derived plan may inherit
+
+**The proposal is the deliberative boundary.** That is why this field exists on
+the *proposal* side: the weight of the deliberation belongs where an independent
+reviewer read the complete contract, and a derived plan that only translates
+already-reviewed decisions should not pay for a second cross-type read of the
+same design.
+
+An **External** reviewer who has read a *complete* current contract may record,
+beside their review basis:
+
+```
+**Plan readiness**: READY | DISTINCT REVIEW REQUIRED
+```
+
+`READY` means that exact contract fixes scope and exclusions, invariants,
+failure dispositions, public paths, omissions, test homes and standing gates,
+documentation and release-note surfaces, implementation areas and sequence, and
+any Maintainer fences or ceremonies. The derived plan then takes a fresh-context
+**Internal** plan review rather than a second different-agent-type round, and
+binds this record by commit.
+
+* **The field is optional and has no default.** Omit it and the derived plan
+  takes a distinct plan review at its declared tier. A value outside the two
+  tokens refuses rather than reading as `READY`.
+* **`DISTINCT REVIEW REQUIRED` is a finding, not a fallback** — you saying
+  consequential design necessarily remains for planning. It is an explicit
+  judgement about *this* contract, never inferred from the topic, and a
+  fresh-context Internal pass does not satisfy it.
+* **Only an External pass may supply it.** What inheritance spends is the
+  different-agent-type read; an Internal review has none to spend.
+* **The assurance path does not decide it.** A high-assurance proposal may
+  record `READY` too; high assurance keeps governing verification, Security
+  Review, protected surfaces and ceremonies.
+
+The record needs no separate basis line — the reviewed commit and the contract
+section it fixed are already the review's own mandatory basis. The full
+inheritance contract, and the seven things that invalidate readiness in both
+directions, live in `doctrine/dual-review.md` > "Plan-readiness inheritance".
 
 ## Scope reduction — the pre-Decision obligation
 

@@ -182,8 +182,16 @@ front-run the review); it advances to `executing` only once the review
 section lands. When `not required`, the rationale is on the record and the
 plan may combine plan-open with first implementation (fast multi-stage).
 
-The review *tier* (Internal-floor vs. an External round) follows the
-review-tier / structural-independence framing in `dual-review.md`.
+The review *tier* follows the review-tier / structural-independence framing in
+`dual-review.md`, and its **default is Internal**: the proposal is the
+deliberative boundary, so a plan derived from a proposal whose **External**
+review recorded `Plan readiness: READY` takes a fresh-context Internal pass
+rather than a second different-agent-type round. A **different-agent-type
+External plan round is an explicit escalation**, not a tier a plan acquires from
+its size, its assurance path, or the surfaces it touches. The plan records the
+inheritance it claims as a commit-bound `Inherited proposal basis`; the record's
+shape and the seven things that invalidate it are in `dual-review.md` >
+"Plan-readiness inheritance".
 
 ### Fast multi-stage
 

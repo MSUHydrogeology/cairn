@@ -102,7 +102,7 @@ proposed --> reviewed --> revised --> accepted
 |---|---|---|
 | → **proposed** | author | the file exists under `dev/proposals/`; carries the house front-matter (`Author`, `Date opened`, `Status: proposed`) and the opening sections (context, the change, alternatives, evidence/verification plan, signals-it-is-wrong); a mandatory `Plan review:` line is present. |
 | proposed → **reviewed** | a reviewer (AI or human), **not the author** | a `## Review -- <reviewer> ... ` section is appended; its author token is **not** the proposal's author (reviewer-authorship); prior sections are unmodified (append-only). |
-| reviewed → **revised** | author | a `## Response` (and, where needed, a revised section) is appended; prior sections unmodified. Review and revision may repeat (`revised → reviewed → revised`). |
+| reviewed → **revised** | author | a `## Response` **and one complete current-contract revision** (`## Revised proposal` or `## Revision <n>`, carrying its mandatory `### Withdrawn / superseded commitments` ledger) are appended; prior sections unmodified. The revision is **not optional** — a Response with none refuses. Review and revision may repeat (`revised → reviewed → revised`). |
 | → **accepted** | **Human Maintainer** | a `## Decision -- <Maintainer> ... ` section is appended that (a) is authored by the human Maintainer identity, (b) **quotes an authorization verbatim** in an isolated blockquote, (c) is **Decision-only** — the commit touches nothing but this section, and (d) does **not** archive the file (an accepted proposal stays in `dev/proposals/`). |
 | → **rejected** / **superseded** | **Human Maintainer** | as **accepted**, except the Decision commit **also** archives the file (moves it to `archive/`). |
 
@@ -132,7 +132,21 @@ open --> [awaiting-plan-review] --> executing --> review --> archived
 |---|---|---|
 | → **open** | author | the plan-open commit creates the plan **and** archives the source proposal (the source proposal moves to `archive/` in this commit); the plan carries the mandatory `Plan review:` line. |
 | open → **awaiting-plan-review** | (state) | only when `Plan review: required(<tier>)`; the plan waits for its plan-review section. A `not required(<rationale>)` plan **skips** this state. |
-| → **executing** | author | for a review-required plan, a plan-review section has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
+| → **executing** | author | for a review-required plan, a plan-review section **at or above the declared tier** has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
+
+**The plan-review tier is Internal by default.** The proposal is the
+deliberative boundary: a plan derived from a proposal whose **External** review
+recorded `Plan readiness: READY` declares `Plan review: required(Internal)` plus
+a commit-bound `Inherited proposal basis`, and a different-agent-type External
+plan round is an **explicit escalation** rather than a tier inferred from size,
+assurance path, or touched surface. Code review's floor is unchanged and
+independent of this: **not the implementing agent**. The checker binds the
+*record* — two full commit ids, a resolvable source proposal, the operative
+finding's value and tier, and `proposal=` equal to the readiness review's
+`Reviewed commit` — and a malformed or partial declaration **refuses** rather
+than reading as `READY`. Pairing an inherited basis with `not required(...)`
+refuses: inheritance reallocates the plan review, it never removes it. Full
+contract in [`dual-review.md`](dual-review.md) > "Plan-readiness inheritance".
 | executing → **review** | a reviewer | a code-review pass section is appended (append-only). |
 | review → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 

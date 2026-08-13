@@ -39,16 +39,35 @@ The pass has four moves:
    which paths before its first edit. This is the *read* half of the
    work-intent convention — the complement to claiming before you edit
    (`coordination-tiers`); skipping it is how a session collides with an
-   active claim it never saw. *If the lifecycle checker/planner is
-   installed* (`tools/lifecycle_planner.py`, the read-only arm of
-   [`lifecycle-contract.md`](lifecycle-contract.md)), `python
-   tools/lifecycle_planner.py scan` reports any open artifact whose
-   status is not structurally supported by its documentary attestations
-   (it doubles as the **adopter fidelity scan**), and `lifecycle_planner.py
-   next <artifact>` reports one artifact's state, legal transitions, and
-   unmet preconditions. It is an **optional orientation aid**: it attests
-   structure, never authenticity, and it **mutates nothing** — never a
-   mandate to act.
+   active claim it never saw.
+
+   *If the lifecycle checker/planner is installed*
+   (`tools/lifecycle_planner.py`, the read-only arm of
+   [`lifecycle-contract.md`](lifecycle-contract.md)), start from the
+   **board** rather than from the artifacts:
+
+   ```
+   python tools/lifecycle_planner.py board --compact
+   ```
+
+   One row per active artifact — kind, artifact, status, owner role,
+   active work-intent, review obligation, evidence, what blocks it, and
+   whether the row is still valid — under a header naming the `HEAD` the
+   view was derived from and whether the lifecycle files differ from it.
+   **Run the board, choose the row you need, then read that artifact and
+   the evidence it cites** — not every active record. That ordering is the
+   point of the view: it replaces "open everything under `dev/` and
+   reconstruct the state" with one derived summary and one targeted read.
+
+   The board is *derived*, and its own footer says so — the artifact is
+   authoritative, and a row that looks wrong is a reason to open the
+   artifact, not to trust the row. Alongside it, `lifecycle_planner.py
+   scan` reports any open artifact whose status is not structurally
+   supported by its documentary attestations (it doubles as the **adopter
+   fidelity scan**), and `lifecycle_planner.py next <artifact>` reports one
+   artifact's state, legal transitions, and unmet preconditions. All three
+   are an **optional orientation aid**: they attest structure, never
+   authenticity, and they **mutate nothing** — never a mandate to act.
 4. **Confirm role and starting point** (`roles.md`) before
    committing to substantive work.
 
