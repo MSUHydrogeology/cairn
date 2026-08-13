@@ -1429,3 +1429,73 @@ untouched.
 recommendation is adopted: the next pass need only read **R10** — a
 packet-integrity-only review. No broader re-read is warranted if that binding
 and the two closure constraints hold.
+
+## Review -- Codex (External Security) -- 2026-08-13
+
+**Model**: GPT-5 Codex
+**Reviewed commit**: `1439ccae5d8e3c2ec7f2e5ec316c2a8e3ec5274b`
+**Target**: R10 in the complete Revision 4 contract, limited to packet binding,
+single-read/hash-before-parse semantics, and the two artifact-closure
+constraints.
+**Prior findings**: R4-E1 from the immediately preceding External Security
+pass.
+**Assurance path**: high-assurance
+**Tier**: External
+**Findings**: none
+
+**Verdict: SHIP.** R10 closes R4-E1 without reopening the candidate-OID or
+operator-workflow problems. The exact packet is now authenticated by a digest
+literal inside the exact launcher M2 already authenticates; the launcher
+measures before parsing and parses only the measured snapshot; and the ceremony
+artifact must be one unique closure member whose row and dedicated field agree.
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Adjudication
+
+The binding chain is now complete at proposal strength:
+
+1. M2 independently reviews the packet and launcher as an exact pair.
+2. The Maintainer verifies the launcher digest through the existing M2 channel.
+3. The launcher authenticates the packet bytes against its embedded digest.
+4. The authenticated packet fixes the closure rows and ceremony-artifact bytes.
+5. The launcher late-binds one candidate OID, verifies those exact object bytes,
+   and only then starts the verified ceremony artifact.
+
+Changing the launcher breaks the Maintainer's M2 comparison. Changing the
+packet breaks the launcher's comparison. Changing a closure member or artifact
+breaks the packet comparison. Advancing the candidate OID without changing any
+of those bytes remains allowed and measured, not assumed.
+
+R10 also corrects the residual description honestly: the packet is an authority
+input, and its safety comes from authentication rather than from calling it a
+carrier. Requiring the artifact path to identify exactly one closure row, with
+equal digests, prevents an adjacent executable from entering through a second
+unbound field.
+
+### Plan-review constraint
+
+The plan's required External Security Review must verify how the POSIX launcher
+implements the snapshot contract. Shell variables are not arbitrary byte
+buffers, and a design that hashes the path and then reopens it for parsing would
+not satisfy R10. The plan must name the byte-preserving snapshot mechanism,
+prove that the hashed bytes are the parsed bytes under malformed/NUL/trailing-LF
+inputs, and add any executable used for snapshotting or hashing to the explicit
+host trust set. This is consequential implementation design already assigned to
+the declared plan review, not missing proposal policy.
+
+### Coverage and recommendation
+
+**Covered**: the launcher/packet authentication chain, mutation and invalidation
+directions, single-snapshot semantics, artifact-to-closure uniqueness, the R9
+withdrawal ledger, and consistency with the no-freeze late-binding rule.
+
+**Not covered / low confidence**: no launcher exists yet, so I did not execute
+packet mutations or malformed-byte cases. I did not reopen R7, R8, the scope
+ruling, or accepted residuals; prior focused passes cleared them and Revision 4
+does not change them.
+
+**Further proposal review recommendation**: not recommended. The contract is
+ready for Maintainer Decision. Preserve the declared External Security plan
+review, which is where the concrete shell snapshot and executable trust set can
+be falsified against implementation-ready design.
