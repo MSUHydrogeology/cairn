@@ -3164,3 +3164,36 @@ verdict's trailing clause -- neither of which any reported field carries -- so
 both passed with `ensure_ascii=False` and proved nothing. Same shape as P2's
 [M16] and P3's [M10]. Fixed by injecting into two fields the payload demonstrably
 carries, with an assertion that it carries them.
+
+### [CF7] A correction owed to `a404a92`'s commit body
+
+P6c's commit body states *"17 falsifiers were applied"*. **That figure is wrong.**
+The accurate ones, from its own record: **22** falsifiers run to *verify the
+delegation* to `test_pilot_evidence.py` (of which **3 survived**, which is the
+finding), and **12** more run to redden the 13 nodes it added. The table in the
+committed test file's section banner is correct; only the commit message is not.
+
+Recorded here rather than amended: Chunk G had already committed on top
+(`5257bde`) by the time P6c went to fix it, and rewriting another session's
+commit to correct a message is the worse trade. The Code review should read the
+banner table, not the count in the body.
+
+**Why the 3 survivors matter more than the count.** P6c was asked to verify
+P6a's claim that all ten of its cells already had behavioural equivalents, rather
+than accept it. It held for 7 cells and for the first clause of cell 10, and
+**broke for two**:
+
+* **cell 6, interrupted write** — a mutation making a failed write return success
+  and record nothing left **97/97 sibling tests green**;
+* **cell 8, boundary-day arithmetic** — two mutations of the deadline comparison
+  each left **97/97 green**. The sibling's only deadline node stands a day *past*
+  the boundary and its only OPEN node fifty days *inside* it, so the compared
+  edge had no witness at all — while `_window_bounds`' own docstring says the
+  off-by-one *"silently moves a Maintainer Decision by a day"*.
+
+Both gaps are closed in `test_lifecycle_contract.py`. The third finding is
+structural: P6c added `_P6C_COVERAGE`, a map from each cell to the sibling node
+carrying it **and the falsifier that reddened that node**, which itself reddens
+when a covering node is renamed or deleted. Without it, "cell N is covered
+elsewhere" is a claim in a commit message that goes false silently — and the
+sibling file is named by neither the P6a nor the P6c row.
