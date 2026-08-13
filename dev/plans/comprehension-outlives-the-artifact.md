@@ -11,7 +11,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -1223,3 +1223,192 @@ the corrections move in the direction of more delivered work, and the class the
 plan had excused itself from is now inside the completion criterion.
 
 **Status** -> `awaiting-plan-review`.
+
+## Plan review -- Claude Opus 5 (Internal) -- 2026-08-13 (round 3)
+
+**Tier**: Internal
+**Findings**: raised
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+**Reviewed commit**: `0cc2f90` (measured at `eb2692e`, the revision's own basis)
+**Basis**: every figure re-derived from blobs (`git show eb2692e:<path>`) with the
+plan's own stated patterns and denylist; eleven files are dirty under another
+agent's claim, including `AGENTS.md` and both planner twins.
+**Verdict: REVISE** — four findings, none structural. **The plan's substance is
+now sound**: scope, the three-class definition, the completion mechanism, the
+matching rule, the D2 fence, the Boundary B mode and the placement are all
+correct, and I could not break any of them. What remains is three figures that
+do not reproduce and one acceptance bar that cannot be failed. I expect the next
+pass to clear.
+
+**The core measurement block reproduces to the digit.** Class 1 = **255**,
+class 2 = **324** net (gross **508**; `PLC0415` 162, `BLE001` 20, `SLF001` 1,
+`ARG002` 1), class 3 = **2679** in comments/docstrings and **35** in code tokens,
+total **3258**. Same patterns, same commit, same answer. That is what isolates
+the three figures below: they were produced by a different method than the block
+they sit in.
+
+### The R2-F4 decline is correct, and my sub-claim was wrong
+
+I opened both docstrings rather than re-asserting. `TestR6ContradictionsThroughBothEntryPoints`
+(`bootstrap/tests/test_lifecycle_contract.py:4211`) and `TestTheR6PredicateIsShared`
+(`:4542`) quote a **planner review finding** — *"`scan`, `next`, and accepted
+closeout tooling consume shared predicates"* — which has nothing to do with the
+redundancy gate's `R6` unused-def walk. They are textbook instances of what this
+plan renames. I also checked the two the plan *did* exclude: `TestR1Shingles`
+and `TestR6UnusedDef` carry **no docstrings at all** and drive the shingle and
+unused-def detectors directly, so those exclusions are right too.
+
+**This is not narrowing.** It is a correction of a round-2 claim I made by
+pattern-matching a letter instead of reading the referent — the same error the
+plan has been correcting in itself, committed by the reviewer. Recorded plainly
+because a decline that survives is worth as much as a finding that lands, and
+because the asymmetry matters: I asked for the exclusion, the author checked and
+refused, and the refusal was right.
+
+### Findings
+
+**[R3-F1 — moderate] The completion set does not reproduce: 185 → 179, and the
+C3 row's 95/536 → 103/603.**
+
+Files carrying at least one candidate at `eb2692e`, tracked `*.py`, the plan's own
+patterns:
+
+| Definition | Tagged files | Class-3-only files | Their class-3 sites |
+|---|---:|---:|---:|
+| comments + docstrings (the plan's candidate definition) | **179** | **103** | **603** |
+| all token classes | 179 | 98 | 554 |
+| whole-file regex, no tokenizing | 179 | 98 | 554 |
+| working tree incl. its one untracked new test | 180 | 99 | 563 |
+
+**No variant gives 185**, and none gives 95/536. Every other figure in the same
+block reproduces exactly, so this is not a pattern disagreement — the file set
+was computed some other way.
+
+Severity is bounded by the plan's own good design: Chunk C says the set *"is
+regenerated at implementation time … and pinned in the implementation record"*,
+so an implementer will discover 179 for themselves. But the Acceptance-criteria
+line reads *"all **185** tagged files dispositioned"*, which makes a number the
+plan cannot support into the chunk's completion criterion, and the C3 row carries
+no regeneration clause at all.
+
+*Required satisfier*: re-derive the file set with the same script that produced
+the 3258, correct both figures, and state the acceptance as *the regenerated set*
+with the count given as `as_of` evidence rather than as the criterion itself.
+
+**[R3-F2 — moderate] 353 is a double count, and the "differs by method" defence
+does not hold — I broke it as invited.**
+
+The stated method is *"`::<class>::` or trailing `::<class>`"*. Measured against
+the manifest at `eb2692e`: **zero** of its 4261 node ids end with a class name
+(every id's last segment is a test), so the trailing arm is a **no-op**. Run the
+author's own method and it returns **326** for the old 36-class set — identical
+to mine. The methods do not differ; the figures do.
+
+Both figures decompose cleanly, and the decomposition names the error:
+
+```
+36-set:   326 node ids  +  30 skip/xfail entries  =  356   <- the old figure
+38-set:   335 node ids  +  18 skip/xfail entries  =  353   <- the current figure
+```
+
+`skip_xfail_marked` is an **identity list of nodes already counted** in
+`node_ids` — `_gate_manifest.py` pins *"the set of pytest node-IDs **plus** the
+identities of any skip/xfail-marked nodes"*, not a second disjoint population.
+Adding the two counts the same tests twice.
+
+The correct figure for the final 38-class set is **335**, and it decomposes as
+`326 (36-set) + 21 (the four TestChunkG*) − 12 (TestR1Shingles 4 + TestR6UnusedDef 8)`,
+of which **18** are also skip/xfail-marked.
+
+This one has a consequence: D2's acceptance says the implementing agent *"reports
+that count"* of orphaned ids, so the plan hands them a target that is 18 too
+high and they will report a discrepancy as a defect.
+
+*Required satisfier*: 335 node ids, 18 of them skip/xfail-marked, stated as two
+facts rather than one sum.
+
+**[R3-F3 — moderate] "Dispositioned" names no artifact, so the per-file bar
+cannot be failed.**
+
+This is the question you flagged, and the answer is that the bar is not yet
+checkable. The criterion is *"every candidate in the file has been looked at and
+dispositioned — rewritten to state its reason, or **left with the reason
+recorded** for why it is not a coordinate"*.
+
+For a **rewritten** candidate the diff is the evidence and the bar is real. For a
+**left-in-place** candidate there is no observable difference between *"read,
+judged domain vocabulary, kept"* and *"never read"* — the file is byte-identical
+in both cases, and the plan never says where the reason is recorded. Given that a
+real fraction of 2679 class-3 candidates are expected to be kept, the majority of
+the plan's newly-claimed scope sits behind a bar whose failure state is invisible.
+
+That is the shape this plan exists to eliminate, arriving in its own acceptance
+criterion: a rule that reads as rigorous, cannot be shown wrong, and finishes by
+assertion. It is also the one finding this round with a real implementation
+consequence — the other three self-correct when the implementer runs the script.
+
+*Required satisfier*: name the artifact. One sentence is enough — e.g. the
+implementation record carries, per file, the kept candidates with a phrase each
+("`R6` here is the redundancy gate's rule id"), the rewritten ones being
+evidenced by the diff. That bounds the writing to the minority class and makes
+the code reviewer able to disagree with a specific judgement instead of with a
+claim of thoroughness.
+
+**[R3-F4 — minor] Three `AGENTS.md` citations were read from the dirty working
+tree the plan warns against.**
+
+The placement note cites `AGENTS.md:426` (heading), `:428` (slot opener) and
+`:429` (`**Naming.**`). At `eb2692e` those lines sit inside the
+dependency-budget paragraph; the true lines are **412**, **414** and **415**. The
+cited numbers are exactly the *working tree's* — another agent's uncommitted
+14-line addition to `AGENTS.md`, which `git status` shows as modified and which
+the revision's own measurement basis says it read from blobs *"because the
+working tree carries another agent's uncommitted work"*. The shipped copy's
+citations (`templates/core/AGENTS.md:388` / `:390`) are correct.
+
+The structural claim is true in both copies, so the placement decision is
+unaffected — only the citations are wrong. Worth one line beyond the fix:
+`claim_check` passed this file, because it verifies that a cited line is *in
+bounds*, not that it says what the citation claims. That gap is exactly the
+"named trigger that does not check the claimed property" hazard `AGENTS.md`
+describes, and it is the reason a citation to a moving file needs its commit.
+
+### On your second question — is 3258 an honest size or an over-correction?
+
+Honest, and I tried to show otherwise. Class 2's denylist is not hiding
+contamination: of the 324 net, the only non-coordinate tokens I can find are
+`SIM115` (2) and `SHA256` (1) — three occurrences, against 162 for `PLC0415`
+alone, which the denylist does catch. Class 3's 2679 is presented as a
+*candidate* count with the read as the filter, which is the correct form for a
+population that pattern-matching cannot decide; sampling across the never-opened
+files showed it dominated by real coordinates, and the plan explicitly says the
+rewrite count is not a target.
+
+So the number is not padded. The over-correction risk is not in the size — it is
+in R3-F3, where an unfalsifiable per-file bar makes a 6.6× larger claim cost
+nothing to assert.
+
+### Coverage
+
+**Covered, with falsifiable citations**: all three class counts, gross and net,
+re-derived with the plan's own patterns and denylist from blobs at `eb2692e`;
+the candidate total; the tagged-file set under four definitions; the class-3-only
+subset; the manifest recount under *both* stated methods with the decomposition
+that explains 356 and 353; the disputed R2-F4 classes read in full, and the two
+excluded ones checked for symmetry; the D2 fence against
+`bootstrap/REANCHOR_RUNBOOK.md`; the placement citations against both blobs and
+the working tree; the Boundary B command pair and sequencing note; the
+acceptance criteria for checkability.
+
+**Not covered / low confidence**: (1) still no suite run or `--collect-only` —
+manifest figures come from the committed JSON and `ast`. (2) I did not attempt to
+classify all 2679 class-3 candidates; my claim is about the candidate set and the
+sample, not about how many need rewriting. (3) I cannot diagnose *how* 185 and
+95/536 were produced — only that four definitions all disagree with them, which
+is why the satisfier asks for a re-derivation rather than an explanation.
+(4) One observation deliberately **not** raised as a finding: the planner's own
+`_r6_gate` helper (`bootstrap/tests/test_lifecycle_contract.py:4560` asserts on
+it) carries a coordinate in a *production function name*, which the accepted
+scope — test containers — does not reach. The doctrine anchor in Chunk A covers
+it; a future instance will land there, and that is the right place for it.
