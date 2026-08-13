@@ -985,7 +985,8 @@ point rather than being copied into another backlog.
   in `bootstrap/security_check.py` reports them as `extra`. **Reproducer:**
   fails in the main checkout, and in a clean `git worktree` at `6a4b3a0` — the
   commit *before* the source plan opened — so it predates that work; it passes
-  only when `bootstrap/tests/__pycache__/` happens to be empty, which means it
+  only when the tests' generated `__pycache__` directory happens to be empty,
+  which means it
   is effectively always red for anyone who has run the suite before.
   **Sharper diagnosis (External review, 2026-08-12):** the failure is
   *environmental, not a byte defect*. All three standing failures — this one and
