@@ -1,3 +1,5 @@
+<!-- claim-check-allow: dev/measurement/pilot-activation.md -->
+
 # Collaboration agreement — Cairn
 
 This is the **working agreement** for Cairn's human + AI
@@ -65,6 +67,78 @@ Refreshed when the team changes.
 * **Coordination is through artifacts.** The team coordinates by
   reading and updating the `dev/` tree, not through side channels
   that leave no durable record.
+
+## Monitoring the review allocation
+
+Cairn's default review allocation — an External proposal review that settles
+a complete contract, followed by a fresh-context **Internal** plan review,
+with External or Security Code review reserved for explicit escalation — is
+**already the default now**, adopted at the Maintainer's direction in the
+*Maintainer-directed contract revision* of
+[`dev/plans/review-efficient-lifecycle.md`](plans/review-efficient-lifecycle.md)
+(2026-08-11). `tools/lifecycle.py` ships **monitoring-evidence** machinery
+(`pilot-report` derives and prints; `pilot-record` is the ledger's only
+writer) that watches that default after the fact, over a bounded window: six
+distinct plan stems reaching `ready-to-archive`, or 60 calendar days from
+activation, whichever comes first. **This is not a permission gate** — the
+allocation above needs no monitoring window to be in force, and no reader or
+writer of this evidence may treat an inactive window as the policy being
+off. `promote` is a retired token; the only Decision left at the boundary is
+`retain | revise | retire`.
+
+**Pause conditions.** One high-severity finding that escaped review because
+of the allocation (a defect the removed External round would plausibly have
+caught) pauses the monitoring window immediately; two lower-severity
+examples do the same. Record a pause — `pilot-record --kind pause-set
+--severity high|low ...` — and clear it explicitly with `pause-cleared` once
+resolved. A recorded escaped finding that meets a threshold with no matching
+pause active is itself surfaced as incomplete, so a pause can't sit
+unrecorded.
+
+**Reading the report.** `python tools/lifecycle.py pilot-report` derives its
+output from the append-only ledger (`dev/measurement/pilot-events.md`) and
+writes nothing itself. Exit `0` is a complete report; exit `3` is
+**incomplete**, naming each missing dependency by name; exit `1` is a
+refusal (a malformed or unreadable record — a data problem, never a policy
+signal). A complete report lists every counted plan stem (date, source
+artifact, commit, assurance path), splits them into **eligible**
+(`standard`) and **ineligible / outside the sample** (anything else), and —
+whenever the sample holds an ineligible stem — prints that the accepted
+parent proposal ("high-assurance work … remains ineligible and does not
+fill the sample") and the 2026-08-11 revision ("standard and high-assurance
+proposals may both receive `READY`") disagree about whose plans should fill
+the six. **That tension is printed, not resolved** — settling it, if it
+ever needs settling, is the Maintainer's call, not an inference the report
+is allowed to make. The report closes with the window's summed measures
+(review-input bytes, transitions removed, escaped findings by severity,
+Maintainer prompts) and, once the boundary is reached, a line naming the
+trigger and stating that the Maintainer's Decision is due.
+
+<!-- cairn:slot monitoring-status -->
+**Current status** (verified 2026-08-12): no monitoring window has opened.
+`dev/measurement/pilot-activation.md` does not exist yet — it lands as a
+data-only, Maintainer-gated commit (fence **M2**) after Boundary B2 — so
+`pilot-report` reports `activation: NONE`, `counted plan stems: 0/6`,
+`pauses: none active`, and closes `report: INCOMPLETE (exit 3)`. Absence of
+an activation record is absence of *evidence*; it says nothing about the
+allocation above, which is already in force. Refresh this note whenever the
+window opens, a pause is set or cleared, or the boundary is reached.
+<!-- cairn:end monitoring-status -->
+
+**The Decision at the boundary (fence M6 — the Maintainer's; describing it
+here is not taking it).** At the boundary the Maintainer reads the report
+above and chooses one of three dispositions:
+
+* **`retain`** — the allocation stays exactly as it is: a no-op over an
+  already-distributed policy, no second distribution change.
+* **`revise`** — the allocation continues in a changed shape. Executes
+  Chunk P7 against the evidence already gathered, under P7's own
+  changed-path, Boundary-B / Code-review, and ceremony classification: a
+  fresh Boundary B and independent Code review if it touches governed
+  bytes, a fresh Maintainer ceremony if it touches a frozen path.
+* **`retire`** — the allocation is withdrawn. Same P7 execution and
+  evidence requirements as `revise`; the outcome differs, not the process
+  that reaches it.
 
 ## Amending this agreement
 
