@@ -1082,3 +1082,105 @@ completeness.
 
 **One focused External Security clearing pass over X1–X7 is owed**, as the
 reviewer recommends. This response does not discharge it.
+
+## Plan review -- Codex -- 2026-08-13
+
+**Reviewed commit**: `e4a9453aa1e2a22c65feb6d6380611b1ef2691d9`
+**Target**: the committed Response to X1-X7 and the complete executable contract
+it amends.
+**Prior round**: `eb2692ed29a372a44b804445afaa5b418a1f8752`
+**Prior findings**: X1-X7 from that External Security plan review.
+**Assurance path**: high-assurance
+**Model**: GPT-5 Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Findings**: raised
+
+**Verdict: REVISE.** The Response closes X2-X4 and X6, assigns X7's test and
+falsification paths, and chooses a technically workable snapshot for X1. Three
+small but load-bearing contradictions remain in the executable contract. One of
+them leaves the newly trusted `cat` executable outside R7's pinned values
+schema, recreating an ambient executable lookup before candidate verification.
+
+### Provenance correction to the prior review
+
+The prior review's `Reviewed commit` field incorrectly named unrelated commit
+`1439ccae`. The reviewed plan version was last changed by `76eeb24`; its exact
+blob was `4c74f78573174632922a6bd53bd8e532fbd87f4e`, unchanged in the review
+commit's parent `3a407d4`. This correction changes no finding, but the security
+record should not preserve a false source coordinate silently.
+
+### Blocking findings
+
+**[Y1] `cat` joins the pre-candidate executable trust set without joining the
+closed values schema.**
+
+D7 executes `cat`; D7b and D9 correctly acknowledge it as newly trusted. But
+accepted R7's executable fields are `env`, `git`, `python`, `mktemp`, `mkdir`,
+`shasum`, and `sort`, and B1 still instantiates exactly those remaining R7
+fields. D10 simultaneously forbids ambient fallback. As written, the launcher
+can only find `cat` through ambient `PATH` (or an unrecorded hard-coded path),
+the same pre-candidate trust gap X2 closed for Git and `shasum`.
+
+**Satisfier**: use the plan-review delegation in the accepted proposal's
+"Plan-review constraint": add `cat` as an absolute, regular, executable,
+symlink-free values field; bind it through B1-B4 and D10-D11; use that value in
+D7; and add an absent/malicious-`cat` negative proving the marker interpreter
+never starts. D9's `bootstrap/SAFETY.md` update remains the descriptive half,
+not the binding mechanism.
+
+**[Y2] D3a still requires one read while the decided mechanism requires two.**
+
+D3a says the launcher reads the packet **once**. D7 and D9a explicitly require
+two path reads: first `SHASUM`, then `cat`, with the snapshot re-hashed before
+parsing. The two-pass design is acceptable under the recorded same-user
+residual because a relevant mutation produces a digest mismatch and bytes
+parsed after the snapshot no longer depend on the path. An implementer cannot,
+however, satisfy both rows.
+
+**Satisfier**: amend D3a to say "two path reads, cross-checked; one immutable
+in-memory parse source" and point to D7-D9a. Do not retain a `reads once` claim.
+
+### Contract corrections
+
+**[Y3] G1's hard stop and G3's subset fallback cannot both govern.** G1 says
+this plan stops unless the other plan's owning commit is already an ancestor.
+G3 says timing can instead force this plan to implement a subset, while its
+required reciprocal adoption remains unlanded. Choose the adopted owner/gate
+model and supersede G3, or land the reciprocal contract before allowing that
+fallback. The current pair leaves implementation ownership conditional on an
+obligation this plan admits it cannot create.
+
+Boundary A also still says the plan "owes" a shell gate even though C4a now
+owns it. Replace that stale statement with an explicit C4a reference so X7 has
+one governing account.
+
+### Disposition of X1-X7
+
+* **X1**: mechanism selected and independently reproduced; remains open only
+  through Y1-Y2's binding and consistency defects.
+* **X2**: closed by D10-D12, subject to extending the same treatment to `cat`.
+* **X3**: closed. H1/N5 precede stable bytes and M2; N7 names the old key as the
+  rollover signer and the post-transaction refresh; the two-key test is owed.
+* **X4**: closed. Criterion 5 now agrees with A1/A3 and has a two-sided
+  restoration mutation.
+* **X5**: the single-owner design is sound; Y3 must remove its contradictory
+  fallback or make it reciprocal.
+* **X6**: closed. The sequence and N6 distinguish reviewer production from
+  Maintainer receipt and verification.
+* **X7**: C4a and Boundary C close the missing ownership and falsification map;
+  only the stale Boundary A sentence remains.
+
+### Execution and coverage
+
+I ran D7's exact shell idiom under `/bin/sh`, not the interactive shell. For a
+three-byte `a\n\n` packet, the file and snapshot SHA-256 values matched. For a
+three-byte `a\0b` packet, they differed, so step 3 refused as designed. I also
+opened accepted R7's complete field table, the current B/D/G chunk rows, the
+sequence, Boundary A/C, and N5-N7. I did not run implementation tests because
+no implementation exists, and I did not re-review the accepted same-user,
+key-holder-not-process, or replay residuals.
+
+**Recommendation**: make the four localized contract corrections above, then
+one narrow clearing read should be enough. No proposal reopening or scope
+reduction is needed.
