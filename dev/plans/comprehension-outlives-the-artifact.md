@@ -11,7 +11,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -242,9 +242,315 @@ not a defect discovered later. The revival conditions in both operational
 proposals already name what would change the answer — coordinate names
 reappearing after the rename, tags reappearing after the pass.
 
-## Plan review
+## Plan review -- Claude Opus 5 (Internal) -- 2026-08-13
 
-*Awaiting a fresh-context Internal pass.*
+**Tier**: Internal
+**Findings**: raised
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+**Reviewed commit**: `ef00dfa625dbe1588feffeab5c666036d33c3633`
+**Reviewed plan blob**: `73797f16fab1cff6bc7cec158ad3762a571dc3cb`
+**Basis**: the three archived source proposals read in full including their
+Round 2 / Round 3 revisions and Decisions; the corpus re-measured under the
+canonical interpreter (`PYTHONDONTWRITEBYTECODE=1`), read-only.
+**Verdict: REVISE** — nine findings, five of them load-bearing. The plan's
+*design* is faithful: it executes three accepted decisions, adds no new outcome,
+and drops none. What fails is the layer a plan review exists to check —
+**the numbers, one named placement, and two acceptance criteria that cannot be
+judged as written**. Four of the five major findings are the same defect in
+different clothes: a count or a location asserted without being opened.
+
+### What I re-measured, and what I got
+
+All figures `as_of 2026-08-13` at `ef00dfa`, over `git ls-files '*.py'` (248
+tracked files; the untracked `.claude/worktrees/` copies are excluded and would
+otherwise inflate every count). "Bracketed tag" means
+`\[[A-Z]{1,4}[0-9]+(-[0-9]+)?[a-z]?\]`; classification into
+comment / docstring / other-string-literal is by `tokenize` + `ast`, not by
+quote style.
+
+| Plan says | I measured | Verdict |
+|---|---|---|
+| 262 tag sites | **265 bracketed occurrences on 238 lines across 37 files** | close enough; but "sites" ≠ "occurrences" and the plan uses them interchangeably |
+| ~8 fenced | **42 in non-docstring string literals**, ~38 of them plainly fixture / test-input / generated-output | **wrong by ~5×** (F2) |
+| 97 in the two `_gate_preflight` files | **98** in comments + docstrings; 105 including string literals | reproducible, immaterial delta |
+| ~21 in each planner twin | **14** each (12 in comments/docstrings), identical at `f654dc0`, `2fd7f4f` and HEAD | **stale inherited figure** (F6) |
+| ~36 coordinate-named containers | **40** leading-coordinate classes + **5** embedded-coordinate | under-measured and undefined (F7) |
+
+Two figures the plan does not state, which change decisions:
+
+* **349** of the **4261** pytest node ids pinned in
+  `bootstrap/tests/fixtures/gate_manifest.json` carry one of those 40 class
+  names, plus **30** skip/xfail entries (F4, F5).
+* **Bare** finding tags — `FUR5`, `CR1`, `R2`, `P1` and kin, unbracketed — are
+  excluded from every count above and are the larger population by an order of
+  magnitude: **168** in the two C1 files alone, **391** in
+  `tools/lifecycle_planner.py` (F1).
+
+### Findings
+
+**[F1 — major] The plan never says what a "tag" is, and under the accepted
+proposals' own examples the corpus is several times 262.**
+
+Every count in this plan is of *bracketed* tags. The tags proposal's rule is not
+so limited — it reads *"`[S1]`, `[M2-1]`, `FUR5` and their kin"*, and its two
+worked examples for this very file are **bare**:
+
+* `bootstrap/tests/test_gate_preflight.py:1621` —
+  `# FUR5 -- the recorded anchored invocation, actually executed` (the
+  proposal's "cheap, immediately glossed" case)
+* `bootstrap/tests/test_gate_preflight.py:1703` —
+  `recorded one stayed broken, which is FUR5 exactly` (its "expensive, the tag
+  is the grammatical subject" case)
+
+`FUR5` never appears bracketed anywhere in the tree. So the Maintainer's raising
+quote — *"I don't know what FUR5 is"* — names a form that **none of this plan's
+97 sites includes**. An implementer clearing only bracketed forms finishes C1
+with the exemplar untouched; one clearing the rule as written meets 168 further
+occurrences in those two files and 391 in one C2 file, against a plan that
+budgeted 97 and ~21.
+
+*Required satisfier*: state the operative definition of "tag" in the scope
+fence — either fence bare tags out **with their measured count**, so the fence
+is checkable the way Round 3's `~8` was meant to be, or admit them and re-size
+Chunks C1–C3. Silence here is what makes F1 a plan defect rather than a
+judgement call: the plan says it will not leave the implementer a judgement the
+plan should have made, and then leaves this one.
+
+**[F2 — major] "~8 fenced" is wrong by ~5×, in the direction that breaks tests.**
+
+42 bracketed occurrences sit in non-docstring string literals. Nearly all are
+exactly what the fence describes — synthetic review fixtures
+(`test_transition_lint.py` ×12, `test_lifecycle_contract.py`,
+`test_lifecycle_vocabulary.py`, `test_reference_scripts.py`), homoglyph fixture
+labels (`test_byline_identity.py` ×6), and **generated output**: the planner
+twins each emit `* **[R1] -- <title>.**` as template text. The ~8 came from
+Round 3's *"single-line quoted values"* row, which is a narrower class than the
+fence the plan actually adopted.
+
+This matters twice over. Chunk C's per-file acceptance is *"no tag remains
+except inside fenced string literals"*; an implementer holding "~8" will read
+the 12 `[R1] a finding` strings in `test_transition_lint.py` as in-scope prose
+and edit test inputs. And the fence's size is precisely the thing Round 3
+insisted on stating, after its own first attempt returned 98 by sweeping
+docstrings into the wrong column — the same error, mirrored.
+
+Related, and worth reconciling in the same edit: the accepted class table
+(77 comments + 51 docstrings + ~8 quoted = 136) does not sum to 262. My
+tokenized re-measure is **103 / 119 / 42 = 264**. All three cells are wrong;
+the plan inherits one of them as an arithmetic operand.
+
+*Required satisfier*: re-measure the fence and state it, with the method.
+
+**[F3 — major] Chunk B3 names a placement that does not exist in the file it
+names.**
+
+`templates/core/AGENTS.md` has **no `**Naming.**` paragraph**. Its
+`## Project-specific conventions` (`templates/core/AGENTS.md:388-396`) is an
+*unfilled* `<!-- cairn:slot project-conventions -->` carrying only the prompt
+*"Naming conventions, the development environment, the high-risk surfaces …
+This is judgment work: a reasoning agent and the maintainer write the project's
+**real** conventions here."*
+
+And in Cairn's own copy, `**Naming.**` is **inside that same slot** —
+`AGENTS.md:414` opens `cairn:slot project-conventions`, `AGENTS.md:514` closes
+it, with the whole conventions body between. `bootstrap/fidelity-check.md:178`
+records the slot as `filled`; `bootstrap/BOOTSTRAP.md:688` describes it as
+adopter-authored.
+
+So B1/B2 land in Cairn's filled slot (fine), and **B3 has nowhere to go**:
+writing two Cairn-authored general rules into the shipped slot converts
+adopter-owned space into governing text, which is not what a slot is. The E3
+finding that produced this placement was about Cairn's copy, where
+`**Naming.**` exists; nobody checked the twin. Chunk B's acceptance — *"both
+rules present in both copies, in the conventions region"* — cannot be satisfied
+in the shipped copy without deciding this.
+
+*Required satisfier*: decide the shipped copy's home explicitly. Either a
+non-slot region of `templates/core/AGENTS.md` (these are general conventions,
+not project-specific ones), or an addition to the slot's *prompt* text — and say
+which, because the two have different meanings for an adopter.
+
+**[F4 — major] Chunk D's acceptance criterion is self-contradictory, and the
+rename touches a file the plan does not list.**
+
+Renaming a class changes every node id beneath it. So *"pass/fail set unchanged"*
+is satisfiable, *"node count identical"* is satisfiable, and **"same node ids"**
+(Acceptance criteria, line 182) is not — nor is *"mechanically checkable by
+diffing collected node ids"* (Chunk D), which will report ~349 differences on a
+correct execution. The names proposal wrote the criterion correctly as node
+**count**; the plan hardened it to ids in one place and to an id-diff in the
+other.
+
+Worse, the same fact reaches a file the plan never names.
+`bootstrap/tests/fixtures/gate_manifest.json` pins **4261 node ids**, of which
+**349 carry one of the 40 classes**, plus **30** skip/xfail identities. Per
+`bootstrap/tests/_gate_manifest.py:33-36` the manifest pins *"the set of pytest
+node-IDs plus the identities of any skip/xfail-marked nodes (not merely
+counts)"*, and *"a dropped node HOLDs"*. It was regenerated **today** at
+`cfaace9` in a supervised re-anchor. Whatever the right disposition is — most
+likely "re-produced at the next ceremony's Phase 0, nothing owed here" — the
+plan has to state it, because the next ceremony operator inherits the drift.
+
+*Required satisfier*: restate Chunk D's criterion as *node count + leaf ids +
+pass/fail set unchanged; container segment changes by construction*, and record
+a disposition for `gate_manifest.json` (including whether a Maintainer fence
+applies, given the anchor is a supervised artifact).
+
+**[F5 — major] The `Boundary B mode` bounding argument is falsified on its own
+stated terms.**
+
+It reads: *"no contract surface (the touched files are not the fidelity or gate
+manifest …)"*. By F4, Chunk D invalidates 349 pinned entries in the gate
+manifest — which `AGENTS.md` names as part of the install contract, the surface
+on which *"bounded mode refuses, and the full suite runs"*. The plan's stated
+falsification condition — a load-bearing comment inside a security-gate file
+turning up during Chunk C's reading — is a real hazard, but it is not the one
+that fires, and it is stated as a *discovery* condition when the disqualifying
+fact is knowable now.
+
+Note this is not automatically "run full": if the correct disposition in F4 is
+that the manifest is regenerated by ceremony and this plan touches neither its
+bytes nor its authority, the bounding may survive. The finding is that the plan
+asserts the negative without having checked it, and `AGENTS.md` resolves
+uncertainty to `full`.
+
+*Required satisfier*: redo the bounding argument against the measured
+interaction, and name the commands bounded mode will actually run.
+
+**[F6 — moderate] C2's "~21 each" is stale, and four of five twin pairs are
+unnamed.**
+
+The planner twins carry **14** bracketed occurrences each (12 in
+comments/docstrings) — identical at `f654dc0`, at plan-open `2fd7f4f`, and at
+HEAD, so this is not drift since the proposal; the figure was never
+re-measured. The plan re-measured 97 and ~36 and left this one inherited.
+
+More consequential: five byte-identical `.py` twin pairs carry tags, and C2
+names one. `templates/skills/_lib/lifecycle.py` ↔ `tools/lifecycle.py` carry
+**17 each** — the third and fourth largest files in the corpus — and their
+identity is enforced by
+`bootstrap/tests/test_lifecycle_brief.py:351`
+(`test_the_two_copies_are_byte_identical`). Also
+`_lifecycle_metrics/__init__.py` (3), `_lifecycle_metrics/subsystems.py` (2),
+`_intent/record_io.py` (1). All four fall into C3 *"the remainder"*, which
+carries no twin warning and names no enforcer — and a one-sided comment edit in
+any of them reds the suite.
+
+*Required satisfier*: promote the `lifecycle.py` twins beside the planner twins
+in C2, list the remaining three, and name each enforcer in Author-accounting.
+
+**[F7 — moderate] "~36 containers" is under-measured and its rule is unstated.**
+
+40 classes in `bootstrap/tests/` begin with a coordinate token
+(`TestP2AmendmentBScopeReduction`, `TestChunkG*`, `TestCF1*`, `TestP6c*`,
+`TestR6*`, `TestV1V2Differential`, …), and 5 more carry one embedded:
+`TestHomoglyphAllowanceRV5`, `TestLivingStateF1`,
+`TestTheLegacyTokensAreStillLegalUntilH1`, `TestEnforceModeAndN1`,
+`TestTheR6PredicateIsShared`. In the other direction, a few of the 40 are
+arguably domain vocabulary rather than plan coordinates — `V1`/`V2` are gate
+manifest schema versions; `R1`/`R6` in `test_quality_gate_redundancy.py` are the
+redundancy gate's own rule ids, and renaming those would *lose* meaning.
+
+So "~36" is neither the count of any stated rule nor a bound on the work. One
+loose end that falls out of the same read:
+`bootstrap/tests/test_security_verification.py:1576` names
+`TestChunkGArgvVectorValidation` in a comment, so the rename has at least one
+in-tree textual reference to carry.
+
+*Required satisfier*: state the matching rule, publish the resulting list (or
+its count under that rule), and say which of the domain-vocabulary cases are
+deliberately excluded.
+
+**[F8 — minor] The mapped test/gate set for Chunks A and B is short by at least
+one live guard and the standing prose gates.**
+
+`bootstrap/tests/test_comprehension_floor.py` asserts, over **both** AGENTS
+copies, that the floor's four obligations are present *and* that it *"sits in
+the review section"* (`bootstrap/tests/test_comprehension_floor.py:61-74`).
+Chunk B4 edits exactly that paragraph in exactly those two files; the plan names
+only `test_installed_operational_rule_is_project_general`. Separately,
+Verification names only `check_cairn.py` per chunk, but Chunk A touches
+`doctrine/` and B3 touches `templates/` — both neutrality-gate surfaces, and
+`AGENTS.md` requires the standing gates for every touched surface.
+`python scripts/quality_gate.py --sub neutrality --sub redundancy` appears
+nowhere in the plan.
+
+*Required satisfier*: add both to the Chunk A/B mapping.
+
+**[F9 — minor] Chunk A appears to drop the Naur citation.**
+
+The doctrine proposal's grounding is Naur (1985), and its E1 response verified
+the pagination independently and recorded it *"with a DOI, which is this file's
+convention"* — `doctrine/rationale.md`'s convention being exactly the cited
+grounding bullets Anchor 16 already carries (Miller, Kalyuga, Clark & Brennan,
+the appropriate-reliance literature). Chunk A's two rows and its acceptance
+criterion mention only the temporal paragraph and the Anchor 17 pairing. If the
+citation is meant to land, say so in A1/A2; if it is deliberately out, say that
+— removal of an accepted outcome is a deviation in the same way an addition is,
+and the Decision's own "superseded commitments" list says the *check* is
+discharged, not the citation.
+
+### Verified clean — probed and passed
+
+Stated so a later reader can tell what was examined from what was assumed.
+
+* **The dead-trigger correction holds.** `git-native-security-foundations`
+  archived at `f654dc0` (2026-08-13, "archive both security plans") and the two
+  `_gate_preflight` files carry the same 105 bracketed occurrences at `f654dc0`,
+  at `2fd7f4f` and at HEAD — the closure cleared none of them. Adopting them
+  into C1 delivers Round 3's phase-3 completion guarantee earlier rather than
+  changing scope; **no scope-delta declaration is owed** for it.
+* **No accepted outcome is dropped, and none is added.** Each chunk maps to an
+  accepted decision; the three "no test / no lint / no second doctrine home"
+  fences are the proposals' own conclusions, not narrowing invented here. The
+  settled no-parity-guard question is not reopened.
+* **Chunk E is right to create no revival row.** Neither tracked
+  `dev/PLANNING.md` item the operational proposals promised on acceptance was
+  ever written — there is no "Rename coordinate-named test containers" row, and
+  the "Opaque finding-IDs" row predates them and carries no three-phase text.
+  Executing the work supersedes both; closing the one existing row is correct.
+* **Tier and precondition are correct.** `required(Internal)` is the highest
+  constituent declaration, recorded in the doctrine proposal's E2; the
+  whole-plan start precondition genuinely retires both proposals' per-chunk
+  sequencing, including the names proposal's `review-efficient-lifecycle` gate.
+* **A→E sequencing is justified** — rules before the passes that apply them, and
+  C/D are mutually independent (C touches comment/docstring bytes, D touches
+  class names; their only shared file is `test_lifecycle_contract.py`, where the
+  two edits do not overlap). I found nothing wrongly gated; the only fence
+  question is F4's.
+* **No `bootstrap/_scaffold/` file carries a bracketed tag**, so the AST
+  attestation baseline is untouched by Chunk C — the plan's silence on it is
+  correct rather than an omission.
+* **The twin invariant C2 does name is real** and its enforcer resolves
+  (`test_scope_reduction_trap.py::test_the_two_planner_twins_stay_byte_identical`).
+
+### Coverage
+
+**Covered, with falsifiable citations**: the three sources' accepted text
+including all revision rounds and Decisions; every numeric claim in the plan,
+re-measured from tracked files under the canonical interpreter with the method
+stated above; the phase-1 dead-trigger claim, checked against `f654dc0` and
+against the corpus at three commits; Chunk B's placement, checked by opening
+both AGENTS copies and the slot boundaries; Chunk C and D acceptance criteria,
+checked for judgeability against the artifacts they would be judged on
+(`gate_manifest.json`, the twin tests, `test_comprehension_floor.py`);
+sequencing and fences; the Boundary B bounding argument against `AGENTS.md`'s
+refusal rule; `dev/PLANNING.md` for the promised tracked items.
+
+**Not covered / low confidence**: (1) I did **not** run the suite or
+`--collect-only` — every node-id figure comes from the committed manifest and
+from `ast`, so a divergence between manifest and live collection would not have
+surfaced here. (2) I did not read all 265 tag sites; the cost split
+(cheap/expensive) remains unmeasured, as the proposal itself warned, and F1/F2
+are about the *bounds*, not about which sites need rewriting. (3) Whether the
+gate manifest's pinned node ids are load-bearing outside a ceremony window is
+inferred from `_gate_manifest.py`'s docstring and the re-anchor runbook, not
+from executing the verifier — F4/F5 ask the author to settle it, and I may be
+overstating the consequence. (4) The bare-tag population (F1) is measured by
+pattern with lint codes excluded by denylist; individual members may be domain
+vocabulary rather than finding tags, which is part of why the definition is
+owed.
 
 ## Code review
 
