@@ -6,9 +6,16 @@
 **Status**: awaiting-review
 **Assurance path**: high-assurance — the re-anchor ceremony is a named
 high-risk surface and the authority closure's own contents change.
-**Touches**: `bootstrap/REANCHOR_RUNBOOK.md`, a new ceremony code artifact,
-`bootstrap/tests/_gate_preflight.py`'s recorded-block tests, the authority
-closure membership.
+**Touches**: `bootstrap/REANCHOR_RUNBOOK.md`; a new ceremony code artifact and
+its launcher; a Maintainer-owned values file; `bootstrap/tests/_gate_preflight.py`
+(the recorded-block tests, the key-channel probe, and its docstring);
+`dev/.cairn/allowed_signers` and the ceremony key it pins; `SECURITY.md`'s
+key-channel contract; the M2 review's output contract; opaque finding-ID tags
+across comments and docstrings; and the authority closure's membership.
+*(Corrected 2026-08-13 — this line still named the opening draft's four surfaces
+after Revisions 1 and 2 had grown the contract to eight R-items. A stale
+`Touches` line is the same defect class this proposal exists to fix, in this
+proposal's own header.)*
 **Related**: `dev/plans/ceremony-handshake-and-first-use.md` (archived work that
 built the two-stage protocol), `dev/plans/git-native-security-foundations.md`
 (M3/M4 completed 2026-08-13 at `cfaace9`), the Maintainer's critique during that
@@ -975,3 +982,52 @@ dedicated-key requirement and why a shared authentication key makes N4 fragile.
 **Plan review remains required(External Security Review)**, and the reviewer's
 recommendation is adopted: the next pass need only read **R6, R7 and R8**.
 E3, E4, and riders 1, 2 and 4 are unchanged and do not need a further read.
+
+## Scope ruling and the objective test -- Claude -- 2026-08-13
+
+**The Maintainer ruled on scope during drafting**, quoted verbatim (a drafting
+preference, not a Decision — `doctrine/lifecycle.md` > "Chat preferences are not
+a lifecycle Decision"):
+
+> I actually don't mind broadening scope. That just means that a bigger
+> perspective was gained. As long as we meet the objective.
+
+So item count is not the test. **The objective is**, and it is stated here once
+so every future revision and the eventual plan can be measured against it rather
+than against a size:
+
+> **The re-anchor ceremony must be performable, end to end, by the Maintainer
+> alone — without an agent generating a script, retyping a digest, or
+> improvising a reader — and without any control being weaker than it was
+> before.**
+
+Both halves are load-bearing. The first is the Maintainer's original complaint:
+*"A process that can't be run by the person authorizing it isn't secure, because
+I cannot truly evaluate what's going on."* The second is what stops this becoming
+a usability change that quietly trades away assurance.
+
+### Every scope item against that test
+
+| item | serves the objective by |
+|---|---|
+| **R1 / R6** — launcher from M2, OID late-bound | removing the one instruction the Maintainer would otherwise have to take from a candidate-controlled document, without inventing a freeze the repository cannot honour |
+| **R2 / R7** — closed values schema | removing the 13 hand substitutions that made an agent necessary; the schema is what lets a parser refuse instead of a human noticing |
+| **R3** — named commands, M2-supplied manifest | assigning the two jobs that currently have no owner. Without it, an agent still writes the manifest and improvises a JSON reader, and the objective is not met |
+| **R4** — step registry | keeping the runbook honest about the procedure once the procedure lives in code — the failure this change would otherwise introduce |
+| **R5 rider 1** — probe cannot see an agent-held key | the second half of the test. Observed on 2026-08-13: Stage 2 signed with no prompt because the agent held the key |
+| **R5 rider 2** — probe's "non-interactive" claim | same half: a control that misdescribes itself cannot be evaluated by the person relying on it |
+| **R8** (rider 3) — dedicated ceremony key | **directly on-objective, and I under-argued it when I called it a rider.** N4 is expensive *because* the roster pins the Maintainer's daily authentication key: satisfying it means removing the key that authenticates ordinary git work, and `AddKeysToAgent` silently restores it. A ceremony whose precondition is that disruptive is a ceremony that will be run with the precondition quietly unmet |
+| **R5 rider 4** — opaque finding-IDs | the *evaluate* half of the original complaint. `[FUR5]` in a docstring is precisely "I cannot truly evaluate what's going on", one layer down |
+
+**Nothing currently in scope fails the test.** The weakest fit is rider 4, which
+serves *evaluability* rather than *runnability* — but that is the same sentence
+the Maintainer opened with, so it stays.
+
+### What would fail it
+
+Recorded so a later reviewer has a boundary to hold this to, rather than
+re-deriving one: **anything that improves the ceremony's mechanics without a
+Maintainer able to run it unaided, and anything that makes a control weaker or
+its description looser than it is today.** A future revision that adds work
+meeting neither half is out of scope regardless of how natural it looks
+alongside the rest.
