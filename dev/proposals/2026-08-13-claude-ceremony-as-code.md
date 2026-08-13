@@ -826,3 +826,152 @@ and no-nonce residuals.
 recommended after R2-E1, R2-E2, and R2-R5 are settled. It need only review the
 new sequencing, schema table, and key-rollover contract; E3/E4 and the other
 R5 riders do not need another full read unless they change.
+
+## Response (Round 2) -- Claude -- 2026-08-13
+
+**All three findings accepted.** [R2-E1] is the important one: it caught R1
+silently changing a sequencing contract that the real ceremony depends on, and
+it is right about the history. Measured against this repository:
+`9a3a1cc..b8c1fac` is **14 commits** — the M2 record to the ceremony candidate —
+and **15** counting the checkpoint the ceremony itself created. Across that span
+**all nine authority files were byte-identical**. So the working contract is
+*M2 binds authority **bytes**; the candidate **OID** is late-bound and
+re-verified at ceremony time*, and R1's "M2 records the exact launcher text and
+the full reviewed candidate OID" collapsed the two into one artifact that cannot
+exist. **R6** codifies the sequence that already works instead of inventing the
+freeze the reviewer offered as an example — a freeze would be operationally
+false in a repository where concurrent sessions commit, which is this one.
+
+**[R2-E2]** accepted without qualification: "`key value` plus a schema version"
+described a parser's *posture* and not the thing it parses, and the reviewer is
+right that the distinctions bite — a regular-file rule cannot validate
+`checkout`, and an output path cannot be required to exist. **R7** supplies the
+closed table and one lexical grammar.
+
+**[R2-R5]** accepted. R5 stated a direction and called it scope, which left the
+one Maintainer-only act — creating and handling a new private key — undefined,
+and left open whether Cairn's own roster changes. **R8** chooses migration and
+names the rollover authority.
+
+## Revised proposal (Revision 2) -- Claude -- 2026-08-13
+
+R1–R5 stand except where R6–R8 replace them.
+
+### R6 — the sequence, and what invalidates M2 ([R2-E1], replaces part of R1)
+
+**The launcher carries no candidate OID.** It is fixed, reviewed, parameterized
+text; the OID and the artifact digest are *arguments*. This is what makes the
+sequence possible at all: reviewed bytes stay constant, late-bound values arrive
+as parameters — exactly the split Cairn already uses for the nine-row hash set.
+
+**The events, in order:**
+
+1. **M2 reviews and commits its record** over the authority bytes: a digest per
+   closure member, plus the launcher's digest and the ceremony artifact's.
+2. **After that commit exists**, the reviewer delivers out of band, directly to
+   the Maintainer: the exact launcher text, the artifact's repository-relative
+   path and SHA-256, and the review-manifest member rows. None of these contains
+   a candidate OID.
+3. **At ceremony time** the Maintainer resolves the candidate OID once,
+   **mechanically re-verifies every closure member at that OID against M2's
+   digests**, and composes the review manifest with that OID.
+4. **The launcher is invoked** with the OID and the artifact digest as arguments.
+
+**What invalidates M2**: any change to a closure member's bytes, the launcher's
+bytes, or the artifact's bytes. **A candidate-OID advance does not**, provided
+step 3's re-verification passes — which is precisely the 14-commit case above.
+
+**Where plan and archive commits sit**: they are ordinary commits. They advance
+HEAD, they do not touch the closure, and they therefore do not invalidate M2.
+Step 3 is what makes that safe, and it is mechanical rather than a judgement.
+
+**No freeze is required, and none is claimed.** The reviewer's example sequence
+forbids commits between M2 and the ceremony. That is a stronger guarantee and an
+unenforceable one here; step 3 buys the same property by measurement instead of
+by asking a multi-session repository to hold still.
+
+### R7 — the closed values schema ([R2-E2], completes R2)
+
+**Every key. Nothing else is accepted.**
+
+| key | value | required state | security use |
+|---|---|---|---|
+| `schema` | literal `cairn-ceremony-values/v1` | exact match | version pin; unknown version refuses |
+| `checkout` | absolute path | existing **directory**, worktree root, no symlink in leaf or parents | the repository blessed |
+| `review_manifest` | absolute path | existing **regular file**, symlink-free | **authority input** — the reviewed member set |
+| `signing_key` | absolute path | existing **regular file**, symlink-free, parses as a public key | the channel probed, and the key bound across stages |
+| `package` | absolute path | leaf **must not exist** at stage 1 and **must exist** at stage 2; parent an existing directory, symlink-free | the authorization handoff |
+| `home` | absolute path | existing **directory** | the signing backend's `HOME` |
+| `env`, `git`, `python`, `mktemp`, `mkdir`, `shasum`, `sort` | absolute path | existing **regular file**, executable bit set, symlink-free | each one is executed |
+
+**Lexical grammar**, deliberately the same shape as the review manifest so one
+operator learns one format:
+
+* UTF-8, LF endings. **No leading whitespace on any line** — the rule [D1]
+  settled for the review manifest, applied here for the same reason.
+* One record per line: `key`, exactly one space, then the value **verbatim to
+  end of line**. Trailing whitespace **refuses** rather than being trimmed, so a
+  path never silently changes.
+* `#` at column 0 is a comment. Elsewhere it is part of the value.
+* No control characters. Max line **4096 bytes**; max file **64 KiB**.
+* **Refusals**: unknown key, duplicate key, missing required key, malformed
+  value, relative path, symlink, wrong file type, missing executable bit.
+* **No ambient fallback of any kind.** An absent field refuses; the ceremony
+  never consults `PATH`, `HOME`, Git config, or any other ambient source.
+
+**Excluded on purpose**, as R2 already said: the reviewed candidate OID and the
+artifact digest. They travel the M2 channel (R6), never this mutable file.
+
+### R8 — the key rollover contract ([R2-R5], completes R5's rider 3)
+
+**This implementation migrates Cairn to a dedicated ceremony key.** Doctrine-only
+was the alternative and is rejected: the live inconsistency is real — Git config
+names `cairn_signing` (`SHA256:8R549gtP…`) while the anchored roster names the
+Maintainer's GitHub key (`SHA256:wuCkJjCO…`) — and leaving it documented rather
+than fixed keeps N4 expensive exactly where it must be cheap.
+
+**End state**: a dedicated ceremony key, encrypted at rest, never added to an
+agent, used for nothing but this ceremony.
+
+**Rollover authority and fences:**
+
+* **Key creation and all private-key handling are MAINTAINER-ONLY.** No agent
+  generates, moves, encrypts, or loads it. This is a fence, not a preference.
+* **Only the public half is committed**, into `dev/.cairn/allowed_signers`.
+* **The old anchored roster authorizes the single transition that installs the
+  new roster** — the reviewed-authority transition, using the key it already
+  pins. That is the only ceremony the old key signs.
+* **Every ceremony thereafter uses the new anchored key.**
+* The Maintainer's `AddKeysToAgent` / `UseKeychain` settings must be understood
+  before the rollover: they are what silently re-added the old key on
+  2026-08-13, and a dedicated key that is auto-loaded is not dedicated.
+
+**Adopter-facing guidance surface**: `SECURITY.md` > *The key channel*, which
+already states the two-stage contract and its non-claims, extended with the
+dedicated-key requirement and why a shared authentication key makes N4 fragile.
+
+### Withdrawn / superseded commitments
+
+* **Withdrawn:** R1's *"M2 produces and records … the exact launcher text **and
+  the full reviewed candidate OID**"* as one reviewed artifact. The reviewer's
+  own commit OID does not exist while the review is being written, so the OID
+  cannot be in bytes M2 reviewed; filling it afterwards changes them (**[R2-E1]**).
+  **Replaced by R6** — the launcher is OID-free and parameterized, M2 binds
+  authority bytes, and the OID is late-bound and mechanically re-verified.
+* **Withdrawn:** R2's implication that *"a line-oriented `key value` format with
+  a schema version"* constituted the data contract. It described the parser's
+  posture, not its vocabulary or types (**[R2-E2]**). **Replaced by R7** — the
+  closed key table, required states, security uses, and one lexical grammar.
+* **Superseded:** R5 rider 3's *"a dedicated ceremony key makes N4 cheap"* as a
+  direction held inside implementation scope. It concealed a Maintainer-only
+  private-key act and left Cairn's own roster's fate undecided (**[R2-R5]**).
+  **Replaced by R8** — migration, with creation and private-key handling as a
+  Maintainer-only fence and the old roster authorizing exactly one transition.
+* **Not withdrawn, recorded as unchanged:** R3, R4, and R5 riders 1, 2 and 4,
+  which the reviewer adjudicated closed or adequate for planning. R1's remaining
+  substance — the launcher's authority coming from M2 rather than candidate
+  prose — stands; only its OID-binding clause is replaced.
+
+**Plan review remains required(External Security Review)**, and the reviewer's
+recommendation is adopted: the next pass need only read **R6, R7 and R8**.
+E3, E4, and riders 1, 2 and 4 are unchanged and do not need a further read.
