@@ -1335,3 +1335,97 @@ and were not re-reviewed.
 **Further review recommendation**: one final, packet-integrity-only External
 Security pass after R4-E1 is answered. If the packet is independently bound and
 the artifact row is closed as above, no broader proposal review is warranted.
+
+## Response (Round 4) -- Claude -- 2026-08-13
+
+**[R4-E1] accepted, and it is a correction to a claim I should not have made.**
+
+Revision 3 said the values-file residual *"goes with it"* when
+`review_manifest` left the schema. That was wrong in the specific way the
+reviewer names: removing the config's ability to **redirect** the path is not the
+same as making the packet's **contents** tamper-evident. The residual moved one
+step earlier, to a file whose closure rows and artifact digest an attacker with
+same-user write can rewrite *consistently* — after which every R9 comparison
+succeeds against bytes of their choosing.
+
+Calling the packet *"the carrier, not a new trust root"* while trusting its
+values without a binding is the same shape: a security property asserted at
+intent rather than delivered. Four reviews have now caught that pattern in this
+proposal family, and this instance is mine, in a sentence I wrote to describe an
+*improvement*.
+
+**The satisfier is adopted whole**, and it has precedent in this codebase rather
+than being invented here: `read_package` already reads the authorization package
+once, hashes those bytes **before** parsing, and parses only that buffer
+(`bootstrap/tests/_gate_preflight.py`). R10 applies the same discipline one
+layer earlier.
+
+**The second half is adopted too** — requiring the artifact path to identify
+exactly one closure row, with its separate digest equal to that row. Without it
+the artifact could be admitted as an executable *adjacent to* the closure while
+the proposal claims it is *inside* it.
+
+## Revised proposal (Revision 4) -- Claude -- 2026-08-13
+
+R1–R9 stand except where R10 replaces them.
+
+### R10 — the packet is bound into the launcher ([R4-E1])
+
+**The exact packet bytes are an M2 output, and their SHA-256 is a literal in the
+M2-reviewed launcher.** M2 delivers the two as a **pair**. Changing either one
+breaks a check the Maintainer already performs: altering the launcher changes the
+digest M2 recorded for it; altering the packet fails the launcher's embedded
+comparison.
+
+**At runtime, before anything else**, the launcher:
+
+1. opens the packet as a **regular, symlink-free** file with a **bounded** size;
+2. reads it **once** into memory;
+3. **hashes those bytes before parsing them**;
+4. compares against its **embedded** digest and refuses on any difference;
+5. parses **only that same in-memory buffer** — never re-reading the path.
+
+Steps 2–5 are the discipline `read_package` already applies to the authorization
+package: what is verified and what is parsed must be the same bytes, or the
+verification describes a file that no longer exists by the time it matters.
+
+**The packet schema gains two closure constraints:**
+
+* the ceremony artifact's path must identify **exactly one** closure row;
+* the artifact's separately-stated digest must **equal that row's digest**.
+
+So the artifact is *in* the closure by construction, rather than being an
+executable the packet happens to name alongside it.
+
+**What the Maintainer verifies is unchanged**: the launcher's digest, which M2
+already records. One comparison now covers both artifacts, because the packet is
+bound into the thing being compared.
+
+**No candidate-OID freeze is introduced**, and R6's invalidation rule is
+untouched.
+
+### Withdrawn / superseded commitments
+
+* **Withdrawn:** Revision 3's claim that, with `review_manifest` gone from the
+  values file, *"the residual R2 disclosed goes with it."* **False.** Removing
+  the config's power to redirect a path is not the same as making the packet's
+  contents tamper-evident; the residual moved one step earlier rather than
+  disappearing (**[R4-E1]**). **Replaced by R10** — the packet is bound into the
+  launcher, so the residual is *closed by a check* rather than declared gone.
+* **Withdrawn:** R9's phrasing that the packet is *"the carrier, not a new trust
+  root."* It **is** an authority input: its rows decide which candidate bytes may
+  execute. **Replaced by R10** — what makes it safe is the binding, not its
+  billing. The sentence asserted a property instead of delivering one.
+* **Superseded:** R9's packet schema as listed, which named the artifact path and
+  digest as free-standing fields. **Replaced by R10's** two closure constraints,
+  which make the artifact a closure member by construction rather than by
+  assertion.
+* **Not withdrawn:** everything else in R9 — the OID-free packet, the single
+  Maintainer command, the launcher's resolve/verify/compose/extract sequence, and
+  *"the launcher composes; it does not source."* R7's remaining schema, R8, and
+  R6's invalidation rule are unchanged and were adjudicated closed.
+
+**Plan review remains required(External Security Review).** The reviewer's
+recommendation is adopted: the next pass need only read **R10** — a
+packet-integrity-only review. No broader re-read is warranted if that binding
+and the two closure constraints hold.
