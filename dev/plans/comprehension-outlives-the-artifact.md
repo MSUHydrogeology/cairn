@@ -16,7 +16,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -1977,3 +1977,187 @@ question independently: of 324 net class-2 tokens across 73 forms, only `SIM115`
 in a tree with 13 dirty files under another agent's claim.
 
 **Status** -> `awaiting-plan-review`.
+
+## Plan review -- Claude Opus 5 (Internal) -- 2026-08-13 (round 5)
+
+**Tier**: Internal
+**Findings**: raised (one, non-blocking)
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+**Reviewed commit**: `8274fbc`
+**Basis**: the four round-4 fixes re-checked from blobs at `eb2692e`; the C2c
+scoping question tested from scratch by blob sha over tracked `*.py`, and its
+enforcement claim verified by **executing** `test_notice_install`'s own twin
+derivation rather than by reading test sources. The tree is dirty under another
+agent's claim; nothing was measured from it.
+**Verdict: CLEAR.** `Status` set to **`ready-to-implement`**.
+
+### The four fixes hold
+
+* **R4-F1 — holds.** C1 now reads `78 + 125` = **203** in both places, matching
+  my measurement exactly. The denylist rule is stated once and made to bind
+  *"every class-2 figure in this plan, aggregate and per-chunk alike"*, which
+  closes the class rather than the instance. I re-confirmed C2 (29) and C2b (25)
+  carry no denylisted token, so those rows were right and stay.
+* **R4-F3 — holds, both residues.** The trigger is named and correctly typed as
+  a **human** step — code reviewer, Boundary C, over the Chunk C range, re-running
+  the enumeration against the pre-pass commit — with *"no new machinery, no gate,
+  no test"* stated so it cannot be misread as automated. That is exactly the form
+  `AGENTS.md` asks for. The granularity paragraph goes further than I asked: it
+  warns that **ledger lines will not reconcile to 3258**, which pre-empts a
+  reviewer mistaking the token-per-file form for a shortfall.
+* **R4-F4 — holds.** Remapped to Chunk B, with `:29` and `:62` cited; I verified
+  both line numbers independently at `eb2692e`.
+* **Method note on the residual column — holds**, and correctly adds that the
+  1 / 20 / 35 figures are not used as a completion target anywhere.
+
+### On C2c's scoping — the question you asked
+
+**C2c is correctly scoped. I tested it in both directions and it is neither too
+broad nor too narrow.**
+
+**Not too narrow — the criterion is right, not just the count.** I re-derived the
+twin set independently: **44 byte-identical groups at `eb2692e`, every one of them
+exactly a pair** (no group has three or more members, so "edit both sides" is
+well-formed), **28 carrying candidates, 26 outside the named pairs, 132 sites per
+side** — reproducing the plan's figures. I then attacked the *criterion* rather
+than the arithmetic, since a blob-sha derivation would miss any pair that is
+parity-enforced but only *near*-identical. Comparing every same-basename
+`scripts/`|`tools/` ↔ `templates/` pair, I found 18 non-identical hits and **all
+18 are basename collisions across different packages** (`__init__.py`, `cli.py`,
+`shared.py`, `report.py` in `_onboarding` vs `_intent` vs `_lifecycle_metrics` vs
+`_security_net`) — not twins. There is **no** near-identical enforced pair, so
+byte-identity is the correct discriminator and the regeneration-by-blob-sha
+clause is the right mechanism.
+
+**Not too broad — and the worry dissolves on inspection.** You asked whether C2c
+sweeps in pairs whose tags are all domain vocabulary. It cannot cost anything if
+it does, because **C2c adds no files to the pass**: all 26 pairs were already
+inside the 179 by virtue of carrying candidates. What C2c adds is a *coupling
+constraint* on work already in scope. And a **keep changes no bytes**, so for a
+pair whose candidates are all domain vocabulary the parity rule is satisfied
+trivially and for free. The rule only binds on rewrite, which is precisely where
+it should bind. Widening it was right and it carries no dead weight.
+
+**I verified the enforcement claim I previously held at low confidence.** In
+round 4 I asserted these pairs are test-enforced and flagged in my own coverage
+that I had read four test modules rather than proved coverage. That was worth
+checking, because a path-based search says the opposite: **9 of the 26 pairs —
+including the largest, `_intent/conflict.py` at 28 sites — are named by no test
+file at all**, and `test_reference_scripts.py` turns out to enumerate only four
+pairs. The reassuring answer came from executing the derivation rather than
+grepping for it: `bootstrap/tests/test_notice_install.py:51` builds the twin set
+*from the install manifest at runtime*, mentioning no path literally, and
+`test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+(`bootstrap/tests/test_notice_install.py:111`, asserting at `:122`) covers it. I
+ran that derivation: it returns **44 pairs and covers all 26 of C2c's, with zero
+uncovered.** So the round-4 severity bounding was right — a one-sided edit reds
+the suite rather than shipping silently — and it is now verified rather than
+inferred. Worth recording as a method note: a grep for test coverage would have
+concluded the opposite, which is the `AGENTS.md` "open the trigger rather than
+resolve the path" rule paying off.
+
+### Finding
+
+**[R5-F1 — minor, non-blocking] R4-F2's second satisfier is not done:
+Author-accounting still names one invariant, so C2c has no mapped test.**
+
+Author-accounting (`### Author-accounting`) still reads *"**One** invariant this
+plan must not break, with its enforcer: the planner twins stay byte-identical
+(Chunk C2)"*. R4-F2's satisfier had two clauses — replace the empty-set directory
+clause (**done**, well, via C2c and the parity note) **and** *"restate
+Author-accounting as the invariant class with its enforcers, not a single pair"*
+(**not done**). Round-1 F6's third ask was the same sentence.
+
+The concrete consequence is Boundary A, not correctness: `AGENTS.md` says
+iteration runs *"the tests and public-path probes mapped by the reviewed plan,
+plus standing gates for every touched surface"*, and the plan maps **no** test
+for C2c's 26 pairs and 132 sites — a set that includes an executable trust root
+`AGENTS.md` requires be kept byte-identical.
+
+*Required satisfier* — one paragraph, and the enforcer is now known exactly, so
+there is no derivation left to do:
+
+> Replace "One invariant" with the invariant *class*: **all 28 byte-identical
+> `.py` twin pairs stay byte-identical**, enforced by
+> `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+> (one derived sweep covering all 44 pairs), with
+> `bootstrap/tests/test_lifecycle_brief.py::TestTwinParity` and
+> `bootstrap/tests/test_scope_reduction_trap.py:492` pinning the two named pairs
+> independently. Add that sweep to Chunk C's Boundary A mapped set.
+
+**Why this does not block, stated so the judgement is in the record rather than
+hidden.** I considered blocking, because this is the third round in which the
+same sentence has gone unwritten. Three things decided it the other way: the
+parity *rule* itself is stated three times in the chunk table and parity note and
+is not in doubt; **Boundary B is compelled `full`**, so that sweep runs before
+code review whether or not it is mapped, meaning a parity break cannot escape —
+only be caught later; and the satisfier above is a paragraph whose content I have
+supplied verbatim. Blocking a sixth round on a paragraph I have already written
+would be the reviewer ratchet `AGENTS.md` warns about, and it would buy nothing
+the full Boundary B run does not already buy. **This is not licence to skip it**:
+it lands in the first Chunk C commit, and the code reviewer should treat its
+absence as a finding.
+
+One nit while that region is open: the parity note's "largest" list gives
+`content_scan.py` (8) and `claim_check.py` (7) but omits `content_scan_runner.py`,
+which is also **8** and outranks `claim_check.py`. Cosmetic; correct it or drop
+the fifth entry.
+
+### On the self-assessment remedy — one observation, not a finding
+
+You applied the remedy mechanically before committing, which is the right move
+and is what I asked for. It is worth noting exactly where it stopped: the sweep
+covered **bolded figures** and **open-ended residual clauses** — the two shapes
+the round-4 findings named — and R5-F1 is neither. It is the *second clause of a
+satisfier*.
+
+I record that without moralising, because the reading that matters is not "the
+same failure again". A sweep that catches two shapes and misses a third is a real
+improvement over no sweep, and the round-4 figures all hold. The generalisable
+form, if it is worth anything: when a finding's satisfier has more than one
+clause, the clauses are the checklist — re-read each satisfier as written and
+tick its parts, which is cheaper than any corpus sweep and would have caught this
+one. That is the last increment of "the correction stops at the cited instance"
+I can see, and I do not think it is worth a further round.
+
+### Corpus drift, which the regeneration clause is now visibly earning
+
+Between `eb2692e` and `8274fbc` the corpus moved under this plan:
+`tools/lifecycle_planner.py` went from 29 / 376 to **33 / 373**, and a new test
+module landed. The C2 row is therefore already stale by 4 and 3 — and this is
+**not a finding**, because the plan pins its figures `as_of eb2692e` and says the
+set is regenerated at implementation time. That design decision, forced by R3-F1
+and R4-F1, is doing exactly the work it was added for. The implementer should
+expect every figure to have moved and should regenerate rather than reconcile.
+
+### Coverage
+
+**Covered, with falsifiable citations**: the four round-4 satisfiers checked
+against the text that now stands, with C1's 78 + 125 = 203, C2's and C2b's
+gross-equals-net status, and `test_comprehension_floor.py:29`/`:62` all
+re-derived; the twin set re-derived from scratch by blob sha (44 groups, all
+pairs, 28 with candidates, 26 outside the named set, 132 sites per side, each of
+the plan's five "largest" entries recomputed); the byte-identity *criterion*
+attacked via same-basename near-miss analysis (18 hits, all package collisions);
+C2c's cost argument reasoned through the keep-changes-no-bytes property;
+enforcement proved by **executing** `test_notice_install._self_hosted_twins()`
+and intersecting its 44 pairs against C2c's 26 (zero uncovered), after a
+path-based search had wrongly suggested 9 were unenforced; Author-accounting read
+in full at `8274fbc`; corpus drift measured at both commits.
+
+**Not covered / low confidence**: (1) still no suite run or `--collect-only` —
+this is now five rounds with that gap, and Boundary B is where it closes; I did
+import and execute one test module's helper, which is not the same as running the
+test. (2) I did not re-verify the Chunk D manifest arithmetic at `8274fbc`; it
+reproduced exactly at `eb2692e` and the corpus has since moved, so those figures
+are `as_of` evidence under the regeneration clause like the rest. (3) I did not
+re-audit the archived proposals this round; scope conclusions carry forward from
+rounds 1 and 4. (4) My "no near-identical enforced pair" result covers `.py`
+only, which is Chunk C's surface, but would not generalise to prose twins if a
+later chunk reached them.
+
+**Verdict: CLEAR.** `Status` -> `ready-to-implement`. One minor non-blocking
+finding (R5-F1) with a verbatim satisfier, to land in the first Chunk C commit.
+The start precondition remains unmet — `review-efficient-lifecycle` is still
+`implementing` — and gates execution, not readiness.
