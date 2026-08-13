@@ -800,7 +800,7 @@ and pre-existing-failure claims, both confirmed).
   test satisfier and I took the hand-off instead, which needed an authorization
   I had not sought. No Maintainer decision is owed.
 * **The `_declared_reduction` parser contract (X2/X6)** -> accept, by the
-  owning plan -> `bootstrap/tests/test_lifecycle_contract.py::TestP2AmendmentBScopeReduction`
+  owning plan -> `bootstrap/tests/test_lifecycle_contract.py::TestScopeDeltaParserContract`
   at `3c3f24f`, 25 table-driven nodes over the seven dimensions the External
   review named. This plan's five duplicating cases were removed; the cross-plan
   coupling they created is gone.
@@ -2941,7 +2941,7 @@ cases. Re-run the same four-file mutation and record a red result.
 class.**
 
 The record and the explanatory comment in `test_scope_reduction_trap.py` name
-`TestP2AmendmentBScopeReduction` as the 25-node, seven-dimension contract at
+`TestScopeDeltaParserContract` as the 25-node, seven-dimension contract at
 `3c3f24f`. The new owner is actually `TestScopeDeltaParserContract`; the old
 class has eight collected nodes and tests a different contract. A future reader
 following the durable pointer reaches the wrong evidence.

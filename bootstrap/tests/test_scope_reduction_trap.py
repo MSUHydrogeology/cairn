@@ -455,15 +455,38 @@ def test_the_scaffolds_do_not_contradict_the_offered_values(
 # cases silently constrained that design.
 #
 # That plan adopted the contract at `3c3f24f`: 25 table-driven nodes in
-# `bootstrap/tests/test_lifecycle_contract.py::TestP2AmendmentBScopeReduction`,
+# `bootstrap/tests/test_lifecycle_contract.py::TestScopeDeltaParserContract`,
 # covering the seven dimensions the review named, and encoding the Maintainer's
 # 2026-08-12 boundary -- a presence check stays forbidden (`preserved`, absent
 # and unfilled values yield nothing), an authorization check is permitted.
-# Verified before removing these: `test_preserved_owes_nothing` and
-# `test_the_templates_unfilled_prompt_is_inert` pin the forbidden half there.
+# Verified before removing these: `test_no_presence_check_exists_in_any_direction` (six values) and
+# `test_an_absent_field_yields_nothing` pin the forbidden half there.
 #
 # What stays here is what this plan owns: that no transition refuses on a
 # missing declaration, pinned below through the planner's own refusal surfaces.
+
+
+@pytest.mark.parametrize("kind,status,target", _SCAFFOLDED_TRANSITIONS,
+                         ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
+def test_the_emitted_scaffold_asks_each_entry_for_its_disposition(
+        kind: str, status: str, target: str) -> None:
+    """The two of six shapes the first version of this guard did not reach.
+
+    `_PER_ENTRY_DISPOSITION_SURFACES` covers the four Markdown templates. The
+    emitted scaffolds are the other two author-facing shapes, and removing the
+    per-entry prompt from both planner copies left the mapped set at 778 passed
+    (correction review, R2-X1). Checked through `_scaffold` rather than by
+    grepping source, because the block is built from adjacent string literals.
+    """
+    art = planner.Artifact(path=Path(f"some-{kind}.md"), kind=kind, text="")
+    art.status = status
+    _, _, blocks = planner._scaffold(art, target, "2026-08-13")
+    emitted = " ".join("\n".join(blocks).split())
+    assert re.search(r"disposition \(accept", emitted), (
+        f"the {kind} -> {target} scaffold no longer asks each removed unit for "
+        f"its own disposition. A group-level home is a location, not a "
+        f"decision, and each entry blocks archive independently."
+    )
 
 
 def test_the_two_planner_twins_stay_byte_identical() -> None:
