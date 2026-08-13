@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: revised
+**Status**: accepted
 **Touches**: `doctrine/rationale.md` — Anchor 16, "The comprehension floor"
 **Related**: `2026-08-13-claude-test-names-outlive-their-plans` and
 `2026-08-13-claude-finding-tags-are-not-reasons` — the two operational rules
@@ -229,4 +229,13 @@ you. Bound in the anchor text instead:
 clause is gone; the trigger stands on its own.
 
 **Scope delta: preserved.** No baseline outcome added or dropped.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-13
+
+**ACCEPTED as revised.** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, please scribe my acceptance of comprehension-outlives-the-room as revised"
+
+**Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
+
 
