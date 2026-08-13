@@ -776,7 +776,60 @@ and pre-existing-failure claims, both confirmed).
 
 ## Lasting-truth migration
 
-*Filled in at archive time.*
+**Dispositions:**
+
+* **The detached-checkout guard counts `__pycache__` as unexpected content**
+  -> defer -> `dev/PLANNING.md` > Deferred follow-ups > Lifecycle apparatus,
+  filed at `e150b7d`. Maintainer authorization quoted verbatim in the row:
+  *"And with the detached-checkout guard, go ahead and file that as a
+  dev/PLANNING.md item"*. Sharpened 2026-08-12 with the External review's better
+  diagnosis: the failure is environmental, clearing entirely under
+  `PYTHONDONTWRITEBYTECODE=1`.
+* **Cairn stacks review tiers upward by default** -> superseded ->
+  `dev/plans/review-efficient-lifecycle.md`, the Maintainer-directed contract
+  revision, binding via cell **G-R** (teach the proposal-centred default in
+  canonical, self-hosted and shipped surfaces) and cell **P8-R** (test matrix).
+  Not a deferral: live work in an executing plan.
+* **The planner gate on the `Scope delta` declaration** -> wontfix, revival
+  condition recorded in the accepted proposal's Round 3 -> guard
+  ([`test_the_planner_does_not_gate_on_a_missing_declaration`](../../bootstrap/tests/test_scope_reduction_trap.py)),
+  which fails if the declined gate returns.
+* **The fence is pinned to pending-retirement vocabulary (E5/X5)** -> guard
+  -> the same node, which now asserts its target is a legal transition. The
+  `defer` first taken here was **withdrawn**: the reviewer offered a one-line
+  test satisfier and I took the hand-off instead, which needed an authorization
+  I had not sought. No Maintainer decision is owed.
+* **The `_declared_reduction` parser contract (X2/X6)** -> accept, by the
+  owning plan -> `bootstrap/tests/test_lifecycle_contract.py::TestP2AmendmentBScopeReduction`
+  at `3c3f24f`, 25 table-driven nodes over the seven dimensions the External
+  review named. This plan's five duplicating cases were removed; the cross-plan
+  coupling they created is gone.
+* **The "cut ceremony" half ships as a paragraph, not a mechanism** ->
+  `wontfix`, on the Maintainer's reasoning (2026-08-12): a per-change check
+  asking *"is this too much process?"* is itself more process, and the two
+  halves are different kinds of claim -- dropping an outcome is decidable on one
+  artifact, aggregate ceremony cost is not. The mechanisms that do cut ceremony
+  work by **lowering the default** rather than adding a gate: the Boundary B
+  bounding clause and the proposal-centred review allocation, both landed
+  2026-08-12.
+
+**Evidence shipped**: the doctrine, both `AGENTS.md` copies, both
+`agent_collaboration.md` copies, all four templates, both board copies, the
+team-gated module and its installed twin, both planner scaffolds, and
+`bootstrap/tests/test_scope_reduction_trap.py` (109 nodes).
+**Evidence deferred**: none.
+
+**Fidelity sign-off** -- the landed implementation commits `be40b41` (Chunk A),
+`99451d2` (Chunk B), `ccffb77` (Chunk C), `64b4ee2` (Chunk D) and `4f17fef`
+(Chunk E), together with the correction commits through `2718e55`, match the
+accepted proposal's `## Revised proposal (Round 6)` -- the baseline-bound
+`preserved / degraded / lost` outcome test, the stage authority split, the
+grouped scope-remainder record, the reviewer-expansion clause, and the
+`scope-cut` vocabulary reconciliation. All five chunk commits verified as
+ancestors of `HEAD` after the 2026-08-12 supervised gate re-anchor rewrote some
+SHAs in this range; the check was by ancestry and content, not by SHA identity.
+
+*This section is append-only once written.*
 
 ### Sharpening -- Claude -- 2026-08-11
 

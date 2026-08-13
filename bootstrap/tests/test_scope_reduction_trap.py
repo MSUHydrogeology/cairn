@@ -442,71 +442,28 @@ def test_the_scaffolds_do_not_contradict_the_offered_values(
     )
 
 
-def _reduction_probe(tmp_path, body: str):
-    """`_declared_reduction` over a minimal plan carrying *body* in a Sharpening."""
-    d = tmp_path / "dev" / "plans"
-    d.mkdir(parents=True, exist_ok=True)
-    f = d / "some-plan.md"
-    f.write_text(
-        "# Plan: x\n\n**Status**: executing\n\n"
-        "## Plan review -- R -- 2026-08-10\n\n"
-        "### Sharpening -- S -- 2026-08-10\n\n" + body,
-        encoding="utf-8")
-    return planner._declared_reduction(planner._read_artifact(f))
-
-
-#: (label, body, expected) -- the boundary the Maintainer decided on 2026-08-12
-#: ("let both stand"), pinned in BOTH directions on the predicate that carries
-#: it. `plan_inheritance_violations` consumes this and is gated on
-#: `_declares_inheritance`, which no artifact in the tree declares yet, so the
-#: refusal is dormant; pinning the predicate tests the rule rather than the
-#: current population.
-_BOUNDARY_CASES = (
-    # FORBIDDEN half -- a presence check. Neither an absent declaration nor a
-    # `preserved` one may yield anything to refuse on. Round 3 declined this:
-    # a tool sees whether the box is ticked, never whether the tick is honest.
-    ("absent", "Nothing declared here.\n", []),
-    ("preserved", "**Scope delta**: preserved\n", []),
-    # PERMITTED half -- an authorization check. A declared loss carries its
-    # allowance or it does not, and that is about WHO MAY CONCEDE, which is the
-    # part that cannot be recovered afterwards.
-    ("degraded without allowance",
-     "**Scope delta**: degraded\n\n**Removed scope**\n\n* b\n",
-     [("degraded", False)]),
-    ("degraded with allowance",
-     "**Scope delta**: degraded\n\n> \"drop chunk B\"\n\n**Removed scope**\n\n* b\n",
-     [("degraded", True)]),
-    ("lost without allowance",
-     "**Scope delta**: lost\n", [("lost", False)]),
-)
-
-
-@pytest.mark.parametrize("label,body,expected", _BOUNDARY_CASES,
-                         ids=[c[0] for c in _BOUNDARY_CASES])
-def test_the_declared_reduction_boundary_holds(tmp_path, label: str, body: str,
-                                               expected) -> None:
-    """A presence check stays forbidden; an authorization check stays permitted.
-
-    Two accepted proposals meet here. `scope-reduction-trap` Round 3 declined a
-    gate that refuses on a *missing* declaration. `review-efficient-lifecycle`
-    Amendment B landed one that refuses a *declared* loss carrying no
-    Maintainer allowance. The Maintainer decided on 2026-08-12 that both stand,
-    because they answer different questions -- paperwork versus authority.
-
-    This pins that boundary so neither half drifts: if a later change makes an
-    absent or `preserved` declaration yield something refusable, the forbidden
-    gate has arrived; if a declared loss stops reporting its allowance state,
-    the permitted one has been lost.
-    """
-    got = [(value, allowed) for _line, value, allowed
-           in _reduction_probe(tmp_path, body)]
-    assert got == expected, (
-        f"the declared-reduction boundary moved for {label!r}: expected "
-        f"{expected}, got {got}. An absent or `preserved` declaration must "
-        f"yield nothing (the declined presence check); a declared "
-        f"`degraded`/`lost` must report whether its Maintainer allowance is "
-        f"present (the permitted authorization check)."
-    )
+# --- the `_declared_reduction` boundary contract lives with its owner --------
+#
+# This module used to carry five parametrised cases pinning `_declared_reduction`
+# directly. They are gone, and their absence is the fix rather than a loss.
+#
+# An External review (Codex, 2026-08-12) raised X2/X6: those cases covered value
+# recognition only -- not heading-bounded scope, allowance position, isolation,
+# fence exclusion, or multiple declarations -- and they imported a private
+# predicate owned by the executing `review-efficient-lifecycle` plan, so a
+# correction there could redden this suite under the wrong owner while these
+# cases silently constrained that design.
+#
+# That plan adopted the contract at `3c3f24f`: 25 table-driven nodes in
+# `bootstrap/tests/test_lifecycle_contract.py::TestP2AmendmentBScopeReduction`,
+# covering the seven dimensions the review named, and encoding the Maintainer's
+# 2026-08-12 boundary -- a presence check stays forbidden (`preserved`, absent
+# and unfilled values yield nothing), an authorization check is permitted.
+# Verified before removing these: `test_preserved_owes_nothing` and
+# `test_the_templates_unfilled_prompt_is_inert` pin the forbidden half there.
+#
+# What stays here is what this plan owns: that no transition refuses on a
+# missing declaration, pinned below through the planner's own refusal surfaces.
 
 
 def test_the_two_planner_twins_stay_byte_identical() -> None:
