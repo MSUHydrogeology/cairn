@@ -185,22 +185,25 @@ facing behaviour; the shipped `AGENTS.md` paragraph is the delivery.
 **Reviewed commit**: `42322f3a653ac359f378bce36f586d7a73ac0993`
 **Reviewed proposal blob**: `035053183fd1290340adc2c1e2f164f4cc7d3860`
 **Assurance path**: high-assurance
-**Findings**: none
-**Verdict: ACCEPT.** The proposal is well-reasoned, operationally sound, and resolves a real maintenance legibility defect without destroying historical provenance. Moving lifecycle coordinates out of test container names and into class docstrings ensures failure logs remain self-describing for future maintainers.
+**Findings**: 3 raised (1 header contradiction, 1 execution tracking gap, 1 docstring formatting gap)
+**Verdict: REVISE.** The core problem and proposed convention are sound, but the proposal carries a direct contradiction in its header justification regarding sequencing, lacks an explicit tracking mechanism for the post-archive rename task, and should provide a standardized docstring example in `AGENTS.md`.
 
-### Steelman & Evaluation
+### Findings
 
-1. **Failure Legibility vs. Historical Provenance**:
-   - Test container names (e.g. `TestP2AmendmentBScopeReduction`) force maintainers diagnosing test failures to consult archived plans. Moving coordinates to class docstrings preserves provenance where it is useful during audits while keeping failure logs focused on pinned behavior.
+1. **[E1 -- Header Justification Contradiction]**:
+   - Line 12 asserts: `**Plan review**: not required(no plan — one convention paragraph plus a mechanical rename, no sequencing, no deferred follow-ups)`.
+   - However, lines 9 and 99–102 explicitly state that the rename is **`sequenced after their owning plan archives`** (specifically `review-efficient-lifecycle`).
+   - *Required satisfier*: Correct the header justification to `not required(no plan — single concept, operational convention change, mechanical rename)` rather than claiming "no sequencing".
 
-2. **Clean Scope & Sequencing Discipline**:
-   - The proposal is appropriately bounded: ~30 class containers renamed without touching method bodies or test logic.
-   - Sequencing the rename after owning plans archive prevents merge conflicts and mid-flight churn with active plans (such as `review-efficient-lifecycle`).
+2. **[E2 -- Execution Handoff & Tracking for Deferred Rename]**:
+   - Because `review-efficient-lifecycle` is currently executing, renaming its test classes now would cause merge conflicts. However, once `review-efficient-lifecycle` eventually archives in a future session, a future agent will have no automated way of knowing this mechanical rename is pending.
+   - *Required satisfier*: Specify that upon acceptance, the mechanical rename is recorded as a queued item in `dev/PLANNING.md` under an explicit revival condition: *"When `review-efficient-lifecycle` archives, execute the test container rename from `2026-08-13-claude-test-names-outlive-their-plans`."*
 
-3. **Adopter & Operational Alignment**:
-   - Updates both `AGENTS.md` and `templates/core/AGENTS.md` in the `**Naming.**` paragraph, ensuring adopter projects inherit the same operational convention.
-   - Declines adding a lint unnecessarily, recording a clear revival condition if coordinate names reappear post-rename.
+3. **[E3 -- Standardized Docstring Provenance Example]**:
+   - The proposed `AGENTS.md` text states: `Provenance belongs in the docstring — the finding id, the date, and why the obligation exists`. Without a concrete example, future test authors will format provenance docstrings inconsistently.
+   - *Required satisfier*: Include a concise 1–2 line docstring template example directly inside the proposed `AGENTS.md` text (e.g. `"""Pinned behavior for finding CF1 (2026-08-11). Asserts that..."""`).
 
 ### Summary Verdict
-**Verdict**: **ACCEPT** (Proposal approved; 0 blocking, 0 substantive, 0 minor findings). Ready for Maintainer disposition.
+**Verdict**: **REVISE** (3 minor/substantive findings). Address E1–E3 in a short Response and Revised proposal.
+
 
