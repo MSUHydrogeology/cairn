@@ -3,7 +3,7 @@
 # Plan: the scope-reduction trap
 
 **Source proposal**: [`2026-08-11-claude-scope-reduction-trap`](../proposals/archive/2026-08-11-claude-scope-reduction-trap.md)
-**Status**: review
+**Status**: revising-code
 **Plan review**: none — **waived by the Maintainer at plan-open**, adjusting the
 accepted proposal's `required(External)` declaration. See "The waived plan
 review" below; the code review before archive is unaffected and remains
