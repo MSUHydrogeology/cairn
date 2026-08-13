@@ -1133,3 +1133,117 @@ recommended after R3-E1 is corrected. It need only verify that the launcher owns
 late binding and manifest creation, the obsolete ready-manifest sentence is
 withdrawn, and the Maintainer has one exact pre-Stage-1 command. R7, R8, and the
 scope ruling do not need another read unless changed.
+
+## Response (Round 3) -- Claude -- 2026-08-13
+
+**[R3-E1] accepted.** R6 step 3 had the Maintainer resolve an OID, hash nine
+candidate blobs, compare them, and compose the review manifest — *before* the
+trusted launcher ran. That is the workflow defect this proposal exists to
+remove, reintroduced by the fix for a different finding, and it contradicts
+unchanged R3. Measured against the objective this proposal itself just wrote
+down, it fails: the ceremony would not be performable from the named public
+commands without an agent-authored script.
+
+The reviewer's diagnosis is exact — *"the late-binding idea itself is sound; the
+defect is only who performs it and when"* — and the satisfier is adopted whole.
+
+**On the symlink constraint**, verified rather than accepted on report: of the
+seven recorded host paths, only `/opt/homebrew/bin/git` is a symlink, and it
+resolves to `/opt/homebrew/Cellar/git/2.53.0/bin/git`. The version is **in the
+resolved path**, so recording it makes the values file stale at every Homebrew
+Git upgrade. That sharpens the reviewer's point rather than softening it: the
+cost is recurring, not one-off, and **R7's no-symlink rule still does not
+relax** — a symlinked executable is a path whose target can change between the
+check and the execution, which is the whole reason the rule exists.
+
+## Revised proposal (Revision 3) -- Claude -- 2026-08-13
+
+R1–R8 stand except where R9 replaces them.
+
+### R9 — the launcher owns late binding; nobody composes an authority artifact ([R3-E1])
+
+**M2 delivers one OID-free authorization packet**, containing:
+
+* a schema version;
+* the review's provenance line;
+* the closure rows — one `<sha256> <path>` per authority member;
+* the ceremony artifact's repository-relative path;
+* the ceremony artifact's SHA-256.
+
+**It contains no candidate OID.** That is what lets M2 produce it *before* the
+candidate commit exists — the impossibility [R2-E1] identified, now resolved by
+the packet's shape rather than by sequencing gymnastics.
+
+**The Maintainer runs one command**: the M2-reviewed launcher, given the packet,
+the values file, and a candidate ref.
+
+**The launcher then does all of it, before any candidate code runs:**
+
+1. resolves the ref **once** to a full commit OID;
+2. verifies **every** closure blob at that OID against the packet's rows;
+3. **composes** the transient review manifest — the packet's provenance and
+   rows, plus the OID it just resolved;
+4. extracts the ceremony artifact at that OID and compares its digest with the
+   packet's;
+5. only then invokes the artifact's Stage 1 command.
+
+**The launcher composes; it does not source.** Every value in the generated
+manifest comes from the packet — which is M2's out-of-band output — or from the
+resolution the launcher performed itself. **Nothing is read from the candidate.**
+The review manifest stops being a hand-authored file and becomes a derived
+artifact of trusted code, which is what removes the last point where a human or
+an agent had to assemble an authority input.
+
+**Consequence for R7, stated rather than left implicit**: `review_manifest`
+**leaves the values-file schema**. The launcher writes the manifest to a path it
+controls. **The residual R2 disclosed goes with it** — *"editing the config can
+redirect that authority input"* is no longer true of the manifest, because the
+config no longer names it. A security improvement falling out of a usability
+fix, and it points the right way: **fewer** authority values in the mutable
+file, not more.
+
+**What M2 reviews is unchanged in kind** (R6): the launcher's bytes, the
+artifact's bytes, the packet's schema, and the closure digests. The packet is
+the carrier, not a new trust root.
+
+**The invalidation rule is unchanged** (R6): an authority-byte change
+invalidates M2; a candidate-OID advance does not, because step 2 re-verifies
+against the packet at the resolved OID.
+
+### Plan obligation carried from this review
+
+The values file must record **resolved, regular-file** executable paths. On this
+host that means `/opt/homebrew/Cellar/git/2.53.0/bin/git` rather than the
+Homebrew shim, and the embedded version means the entry goes stale on upgrade.
+The plan owes a human-readable setup-and-refresh step for the values file that
+records resolved paths and can be re-run after a toolchain upgrade. **It does not
+owe a relaxation of the rule**: a symlinked executable is a path whose target can
+change between the check and the execution.
+
+### Withdrawn / superseded commitments
+
+* **Withdrawn:** R6 steps 2–4 as written, in which M2 delivered *"the
+  review-manifest member rows"* and **the Maintainer** resolved the OID,
+  re-verified the closure, and **composed the review manifest** before the
+  launcher was invoked. It reintroduced the defect the proposal exists to remove
+  and contradicted unchanged R3 (**[R3-E1]**). **Replaced by R9** — the launcher
+  performs all of it, from one Maintainer command.
+* **Withdrawn:** R3's commitment that *"M2 delivers a ready-to-use review
+  manifest"* whose candidate OID is the reviewer's output. M2 cannot know that
+  OID when it writes. **Replaced by R9** — M2 delivers an OID-free packet and
+  the launcher generates the manifest. Leaving both sentences standing would
+  have left the contract self-contradictory, which is why this one is withdrawn
+  explicitly rather than read as compatible.
+* **Withdrawn:** R7's `review_manifest` key, and with it R2's disclosed residual
+  that editing the values file could redirect that authority input. **Replaced
+  by R9** — the manifest is generated by trusted code into a path the launcher
+  controls, so the mutable file no longer names it.
+* **Not withdrawn:** R6's invalidation rule and its rejection of a candidate-OID
+  freeze; R7's schema, grammar and refusals other than the one key above; R8
+  entire; and R1's substance that the launcher's authority comes from M2 rather
+  than candidate prose. The reviewer adjudicated R2-E2 and R2-R5 closed.
+
+**Plan review remains required(External Security Review).** The reviewer's
+`Plan readiness: DISTINCT REVIEW REQUIRED` stands; the next pass need only read
+**R9** and its two knock-ons, since R7 and R8 were adjudicated closed and R6's
+remaining substance is unchanged.
