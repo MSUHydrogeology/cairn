@@ -286,7 +286,7 @@ P6a pilot engine + state schema (in reviewed range)[DONE 8bf1154]
 P6b pilot human contract                           [commit pending]
 P6c pilot mutation tests                           [commit pending]
 F   the derived board                              [commit pending]
-G   doctrine, templates, agent teaching            [commit pending]
+G   doctrine, templates, agent teaching            [DONE 5257bde G1 + CF5; 7d9594a G2; 94f13d1 G4; 45ad708 G3; 43df6fd G5]
 H   migration + source-proposal archive            [commit pending]
 --- stable bytes ---------------------------------------------------
 B1  Boundary B on the pre-review commit            [record]
@@ -3197,3 +3197,79 @@ carrying it **and the falsifier that reddened that node**, which itself reddens
 when a covering node is renamed or deleted. Without it, "cell N is covered
 elsewhere" is a claim in a commit message that goes false silently — and the
 sibling file is named by neither the P6a nor the P6c row.
+
+### [CF5] CLOSED by Chunk G -- Claude (Implementation) -- 2026-08-12
+
+Closed at `5257bde` (G1). All three cited `doctrine/proposals.md` locations
+carried the pre-contract conditional wording; a fourth, unfiled instance was in
+`doctrine/lifecycle-contract.md`'s own transition table, which is the
+*executable formalization* and therefore the worse of the four to leave stale.
+
+| filed location | before | after |
+|---|---|---|
+| `proposals.md` :36 | *"the author appends a `## Response` and, **where needed**, a `## Revised proposal`"* | *"appends a `## Response` **and one complete current-contract revision** ... The revision is mandatory with every Response, not conditional on how much changed."* |
+| `proposals.md` :71 | *"Commit on **appending a Response and any "Revised proposal" section**"* | *"Commit on **appending a Response and its complete current-contract revision** ... the two land together, because a Response without a revision is not a legal `revised` state."* |
+| `proposals.md` :504 | *"If accepted critiques substantially change the proposal, write a short "## Revised proposal" section"* | replaced by `### Append one complete current contract with the Response, every time`, carrying the mandatory ledger, the `* None` rule, and an explicit note that the older conditional form made record completeness depend on the author's own estimate of significance |
+| **not filed** -- `lifecycle-contract.md`, the `reviewed -> revised` row | *"a `## Response` (and, where needed, a revised section) is appended"* | *"a `## Response` **and one complete current-contract revision** ... are appended ... The revision is **not optional** -- a Response with none refuses."* |
+
+`doctrine/proposals.md` also gained a `## Plan readiness` section, since the
+accepted three-layer distribution matrix names that file as the *Published
+canonical method* row for this contract and G-R distributes it there.
+
+### [CF8] Two red gates at HEAD that Chunk G did not create and did not touch -- Claude (Implementation) -- 2026-08-12
+
+Both were measured against a clean detached worktree at `5257bde` (G1), i.e.
+**before** any G2--G5 byte, so neither is attributable to this chunk. Both are
+owed to Boundary B, and neither file is in a G cell.
+
+1. **`test_quickstart_sequence.py::test_step3_install_writes_expected_kernel_and_modules`
+   is RED.** *"docs/quickstart.md says '23 unfilled block slots' but the live
+   install reports 24."* The 24th slot is
+   `<!-- cairn:slot assurance-path-triggers -->`, which **P1** (`76bc678`, this
+   plan) added to `templates/core/dev/proposals/_template.md`; `docs/quickstart.md`
+   was not refreshed with it. The fix is a one-number edit to a file no G cell
+   names, so G leaves it: it belongs to P1's own surface, and sweeping it in
+   would be scope this chunk's cell never carried.
+
+2. **`scripts/verify_stems.py` reports 2 issues**, both in `dev/PLANNING.md`:
+   stems `2026-07-08-claude-broad-look-skeptical-review` and
+   `2026-08-05-codex-security-strategy` resolve to no file. `dev/PLANNING.md` is
+   a shared board this chunk does not touch; likely an H4 row-move concern.
+
+### [CF9] The #58 loop-fidelity gate has one prefix, and G is the chunk that most needed more -- Claude (Implementation) -- 2026-08-12
+
+`scripts/check_cairn.py`'s `_CAIRN_INTERNAL_PREFIXES` is `('doctrine/',)`. The
+gate therefore catches a shipped `templates/**` surface citing any path under
+`doctrine/` and **nothing else** -- a `bootstrap/`, `dev/plans/`, `dev/proposals/`,
+`dev/measurement/`, `case-studies/` or `dimensions/` path in the same position
+dangles in an adopter tree and passes clean.
+
+**Measured, not inferred.** With
+`` `bootstrap/fidelity-check.md` `` and
+`` `dev/plans/review-efficient-lifecycle.md` `` appended to a shipped surface
+(`templates/skills/session-start/SKILL.md`), `check_cairn` on that file printed
+`OK -- 1 Markdown file(s) scanned; no issues.` The synthetic lines were removed
+and the file restored byte-exactly (`cmp` clean) before any commit.
+
+There is already at least one live instance: `templates/core/AGENTS.md` cites
+`bootstrap/fidelity-check.md` in its drift-guard paragraph. It predates this
+plan and G did not touch it.
+
+**G self-policed instead of widening the set**, because widening a standing gate
+as a side effect of a prose chunk is exactly the deviation the plan forbids.
+The check run over every added line in every `templates/**` file across the
+whole Chunk G range (`b7f93dc..43df6fd`): resolve each path-shaped backtick and
+link token against the real install set from `scaffold.py --manifest`, skipping
+`doctrine/` (the #58 gate's own territory) and 4-space-indented illustrative
+blocks (the house convention `claim_check.scannable_lines` already honors).
+Result **5 shipped files with additions, 5 path-shaped tokens, 0 leaks**; the
+check was falsified twice against synthetic leaks, each removed byte-exactly.
+It caught one real defect pre-commit: an example path under `bootstrap/tests/`
+in G3's registry block -- a Cairn-only path in a surface that ships -- now
+`tests/test_widget_contract.py`.
+
+**Recommendation, as a finding and not an action.** Extend
+`_CAIRN_INTERNAL_PREFIXES` to the verified-not-installed set, with the live
+`templates/core/AGENTS.md` instance dispositioned first (an inline
+`cairn-internal-ref:` marker, or transplanting the reference). It is a
+contract-surface change to a standing gate and wants its own cell.
