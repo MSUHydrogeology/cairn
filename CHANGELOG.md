@@ -221,6 +221,74 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **The proposal is now the deliberative boundary, and the plan does not pay
+  for a second cross-type read of it.** When an **External** proposal review
+  has read a *complete current contract* and recorded `Plan readiness: READY`,
+  the derived plan takes a **fresh-context Internal** plan review instead of
+  another different-agent-type round, binding the two inherited commits in its
+  header. Three things are deliberately unchanged: **code review's floor stays
+  *not the implementing agent***; an independent read is **reallocated, never
+  removed** (an inherited basis paired with `not required(...)` refuses); and a
+  **named high-risk surface still takes its own Security Review**, which this
+  routing neither replaces nor implies. **External plan or code review is an
+  explicit escalation** — a reviewer's `DISTINCT REVIEW REQUIRED` finding, an
+  invalidated readiness, or a deliberately spent `recommend-and-decide` pass —
+  and is no longer inferred from a change's size, its assurance path, or the
+  surfaces it touches. **Assurance path no longer decides plan-review
+  independence**: a high-assurance proposal may record `READY` exactly as a
+  standard one may, while high assurance keeps governing verification, Security
+  Review, scientific review, protected-surface handling, risk acceptance and
+  ceremonies.
+
+  The trade is stated rather than left implicit. Security and trust-boundary
+  work keeps an independent backstop *outside* this allocation; for the other
+  three high-assurance categories — a scientific assumption, a destructive
+  migration or compatibility break, and a doctrine or lifecycle-enforcement
+  change — the fresh-context Internal reviewer plus optional escalation is now
+  the guarantee. **And this change is itself in that third category**: the
+  review model was rewritten under the allocation it installs, on the
+  Maintainer's explicit direction and with one fresh-context Internal plan
+  review of the revision. That is recorded here so a later reader sees which
+  read the change actually received rather than assuming a stronger one.
+
+  Distributed in one pass across the canonical, self-hosted and shipped
+  surfaces — there are no existing adopters, so there is no migration or
+  compatibility branch: `doctrine/proposals.md`, `doctrine/plans.md`,
+  `doctrine/lifecycle.md`, `doctrine/lifecycle-contract.md`,
+  `doctrine/dual-review.md`, both `AGENTS.md` copies, both
+  `agent_collaboration.md` copies, and both authoring templates with their
+  shipped twins. Plan `review-efficient-lifecycle`.
+
+- **A proposal Response now always carries one complete current contract, and
+  doctrine says so.** The revision stopped being conditional on how much
+  changed when the conformance check began refusing a Response with no
+  revision; `doctrine/proposals.md` and `doctrine/lifecycle-contract.md` had
+  kept the older *"where needed"* / *"if accepted critiques substantially
+  change the proposal"* wording, so the doctrine read as permissive while the
+  tool refused. Both now state the mandatory form with its
+  `### Withdrawn / superseded commitments` ledger. Plan
+  `review-efficient-lifecycle`.
+
+- **Session-start orientation now routes through the lifecycle board.** Run
+  `python tools/lifecycle_planner.py board --compact`, choose the row you need,
+  then read *that* artifact and the evidence it cites — instead of opening
+  every active record under `dev/`. The board is a derived view and says so;
+  its header names the `HEAD` it came from and whether the lifecycle files on
+  disk differ from it, so a stale read is visible rather than silent, and it
+  mutates nothing. Taught in `doctrine/session-routines.md`, both `AGENTS.md`
+  copies, both `agent_collaboration.md` copies, and both `session-start`
+  skill copies. Plan `review-efficient-lifecycle`.
+
+- **The authoring templates now teach the typed-declaration registry.** A
+  `Proposed paths:` / `Untracked paths:` / `External-repo paths:` marker block
+  is also a small document registry: each *exact* backticked path it lists may
+  recur anywhere else in the same document without a second document-wide
+  `claim-check-allow` directive. The four exactness rules each fail closed —
+  literal paths never globs, exact match only, a placeholder declares nothing,
+  and a path declared twice inside one block grants nothing — and liveness
+  keeps an exemption honest as temporary debt. Plan
+  `review-efficient-lifecycle`.
+
 - **The homoglyph detector now asks about confusability, not merely mixed
   scripts.** Scientific Greek notation that has no reviewed ASCII twin stays
   clear, while Latin/non-Latin twins and multi-script non-Latin tokens retain
