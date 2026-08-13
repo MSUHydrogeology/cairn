@@ -129,6 +129,7 @@ file for either branch.
 
 | # | File | Change |
 |---|------|--------|
+| B1a | same | **`cat` joins the schema as an executable field** ([Y1]) — absolute, regular, executable, symlink-free, under R7's identical rules. Accepted R7 lists seven executables; D7 added an eighth dependency, and an executable that is trusted but unbound can only be found through ambient `PATH`, which is the gap [X2] closed for `git` and `shasum`. This uses the accepted proposal's plan-review delegation |
 | B1 | `bootstrap/reanchor-values.example` | the template, with every key from R7's table **except `review_manifest`, which R9 withdrew** — the launcher generates the manifest, so the values file must not name it. A comment names each value's security use |
 | B2 | `bootstrap/reanchor.sh` | the parser: **no `source`, no `eval`, no command substitution, no shell expansion**. R7's lexical grammar exactly |
 | B3 | same | every R7 refusal: unknown, duplicate, missing, malformed, relative, control character, wrong file type, missing executable bit, symlink at leaf **or any parent** — plus the rest of R7's grammar: no leading whitespace, trailing whitespace refuses, `#` only at column 0, 4096-byte line and 64 KiB file limits, UTF-8/LF |
@@ -157,16 +158,17 @@ file for either branch.
 | D1 | `bootstrap/reanchor.sh` | the packet schema: version, provenance, closure rows, artifact path, artifact digest — **and no candidate OID** |
 | D2 | same | R10's closure constraints: the artifact path identifies **exactly one** closure row, and its separate digest **equals that row** |
 | D3 | `bootstrap/reanchor-launcher.template.sh` | the launcher's **reviewed source**, carrying a single `@PACKET_SHA256@` slot. M2 instantiates it; the instance is M2's output and the authority. **This resolves the review's [I1]**: the template is in-repo so D can build and test it, while the operative launcher is still M2's, never the agent's |
-| D3a | same | opens the packet **bounded, regular, symlink-free**; reads **once**; hashes **before parsing**; compares against the instantiated digest; parses only that buffer |
+| D3a | same | opens the packet **bounded, regular, symlink-free**; **two path reads, cross-checked** (D7 steps 1–3); hashes **before parsing**; compares against the instantiated digest; **one immutable in-memory parse source**. *([Y2]: this row previously said "reads once", which D7's decided mechanism cannot satisfy — an implementer could not meet both.)* See D7–D9a |
 | D4 | same | resolves the candidate ref **once**, verifies every closure blob at that OID, **composes** the transient review manifest, extracts and hashes the artifact, then invokes `stage1` |
 | D5 | `bootstrap/tests/test_reanchor.py` | a **mutated packet with a consistently rewritten row set** must refuse — the [R4-E1] attack, run rather than argued |
 | D6 | same | a **marker interpreter** proves no candidate code starts on any packet or closure failure |
 | D10 | `bootstrap/reanchor-launcher.template.sh` | **the launcher's own pre-candidate values reader.** The launcher needs `git`, `shasum`, temp machinery and the checkout *before* it can verify `reanchor.sh`, and the artifact's parser is candidate code it has not yet started. It therefore validates every field it uses under **R7's same closed grammar and refusals**, with **no ambient fallback** |
-| D11 | `bootstrap/tests/test_reanchor.py` | a **parity matrix**: for every R7 rule, the launcher reader and the artifact parser agree. **Neither accepts a value the other refuses** |
-| D12 | same | a **malicious `git` or `shasum` value** in the values file leaves the marker interpreter **absent** — the reader refuses before any candidate byte runs |
+| D11 | `bootstrap/tests/test_reanchor.py` | a **parity matrix**: for every R7 rule **and for `cat`**, the launcher reader and the artifact parser agree. **Neither accepts a value the other refuses** |
+| D12 | same | a **malicious `git`, `shasum` or `cat` value** in the values file leaves the marker interpreter **absent** — the reader refuses before any candidate byte runs |
+| D12a | same | an **absent or non-executable `cat`** refuses in the launcher's reader, before the snapshot is attempted |
 | D7 | `bootstrap/reanchor-launcher.template.sh` | **DECIDED — the hash-cross-checked in-memory snapshot.** Four steps, in order: (1) `SHASUM` the packet file and refuse unless it equals the instantiated digest; (2) snapshot with the trailing-byte-preserving idiom `v=$(cat "$PKT"; printf x); v=${v%x}`; (3) re-hash the snapshot (`printf '%s' "$v" \| SHASUM`) and **refuse unless it equals step 1's digest**; (4) parse **only** `$v`. Step 3 is what makes the design work: it *detects* any byte the shell could not carry |
 | D7a | same | **the packet format is NUL-free by definition**, and step 3 is what enforces it — a NUL makes the snapshot hash differ and the launcher refuses. Verified on this host: `a\0b` snapshots to 2 characters and is caught; `a\n\n` survives the idiom intact |
-| D7b | same | **trust-set delta**: `cat` joins the pre-candidate set (`printf` is a shell builtin; `SHASUM` is already there). The digest field is taken with `${d%% *}`, so **`cut` does not join** |
+| D7b | same | **trust-set delta**: `cat` joins the pre-candidate set (`printf` is a shell builtin; `SHASUM` is already there). The digest field is taken with `${d%% *}`, so **`cut` does not join**. `cat` is used **only through its values field** (B1a), never by bare name |
 | D8 | `bootstrap/tests/test_reanchor.py` | **hashed bytes == parsed bytes**, attacking D7's *exact* mechanism rather than an abstract helper: a trailing-LF-only difference must survive; an embedded NUL must **refuse at step 3**; a packet mutated between steps 1 and 2 must refuse at step 3 |
 | D8a | same | the step-3 comparison is **mutation-checked** — removing it must make the NUL case pass, since that is the only thing standing between a lossy snapshot and a parsed one |
 | D9 | `bootstrap/SAFETY.md` | the pre-candidate trust set gains **`cat`** and nothing else, recorded there rather than acquired silently |
@@ -211,7 +213,7 @@ rather than lost:
 |---|------|--------|
 | G1 | this plan | **the owning commit is an ancestor** before the stable-bytes line. If it is not, this plan stops rather than doing the pass itself |
 | G2 | `bootstrap/tests/test_reanchor.py` | the **ceremony closure files carry no unexplained tag** — a bare `[FUR5]`-style label with no adjacent reason fails. This is the evidence that rider 4 was delivered *for this plan's surface*, whoever made the edit |
-| G3 | — | **if timing forces a subset here**, it is enumerated in this plan and the other plan adopts the same commit as delivered scope. One edit, one evidence record, no accepted outcome lost |
+| ~~G3~~ | — | **Superseded at review ([Y3]).** A subset fallback cannot govern alongside G1's hard stop, and it was conditional on a reciprocal obligation this plan admits it cannot create. **The single-owner model governs without exception**: if the owning commit is not an ancestor, this plan stops. Reviving a subset route requires the reciprocal contract to land in the other plan **first** |
 
 **The reciprocal row belongs in the other plan too.** This plan cannot create
 that obligation unilaterally; it is raised as a finding on that plan's review,
@@ -317,9 +319,10 @@ surface is F7 and the recorded-loader nodes.
     radius, and `_gate_preflight.py`'s own docstrings are inside it.
   * **H** — `claim_check`, `link_check`, and the neutrality gate.
   * **There is no shell gate in this repository**, so "standing gates" is empty
-    for `reanchor.sh`. The plan owes one: at minimum `sh -n` over the artifact
-    and the launcher template as a test node, since a syntax error in either is
-    a ceremony that fails after the key is loaded.
+    for `reanchor.sh`. **C4a owns the replacement** — `sh -n` over the artifact
+    and the instantiated launcher, as public-path nodes. *(Corrected at review
+    [Y3]: this paragraph previously said the plan "owes" one after C4a had
+    already been assigned it, leaving X7 with two accounts.)*
 * **Boundary B**: one full suite on a clean commit under the canonical
   interpreter. **Bounded mode is refused** — trust-ceremony surfaces sit inside
   the `boundary-b-bounding-clause` Hard Refusal Fence, and this plan changes the
@@ -1184,3 +1187,63 @@ key-holder-not-process, or replay residuals.
 **Recommendation**: make the four localized contract corrections above, then
 one narrow clearing read should be enough. No proposal reopening or scope
 reduction is needed.
+
+## Response to the clearing review -- Claude -- 2026-08-13
+
+**All three findings accepted, plus the stale Boundary A sentence.** All four are
+mine, all localized, and two of them were created by my own fix for [X1] — a
+correction that introduced a dependency and a contradiction while closing a
+different defect.
+
+**[Y1] — `cat` was trusted but unbound.** Accepted, and this is the sharper
+version of the finding I thought I had closed. D7 added an eighth executable
+dependency; D7b and D9 acknowledged it as newly trusted; and R7's schema still
+listed seven. With D10 forbidding ambient fallback, the launcher could only have
+found `cat` through ambient `PATH` — **precisely the gap [X2] closed for `git`
+and `shasum`, reopened one utility over.** B1a now binds it as a values field
+under R7's identical rules, D7b uses it only through that field, D11 extends the
+parity matrix to it, and D12/D12a require an absent or malicious `cat` to leave
+the marker interpreter absent. This uses the accepted proposal's plan-review
+delegation rather than widening scope.
+
+**[Y2] — "reads once" survived the mechanism that replaced it.** Accepted. D3a
+still carried the single-read language from before D7 chose a two-pass
+cross-checked design, so an implementer could not satisfy both rows. D3a now
+reads *"two path reads, cross-checked; one immutable in-memory parse source"*
+and points at D7–D9a. The residual disclosure in D9a is unchanged and correct.
+
+**[Y3] — G1 and G3 could not both govern.** Accepted. G3's subset fallback was
+conditional on a reciprocal obligation the plan itself admits it cannot create,
+which made implementation ownership conditional on nothing. **G3 is superseded**:
+the single-owner model governs without exception, and reviving a subset route
+requires the reciprocal contract to land in the other plan *first*.
+
+**The stale Boundary A sentence** is replaced with an explicit C4a reference, so
+X7 has one governing account instead of two.
+
+### On the provenance correction
+
+Noted and appreciated. The prior review's `Reviewed commit` named `1439ccae`,
+which is unrelated; the reviewed blob was `4c74f78`, unchanged from `76eeb24`.
+It changes no finding, and correcting it in the record rather than silently is
+the right handling — a false source coordinate in a security record is exactly
+the kind of thing that reads as authoritative later.
+
+### A coordination note, third occurrence
+
+While this response was being written, the review section existed **uncommitted**
+in the shared working tree alongside my in-progress corrections to the same file.
+Either party committing would have swept the other's work. I parked my edits,
+verified the reviewer's section was intact, and confirmed their commit
+(`ce94727`) contained none of my lines before restoring.
+
+**No collision occurred this time.** But this is the third live instance of the
+shared *working tree* hazard recorded in `dev/PLANNING.md` — after the 2026-08-12
+sweep and its correction. `AGENTS.md`'s commit discipline addresses the shared
+**index**, and path-scoped commits make that hazard structurally impossible; they
+do nothing here. Two agents appending to one file is a different failure, and it
+now has enough recurrence to clear the doctrine rate-limit gate rather than being
+rediscovered a fourth time.
+
+**One narrow clearing read remains owed**, as the reviewer recommends. This
+response does not discharge it.
