@@ -11,7 +11,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -45,8 +45,8 @@ The plan executes the decisions. It does not re-open them.
 |---|---|
 | doctrine proposal | Extend Anchor 16 in `doctrine/rationale.md` with the temporal half, paired with Anchor 17 so it cannot be read as licence to narrate |
 | both operational proposals | Two convention rules in `AGENTS.md` and `templates/core/AGENTS.md`, **beside `**Naming.**`** — code-authoring conventions, not `## Review` |
-| tags proposal | The finding-tag revision pass over 262 sites in `.py`, **in one plan rather than three phases** — see the start precondition |
-| names proposal | ~36 coordinate-named test containers renamed, bodies untouched |
+| tags proposal | The finding-tag revision pass — **see "What counts as a tag" below**; the plan's earlier "262 sites" was one form of three |
+| names proposal | Coordinate-named test containers renamed, bodies untouched — **36 by the matching rule stated in Chunk D** |
 | tags proposal | Close the `dev/PLANNING.md` item this plan drains. **No revival rows** — nothing is deferred, so none is owed |
 
 **The scope fence — what this plan does *not* do**
@@ -62,10 +62,45 @@ The plan executes the decisions. It does not re-open them.
 * **No sweep without reading.** Deletion has a bar — the sentence must stand
   without the tag — and that bar is a human read, per the board's own warning.
 * **Out of scope by fence**: tags inside string literals that are test inputs,
-  generated output, or fixture data (~8 sites). The rule governs prose
-  addressed to a reader, not strings addressed to a parser.
+  generated output, or fixture data. **The count is not pinned here** — the
+  plan's earlier "~8" was wrong by roughly 5×, and the review measured 42 by a
+  different pattern than mine returns. Two greps disagreeing is the signal that
+  this class is *not* mechanically separable from docstrings, so the fence is
+  stated as a **property the implementer applies per file**: a string addressed
+  to a parser is out; prose addressed to a reader is in. Concentrations to
+  expect: `test_transition_lint.py`, `test_byline_identity.py`, and both
+  planner twins' emitted template strings.
 * **No `doctrine/` change beyond Anchor 16.** The operational rules live in
   `AGENTS.md`; no second doctrine home is created.
+
+### What counts as a tag — the definition the plan owed
+
+The review's first finding is that "tag" was never defined, and that every count
+in the opened plan was of **bracketed** forms only. That is right, and it
+matters: `FUR5` — the Maintainer's raising quote, and *both* worked examples in
+the accepted proposal — is **bare**, and appeared in none of the plan's sites.
+
+Measured `as_of 2026-08-13`, three classes:
+
+| Class | Form | Count | Mechanically findable? |
+|---|---|---:|---|
+| 1 | bracketed — `[S1]`, `[M2-1]`, `[R2-E1]` | **346** | yes |
+| 2 | bare, distinctive prefix — `FUR5`, `CF9` | **145** | yes |
+| 3 | bare, single letter + digit — `S1`, `C4` in running prose | **not enumerable** | **no** |
+
+**Class 3 is why this plan cannot carry one number.** A grep for `\b[A-Z][0-9]\b`
+returns **5194** matches, overwhelmingly ordinary identifiers and variables. The
+class is real — it is the same failure — but it is found only by reading, which
+is what the accepted proposal already requires and what the no-sweep fence
+already says.
+
+**Implementer's rule**: classes 1 and 2 are enumerable and must all be cleared —
+**491 sites**. Class 3 is cleared opportunistically *within each file already
+being read*, and is not a completion criterion, because no one can enumerate it.
+
+**No accepted outcome changes.** The proposal's rule was always "comments explain
+the code, not the process", and its own examples were class 2. What was wrong was
+the plan's size estimate, not its scope.
 
 ### A correction the plan must carry: phase 1's trigger is already dead
 
@@ -110,6 +145,7 @@ around.
 |---|------|--------|
 | A1 | `doctrine/rationale.md` | Anchor 16 gains the temporal paragraph: the reader who must understand a durable artifact is whoever meets it next, not whoever decided on it; the artifact must stand without the record. |
 | A2 | `doctrine/rationale.md` | The Anchor 17 pairing, **in the anchor text** — writing the reason in is not licence to restate what the code already says. |
+| A3 | `doctrine/rationale.md` | The grounding citation, which the opened plan dropped (F9): Naur, P. (1985). *Programming as theory building.* Microprocessing and Microprogramming, 15(5), 253–261. doi:10.1016/0165-6074(85)90032-8 — verified independently at Round 2 of the source proposal, not taken on a reviewer's confirmation. |
 
 **Acceptance**: Anchor 16 carries both; Anchor 17 is named *in* the extension,
 not only cross-referenced; `check_cairn.py` resolves every reference.
@@ -120,14 +156,33 @@ not only cross-referenced; `check_cairn.py` resolves every reference.
 |---|------|--------|
 | B1 | `AGENTS.md` | Beside `**Naming.**`: tests are named for the property they pin; the docstring carries the *reason*, not the finding id. Includes the worked docstring example the names review required — **stating why the obligation exists and naming no coordinate**. |
 | B2 | `AGENTS.md` | Beside B1: comments and docstrings explain the code, not the process. State the reason; do not cite the finding. |
-| B3 | `templates/core/AGENTS.md` | B1 + B2, adopter-general wording. |
+| B3 | `templates/core/AGENTS.md` | B1 + B2, adopter-general wording, **immediately above `## Project-specific conventions` and outside every `cairn:slot`** — see the placement note. |
 | B4 | `AGENTS.md` ×2 | A one-line pointer from the comprehension-floor paragraph to the conventions, so the derivation stays visible from the other direction. |
 
-**Acceptance**: both rules present in both copies, in the conventions region and
-**not** under `## Review`; the shipped copy carries no Cairn-only token
-(`test_installed_operational_rule_is_project_general` still bites); the worked
-example contains no finding tag — the names review supplied one that did, and
-it is rejected here on the accepted terms.
+**Placement note (plan review F3).** The accepted proposals say "beside
+`**Naming.**`". In Cairn's own `AGENTS.md` that paragraph sits **inside** the
+`cairn:slot project-conventions` block (`AGENTS.md:414`). The shipped copy has
+**no `**Naming.**` paragraph at all** — that same slot ships as an *unfilled
+placeholder* telling the adopter to write their own conventions
+(`templates/core/AGENTS.md:390-396`).
+
+So the literal placement is impossible in the shipped copy, and taking it would
+write Cairn-authored universal rules into **adopter-owned space**, where they
+would collide at install and misrepresent whose rules they are.
+
+Both rules therefore land **immediately above `## Project-specific conventions`,
+outside every slot**, in both copies — so an adopter filling their own slot meets
+the universal rule directly above it, and Cairn's project-specific `**Naming.**`
+stays where it belongs, inside the slot. **Scope delta: preserved** — the
+accepted outcome is that a code-authoring agent finds the rule in the conventions
+region rather than under `## Review`, and this delivers it; only the anchor
+moves, forced by a fact the proposals did not have.
+
+**Acceptance**: both rules present in both copies, in the conventions region,
+**outside every `cairn:slot`**, and **not** under `## Review`; the shipped copy
+carries no Cairn-only token (`test_installed_operational_rule_is_project_general`
+still bites); the worked example contains no finding tag — the names review
+supplied one that did, and it is rejected here on the accepted terms.
 
 ### Chunk C -- the finding-tag revision pass
 
@@ -136,7 +191,8 @@ it is rejected here on the accepted terms.
 | # | Files | Notes |
 |---|------|--------|
 | C1 | `bootstrap/tests/_gate_preflight.py`, `bootstrap/tests/test_gate_preflight.py` | **97 sites** — the orphaned set. Largest and first, because they have no other home. |
-| C2 | `tools/lifecycle_planner.py` + twin | ~21 each; **twins must stay byte-identical**. |
+| C2 | `tools/lifecycle_planner.py` + twin | **25 each** (F6 — the opened plan said ~21). **Twins must stay byte-identical.** |
+| C2b | every other byte-identical twin pair | Named rather than assumed (F6): `tools/lifecycle.py` ↔ `templates/skills/_lib/lifecycle.py` (17 sites), plus any remaining `tools/` ↔ `templates/skills/_lib/` pair. Parity is enforced by `bootstrap/tests/test_lifecycle_brief.py`; edit both or neither. |
 | C3 | the remainder | By file, smallest last. |
 
 **Acceptance per file**: no tag remains except inside fenced string literals;
@@ -159,9 +215,24 @@ precondition satisfies that gate for the whole plan**, so no per-chunk deferral
 survives — and the `dev/PLANNING.md` revival row the proposal committed to is
 no longer owed, because nothing is being deferred.
 
-**Acceptance**: `pytest --collect-only` node count and pass/fail set **identical**
-across the rename commit — that is the whole acceptance criterion, and it is
-mechanically checkable by diffing collected node ids.
+| # | File | Change |
+|---|------|--------|
+| D1 | `bootstrap/tests/*.py` | The renames. **36** containers by the matching rule below. |
+| D2 | `bootstrap/tests/fixtures/gate_manifest.json` | **Regenerate.** It pins **356** node ids naming classes this chunk renames (measured 2026-08-13; regenerated as recently as `cfaace9`). The opened plan named neither the file nor a disposition. |
+
+**Matching rule (F7)**: a container is in scope when its name matches
+`^class Test[A-Za-z]*(P|C|M|R|E|CF|D|S)[0-9]` — a plan or finding coordinate
+embedded in the class name. **36** as of 2026-08-13. Classes whose names merely
+*contain* a digit are out; the rule is the coordinate prefix, not the digit.
+
+**Acceptance (F4, corrected)**: the opened plan said "collected node ids
+unchanged", which **cannot pass** — renaming a class changes its node ids by
+definition. The criterion is:
+
+* the **pass/fail/skip set is unchanged** in count and in outcome per test;
+* every node id in `gate_manifest.json` resolves after regeneration, with no
+  orphans;
+* no test body is edited.
 
 ### Chunk E -- the tracked items
 
@@ -211,12 +282,28 @@ Boundary B once, on a clean unchanged commit under the canonical interpreter
 (`PYTHONDONTWRITEBYTECODE=1` — three suite nodes are bytecode-sensitive and this
 is a measured environmental artifact, not a defect).
 
-**Boundary B mode**: expected **bounded**, and the argument is owed *in the
-record*, not here — no contract surface (the touched files are not the fidelity
-or gate manifest, the lockfile schema, or the published `scaffold.py --manifest`)
-and no trust-ceremony surface. **If Chunk C's reading turns up a tag inside a
-security-gate file whose comment is load-bearing for the gate's behaviour, the
-bounding fails and Boundary B runs full.** Uncertainty resolves to `full`.
+**Boundary B mode**: **full**, and not by preference — **the fence refuses.**
+
+The opened plan argued `bounded` on the grounds that no contract surface is
+touched. **That was false and the review falsified it on the plan's own terms.**
+Chunk D regenerates `bootstrap/tests/fixtures/gate_manifest.json`, and
+`AGENTS.md` names the gate manifest as part of the install contract — a contract
+surface, where bounded mode refuses outright.
+
+Worse, the opened plan wrote its falsification as a *discovery* condition
+("if Chunk C's reading turns up..."), when the disqualifying fact was knowable
+at plan-open by reading the chunk list against the fence. A condition that waits
+to be discovered is not a fence.
+
+So: **one full-suite Boundary B run** after the final implementation commit, on
+a clean unchanged commit under the canonical interpreter with
+`PYTHONDONTWRITEBYTECODE=1`. This is the first time the clause has refused a
+bounded claim, which is what it is for.
+
+**Standing gates mapped for Chunks A and B (F8)**, which the opened plan omitted:
+`bootstrap/tests/test_comprehension_floor.py` (Chunk A edits the anchor it pins)
+and `python scripts/quality_gate.py --sub neutrality --sub redundancy` (Chunk B
+edits `templates/core/AGENTS.md`, a neutrality surface).
 
 ## Settled: no parity guard
 
@@ -559,3 +646,63 @@ owed.
 ## Lasting-truth migration
 
 *Filled in at archive time.*
+
+## Response to plan review -- Claude -- 2026-08-13
+
+**All nine accepted. None rejected, none deferred.** The review's own summary is
+the fair reading: the plan's *design* is a faithful translation — nothing added,
+nothing dropped — and what failed is the layer a plan review exists to check.
+That is the tier working, and it is worth saying plainly that a plan I described
+as "complete" was wrong on five substantive points.
+
+| | Disposition |
+|---|---|
+| **F1** | accept — "tag" is now defined in three classes, with the honest consequence. |
+| **F2** | accept — the fence is a property, not a number. |
+| **F3** | accept — the named placement does not exist; corrected. |
+| **F4** | accept — a contract-surface file was missing and the criterion was impossible. |
+| **F5** | accept — the bounding is falsified; Boundary B is now **full**. |
+| **F6-F9** | accept — counts, twin pairs, matching rule, gate mapping, citation. |
+
+**[F1] is the finding of this round.** Every count I published was of *bracketed*
+tags. `FUR5` — the Maintainer's raising quote and **both** worked examples in the
+accepted proposal — is bare, and appeared in none of my 97 sites. I measured the
+form I had noticed rather than the thing the rule is about.
+
+Re-measuring produced something better than a bigger number: **three classes**,
+of which the third is **not mechanically enumerable** — `\b[A-Z][0-9]\b` returns
+**5194** matches, almost all ordinary identifiers. So the plan cannot carry one
+completion figure, and pretending otherwise would have handed the implementer a
+false target. Classes 1 and 2 are enumerable at **491 sites** and must all clear;
+class 3 is cleared within files already being read. No accepted outcome changes.
+
+**[F4] and [F5] together are the more serious pair.** `gate_manifest.json` pins
+**356** node ids naming classes Chunk D renames, and `AGENTS.md` lists the gate
+manifest in the install contract. So the plan (a) omitted a file that must be
+regenerated, and (b) claimed a bounded Boundary B on the explicit ground that no
+contract surface is touched.
+
+**Boundary B is now `full`, because the fence refuses** — not because I prefer
+it. This is the first time the bounding clause has refused a claim, and it
+refused mine, three days after I implemented it. The clause's own words are
+`uncertainty resolves to full`, and there was not even uncertainty here: the fact
+was knowable at plan-open by reading the chunk list against the fence. I had also
+written the falsification as a *discovery* condition, which is not a fence at
+all.
+
+**[F3] is the one where the accepted text could not be followed literally.** Both
+proposals say "beside `**Naming.**`". The shipped `AGENTS.md` has no such
+paragraph — that slot ships as an unfilled placeholder for the adopter's own
+conventions, and Cairn's `**Naming.**` sits *inside* it. Following the letter
+would write Cairn-authored universal rules into adopter-owned space. Both rules
+now land immediately above `## Project-specific conventions`, outside every slot,
+in both copies. **Scope delta: preserved** — the accepted outcome is that a
+code-authoring agent finds the rule in the conventions region instead of under
+`## Review`; only the anchor moves.
+
+**What I did not do**: raise the parity guard, reopen any accepted decision, or
+treat the review's "no accepted outcome added or dropped" as licence to relax.
+
+**Status returns to `awaiting-plan-review`.** Clearing the floor is the
+reviewer's move, not mine.
+
