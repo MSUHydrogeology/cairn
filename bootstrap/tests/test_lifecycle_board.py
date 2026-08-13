@@ -301,6 +301,34 @@ class TestOwnerVocabulary:
         assert planner.next_owner("plan", "review") == \
             planner.NEXT_OWNER_UNRESOLVED
 
+    def test_the_retained_historical_owner_rows_are_not_dead_weight(self):
+        """The other three retained rows, which nothing else visits.
+
+        Code review [C2]: after H1 retired the six tokens, `TestOwnerVocabulary`'s
+        general coverage iterates the CURRENT tuples, so it stops visiting the
+        historical rows entirely. The sibling node above pins `reviewed`,
+        `revised` and `review` because they resolve to `unresolved`; these three
+        resolve to a REAL owner and were pinned by nothing at all -- deleting
+        them as dead weight passed the whole suite.
+
+        Why they must stay ([C3] corrected the reason): not for archived
+        artifacts -- none declares a historical token, and the archive tree is
+        unreachable from `next_owner`'s only call site -- but for an artifact
+        still ACTIVE on a retired token, mid-migration or hand-copied from an
+        old record. That is exactly when an operator needs the board to say
+        whose move it is, and without these rows it answers `unknown`.
+        """
+        assert planner.next_owner("proposal", "proposed") == "proposal-reviewer"
+        assert planner.next_owner("plan", "open") == "plan-reviewer"
+        assert planner.next_owner("plan", "executing") == "implementation"
+        # ...and every one is a member of the closed owner vocabulary, so none
+        # of them can be filterable in one place and unknown in the other.
+        for kind, state in (("proposal", "proposed"), ("plan", "open"),
+                            ("plan", "executing")):
+            owner = planner.next_owner(kind, state)
+            assert owner in planner.NEXT_OWNERS, (kind, state, owner)
+            assert owner != planner.NEXT_OWNER_UNKNOWN, (kind, state)
+
     @pytest.mark.parametrize("kind,state", [
         ("proposal", state) for state in ("awaiting-review", "revising",
                                          "awaiting-decision", "accepted")

@@ -1287,14 +1287,29 @@ PROPOSAL_NEXT_OWNERS = {
     "accepted": NEXT_OWNER_TERMINAL,
     "rejected": NEXT_OWNER_TERMINAL,
     "superseded": NEXT_OWNER_TERMINAL,
-    # HISTORICAL (retired by H1) -- RETAINED DELIBERATELY.  An archived proposal
-    # still declares these, and the board must render it rather than answer
-    # `unknown`.  `proposed` had exactly one R7 successor (`awaiting-review`);
-    # `reviewed` mapped to `revising|awaiting-decision` and `revised` to
+    # HISTORICAL (retired by H1) -- RETAINED DELIBERATELY, and the reason is the
+    # ACTIVE artifact, not the archived one.  Code review [C3] falsified an
+    # earlier version of this note: measured over the real corpus, ZERO archived
+    # artifacts declare a historical token (40 archived plans are `archived`; 54
+    # archived proposals `accepted`, 4 `superseded`), and `next_owner`'s only
+    # call site is the board row builder, which reads direct children and never
+    # the archive tree -- so no archived artifact can reach this table at all.
+    #
+    # The reachable reason: an artifact that is still ACTIVE and still declares
+    # a retired token -- mid-migration, or hand-authored from an old copy -- is
+    # exactly the case the board must stay useful for.  With these rows it
+    # renders `proposal-reviewer` / `implementation` and the operator can act;
+    # without them `next_owner` answers `unknown` and B1's whole point, saying
+    # whose move it is, degrades precisely when someone needs telling.
+    #
+    # `proposed` had one R7 successor (`awaiting-review`); `reviewed` mapped to
+    # `revising|awaiting-decision` and `revised` to
     # `awaiting-review|awaiting-decision`, whose owners differ, so those two
-    # report `unresolved` rather than guess.  Deleting these three rows passes
-    # the suite -- `TestOwnerVocabulary`'s coverage iterates the CURRENT tuples
-    # and no longer visits them -- which is why they carry their own node.
+    # report `unresolved` rather than guess.
+    #
+    # `TestOwnerVocabulary`'s general coverage iterates the CURRENT tuples and
+    # no longer visits these rows, so they carry their own node --
+    # `test_the_retained_historical_owner_rows_are_not_dead_weight`.
     "proposed": "proposal-reviewer",
     "reviewed": NEXT_OWNER_UNRESOLVED,
     "revised": NEXT_OWNER_UNRESOLVED,
@@ -1310,9 +1325,13 @@ PLAN_NEXT_OWNERS = {
     "ready-to-archive": "implementation",      # Implementation
     "archived": NEXT_OWNER_TERMINAL,
     # HISTORICAL (retired by H1) -- RETAINED DELIBERATELY, same reason as the
-    # proposal table above: 40 archived plans still declare these.  `open` ->
-    # `awaiting-plan-review` and `executing` -> `implementing` were each one R7
-    # successor; `review` mapped to three
+    # proposal table above, and see [C3] there: the reachable case is an ACTIVE
+    # plan still declaring a retired token, NOT an archived one.  No archived
+    # plan declares one (measured: all 40 are `archived`), and the archive tree
+    # is not reachable from `next_owner`'s only call site.
+    #
+    # `open` -> `awaiting-plan-review` and `executing` -> `implementing` were
+    # each one R7 successor; `review` mapped to three
     # (`awaiting-code-review|revising-code|ready-to-archive`) whose owners are
     # not the same, so it reports `unresolved` rather than guess.
     "open": "plan-reviewer",
@@ -4174,15 +4193,23 @@ PLAN_REVIEW_CLEARED_STATES = ("ready-to-implement", "implementing",
 #:
 #: **H1 deliberately did NOT narrow this tuple, departing from its own cost
 #: list, because narrowing it disables a real check rather than merely changing
-#: a message.** Measured on a self-reviewed archived proposal declaring
-#: `reviewed`: with the historical tokens present the scan reports *"'## Review'
-#: appears authored by the proposal author"*; with them removed that finding
-#: disappears and only `unknown proposal status` remains.  `scan` still exits 1
-#: either way, so the regression hides behind an unrelated non-zero exit -- and
-#: the one node that catches it invites the wrong repair (move the fixture to a
-#: current status and the suite goes green with the independence check silently
-#: unexercised).  The comment above is the standing reason: the check is about
-#: the record, not the token.
+#: a message.**
+#:
+#: Code review [C4] falsified the measurement an earlier version of this note
+#: gave, and the corrected one is worse, not better. That version claimed the
+#: narrowing leaves `unknown proposal status` behind and that *"scan still exits
+#: 1 either way"*. It does not: it was taken against a partially-applied
+#: retirement. On the finished state, for a self-reviewed **archived** proposal
+#: declaring `reviewed`, narrowing this tuple yields **zero violations and exit
+#: 0** -- because [H1-D2] correctly exempts archived artifacts from the status
+#: check, so nothing at all remains to be non-zero about. The regression is
+#: therefore fully silent for archived artifacts, not merely camouflaged.
+#:
+#: For an **active** proposal the narrowing is caught:
+#: `test_scan_flags_review_authored_by_proposal_author` reddens. The archived
+#: case is the unguarded one, and it is the case this tuple exists for -- the
+#: comment above is the standing reason: the check is about the record, not the
+#: token, and an archived record is still a record.
 _PROPOSAL_POST_REVIEW_STATES = (
     "revising", "awaiting-decision",
     "reviewed", "revised",

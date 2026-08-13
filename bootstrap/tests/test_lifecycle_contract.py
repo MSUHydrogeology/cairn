@@ -407,6 +407,21 @@ def test_scan_flags_accepted_without_decision(tmp_path, monkeypatch, capsys):
 
 
 def test_scan_flags_review_authored_by_proposal_author(tmp_path, monkeypatch, capsys):
+    """The sole behavioural guard on `_PROPOSAL_POST_REVIEW_STATES` staying wide.
+
+    **The `status="reviewed"` fixture is deliberate -- do not "modernize" it.**
+    Code review [C8] measured the two-step trap: (1) a hygiene pass moves this
+    fixture to a live token like `awaiting-decision` -- still green, since that
+    token is in the tuple too; (2) a later maintainer narrows the tuple, dropping
+    its historical members -- also green, because step (1) removed the only
+    fixture that exercised them. The reviewer-independence check is then silently
+    disabled for archived self-reviewed proposals, with no non-zero exit to
+    notice it (see the tuple's note at `_PROPOSAL_POST_REVIEW_STATES`).
+
+    `reviewed` is retired from the CURRENT vocabulary but deliberately still
+    recognized here, which is the whole property under test: the check is about
+    the record, not the token.
+    """
     repo = _make_repo(tmp_path)
     _write_proposal(repo, "p.md", status="reviewed", author="Claude", body=(
         "## Review -- Claude (author) -- 2026-05-02\n\nself-review\n"
@@ -3960,6 +3975,45 @@ class TestTheLegacyTokensWereRetiredAtH1:
             art = planner._read_artifact(path)
             violations = _e_conf(art)
             assert not any("retired plan status" in v for v in violations), (
+                state, violations)
+
+    def test_the_proposal_side_retirement_bites_the_same_way(self, tmp_path):
+        """The same contract, proposal side -- which had NO witness at all.
+
+        Code review [C1]: the node above parametrizes the three PLAN tokens
+        only, so `_conformance_violations`' proposal arm was unguarded in both
+        directions. Two independent mutations of that arm left the entire scoped
+        mapping green: drop the `_is_immutable` guard and an active proposal on a
+        retired token reports `unknown proposal status`, losing the migration
+        target retirement exists to hand the author; invert it and every archived
+        proposal that ever declared one is called malformed -- the exact R7 false
+        positive `HISTORICAL_PROPOSAL_STATES` was added to prevent.
+
+        This matters more than symmetry-for-its-own-sake: `[H1-D1]`'s own rule is
+        that a regression test lands WITH the fix, and D2's fix shipped without
+        one.
+        """
+        repo = _e_repo(tmp_path)
+        for state in ("proposed", "reviewed", "revised"):
+            path = _write_proposal(repo, f"p-{state}.md", status=state)
+            art = planner._read_artifact(path)
+            violations = _e_conf(art)
+            assert any(
+                f"retired proposal status {state!r}" in v for v in violations
+            ), (state, violations)
+            # The message must hand over a migration target, not a dead end.
+            retired = [v for v in violations if "retired proposal status" in v]
+            assert "awaiting-review" in retired[0], retired
+
+        archive_dir = repo / "dev" / "proposals" / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        for state in ("proposed", "reviewed", "revised"):
+            path = _write_proposal(
+                repo, f"archive/p-{state}-archived.md", status=state)
+            art = planner._read_artifact(path)
+            violations = _e_conf(art)
+            assert not any(
+                "retired proposal status" in v for v in violations), (
                 state, violations)
 
 
