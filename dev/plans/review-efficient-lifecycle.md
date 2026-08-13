@@ -3364,3 +3364,64 @@ own commits only (the range also holds 54 commits from three other sessions):
 **5 frozen paths changed and 5 discovered `FROZEN-NEW`** -- ten, not four -- and it
 grew again with F, P4 and G. `bootstrap/_scaffold/` is untouched, so the **AST
 attestation baseline needs no re-anchor**; only the gate manifest does.
+
+## Chunk I is subsumed, and the ceremony has run -- Claude (Implementation) -- 2026-08-13
+
+**Chunk I no longer executes.** The Maintainer decided on 2026-08-11 that the
+re-anchor would be a single ceremony, performed by
+`git-native-security-foundations`'s Chunk H rather than twice. Authorization,
+quoted verbatim from that plan's record
+([`dev/plans/archive/git-native-security-foundations.md:1012`](archive/git-native-security-foundations.md)):
+
+> Let's go a single ceremony. The other plan doesn't care about what's in the
+> runbook
+
+That plan states the consequence and assigns this record explicitly — *"The
+other plan's owner should know its Chunk I no longer executes ... a subsumed
+chunk is that plan's own record to make"* (line 1028). This section is that
+record. The reasoning was that its Chunk H already re-derives the evidence and
+advances branch and anchor, so it re-pins the frozen set Chunk I would have
+re-pinned; running both would re-anchor twice, the second time over a set the
+first had just fixed.
+
+**The ceremony ran on 2026-08-13**, anchor `e45e1fc` -> `cfaace9`, over the
+reviewed tree at `b8c1fac`: 164 frozen files modified, 37 added, 0 removed;
+pytest collection 1598 -> 4261. Verified here rather than taken on trust —
+`test_gate_manifest.py` is **21 passed** at that anchor, and collection measures
+**4261**, so this plan's ten frozen paths (re-measured in the section above) are
+absorbed and the `FROZEN-MODIFIED` dirtiness signals this plan carried through
+G are cleared.
+
+**One ordering divergence, recorded because it is load-bearing and because
+nothing should infer it later.** Chunk I's condition was *"after every
+executable, test, template and frozen byte across A–H is stable **and** the
+single code review has landed"*. The ceremony instead ran with **H still
+outstanding and before the code review**, because it was scheduled by the other
+plan's needs, not this one's. The subsumption record asserts the single
+ceremony's delta *"covers both plans, including
+`bootstrap/tests/test_lifecycle_contract.py`"* (line 1025) — true as of
+`b8c1fac`, but that file is **frozen** (confirmed present in
+`frozen_files`, 201 entries) and **H1 must edit it**, since retiring the legacy
+tokens is exactly what `TestTheLegacyTokensAreStillLegalUntilH1` pins. So H1's
+frozen-byte change post-dates the anchor that was supposed to cover it.
+
+Whether that leaves the gate red is **measured when H1 lands, not asserted
+here** — and the disposition is the Maintainer's, not an implementing agent's,
+because a re-anchor is fenced work. What is already certain is bounded and
+small: the remaining delta is H's paths alone, not the ten this plan
+accumulated, so any follow-on ceremony has a far smaller and more reviewable
+scope than the one just performed.
+
+**B2 still stands and its position moves.** It was defined as the Boundary B on
+*"the post-ceremony commit after Chunk I"*. Chunk I is gone, so B2 attaches to
+the post-ceremony commit after whichever re-anchor finally covers H's frozen
+delta. B1, the single code review, and the union range are untouched.
+
+**The plan's sequencing assumption became true, late.** Chunk H's cell says the
+security plans *"are already archived when this plan implements, so the quiet
+tree is a precondition to check at H, not a wait to schedule"*. They were not
+archived when H began; both were archived at `f654dc0` on 2026-08-13, mid-H. The
+precondition therefore had to be checked as the cell requires, and it did not
+hold on first check — two other sessions held live intent claims on two of the
+four active artifacts, one of them writing an archive record. Those rows waited
+rather than being applied against moving blobs.
