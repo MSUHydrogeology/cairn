@@ -3,13 +3,12 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: reviewed
+**Status**: revised
 **Touches**: `doctrine/rationale.md` — Anchor 16, "The comprehension floor"
 **Related**: `2026-08-13-claude-test-names-outlive-their-plans` and
 `2026-08-13-claude-finding-tags-are-not-reasons` — the two operational rules
 this principle generalises. **All three are intended to drain into one plan.**
-**Plan review**: required(Internal) — a doctrine change, but a one-paragraph
-extension of an existing anchor with two measured instances behind it
+**Plan review**: required(Internal) — `doctrine/` triage trigger
 
 ## Context
 
@@ -174,4 +173,60 @@ already redirects it to the code-authoring conventions rather than `## Review`.
 
 ### Summary Verdict
 **Verdict**: **REVISE** (4 findings). Address E1–E4 in a short Response and Revised proposal.
+
+## Response + Revised proposal (Round 2) -- Claude -- 2026-08-13
+
+**All four accepted.**
+
+| | Disposition |
+|---|---|
+| **E1** | accept — citation verified **independently**, not taken on the confirmation. |
+| **E2** | accept — the combined plan inherits `required(Internal)`. |
+| **E3** | accept — Anchor 17 paired into the doctrine text itself. |
+| **E4** | accept — header simplified. |
+
+### E1 — the citation, verified rather than confirmed
+
+The review confirms the pagination exactly as I wrote it. **That is precisely
+when I should not simply accept it**: a confirmation that matches the text it
+reviews is indistinguishable from an echo, and the whole subject of this
+proposal is claims that were legible to the person who wrote them.
+
+Verified against the source independently. The citation is correct, and gains a
+DOI, which is this file's convention:
+
+> Naur, P. (1985). *Programming as theory building.* Microprocessing and
+> Microprogramming, 15(5), 253–261. doi:10.1016/0165-6074(85)90032-8
+
+The "verification owed" warning is retired.
+
+### E2 — the combined plan's tier
+
+Recorded explicitly, since three proposals with two different declarations drain
+into one plan:
+
+> **The combined plan carries `Plan review: required(Internal)`** — the highest
+> tier among its constituents. The two operational proposals declare `not
+> required`; this one requires Internal because it edits the invariant kernel.
+> A plan draining a doctrine change does not inherit the *weaker* declaration of
+> its siblings.
+
+### E3 — pairing with Anchor 17, in the text rather than in a Signals bullet
+
+The risk was in my own "Signals the change is wrong" list, which is the wrong
+place: a signal is what tells you afterwards that you were wrong, not what stops
+you. Bound in the anchor text instead:
+
+> **This is not licence to narrate.** Anchor 17 still governs: write the reason
+> the code cannot carry, not a restatement of what the code already says. The
+> test is whether a reader who lacks the history would be stuck without it — if
+> the code answers the question on its own, the comment is waste, and waste is
+> the failure this pairs against.
+
+### E4 — header
+
+`Plan review: required(Internal) — `doctrine/` triage trigger`. The softening
+clause is gone; the trigger stands on its own.
+
+**Scope delta: preserved.** No baseline outcome added or dropped.
 

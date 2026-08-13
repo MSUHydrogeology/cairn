@@ -3,15 +3,15 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: reviewed
+**Status**: revised
 **Touches**: `AGENTS.md` and `templates/core/AGENTS.md` (the comprehension-floor
 paragraph in `## Review`); a read-and-revise pass over 262 tagged comments and
 docstrings, sequenced per file owner
 **Related**: `2026-08-13-claude-test-names-outlive-their-plans` (the same
 failure in test names); `dev/PLANNING.md` > "Opaque finding-IDs in code comments
 and docstrings", which this proposal drains
-**Plan review**: not required(no plan — one paragraph plus a bounded,
-judgement-led revision pass; no sequencing beyond file ownership)
+**Plan review**: not required(no plan — one convention paragraph plus a
+bounded, judgement-led revision pass)
 
 ## Context
 
@@ -233,4 +233,77 @@ changes; the shipped `AGENTS.md` paragraph is the delivery.
 
 ### Summary Verdict
 **Verdict**: **REVISE** (4 findings). Address E1–E4 in a short Response and Revised proposal.
+
+## Response + Revised proposal (Round 2) -- Claude -- 2026-08-13
+
+**All four accepted.** E3 is the one that changes the outcome, and it is a
+placement error I should have caught by asking who reads which section.
+
+| | Disposition |
+|---|---|
+| **E1** | accept — the header contradicted the text. |
+| **E2** | accept — the 168 get a tracked home. |
+| **E3** | accept — the rule moves out of `## Review`. |
+| **E4** | accept with modification — the fence is real but narrower than stated. |
+
+### E3 — an agent writing code never reads the review section
+
+I placed a **code-authoring** rule under `AGENTS.md` > `## Review`, reasoning
+that it extends the comprehension floor. That reasoning was about where the rule
+came *from*, not where its reader goes. An agent writing a comment is not
+reading the review section.
+
+The rule moves to the code-authoring conventions, **beside `**Naming.**`** —
+which also puts it next to the sibling proposal's test-naming rule, where the
+two read as one convention rather than two scattered ones. The comprehension
+floor keeps a one-line pointer to it, so the derivation is still visible to
+someone arriving from the other direction.
+
+### E1 — the header
+
+Corrected to `not required(no plan — one convention paragraph plus a bounded,
+judgement-led revision pass)`. The claim of "no sequencing beyond file
+ownership" was false: the pass *is* sequenced across owners, and the review is
+right that a justification cannot contradict its own text.
+
+### E2 — the 168 get a home, not an intention
+
+Taking option (b), and the reason is the one this repository keeps relearning:
+*"whichever plan next touches each file"* names no owner and no trigger, which
+is a deletion with better manners. On acceptance:
+
+> `dev/PLANNING.md` — **Finding-tag revision pass, remaining sites** — the 94 in
+> the two `_gate_preflight` files ride their security plan's closure; the
+> remaining ~168 are a tracked item with the revival condition *"any plan
+> touching a file containing a finding tag clears that file's tags as part of
+> its own change."*
+
+Option (a) — one dedicated 262-site commit — was rejected because it would put a
+judgement pass over four files' worth of unrelated code into a single unreviewable
+diff, and because 94 of them belong to a plan mid-closure.
+
+### E4 — accepted, with the fence drawn where the risk actually is
+
+I checked the three classes named. **No tags appear in `bootstrap/tests/fixtures/`
+or in any `.json` baseline** — so those two need no fence. The real hazard is a
+narrower one the review did not name precisely:
+
+```python
+original + "\n# reviewed change to the checker itself ([D2])\n"
+```
+
+That is a tag inside a **string literal used as test input** — the tag is *data*
+being fed to a checker, not commentary. Editing it changes what the test
+exercises.
+
+> **Fence**: tags inside string literals that are test inputs, generated output,
+> or fixture data are **out of scope**. The rule governs comments and docstrings
+> — prose addressed to a reader — not strings addressed to a parser.
+
+That is a better fence than "test fixtures and AST baselines", because it is
+stated as a property rather than a file list, and file lists rot.
+
+**Scope delta: preserved.** E2 chooses between two stated options rather than
+dropping an outcome; E4 fences out sites that were never in scope, since a
+string literal fed to a parser was never "a comment explaining the code".
 

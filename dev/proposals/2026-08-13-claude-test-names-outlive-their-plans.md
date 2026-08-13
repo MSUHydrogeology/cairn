@@ -3,14 +3,14 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: reviewed
+**Status**: revised
 **Touches**: `AGENTS.md` and `templates/core/AGENTS.md` (the `**Naming.**`
 paragraph); a bounded, mechanical rename of ~30 test classes in
 `bootstrap/tests/`, sequenced after their owning plan archives
 **Related**: `doctrine/doc-governance.md` (routing); the archived
 `scope-reduction-trap`, whose review rounds surfaced this
-**Plan review**: not required(no plan — one convention paragraph plus a
-mechanical rename, no sequencing, no deferred follow-ups)
+**Plan review**: not required(no plan — single concept, operational convention
+change, mechanical rename)
 
 ## Context
 
@@ -211,4 +211,70 @@ facing behaviour; the shipped `AGENTS.md` paragraph is the delivery.
 ### Summary Verdict
 **Verdict**: **REVISE** (3 minor/substantive findings). Address E1–E3 in a short Response and Revised proposal.
 
+## Response + Revised proposal (Round 2) -- Claude -- 2026-08-13
+
+| | Disposition |
+|---|---|
+| **E1** | accept — the header contradicted the text. |
+| **E2** | accept — the deferred rename gets a tracked home and a revival condition. |
+| **E3** | **accept with modification** — the example is right to ask for; the *suggested* example violates the sibling rule. |
+
+### E1 — the header said "no sequencing" while the text sequenced
+
+Corrected to:
+
+> `Plan review: not required(no plan — single concept, operational convention
+> change, mechanical rename)`
+
+The rename *is* sequenced — after `review-efficient-lifecycle` archives — so
+claiming "no sequencing" as the reason for skipping a plan was simply false. The
+reason still holds; the justification was wrong.
+
+### E2 — the deferred rename gets a home
+
+Recorded on acceptance as a queued item in `dev/PLANNING.md`:
+
+> **Rename coordinate-named test containers** — revival condition: *when
+> `review-efficient-lifecycle` archives.* ~30 classes, bodies untouched;
+> acceptance is that `--collect-only` node count and pass/fail set are unchanged.
+
+Without it the rename waits on somebody remembering, which is the deferral
+failure this repository already has a rule about.
+
+### E3 — accept the requirement, reject the example
+
+The review asks for a docstring template in the `AGENTS.md` text. Agreed: a rule
+without a worked example gets read and not applied.
+
+**But the suggested example cannot be used.** It reads:
+
+```
+"""Pinned behavior for finding CF1 (2026-08-11). Asserts that..."""
+```
+
+That carries a finding tag into a docstring, which is exactly what the sibling
+proposal `2026-08-13-claude-finding-tags-are-not-reasons` forbids — and what the
+Maintainer corrected when they said *"I don't think the tag ever belongs in the
+finished code."* `CF1` identifies nothing to the reader the docstring is for.
+
+Two rules landing in the same file must not contradict each other, so the
+example becomes:
+
+```python
+class TestADeclaredReductionNeedsItsAllowance:
+    """A narrowing that drops an outcome needs the Maintainer's recorded
+    allowance. Without this, an author could concede scope on their own
+    authority and the record would look complete.
+    """
+```
+
+Same length. States why the obligation exists, which is what a reader needs,
+and names no coordinate. Provenance stays in `git blame`.
+
+**This is worth flagging beyond this proposal**: the reviewer read both
+documents and still produced an example violating one of them. That is evidence
+the rule needs its example *in the rule*, not merely nearby — which is what E3
+asked for and why it is accepted.
+
+**Scope delta: preserved.**
 
