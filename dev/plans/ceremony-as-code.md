@@ -755,3 +755,173 @@ seventeen findings were mechanisms chunked but never reached by the governing
 path** — the same shape four External passes found in the proposal. That the
 count is not falling is the useful signal here, and it argues for the External
 pass reading the *sequence* hardest rather than the individual chunks.
+
+## Plan review -- Codex -- 2026-08-13
+
+**Reviewed commit**: `1439ccae5d8e3c2ec7f2e5ec316c2a8e3ec5274b`
+**Target**: the complete plan after the Internal I1-I17 response at `76eeb24`,
+against accepted proposal Revision 4 and its final External Security
+plan-review constraint.
+**Prior findings**: I1-I17 from `## Plan review -- Claude (Internal,
+fresh-context) -- 2026-08-13`; especially I6-I10 and I14.
+**Assurance path**: high-assurance
+**Model**: GPT-5 Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Findings**: raised
+
+**Verdict: REVISE.** The revised plan now owns most of the accepted contract,
+including the artifact's closure membership, the public command surface, and
+the recorded-loader migration. It still does not settle the exact shell
+snapshot design this review was reserved to adjudicate, and three governing
+paths remain internally contradictory. A newer active plan also owns Chunk G's
+same repository-wide edits.
+
+### What is right
+
+The template/instance split is sound: candidate work can build and falsify a
+launcher template while M2 remains the source of the exact operative instance.
+The ten-member closure change now lands before M2, the effective configuration
+is on the actual Stage-1 path, and the runbook tests and end-to-end ceremony have
+named migration homes. Dropping `SSH_AUTH_SOCK` from Stage 1 is the right
+security decision: a stage that must not sign gains nothing from receiving a
+signing channel. R7's complete values grammar and R10's packet/closure binding
+are carried rather than summarized away.
+
+### Blocking findings
+
+**[X1] D7 still does not choose a byte-preserving snapshot mechanism, and one
+of its offered branches demonstrably cannot satisfy R10.**
+
+D7 says the packet is read into a shell variable **or** a temp file and then
+says "the plan names which." It names neither. The shell-variable branch is
+not viable for the required cases: under `/bin/sh`, command substitution turned
+a three-byte `a\n\n` packet into one byte and a three-byte `a\0b` packet into
+two. The trailing-LF and NUL probes D8 names therefore cannot establish that
+the hashed bytes are the parsed bytes through that branch.
+
+The temp-file branch is also only a noun. It does not state what reads the
+untrusted packet exactly once, how the snapshot becomes unavailable to a
+same-user writer between hash and parse, how NUL and UTF-8 are checked, or which
+new executable joins the pre-candidate trust set. Re-reading an ordinary temp
+path is the mutable-path design R10 rejected.
+
+**Satisfier**: choose one implementable design in D7 and specify its descriptor,
+unlink/snapshot, byte-validation, hash, and parse sequence plus every host
+executable it trusts. D8 must attack that exact mechanism, not an abstract
+helper. If POSIX shell cannot deliver R10's literal single-buffer contract with
+an acceptable trust set, seek a Maintainer-authorized contract adjustment
+before implementation; do not quietly substitute "same filename" or "same
+intended content."
+
+**[X2] The launcher has no trusted route to the host values it needs before it
+can verify `reanchor.sh`.**
+
+R9's one command passes the packet, values file, and candidate ref to the
+launcher. Before candidate code may run, D3-D4 require that launcher to invoke
+at least Git, `shasum`, and temporary-file machinery, and to locate the checkout.
+Those absolute paths live in the values file. But B2-B4 put the only strict
+values parser inside candidate `bootstrap/reanchor.sh`, which D4 has not yet
+verified or started. The launcher must therefore either use ambient utilities,
+consume unvalidated values, or duplicate an unspecified parser. The first two
+violate R7; the third is not chunked or tested.
+
+**Satisfier**: add the launcher's pre-candidate values reader to Chunk D. It must
+validate every field used before artifact execution under R7's same closed
+grammar and refusal rules, use no ambient fallback, and have a parity matrix
+against the artifact parser so one accepts no value the other refuses. Name any
+additional bootstrap utilities in D9. The one-command F7 path must execute this
+reader, and a malicious `git`/`shasum` value must leave the marker interpreter
+absent.
+
+**[X3] The dedicated-key rollover is still sequenced so it can invalidate M2,
+and it never says which key signs the rollover.**
+
+N5 still reads "before M3," despite the Response claiming it was tightened to
+before M2. It includes committing the new public half, but
+`dev/.cairn/allowed_signers` is a closure member; a commit after M2 invalidates
+M2. No implementation row owns that candidate roster edit. The current sequence
+also does not say that the rollover ceremony's `signing_key` value is the **old
+anchored key**: the old roster must verify the transition that installs the new
+public key. Pointing the values file at the newly created key would make that
+transition unverifiable.
+
+**Satisfier**: put N5 and the public-roster candidate commit before the stable-
+bytes line and Boundary B. Add the roster edit as an explicit Maintainer-fenced
+row. State that M3 Stage 1/Stage 2 use the old anchored key, that the old key
+signs exactly this rollover, and that only after the successful transaction is
+the local values file refreshed to the new dedicated key for future ceremonies.
+Exercise the old-key/new-roster/new-key sequence with two disposable keys.
+
+**[X4] Acceptance criterion 5 contradicts the decided Stage-1 channel.**
+
+A1/A3 correctly remove the socket and require an agent-held disposable key to
+be unreachable from Stage 1. Criterion 5 still requires that same agent-held key
+to make the probe report **can sign**. Both cannot be true. This leaves the
+accepted R5 security floor with mutually exclusive evidence directions.
+
+**Satisfier**: make criterion 5 match A1/A3: with the disposable key only in a
+scratch agent, both the probe and candidate Stage 1 must be unable to sign
+because neither receives the socket. Add the two-sided mutation: restoring the
+Stage-1 forward makes the governing test red because candidate Stage 1 can sign.
+
+**[X5] Chunk G has two active owners over the same high-traffic security files.**
+
+`dev/plans/comprehension-outlives-the-artifact.md` now drains the accepted
+`finding-tags-are-not-reasons` proposal and assigns its Chunk C the same
+repository-wide comment/docstring pass, explicitly including
+`_gate_preflight.py` and `test_gate_preflight.py`. This plan's G1-G3 claims that
+work again. Both plans are awaiting review, and both would edit closure members,
+run broad verification, and claim the same accepted outcome. Independent
+execution would create collision and duplicate-review risk; silently dropping
+either copy would violate the scope-floor rule.
+
+**Satisfier**: record one implementation owner and a reciprocal gate in both
+plans. My recommendation is that the dedicated comprehension plan owns the
+global pass; this plan preserves R5 rider 4 by requiring that owning commit as
+an ancestor before its stable-bytes line and verifying the ceremony closure
+files contain no unexplained tags. If timing requires this plan to execute a
+subset first, enumerate that subset and have the other plan adopt the same
+commit as delivered scope. One edit and one evidence record, with no accepted
+outcome lost.
+
+### Substantive corrections
+
+**[X6] M2 production and Maintainer receipt remain conflated.** The sequence
+marks M2 as `[Maintainer]`, and N6's Maintainer-intervention row says "M2
+produces" and describes delivery. The independent External Security reviewer
+produces and self-records the exact packet/launcher pair; the Maintainer obtains
+it out of band, verifies the launcher digest against the M2 record, retains the
+pair, and runs the one command. Split those actors explicitly. Otherwise the
+table invites the Maintainer to author the authority input that independence is
+supposed to supply.
+
+**[X7] The shell standing gate is acknowledged but not assigned.** Boundary A
+says the plan "owes" `sh -n`, while no chunk or acceptance criterion creates
+that test. Add public-path syntax nodes for both the artifact and instantiated
+launcher, and make Boundary C independently target X1's snapshot, X2's bootstrap
+values path, and X3's two-key rollover. File-level pytest names alone are not a
+falsification mapping for this trust surface.
+
+### Scope and coverage
+
+No chunk exceeds accepted Revision 4. X1-X4 are missing or contradictory
+delivery of accepted outcomes; X5 is duplicate ownership, not a recommendation
+to cut scope. The three accepted residuals remain accurately out of scope.
+
+**Executed**: `claim_check` is clean. The lifecycle planner reports the plan
+structurally sound but correctly finds no conforming External clearing pass.
+The `/bin/sh` byte probes above independently reproduced why command
+substitution cannot satisfy D8. I opened the live closure function, all four
+recorded `SSH_AUTH_SOCK` forwards, the current M2/N5 sequence, and the competing
+comprehension plan's Chunk C.
+
+**Not executed / low confidence**: no implementation exists, so I did not run a
+launcher, packet parser, key rollover, ref transaction, or full suite. I did not
+inspect private-key material or alter an agent socket. The exact snapshot helper
+and its acceptable host trust set remain the design this plan must settle.
+
+**Recommendation**: revise, then obtain one focused External Security clearing
+pass over X1-X7. X1-X4 are the security floor; X5-X7 should be corrected in the
+same response so implementation begins with one owner, one actor model, and one
+verification map.
