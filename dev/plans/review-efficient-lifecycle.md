@@ -3995,7 +3995,7 @@ caught this one.
 | [CF8] (2) | -> wontfix | `verify_stems`' 2 issues are `dev/strategy/` stems, which the checker resolves only under `dev/proposals/` or `dev/plans/`. Measured before and after this plan's edits: identical count, so neither is this plan's to fix |
 | [CF9] | -> defer | homed to `dev/PLANNING.md` > Queued at `6c927ff`, at the Maintainer's instruction. Revival condition: the next change to `check_cairn`'s prefix set or to shipped-template citation policy |
 
-### [CF3](b) withdrawn -- Maintainer decision, 2026-08-13
+### [CF3] item (b) withdrawn -- Maintainer decision, 2026-08-13
 
 R3 required migration to enumerate the legacy multi-obligation passes in three
 **archived** plans and record which obligation each satisfied. The Maintainer
