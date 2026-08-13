@@ -109,6 +109,25 @@ Review is asynchronous and commit-mediated: a review is a section
 appended to the artifact and committed, not a conversation that
 leaves no record.
 
+**The proposal is where the deliberative weight sits — so plan review is
+Internal by default.** When an **External** proposal review has read a
+complete current contract and recorded `Plan readiness: READY`, the
+derived plan takes a **fresh-context Internal** plan review, not a second
+different-agent-type round; it declares `Plan review: required(Internal)`
+plus a commit-bound `Inherited proposal basis`. **Code review's floor is
+unchanged and independent: not the implementing agent** — a same-type
+agent in an independent context clears it. **External or Security review
+of a plan or of code is an explicit escalation**, taken because a
+proposal reviewer recorded `DISTINCT REVIEW REQUIRED`, because readiness
+was invalidated, or because a reviewer or the Maintainer spent one
+deliberately — never inferred from a change's size, its assurance path,
+or the surfaces it touches. A high-risk surface named below still takes
+its own Security Review; that trigger is untouched by this routing.
+Inheritance reallocates the plan review, it never removes it: an
+inherited basis paired with `not required(...)` refuses. Contract and
+rationale: `doctrine/dual-review.md` > "Plan-readiness inheritance";
+process framing in `dev/agent_collaboration.md`.
+
 **Reviews are attributed and self-committed.** No agent writes or
 commits a review attributed to another agent — the named reviewer
 commits their own findings, or the Maintainer does. The attribution
@@ -134,6 +153,20 @@ grounding: `doctrine/rationale.md` > the comprehension floor.
   then re-anchor on the `dev/` tree, read the commit log since the
   last handoff, note in-flight proposals, and confirm your role
   before substantive work.
+
+  For the in-flight threads, **start from the board, not from the
+  artifacts**:
+
+  ```
+  python tools/lifecycle_planner.py board --compact
+  ```
+
+  One row per active artifact — kind, artifact, status, owner role,
+  active work-intent, review obligation, evidence, what blocks it, and
+  row validity. **Run the board, choose the row you need, then read that
+  artifact and the evidence it cites** — not every active record. The
+  view is derived and says so; the artifact is authoritative, and it
+  mutates nothing.
 * **Goodnight** — at the end of a session, leave a clean handoff:
   a status summary, a per-agent reflection, and (for the
   designated owner) a scrub of the roadmap boards. The handoff commit is
