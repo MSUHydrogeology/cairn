@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-13
-**Status**: revised
+**Status**: awaiting-review
 **Assurance path**: high-assurance — the re-anchor ceremony is a named
 high-risk surface and the authority closure's own contents change.
 **Touches**: `bootstrap/REANCHOR_RUNBOOK.md`, a new ceremony code artifact,
