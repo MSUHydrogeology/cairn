@@ -81,20 +81,22 @@ Add to the `**Naming.**` paragraph in both `AGENTS.md` copies:
 > review finding that produced them.** A test name is read at failure time by
 > someone who was not there: `test_a_declared_reduction_with_no_allowance_refuses`
 > tells them what broke; `TestP2AmendmentB` sends them to an archived plan the
-> lifecycle tells them not to re-read. **Provenance belongs in the docstring** —
-> the finding id, the date, and *why the obligation exists* — where it is read
-> when deciding whether a test still earns its place, rather than every time it
-> fails.
+> lifecycle tells them not to re-read. **The docstring carries the reason** —
+> *why the obligation exists*, in plain terms — not the finding id, which
+> identifies nothing to a reader without that plan open. Provenance already
+> lives in `git blame` → the commit body → the plan.
 
-The second sentence is the load-bearing one. This is not "delete the
-provenance"; it is "put it where it is useful and out of where it is not."
+This is not "delete the history"; it is "write the history into the sentence
+rather than a label pointing at it." The sibling proposal
+`2026-08-13-claude-finding-tags-are-not-reasons` states that rule for comments
+and docstrings generally; this one applies it to names.
 
 ### 2. The rename
 
 ~30 classes, mechanically: `TestP2AmendmentBScopeReduction` →
 `TestADeclaredReductionNeedsItsAllowance`, and so on. **Bodies untouched, no
-test logic changed**, with the coordinate moved into the class docstring if it
-is not already there.
+test logic changed**, with the class docstring stating *why the obligation
+exists* where it does not already.
 
 **Sequenced after the owning plan archives.** Most affected classes belong to
 `review-efficient-lifecycle`, which is executing. Renaming another plan's tests
@@ -137,8 +139,11 @@ depend on the record for its meaning.
   sentence.
 * **Rename everything now.** Rejected on collision risk, not on merit. The
   affected classes are in an executing plan's files.
-* **Ban coordinates from docstrings too.** Rejected — that is where provenance
-  belongs. This proposal moves the coordinate, it does not delete it.
+* **Keep the coordinate in the docstring.** This was the earlier draft.
+  Rejected on the Maintainer's correction (2026-08-13): a finding id identifies
+  nothing to a reader without the plan open, and `git blame` is the maintained
+  path to it. The docstring carries the *reason*, not the label. See the sibling
+  proposal for the general rule.
 * **Add a naming lint.** Rejected *for now*, and the reasoning is worth
   recording because the criterion in `doctrine/dual-review.md` does not cleanly
   decide it. That criterion says mechanize when the failure is silent, the check
