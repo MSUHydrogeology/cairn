@@ -37,7 +37,8 @@ Proposed paths:
 **In scope**: the launcher and packet (R1, R6, R9, R10), the values schema
 (R2, R7), the operator command surface (R3), the step registry and
 doc-agreement tests (R4), the two key-probe corrections (R5 riders 1–2), the
-dedicated-key rollover (R8), the finding-tag cleanup (R5 rider 4), the runbook
+dedicated-key rollover (R8), the finding-tag outcome (R5 rider 4 — **gated**, owned by
+`comprehension-outlives-the-artifact`), the runbook
 restructure, and `SECURITY.md`'s adopter-facing key guidance.
 
 **Explicitly out of scope**: the accepted host-persistence residual, the
@@ -70,12 +71,14 @@ C   the ceremony artifact and its subcommands                [commit]
 D   the packet, the launcher, and their binding              [commit]
 E   the step registry and the doc-agreement tests            [commit]
 F   the runbook restructure                                  [commit]
-G   the finding-tag cleanup                                  [commit]
+G   the finding-tag pass — OWNED ELSEWHERE, gated here        [gate]
 H   SECURITY.md adopter guidance                             [commit]
 --- stable bytes -----------------------------------------------------
 BB  Boundary B, full, on the stable pre-review commit        [record]
 CR  independent code review                                  [review]
-M2  exact-byte External Security Review + launcher/packet    [Maintainer]
+M2  exact-byte External Security Review; the REVIEWER produces
+    and self-records the launcher/packet pair                [reviewer]
+    the MAINTAINER obtains it out of band and verifies it     [Maintainer]
 M3  the ceremony: key rollover AND transition, in one        [Maintainer]
 M4  atomic publication                                       [Maintainer]
 ```
@@ -94,8 +97,8 @@ M4  atomic publication                                       [Maintainer]
   records what the code does, so it follows the code — but E2 asserts the
   runbook cites every step ID, which cannot pass until F has written those
   citations. The registry (E1) lands in E; its agreement test (E2) lands in F.
-* **G anywhere after A**, and deliberately not first: the tag cleanup touches
-  files Chunks A–E also edit, and doing it first guarantees conflicts.
+* **G is a gate, not an edit** ([X5]). Its only ordering requirement is that the
+  owning commit be an ancestor before the stable-bytes line.
 
 **No chunk moves a Cairn ref, loads a key, or runs a ceremony.**
 
@@ -141,6 +144,7 @@ file for either branch.
 | C2 | same | `show-report` renders the package's range report in a **bounded, human-readable** form — the step that currently has no command at all |
 | C3 | same | `hash-package` computes the digest the Maintainer confirms, over the bytes on disk |
 | C4 | `bootstrap/tests/test_reanchor.py` | every subcommand exercised **through its public path**, not a helper |
+| C4a | same | **`sh -n` over `reanchor.sh` and the instantiated launcher**, as public-path nodes ([X7]). This is the shell standing gate the repository does not have; a syntax error in either fails *after* the key is loaded |
 | C5 | `bootstrap/tests/_gate_preflight.py` | **`bootstrap/reanchor.sh` joins `declared_authority_closure()`** — a hard-coded list, so this is candidate code that must land *before* M2, not at M3 |
 | C6 | `bootstrap/tests/test_gate_preflight.py` | every closure-arity assertion moves nine → **ten**, including `_LOADED_MODULES` and the loader's fixed expected-path list |
 | C7 | `bootstrap/REANCHOR_RUNBOOK.md` | the fixed member-set list in both loaders gains the artifact, in `LC_ALL=C` order |
@@ -157,9 +161,16 @@ file for either branch.
 | D4 | same | resolves the candidate ref **once**, verifies every closure blob at that OID, **composes** the transient review manifest, extracts and hashes the artifact, then invokes `stage1` |
 | D5 | `bootstrap/tests/test_reanchor.py` | a **mutated packet with a consistently rewritten row set** must refuse — the [R4-E1] attack, run rather than argued |
 | D6 | same | a **marker interpreter** proves no candidate code starts on any packet or closure failure |
-| D7 | `bootstrap/reanchor-launcher.template.sh` | **the byte-preserving snapshot named**: the packet is read into a shell variable via a single `read`-free capture that preserves NUL-free bytes exactly, or into a temp file the launcher created and re-reads by descriptor. The plan names which and why; "reads once" without a mechanism is prose |
-| D8 | `bootstrap/tests/test_reanchor.py` | **hashed bytes == parsed bytes** proven under a malformed packet, a trailing-LF-only difference, and an embedded NUL — the Revision 4 reviewer's explicit plan-review constraint |
-| D9 | `bootstrap/SAFETY.md` | the host trust set gains whatever D7 requires; if the launcher needs a utility the loader did not, it is recorded there rather than acquired silently |
+| D10 | `bootstrap/reanchor-launcher.template.sh` | **the launcher's own pre-candidate values reader.** The launcher needs `git`, `shasum`, temp machinery and the checkout *before* it can verify `reanchor.sh`, and the artifact's parser is candidate code it has not yet started. It therefore validates every field it uses under **R7's same closed grammar and refusals**, with **no ambient fallback** |
+| D11 | `bootstrap/tests/test_reanchor.py` | a **parity matrix**: for every R7 rule, the launcher reader and the artifact parser agree. **Neither accepts a value the other refuses** |
+| D12 | same | a **malicious `git` or `shasum` value** in the values file leaves the marker interpreter **absent** — the reader refuses before any candidate byte runs |
+| D7 | `bootstrap/reanchor-launcher.template.sh` | **DECIDED — the hash-cross-checked in-memory snapshot.** Four steps, in order: (1) `SHASUM` the packet file and refuse unless it equals the instantiated digest; (2) snapshot with the trailing-byte-preserving idiom `v=$(cat "$PKT"; printf x); v=${v%x}`; (3) re-hash the snapshot (`printf '%s' "$v" \| SHASUM`) and **refuse unless it equals step 1's digest**; (4) parse **only** `$v`. Step 3 is what makes the design work: it *detects* any byte the shell could not carry |
+| D7a | same | **the packet format is NUL-free by definition**, and step 3 is what enforces it — a NUL makes the snapshot hash differ and the launcher refuses. Verified on this host: `a\0b` snapshots to 2 characters and is caught; `a\n\n` survives the idiom intact |
+| D7b | same | **trust-set delta**: `cat` joins the pre-candidate set (`printf` is a shell builtin; `SHASUM` is already there). The digest field is taken with `${d%% *}`, so **`cut` does not join** |
+| D8 | `bootstrap/tests/test_reanchor.py` | **hashed bytes == parsed bytes**, attacking D7's *exact* mechanism rather than an abstract helper: a trailing-LF-only difference must survive; an embedded NUL must **refuse at step 3**; a packet mutated between steps 1 and 2 must refuse at step 3 |
+| D8a | same | the step-3 comparison is **mutation-checked** — removing it must make the NUL case pass, since that is the only thing standing between a lossy snapshot and a parsed one |
+| D9 | `bootstrap/SAFETY.md` | the pre-candidate trust set gains **`cat`** and nothing else, recorded there rather than acquired silently |
+| D9a | this plan | **What D7 does not close, stated rather than implied**: steps 1 and 2 read the file twice, so a same-user writer can change it between them. Step 3 **detects** that and refuses; it does not **prevent** it. That is the accepted same-user residual, unchanged and not enlarged. R10's "single buffer" is delivered for *parsing*; the *reading* is two passes cross-checked, and this plan says so rather than claiming otherwise |
 
 ### Chunk E — the step registry and doc agreement ([R4])
 
@@ -184,21 +195,40 @@ about whether the surrounding explanation is accurate. That prose is reviewed.
 | F6 | same | **`_substitute()` is retired.** It is the placeholder-filling helper R3 forbids; once the values file exists nothing should fill placeholders at test time |
 | F7 | `bootstrap/tests/test_reanchor.py` | **the R3 end-to-end node**: start from only the M2 outputs plus a values file, run the launcher and the public commands, finish at the expected two-ref transaction. This is acceptance criterion 1's evidence producer, which the opened plan left with none |
 
-### Chunk G — the finding-tag cleanup ([R5] rider 4)
+### Chunk G — the finding-tag pass is OWNED ELSEWHERE; this plan gates on it ([X5])
+
+**Ownership resolved, not duplicated.** `dev/plans/comprehension-outlives-the-artifact.md`
+Chunk C drains the accepted `finding-tags-are-not-reasons` proposal and already
+owns this exact repository-wide pass, **including `_gate_preflight.py` and
+`test_gate_preflight.py` — 97 enumerated sites**. Both plans are awaiting review
+and both would edit closure members. Executing independently would collide;
+silently dropping either copy would breach the scope floor.
+
+**That plan owns the edit. This plan owns the gate**, so R5 rider 4 is preserved
+rather than lost:
 
 | # | File | Change |
 |---|------|--------|
-| G1 | repository-wide | bare `[FUR5]`, `[M2-1]`, `[S1]`-style tags in comments and docstrings replaced by the reason they stand for |
-| G2 | — | **read, not swept.** Each site is judged: keep the reason, drop or gloss the label. A tag adjacent to load-bearing history keeps the history |
-| G3 | — | **`dev/**/archive/**` is out of bounds**, and so is any committed review or Decision section. Those records are append-only; editing a tag inside one would rewrite a reviewer's words |
+| G1 | this plan | **the owning commit is an ancestor** before the stable-bytes line. If it is not, this plan stops rather than doing the pass itself |
+| G2 | `bootstrap/tests/test_reanchor.py` | the **ceremony closure files carry no unexplained tag** — a bare `[FUR5]`-style label with no adjacent reason fails. This is the evidence that rider 4 was delivered *for this plan's surface*, whoever made the edit |
+| G3 | — | **if timing forces a subset here**, it is enumerated in this plan and the other plan adopts the same commit as delivered scope. One edit, one evidence record, no accepted outcome lost |
 
-### Chunk H — the adopter-facing key guidance ([R8])
+**The reciprocal row belongs in the other plan too.** This plan cannot create
+that obligation unilaterally; it is raised as a finding on that plan's review,
+not asserted here as though agreed.
+
+### Chunk H — the roster edit and the adopter-facing key guidance ([R8])
+
+**H1 is Maintainer-fenced and lands BEFORE the stable-bytes line** ([X3]).
+`dev/.cairn/allowed_signers` is a closure member, so a commit after M2
+invalidates M2 — the same M7 rule the parent plan carries.
 
 | # | File | Change |
 |---|------|--------|
-| H1 | `SECURITY.md` | the dedicated-ceremony-key requirement, and why a shared authentication key makes N4 fragile — with the 2026-08-13 evidence |
-| H2 | same | what auto-loading (`AddKeysToAgent`, `UseKeychain`) does to the precondition |
-| H3 | `bootstrap/reanchor-values.example` + runbook | the **setup-and-refresh procedure** carried from the Revision 4 review: record *resolved, regular-file* executable paths, and re-run after a toolchain upgrade. On this host `/opt/homebrew/bin/git` is a symlink to a version-pinned Cellar path, so the entry goes stale at every Git upgrade |
+| H1 | `dev/.cairn/allowed_signers` | **MAINTAINER-FENCED (N5)** — commit the **public half** of the new dedicated key. An implementing agent does not create, move, or handle the private half |
+| H2 | `SECURITY.md` | the dedicated-ceremony-key requirement, and why a shared authentication key makes N4 fragile — with the 2026-08-13 evidence |
+| H3 | same | what auto-loading (`AddKeysToAgent`, `UseKeychain`) does to the precondition |
+| H4 | `bootstrap/reanchor-values.example` + runbook | the **setup-and-refresh procedure** carried from the Revision 4 review: record *resolved, regular-file* executable paths, and re-run after a toolchain upgrade. On this host `/opt/homebrew/bin/git` is a symlink to a version-pinned Cellar path, so the entry goes stale at every Git upgrade |
 
 ## Acceptance criteria
 
@@ -214,8 +244,13 @@ about whether the surrounding explanation is accurate. That prose is reviewed.
    digest does not match.
 4. **The artifact is a closure member by construction** — its path is exactly one
    closure row and its digest equals that row.
-5. **The probe measures the channel candidate code has**, proven by an
-   agent-held disposable key making it report *can sign*.
+5. **Stage 1 receives no agent socket**, so with a disposable key held only in a
+   scratch agent **neither the probe nor candidate Stage 1 can sign**.
+   *(Corrected at plan review [X4]: this criterion previously required that same
+   key to make the probe report* can sign *, which contradicts A1's decision to
+   drop the forward. Both could not be true.)* **Two-sided**: restoring the
+   Stage-1 forward must turn a governing test red, because candidate Stage 1
+   could then sign.
 6. **The values parser never executes its input** and never falls back to an
    ambient value.
 7. **Every public command is exercised through its public path**, and the runbook
@@ -289,17 +324,30 @@ surface is F7 and the recorded-loader nodes.
   interpreter. **Bounded mode is refused** — trust-ceremony surfaces sit inside
   the `boundary-b-bounding-clause` Hard Refusal Fence, and this plan changes the
   ceremony itself.
-* **Boundary C**: independent, and **not by the implementing agent**.
+* **Boundary C**: independent, **not by the implementing agent**, and targeted
+  rather than file-level ([X7]). It must independently attack: **D7's snapshot
+  mechanism** (the trailing-LF, NUL and mutate-between-reads cases), **D10's
+  pre-candidate values reader** (a malicious `git`/`shasum` value leaving the
+  marker absent), and **the two-key rollover sequence**. Naming pytest files is
+  not a falsification mapping for this surface.
 * Then **M2** on the exact bytes, then **M3**, then **M4**.
 
 ## Maintainer interventions
 
 | | what | when | discharges by | must not |
 |---|---|---|---|---|
-| **N5** | **Dedicated key creation and all private-key handling** | before M3 | Creating an encrypted ceremony key used for nothing else, with auto-load disabled, and committing **only** the public half | Let any agent generate, move, encrypt, or load it. This is a fence, not a preference |
-| **N6** | **M2 produces the launcher and packet** | after the M2 record commits | Delivering the paired launcher and OID-free packet out of band, with the launcher carrying the packet's digest as a literal | Put a candidate OID in either. Let the candidate repository carry them |
+| **N5** | **Dedicated key creation and all private-key handling** | **before Chunk H1, therefore before Boundary B and M2** | Creating an encrypted ceremony key used for nothing else, with auto-load disabled, and committing **only** the public half | Let any agent generate, move, encrypt, or load it. This is a fence, not a preference |
+| **N6** | **Obtaining and verifying the M2 pair** — *the Maintainer's act; the **reviewer** produces it* ([X6]) | after the M2 record commits | The independent reviewer produces and self-records the launcher/packet pair; the **Maintainer obtains it out of band, verifies the launcher digest against the M2 record, retains it, and runs the one command** | **Author the pair themselves.** Independence is the whole point of the channel: a Maintainer-authored authority input supplies nothing an agent could not have |
 | **N7** | **The ceremony** — rollover and transition in one | after M2 | The old anchored roster authorizing the single transition that installs the new roster and the new closure | Let an agent run it, load the key, or move a Cairn ref |
 | **N8** | **Publication** | after M3 | One atomic push of branch and anchor | Let an agent push. No two-push fallback |
+
+**The rollover signs with the OLD key** ([X3]). M3's Stage 1 and Stage 2 use the
+**old anchored key** — its `signing_key` value is the old key's public path,
+because the old roster is what must verify the transition installing the new
+public key. Pointing the values file at the newly created key would make that
+transition unverifiable. **Only after the transaction succeeds** is the local
+values file refreshed to the new key for future ceremonies. The plan exercises
+the full old-key → new-roster → new-key sequence with **two disposable keys**.
 
 **M3 is one ceremony, not two.** The roster is a closure member, so the
 transition that blesses this plan's bytes is the same transition that installs
@@ -925,3 +973,112 @@ and its acceptable host trust set remain the design this plan must settle.
 pass over X1-X7. X1-X4 are the security floor; X5-X7 should be corrected in the
 same response so implementation begins with one owner, one actor model, and one
 verification map.
+
+## Response to the External plan review -- Claude -- 2026-08-13
+
+**All seven findings accepted; none disputed.** Corrections are folded into the
+cells above. This section is the finding-disposition record.
+
+### [X1] — the snapshot mechanism, now chosen
+
+**Accepted, and the probe reproduces.** On this host, `/bin/sh` command
+substitution turns a three-byte `a\n\n` packet into **1 character** and a
+three-byte `a\0b` packet into **2**. The shell-variable branch as written could
+not satisfy R10, and "the plan names which" named neither.
+
+**Decided: the hash-cross-checked in-memory snapshot** (D7). Hash the file and
+compare with the instantiated digest; snapshot with the trailing-byte-preserving
+idiom; **re-hash the snapshot and refuse unless it equals the file's digest**;
+parse only the buffer. Step 3 is the load-bearing one — it *detects* every byte
+the shell could not carry. Verified here: `a\n\n` survives intact, `a\0b` is
+caught.
+
+**Trust-set delta is one utility**: `cat`. `printf` is a builtin, `SHASUM` was
+already in the set, and the digest field is taken with `${d%% *}` so `cut` does
+**not** join.
+
+**What it does not close, stated in D9a rather than implied**: steps 1 and 2
+read the file twice, so a same-user writer can change it between them. Step 3
+**detects** and refuses; it does not **prevent**. That is the accepted same-user
+residual, unchanged. R10's single buffer is delivered for *parsing*; the
+*reading* is two passes cross-checked, and the plan says so rather than claiming
+the stronger property. No Maintainer contract adjustment is sought, because the
+literal requirement — hashed bytes are parsed bytes — is met.
+
+### [X2] — the launcher's bootstrap values gap
+
+**Accepted; this was a genuine circularity.** The launcher needs `git`,
+`shasum`, temp machinery and the checkout *before* it can verify `reanchor.sh`,
+and the only strict parser sat inside that unverified candidate artifact. The
+three ways out were all bad: ambient utilities, unvalidated values, or an
+unchunked duplicate parser. **D10** adds the launcher's own pre-candidate reader
+under R7's identical grammar and refusals, **D11** adds a parity matrix so
+neither parser accepts what the other refuses, and **D12** requires a malicious
+`git`/`shasum` value to leave the marker interpreter absent.
+
+### [X3] — the rollover could invalidate M2, and never named its signer
+
+**Accepted on both halves.** N5 still said "before M3" despite my Response
+claiming it was tightened; `allowed_signers` is a closure member, so a commit
+after M2 invalidates M2 under the same M7 rule the parent plan carries. **H1 is
+now a Maintainer-fenced row landing before the stable-bytes line.**
+
+And the plan never said which key signs the rollover. **M3 uses the old anchored
+key** — the old roster must verify the transition installing the new public key,
+so pointing the values file at the new key would make that transition
+unverifiable. The values file is refreshed **only after** the transaction
+succeeds. Exercised with two disposable keys.
+
+### [X4] — criterion 5 contradicted the decision
+
+**Accepted.** A1 drops the Stage-1 socket; criterion 5 still demanded that an
+agent-held key make the probe report *can sign*. Both could not be true, and it
+left the accepted R5 floor with mutually exclusive evidence. Criterion 5 now
+matches: **neither the probe nor candidate Stage 1 can sign**, because neither
+receives the socket — plus the two-sided mutation, that restoring the forward
+turns a governing test red.
+
+### [X5] — two owners for one repository-wide pass
+
+**Accepted, and verified before adopting**:
+`comprehension-outlives-the-artifact.md` Chunk C owns this pass with **97
+enumerated sites**, explicitly including both ceremony files, and is likewise
+awaiting review.
+
+**The recommendation is adopted**: that plan owns the edit; **this plan owns the
+gate**. G1 requires the owning commit as an ancestor before the stable-bytes
+line; G2 proves the ceremony closure files carry no unexplained tag, whoever made
+the edit; G3 handles the subset case without either plan losing accepted scope.
+
+**The reciprocal row in the other plan is raised as a finding on *its* review,
+not asserted here.** This plan cannot create an obligation on another plan
+unilaterally, and writing one in would be exactly the quiet cross-plan scope
+edit the scope-floor rule exists to stop.
+
+### [X6] — production and receipt were conflated
+
+**Accepted.** The sequence marked M2 `[Maintainer]` and N6 said "M2 produces",
+which invites the Maintainer to author the authority input that independence is
+supposed to supply. Split: the **reviewer** produces and self-records the pair;
+the **Maintainer** obtains it out of band, verifies the launcher digest against
+the M2 record, retains it, and runs the one command.
+
+### [X7] — the shell gate was owed but unassigned
+
+**Accepted.** C4a makes `sh -n` over the artifact and the instantiated launcher
+public-path nodes — the repository has no shell gate, and a syntax error in
+either fails *after* the key is loaded. Boundary C is now **targeted**: it must
+attack D7's snapshot, D10's values reader, and the two-key rollover, rather than
+naming pytest files.
+
+### Where this leaves the plan
+
+Seven findings, five blocking, and **three of them were contradictions between
+two parts of my own document** ([X3] N5's timing versus my Response's claim,
+[X4] criterion 5 versus A1, [X6] the sequence versus N6). That is a different
+failure from the Internal pass's "chunked but unreached", and it argues the
+clearing pass should read the plan for **internal consistency** as hard as for
+completeness.
+
+**One focused External Security clearing pass over X1–X7 is owed**, as the
+reviewer recommends. This response does not discharge it.
