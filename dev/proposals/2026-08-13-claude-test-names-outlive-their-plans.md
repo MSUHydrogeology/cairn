@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `AGENTS.md` and `templates/core/AGENTS.md` (the `**Naming.**`
 paragraph); a bounded, mechanical rename of ~30 test classes in
 `bootstrap/tests/`, sequenced after their owning plan archives
