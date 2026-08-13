@@ -1031,3 +1031,105 @@ Maintainer able to run it unaided, and anything that makes a control weaker or
 its description looser than it is today.** A future revision that adds work
 meeting neither half is out of scope regardless of how natural it looks
 alongside the rest.
+
+## Review -- Codex (External Security) -- 2026-08-13
+
+**Model**: GPT-5 Codex
+**Reviewed commit**: `b74df8c6430d56d91b1a09208185dd28fb834044`
+**Target**: R6-R8 in the complete Revision 2 contract plus `## Scope ruling and
+the objective test`; R1-R5 were read only where Revision 2 says they remain in
+force.
+**Prior findings**: R2-E1, R2-E2, and R2-R5 from the immediately preceding
+External Security pass.
+**Assurance path**: high-assurance
+**Findings**: raised
+
+**Verdict: REVISE.** R7 and R8 close their findings. R6 correctly restores
+late-bound candidate identity and byte-bound M2 authority, but its four-step
+operator sequence reopens the manifest-construction gap that R3 already closed.
+One bounded correction remains.
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+Revision 2 is much closer to an executable contract. R7 defines every field,
+distinguishes existing files, directories, executables, and a stage-dependent
+output path, and closes the lexical grammar. R8 chooses migration rather than
+leaving a security direction in prose, identifies the old anchored roster as
+the rollover authority, and puts every private-key act behind a real
+Maintainer-only fence. The scope ruling is coherent: each item bears directly
+on Maintainer-run usability or on preserving/evaluating an existing control.
+
+### Finding
+
+**[R3-E1 -- BLOCKING] R6 makes the Maintainer construct the authority artifact
+before the trusted launcher runs.**
+
+R6 step 2 delivers only review-manifest member rows. Step 3 then says the
+Maintainer resolves the candidate, mechanically re-verifies every closure
+member, and **composes the review manifest**; only step 4 invokes the launcher.
+That conflicts with unchanged R3, which says M2 delivers a ready-to-use review
+manifest whose candidate OID is the reviewer's output, and it recreates the
+central workflow defect: the Maintainer still needs an unassigned command or an
+agent-authored script to resolve an OID, hash nine candidate blobs, compare
+them, and write the correctly structured manifest. Passing the artifact digest
+as another hand-supplied launcher argument also leaves the exact invocation to
+be assembled at ceremony time. The new objective makes the failure explicit:
+the ceremony is not yet performable end to end from the named public commands.
+
+The late-binding idea itself is sound. The defect is only who performs it and
+when.
+
+**Satisfier**: make the fixed, M2-reviewed launcher perform R6 step 3 before it
+starts candidate code. M2 can deliver an OID-free authorization packet containing
+the closure rows, artifact path, and artifact digest. One exact Maintainer
+command gives the launcher that packet, the values file, and a candidate ref;
+the launcher resolves the ref once, verifies every closure blob at that OID,
+creates the transient review manifest with the resolved OID, extracts and hashes
+the ceremony artifact, and only then invokes its Stage 1 command. The packet's
+schema and launcher digest remain M2 outputs. No candidate-OID freeze is needed,
+and no human or agent composes a manifest or retypes a digest.
+
+R3's old sentence that M2 supplies a *ready-to-use manifest* should be replaced
+by the OID-free packet plus launcher-generated manifest; leaving both contracts
+standing would remain contradictory.
+
+### Prior-finding adjudication
+
+* **R2-E1**: narrowed to the single R3-E1 sequencing defect above. The
+  invalidation rule is now correct: authority-byte changes invalidate M2;
+  unrelated OID advances are admitted only after exact re-verification.
+* **R2-E2**: closed. R7 is a closed, versioned, bounded schema with explicit
+  types, states, syntax, and fail-closed handling.
+* **R2-R5**: closed. R8 defines the end state, old-key rollover authority,
+  Maintainer-only private-key fence, public-only repository input, and
+  adopter-facing documentation home.
+
+### Plan constraint, not a blocker
+
+The current reviewed host parameterization uses `/opt/homebrew/bin/git`, which
+is a symbolic link to `../Cellar/git/2.53.0/bin/git`; R7 correctly rejects it.
+The plan must therefore include a human-readable values-file setup/migration
+step that records the resolved regular-file executable path without weakening
+the no-symlink rule. This is evidence that the rule has an operational cost,
+not a reason to relax it.
+
+### Coverage and recommendation
+
+**Covered**: R6's authority sequence against the unchanged R3 operator
+contract; R7's complete schema and the actual file types of all currently
+recorded host paths (`stat` confirmed only the Homebrew Git path is a symlink);
+R8 against the distinct live Git-signing and anchored-roster fingerprints; the
+Revision 2 withdrawal ledger; and every item in the appended objective test.
+
+**Not covered / low confidence**: no implementation exists. I did not execute a
+launcher or parser, create or inspect private-key material, move refs, or run a
+ceremony. I did not reopen E3/E4, R5 riders 1/2/4, or the accepted residuals
+because Revision 2 leaves them unchanged.
+
+**Further review recommendation**: one final focused External Security pass is
+recommended after R3-E1 is corrected. It need only verify that the launcher owns
+late binding and manifest creation, the obsolete ready-manifest sentence is
+withdrawn, and the Maintainer has one exact pre-Stage-1 command. R7, R8, and the
+scope ruling do not need another read unless changed.
