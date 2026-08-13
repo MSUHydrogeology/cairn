@@ -16,7 +16,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -1523,3 +1523,313 @@ R2-X2. What changed this round is only that someone else was still checking.
 enlarged scope checkable rather than merely claimed.
 
 **Status** -> `awaiting-plan-review`.
+
+## Plan review -- Claude Opus 5 (Internal) -- 2026-08-13 (round 4)
+
+**Tier**: Internal
+**Findings**: raised
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+**Reviewed commit**: `817a76c`
+**Basis**: every figure re-derived from **blobs** at `eb2692e` (the plan's own
+measurement basis) with the plan's own stated patterns, denylist and
+`tokenize`+`ast` classification; the working tree is dirty under another agent's
+claim, so nothing was measured from it. Read-only apart from this section and
+the `Status` field.
+**Verdict: REVISE** — four findings, **none structural**. The plan's design,
+scope, three-class definition, matching rule, D2 fence, Boundary B mode and
+placement are all correct and I could not break any of them. All four findings
+are edits to sentences that already exist; none requires re-measuring the corpus
+or changing a decision. **I recommend no scope reduction of any kind** — two of
+the four satisfiers widen what the plan must watch.
+
+### The core block reproduces to the digit
+
+Same commit, same patterns, same answers:
+
+| Figure | Plan | Measured |
+|---|---:|---:|
+| class 1 (comments + docstrings) | 255 | **255** |
+| class 2, net of the lint denylist | 324 | **324** |
+| class 2, gross | 508 | **508** |
+| class 3 (comments + docstrings) | 2679 | **2679** |
+| total candidate sites | 3258 | **3258** |
+| files carrying a tag | 179 | **179** |
+| class-1/2 files / class-3-only files | 76 / 103 | **76 / 103** |
+| class-3-only sites | 603 | **603** |
+| C2 planner twins (class 1+2 / class 3) | 29 / 376 | **29 / 376** |
+| C2b `lifecycle.py` twins | 25 / 55 | **25 / 55** |
+| C1 class-3 | 64 | **64** |
+
+The "in code tokens" column (1 / 20 / 35) also reproduces once its method is
+understood: it is a **residual** — whole-file raw regex (292 / 355 / 2850) minus
+the tokenized comment/docstring and string-literal columns — not a per-token
+scan, which returns 0 for all three classes. Worth one line in the plan so a
+later reader does not conclude the column is wrong.
+
+Chunk D reproduces exactly, including the trap: 36 digit-coordinate + 4
+`TestChunkG*` − 2 = **38**; **335** node ids naming them; **18** of those also
+in `collection.skip_xfail_marked`, which I confirmed is a strict subset of
+`collection.node_ids` (1394 ⊂ 4261); decomposition 326 + 21 − 12 = 335; the
+trailing-`::<class>` arm matches **zero** ids. The placement citations
+(`AGENTS.md:412`/`:414`/`:415`, `templates/core/AGENTS.md:388`/`:390`) are
+correct at `eb2692e`, so R3-F4 is closed. The forward reference to the keep
+ledger is properly **marked** — a prose comment naming the creating chunk plus a
+`claim-check-allow` directive; `claim_check.py` reports the exemption out loud
+(five sites) rather than suppressing it, which is the behaviour that rule wants.
+
+### Findings
+
+**[R4-F1 — moderate] C1's `205` is the un-denylisted count. The correct figure
+is 203, and it is R3-F1's own diagnosis surviving in the commit that records it.**
+
+`bootstrap/tests/_gate_preflight.py` measures 41 class-1 + **39 gross** class-2 =
+**80** — the plan's figure — of which **2 are `PLC0415`**, a Ruff code on the
+plan's own denylist. Net: 41 + 37 = **78**. `test_gate_preflight.py` measures
+60 + 65 = **125** either way, because it carries no denylisted token — which is
+why a single counter with no denylist produces exactly the plan's `80 + 125`.
+
+So C1 class-1/2 = **203**, not 205. Class 3 (64) is right.
+
+The response to round 3 named this defect precisely — *"my per-file class-2
+counter applied **no lint denylist**, while the aggregate I published alongside
+it applied one"* — corrected every figure the **aggregate** produced (179, 76,
+103, 603; all four reproduce to the digit), and left the figure the **per-file**
+counter produced standing two sections above it.
+
+Two reasons this is not cosmetic:
+
+* The C1 row is **not** covered by the regeneration clause. That clause reads
+  *"The 179 and the C3 row's 103/603 are regenerated at implementation time"* —
+  205 is a pinned assertion with nothing downstream to correct it.
+* Chunk C's own preamble says *"every figure below is per file on the corrected
+  definition, and every row states all three classes so no row is sized on a
+  definition the plan has withdrawn (R2-F5)"*, and the phase-1 correction
+  asserts *"Re-measured `as_of 2026-08-13` at `eb2692e` on the definition
+  above: **205**"*. Both sentences are falsified by the row they describe: 205
+  is on the definition the plan withdrew.
+
+*Required satisfier*: **203** (78 + 125) in the C1 row and in "A correction the
+plan must carry"; or extend the regeneration clause to cover every per-chunk
+figure, not only the file set.
+
+**[R4-F2 — moderate] C2b's residual twin clause resolves to the empty set, and
+Author-accounting names one invariant where 28 apply. This is round-1 F6, never
+closed.**
+
+C2b ends *"Plus any remaining `tools/` ↔ `templates/skills/_lib/` pair."* Those
+two directories contain **exactly the two pairs the plan already names**
+(`lifecycle.py`, `lifecycle_planner.py`). The clause reads as a catch-all and
+catches nothing.
+
+Measured by content hash over tracked `*.py` at `eb2692e`: **44 byte-identical
+pairs**, **28 of them carrying candidates**, of which **26 sit outside the
+plan's named set** and hold **132 candidate sites per side**. They live in
+families the clause's directory scope never reaches — `scripts/` and `tools/`
+against `templates/modules/default-on/` and `templates/modules/team-gated/`.
+Largest:
+
+| Pair | class 1+2 | class 3 |
+|---|---:|---:|
+| `tools/_intent/conflict.py` ↔ team-gated twin | 1 | 27 |
+| `scripts/run_portable_security_sweeps.py` ↔ team-gated twin | 11 | 2 |
+| `scripts/_onboarding/triggers.py` ↔ default-on twin | 0 | 10 |
+| `scripts/content_scan_runner.py` ↔ team-gated twin | 0 | 8 |
+| `scripts/claim_check.py` ↔ default-on twin | 0 | 7 |
+| `scripts/content_scan.py` ↔ team-gated twin | 6 | 2 |
+
+The second row is the one that matters: `run_portable_security_sweeps.py` is a
+**high-risk surface `AGENTS.md` names explicitly**, and the entry requires it be
+*"kept byte-identical"*. Chunk C reads and edits comments and docstrings across
+all 179 files; a one-sided edit there touches a surface with a Security Review
+trigger on it.
+
+**Severity is bounded by enforcement, which is why this is moderate and not
+major**: every one of these pairs is test-enforced — `test_lifecycle_brief.py:351`,
+`test_scope_reduction_trap.py:492`, `test_portable_security_sweeps.py:2281`,
+`test_reference_scripts.py:160` — so a one-sided edit reds the suite rather than
+shipping silently. The cost is churn and a confused implementer, not escape.
+
+Round-1 **F6** asked for exactly three things: *"promote the `lifecycle.py`
+twins beside the planner twins in C2, **list the remaining three**, and **name
+each enforcer in Author-accounting**."* The first was done (C2b). The second was
+answered with a directory clause that enumerates nothing. The third was not done
+— Author-accounting still reads *"**One** invariant this plan must not break"*.
+F6 is the only round-1 finding no later round re-checked: round 2 closed
+F5/F8/F9/F2/F3 and carried F1/F4/F7 into R2-F1/F2/F3/F4. I am recording it as
+still open, not raising it as new.
+
+*Required satisfier*: replace the directory clause with the twin set derived by
+**content hash over tracked `*.py`**, regenerated at implementation time
+alongside the 179; and restate Author-accounting as the invariant *class* with
+its enforcers, not a single pair. This widens what the plan must watch.
+
+**[R4-F3 — moderate] The keep ledger is a real bar — I could not break it — but
+it names no trigger and leaves its granularity unstated.**
+
+**Answering the first question you asked to have attacked**: the R3-F3
+replacement is **not** a second unfalsifiable bar. I ran every input a checker
+needs and they all reproduce: the candidate enumeration comes from the plan's
+own stated method and returns 3258 across 179 files to the digit, the ledger
+format is specified (`<path> :: <token> :: <reason>`), and the pairing
+(candidate ⇒ diff ∪ ledger) is decidable by someone who was not present. The
+`dev/measurement/` directory is tracked and not ignored, so the ledger will be a
+committed artifact rather than local residue. That is a genuine improvement over
+"dispositioned", and it survives the attack.
+
+Two residues keep it *checkable* rather than *checked*:
+
+**(a) No named trigger.** The plan says the chunk's completion *"is checkable by
+that pairing rather than asserted"* — but never says who runs the pairing, with
+what, or over which commit range. `AGENTS.md`: *"Any document that describes a
+check says what runs it… A check whose only trigger is a human remembering is
+described that way."* Chunk C spans many commits, so the pairing also needs a
+pinned baseline; the plan pins the file *set* at implementation time but not the
+range the diff is taken over.
+
+This is an increment on R3-F3, not a re-raise — R3-F3 asked for the artifact and
+got it. The trigger is a separate `AGENTS.md` obligation, and satisfying it
+needs **no new machinery**: one or two sentences naming the code reviewer at
+Boundary C as the runner, over the pinned enumeration and the pinned range. The
+no-new-tests fence is inherited and I am not reopening it.
+
+**(b) Granularity is unstated.** Candidates are counted as **occurrences**
+(3258); the ledger is *"one line per kept **token per file**"*. So one line
+discharges every occurrence of that token in that file — in
+`tools/lifecycle_planner.py` that is potentially ~376 class-3 occurrences behind
+a handful of lines. The per-file-per-token equivalence is defensible and my
+probe supports it (all 21 `R6` in `test_lifecycle_contract.py` are the same
+review finding; `R1`/`R6` in `scripts/quality_gate.py` are uniformly the gate's
+rule ids). But the plan never states the equivalence it leans on — and it is
+precisely the assumption its **own Chunk D argument denies at tree scope**,
+where `R6` is the gate rule in `test_quality_gate_redundancy.py` and a review
+finding in `test_lifecycle_contract.py`. Left unstated, a checker cannot tell a
+bounded judgement from a shortcut.
+
+*Required satisfier*: name the runner and the commit range; and state that a
+ledger line disposes of every occurrence of that token in that file, with a file
+whose one token carries two referents taking per-occurrence lines. Both tighten
+the bar.
+
+**[R4-F4 — minor] The `test_comprehension_floor.py` mapping is attributed to the
+chunk that cannot break it.**
+
+Verification reads: *"`bootstrap/tests/test_comprehension_floor.py` (**Chunk A
+edits the anchor it pins**)"*. The module pins the two AGENTS copies, not
+doctrine — `_AGENTS_FILES = ("templates/core/AGENTS.md", "AGENTS.md")`
+(`bootstrap/tests/test_comprehension_floor.py:29`), and its docstring is
+explicit that `doctrine/rationale.md` is *not* what it asserts on, because
+`doctrine/` is not installed. Chunk A touches only `doctrine/rationale.md`.
+
+The chunk that can break it is **B4**, which adds a pointer line to the
+comprehension-floor paragraph in both AGENTS copies —
+`test_comprehension_floor_sits_in_the_review_section`
+(`bootstrap/tests/test_comprehension_floor.py:62`) requires
+`mandatory pause|not decidable` to survive inside `## Review`.
+
+Coverage is not lost: the gate is mapped for "Chunks A and B" jointly. What is
+wrong is the reason, and it points the implementer away from the risk. Round-1
+F8's own words were *"Chunk B4 edits exactly that paragraph in exactly those two
+files"* — inverted in the fix for F8.
+
+*Required satisfier*: re-attribute to B4.
+
+### On the author's self-assessment — the second question
+
+You asked whether the round-3 closing framing is too tidy. **The diagnosis is
+accurate; the tense is not.**
+
+Two specific over-tidyings:
+
+1. *"Round 3's three are the same failure **inside the corrections for round
+   2**"* covers **three of four** findings, and of those three only two are
+   given a round-2 antecedent. R3-F2 (the double-counted skip/xfail subset) is
+   listed as *"one walker double-counting a subset"* with no round-2 defect it
+   reproduces — it is an ordinary bug, and folding it into the pattern makes the
+   pattern look tighter than the evidence supports. R3-F4 is dropped from the
+   count entirely, and maps to nothing in round 2 either.
+
+2. Decisively: **R4-F1 above is R3-F1's own diagnosis, unfixed, in the commit
+   that records it.** So the shape is not *"each fix reproduced the flaw it was
+   fixing, one level down"* — that framing casts the flaw as understood and
+   re-committed somewhere new, which is the more flattering reading. What
+   actually happened is narrower and duller: **the fix was applied where the
+   finding pointed, and nowhere else.** R4-F4 is the same shape — F8's fix
+   installs the gate but inverts F8's stated reason for it.
+
+That distinction is worth the record because of what it implies about the
+remedy. If the pattern were "the defect recurs one level down", the remedy would
+be more self-scrutiny, and four rounds of accurate self-diagnosis would count as
+progress toward it. If the pattern is "the correction stops at the cited
+instance", the remedy is mechanical and was available both times: **re-run the
+corrected counter over every figure it ever produced, and re-derive every claim
+that shares a cause with the finding — not the ones the finding named.** The
+closing line *"the same diagnosis recorded at F1/F5, at E1/D5, and at R2-X2"*
+presents an escalating series of self-knowledge; what it also shows is a
+diagnosis that has now been stated four times without generalising past its
+citation. I would rather see the narrative dropped and the re-derivation done.
+
+Said plainly in the other direction, because it is equally true: the core
+measurement block, the file-set figures, and all of Chunk D's arithmetic —
+including the subset trap that produced 353 — reproduce **exactly** at round 4.
+That is real, and it is what makes the four findings above local rather than
+structural.
+
+### Not a finding: the size, and where it belongs
+
+I retested round 3's over-correction check and it holds. Of the 324 net class-2
+tokens across 73 distinct forms, the only non-coordinates I can find are
+`SIM115` (2) and `SHA256` (1) — three occurrences — while the denylist correctly
+removes `PLC0415` (162), `BLE001` (20), `SLF001` (1), `ARG002` (1). Class 3 is
+presented as a *candidate* count with the read as the filter, which is the
+correct form. **3258 is not padded.**
+
+The *execution* size — 179 files read one at a time, in a tree that has produced
+two in-file collisions in three days — is a real question, but it is a
+sequencing and serialization question and it is **the Maintainer's**, not a
+reviewer's. `AGENTS.md` is explicit that a reviewer cannot manufacture authority
+to narrow by calling work out of scope, and narrowing here would be especially
+cheap for me and especially expensive to detect, because the wider version would
+simply never be built. I name it and leave it there.
+
+### Coverage
+
+**Covered, with falsifiable citations**: all three class counts, gross and net,
+re-derived from blobs at `eb2692e` with the plan's own patterns, denylist and
+`tokenize`+`ast` split; the total, the tagged-file set, the class-1/2 and
+class-3-only partition and its 603 sites; the "in code tokens" column resolved
+to a residual method; every per-chunk figure recomputed per file, which is what
+isolated R4-F1 to a single file and a single named denylist token; the full
+class-2 token inventory (73 forms) inspected for contamination; the Chunk D
+matching rule executed as written, both arms, with the manifest recount and the
+`skip_xfail_marked ⊂ node_ids` subset check run directly against the committed
+JSON; the byte-identical twin set derived by content hash over all tracked
+`*.py`, cross-referenced against the plan's named pairs and against
+`AGENTS.md`'s high-risk-surface list, with each enforcer opened; the keep
+ledger's checkability tested end-to-end (enumeration, artifact location,
+tracked-ness, pairing decidability) and its granularity probed against two
+files where one token repeats; `test_comprehension_floor.py` opened and its
+asserted files read; the placement citations re-checked at `eb2692e`;
+`REANCHOR_RUNBOOK.md:734-751` opened for the D2 fence;
+`scripts/quality_gate.py:31-33` for the exclusion reason; `dev/PLANNING.md:753`
+for the Chunk E item; `claim_check.py` run against the plan.
+
+**Not covered / low confidence**: (1) I did **not** run the suite or
+`--collect-only` — every node-id figure comes from the committed manifest and
+from `ast`, so a divergence between the manifest and live collection would not
+surface here; this is the fourth consecutive round with that gap, and Boundary B
+is where it closes. (2) I did not classify the 2679 class-3 candidates; my
+claims are about the candidate set and about two sampled files, not about how
+many need rewriting. (3) R4-F2's blast-radius judgement rests on reading the
+four enforcer tests, not on executing a one-sided edit to see it fail. (4) I did
+not verify that the ledger format survives contact with a file where a token's
+two referents interleave line-by-line — I found no such file, but I searched by
+sampling, not exhaustively, so R4-F3(b) is a precaution rather than a
+reproduction. (5) I did not re-audit the archived proposals; I took round 1's
+"no accepted outcome added or dropped" finding as standing, having confirmed
+only that this round's satisfiers do not disturb it.
+
+**Verdict: REVISE.** `Status` set to `revising-plan`. Four findings, all
+satisfiable by editing sentences that already exist; no design change, no
+re-measurement of the corpus, and no scope reduction. I expect the next pass to
+clear.
