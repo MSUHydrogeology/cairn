@@ -693,3 +693,136 @@ re-derive them: the diagnosis and its evidence; the split of the runbook's two
 jobs; the artifact's membership in the authority closure and the transition
 ceremony that membership requires; the assurance path; and the four residuals
 named under *What Revision 1 does not change*.
+
+## Review -- Codex (External Security) -- 2026-08-13
+
+**Model**: GPT-5 Codex
+**Reviewed commit**: `068e264ba2ae22686a32c4db3be5e4bc6a27dde0`
+**Target**: the complete current contract in `## Revised proposal (Revision 1)`,
+including R1-R5 and its withdrawal ledger; Revision 1 entered at `b1cb5ba` and
+only the lifecycle status changed afterwards.
+**Prior findings**: E1-E4 from `## Review -- Codex (External Security) --
+2026-08-13`.
+**Assurance path**: high-assurance
+**Findings**: raised
+
+**Verdict: REVISE.** Revision 1 chooses the right architecture and closes E3
+and E4. E1 and E2 are materially narrowed but still leave their load-bearing
+sequence and schema for the plan to invent. The added dedicated-key rider also
+needs one explicit rollover contract before Decision.
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+The dedicated POSIX artifact is the right center of gravity. R3 now gives the
+Maintainer a complete named command surface rather than another instruction to
+improvise, and its end-to-end test starts from only M2 outputs plus recorded
+values. R4 makes the prose/code drift claim mechanical at exactly the strength
+a test can deliver: closed step identities and exercised public commands, with
+semantic explanation left to review. The withdrawal ledger accurately accounts
+for the opening contract's abandoned preamble source, ownership claim,
+semantic-equivalence claim, self-printing bootstrap, undecided artifact type,
+and narrower scope.
+
+### Findings
+
+**[R2-E1 -- BLOCKING] The exact-OID launcher has no non-self-referential
+production and freeze sequence.**
+
+R1 says M2 produces and records the exact launcher text and full reviewed
+candidate OID, and that M2 reviews every launcher byte. But the External
+reviewer's review is itself self-committed: its commit OID does not exist while
+the review text is being written. Putting that future OID into the committed
+launcher is impossible; filling it afterwards changes bytes M2 did not review.
+The last real ceremony demonstrates why this is not theoretical: M2 reviewed
+`9a3a1cc`, the ceremony candidate was `cfaace9`, and **15 commits** landed
+between them while all nine authority files remained byte-identical. Existing
+M2 therefore binds exact authority bytes and late-binds the candidate OID; R1
+silently changes that sequencing contract.
+
+**Satisfier**: define the events, the actual out-of-band carrier, and the freeze.
+For example: the reviewer commits the M2 record over stable authority bytes;
+after that commit exists, the reviewer produces the exact launcher and review
+manifest bound to the resulting candidate OID and delivers them directly to
+the Maintainer outside the candidate repository; no commit or ref advance is
+allowed until the ceremony; and any candidate-OID, launcher, manifest, or
+authority-byte change invalidates M2. State where plan/archive commits sit
+relative to that freeze. Another coherent sequence is acceptable, but the
+proposal must choose one.
+
+**[R2-E2 -- BLOCKING] R2 describes a strict parser without defining the closed
+schema it parses.**
+
+`key value` plus a schema version is not yet a data contract. Revision 1 does
+not enumerate the allowed keys, their exact spelling, which values are existing
+files, existing directories, host executables, or not-yet-created output paths,
+nor the lexical rules for separators, whitespace, comments, encoding, and
+value length. Those distinctions matter to the promised checks: a regular-file
+rule cannot validate `CHECKOUT` or `HOME`, and an output path cannot already be
+required to be a regular file. The current transition surface carries distinct
+values for the checkout, review manifest, interpreter, host utilities, home,
+signing public key, and package paths; the plan should not be asked to decide
+which of those are authority-bearing fields or how malformed input is parsed.
+
+**Satisfier**: add a closed schema table naming every key, value type, required
+state, and security use, plus one exact lexical grammar and size/encoding
+limits. Keep the reviewed OID and artifact digest excluded as R2 already does.
+The plan may choose implementation structure and filename; it should not create
+the security contract.
+
+**[R2-R5 -- BLOCKING] The dedicated ceremony-key rider states a direction, not
+the rollover contract.**
+
+The live facts reproduce: Git config names
+`/Users/kendal30/.ssh/cairn_signing.pub` with fingerprint
+`SHA256:8R549gtP0SJPaCWlQlausCtAbRBquXCIhbM6395ESsM`, while the anchored roster
+names a different key with fingerprint
+`SHA256:wuCkJjCOOr9htMTA6JlZGjMH+qH/lD8/X8EL47YCyao`. R5 says a dedicated key
+"makes N4 cheap" and that all four riders are implementation scope, but it does
+not say whether this change must replace Cairn's roster, merely document a
+recommendation, or reconcile the already-separate signing key. That choice
+changes the trust root and includes a Maintainer-only private-key act; it is not
+a plan-level naming detail.
+
+**Satisfier**: state the intended end state and rollover authority. If this
+implementation migrates Cairn, require a dedicated encrypted ceremony key that
+is not auto-loaded or exposed to agents; make key creation and private-key
+handling a Maintainer-only fence; commit only the public half; have the old
+anchored roster authorize the one transition that installs the new roster; and
+use the new anchored key thereafter. If R5 is doctrine-only, say so and keep the
+live roster change out of this proposal. In either case, name the adopter-facing
+guidance surface.
+
+### Prior-finding adjudication
+
+* **E1**: narrowed, not closed — authority moved out of candidate prose, but the
+  exact-OID output cannot yet be produced and durably handed off in the stated
+  sequence.
+* **E2**: narrowed, not closed — the failure posture is good, but the schema's
+  vocabulary and types remain unspecified.
+* **E3**: closed — M2 owns the ready manifest and the artifact owns every public
+  operator command, including report rendering and package hashing.
+* **E4**: closed — the ordered step registry is mechanically comparable and the
+  proposal no longer claims semantic prose attestation.
+* **R5 riders 1, 2, and 4**: adequate for planning. Riders 1 and 2 set an
+  explicit security floor; rider 4 preserves reasons and requires a read rather
+  than a blind tag deletion.
+
+### Coverage and recommendation
+
+**Covered**: trust-source closure (R1 against the actual `9a3a1cc` to `cfaace9`
+ceremony history); config-contract completeness (R2 against every host value in
+the current transition blocks); end-to-end operator ownership (R3); testable
+drift strength (R4); authority-closure and key-channel scope (R5, current Git
+signing key and anchored-roster fingerprints); and the withdrawal ledger.
+
+**Not covered / low confidence**: no implementation exists to execute. I did
+not inspect private-key material, run the ceremony, move refs, test a new config
+parser, or re-litigate the accepted host-persistence, key-holder-not-process,
+and no-nonce residuals.
+
+**Second-round recommendation**: one further focused External Security pass is
+recommended after R2-E1, R2-E2, and R2-R5 are settled. It need only review the
+new sequencing, schema table, and key-rollover contract; E3/E4 and the other
+R5 riders do not need another full read unless they change.
