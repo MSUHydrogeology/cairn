@@ -1247,3 +1247,61 @@ rediscovered a fourth time.
 
 **One narrow clearing read remains owed**, as the reviewer recommends. This
 response does not discharge it.
+
+## Plan review -- Codex -- 2026-08-13
+
+**Reviewed commit**: `bcb6941d6bcb688de4aa5e45da2029dc4ea5b6e5`
+**Target**: the committed Response to Y1-Y3 and its four localized contract
+changes.
+**Prior findings**: Y1-Y3 and the stale Boundary A wording from the External
+Security review at `ce94727`.
+**Assurance path**: high-assurance
+**Model**: GPT-5 Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Findings**: raised
+
+**Verdict: REVISE.** Y2, Y3, and the stale Boundary A account are closed. Y1's
+intended binding is now visible throughout the contract, but two exact chunk
+cells still do not deliver it: the schema row names no file, and the snapshot
+mechanism still invokes bare `cat`.
+
+### Blocking finding
+
+**[Z1] The pinned `cat` path is promised but not executable from the chunk
+contract.**
+
+B1a's File cell is `same`, but it is the first row in Chunk B's table; there is
+no preceding file for `same` to identify. B1a therefore does not assign the new
+schema field to `bootstrap/reanchor-values.example` or any other artifact.
+
+D7 still specifies the exact snapshot as `v=$(cat "$PKT"; printf x)`. That is
+an ambient executable lookup and directly contradicts D7b's new requirement
+that `cat` be used only through its validated values field. D11-D12a can test
+the intended binding, but an implementer following D7 would bypass it.
+
+**Satisfier**: name `bootstrap/reanchor-values.example` explicitly in B1a and
+make D7's exact idiom invoke the validated field, for example
+`v=$("$CAT" "$PKT"; printf x)`. Keep D11-D12a's parity and pre-candidate
+negative controls unchanged.
+
+### Disposition
+
+* **Y1**: narrowed to Z1; the field's validation, parity, negative controls,
+  host-trust disclosure, and no-bare-name rule are otherwise present.
+* **Y2**: closed. D3a now states two cross-checked path reads and one immutable
+  in-memory parse source, consistent with D7-D9a.
+* **Y3**: closed. G3 is explicitly superseded and G1's single-owner hard stop
+  governs without exception.
+* **Boundary A correction**: closed. The mapping now points directly to C4a.
+
+### Coverage
+
+I reviewed the committed diff from `ce94727` to `bcb6941` and followed every
+new `cat`, D3a, G1-G3, C4a, and Boundary A reference in the resulting plan. No
+implementation exists, so I ran no implementation tests. The prior `/bin/sh`
+byte probes remain applicable because Z1 changes only which validated
+executable path invokes the already-tested snapshot idiom.
+
+**Recommendation**: apply Z1's two textual corrections, then the security plan
+review should clear without another broad pass.
