@@ -1,9 +1,10 @@
+<!-- claim-check-allow: bootstrap/reanchor.sh -->
 # The ceremony belongs in verified code; the runbook belongs in prose
 
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-13
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: high-assurance — the re-anchor ceremony is a named
 high-risk surface and the authority closure's own contents change.
 **Touches**: `bootstrap/REANCHOR_RUNBOOK.md`; a new ceremony code artifact and
@@ -1499,3 +1500,20 @@ does not change them.
 ready for Maintainer Decision. Preserve the declared External Security plan
 review, which is where the concrete shell snapshot and executable trust set can
 be falsified against implementation-ready design.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-13
+
+**ACCEPTED as revised (Revision 4).** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, please scribe my acceptance of ceremony-as-code as revised"
+
+**Summary of accepted terms (Revision 4)**:
+- **Verified Code Artifact**: Moves the executable re-anchor ceremony into a single internal POSIX script artifact (`bootstrap/reanchor.sh`).
+- **1-Line M2 Launcher**: The Maintainer pastes only a single 1-line launcher command provided out-of-band by the M2 External Security reviewer.
+- **Closed Values Schema (R7)**: Sourced from a strict, non-executable `key value` configuration file, fail-closed against symlinks, missing keys, or unknown keys.
+- **Complete Operator Surface (R3)**: Provides explicit subcommands (`validate`, `stage1`, `show-report`, `hash-package`, `stage2`).
+- **Rider Integration (R5)**: Incorporates the 4 ceremony findings (key-channel probe fix, TTY docstrings, dedicated ceremony key hygiene R8, and finding-tag cleanup).
+- **Plan Review Requirement**: Declares `Plan review: required(External Security Review)` for the derived plan.
+
+**Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
+
