@@ -3860,3 +3860,105 @@ owner(proposal,proposed) proposal-reviewer   owner(plan,open) plan-reviewer   ow
 **Verdict**: **SHIP**
 
 No HIGH survived verification, and the shipped behaviour of H1's central design is correct in both directions on direct probe. The six MEDIUMs are two kinds of debt, both cheap and both worth closing before archive rather than after: **three untested retentions** ([C1], [C2] — the second of which the plan itself predicted and prescribed a fix for, so closing it is arguably owed rather than optional) and **four inaccurate records** ([C3], [C4], [C5], [C6]) that would each mislead the next person to check them — one of which, [C5], mis-states a fenced Maintainer hand-off list by three paths.
+## Response to code review -- Claude (Implementation) -- 2026-08-13
+
+Eight findings, all against this agent's own work, all accepted. Six are closed in
+code at `fc67c29`; three are corrections to landed records and are made **here,
+by appending**, rather than by editing the sections they correct -- the record
+has to show what was believed when, and a silently-fixed ledger is a worse
+artifact than a visibly-corrected one.
+
+The review's framing is the right one and worth restating: none of these breaks
+shipped behaviour, which is why no HIGH survived. **Four of them are inaccurate
+records.** In a repository whose product *is* the record, that is not a lesser
+class of defect than a code bug -- it is the more characteristic one.
+
+| id | disposition |
+|---|---|
+| C1 | **accept** -- fixed, mutation-verified both directions (`fc67c29`) |
+| C2 | **accept** -- fixed, mutation-verified by performing the predicted deletion |
+| C3 | **accept** -- justification replaced with the reachable one |
+| C4 | **accept** -- note corrected; the truth is worse than the original claim |
+| C5 | **accept** -- corrected below; this one mis-states a Maintainer hand-off |
+| C6 | **accept** -- corrected below |
+| C7 | **accept** -- corrected below |
+| C8 | **accept** -- fixture documented |
+
+### [C5] The frozen-path hand-off list was wrong, and it is the fenced one
+
+**Correction, superseding the `Known omissions` paragraph of
+`## Implementation verification`.** That paragraph names **two** changed frozen
+paths plus one `FROZEN-NEW`. Measured against
+`bootstrap/tests/fixtures/gate_manifest.json` (201 entries) at `3defdb7`, **five**
+frozen paths differ:
+
+```
+bootstrap/tests/test_lifecycle_contract.py
+bootstrap/tests/test_pilot_evidence.py
+bootstrap/tests/test_scope_reduction_trap.py
+bootstrap/tests/test_transition_lint.py
+templates/modules/default-on/_lifecycle_metrics/extract.py
+```
+
+plus `FROZEN-NEW` `bootstrap/tests/test_metrics_status_normalization.py`, and
+`fc67c29` has since also touched `bootstrap/tests/test_lifecycle_board.py`. **The
+Maintainer must re-measure at the ceremony parent rather than trust any figure
+here** -- which is what Chunk I's cell said in the first place, and what this
+error demonstrates the value of.
+
+**How it happened, because the mechanism generalises.** The three paths I missed
+are exactly the test files the *delegated repair agents* edited. I wrote the
+omissions paragraph from my own memory of what I had touched, and my memory did
+not include work I had farmed out. That is the same failure recorded at
+`ef5c079` in `dev/PLANNING.md` -- discipline not surviving delegation -- in a
+third form: not a budget this time, but an *inventory*. The plan's own
+cross-cutting section already said *"5 frozen paths changed and 5 discovered
+FROZEN-NEW -- ten, not four"* on 2026-08-12; the record written a day later
+narrowed it without saying why. **Nothing is silent about this drift**:
+`test_gate_manifest.py` reports `21 passed` with all five stale.
+
+### [C6] The Boundary B table records exit 0 for a command that exits 1
+
+**Correction, superseding that row.** `python scripts/quality_gate.py --sub
+neutrality --sub redundancy` exits **1**, not 0. Re-measured deterministically:
+
+```
+$ python scripts/quality_gate.py --sub neutrality --sub redundancy >/dev/null 2>&1 ; echo $?
+1
+```
+
+The cause is a measurement error, not a regression: the original was taken as
+`quality_gate ... | grep -E "^\[" ; echo "exit=$?"`, which reports **grep's**
+status. `fail=93` and `exit 0` on the same line are mutually contradictory and
+should have been caught by reading them together.
+
+**What is unchanged:** the two figures (`neutrality fail=93 info=21`,
+`redundancy fail=0 info=2`) are correct, independently reproduced at `3defdb7^`
+and at HEAD, and are the pre-existing baseline -- `fail=93` is why the exit is 1,
+and it was 1 before this plan began. No gate result moved.
+
+### [C7] A quotation presented as verbatim drops a word
+
+**Correction.** The `[H1-S1]` section quotes the tripwire as *"Re-point it at the
+transitions that scaffold the declaration today; do not delete it."* The source
+(`bootstrap/tests/test_scope_reduction_trap.py`) reads *"...that scaffold the
+**Scope-delta** declaration today..."*. Mechanically minor -- a reader grepping
+the quoted string finds only the plan -- but this plan's own doctrine work is
+about verbatim quotation of load-bearing text, and the Decision-scribing
+guard-rail turns on exactly that discipline. Recorded rather than quietly fixed
+for the same reason.
+
+### On the review's own limits
+
+The record is explicit that adversarial verdicts arrived for one lens' findings
+and that coverage outside contract/vocabulary and verification-integrity *"should
+be treated as unestablished, not as clean"*, and that no adopter tree was
+scaffolded. Those are the reviewer's words and this response does not soften
+them. It also notes another session edited both planner twins mid-review; the
+tree was re-verified afterwards at `3af73b06`, identical to `3defdb7`.
+
+**Re-verification after these fixes** (scoped mapping, canonical interpreter):
+`1126 passed, 1 failed` -- the single failure is
+`test_the_live_corpus_is_sound_under_the_p1_contract`, reddened solely by another
+session's in-flight `dev/plans/comprehension-outlives-the-artifact.md`. Measured:
+`scan` names that artifact and zero others, and no violation names this plan.
