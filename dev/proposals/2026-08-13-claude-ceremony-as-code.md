@@ -3,7 +3,7 @@
 **Author**: Claude (Implementation)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-13
-**Status**: proposed
+**Status**: revised
 **Assurance path**: high-assurance — the re-anchor ceremony is a named
 high-risk surface and the authority closure's own contents change.
 **Touches**: `bootstrap/REANCHOR_RUNBOOK.md`, a new ceremony code artifact,
@@ -447,3 +447,249 @@ surface not to silently enlarge or misdescribe them.
 
 **Plan readiness: DISTINCT REVIEW REQUIRED.** After a complete revision settles
 [E1]-[E4], the proposal needs another External Security read before Decision.
+
+## Response -- Claude -- 2026-08-13
+
+**All four findings accepted; none disputed.** [E1] and [E2] identify the two
+places where the opening draft did the thing it was written to complain about —
+naming a control and leaving its authority source or its parser to the plan.
+[E3] is the sharpest: the draft diagnosed two agent-shaped gaps and then failed
+to assign either job, which would have reproduced the defect inside the fix.
+[E4] correctly refuses a test claim I could not have delivered.
+
+**[E1] — the preamble's authority source.** Accepted, and the recommendation is
+adopted rather than a variant of it. The draft said "a small fixed preamble stays
+in the runbook, and it is the only thing the Maintainer pastes" without asking
+where that text's authority comes from. It is executable authority: it chooses
+the OID, the path, and the expected digest, and decides whether to run the
+result. Taken from the candidate runbook, a candidate rewrites the check that is
+supposed to constrain it; taken from the anchor, it is stale in exactly the
+transition case this proposal exists to serve. **R1** puts the launcher in M2's
+output.
+
+**[E2] — the config is not yet a data contract.** Accepted. "Maintainer-owned by
+construction" was doing work it cannot do: at one UID, file ownership and mode
+do not distinguish the Maintainer from an agent, and the draft leaned on that
+phrase instead of a parser. **R2** specifies the schema, the refusals, and the
+disclosure, and states the residual plainly rather than implying enforcement.
+
+**[E3] — two agent-shaped gaps.** Accepted, and this is the finding that matters
+most to the proposal's own objective. The draft listed "the manifest's creation
+appears nowhere" and "no command for reading the report" as evidence of the
+problem, then left both unassigned — so an agent would still have written the
+manifest and improvised a JSON reader, and the ceremony would still have run
+through an agent. **R3** assigns both jobs and defines the complete operator
+surface as named commands.
+
+**[E4] — semantic agreement is not mechanically testable.** Accepted. The claim
+that "a prose claim with no counterpart in the module … fails a test" asserted
+strength at intent rather than delivery, which is the exact pattern four reviews
+have now caught in this family. **R4** replaces it with a closed step registry
+the tests can actually compare, and says explicitly that the remaining prose is
+reviewed, not attested.
+
+**On the rulings.** All four are adopted as stated. Ruling 1 (dedicated POSIX
+shell artifact) settles the alternative the draft flagged as possibly better;
+ruling 3 in particular kills the draft's idea that the module might print its own
+bootstrap, which was circular for the same reason [E1] names.
+
+**Scope added at the Maintainer's instruction**, quoted verbatim:
+
+> So as far as "riding along with the ceremony-as-code implementation" let's
+> make sure you incorporate that in your revision.
+
+Four findings from the first ceremony were deferred to `dev/PLANNING.md` on
+2026-08-13 with the note that each changes the authority closure and therefore
+costs a transition ceremony on its own. **R5** folds them into this proposal so
+one ceremony discharges all of them. This is *added* scope, declared rather than
+absorbed: the External read that follows covers more than the one just
+completed.
+
+## Revised proposal (Revision 1) -- Claude -- 2026-08-13
+
+### R1 — the launcher is an M2 output, not runbook prose ([E1])
+
+**M2 produces and records, out of band, four values**: the exact launcher text,
+the full reviewed candidate OID, the ceremony artifact's repository-relative
+path, and its SHA-256. The Maintainer runs the M2-supplied launcher. The runbook
+**reproduces it for explanation and is explicitly not its authority source** —
+that sentence appears next to the reproduction, so a reader cannot mistake one
+for the other.
+
+This resolves the circularity in the only direction that does not reintroduce
+staleness. It also fits the channel that already exists: M2 already hands the
+Maintainer a nine-row hash set, and the ceremony already treats that set as
+out-of-band truth. The launcher joins the same envelope.
+
+**M2 reviews the launcher as well as the artifact.** Any changed byte in either
+invalidates the disposition, exactly as any changed byte of the nine does today.
+The artifact digest and reviewed OID are **never** read from the candidate or
+from the values file.
+
+**The irreducible bootstrap is not eliminated, and the revision does not claim
+it is.** It is made short enough to inspect and bound to the independent review.
+An anchored, already-trusted launcher verifying a reviewed successor is a
+coherent alternative; it is a different design with its own update path and is
+**not** adopted here.
+
+### R2 — the values file is a closed data contract ([E2])
+
+**Parsed, never executed.** No `source`, no `eval`, no command substitution, no
+shell expansion. A line-oriented `key value` format with a schema version.
+
+**Refusals, all fail-closed:** unknown key, duplicate key, missing required key,
+malformed value, relative path, control character, non-regular file where a file
+is required, and a symlink at the leaf **or any parent**. **No ambient fallback
+exists**: when a field is absent the ceremony refuses. It never consults `PATH`,
+`HOME`, Git config, or any other ambient source for a value the file should
+carry.
+
+**The artifact prints the complete effective non-secret configuration before
+Stage 1**, so the Maintainer sees what will be used while it is still free to
+stop.
+
+**The file carries no secret material** — no passphrase, no private key.
+
+**The reviewed OID and the artifact digest are not in this file.** They arrive
+through the M2 launcher channel (R1). The values file is mutable operational
+configuration and must not carry authority values.
+
+**Stated plainly, not implied:** the review-manifest path lives in this file, so
+**editing the file can redirect an authority input**. That sits inside Cairn's
+accepted same-user residual and is not closed by this proposal. **File ownership
+and mode are hygiene and do not distinguish the Maintainer from an agent running
+as the same OS user**; the revision makes no claim that they do.
+
+### R3 — the complete operator surface, with both gaps assigned ([E3])
+
+**M2 delivers a ready-to-use review manifest.** Its candidate OID, provenance,
+member paths and digests are the reviewer's output. The ceremony **validates**
+it and **never derives its expected contents from the candidate**.
+
+**The trusted artifact provides named commands**, so no step requires an
+agent-authored script, a retyped hash row, or an ad hoc reader:
+
+| command | does |
+|---|---|
+| validate the values file | parse, refuse, and print the effective configuration |
+| stage 1 | probe the key channel, run the checks, write the package |
+| show the report | render the package's range report in a bounded, human-readable form |
+| hash the package | compute the digest the Maintainer confirms |
+| stage 2 | validate the confirmed package, sign, and perform the two-ref transaction |
+
+The Maintainer still types the passphrase and makes the key available at N4's
+boundary. That is the one act that must stay human.
+
+**The end-to-end test starts from only the M2 outputs and a valid values file**,
+executes the exact launcher and the public stage commands, and ends at the
+expected two-ref transaction. **No test helper fills an unrecorded placeholder** —
+such a helper would rebuild the present defect inside the test, which is how the
+current recorded ceremony passed while being unusable.
+
+### R4 — an enforceable agreement invariant ([E4])
+
+The draft's semantic claim is **withdrawn**. In its place:
+
+* The artifact owns a **closed, ordered procedure-step registry**: stable step
+  ID, stage, command, inputs, and security-relevant outcome.
+* The runbook **cites every ID exactly once**, with **no unknown IDs**.
+* Tests compare the two structures and **exercise every public command**.
+
+What this delivers is a drift signal on the *procedure's shape*. What it does
+not deliver — and the revision says so where the invariant is stated — is any
+attestation that the surrounding explanation is accurate. **That prose is
+reviewed, not machine-checked.**
+
+### R5 — four riders, so one ceremony discharges them all ([Maintainer])
+
+Each changes the authority closure and would otherwise cost its own transition
+ceremony. They are in scope for this proposal's implementation:
+
+1. **The key-channel probe cannot see an agent-held key.** `probe_cannot_sign`
+   drops `SSH_AUTH_SOCK` for itself while the loader forwards it to Stage 1, so
+   an agent-held copy of the key is invisible to the check and available to
+   everything else in that stage. Observed on 2026-08-13: Stage 2 signed with no
+   passphrase prompt because the agent held the key. The revision requires the
+   probe to test **the channel candidate code actually has**, or the ceremony to
+   stop forwarding the socket — and the runbook's claim to match whichever is
+   chosen.
+2. **The probe's "non-interactive" claim is false.** `ssh-keygen` reads
+   passphrases from `/dev/tty`, so the probe prompts on a controlling terminal
+   regardless of its stdin redirect. It fails closed; the docstring still
+   misdescribes it. Corrected, and the ceremony must state what a prompt means
+   for the operator.
+3. **The roster pins a general-purpose authentication key.**
+   `dev/.cairn/allowed_signers` pins the Maintainer's GitHub key, so N4 requires
+   removing the key that authenticates daily git work — and `AddKeysToAgent yes`
+   silently restores it. A dedicated ceremony key makes N4 cheap. This is
+   **adopter-facing doctrine**, not only this host's setup, and the revision
+   must say what Cairn tells adopters about ceremony key hygiene.
+4. **Opaque finding-IDs in comments and docstrings.** Bare tags — `[FUR5]`,
+   `[M2-1]`, `[S1]` and others — identify nothing without the originating plan
+   open alongside. A comprehension-floor failure (`AGENTS.md` > Review), raised
+   by the Maintainer: *"They don't inform anyone anything. I don't know what
+   FUR5 is."* Keep the reason, drop or gloss the label. **Not a mechanical
+   sweep**: some tags sit beside load-bearing history, and stripping them
+   unread would lose the explanation with the noise.
+
+**Riders 1 and 2 are security corrections and set this proposal's floor**: the
+implementing plan must not land the new operator surface while leaving the key
+probe measuring a channel candidate code can bypass.
+
+### What Revision 1 does not change
+
+The accepted host-persistence residual, N4's human key boundary, the
+key-holder-not-process limit, and the no-nonce replay posture are **unchanged**.
+This proposal does not solve them and does not enlarge them; R2 states the one
+place — the values file — where the operator surface touches that residual, so
+it is disclosed rather than discovered.
+
+**Plan review remains required(External Security Review)**, and the reviewer's
+`Plan readiness: DISTINCT REVIEW REQUIRED` stands: this revision needs a further
+External Security read before a Decision.
+
+### Withdrawn / superseded commitments
+
+Every commitment the opening contract carried that Revision 1 does not.
+
+* **Withdrawn:** *"A small fixed preamble stays in the runbook, and it is the
+  only thing the Maintainer pastes."* The runbook is candidate-controlled, so
+  preamble-as-prose lets a candidate rewrite the very check meant to constrain
+  it; reading it from the anchor instead is stale in exactly the transition case
+  this proposal serves (**[E1]**). **Replaced by R1** — the launcher is an M2
+  output, and the runbook reproduces it for explanation while explicitly not
+  being its authority source.
+* **Withdrawn:** *"Maintainer-owned config file … Maintainer-owned by
+  construction"*, offered as though ownership were enforcement. At one UID, file
+  ownership and mode do not distinguish the Maintainer from an agent (**[E2]**).
+  **Replaced by R2** — a closed parsed schema with enumerated refusals, plus an
+  explicit statement that permissions separate nothing and that editing the file
+  can redirect an authority input.
+* **Withdrawn:** *"a prose claim with no counterpart in the module, or a module
+  step the prose does not describe, fails a test."* Not deliverable: a test can
+  compare closed identifiers and command schemas, not whether arbitrary prose
+  describes arbitrary shell. The claim asserted strength at intent rather than
+  delivery (**[E4]**). **Replaced by R4** — a closed ordered step registry cited
+  exactly once each with no unknown IDs; the remaining explanation is reviewed
+  prose, stated as such.
+* **Withdrawn:** open question 3's suggestion that the module might **print its
+  own bootstrap**. Circular for [E1]'s reason — the module cannot vouch for the
+  instruction deciding whether to run the module. **Replaced by R1**, where the
+  launcher precedes and authenticates the artifact.
+* **Superseded:** open question 1 left the **artifact type** undecided, and
+  *Alternatives* flagged values-plus-executable-Markdown as possibly better.
+  Leaving it open would have deferred the proposal's central shape to the plan.
+  **Settled by ruling 1**, adopted: a dedicated POSIX shell artifact — one
+  hashable executable source, no Markdown extraction, no 180-line paste. Only
+  the filename remains for the plan.
+* **Superseded:** the implicit commitment that this proposal's scope was **the
+  operator surface alone**. Four closure-changing findings from the first
+  ceremony would each have cost their own transition ceremony, and the
+  Maintainer directed they ride along. **Replaced by R5**, with riders 1 and 2
+  (the key-probe corrections) setting the implementation floor.
+
+**Carried unchanged from the opening contract**, so the reviewer need not
+re-derive them: the diagnosis and its evidence; the split of the runbook's two
+jobs; the artifact's membership in the authority closure and the transition
+ceremony that membership requires; the assurance path; and the four residuals
+named under *What Revision 1 does not change*.
