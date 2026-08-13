@@ -281,7 +281,7 @@ D   claim-check archive resolution + registry      [DONE 4723107 D1/D2/D5; 68690
 E   status vocabulary, transitions, conformance    [DONE ec6139e E1/E2/E3]
 P2  plan readiness, inheritance, expansion refusal [DONE b00ab89 P2-R + [CF1]]
 P3  current-contract revision + withdrawal ledger  [DONE b3d17a5; CF5 filed]
-P4  review-brief + closeout --dry-run              [commit pending]
+P4  review-brief + closeout --dry-run              [DONE 6bc33d2; CF6 filed]
 P6a pilot engine + state schema (in reviewed range)[DONE 8bf1154]
 P6b pilot human contract                           [commit pending]
 P6c pilot mutation tests                           [commit pending]
@@ -3114,3 +3114,53 @@ told authors to do), and `resp=2 rev=1` is the single most common shape. A
 pairing rule would have refused correct records for a rule no accepted text
 states. The residual is that a proposal with five Responses and one round-1
 revision clears; closing it needs a contract sentence, not a tighter regex.
+
+### [CF6] P4 published one planner name outside its own cell -- Claude (Implementation) -- 2026-08-12
+
+**Declared rather than absorbed, because it edits a file the P4 cell's Surface
+column does not name.** That column reads `tools/lifecycle.py` + installed twin.
+P4 also added **one line** to `tools/lifecycle_planner.py` and its twin:
+
+```
+read_artifact = _read_artifact
+```
+
+**Why it was unavoidable.** R6 requires that *"`scan`, `next`, and accepted
+closeout tooling consume shared predicates rather than implement three
+interpretations of readiness"*, and Chunk E wrote P4's half of that into the
+planner by name -- `status_evidence_violations`'s own docstring says *"Public
+because three surfaces consume it ... and, when P4 lands it, `closeout
+--dry-run`"*, and the E2 section comment says *"P4's `closeout --dry-run` will
+pass `ready-to-archive`; three call sites, one interpretation."* That predicate
+and the three beside it (`review_record_violations`, `blocked_by_violations`,
+`plan_inheritance_violations`) are already public and all four take an
+`Artifact` -- and **nothing public built one**. The only two remaining routes
+were to reach a private name across the module boundary, or to grow a second
+artifact parser in the CLI. Chunk P6a refused exactly that pair for the
+assurance vocabulary and deferred to P2, which **published** `ASSURANCE_PATHS`
+and recorded why; there is no later chunk to defer to here, so this is the same
+move for the parser.
+
+**Why it is a declaration and not a `Scope delta`.** The planner and its twin
+are named in this plan's own `## Scope` surface list, no accepted outcome is
+dropped, and the change adds no behavior: it is an alias, not a wrapper, so
+there is no second body to drift from the one every in-file call site uses. It
+is recorded here so the Code review checks it off rather than discovering it in
+a diff.
+
+**What P4 did NOT do, and the reader should confirm.** It did not make the
+planner's heading, field or clause grammars public. The CLI restates three of
+them locally to *locate* records, and
+`bootstrap/tests/test_lifecycle_brief.py::TestNoGrammarDrift` compares each
+against the planner's own helper over the whole live corpus. That guard earned
+itself during implementation: a hand-rolled verdict-clause split classified
+`REVISE / NOT CLEARED.` as *unreadable* where the planner reads `REVISE` -- a
+blocking code review silently losing its class. The rule is now the planner's
+expression, pinned by that node.
+
+**One measurement worth carrying to the Code review.** The mutation run found
+that P4's two ASCII-safety nodes were injecting non-ASCII into an H1 title and a
+verdict's trailing clause -- neither of which any reported field carries -- so
+both passed with `ensure_ascii=False` and proved nothing. Same shape as P2's
+[M16] and P3's [M10]. Fixed by injecting into two fields the payload demonstrably
+carries, with an assertion that it carries them.
