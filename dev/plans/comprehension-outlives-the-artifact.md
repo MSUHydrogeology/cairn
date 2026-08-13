@@ -1,5 +1,10 @@
 <!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/dual-review.md doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
+<!-- Forward reference, marked deliberately: the keep ledger below is created by
+     Chunk C of this plan (see "Where a keep is recorded, and how much gets
+     written"). It does not exist until that chunk runs. -->
+<!-- claim-check-allow: dev/measurement/tag-pass-dispositions.md -->
+
 # Plan: comprehension outlives the artifact
 
 **Source proposals** — three, accepted 2026-08-13, draining into one plan by
@@ -11,7 +16,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -45,7 +50,7 @@ The plan executes the decisions. It does not re-open them.
 |---|---|
 | doctrine proposal | Extend Anchor 16 in `doctrine/rationale.md` with the temporal half, paired with Anchor 17 so it cannot be read as licence to narrate |
 | both operational proposals | Two convention rules in `AGENTS.md` and `templates/core/AGENTS.md`, **beside `**Naming.**`** — code-authoring conventions, not `## Review` |
-| tags proposal | The finding-tag revision pass — **see "What counts as a tag" below**; **185 files, 3258 candidate sites** across three classes. The plan's earlier "262 sites" and its round-1 correction to "491" were both one form of three |
+| tags proposal | The finding-tag revision pass — **see "What counts as a tag" below**; **179 files, 3258 candidate sites** across three classes. The plan's earlier "262 sites" and its round-1 correction to "491" were both one form of three |
 | names proposal | Coordinate-named test containers renamed, bodies untouched — **38 by the matching rule stated in Chunk D** |
 | tags proposal | Close the `dev/PLANNING.md` item this plan drains. **No revival rows** — nothing is deferred, so none is owed |
 
@@ -122,8 +127,8 @@ enumerable"** — reading is what this plan already requires for classes 1 and 2
 
 **Why that mattered more than the arithmetic.** The withdrawn rule was *"class 3
 is cleared opportunistically within each file already being read, and is not a
-completion criterion."* Measured against the corpus, that rule leaves **95 files
-carrying 536 class-3 occurrences never opened at all** (they hold no class-1 or
+completion criterion."* Measured against the corpus, that rule leaves **103 files
+carrying 603 class-3 occurrences never opened at all** (they hold no class-1 or
 class-2 tag), and adds **2143 further sites with no criterion** inside the files
 that are opened. `tools/lifecycle_planner.py` alone carries **376** class-3
 against the 29 class-1/2 sites that put it in scope.
@@ -137,19 +142,34 @@ rather than defended.
 **Implementer's rule (corrected).** All three classes are in scope and the pass
 **finishes against an enumerated file set**, not against a tag count:
 
-* **185 files** carry at least one tag of any class. That set is the unit of
+* **179 files** carry at least one tag of any class (76 hold a class-1/2 tag;
+  103 hold class-3 only). That set is the unit of
   completion; it is regenerated at implementation time by the script above and
   pinned in the implementation record.
 * **Per file, the acceptance is the read**: every candidate in the file has been
-  looked at and dispositioned — rewritten to state its reason, or left with the
-  reason recorded for why it is *not* a coordinate (gate rule ids, domain
-  vocabulary). A file is done when no undispositioned candidate remains in it.
+  looked at and dispositioned — rewritten to state its reason, or **kept**
+  because it is not a coordinate (gate rule ids, domain vocabulary).
+
+  **Where a keep is recorded, and how much gets written (R3-F3).** A rewrite
+  evidences itself in the diff; a keep leaves the file byte-identical, so
+  without a named artifact the bar has an invisible failure state and cannot be
+  failed. Since most of the 2679 class-3 candidates are expected to be *kept*,
+  that would put the majority of this plan's newly-claimed scope behind an
+  unfalsifiable criterion — which is the same defect as the withdrawn
+  opportunistic rule wearing better clothes.
+
+  So: keeps are recorded in **`dev/measurement/tag-pass-dispositions.md`**, one
+  line per kept **token per file** — `<path> :: <token> :: <reason>` — created by
+  this chunk. **Bounded to the kept minority**: rewrites are not listed there,
+  because the diff already carries them. A file is done when every candidate in
+  it is either changed in the diff or named in that ledger, and the chunk's
+  completion is checkable by that pairing rather than asserted.
 * **The rewrite count is not a target.** A real minority of class-3 candidates
   are genuine domain vocabulary — `R1`/`R6` in `scripts/quality_gate.py:31-33`
   are the redundancy gate's own published rule ids — and those stay. Separating
   them is reading, which the no-sweep fence already governs.
 
-**Total candidate sites: 3258** (255 + 324 + 2679) across **185 files**. This is
+**Total candidate sites: 3258** (255 + 324 + 2679) across **179 files**. This is
 roughly **6.6×** the withdrawn 491, and the plan states it rather than sizing
 itself on the number it can most easily defend.
 
@@ -237,13 +257,13 @@ Markdown has no headless region between two H2s, so text above the heading
 belongs to `## Documentation discipline`, and B3 would have failed Chunk B's own
 acceptance criterion (*"in the conventions region"*) while satisfying its slot
 constraint. Verified in both copies — one blank line separates the heading from
-the slot opener (`templates/core/AGENTS.md:388` / `:390`; `AGENTS.md:426` / `:428`).
+the slot opener (`templates/core/AGENTS.md:388` / `:390`; `AGENTS.md:412` / `:414`, measured at `eb2692e`).
 
 Both rules therefore land **under the `## Project-specific conventions` heading
 and above the `<!-- cairn:slot project-conventions -->` opener**, in both copies.
 That is inside the conventions region, outside every slot, and directly above the
 adopter's own space rather than in it — and in Cairn's copy it puts them
-immediately above `**Naming.**` (`AGENTS.md:429`), which is as close to the
+immediately above `**Naming.**` (`AGENTS.md:415` at `eb2692e`), which is as close to the
 accepted text's letter as the file permits.
 
 **Scope delta: preserved** — the accepted outcome is that a code-authoring agent
@@ -261,7 +281,7 @@ supplied one that did, and it is rejected here on the accepted terms.
 
 ### Chunk C -- the finding-tag revision pass
 
-**185 files, 3258 candidate sites** across all three classes (see the definition
+**179 files, 3258 candidate sites** across all three classes (see the definition
 above), less the fenced string literals. Revised **by reading**, one file at a
 time. **The file set is the unit of completion, not the site count** — every
 figure below is per file on the corrected definition, and every row states all
@@ -272,17 +292,21 @@ three classes so no row is sized on a definition the plan has withdrawn (R2-F5).
 | C1 | `bootstrap/tests/_gate_preflight.py` (80) + `bootstrap/tests/test_gate_preflight.py` (125) | **205** | 64 | The orphaned set. First, because they have no other home. |
 | C2 | `tools/lifecycle_planner.py` + twin | **29** each | **376** each | The opened plan said 25; that figure matched no pattern for these files. **Twins must stay byte-identical**, and class 3 here is 13× the class-1/2 count. |
 | C2b | `tools/lifecycle.py` ↔ `templates/skills/_lib/lifecycle.py` | **25** each | 55 each | The opened plan's 17 was the narrow bracketed count. Parity enforced by `bootstrap/tests/test_lifecycle_brief.py`; edit both or neither. Plus any remaining `tools/` ↔ `templates/skills/_lib/` pair. |
-| C3 | the **95 files carrying class-3 only** | 0 | **536** | *These were unreachable under the withdrawn rule.* Largest: `test_security_capability_install.py` (33), `test_lifecycle_stage_patterns.py` (29), `test_scope_reduction_trap.py` (28), `run_security_verification.py` (25). |
-| C4 | the remainder of the 185 | — | — | By file, smallest last. |
+| C3 | the **103 files carrying class-3 only** | 0 | **603** | *These were unreachable under the withdrawn rule.* Largest: `test_security_capability_install.py` (33), `test_lifecycle_stage_patterns.py` (29), `test_scope_reduction_trap.py` (28), `run_security_verification.py` (25). |
+| C4 | the remainder of the 179 | — | — | By file, smallest last. |
 
 **Acceptance per file**: every candidate of every class has been read and
 dispositioned — rewritten to state its reason, or left in place with the reason
 recorded for why it is not a coordinate; no undispositioned candidate remains;
 the suite's pass/fail set is unchanged.
 
-**Acceptance for the chunk**: all 185 files dispositioned. The set is regenerated
-at implementation time and pinned in the implementation record, so "finished" is
-checkable against a list rather than asserted.
+**Acceptance for the chunk**: all 179 files dispositioned — every candidate
+either changed in the diff or named in `dev/measurement/tag-pass-dispositions.md`
+with its reason. **The 179 and the C3 row's 103/603 are regenerated at
+implementation time** by the script in the definition above and pinned in the
+implementation record; they are the figure as measured at `eb2692e`, not a
+contract. "Finished" is checkable against that regenerated list plus the ledger
+pairing, not asserted.
 
 **Coordination**: `_gate_preflight` and the planner twins are high-traffic. Claim
 work-intent per file, and check the active claim set immediately before each
@@ -303,7 +327,7 @@ no longer owed, because nothing is being deferred.
 | # | File | Change |
 |---|------|--------|
 | D1 | `bootstrap/tests/*.py` | The renames. **38** containers by the matching rule below. |
-| D2 | `bootstrap/tests/fixtures/gate_manifest.json` | **MAINTAINER-GATED — regenerate only under the re-anchor ceremony.** It pins **353** node ids naming classes D1 renames (measured `as_of 2026-08-13` at `eb2692e`). See the fence below. |
+| D2 | `bootstrap/tests/fixtures/gate_manifest.json` | **MAINTAINER-GATED — regenerate only under the re-anchor ceremony.** It pins **335** node ids naming classes D1 renames -- 326 (the 36 digit-coordinate classes) + 21 (`TestChunkG*`) - 12 (the two excluded gate-rule classes); **18 of the 335 are skip/xfail-marked**. Measured `as_of 2026-08-13` at `eb2692e`. See the fence below. |
 
 **Matching rule (F7, corrected at R2-F4)**: a container is in scope when its name
 embeds a plan or finding coordinate —
@@ -359,7 +383,7 @@ definition. The criterion is:
 
 * the **pass/fail/skip set is unchanged** in count and in outcome per test;
 * every node id in `gate_manifest.json` resolves after the Maintainer's
-  regeneration, with no orphans — **and until that regeneration, the 353 pinned
+  regeneration, with no orphans — **and until that regeneration, the 335 pinned
   ids naming renamed classes are expected to be orphaned.** The implementing
   agent reports that count rather than treating it as a failure;
 * no test body is edited.
@@ -384,8 +408,12 @@ to protect (the work does not silently evaporate) is delivered by doing it.
   Chunk D** — renaming a container changes its node ids by definition, which is
   why "same node ids" cannot be a criterion for D (F4). Chunks A, B and E are
   prose and run the standing gates.
-* **Chunk C finishes against a list** — all **185** tagged files dispositioned,
-  the set regenerated and pinned in the implementation record.
+* **Chunk C finishes against a list** — all tagged files dispositioned (**179**
+  at `eb2692e`, regenerated at implementation time), every candidate either
+  changed in the diff or named with its reason in
+  `dev/measurement/tag-pass-dispositions.md`.
+* **Doc updates gain one file** — `dev/measurement/tag-pass-dispositions.md`, the
+  keep ledger Chunk C creates.
 * **Doc updates** — `doctrine/rationale.md`, `AGENTS.md` ×2, `dev/PLANNING.md`.
   No `CHANGELOG.md` entry: no adopter-facing *behaviour* changes; the shipped
   `AGENTS.md` paragraphs are the delivery.
@@ -1412,3 +1440,86 @@ is why the satisfier asks for a re-derivation rather than an explanation.
 it) carries a coordinate in a *production function name*, which the accepted
 scope — test containers — does not reach. The doctrine anchor in Chunk A covers
 it; a future instance will land there, and that is the right place for it.
+
+## Response to plan review (round 3) -- Claude -- 2026-08-13
+
+**Disposition**: all four findings accepted, each verified independently at
+`eb2692e` before the fix. No declines this round. **All three disputed figures
+were mine and all three were wrong**; the review's replacements reproduce.
+
+**R3-F1 — accepted; 185 is withdrawn, and I can now name the cause the review
+could not.** Re-measured: **179** files carry a tag, **76** hold class 1/2,
+**103** hold class 3 only, carrying **603** occurrences. The review's figures to
+the digit.
+
+The defect: my per-file class-2 counter applied **no lint denylist**, while the
+aggregate I published alongside it applied one. So every file whose only class-2
+"tags" were `PLC0415` or `BLE001` was counted as a class-1/2 file — inflating that
+set 76 → 90, deflating the class-3-only set 103 → 95, and inflating the total 179
+→ 185. **The same script printed both numbers under two different definitions**,
+which is R2-F5's finding — chunk figures sitting on a definition the plan had
+replaced — recurring inside the response that answered R2-F5.
+
+The C3 row and the acceptance line now both carry the regeneration clause, so
+neither reads as a contract.
+
+**R3-F2 — accepted; 353 and 356 are both withdrawn. Correct value 335.** The
+review broke my method defence exactly as invited, and it was not a method
+difference — it was a bug. Verified:
+
+* `collection.skip_xfail_marked` (1394 entries) is a **strict subset** of
+  `collection.node_ids` (4261). My walker traversed every string in the document,
+  so it counted every skip/xfail-marked node **twice**.
+* The trailing-`::<class>` arm I offered as the difference between our figures
+  matches **zero** ids. It is a no-op, and citing it as method was citing dead code.
+* Decomposition confirmed: 36-set = 326 + 30 dupes = **356**; 38-set = 335 + 18
+  dupes = **353**. Correct: **326 + 21 (`TestChunkG*`) − 12 (`TestR1Shingles` 4,
+  `TestR6UnusedDef` 8) = 335**, of which **18** are skip/xfail-marked.
+
+This one had teeth: D2 tells the implementer to report the orphan count against
+that target, and 353 would have been **18 too high** — a discrepancy that would
+have surfaced during a Maintainer-gated ceremony, which is the worst place to
+discover an arithmetic error.
+
+**R3-F3 — accepted, and this is the finding that mattered.** My answer to
+"is 'dispositioned' checkable?" was no. A rewrite evidences itself in the diff; a
+**keep leaves the file byte-identical**, and I never said where the reason goes.
+With most of 2679 class-3 candidates expected to be kept, the majority of the
+scope I had just enlarged 6.6× sat behind a bar with **no failure state** — the
+withdrawn opportunistic rule's defect, re-committed in the fix for it, one round
+later.
+
+Fixed by naming the artifact: `dev/measurement/tag-pass-dispositions.md`, one
+line per kept token per file, bounded to keeps because rewrites are already in
+the diff. A file is done when every candidate is either in the diff or in the
+ledger — a pairing, not an assertion.
+
+**R3-F4 — accepted.** `AGENTS.md:426/428/429` were the **dirty working tree's**
+line numbers; at `eb2692e` they are **412/414/415**. Corrected, with the commit
+named. I measured every *tag* figure from blobs precisely because the tree is
+dirty, then read line numbers off the tree in the same commit — the discipline
+was stated and selectively applied. `claim_check` passed them because it checks
+line *bounds*, not content, which is worth knowing about the tool.
+
+**Review's answer to my question (2)**: 3258 is not padded — class-2
+contamination is three occurrences total (`SIM115` ×2, `SHA256` ×1) against 324
+net, and class 3 is a *candidate* count with the read as the filter. Recorded
+because I asked to be checked for over-correction and was not.
+
+### What this round says about the author
+
+Round 2's two majors were "measured the wrong surface, then defended the number."
+Round 3's three are the same failure **inside the corrections for round 2**: one
+script printing two definitions (the defect R2-F5 named), one walker
+double-counting a subset, one bar with no failure state (the defect R2-F2 named).
+Each fix reproduced the flaw it was fixing, one level down.
+
+The pattern is not carelessness about arithmetic. It is that I check whether a
+correction *looks* responsive to the finding, and not whether the thing it
+asserts is true — the same diagnosis recorded at F1/F5, at E1/D5, and at
+R2-X2. What changed this round is only that someone else was still checking.
+
+**Scope delta: preserved.** No accepted outcome was dropped; R3-F3 makes the
+enlarged scope checkable rather than merely claimed.
+
+**Status** -> `awaiting-plan-review`.
