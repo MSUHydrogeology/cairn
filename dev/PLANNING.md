@@ -124,6 +124,51 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **Agent-facing discipline does not survive delegation** *(observed 2026-08-13
+  during `review-efficient-lifecycle` Chunk H1; raised by the Maintainer)* — every
+  operational rule in `AGENTS.md` is written for *the* agent, in the singular. It
+  binds the agent that reads it. It says nothing about the agents that agent
+  spawns, and a subagent does not read `AGENTS.md` unless its brief carries the
+  rule down. Two independent instances landed the same day, which is what makes
+  this a pattern rather than one session's sloppiness:
+
+  **(a) The verification-boundary budget, measured.** *Verification boundaries*
+  opens with *"do not pay for the same broad run at every one"*: Boundary A is
+  scoped to the plan's reviewed mapping, B is the one stable run, and C states
+  outright that *"copying Boundary B's broad command is not a falsification
+  ledger."* `review-efficient-lifecycle` budgets **two** full suites (B1, and B2
+  after the ceremony). The chunk spent **13** — roughly 2¼ hours of compute.
+  **11 of the 13 were delegated agents**, each independently reaching for
+  `pytest bootstrap/tests` because that is the obvious way to answer "did this
+  break anything," with nothing in their brief saying a budget existed or that a
+  six-file scoped mapping (~70s) was available. The implementing agent held the
+  mapping and did not pass it down.
+
+  **(b) Work-intent claims are advisory, not locking.** Two artifacts moved under
+  a claim this session was holding (`e02f6a8`, `618ec47`), one discarding an
+  uncommitted edit. Correct behaviour on every side — a claim is a coordination
+  *signal* — but an agent that reads "claim before editing" without also reading
+  "and re-check the blob, because the claim guarantees nothing" will lose work.
+  The migration refused both rows, which is the designed outcome; the cost was
+  the pass, not the data.
+
+  **The shape both share.** A rule is stated once, in a file only the top-level
+  agent loads, and the mechanism that would carry it to a subagent is the
+  spawning agent's own memory of it. That is the weakest possible transmission
+  path, and it degrades exactly when a task is large enough to be worth
+  delegating — i.e. when the discipline matters most.
+
+  **Not proposing a doctrine change on this evidence.** `doctrine/rationale.md` >
+  *"How the doctrine evolves under evidence"* rate-limits changes on a single
+  incident, and while there are two instances here they are one day, one plan,
+  one agent. What is wanted first is a **decision about where the rule belongs**:
+  a delegation clause in `AGENTS.md`; a required preamble every subagent brief
+  carries; a tool-level default; or an explicit acceptance that budgets are the
+  spawning agent's job and the failure was ordinary. That routing question is the
+  Maintainer's, and it wants its own proposal rather than a row here.
+  *Trigger:* the next plan that fans work out to subagents, or any change to how
+  briefs are composed.
+
 * **Portable-security-sweeps deferred set (LT-1, LT-2, LT-4, LT-6)** *(homed
   2026-08-10 as that plan's archive precondition; LT-3 and LT-5 live in
   `dev/measurement/gitleaks-version-support.md`, and LT-7 was resolved outright
