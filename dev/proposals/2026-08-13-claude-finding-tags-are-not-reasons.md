@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: revised
+**Status**: accepted
 **Touches**: `AGENTS.md` and `templates/core/AGENTS.md` (the comprehension-floor
 paragraph in `## Review`); a read-and-revise pass over 262 tagged comments and
 docstrings, sequenced per file owner
@@ -378,4 +378,13 @@ of a guarantee, a hand-off instead of a fix, a later read instead of an earlier
 one — and each time I checked whether the mechanism was defensible instead of
 whether the outcome survived. The outcome test exists precisely because those
 two questions come apart, and its author keeps answering the wrong one.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-13
+
+**ACCEPTED as revised.** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, please scribe my acceptance of finding-tags-are-not-reasons as revised"
+
+**Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
+
 
