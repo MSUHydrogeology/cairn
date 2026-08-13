@@ -3,7 +3,7 @@
 # Plan: the scope-reduction trap
 
 **Source proposal**: [`2026-08-11-claude-scope-reduction-trap`](../proposals/archive/2026-08-11-claude-scope-reduction-trap.md)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: none — **waived by the Maintainer at plan-open**, adjusting the
 accepted proposal's `required(External)` declaration. See "The waived plan
 review" below; the code review before archive is unaffected and remains
@@ -3069,7 +3069,13 @@ was left to review by the accepted Round-3 disposition.
 **Model**: Antigravity (Gemini 3.1 Pro)
 **Tier**: External, different agent type from implementing agent (Claude Opus 5)
 **Reviewed commit**: `b74df8c17b1220a2323e20ec6891db854acfa4f6`
-**Target range**: `4f17fef..53622b8` (specifically correction commits `4000ebf` and `53622b8`)
+**Target**: `4f17fef..53622b8` (specifically correction commits `4000ebf` and `53622b8`)
+<!-- Field label corrected from `Target range` to `Target` by the implementing
+     agent on explicit Maintainer authorization ("Go ahead and fix it",
+     2026-08-13). The four-field review basis requires `Target:` and the archive
+     gate refused on it. Label only -- no value, finding, verdict or attribution
+     was altered, and this note records the edit because the section is another
+     agent's attributed, append-only review. -->
 **Assurance path**: standard
 **Prior findings**: R2-X1, R2-X2, R2-X3 from Codex (2026-08-13)
 **Bounding**: **ACCEPTED** (Boundary B bounded integration record validated; no contract or trust-ceremony surfaces touched)
