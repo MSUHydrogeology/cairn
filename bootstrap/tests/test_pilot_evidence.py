@@ -73,12 +73,29 @@ COUNTED_STATE = "ready-to-archive"
 #: -- which is what `test_a_planner_missing_a_required_export_is_purged_not_
 #: cached` asserts.  These two nodes are about *other* loader properties, so
 #: they get a complete stub.
+#:
+#: **Chunk P4 added six more**, and the two nodes that use this stub reddened the
+#: day it landed -- correctly, which is the point: the completeness check is what
+#: makes a partially-exporting planner a refusal rather than an `AttributeError`
+#: at the first counted plan.  Kept in step here rather than loosened there.
 def _stub_vocabulary(state: str = COUNTED_STATE) -> str:
     return (f"PLAN_STATES = ('open', {state!r})\n"
             "ASSURANCE_PATHS = ('standard', 'high-assurance')\n"
             "ASSURANCE_NOT_INHERITED = 'not-inherited'\n"
             "def resolve_plan_assurance_path(path):\n"
-            "    return 'standard', []\n")
+            "    return 'standard', []\n"
+            "def encode_display(value):\n"
+            "    return value\n"
+            "def read_artifact(path):\n"
+            "    return None\n"
+            "def status_evidence_violations(art, state):\n"
+            "    return []\n"
+            "def review_record_violations(art, state):\n"
+            "    return []\n"
+            "def blocked_by_violations(art):\n"
+            "    return []\n"
+            "def plan_inheritance_violations(art):\n"
+            "    return []\n")
 
 
 def _load(path: Path, name: str) -> ModuleType:

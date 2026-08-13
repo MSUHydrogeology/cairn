@@ -49,11 +49,21 @@ already in force; an absent activation record means *no evidence yet*, never
 that the review policy is off.  See the section comment above
 ``_validated_planner_path`` for the whole contract.
 
+Two further subcommands are the lifecycle's **read-only navigation** surface --
+`review-brief` (extracts one artifact's review surface) and `closeout
+--dry-run` (the plan archive completeness preflight).  Neither writes, moves,
+commits, runs tests, or decides whether evidence is competent; both are
+deterministic, offline, standard-library-only extractors whose output derives
+only from repository bytes, git metadata and their arguments.  See the P4
+section comment below.
+
 Run:
     python tools/lifecycle.py session-start
     python tools/lifecycle.py session-end [--dry-run]
     python tools/lifecycle.py pilot-report
     python tools/lifecycle.py pilot-record --kind <kind> ... [--dry-run]
+    python tools/lifecycle.py review-brief <artifact> [--format json]
+    python tools/lifecycle.py closeout <plan> --dry-run [--format json]
 """
 from __future__ import annotations
 
@@ -121,20 +131,48 @@ def _emit(message: str) -> None:
     print(f"{_PREFIX} {message}")
 
 
-_FIELD_ESCAPES = {
-    **{c: "\\x%02x" % c for c in range(0x20)},
-    0x7F: "\\x7f",
-    **{c: "\\x%02x" % c for c in range(0x80, 0xA0)},
-    0x2028: "\\u2028",
-    0x2029: "\\u2029",
-    0x5C: "\\\\",
-}
+#: How many *encoded* characters one field may contribute before the tail is
+#: elided.  Counted after encoding, never before: the marker is unauthenticated
+#: and a source-length cap would let one crafted character buy 10 columns.
 _FIELD_LIMIT = 200
 
 
 def _safe_field(value, *, limit=_FIELD_LIMIT):
-    """Render one externally sourced single-line value inert for the stream."""
-    text = str(value).translate(_FIELD_ESCAPES)
+    """Render one externally sourced single-line value inert for the stream.
+
+    **The escaping rule is `tools/lifecycle_planner.py`'s `encode_display`, and
+    this function no longer owns one.**  Chunk P4 of
+    `dev/plans/review-efficient-lifecycle.md`: *"human output passes through the
+    **same** terminal encoder as F2 ... The existing `_safe_field` is **not**
+    this rule -- it translates a fixed escape table and truncates; it applies
+    neither `str.isprintable()` nor `_DISPLAY_UNSAFE_RANGES` -- and is replaced,
+    not wrapped."*
+
+    What that fixed table missed is not hypothetical: the combining grapheme
+    joiner, the Hangul fillers, the variation selectors and the whole Tag block
+    are `Mn`/`Lo`, so `str.isprintable()` calls them printable and the old table
+    listed none of them -- they reached a terminal raw.  One encoder means there
+    is no second, weaker path, and the board's directional drift test
+    (`bootstrap/tests/test_lifecycle_board.py`) is what keeps the range table
+    ahead of the content scanner for **both** consumers at once.
+
+    **Elision is layered OUTSIDE the encoder, not folded into it** (the same
+    cell).  It is a display concern with its own oracle -- a hostile
+    4,000-character `**Status**:` value must not own the terminal -- and folding
+    a length rule into a code-point rule is how one of them comes to be
+    reasoned about as if it were the other.  So the encoder runs first over the
+    whole value and the cut is taken from its output, which also makes the cut
+    unable to split a *source* character into a half-escape that reads as
+    something else.
+
+    An unloadable vocabulary **refuses** (`VocabularyUnavailable`, a
+    `LifecycleError` -> exit 1 with the reason).  That is the A3/A5 contract's
+    own direction and it is deliberate here: the alternative -- falling back to
+    a local escape table when the shared encoder cannot be reached -- is exactly
+    the second, weaker path this change removes, and it would appear precisely
+    when something is already wrong with the install.
+    """
+    text = _vocabulary().encode_display(str(value))
     if limit is not None and len(text) > limit:
         return text[:limit] + "...[+%d chars elided]" % (len(text) - limit)
     return text
@@ -1540,8 +1578,25 @@ _PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
 #: through this loader is what keeps the CLI from re-declaring either token --
 #: the second vocabulary the single-source rule forbids, and the reason P6a
 #: deliberately left this open rather than closing it early.
+#:
+#: **P4 adds six more, and the reason is the same rule read from the other
+#: end.**  `encode_display` is the one terminal encoder (Chunk F2); every human
+#: line this file prints goes through it, so it is required *unconditionally*,
+#: not only by the two new subcommands.  `read_artifact` is the one artifact
+#: parser -- R6 requires that *"`scan`, `next`, and accepted closeout tooling
+#: consume shared predicates rather than implement three interpretations of
+#: readiness"*, and the four predicates below all take the object it builds.
+#: `status_evidence_violations` is the closeout preflight itself (its own
+#: docstring names this caller: *"and, when P4 lands it, `closeout --dry-run`"*);
+#: `review_record_violations`, `blocked_by_violations` and
+#: `plan_inheritance_violations` are the other three the same reports read.
+#: Every one of them is *the planner's*, reached through this loader -- there is
+#: no second parser and no second readiness reading in this file.
 _REQUIRED_EXPORTS = ("PLAN_STATES", "ASSURANCE_PATHS",
-                     "ASSURANCE_NOT_INHERITED", "resolve_plan_assurance_path")
+                     "ASSURANCE_NOT_INHERITED", "resolve_plan_assurance_path",
+                     "encode_display", "read_artifact",
+                     "status_evidence_violations", "review_record_violations",
+                     "blocked_by_violations", "plan_inheritance_violations")
 
 _planner_cache = None
 
@@ -2739,6 +2794,914 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
     return 0
 
 
+# === P4 -- review-brief and closeout --dry-run ===============================
+#
+# Chunk P4 of `dev/plans/review-efficient-lifecycle.md`, implementing the
+# accepted parent's Revision 1 -- the operative revision; its own opening words
+# are *"This section supersedes the operative requirements in the opening
+# Proposal, Pilot, Evidence, and Signals sections"*, so the two field lists
+# below are Revision 1's, not the opening Proposal's (they agree in substance;
+# Revision 1 is the shorter spelling and is the one quoted here).
+#
+#     `python tools/lifecycle.py closeout <plan> --dry-run` reports plan/proposal
+#     state, accepted commit and assurance path, plan-review satisfaction,
+#     Boundary B binding, latest code-review result, unresolved findings,
+#     unhomed follow-ups, and the exact archive/board paths.  It never edits,
+#     moves, commits, runs tests, or decides whether evidence is competent.
+#
+#     `review-brief` reports the assurance path and tier, complete-current-
+#     contract span, last reviewed commit, unresolved finding ids, paths changed
+#     since that commit, and any Boundary B summary.  It does not summarize
+#     prose, choose evidence, or grant authority.
+#
+#     `review-brief` and `closeout --dry-run` are deterministic, offline,
+#     standard-library-only extractors.  They have no LLM, API, telemetry, or
+#     network dependency.  Their output derives only from repository bytes, git
+#     metadata, and explicit command arguments.
+#
+# **Three properties are structural, not promises.**
+#
+#   * **Read-only, and no artifact content is executed.**  Nothing below opens a
+#     file for writing, and the only subprocess is the module's one read-only
+#     `_git` helper.  An artifact is *parsed*, never imported or evaluated.
+#   * **One readiness reading, not a second one.**  R6 requires that *"`scan`,
+#     `next`, and accepted closeout tooling consume shared predicates rather than
+#     implement three interpretations of readiness"*.  So the preflight below is
+#     literally `status_evidence_violations(art, "ready-to-archive")` -- the
+#     planner's own predicate, through the contained loader, exactly as `scan`
+#     and `next` call it.  There is no local re-derivation to tighten or loosen.
+#   * **The protected interpreter binding is untouched.**  `_resolve_interpreter`
+#     is not called, not read, and not reachable from either command; neither
+#     command spawns anything under the resolved path.  That is fence **M3** of
+#     the plan, pinned by
+#     `bootstrap/tests/test_lifecycle_brief.py::TestInterpreterFence`.
+#
+# **What is extracted here rather than asked of the planner, and why that is
+# stated rather than hidden.**  The planner owns the artifact parser
+# (`read_artifact`), the readiness predicates, the closed vocabularies and the
+# terminal encoder, and all of them are reached through the one contained loader
+# above.  What this file adds is *heading and field location* -- which lines a
+# record occupies -- because the planner's public surface answers "is this
+# record valid", not "where is it".  Those local rules are restatements of the
+# planner's, and `bootstrap/tests/test_lifecycle_brief.py::TestNoGrammarDrift`
+# compares them against the planner's own helpers over the live corpus so a
+# restatement cannot quietly become a divergence.
+
+#: Versioned machine contracts.  A consumer pins the version and a bump is
+#: visible; there is no unversioned shape to fall back to.
+_BRIEF_SCHEMA = "cairn-review-brief/1"
+_CLOSEOUT_SCHEMA = "cairn-closeout/1"
+
+#: Where an artifact may live, and the only directories a bare stem is searched
+#: in.  A path outside them refuses: these two commands read the deliberation
+#: record, and pointing them at an arbitrary file would make "status" and
+#: "assurance path" answers about something that is not a lifecycle artifact.
+_ARTIFACT_DIRS = (
+    ("proposal", ("dev", "proposals")),
+    ("proposal", ("dev", "proposals", "archive")),
+    ("plan", ("dev", "plans")),
+    ("plan", ("dev", "plans", "archive")),
+)
+
+#: The board a plan's archive transition must touch alongside the file move.
+_BOARD_REL = ("dev", "PLANNING.md")
+
+#: A real (unfenced) ATX heading.  Column 0 is markdown's own rule; the planner's
+#: `_ATX_HEADING_RE` is the same expression, and `TestNoGrammarDrift` pins that.
+_ATX_RE = re.compile(r"^(?P<hashes>#{1,6})[ \t]+(?P<text>.*?)[ \t]*$")
+
+#: **Two normalizers, because the planner has two and they are not the same
+#: rule.**  A field VALUE drops only the paired emphasis markers
+#: (`_EMPHASIS_RE`); a HEADING drops every emphasis character including the
+#: backtick (`_strip_emphasis_chars`), which is why `## check_cairn: ...`
+#: normalizes to `checkcairn: ...`.  Collapsing the two into one would make this
+#: file's heading recognition disagree with the planner's on every heading that
+#: carries a code span -- measured, not hypothetical: the live corpus has them.
+_EMPHASIS_SUB_RE = re.compile(r"\*\*|__")
+_HEADING_EMPHASIS_CHARS = "*_`"
+_ASCII_WS_SUB_RE = re.compile(r"[ \t\n\r\f\v]+")
+
+#: The leading clause of a closed-vocabulary field value, the planner's own
+#: expression.  `**Verdict: REVISE / NOT CLEARED TO ARCHIVE.**` is a real record,
+#: so trailing prose must be tolerated -- but only after a break character, never
+#: inside the token, so `SHIP but actually BLOCK` stays out-of-vocabulary rather
+#: than parsing as `SHIP`.
+_VERDICT_CLAUSE_SUB_RE = re.compile(r"^[^.,;(/]*")
+
+#: Heading classes this file needs to *locate*.  Matched on the NORMALIZED
+#: heading text (emphasis stripped, ASCII whitespace collapsed, casefolded), the
+#: same normalization the planner's `_heading_records` applies, because the
+#: corpus writes both `--` and em-dash separators and neither is a contract
+#: difference.
+_CONTRACT_NORM_RE = re.compile(r"(?:revised proposal|revision)\b")
+_RESPONSE_NORM_SUB_RE = re.compile(r"response\b")
+_REVIEW_HEADING_NORM_RE = re.compile(r"(?:review|plan review|code review)\b")
+
+#: Boundary B's stable-evidence record, and the Code-review pass, in the exact
+#: raw-line shapes the planner matches them in.
+_STABLE_EVIDENCE_LINE_RE = re.compile(
+    r"^## Implementation verification -- (?P<agent>[^\n]+?) -- "
+    r"(?P<date>\d{4}-\d{2}-\d{2})(?P<rest>[^\n]*)$")
+_CODE_REVIEW_LINE_RE = re.compile(
+    r"^## Code review -- (?P<reviewer>[^\n]+?) -- "
+    r"(?P<date>\d{4}-\d{2}-\d{2})(?: \(round (?P<round>\d+)\))?$")
+
+#: A bracketed finding id -- `[E1]`, `[S12]`, `[CF3]`, `[M6-R]`.  Deliberately
+#: narrow: an arbitrary bracketed word is a citation, not a finding id, and
+#: widening this would turn every markdown link into an "unresolved finding".
+_FINDING_ID_RE = re.compile(r"\[(?P<id>[A-Z]{1,3}\d{1,3}(?:-[A-Z])?)\]")
+
+#: A full commit id, the only shape a binding may carry.  An abbreviation is
+#: reported as present-but-not-full rather than silently accepted: the accepted
+#: contract writes `<full commit id>` and a 7-character prefix is not one.
+_FULL_SHA_RE = re.compile(r"\A[0-9a-f]{40}\Z")
+
+#: How many list members a report prints before it says how many it withheld.
+#: Bounded output is a display property, not a security one -- but an unbounded
+#: `git diff --name-only` over a wide range can bury the rest of the report.
+_LIST_CAP = 40
+
+
+def _field_pattern(name: str) -> "re.Pattern[str]":
+    """One emphasis-optional full-line field matcher, by field name.
+
+    The same expression as the planner's `_code_review_field_re`; both spellings
+    are live text in this tree (the accepted contract writes the basis unbolded,
+    every real review writes it bolded), so admitting only one would refuse
+    correct records for no contract reason.
+    """
+    return re.compile(
+        r"^(?:\*\*|__)?" + re.escape(name) + r"(?:\*\*|__)?:[ \t]*"
+        r"(?P<value>.*?)[ \t]*$", re.M)
+
+
+def _normalize_heading(text: str) -> str:
+    """Emphasis characters deleted, ASCII whitespace collapsed, casefolded."""
+    for char in _HEADING_EMPHASIS_CHARS:
+        text = text.replace(char, "")
+    return _ASCII_WS_SUB_RE.sub(" ", text).strip().casefold()
+
+
+def _iter_unfenced(text: str):
+    """``(line_no, line)`` for every line OUTSIDE a fenced code block.
+
+    A `##` inside a fence is literal text, not a heading.  It matters on real
+    bytes rather than in theory: this plan's own accepted contract quotes record
+    headings inside ```text fences, and both authoring templates now do too, so a
+    raw search would report a specification as a record.
+    """
+    in_fence = False
+    for i, line in enumerate(_split_lines(text)):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            yield i + 1, line
+
+
+def _headings(text: str) -> List[Tuple[int, int, str, str]]:
+    """``(line_no, level, raw_heading, normalized)`` per real heading."""
+    out: List[Tuple[int, int, str, str]] = []
+    for line_no, line in _iter_unfenced(text):
+        m = _ATX_RE.match(line)
+        if m is None:
+            continue
+        out.append((line_no, len(m.group("hashes")), line.strip(),
+                    _normalize_heading(m.group("text"))))
+    return out
+
+
+def _span_end(headings: List[Tuple[int, int, str, str]], index: int,
+              total_lines: int) -> int:
+    """The last line of `headings[index]`'s span: up to the next same-or-shallower
+    heading, else end of file."""
+    level = headings[index][1]
+    for line_no, lvl, _raw, _norm in headings[index + 1:]:
+        if lvl <= level:
+            return line_no - 1
+    return total_lines
+
+
+def _header_region(text: str) -> str:
+    """Every line above the first `## ` heading.
+
+    Bounding the read is what stops an `**Assurance path**:` line quoted inside
+    an appended review section from being read as the artifact's own
+    declaration -- the same bound the planner's `_iter_header_lines` applies.
+    """
+    out: List[str] = []
+    for line in _split_lines(text):
+        if line.startswith("## "):
+            break
+        out.append(line)
+    return "\n".join(out)
+
+
+def _one_field(body: str, name: str) -> Tuple[Optional[str], Optional[str]]:
+    """``(value, problem)`` for one field: absent and duplicate are both problems.
+
+    A duplicate is a problem **even when the two lines agree**: agreeing is a
+    judgement, and there is no rule here for choosing between two lines that may
+    not.
+    """
+    found = _field_pattern(name).findall(body)
+    if not found:
+        return None, f"no '{name}:' line"
+    if len(found) > 1:
+        return None, f"duplicate '{name}:' ({len(found)} lines)"
+    value = _EMPHASIS_SUB_RE.sub("", found[0]).strip()
+    # One pair of surrounding backticks is presentation, not value.  Measured
+    # rather than assumed: every `Reviewed commit:` line in `dev/plans/` writes
+    # the id inside a code span, so a shape check run on the raw value would
+    # report every real binding as "not a full commit id" -- a checker refusing
+    # the house form is the same defect class as one accepting an empty field.
+    if len(value) > 1 and value.startswith("`") and value.endswith("`"):
+        value = value[1:-1].strip()
+    if not value:
+        return None, f"empty '{name}:' value"
+    return value, None
+
+
+# --- locating the artifact ---------------------------------------------------
+
+
+def _artifact_path(root: Path, spec: str) -> Path:
+    """Resolve `<artifact>` to a real file under one of the four lifecycle dirs.
+
+    Accepts a repository-relative path or a bare stem.  An **ambiguous** stem
+    (the same name live and archived, which is exactly what an in-flight archive
+    looks like) refuses and names both hits rather than picking one -- picking
+    would answer the operator's question about a file they did not mean.
+    """
+    candidates: List[Path] = []
+    if spec.endswith(".md") or "/" in spec or "\\" in spec:
+        rel = spec.replace("\\", "/").strip("/")
+        if not rel.endswith(".md"):
+            raise LifecycleError(
+                f"not a lifecycle artifact path: {_safe_field(spec)} -- expected "
+                f"a '.md' file under dev/proposals/ or dev/plans/")
+        path = root.joinpath(*rel.split("/"))
+        parent_rels = {parts for _kind, parts in _ARTIFACT_DIRS}
+        try:
+            here = tuple(path.parent.relative_to(root).parts)
+        except ValueError:
+            here = ()
+        if here not in parent_rels:
+            raise LifecycleError(
+                f"{_safe_field(rel)} is not under a lifecycle directory -- these "
+                f"commands read the deliberation record, so the artifact must "
+                f"live in dev/proposals/[archive/] or dev/plans/[archive/]")
+        candidates = [path]
+    else:
+        stem = spec[:-3] if spec.endswith(".md") else spec
+        for _kind, parts in _ARTIFACT_DIRS:
+            candidate = root.joinpath(*parts, stem + ".md")
+            if candidate.is_file():
+                candidates.append(candidate)
+        if not candidates:
+            raise LifecycleError(
+                f"no artifact named {_safe_field(stem)}.md under "
+                f"dev/proposals/[archive/] or dev/plans/[archive/]")
+        if len(candidates) > 1:
+            named = ", ".join(
+                _safe_field(c.relative_to(root).as_posix()) for c in candidates)
+            raise LifecycleError(
+                f"{_safe_field(stem)} is ambiguous -- it names {len(candidates)} "
+                f"artifacts ({named}).  Pass the exact path; a stem that matches "
+                f"both a live and an archived copy is what an in-flight archive "
+                f"looks like, and choosing one would answer a different question")
+    path = candidates[0]
+    _assert_within(path, root)
+    try:
+        if _has_symlink_component_below(path, root):
+            raise LifecycleError(
+                f"{_safe_field(path.relative_to(root).as_posix())} is reached "
+                f"through a symlink -- refusing to read a lifecycle artifact "
+                f"through one")
+        if not path.is_file():
+            raise LifecycleError(f"no such artifact: {path}")
+    except OSError as exc:
+        raise LifecycleError(f"cannot inspect {path}: {exc}") from None
+    return path
+
+
+def _artifact(root: Path, spec: str, *, require_kind: Optional[str] = None):
+    """``(planner Artifact, repo-relative path)``, or a clean refusal."""
+    planner = _vocabulary()
+    path = _artifact_path(root, spec)
+    rel = path.relative_to(root).as_posix()
+    try:
+        art = planner.read_artifact(path)
+    except Exception as exc:                     # PlannerError / OSError / ValueError
+        raise LifecycleError(
+            f"cannot parse {_safe_field(rel)}: {_safe_field(exc)}") from None
+    if require_kind is not None and art.kind != require_kind:
+        raise LifecycleError(
+            f"{_safe_field(rel)} is a {_safe_field(art.kind)}, not a "
+            f"{require_kind} -- `closeout` is the plan archive preflight")
+    return art, rel
+
+
+# --- the extractors ----------------------------------------------------------
+
+
+def _declared_assurance(root: Path, art, rel: str) -> Tuple[Optional[str],
+                                                            List[str]]:
+    """``(value, problems)``.  A plan INHERITS one; a proposal DECLARES one.
+
+    The plan arm is the planner's `resolve_plan_assurance_path` -- P2's chain,
+    not a second reading of it -- and the proposal arm reads the artifact's own
+    header declaration against the planner's closed `ASSURANCE_PATHS`.
+    """
+    planner = _vocabulary()
+    if art.kind == "plan":
+        value, problems = planner.resolve_plan_assurance_path(art.path)
+        return value, [_safe_field(p) for p in problems]
+    value, problem = _one_field(_header_region(art.text), "Assurance path")
+    if problem:
+        return None, [problem]
+    for canonical in planner.ASSURANCE_PATHS:
+        if value.casefold() == canonical.casefold():
+            return canonical, []
+    return None, [f"'Assurance path: {_safe_field(value)}' is outside the closed "
+                  f"vocabulary {tuple(planner.ASSURANCE_PATHS)} -- there is no "
+                  f"default"]
+
+
+def _declared_tier(art) -> Tuple[str, List[str]]:
+    """The artifact's declared review obligation, verbatim, plus any problem.
+
+    A plan declares `**Plan review**: required(<tier>[ + <tier>])`; a proposal
+    declares none of its own, so the value reported is the *record's* -- the
+    latest `## Review` pass's `Tier:` line -- and the difference is stated in the
+    value rather than smoothed over.
+    """
+    if art.kind == "plan":
+        declared = (art.plan_review or "").strip()
+        if not declared:
+            return "undeclared", ["no '**Plan review**:' line in the header"]
+        return _safe_field(declared), []
+    latest: Optional[Tuple[int, str]] = None
+    for line_no, level, raw, norm in _headings(art.text):
+        if level == 2 and norm.startswith("review "):
+            latest = (line_no, raw)
+    if latest is None:
+        return "no-review-record", []
+    body = _section_body(art.text, latest[0])
+    value, problem = _one_field(body, "Tier")
+    if problem:
+        return "unreadable", [f"{_safe_field(latest[1])}: {problem}"]
+    return _safe_field(value), []
+
+
+def _section_body(text: str, line_no: int) -> str:
+    """The body of the heading at `line_no`, up to the next same-or-shallower one."""
+    headings = _headings(text)
+    lines = _split_lines(text)
+    for index, (start, _lvl, _raw, _norm) in enumerate(headings):
+        if start == line_no:
+            end = _span_end(headings, index, len(lines))
+            return "\n".join(lines[start:end])
+    return ""
+
+
+def _contract_spans(art) -> List[dict]:
+    """Every complete-current-contract section, in document order, with its span.
+
+    Located, never judged: whether the section really *is* complete is the
+    reader's job, and the accepted contract assigns it to one ("A reviewer
+    compares the complete revision to the previously reviewed contract").  P3's
+    `current_contract_violations` is the predicate; this is the pointer.
+    """
+    headings = _headings(art.text)
+    total = len(_split_lines(art.text))
+    out: List[dict] = []
+    for index, (line_no, level, raw, norm) in enumerate(headings):
+        if level != 2 or not _CONTRACT_NORM_RE.match(norm):
+            continue
+        out.append({
+            "line": line_no,
+            "end_line": _span_end(headings, index, total),
+            "heading": _safe_field(raw),
+        })
+    return out
+
+
+def _review_records(art) -> List[Tuple[int, str, str]]:
+    """``(line_no, raw_heading, normalized)`` for every H2 review record."""
+    out: List[Tuple[int, str, str]] = []
+    for line_no, level, raw, norm in _headings(art.text):
+        if level == 2 and _REVIEW_HEADING_NORM_RE.match(norm):
+            out.append((line_no, raw, norm))
+    return out
+
+
+def _last_reviewed_commit(art) -> dict:
+    """The newest review record's `Reviewed commit:` binding, and its shape.
+
+    Document order is authoritative -- the same rule the planner applies to the
+    Code-review record ("the last record in the file is the current one").  An
+    abbreviated id is reported as `full: false` rather than accepted: the
+    accepted contract writes `<full commit id>`, and a report that quietly
+    treated a 7-character prefix as the binding would be asserting something the
+    record does not say.
+    """
+    records = _review_records(art)
+    if not records:
+        return {"record": None, "line": None, "value": None, "full": False,
+                "problems": ["no review record in this artifact"]}
+    line_no, raw, _norm = records[-1]
+    value, problem = _one_field(_section_body(art.text, line_no),
+                                "Reviewed commit")
+    return {
+        "record": _safe_field(raw),
+        "line": line_no,
+        "value": None if value is None else _safe_field(value),
+        "full": bool(value and _FULL_SHA_RE.match(value)),
+        "problems": [] if problem is None else [f"{_safe_field(raw)}: {problem}"],
+    }
+
+
+def _finding_ids(art) -> dict:
+    """Raised ids, ids a later Response names, and the difference.
+
+    **Extraction, and the limit is stated in the output.**  A finding is counted
+    *raised* when its bracketed id appears in a review record, and *answered*
+    when the same id appears in a `## Response...` section **below** that
+    record.  What this cannot see is whether the answer resolved anything --
+    that is a reading, and the accepted contract keeps it with the reviewer.  So
+    the field is named `unanswered`, never `unresolved-and-blocking`.
+    """
+    headings = _headings(art.text)
+    lines = _split_lines(art.text)
+    raised: List[Tuple[str, int]] = []
+    answered: List[Tuple[str, int]] = []
+    for index, (line_no, level, _raw, norm) in enumerate(headings):
+        if level != 2:
+            continue
+        end = _span_end(headings, index, len(lines))
+        body = "\n".join(lines[line_no:end])
+        ids = [m.group("id") for m in _FINDING_ID_RE.finditer(body)]
+        if _RESPONSE_NORM_SUB_RE.match(norm):
+            answered.extend((i, line_no) for i in ids)
+        elif _REVIEW_HEADING_NORM_RE.match(norm):
+            raised.extend((i, line_no) for i in ids)
+    unanswered = sorted({
+        i for i, at in raised
+        if not any(a == i and after > at for a, after in answered)
+    })
+    return {
+        "raised": sorted({i for i, _at in raised}),
+        "answered": sorted({i for i, _at in answered}),
+        "unanswered": unanswered,
+    }
+
+
+def _changed_paths(root: Path, base: Optional[str]) -> dict:
+    """Repository paths changed since `base`, from git.  Read-only, no network.
+
+    An unusable base is reported with its reason and an empty list -- never as
+    "nothing changed", which is the same bytes and the opposite meaning.
+    """
+    if not base:
+        return {"base": None, "available": False, "reason": "no reviewed commit "
+                "to measure from", "count": 0, "paths": [], "withheld": 0}
+    if _git_ok(root, ["cat-file", "-e", base + "^{commit}"]) is None:
+        return {"base": _safe_field(base), "available": False,
+                "reason": "not a commit in this repository", "count": 0,
+                "paths": [], "withheld": 0}
+    out = _git_ok(root, ["diff", "--name-only", base, "--"])
+    if out is None:
+        return {"base": _safe_field(base), "available": False,
+                "reason": "git could not diff from that commit", "count": 0,
+                "paths": [], "withheld": 0}
+    paths = [p for p in _split_lines(out) if p.strip()]
+    return {
+        "base": _safe_field(base),
+        "available": True,
+        "reason": None,
+        "count": len(paths),
+        "paths": paths[:_LIST_CAP],
+        "withheld": max(0, len(paths) - _LIST_CAP),
+    }
+
+
+def _boundary_b_records(art) -> List[dict]:
+    """Every conforming `## Implementation verification` record, with its mode.
+
+    `Boundary B mode` is `AGENTS.md`'s `full | bounded` field.  Absent is
+    reported as absent, not as `full`: the rule's own direction is that
+    *"uncertainty resolves to `full`"* for the *runner*, and a reader of a record
+    that never stated a mode needs to see that it never stated one.
+    """
+    out: List[dict] = []
+    headings = _headings(art.text)
+    lines = _split_lines(art.text)
+    for index, (line_no, level, raw, _norm) in enumerate(headings):
+        if level != 2:
+            continue
+        m = _STABLE_EVIDENCE_LINE_RE.match(raw)
+        if m is None:
+            continue
+        end = _span_end(headings, index, len(lines))
+        body = "\n".join(lines[line_no:end])
+        mode, _problem = _one_field(body, "Boundary B mode")
+        out.append({
+            "line": line_no,
+            "heading": _safe_field(raw),
+            "agent": _safe_field(m.group("agent")),
+            "date": m.group("date"),
+            "mode": None if mode is None else _safe_field(mode),
+        })
+    return out
+
+
+def _code_review_result(art) -> dict:
+    """The latest Code-review pass's verdict, classified by the planner's sets.
+
+    The two verdict vocabularies are `tools/lifecycle_planner.py`'s, read through
+    the contained loader.  A verdict outside both is `unreadable` and is
+    **never** collapsed into either class -- a blocking pass that a reader cannot
+    parse must not summarize as a clearing one.
+    """
+    planner = _vocabulary()
+    passes = [(line_no, raw) for line_no, _lvl, raw, _norm in _headings(art.text)
+              if _CODE_REVIEW_LINE_RE.match(raw)]
+    if not passes:
+        return {"record": None, "line": None, "verdict": None,
+                "classification": "absent"}
+    line_no, raw = passes[-1]
+    body = _section_body(art.text, line_no)
+    value, problem = _one_field(body, "Verdict")
+    classification = "unreadable"
+    verdict = None
+    if value is not None:
+        head = _VERDICT_CLAUSE_SUB_RE.match(
+            _EMPHASIS_SUB_RE.sub("", value)).group(0).strip()
+        verdict = head
+        for known in planner.CODE_REVIEW_CLEARING_VERDICTS:
+            if head.casefold() == known.casefold():
+                classification = "clearing"
+        for known in planner.CODE_REVIEW_BLOCKING_VERDICTS:
+            if head.casefold() == known.casefold():
+                classification = "blocking"
+    return {
+        "record": _safe_field(raw),
+        "line": line_no,
+        "verdict": None if verdict is None else _safe_field(verdict),
+        "classification": classification,
+        "problems": [] if problem is None else [problem],
+    }
+
+
+# --- rendering ---------------------------------------------------------------
+
+
+def _predicate_text(value) -> str:
+    """A planner predicate's own sentence, encoded but **not** elided.
+
+    Encoded for the same reason everything else is -- a predicate quotes artifact
+    bytes, so its message carries untrusted text.  Not elided because a preflight
+    exists to say *what is missing*, and these sentences carry the remedy at the
+    end: the field cap would cut every one of them mid-instruction and leave the
+    operator with a diagnosis and no fix.  Bounding is instead the predicates'
+    own job -- they are authored text, not attacker-chosen length.
+    """
+    return _safe_field(value, limit=None)
+
+
+def _emit_list(label: str, values: List[str], *, empty: str) -> None:
+    if not values:
+        _emit(f"{label}: {empty}")
+        return
+    _emit(f"{label}:")
+    for value in values:
+        _emit(f"  - {value}")
+
+
+def _print_json(payload: dict) -> None:
+    """Deterministic, ASCII-safe machine output.
+
+    `ensure_ascii=True` is the ASCII-safety clause; key order is the insertion
+    order the builders write, which is fixed source order, so identical inputs
+    give byte-identical output.  Printed raw -- the `lifecycle:` prefix is a
+    human affordance and would make the stream unparseable.
+    """
+    print(json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=False))
+
+
+# --- subcommand: review-brief ------------------------------------------------
+
+
+def _build_brief(root: Path, art, rel: str) -> dict:
+    assurance, assurance_problems = _declared_assurance(root, art, rel)
+    tier, tier_problems = _declared_tier(art)
+    reviewed = _last_reviewed_commit(art)
+    return {
+        "schema": _BRIEF_SCHEMA,
+        "artifact": rel,
+        "kind": art.kind,
+        "status": _safe_field(art.status) or None,
+        "assurance_path": {"value": assurance, "problems": assurance_problems},
+        "tier": {"value": tier, "problems": tier_problems},
+        "current_contract": _contract_spans(art),
+        "last_reviewed_commit": reviewed,
+        "findings": _finding_ids(art),
+        "changed_paths": _changed_paths(
+            root, reviewed["value"] if reviewed["full"] else None),
+        "boundary_b": _boundary_b_records(art),
+    }
+
+
+def cmd_review_brief(args: argparse.Namespace) -> int:
+    """Extract and point at one artifact's review surface.  Writes nothing."""
+    root = _repo_root()
+    art, rel = _artifact(root, args.artifact)
+    brief = _build_brief(root, art, rel)
+    if args.format == "json":
+        _print_json(brief)
+        return 0
+
+    _emit_section(f"review brief -- {rel}")
+    _emit(f"kind: {brief['kind']}    status: {brief['status'] or '(none)'}")
+    _emit(f"assurance path: {brief['assurance_path']['value'] or 'UNRESOLVED'}")
+    for problem in brief["assurance_path"]["problems"]:
+        _emit(f"  ! {problem}")
+    _emit(f"tier: {brief['tier']['value']}")
+    for problem in brief["tier"]["problems"]:
+        _emit(f"  ! {problem}")
+
+    _emit_section("complete-current-contract span")
+    if not brief["current_contract"]:
+        _emit("no revision section in this artifact")
+    for span in brief["current_contract"]:
+        _emit(f"L{span['line']}-{span['end_line']}  {span['heading']}")
+
+    _emit_section("last reviewed commit")
+    reviewed = brief["last_reviewed_commit"]
+    if reviewed["record"] is None:
+        _emit("no review record in this artifact")
+    else:
+        _emit(f"record: L{reviewed['line']}  {reviewed['record']}")
+        _emit(f"Reviewed commit: {reviewed['value'] or '(absent)'}"
+              + ("" if reviewed["full"] else "   [not a full 40-char commit id]"))
+    for problem in reviewed["problems"]:
+        _emit(f"  ! {problem}")
+
+    _emit_section("finding ids")
+    findings = brief["findings"]
+    # Counts for the two historical sets, the full list for the one a reader
+    # acts on.  An artifact with nine review rounds raises dozens of ids and
+    # printing all of them buries the short list that matters; the machine
+    # contract carries all three in full, so nothing is lost, only unstacked.
+    _emit(f"raised: {len(findings['raised'])}    "
+          f"named by a later Response: {len(findings['answered'])}")
+    _emit_list("unanswered", findings["unanswered"], empty="none")
+    _emit("(ids are extracted; whether an answer RESOLVED a finding is the "
+          "reviewer's reading, not this tool's)")
+
+    _emit_section("paths changed since the reviewed commit")
+    changed = brief["changed_paths"]
+    if not changed["available"]:
+        _emit(f"UNAVAILABLE: {changed['reason']}")
+    else:
+        _emit(f"{changed['count']} path(s) since {changed['base']}")
+        for path in changed["paths"]:
+            _emit(f"  - {path}")
+        if changed["withheld"]:
+            _emit(f"  ... and {changed['withheld']} more")
+
+    _emit_section("Boundary B records")
+    if not brief["boundary_b"]:
+        _emit("none")
+    for record in brief["boundary_b"]:
+        _emit(f"L{record['line']}  {record['date']}  {record['agent']}  "
+              f"mode={record['mode'] or '(not stated)'}")
+
+    _emit("brief: extraction only -- it points at records, grants no authority, "
+          "and satisfies no gate")
+    return 0
+
+
+# --- subcommand: closeout ----------------------------------------------------
+
+
+def _source_proposal(root: Path, art) -> dict:
+    """The plan's declared source proposal, resolved to a real artifact if it is
+    one.  A declaration that does not resolve is reported, never guessed at."""
+    value, problem = _one_field(_header_region(art.text), "Source proposal")
+    out: dict = {"declared": None if value is None else _safe_field(value),
+                 "path": None, "status": None,
+                 "problems": [] if problem is None else [problem]}
+    if value is None:
+        return out
+    stem = value.strip()
+    # The corpus writes this field as a markdown link, a bare stem, or a path;
+    # take the last path-ish token and drop any extension.
+    for token in reversed(re.split(r"[\s()\[\]<>|]+", stem)):
+        token = token.strip().rstrip(",.;")
+        if not token:
+            continue
+        candidate = token.split("/")[-1]
+        if candidate.endswith(".md"):
+            candidate = candidate[:-3]
+        for _kind, parts in _ARTIFACT_DIRS[:2]:
+            path = root.joinpath(*parts, candidate + ".md")
+            if path.is_file():
+                planner = _vocabulary()
+                try:
+                    proposal = planner.read_artifact(path)
+                except Exception as exc:
+                    out["problems"].append(
+                        f"cannot parse {_safe_field(candidate)}.md: "
+                        f"{_safe_field(exc)}")
+                    return out
+                out["path"] = path.relative_to(root).as_posix()
+                out["status"] = _safe_field(proposal.status) or None
+                return out
+        break
+    out["problems"].append(
+        f"'Source proposal: {_safe_field(stem)}' names no artifact under "
+        f"dev/proposals/[archive/]")
+    return out
+
+
+def _accepted_binding(art) -> dict:
+    """The plan's `Inherited proposal basis:` bindings, or the absence of them.
+
+    Absence is **not** a violation -- the 2026-08-11 revision makes inheritance a
+    declaration, and a plan that took a distinct review declares none -- so it is
+    reported as `not-declared` and the shape check runs only on what is written.
+    The planner's `plan_inheritance_violations` is the predicate; this is the
+    value.
+    """
+    value, problem = _one_field(_header_region(art.text),
+                                "Inherited proposal basis")
+    if value is None:
+        return {"declared": False, "bindings": {}, "problems": []}
+    bindings: dict = {}
+    problems: List[str] = [] if problem is None else [problem]
+    for clause in value.split(";"):
+        if "=" not in clause:
+            continue
+        key, _, raw = clause.partition("=")
+        bindings[_safe_field(key.strip())] = _safe_field(raw.strip())
+    for key, sha in bindings.items():
+        if not _FULL_SHA_RE.match(sha):
+            problems.append(f"'{key}={sha}' is not a full 40-character commit id")
+    return {"declared": True, "bindings": bindings, "problems": problems}
+
+
+def _archive_paths(root: Path, rel: str) -> List[dict]:
+    """The exact files a plan's archive transition must touch."""
+    source = Path(rel)
+    destination = source.parent / "archive" / source.name
+    board = Path(*_BOARD_REL)
+    return [
+        {"role": "move-from", "path": source.as_posix(),
+         "exists": (root / source).is_file()},
+        {"role": "move-to", "path": destination.as_posix(),
+         "exists": (root / destination).is_file()},
+        {"role": "board-row", "path": board.as_posix(),
+         "exists": (root / board).is_file()},
+    ]
+
+
+def _build_closeout(root: Path, art, rel: str) -> dict:
+    planner = _vocabulary()
+    assurance, assurance_problems = _declared_assurance(root, art, rel)
+    # THE shared predicate.  `closeout` evaluates the state it is a preflight
+    # FOR, exactly as `next --to <target>` does -- not `art.status`, which would
+    # ask whether the plan is validly *where it is* rather than whether it may
+    # move (R6's own split, and the reason the state is a parameter).
+    target = "ready-to-archive"
+    preflight = [_predicate_text(v)
+                 for v in planner.status_evidence_violations(art, target)]
+    review = [_predicate_text(v)
+              for v in planner.review_record_violations(art, target)]
+    review += [_predicate_text(v) for v in planner.plan_inheritance_violations(art)]
+    review += [_predicate_text(v) for v in planner.blocked_by_violations(art)]
+    findings = _finding_ids(art)
+    return {
+        "schema": _CLOSEOUT_SCHEMA,
+        "plan": rel,
+        "status": _safe_field(art.status) or None,
+        "target_state": target,
+        "source_proposal": _source_proposal(root, art),
+        "accepted_binding": _accepted_binding(art),
+        "assurance_path": {"value": assurance, "problems": assurance_problems},
+        "plan_review": {"declared": _safe_field(art.plan_review or "")
+                        or None, "problems": review},
+        "boundary_b": _boundary_b_records(art),
+        "code_review": _code_review_result(art),
+        "unanswered_findings": findings["unanswered"],
+        "followups": {
+            "dispositions_block": bool(art.has_disposition_attestation),
+            "loop_fidelity_signoff": bool(art.has_fidelity_signoff),
+        },
+        "archive_paths": _archive_paths(root, rel),
+        "preflight": {"violations": preflight, "clean": not preflight},
+    }
+
+
+def cmd_closeout(args: argparse.Namespace) -> int:
+    """The archive completeness preflight.  Read-only; `--dry-run` is the only mode.
+
+    Exit codes are the module's existing contract: `0` a clean preflight, `3`
+    outstanding items (each printed with its reason), `1` a refusal.  A `3` is a
+    statement about *completeness*, never about whether the evidence is good --
+    the accepted contract keeps that with the reviewer, and this command "never
+    edits, moves, commits, runs tests, or decides whether evidence is competent".
+    """
+    if not args.dry_run:
+        raise LifecycleError(
+            "closeout has no writing mode: pass --dry-run.  The accepted "
+            "contract makes it a completeness preflight -- it never edits, "
+            "moves, commits, runs tests, or decides whether evidence is "
+            "competent -- so a mode that omitted --dry-run would be promising "
+            "an action this command does not have")
+    root = _repo_root()
+    art, rel = _artifact(root, args.plan, require_kind="plan")
+    report = _build_closeout(root, art, rel)
+    if args.format == "json":
+        _print_json(report)
+        return 0 if report["preflight"]["clean"] else 3
+
+    _emit_section(f"closeout preflight (dry run) -- {rel}")
+    _emit(f"plan status: {report['status'] or '(none)'}    "
+          f"evaluated against: {report['target_state']}")
+    source = report["source_proposal"]
+    _emit(f"source proposal: {source['path'] or source['declared'] or '(none)'}"
+          f"    proposal status: {source['status'] or '(unresolved)'}")
+    for problem in source["problems"]:
+        _emit(f"  ! {problem}")
+    binding = report["accepted_binding"]
+    if not binding["declared"]:
+        _emit("accepted proposal commit: not declared (this plan declares no "
+              "inherited proposal basis)")
+    else:
+        for key, sha in binding["bindings"].items():
+            _emit(f"accepted binding: {key}={sha}")
+    for problem in binding["problems"]:
+        _emit(f"  ! {problem}")
+    _emit(f"assurance path: {report['assurance_path']['value'] or 'UNRESOLVED'}")
+    for problem in report["assurance_path"]["problems"]:
+        _emit(f"  ! {problem}")
+
+    _emit_section("plan-review satisfaction")
+    _emit(f"declared: {report['plan_review']['declared'] or '(undeclared)'}")
+    _emit_list("reported by the shared predicates",
+               report["plan_review"]["problems"], empty="nothing reported")
+
+    _emit_section("Boundary B binding")
+    if not report["boundary_b"]:
+        _emit("no '## Implementation verification' record in this plan")
+    for record in report["boundary_b"]:
+        _emit(f"L{record['line']}  {record['date']}  {record['agent']}  "
+              f"mode={record['mode'] or '(not stated)'}")
+
+    _emit_section("latest code review")
+    review = report["code_review"]
+    if review["record"] is None:
+        _emit("no conforming '## Code review -- <reviewer> -- <date>' pass")
+    else:
+        _emit(f"L{review['line']}  {review['record']}")
+        _emit(f"verdict: {review['verdict'] or '(absent)'}  "
+              f"[{review['classification']}]")
+        for problem in review.get("problems", []):
+            _emit(f"  ! {problem}")
+
+    _emit_section("unanswered finding ids")
+    _emit_list("unanswered", report["unanswered_findings"], empty="none")
+
+    _emit_section("deferred follow-ups")
+    followups = report["followups"]
+    _emit(f"Dispositions block present: {followups['dispositions_block']}")
+    _emit(f"loop-fidelity sign-off present: {followups['loop_fidelity_signoff']}")
+    _emit("(presence is mechanical; whether each follow-up has a DURABLE home is "
+          "a reading this tool does not make)")
+
+    _emit_section("archive / board paths this transition must touch")
+    for entry in report["archive_paths"]:
+        _emit(f"{entry['role']}: {entry['path']}"
+              f"   ({'present' if entry['exists'] else 'absent'})")
+
+    _emit_section("preflight")
+    if report["preflight"]["clean"]:
+        _emit("CLEAN -- every mechanically checkable archive precondition holds")
+        _emit("closeout: preflight only -- it never edits, moves, commits, runs "
+              "tests, or decides whether evidence is competent")
+        return 0
+    for violation in report["preflight"]["violations"]:
+        _emit(f"OUTSTANDING: {violation}")
+    _emit(f"preflight: OUTSTANDING (exit 3) -- "
+          f"{len(report['preflight']['violations'])} item(s)")
+    _emit("closeout: preflight only -- it never edits, moves, commits, runs "
+          "tests, or decides whether evidence is competent")
+    return 3
+
+
 # --- argument parsing --------------------------------------------------------
 
 
@@ -2881,6 +3844,48 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print the event block that would be appended and write nothing.",
     )
     p_record.set_defaults(func=cmd_pilot_record)
+
+    p_brief = sub.add_parser(
+        "review-brief",
+        help="Extract one artifact's review surface -- assurance path and "
+             "tier, complete-current-contract span, last reviewed commit, "
+             "finding ids, paths changed since that commit, and Boundary B "
+             "records. Read-only; it points at records and grants no authority.",
+    )
+    p_brief.add_argument(
+        "artifact",
+        help="Repository-relative path, or a bare stem searched under "
+             "dev/proposals/[archive/] and dev/plans/[archive/].",
+    )
+    p_brief.add_argument(
+        "--format", choices=("text", "json"), default="text",
+        help="'text' for the human report; 'json' for the versioned, "
+             f"ASCII-safe machine contract ({_BRIEF_SCHEMA}).",
+    )
+    p_brief.set_defaults(func=cmd_review_brief)
+
+    p_closeout = sub.add_parser(
+        "closeout",
+        help="Archive completeness preflight for a plan. Read-only: --dry-run "
+             "is the only mode. Exit 3 means outstanding items -- never that "
+             "the evidence is bad, which is the reviewer's reading.",
+    )
+    p_closeout.add_argument(
+        "plan",
+        help="Repository-relative path, or a bare stem searched under "
+             "dev/plans/[archive/].",
+    )
+    p_closeout.add_argument(
+        "--dry-run", action="store_true",
+        help="Required. The command has no writing mode; the flag is explicit "
+             "so the read-only contract is visible at the call site.",
+    )
+    p_closeout.add_argument(
+        "--format", choices=("text", "json"), default="text",
+        help="'text' for the human report; 'json' for the versioned, "
+             f"ASCII-safe machine contract ({_CLOSEOUT_SCHEMA}).",
+    )
+    p_closeout.set_defaults(func=cmd_closeout)
 
     return parser
 

@@ -867,6 +867,27 @@ def _read_artifact(path: Path) -> Artifact:
     return art
 
 
+#: **PUBLIC alias, added by Chunk P4, and the name is load-bearing.**
+#:
+#: P1 published `ASSURANCE_PATHS` for exactly this reason and recorded why; this
+#: is the same move for the parser.  R6 requires that *"`scan`, `next`, and
+#: accepted closeout tooling consume shared predicates rather than implement
+#: three interpretations of readiness"*, and Chunk E wrote P4's half of that
+#: into this file by name (`status_evidence_violations`'s docstring: *"and, when
+#: P4 lands it, `closeout --dry-run`"*).  `status_evidence_violations`,
+#: `review_record_violations`, `blocked_by_violations` and
+#: `plan_inheritance_violations` are all already public and all take an
+#: `Artifact` -- so without a public way to *build* one, the only routes left to
+#: `tools/lifecycle.py` were to reach into a private name or to grow a second
+#: artifact parser.  Chunk P6a refused both for the assurance vocabulary and
+#: deferred instead; there is no later chunk to defer to here, so the name is
+#: published.
+#:
+#: Deliberately an ALIAS, not a wrapper: a wrapper is a second body that can
+#: drift from the one every in-file call site uses.
+read_artifact = _read_artifact
+
+
 #: A ``## Code review`` section counts as *substantive* only if it carries one of
 #: the two markers the plan template itself demands of a real reviewer: the
 #: ``**Model**:`` identity line, or a dated ``Code review -- <reviewer> --
