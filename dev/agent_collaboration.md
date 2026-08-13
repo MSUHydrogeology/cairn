@@ -108,6 +108,40 @@ accepted` (see `proposals/_template.md`). Review has two tiers:
 Code review — the implementation-side pass, before a plan archives
 — has its own floor: **not the implementing agent**.
 
+**Where the deliberative weight sits, and why the plan does not pay twice.**
+The proposal is the deliberative boundary. When an **External** proposal
+review has read a *complete current contract* and recorded
+`Plan readiness: READY`, the derived plan takes a **fresh-context Internal**
+plan review, not a second different-agent-type round — the plan is
+translating decisions an independent reviewer already tested, and a routine
+cross-type reread of that translation buys little for what it costs in
+elapsed time and hurdles. The plan records what it is inheriting, by commit,
+so the reallocation is auditable rather than assumed.
+
+Three boundaries this does **not** move, stated because each is easy to
+assume away:
+
+* **Code review is untouched.** Its floor is still *not the implementing
+  agent*, and nothing here upgrades it to External or downgrades it to none.
+* **An independent read is reallocated, never removed.** A plan claiming an
+  inherited basis while declaring no plan review at all is the one
+  combination the record exists to make impossible.
+* **Escalation stays available and is explicit.** `DISTINCT REVIEW REQUIRED`
+  is the proposal reviewer's finding that consequential design remains for
+  planning; a declared expansion *or* a scope reduction invalidates
+  inheritance; and `recommend-and-decide` lets any reviewer ask the
+  Maintainer to spend a second independent pass. What went away is the
+  *automatic* second round, not the option.
+
+The honest trade: for high-assurance work that is not security or
+trust-boundary — a scientific assumption, a destructive migration, a
+doctrine or lifecycle-enforcement change — the fresh-context Internal
+reviewer is now the only structurally guaranteed read of the sequencing
+before implementation. Security and trust-boundary work keeps its backstop
+outside this allocation, in the Security Review its surface triggers on its
+own. See `doctrine/dual-review.md` > "Plan-readiness inheritance" for the
+record's exact shape and the seven invalidators.
+
 Every first-pass review — Internal or External — works through the
 shared **review sweep** (a generic, change-agnostic lens roster) and
 ends with a **two-part coverage line** (Covered, with falsifiable
@@ -193,6 +227,23 @@ The team coordinates **stigmergically** — through the persistent
 `dev/` tree, not by message-passing. The durable record is the
 source of truth, and it survives context loss and contributor
 handoff.
+
+**Reading that record has an order: board, row, artifact.** A tree of
+committed files is durable but not summarizable by inspection, and the
+failure it invites is reading everything under `dev/` on every entry.
+When the lifecycle checker/planner is installed, `python
+tools/lifecycle_planner.py board --compact` derives one row per active
+artifact — kind, artifact, status, owner role, active work-intent, review
+obligation, evidence, what blocks it, and whether the row is still valid.
+**Run the board, choose the row you need, then read that artifact and the
+evidence it cites.** Only the third step is expensive, and it is now
+targeted.
+
+The board is a *derived view*, and it says so in its own footer: the
+artifact is authoritative. A row that looks wrong is a reason to open the
+artifact, not to trust the row — and the view's header names the `HEAD` it
+was derived from, plus whether the lifecycle files on disk differ from it,
+so a stale read is visible rather than silent. It mutates nothing.
 
 **Model-agnostic by construction.** Because the coordination
 channel is git-committed files — not a live vendor API — the

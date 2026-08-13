@@ -32,10 +32,24 @@ install -- gets working skills with no manual step. It is a no-op when already
 linked, and never clobbers a divergent target (it refuses or quarantines). The
 mechanics live in `tools/lifecycle.py`; this skill never reimplements them.
 
-## 2. Judgment steps (yours, not the tool's)
+## 2. Route through the board before reading artifacts
+
+```
+python tools/lifecycle_planner.py board --compact
+```
+
+One row per active artifact -- kind, artifact, status, owner role, active
+work-intent, review obligation, evidence, what blocks it, and row validity.
+**Run the board, choose the row you need, then read that artifact and the
+evidence it cites** -- not every active record. The view is derived (its footer
+says so); the artifact is authoritative, and the header names the `HEAD` the
+view came from and whether the lifecycle files differ from it. Read-only, like
+everything else in this routine.
+
+## 3. Judgment steps (yours, not the tool's)
 
 - Re-anchor on the governing doctrine and the deliberation record the gather
-  surfaced -- read the load-bearing artifacts, not everything.
+  and the board surfaced -- read the load-bearing artifacts, not everything.
 - Identify candidate next steps, threads in flight, and their resumption state.
 - Confirm your role for the session before substantive work (see the roles
   doctrine) and name it explicitly.
