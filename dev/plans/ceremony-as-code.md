@@ -1337,3 +1337,36 @@ idiom, not the idiom.
 
 **Disposition carried forward**: Y2, Y3 and the Boundary A account are closed by
 the reviewer; Y1 is closed by these two corrections. No broader pass is sought.
+
+## Plan review -- Codex -- 2026-08-13
+
+**Reviewed commit**: `36808eacad49438ef33af41fef27768cf152b8de`
+**Target**: the committed Response to Z1 and its two contract corrections.
+**Prior findings**: Z1 from the External Security plan review at `de605f3`;
+Y1-Y3 and X1-X7 as carried forward by that review.
+**Assurance path**: high-assurance
+**Model**: GPT-5 Codex
+**Tier**: External
+**Obligation**: External Security Review
+**Findings**: none
+
+**Verdict: SHIP.** Z1 is closed in the executable contract. B1a now assigns the
+new `cat` field to `bootstrap/reanchor-values.example`, and D7 invokes only the
+validated `"$CAT"` path. The parity and pre-candidate refusal nodes remain bound
+to that mechanism. No prior security finding remains open.
+
+### Verification and limits
+
+I reviewed the complete committed diff from `de605f3` to `36808ea` and the
+resulting B1a, D7, D7b, and D11-D12a rows. I also executed D7's revised idiom
+under `/bin/sh` with `CAT=/bin/cat`: a trailing-LF packet retained an equal
+SHA-256, while a NUL-bearing packet produced a mismatch and therefore the
+required refusal. This is a plan review, not a code review; no implementation
+exists, so I did not run implementation tests or claim that the future parser,
+launcher, two-key rollover, or ref transaction is correct.
+
+The implementation may proceed subject to the plan's existing gates: the
+single-owner finding-tag commit must be an ancestor before stable bytes, the
+Maintainer performs N5-N8, and Boundary C plus M2 remain independent security
+checks. The accepted same-user, key-holder-not-process, and replay residuals are
+unchanged and accurately described.
