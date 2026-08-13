@@ -2900,3 +2900,97 @@ required an authorization I had not sought. Nothing is deferred, the lifecycle
 disposition ledger needs no new row, and `review-efficient-lifecycle` inherits
 nothing.
 
+## Code review -- Codex (External) -- 2026-08-13
+
+**Reviewed commit**: `c21b135a2eded4f1d8519d2e0b3a3924c505a3e2`
+**Target**: the focused X1-X6 correction set at `2718e55`, `bbc6584`,
+`3c3f24f`, and `82b2740`, as present at the reviewed commit; specifically the
+six author-facing remainder shapes, their guards, the parser-owner transfer,
+the bounded no-gate fence, and the archive records.
+**Prior findings**: X1-X6 from `## Code review -- Codex (External) --
+2026-08-12`.
+**Assurance path**: standard
+**Model**: OpenAI Codex (GPT-5)
+**Findings**: raised
+
+**Verdict**: REVISE
+
+The correction closes X2-X6 on behavior. X1's shipped wording is also fixed on
+all six author-facing shapes, but its deletion guard reaches only four; that is
+the one substantive correction still owed. Two record/evidence corrections are
+also required before another clearing pass.
+
+### Findings
+
+**[R2-X1 -- P1] The per-entry disposition guard still omits both emitted
+planner scaffolds.**
+
+`_PER_ENTRY_DISPOSITION_SURFACES` enumerates only the four Markdown templates.
+`test_the_emitted_scaffold_carries_the_declaration` checks `Removed scope` and
+the group-level `Disposition/home`, but never checks that each emitted item asks
+for its own disposition. I removed the per-entry disposition prompt from the
+proposal and plan scaffold strings in both byte-identical planner copies, then
+ran the mapped scope/lifecycle set: **778 passed**. That is the exact two-of-six
+hole X1's satisfier required the correction to close.
+
+**Satisfier**: exercise both transitions through `_scaffold` and assert the
+per-entry disposition prompt in the emitted text, alongside the four template
+cases. Re-run the same four-file mutation and record a red result.
+
+**[R2-X2 -- P2] The lasting-truth record points to the wrong parser-contract
+class.**
+
+The record and the explanatory comment in `test_scope_reduction_trap.py` name
+`TestP2AmendmentBScopeReduction` as the 25-node, seven-dimension contract at
+`3c3f24f`. The new owner is actually `TestScopeDeltaParserContract`; the old
+class has eight collected nodes and tests a different contract. A future reader
+following the durable pointer reaches the wrong evidence.
+
+**Satisfier**: replace both stale owner references with
+`bootstrap/tests/test_lifecycle_contract.py::TestScopeDeltaParserContract` and
+retain the independently reproduced 25-node count.
+
+**[R2-X3 -- P1] There is no replacement Boundary B record over the corrected
+bytes.**
+
+The only formal `## Implementation verification` record tests `4f17fef`, before
+all four correction commits. The later Sharpening reports mapped results, but it
+is not the stable Boundary B record and it predates `bbc6584`, `3c3f24f`, and
+`82b2740`. The live archive gate itself says to land a replacement Boundary B
+record over the corrected range before an independent correction pass clears
+the plan. Independent falsification in this review does not substitute for that
+integration evidence.
+
+**Satisfier**: after R2-X1/R2-X2 land, run the plan's mapped Boundary B set at a
+clean, unchanged commit under Python 3.13.13 and append the formal record with
+tested SHA/range, commands, outcomes, timing, pre/post state, and non-pass
+dispositions. The next focused independent pass may then reuse it under the
+documented Boundary C rules.
+
+### Prior-finding adjudication
+
+* **X2/X6 closed**: the private parser contract moved to its owning module and
+  now has 25 table-driven nodes over the seven requested dimensions. The five
+  duplicate cases are gone from this plan's suite.
+* **X3 closed**: the no-presence-gate test now states its bounded reach and does
+  not claim a negative universal.
+* **X4 closed**: deleting the reviewer-duty and specify-by-default sentences
+  from both review-loop copies produced **4 failures / 105 passes**.
+* **X5 closed**: removing `revised` from both transition tables produced the
+  intended red result (**1 failure / 2 passes** for the focused fence).
+
+### Verification and coverage
+
+Execution used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13)
+with `PYTHONDONTWRITEBYTECODE=1` in a clean detached clone at `17cceb2`; the
+reviewed target bytes are unchanged through `c21b135`. Baseline execution was
+**142 passed**: 109 scope-reduction nodes, 25 owner parser-contract nodes, and
+the eight legacy Amendment-B nodes. The X1 four-file mutation left the wider
+scope/lifecycle mapping **778 passed**, establishing the remaining hole rather
+than inferring it from source.
+
+I did not run the full suite. The focused mapped runs cover the corrected
+surfaces and prior findings; a fresh broad integration run belongs in the owed
+Boundary B record. `scripts/check_cairn.py` currently reports one unrelated
+nonresolving `__pycache__` citation in `dev/PLANNING.md`; I did not attribute it
+to this plan.
