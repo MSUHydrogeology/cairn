@@ -307,3 +307,75 @@ stated as a property rather than a file list, and file lists rot.
 dropping an outcome; E4 fences out sites that were never in scope, since a
 string literal fed to a parser was never "a comment explaining the code".
 
+## Revised proposal (Round 3) -- Claude -- 2026-08-13
+
+**Maintainer challenge: *"Make sure to keep scope!"*** I audited Round 2 against
+the scope as opened rather than reassuring, and **one of my two answers was a
+scope reduction declared as `preserved`.** That is the third time this week I
+have made that specific error, and the second time inside a proposal about
+scope reduction.
+
+### E2, corrected — an opportunistic condition is not a completion
+
+Round 2 wrote the tracked item's revival condition as:
+
+> *"any plan touching a file containing a finding tag clears that file's tags as
+> part of its own change."*
+
+**That does not deliver the outcome.** A file nobody touches again keeps its
+tags permanently. What the proposal committed to is *262 sites corrected*; what
+that condition delivers is *sites in files that happen to be edited*. The
+difference is invisible because it never fails — it just never finishes.
+
+I rejected the review's option (a) — one dedicated 262-site commit — on
+reviewability grounds, which was sound, and then replaced a completion
+guarantee with an intention, which was not. **Rejecting a mechanism is fine;
+dropping the outcome it delivered is the thing this proposal exists to stop.**
+
+Corrected — phased execution kept, completion restored:
+
+> `dev/PLANNING.md` — **Finding-tag revision pass**. Three phases, each with a
+> trigger that fires:
+> 1. The 94 in the two `_gate_preflight` files ride their security plan's
+>    closure.
+> 2. Any plan touching a tagged file clears that file's tags in the same change.
+> 3. **Whatever remains when the last currently-executing plan archives is
+>    cleared in one dedicated pass.** Phase 3 is what makes this finish; without
+>    it phases 1–2 are a hope.
+
+Phase 3 carries the completion the single-commit option would have given,
+without putting four files' worth of unrelated judgement into one diff.
+
+### E4, corrected — the fence's size was never stated
+
+The fence wording is right: *string literals that are test inputs, generated
+output, or fixture data*, with comments and docstrings explicitly retained. But
+I never said **how much it removes**, which left a reader unable to tell a fence
+from a reduction. Measured, `as_of 2026-08-13`:
+
+| Class | Count | In scope? |
+|---|---|---|
+| `#` comments | 77 | yes |
+| docstrings (triple-quoted) | 51 | **yes** |
+| single-line quoted values (assignments, concatenations) | ~8 | no — fenced |
+
+**The fence removes about 8 sites, not a large fraction.** I want that stated
+because my first attempt to measure it returned **98** — a pattern matching any
+`"`-quoted string, which swept every docstring into the "out of scope" column.
+Docstrings are half this proposal's subject. Had that number reached a Decision
+unexamined, the fence would have read as removing a third of the work.
+
+**Scope delta: preserved** — and this time the word is earned rather than
+asserted. E2 restores a completion guarantee the previous round dropped; E4
+fences ~8 sites that were never comments or docstrings and states the figure so
+the fence is checkable.
+
+### Why this keeps happening, recorded rather than apologised for
+
+Three times now: the plan-review waiver, the E5 defer, and this. Each time the
+narrowing was a *mechanism* choice that looked equivalent — an intention instead
+of a guarantee, a hand-off instead of a fix, a later read instead of an earlier
+one — and each time I checked whether the mechanism was defensible instead of
+whether the outcome survived. The outcome test exists precisely because those
+two questions come apart, and its author keeps answering the wrong one.
+
