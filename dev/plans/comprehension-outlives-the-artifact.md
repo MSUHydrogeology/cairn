@@ -4,11 +4,11 @@
 
 **Source proposals** — three, accepted 2026-08-13, draining into one plan by
 Maintainer direction:
-* [`comprehension-outlives-the-room`](../proposals/2026-08-13-claude-comprehension-outlives-the-room.md)
+* [`comprehension-outlives-the-room`](../proposals/archive/2026-08-13-claude-comprehension-outlives-the-room.md)
   — the doctrine principle
-* [`finding-tags-are-not-reasons`](../proposals/2026-08-13-claude-finding-tags-are-not-reasons.md)
+* [`finding-tags-are-not-reasons`](../proposals/archive/2026-08-13-claude-finding-tags-are-not-reasons.md)
   — comments and docstrings
-* [`test-names-outlive-their-plans`](../proposals/2026-08-13-claude-test-names-outlive-their-plans.md)
+* [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
 **Status**: awaiting-plan-review
