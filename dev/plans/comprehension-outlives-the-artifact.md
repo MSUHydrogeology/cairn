@@ -467,9 +467,30 @@ to protect (the work does not silently evaporate) is delivered by doing it.
 **N/A on new contracts** — no new public entry point, no executable path, no
 parser. Chunks C and D change comments, names and prose only.
 
-One invariant this plan must not break, with its enforcer: the planner twins
-stay byte-identical (Chunk C2), enforced by
-`bootstrap/tests/test_scope_reduction_trap.py::test_the_two_planner_twins_stay_byte_identical`.
+**Two** invariants this plan must not break, each with its enforcer (R5-F1 — the
+second was missing, which left C2c's executable trust root with no Boundary A
+mapping):
+
+* **The planner twins stay byte-identical** (Chunk C2), enforced by
+  `bootstrap/tests/test_scope_reduction_trap.py::test_the_two_planner_twins_stay_byte_identical`.
+* **Every self-hosted twin stays byte-identical to its manifest source**
+  (Chunks C2b and **C2c**, including
+  `scripts/run_portable_security_sweeps.py`), enforced by
+  `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source`
+  (`:111`).
+
+  **Why this is the enforcer and a path search says otherwise.** Nine of C2c's
+  26 pairs — including the largest, `_intent/conflict.py` — are named by no test
+  file, and `test_reference_scripts.py` enumerates only four pairs. The real
+  enforcer names no path: `_self_hosted_twins()` (`:51`) builds the twin set
+  **from the install manifest at runtime**. Executing that derivation covers all
+  44 pairs and all 26 of C2c's, none uncovered. This is `AGENTS.md`'s *"open the
+  trigger rather than resolve the path"* — a path-based search would have
+  concluded the opposite.
+
+**Boundary A for C2b/C2c** therefore runs
+`python -m pytest bootstrap/tests/test_notice_install.py` alongside the
+per-file mapped set.
 
 **Security preflight**: no answer changes. No trust boundary is added, moved or
 widened; no input channel, parser, subprocess or executable path appears.
@@ -2161,3 +2182,38 @@ later chunk reached them.
 finding (R5-F1) with a verbatim satisfier, to land in the first Chunk C commit.
 The start precondition remains unmet — `review-efficient-lifecycle` is still
 `implementing` — and gates execution, not readiness.
+
+## Response to plan review (round 5) -- Claude -- 2026-08-13
+
+**R5-F1 closed in the plan, not deferred to the first Chunk C commit.** The
+reviewer cleared the plan and offered to let this ride; it is a paragraph, the
+plan is blocked on its start precondition anyway, and an accepted finding
+carried into implementation is one more thing depending on an agent remembering.
+Author-accounting now names **two** invariants: the planner twins, and every
+self-hosted twin against its manifest source
+(`test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source`,
+`:111`), with Boundary A for C2b/C2c mapped to that file.
+
+**The enforcement fact is recorded because it inverts a path search.** Nine of
+C2c's 26 pairs are named by no test file, and `test_reference_scripts.py`
+enumerates four. The real enforcer names no path — `_self_hosted_twins()`
+(`:51`) derives the set from the install manifest at runtime, covering all 44
+pairs. Verified by executing the derivation. This is the `AGENTS.md` rule about
+opening a trigger rather than resolving a path, and a path-based search here
+returns the opposite answer.
+
+**The reviewer's increment, accepted.** My round-4 sweep covered *bolded figures*
+and *residual clauses* — the two shapes the findings named. R5-F1 was neither: it
+was the **second clause of a satisfier I had already accepted**. So the rule
+"re-derive every claim sharing a cause" still ran against the shapes it was
+handed. The cheaper generalisation is the reviewer's: **when a satisfier has
+multiple clauses, the clauses are the checklist.** Three rounds produced a sweep;
+one round produced a checklist that would have caught what the sweep missed.
+
+**Corpus drift, for the implementer.** `tools/lifecycle_planner.py` moved 29/376
+→ 33/373 between `eb2692e` and `8274fbc` under another agent's work. Every figure
+in this plan should be expected to have moved. **Regenerate, do not reconcile** —
+which is what the regeneration clauses forced by R3-F1 and R4-F1 exist for.
+
+**Status**: `ready-to-implement` (set by the clearing review at `9af47c4`;
+unchanged here). Execution still gated on `review-efficient-lifecycle` archiving.
