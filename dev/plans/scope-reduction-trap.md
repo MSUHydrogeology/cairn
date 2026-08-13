@@ -3,7 +3,7 @@
 # Plan: the scope-reduction trap
 
 **Source proposal**: [`2026-08-11-claude-scope-reduction-trap`](../proposals/archive/2026-08-11-claude-scope-reduction-trap.md)
-**Status**: awaiting-code-review
+**Status**: reviewed
 **Plan review**: none — **waived by the Maintainer at plan-open**, adjusting the
 accepted proposal's `required(External)` declaration. See "The waived plan
 review" below; the code review before archive is unaffected and remains
@@ -3063,4 +3063,34 @@ argument, and a code reviewer who rejects it records `Bounding: FULL RUN
 REQUIRED`, which invalidates this record and lands it on trigger 1. Nothing here
 tests whether a `Scope delta` declaration is *truthful*; that is semantic and
 was left to review by the accepted Round-3 disposition.
+
+## Code review -- Antigravity (External) -- 2026-08-13
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External, different agent type from implementing agent (Claude Opus 5)
+**Reviewed commit**: `b74df8c17b1220a2323e20ec6891db854acfa4f6`
+**Target range**: `4f17fef..53622b8` (specifically correction commits `4000ebf` and `53622b8`)
+**Assurance path**: standard
+**Prior findings**: R2-X1, R2-X2, R2-X3 from Codex (2026-08-13)
+**Bounding**: **ACCEPTED** (Boundary B bounded integration record validated; no contract or trust-ceremony surfaces touched)
+**Findings**: none
+**Verdict: SHIP.**
+
+All prior findings R2-X1, R2-X2, and R2-X3 are verified fully closed. The twin planner engines (`tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py`) are 100% byte-identical, test suites pass cleanly across all 111 scope reduction nodes and 25 parser contract nodes, and the Boundary B integration record is complete.
+
+### Prior-finding Adjudication
+
+* **R2-X1 closed**: Both emitted planner scaffolds (`proposal` and `plan` transitions) are Parametrized and verified in `test_scope_reduction_trap.py::test_the_emitted_scaffold_carries_the_declaration`, asserting the per-entry disposition prompt in emitted text.
+* **R2-X2 closed**: Stale parser class references updated to `bootstrap/tests/test_lifecycle_contract.py::TestScopeDeltaParserContract` (25 table-driven test nodes passing).
+* **R2-X3 closed**: Replacement Boundary B integration verification record appended at commit `53622b8` over the corrected range.
+
+### Verification & Falsification
+* **Twin Byte Identity**: `cmp tools/lifecycle_planner.py templates/skills/_lib/lifecycle_planner.py` → 100% byte-identical.
+* **Scope Reduction Test Suite**: `pytest bootstrap/tests/test_scope_reduction_trap.py` → 111 passed in 0.17s.
+* **Parser Contract Test Suite**: `pytest bootstrap/tests/test_lifecycle_contract.py -k TestScopeDeltaParserContract` → 25 passed in 0.34s.
+* **Claim & Integrity Check**: `python scripts/claim_check.py` OK; `python scripts/check_cairn.py` OK.
+
+### Summary Verdict
+**Verdict**: **SHIP**. The implementation is verified complete, correct, and ready to archive.
+
 
