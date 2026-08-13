@@ -186,7 +186,7 @@ See `doctrine/proposals.md` > "Count claims" for the three-kind discipline
 **Author**: {{name / role}}
 **Model**: {{your actual running model — query and state it; don't copy a label from an old template or archive}}
 **Date opened**: {{YYYY-MM-DD}}
-**Status**: proposed
+**Status**: awaiting-review
 **Assurance path**: {{standard | high-assurance — the mandatory trigger set is above under "Assurance paths"; there is NO default and uncertainty resolves to high-assurance}}
 **Touches**: {{the files / surfaces this changes}}
 **Related**: {{roadmap links, prior proposals, commits, issues}}

@@ -28,8 +28,20 @@ section has landed), the release-gated parked-state note, and the
 fast-multi-stage sub-pattern.
 
 ```
-open -> [awaiting-plan-review] -> executing -> review -> archived
+awaiting-plan-review <-> revising-plan
+         |
+         v
+ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
+                                              |
+                                              v
+                                      ready-to-archive -> archived
 ```
+
+A plan whose review is **not required** may open directly at
+`ready-to-implement`, or at `implementing` if the opening commit carries the
+implementation evidence that makes the skipped state true. That fast path is
+offered only at opening — never from `awaiting-plan-review`, where a
+`required(...)` review is outstanding by definition.
 
 A plan is an *execution* artifact: status, progress markers, and commit
 hashes are updated in place. Review findings and the archive record are
@@ -150,7 +162,7 @@ See `doctrine/plans.md` > "Count claims" for the three-kind discipline
 # Plan: {{short title}}
 
 **Source proposal**: {{link to dev/proposals/archive/...}}
-**Status**: open
+**Status**: awaiting-plan-review
 **Plan review**: {{required(<tier>) | not required(<rationale>)}}
 **Last update**: {{YYYY-MM-DD}}
 **Opened**: {{YYYY-MM-DD alongside the proposal's Decision-and-archive commit}}
