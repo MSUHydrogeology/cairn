@@ -1,19 +1,26 @@
 <!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/lifecycle-contract.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/measurement/pilot-activation.md, dev/plans/corpus-tier-cost.md, dev/.cairn/pilot-state.json, tools/__init__.py -->
-<!-- The paths above are forward references created by Chunks A, C and F.
-     They are also registered under `Proposed paths:`; that marker exempts only
-     its own contiguous bullet block, so this file-scoped directive covers the
-     chunk tables that name the same paths. Each line drops when its file lands.
-     Chunk F's `bootstrap/tests/test_lifecycle_board.py` landed and its two
-     declarations (this directive and the `Proposed paths:` bullet) dropped with
-     it, per that rule -- a materialized path leaves a stale declaration that
-     `check_cairn` reports, so the drop belongs in the commit that lands the file.
-     `tools/__init__.py` is the opposite case: it is cited BECAUSE it must never
-     exist -- A3/A5's no-package-shortcut clause -- so no typed declaration can
-     express it.  `dev/.cairn/pilot-state.json` is a third case: the landed,
-     append-only Security review cites it, and the revision it prompted replaced
-     that path with the two `dev/measurement/` records.  The review section is
-     immutable, so the citation is marked rather than edited. -->
+<!-- claim-check-allow: dev/.cairn/pilot-state.json, tools/__init__.py -->
+<!-- Both paths above are PERMANENT exemptions, not forward references, and
+     neither is expressible as a typed declaration -- which is why H2's
+     metadata migration kept them while retiring the rest.
+     `tools/__init__.py` is cited BECAUSE it must never exist -- A3/A5's
+     no-package-shortcut clause -- so there is no path for a declaration to
+     register.  `dev/.cairn/pilot-state.json` is cited by the landed,
+     append-only Security review, and the revision that review prompted
+     replaced that path with the two `dev/measurement/` records; the review
+     section is immutable, so the citation is marked rather than edited.
+     Chunk H2 retired three now-redundant entries, each measured rather than
+     assumed -- removing them produced zero new claim_check flags, and D4
+     independently classified all three as `migration item`, not stale debt:
+     the `dev/measurement/pilot-activation.md` glob (`resolved-by-registry` --
+     the `Proposed paths:` declaration below authorizes every occurrence it
+     suppressed), the `dev/plans/corpus-tier-cost.md` glob, and that path's own
+     `Proposed paths:` bullet (both `resolved-by-archive` -- D1's exact archive
+     rule resolves every occurrence through `dev/plans/archive/`).
+     Chunk F's `bootstrap/tests/test_lifecycle_board.py` had already dropped
+     both of its declarations when it landed, per the same rule: a materialized
+     path leaves a stale declaration that `check_cairn` reports, so the drop
+     belongs in the commit that lands the file. -->
 
 # Plan: one lifecycle contract, one evidence boundary
 
@@ -213,7 +220,6 @@ an authority: each plan keeps its own scope, gates, and archive.
 
 Proposed paths:
 - `dev/measurement/pilot-activation.md` — P6a's immutable activation record; introduced by P6d.
-- `dev/plans/corpus-tier-cost.md` — sibling plan for proposal 1; opened alongside this one.
 
 ## Scope
 
