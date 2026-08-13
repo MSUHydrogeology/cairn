@@ -124,6 +124,34 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **The loop-fidelity gate covers one folder out of several** *(homed 2026-08-13
+  from `review-efficient-lifecycle` [CF9], at the Maintainer's instruction; that
+  plan measured it and deliberately did not widen it)* — `check_cairn`'s
+  `_CAIRN_INTERNAL_PREFIXES` is `('doctrine/',)`. The gate exists to stop a
+  **shipped** `templates/**` surface citing a path that exists in Cairn's tree
+  but not in an adopter's; with one prefix it catches `doctrine/` and nothing
+  else, so a `bootstrap/`, `dev/plans/`, `dev/proposals/`, `dev/measurement/`,
+  `case-studies/` or `dimensions/` citation dangles in an adopter tree and
+  passes clean.
+
+  **Measured, not inferred** (`review-efficient-lifecycle` [CF9], 2026-08-12):
+  with `bootstrap/fidelity-check.md` and a `dev/plans/` path appended to a
+  shipped surface, `check_cairn` printed `OK -- 1 Markdown file(s) scanned; no
+  issues.` **There is at least one live instance today**: `templates/core/AGENTS.md`
+  cites `bootstrap/fidelity-check.md` in its drift-guard paragraph. It predates
+  that plan.
+
+  **Why it was not fixed in passing, and what the first task is.** Widening the
+  tuple changes a standing gate's verdict across the whole repository, and
+  nobody knows yet how many currently-passing surfaces it would flag — one, or
+  dozens. That count *is* the first task, and it decides the shape of the rest:
+  a handful of real dangling citations is an ordinary fix; a large population
+  means the widening needs staging, or a deprecation window like the one D4 gave
+  the claim-check globs. Doing it as a side effect of an unrelated plan is how a
+  standing gate changes behaviour without anyone reviewing the change.
+  *Trigger:* the next change to `check_cairn`'s prefix set or to shipped-template
+  citation policy — or sooner, since the live instance is already shipping.
+
 * **Agent-facing discipline does not survive delegation** *(observed 2026-08-13
   during `review-efficient-lifecycle` Chunk H1; raised by the Maintainer)* — every
   operational rule in `AGENTS.md` is written for *the* agent, in the singular. It
