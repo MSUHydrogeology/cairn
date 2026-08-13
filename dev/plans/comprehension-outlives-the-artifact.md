@@ -11,7 +11,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -705,4 +705,258 @@ treat the review's "no accepted outcome added or dropped" as licence to relax.
 
 **Status returns to `awaiting-plan-review`.** Clearing the floor is the
 reviewer's move, not mine.
+
+## Plan review -- Claude Opus 5 (Internal) -- 2026-08-13 (round 2)
+
+**Tier**: Internal
+**Findings**: raised
+**Model**: Claude Opus 5 (`claude-opus-5`)
+
+**Reviewed commit**: `3a407d4ca541d144e31d92e081d83508e172a056`
+**Basis**: the response and revision at `3a407d4`, re-measured from **blobs at
+that commit** (`git show 3a407d4:<path>`) rather than the working tree — three
+`.py` files are dirty under another agent's claim, including both planner twins.
+**Verdict: REVISE** — six findings, two of them load-bearing. Four of the nine
+round-1 findings are now **fully satisfied** and are recorded as closed below.
+F4 and F5 are answered in substance. **F1 is not**: the definition the plan owed
+has arrived, and it is the right shape, but its two enumerable counts do not
+reproduce and its non-enumerable class is dismissed on a claim the measurement
+contradicts.
+
+I am aware this is a second block on a plan whose start precondition is unmet,
+and I have kept the findings to what would change the implementer's behaviour.
+
+### Round-1 findings: closed
+
+* **F5 — closed, and correctly reasoned.** I checked the derivation, not the
+  conclusion. Chunk D now regenerates `bootstrap/tests/fixtures/gate_manifest.json`
+  (D2); `AGENTS.md` names the gate manifest in the install contract; the fence's
+  words are *"bounded mode refuses … whenever the change touches a contract
+  surface"*. So `full` is compelled, not chosen — and the plan says so in those
+  terms. The added observation that a *discovery* condition is not a fence is
+  the right generalisation. One residue: the run is described as "one full-suite
+  Boundary B run" without naming the commands; `AGENTS.md`'s canonical pair
+  (`python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`, then
+  `python scripts/quality_gate.py --sub neutrality --sub redundancy`) should be
+  written into the plan so the evidence record has a target.
+* **F8 — closed.** `test_comprehension_floor.py` and the neutrality/redundancy
+  gates are mapped for Chunks A and B.
+* **F9 — closed.** A3 restores the Naur citation with its DOI.
+* **F2 — closed as accepted.** A per-file property is the right form; two
+  patterns disagreeing (my 42, yours 24) is a fair signal that the class boundary
+  is semantic. For the record, a number *is* partially recoverable — by
+  `tokenize`, class-1 tags in non-docstring string literals are exactly 42 and
+  class-2 are 7 — but tokenizing separates *string literal from docstring*, not
+  *parser-addressed from reader-addressed*, which is the distinction the fence
+  actually draws. The property stands.
+* **F3 — the `Scope delta: preserved` declaration survives my attack**, with one
+  correction below (R2-F6). I tried to break it and could not: the accepted
+  satisfier is the tags review's E3, whose own words are *"Place the rule under
+  code-authoring / development conventions in `AGENTS.md` (e.g. alongside
+  `**Naming.**` **or project conventions**)"* — the anchor was offered as an
+  example with an alternative, not as the outcome. The outcome is *a
+  code-authoring agent finds the rule where they are working, not under
+  `## Review`*, and that is delivered. The shipped-copy fact (no `**Naming.**`
+  exists; the slot is adopter-owned) genuinely forbids the literal reading, and
+  the plan states the fact rather than asserting equivalence. **Preserved is
+  earned here.**
+
+### Findings
+
+**[R2-F1 — major] The 491 figure does not reproduce, and class 2 is understated
+by roughly half.**
+
+Measured at `3a407d4` over `git ls-files '*.py'` (248 files), classified by
+`tokenize` + `ast`:
+
+| Class | Plan | Measured (comments + docstrings) | Measured (all tokens) |
+|---|---:|---:|---:|
+| 1 — bracketed | **346** | 222 narrow / **260** widest | 265 narrow / **309** widest |
+| 2 — bare, ≥2-letter prefix, lint codes excluded | **145** | **322** | **347** |
+| 1 + 2 | **491** | **544–582** | 612 |
+
+Class 2 is the serious half: the plan's 145 is less than half the 322 I measure
+in the surface the rule governs. The top contributors are not exotic — `CR1`
+(39), `CR2` (25), `SR1` (22), `RV5` (22), `CR3` (14), `SR6` (12), `FUR5` (12).
+An implementer holding 491 as the completion target will believe they are done
+with roughly 150 class-2 sites still standing.
+
+Class 1's 346 is wrong in the other direction, and the likely cause is the one
+named in round 1: **346 is unreachable from tracked files under any bracket
+pattern I try** (max 311), but scanning the whole tree *including the untracked
+`.claude/worktrees/` copies* gives 329 narrow / 368 wide / 375 widest. If that is
+what happened, the headline figure of this revision is contaminated by stale
+worktree duplicates.
+
+*Required satisfier*: re-measure both classes against tracked files only, state
+the pattern and the token-class restriction, and correct 491.
+
+**[R2-F2 — major] "Class 3 is not mechanically enumerable" is not supported by
+the measurement, and its disposition re-creates the failure Round 3 of the
+accepted proposal corrected.**
+
+The claim rests on `\b[A-Z][0-9]\b` returning 5194 matches *"overwhelmingly
+ordinary identifiers and variables"*. Restricted to the surface the rule governs,
+that is not what the corpus says:
+
+* **2679** matches in comments and docstrings, across **170** files;
+* **136** in string literals;
+* **35** in code tokens — total, tree-wide.
+
+So the false-positive population the argument rests on is **35 occurrences**, not
+a swamp. The matches are also not ambiguous on inspection — sampled from files
+the plan would never open: `"""Tests for api-web-security-modules Chunk F, row
+**F5**"""`, `# T1 -- corpus regression`,
+`# X4 (External review): Codex deleted the reviewer-duty …`,
+`# D7 (clearing pass): C9 added the floor rule …`,
+`# R2-E1 again. The code review (C3) rewrote this module …`
+(`bootstrap/tests/test_scope_reduction_trap.py:106` and `:143`). A real minority is
+genuine domain vocabulary — `R1`/`R6` in `scripts/quality_gate.py:31-33` are the
+redundancy gate's own rule ids — but separating those is *reading*, which the
+plan already requires for classes 1 and 2 and which the no-sweep fence already
+governs. **"Needs a read" is not "not enumerable".** The honest statement is
+*2679 candidate sites, decided by reading* — which is a number, and a large one.
+
+The consequence is what makes this major rather than pedantic. The plan's rule is
+*"class 3 is cleared opportunistically within each file already being read"*.
+Measured against that rule:
+
+* **105 files carrying 657 class-3 occurrences contain no class-1 or class-2
+  tag at all**, so they are never opened and never cleared — among them
+  `test_security_capability_install.py` (33), `test_lifecycle_stage_patterns.py`
+  (29), `_intent/conflict.py` ×2 (27 each), `bootstrap/_scaffold/cli.py` (19).
+* In the files that *are* opened, class 3 adds **2022** further sites with no
+  criterion, no estimate and no budget. `tools/lifecycle_planner.py` alone
+  carries **376** class-3 occurrences against its 29 class-1/2 sites — the
+  chunk sized at "25 each" contains thirteen times that in the class the plan
+  declines to count.
+
+That first bullet is, structurally, the thing the accepted proposal's Round 3
+already caught and fixed in itself:
+
+> *"A file nobody touches again keeps its tags permanently. … The difference is
+> invisible because it never fails — it just never finishes."*
+
+Round 3 rejected exactly this shape as a `dev/PLANNING.md` revival condition. The
+revision re-introduces it inside the plan, one class down, and calls it "not a
+completion criterion".
+
+*Required satisfier*: either (a) publish the class-3 candidate count and a
+disposition that finishes — the files needing a read, enumerated, with the
+reading itself as the acceptance bar; or (b) declare it a **scope boundary**,
+with the count stated, and take it to the Maintainer for an explicit allowance.
+The plan may not settle this by declaring the remainder unmeasurable: it is
+measured above, and `AGENTS.md` is explicit that narrowing which the wider
+version never gets built cannot be shown wrong.
+
+**[R2-F3 — moderate] D2 regenerates a Maintainer-authored ceremony artifact, with
+no fence.**
+
+Accepting the file was right. But `bootstrap/tests/fixtures/gate_manifest.json`
+is not an ordinary fixture: `bootstrap/REANCHOR_RUNBOOK.md:734-749` makes
+`_gate_manifest.py produce` **step 2** of a supervised ceremony whose step 3 is
+*"a supervised, **Maintainer-authored** commit containing the new
+`gate_manifest.json`"*, and the value of the pin is that it is *"a reviewed pin
+and not a self-generated one"*. D2 says "Regenerate" inside an ordinary
+implementation chunk with no `MAINTAINER-GATED` marking and no reference to the
+runbook. This is the same shape as the AST-baseline pitfall `AGENTS.md` already
+warns about, where self-service repair reaches only a named allowlist and
+anything else is Maintainer-run.
+
+*Required satisfier*: mark D2 MAINTAINER-GATED and cite the runbook, or record
+the Maintainer's explicit position that an out-of-ceremony regeneration is
+acceptable here and how it gets re-anchored.
+
+**[R2-F4 — moderate] The container matching rule misses the most literal
+coordinates and sweeps in domain vocabulary; 356 does not reproduce.**
+
+The rule `^class Test[A-Za-z]*(P|C|M|R|E|CF|D|S)[0-9]` yields exactly **36** —
+reproducible, and stating it was the right response to F7. But:
+
+* It **excludes the four `TestChunkG*` classes** —
+  `TestChunkGArgvVectorValidation`, `TestChunkGDeclaredCapabilitySet`,
+  `TestChunkGRealFacadeThroughRealDispatcher`, `TestChunkGRegistryShape` — whose
+  names contain the word *Chunk* followed by the chunk letter. The accepted
+  proposal's subject is names carrying *"the plan chunk or review finding that
+  produced them"*; these are the least deniable instances in the tree, and the
+  rule as written is blind to them because the coordinate has no digit.
+* It **includes** `TestR1Shingles`, `TestR6UnusedDef` and
+  `TestTheR6PredicateIsShared`, where `R1` and `R6` are the redundancy gate's own
+  published rule ids (`scripts/quality_gate.py:31-33`, *"redundancy (G R1 + R6)"*).
+  Round 1 flagged these by name; the response did not dispose of them, and the
+  rule now sweeps them in silently. Renaming them *loses* meaning.
+* **356 node ids does not reproduce.** Against the plan's own 36-class set the
+  manifest yields **326**; against my round-1 40-class set, 349; against the
+  union, 353. No reading gives 356.
+
+*Required satisfier*: extend the rule to word-coordinates (`Chunk<X>`), exclude
+the redundancy-gate trio explicitly with the reason, and re-derive the manifest
+figure from the final class list.
+
+**[R2-F5 — moderate] The chunk sizing was not carried onto the new definition —
+three rows, three different definitions.**
+
+The plan now defines a tag in three classes, then sizes its chunks on the old
+one:
+
+| Row | Plan says | Measured at `3a407d4` (comments + docstrings) |
+|---|---|---|
+| C1, the two `_gate_preflight` files | **97 sites** | class 1 = 102, class 2 = 101, **class 1+2 = 203**; 97 was the *bracketed-only* count |
+| C2, planner twins | **25 each** | class 1 = 24, **class 1+2 = 29**, narrow-bracketed = 14 |
+| C2b, `lifecycle.py` twins | **17 sites** | narrow-bracketed = 17, **class 1+2 = 25** |
+
+C1 is still on the round-1 definition the response repudiated; C2b is on the
+narrow bracketed pattern; C2's 25 matches no pattern I can construct for the
+planner twins, though it is exactly the class-1+2 figure for the *`lifecycle.py`*
+twins one row below — which suggests the two rows' figures were transposed. The
+"A correction the plan must carry" section likewise still reads *"**97** tags
+across …"*.
+
+*Required satisfier*: restate every per-chunk figure in the definition's own
+terms, or drop the per-chunk numbers and keep only the definition plus the
+per-file acceptance property.
+
+**[R2-F6 — minor] "Immediately above `## Project-specific conventions`" is inside
+the previous section.**
+
+Markdown has no headless region between two H2s: text placed immediately above
+`## Project-specific conventions` belongs to `## Documentation discipline` — in
+the shipped copy that is right after `<!-- cairn:end documentation-discipline -->`
+(`templates/core/AGENTS.md:374-388`), and in Cairn's copy after the same marker
+(`AGENTS.md:410-412`). So B3's placement satisfies "outside every slot" and
+fails Chunk B's own acceptance criterion, *"in the conventions region"*. An
+agent scanning headings for conventions finds the section and not the rules.
+
+The fix is one line and keeps everything the response wanted: place both rules
+**under the `## Project-specific conventions` heading and above the
+`<!-- cairn:slot project-conventions -->` opener**. That is inside the conventions
+region, outside every slot, above the adopter's own space rather than in it, and
+in Cairn's copy it puts them directly above `**Naming.**` — as close to the
+accepted text's letter as the file allows.
+
+### Coverage
+
+**Covered, with falsifiable citations**: all three tag classes re-measured from
+blobs at `3a407d4` by `tokenize` + `ast`, reported per token class so the figures
+are separable; the class-3 enumerability claim tested directly, including the
+false-positive population and a sample from the never-opened files; the reachable
+/ unreachable file split under the plan's own opportunistic rule; the container
+matching rule executed as written, with its inclusions and exclusions listed and
+the manifest recount done against the plan's own class set; the per-chunk figures
+recomputed per file; the F5 bounding derivation checked against the fence's text
+rather than its conclusion; the F3 `Scope delta` declaration tested against the
+accepted satisfier's own wording; B3's placement checked against both files'
+actual section and slot boundaries; D2's authority checked against
+`REANCHOR_RUNBOOK.md`.
+
+**Not covered / low confidence**: (1) I still have not run the suite or
+`--collect-only` — node-id figures come from the committed manifest and `ast`.
+(2) The class-2 lint denylist is hand-built; a few of its 347 may be tool codes I
+did not recognise, which would move the figure by single digits, not by the ~180
+that separates it from 145. (3) Whether each of the 2679 class-3 candidates is a
+coordinate or domain vocabulary is a semantic judgement I sampled rather than
+enumerated — my claim is that the *candidate set* is enumerable and the sample is
+dominated by coordinates, not that all 2679 need rewriting. (4) I have not
+verified that `_gate_manifest.py produce` is refused outside a ceremony, only
+that the runbook assigns the commit to the Maintainer.
 
