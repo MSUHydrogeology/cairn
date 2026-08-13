@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Author tip: numeric claims follow the three-kind precision /
      `as_of` discipline -- approximate a decision-irrelevant count
      (`~4900 lines`), date a snapshot (`N, as_of YYYY-MM-DD`, never
@@ -92,6 +91,41 @@ test / fixture / documentation files, or a future archive path. Place it
 near the top of the proposal; the marker exempts tokens on its own line
 and any contiguous structured block immediately beneath it.
 
+**The marker block is also a small document registry.** Every *exact*
+backticked path listed in the block may recur anywhere else in the same
+document without a second, document-wide `claim-check-allow` directive. Write
+the declaration in registry form and you will rarely need the directive at all:
+
+    Proposed paths:
+    * `tests/test_widget_contract.py` -- the acceptance tests
+    * `docs/widget-tour.md` -- the topic doc this lands
+
+What counts as an entry: on the marker line itself, **every** backticked token
+(the compact ``Proposed paths: `a.md`, `b.md` `` form); on a continuation row,
+the row's **first** backticked token only -- a row names one path and then
+explains it, so a path cited later in that row's prose is a reference, not a
+second declaration.
+
+Four rules keep the registry exact, and each fails **closed**:
+
+* **Literal paths, never globs.** A wildcard makes the entry *malformed*: it
+  grants no document-wide authority at all.
+* **Exact match only** -- never a sibling, a descendant, or a look-alike prefix.
+* **A placeholder declares nothing.** A token carrying `<slug>` or a brace is an
+  illustrative form, not a declaration -- so write the real path when you mean
+  to register it.
+* **Declared twice inside one block** is a duplicate and grants nothing. The
+  same path in two *different* blocks is fine: an append-only record whose
+  later section restates its proposed paths is doing the right thing.
+
+**An exemption is temporary debt, and liveness says so.** While this artifact is
+non-terminal, every registry entry must authorize at least one exemption
+*outside its own block*; an entry whose path has since materialized -- or that
+nothing outside the block cites -- is a hard finding, as is a
+`claim-check-allow` glob that suppresses nothing. Every exemption is reported
+together with the declaration that authorized it, so the audit trail is the
+report, not a reading of the file.
+
 ## File moves
 
 See `doctrine/proposals.md` > "File moves" for the full rule on when the
@@ -136,6 +170,16 @@ The lifecycle planner verifies that the declaration exists and is in vocabulary;
 it cannot know whether your change touches a scientific assumption or a trust
 boundary. That judgement is yours, it is recorded in your own words, and a
 reviewer checks it the way they check any other claim in the proposal.
+
+**What the path does *not* decide: how the derived plan is reviewed.** A
+high-assurance declaration governs verification, Security Review, scientific
+review, protected-surface handling, risk acceptance and ceremonies. It does
+**not** buy a second different-agent-type read of the plan: a high-assurance
+proposal may record `Plan readiness: READY` exactly as a standard one may, and
+the derived plan then takes a fresh-context **Internal** pass. Where a
+high-assurance trigger keeps an independent backstop, it keeps it outside the
+plan-review allocation -- a named high-risk surface takes its Security Review on
+its own trigger, whatever this field says.
 
 <!-- cairn:slot assurance-path-triggers -->
 Cairn's own mandatory high-assurance surfaces, each named in `AGENTS.md` >
@@ -557,6 +601,14 @@ visible, and only a written `None` distinguishes "nothing was withdrawn" from
 The **newest reviewed** complete revision is what the Decision and the
 implementation bind. Every earlier section stays as immutable history — you are
 appending a new contract, never editing the old one.
+
+**Completeness is what buys the derived plan its lighter review.** Only an
+**External** reviewer who has read a *complete* current contract may record
+`Plan readiness: READY`, and only that finding lets the plan take a
+fresh-context Internal pass instead of a second different-agent-type round. A
+revision that leaves the reviewer reassembling the contract out of the history
+cannot earn it -- so the completeness this section asks for is not bookkeeping,
+it is the thing that removes a review round downstream.
 
 Three mechanical facts, each of which the lifecycle conformance check enforces:
 

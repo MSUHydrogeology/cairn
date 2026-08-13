@@ -67,6 +67,33 @@ plan when the implementation is a single commit, single-file / single-area,
 with no follow-up needing a `defer` home (a follow-up headed for
 `accept`, `guard` or `wontfix` does not by itself require a plan).
 
+## Plan review — choosing the tier you declare
+
+The `**Plan review**:` header field is mandatory and has **no silent default**;
+this is how to choose its value.
+
+**Internal is the default, because the proposal is the deliberative boundary.**
+When the source proposal's **External** review read a complete current contract
+and recorded `Plan readiness: READY`, this plan takes a fresh-context
+**Internal** pass -- it is translating decisions an independent reviewer already
+tested, not proposing new ones. Declare `required(Internal)` and bind the two
+inherited commits (see "Inherited plan readiness" under `## Verification`).
+
+**Escalate to `required(External)` explicitly, never by inference.** Reach for
+it when the proposal reviewer recorded `DISTINCT REVIEW REQUIRED`, when
+readiness was invalidated by an expansion or a reduction, or when you or the
+Maintainer want a second independent read of the sequencing. A plan does not
+acquire an External tier from being large, from carrying a high assurance path,
+or from touching a protected surface -- a high-risk surface takes its **Security
+Review** on its own trigger, which this field neither replaces nor implies.
+
+**`not required(<rationale>)` still needs a real rationale**, and it is
+incompatible with claiming an inherited basis: inheritance reallocates the plan
+review, it never removes it, and the pairing refuses.
+
+Code review is a separate obligation with a separate floor -- **not the
+implementing agent** -- and nothing in this field changes it.
+
 ## Forward-reference paths — `Proposed paths:` marker doctrine
 
 See `doctrine/plans.md` > "Forward-reference paths" for the full
@@ -77,6 +104,41 @@ Place `Proposed paths:` lines near the top of the plan (after this section,
 before `## Scope`), each listing a batch of related tokens. The marker
 exempts tokens on its own line and any contiguous structured block
 immediately beneath it.
+
+**The marker block is also a small document registry.** Every *exact*
+backticked path listed in the block may recur anywhere else in the same
+document without a second, document-wide `claim-check-allow` directive. Write
+the declaration in registry form and you will rarely need the directive at all:
+
+    Proposed paths:
+    * `tests/test_widget_contract.py` -- the acceptance tests
+    * `docs/widget-tour.md` -- the topic doc this lands
+
+What counts as an entry: on the marker line itself, **every** backticked token
+(the compact ``Proposed paths: `a.md`, `b.md` `` form); on a continuation row,
+the row's **first** backticked token only -- a row names one path and then
+explains it, so a path cited later in that row's prose is a reference, not a
+second declaration.
+
+Four rules keep the registry exact, and each fails **closed**:
+
+* **Literal paths, never globs.** A wildcard makes the entry *malformed*: it
+  grants no document-wide authority at all.
+* **Exact match only** -- never a sibling, a descendant, or a look-alike prefix.
+* **A placeholder declares nothing.** A token carrying `<slug>` or a brace is an
+  illustrative form, not a declaration -- so write the real path when you mean
+  to register it.
+* **Declared twice inside one block** is a duplicate and grants nothing. The
+  same path in two *different* blocks is fine: an append-only record whose
+  later section restates its proposed paths is doing the right thing.
+
+**An exemption is temporary debt, and liveness says so.** While this artifact is
+non-terminal, every registry entry must authorize at least one exemption
+*outside its own block*; an entry whose path has since materialized -- or that
+nothing outside the block cites -- is a hard finding, as is a
+`claim-check-allow` glob that suppresses nothing. Every exemption is reported
+together with the declaration that authorized it, so the audit trail is the
+report, not a reading of the file.
 
 ## Count claims — the three-kind precision / `as_of` discipline
 
