@@ -218,25 +218,29 @@ and no trust-ceremony surface. **If Chunk C's reading turns up a tag inside a
 security-gate file whose comment is load-bearing for the gate's behaviour, the
 bounding fails and Boundary B runs full.** Uncertainty resolves to `full`.
 
-## Open question for the plan review
+## Settled: no parity guard
 
-**Should the two `AGENTS.md` conventions carry a parity guard?**
+Put to the plan review; answered by the Maintainer before it ran.
 
-All three proposals declined new tests, and this plan inherits that. But the
-scope-reduction-trap plan that closed today landed exactly this shape — rules in
-`AGENTS.md` ×2 — and an obligation-parity test caught **four** cases where a
-rule could be deleted from a shipped copy while the suite stayed green.
+> *"Let's not make machinery for this one. Just doctrine"*
 
-The counter-argument is the proposals' own: no test can tell whether a comment
-carries its reason. **But that is not what a parity guard would test.** It would
-test that the *rule text* survives in both copies, which is formal and fully
-decidable — the same property `test_comprehension_floor.py` already pins for the
-comprehension floor.
+**No parity guard, and no new test of any kind.** The scope fence above stands
+as written, and the plan review need not revisit it.
 
-I have **not** added one, because adding scope the accepted proposals declined
-is a deviation and not the implementer's call. **The plan review should settle
-it.** If the answer is yes, it is one parametrised test in the shape of
-`test_comprehension_floor.py` and belongs in Chunk B.
+The argument I had assembled *for* a guard was sound on its own terms — rule-text
+survival is formal and decidable, and a parity test caught four deletable
+obligations in the plan that closed this morning. It is set aside anyway, on the
+Maintainer's standing reasoning: a mechanism has a permanent cost paid by every
+contributor thereafter, and too many mechanisms increase the deliberative weight
+they were meant to reduce. A rule that a person must read and apply is not a
+weaker rule; it is a cheaper one, and this repository has been paying for the
+expensive kind all week.
+
+**Consequence for the record**: if these conventions later erode from one copy
+while the suite stays green, that is the *accepted* cost of this decision and
+not a defect discovered later. The revival conditions in both operational
+proposals already name what would change the answer — coordinate names
+reappearing after the rename, tags reappearing after the pass.
 
 ## Plan review
 
