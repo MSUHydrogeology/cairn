@@ -11,7 +11,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -45,8 +45,8 @@ The plan executes the decisions. It does not re-open them.
 |---|---|
 | doctrine proposal | Extend Anchor 16 in `doctrine/rationale.md` with the temporal half, paired with Anchor 17 so it cannot be read as licence to narrate |
 | both operational proposals | Two convention rules in `AGENTS.md` and `templates/core/AGENTS.md`, **beside `**Naming.**`** — code-authoring conventions, not `## Review` |
-| tags proposal | The finding-tag revision pass — **see "What counts as a tag" below**; the plan's earlier "262 sites" was one form of three |
-| names proposal | Coordinate-named test containers renamed, bodies untouched — **36 by the matching rule stated in Chunk D** |
+| tags proposal | The finding-tag revision pass — **see "What counts as a tag" below**; **185 files, 3258 candidate sites** across three classes. The plan's earlier "262 sites" and its round-1 correction to "491" were both one form of three |
+| names proposal | Coordinate-named test containers renamed, bodies untouched — **38 by the matching rule stated in Chunk D** |
 | tags proposal | Close the `dev/PLANNING.md` item this plan drains. **No revival rows** — nothing is deferred, so none is owed |
 
 **The scope fence — what this plan does *not* do**
@@ -80,34 +80,95 @@ in the opened plan was of **bracketed** forms only. That is right, and it
 matters: `FUR5` — the Maintainer's raising quote, and *both* worked examples in
 the accepted proposal — is **bare**, and appeared in none of the plan's sites.
 
-Measured `as_of 2026-08-13`, three classes:
+**Measurement method** (round 2, R2-F1/R2-F2 — every figure below is
+reproducible from this): tracked `*.py` only (`git ls-files '*.py'`, 247 files),
+read from **blobs at the measured commit** (`git show <rev>:<path>`) because the
+working tree carries another agent's uncommitted work; classified with
+`tokenize` + `ast` so **comments and docstrings** — the surface the rule governs
+— are separated from string literals and code tokens. Patterns:
 
-| Class | Form | Count | Mechanically findable? |
-|---|---|---:|---|
-| 1 | bracketed — `[S1]`, `[M2-1]`, `[R2-E1]` | **346** | yes |
-| 2 | bare, distinctive prefix — `FUR5`, `CF9` | **145** | yes |
-| 3 | bare, single letter + digit — `S1`, `C4` in running prose | **not enumerable** | **no** |
+```
+class 1   \[([A-Z]{1,4}\d+(?:[-–][A-Z]{0,4}\d+)?)\]
+class 2   (?<![\[\w-])([A-Z]{2,4}\d+)(?![\w\]-])      minus a lint denylist
+class 3   (?<![\[\w-])([A-Z]\d)(?![\w\]-])
+```
 
-**Class 3 is why this plan cannot carry one number.** A grep for `\b[A-Z][0-9]\b`
-returns **5194** matches, overwhelmingly ordinary identifiers and variables. The
-class is real — it is the same failure — but it is found only by reading, which
-is what the accepted proposal already requires and what the no-sweep fence
-already says.
+Measured `as_of 2026-08-13` at `eb2692e`:
 
-**Implementer's rule**: classes 1 and 2 are enumerable and must all be cleared —
-**491 sites**. Class 3 is cleared opportunistically *within each file already
-being read*, and is not a completion criterion, because no one can enumerate it.
+| Class | Form | Comments + docstrings | In string literals | In code tokens |
+|---|---|---:|---:|---:|
+| 1 | bracketed — `[S1]`, `[M2-1]`, `[R2-E1]` | **255** | 36 | 1 |
+| 2 | bare, ≥2-letter prefix — `FUR5`, `CR1` | **324** | 11 | 20 |
+| 3 | bare, single letter + digit — `F5`, `D7`, `T1` | **2679** | 136 | **35** |
 
-**No accepted outcome changes.** The proposal's rule was always "comments explain
-the code, not the process", and its own examples were class 2. What was wrong was
-the plan's size estimate, not its scope.
+Class 2 is net of a lint denylist: the gross 508 includes `PLC0415` (162),
+`BLE001` (20), `SLF001` (1) and `ARG002` (1) — Ruff codes, not coordinates.
+
+**The opened plan's `491` was wrong in both halves, and is withdrawn.** Class 1's
+`346` is unreachable from tracked files under any bracket pattern; it was
+contaminated by untracked `.claude/worktrees/` duplicates, which the round-1
+review had already warned about and this revision reproduced in its headline
+figure. Class 2's `145` was under half the true 324. The corrected enumerable
+total is **579**.
+
+**Class 3 is enumerable, and the claim that it was not is withdrawn.** The
+argument rested on `\b[A-Z][0-9]\b` returning 5194 matches "overwhelmingly
+ordinary identifiers" — but that grep counts *code*, and the rule does not govern
+code. Restricted to the surface it does govern, the false-positive population is
+**35 occurrences tree-wide**, not a swamp. Sampled matches are unambiguous
+coordinates (`# T1 -- corpus regression`, `# X4 (External review)`,
+`# D7 (clearing pass): C9 added ...`). **"Needs a read" is not "not
+enumerable"** — reading is what this plan already requires for classes 1 and 2.
+
+**Why that mattered more than the arithmetic.** The withdrawn rule was *"class 3
+is cleared opportunistically within each file already being read, and is not a
+completion criterion."* Measured against the corpus, that rule leaves **95 files
+carrying 536 class-3 occurrences never opened at all** (they hold no class-1 or
+class-2 tag), and adds **2143 further sites with no criterion** inside the files
+that are opened. `tools/lifecycle_planner.py` alone carries **376** class-3
+against the 29 class-1/2 sites that put it in scope.
+
+That is, structurally, the shape the accepted proposal's own Round 3 identified
+and rejected — *"A file nobody touches again keeps its tags permanently. … The
+difference is invisible because it never fails — it just never finishes."* The
+revision re-introduced it one class down and relabelled it. It is corrected here
+rather than defended.
+
+**Implementer's rule (corrected).** All three classes are in scope and the pass
+**finishes against an enumerated file set**, not against a tag count:
+
+* **185 files** carry at least one tag of any class. That set is the unit of
+  completion; it is regenerated at implementation time by the script above and
+  pinned in the implementation record.
+* **Per file, the acceptance is the read**: every candidate in the file has been
+  looked at and dispositioned — rewritten to state its reason, or left with the
+  reason recorded for why it is *not* a coordinate (gate rule ids, domain
+  vocabulary). A file is done when no undispositioned candidate remains in it.
+* **The rewrite count is not a target.** A real minority of class-3 candidates
+  are genuine domain vocabulary — `R1`/`R6` in `scripts/quality_gate.py:31-33`
+  are the redundancy gate's own published rule ids — and those stay. Separating
+  them is reading, which the no-sweep fence already governs.
+
+**Total candidate sites: 3258** (255 + 324 + 2679) across **185 files**. This is
+roughly **6.6×** the withdrawn 491, and the plan states it rather than sizing
+itself on the number it can most easily defend.
+
+**No accepted outcome changes, and none is narrowed.** The proposal's rule was
+always "comments explain the code, not the process". What was wrong was the
+plan's measurement and the disposition it built on that measurement — not the
+scope. **Scope delta: preserved** — the correction moves in the direction of
+*more* delivered work, and the class the plan had excused itself from is now
+inside the completion criterion.
 
 ### A correction the plan must carry: phase 1's trigger is already dead
 
 The tags proposal routes the `_gate_preflight` sites through *"their security
 plan's closure"*. **That plan archived at `f654dc0` without clearing them.**
-Re-measured `as_of 2026-08-13`: **97** tags across
+Re-measured `as_of 2026-08-13` at `eb2692e` on the definition above: **205**
+class-1/2 tags plus **64** class-3 candidates across
 `bootstrap/tests/_gate_preflight.py` and `bootstrap/tests/test_gate_preflight.py`.
+(The opened plan's **97** was the bracketed-only count under the definition this
+revision withdrew; R2-F5.)
 
 They are therefore **not** riding anything. This plan adopts them directly in
 Chunk C rather than leaving them to a trigger that has passed — which is the
@@ -156,7 +217,7 @@ not only cross-referenced; `check_cairn.py` resolves every reference.
 |---|------|--------|
 | B1 | `AGENTS.md` | Beside `**Naming.**`: tests are named for the property they pin; the docstring carries the *reason*, not the finding id. Includes the worked docstring example the names review required — **stating why the obligation exists and naming no coordinate**. |
 | B2 | `AGENTS.md` | Beside B1: comments and docstrings explain the code, not the process. State the reason; do not cite the finding. |
-| B3 | `templates/core/AGENTS.md` | B1 + B2, adopter-general wording, **immediately above `## Project-specific conventions` and outside every `cairn:slot`** — see the placement note. |
+| B3 | `templates/core/AGENTS.md` | B1 + B2, adopter-general wording, **under the `## Project-specific conventions` heading and above the `<!-- cairn:slot project-conventions -->` opener** — see the placement note. |
 | B4 | `AGENTS.md` ×2 | A one-line pointer from the comprehension-floor paragraph to the conventions, so the derivation stays visible from the other direction. |
 
 **Placement note (plan review F3).** The accepted proposals say "beside
@@ -170,13 +231,27 @@ So the literal placement is impossible in the shipped copy, and taking it would
 write Cairn-authored universal rules into **adopter-owned space**, where they
 would collide at install and misrepresent whose rules they are.
 
-Both rules therefore land **immediately above `## Project-specific conventions`,
-outside every slot**, in both copies — so an adopter filling their own slot meets
-the universal rule directly above it, and Cairn's project-specific `**Naming.**`
-stays where it belongs, inside the slot. **Scope delta: preserved** — the
-accepted outcome is that a code-authoring agent finds the rule in the conventions
-region rather than under `## Review`, and this delivers it; only the anchor
-moves, forced by a fact the proposals did not have.
+**Corrected placement (R2-F6).** The opened revision said *"immediately above
+`## Project-specific conventions`"*. That is inside the **previous** section:
+Markdown has no headless region between two H2s, so text above the heading
+belongs to `## Documentation discipline`, and B3 would have failed Chunk B's own
+acceptance criterion (*"in the conventions region"*) while satisfying its slot
+constraint. Verified in both copies — one blank line separates the heading from
+the slot opener (`templates/core/AGENTS.md:388` / `:390`; `AGENTS.md:426` / `:428`).
+
+Both rules therefore land **under the `## Project-specific conventions` heading
+and above the `<!-- cairn:slot project-conventions -->` opener**, in both copies.
+That is inside the conventions region, outside every slot, and directly above the
+adopter's own space rather than in it — and in Cairn's copy it puts them
+immediately above `**Naming.**` (`AGENTS.md:429`), which is as close to the
+accepted text's letter as the file permits.
+
+**Scope delta: preserved** — the accepted outcome is that a code-authoring agent
+finds the rule in the conventions region rather than under `## Review`, and this
+delivers it; only the anchor moves, forced by a fact the proposals did not have.
+The round-2 review attacked this declaration directly and it held: the tags
+review's E3 offered the anchor as *"alongside `**Naming.**` **or project
+conventions**"* — an example with an alternative, not the outcome.
 
 **Acceptance**: both rules present in both copies, in the conventions region,
 **outside every `cairn:slot`**, and **not** under `## Review`; the shipped copy
@@ -186,18 +261,28 @@ supplied one that did, and it is rejected here on the accepted terms.
 
 ### Chunk C -- the finding-tag revision pass
 
-262 sites, less ~8 fenced. Revised **by reading**, one file at a time.
+**185 files, 3258 candidate sites** across all three classes (see the definition
+above), less the fenced string literals. Revised **by reading**, one file at a
+time. **The file set is the unit of completion, not the site count** — every
+figure below is per file on the corrected definition, and every row states all
+three classes so no row is sized on a definition the plan has withdrawn (R2-F5).
 
-| # | Files | Notes |
-|---|------|--------|
-| C1 | `bootstrap/tests/_gate_preflight.py`, `bootstrap/tests/test_gate_preflight.py` | **97 sites** — the orphaned set. Largest and first, because they have no other home. |
-| C2 | `tools/lifecycle_planner.py` + twin | **25 each** (F6 — the opened plan said ~21). **Twins must stay byte-identical.** |
-| C2b | every other byte-identical twin pair | Named rather than assumed (F6): `tools/lifecycle.py` ↔ `templates/skills/_lib/lifecycle.py` (17 sites), plus any remaining `tools/` ↔ `templates/skills/_lib/` pair. Parity is enforced by `bootstrap/tests/test_lifecycle_brief.py`; edit both or neither. |
-| C3 | the remainder | By file, smallest last. |
+| # | Files | class 1+2 | class 3 | Notes |
+|---|------|---:|---:|--------|
+| C1 | `bootstrap/tests/_gate_preflight.py` (80) + `bootstrap/tests/test_gate_preflight.py` (125) | **205** | 64 | The orphaned set. First, because they have no other home. |
+| C2 | `tools/lifecycle_planner.py` + twin | **29** each | **376** each | The opened plan said 25; that figure matched no pattern for these files. **Twins must stay byte-identical**, and class 3 here is 13× the class-1/2 count. |
+| C2b | `tools/lifecycle.py` ↔ `templates/skills/_lib/lifecycle.py` | **25** each | 55 each | The opened plan's 17 was the narrow bracketed count. Parity enforced by `bootstrap/tests/test_lifecycle_brief.py`; edit both or neither. Plus any remaining `tools/` ↔ `templates/skills/_lib/` pair. |
+| C3 | the **95 files carrying class-3 only** | 0 | **536** | *These were unreachable under the withdrawn rule.* Largest: `test_security_capability_install.py` (33), `test_lifecycle_stage_patterns.py` (29), `test_scope_reduction_trap.py` (28), `run_security_verification.py` (25). |
+| C4 | the remainder of the 185 | — | — | By file, smallest last. |
 
-**Acceptance per file**: no tag remains except inside fenced string literals;
-every sentence that previously leaned on a tag now states its reason; the
-suite's pass/fail set is unchanged.
+**Acceptance per file**: every candidate of every class has been read and
+dispositioned — rewritten to state its reason, or left in place with the reason
+recorded for why it is not a coordinate; no undispositioned candidate remains;
+the suite's pass/fail set is unchanged.
+
+**Acceptance for the chunk**: all 185 files dispositioned. The set is regenerated
+at implementation time and pinned in the implementation record, so "finished" is
+checkable against a list rather than asserted.
 
 **Coordination**: `_gate_preflight` and the planner twins are high-traffic. Claim
 work-intent per file, and check the active claim set immediately before each
@@ -205,8 +290,8 @@ commit — this tree has produced two in-file collisions in three days.
 
 ### Chunk D -- the test-container rename
 
-~36 classes (re-measured `as_of 2026-08-13`), bodies untouched, coordinate moved
-out of the name and the reason stated in the docstring.
+**38 classes** (re-measured `as_of 2026-08-13` at `eb2692e`), bodies untouched,
+coordinate moved out of the name and the reason stated in the docstring.
 
 The names proposal gated this on `review-efficient-lifecycle` archiving, because
 it owns most of the affected classes and renaming another plan's tests mid-flight
@@ -217,21 +302,66 @@ no longer owed, because nothing is being deferred.
 
 | # | File | Change |
 |---|------|--------|
-| D1 | `bootstrap/tests/*.py` | The renames. **36** containers by the matching rule below. |
-| D2 | `bootstrap/tests/fixtures/gate_manifest.json` | **Regenerate.** It pins **356** node ids naming classes this chunk renames (measured 2026-08-13; regenerated as recently as `cfaace9`). The opened plan named neither the file nor a disposition. |
+| D1 | `bootstrap/tests/*.py` | The renames. **38** containers by the matching rule below. |
+| D2 | `bootstrap/tests/fixtures/gate_manifest.json` | **MAINTAINER-GATED — regenerate only under the re-anchor ceremony.** It pins **353** node ids naming classes D1 renames (measured `as_of 2026-08-13` at `eb2692e`). See the fence below. |
 
-**Matching rule (F7)**: a container is in scope when its name matches
-`^class Test[A-Za-z]*(P|C|M|R|E|CF|D|S)[0-9]` — a plan or finding coordinate
-embedded in the class name. **36** as of 2026-08-13. Classes whose names merely
-*contain* a digit are out; the rule is the coordinate prefix, not the digit.
+**Matching rule (F7, corrected at R2-F4)**: a container is in scope when its name
+embeds a plan or finding coordinate —
+
+```
+digit coordinate   ^class Test[A-Za-z]*(P|C|M|R|E|CF|D|S)[0-9]      -> 36
+word coordinate    ^class Test[A-Za-z]*Chunk[A-Z]                   ->  4
+minus gate rule ids (below)                                         -> -2
+                                                                    ------
+                                                                       38
+```
+
+The **word-coordinate arm is new**. The digit rule missed
+`TestChunkGArgvVectorValidation`, `TestChunkGDeclaredCapabilitySet`,
+`TestChunkGRealFacadeThroughRealDispatcher` and `TestChunkGRegistryShape` —
+literally *Chunk* plus the chunk letter, the least deniable instances in the
+tree, invisible to a rule that requires a digit.
+
+**Two exclusions, not three.** `TestR1Shingles` and `TestR6UnusedDef`
+(`bootstrap/tests/test_quality_gate_redundancy.py`) are out: `R1` and `R6` are
+the redundancy gate's own published rule ids (`scripts/quality_gate.py:31-33`,
+`489`, `497`), so renaming them *loses* meaning.
+
+The review also asked to exclude `TestTheR6PredicateIsShared`, and **that one is
+declined on inspection.** Its docstring quotes a *review finding* — *"R6:
+`scan`, `next`, and accepted closeout tooling consume shared predicates"*
+(`bootstrap/tests/test_lifecycle_contract.py:4542-4545`) — not the gate rule; the
+same is true of `TestR6ContradictionsThroughBothEntryPoints` (`:4211-4217`).
+Both are textbook instances of exactly what this plan renames, and excluding them
+because their coordinate letter collides with a gate rule id would narrow the
+pass by two of its clearest cases. Classes whose names merely *contain* a digit
+remain out; the rule is the coordinate, not the digit.
+
+**Fence on D2 (R2-F3).** `gate_manifest.json` is not an ordinary fixture.
+`bootstrap/REANCHOR_RUNBOOK.md:734-751` makes `_gate_manifest.py produce` **step
+2** of a supervised ceremony whose step 3 is *"a supervised, **Maintainer-
+authored** commit containing the new `gate_manifest.json`"*, and the runbook is
+explicit that confirming the pinned hashes against out-of-band-authorized values
+*"is what makes this a reviewed pin and not a self-generated one"*. An
+implementing agent regenerating it inside an ordinary chunk would manufacture
+precisely the self-generated pin the ceremony exists to prevent — the same shape
+as the AST-baseline pitfall `AGENTS.md` already warns about.
+
+**So D2 does not execute without the Maintainer.** The implementing agent stops
+at D1, reports the renames and the resulting orphaned node ids, and the
+regeneration is the Maintainer's under the runbook. If the Maintainer prefers an
+out-of-ceremony regeneration, that is theirs to authorize explicitly and the
+authorization is quoted here before D2 runs.
 
 **Acceptance (F4, corrected)**: the opened plan said "collected node ids
 unchanged", which **cannot pass** — renaming a class changes its node ids by
 definition. The criterion is:
 
 * the **pass/fail/skip set is unchanged** in count and in outcome per test;
-* every node id in `gate_manifest.json` resolves after regeneration, with no
-  orphans;
+* every node id in `gate_manifest.json` resolves after the Maintainer's
+  regeneration, with no orphans — **and until that regeneration, the 353 pinned
+  ids naming renamed classes are expected to be orphaned.** The implementing
+  agent reports that count rather than treating it as a failure;
 * no test body is edited.
 
 ### Chunk E -- the tracked items
@@ -248,9 +378,14 @@ to protect (the work does not silently evaporate) is delivered by doing it.
 
 ## Acceptance criteria
 
-* **Tests that must pass** — no new tests (inherited). The existing suite must
-  be **unchanged** by Chunks C and D: same node ids, same pass/fail set. Chunks
-  A, B and E are prose and run the standing gates.
+* **Tests that must pass** — no new tests (inherited). The existing suite's
+  **pass/fail/skip set** must be unchanged by Chunks C and D, in count and in
+  outcome per test. **Node ids are unchanged by Chunk C and change by design in
+  Chunk D** — renaming a container changes its node ids by definition, which is
+  why "same node ids" cannot be a criterion for D (F4). Chunks A, B and E are
+  prose and run the standing gates.
+* **Chunk C finishes against a list** — all **185** tagged files dispositioned,
+  the set regenerated and pinned in the implementation record.
 * **Doc updates** — `doctrine/rationale.md`, `AGENTS.md` ×2, `dev/PLANNING.md`.
   No `CHANGELOG.md` entry: no adopter-facing *behaviour* changes; the shipped
   `AGENTS.md` paragraphs are the delivery.
@@ -299,6 +434,20 @@ So: **one full-suite Boundary B run** after the final implementation commit, on
 a clean unchanged commit under the canonical interpreter with
 `PYTHONDONTWRITEBYTECODE=1`. This is the first time the clause has refused a
 bounded claim, which is what it is for.
+
+**The canonical pair, named so the evidence record has a target** (round-2
+residue on F5):
+
+```
+PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
+python scripts/quality_gate.py --sub neutrality --sub redundancy
+```
+
+**Sequencing note.** D2 is MAINTAINER-GATED, so the Boundary B run happens with
+`gate_manifest.json` still pinning the pre-rename node ids. That is expected, and
+the run records the orphan count rather than reading it as a regression; the
+post-regeneration state is verified when the Maintainer lands the ceremony
+commit.
 
 **Standing gates mapped for Chunks A and B (F8)**, which the opened plan omitted:
 `bootstrap/tests/test_comprehension_floor.py` (Chunk A edits the anchor it pins)
@@ -960,3 +1109,117 @@ dominated by coordinates, not that all 2679 need rewriting. (4) I have not
 verified that `_gate_manifest.py produce` is refused outside a ceremony, only
 that the runbook assigns the commit to the Maintainer.
 
+
+## Response to plan review (round 2) -- Claude -- 2026-08-13
+
+**Disposition**: all six findings accepted; **one sub-claim of R2-F4 declined on
+inspection**, with the measurement below. Every figure in the plan has been
+re-measured independently rather than copied from the review.
+
+**Measurement basis**: `eb2692e`, tracked `*.py` only, read from blobs
+(`git show`) because four files are dirty under another agent's claim.
+`tokenize` + `ast` separate comments/docstrings from string literals and code.
+The script and patterns are stated in the plan so any figure here can be
+falsified by re-running it.
+
+**R2-F1 — accepted; 491 is withdrawn.** My own re-measurement reproduces the
+review's: class 1 = **255**, class 2 = **324** net of a lint denylist (gross 508,
+of which `PLC0415`=162, `BLE001`=20, `SLF001`=1, `ARG002`=1 are Ruff codes).
+Corrected enumerable total **579**. The review's diagnosis of the `346` is
+confirmed — it is unreachable from tracked files, so it came from untracked
+`.claude/worktrees/` duplicates. **Round 1 warned me about exactly that
+contamination and I put it in the headline figure of the response that answered
+Round 1.**
+
+**R2-F2 — accepted, and this is the one that mattered.** The claim that class 3
+is "not mechanically enumerable" is false and is withdrawn. My measurement is
+identical to the review's to the digit: **2679** candidates in comments and
+docstrings, **35** in code tokens tree-wide. The 5194-match grep I built the
+argument on was counting *code*, which the rule does not govern — I measured the
+wrong surface and then reasoned confidently from it.
+
+The consequence was worse than the arithmetic. The disposition I wrote —
+"cleared opportunistically within each file already being read" — leaves **95
+files carrying 536 class-3 occurrences never opened at all**, and adds **2143**
+uncriteria'd sites inside the files that are opened. That is the *"it never
+fails — it just never finishes"* shape the accepted proposal's own Round 3
+identified and rejected. I reproduced it one class down, in the plan that drains
+that proposal, and labelled it "not a completion criterion" as though naming it
+disposed of it.
+
+I took satisfier **(a)**, not (b). Class 3 is in scope; the pass now finishes
+against an **enumerated 185-file set** with the read as the per-file acceptance
+bar; the rewrite count is explicitly not a target, because a real minority are
+genuine domain vocabulary. **Total 3258 candidate sites — 6.6× the figure I was
+defending.** I did not take (b) because declaring a scope boundary here would
+have been narrowing on a measurement I had already got wrong, and `AGENTS.md` is
+explicit that the wider version never gets built and so can never be shown wrong.
+
+**R2-F3 — accepted.** Verified at `REANCHOR_RUNBOOK.md:734-751`: `produce` is
+step 2 of a supervised ceremony, step 3 is a *"supervised, Maintainer-authored
+commit"*, and the runbook states the confirmation is *"what makes this a reviewed
+pin and not a self-generated one"*. **D2 is now MAINTAINER-GATED**, the
+implementing agent stops at D1, and the Boundary B sequencing note records that
+the run happens with the manifest still pinning pre-rename ids.
+
+**R2-F4 — accepted on the rule, declined on one exclusion.**
+
+* Word coordinates added: the four `TestChunkG*` classes were invisible to a rule
+  requiring a digit. Confirmed, 4 classes.
+* `TestR1Shingles` and `TestR6UnusedDef` excluded — `R1`/`R6` are the redundancy
+  gate's published rule ids (`scripts/quality_gate.py:31-33`, `489`, `497`).
+* **`TestTheR6PredicateIsShared` is *not* excluded, and neither is
+  `TestR6ContradictionsThroughBothEntryPoints`.** Both live in
+  `test_lifecycle_contract.py`, and their docstrings quote a **review finding** —
+  *"R6: `scan`, `next`, and accepted closeout tooling consume shared
+  predicates"* (`:4542-4545`, `:4211-4217`) — not the gate rule. The letter
+  collides; the referent does not. Excluding them would drop two of the clearest
+  instances the plan exists to rename.
+* Final set **38** (36 + 4 − 2). Manifest recount against that set: **353** node
+  ids. My `356` does reproduce for the old 36-class set under my matching method
+  (`::<class>::` or trailing `::<class>`), so the review's 326 and my 356 differ
+  by method rather than one being an error; the figure that governs is 353
+  against the final set, and the method is stated so it can be checked.
+
+**R2-F5 — accepted.** Every per-chunk row is restated on the corrected
+definition, with class 1+2 and class 3 in separate columns so no row can sit on a
+withdrawn definition again: C1 **205** (not 97 — that was bracketed-only), C2
+**29** each (the opened 25 matched no pattern for those files), C2b **25** each
+(17 was the narrow bracketed count). The "97 tags" sentence in the phase-1
+correction is updated. A new C3 row carries the 95 previously-unreachable files.
+
+**R2-F6 — accepted.** Verified in both copies: one blank line separates
+`## Project-specific conventions` from the slot opener
+(`templates/core/AGENTS.md:388` / `:390`; `AGENTS.md:426` / `:428`), so "immediately above
+the heading" placed the rules in `## Documentation discipline` and would have
+failed Chunk B's own acceptance criterion. Both rules now land **under the
+heading, above the slot opener** — in the conventions region, outside every slot,
+and in Cairn's copy directly above `**Naming.**`.
+
+**F5 residue — accepted.** The canonical command pair is written into
+Verification.
+
+**Round-1 F3 closed.** The reviewer attacked the `Scope delta: preserved`
+declaration and it held on the accepted satisfier's own wording. Recorded because
+a declaration that survives a deliberate attack is worth more than one that was
+never tested.
+
+### What this round says about the author
+
+Two of the six are the same failure as the two majors in round 1, and the same
+failure as F1 and F5 before that: **I measured the thing I had noticed rather
+than the thing the rule governs, and then defended the number.** Round 1 told me
+the `346` was contaminated; I carried it into the response to Round 1. Round 1
+told me the definition was owed; I supplied one and immediately sized three
+chunks on the definition it replaced.
+
+The class-3 disposition is the sharper instance, because it was not an
+arithmetic slip. I wrote a rule that cannot finish, recognised the shape well
+enough to pre-empt the objection in the plan's own words, and shipped it anyway.
+The proposal that names that failure is the one this plan drains.
+
+**Scope delta: preserved** for the plan as a whole. Nothing accepted was dropped;
+the corrections move in the direction of more delivered work, and the class the
+plan had excused itself from is now inside the completion criterion.
+
+**Status** -> `awaiting-plan-review`.
