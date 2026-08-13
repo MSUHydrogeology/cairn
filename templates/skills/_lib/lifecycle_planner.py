@@ -1083,51 +1083,38 @@ def _has_code_review_marker(text: str) -> bool:
 # made Chunk E's vocabulary change an edit to these tuples rather than a refactor
 # of every consumer -- which is exactly how it landed.
 #
-# === Chunk E: the accepted next-action vocabulary, landed ADDITIVELY ==========
+# === Chunk E + H1: the accepted next-action vocabulary, now the ONLY one ======
 #
 # `lifecycle-status-vocabulary` R1'/R2' replace the flat tokens with next-action
-# states.  Chunk E makes the new tokens LEGAL; it does not retire the three old
-# ones, and the reason is measured rather than preferred:
+# states.  Chunk E made the new tokens legal *additively*, because three live
+# artifacts still declared `executing` / `review` at the time and a hard
+# replacement would have redded all three.  **Chunk H1 completed the
+# replacement on 2026-08-13**: every active artifact was migrated first (blob-
+# checked, refusing any row whose blob moved), the authoring templates were
+# fixed so newly opened artifacts cannot reintroduce a retired token, and only
+# then did the six tokens move into the historical tuples below.
 #
-#   dev/plans/git-native-security-foundations.md   **Status**: executing
-#   dev/plans/review-efficient-lifecycle.md        **Status**: executing
-#   dev/plans/scope-reduction-trap.md              **Status**: review
-#
-# Two of those three are another session's in-flight work (measured 2026-08-12).
-# A hard replacement here would red all three the moment it landed, and "all
-# live artifacts sound" is one of this plan's own acceptance criteria.
-#
-# **Retiring `open` / `executing` / `review` is Chunk H1's named job** -- it
-# *"rewrites the `Status:` of every active artifact"*, behind a dry-run
-# inventory, blob-checked, admitted by a reviewer independent of the generator
-# (R7's six-step migration).  H1 moves the three tokens out of the tuples below
-# and into `HISTORICAL_PLAN_STATES`, which Chunk A1 built empty for exactly this
-# edit.  So this is **sequencing, not scope reduction**: nothing accepted is
-# dropped, and the chunk that owns the migration performs it.
-#
-# Every legacy arm below is marked `PENDING-RETIREMENT (H1)` so the migration has
-# a grep target rather than a reading exercise.
+# `open` / `executing` / `review` and `proposed` / `reviewed` / `revised` are
+# now **historical**: never legal for an active artifact, never a transition
+# target, and still recognized everywhere a consumer reads an archived artifact
+# or longitudinal history.  Retiring a token removes it from the *current*
+# vocabulary; it must never stop a consumer parsing a record that predates the
+# migration (R7).  Three consumers depend on exactly that distinction and are
+# easy to break silently -- see `_plan_status_enum` in `_lifecycle_metrics`,
+# `_PROPOSAL_POST_REVIEW_STATES`, and the two `*_NEXT_OWNERS` tables, each of
+# which carries its own note.
 
 #: The CURRENT vocabulary -- the only statuses an *active* artifact may declare.
-#: New tokens first, in state-machine order; the pending-retirement legacy tokens
-#: last.  Order is not semantic for membership, but `_lifecycle_metrics`'
-#: `_normalize_plan_status` resolves a free-text status by the FIRST enum the
-#: leading token starts with, so the two groups are kept separate and no new
-#: token is a prefix of an old one (checked: none of the eleven pairs collide).
+#: In state-machine order.  Order is not semantic for membership, but
+#: `_lifecycle_metrics`' `_normalize_plan_status` resolves a free-text status by
+#: the FIRST enum the leading token starts with, so the current and historical
+#: groups are kept separate and no current token is a prefix of a historical one
+#: (checked: none of the eleven pairs collide).
 PROPOSAL_STATES = ("awaiting-review", "revising", "awaiting-decision",
-                   "accepted", "rejected", "superseded",
-                   # PENDING-RETIREMENT (H1) -- R7: `proposed` -> awaiting-review,
-                   # `reviewed` -> revising|awaiting-decision, `revised` ->
-                   # awaiting-review|awaiting-decision, all evidence-derived.
-                   "proposed", "reviewed", "revised")
+                   "accepted", "rejected", "superseded")
 PLAN_STATES = ("awaiting-plan-review", "revising-plan", "ready-to-implement",
                "implementing", "awaiting-code-review", "revising-code",
-               "ready-to-archive", "archived",
-               # PENDING-RETIREMENT (H1) -- R7: `open` -> evidence-derived,
-               # never one bulk replacement; `executing` -> implementing;
-               # `review` -> awaiting-code-review | revising-code |
-               # ready-to-archive, from the latest Code-review verdict.
-               "open", "executing", "review")
+               "ready-to-archive", "archived")
 
 #: Terminal = no status flip leaves them.  A proposal's `accepted` IS terminal:
 #: its archive move is a file operation, not a transition.
@@ -1156,11 +1143,6 @@ PROPOSAL_TRANSITIONS = {
     "accepted": (),
     "rejected": (),
     "superseded": (),
-    # PENDING-RETIREMENT (H1): the legacy arms, unchanged, so the three live
-    # legacy-token artifacts keep a legal forward path until migration.
-    "proposed": ("reviewed",),
-    "reviewed": ("revised", "accepted", "rejected", "superseded"),
-    "revised": ("reviewed", "accepted", "rejected", "superseded"),
 }
 
 #: R2's cycle, verbatim:
@@ -1177,9 +1159,7 @@ PROPOSAL_TRANSITIONS = {
 #:     awaiting-code-review -> ready-to-archive -> archived
 PLAN_TRANSITIONS = {
     "": ("awaiting-plan-review",),
-    "awaiting-plan-review": ("revising-plan", "ready-to-implement",
-                             # PENDING-RETIREMENT (H1)
-                             "executing"),
+    "awaiting-plan-review": ("revising-plan", "ready-to-implement"),
     "revising-plan": ("awaiting-plan-review",),
     "ready-to-implement": ("implementing",),
     "implementing": ("awaiting-code-review",),
@@ -1187,12 +1167,6 @@ PLAN_TRANSITIONS = {
     "revising-code": ("awaiting-code-review",),
     "ready-to-archive": ("archived",),
     "archived": (),
-    # PENDING-RETIREMENT (H1): the legacy arms.  Each keeps its old target AND
-    # gains the new-vocabulary equivalent, so a plan still declaring a legacy
-    # token can move forward into either vocabulary rather than being stranded.
-    "open": ("awaiting-plan-review",),
-    "executing": ("review", "awaiting-code-review"),
-    "review": ("archived", "ready-to-archive"),
 }
 
 #: The statuses whose legal set depends on the artifact's own declaration rather
@@ -1207,24 +1181,28 @@ PLAN_TRANSITIONS = {
 #: `required(...)` and has not cleared it is exactly R6's refusal case.
 PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED = {
     "": ("ready-to-implement", "implementing"),
-    # PENDING-RETIREMENT (H1)
-    "open": ("executing", "ready-to-implement", "implementing"),
 }
 
-#: Historical tokens -- admitted ONLY for migration, archived-artifact
-#: compatibility, and longitudinal metrics.  **Never** legal for an active
-#: artifact and never a transition target.
+#: Historical tokens -- admitted ONLY for archived-artifact compatibility and
+#: longitudinal metrics.  **Never** legal for an active artifact and never a
+#: transition target: R7's *"After migration, old non-terminal values are
+#: invalid directly under active proposal and plan directories."*
 #:
-#: **Still empty after Chunk E, and that is the sequencing decision above, not an
-#: oversight.**  A token becomes historical when the migration removes it from an
-#: active artifact; until H1 rewrites those three `Status:` lines, `open`,
-#: `executing` and `review` are tokens live artifacts still legally declare, so
-#: listing them here would make the planner contradict the tree it scans.  H1
-#: moves them from `PLAN_STATES` to `HISTORICAL_PLAN_STATES` in one edit, in the
-#: commit that rewrites the artifacts -- R7's *"After migration, old non-terminal
-#: values are invalid directly under active proposal and plan directories."*
-HISTORICAL_PROPOSAL_STATES: Tuple[str, ...] = ()
-HISTORICAL_PLAN_STATES: Tuple[str, ...] = ()
+#: **Populated by Chunk H1 on 2026-08-13**, in the same change that migrated the
+#: last active artifact off them -- the ordering matters in both directions.
+#: Listing a token here while a live artifact declares it makes the planner
+#: contradict the tree it scans; leaving it out of here after migration makes
+#: every consumer that reads history call an archived artifact malformed.
+#:
+#: **These are not decoration -- three consumers read them and break silently
+#: without them.** `_lifecycle_metrics._plan_status_enum` resolves a free-text
+#: historical status by prefix and would regress `reviewed; ...` from `review`
+#: to `reviewed`; `_conformance_violations` would report `unknown proposal
+#: status` for an archived proposal; and `next_owner` would answer `unknown` for
+#: a row the board can still render.  Membership here is what keeps a *retired*
+#: token distinct from an *unrecognized* one.
+HISTORICAL_PROPOSAL_STATES: Tuple[str, ...] = ("proposed", "reviewed", "revised")
+HISTORICAL_PLAN_STATES: Tuple[str, ...] = ("open", "executing", "review")
 
 #: The *opening* statuses -- an artifact still at or before its review floor.
 #: `transition_lint`'s shape (b) asks whether an ADDED lifecycle file already
@@ -1232,9 +1210,9 @@ HISTORICAL_PLAN_STATES: Tuple[str, ...] = ()
 #:
 #: `awaiting-review` and `awaiting-plan-review` are the accepted vocabulary's two
 #: initial states (R1/R2, "Initial state"); `proposed` and `open` are their
-#: PENDING-RETIREMENT (H1) predecessors and stay listed so that when H1 moves them
-#: into the historical tuples the shape-(b) set below still admits them for old
-#: commits, which is the whole reason that filter exists.
+#: retired predecessors and stay listed for exactly the reason the filter below
+#: exists -- H1 moved them into the historical tuples, and they must remain
+#: shape-(b) eligible for the old commits that added files declaring them.
 OPENING_STATES = ("awaiting-review", "awaiting-plan-review", "proposed", "open")
 
 #: The added-artifact status set shape (b) consumes: every recognized current
@@ -1242,14 +1220,25 @@ OPENING_STATES = ("awaiting-review", "awaiting-plan-review", "proposed", "open")
 #:
 #: Widened from `OPENING_STATES` alone (3 tokens) to every current non-terminal
 #: state (7 at Chunk A1, **16** once Chunk E made the accepted vocabulary legal)
-#: per the accepted R5 replacement.  The proposal records the widening as
-#: corpus-neutral at the reviewed 2026-08-10 history because none of the newly
-#: admitted tokens occurs as the status of an *added* file there; Chunk E
-#: re-measured that at its own parent and the pinned corpus expectations did not
-#: move.  That is a claim about a pinned corpus, so
-#: `test_transition_lint.py`'s corpus expectations are the witness, not this
-#: comment -- and a later widening to historical NON-opening tokens is
-#: corpus-CHANGING and re-runs that measurement.
+#: per the accepted R5 replacement, then **16 -> 12 at Chunk H1** as `reviewed`,
+#: `revised`, `executing` and `review` stopped being *current* non-terminal
+#: states.  `proposed` and `open` re-enter through the filter below.
+#:
+#: **H1 kept the filter at historical OPENING statuses rather than all
+#: historical tokens, and that is the accepted R5 text, not a convenience**:
+#: *"every recognized current non-terminal status plus the historical opening
+#: statuses"*.  Widening it to all six would have held the set at 16 and made
+#: the narrowing trivially corpus-neutral, but it would also have contradicted
+#: the accepted contract, so the measurement was run instead of avoided.
+#:
+#: The narrowing is corpus-neutral **by measurement, not by argument**: every
+#: added lifecycle file in both pinned windows declares `proposed`, `open` or
+#: `awaiting-plan-review`, all of which survive here, so no shape-(b) finding
+#: disappears.  A status that is recognized but outside this set takes a silent
+#: `continue` in `_shape_b` -- never the `b?` advisory, which is reserved for
+#: genuinely unrecognized tokens.  `test_transition_lint.py`'s corpus
+#: expectations remain the witness, not this comment: if they ever move, that is
+#: a finding to report, never a number to update.
 SHAPE_B_STATUSES = tuple(dict.fromkeys(
     PROPOSAL_NON_TERMINAL_STATES
     + PLAN_NON_TERMINAL_STATES
@@ -1298,9 +1287,14 @@ PROPOSAL_NEXT_OWNERS = {
     "accepted": NEXT_OWNER_TERMINAL,
     "rejected": NEXT_OWNER_TERMINAL,
     "superseded": NEXT_OWNER_TERMINAL,
-    # PENDING-RETIREMENT (H1).  `proposed` has exactly one R7 successor
-    # (`awaiting-review`); `reviewed` maps to `revising|awaiting-decision` and
-    # `revised` to `awaiting-review|awaiting-decision`, whose owners differ.
+    # HISTORICAL (retired by H1) -- RETAINED DELIBERATELY.  An archived proposal
+    # still declares these, and the board must render it rather than answer
+    # `unknown`.  `proposed` had exactly one R7 successor (`awaiting-review`);
+    # `reviewed` mapped to `revising|awaiting-decision` and `revised` to
+    # `awaiting-review|awaiting-decision`, whose owners differ, so those two
+    # report `unresolved` rather than guess.  Deleting these three rows passes
+    # the suite -- `TestOwnerVocabulary`'s coverage iterates the CURRENT tuples
+    # and no longer visits them -- which is why they carry their own node.
     "proposed": "proposal-reviewer",
     "reviewed": NEXT_OWNER_UNRESOLVED,
     "revised": NEXT_OWNER_UNRESOLVED,
@@ -1315,10 +1309,12 @@ PLAN_NEXT_OWNERS = {
     "revising-code": "implementation",         # Implementation
     "ready-to-archive": "implementation",      # Implementation
     "archived": NEXT_OWNER_TERMINAL,
-    # PENDING-RETIREMENT (H1).  `open` -> `awaiting-plan-review` and
-    # `executing` -> `implementing` are each one R7 successor; `review` maps to
-    # three (`awaiting-code-review|revising-code|ready-to-archive`) whose owners
-    # are not the same, so it resolves to `unresolved` until H1 rewrites it.
+    # HISTORICAL (retired by H1) -- RETAINED DELIBERATELY, same reason as the
+    # proposal table above: 40 archived plans still declare these.  `open` ->
+    # `awaiting-plan-review` and `executing` -> `implementing` were each one R7
+    # successor; `review` mapped to three
+    # (`awaiting-code-review|revising-code|ready-to-archive`) whose owners are
+    # not the same, so it reports `unresolved` rather than guess.
     "open": "plan-reviewer",
     "executing": "implementation",
     "review": NEXT_OWNER_UNRESOLVED,
@@ -4170,16 +4166,25 @@ def review_record_violations(art: Artifact,
 #: outstanding or blocking by definition, so demanding a clearing pass there
 #: would make the two states unreachable.
 PLAN_REVIEW_CLEARED_STATES = ("ready-to-implement", "implementing",
-                              "awaiting-code-review", "revising-code",
-                              # PENDING-RETIREMENT (H1)
-                              "executing", "review")
+                              "awaiting-code-review", "revising-code")
 
 #: The proposal states at or past the review floor -- where a `## Review` record
 #: must exist and must not be the author's own.  Both vocabularies, because the
 #: check is about the record and not about the token.
+#:
+#: **H1 deliberately did NOT narrow this tuple, departing from its own cost
+#: list, because narrowing it disables a real check rather than merely changing
+#: a message.** Measured on a self-reviewed archived proposal declaring
+#: `reviewed`: with the historical tokens present the scan reports *"'## Review'
+#: appears authored by the proposal author"*; with them removed that finding
+#: disappears and only `unknown proposal status` remains.  `scan` still exits 1
+#: either way, so the regression hides behind an unrelated non-zero exit -- and
+#: the one node that catches it invites the wrong repair (move the fixture to a
+#: current status and the suite goes green with the independence check silently
+#: unexercised).  The comment above is the standing reason: the check is about
+#: the record, not the token.
 _PROPOSAL_POST_REVIEW_STATES = (
     "revising", "awaiting-decision",
-    # PENDING-RETIREMENT (H1)
     "reviewed", "revised",
     "accepted", "rejected", "superseded")
 
@@ -4510,6 +4515,20 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 "superseded); a missing status hides every downstream "
                 "conformance check."
             )
+        elif s in HISTORICAL_PROPOSAL_STATES:
+            # H1: retired, not unrecognized -- and the two must not be conflated.
+            # An ARCHIVED proposal legitimately still declares one of these, so
+            # reading history is never a violation; an ACTIVE one declaring it
+            # is exactly what retirement refuses, and it gets the migration
+            # target rather than a dead-end `unknown`.
+            if not _is_immutable(art):
+                v.append(
+                    f"retired proposal status {s!r} -- the accepted vocabulary "
+                    "replaced it (proposed -> awaiting-review; reviewed/revised "
+                    "-> revising | awaiting-review | awaiting-decision, derived "
+                    "from the latest review). Historical values stay legal on "
+                    "archived artifacts only."
+                )
         elif s not in _PROPOSAL_STATES:
             v.append(f"unknown proposal status {s!r}")
         # P1 -- the artifact-level declaration and the review basis, on the same
@@ -4601,7 +4620,18 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 # still does not authenticate the quoted authorization itself --
                 # that remains the committing operator's guarantee (R1).
     else:  # plan
-        if s and s not in _PLAN_STATES:
+        if s and s in HISTORICAL_PLAN_STATES:
+            # H1 -- see the proposal-side note above; archived plans keep theirs.
+            if not _is_immutable(art):
+                v.append(
+                    f"retired plan status {s!r} -- the accepted vocabulary "
+                    "replaced it (open -> awaiting-plan-review; executing -> "
+                    "implementing; review -> awaiting-code-review | "
+                    "revising-code | ready-to-archive, from the latest "
+                    "Code-review verdict). Historical values stay legal on "
+                    "archived artifacts only."
+                )
+        elif s and s not in _PLAN_STATES:
             v.append(f"unknown plan status {s!r}")
         if not art.plan_review:
             v.append(
@@ -4934,87 +4964,117 @@ def _status_move_manifest(art: Artifact, target: str) -> List[str]:
     ]
 
 
+def _review_template(date: str) -> str:
+    """The reviewer's `## Review` section, re-homed by H1.
+
+    Emitted for the two arms a landing review selects (`revising` on a
+    blocking pass, `awaiting-decision` on a clearing one). Before H1 this
+    lived on the retired `-> reviewed` arm and would otherwise have been
+    lost: it is the only place the tool states that THE REVIEWER fills their
+    own identity, which is the anti-attribution property [H1-S2] protects.
+    """
+    return (
+            "## Review -- <reviewer> (<role>) -- " + date + "\n\n"
+            "**Model**: <model or tier when known; 'unknown' if not>\n\n"
+            "<one-paragraph orientation: who asked, what triggered the pass>\n\n"
+            "**Structural-independence stance.** <author / reviewer "
+            "identities; tier choice and why>\n\n"
+            "**Verification done before drafting:**\n\n"
+            "* <file:line reads, empirical reproducers, grep counts>\n\n"
+            "**Steelman:**\n\n* <what the proposal got right>\n\n"
+            "**Findings:**\n\n"
+            "* **[R1] -- <title>.** <body with citations>\n\n"
+            "**Covered** -- <lenses swept, each with a citation>\n"
+            "**Not covered / low confidence** -- <the negative space>\n\n"
+            "**Second-round recommendation**: <recommended / not, with reasons>"
+    )
+
+
+def _response_template(date: str) -> str:
+    """The author's `## Response` + complete-current-contract revision.
+
+    Carries the `**Scope delta**` declaration. Emitted on the return arm out
+    of `revising`. Before H1 this lived on the retired `-> revised` arm; it
+    is the ONLY user-reachable surface that teaches the scope-reduction
+    grammar while an author is typing, so [H1-S1] re-homes rather than
+    deletes it.
+    """
+    return (
+            "## Response -- <author> -- " + date + "\n\n"
+            "**Model**: <model or tier>\n\n"
+            "For each numbered critique, one disposition token + a "
+            "one-sentence rationale (proposal-Response grammar: accept / "
+            "accept with modification / reject / defer):\n\n"
+            "* **[R1]** <accept|accept with modification|reject|defer> -- "
+            "<rationale>\n\n"
+            "<Scope delta -- ONLY if this revision narrows what the "
+            "proposal will deliver, judged against the scope AS OPENED. "
+            "State `preserved` if you want the record to show you "
+            "checked; only `degraded` and `lost` require the block "
+            "below.>\n\n"
+            "**Scope delta**: preserved | degraded | lost\n\n"
+            "**Removed scope**\n\n"
+            "* <unit> -- source section; reason; disposition (accept | "
+            "guard | wontfix | defer); revival/closure condition. EACH "
+            "entry needs its OWN disposition -- a shared home is a "
+            "location, not a decision.\n\n"
+            "**Disposition/home**: <where the grouped remainder lives>\n\n"
+            "## Revised proposal -- " + date + "\n\n"
+            "<ONE complete current contract, MANDATORY with every Response "
+            "-- not only when the critiques were substantial. "
+            "Self-contained rather than a delta: scope and exclusions, "
+            "invariants, failure dispositions, public paths, evidence, "
+            "omissions, deferred work. The NEWEST reviewed revision is what "
+            "the Decision and the implementation bind; every earlier "
+            "section stays as immutable history.>\n\n"
+            "### " + _LEDGER_HEADING + "\n\n"
+            "* <earlier commitment, the replacement or withdrawal, and the "
+            "reason -- or a single '* None'. The heading is MANDATORY even "
+            "when its value is None: only a written None distinguishes "
+            "'nothing was withdrawn' from 'nobody checked'.>"
+    )
+
+
 def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str]]:
-    """Return (status_from, status_to_or_note, [scaffold_block, manifest...])."""
+    """Return (status_from, status_to_or_note, [scaffold_block, manifest...]).
+
+    **A status-move target may still carry a section template, and two must.**
+    R4 says these flips append no section *of their own* -- they ride on someone
+    else's commit.  But the author writing that commit still needs its grammar,
+    and before H1 the only place it existed was the retired `-> reviewed` and
+    `-> revised` arms.  Retiring those without re-homing their templates would
+    have deleted, from every user-reachable path, the one surface that teaches
+    the `**Scope delta**` declaration while an author is typing -- which is
+    `scope-reduction-trap`'s whole mechanism, and another plan's accepted scope.
+    So the templates move to the live arms that carry the same authorial moment:
+    the reviewer's `## Review` to the two arms a review selects, and the
+    author's `## Response` + revision (carrying `Scope delta`) to the return arm
+    out of `revising`.  See [H1-S1] / [H1-S2] in
+    `dev/plans/review-efficient-lifecycle.md`.
+    """
     k = art.kind
     if target in _STATUS_MOVES_WITH:
-        return (art.status, target, _status_move_manifest(art, target))
+        manifest = _status_move_manifest(art, target)
+        if k == "proposal" and target in ("revising", "awaiting-decision"):
+            return (art.status, target, [_review_template(date)] + manifest)
+        if (k == "proposal" and target == "awaiting-review"
+                and art.status == "revising"):
+            # Only the RETURN arm. The proposal-open arm has nothing to revise.
+            #
+            # The caveat below travelled with the retired `-> revised` arm's
+            # MANIFEST, not with its block, so re-homing the template alone
+            # dropped it -- caught by `test_scope_reduction_trap.py`, which
+            # exists to fail on exactly this silent-deletion shape rather than
+            # on a rewording. It is doctrine, not decoration: the tool must say
+            # that it does not enforce the declaration, or an author may read
+            # a green transition as the declaration having been checked.
+            return (art.status, target, [_response_template(date)] + manifest + [
+                "accepted scope is a FLOOR. NO TRANSITION REFUSES ON A MISSING "
+                "OR MALFORMED DECLARATION -- review is the enforcement, "
+                "including for whether a declaration is TRUE.",
+            ])
+        return (art.status, target, manifest)
     if k == "proposal":
-        if target == "reviewed":
-            block = (
-                "## Review -- <reviewer> (<role>) -- " + date + "\n\n"
-                "**Model**: <model or tier when known; 'unknown' if not>\n\n"
-                "<one-paragraph orientation: who asked, what triggered the pass>\n\n"
-                "**Structural-independence stance.** <author / reviewer "
-                "identities; tier choice and why>\n\n"
-                "**Verification done before drafting:**\n\n"
-                "* <file:line reads, empirical reproducers, grep counts>\n\n"
-                "**Steelman:**\n\n* <what the proposal got right>\n\n"
-                "**Findings:**\n\n"
-                "* **[R1] -- <title>.** <body with citations>\n\n"
-                "**Covered** -- <lenses swept, each with a citation>\n"
-                "**Not covered / low confidence** -- <the negative space>\n\n"
-                "**Second-round recommendation**: <recommended / not, with reasons>"
-            )
-            manifest = [
-                "Status: proposed -> reviewed",
-                "append the '## Review' section above (append-only; prior "
-                "sections untouched).",
-                "THE REVIEWER fills their own <reviewer>/<role>/<Model> -- this "
-                "tool attributes nothing.",
-                "one commit for this transition.",
-            ]
-            return ("proposed", "reviewed", [block] + manifest)
-        if target == "revised":
-            block = (
-                "## Response -- <author> -- " + date + "\n\n"
-                "**Model**: <model or tier>\n\n"
-                "For each numbered critique, one disposition token + a "
-                "one-sentence rationale (proposal-Response grammar: accept / "
-                "accept with modification / reject / defer):\n\n"
-                "* **[R1]** <accept|accept with modification|reject|defer> -- "
-                "<rationale>\n\n"
-                "<Scope delta -- ONLY if this revision narrows what the "
-                "proposal will deliver, judged against the scope AS OPENED. "
-                "State `preserved` if you want the record to show you "
-                "checked; only `degraded` and `lost` require the block "
-                "below.>\n\n"
-                "**Scope delta**: preserved | degraded | lost\n\n"
-                "**Removed scope**\n\n"
-                "* <unit> -- source section; reason; disposition (accept | "
-                "guard | wontfix | defer); revival/closure condition. EACH "
-                "entry needs its OWN disposition -- a shared home is a "
-                "location, not a decision.\n\n"
-                "**Disposition/home**: <where the grouped remainder lives>\n\n"
-                "## Revised proposal -- " + date + "\n\n"
-                "<ONE complete current contract, MANDATORY with every Response "
-                "-- not only when the critiques were substantial. "
-                "Self-contained rather than a delta: scope and exclusions, "
-                "invariants, failure dispositions, public paths, evidence, "
-                "omissions, deferred work. The NEWEST reviewed revision is what "
-                "the Decision and the implementation bind; every earlier "
-                "section stays as immutable history.>\n\n"
-                "### " + _LEDGER_HEADING + "\n\n"
-                "* <earlier commitment, the replacement or withdrawal, and the "
-                "reason -- or a single '* None'. The heading is MANDATORY even "
-                "when its value is None: only a written None distinguishes "
-                "'nothing was withdrawn' from 'nobody checked'.>"
-            )
-            manifest = [
-                "Status: reviewed -> revised",
-                "append '## Response' AND the complete current-contract "
-                f"revision with its '### {_LEDGER_HEADING}' ledger -- the "
-                "revision is MANDATORY, and the conformance check refuses a "
-                "Response without one; append-only.",
-                "state `preserved` if you want the record to show you checked; "
-                "only `degraded` and `lost` require the Removed-scope block. "
-                "Declining a reviewer's proposed expansion is not a reduction. "
-                "NO TRANSITION REFUSES ON A MISSING OR MALFORMED DECLARATION -- "
-                "review is the enforcement, including for whether a declaration "
-                "is TRUE.",
-                "one commit for this transition.",
-            ]
-            return ("reviewed/revised", "revised", [block] + manifest)
         if target in ("accepted", "rejected", "superseded"):
             block = (
                 "## Decision -- <Maintainer> -- " + date + "\n\n"
@@ -5044,15 +5104,24 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
             ]
             return ("reviewed/revised", target, [block] + manifest)
     else:  # plan
-        if target in ("awaiting-plan-review", "executing"):
-            if target == "awaiting-plan-review":
+        if target == "awaiting-plan-review":
+            if target == "awaiting-plan-review" and art.status != "revising-plan":
+                # The plan-OPEN arm: nothing to revise yet.
                 manifest = [
-                    "Status: open -> awaiting-plan-review",
+                    f"Status: {art.status or '(none)'} -> awaiting-plan-review",
                     "no section to append yet -- the plan waits for its "
                     "'## Plan review' section to land before implementation.",
                     "(in-place status edit; plans are execution artifacts.)",
                 ]
-                return ("open", "awaiting-plan-review", manifest)
+                return (art.status, "awaiting-plan-review", manifest)
+            # The author's Sharpening RETURN arm, `revising-plan ->
+            # awaiting-plan-review`.  H1 re-homed the plan-side `Scope delta`
+            # surface here: it previously lived only on `-> executing`, which
+            # the retirement made unreachable, and losing it would have deleted
+            # the plan half of scope-reduction-trap's mechanism.  Exactly
+            # parallel to the proposal side, where the same declaration sits on
+            # `revising -> awaiting-review`: both are the arm on which an AUTHOR
+            # answers a review, which is the moment scope can quietly narrow.
             block = (
                 "## Plan review -- <reviewer> -- " + date + "\n\n"
                 "**Tier**: <Internal|External>\n"
@@ -5077,7 +5146,7 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "**Disposition/home**: <where the grouped remainder lives>"
             )
             manifest = [
-                "Status: -> executing",
+                "Status: revising-plan -> awaiting-plan-review",
                 "accepted scope is a FLOOR: a Sharpening that removes an "
                 "accepted outcome needs the Maintainer's explicit disposition "
                 "under the deviation gate. A plan reviewer cannot create that "
@@ -5090,7 +5159,7 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 "first-implementation commits stay distinct.",
                 "review/Sharpening sections are append-only.",
             ]
-            return ("open/awaiting-plan-review", "executing", [block] + manifest)
+            return ("revising-plan", "awaiting-plan-review", [block] + manifest)
         if target == "awaiting-code-review":
             block = (
                 "## Implementation verification -- <agent> -- " + date + "\n\n"

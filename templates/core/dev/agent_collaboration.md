@@ -71,8 +71,9 @@ The working habits (the deeper *why* is in
 
 ## The review loop
 
-A substantive change moves `proposed -> reviewed -> revised ->
-accepted` (see `proposals/_template.md`). Review has two tiers:
+A substantive change moves `awaiting-review -> revising ->
+awaiting-review -> awaiting-decision -> accepted` (see
+`proposals/_template.md`). Review has two tiers:
 
 * **Internal review** helps a change land — a constructive second
   read. Floor: the same agent type in a fresh session —

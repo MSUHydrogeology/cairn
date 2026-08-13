@@ -1055,8 +1055,13 @@ class TestShapeB:
 class TestShapeBWideningAndAdvisory:
     """A7 -- ``review-efficient-lifecycle`` Chunk A.  ``_OPEN_STATUSES`` is
     gone; shape (b) now consumes the planner's ``SHAPE_B_STATUSES`` (3 -> 7
-    tokens) and an unrecognized ``**Status**:`` is a new advisory ``'b?'``
-    finding rather than a silent skip.  ``bootstrap/tests/
+    -> 16 -> 12 tokens: 3 at ``OPENING_STATES``, 7 once Chunk A1 widened it to
+    every current non-terminal state, 16 once Chunk E made the accepted
+    vocabulary legal, then narrowed back to 12 at Chunk H1, which retired
+    ``reviewed``/``revised``/``executing``/``review`` from the *current*
+    vocabulary -- ``proposed`` and ``open`` re-enter through the historical-
+    opening-statuses filter) and an unrecognized ``**Status**:`` is a new
+    advisory ``'b?'`` finding rather than a silent skip.  ``bootstrap/tests/
     test_lifecycle_vocabulary.py`` carries the exhaustive synthetic matrix
     over every ``SHAPE_B_STATUSES`` member and every terminal state; the
     nodes here are targeted regressions on the specific widening and the new
@@ -1066,42 +1071,76 @@ class TestShapeBWideningAndAdvisory:
     update here.
     """
 
-    def test_a_revised_proposal_open_is_now_shape_b_eligible(
+    def test_a_revised_proposal_open_is_not_shape_b_eligible(
         self, tl: ModuleType, repo: Path,
     ) -> None:
-        # "revised" was never a member of the old _OPEN_STATUSES tuple
-        # ("proposed", "open", "awaiting-plan-review"), so a proposal ADDED at
-        # status "revised" carrying a baked-in review used to fall through
-        # shape (b) with no finding at all.  Perturbation: narrow
-        # SHAPE_B_STATUSES back to the pre-widening three tokens.  Red.
+        # Chunk H1 retired "revised" from the current proposal vocabulary
+        # into HISTORICAL_PROPOSAL_STATES.  It is a historical token but NOT
+        # one of OPENING_STATES' two historical members ("proposed", "open"),
+        # so the SHAPE_B_STATUSES filter does not re-admit it: SHAPE_B
+        # narrowed 16 -> 12 and "revised" is one of the four tokens that fell
+        # out.  A proposal ADDED at status "revised" with a baked-in review is
+        # now a silent `continue` in `_shape_b` -- `declared` is RECOGNIZED
+        # (it is in HISTORICAL_PROPOSAL_STATES, so the "b?" advisory does not
+        # fire either) but outside SHAPE_B_STATUSES, so no finding at all.
+        # Perturbation: widen SHAPE_B_STATUSES's OPENING_STATES filter to all
+        # of HISTORICAL_PROPOSAL_STATES + HISTORICAL_PLAN_STATES instead of
+        # just the opening ones.  Red -- a shape-(b) finding reappears.
         base = _git(repo, "rev-parse", "HEAD")
         _write(repo, "dev/proposals/p.md", _HEADER.replace("open", "revised")
                + "## Review -- Internal -- 2026-01-01\n\n[R1] a finding\n")
         _commit(repo, "dev/proposals: open p")
         _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
-        assert [(f.shape, f.file) for f in findings] == [("b", "dev/proposals/p.md")]
+        assert findings == []
 
-    def test_an_executing_plan_open_is_now_shape_b_eligible(
+    def test_an_executing_plan_open_is_not_shape_b_eligible(
         self, tl: ModuleType, repo: Path,
     ) -> None:
-        # "executing" is a plan non-terminal state that was never in
-        # _OPEN_STATUSES either.  Perturbation: same as above.  Red.
+        # "executing" is a plan non-terminal state Chunk H1 retired into
+        # HISTORICAL_PLAN_STATES; like "revised" above it is a historical
+        # *non-opening* token, so it stays outside the narrowed 12-token
+        # SHAPE_B_STATUSES.  Perturbation: same as above.  Red.
         base = _git(repo, "rev-parse", "HEAD")
         _write(repo, "dev/plans/p.md",
                "# p\n\n**Status**: executing\n\n"
                "## Plan review -- Reviewer -- 2026-01-01\n\n[E1] a finding\n")
         _commit(repo, "dev/plans: open p")
         _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
-        assert [(f.shape, f.file) for f in findings] == [("b", "dev/plans/p.md")]
+        assert findings == []
 
-    def test_a_review_status_plan_open_is_now_shape_b_eligible(
+    def test_a_review_status_plan_open_is_not_shape_b_eligible(
         self, tl: ModuleType, repo: Path,
     ) -> None:
         # "review" -- the plan status immediately before "archived" -- is the
-        # last of the four newly-widened tokens.  Perturbation: same.  Red.
+        # last of the four tokens Chunk H1 retired into the historical
+        # *non-opening* group.  Perturbation: same.  Red.
         base = _git(repo, "rev-parse", "HEAD")
         _write(repo, "dev/plans/p.md",
                "# p\n\n**Status**: review\n\n"
+               "## Plan review -- Reviewer -- 2026-01-01\n\n[E1] a finding\n")
+        _commit(repo, "dev/plans: open p")
+        _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})
+        assert findings == []
+
+    def test_a_historical_opening_plan_status_stays_shape_b_eligible(
+        self, tl: ModuleType, repo: Path,
+    ) -> None:
+        # The other half of Chunk H1's contract, and what makes the 12-token
+        # SHAPE_B_STATUSES set self-documenting: "open" is retired exactly
+        # like "executing" and "review" above, but it is also one of
+        # OPENING_STATES' two historical members (with "proposed"), so the
+        # filter inside SHAPE_B_STATUSES' construction re-admits it -- the
+        # accepted R5 text is "every recognized current non-terminal status
+        # plus the historical opening statuses", not "plus the historical
+        # statuses".  A plan ADDED at status "open" with a baked-in review
+        # must still flag.  Perturbation: drop the OPENING_STATES filter term
+        # from SHAPE_B_STATUSES entirely, narrowing it to
+        # PROPOSAL_NON_TERMINAL_STATES + PLAN_NON_TERMINAL_STATES (10
+        # tokens, losing "proposed" and "open" too).  Red -- this finding
+        # disappears along with the three inversions above staying empty.
+        base = _git(repo, "rev-parse", "HEAD")
+        _write(repo, "dev/plans/p.md",
+               "# p\n\n**Status**: open\n\n"
                "## Plan review -- Reviewer -- 2026-01-01\n\n[E1] a finding\n")
         _commit(repo, "dev/plans: open p")
         _, _, findings = tl.scan(f"{base}..HEAD", repo, whitelist={})

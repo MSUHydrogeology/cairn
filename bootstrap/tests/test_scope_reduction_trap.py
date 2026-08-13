@@ -321,9 +321,35 @@ def test_the_canonical_section_exists_and_sits_beside_its_mirror() -> None:
 #: The two transitions whose scaffold an author meets when narrowing:
 #: a proposal revision (pre-Decision) and a plan-review Sharpening
 #: (post-Decision).
+#:
+#: Chunk H1 retired `reviewed`/`revised` from the live proposal vocabulary and
+#: re-homed the Scope-delta declaration onto the RETURN arm out of `revising`
+#: -- `_response_template`, emitted by `_scaffold` for `revising ->
+#: awaiting-review` -- so the proposal row is re-pointed there.
+#:
+#: The plan row is left UNCHANGED and STILL POINTS AT THE RETIRED `executing`
+#: TOKEN. H1 did not re-home the plan-side scaffold: `_scaffold`'s plan branch
+#: still only emits `**Scope delta**` for the literal string "executing",
+#: which is no longer reachable from any state in `PLAN_TRANSITIONS` or
+#: `PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED` (checked by hand against
+#: `tools/lifecycle_planner.py` at H1). There is currently NO live plan
+#: transition that scaffolds the declaration -- not `ready-to-implement`
+#: (the reviewer's clearing move, using the generic `_status_move_manifest`
+#: with no declaration block) and not `revising-plan`'s return arm to
+#: `awaiting-plan-review` (same). This row is kept exactly as it was --
+#: neither invented a new live target nor dropped -- because the three
+#: direct-`_scaffold`-call tests below still pass against it (they bypass
+#: `_legal_transitions` entirely), and inventing a plausible-looking live
+#: target here would assert a parity with the proposal side that does not
+#: exist in the code today. A later chunk that re-homes the plan-side
+#: scaffold should update this row alongside it.
+#: H1 re-homed BOTH surfaces onto the arm where an AUTHOR answers a review,
+#: which is the moment scope can quietly narrow -- and the two are deliberately
+#: symmetric now, where before they were not (`reviewed -> revised` on one side,
+#: `awaiting-plan-review -> executing` on the other, both legacy-only).
 _SCAFFOLDED_TRANSITIONS = (
-    ("proposal", "reviewed", "revised"),
-    ("plan", "awaiting-plan-review", "executing"),
+    ("proposal", "revising", "awaiting-review"),
+    ("plan", "revising-plan", "awaiting-plan-review"),
 )
 
 
@@ -496,17 +522,19 @@ def test_the_two_planner_twins_stay_byte_identical() -> None:
     assert a == b, "lifecycle_planner twins have drifted"
 
 
-#: A proposal at `reviewed`, i.e. one transition BEFORE the `-> revised`
-#: scaffold that carries the declaration. The source status matters: an
-#: artifact already at `revised` has legal targets
-#: `reviewed/accepted/rejected/superseded`, so sweeping `_legal_transitions`
+#: A proposal at `revising`, i.e. one transition BEFORE the `-> awaiting-review`
+#: scaffold that carries the declaration (re-pointed at H1, which retired
+#: `reviewed`/`revised` and re-homed the declaration onto this return arm --
+#: see `_SCAFFOLDED_TRANSITIONS` above). The source status matters: an
+#: artifact already at `awaiting-review` has legal targets
+#: `revising/awaiting-decision`, so sweeping `_legal_transitions`
 #: from there covers every transition EXCEPT the one under test. That was the
 #: defect in the first version of this fence (clearing pass, D1) -- the same
 #: named-enforcer-that-does-not-enforce shape it was written to close.
 _PROPOSAL_AWAITING_REVISION = """# Proposal: something
 
 **Author**: Someone
-**Status**: reviewed
+**Status**: revising
 
 ## Context
 
@@ -540,16 +568,27 @@ Narrowed chunk B away.
 """
 
 #: (kind, subdirectory, filename, source status, scaffolded target).
-#: These targets are exactly `_SCAFFOLDED_TRANSITIONS` above -- the two places
-#: the declaration is offered, and therefore the only two a gate could be
-#: attached to and still bite. Deriving the sweep from `_legal_transitions`
-#: instead is what let a real gate pass unnoticed.
-#: A plan on the `not required` path, which reaches `executing` straight from
-#: `open` -- `_scaffold` returns ("open/awaiting-plan-review", "executing"), so
-#: the review-required fixture alone left that route unswept (E2).
+#: The proposal row's target is exactly `_SCAFFOLDED_TRANSITIONS`' proposal
+#: row -- the one place the declaration is offered live today.
+#:
+#: **The two plan rows below no longer match `_SCAFFOLDED_TRANSITIONS`' plan
+#: row.** That row still names the retired `executing` token deliberately
+#: (see the comment above `_SCAFFOLDED_TRANSITIONS`) because there is no live
+#: transition that scaffolds the declaration on the plan side post-H1 -- but
+#: `target in planner._legal_transitions(art)` below REQUIRES a live target,
+#: so the two plan fixtures are re-pointed at `ready-to-implement`, the
+#: nearest live state both preconditions can legally reach (the only target
+#: common to `PLAN_TRANSITIONS["awaiting-plan-review"]` and
+#: `PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED[""]`), preserving the original
+#: design's shape -- both fixtures converging on ONE target reached via two
+#: different preconditions -- as a regression floor on "the planner does not
+#: gate here" even though neither target carries the declaration today.
+#: A plan on the `not required` path, which reaches `ready-to-implement`
+#: straight from the not-yet-opened state (no `**Status**:` line, i.e.
+#: `art.status == ""`) -- the review-required fixture alone left that route
+#: unswept (E2).
 _PLAN_NO_REVIEW_REQUIRED = """# Plan: something
 
-**Status**: open
 **Plan review**: not required(single commit, single area)
 
 ## Scope
@@ -559,11 +598,11 @@ Carries less than the accepted proposal, and declares nothing.
 
 _FENCE_FIXTURES = (
     ("proposal", "proposals", "2026-08-10-someone-something.md",
-     _PROPOSAL_AWAITING_REVISION, "revised"),
+     _PROPOSAL_AWAITING_REVISION, "awaiting-review"),
     ("plan", "plans", "some-plan.md",
-     _PLAN_AWAITING_EXECUTION, "executing"),
+     _PLAN_AWAITING_EXECUTION, "ready-to-implement"),
     ("plan", "plans", "some-other-plan.md",
-     _PLAN_NO_REVIEW_REQUIRED, "executing"),
+     _PLAN_NO_REVIEW_REQUIRED, "ready-to-implement"),
 )
 
 

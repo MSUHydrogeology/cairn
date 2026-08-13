@@ -191,45 +191,81 @@ def test_every_subcommand_is_read_only(tmp_path, monkeypatch, capsys, argv) -> N
 # --- the state machine -------------------------------------------------------
 
 
-def test_proposed_lists_reviewed_as_only_transition(tmp_path, monkeypatch, capsys):
+def test_awaiting_review_lists_review_outcomes_not_a_direct_decision(
+        tmp_path, monkeypatch, capsys):
+    """H1 retired `proposed`; its live successor is `awaiting-review`, R1's
+    initial waiting-on-review state.  The old single `reviewed` outcome forks
+    into a blocking arm and a clearing arm, but a not-yet-reviewed proposal
+    still cannot leap straight to a decision."""
     repo = _make_repo(tmp_path)
-    _write_proposal(repo, "p.md", status="proposed")
+    _write_proposal(repo, "p.md", status="awaiting-review")
     monkeypatch.chdir(repo)
     planner.main(["next", "dev/proposals/p.md"])
     out = capsys.readouterr().out
-    assert "-> reviewed" in out
+    assert "-> revising" in out
+    assert "-> awaiting-decision" in out
     assert "-> accepted" not in out
 
 
-def test_reviewed_lists_revised_and_decision_targets(tmp_path, monkeypatch, capsys):
+def test_awaiting_decision_lists_revising_and_decision_targets(
+        tmp_path, monkeypatch, capsys):
+    """H1 retired `reviewed`; the live state offering the same four-way fork
+    (return for more work, or straight to any decision) is `awaiting-decision`,
+    with `revising` standing in for the old `revised` return arm."""
     repo = _make_repo(tmp_path)
-    _write_proposal(repo, "p.md", status="reviewed", body=(
+    _write_proposal(repo, "p.md", status="awaiting-decision", body=(
         "## Review -- Codex (External Reviewer) -- 2026-05-02\n\nx\n"
     ))
     monkeypatch.chdir(repo)
     planner.main(["next", "dev/proposals/p.md"])
     out = capsys.readouterr().out
-    for target in ("-> revised", "-> accepted", "-> rejected", "-> superseded"):
+    for target in ("-> revising", "-> accepted", "-> rejected", "-> superseded"):
         assert target in out
 
 
-def test_plan_open_required_lists_awaiting_review(tmp_path, monkeypatch, capsys):
+def test_plan_required_review_is_offered_no_fast_path(tmp_path, monkeypatch,
+                                                      capsys):
+    """A `required(...)` plan is offered its review floor and NOTHING past it.
+
+    Rewritten at H1, and the reason is worth keeping: this node used to build
+    its fixture at `status="open"`. Once H1 retired that token the plan had no
+    legal transitions at all, so `next` printed only a conformance violation --
+    and the old assertion (`"-> awaiting-plan-review" in out`) still PASSED,
+    because the violation's own migration hint contains the literal text
+    `open -> awaiting-plan-review; executing -> implementing; ...`. A test that
+    green-lights on a substring of an error message is checking the wording of
+    the error, not the state machine.
+
+    Two changes stop that recurring: the fixture uses the live not-yet-created
+    state, and the node asserts the output carries no VIOLATION at all, so a
+    future diagnostic can never again supply the token this test looks for.
+    """
     repo = _make_repo(tmp_path)
-    _write_plan(repo, "x.md", status="open", plan_review="required(Internal)")
+    _write_plan(repo, "x.md", status="", plan_review="required(Internal)")
     monkeypatch.chdir(repo)
     planner.main(["next", "dev/plans/x.md"])
     out = capsys.readouterr().out
+    assert "VIOLATION" not in out, (
+        "the fixture is malformed, so any token found below may come from a "
+        "diagnostic rather than from a real transition listing"
+    )
     assert "-> awaiting-plan-review" in out
-    assert "-> executing" not in out
+    # The fast path belongs to `not required(...)` alone -- a plan that owes a
+    # review may not be offered implementation states before clearing it.
+    assert "-> ready-to-implement" not in out
+    assert "-> implementing" not in out
 
 
-def test_plan_open_not_required_lists_executing(tmp_path, monkeypatch, capsys):
+def test_plan_open_not_required_lists_implementing(tmp_path, monkeypatch, capsys):
+    """H1 retired `open`/`executing`; the not-required fast path is offered
+    only from the not-yet-created state (`""`), never from
+    `awaiting-plan-review`, and its live target is `implementing`."""
     repo = _make_repo(tmp_path)
-    _write_plan(repo, "x.md", status="open", plan_review="not required(doc sync)")
+    _write_plan(repo, "x.md", status="", plan_review="not required(doc sync)")
     monkeypatch.chdir(repo)
     planner.main(["next", "dev/plans/x.md"])
     out = capsys.readouterr().out
-    assert "-> executing" in out
+    assert "-> implementing" in out
     assert "-> awaiting-plan-review" not in out
 
 
@@ -247,16 +283,22 @@ def test_illegal_transition_is_refused(tmp_path, monkeypatch, capsys):
 
 
 def test_review_scaffold_carries_no_reviewer_attribution(tmp_path, monkeypatch, capsys):
-    """A generated review scaffold never attributes a reviewer identity."""
+    """A generated review scaffold never attributes a reviewer identity.
+
+    H1 re-homed the `## Review` template off the retired `-> reviewed` arm
+    onto the two live arms a landing review selects (`revising` on a blocking
+    pass, `awaiting-decision` on a clearing one); this re-points to
+    `awaiting-review -> revising`, one of the two.
+    """
     repo = _make_repo(tmp_path)
-    _write_proposal(repo, "p.md", status="proposed", author="Claude")
+    _write_proposal(repo, "p.md", status="awaiting-review", author="Claude")
     monkeypatch.chdir(repo)
-    planner.main(["next", "dev/proposals/p.md", "--to", "reviewed",
+    planner.main(["next", "dev/proposals/p.md", "--to", "revising",
                   "--date", "2026-06-01"])
     out = capsys.readouterr().out
     # The reviewer/role/model are placeholders the reviewer fills themselves.
     assert "## Review -- <reviewer> (<role>)" in out
-    assert "fills their own" in out
+    assert "the REVIEWER's own" in out
     # The tool must not have injected a concrete known agent identity.
     for ident in ("Codex", "Antigravity", "Gemini", "Anthony"):
         assert ident not in out
@@ -267,7 +309,9 @@ def test_decision_scaffold_requires_verbatim_blockquote_and_disclaims(
     """A -> accepted scaffold emits an EMPTY verbatim blockquote + a
     cannot-certify-authenticity disclaimer (R1/R2)."""
     repo = _make_repo(tmp_path)
-    _write_proposal(repo, "p.md", status="revised", body=(
+    # status=awaiting-decision (so accepted is legal) -- the live successor of
+    # the retired `revised`, which offered the same direct decision targets.
+    _write_proposal(repo, "p.md", status="awaiting-decision", body=(
         "## Review -- Codex (External Reviewer) -- 2026-05-02\n\nx\n\n"
         "## Response -- Claude (author) -- 2026-05-03\n\nx\n"
     ))
@@ -286,11 +330,11 @@ def test_accepted_gate_reports_missing_independent_review(
     """When no independent review exists, -> accepted reports the MISSING
     gating precondition rather than presenting the transition as ready."""
     repo = _make_repo(tmp_path)
-    # status=revised (so accepted is legal) but the only review is by the
-    # author -> not an independent review.
-    _write_proposal(repo, "p.md", status="revised", author="Claude", body=(
-        "## Review -- Claude (author) -- 2026-05-02\n\nself\n"
-    ))
+    # status=awaiting-decision (so accepted is legal -- the live successor of
+    # the retired `revised`) but the only review is by the author -> not an
+    # independent review.
+    _write_proposal(repo, "p.md", status="awaiting-decision", author="Claude",
+                    body="## Review -- Claude (author) -- 2026-05-02\n\nself\n")
     monkeypatch.chdir(repo)
     planner.main(["next", "dev/proposals/p.md", "--to", "accepted",
                   "--date", "2026-06-01"])
@@ -340,8 +384,8 @@ def test_malformed_identity_config_falls_back_to_builtin(tmp_path):
 
 def test_scan_clean_corpus_exits_zero(tmp_path, monkeypatch, capsys):
     repo = _make_repo(tmp_path)
-    _write_proposal(repo, "p.md", status="proposed")
-    _write_plan(repo, "x.md", status="open", plan_review="not required(doc)")
+    _write_proposal(repo, "p.md", status="awaiting-review")
+    _write_plan(repo, "x.md", status="", plan_review="not required(doc)")
     monkeypatch.chdir(repo)
     rc = planner.main(["scan"])
     out = capsys.readouterr().out
@@ -776,7 +820,7 @@ _BASIS_LINES = ("**Reviewed commit**: " + "0123456789abcdef" * 2 + "01234567\n"
                 "**Assurance path**: standard\n")
 
 
-def _plan_art(tmp_path: Path, body: str, *, status: str = "executing",
+def _plan_art(tmp_path: Path, body: str, *, status: str = "implementing",
               plan_review: str = "required(External)",
               stem: str = _GATE_STEM, header_extra: str = ""):
     """Parse a plan fixture into an Artifact (the predicate's input).
@@ -1154,15 +1198,16 @@ def test_c7_external_satisfies_an_internal_floor_and_a_human_declares_it(
     _pass_block(tier="Internal"),
     _pass_block(findings="raised"),
 ])
-def test_c8_scan_and_the_executing_gate_agree_on_the_same_record(
+def test_c8_scan_and_the_implementing_gate_agree_on_the_same_record(
         tmp_path, body):
-    """`scan` cannot tighten while `next --to executing` stays presence-only.
+    """`scan` cannot tighten while `next --to implementing` stays presence-only.
 
     The same record is put to both public surfaces: `_conformance_violations`
-    (what `scan` reports for a plan already `executing`) and
-    `_gating_preconditions(..., "executing")` (what `next --to executing`
+    (what `scan` reports for a plan already `implementing`) and
+    `_gating_preconditions(..., "implementing")` (what `next --to implementing`
     requires of a plan still `awaiting-plan-review`).  Status is the only
-    difference between the two fixtures.
+    difference between the two fixtures.  (`implementing` is the live
+    successor of the retired `executing`, which this node targeted before H1.)
 
     **This node asserts AGREEMENT, never a particular verdict.**  Deliberately:
     a node that also pinned what the verdict should be would redden whenever
@@ -1171,16 +1216,17 @@ def test_c8_scan_and_the_executing_gate_agree_on_the_same_record(
     verdict should be is C.1-C.9c's business; that the two surfaces reach the
     same one is this node's."""
     identity = planner.IdentityModel(frozenset(), frozenset())
-    art_executing = _plan_art(tmp_path, body, status="executing")
+    art_implementing = _plan_art(tmp_path, body, status="implementing")
     art_awaiting = _plan_art(tmp_path, body, status="awaiting-plan-review")
-    expected = planner.review_record_violations(art_executing)
+    expected = planner.review_record_violations(art_implementing)
     # The record reads the same whatever the status -- status selects WHEN the
     # predicate is consulted, never WHAT it finds.
     assert planner.review_record_violations(art_awaiting) == expected
     # `scan` reports exactly the predicate's list -- not a subset, not a
     # re-worded summary.
-    assert planner._conformance_violations(art_executing, identity) == expected
-    gates = planner._gating_preconditions(art_awaiting, "executing", identity)
+    assert planner._conformance_violations(
+        art_implementing, identity) == expected
+    gates = planner._gating_preconditions(art_awaiting, "implementing", identity)
     review_gates = [g for g in gates if "Plan review" in g[1]]
     assert len(review_gates) == 1, gates
     met, desc = review_gates[0]
@@ -2517,7 +2563,7 @@ def _real_headings(stem: str) -> list[str]:
 _P1_STEM = "p1-fixture"        # deliberately in NO manifest
 
 
-def _prop_art(tmp_path: Path, body: str = "", *, status: str = "reviewed",
+def _prop_art(tmp_path: Path, body: str = "", *, status: str = "revising",
               assurance: str | None = "standard", stem: str = _P1_STEM,
               archived: bool = False, extra_header: str = ""):
     """A proposal on disk, parsed through the planner's own reader.
@@ -3759,9 +3805,10 @@ class TestP5Placement:
 # `executing`, and `review`"*.  E made the new tokens legal and left the three
 # old ones legal, because all three are declared by live plans -- two of them
 # another session's -- and `scan` reporting every live artifact sound is one of
-# the plan's acceptance criteria.  The retirement is Chunk H1's named job, and
-# `TestTheLegacyTokensAreStillLegalUntilH1` is what makes the split visible
-# rather than a silent narrowing.
+# the plan's acceptance criteria.  Retirement was Chunk H1's named job, landed
+# 2026-08-13; `TestTheLegacyTokensWereRetiredAtH1` (the renamed, inverted form
+# of the class that tracked the pending-retirement window) is what makes that
+# split visible rather than a silent narrowing.
 # ===========================================================================
 
 _E_STEM = "e-fixture"          # deliberately in NEITHER legacy manifest
@@ -3855,42 +3902,65 @@ class TestTheAcceptedVocabularyIsDeclared:
             assert state in planner.RECOGNIZED_STATES, state
 
 
-class TestTheLegacyTokensAreStillLegalUntilH1:
-    """The sequencing decision, pinned as behaviour so it cannot drift silently.
-
-    Both directions matter.  If a later change retires the three tokens *without*
-    migrating the artifacts, the first two nodes redden.  When H1 *does* migrate
-    them, the third node is what tells the implementer that retiring the tokens
-    means moving them into the historical tuples -- not deleting them, because
-    metrics must keep parsing pre-migration commits.
+class TestTheLegacyTokensWereRetiredAtH1:
+    """The sequencing decision, pinned as behaviour so it cannot drift silently
+    -- INVERTED at H1.  This class was `TestTheLegacyTokensAreStillLegalUntilH1`;
+    that name pinned the pending-retirement WINDOW (all six tokens additively
+    legal, because live artifacts still declared them).  H1 closed the window:
+    every active artifact was migrated off the six tokens first, blob-checked,
+    and only then did retirement land.  The class is the same behaviour
+    inverted, not deleted, because the sequencing decision it protects still
+    matters in the other direction -- a later change must not silently widen
+    the vocabulary back out, or silently drop the historical tuples metrics
+    still need to parse pre-migration commits.
     """
 
     @pytest.mark.parametrize("state", ["open", "executing", "review"])
-    def test_the_three_pending_retirement_plan_tokens_are_still_legal(self, state):
-        assert state in planner.PLAN_STATES, state
-        assert planner._legal_transitions.__module__  # the table is consulted
+    def test_the_three_retired_plan_tokens_are_no_longer_current(self, state):
+        assert state not in planner.PLAN_STATES, state
+        assert state in planner.HISTORICAL_PLAN_STATES, state
 
     @pytest.mark.parametrize("state", ["proposed", "reviewed", "revised"])
-    def test_the_three_pending_retirement_proposal_tokens_are_still_legal(
+    def test_the_three_retired_proposal_tokens_are_no_longer_current(
             self, state):
-        assert state in planner.PROPOSAL_STATES, state
+        assert state not in planner.PROPOSAL_STATES, state
+        assert state in planner.HISTORICAL_PROPOSAL_STATES, state
 
-    def test_the_historical_tuples_are_still_empty_and_that_is_the_seam(self):
-        """A token becomes historical when the migration removes it from an active
-        artifact, not when a newer name for it exists.  Listing `executing` here
-        while a live plan declares it would make the planner contradict the tree
-        it scans."""
-        assert planner.HISTORICAL_PROPOSAL_STATES == ()
-        assert planner.HISTORICAL_PLAN_STATES == ()
+    def test_the_historical_tuples_are_no_longer_empty_and_that_is_the_seam(
+            self):
+        """A token becomes historical when the migration removes it from an
+        active artifact, not when a newer name for it exists.  H1 is the
+        commit that made both true at once: the last live artifact moved off
+        the six tokens, and only then did they populate these tuples."""
+        assert planner.HISTORICAL_PROPOSAL_STATES == (
+            "proposed", "reviewed", "revised")
+        assert planner.HISTORICAL_PLAN_STATES == ("open", "executing", "review")
 
-    def test_each_legacy_state_keeps_a_forward_path(self, tmp_path):
-        """The concrete hazard: a live plan whose token is still legal but whose
-        transition table lost its arm has no legal move at all."""
+    def test_each_legacy_state_now_has_no_forward_path(self, tmp_path):
+        """The concrete hazard, inverted: a live plan stuck on a retired token
+        must have NO legal move (nothing silently advances it past a status the
+        vocabulary no longer supports), and `scan` refuses it by name with the
+        retired-status message -- while the SAME token on an ARCHIVED plan is
+        left alone, because reading history is never a violation.  This is the
+        only node that proves retirement actually bites."""
         repo = _e_repo(tmp_path)
         for state in ("open", "executing", "review"):
             path = _write_plan(repo, f"{state}.md", status=state)
             art = planner._read_artifact(path)
-            assert planner._legal_transitions(art), state
+            assert planner._legal_transitions(art) == [], state
+            violations = _e_conf(art)
+            assert any(
+                f"retired plan status {state!r}" in v for v in violations
+            ), (state, violations)
+        archive_dir = repo / "dev" / "plans" / "archive"
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        for state in ("open", "executing", "review"):
+            path = _write_plan(
+                repo, f"archive/{state}-archived.md", status=state)
+            art = planner._read_artifact(path)
+            violations = _e_conf(art)
+            assert not any("retired plan status" in v for v in violations), (
+                state, violations)
 
 
 class TestEveryLegalTransition:
@@ -3914,8 +3984,7 @@ class TestEveryLegalTransition:
 
     @pytest.mark.parametrize("status,expected", [
         ("", ["awaiting-plan-review"]),
-        ("awaiting-plan-review", ["revising-plan", "ready-to-implement",
-                                  "executing"]),
+        ("awaiting-plan-review", ["revising-plan", "ready-to-implement"]),
         ("revising-plan", ["awaiting-plan-review"]),
         ("ready-to-implement", ["implementing"]),
         ("implementing", ["awaiting-code-review"]),
@@ -5376,7 +5445,7 @@ _P3_REVISION = "## Revised proposal -- Revision 2"
 _P3_RESPONSE = "## Response -- Author A (Strategy) -- 2026-08-11"
 
 
-def _p3_prop(tmp_path: Path, body: str, *, status: str = "revised",
+def _p3_prop(tmp_path: Path, body: str, *, status: str = "awaiting-review",
              stem: str = "p3-fixture", archived: bool = False):
     """A live proposal carrying *body* below its header -> the parsed artifact.
 
@@ -5930,10 +5999,15 @@ class TestP3AuthoringTemplates:
         """A scaffold that emits text its own checker refuses is worse than no
         scaffold: the tool would hand the author a violation.  The `revised`
         block previously said the revision was *optional* -- the pre-contract
-        wording -- and this node is why that could not survive."""
-        art = _p3_prop(tmp_path, "", status="reviewed")
-        _f, _t, blocks = planner._scaffold(art, "revised", "2026-08-11")
-        pasted = _p3_prop(tmp_path, blocks[0] + "\n", status="revised",
+        wording -- and this node is why that could not survive.
+
+        H1 re-homed this block: it is now `_response_template`, emitted on the
+        `revising -> awaiting-review` return arm (the live successor of the
+        retired `reviewed -> revised` arm this node targeted before H1).
+        """
+        art = _p3_prop(tmp_path, "", status="revising")
+        _f, _t, blocks = planner._scaffold(art, "awaiting-review", "2026-08-11")
+        pasted = _p3_prop(tmp_path, blocks[0] + "\n", status="awaiting-review",
                           stem="p3-scaffolded")
         assert planner.current_contract_violations(pasted) == []
         joined = " ".join(blocks)

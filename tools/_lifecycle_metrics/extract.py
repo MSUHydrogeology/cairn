@@ -337,7 +337,7 @@ class VocabularyUnavailable(RuntimeError):
 
 _PLANNER_MODULE_NAME = "_lifecycle_metrics_lifecycle_planner"
 _PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
-_REQUIRED_EXPORTS = ('PLAN_STATES',)
+_REQUIRED_EXPORTS = ('PLAN_STATES', 'HISTORICAL_PLAN_STATES')
 _planner_cache = None
 
 
@@ -430,8 +430,25 @@ def _vocabulary():
 
 
 def _plan_status_enum() -> Tuple[str, ...]:
-    """The current plan states, from the one runtime source."""
-    return tuple(_vocabulary().PLAN_STATES)
+    """The plan states metrics may resolve -- current **and historical**.
+
+    Metrics read the whole corpus, most of which is archived and predates the
+    H1 vocabulary migration, so this enum is deliberately wider than the set an
+    *active* artifact may declare.  R7 requires exactly this: retiring a token
+    from the current vocabulary must not stop longitudinal history parsing.
+
+    The historical group comes last because `_normalize_plan_status` resolves by
+    the FIRST enum the leading token starts with.  Order is load-bearing and the
+    two groups do not prefix-collide (checked); current tokens must win.
+
+    Dropping the historical half is a **silent** regression, not a loud one:
+    every exact token still resolves to itself through the fall-through, and
+    only the prefix cases move -- `'reviewed; ...'` would resolve `'reviewed'`
+    instead of `'review'`, splitting one longitudinal bucket in two with the
+    suite still green.  `test_metrics_status_normalization.py` is the guard.
+    """
+    vocab = _vocabulary()
+    return tuple(vocab.PLAN_STATES) + tuple(vocab.HISTORICAL_PLAN_STATES)
 
 
 def _normalize_plan_status(value: str) -> str:

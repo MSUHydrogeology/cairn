@@ -76,11 +76,25 @@ refactor, a contract change, anything worth a second opinion —
 goes through a **proposal**:
 
 ```
-proposed -> reviewed -> revised -> accepted / rejected / superseded
+awaiting-review <-> revising -> awaiting-decision
+                             -> accepted / rejected / superseded
 ```
 
-A non-trivial accepted proposal then gets a **plan**
-(`open -> executing -> review -> archived`). Two rules are
+A blocking review moves a proposal to `revising`; the author's Response
+and complete current-contract revision return it to `awaiting-review`; a
+clearing review moves it to `awaiting-decision`, which is the
+Maintainer's. A non-trivial accepted proposal then gets a **plan**:
+
+```
+awaiting-plan-review <-> revising-plan -> ready-to-implement
+  -> implementing -> awaiting-code-review <-> revising-code
+  -> ready-to-archive -> archived
+```
+
+Each status names **who holds it next**, which is why the flat
+`proposed / open / executing / review` tokens were retired: they named a
+phase but not an owner. They remain readable on archived artifacts and
+in longitudinal metrics, and are refused on an active one. Two rules are
 bright-line:
 
 * **Append-only.** Never edit a prior section of a proposal —

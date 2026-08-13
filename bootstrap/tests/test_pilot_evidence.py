@@ -498,8 +498,13 @@ class TestVocabularyLoader:
         assert lifecycle._COUNTED_PLAN_STATE != "review"
         assert lifecycle._COUNTED_PLAN_STATE != "archived"
         # And the neighbours it must not have drifted onto are still distinct
-        # states, so the assertion above is a real discrimination.
-        assert {"review", "archived"} <= set(planner.PLAN_STATES)
+        # states, so the assertion above is a real discrimination.  "review" is
+        # retired as of Chunk H1 -- it moved from PLAN_STATES into
+        # HISTORICAL_PLAN_STATES, not out of the vocabulary entirely -- so the
+        # membership check widens to both tuples rather than dropping the
+        # neighbour or re-pointing onto a still-live state.
+        assert {"review", "archived"} <= set(
+            planner.PLAN_STATES + planner.HISTORICAL_PLAN_STATES)
 
 
 # ---------------------------------------------------------------------------
