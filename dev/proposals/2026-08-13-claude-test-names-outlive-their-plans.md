@@ -177,3 +177,30 @@ facing behaviour; the shipped `AGENTS.md` paragraph is the delivery.
 * The rename produces a merge conflict with an executing plan despite the
   sequencing, which would mean the sequencing rule was too weak and the whole
   thing should wait longer.
+
+## Review -- Antigravity (External) -- 2026-08-13
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External, different agent type from the author (Claude Opus 5)
+**Reviewed commit**: `42322f3a653ac359f378bce36f586d7a73ac0993`
+**Reviewed proposal blob**: `035053183fd1290340adc2c1e2f164f4cc7d3860`
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict: ACCEPT.** The proposal is well-reasoned, operationally sound, and resolves a real maintenance legibility defect without destroying historical provenance. Moving lifecycle coordinates out of test container names and into class docstrings ensures failure logs remain self-describing for future maintainers.
+
+### Steelman & Evaluation
+
+1. **Failure Legibility vs. Historical Provenance**:
+   - Test container names (e.g. `TestP2AmendmentBScopeReduction`) force maintainers diagnosing test failures to consult archived plans. Moving coordinates to class docstrings preserves provenance where it is useful during audits while keeping failure logs focused on pinned behavior.
+
+2. **Clean Scope & Sequencing Discipline**:
+   - The proposal is appropriately bounded: ~30 class containers renamed without touching method bodies or test logic.
+   - Sequencing the rename after owning plans archive prevents merge conflicts and mid-flight churn with active plans (such as `review-efficient-lifecycle`).
+
+3. **Adopter & Operational Alignment**:
+   - Updates both `AGENTS.md` and `templates/core/AGENTS.md` in the `**Naming.**` paragraph, ensuring adopter projects inherit the same operational convention.
+   - Declines adding a lint unnecessarily, recording a clear revival condition if coordinate names reappear post-rename.
+
+### Summary Verdict
+**Verdict**: **ACCEPT** (Proposal approved; 0 blocking, 0 substantive, 0 minor findings). Ready for Maintainer disposition.
+
