@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: revised
+**Status**: accepted
 **Touches**: `AGENTS.md` and `templates/core/AGENTS.md` (the `**Naming.**`
 paragraph); a bounded, mechanical rename of ~30 test classes in
 `bootstrap/tests/`, sequenced after their owning plan archives
@@ -277,4 +277,13 @@ the rule needs its example *in the rule*, not merely nearby — which is what E3
 asked for and why it is accepted.
 
 **Scope delta: preserved.**
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-13
+
+**ACCEPTED as revised.** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, please scribe my acceptance of test-names-outlive-their-plans as revised"
+
+**Scribed by** Antigravity (Gemini 3.1 Pro) on explicit Maintainer instruction.
+
 
