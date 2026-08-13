@@ -4,7 +4,7 @@
 
 **Source proposal**: `2026-08-10-codex-git-native-security-foundations`,
 accepted at Revision 1 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-10`).
-**Status**: executing
+**Status**: archived
 **Plan review**: required(**External** + **External Security Review**) — set by
 the proposal, not by this plan. Two passes, one per clause; **one pass cannot
 discharge both**.
@@ -171,10 +171,10 @@ D  manifest v2  (unblocked: one ceremony)             [commit 4365205]
 F  reflogs, atomic publication, runbook text          [commit 721161a]
 G  the security/provenance documentation surface      [commit 4889d8e]
 --- stable bytes -----------------------------------------------------
-B1 Boundary B on the stable pre-review commit         [record]
-CR independent External Code review                   [review]
-SR focused exact-byte External Security Review        [M2]
-H  the exact-byte bootstrap ceremony                  [M3, M4]
+B1 Boundary B on the stable pre-review commit    [DONE, records below]
+CR independent External Code review              [DONE]
+SR focused exact-byte External Security Review   [DONE Codex SHIP 2026-08-12]
+H  the exact-byte bootstrap ceremony             [DONE cfaace9 2026-08-13]
 ```
 
 Orderings that are load-bearing rather than preference:
@@ -2336,3 +2336,74 @@ left clean**; no probe ref survives in the namespace the ceremony publishes into
 * **M4 is not discharged.** M4 is the *supervised publication* of branch and
   anchor together. This closes its [TRU-7] precondition; the publication itself
   still follows M3.
+
+## M3 and M4 performed -- Anthony Kendall (Maintainer) -- 2026-08-13
+
+**The ceremony ran. The trust root moved for the first time.** Scribed by Claude
+from the Maintainer's own terminal output; **every command below was run by the
+Maintainer**, per R1-F and R1-D. No agent loaded a key, moved a Cairn ref, or
+pushed.
+
+### M3 — the exact-byte bootstrap ceremony
+
+| | |
+|---|---|
+| anchor | `e45e1fcc84ded159ef910b6e7bde15f7b715a5b3` → `cfaace9dc7740476dbe8c648ed30ffa5ef85cbfc` |
+| `refs/heads/master` | `b8c1fac61aeba09de3192c1d28c34ae08059f45a` → `cfaace9` |
+| checkpoint signature | `G`, `kendal30@msu.edu`, `SHA256:wuCkJjCOOr9htMTA6JlZGjMH+qH/lD8/X8EL47YCyao` |
+| reflog | `cairn: supervised gate re-anchor` |
+| M2 basis | `## Code review -- Codex -- 2026-08-12` (**SHIP**, no findings) on `9a3a1cc` |
+| authority set | the nine files, verified byte-identical to the M2 record at ceremony time |
+
+Run in **transition mode**: the closure's membership changed, so the loader
+extracted the checker from the reviewed candidate by OID rather than from the
+old anchor. The blessed range was `e45e1fc..b8c1fac` — **877 commits**, ten days,
+77 frozen-surface files changed, 206 paths outside coverage, 691 of 877 commits
+unsigned (the normal agent-commit shape; the census is diagnostics, never a
+verdict).
+
+**Controls that fired, in the real run and not only in tests:**
+
+* The fixed member-set comparison refused nothing here because the set was
+  correct — but the loader's `shasum -c` gate ran over all nine before any
+  Python started.
+* The key-channel probe **refused the first attempt**: the ceremony was
+  initially pointed at `~/.ssh/cairn_signing.pub`, whose passphrase prompt was
+  answered, producing a signature. `[REFUSE] STAGE 1 CAN SIGN`. Correct, and the
+  ceremony stopped.
+* The transition loader **refused a stale candidate**: HEAD advanced between the
+  review manifest being written and Stage 1 running, and the OID equality check
+  caught it. `REFUSE: candidate resolves to b8c1fac…, review manifest names
+  27fde51…`.
+* Stage 2's signature verification would have refused the originally configured
+  key: `cairn_signing` is **not** on the anchored roster. Caught before the
+  ceremony by comparing the configured key against the anchor's
+  `allowed_signers`, not by the ceremony failing late.
+
+### M4 — atomic publication
+
+One push, both refs, explicit refspecs, `--atomic`. Read back from the remote:
+
+```text
+cfaace9dc7740476dbe8c648ed30ffa5ef85cbfc	refs/cairn/gate-anchor
+cfaace9dc7740476dbe8c648ed30ffa5ef85cbfc	refs/heads/master
+```
+
+Two lines, both naming `N`. **[TRU-7] is closed**: the real remote accepts
+`refs/cairn/*`. Its capability was measured non-mutatingly *before* the ceremony
+(`## M4 remote capability probe`, 2026-08-12) rather than discovered during it,
+and the anchor's presence on the remote beforehand meant this push **updated** an
+existing ref rather than creating one.
+
+### What the run exposed, and where it went
+
+The ceremony worked and **could not be performed by the Maintainer unaided** —
+an agent generated a script for each stage, which put the agent inside the trust
+path R1-F exists to keep it out of. That, and four other findings from the run,
+are recorded under `dev/PLANNING.md` > *"From the first re-anchor ceremony"*,
+deferred as one batch on the Maintainer's authorization. The usability defect
+became proposal `2026-08-13-claude-ceremony-as-code`.
+
+**Both plans in this family are archived as of this record.** The parent's
+remaining Maintainer interventions — M1 through M7 — are all discharged or
+expired: M7 protected the pre-ceremony window and that window has closed.

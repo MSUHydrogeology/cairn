@@ -392,14 +392,22 @@ board by design.
 
 * **[TRU-5] gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
   survives because its commitments are live, not completed)* — the trust root is
-  established at `e45e1fc` and the pre-flight is in the anchor, so every ceremony
-  from here runs the anchored loader. What remains open is the **dated
+  established at `cfaace9` *(re-anchored 2026-08-13; previously `e45e1fc`)* and
+  the pre-flight is in the anchor, so every ceremony from here runs the anchored
+  loader. What remains open is the **dated
   threat-model posture**: Cairn accepts a *trusted-contributor* model for its own
   trust root, **single-maintainer, as of 2026-08-03** — not a standing
-  assumption. Its mechanical expiry is **signature verification against a pinned
-  roster from the recorded signing epoch** (`a07fac8`); `apply` refuses any
-  commit at or after it that is unsigned or signed by a key outside
-  `dev/.cairn/allowed_signers`. *(Corrected at archive: this entry previously
+  assumption. Its mechanical expiry is **the Maintainer's signature on a
+  checkpoint whose message binds the canonical range-review report digest**,
+  verified against the roster read from the anchor.
+  *(Corrected 2026-08-13: this entry previously named a per-commit "signing
+  epoch" tripwire at `a07fac8`. That mechanism was **retired**, not renamed —
+  the epoch constant lived in the tree being blessed, so a candidate could move
+  the line deciding which of its own commits were exempt, and refusing unsigned
+  agent commits contradicted the normal workflow badly enough that operations
+  disabled it. A control routinely disabled is not a control. Authorization now
+  happens in exactly one place: the signed checkpoint. The per-commit census
+  survives as diagnostics inside the range report and is never a verdict.)* *(Corrected at archive: this entry previously
   named a committer-identity tripwire. That mechanism was superseded during
   implementation — Git's committer name and email are unauthenticated and a
   spoofing probe defeated it, GPR2.)* **Two triggers cannot be mechanical and
@@ -693,6 +701,82 @@ because conflating them is how the first enumeration went wrong:
 Commit bodies are the **most immutable** record of all and no artifact-level
 enumeration reaches them — which is the real reason a row a closed artifact names
 is ineligible for `wontfix` without the Maintainer.
+
+#### From the first re-anchor ceremony (2026-08-13) — deferred as one batch
+
+The ceremony ran for the first time on 2026-08-13 (`e45e1fc` → `cfaace9`,
+published atomically). Both source plans archived the same day. These are the
+findings the run itself produced, deferred here on the Maintainer's
+authorization at the archive serialization point:
+
+> "Yes, go ahead and close everything else from these two plans out, including
+> finding a permanent home for any remaining items"
+
+**Four of the five below change the authority closure, so each one costs a
+reviewed-authority transition ceremony.** That is the single most useful thing
+to know about this batch: **do not spend a ceremony on any one of them alone.**
+Batch them with the implementation of
+`2026-08-13-claude-ceremony-as-code`, which already requires a transition
+because it changes closure membership. Revival condition for all four is
+therefore *"when that proposal reaches implementation"*, not a date.
+
+* **The key-channel probe cannot see an agent-held key** *(closure change;
+  `bootstrap/tests/_gate_preflight.py`)*. `probe_cannot_sign` drops
+  `SSH_AUTH_SOCK` from its own environment, while the recorded loader
+  deliberately passes `SSH_AUTH_SOCK` **through** to Stage 1. So the probe
+  measures the on-disk key while an agent-held copy of the same key is
+  invisible to the check and available to everything else in that stage.
+  `ssh-keygen -Y sign -f <public key>` signs via the agent when the agent holds
+  the private half — which is how the 2026-08-13 Stage 2 signed with no
+  passphrase prompt. **Observed, not theorised.** Whether the key was in the
+  agent during that run's Stage 1 could not be determined afterwards: the agent
+  keeps no log, and `AddKeysToAgent yes` was set. Fix direction: the probe must
+  test the same channel candidate code has, or the loader must stop forwarding
+  the socket — and the runbook's claim must match whichever is chosen.
+* **The probe's "non-interactive" claim is false** *(closure change; same
+  file)*. The docstring says `< /dev/null` plus a timeout makes the probe a
+  definite negative. `ssh-keygen` reads passphrases from `/dev/tty`, so on a
+  controlling terminal it **prompts the operator** — observed on 2026-08-13,
+  where supplying the passphrase produced a signature and the correct refusal.
+  It fails closed, and the claim still does not describe the behaviour.
+* **Cairn's roster pins a general-purpose auth key** *(closure change;
+  `dev/.cairn/allowed_signers`)*. The anchored roster pins
+  `~/.ssh/id_ed25519` — the Maintainer's **GitHub authentication key**. So N4's
+  "loaded into no agent" requires removing the key that authenticates day-to-day
+  git work, and `AddKeysToAgent yes` silently restores it. A dedicated ceremony
+  key makes N4 cheap; a shared auth key makes it disruptive and therefore
+  fragile. The repository's `user.signingkey` already names a separate
+  `cairn_signing` key that is **not** on the roster — a pre-existing
+  inconsistency that only surfaced when the two were first exercised together.
+  This is also **adopter-facing doctrine**: what Cairn tells adopters about
+  ceremony key hygiene, not just this laptop's setup.
+* **Opaque finding-IDs in code comments and docstrings** *(closure change for
+  the gate files; ordinary change elsewhere)*. Comments and docstrings across
+  the codebase carry bare review-finding tags — `[FUR5]`, `[M2-1]`, `[S1]`,
+  `[C1]`, `[E1]`, `[D2]` and others — that identify nothing to a reader without
+  the originating plan open beside them. Raised by the Maintainer, 2026-08-13:
+  *"They don't inform anyone anything. I don't know what FUR5 is."* This is a
+  **comprehension-floor** failure (`AGENTS.md` > Review): the tag was written
+  for the reviewer who had just read the finding, and is inert for everyone
+  after. The rationale is usually present and worth keeping — what fails is the
+  bare identifier standing in for it. Fix direction: keep the *reason*, drop or
+  gloss the *label* (`# the loader is its own trust boundary: an earlier
+  version…` rather than `# FUR5`). Deliberately **not** a mechanical
+  find-and-replace: some tags sit next to genuinely load-bearing history, and a
+  sweep that strips them without reading loses the reason too.
+* **The shared *working tree* is an uncovered coordination hazard** *(no closure
+  change)*. On 2026-08-12 a concurrent session's path-scoped commit swept
+  another agent's **uncommitted** review section into it; the author noticed and
+  corrected it. `AGENTS.md`'s commit discipline addresses the shared **index**,
+  and path-scoped commits make that hazard structurally impossible — they do
+  nothing about two sessions appending to one file. Recorded once, so a second
+  occurrence clears the doctrine rate-limit gate rather than being rediscovered.
+
+Also from this cluster and already homed, listed so the batch reads complete:
+the runbook-usability defect became proposal
+`2026-08-13-claude-ceremony-as-code`; the missing gate-anchor fetch instruction
+was fixed in `AGENTS.md` (`088539f`); and the `.pyc`-as-working-tree-mutation
+test defect is queued as its own task.
 
 ### Security-cluster routing
 

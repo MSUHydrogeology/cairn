@@ -2993,10 +2993,17 @@ class TestBasisLegacyEnumerations:
                         planner._LEGACY_UNDECLARED_BASIS) is (k <= n), (
                             stem, dig, k)
                 checked += 1
-        assert checked == 4, (
+        assert checked == 2, (
             "the enumeration changed size; re-derive it against "
             "`_BASIS_BASELINE_COMMIT` and update this figure deliberately "
             f"(found {checked})")
+        # 4 -> 2 on 2026-08-13, deliberately, and for the third time for the
+        # same reason -- this time a PLAN closing rather than a proposal.
+        # `git-native-security-foundations` archived when its ceremony ran
+        # (anchor e45e1fc -> cfaace9), `_is_immutable` began covering it, and
+        # `test_every_basis_manifest_entry_resolves_in_the_live_tree` reddened
+        # on the stem the same hour.  Two digests left with it.  The figure
+        # counts (stem, digest) pairs, so one stem of two digests is -2.
         # 9 -> 8 -> 4 on 2026-08-12, deliberately, and TWICE for the same
         # reason: a Decision landing in another session flips a proposal to a
         # terminal status, `_is_immutable` starts covering it, and its entries

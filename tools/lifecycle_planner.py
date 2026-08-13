@@ -2472,8 +2472,10 @@ _BASIS_BASELINE_COMMIT = "50a32237c54cbce437b0834c48bd9c5645b9cd7a"
 #: `_LEGACY_PASSES`.  Splitting it per field would need per-field manifest data
 #: to grandfather records whose bytes are append-only and will not change.
 _LEGACY_UNDECLARED_BASIS: Dict[str, Dict[str, int]] = {
-    "git-native-security-foundations": {
-        "2a402faafe63d5ef": 1, "84ac2b7fb1d624af": 1},
+    # `git-native-security-foundations` was removed on 2026-08-13 when it
+    # archived: an archived artifact is already covered by `_is_immutable`, so
+    # the entry became dead weight and the contract test says so. This set only
+    # ever shrinks, and archiving is one of the two ways it does.
     "review-efficient-lifecycle": {
         "59f58c6aaced549e": 1, "8dd3a11df9f938af": 1},
 }

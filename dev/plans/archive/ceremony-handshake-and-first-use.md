@@ -4,7 +4,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-12-claude-ceremony-handshake-and-first-use.md`,
 accepted as revised at Round 2 (`## Decision -- Anthony Kendall (Maintainer) -- 2026-08-12`).
-**Status**: review
+**Status**: archived
 **Plan review**: required(**External Security Review**) — set by the proposal.
 An Internal read missed both defects this corrects, and an Internal read missed
 [M2-1] in the parent plan. A same-agent-type reader is not the instrument for
@@ -58,8 +58,8 @@ D  the two-invocation protocol + key-channel preflight    [DONE a63da58 +
 E  runbook rewrite + the R1-F amendment                         [DONE 95c2f47]
 --- stable bytes ---------------------------------------------------
 B1 Boundary B on the stable pre-review commit                   [record]
-M2 the parent plan's exact-byte retake, ONE only  (obtained by) [Maintainer]
-H  the ceremony                                                 [Maintainer]
+M2 the parent plan's exact-byte retake, ONE only   [DONE Codex SHIP 2026-08-12]
+H  the ceremony                                    [DONE cfaace9 2026-08-13]
 ```
 
 **Orderings that are load-bearing:**
