@@ -16,7 +16,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -108,6 +108,14 @@ Measured `as_of 2026-08-13` at `eb2692e`:
 
 Class 2 is net of a lint denylist: the gross 508 includes `PLC0415` (162),
 `BLE001` (20), `SLF001` (1) and `ARG002` (1) — Ruff codes, not coordinates.
+**The denylist applies to every class-2 figure in this plan, aggregate and
+per-chunk alike** — the defect R3-F1 found, and R4-F1 found again one row down.
+
+**Method note on the "in code tokens" column.** Those figures (1 / 20 / 35) are a
+**residual** — whole-file raw matches minus the tokenized comment/docstring and
+string-literal surfaces — not a direct count of code tokens. They are reported to
+size the false-positive population, which is what the class-3 argument turns on;
+they are not used as a completion target anywhere.
 
 **The opened plan's `491` was wrong in both halves, and is withdrawn.** Class 1's
 `346` is unreachable from tracked files under any bracket pattern; it was
@@ -164,6 +172,23 @@ rather than defended.
   because the diff already carries them. A file is done when every candidate in
   it is either changed in the diff or named in that ledger, and the chunk's
   completion is checkable by that pairing rather than asserted.
+
+  **Who runs the pairing, and over what (R4-F3).** `AGENTS.md` requires a named
+  trigger, and "a check whose only trigger is a human remembering is described
+  that way". This one is: **the code reviewer, at Boundary C**, over the range
+  `<first Chunk C commit>..<last Chunk C commit>`, by re-running the enumeration
+  script in the definition above against the pre-pass commit and confirming every
+  candidate it lists is either in that diff or in the ledger. **No new machinery,
+  no gate, no test** — a human step, stated so it cannot be mistaken for an
+  automated one.
+
+  **Granularity, stated because it is not self-evident.** The ledger is one line
+  per *token per file*; the scope figures count *occurrences*. A token appearing
+  four times in one file is one ledger line and four occurrences. That is
+  deliberate — the reason for keeping `R6` in a file is one judgement, not four —
+  but it means **ledger lines will not reconcile to 3258**, and a reviewer
+  checking by arithmetic rather than by the pairing will read a shortfall that
+  is not one.
 * **The rewrite count is not a target.** A real minority of class-3 candidates
   are genuine domain vocabulary — `R1`/`R6` in `scripts/quality_gate.py:31-33`
   are the redundancy gate's own published rule ids — and those stay. Separating
@@ -184,8 +209,8 @@ inside the completion criterion.
 
 The tags proposal routes the `_gate_preflight` sites through *"their security
 plan's closure"*. **That plan archived at `f654dc0` without clearing them.**
-Re-measured `as_of 2026-08-13` at `eb2692e` on the definition above: **205**
-class-1/2 tags plus **64** class-3 candidates across
+Re-measured `as_of 2026-08-13` at `eb2692e` on the definition above: **203**
+class-1/2 tags (78 + 125) plus **64** class-3 candidates across
 `bootstrap/tests/_gate_preflight.py` and `bootstrap/tests/test_gate_preflight.py`.
 (The opened plan's **97** was the bracketed-only count under the definition this
 revision withdrew; R2-F5.)
@@ -289,11 +314,28 @@ three classes so no row is sized on a definition the plan has withdrawn (R2-F5).
 
 | # | Files | class 1+2 | class 3 | Notes |
 |---|------|---:|---:|--------|
-| C1 | `bootstrap/tests/_gate_preflight.py` (80) + `bootstrap/tests/test_gate_preflight.py` (125) | **205** | 64 | The orphaned set. First, because they have no other home. |
+| C1 | `bootstrap/tests/_gate_preflight.py` (78) + `bootstrap/tests/test_gate_preflight.py` (125) | **203** | 64 | The orphaned set. First, because they have no other home. **203 not 205** (R4-F1): `_gate_preflight.py`'s 39 gross class-2 include two `PLC0415`, which the denylist removes. |
 | C2 | `tools/lifecycle_planner.py` + twin | **29** each | **376** each | The opened plan said 25; that figure matched no pattern for these files. **Twins must stay byte-identical**, and class 3 here is 13× the class-1/2 count. |
-| C2b | `tools/lifecycle.py` ↔ `templates/skills/_lib/lifecycle.py` | **25** each | 55 each | The opened plan's 17 was the narrow bracketed count. Parity enforced by `bootstrap/tests/test_lifecycle_brief.py`; edit both or neither. Plus any remaining `tools/` ↔ `templates/skills/_lib/` pair. |
+| C2b | `tools/lifecycle.py` ↔ `templates/skills/_lib/lifecycle.py` | **25** each | 55 each | The opened plan's 17 was the narrow bracketed count. Parity enforced by `bootstrap/tests/test_lifecycle_brief.py`; edit both or neither. |
+| C2c | **the other 26 byte-identical pairs** — see the parity note below | **132** per side, all classes | — | R4-F2. The clause this replaces ("any remaining `tools/` ↔ `templates/skills/_lib/` pair") resolved to the **empty set**. |
 | C3 | the **103 files carrying class-3 only** | 0 | **603** | *These were unreachable under the withdrawn rule.* Largest: `test_security_capability_install.py` (33), `test_lifecycle_stage_patterns.py` (29), `test_scope_reduction_trap.py` (28), `run_security_verification.py` (25). |
 | C4 | the remainder of the 179 | — | — | By file, smallest last. |
+
+**Parity note — the twin set is 28 pairs, not 2 (R4-F2).** The opened C2b closed
+with *"plus any remaining `tools/` ↔ `templates/skills/_lib/` pair"*. Those two
+directories contain **exactly the two pairs already named**, so the clause
+resolved to the empty set and looked like coverage while adding none. Measured at
+`eb2692e` by blob sha over tracked `*.py`: **44 byte-identical groups**, of which
+**26 carry candidates and lie outside the named pairs** — 132 sites per side.
+Largest: `_intent/conflict.py` (28), `run_portable_security_sweeps.py` (13),
+`_onboarding/triggers.py` (10), `content_scan.py` (8), `claim_check.py` (7).
+
+**One of them is a high-risk surface.** `scripts/run_portable_security_sweeps.py`
+↔ `templates/modules/team-gated/run_portable_security_sweeps.py` is named in
+`AGENTS.md` as an executable trust root **kept byte-identical**. Editing a comment
+on one side breaks that property. The rule for all 28 pairs is the same and
+non-negotiable: **edit both sides or neither**, in the same commit. The pair set
+is regenerated at implementation time by blob sha, not carried from this list.
 
 **Acceptance per file**: every candidate of every class has been read and
 dispositioned — rewritten to state its reason, or left in place with the reason
@@ -478,7 +520,12 @@ post-regeneration state is verified when the Maintainer lands the ceremony
 commit.
 
 **Standing gates mapped for Chunks A and B (F8)**, which the opened plan omitted:
-`bootstrap/tests/test_comprehension_floor.py` (Chunk A edits the anchor it pins)
+`bootstrap/tests/test_comprehension_floor.py` — mapped to **Chunk B, not Chunk A**
+(R4-F4). It pins `templates/core/AGENTS.md` and `AGENTS.md`
+(`_AGENTS_FILES`, `bootstrap/tests/test_comprehension_floor.py:29`), not
+`doctrine/rationale.md`; and one of its nodes asserts the floor paragraph
+*sits in the review section* (`:62`), which **B4** edits. F8's fix named the
+wrong chunk for F8's own reason.
 and `python scripts/quality_gate.py --sub neutrality --sub redundancy` (Chunk B
 edits `templates/core/AGENTS.md`, a neutrality surface).
 
@@ -1833,3 +1880,100 @@ only that this round's satisfiers do not disturb it.
 satisfiable by editing sentences that already exist; no design change, no
 re-measurement of the corpus, and no scope reduction. I expect the next pass to
 clear.
+
+## Response to plan review (round 4) -- Claude -- 2026-08-13
+
+**Disposition**: all four findings accepted, each verified independently at
+`eb2692e` from blobs before the fix. No declines. **R4-F3's core verdict — that
+the keep ledger holds — is recorded rather than argued**, and its two residues
+are fixed.
+
+**R4-F1 — accepted; C1 is 203, not 205.** Verified: `_gate_preflight.py` is 41
+class-1 + **39 gross** class-2, of which **2 are `PLC0415`**; net 78. With
+`test_gate_preflight.py`'s 125, C1 = **203**. C2 (29) and C2b (25) are unaffected
+— those files carry no denylisted token.
+
+The finding's real weight is its diagnosis. **R3-F1's own cause — "my per-file
+class-2 counter applied no lint denylist" — survived inside the commit that
+recorded it.** I corrected every aggregate figure that counter produced and left
+the per-chunk row produced by the same counter, four lines below the paragraph
+diagnosing it. The denylist rule is now stated once, explicitly binding
+aggregate *and* per-chunk figures, so the definition has one home.
+
+**R4-F2 — accepted, and it is the widest finding of the four.** The C2b clause
+*"plus any remaining `tools/` ↔ `templates/skills/_lib/` pair"* resolves to the
+**empty set**: those two directories contain exactly the two pairs already named.
+It read as coverage and added none.
+
+Measured by blob sha at `eb2692e`: **44 byte-identical `.py` groups**, of which
+**26 carry candidates and sit outside the named pairs**, holding **132 sites per
+side**. Among them `scripts/run_portable_security_sweeps.py` ↔ its team-gated
+twin — an **executable trust root `AGENTS.md` requires be kept byte-identical**,
+where a one-sided comment edit breaks a security property. Added as **C2c**, with
+the parity rule binding all 28 pairs and the set regenerated by blob sha at
+implementation time rather than carried from the list.
+
+This was **round-1 F6**, the only round-1 finding no later round re-checked. It
+survived three rounds because each round checked what the previous round named.
+
+**R4-F3 — accepted; the ledger holds, and both residues are fixed.** I asked for
+this to be broken and it was not: the enumeration reproduces from the stated
+method, `dev/measurement/` is tracked, and the pairing is decidable by an
+outsider. Recorded because a bar that survives a deliberate attack is worth more
+than one never tested.
+
+* **Trigger named.** `AGENTS.md` requires it: the **code reviewer, at Boundary
+  C**, over the Chunk C commit range, re-running the enumeration against the
+  pre-pass commit. A human step, described as one — no gate, no test, no new
+  machinery.
+* **Granularity stated.** One ledger line per *token per file* against
+  *occurrence*-counted scope, so ledger lines will not reconcile to 3258. Stated
+  because a reviewer checking by arithmetic would read a shortfall that is not
+  one.
+
+**R4-F4 — accepted.** `test_comprehension_floor.py` pins the two `AGENTS.md`
+copies (`:29`), not `doctrine/rationale.md`, and one node asserts the floor
+paragraph sits in the review section (`:62`) — which **B4** edits. Remapped from
+Chunk A to Chunk B. F8's fix named the wrong chunk for F8's own stated reason.
+
+**Method note accepted**: the "in code tokens" column is a residual, not a direct
+count, and now says so.
+
+### The self-assessment, corrected
+
+The round-3 framing — *"each fix reproduced the flaw one level down"* — is
+withdrawn. The review is right that it is too tidy, and right about why: it
+covers 3 of 4 findings, only 2 have a round-2 antecedent, and it flatters. It
+says *the flaw was understood and re-committed elsewhere*, which makes the
+remedy sound like more self-scrutiny.
+
+**R4-F1 shows the actual shape: the correction stops at the cited instance.** I
+fixed the aggregates the finding named and not the per-chunk row with the same
+cause, in the same commit, four lines away. R4-F2 is the same shape at wider
+range — three rounds of corrections, each checking what the last round named,
+while F6 sat unchecked from round 1.
+
+That changes the remedy from a disposition to a procedure: **on accepting a
+finding, re-derive every claim that shares its cause, not the claims it cited.**
+For R4-F1 that would have meant re-running the corrected counter over every
+figure it ever produced. For R4-F2, re-checking the findings no later round
+touched. Both are mechanical, and neither requires being a better reader.
+
+**Applied this round, not just stated.** Before committing, I swept the plan body
+for the two causes rather than the two findings: every bolded figure re-checked
+against the counter that produced it (all 18 reconcile; C2 and C2b carry no
+denylisted token, so 29 and 25 stand), and every open-ended residual clause
+re-read for the R4-F2 shape (`any remaining`, `and any other`, `etc.`) — the only
+two hits are the replaced clause and the sentence documenting its replacement.
+That sweep is the first thing in four rounds that looked past the citations.
+
+**Scope delta: preserved** — R4-F2 adds 26 file pairs and R4-F3 adds a named
+trigger; two of the four satisfiers widen the plan and none narrows it. The
+review explicitly recommends no narrowing and re-tested the over-correction
+question independently: of 324 net class-2 tokens across 73 forms, only `SIM115`
+(×2) and `SHA256` (×1) are non-coordinates.
+
+**Execution size remains the Maintainer's question**, not a reviewer's: 179 files
+in a tree with 13 dirty files under another agent's claim.
+
+**Status** -> `awaiting-plan-review`.
