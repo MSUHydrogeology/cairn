@@ -3705,3 +3705,158 @@ changed two frozen paths *after* the 2026-08-13 ceremony:
 `FROZEN-NEW` `bootstrap/tests/test_metrics_status_normalization.py`. See the
 Chunk I section above; that re-anchor is the one archive precondition an
 implementing agent cannot discharge.
+
+## Code review -- Claude (Internal, delegated) -- 2026-08-13
+
+**Reviewed commit**: `3defdb7`
+**Target**: this plan's implementation range — the pre-landed gate repair `286f07d^..286f07d`, and the `review-efficient-lifecycle` commits within `1c68926^..3defdb7` (filtered from the 213 commits in that window; the rest belong to concurrent sessions and were not reviewed). Substantively: **H1's retirement of the six legacy lifecycle status tokens** across `tools/lifecycle_planner.py` + its `templates/skills/_lib/` twin, `tools/_lifecycle_metrics/extract.py` + its `templates/modules/default-on/` twin, and the five test files H1 touched — plus the plan's own self-reported records (`## H1 retirement: measured blast radius`, `## Cross-cutting findings`, `## Implementation verification`, `[H1-D1]`–`[H1-D4]`, `[H1-S1]`–`[H1-S2]`, `[CF1]`–`[CF9]`), which were treated as claims to be checked rather than as evidence.
+**Prior findings**: none — this is the first code-review pass on this range. The author's `[CF1]`–`[CF9]` hand-off list was checked but is not a prior review's findings.
+**Assurance path**: standard
+**Tier**: Internal
+**Findings**: raised — six MEDIUM, one LOW, one observation. No HIGH survived verification.
+**Bounding**: **not applicable.** The Boundary B record declares `**Boundary B mode**: full`, so there is no bounded record to accept or reject and no `ACCEPTED / FULL RUN REQUIRED` verdict is owed. I verified the declaration is *correct* rather than merely present: the change dirties gate-manifest-frozen paths (a contract surface, on which bounded mode refuses on its own terms — measured below at five paths, not the two the record names), and the plan was opened before bounded mode existed, so under `AGENTS.md` it keeps the verification contract written in it. Both of the record's stated reasons hold.
+
+**What this change is, in plain language.** Six status tokens (`proposed`, `reviewed`, `revised` for proposals; `open`, `executing`, `review` for plans) were removed from the *current* lifecycle vocabulary and moved into two `HISTORICAL_*_STATES` tuples. The design commitment is that **retired is not the same as unrecognized**: an *active* artifact that still declares a retired token is refused by name and handed a migration target, while an *archived* artifact declaring one is left entirely alone, because reading history is never a violation. A genuinely unknown token stays loud in both places. Around that sit four deliberate retention decisions ([H1-D1]–[H1-D4]) and two scope-preservation decisions ([H1-S1]–[H1-S2]).
+
+**How I reviewed it.** Five lenses were run over the range and every finding was put to an adversarial verifier instructed to refute by default; I then re-derived the load-bearing measurements myself before writing this record. I ran **zero** full suites — Boundary B already spent the broad run (4275 passed / 0 failed / 622s on clean `3defdb7`), and `AGENTS.md` > *Verification boundaries* is explicit that copying it here would not be a falsification ledger. All work below is the plan's scoped mapping, single-node runs, static enumeration over the real corpus, and in-memory mutation.
+
+**Method note the Maintainer should know.** Two lenses reported `tools/lifecycle_planner.py` and its twin being edited *under them* by a concurrent session mid-review (digest moving `3af73b06 → a2b8fdbc → 2ce1dccf`, and at one point all six historical owner rows deleted in the working tree). At the time I took the measurements below the tree was clean for `tools/`, `bootstrap/`, `templates/`, `scripts/` and both planner twins digested `3af73b06e10ba17c95cb5e34c669b4a89d073e65c10f929ad2d9d23b7bac1c74`, identical to `git show 3defdb7:tools/lifecycle_planner.py`. I wrote no file in the repository; every mutation below is in-memory (module attribute patched after `exec_module`) or in an out-of-tree scratch tree. **Any Boundary C evidence produced in this working tree during that window is unreliable unless the file digest was pinned before and after each run.**
+
+---
+
+### Falsification performed
+
+**1. The scoped mapping, at review time.**
+
+```
+$ python3.13 -m pytest bootstrap/tests/{test_lifecycle_contract,test_lifecycle_board,\
+  test_lifecycle_vocabulary,test_transition_lint,test_pilot_evidence,\
+  test_scope_reduction_trap,test_metrics_status_normalization,test_notice_install}.py -q -p no:randomly
+1 failed, 1124 passed in 74.75s
+```
+
+The single failure is **not attributable to this change**, and I established that rather than assuming it:
+
+```
+$ python3.13 tools/lifecycle_planner.py scan
+dev/plans/comprehension-outlives-the-artifact.md: 'Plan review -- ... -- 2026-08-13': missing 'Target:' ...
+```
+
+Every violation belongs to another session's in-flight plan artifact landed after `3defdb7`, on the review-basis axis, not the status axis. Code and test bytes are unchanged from `3defdb7`. (It is mild positive evidence that the P1 contract bites on a live artifact it was never fixtured against.)
+
+**2. Shipped behaviour of the headline design — probed directly, both directions.** Synthetic proposals declaring `revised`, one active and one under `dev/proposals/archive/`:
+
+```
+dev/proposals/2026-01-01-x-live.md        | immutable=False
+    "retired proposal status 'revised' -- the accepted vocabulary replaced it (proposed -> awaiting-review; ...)"
+dev/proposals/archive/2026-01-01-x-old.md | immutable=True
+    (no status-axis violation)
+```
+
+**The behaviour is correct.** Every surviving finding below is about *coverage* or *the record*, not about a wrong answer the shipped code produces today. That is why none of them is HIGH.
+
+**3. The standing `_PROPOSAL_POST_REVIEW_STATES` note, reproduced against its own stated case.** In-memory narrowing of the tuple, on a clean self-reviewed **archived** proposal declaring `reviewed` — the exact artifact the comment at `tools/lifecycle_planner.py:4176-4181` names:
+
+```
+--- BASELINE (as shipped)
+    * '## Review' at line 11 appears authored by the proposal author ('Ada Lovelace (Strategy)') ...
+--- MUT-A: narrow _PROPOSAL_POST_REVIEW_STATES
+    * (NO VIOLATIONS -- scan would exit 0)
+```
+
+The comment promises `unknown proposal status` survives and *"`scan` still exits 1 either way"*. It does not. See [C4].
+
+**4. Gate-manifest frozen-path drift, computed per-path against `bootstrap/tests/fixtures/gate_manifest.json` (201 entries) at three revisions.**
+
+```
+=== 3defdb7^: 2 frozen paths differ
+    test_lifecycle_contract.py, test_scope_reduction_trap.py
+=== 3defdb7 : 5 frozen paths differ
+    test_lifecycle_contract.py, test_pilot_evidence.py, test_scope_reduction_trap.py,
+    test_transition_lint.py, templates/modules/default-on/_lifecycle_metrics/extract.py
+$ python3.13 -m pytest bootstrap/tests/test_gate_manifest.py -q -p no:randomly
+21 passed in 14.43s
+```
+
+Five, not two — and nothing reports it. See [C5].
+
+**5. The standing gate's exit code.**
+
+```
+$ python3.13 scripts/quality_gate.py --sub neutrality --sub redundancy ; echo "EXIT=$?"
+[neutrality]  fail=93  info=21
+[redundancy]  fail=0  info=2
+EXIT=1
+```
+
+See [C6]. The two *figures* are correct and were independently reproduced at `3defdb7^` and at HEAD — they are the unchanged pre-existing baseline, exactly as the record claims.
+
+**6. Test-witness enumeration for the retirement message and the owner tables** (exhaustive, repo-wide, not sampled):
+
+```
+$ grep -rn "retired proposal status\|retired plan status" bootstrap/tests/ scripts/ templates/ tools/ | grep -v lifecycle_planner.py:
+bootstrap/tests/test_lifecycle_contract.py:3953:  f"retired plan status {state!r}" in v for v in violations
+bootstrap/tests/test_lifecycle_contract.py:3962:  assert not any("retired plan status" in v for v in violations)
+```
+
+Plan side only. Nothing anywhere asserts the proposal-side message. See [C1].
+
+```
+$ python3.13 -c '... next_owner probes ...'
+owner(proposal,proposed) proposal-reviewer   owner(plan,open) plan-reviewer   owner(plan,executing) implementation
+```
+
+…and `TestOwnerVocabulary` (`test_lifecycle_board.py:263-302`) iterates only the **current** tuples plus the three `unresolved` legacy tokens. See [C2].
+
+**7. `[CF8]`'s two red gates, re-measured at the tested commit.** Item 1 is now **green** — `test_quickstart_sequence.py` → `8 passed` (fixed in-range by `27fde51`), so it does not contradict the 0-failed figure. Item 2 still reproduces — `scripts/verify_stems.py` reports 2 dangling stems in `dev/PLANNING.md`, both introduced by commits that are **ancestors of the range start**, i.e. not this plan's debt at all. The record's hedge is wrong in the plan's own favour.
+
+---
+
+### Findings
+
+* **[C1] MEDIUM — the proposal half of H1's headline behaviour has no test witness, in either direction.** `tools/lifecycle_planner.py:4518-4531` (byte-identical twin at `templates/skills/_lib/lifecycle_planner.py`). The only node that exercises retirement is `bootstrap/tests/test_lifecycle_contract.py:3939` `test_each_legacy_state_now_has_no_forward_path`, whose own docstring calls itself *"the only node that proves retirement actually bites"* — and it parametrizes `("open", "executing", "review")`, the plan side, only. **Failure scenario:** a later edit changes `if not _is_immutable(art):` at :4524. Drop or falsify it and an active proposal declaring `revised` reports `unknown proposal status` — losing the migration target retirement exists to hand the author — or reports nothing at all. Invert it and every archived proposal that ever declared a retired token is called malformed by `scan --include-archive`, which is the exact R7 false positive `HISTORICAL_PROPOSAL_STATES` was added to prevent. Both directions were mutated by two independent lenses and left the mapping fully green (`1125 passed`; and `1 failed, 945 passed` / `1 failed, 834 passed` on wider sets, the one failure being the unrelated live-corpus artifact). Aggravating: the plan's own `[H1-D1]` rule is *"A regression test lands with it; shipping the fix without one leaves the same silent hole."* D1 got `test_metrics_status_normalization.py`; D2's fix got nothing.
+
+* **[C2] MEDIUM — three retained `*_NEXT_OWNERS` rows are guarded by no test, and the source comment states the opposite.** `tools/lifecycle_planner.py:1290-1298` and `:1312-1319`. The comment at :1295-1297 reads *"Deleting these three rows passes the suite — `TestOwnerVocabulary`'s coverage iterates the CURRENT tuples and no longer visits them — which is why they carry their own node."* That node does not exist. `test_the_legacy_multi_successor_tokens_report_unresolved` (`test_lifecycle_board.py:293-302`) pins only `reviewed`/`revised`/`review`; `PROPOSAL_NEXT_OWNERS["proposed"]`, `PLAN_NEXT_OWNERS["open"]` and `["executing"]` are visited by nothing. **Failure scenario:** a cleanup deletes the three rows as dead weight; the mapping stays green (verified twice: `805 passed`, and `1125 passed` on the full mapping, deltas zero against baseline); `next_owner("plan","executing")` then answers `unknown` and the board's `owner` column — B1's entire point — degrades for any active artifact mid-migration. The comment is what a maintainer would rely on to believe the deletion is guarded. **The plan predicted this exactly** (`dev/plans/review-efficient-lifecycle.md:3576-3581`: *"Three owner-table entries end up covered by no test at all … so the retained entries need their own assertions"*) and prescribed the fix; the assertions were never written, and the inaccurate earlier reading was written into the shipped source instead. Cheapest close: three asserts in `TestOwnerVocabulary`, after which the comment becomes true as written.
+
+* **[C3] MEDIUM — the retention justification for those rows is false by measurement.** `tools/lifecycle_planner.py:1290-1291` (*"An archived proposal still declares these"*) and `:1312-1313` (*"40 archived plans still declare these"*), repeated in `3defdb7`'s commit body as one of three decisions offered as *"measured rather than assumed"*. Measured over the live corpus with the planner's own reader: `dev/plans/archive` → 40 × `archived`; `dev/proposals/archive` → 54 × `accepted`, 4 × `superseded`; **historical-token artifacts: 0**. Raw-byte cross-check is stronger still — `grep "^\*\*Status\*\*: *\(open\|executing\|review\)" dev/plans/archive/*.md` returns nothing at all, and every archived plan carries exactly one Status line. (The 7–10 raw `**Status**: revised` hits under `dev/proposals/archive/` are appended-section restatements below the first H2, which `_parse_status` correctly ignores.) The stated *mechanism* is also unreachable: `next_owner` has exactly one call site, `:6183` in the board row builder, and `_board_artifact_paths` (`:5907-5926`) reads direct children only, no archive tree — so no archived artifact can reach `next_owner` at all. **Failure scenario:** the justification cannot survive being checked, which is precisely what invites the deletion [C2] shows is unguarded. The *real* reason to keep the rows is reachable and I demonstrated it — an **active** plan wrongly declaring `executing` renders `owner=implementation` today and `unknown` without them — and it appears nowhere in the comment.
+
+* **[C4] MEDIUM — the standing in-code record of a departure from the plan's own cost list describes a measurement that does not reproduce, and understates the regression.** `tools/lifecycle_planner.py:4174-4185`. The note says that narrowing `_PROPOSAL_POST_REVIEW_STATES` leaves *"only `unknown proposal status`"* and that *"`scan` still exits 1 either way"*. Measured on the exact case it names (§3 above): the narrowing yields **zero violations and exit 0**. Only a *second*, different mutation — also emptying `HISTORICAL_PROPOSAL_STATES`, i.e. the pre-[H1-D2] world — reproduces the stated "after"; the plan's `[H1-D4]` block (`:3620-3636`) carries the same measurement, evidently taken against a partially-applied retirement, and the shipped comment restates it as finished-state fact while additionally re-scoping the case from active to archived. **Failure scenario:** a maintainer does what the comment invites, fails to reproduce it, concludes the note is stale, and proceeds with the narrowing — silently disabling the reviewer-independence check for archived self-reviewed proposals, with no non-zero exit to notice. The *disposition* (keep the tuple wide) is correct and I confirmed it is guarded for the **active** case: narrowing reddens `test_scan_flags_review_authored_by_proposal_author` (`reviewer-authorship` present `True → False`). This finding is about the record, not the behaviour.
+
+* **[C5] MEDIUM — the Known-omissions frozen-path list undercounts by three, and the drift is silent.** `dev/plans/review-efficient-lifecycle.md:3699-3707`. The record names two changed frozen paths plus one `FROZEN-NEW`; measurement (§4 above) shows **five** frozen paths differ from the manifest at `3defdb7`. `test_lifecycle_contract.py` and `test_scope_reduction_trap.py` were already stale at `3defdb7^`; H1 added `test_pilot_evidence.py`, `test_transition_lint.py` and `templates/modules/default-on/_lifecycle_metrics/extract.py`. **Failure scenario:** this section exists to tell the Maintainer what remains before the fenced gate re-anchor. Acting on it re-pins two paths and admits the new file; three stay stale, `test_gate_manifest.py` says `21 passed`, and the omission surfaces at the *next* ceremony attributed to whoever runs it. Note the plan's own cross-cutting section (`:3364`) says *"5 frozen paths changed and 5 discovered FROZEN-NEW — ten, not four"*, so the wider number was known on 2026-08-12; the verification record written a day later narrows it to two without saying why.
+
+* **[C6] MEDIUM — the Boundary B command table records `exit 0` for a command that exits 1.** `dev/plans/review-efficient-lifecycle.md:3666`. Measured deterministically (§5): `EXIT=1`, decomposing to redundancy-only `EXIT=0`, neutrality-only `EXIT=1` — the record's own adjacent `fail=93` is the reason. **Failure scenario:** a reader auditing the ledger, or a future agent scripting that command pair as a pass/fail precondition on the strength of this record, treats the non-zero exit as a regression their own change introduced. The internally contradictory `fail=93` + `exit 0` pairing also costs the ledger credibility on the figures that are right — and most of them are: I reproduced 93/21 and 0/2 at both `3defdb7^` and HEAD, and the `dev/`-scan-root argument for the split-tree discrepancy holds under independent reading of `_NEUTRALITY_SCAN_ROOTS` (`scripts/quality_gate.py:208`), `_R1_SCAN_ROOTS` (`:489`) and `_R6_SCAN_ROOTS` (`:497`) — none contains `dev/` — with `grep -c "dev/"` over the gate output returning **0**.
+
+* **[C7] LOW — a quotation presented verbatim drops a word.** `dev/plans/review-efficient-lifecycle.md:3516-3517` quotes the tripwire as *"Re-point it at the transitions that scaffold the declaration today; do not delete it."* The source (`bootstrap/tests/test_scope_reduction_trap.py:655-658`) reads *"…that scaffold the **Scope-delta** declaration today…"*. **Failure scenario:** a reader greps for the quoted string to find the tripwire and gets only the plan back. Minor mechanically; it earns a line because this plan's own doctrine work is about verbatim quotation of load-bearing text.
+
+* **[C8] OBSERVATION (no reachable failure in the shipped artifact) — a load-bearing fixture sits at a status the tool refuses, undocumented.** `bootstrap/tests/test_lifecycle_contract.py:409-418`. `test_scan_flags_review_authored_by_proposal_author` is the sole behavioural guard on [C4]'s disposition, and it depends on its fixture keeping `status="reviewed"` — now a refused token — yet carries no docstring or comment, in a file where the neighbouring guard nodes all do. The two-step trap: (1) a hygiene pass moves the fixture to `awaiting-decision` (still green, still in the tuple); (2) a later maintainer narrows the tuple (now also green) and the independence check is silently disabled. Both steps were measured green. Step (1) is *more* attractive after H1 than before it. The warning against this lives only in [C4]'s comment — the one that does not reproduce. One-line remedy: a docstring saying the `reviewed` fixture is deliberate and pointing at the tuple. Related and cosmetic: `test_illegal_transition_is_refused` (`:272-279`) still uses `status="proposed"` and now passes degenerately (`legal targets: (none)`), though `TestEveryLegalTransition` covers the real table exhaustively.
+
+#### Refuted during verification
+
+* **Lost `## Code review` scaffold** (claimed [H1-S2] applied asymmetrically). Refuted: `-> awaiting-code-review` is the *implementer's* arm and correctly emits `## Implementation verification`; the reviewer's arms (`-> ready-to-archive`, `-> revising-code`) do print the full code-review grammar, including the four-field basis and the clearing/blocking verdict vocabulary. The dead template is stale and re-pointing it would emit a skeleton that **fails** `review_record_violations` on six predicates — the proposed fix was worse than the state. Downgraded to an observation about unreachable dead code.
+* **`tools/lifecycle.py` stale `ready-to-archive` measurement.** Refuted on attribution and reachability: `3defdb7` does not touch that file (the assertion went stale at `ec6139e`, Chunk E), and the `MonitoringIncomplete` branch is reachable only in a tree that has broken the `verbatim=True` fidelity pairing of the two `skills/_lib` files. The retention is deliberated at `[CF3]` and the phrase is pinned by `test_pilot_evidence.py:487`.
+* **Board `validity` reason-code collapse** (retired vs unknown both reporting `status-vocabulary`). Refuted: no second command is needed — the `owner` column is a *total, exact* discriminator (proved biconditionally over the whole vocabulary, not sampled), it is pinned by `test_lifecycle_board.py:544-558`, and the closed reason-code set is contract behaviour B1/B2 specify deliberately.
+
+---
+
+### Covered — what was checked and found SOUND
+
+**Contract and vocabulary.** Every derived tuple matches its claimed value *by construction*, not by assertion: `SHAPE_B_STATUSES` 16→12 with `proposed`/`open` re-entering only through the OPENING-states-in-historical filter (the accepted R5 reading, not the trivially-neutral widening), `RECOGNIZED_STATES` unchanged at 20, `PROPOSAL_NON_TERMINAL` 3 / `PLAN_NON_TERMINAL` 7, `NEXT_OWNERS` 10 closed values. Both state machines survive the arm drops: every state reachable from `""`, every state keyed, no transition target outside the current vocabulary, dead ends exactly the declared terminals, `terminal_by_owner == terminal_by_table` for both kinds. All six retired tokens are structurally inert — not keys, not targets, `_legal_transitions` returns `[]`, and `cmd_next` refuses `--to <retired>` before any scaffold runs. Retired-vs-unrecognized was checked on a 13-case matrix and is never inverted, including the fail-closed edges (a non-strict header line yields `_strict_header_status() is None` so the artifact is *not* treated as immutable and the refusal still fires; a cross-kind token is reported unknown, not retired). `scan --include-archive` over the real 102-artifact corpus produces **zero** status-vocabulary findings — the retirement added no archive noise. Board CLI fail-closed behaviour confirmed against a synthetic repo (`--status frobnicated` and `--owner nobody` exit 2; `--status review`, retired-but-recognized, exits 0).
+
+**The four retention decisions.** `[H1-D1]` reproduced through the production path (`_plan_status_enum()` = current + historical, historical last; `'reviewed; awaiting code review'` → `'review'`, regressing to `'reviewed'` if the historical half is dropped; no member is a prefix of another, so order is safe), and its new guard file is real: three separate mutations redden it, including order inversion and single-side twin drift. `[H1-D3]`/`[H1-D4]` dispositions correct, D4's guarded for the active case. `[H1-S1]`/`[H1-S2]` verified by **exhaustive scaffold inventory over all 28–29 reachable transitions**, not by reading: `**Scope delta**` is emitted by exactly two symmetric arms (proposal `revising → awaiting-review`, plan `revising-plan → awaiting-plan-review`), both mutation-caught; `<reviewer>` survives on four to five reachable arms, so the no-attribution property retains live, non-vacuous witnesses (`test_review_scaffold_carries_no_reviewer_attribution` + `test_scope_reduction_trap.py` → `112 passed`).
+
+**Verification-integrity.** The collection delta is exact and fully attributed: 4258 at `3defdb7^` → 4275 at `3defdb7`, per-file `test_metrics_status_normalization` 0→16 and `test_transition_lint` 53→54, with `test_lifecycle_contract` 640→640 (9 defs removed, 9 added — an inversion, not a deletion). **No test was deleted or skipped to reach green.** The corpus rebuttal in the record is true (`test_the_live_corpus_is_sound_under_the_p1_contract` passes at both `3defdb7` and `11a8dde`). SHAPE_B corpus neutrality was re-measured independently of the pinned expectations across all three pinned windows (8/2/1, 5/2/0, 27/2/11 added lifecycle files) — none of the four dropped tokens appears as the status of an added file, so the narrowing can remove no shape-(b) finding, and `test_transition_lint.py` holds 54/54 with its pinned corpus counts unmoved. Twin byte-identity holds for all three pairs at HEAD and is mutation-guarded on both sides. The three fixture-helper defaults the plan flagged as silently drifting were migrated. Every file:line citation in the blast-radius record resolves against the pre-change tree, and `scripts/claim_check.py` on the plan is clean.
+
+**Consumer audit.** No further "reads only the current tuples where it should read history too" defect beyond the one the author fixed: `scripts/transition_lint.py` correctly reads `RECOGNIZED_STATES` + `SHAPE_B_STATUSES`; `_board_validity` correctly reads current-only (the board is active-only); `PLAN_REVIEW_CLEARED_STATES` and `CODE_REVIEW_EFFECTIVE_STATES` correctly current-only.
+
+### Not covered / low confidence
+
+* **Two lenses' reports reached this record in full; the harness delivered adversarial verdicts for one of them.** [C1]–[C4] and [C8] carry an explicit refute-by-default verdict; [C5]–[C7] arrived without one and I re-derived each myself before listing it (the commands are in §4, §5 and the [C7] entry). Findings from the remaining lenses, if any, are not represented here. **Coverage of areas outside contract/vocabulary and verification-integrity should be treated as unestablished, not as clean.**
+* **No full suite was run at any point in this review, by design.** The +17 collection delta and the 0-failed figure rest on Boundary B plus the independent per-file collection audit, not on a re-run. If the Maintainer wants the 4275 figure re-observed rather than re-derived, that is a separate spend.
+* **The `dev/`-scan-root argument was verified structurally, not by running the gate at `3defdb7` itself** — I ran it at a clean HEAD with a strictly *larger* `dev/` delta than `11a8dde` and got identical figures with zero `dev/` occurrences in the output, which bounds the risk but does not eliminate the split-tree fact the record honestly discloses.
+* **Adopter-side behaviour is inferred from twin byte-identity, not exercised.** I did not scaffold a fresh adopter tree and drive the retired vocabulary through it.
+* **The concurrent-mutation window.** Two lenses measured against a tree another session was editing. Their *conclusions* were reproduced by me on a pinned-digest clean tree, but any raw figure in their reports taken during that window should be read with that caveat.
+* **Security surfaces** (`bootstrap/_scaffold/`, the interpreter binding, the portable sweep) are untouched by this range and were not reviewed; the AST attestation baseline correctly needs no re-anchor.
+
+**Verdict**: **SHIP**
+
+No HIGH survived verification, and the shipped behaviour of H1's central design is correct in both directions on direct probe. The six MEDIUMs are two kinds of debt, both cheap and both worth closing before archive rather than after: **three untested retentions** ([C1], [C2] — the second of which the plan itself predicted and prescribed a fix for, so closing it is arguably owed rather than optional) and **four inaccurate records** ([C3], [C4], [C5], [C6]) that would each mislead the next person to check them — one of which, [C5], mis-states a fenced Maintainer hand-off list by three paths.
