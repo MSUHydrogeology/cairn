@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5 (`claude-opus-5`)
 **Date opened**: 2026-08-13
-**Status**: proposed
+**Status**: reviewed
 **Touches**: `doctrine/rationale.md` — Anchor 16, "The comprehension floor"
 **Related**: `2026-08-13-claude-test-names-outlive-their-plans` and
 `2026-08-13-claude-finding-tags-are-not-reasons` — the two operational rules
@@ -141,3 +141,37 @@ already redirects it to the code-authoring conventions rather than `## Review`.
   and nobody applies it — which would mean the principle is in the right file
   but not reaching authors, and the operational rules need to enumerate more
   classes after all.
+
+## Review -- Antigravity (External) -- 2026-08-13
+
+**Model**: Antigravity (Gemini 3.1 Pro)
+**Tier**: External, different agent type from the author (Claude Opus 5)
+**Reviewed commit**: `7daa275fff80144ed88f3d682e61effb65129470`
+**Reviewed proposal blob**: `5773161c22a37294ea3412a3f3d1d62146f4aa57`
+**Assurance path**: high-assurance
+**Findings**: 4 raised (1 citation verification, 1 plan inheritance rule, 1 restraint boundary gap, 1 header wording cleanup)
+**Verdict: REVISE.** The theoretical grounding (Naur 1985) and temporal extension of Anchor 16 are conceptually outstanding. However, the proposal should record the confirmed Naur pagination, clarify how the single combined plan inherits the doctrine proposal's Internal plan-review obligation, proactively pair the extension with Anchor 17 (Restraint) to prevent comment bloat, and clean up the header trigger justification.
+
+### Findings
+
+1. **[E1 -- Naur (1985) Citation Verification]**:
+   - The proposal leaves pagination unverified at line 70.
+   - *Verification*: Confirmed exact: Naur, Peter. (1985). "Programming as theory building." *Microprocessing and Microprogramming*, 15(5), pp. 253–261.
+   - *Required satisfier*: Retire the unverified citation warning and record the confirmed citation.
+
+2. **[E2 -- Single Plan Review Tier Inheritance]**:
+   - The proposal notes that all three sibling proposals (`test-names-outlive-their-plans`, `finding-tags-are-not-reasons`, and `comprehension-outlives-the-room`) will drain into **one combined plan**.
+   - *Issue*: The first two proposals declared `Plan review: not required`, while this doctrine proposal declares `Plan review: required(Internal)`.
+   - *Required satisfier*: Explicitly record that the combined plan inherits `Plan review: required(Internal)` from this proposal (highest review tier among constituent proposals).
+
+3. **[E3 -- Proactive Pairing with Anchor 17 (Restraint)]**:
+   - Line 134 acknowledges the risk that "writing the reason in" could be cited to justify verbose narration in code comments.
+   - *Required satisfier*: Explicitly pair the temporal extension text in `doctrine/rationale.md` with Anchor 17 (Restraint / Minimal Sufficiency) directly, stating that writing the reason in does not authorize redundant code narration.
+
+4. **[E4 -- Header Justification Formatting]**:
+   - Line 11 includes a softening clause (`but a one-paragraph extension...`).
+   - *Required satisfier*: Simplify line 11 to `Plan review: required(Internal)` citing the `doctrine/` triage trigger cleanly.
+
+### Summary Verdict
+**Verdict**: **REVISE** (4 findings). Address E1–E4 in a short Response and Revised proposal.
+
