@@ -321,7 +321,7 @@ surface is F7 and the recorded-loader nodes.
   * **There is no shell gate in this repository**, so "standing gates" is empty
     for `reanchor.sh`. **C4a owns the replacement** — `sh -n` over the artifact
     and the instantiated launcher, as public-path nodes. *(Corrected at review
-    [Y3]: this paragraph previously said the plan "owes" one after C4a had
+    [Y3] -- this paragraph previously said the plan "owes" one after C4a had
     already been assigned it, leaving X7 with two accounts.)*
 * **Boundary B**: one full suite on a clean commit under the canonical
   interpreter. **Bounded mode is refused** — trust-ceremony surfaces sit inside
@@ -1370,3 +1370,89 @@ single-owner finding-tag commit must be an ancestor before stable bytes, the
 Maintainer performs N5-N8, and Boundary C plus M2 remain independent security
 checks. The accepted same-user, key-holder-not-process, and replay residuals are
 unchanged and accurately described.
+
+## Ceremony evidence -- a second real re-anchor, 2026-08-13 -- Claude (Implementation)
+
+**This section changes no contract and asks for no re-review.** The External
+Security pass above cleared at `36808ea` with `**Findings**: none`, and expansion
+would invalidate that. What follows is *evidence*, recorded because this plan
+argues largely from the 2026-08-13 Phase 0 ceremony (`e45e1fc` -> `cfaace9`) and a
+second one has now happened under different conditions. Where it would imply a
+contract change, that is flagged and **not** adopted here.
+
+**What ran.** A Phase 0 re-anchor for `review-efficient-lifecycle`, driven by
+`_gate_preflight.py check / evidence / stage1 / stage2`. Anchor `cfaace9` ->
+`089a9db`, candidate `f7d7a654`. Range: 7 frozen-class paths (6 changed, 1
+`FROZEN-NEW`), 25 outside-coverage, 0 cascade-mutable, 0 phase-mutable. Drift
+against the new anchor is **0 across 202 frozen entries**; the anchor commit
+verifies `G` against the anchored roster. The controls behaved correctly at every
+step -- **every problem below was caught, none was blessed.**
+
+### Corroboration for contract already in this plan
+
+**R8 (dedicated-key rollover), demonstrated rather than argued.** The host holds
+`~/.ssh/cairn_signing.pub`, comment `release` -- evidently created for this job --
+fingerprint `SHA256:8R549gtP...`. `dev/.cairn/allowed_signers` contains exactly
+one principal, `SHA256:wuCkJjCO...`, which is `~/.ssh/id_ed25519.pub`, the
+Maintainer's general-purpose key. **The dedicated key exists and the roster never
+learned about it.** Stage 1 was therefore run against a key that cannot verify,
+and produced a complete authorization package bound to it. The failure would have
+surfaced only at stage 2's `status != "G"` check, one stage and one full package
+later.
+
+**`SECURITY.md`'s N4-fragility claim (Chunk H), demonstrated.** Using the
+general-purpose key makes N4 fragile in a specific, mechanical way that is worth
+naming: `~/.ssh/config` carries `AddKeysToAgent yes` for `id_ed25519`, so any
+ordinary use of that key silently re-loads it into the agent and re-breaks the
+stage-1 precondition between attempts. The operator cannot satisfy N4 once; they
+must re-satisfy it before every stage-1 run, against a config that keeps undoing
+it.
+
+**R1-F's premise ("nominally true and operationally false"), again.** The
+assisting agent gave three consecutive wrong answers on the key channel -- advising
+the operator to enter the passphrase at the stage-1 probe (which is the probe
+succeeding, i.e. the refusal), then to `ssh-add` the key (breaching N4 a second
+way), then `< /dev/null` (which cannot suppress an ssh prompt, since ssh reads
+`/dev/tty`). Each was caught by the gate. The agent also handed over the roster
+fingerprint and did not verify that the file the operator selected matched it.
+
+### Two operator-surface facts the runbook does not state
+
+Recorded for Chunk F's restructure. Neither is a new requirement; both are true
+of the procedure as it stands today.
+
+1. **The two stages demand opposite agent states.** Stage 1 refuses if the key is
+   reachable; stage 2 *fails* if it is not -- `git commit-tree` invokes the signer
+   with no controlling tty, falls back to `ssh-askpass`, and dies with
+   `exec(/usr/X11R6/bin/ssh-askpass): No such file or directory` on a stock macOS
+   host. The remedy is `ssh-add` between the stages and `ssh-add -D` after. The
+   runbook says neither, and the error names nothing an operator can act on.
+2. **A stage-1 passphrase prompt is a decision point, not a formality.** The code
+   comment says so exactly -- *"an interactive passphrase prompt is not a refusal --
+   it is the ceremony waiting for a human to make the key available"* -- but the
+   prompt itself is an ordinary `Enter passphrase for ...`, indistinguishable from
+   every other passphrase prompt the operator answers all day. The correct action
+   is to decline within the 10-second probe timeout.
+
+### One candidate contract addition -- FLAGGED, NOT ADOPTED
+
+A stage-1 refusal when `--signing-key`'s fingerprint is absent from
+`allowed_signers`. It is cheap, it is squarely R3's operator surface, and it would
+have failed today's run in the first second instead of after a package was built.
+**It is not added here**, because this plan's contract is cleared and adding a
+refusal is an expansion that would invalidate that clearance. It belongs to
+whoever next revises this plan, or to R8's rollover work, which has to touch the
+roster anyway.
+
+### Out of scope, pointed elsewhere
+
+**Phase 4 has no route for the common case.** Phase 4 (`_gate_reanchor.py`)
+hard-refuses on `evidence_oracle_ok`, which requires the differential oracle to
+have *run*; the oracle runs only with a baseline ref configured, i.e. **during an
+engine refactor** (*"oracle dormant between refactors"*). Today's re-anchor was
+caused by ordinary frozen-file churn -- test files legitimately changing -- so
+Phase 4 refused, and Phase 0 was the only available path despite being documented
+as *"supervised, one-time"* and lacking Phase 4's authorization binding and CAS.
+Both of Cairn's real re-anchors have now gone through Phase 0. This is about
+**which ceremony applies**, not about the operator surface, so it is not folded in
+here.
