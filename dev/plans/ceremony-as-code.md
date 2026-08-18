@@ -13,7 +13,7 @@ added since are the appended `## Ceremony evidence` section (`281acb6`), which
 changes no cell and asks for no re-review.
 **Last update**: 2026-08-18
 **Status detail**: implementing — A `3980ad1`, B `01157dd`, C `39fe015` +
-`1038c90`. Next: D.
+`1038c90`, D `0da586b`. Next: E.
 **Opened**: 2026-08-13
 
 > **Start state.** Implementation begins at **Chunk A**, which the accepted
@@ -81,7 +81,7 @@ PR  External Security Review of this plan                    [required]
 A   the two key-probe corrections (the floor)                [DONE 3980ad1]
 B   the values schema, parser, and `validate`                [DONE 01157dd]
 C   the ceremony artifact and its subcommands                [DONE 39fe015+1038c90]
-D   the packet, the launcher, and their binding              [commit]
+D   the packet, the launcher, and their binding              [DONE 0da586b]
 E   the step registry and the doc-agreement tests            [commit]
 F   the runbook restructure                                  [commit]
 G   the finding-tag pass — OWNED ELSEWHERE, gated here        [gate]
@@ -1469,3 +1469,40 @@ as *"supervised, one-time"* and lacking Phase 4's authorization binding and CAS.
 Both of Cairn's real re-anchors have now gone through Phase 0. This is about
 **which ceremony applies**, not about the operator surface, so it is not folded in
 here.
+
+## Sequence correction -- Claude (Implementation) -- 2026-08-18
+
+**Appended, not folded**: execution of Chunk D has begun, so the append-only
+sequence-revision rule applies.
+
+**[D1]/[D2] name the wrong file, and the plan's own [D3]-[D4] say so.** Both
+rows assign the packet schema and R10's two closure constraints to
+`bootstrap/reanchor.sh`. They are implemented in
+`bootstrap/reanchor-launcher.template.sh` instead.
+
+**Why the cells could not be executed as written.** `reanchor.sh` **is
+candidate code** -- that is the plan's own framing, and it is why [D4] has the
+launcher verify the artifact's digest before starting it. A packet schema
+enforced inside the artifact would run *after* the first candidate byte, which
+inverts the ordering the whole chunk exists to establish, and [D6]'s marker
+interpreter would fail by construction. The two rows are internally
+inconsistent with [D3a], [D4] and [D6], which all place packet handling in the
+launcher.
+
+**No accepted outcome moved.** The packet schema (version, provenance, closure
+rows, artifact path, artifact digest, and no candidate OID) and R10's two
+constraints are all delivered and each has a named test. This is a placement
+correction, not a scope change in either direction -- nothing was added and
+nothing was dropped. It is recorded because a reviewer reading [D1] would look
+in `reanchor.sh` and find nothing there.
+
+**One addition beyond the reviewed cells, declared.** The launcher canonicalises
+its own `mktemp -d` directory with shell builtins. Found by executing the
+launcher end to end: on a stock macOS host `mktemp -d` returns a path under
+`/var`, `/var` is a symlink, and the artifact then refused its own launcher's
+review manifest -- correct by its own rule, ceremony unrunnable. Resolving a
+path *this launcher created seconds ago* is not an exemption from the
+no-symlink rule, which governs paths **supplied** to the ceremony; the
+alternative fix, exempting the manifest, would have left a genuinely unchecked
+path behind a special case. Flagged here rather than absorbed, because a
+reviewer should get to disagree with that reasoning.
