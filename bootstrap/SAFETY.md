@@ -595,6 +595,61 @@ having run.** Porcelain status and reflog output are evidence about local state,
 not identity: security-sensitive decisions bind to object ids, explicit refs,
 verifier exit status and pinned policy.
 
+## Rule 13 — The re-anchor ceremony's pre-candidate trust set is enumerated,
+and every member is recorded rather than resolved
+
+The re-anchor ceremony runs a launcher (`bootstrap/reanchor-launcher.template.sh`,
+instantiated by review) which verifies an authorization packet and the authority
+closure **before** the first candidate byte executes. Everything the launcher
+runs in that window is *pre-candidate*: it decides whether candidate code starts,
+so a substituted one is not caught by anything downstream.
+
+**The posture differs from Rule 10 and the difference is the point.** Rule 10
+governs scripts where **`PATH` resolution is execution authority**. Here there is
+no `PATH` resolution: every executable is an **absolute path recorded by the
+Maintainer in the values file**, validated as an existing, symlink-free,
+executable regular file, and invoked by that path — which no inherited shell
+function or alias can shadow. Ambient discovery is the failure this design
+exists to remove: it is what once let a substituted repository answer for the
+named one, and a replacement `shasum` vouch for bytes it had just rewritten.
+
+**The pre-candidate set, enumerated:**
+
+| executable | why it is in the window |
+|---|---|
+| `env` | builds the sterile child for every `git` invocation |
+| `git` | resolves the candidate OID once and reads closure blobs by that OID |
+| `shasum` | hashes the packet, the snapshot, and every closure blob |
+| `mktemp` | creates the extraction directory |
+| `mkdir` | creates its subdirectories |
+| `cat` | **snapshots the packet into memory before it is parsed** |
+
+`printf`, `read`, `case`, `cd` and `pwd` are shell builtins and reach for
+nothing, which is why the launcher prefers them wherever a utility would
+otherwise be needed — the digest field is split with `${d%% *}` rather than
+`cut`, so `cut` does not join this table.
+
+**`cat` is the one addition this ceremony's second iteration made**, and it is
+recorded here rather than acquired silently. It is needed because the packet
+must be hashed and then parsed from *the same bytes*: the snapshot idiom
+(`v=$("$CAT" "$PKT"; printf x); v=${v%x}`) is what preserves trailing bytes that
+`$(...)` would otherwise strip. It is invoked **only through its validated
+values field**, never by bare name — an executable that is trusted but unbound
+can only be found through ambient `PATH`, which is exactly the gap the recorded
+paths close.
+
+**What the snapshot does not close, stated rather than implied.** The packet is
+read twice — once to hash the file, once to snapshot it — so a same-user writer
+can change it in between. Re-hashing the snapshot and comparing **detects**
+that; it does not **prevent** it. That is Cairn's accepted same-user residual,
+unchanged and not enlarged. The single-buffer property is delivered for
+*parsing*; the *reading* is two passes cross-checked.
+
+**Changes to this table, to how any member is resolved, or to the point at which
+candidate code starts, take a Security Review.**
+
+---
+
 ## Self-check before committing any bootstrap output
 
 Before committing bootstrap-generated or bootstrap-customized

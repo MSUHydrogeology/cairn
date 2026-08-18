@@ -865,3 +865,482 @@ class TestEveryPublicCommandIsExercised:
         usage = text.split("usage() {", 1)[1].split("\n}", 1)[0]
         for cmd in self.PUBLIC_COMMANDS:
             assert cmd in usage, f"'{cmd}' is undocumented in usage"
+
+
+# --------------------------------------------------------------------------
+# the launcher: the packet, the closure, and what must not start
+# --------------------------------------------------------------------------
+
+_LAUNCHER_TEMPLATE = _REPO / "bootstrap/reanchor-launcher.template.sh"
+
+#: The ten authority-closure members, in LC_ALL=C order. Retyped rather than
+#: imported so the launcher, the runbook and the checker are three independent
+#: statements of one set: importing would make this test agree with whatever
+#: the code says, which is not a check.
+CLOSURE = (
+    "bootstrap/REANCHOR_RUNBOOK.md",
+    "bootstrap/reanchor.sh",
+    "bootstrap/tests/_gate_manifest.py",
+    "bootstrap/tests/_gate_preflight.py",
+    "bootstrap/tests/_gate_reanchor.py",
+    "bootstrap/tests/_gate_transition.py",
+    "bootstrap/tests/_oracle.py",
+    "bootstrap/tests/_oracle_activation.py",
+    "bootstrap/tests/_oracle_trust.py",
+    "dev/.cairn/allowed_signers",
+)
+
+#: THE MARKER INTERPRETER. The candidate's `reanchor.sh` writes a file and
+#: stops. Its existence is the *only* evidence that candidate code ran -- an
+#: absent traceback is not evidence, because a refusal and a crash both produce
+#: one. Every refusal node below asserts the marker is ABSENT.
+_MARKER_ARTIFACT = '''\
+#!/bin/sh
+# The first candidate byte that would execute. It records that it did.
+printf 'candidate code ran\\n' > "@MARKER@"
+'''
+
+
+def _sha256_file(path) -> str:
+    import hashlib
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+@pytest.fixture
+def ceremony(bed, tmp_path):
+    """A complete launcher bed: a candidate repository carrying all ten closure
+    members, a packet composed over them, and a launcher instantiated with that
+    packet's digest -- exactly the pair the review delivers."""
+    repo = Path(bed["values"]["checkout"])
+    marker = tmp_path / "CANDIDATE-CODE-RAN"
+
+    for rel in CLOSURE:
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        if rel == "bootstrap/reanchor.sh":
+            p.write_text(_MARKER_ARTIFACT.replace("@MARKER@", str(marker)))
+        else:
+            p.write_text(f"stub for {rel}\n")
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t",
+                    "-c", "user.name=t", "commit", "-qm", "candidate"],
+                   check=True, capture_output=True)
+    oid = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"],
+                         capture_output=True, text=True,
+                         check=True).stdout.strip()
+
+    state = {"repo": repo, "oid": oid, "marker": marker, "dir": tmp_path,
+             "bed": bed}
+    state["packet_path"] = tmp_path / "packet.txt"
+    state["launcher"] = tmp_path / "launcher.sh"
+    _instantiate(state, _compose_packet(state))
+    return state
+
+
+def _compose_packet(state, *, rows=None, artifact_rel="bootstrap/reanchor.sh",
+                    artifact_sha=None, extra=(), schema=None,
+                    provenance="External Security Review, test fixture"):
+    repo = state["repo"]
+    if rows is None:
+        rows = [(_sha256_file(repo / rel), rel) for rel in CLOSURE]
+    if artifact_sha is None:
+        artifact_sha = _sha256_file(repo / "bootstrap/reanchor.sh")
+    lines = [f"schema {schema or 'cairn-authorization-packet/v1'}",
+             f"provenance {provenance}",
+             f"artifact {artifact_rel}",
+             f"artifact_sha256 {artifact_sha}"]
+    lines += [f"member {sha} {rel}" for sha, rel in rows]
+    lines += list(extra)
+    return "\n".join(lines) + "\n"
+
+
+def _instantiate(state, packet_text, *, packet_bytes=None, digest=None):
+    """Write the packet and the launcher instantiated with its digest.
+
+    This models what the review does: it reviews the launcher's text and the
+    packet's bytes together, and the digest it fills is the one it reviewed.
+    """
+    import hashlib
+    body = packet_bytes if packet_bytes is not None else packet_text.encode()
+    Path(state["packet_path"]).write_bytes(body)
+    if digest is None:
+        digest = hashlib.sha256(body).hexdigest()
+    template = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+    assert template.count("@PACKET_SHA256@") == 1, (
+        "the template must carry exactly ONE slot; reviewed bytes stay "
+        "constant and late-bound values arrive as arguments")
+    Path(state["launcher"]).write_text(
+        template.replace("@PACKET_SHA256@", digest), encoding="utf-8")
+    return digest
+
+
+def _launch(state, *, ref=None, values=None, packet=None):
+    return subprocess.run(
+        ["/bin/sh", str(state["launcher"]),
+         str(packet or state["packet_path"]),
+         values or _write_values(state["bed"]),
+         ref or state["oid"]],
+        capture_output=True, text=True, check=False)
+
+
+def _assert_no_candidate_code_ran(state, r, needle):
+    assert r.returncode != 0, f"expected a refusal:\n{r.stdout}\n{r.stderr}"
+    assert needle in r.stderr, f"refusal does not name {needle!r}:\n{r.stderr}"
+    assert not state["marker"].exists(), (
+        "CANDIDATE CODE RAN despite the refusal. The marker interpreter is "
+        "the only evidence that matters here: an absent traceback proves "
+        "nothing, because a refusal and a crash both produce one")
+
+
+class TestTheLauncherRunsTheWholeCeremonyFromOneCommand:
+
+    def test_the_happy_path_reaches_candidate_code(self, ceremony):
+        """Every refusal node below is meaningless unless the clean path
+        actually starts the artifact."""
+        r = _launch(ceremony)
+        assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+        assert ceremony["marker"].exists(), (
+            "the clean path never reached the artifact, so every 'no candidate "
+            "code ran' assertion below is vacuous")
+        assert ceremony["oid"] in r.stdout
+
+    def test_the_template_itself_refuses_unfilled(self, ceremony):
+        """An unfilled template is not an operative launcher. The placeholder
+        is not 64 hex characters, so the comparison cannot pass by accident."""
+        raw = ceremony["dir"] / "raw-template.sh"
+        raw.write_text(_LAUNCHER_TEMPLATE.read_text(encoding="utf-8"))
+        r = subprocess.run(
+            ["/bin/sh", str(raw), str(ceremony["packet_path"]),
+             _write_values(ceremony["bed"]), ceremony["oid"]],
+            capture_output=True, text=True, check=False)
+        _assert_no_candidate_code_ran(ceremony, r, "UNFILLED TEMPLATE")
+
+    def test_the_launcher_carries_no_candidate_oid(self):
+        """Reviewed bytes stay constant; late-bound values arrive as arguments.
+        A candidate OID literal would change the reviewed bytes every ceremony,
+        and the review would be of something nobody ran."""
+        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+        import re as _re
+        assert not _re.search(r"\b[0-9a-f]{40}\b", text), (
+            "the launcher template carries something shaped like an OID")
+
+    def test_the_launcher_passes_a_shell_syntax_check(self):
+        r = subprocess.run(["/bin/sh", "-n", str(_LAUNCHER_TEMPLATE)],
+                           capture_output=True, text=True, check=False)
+        assert r.returncode == 0, r.stderr
+
+
+class TestThePacketIsBoundIntoTheLauncher:
+
+    def test_a_consistently_rewritten_packet_refuses(self, ceremony):
+        """The attack the binding exists to stop, run rather than argued.
+
+        Every row is rewritten to a self-consistent set: the digests match
+        files that really exist, the paths are the real closure, the schema is
+        right. Nothing INSIDE the packet is wrong. Only the launcher's embedded
+        digest catches it -- which is the entire point of binding the two.
+        """
+        forged = ceremony["dir"] / "forged"
+        forged.mkdir()
+        rows = []
+        for rel in CLOSURE:
+            f = forged / rel.replace("/", "_")
+            f.write_text(f"substituted bytes for {rel}\n")
+            rows.append((_sha256_file(f), rel))
+        Path(ceremony["packet_path"]).write_text(
+            _compose_packet(ceremony, rows=rows))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "bound into this launcher")
+
+    def test_a_single_flipped_byte_refuses(self, ceremony):
+        body = Path(ceremony["packet_path"]).read_bytes()
+        Path(ceremony["packet_path"]).write_bytes(
+            body.replace(b"provenance ", b"provenance!", 1))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "bound into this launcher")
+
+    def test_a_symlinked_packet_refuses(self, ceremony):
+        real = ceremony["packet_path"]
+        link = ceremony["dir"] / "packet-link.txt"
+        link.symlink_to(real)
+        r = _launch(ceremony, packet=link)
+        _assert_no_candidate_code_ran(ceremony, r, "symbolic link")
+
+    def test_a_missing_packet_refuses(self, ceremony):
+        r = _launch(ceremony, packet=ceremony["dir"] / "no-such-packet.txt")
+        _assert_no_candidate_code_ran(ceremony, r, "does not exist")
+
+
+class TestHashedBytesAreParsedBytes:
+    """What is verified and what is parsed must be the same bytes, or the
+    verification describes a file that no longer exists by the time it matters.
+
+    Step 3 -- re-hashing the in-memory snapshot -- is what makes the design
+    work, and these are the nodes that attack it directly rather than through
+    an abstract helper.
+    """
+
+    def test_a_trailing_newline_survives_the_snapshot(self, ceremony):
+        """`$(...)` strips every trailing newline. Without the sentinel idiom
+        the snapshot's digest would differ from the file's on a packet ending
+        in a blank line, and a correct ceremony would refuse."""
+        text = _compose_packet(ceremony) + "\n\n"
+        _instantiate(ceremony, text)
+        r = _launch(ceremony)
+        assert r.returncode == 0, (
+            f"a packet with trailing newlines was refused, so the "
+            f"trailing-byte-preserving idiom is not working:\n{r.stderr}")
+        assert ceremony["marker"].exists()
+
+    def test_an_embedded_NUL_refuses_at_the_snapshot_comparison(self, ceremony):
+        """A shell variable cannot carry a NUL, so the snapshot would be a
+        SHORTER string that parsed cleanly. Step 3 is what detects it: the
+        packet format is NUL-free by definition, and this is the enforcement."""
+        body = _compose_packet(ceremony).encode()
+        body = body.replace(b"provenance ", b"provenance\x00", 1)
+        _instantiate(ceremony, "", packet_bytes=body)
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "in memory")
+
+    def test_a_packet_rewritten_between_the_two_reads_refuses(self, ceremony):
+        """The same-user residual, measured rather than assumed. Steps 1 and 2
+        read the file twice, so a writer can change it in between; step 3
+        DETECTS that. It does not prevent it, and the launcher says so."""
+        good = _compose_packet(ceremony)
+        digest = _instantiate(ceremony, good)
+        # Swap `cat` for one that returns different bytes than `shasum` saw.
+        liar = ceremony["dir"] / "lying-cat"
+        other = ceremony["dir"] / "other-packet.txt"
+        other.write_text(good.replace("test fixture", "swapped mid-read"))
+        liar.write_text(f'#!/bin/sh\nexec /bin/cat {other}\n')
+        liar.chmod(0o755)
+        values = _write_values(ceremony["bed"],
+                               override={"cat": str(liar)}, name="values-liar")
+        r = _launch(ceremony, values=values)
+        _assert_no_candidate_code_ran(ceremony, r, "in memory")
+        assert digest in r.stderr or "differ" in r.stderr
+
+
+class TestTheClosureIsVerifiedAtTheResolvedOid:
+
+    def test_a_member_that_differs_at_the_candidate_refuses(self, ceremony):
+        """The packet says one thing, the candidate holds another. The launcher
+        verifies EVERY blob at the OID it resolved, not a sample."""
+        rows = [(_sha256_file(ceremony["repo"] / rel), rel) for rel in CLOSURE]
+        rows[4] = ("a" * 64, rows[4][1])
+        _instantiate(ceremony, _compose_packet(ceremony, rows=rows))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "does not match the reviewed")
+
+    def test_a_dropped_member_refuses_against_the_fixed_set(self, ceremony):
+        """Everything the packet says validates it against ITSELF. A packet
+        with nine rows parses cleanly and hashes correctly -- it is a
+        well-formed packet describing a different closure. Only the launcher's
+        own fixed list catches that."""
+        rows = [(_sha256_file(ceremony["repo"] / rel), rel)
+                for rel in CLOSURE if rel != "bootstrap/tests/_oracle.py"]
+        _instantiate(ceremony, _compose_packet(ceremony, rows=rows))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "not the authority closure")
+
+    def test_an_added_member_refuses_against_the_fixed_set(self, ceremony):
+        extra = ceremony["repo"] / "bootstrap/tests/_smuggled.py"
+        extra.write_text("smuggled\n")
+        subprocess.run(["git", "-C", str(ceremony["repo"]), "add", "-A"],
+                       check=True, capture_output=True)
+        rows = [(_sha256_file(ceremony["repo"] / rel), rel) for rel in CLOSURE]
+        rows.append((_sha256_file(extra), "bootstrap/tests/_smuggled.py"))
+        rows.sort(key=lambda r: r[1])
+        _instantiate(ceremony, _compose_packet(ceremony, rows=rows))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "not the authority closure")
+
+    def test_rows_out_of_order_refuse(self, ceremony):
+        """LC_ALL=C order is canonical because it is independently derivable,
+        so no hidden list decides what 'correct order' means."""
+        rows = [(_sha256_file(ceremony["repo"] / rel), rel) for rel in CLOSURE]
+        rows[0], rows[1] = rows[1], rows[0]
+        _instantiate(ceremony, _compose_packet(ceremony, rows=rows))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "not the authority closure")
+
+    def test_an_unresolvable_candidate_refuses(self, ceremony):
+        r = _launch(ceremony, ref="refs/heads/no-such-branch")
+        _assert_no_candidate_code_ran(ceremony, r, "cannot resolve")
+
+
+class TestTheArtifactIsAClosureMemberByConstruction:
+    """R10's two constraints. The artifact is IN the closure by construction,
+    rather than being an executable the packet happens to name alongside it."""
+
+    def test_an_artifact_path_matching_no_row_refuses(self, ceremony):
+        _instantiate(ceremony, _compose_packet(
+            ceremony, artifact_rel="bootstrap/not_a_member.sh"))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "matches 0 closure rows")
+
+    def test_an_artifact_digest_disagreeing_with_its_row_refuses(self, ceremony):
+        _instantiate(ceremony, _compose_packet(ceremony, artifact_sha="b" * 64))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "does not equal its closure")
+
+    def test_an_artifact_row_naming_a_different_member_refuses(self, ceremony):
+        """A packet could name a real closure member -- with a real digest --
+        that is not the ceremony artifact, and the two constraints alone would
+        be satisfied. The launcher starts one file and will not start another.
+        """
+        other = "bootstrap/tests/_oracle.py"
+        _instantiate(ceremony, _compose_packet(
+            ceremony, artifact_rel=other,
+            artifact_sha=_sha256_file(ceremony["repo"] / other)))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "will not start another")
+
+
+class TestThePacketCarriesNoAuthorityItShouldNot:
+
+    def test_a_candidate_row_in_the_packet_refuses(self, ceremony):
+        """OID-free BY DESIGN -- that is what lets the review produce the
+        packet before the candidate commit exists. A packet naming an OID is a
+        packet from a different contract."""
+        _instantiate(ceremony, _compose_packet(
+            ceremony, extra=(f"candidate {ceremony['oid']}",)))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "must carry NO candidate")
+
+    def test_an_unknown_row_type_refuses(self, ceremony):
+        _instantiate(ceremony, _compose_packet(
+            ceremony, extra=("bless_anyway true",)))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "unknown row type")
+
+    def test_a_wrong_schema_refuses(self, ceremony):
+        _instantiate(ceremony, _compose_packet(
+            ceremony, schema="cairn-authorization-packet/v2"))
+        r = _launch(ceremony)
+        _assert_no_candidate_code_ran(ceremony, r, "unknown schema")
+
+
+class TestTheLauncherReaderRefusesBeforeAnyCandidateByte:
+    """The launcher needs git, shasum, cat, mktemp and mkdir BEFORE it can
+    verify the artifact -- and the artifact's parser is candidate code it has
+    not yet cleared. So it has its own reader, and these nodes prove the reader
+    refuses with the marker still absent."""
+
+    @pytest.mark.parametrize("key", ("git", "shasum", "cat", "mktemp",
+                                     "mkdir", "env"))
+    def test_a_malicious_executable_value_leaves_the_marker_absent(
+            self, ceremony, key):
+        """Not merely 'refuses' -- refuses BEFORE anything runs. A reader that
+        validated after starting the artifact would be describing a boundary
+        that had already been crossed."""
+        evil = ceremony["dir"] / f"evil-{key}"
+        evil.write_text(
+            f'#!/bin/sh\nprintf "evil {key} ran\\n" > "{ceremony["marker"]}"\n')
+        evil.chmod(0o644)          # present, but NOT executable
+        values = _write_values(ceremony["bed"], override={key: str(evil)},
+                               name=f"values-{key}")
+        r = _launch(ceremony, values=values)
+        _assert_no_candidate_code_ran(ceremony, r, "is not executable")
+
+    @pytest.mark.parametrize("key", ("git", "shasum", "cat", "mktemp",
+                                     "mkdir", "env"))
+    def test_an_absent_executable_value_leaves_the_marker_absent(
+            self, ceremony, key):
+        values = _write_values(
+            ceremony["bed"], override={key: str(ceremony["dir"] / "nope")},
+            name=f"values-absent-{key}")
+        r = _launch(ceremony, values=values)
+        _assert_no_candidate_code_ran(ceremony, r, "does not exist")
+
+    @pytest.mark.parametrize("key", ("git", "shasum", "cat", "mktemp",
+                                     "mkdir", "env", "checkout"))
+    def test_a_missing_field_refuses_with_no_ambient_fallback(
+            self, ceremony, key):
+        values = _write_values(ceremony["bed"], drop=(key,),
+                               name=f"values-drop-{key}")
+        r = _launch(ceremony, values=values)
+        _assert_no_candidate_code_ran(ceremony, r, f"missing required key '{key}'")
+
+
+class TestTheTwoValuesParsersAgree:
+    """A parity matrix. The launcher's reader and the artifact's parser are two
+    implementations of one grammar, and two parsers of one artifact that drift
+    is a defect this repository has already had.
+
+    Neither may accept a value the other refuses.
+    """
+
+    #: One damaged values file per rule in the closed grammar, plus `cat`.
+    @pytest.mark.parametrize("label,kwargs", [
+        ("relative-path", {"override": {"git": "bin/git"}}),
+        ("relative-cat", {"override": {"cat": "bin/cat"}}),
+        ("leading-whitespace", {"extra_lines": (" git /bin/sh",)}),
+        ("trailing-whitespace", {"override": {"git": "/bin/sh "}}),
+        ("control-character", {"override": {"git": "/bin/sh\tx"}}),
+        ("no-value", {"extra_lines": ("git",)}),
+        ("duplicate-git", {"extra_lines": ("git /bin/sh",)}),
+        ("duplicate-cat", {"extra_lines": ("cat /bin/cat",)}),
+        ("missing-git", {"drop": ("git",)}),
+        ("missing-cat", {"drop": ("cat",)}),
+        ("over-long-line", {"extra_lines": ("git /" + "a" * 5000,)}),
+        ("non-executable-cat", {}),          # filled in below
+    ])
+    def test_both_parsers_refuse_the_same_values_file(self, ceremony, bed,
+                                                      tmp_path, label, kwargs):
+        if label == "non-executable-cat":
+            plain = tmp_path / "plain-cat"
+            plain.write_text("#!/bin/sh\n")
+            plain.chmod(0o644)
+            kwargs = {"override": {"cat": str(plain)}}
+        values = _write_values(bed, name=f"values-{label}", **kwargs)
+
+        artifact = _run("validate", values)
+        assert artifact.returncode != 0, (
+            f"the ARTIFACT accepted {label!r}, which the launcher refuses")
+
+        launcher = _launch(ceremony, values=values)
+        assert launcher.returncode != 0, (
+            f"the LAUNCHER accepted {label!r}, which the artifact refuses")
+        assert not ceremony["marker"].exists()
+
+    def test_both_parsers_accept_the_same_clean_file(self, ceremony, bed):
+        """The other direction. A parity suite of refusals alone would pass if
+        one parser refused everything."""
+        values = _write_values(bed, name="values-clean")
+        assert _run("validate", values).returncode == 0
+        assert _launch(ceremony, values=values).returncode == 0
+        assert ceremony["marker"].exists()
+
+
+class TestTheLauncherMemberSetMatchesTheOtherTwo:
+    """Three independent statements of one set: the launcher's literal list,
+    the runbook's, and `declared_authority_closure()`. Any two agreeing while
+    the third drifts is how a member gets admitted that nobody declared."""
+
+    def test_the_launcher_list_matches_this_tests_own(self):
+        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
+        recorded = tuple(l for l in block.splitlines() if l)
+        assert recorded == CLOSURE
+
+    def test_the_launcher_list_matches_the_runbook(self):
+        launcher = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+        runbook = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        a = launcher.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
+        b = runbook.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
+        assert [l for l in a.splitlines() if l] == \
+               [l for l in b.splitlines() if l]
+
+    def test_the_launcher_never_invokes_cat_by_bare_name(self):
+        """`cat` is validated so it can be bound. Reaching for it by bare name
+        would find it through ambient PATH -- the gap the recorded paths exist
+        to close, reopened at the one place it matters most."""
+        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+        code = "\n".join(l for l in text.splitlines()
+                         if not l.lstrip().startswith("#"))
+        assert "$(cat " not in code and "`cat " not in code
+        for line in code.splitlines():
+            assert not line.strip().startswith("cat "), line
