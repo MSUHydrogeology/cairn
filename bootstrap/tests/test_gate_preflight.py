@@ -1633,7 +1633,7 @@ class TestThreeCommandIntegration:
 #: The first-use hash set the loader verifies against. Recorded by the
 #: Maintainer at Chunk G step M2; the fixtures compute their own.
 #:
-#: **All nine authority-closure members, not the seven importable modules.**
+#: **All ten authority-closure members, not the seven importable modules.**
 #: Security review [M2-R1]: this helper carried only the Python modules while
 #: M2's authority closure also contains `REANCHOR_RUNBOOK.md` and
 #: `dev/.cairn/allowed_signers`, so the tests exercised a checklist narrower
@@ -3457,7 +3457,7 @@ class TestAuthorizationPackage:
         """[C1]. The package is re-digested, so the confirmation matches.
 
         This is the exact probe the code review ran. Before the fix, three of
-        these signed a checkpoint: falsified digests wrote nine false rows with
+        these signed a checkpoint: falsified digests wrote a full set of false rows with
         every check green, dropping `members` signed
         "steady state -- no closure change" over a real closure change, and a
         newline in a path forged an extra row. The fourth raised an uncaught
@@ -4272,6 +4272,70 @@ class TestTheRunbookSaysWhatItsLoadersDo:
             "the docstring must say WHY stdin=DEVNULL does not suppress it")
         assert "Decline" in doc or "decline" in doc, (
             "the docstring must tell the operator what to do at the prompt")
+
+class TestTheCeremonyArtifactIsAClosureMember:
+    """Chunk C5-C7. `bootstrap/reanchor.sh` IS the procedure now, so its bytes
+    decide what executes at the next ceremony -- which is the definition the
+    closure uses, and the reason the runbook and the roster are already in it.
+
+    It is not a Python module, so `_gate_manifest._frozen_files()` cannot cover
+    it: that function globs Python. Membership is therefore explicit, and these
+    nodes are what stop it from being explicit-but-forgotten.
+    """
+
+    def test_the_artifact_is_in_the_declared_closure(self):
+        assert "bootstrap/reanchor.sh" in P.declared_authority_closure()
+
+    def test_the_frozen_manifest_still_cannot_cover_it(self):
+        """The reason membership had to be explicit, asserted rather than
+        assumed. If this ever becomes false the explicit pin is redundant --
+        but silently keeping both is how two sources of truth start."""
+        frozen = set(G._frozen_files(P._REPO))
+        assert "bootstrap/reanchor.sh" not in frozen, (
+            "the manifest now covers the artifact; the explicit closure pin "
+            "and the manifest are two answers to one question")
+
+    def test_the_runbook_loader_expects_exactly_the_declared_closure(self):
+        """The loader's fixed list is compared BEFORE candidate resolution, so
+        it is the one place the member set is established out of band. If it
+        and `declared_authority_closure()` disagree, either the loader refuses
+        a correct ceremony or it admits a member nobody declared."""
+        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
+        recorded = [l for l in block.splitlines() if l]
+        assert recorded == sorted(P.declared_authority_closure()), (
+            f"the loader's fixed set {recorded} is not the declared closure "
+            f"{sorted(P.declared_authority_closure())}")
+
+    def test_the_loader_list_is_in_LC_ALL_C_order(self):
+        """Canonical because it is independently derivable, so no hidden list
+        decides what 'correct order' means. Sorted order also makes duplicates
+        and omissions detectable by the same check."""
+        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
+        recorded = [l for l in block.splitlines() if l]
+        assert recorded == sorted(recorded)
+        assert len(recorded) == len(set(recorded)), "a path is listed twice"
+
+    def test_the_runbook_prose_names_the_right_arity(self):
+        """The loader's refusal message tells the operator how many paths were
+        expected. A stale count there sends them to count the wrong thing."""
+        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        n = len(P.declared_authority_closure())
+        word = {9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}[n]
+        assert f"the {word} paths recorded in this loader" in text, (
+            f"the loader's refusal message does not say {word!r} for a "
+            f"{n}-member closure")
+
+    def test_LOADED_MODULES_tracks_the_closure_rather_than_a_retyped_list(self):
+        """Derived, so the fixture set and the closure cannot drift. This is
+        the node that made C5 a one-line change instead of a hunt."""
+        assert set(_LOADED_MODULES) == set(P.declared_authority_closure())
+        assert "bootstrap/reanchor.sh" in _LOADED_MODULES
+
 
 class TestReadBoundaryIsRepositoryReadOnly:
     """Security review [M2-4]. `_READ_ONLY_GIT` bounds *subcommands*; it said

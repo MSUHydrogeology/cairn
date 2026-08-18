@@ -64,6 +64,12 @@ _CEREMONY_REFLOG_REASON = "cairn: supervised gate re-anchor"
 _MANIFEST_REL = "bootstrap/tests/fixtures/gate_manifest.json"
 _RUNBOOK_REL = "bootstrap/REANCHOR_RUNBOOK.md"
 _ALLOWED_SIGNERS_REL = "dev/.cairn/allowed_signers"
+#: The ceremony artifact the Maintainer actually runs. It is not a Python
+#: module, so `_gate_manifest._frozen_files()` -- which globs Python only --
+#: cannot cover it. It is pinned here explicitly, the same way the runbook and
+#: the roster are, because the same argument applies: its bytes decide what
+#: executes at the next ceremony.
+_ARTIFACT_REL = "bootstrap/reanchor.sh"
 
 #: **There is deliberately no signing epoch here.** A `_SIGNING_EPOCH` constant
 #: used to sit at this line and decide which commits were exempt from a
@@ -583,9 +589,15 @@ def declared_authority_closure() -> list[str]:
 
     The six Stage-B modules alone are not enough: after first use this checker
     decides what may be blessed, and the runbook holds the invocation deciding
-    which bytes run. Neither is in that set, and ``REANCHOR_RUNBOOK.md`` and the
-    allowed-signers file are not in ``_gate_manifest._frozen_files()`` **at all**,
-    so the manifest cannot cover them. They are pinned here explicitly.
+    which bytes run. Neither is in that set, and ``REANCHOR_RUNBOOK.md``, the
+    allowed-signers file and ``reanchor.sh`` are not in
+    ``_gate_manifest._frozen_files()`` **at all** -- it globs Python -- so the
+    manifest cannot cover them. They are pinned here explicitly.
+
+    ``reanchor.sh`` joins for the reason the runbook did, one step further on:
+    the runbook used to *hold* the procedure as prose the operator retyped, and
+    now the artifact *is* the procedure. Bytes that decide what executes at the
+    next ceremony belong in the closure whatever language they are written in.
     """
     return [
         "bootstrap/tests/_gate_preflight.py",     # this checker
@@ -596,6 +608,7 @@ def declared_authority_closure() -> list[str]:
         "bootstrap/tests/_oracle.py",
         "bootstrap/tests/_oracle_trust.py",
         _RUNBOOK_REL,                             # canonical invocation source
+        _ARTIFACT_REL,                            # the procedure itself
         _ALLOWED_SIGNERS_REL,                     # pinned key set
     ]
 
@@ -3087,7 +3100,8 @@ def apply_now(*, repo: Path = _REPO,
                          # validates only the top-level field set, so the inner
                          # dict was entirely unchecked. A package re-digested
                          # after tampering (the confirmation then matches
-                         # perfectly) signed nine false rows with every check
+                         # perfectly) signed a full set of false rows with
+                         # every check
                          # green, and dropping the `members` key signed
                          # "steady state -- no closure change" over a real
                          # closure change -- verbatim the failure the refusal

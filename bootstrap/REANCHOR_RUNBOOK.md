@@ -351,6 +351,7 @@ LC_ALL=C "$SORT" -c -u "$T/paths" 2>/dev/null \
 # residual trust set** by this check. It costs one shell variable and is
 # byte-for-byte.
 EXPECTED_PATHS='bootstrap/REANCHOR_RUNBOOK.md
+bootstrap/reanchor.sh
 bootstrap/tests/_gate_manifest.py
 bootstrap/tests/_gate_preflight.py
 bootstrap/tests/_gate_reanchor.py
@@ -362,7 +363,7 @@ dev/.cairn/allowed_signers
 '
 [ "$GOT_PATHS" = "$EXPECTED_PATHS" ] \
     || die "the review manifest is not the authority closure -- the member set \
-differs from the nine paths recorded in this loader"
+differs from the ten paths recorded in this loader"
 
 # ---- bind the candidate ONCE ----------------------------------------------
 # Resolved once, to a full object id, and every later read uses that id. A
@@ -384,7 +385,7 @@ done < "$T/members.sha256"
 ( cd "$T" && "$SHASUM" -a 256 -c members.sha256 ) \
     || die "extracted bytes do not match the reviewed manifest"
 
-# The extracted set was established as EXACTLY the fixed nine above, before any
+# The extracted set was established as EXACTLY the fixed ten above, before any
 # of this ran. That comment used to sit here with no check behind it, which is
 # how [M2-R1] survived: a claim in a comment is not a control.
 # STAGE 1 ONLY, as in steady state. The transition changes which bytes run,
@@ -406,7 +407,7 @@ duplicated — and that **no Python starts at all** if any of that fails.
 made the claim above before the code supported it (security review [M2-R1]): the
 loader validated the manifest against itself and left the exact-set comparison
 to `revalidate_transition()`, which runs *inside* the candidate Python the loader
-had already started. The nine expected paths are now literal in the block and
+had already started. The ten expected paths are now literal in the block and
 compared before candidate resolution, extraction or Python — because a check
 performed by the candidate cannot establish that the candidate was safe to run.
 The comparison uses the shell's own string equality, so **the residual trust set
