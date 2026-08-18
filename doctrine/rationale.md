@@ -220,6 +220,18 @@ Four converging literatures ground the principle:
   over-reliance and manufacture an *illusion of understanding*;
   genuine complementary performance needs **verifiability**, not a
   plausible-sounding story.
+* **The understanding is the artifact, and it does not persist by
+  itself** — Naur (1985), *Programming as Theory Building*
+  (Microprocessing and Microprogramming 15(5):253–261;
+  doi:10.1016/0165-6074(85)90032-8): a program's essential content
+  is a *theory* held by the people who built it, and that theory
+  is not contained in the program text or its documentation. When
+  the holders disperse, the theory is lost and the artifact
+  becomes unmodifiable in any principled way. Naur's conclusion is
+  bleak by design; Cairn's answer is not to pretend the theory can
+  be written down whole, but to require that the artifact carry
+  **the reasons a reader needs to rebuild it** — which is the
+  temporal half below.
 
 Cairn's contribution is to make the comprehension floor a
 **reviewable property of the lifecycle** — the same move that
@@ -230,6 +242,40 @@ first-class question, not an afterthought.
 The operative norm: lead plain, keep precision beneath, and treat
 *"I don't understand this yet"* as a **mandatory pause** — a
 decision surface the Maintainer cannot follow is not decidable.
+
+**The floor has a temporal half.** Everything above is about the
+reader in the room — the Maintainer deciding now, with the
+proposal open and the reviewer reachable. But a durable artifact
+outlives that room. **The reader who must understand it is
+whoever meets it next**, and that reader has no deliberation to
+consult: the proposal is archived, the review is a section in a
+file nobody opens, and the agent that wrote the code is a session
+that ended. The record is a *by-product* of deciding, not a
+channel to the future — so **an artifact whose meaning depends on
+the record decays at exactly the rate the record archives.**
+
+The obligation this creates is narrow and concrete: **a durable
+artifact must stand without the deliberation that produced it.**
+A test name says what property it pins, not which plan chunk
+produced it. A comment says why the code is the way it is, not
+which review finding asked for it. A coordinate — `F5`,
+`CR1`, `TestP2AmendmentBScopeReduction` — is a pointer into a
+conversation that has ended; to the next reader it is a token
+that *looks* like information and carries none. It is worse than
+silence, because silence prompts a question and a dead coordinate
+answers it wrongly.
+
+**This is not licence to narrate, and Anchor 17 is the fence.**
+Writing the reason in means writing the reason the code does not
+already state — not restating the code in prose, not transcribing
+the deliberation into the artifact, not a comment on every line.
+Naur's point cuts both ways: the theory cannot be written down
+whole, so an attempt to write it all down produces volume without
+transmission, and volume is waste in Anchor 17's exact sense.
+The test is not *"is the reasoning recorded somewhere"* but
+**"can the next reader act on this without the record?"** — which
+usually takes one sentence, and sometimes takes none.
+
 This anchor is scoped to that **universal norm**. The further
 dimension — calibrating communication by the recipient's domain
 and software proximity — is observed in the guide-star but is not
