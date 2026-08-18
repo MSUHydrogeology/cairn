@@ -124,6 +124,31 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **The controlled re-anchor path cannot run for the ordinary case** *(observed
+  2026-08-13 during the second real gate re-anchor; homed at goodnight because
+  it belongs to no plan)* — there are two ways to move the gate's trust root, and
+  neither fits routine work. The **controlled** path refuses unless the
+  differential oracle has *run*, and that oracle only runs when a pre-refactor
+  baseline is configured — i.e. **during an engine refactor**. It reports itself
+  *"dormant between refactors"* and the promotion then refuses, because the
+  refusal cannot distinguish *"the check failed"* from *"the check did not need
+  to run."*
+
+  So a re-anchor caused by ordinary churn — test files legitimately changing —
+  has only the **establishment** path, which is documented as *"supervised,
+  one-time"* and skips the authorization binding and the compare-and-swap that
+  make the controlled path controlled. **Both of Cairn's real re-anchors have now
+  gone through it.** A one-time procedure used twice is a routine procedure that
+  nobody designed.
+
+  **Do not close this by configuring a baseline to satisfy the check** — that
+  declares a refactor that did not happen, which is fabricating evidence to stop
+  a control objecting, on a trust root. The honest options are to give the
+  controlled path a way to record *"no refactor, oracle not applicable"* without
+  treating it as a failure, or to accept the establishment path as the routine
+  one and give it the missing controls. *Trigger:* the next gate re-anchor, or
+  any work on the re-anchor machinery.
+
 * **The review-allocation pilot is built and reviewed, but has never been
   switched on** *(homed 2026-08-13, when the plan that built it archived)* — the
   machinery for measuring whether the lighter review allocation actually works
