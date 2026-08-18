@@ -12,7 +12,8 @@ SHIP"* — reviewed against the contract bytes at `36808ea`. The only plan bytes
 added since are the appended `## Ceremony evidence` section (`281acb6`), which
 changes no cell and asks for no re-review.
 **Last update**: 2026-08-18
-**Status detail**: implementing — Chunk A landed at `3980ad1`.
+**Status detail**: implementing — A `3980ad1`, B `01157dd`, C `39fe015` +
+`1038c90`. Next: D.
 **Opened**: 2026-08-13
 
 > **Start state.** Implementation begins at **Chunk A**, which the accepted
@@ -78,8 +79,8 @@ precedes the surface work and is not reorderable.
 ```
 PR  External Security Review of this plan                    [required]
 A   the two key-probe corrections (the floor)                [DONE 3980ad1]
-B   the values schema, parser, and `validate`                [commit]
-C   the ceremony artifact and its subcommands                [commit]
+B   the values schema, parser, and `validate`                [DONE 01157dd]
+C   the ceremony artifact and its subcommands                [DONE 39fe015+1038c90]
 D   the packet, the launcher, and their binding              [commit]
 E   the step registry and the doc-agreement tests            [commit]
 F   the runbook restructure                                  [commit]
