@@ -4071,3 +4071,55 @@ clean"*, and this sign-off does not upgrade that.
 multi-obligation mapping over three archived plans, by the Maintainer's explicit
 2026-08-13 decision quoted verbatim in `## Dispositions`. It is named here so the
 sign-off does not read as "everything accepted shipped" when one thing did not.
+
+## Implementation verification -- Claude (Implementation) -- 2026-08-13 (B2)
+
+**Boundary B mode**: full. The second of the two runs this plan budgets, owed
+because the re-anchor rewrote `bootstrap/tests/fixtures/gate_manifest.json`
+inside the reviewed range and *"the runbook itself runs the suite zero times"* --
+so until now nothing had tested the tree as it stands.
+
+**Tested commit**: `089a9dba39b935bb77b0e447454d6ff6eb52bd2f` -- the post-ceremony
+anchor. `refs/cairn/gate-anchor`, `refs/heads/master` and `HEAD` are all at it;
+tree clean at start.
+
+**Interpreter**: CPython 3.13.13, canonical, `PYTHONDONTWRITEBYTECODE=1`.
+
+| command | outcome | timing |
+|---|---|---|
+| `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **4276 passed, 1 failed** | 689.49s |
+
+**The ceremony itself, verified rather than reported.** Anchor `cfaace9` ->
+`089a9db`, signed and verifying `G` against the anchored roster as
+`kendal30@msu.edu`. Frozen drift against the new anchor is **0 across 202
+entries** (was 6 changed + 1 `FROZEN-NEW` against the old one), and
+`test_gate_manifest.py` is 21 passed. The range report classified 7 frozen-class
+paths, 25 outside-coverage, 0 cascade-mutable, 0 phase-mutable, 0
+manifest-artifact -- nothing rode along.
+
+**The one failure is not this plan's, and that is measured rather than asserted.**
+`test_the_live_corpus_is_sound_under_the_p1_contract` reads every live `dev/`
+artifact, so any non-conforming artifact anywhere reddens it. Re-run after B2:
+the assertion names exactly one artifact,
+`dev/plans/comprehension-outlives-the-artifact.md` -- another session's in-flight
+plan, whose `## Plan review` record is missing its `Target:` basis field.
+`lifecycle_planner scan` independently names that artifact and no other, and
+`ceremony-as-code` (the only `dev/` file this session touched during the window)
+appears **zero** times in the failure output. The defect is on the review-basis
+axis, not the status axis this plan changed.
+
+**One honest discrepancy, recorded as B1's was.** A commit from this session
+(`281acb6`, 16:29:26) landed inside B2's window (16:25:54 + 689s). B2's tree was
+therefore not unchanged throughout, and the run is not claimed as a
+byte-stable-tree measurement. The change was markdown-only, in
+`dev/plans/ceremony-as-code.md`; the only node that reads live `dev/` markdown is
+the corpus node above, which fails for a different artifact and reproduces
+identically at a clean tree afterwards. **A reader wanting a strictly
+unperturbed B2 should re-run it on a quiet tree** -- this record does not claim
+to be one.
+
+**Known omissions.** No release ceremony (out of scope). No AST re-anchor needed;
+`bootstrap/_scaffold/` is untouched. The gate manifest re-anchor that B1 listed
+as outstanding is **now discharged** -- it is the ceremony recorded above.
+Nothing published: `master` and `refs/cairn/gate-anchor` are both unpushed, and
+Phase 5 is the Maintainer's separate act.
