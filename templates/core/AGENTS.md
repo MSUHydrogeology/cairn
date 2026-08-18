@@ -141,7 +141,9 @@ decide" into "approve". Lead plain and keep the precision beneath it; define a
 specialist term the first time it carries weight; and treat *"I don't
 understand this yet"* as a **mandatory pause** — a decision surface the
 Maintainer cannot follow is not decidable. This binds the agent, who is
-typically the stronger party on the software, not the reader. Rationale and
+typically the stronger party on the software, not the reader. **The same floor
+reaches forward in time** — see the durable-artifact rules under
+*Project-specific conventions*. Rationale and
 grounding: `doctrine/rationale.md` > the comprehension floor.
 
 ## Session routines
@@ -397,6 +399,40 @@ finding.)
 <!-- cairn:end documentation-discipline -->
 
 ## Project-specific conventions
+
+**Durable artifacts stand without the deliberation that produced them.**
+A test name, a comment, a docstring outlives the plan chunk and the review
+finding that prompted it. The next reader has no proposal open and no reviewer
+to ask, so a coordinate — a finding id, a chunk letter, a plan row — is a
+pointer into a conversation that has ended. It reads as information and carries
+none. Two consequences, both at authoring time:
+
+* **Name a test for the property it pins, not for what produced it.**
+  `TestP2AmendmentBScopeReduction` tells the next reader nothing they can act
+  on -- P2 is a plan chunk and Amendment B a review finding, both long
+  archived. `TestScopeReductionNeedsMaintainerAllowance` tells them what breaks
+  if it fails. Put the *reason* in the docstring — why the obligation exists, what
+  goes wrong without it — and no coordinate:
+
+  ```python
+  class TestScopeReductionNeedsMaintainerAllowance:
+      """Accepted scope is a floor, so dropping an outcome takes an explicit
+      allowance. Without this, narrowing passes as prudence: it costs the
+      reviewer nothing and can never be shown wrong, because the wider
+      version is never built."""
+  ```
+
+* **Comments and docstrings explain the code, not the process.** State the
+  reason the code is the way it is; do not cite the finding that asked for it.
+  `# CR3: use a set here` decays the moment CR3 archives; `# set, not list --
+  membership is checked once per candidate and the candidate list is large`
+  still works in five years. The bar is not *"is the reasoning recorded somewhere"* but **"can the
+  next reader act on this without the record?"** — usually one sentence, and
+  sometimes none. Writing the reason in is not licence to narrate: restating
+  what the code already says is waste, not comprehension.
+
+Grounding: `doctrine/rationale.md`, Anchor 16 (the comprehension floor and its
+temporal half), fenced by Anchor 17.
 
 <!-- cairn:slot project-conventions -->
 (Naming conventions, the development environment, the high-risk
