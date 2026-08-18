@@ -253,6 +253,11 @@ def _sterile_env(index: str | None = None) -> dict[str, str]:
     ``SSH_AUTH_SOCK`` are the operator's, and signing needs them. That is a
     scope statement, not a trust claim -- the runbook's residual trust set is
     where the chain actually ends.
+
+    ``SSH_AUTH_SOCK`` is named here because *stage 2* has one. **Stage 1 is
+    invoked without it**, so this function passes on an absence rather than a
+    socket; that asymmetry lives in the runbook's two environment blocks, not
+    here, and this helper deliberately does not re-decide it.
     """
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env["GIT_TERMINAL_PROMPT"] = "0"
@@ -2114,11 +2119,27 @@ def validate_signing_key(recorded: str | None) -> tuple[str, str]:
 def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
     """Attempt a real signing operation. **Success is the failure case.**
 
-    Non-interactive and timeout-bounded: `ssh-keygen` prompts for a passphrase
-    on an encrypted key, and a prompt is not a refusal -- left interactive, the
-    ceremony would sit waiting for the operator to supply exactly the thing the
-    probe exists to prove is unavailable. `< /dev/null` plus a timeout turns
-    that into a definite negative.
+    **Timeout-bounded, and NOT non-interactive** -- an earlier version of this
+    docstring said it was, and an operator who believed it answered the prompt.
+    `ssh-keygen` reads its passphrase from `/dev/tty`, not from stdin, so
+    `stdin=DEVNULL` does not suppress the prompt and neither does
+    `SSH_ASKPASS_REQUIRE=never`; those close the *other* two channels. On a
+    controlling terminal an encrypted key therefore **prompts, visibly**, with
+    an ordinary `Enter passphrase for ...` indistinguishable from every other
+    passphrase prompt of the day.
+
+    **What the prompt means for the operator**: the prompt IS the refusal
+    working. It is the ceremony asking whether the key is reachable, and typing
+    the passphrase answers *yes* -- which makes the probe succeed, which is the
+    failure case, and the ceremony stops. **Decline** it (Ctrl-C, or an empty
+    entry, or simply wait out the timeout): declining is the act that
+    establishes the N4 precondition for this run. Nothing else in the ceremony
+    asks the operator to withhold something, so nothing else in the ceremony is
+    this easy to get backwards.
+
+    The timeout bounds the wait so an unanswered prompt cannot hang the
+    ceremony, and a timeout is reported as its own outcome rather than as a
+    refusal (see below).
 
     Returns ``(cannot_sign, detail, timed_out)``. This is a probe of a
     precondition, not an enforcement of one. ``timed_out`` is separate from
@@ -2133,7 +2154,16 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
     # after the key-load seal in any case.
     refuse_if_sealed("the key-channel signing probe")
     child = dict(env or os.environ)
-    child.pop("SSH_AUTH_SOCK", None)          # evidence, not the property
+    # The stage-1 loader is invoked with NO `SSH_AUTH_SOCK` at all, so this pop
+    # normally removes nothing. It is kept because it makes the probe's
+    # environment MATCH the stage it runs in rather than DIFFER from it: while
+    # the loader still forwarded the socket, this line meant the probe measured
+    # a channel the candidate code beneath it could still reach, and "cannot
+    # sign" was true only of the probe. A probe that measures a narrower
+    # environment than the code it clears is not a control. If a caller supplies
+    # an `env` carrying a socket, dropping it here keeps that invariant true for
+    # the probe; what makes it true for the *stage* is the loader.
+    child.pop("SSH_AUTH_SOCK", None)
     child["SSH_ASKPASS_REQUIRE"] = "never"    # no GUI prompt path either
     child["DISPLAY"] = ""
     with tempfile.TemporaryDirectory(prefix="cairn-keyprobe-") as td:

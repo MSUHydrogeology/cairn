@@ -3981,6 +3981,298 @@ class TestKeyChannelProbe:
         assert "NOT CONTAINMENT" in marker.upper()
 
 
+# --------------------------------------------------------------------------
+# Chunk A ([R5] riders 1-2): stage 1 receives no agent socket
+# --------------------------------------------------------------------------
+
+#: The two heredoc delimiters that open a **stage-1** loader in the runbook, and
+#: the two that open a **stage-2** one. The split is the control Chunk A
+#: introduced: stage 1 must not be handed a signing channel, stage 2 must.
+_STAGE1_DELIMS = ("LOADER", "TRANSITION")
+_STAGE2_DELIMS = ("STAGE2", "STAGE2T")
+
+
+def _stage1_blocks() -> dict[str, str]:
+    """The two recorded stage-1 loader blocks, by heredoc delimiter."""
+    return {"LOADER": _runbook_block("_gate_preflight.py"),
+            "TRANSITION": _transition_block()}
+
+
+def _stage2_blocks() -> dict[str, str]:
+    """The two recorded stage-2 blocks, by heredoc delimiter."""
+    return {"STAGE2": _stage2_block(), "STAGE2T": _stage2_transition_block()}
+
+
+def _env_header(block: str, delim: str) -> str:
+    """Everything up to and including the ``/bin/sh <<'DELIM'`` line.
+
+    This is the part of a recorded block that decides **what environment the
+    stage runs in**, which is the whole of what Chunk A changed. Lifting it out
+    of the runbook rather than retyping it is the same FUR5 discipline every
+    other recorded-block helper follows: an environment written correct in
+    Python while the recorded one stayed wrong is the failure this repository
+    keeps finding.
+    """
+    opener = f"/bin/sh <<'{delim}'"
+    assert block.count(opener) == 1, (
+        f"expected exactly one {opener!r} in the recorded block")
+    head, _rest = block.split(opener, 1)
+    return head + opener + "\n"
+
+
+def _ssh_tooling() -> tuple[str, str, str]:
+    """Absolute paths for the disposable-key machinery, or skip.
+
+    Never the ceremony key and never the operator's agent: every node below
+    generates its own ed25519 key in `tmp_path` and starts its own agent.
+    """
+    found = {n: shutil.which(n) for n in ("ssh-keygen", "ssh-agent", "ssh-add")}
+    missing = [n for n, p in found.items() if not p]
+    if missing:
+        pytest.skip(f"no {' / '.join(missing)} on this host")
+    return found["ssh-keygen"], found["ssh-agent"], found["ssh-add"]
+
+
+@contextlib.contextmanager
+def _scratch_agent(tmp_path: Path):
+    """A private `ssh-agent` holding a disposable key whose private half is
+    **deleted from disk**.
+
+    Deleting the private file is what makes the node measure the right thing.
+    With it present, `ssh-keygen -Y sign -f k.pub` signs from the file and the
+    agent is irrelevant, so a "cannot sign" result would prove nothing about the
+    socket. With it gone, the agent is the *only* route -- so signing succeeds
+    exactly when the socket is reachable, which is the property Chunk A moved.
+
+    Yields ``(socket_path, public_key_path)``.
+    """
+    keygen, agent, add = _ssh_tooling()
+    key = tmp_path / "disposable"
+    subprocess.run([keygen, "-q", "-t", "ed25519", "-N", "", "-f", str(key),
+                    "-C", "cairn-stage1-boundary-probe"],
+                   check=True, capture_output=True)
+    r = subprocess.run([agent, "-s"], capture_output=True, text=True, check=True)
+    sock = re.search(r"SSH_AUTH_SOCK=([^;]+);", r.stdout)
+    pid = re.search(r"SSH_AGENT_PID=(\d+);", r.stdout)
+    assert sock and pid, f"could not parse ssh-agent output: {r.stdout!r}"
+    sock, pid = sock.group(1), pid.group(1)
+    try:
+        subprocess.run([add, str(key)], check=True, capture_output=True,
+                       env={**os.environ, "SSH_AUTH_SOCK": sock},
+                       stdin=subprocess.DEVNULL)
+        key.unlink()                    # the agent is now the only route
+        yield sock, key.with_suffix(".pub")
+    finally:
+        subprocess.run([agent, "-k"], capture_output=True,
+                       env={**os.environ, "SSH_AUTH_SOCK": sock,
+                            "SSH_AGENT_PID": pid})
+
+
+def _signing_attempt_body(pub: Path, workdir: Path) -> str:
+    """A heredoc body that tries to sign and reports which way it went.
+
+    Deliberately **not** an `SSH_AUTH_SOCK` observation. Observing the variable
+    is the proxy check plan review [E1] falsified: it is what the stage *was
+    handed*, not what the stage *can do*. This body runs the real signing
+    command, which is the only thing that answers the question.
+    """
+    keygen, _agent, _add = _ssh_tooling()
+    payload = workdir / "payload"
+    payload.write_bytes(b"cairn stage-1 boundary probe\n")
+    return (
+        f"SK={shlex.quote(keygen)}\n"
+        f"PUB={shlex.quote(str(pub))}\n"
+        f"PAYLOAD={shlex.quote(str(payload))}\n"
+        'if [ -n "${SSH_AUTH_SOCK-}" ]; then\n'
+        '    echo SOCKET_PRESENT\n'
+        'else\n'
+        '    echo SOCKET_ABSENT\n'
+        'fi\n'
+        'rm -f "$PAYLOAD.sig"\n'
+        'if "$SK" -Y sign -f "$PUB" -n git "$PAYLOAD" >/dev/null 2>&1; then\n'
+        '    echo SIGNED\n'
+        'else\n'
+        '    echo COULD_NOT_SIGN\n'
+        'fi\n')
+
+
+def _run_recorded_header(header: str, delim: str, body: str, *, sock: str,
+                         repo: Path):
+    """Run a recorded environment header with a substituted heredoc body.
+
+    The **invoking** shell carries a live `SSH_AUTH_SOCK`, which is the case
+    that matters: the question is not whether an absent variable stays absent,
+    it is whether a header handed a real agent forwards it.
+    """
+    script = header + body + delim + "\n"
+    return subprocess.run(
+        ["bash", "-c", _substitute(script, repo, hashes=False)],
+        capture_output=True, text=True, check=False, cwd=str(repo),
+        env={**os.environ, "SSH_AUTH_SOCK": sock})
+
+
+class TestStage1ReceivesNoAgentSocket:
+    """Chunk A / [R5] riders 1-2, and acceptance criterion 5.
+
+    Stage 1's contract is that it **cannot sign**: it runs candidate code to
+    build an authorization package and exits. Forwarding an agent socket into it
+    hands that candidate code a live signing channel in exchange for nothing, so
+    Chunk A **removed the channel** instead of measuring it. Removing a channel
+    beats measuring one -- the key probe cleared the probe's own environment,
+    not the environment the candidate code beneath it ran in.
+
+    Every key here is generated in `tmp_path` and every agent is started and
+    killed by the test. **No ceremony key is ever touched, and the operator's
+    own agent is never used.**
+    """
+
+    @pytest.mark.parametrize("delim", _STAGE1_DELIMS)
+    def test_a_key_in_a_scratch_agent_cannot_sign_from_stage_1(
+            self, delim, tmp_path):
+        """The property, run rather than argued."""
+        repo = tmp_path
+        block = _stage1_blocks()[delim]
+        with _scratch_agent(tmp_path) as (sock, pub):
+            body = _signing_attempt_body(pub, tmp_path)
+            r = _run_recorded_header(_env_header(block, delim), delim, body,
+                                     sock=sock, repo=repo)
+            assert r.returncode == 0, r.stderr[-2000:]
+            assert "SOCKET_ABSENT" in r.stdout, (
+                f"the recorded {delim} header forwarded an agent socket into "
+                f"stage 1:\n{r.stdout}")
+            assert "COULD_NOT_SIGN" in r.stdout, (
+                f"stage 1 signed through the scratch agent; the {delim} "
+                f"header's environment is not the boundary it claims:\n"
+                f"{r.stdout}")
+
+    @pytest.mark.parametrize("delim", _STAGE1_DELIMS)
+    def test_restoring_the_forward_makes_the_same_stage_able_to_sign(
+            self, delim, tmp_path):
+        """The other side, so the node above cannot pass vacuously.
+
+        If the signature failed for some reason unrelated to the socket -- a
+        missing agent, an unusable key, a typo in the body -- the node above
+        would pass while measuring nothing. Putting the forward back must make
+        the *same* header, the *same* key and the *same* command **succeed**.
+        This is the mutation check for acceptance criterion 5's two-sided form,
+        expressed as a test rather than as a claim that one exists.
+        """
+        repo = tmp_path
+        header = _env_header(_stage1_blocks()[delim], delim)
+        restored = header.replace(
+            f"    /bin/sh <<'{delim}'",
+            f'    SSH_AUTH_SOCK="${{SSH_AUTH_SOCK-}}" \\\n'
+            f"    /bin/sh <<'{delim}'")
+        assert restored != header, "the forward was not re-inserted"
+        with _scratch_agent(tmp_path) as (sock, pub):
+            body = _signing_attempt_body(pub, tmp_path)
+            r = _run_recorded_header(restored, delim, body, sock=sock,
+                                     repo=repo)
+            assert r.returncode == 0, r.stderr[-2000:]
+            assert "SOCKET_PRESENT" in r.stdout, r.stdout
+            assert "SIGNED" in r.stdout, (
+                "with the forward restored the stage still could not sign, so "
+                "the boundary node above is not measuring the forward:\n"
+                f"{r.stdout}\n{r.stderr[-1500:]}")
+
+    @pytest.mark.parametrize("delim", _STAGE2_DELIMS)
+    def test_stage_2_still_receives_the_socket(self, delim, tmp_path):
+        """The asymmetry is deliberate and must not be "tidied" symmetric.
+
+        Stage 2 is the stage that signs. `git commit-tree` invokes the signer
+        with no controlling terminal, so without a forwarded agent it falls back
+        to `ssh-askpass` and dies naming a path that does not exist on a stock
+        host. A later cleanup that removed *both* forwards would leave stage 1
+        correct and the ceremony unrunnable.
+        """
+        repo = tmp_path
+        header = _env_header(_stage2_blocks()[delim], delim)
+        with _scratch_agent(tmp_path) as (sock, pub):
+            body = _signing_attempt_body(pub, tmp_path)
+            r = _run_recorded_header(header, delim, body, sock=sock, repo=repo)
+            assert r.returncode == 0, r.stderr[-2000:]
+            assert "SOCKET_PRESENT" in r.stdout, (
+                f"the recorded {delim} header dropped the agent socket; stage "
+                f"2 cannot sign without it:\n{r.stdout}")
+            assert "SIGNED" in r.stdout, r.stdout
+
+
+class TestTheRunbookSaysWhatItsLoadersDo:
+    """Chunk A / [R5] rider 1's second half: **prose and loader cannot drift.**
+
+    The behavioural nodes above execute the recorded headers, so they catch a
+    loader that stops matching its contract. They do not catch the other
+    direction -- a loader corrected while the paragraph above it still explains
+    the old behaviour -- and that direction is the one an operator reads.
+    """
+
+    @staticmethod
+    def _executable(header: str) -> str:
+        """The header's shell lines, with its comments removed.
+
+        The control is what the shell *runs*. The steady-state header also
+        *explains* the removal in a comment, and a naive substring search over
+        the whole header cannot tell the explanation from the thing it
+        explains -- it would read "SSH_AUTH_SOCK IS NOT FORWARDED" as a
+        forward.
+        """
+        return "\n".join(l for l in header.splitlines()
+                          if not l.lstrip().startswith("#"))
+
+    def test_no_stage_1_loader_forwards_the_agent_socket(self):
+        for delim, block in _stage1_blocks().items():
+            assert "SSH_AUTH_SOCK" not in \
+                self._executable(_env_header(block, delim)), (
+                    f"the recorded {delim} loader forwards SSH_AUTH_SOCK into "
+                    f"stage 1, which is the channel Chunk A removed")
+
+    def test_the_comment_stripper_does_not_hide_a_real_forward(self):
+        """The node above would pass vacuously if `_executable` ate everything.
+
+        Feeding it a header that *does* forward must still show the forward --
+        otherwise "no match" would mean "nothing was searched".
+        """
+        delim = "LOADER"
+        header = _env_header(_stage1_blocks()[delim], delim)
+        forward = '    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \\\n'
+        restored = header.replace(f"    /bin/sh <<'{delim}'",
+                                  forward + f"    /bin/sh <<'{delim}'")
+        assert "SSH_AUTH_SOCK" in self._executable(restored), (
+            "the comment stripper removed a real forward, so the node above "
+            "proves nothing")
+
+    def test_both_stage_2_blocks_forward_the_agent_socket(self):
+        for delim, block in _stage2_blocks().items():
+            assert 'SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}"' in \
+                self._executable(_env_header(block, delim)), (
+                    f"the recorded {delim} block no longer forwards the agent "
+                    f"socket; stage 2 is the stage that signs")
+
+    def test_the_prose_records_the_asymmetry_as_deliberate(self):
+        """A reader who meets two blocks differing by one line must be told the
+        difference is the control, or they will "fix" it."""
+        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
+            encoding="utf-8")
+        assert "IS NOT FORWARDED TO STAGE 1" in text, (
+            "the runbook no longer states that stage 1 gets no agent socket")
+        stage2 = text.split("### Phase 0 stage 2")[1]
+        assert "opposite states" in stage2, (
+            "the stage-2 section must name the asymmetry, or the two "
+            "environment blocks read as a copying slip")
+
+    def test_the_probe_docstring_does_not_call_itself_non_interactive(self):
+        """[R5] rider 2. The docstring said "non-interactive"; `ssh-keygen`
+        reads its passphrase from `/dev/tty`, so on a controlling terminal the
+        probe **prompts**. An operator who trusted the old wording answered the
+        prompt -- which is the probe succeeding, i.e. the refusal."""
+        doc = P.probe_cannot_sign.__doc__ or ""
+        assert "NOT non-interactive" in doc, (
+            "the probe's own docstring must say it can prompt")
+        assert "/dev/tty" in doc, (
+            "the docstring must say WHY stdin=DEVNULL does not suppress it")
+        assert "Decline" in doc or "decline" in doc, (
+            "the docstring must tell the operator what to do at the prompt")
+
 class TestReadBoundaryIsRepositoryReadOnly:
     """Security review [M2-4]. `_READ_ONLY_GIT` bounds *subcommands*; it said
     nothing about whether the repository is written. `git status` refreshes

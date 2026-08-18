@@ -75,11 +75,17 @@ returning success — the same trust-source failure as FUR1, one step earlier.
 #
 # `PATH` is real here, unlike an earlier version of this block that set it only
 # inside the git child and then claimed it covered the utilities.
-# `HOME` is recorded because the signing backend needs it. `SSH_AUTH_SOCK` is
-# the single deliberate pass-through from the invoking shell, since an agent
-# socket is per-session and cannot be recorded; a wrong value can only make
-# signing FAIL, never pass, because the signature is verified against the
-# anchored roster with a pinned verifier.
+# `HOME` is recorded because the signing backend needs it.
+#
+# `SSH_AUTH_SOCK` IS NOT FORWARDED TO STAGE 1, and its absence here is the
+# control, not an omission. Stage 1's whole contract is that it CANNOT SIGN: it
+# runs candidate code to build an authorization package and exits. An agent
+# socket therefore buys stage 1 nothing, while handing that candidate code a
+# live signing channel -- so the channel is REMOVED rather than measured. An
+# earlier version forwarded it and relied on the key probe to establish that
+# nothing could sign through it, which measured a channel the code beneath it
+# could still use. Removing a channel beats measuring one. Stage 2 forwards the
+# socket, because stage 2 is the stage that signs.
 #
 # THE SHELL IS `/bin/sh`, LITERALLY -- do not substitute your own. This is not a
 # recorded value and not a preference: a non-interactive `/bin/sh` reads no
@@ -92,7 +98,6 @@ returning success — the same trust-source failure as FUR1, one step earlier.
 <maintainer-recorded-env> -i \
     PATH=/usr/bin:/bin \
     HOME=<maintainer-recorded-home> \
-    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
     /bin/sh <<'LOADER'
 # Every value here is recorded by the Maintainer at first use. NOTHING is
 # discovered: ambient discovery is what let a substituted repository answer for
@@ -215,7 +220,6 @@ Sorted order also makes duplicates and omissions detectable by the same check.
 <maintainer-recorded-env> -i \
     PATH=/usr/bin:/bin \
     HOME=<maintainer-recorded-home> \
-    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
     /bin/sh <<'TRANSITION'
 CHECKOUT=<absolute-path-of-the-checkout-to-bless>
 CANDIDATE=<candidate-ref-or-oid-to-transition-to>
@@ -496,6 +500,14 @@ from object bytes, and is the reason the stage exists.
    stage 1 proved it could not sign. Loading it earlier collapses the boundary
    the two stages exist to create.
 
+**The two stages want opposite states, and the environment lines say so.** Stage
+1 is invoked with **no `SSH_AUTH_SOCK`** and refuses if the key can sign anyway;
+stage 2 forwards the socket and **fails without it**, because `git commit-tree`
+invokes the signer with no controlling terminal, falls back to `ssh-askpass`, and
+dies naming a path that does not exist on a stock host. So the key is made
+available **between** the stages, and put away after — the asymmetry in the two
+environment blocks below is the whole boundary, not a copying slip.
+
 **Stage 2 extracts and verifies its own bytes.** It does *not* reuse stage 1's
 temp directory. Candidate code ran in stage 1 — that is what stage 1 is for —
 so anything stage 1 left on disk had a window in which candidate code was
@@ -511,7 +523,9 @@ signing stage bytes the candidate had an opportunity to rewrite. This is D4's
     SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
     /bin/sh <<'STAGE2'
 # Same recorded values as stage 1, and recorded the same way: nothing is
-# discovered, and nothing is carried over from the previous invocation.
+# discovered, and nothing is carried over from the previous invocation. The one
+# deliberate difference is the environment line above: stage 2 forwards
+# `SSH_AUTH_SOCK` and stage 1 does not, because this is the stage that signs.
 CHECKOUT=<absolute-path-of-the-checkout-to-bless>
 ENV=<maintainer-recorded-env>
 GIT=<maintainer-recorded-git>
