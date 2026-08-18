@@ -4,7 +4,7 @@ Every refusal here is proved **non-vacuous** by construction: each test builds t
 state that must refuse and asserts the specific finding, and the accompanying
 "clean" case asserts the same check stays silent. Two properties this file
 deliberately does **not** assert, because the mechanism does not provide them and
-a test claiming otherwise is worse than no test (security review SR7 / SR10):
+a test claiming otherwise is worse than no test:
 
 * that candidate collection cannot reach the real repository -- the evidence stage
   is best-effort isolation under an accepted trusted-contributor residual;
@@ -84,7 +84,7 @@ def _findings(report: P.Report, code: str) -> list[P.Finding]:
 
 
 # --------------------------------------------------------------------------
-# read-only invariant (plan finding GPR4)
+# read-only invariant
 # --------------------------------------------------------------------------
 
 class TestReadOnlyByConstruction:
@@ -92,7 +92,8 @@ class TestReadOnlyByConstruction:
 
     A `git status --porcelain` snapshot cannot see ignored files, `.git/config`,
     hooks, or arbitrary refs -- the same observability limitation that produced
-    SR5. So the guarantee lives in `_git`'s allowlist instead.
+    the index-validation requirement below. So the guarantee lives in `_git`'s
+    allowlist instead.
     """
 
     @pytest.mark.parametrize("bad", ["commit", "update-ref", "checkout", "push",
@@ -113,7 +114,7 @@ class TestReadOnlyByConstruction:
 
 
 # --------------------------------------------------------------------------
-# index-validated frozen surface (security review SR5)
+# index-validated frozen surface
 # --------------------------------------------------------------------------
 
 class TestFrozenSurfaceIsIndexValidated:
@@ -165,7 +166,7 @@ class TestFrozenSurfaceIsIndexValidated:
 
 
 # --------------------------------------------------------------------------
-# the preflight-authority closure (plan finding GPR1)
+# the preflight-authority closure
 # --------------------------------------------------------------------------
 
 class TestAuthorityClosure:
@@ -269,7 +270,7 @@ def _signed_commit(repo: Path, message: str) -> str:
 
 
 class TestUnsignedRangeReachesACheckpoint:
-    """Chunk C4 / acceptance criterion 1, which had no test until now.
+    """Unsigned agent commits reach a signed checkpoint without a range refusal.
 
     *"No range-signature refusal. Unsigned agent commits are the normal format;
     authorization occurs only at a signed checkpoint. Proven on the public path
@@ -322,7 +323,7 @@ class TestUnsignedRangeReachesACheckpoint:
         assert census["good"] == 1
 
     def test_no_candidate_editable_epoch_constant_survives(self):
-        """R1's proof obligation, worded precisely: *no* candidate-editable
+        """Worded precisely: *no* candidate-editable
         epoch exists after this change, so self-grandfathering is eliminated
         rather than renamed. Asserted on the module's executable bytes, since
         the retirement docstrings legitimately mention the old name."""
@@ -372,7 +373,7 @@ class TestAnchorPosition:
 
 
 # --------------------------------------------------------------------------
-# the evidence artifact, parsed fail-closed (plan finding GPR3)
+# the evidence artifact, parsed fail-closed
 # --------------------------------------------------------------------------
 
 def _evidence(candidate: str, manifest: dict | None = None,
@@ -503,7 +504,7 @@ class TestPublicCli:
             assert "bootstrap" in r.stderr
 
     def test_no_flag_can_turn_a_refusal_into_a_pass(self):
-        """There is deliberately no suppression switch (security review SR3)."""
+        """There is deliberately no suppression switch."""
         r = subprocess.run(
             [sys.executable, str(_REPO / "bootstrap/tests/_gate_preflight.py"),
              "check", "--help"],
@@ -514,7 +515,7 @@ class TestPublicCli:
 
 
 class TestGitConfigCannotSteerTheChecker:
-    """CR1's *class*, not just its instance: the checker's reading of the
+    """The whole class, not just the one known instance: the checker's reading of the
     repository must not depend on candidate-controlled `.git/config`."""
 
     def test_non_ascii_frozen_path_is_matched_despite_quotepath(
@@ -543,7 +544,7 @@ class TestGitConfigCannotSteerTheChecker:
 
 
 # --------------------------------------------------------------------------
-# FUR1 / FUR2 -- the sterile-Git launcher
+# the sterile-Git launcher
 #
 # `_PINNED_CONFIG` pinned exactly one key and the module claimed that "closes
 # the class for future call sites too". It did not. Four more channels each
@@ -583,7 +584,7 @@ class TestSterileGitLauncher:
 
     def test_replacement_objects_cannot_substitute_the_anchored_roster(
             self, tmp_path):
-        """FUR1 probe 1. `refs/replace/<anchor>` makes every read of the anchor
+        """`refs/replace/<anchor>` makes every read of the anchor
         return attacker content while `rev-parse` still reports the real SHA --
         so the roster looks correctly sourced and is not."""
         repo, _key, _signers = _signing_repo(tmp_path)
@@ -605,7 +606,7 @@ class TestSterileGitLauncher:
 
     def test_a_configured_verifier_cannot_forge_a_signature(self, tmp_path,
                                                             monkeypatch):
-        """FUR1 probe 2. `gpg.ssh.program` is ordinary repository config; a fake
+        """`gpg.ssh.program` is ordinary repository config; a fake
         made a commit signed by an unrostered key report `%G? = G` with a
         rostered-looking `%GS`."""
         repo, key, signers = _signing_repo(tmp_path)
@@ -636,7 +637,7 @@ class TestSterileGitLauncher:
             f"status={status!r} signer={signer!r}")
 
     def test_a_configured_fsmonitor_does_not_execute(self, tmp_path):
-        """FUR2. A monitor program ran during `git status` while git returned
+        """A monitor program ran during `git status` while git returned
         success, so `check` was never structurally free of candidate-configured
         execution."""
         repo = _repo(tmp_path)
@@ -659,7 +660,7 @@ class TestSterileGitLauncher:
 
     def test_a_reference_transaction_hook_cannot_move_a_third_ref(self,
                                                                   tmp_path):
-        """FUR2's sharpest case: the hook's committed phase advanced a THIRD ref
+        """The sharpest case: the hook's committed phase advanced a THIRD ref
         while the two-ref transaction reported `ok=True`."""
         repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
         hook = repo / ".git/hooks/reference-transaction"
@@ -736,7 +737,8 @@ class TestSterileGitLauncher:
         # The two GIT_* the ceremony sets on purpose. Named rather than
         # prefix-matched: the point of this test is that nothing INHERITED
         # survives, and a loose filter would let an inherited one through under
-        # a plausible name. `GIT_OPTIONAL_LOCKS` was added for [M2-4].
+        # a plausible name. `GIT_OPTIONAL_LOCKS` is set because `git status`
+        # refreshes the index lock otherwise.
         deliberate = {"GIT_TERMINAL_PROMPT", "GIT_OPTIONAL_LOCKS"}
         assert not [k for k in env
                     if k.startswith("GIT_") and k not in deliberate]
@@ -826,7 +828,7 @@ class TestEvidenceStage:
                               out=__import__("io").StringIO())
 
     def test_the_operator_facing_residual_makes_no_containment_claim(self):
-        """Security review SR7, asserted where it actually bites.
+        """The operator-facing residual, asserted where it actually bites.
 
         A file-wide prose lint was tried first and removed: it produced three
         false positives in a row -- on the ordinary verb "contain", on a wrapped
@@ -856,8 +858,8 @@ class TestEvidenceStage:
 #
 # Rewritten after the security code review. The handoff bundle is GONE as an
 # authority path: `apply` re-derives everything in memory, because a bundle
-# carrying its own digests is a corruption check and not tamper evidence (CR1 --
-# a re-hashed tampered manifest was anchored). Both alternatives were rejected
+# carrying its own digests is a corruption check and not tamper evidence -- a
+# re-hashed tampered manifest was anchored. Both alternatives were rejected
 # on external review: an out-of-band digest argument (file-write and terminal
 # access are one practical authority domain on a single-user machine) and a
 # signed check artifact (agents already hold the Maintainer's key, so it proves
@@ -907,7 +909,7 @@ def _ceremony_repo(tmp_path: Path):
     # The REAL manifest producer runs in this fixture, so supply the two things
     # it refuses without: a non-empty pytest collection, and the AST baseline
     # keys it pins. That is what makes a true three-command integration test
-    # possible (code review CR5).
+    # possible.
     _write(repo, "bootstrap/tests/test_smoke.py",
            "def test_smoke():\n    assert True\n")
     _write(repo, "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
@@ -923,7 +925,7 @@ def _ceremony_repo(tmp_path: Path):
     _run("git", "config", "user.email", "m@example", cwd=repo)
 
     # The signing epoch has to be a commit this repository actually contains
-    # (FUR4: an absent epoch now refuses instead of grandfathering everything),
+    # (an absent epoch refuses instead of grandfathering everything),
     # so the fixture makes one and pins the checker copy to it before anchoring.
     epoch = _signed_commit(repo, "epoch")
     anchor = _signed_commit(repo, "anchor")
@@ -963,7 +965,7 @@ class TestBlessingPlan:
         assert anchor in plan["message"] and head in plan["message"]
 
     def test_message_carries_no_self_referential_sha(self, tmp_path):
-        """SR4: a commit's SHA hashes its own message."""
+        """A commit's SHA hashes its own message, so it cannot name itself."""
         repo, anchor, head = _anchored_repo(tmp_path)
         assert "new anchor P        : this commit" in _plan_for(
             repo, anchor, head)["message"]
@@ -992,7 +994,7 @@ def _anchored_repo(tmp_path: Path):
 
 
 class TestApplyTakesNoArtifact:
-    """CR1's structural answer, **narrowed** by security review [S2]/[E2].
+    """The structural answer, **narrowed** once the package became necessary.
 
     The original claim was "apply reads no handoff artifact". That cannot
     survive a signing stage which executes no candidate code: `collection` and
@@ -1000,7 +1002,7 @@ class TestApplyTakesNoArtifact:
     a no-candidate-execution signer must consume stage-1 data. The claim was
     retracted rather than defended.
 
-    What remains true, and is what CR1 actually falsified: **no adjacent
+    What remains true, and is what was actually falsified: **no adjacent
     self-digest authenticates a file.** A bundle carrying its own digest beside
     its own values is worthless -- re-hashing a tampered manifest agreed with
     itself. Authority comes from outside the artifact: for the review manifest,
@@ -1015,14 +1017,14 @@ class TestApplyTakesNoArtifact:
                           "signing_key",
                           "review_manifest", "reviewed_candidate"}, (
             f"stage 2's inputs are a closed set; got {sorted(params)}")
-        # `signing_key` was added by security review [S1]. Stage 2 previously
+        # `signing_key` is in this set on purpose. Stage 2 previously
         # received no key identity at all, so Git chose the signer from
         # repository configuration -- a closed input set that omits the identity
         # of the key that signs is closed around the wrong thing.
 
     def test_the_review_manifest_carries_no_self_digest(self):
         """The narrowed claim, mechanised. A `digest` or `sha256` row naming the
-        manifest itself would be exactly the shape CR1 falsified, reappearing in
+        manifest itself would be exactly the falsified shape, reappearing in
         the new artifact."""
         m = P.parse_review_manifest(
             "schema cairn-review-manifest/v1\n"
@@ -1069,7 +1071,7 @@ class TestApplyTransaction:
                 P._git_write(bad, repo=repo)
 
     def test_symbolic_gate_anchor_refuses(self, tmp_path):
-        """CR4: update-ref follows a symbolic ref, so the 'two-ref' transaction
+        """update-ref follows a symbolic ref, so the 'two-ref' transaction
         would silently change a third logical ref."""
         repo, anchor, head = _anchored_repo(tmp_path)
         _run("git", "symbolic-ref", P._ANCHOR_REF, "refs/heads/master", cwd=repo)
@@ -1082,7 +1084,7 @@ class TestApplyTransaction:
 
     def test_stale_anchor_aborts_leaving_BOTH_refs_unmoved_and_no_residue(
             self, tmp_path):
-        """SR8 plus CR3: an abort must move neither ref AND leave no residue,
+        """An abort must move neither ref AND leave no residue,
         because construction never touches the real index or worktree."""
         repo, anchor, head = _anchored_repo(tmp_path)
         target = P.R._construct_anchor_commit(
@@ -1102,7 +1104,8 @@ class TestApplyTransaction:
 
 @contextlib.contextmanager
 def _n4_precondition(key: Path):
-    """Model the **N4** Maintainer precondition for a subprocess ceremony.
+    """Model the N4 Maintainer precondition -- the ceremony key encrypted at
+    rest and loaded into no agent -- for a subprocess ceremony.
 
     Stage 1 probes whether it can sign and refuses if it can. In-process tests
     stub that probe; a test that executes the *recorded loader* cannot, because
@@ -1126,10 +1129,10 @@ def _n4_precondition(key: Path):
 def _stub_key(tmp_path: Path) -> dict:
     """Stub the key-channel PROBE while keeping the key IDENTITY real.
 
-    Security review [S1] binds one validated fingerprint across both stages, so
-    a stub that invented a key path would make every node using it blind to the
-    binding. The probe is stubbed because in a test environment the key
-    genuinely can sign -- that is [E1], covered by its own disposable-key nodes.
+    One validated fingerprint binds across both stages, so a stub that invented
+    a key path would make every node using it blind to the binding. The probe is
+    stubbed because in a test environment the key genuinely can sign -- which is
+    covered by its own disposable-key nodes.
     """
     key_pub = str(Path(tmp_path) / "maint.pub")
     _path, fingerprint = P.validate_signing_key(key_pub)
@@ -1162,7 +1165,7 @@ def _assert_stage1_completed(repo: Path, r, before: str):
 
     The old assertion was "the anchor advanced". Asserting that today would be
     asserting that a stage holding no key had signed -- the exact inversion of
-    D3. So success is: the loader ran clean, a package exists, and **no ref
+    the intended one. So success is: the loader ran clean, a package exists, and **no ref
     moved**.
     """
     assert r.returncode == 0, r.stderr[-2500:]
@@ -1178,16 +1181,16 @@ def _two_stage(repo: Path, monkeypatch, *, out=None, package_dir=None,
     """Drive the real two-stage ceremony: stage 1 -> confirm -> stage 2.
 
     The key-channel probe is stubbed to "cannot sign" because in a test
-    environment the ceremony key genuinely CAN sign -- that is [E1], and it has
-    its own dedicated tests with disposable keys. Stubbing it here keeps these
+    environment the ceremony key genuinely CAN sign, which has its own
+    dedicated tests with disposable keys. Stubbing it here keeps these
     nodes about the protocol rather than about the host's key hygiene.
 
     The confirmation digest is taken from stage 1's **return value**, which is
     computed over the bytes it wrote -- never from inside the package.
     """
     # The PROBE is stubbed (in a test environment the key genuinely can sign --
-    # that is [E1], with its own disposable-key nodes). The key IDENTITY is not:
-    # security review [S1] binds one validated fingerprint across both stages,
+    # covered by its own disposable-key nodes). The key IDENTITY is not:
+    # one validated fingerprint binds across both stages,
     # so the stub reports the fixture key's real fingerprint and stage 2
     # re-derives it from the same file. Stubbing the identity too would make
     # every node here blind to the binding it exists to carry.
@@ -1242,7 +1245,7 @@ class TestApplySuccessPath:
 
     def _prepared(self, tmp_path, monkeypatch):
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        # Only the *executable* half is stubbed. Since FUR3 the static fields
+        # Only the *executable* half is stubbed. The static fields
         # are re-derived from raw objects and compared, so a wholly invented
         # manifest is refused -- correctly. What the real producer supplies and
         # this cannot is the pytest collection; everything else must be the
@@ -1262,7 +1265,7 @@ class TestApplySuccessPath:
         new_head, new_anchor = self._refs(repo)
         assert new_head == new_anchor == res["new_anchor"]
 
-        # CR2: the blessed commit must carry the reviewed message AND a
+        # The blessed commit must carry the reviewed message AND a
         # signature. It becomes the anchor, so an unsigned one would be excluded
         # from every later anchor..HEAD signature check, permanently.
         sig = _run("git", "log", "-1", "--format=%G?", cwd=repo).stdout.strip()
@@ -1271,7 +1274,7 @@ class TestApplySuccessPath:
         assert "Authorized verifier-module hashes" in body
         assert "cairn: supervised gate re-anchor (N = C + manifest)" not in body
 
-        # CR3: success must leave no staged or unstaged residue.
+        # Success must leave no staged or unstaged residue.
         assert _run("git", "status", "--porcelain", cwd=repo).stdout == ""
         assert _run("git", "diff", "--cached", "--name-only",
                     cwd=repo).stdout == ""
@@ -1316,7 +1319,7 @@ class TestApplySuccessPath:
 
 
 class TestPublicPathCli:
-    """CR5: the recorded workflow exercised through real subprocesses.
+    """The recorded workflow exercised through real subprocesses.
 
     The refusal paths live here; the full three-command success case is in
     `TestThreeCommandIntegration`, which drives all three through subprocesses
@@ -1350,7 +1353,7 @@ class TestPublicPathCli:
 
     def test_the_single_stage_apply_and_its_boolean_are_gone_from_the_cli(
             self, tmp_path):
-        """D5: **removed, not deprecated** -- and removed at the CLI surface.
+        """**Removed, not deprecated** -- and removed at the CLI surface.
 
         The old shape was one `apply --confirm-supervised-reanchor` that ran
         candidate code and signed in one process. A deprecation that still
@@ -1436,14 +1439,15 @@ def _subprocess_ceremony(checker: Path, repo: Path, tmp_path: Path, *,
     """Stage 1 -> external confirmation -> stage 2, as real subprocesses.
 
     The point of running it this way is that nothing can be stubbed. Stage 1
-    genuinely probes the key channel, so the N4 precondition is genuinely
+    genuinely probes the key channel, so the N4 precondition -- the key
+    encrypted at rest and in no agent -- is genuinely
     established: the private half is withheld for the duration of stage 1
     and restored only for stage 2 -- which is the ceremony's own
     instruction, not a test convenience.
 
     The confirmation digest is read from **stage 1's stdout**, computed by
     stage 1 over the bytes it wrote. Taking it from inside the package would
-    be the CR1 defect exactly: value and digest from one editable file.
+    be the self-digest defect exactly: value and digest from one editable file.
     """
     pkg = Path(package) if package else tmp_path / "authorization-package.json"
     if pkg.exists():
@@ -1474,13 +1478,13 @@ def _subprocess_ceremony(checker: Path, repo: Path, tmp_path: Path, *,
 class TestThreeCommandIntegration:
     """Chunk E: `evidence` -> `check` -> `apply` as one flow, all real.
 
-    This is the coverage code review CR5 asked for. Nothing is substituted and
+    Nothing is substituted and
     nothing is imported: all three commands run as real subprocesses, the
     producer executes candidate code for real, and the transaction moves real
     refs in a temp repo. It took supplying the two things the real producer
     refuses without -- a non-empty collection and the AST baseline keys.
 
-    Since FUR5 the executed bytes come from **the anchor**, extracted by the
+    The executed bytes come from **the anchor**, extracted by the
     runbook's own pipeline, rather than from `_REPO`. That is what the ceremony
     actually does, and running it any other way is how a recorded invocation
     reached first use having never been executed once.
@@ -1530,7 +1534,7 @@ class TestThreeCommandIntegration:
         # And the blessed manifest is the AUTHORITATIVE one -- the candidate's
         # collection with every checker-derived field replaced by the checker's
         # own re-derivation. This used to assert `blessed == evidence["manifest"]`,
-        # which is the defect code review [IC2] found: the re-derivation was
+        # which was the defect: the re-derivation was
         # computed, compared, and then discarded, so no Git-native field ever
         # reached the anchored artifact.
         blessed = json.loads(_run("git", "show",
@@ -1539,7 +1543,7 @@ class TestThreeCommandIntegration:
 
         # Asserted as PROPERTIES of the committed bytes, not against a rebuild.
         #
-        # The replacement for [IC2] was `blessed == authoritative_manifest(...)`
+        # The first replacement was `blessed == authoritative_manifest(...)`
         # -- the same function on both sides of the equals sign, so it agreed
         # with whatever that function did and could not fail. It duly passed
         # while every committed entry was `{"mode":..., "oid":...}` with the
@@ -1618,7 +1622,7 @@ class TestThreeCommandIntegration:
 
 
 # --------------------------------------------------------------------------
-# FUR5 -- the recorded anchored invocation, actually executed
+# the recorded anchored invocation, actually executed
 #
 # The runbook recorded a ceremony that had never been run once. It extracted
 # `bootstrap/tests` into a temp directory and invoked the checker with no
@@ -1631,11 +1635,11 @@ class TestThreeCommandIntegration:
 # --------------------------------------------------------------------------
 
 #: The first-use hash set the loader verifies against. Recorded by the
-#: Maintainer at Chunk G step M2; the fixtures compute their own.
+#: Maintainer at first use; the fixtures compute their own.
 #:
 #: **All ten authority-closure members, not the seven importable modules.**
-#: Security review [M2-R1]: this helper carried only the Python modules while
-#: M2's authority closure also contains `REANCHOR_RUNBOOK.md` and
+#: This helper carried only the Python modules, while the authority closure
+#: also contains `REANCHOR_RUNBOOK.md` and
 #: `dev/.cairn/allowed_signers`, so the tests exercised a checklist narrower
 #: than the artifact they claimed to test. Derived from
 #: `declared_authority_closure()` rather than retyped, so the two cannot drift.
@@ -1700,7 +1704,7 @@ def _stage2_block() -> str:
 
     Same discipline as every other recorded block: the document is the ceremony.
     A stage-2 script transcribed into Python could be written correct while the
-    recorded one stayed broken, which is FUR5 exactly -- and stage 2 is the
+    recorded one stayed broken -- and stage 2 is the
     invocation that signs and moves the trust root, so it is the last place to
     accept a recorded-but-never-executed procedure.
     """
@@ -1717,7 +1721,7 @@ def _stage2_block() -> str:
 def _stage2_transition_block() -> str:
     """The transition's OWN complete stage-2 block.
 
-    Selected separately because it *is* separate: code review [C2] found the
+    Selected separately because it *is* separate: the
     runbook telling the operator to "replace the final command" of the
     steady-state block, which left the extraction reading
     `refs/cairn/gate-anchor`. Stage 1 then ran the candidate's checker and stage
@@ -1735,7 +1739,7 @@ def _stage2_transition_block() -> str:
 
 def _recorded(repo: Path) -> dict[str, str]:
     """The values a Maintainer records at first use. Nothing is discovered by
-    the runbook itself -- that was FUR6 and FUR7 -- so the fixtures stand in for
+    the runbook itself -- discovery was the defect -- so the fixtures stand in for
     the Maintainer and supply them explicitly."""
     values = {
         "<absolute-path-of-the-checkout-to-bless>": str(repo),
@@ -1774,7 +1778,7 @@ def _substitute(block: str, repo: Path, *, hashes: bool = True,
     candidate's bytes, recorded at that OID. It is a separate placeholder from
     the first-use set on purpose -- a transition's stage 2 extracts by the
     reviewed OID and must verify against **that** commit's hashes, and reusing
-    the anchor's set is exactly the [C2] confusion in a different key.
+    the anchor's set is exactly that confusion in a different key.
     """
     for placeholder, value in _recorded(repo).items():
         if placeholder in block:
@@ -1798,8 +1802,8 @@ def _runbook_ceremony_script(repo: Path) -> str:
     """The Phase 0 pre-flight loader, lifted verbatim from the runbook.
 
     The recorded steps **are** the ceremony. A fix in code that the recorded
-    steps do not exercise is not a fix -- which is exactly the shape FUR5 took,
-    and FUR6 and FUR7 after it -- so the script under test comes out of the
+    steps do not exercise is not a fix -- the shape three separate first-use
+    defects took -- so the script under test comes out of the
     runbook rather than being transcribed into Python, where it could be written
     correct while the recorded steps stayed broken.
 
@@ -1813,7 +1817,7 @@ def _runbook_acquisition_command(repo: Path) -> str:
     """The step-1 command that reads the runbook itself from the anchor.
 
     Under test because it claimed to be sterile and was not: it is the
-    instruction source, so a substituted one can simply omit the loader (FUR7).
+    instruction source, so a substituted one can simply omit the loader.
     """
     return _substitute(_runbook_block("REANCHOR_RUNBOOK.md"), repo,
                        hashes=False)
@@ -1830,7 +1834,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
     def test_the_recorded_runbook_ceremony_actually_runs(self, tmp_path):
         """The runbook's own bytes, executed.
 
-        This is the test whose absence *was* FUR5. The recorded ceremony had
+        This is the test whose absence let the defect through. The recorded ceremony had
         never been run once, and a Python transcription of it would not have
         caught that -- the transcription would have been written correct while
         the recorded steps stayed broken. So the script comes out of the runbook.
@@ -1857,8 +1861,8 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
     def test_the_recorded_two_stage_ceremony_runs_end_to_end(self, tmp_path):
         """Both recorded blocks, executed in order, with a real key handover.
 
-        The FUR5 lesson applied to the protocol that replaced the one FUR5
-        found: a recorded ceremony nobody has run is not a ceremony. Stage 1's
+        The same lesson applied to the protocol that replaced the broken one:
+        a recorded ceremony nobody has run is not a ceremony. Stage 1's
         block and stage 2's block are both lifted from the runbook, and the
         Maintainer's part between them -- confirm the digest independently, then
         make the key available -- is performed rather than assumed.
@@ -1898,7 +1902,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
                     cwd=repo).stdout.strip() == "G", "the checkpoint is unsigned"
 
     def test_the_recorded_transition_stage2_carries_both_flags(self):
-        """E2. A transition's stage 2 has no recorded form without them.
+        """A transition's stage 2 has no recorded form without them.
 
         This is the shape of gap that keeps recurring here: the transition
         loader was updated to end at stage 1, and stage 2 got a recorded block
@@ -1915,12 +1919,12 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert "--reviewed-candidate" in section
         assert "REVIEW_MANIFEST=" in section and "RESOLVED=" in section
         # And it must say where RESOLVED comes from: re-resolving a ref here
-        # would defeat the transition loader's resolve-once discipline (A4).
+        # would defeat the transition loader's resolve-once discipline.
         assert "never re-resolved here" in section
 
     def test_the_transition_stage2_extracts_from_the_candidate_not_the_anchor(
             self):
-        """Code review [C2], as a property of the recorded text.
+        """Extraction by reviewed OID, as a property of the recorded text.
 
         A transition's stage 2 must extract by the reviewed candidate OID. The
         runbook previously said "replace the final command" of the steady-state
@@ -1973,7 +1977,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
 
         confirmed = hashlib.sha256(pkg.read_bytes()).hexdigest()
         # The transition's OWN recorded block, verbatim -- not the steady-state
-        # one with its last command edited. That edit was [C2].
+        # one with its last command edited, which is the defect this pins.
         script = _substitute(_stage2_transition_block(), repo, hashes=False,
                              candidate=resolved)
         script = script.replace("<the-64-hex-digest-you-verified-in-step-1>",
@@ -1996,13 +2000,13 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
             "the recorded transition ceremony did not record its admitted set")
 
     def test_a_transition_in_which_the_CHECKER_ITSELF_differs(self, tmp_path):
-        """Code review [D2]: the case that motivates transition mode at all.
+        """The case that motivates transition mode at all.
 
         Every other transition node changes `_oracle.py`. But the reason the
         mode exists is that a candidate may change **the checker that decides**
         — `_gate_preflight.py` — and the old anchor must not be the thing that
         vouches for its own replacement. No node ran that; the reviewer had to
-        construct it by hand to find [C2], and the probe was not kept. This
+        construct it by hand to find the defect, and the probe was not kept. This
         keeps it.
 
         The candidate's checker is modified in a way that is real (the bytes
@@ -2067,7 +2071,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
             "checkpoint records")
 
     def test_the_recorded_stage2_extracts_and_verifies_its_own_bytes(self):
-        """D4: stage 2 starts from **separately** hash-verified bytes.
+        """Stage 2 starts from **separately** hash-verified bytes.
 
         Reusing stage 1's temp directory would be the tempting simplification,
         and it is wrong for a specific reason: candidate code executed during
@@ -2087,7 +2091,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert "from-stage-1" not in block
 
     def test_the_extraction_directory_is_not_itself_a_repository(self, tmp_path):
-        """The premise the FUR5 shape depends on: were `$T` a repository, the
+        """The premise the defect depends on: were `$T` a repository, the
         no-`--repo` default would have silently worked and hidden the defect."""
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         extract = tmp_path / "T"
@@ -2097,7 +2101,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
     @pytest.mark.parametrize("stage", ["stage1", "stage2"])
     def test_omitting_repo_refuses_diagnosably_and_moves_nothing(self, tmp_path,
                                                                  stage):
-        """The exact FUR5 defect. It was fail-closed but undiagnosable: git's
+        """The exact defect. It was fail-closed but undiagnosable: git's
         bare `fatal: not a git repository` names neither the cause nor the fix.
 
         Both stages are covered because both are anchored invocations run from
@@ -2151,7 +2155,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
     def test_the_loader_never_discovers_the_checkout_ambiently(self):
         """Properties of the recorded text that an execution test cannot see,
         because a substituted repository answers correctly right up until it
-        doesn't (FUR6). Read raw -- no fixture substitution."""
+        doesn't. Read raw -- no fixture substitution."""
         block = _runbook_block("_gate_preflight.py")
         # Comments are stripped first. An earlier version of this assertion
         # fired on the comment *explaining* why `git archive` is not used --
@@ -2178,7 +2182,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
 
 
 # --------------------------------------------------------------------------
-# FUR4 -- signature-history enumeration must not fail open
+# signature-history enumeration must not fail open
 #
 # `_rev_list` returned `[]` on any git error, so "the signed range cannot be
 # established" became "there is nothing to check". With the epoch object
@@ -2189,9 +2193,10 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
 
 
 # --------------------------------------------------------------------------
-# FUR3 -- static manifest authority is no longer delegated
+# static manifest authority is no longer delegated
 #
-# `apply` correctly ignored a tampered evidence FILE (the CR1 redesign holds).
+# `apply` correctly ignored a tampered evidence FILE (the no-self-digest
+# redesign holds).
 # But it materialized the candidate tree with `git archive`, which honours
 # in-tree `.gitattributes`, and validated only the candidate SHA, an adjacent
 # digest, and the interpreter. A signed candidate that added a tracked module
@@ -2264,7 +2269,7 @@ def _reset_key_load_phase():
 
 
 # ---------------------------------------------------------------------------
-# Chunk H2: the key-load phase sentinel.
+# the key-load phase sentinel.
 #
 # Acceptance criterion 8 -- "no candidate execution after the key-load marker,
 # **proven by sentinel, not by inspection**". R1-F steps 4-5 put the ceremony in
@@ -2378,7 +2383,7 @@ class TestKeyLoadPhaseSentinel:
             f"key must not be loadable while candidate code may still run")
 
     def test_stage1_never_reaches_a_signing_call_at_all(self):
-        """D3: "it never holds the key" as a property of the source.
+        """"It never holds the key" as a property of the source.
 
         The ordering node above is about `apply_now`, where a seal precedes the
         key. Stage 1 is a stronger claim -- not "seals first" but "does not
@@ -2434,7 +2439,7 @@ class TestKeyLoadPhaseSentinel:
 
         result = _two_stage(repo, monkeypatch)
 
-        # Two stages, so two seals -- and the shape carries the D3 contract.
+        # Two stages, so two seals -- and the shape carries the no-key contract.
         # Candidate code runs exactly once, in stage 1, and every seal follows
         # it; stage 2 seals with nothing executed in between. `_two_stage`
         # resets the phase between the stages because stage 2 is a fresh
@@ -2453,7 +2458,7 @@ class TestKeyLoadPhaseSentinel:
 # ---------------------------------------------------------------------------
 # Chunk A: source selection lives in the LOADER, not in the code it selects.
 #
-# Plan review [E3]: `_gate_preflight.py` runs only AFTER the candidate bytes
+# `_gate_preflight.py` runs only AFTER the candidate bytes
 # have been chosen and executed, so a Python check cannot establish which Python
 # was safe to run. These nodes therefore execute the runbook's own transition
 # block and assert on what happens BEFORE any interpreter starts.
@@ -2521,7 +2526,7 @@ class TestTransitionLoaderSelectsTheSource:
     ])
     def test_each_rejection_refuses_before_any_python_starts(
             self, tmp_path, mutation, expect):
-        """[E3]'s core requirement. Every one of these is a *selection* failure,
+        """The core requirement. Every one of these is a *selection* failure,
         so the correct outcome is not "the checker refused" -- it is that **no
         interpreter ran at all**."""
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
@@ -2591,7 +2596,7 @@ class TestTransitionLoaderSelectsTheSource:
             "the candidate is resolved exactly once")
 
     def test_both_parsers_reject_a_row_with_leading_whitespace(self, tmp_path):
-        """Code review [C4]. One artifact, two parsers, two answers.
+        """One artifact, two parsers, two answers.
 
         `raw.split()` ignores leading whitespace so the Python side classified
         an indented row by its first word, then took `provenance` by slicing at
@@ -2606,7 +2611,7 @@ class TestTransitionLoaderSelectsTheSource:
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         honest = _review_manifest(repo, head)
 
-        # Code review [D1]: the first fix relocated the divergence instead of
+        # The first fix relocated the divergence instead of
         # removing it. The loader's check ran BEFORE its blank/comment case and
         # Python's ran after, so three shapes that are not rows at all -- an
         # indented comment, a whitespace-only line, a trailing line of spaces --
@@ -2640,7 +2645,7 @@ class TestTransitionLoaderSelectsTheSource:
                 f"{r.stderr[-500:]}")
 
     def test_the_anchored_steady_state_loader_has_no_transition_mode(self):
-        """[S1] as a test. The anchored checker cannot contain a mode added to
+        """The anchored checker cannot contain a mode added to
         its successor, so the steady-state block must not offer one -- if it
         did, the old authority would be vouching for its replacement."""
         steady = _runbook_block("_gate_preflight.py")
@@ -2657,11 +2662,12 @@ class TestTransitionLoaderSelectsTheSource:
         would run the ceremony with the selection predicate silently skipped.
 
         Both stages are covered because each revalidates the transition
-        independently (D4 defence in depth). Checking stage 1 alone would leave
+        independently, as defence in depth. Checking stage 1 alone would leave
         stage 2 able to sign a *steady-state* checkpoint -- one whose message
         records "no closure change" -- for a run the loader selected in
         transition mode. The admitted authority set would simply be absent from
-        the durable record, which is the [E4] failure with extra steps.
+        the durable record -- the record missing what it exists to record,
+        with extra steps.
         """
         repo, anchor, head = _anchored_repo(tmp_path)
         checker = _REPO / "bootstrap/tests/_gate_preflight.py"
@@ -2688,7 +2694,7 @@ class TestTransitionLoaderSelectsTheSource:
 
     @pytest.mark.parametrize("shape", ["extra-member", "missing-member"])
     def test_a_wrong_member_SET_starts_no_interpreter(self, tmp_path, shape):
-        """Security review [M2-R1], with the evidence it asked for.
+        """The loader must validate against the anchored set, with evidence.
 
         The loader validated the manifest against *itself* — rows well-formed,
         paths sorted and unique, digests matching the bytes it extracted for
@@ -2784,7 +2790,7 @@ class TestTransitionLoaderSelectsTheSource:
             "wired up'")
 
     def test_stage2_actually_receives_the_transition_flags_it_declares(self):
-        """A declared flag that no call site consumes is [M2-1] again.
+        """A declared flag that no call site consumes is the recurring shape.
 
         The `stage2` parser grew `--transition-from-review` and
         `--reviewed-candidate` before `apply_now` was given them, so the
@@ -2812,11 +2818,11 @@ class TestTransitionLoaderSelectsTheSource:
 
 
 class TestTheCheckpointCarriesTheAdmittedSet:
-    """Chunk D7/D8 and plan review [E4].
+    """The checkpoint records the admitted authority set, not only its digest.
 
-    The opening A3 question was whether the checkpoint records the admitted
-    authority set itself or only binds its digest. The Maintainer accepted the
-    proposal with that open, and D6 required a decision rather than a lapse:
+    The open question was whether the checkpoint records the admitted authority
+    set itself or only binds its digest. It was settled deliberately rather than
+    by lapse:
     **the set is written**. A digest binds cryptographically and is unreadable,
     and the review manifest is an out-of-band artifact that may not survive --
     so digest-only leaves a future reader able to prove that *a* set was
@@ -2858,7 +2864,7 @@ class TestTheCheckpointCarriesTheAdmittedSet:
         assert paths == sorted(self._ADMITTED), paths
 
     def test_the_review_manifest_digest_is_bound_alongside_the_rows(self):
-        """D7. The rows say what was admitted; the digest says which reviewed
+        """The rows say what was admitted; the digest says which reviewed
         artifact admitted it. Without it, two different reviews of the same
         bytes are indistinguishable in the durable record."""
         assert "d" * 64 in self._message()
@@ -2866,7 +2872,7 @@ class TestTheCheckpointCarriesTheAdmittedSet:
 
     @pytest.mark.parametrize("victim", sorted(_ADMITTED))
     def test_a_single_row_mutation_changes_the_message(self, victim):
-        """D8. Every row is load-bearing, one at a time.
+        """Every row is load-bearing, one at a time.
 
         A block that is signed as a whole can still be decorative: if the
         message were assembled from a count and a provenance string, mutating
@@ -2916,7 +2922,7 @@ class TestTheCheckpointCarriesTheAdmittedSet:
 
     def test_the_set_reaches_the_message_through_a_real_two_stage_run(
             self, tmp_path, monkeypatch):
-        """The [M2-1] question asked of D7: what calls this?
+        """The reachability question asked of the admitted-rows writer: what calls this?
 
         Every node above builds the message directly. That is exactly the shape
         that let a canonical range report be derived, digested, tested -- and
@@ -2925,7 +2931,7 @@ class TestTheCheckpointCarriesTheAdmittedSet:
         checkpoint**, which is the only place it counts.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        # A real closure change, or the transition refuses with no delta ([S3]).
+        # A real closure change, or the transition refuses with no delta.
         changed = {"bootstrap/tests/_oracle.py"}
         _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
         head = _signed_commit(repo, "authority change")
@@ -3125,7 +3131,7 @@ class TestTheAuthorityModuleCheckAdmitsTheSameSet:
 
 
 class TestTransitionRefusesWithoutADelta:
-    """Chunk B / plan finding [S3]. "First use" was never mechanically one-time
+    """"First use" was never mechanically one-time
     -- the delta condition recurs on every authority change -- so the mode is
     named the **reviewed-authority transition** and is gated on the delta
     itself, at the cost of a fresh external review each time."""
@@ -3134,8 +3140,8 @@ class TestTransitionRefusesWithoutADelta:
         """An anchor and a candidate whose authority closures differ (or not).
 
         Deliberately NOT `_ceremony_repo()`: its pre-aligned closure is what hid
-        [M2-2], so it is inadmissible for transition fixtures ([E4]/B4). This
-        builds the old-anchor state explicitly.
+        it, so it is inadmissible for transition fixtures. This builds the
+        old-anchor state explicitly.
         """
         repo, anchor_sha = _closure_repo(tmp_path)
         if change:
@@ -3169,7 +3175,7 @@ class TestTransitionRefusesWithoutADelta:
 
 
 class TestRosterContinuityIsAHardRefusal:
-    """Chunk B3 / [E4]. Continuity means the OLD anchor's roster verifies a
+    """Continuity means the OLD anchor's roster verifies a
     transition. An anchor without one is a distinct bootstrap case, and neither
     the candidate's roster nor the review manifest may stand in -- both are the
     thing being authorized."""
@@ -3223,10 +3229,10 @@ class TestRosterContinuityIsAHardRefusal:
 
 
 class TestAuthorizationPackage:
-    """Chunk C / plan review [E2]. A strict field schema alone does not stop a
+    """A strict field schema alone does not stop a
     symlink target, a partial write, a replacement between hash and parse,
     duplicate JSON keys, or stage 2 confirming against a digest carried *inside*
-    the artifact -- the adjacent self-digest CR1 falsified, one layer down."""
+    the artifact -- the adjacent self-digest already falsified, one layer down."""
 
     def _pkg(self):
         return {
@@ -3260,7 +3266,7 @@ class TestAuthorizationPackage:
         assert digest == hashlib.sha256(dest.read_bytes()).hexdigest()
 
     def test_a_self_digest_field_is_refused(self, tmp_path):
-        """The [E2] shape stated directly: authority must never come from a
+        """Stated directly: authority must never come from a
         value the artifact carries about itself."""
         dest = tmp_path / "pkg.json"
         pkg = self._pkg()
@@ -3312,7 +3318,7 @@ class TestAuthorizationPackage:
         arrived inside a confirmed artifact.
 
         Running it through the public stage-2 path rather than `read_package`
-        is the [M2-1] discipline: a schema check that nothing consumes refuses
+        is the reachability discipline: a schema check that nothing consumes refuses
         nothing.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
@@ -3411,7 +3417,7 @@ class TestAuthorizationPackage:
     def _transition_ready(self, tmp_path, monkeypatch):
         """A package produced in TRANSITION mode, and the pieces to replay it.
 
-        Code review [C1]: the parametrized mutation node above runs stage 1 in
+        The parametrized mutation node above runs stage 1 in
         **steady state**, so `review_manifest` is `None` and only the
         `None -> dict` direction was ever exercised. Every field *inside* that
         dict -- the admitted set that the checkpoint writes down -- went
@@ -3454,9 +3460,9 @@ class TestAuthorizationPackage:
     ])
     def test_the_admitted_set_inside_the_package_cannot_forge_the_record(
             self, tmp_path, monkeypatch, tamper):
-        """[C1]. The package is re-digested, so the confirmation matches.
+        """The package is re-digested, so the confirmation matches.
 
-        This is the exact probe the code review ran. Before the fix, three of
+        Before the fix, three of
         these signed a checkpoint: falsified digests wrote a full set of false rows with
         every check green, dropping `members` signed
         "steady state -- no closure change" over a real closure change, and a
@@ -3494,7 +3500,7 @@ class TestAuthorizationPackage:
 
     def test_the_signed_record_is_the_revalidated_set_not_the_packages(
             self, tmp_path, monkeypatch):
-        """The positive half of [C1]: which object actually reaches the message.
+        """The positive half: which object actually reaches the message.
 
         Refusing a mismatch is good, but the load-bearing property is *whose*
         set gets written down. Asserted by reading the committed checkpoint of
@@ -3535,7 +3541,7 @@ class TestAuthorizationPackage:
                 review_provenance="ESR", review_digest="d" * 64)
 
     def test_the_retired_no_handoff_artifact_claim_cannot_return(self):
-        """Security review [S2] / Chunk C10.
+        """The overclaimed docstring, pinned.
 
         `apply_now` claimed "no handoff artifact is trusted" and "there is no
         authority-bearing file" long after stage 2 began consuming the
@@ -3655,7 +3661,7 @@ class TestAuthorizationPackage:
             P.read_package(dest, confirmed_sha256=digest)
 
     def test_the_executable_only_list_is_closed(self):
-        """C3/C6. These are exactly the fields static re-derivation cannot
+        """These are exactly the fields static re-derivation cannot
         produce. A third member without a matching change to
         `rederive_static_manifest` means something derivable is being
         delegated to the candidate."""
@@ -3670,7 +3676,7 @@ class TestAuthorizationPackage:
 
 
 class TestReportBindsTheProspectiveManifest:
-    """Chunk C5. The live defect security review [S2] found in `2df83d2`: the
+    """The live defect found in `2df83d2`: the
     report bound the manifest already in the worktree while `apply` committed a
     different one, so `rederive_and_bind` reconfirmed the wrong identity."""
 
@@ -3696,7 +3702,7 @@ class TestReportBindsTheProspectiveManifest:
 
 
 class TestKeyChannelProbe:
-    """Chunk D / plan review [E1]. The probe must attempt a REAL signing
+    """The probe must attempt a REAL signing
     operation and require failure. Observing `SSH_AUTH_SOCK` is the proxy
     failure the proposal warned against and then committed -- twice.
 
@@ -3713,7 +3719,7 @@ class TestKeyChannelProbe:
 
     def test_a_successful_ssh_keygen_with_no_sig_file_counts_as_CAN_sign(
             self, tmp_path, monkeypatch):
-        """Code review [C5]. The probe was fail-OPEN on its own success case.
+        """The probe was fail-OPEN on its own success case.
 
         It required exit 0 **and** a `.sig` at one of two guessed paths. An
         `ssh-keygen` that signed but wrote its output elsewhere therefore
@@ -3738,14 +3744,14 @@ class TestKeyChannelProbe:
 
     def test_a_locked_key_still_counts_as_cannot_sign(
             self, tmp_path, monkeypatch):
-        """The other direction, so the [C5] fix did not invert into refusing
+        """The other direction, so the fix did not invert into refusing
         every ceremony.
 
-        Security review [S1] flagged the earlier version of this node: it used
+        The earlier version of this node used
         `"no such key"` as the failure text, which **codified the unsafe
         classification** — a key that is not there and a key whose private half
-        is locked away produced the same verdict. Only the second is the N4
-        precondition holding. The first is now refused upstream by
+        is locked away produced the same verdict. Only the second is the
+        N4 precondition holding. The first is now refused upstream by
         `validate_signing_key` as *unprobeable*, and this node uses a real
         locked-key failure so it can no longer be read as blessing the other.
         """
@@ -3767,7 +3773,7 @@ class TestKeyChannelProbe:
                                      "not-a-key", "directory"])
     def test_an_unprobeable_key_is_a_third_answer_and_refuses(
             self, tmp_path, bad):
-        """Security review [S1]. "Unprobeable" is not "cannot sign".
+        """"Unprobeable" is not "cannot sign".
 
         The reproduction: point stage 1 at a **nonexistent** public-key path.
         `ssh-keygen` fails with "no such file", the probe classified that as
@@ -3799,7 +3805,7 @@ class TestKeyChannelProbe:
 
     def test_a_nonexistent_stage1_key_cannot_reach_construction(
             self, tmp_path, monkeypatch):
-        """[S1] through the public path: the refusal precedes everything.
+        """Through the public path: the refusal precedes everything.
 
         The point is not merely that `validate_signing_key` raises — it is that
         the ceremony stops before candidate code runs, before a package exists,
@@ -3825,7 +3831,7 @@ class TestKeyChannelProbe:
 
     def test_stage_2_refuses_a_different_key_than_stage_1_probed(
             self, tmp_path, monkeypatch):
-        """[S1]'s core: the two stages must be talking about one key.
+        """The core: the two stages must be talking about one key.
 
         Stage 2 previously received no key identity, so a *different* key —
         rostered, and therefore passing the pinned-principal check — could sign
@@ -3864,7 +3870,7 @@ class TestKeyChannelProbe:
 
     def test_a_repository_key_command_never_executes_after_the_seal(
             self, tmp_path):
-        """[S1]'s second consequence: repository config could run a PROGRAM.
+        """The second consequence: repository config could run a PROGRAM.
 
         `gpg.ssh.defaultKeyCommand` names a command Git executes to obtain a
         signing key when `user.signingKey` is unset. Under candidate control
@@ -3897,7 +3903,7 @@ class TestKeyChannelProbe:
             "candidate execution was declared sealed")
 
     def test_a_readable_private_sibling_means_stage_1_CAN_sign(self, tmp_path):
-        """[E1] reproduced as a regression. This is the state the old design
+        """Reproduced as a regression. This is the state the old design
         called 'the key channel absent'."""
         key = self._keypair(tmp_path)
         assert key.exists(), "the private sibling is present and readable"
@@ -3925,7 +3931,7 @@ class TestKeyChannelProbe:
 
     def test_the_negative_control_refuses_rather_than_reporting_soundness(
             self, tmp_path, monkeypatch):
-        """[E1]'s exact requirement: make the private sibling readable and
+        """The exact requirement: make the private sibling readable and
         require stage 1 to REFUSE THE ENVIRONMENT -- not to report the boundary
         sound."""
         key = self._keypair(tmp_path)
@@ -3938,10 +3944,12 @@ class TestKeyChannelProbe:
         msg = str(exc.value)
         assert "STAGE 1 CAN SIGN" in msg
         assert "the ceremony stops here" in msg
-        assert "N4" in msg, "the refusal must name the precondition it enforces"
+        assert "N4" in msg, (
+            "the refusal must name the fence it enforces -- a Maintainer reads "
+            "N4 in the refusal and looks it up in the intervention table")
 
     def test_an_unnamed_key_channel_refuses(self, monkeypatch):
-        """D2: the contract names the supported channel. An unnamed one cannot
+        """The contract names the supported channel. An unnamed one cannot
         be probed, and an unprobeable precondition is not a precondition."""
         monkeypatch.setattr(P, "signing_key_path", lambda recorded=None: "")
         with pytest.raises(P.KeyChannelError, match="unnamed"):
@@ -3977,12 +3985,12 @@ class TestKeyChannelProbe:
         src = inspect.getsource(P) if hasattr(P, "__file__") else ""
         text = (P._REPO / "bootstrap/tests/_gate_preflight.py").read_text(
             encoding="utf-8")
-        marker = text.split("# the key channel (Chunk D")[1][:2000]
+        marker = text.split("# the key channel\n")[1][:2000]
         assert "NOT CONTAINMENT" in marker.upper()
 
 
 # --------------------------------------------------------------------------
-# Chunk A ([R5] riders 1-2): stage 1 receives no agent socket
+# stage 1 receives no agent socket
 # --------------------------------------------------------------------------
 
 #: The two heredoc delimiters that open a **stage-1** loader in the runbook, and
@@ -4008,7 +4016,7 @@ def _env_header(block: str, delim: str) -> str:
 
     This is the part of a recorded block that decides **what environment the
     stage runs in**, which is the whole of what Chunk A changed. Lifting it out
-    of the runbook rather than retyping it is the same FUR5 discipline every
+    of the runbook rather than retyping it is the same discipline every
     other recorded-block helper follows: an environment written correct in
     Python while the recorded one stayed wrong is the failure this repository
     keeps finding.
@@ -4072,7 +4080,7 @@ def _signing_attempt_body(pub: Path, workdir: Path) -> str:
     """A heredoc body that tries to sign and reports which way it went.
 
     Deliberately **not** an `SSH_AUTH_SOCK` observation. Observing the variable
-    is the proxy check plan review [E1] falsified: it is what the stage *was
+    is the falsified proxy check: it is what the stage *was
     handed*, not what the stage *can do*. This body runs the real signing
     command, which is the only thing that answers the question.
     """
@@ -4112,9 +4120,7 @@ def _run_recorded_header(header: str, delim: str, body: str, *, sock: str,
 
 
 class TestStage1ReceivesNoAgentSocket:
-    """Chunk A / [R5] riders 1-2, and acceptance criterion 5.
-
-    Stage 1's contract is that it **cannot sign**: it runs candidate code to
+    """Stage 1's contract is that it **cannot sign**: it runs candidate code to
     build an authorization package and exits. Forwarding an agent socket into it
     hands that candidate code a live signing channel in exchange for nothing, so
     Chunk A **removed the channel** instead of measuring it. Removing a channel
@@ -4198,7 +4204,7 @@ class TestStage1ReceivesNoAgentSocket:
 
 
 class TestTheRunbookSaysWhatItsLoadersDo:
-    """Chunk A / [R5] rider 1's second half: **prose and loader cannot drift.**
+    """**Prose and loader cannot drift.**
 
     The behavioural nodes above execute the recorded headers, so they catch a
     loader that stops matching its contract. They do not catch the other
@@ -4261,7 +4267,7 @@ class TestTheRunbookSaysWhatItsLoadersDo:
             "environment blocks read as a copying slip")
 
     def test_the_probe_docstring_does_not_call_itself_non_interactive(self):
-        """[R5] rider 2. The docstring said "non-interactive"; `ssh-keygen`
+        """The docstring said "non-interactive"; `ssh-keygen`
         reads its passphrase from `/dev/tty`, so on a controlling terminal the
         probe **prompts**. An operator who trusted the old wording answered the
         prompt -- which is the probe succeeding, i.e. the refusal."""
@@ -4331,14 +4337,15 @@ class TestTheCeremonyArtifactIsAClosureMember:
             f"{n}-member closure")
 
     def test_LOADED_MODULES_tracks_the_closure_rather_than_a_retyped_list(self):
-        """Derived, so the fixture set and the closure cannot drift. This is
-        the node that made C5 a one-line change instead of a hunt."""
+        """Derived, so the fixture set and the closure cannot drift. Adding a
+        closure member is then a one-line change here rather than a hunt through
+        a retyped list that no test would have caught going stale."""
         assert set(_LOADED_MODULES) == set(P.declared_authority_closure())
         assert "bootstrap/reanchor.sh" in _LOADED_MODULES
 
 
 class TestReadBoundaryIsRepositoryReadOnly:
-    """Security review [M2-4]. `_READ_ONLY_GIT` bounds *subcommands*; it said
+    """`_READ_ONLY_GIT` bounds *subcommands*; it said
     nothing about whether the repository is written. `git status` refreshes
     cached stat data through an optional index lock, so a public `check`
     changed `.git/index` bytes while leaving the worktree clean."""
@@ -4364,10 +4371,10 @@ class TestReadBoundaryIsRepositoryReadOnly:
 
 
 class TestManifestLauncherResistsSymlinkedStartPaths:
-    """Security review [M2-5]. `GIT_CEILING_DIRECTORIES` is compared against the
+    """`GIT_CEILING_DIRECTORIES` is compared against the
     *logical* path, so a symlink to a nested non-repository directory escaped
-    the ceiling and discovered the target repository -- the first fix for [IC6]
-    set the ceiling from the unresolved parent and was evadable."""
+    the ceiling and discovered the target repository -- the first fix set the
+    ceiling from the unresolved parent and was evadable."""
 
     def test_a_symlinked_non_repository_does_not_discover_its_target(
             self, tmp_path):
@@ -4392,7 +4399,7 @@ class TestManifestLauncherResistsSymlinkedStartPaths:
 
 
 class TestRangeReportIsOnTheGoverningPath:
-    """Security review [M2-1]. The range machinery existed, its isolated tests
+    """The range machinery existed, its isolated tests
     passed, and **nothing on the `apply` path called it** -- every real ceremony
     signed `range-report digest : (not bound)`.
 
@@ -4486,7 +4493,7 @@ class TestRangeReportIsOnTheGoverningPath:
 
 
 class TestApplyCommitsTheAuthoritativeManifest:
-    """Code review [IC2]. The shape of the manifest `apply` writes had no test,
+    """The shape of the manifest `apply` writes had no test,
     which is how "never accepted from the candidate" stayed true of the
     comparison and false of the artifact for a whole chunk."""
 
@@ -4516,7 +4523,7 @@ class TestApplyCommitsTheAuthoritativeManifest:
         assert "object_format" not in merged
 
     def test_a_candidate_asserted_subkey_cannot_survive(self):
-        """The [IC2] probe, as a test: a hostile manifest inventing `mode` and
+        """A hostile manifest inventing `mode` and
         `oid` for a frozen entry must not reach the committed bytes."""
         theirs = {"frozen_files": {"x.py": {"sha256": "c" * 64,
                                             "mode": "100755", "oid": "0" * 64}}}
@@ -4550,7 +4557,7 @@ class TestApplyCommitsTheAuthoritativeManifest:
         assert entry["mode"] == "100644" and entry["oid"] == "a" * 40
 
     def test_the_merge_agrees_whether_the_candidate_is_v1_or_v2(self):
-        """C7's byte comparison depends on this and would silently fail without.
+        """Stage 2's byte comparison depends on this and would silently fail without.
 
         Stage 1 merges the candidate's v1-shaped manifest; stage 2 merges its
         own v2-shaped re-derivation. The two must produce identical bytes or
@@ -4568,7 +4575,7 @@ class TestApplyCommitsTheAuthoritativeManifest:
 class TestStaticManifestIsRederived:
 
     def test_a_file_missing_from_the_manifest_refuses(self, tmp_path):
-        """FUR3's exact shape: the blessed tree would contain a frozen-surface
+        """The exact shape: the blessed tree would contain a frozen-surface
         file that the manifest does not pin."""
         repo, anchor, head, _epoch = _ceremony_repo(tmp_path)
         honest = P.rederive_static_manifest(head, repo=repo)
@@ -4677,10 +4684,10 @@ class TestStaticManifestIsRederived:
 
 
 class TestStaticManifestIsWiredIntoCheck:
-    """Mutation testing caught this gap: every FUR3 test above called
-    `check_static_manifest` directly, so deleting its call site in `check()`
-    broke nothing. A guard the real path does not invoke is not a guard -- which
-    is precisely what FUR5 was."""
+    """Mutation testing caught this gap: every static-manifest test above
+    called `check_static_manifest` directly, so deleting its call site in
+    `check()` broke nothing. A guard the real path does not invoke is not a
+    guard."""
 
     def test_check_refuses_a_manifest_that_does_not_match_the_tree(self,
                                                                    tmp_path):
@@ -4694,8 +4701,8 @@ class TestStaticManifestIsWiredIntoCheck:
         tampered["interpreter"] = {"version": "3.13.13"}
 
         # Internally consistent: `_fake_evidence` re-hashes, so the digest check
-        # passes and the refusal must come from the re-derivation (CR1's lesson
-        # -- a tampered artifact that re-hashes itself is not caught by a digest).
+        # passes and the refusal must come from the re-derivation -- a tampered
+        # artifact that re-hashes itself is not caught by a digest.
         report = P.check(repo=repo, evidence=_fake_evidence(head, tampered))
 
         assert report.blocked
@@ -4712,7 +4719,7 @@ class TestStaticManifestIsWiredIntoCheck:
         assert [f for f in report.findings if f.code == "MANIFEST"] == []
 
     def test_an_export_ignored_file_is_still_pinned_end_to_end(self, tmp_path):
-        """FUR3's own probe, driven through the real flow.
+        """The original probe, driven through the real flow.
 
         The property is **not** that this refuses -- a genuinely new frozen-surface
         file should be pinned, not rejected. It is that the blessed manifest
@@ -4742,13 +4749,13 @@ class TestStaticManifestIsWiredIntoCheck:
 
 
 # --------------------------------------------------------------------------
-# FUR6 -- the loader is its own trust boundary
+# the loader is its own trust boundary
 #
 # The checker's sterile launcher cannot protect bytes that have not loaded yet.
 # The recorded block obtained the checkout by ambient discovery and extracted
 # with `git archive`, so repository-local object substitution made the literal
 # runbook block execute substituted checker bytes while returning success --
-# FUR1's failure one step earlier, outside everything FUR1 fixed.
+# the sterile-launcher failure one step earlier, outside everything it fixed.
 # --------------------------------------------------------------------------
 
 class TestLoaderTrustBoundary:
@@ -4814,10 +4821,10 @@ class TestLoaderTrustBoundary:
         """The recorded set is the AUTHORITY closure, not the import closure.
 
         A module missing from the recorded set would be absent at import time --
-        fail-closed, but only if the set is complete. Security review [M2-R1]
-        found the set narrower than that: it held the seven importable modules
+        fail-closed, but only if the set is complete. The set was found
+        narrower than that: it held the seven importable modules
         while the authority closure also contains `REANCHOR_RUNBOOK.md` (the
-        instruction source, and FUR7's subject) and `dev/.cairn/allowed_signers`
+        instruction source) and `dev/.cairn/allowed_signers`
         (the roster the checkpoint's signature is verified against). Neither is
         imported, and neither being imported is exactly why their absence would
         not have announced itself.
@@ -4836,8 +4843,8 @@ class TestLoaderTrustBoundary:
 
         `GIT_DIR` is the channel that makes it matter. It names the object store
         outright and takes precedence over `-C`, so the loader would read the
-        checker from a repository the operator never named -- the FUR6 failure
-        by a different route.
+        checker from a repository the operator never named -- the loader-boundary
+        failure by a different route.
         """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
         script = _runbook_ceremony_script(repo)
@@ -4862,7 +4869,7 @@ class TestLoaderTrustBoundary:
         _assert_stage1_completed(repo, r, before)
 
     def test_the_acquisition_command_resists_git_dir_redirection(self, tmp_path):
-        """FUR7. The command that obtains the runbook is the instruction source:
+        """The command that obtains the runbook is the instruction source:
         a substituted one can omit the loader entirely, so no later check can
         recover. It claimed to be sterile and had no environment scrub."""
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
@@ -4895,7 +4902,7 @@ class TestLoaderTrustBoundary:
 
     def test_a_replacement_shasum_on_path_cannot_vouch_for_rewritten_bytes(
             self, tmp_path):
-        """FUR8. `PATH=/usr/bin:/bin` lived only inside the `env -i` child used
+        """`PATH=/usr/bin:/bin` lived only inside the `env -i` child used
         for git; every other utility -- decisively `shasum` -- came from the
         operator's ambient environment. A replacement rewrote the extracted
         checker after extraction, reported success, and the rewritten checker
@@ -4947,7 +4954,7 @@ class TestLoaderTrustBoundary:
 
     def test_an_inherited_shell_function_cannot_alter_the_checklist(self,
                                                                     tmp_path):
-        """FUR9. Pinning the utilities left the loader *body* interpreted by the
+        """Pinning the utilities left the loader *body* interpreted by the
         operator's shell. An inherited `echo` function rewrote the extracted
         checker and emitted the rewritten file's digest into RECORDED.sha256, so
         the pinned absolute `shasum` verified the wrong list and reported
@@ -5013,7 +5020,7 @@ class TestLoaderTrustBoundary:
             "the body must be fully enclosed by the clean-child heredoc")
 
     def test_the_operator_facing_shell_is_literally_bin_sh(self):
-        """FUR10. The harness used to substitute `/bin/sh` for a recorded
+        """The harness used to substitute `/bin/sh` for a recorded
         placeholder, so the tested property depended on a choice the runbook
         never told the operator to make. The value is now literal in the
         operator-facing text, and this asserts *that* text rather than the
@@ -5059,8 +5066,8 @@ class TestLoaderTrustBoundary:
 
 
 # ---------------------------------------------------------------------------
-# Plan `git-native-security-foundations`, Chunks A5/A6: object-id width comes
-# from the repository, and the evidence runs on the PUBLIC path.
+# object-id width comes from the repository, and the evidence runs on the
+# PUBLIC path.
 # ---------------------------------------------------------------------------
 
 
@@ -5069,7 +5076,7 @@ class TestObjectFormatAwareWidth:
 
     The refusal happened in `_resolve`, which `check` and `apply` both call
     first -- so helper-level SHA-256 coverage could pass while the public path
-    failed before ever reaching the helper. That is why A6 exercises `check`,
+    failed before ever reaching the helper. That is why this exercises `check`,
     not just `_blob_oid`-style internals.
     """
 
@@ -5117,8 +5124,8 @@ class TestObjectFormatAwareWidth:
 
 
 # ---------------------------------------------------------------------------
-# Chunk B: the canonical range-review report.  B5 pins the report's own
-# properties; B7 pins that its classes agree with the manifest policy.
+# the canonical range-review report: one group pins the report's own
+# properties, the next pins that its classes agree with the manifest policy.
 # ---------------------------------------------------------------------------
 
 
@@ -5210,9 +5217,10 @@ class TestRangeReviewReport:
 
 
 class TestReportAgreesWithManifestPolicy:
-    """B7 -- the cross-contract corpus.
+    """The cross-contract corpus.
 
-    B5 proves a *partition*.  It cannot prove the partition is **right**: a
+    The partition nodes above prove a *partition*.  They cannot prove it is
+    **right**: a
     total-but-wrong classification would bind a misdescription with a perfect
     digest, and the Maintainer would sign an accurate-looking report of the
     wrong facts.
@@ -5355,7 +5363,7 @@ def _reflog(repo: Path, ref: str) -> list[str]:
 
 
 class TestCeremonyReflogs:
-    """F1/F4. Both refs record the ceremony on success; an abort records
+    """Both refs record the ceremony on success; an abort records
     nothing, because it did nothing."""
 
     def _refs(self, repo: Path):
@@ -5460,7 +5468,7 @@ class TestCeremonyReflogs:
         def literals(node):
             """Every string this expression can contribute, statically.
 
-            Code review [IC4]: the first version inspected `ast.Constant` args
+            The first version inspected `ast.Constant` args
             only. Measured over this module, 25 of the 29 argument expressions
             in git calls are *not* constant strings -- 17 `Name`, 7 `JoinedStr`,
             1 `Starred` -- and the f-string is the module's normal way of
@@ -5506,12 +5514,13 @@ class TestCeremonyReflogs:
 
 
 class TestAtomicPublication:
-    """F4. The publication contract, exercised against a real bare remote.
+    """The publication contract, exercised against a real bare remote.
 
-    Necessary but **not sufficient** to close [TRU-7]: a local bare remote
+    Necessary but **not sufficient** for the real remote: a local bare remote
     accepts what a real forge might refuse (hooks, protected branches, ref
-    namespace policy). M4 records a probe or the first supervised push against
-    the real remote. These tests establish the mechanism, not the capability.
+    namespace policy). The Maintainer records a probe or the first supervised
+    push against the real remote. These tests establish the mechanism, not the
+    capability.
     """
 
     def _publish(self, tmp_path):
@@ -5621,7 +5630,7 @@ class TestAtomicPublication:
 
     def test_the_authorization_ref_is_deleted_by_its_expected_old_value(
             self, tmp_path):
-        """F3. A bare `-d` deletes whatever the ref points at, which is a
+        """A bare `-d` deletes whatever the ref points at, which is a
         different operation whenever that is not what this ceremony left."""
         repo, remote, base, new = self._publish(tmp_path)
         auth = "refs/cairn/gate-authorization"
@@ -5648,11 +5657,11 @@ class TestAtomicPublication:
 
 
 # ---------------------------------------------------------------------------
-# F5. The runbook's publication text, tested as the recorded procedure.
+# The runbook's publication text, tested as the recorded procedure.
 #
 # Same discipline as the Phase 0 loader tests above: a fix in code that the
 # recorded steps do not carry is not a fix. Phase 5 is not executable here --
-# it pushes to a real remote and that is M4's, not a test's -- so what is
+# it pushes to a real remote and that is the Maintainer's, not a test's -- so what is
 # asserted is the *text*: the contract a Maintainer reads off the page.
 # ---------------------------------------------------------------------------
 
@@ -5725,7 +5734,7 @@ class TestRunbookPublicationText:
     def test_no_partial_push_fallback_is_offered(self):
         """Scoped to the whole file, not to Phase 5.
 
-        Code review [IC5]: this read only Phase 5 while its sibling
+        This read only Phase 5 while its sibling
         `test_the_authorization_ref_appears_in_NO_push_or_fetch_block`
         deliberately reads the whole file and says why -- *"a later-added block
         is exactly where that would reappear."* That reasoning applies verbatim

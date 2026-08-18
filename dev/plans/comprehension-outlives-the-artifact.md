@@ -1,9 +1,5 @@
 <!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/dual-review.md doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
-<!-- Forward reference, marked deliberately: the keep ledger below is created by
-     Chunk C of this plan (see "Where a keep is recorded, and how much gets
-     written"). It does not exist until that chunk runs. -->
-<!-- claim-check-allow: dev/measurement/tag-pass-dispositions.md -->
 
 # Plan: comprehension outlives the artifact
 

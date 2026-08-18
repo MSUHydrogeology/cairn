@@ -16,7 +16,7 @@ pass.
 Read-only by construction, and structurally so: every git invocation goes through
 :func:`_git`, which refuses any subcommand outside :data:`_READ_ONLY_GIT`. That is
 the hook the read-only invariant test asserts against, rather than trusting a
-before/after snapshot to notice (plan finding GPR4).
+before/after snapshot to notice.
 
 **Threat model** -- trusted-contributor, scoped to Cairn's own trust root,
 single-maintainer, as of 2026-08-03, accepted by Maintainer Decision and amended
@@ -105,7 +105,7 @@ _READ_ONLY_GIT = frozenset({
     "diff-tree",
     # `archive` was here and is deliberately gone: it is attribute-aware, so a
     # candidate `.gitattributes` could hide a tracked file from the materialized
-    # tree (FUR3). `raw_tree` reads `ls-tree` + `cat-file` instead, and removing
+    # tree. `raw_tree` reads `ls-tree` + `cat-file` instead, and removing
     # the subcommand makes the archive path unreachable rather than merely
     # unused.
 })
@@ -120,23 +120,23 @@ _SSH_KEYGEN = "/usr/bin/ssh-keygen"
 
 #: Config forced onto **every** git invocation, read or write.
 #:
-#: CR1 found one instance of this class (the roster's *location*) and its
-#: reviewer flagged the class as unswept. The previous fix pinned exactly one
-#: sibling and declared the class closed; the first-use review then found four
-#: more, each defeating a different asserted guarantee. Each entry below is
+#: This list is exhaustive by hard experience, not by survey. One instance was
+#: found (the roster's *location*), fixed by pinning exactly one sibling, and
+#: the class declared closed -- after which four more turned up, each defeating
+#: a different asserted guarantee. Each entry below is
 #: paired with the attack it was verified against, because "pinned a plausible
 #: key" is not evidence:
 #:
 #: * ``core.useReplaceRefs`` -- ``refs/replace/<anchor>`` made ``show
 #:   <anchor>:<path>`` return attacker bytes while ``rev-parse`` still reported
 #:   the original SHA, so :func:`anchored_roster` read an attacker roster with
-#:   every SHA looking correct (FUR1 probe 1).
+#:   every SHA looking correct.
 #: * ``core.hooksPath`` -- a ``reference-transaction`` hook advanced a **third**
-#:   ref while the two-ref transaction reported success (FUR2). ``/dev/null``
+#:   ref while the two-ref transaction reported success. ``/dev/null``
 #:   disables the configured path *and* the default ``.git/hooks``.
 #: * ``core.fsmonitor`` -- a configured monitor program executed during
 #:   ``git status``, so ``check`` was never structurally free of
-#:   candidate-configured execution (FUR2).
+#:   candidate-configured execution.
 #: * ``gpg.format`` -- unpinned, a candidate selects a backend whose program
 #:   key is not the one pinned below.
 #: * ``core.quotePath`` -- non-ASCII frozen paths read back escaped and never
@@ -158,7 +158,7 @@ _STERILE_CONFIG: dict[str, str] = {
     "gpg.format": "ssh",
     "diff.external": "",
     "core.pager": "cat",
-    # Security review [S1]. `gpg.ssh.defaultKeyCommand` names a program Git runs
+    # `gpg.ssh.defaultKeyCommand` names a program Git runs
     # to obtain a signing key when `user.signingKey` is unset -- so a repository
     # under candidate control could name a script and have Git EXECUTE it, in
     # stage 2, after `seal_candidate_execution`. Reproduced: the script ran and
@@ -172,7 +172,7 @@ _STERILE_CONFIG: dict[str, str] = {
 #: Index modes accepted for a frozen-surface member: regular file only.
 #: 120000 is a symlink and 160000 a gitlink/submodule; both are refused, because
 #: a symlink hashes through to its target and can pin bytes no committed blob
-#: contains (security review SR5).
+#: contains.
 _REGULAR_MODES = frozenset({"100644", "100755"})
 
 
@@ -267,7 +267,7 @@ def _sterile_env(index: str | None = None) -> dict[str, str]:
     """
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env["GIT_TERMINAL_PROMPT"] = "0"
-    # Security review [M2-4]. `_READ_ONLY_GIT` keeps content- and ref-writing
+    # `_READ_ONLY_GIT` keeps content- and ref-writing
     # subcommands behind `_git_write`, but "read-only" was a claim about
     # subcommands, not about the repository: `git status` refreshes cached stat
     # data through an *optional* index lock, so a public `check` changed
@@ -316,7 +316,7 @@ def _git(*args: str, repo: Path = _REPO,
     ``config`` supplies ``-c key=value`` overrides ahead of the subcommand.
     Command-line ``-c`` outranks repository config, which is what lets a caller
     take a security-relevant setting **out of the candidate's hands** -- see
-    :func:`check_signatures` and plan finding CR1.
+    :func:`check_signatures`, and the exhaustive `_FORCED_CONFIG` list above.
     """
     if not args or args[0] not in _READ_ONLY_GIT:
         raise PreflightError(
@@ -335,8 +335,8 @@ def _require_worktree_root(repo: Path) -> Path:
     computed from ``__file__`` -- names the *extraction* directory, not the
     checkout being blessed. Executing the runbook's exact steps refused with
     git's bare ``fatal: not a git repository`` before reaching the real checkout
-    (first-use review FUR5): fail-closed, but undiagnosable, and it meant the
-    recorded ceremony had never been run.
+    -- fail-closed, but undiagnosable, and it meant the recorded ceremony had
+    never been run.
 
     The second failure is why "not a git repository" was luck rather than
     design. ``git -C <path>`` **discovers upward**. Had the extraction landed
@@ -364,9 +364,9 @@ def _require_worktree_root(repo: Path) -> Path:
 
 
 #: Object format -> full object-id width.  The one place a width is named.
-#: Plan `git-native-security-foundations`, Chunk A5: three call sites required
-#: a literal 40, so a SHA-256 repository -- which returns a valid 64-hex id --
-#: was refused on the PUBLIC path before any helper could be reached.
+#: Three call sites once required a literal 40, so a SHA-256 repository --
+#: which returns a valid 64-hex id -- was refused on the PUBLIC path before any
+#: helper could be reached. Naming the width once is what prevents that.
 _OBJECT_FORMAT_WIDTH = {"sha1": 40, "sha256": 64}
 
 
@@ -407,7 +407,8 @@ def _tree_entries(commit: str, *,
     tracked file marked ``export-ignore`` was silently absent from the
     materialized tree. The candidate's producer never saw it, the manifest it
     emitted did not pin it, and the blessed commit's tree contained it anyway
-    (FUR3, reproduced). ``-z`` also means paths arrive raw rather than quoted.
+    -- reproduced, not theorised. ``-z`` also means paths arrive raw rather
+    than quoted.
     """
     p = _git("ls-tree", "-r", "-z", "--full-tree", commit, repo=repo,
              want_bytes=True)
@@ -520,7 +521,7 @@ def raw_tree(commit: str, *, repo: Path = _REPO):
     """Materialize a commit's tree from raw objects, outside the repository.
 
     Replaces ``git archive``, which is attribute-aware and therefore
-    candidate-steerable (FUR3). Non-regular entries refuse rather than being
+    candidate-steerable. Non-regular entries refuse rather than being
     written: a symlink can redirect a write out of the destination, and a
     gitlink names content this repository does not hold.
     """
@@ -571,7 +572,8 @@ def _sha256_hex(data: bytes) -> str:
 
     Kept distinct from :func:`_sha256_bytes` rather than stripping its prefix at
     each site. The manifest's rows are produced by `shasum -a 256` in the fixed
-    loader and parsed under A3's "64 lowercase hex digits" rule, so bare hex is
+    loader and parsed under the manifest's "64 lowercase hex digits" rule, so
+    bare hex is
     that artifact's format and the prefixed form is this module's internal one.
     Comparing across the two silently never matches, which is exactly what
     `revalidate_transition` did to every member it checked.
@@ -580,7 +582,7 @@ def _sha256_hex(data: bytes) -> str:
 
 
 # --------------------------------------------------------------------------
-# the preflight-authority closure (plan finding GPR1)
+# the preflight-authority closure
 # --------------------------------------------------------------------------
 
 def declared_authority_closure() -> list[str]:
@@ -618,7 +620,8 @@ def _imported_local_modules() -> set[str]:
     import graph actually reaches.
 
     Compared against the declared closure so a **new dependency** cannot slip in
-    uncovered -- the "extra member" half of GPR1's satisfier. Walks this module's
+    uncovered -- the "extra member" half of the closure property. Walks this
+    module's
     transitive module-valued globals rather than scanning ``sys.modules``, which
     under pytest also holds every ``conftest`` and ``test_*`` module and would
     report them as spurious extras.
@@ -667,10 +670,11 @@ def check_authority_closure(anchor: str, report: Report, *,
     **Why this parameter has to exist.** Without it the transition was
     unreachable end to end, by construction rather than by accident:
     :func:`revalidate_transition` refuses when the closure is *unchanged*
-    ([S3]), and this function refused whenever it *changed*. The two conditions
-    are complements, so every real transition died here -- at the checks, with a
-    CLOSURE finding -- and the transition machinery Chunks A and B built could
-    never run. It is the [M2-1] shape once more: built, unit-tested, and dead to
+    (see :func:`authority_closure_delta`), and this function refused whenever it
+    *changed*. The two conditions are complements, so every real transition died
+    here -- at the checks, with a CLOSURE finding -- and the transition
+    machinery could never run. That is the recurring shape in this module:
+    built, unit-tested, and dead to
     the governing path.
 
     The admission is deliberately narrow. A member is admitted only when its
@@ -678,7 +682,7 @@ def check_authority_closure(anchor: str, report: Report, *,
     path*; anything else still returns ``review``. That digest was independently
     checked against the candidate's anchored blob in `revalidate_transition`, so
     two separate bindings have to agree before a byte change passes, and the set
-    is written into the checkpoint message (D7) rather than merely consulted.
+    is written into the checkpoint message rather than merely consulted.
     """
     admitted = admitted_authority or {}
     declared = declared_authority_closure()
@@ -730,7 +734,7 @@ def check_authority_closure(anchor: str, report: Report, *,
 
 
 # --------------------------------------------------------------------------
-# index-validated frozen surface (security review SR5)
+# index-validated frozen surface
 # --------------------------------------------------------------------------
 
 def _index_entries(*, repo: Path = _REPO) -> dict[str, str]:
@@ -841,7 +845,7 @@ def authority_closure_delta(anchor: str, candidate: str, *,
 
     The transition exists **because** the closure changed. With no delta there
     is nothing for an external review to have reviewed, and running the mode
-    anyway would make it a flag rather than a ceremony -- plan finding [S3].
+    anyway would make it a flag rather than a ceremony.
     """
     delta: dict[str, tuple] = {}
     for rel in sorted(declared_authority_closure()):
@@ -861,7 +865,7 @@ def parse_review_manifest(text: str) -> dict:
     (`REANCHOR_RUNBOOK.md`, *Phase 0 transition mode*), which runs *before* any
     Python — including this function — exists in the process. By the time this
     executes, the bytes it would judge have already been selected and are
-    already running. Plan review finding **[E3]**: a Python re-check cannot
+    already running. A Python re-check cannot
     establish which Python was safe to run.
 
     It is kept because a second, independent implementation of the same
@@ -877,13 +881,13 @@ def parse_review_manifest(text: str) -> dict:
         if any(ch not in "\t" and (ord(ch) < 32 or ord(ch) == 127)
                for ch in raw):
             raise ReviewManifestError("control character in the review manifest")
-        # Code review [C4]: the two parsers of this one artifact disagreed here.
+        # The two parsers of this one artifact disagreed here.
         # `raw.split()` ignores leading whitespace, so an indented row was
         # classified by its first word -- but `provenance` is then taken by
         # slicing `raw` at a fixed offset, which on an indented row yields a
         # different string than the loader's `${line#provenance }` produces.
         # Rejecting the row outright is the fix that cannot drift: the format is
-        # declared "one concrete, bounded format" (A2), and an indented row is
+        # declared "one concrete, bounded format", and an indented row is
         # not in it. The loader rejects it identically.
         if raw[:1].isspace():
             raise ReviewManifestError(
@@ -948,7 +952,7 @@ def read_review_manifest(path: str | Path) -> tuple[dict, str]:
     they hold, and a provenance value nobody can reproduce is worse than none --
     it reads as verified.
 
-    [E4]/D7: the checkpoint binds this digest, so the durable record names
+    The checkpoint binds this digest, so the durable record names
     *which* review admitted the authority set, not merely that some review did.
     """
     raw = Path(path).read_bytes()
@@ -1055,8 +1059,8 @@ def _rev_list(spec: str, *, repo: Path = _REPO) -> list[str]:
     signed range cannot be established" into "there is nothing to check". With
     the signing-epoch object absent -- a shallow or partial clone is enough --
     an unsigned commit inside ``anchor..HEAD`` was reported as *grandfathered*
-    and :func:`check_signatures` emitted no finding at all (first-use review
-    FUR4). An unestablishable range is not an empty one.
+    and :func:`check_signatures` emitted no finding at all. An unestablishable
+    range is not an empty one.
     """
     p = _git("rev-list", spec, repo=repo)
     if p.returncode != 0:
@@ -1173,7 +1177,7 @@ def _classify_path(rel: str, frozen: set, cascade: set, phase: set,
                    manifest_rel: str) -> str:
     """Exactly one class per path, from the **manifest's** own policy.
 
-    B6: the source is `_gate_manifest`'s -- `_frozen_files()` plus the mutable
+    The source is `_gate_manifest`'s -- `_frozen_files()` plus the mutable
     registries plus the manifest artifact -- not a second definition here.  A
     report that partitions perfectly but disagrees with the policy that later
     decides HOLD would bind a misdescription with a perfect digest.
@@ -1245,7 +1249,7 @@ def range_review_report(anchor: str, head: str, *, branch: str,
 
     by_class = {name: [e["display"] for e in entries if e["class"] == name]
                 for name in _RANGE_CLASSES}
-    # [E2]/C5, and the live defect security review [S2] found in `2df83d2`:
+    # A live defect, found in `2df83d2`:
     # this read the manifest **already in the worktree**, while `apply` commits
     # `authoritative_manifest(...)` -- a different artifact with a different
     # digest. So the report faithfully bound the wrong manifest identity, and
@@ -1369,7 +1373,7 @@ def check_authority_modules(anchor: str, report: Report, *,
 
 
 # --------------------------------------------------------------------------
-# the evidence artifact (plan finding GPR3) -- parsed fail-closed
+# the evidence artifact -- parsed fail-closed
 # --------------------------------------------------------------------------
 
 #: Printed by the evidence stage, every run. Deliberately not softened: the
@@ -1400,7 +1404,7 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
     """Produce the evidence artifact by running the **candidate's** manifest
     producer over a materialized copy of the candidate tree.
 
-    Separated from :func:`check` on purpose (plan finding GPR3): producing a
+    Separated from :func:`check` on purpose: producing a
     manifest requires a pytest collection, which imports the candidate's
     ``conftest.py`` and test modules. ``check`` promises to be read-only, and a
     stage that executes host-capable code cannot make that promise. So this is a
@@ -1413,7 +1417,7 @@ def gather_evidence(candidate_ref: str = "HEAD", *, repo: Path = _REPO,
 
     # Materialized from raw objects, not `git archive`: the archive path honours
     # in-tree `.gitattributes`, so a tracked file marked `export-ignore` was
-    # invisible to the producer while remaining in the blessed tree (FUR3).
+    # invisible to the producer while remaining in the blessed tree.
     with raw_tree(candidate, repo=repo) as tree:
         out.write(f"materialized {candidate[:12]} at {tree} "
                   f"(no .git, raw objects)\n")
@@ -1502,7 +1506,7 @@ def rederive_static_manifest(commit: str, *, repo: Path = _REPO) -> dict:
     process produced. A signed candidate that added a tracked module under the
     frozen directory and a ``.gitattributes`` marking it ``export-ignore`` got a
     commit blessed whose tree held the file while its manifest did not pin it
-    (FUR3). The archive hole is closed in :func:`raw_tree`; this closes the
+    The archive hole is closed in :func:`raw_tree`; this closes the
     delegation.
 
     Two deliberate choices. The tree is materialized from **raw objects**, so
@@ -1585,8 +1589,7 @@ def _entry_base(entry) -> dict:
 
     **The v1 scalar is the live shape, not a legacy one.** `gather_evidence`
     runs `produce` from a materialized raw tree with no repository, so it emits
-    `rel -> "<sha256>"` for every frozen file -- v2-labelled and v1-shaped, as
-    [IC2] recorded.
+    `rel -> "<sha256>"` for every frozen file -- v2-labelled and v1-shaped.
 
     Losing this is what the first cut of :func:`authoritative_manifest` did:
     it built the entry from `{}` whenever the candidate's side was not already a
@@ -1612,7 +1615,7 @@ def authoritative_manifest(theirs: dict, ours: dict) -> dict:
     """The manifest the ceremony actually commits: the candidate's, with every
     checker-derived field **replaced** by the checker's own re-derivation.
 
-    Code review **[IC2]**. `apply` used to commit ``evidence["manifest"]``
+    `apply` used to commit ``evidence["manifest"]``
     verbatim, so the re-derivation was computed, compared, and then discarded --
     not one Git-native field reached the anchored artifact. Because
     `gather_evidence` runs `produce` from a materialized raw tree with no
@@ -1670,7 +1673,7 @@ def check_static_manifest(evidence: dict, head: str, report: Report, *,
             #
             # Skipping the comparison is safe only because
             # :func:`authoritative_manifest` **replaces** these fields in the
-            # bytes `apply` commits ([IC2]). Before that, skipping meant a
+            # bytes `apply` commits. Before that, skipping meant a
             # candidate-supplied value was neither compared nor overwritten, so
             # it rode into the signed artifact unexamined. Refusing the mere
             # presence of a value was tried and is wrong: `produce` legitimately
@@ -1781,7 +1784,7 @@ BUNDLE_SCHEMA = 1
 #: index/worktree transition, and the two-direct-ref transaction. Deliberately a
 #: *separate* allowlist from :data:`_READ_ONLY_GIT`, so `check` has no path to
 #: any repository writer while `apply`'s capability is stated rather than
-#: implied (security code review CR4).
+#: implied.
 _WRITE_GIT = frozenset({
     "update-ref",     # the two-direct-ref transaction, --stdin only
     "hash-object",    # write the manifest blob
@@ -1791,7 +1794,7 @@ _WRITE_GIT = frozenset({
     "commit-tree",    # construct the signed commit
     # `add` was here and is deliberately gone: it re-reads the worktree through
     # any configured `clean` filter, putting a candidate-controlled transform
-    # between the verified bytes and the index (FUR2). The sync installs the
+    # between the verified bytes and the index. The sync installs the
     # already-verified blob by id via `update-index --cacheinfo`, so removing
     # the subcommand makes the filtered path unreachable rather than unused.
 })
@@ -1809,14 +1812,15 @@ def _admitted_rows(admitted: dict | None, provenance: str | None,
                    review_digest: str | None) -> str:
     """The complete admitted authority set, as ordered `path -> sha256` rows.
 
-    Plan review [E4] and opening outcome A3. The digest alone binds
-    cryptographically and is **unreadable**: a later reader could verify *that*
+    The digest alone binds cryptographically and is **unreadable**: a later
+    reader could verify *that*
     a set was admitted without being able to see *which bytes*, because the
     review manifest is an out-of-band artifact that may not survive. Nine rows
     is a reasonable audit cost for a trust root, and it is the difference
     between a durable record and a durable pointer to one.
 
-    D7 binds the **review-manifest digest** alongside them, which answers the
+    The checkpoint binds the **review-manifest digest** alongside them, which
+    answers the
     other half: the rows say what was admitted, the digest says which reviewed
     artifact admitted it. Rows without the digest would let two different
     reviews of the same bytes be indistinguishable in the record.
@@ -1839,7 +1843,7 @@ def _admitted_rows(admitted: dict | None, provenance: str | None,
 def parse_admitted_authority(message: str) -> dict | None:
     """Read the admitted authority set back out of a checkpoint message.
 
-    D8. The claim the rows exist to support is that a later reader can recover
+    The claim the rows exist to support is that a later reader can recover
     *which bytes* were admitted from the anchored record alone -- so that claim
     has to be executable, not merely plausible from looking at the text. If the
     set can only be recovered by a human squinting at a commit message, it is a
@@ -1898,7 +1902,7 @@ def draft_message(*, observed_anchor: str, checked_head: str,
     human to retype six sha256 strings mid-ceremony is how the 2026-07-31 run
     lost its audit trail entirely.
 
-    It does **not** contain the resulting ``P`` SHA (security review SR4): a
+    It does **not** contain the resulting ``P`` SHA: a
     commit's SHA hashes its own message, so a message cannot carry it. The real
     ``e5ecaa5`` / ``bf08f62`` messages say "this commit", which is the honest
     form and the one used here.
@@ -1943,7 +1947,7 @@ Produced under the canonical interpreter. The pre-flight ran read-only from the
 anchored checker; the review, the decision, this commit and the ref advance are
 the Maintainer's own acts, per REANCHOR_RUNBOOK's Maintainer-only constraint.
 """
-    # Code review [C1]: the writer must be able to read its own record back.
+    # The writer must be able to read its own record back.
     #
     # The admitted set is written as delimited rows, so a member path carrying a
     # newline forges an extra row -- and the forged message still signs, still
@@ -2018,10 +2022,10 @@ def verify_message_binds_report(message: str, *, digest: str, tree: str,
 
 
 # --------------------------------------------------------------------------
-# the key channel (Chunk D; plan review [E1], proposal R4)
+# the key channel
 # --------------------------------------------------------------------------
 #
-# [E1] falsified the design this replaces. The proposal said stage 1 runs with
+# Reproduction falsified the design this replaces, which said stage 1 runs with
 # "the signing key channel absent (`SSH_AUTH_SOCK` unset)". Reproduced with a
 # disposable key: under `env -i`, `HOME=/nonexistent` and NO `SSH_AUTH_SOCK`,
 # `ssh-keygen -Y sign -f key.pub` SUCCEEDED, because it found the private
@@ -2031,8 +2035,8 @@ def verify_message_binds_report(message: str, *, digest: str, tree: str,
 # So an unset variable is **evidence, never the property**, and the property is
 # not one code can establish: nothing a program does makes a readable
 # unencrypted private key unavailable to another process running as the same
-# user. The boundary is therefore a **Maintainer precondition (N4)** -- the
-# ceremony key encrypted at rest and in no agent during stage 1 -- and what code
+# user. The boundary is therefore a **Maintainer precondition** -- the ceremony
+# key encrypted at rest and in no agent during stage 1 -- and what code
 # does is *probe* it and refuse when the probe succeeds.
 #
 # This remains SEQUENCING, NOT CONTAINMENT. Candidate code that ran earlier on
@@ -2046,7 +2050,8 @@ KEY_PROBE_TIMEOUT_S = 10
 
 
 class KeyChannelError(PreflightError):
-    """Stage 1 could sign, so the N4 precondition does not hold."""
+    """Stage 1 could sign, so the N4 precondition -- the ceremony key encrypted
+    at rest and loaded into no agent -- does not hold."""
 
 
 def signing_key_path(recorded: str | None) -> str:
@@ -2069,8 +2074,8 @@ def signing_key_path(recorded: str | None) -> str:
 def validate_signing_key(recorded: str | None) -> tuple[str, str]:
     """Resolve the recorded key to ``(absolute path, SHA256 fingerprint)``.
 
-    Security review **[S1]**. Before this, a recorded path that did not exist
-    was handed straight to :func:`probe_cannot_sign`, `ssh-keygen` failed with
+    Before this, a recorded path that did not exist was handed straight to
+    :func:`probe_cannot_sign`, `ssh-keygen` failed with
     "no such file", and the failure was classified as **"stage 1 cannot sign"**.
     So the strongest-sounding control in the ceremony could be satisfied by
     aiming it at nothing — and stage 2, which received no key identity at all,
@@ -2095,7 +2100,8 @@ def validate_signing_key(recorded: str | None) -> tuple[str, str]:
     if not key_path:
         raise KeyChannelError(
             "no signing key was recorded (--signing-key), so the supported "
-            "key channel is unnamed and the N4 precondition cannot be probed. "
+            "key channel is unnamed and the N4 precondition (the ceremony "
+            "key encrypted at rest, in no agent) cannot be probed. "
             "It is recorded rather than discovered, deliberately.")
     p = Path(key_path)
     if not p.is_absolute():
@@ -2146,7 +2152,8 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
     the passphrase answers *yes* -- which makes the probe succeed, which is the
     failure case, and the ceremony stops. **Decline** it (Ctrl-C, or an empty
     entry, or simply wait out the timeout): declining is the act that
-    establishes the N4 precondition for this run. Nothing else in the ceremony
+    establishes the N4 precondition -- the ceremony key encrypted at rest and
+    in no agent -- for this run. Nothing else in the ceremony
     asks the operator to withhold something, so nothing else in the ceremony is
     this easy to get backwards.
 
@@ -2158,7 +2165,7 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
     precondition, not an enforcement of one. ``timed_out`` is separate from
     ``cannot_sign`` because a hung probe answered **neither** question, and
     reporting it as either one tells the operator something this run did not
-    establish ([D4]).
+    establish.
     """
     # Guarded like every other launcher in this module. The probe runs `ssh-keygen`
     # at a pinned absolute path, not candidate code, so exempting it would have
@@ -2189,14 +2196,14 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
                 stdin=subprocess.DEVNULL, capture_output=True, text=True,
                 timeout=KEY_PROBE_TIMEOUT_S, env=child, check=False)
         except subprocess.TimeoutExpired:
-            # [D4]: reported as its own outcome, not folded into "can sign".
+            # Reported as its own outcome, not folded into "can sign".
             # The caller still refuses -- an unanswered probe is not a pass --
             # but it no longer tells the operator the channel is open when
             # nothing established that.
             return (False, "the signing probe timed out; a probe that hangs "
                            "has not answered, and a passphrase prompt is not "
                            "a refusal", True)
-        # Code review [C5]: exit 0 alone means the key channel is OPEN.
+        # Exit 0 alone means the key channel is OPEN.
         #
         # This used to require a locatable `.sig` as well, so an `ssh-keygen`
         # that succeeded while writing its output somewhere this code did not
@@ -2217,15 +2224,16 @@ def probe_cannot_sign(key_path: str, *, env: dict | None = None) -> tuple:
 
 def require_stage1_cannot_sign(recorded_key: str | None = None, *,
                                out=sys.stderr) -> dict:
-    """Stage 1's gate on the N4 precondition. Refuses if signing succeeds.
+    """Stage 1's gate on the N4 precondition -- the ceremony key encrypted at
+    rest and in no agent. Refuses if signing succeeds.
 
-    Security review [S1]: the key is **validated before it is probed**, and the
+    The key is **validated before it is probed**, and the
     fingerprint returned here is what binds stage 2 to this same key.
     """
     key_path, fingerprint = validate_signing_key(recorded_key)
     cannot, detail, timed_out = probe_cannot_sign(key_path)
     if timed_out:
-        # [D4]: a hung probe answered nothing, so saying "CAN SIGN" asserts
+        # A hung probe answered nothing, so saying "CAN SIGN" asserts
         # something this run did not establish. Refusing is still right --
         # an unanswered question about the key channel is not a pass.
         raise KeyChannelError(
@@ -2247,7 +2255,7 @@ def require_stage1_cannot_sign(recorded_key: str | None = None, *,
 
 
 # --------------------------------------------------------------------------
-# the authorization package (Chunk C; plan review [E2], proposal R3)
+# the authorization package
 # --------------------------------------------------------------------------
 
 PACKAGE_SCHEMA = "cairn-authorization-package/v1"
@@ -2287,10 +2295,11 @@ def write_package(path: Path, pkg: dict) -> str:
     """Write the package atomically and exclusively; return the **external**
     digest over the exact bytes written.
 
-    **The digest is external on purpose** ([E2]). An earlier design put a
+    **The digest is external on purpose.** An earlier design put a
     `package_digest` field *inside* the package it digests, which is either
     recursive or silently excludes a field nobody named -- and either way it is
-    the adjacent self-digest CR1 falsified, one layer down. Authority comes from
+    the same self-digest mistake as the handoff bundle described in
+    :func:`transition`, one layer down. Authority comes from
     a digest the Maintainer carries out of band, computed over bytes that
     already exist.
 
@@ -2382,7 +2391,7 @@ def read_package(path: Path, *, confirmed_sha256: str) -> dict:
             f"package fields do not match the schema: {len(missing)} missing "
             f"{missing}, {len(extra)} unexpected {extra}")
 
-    # Code review [C1]: the INNER shape, which nothing checked.
+    # The INNER shape, which nothing checked.
     #
     # The top-level field set was validated and `review_manifest`'s contents
     # were not, so a non-dict reached `.get(...)` and surfaced as an uncaught
@@ -2447,8 +2456,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     """The derived description of what a blessing would do.
 
     Formerly emitted as a handoff *bundle* that ``apply`` read back and trusted.
-    Code review CR1 falsified that: value and digest sat in the same editable
-    JSON, so re-hashing a tampered manifest was accepted. It is now built in
+    That was falsified: value and digest sat in the same editable JSON, so
+    re-hashing a tampered manifest was accepted. It is now built in
     memory by whichever command needs it, and `check` may write it out only as a
     **record for the operator to read** -- nothing consumes it as authority.
     """
@@ -2468,8 +2477,8 @@ def blessing_plan(report: Report, evidence: dict, *, repo: Path = _REPO,
     erroneous = (report.facts["anchor"]
                  if last_legitimate_anchor
                  and last_legitimate_anchor != report.facts["anchor"] else None)
-    # [M2-1]: derive the canonical report HERE, so the message that gets signed
-    # binds it. This was the whole point of Chunks B and C, and neither reached
+    # Derive the canonical report HERE, so the message that gets signed binds
+    # it. The machinery for this existed and nothing reached
     # this line -- `range_report_digest` defaulted to None and every real
     # ceremony signed "range-report digest : (not bound)". The machinery existed,
     # was tested in isolation, and was dead to authorization.
@@ -2520,7 +2529,8 @@ def _git_write(*args: str, repo: Path = _REPO, stdin: str | None = None,
                index: str | None = None) -> subprocess.CompletedProcess:
     """The **only** repository-writing path, with its own enumerated allowlist.
 
-    Routed through :func:`_run_git` since FUR1/FUR2. Before that it called
+    Routed through :func:`_run_git` so the forced config applies here too.
+    Before that it called
     ``subprocess`` directly with **no config pinning at all**, so the write path
     -- the one that signs the commit and moves the trust root -- was the *least*
     protected in the module: ``gpg.ssh.program`` chose the verifier and a
@@ -2540,7 +2550,7 @@ def _git_write(*args: str, repo: Path = _REPO, stdin: str | None = None,
 
 
 def _require_direct_ref(ref: str, *, repo: Path = _REPO) -> None:
-    """Refuse a symbolic ref as a transaction target (code review CR4).
+    """Refuse a symbolic ref as a transaction target.
 
     ``update-ref`` follows a symbolic ref by default, so a gate anchor turned
     symbolic would silently advance a *third* logical ref -- the claimed two-ref
@@ -2562,7 +2572,7 @@ def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
     Written here rather than reusing ``_gate_reanchor._construct_anchor_commit``
     for two reasons: that helper hard-codes its own message and does not sign, so
     the audit trail never reached the commit and the most privileged commit in
-    the repository was unsigned (code review CR2); and it is a FROZEN gate file,
+    the repository was unsigned; and it is a FROZEN gate file,
     so editing it would force a re-anchor to fix a defect in this plan's work.
 
     A temporary index is used, so nothing touches the real index or worktree
@@ -2596,7 +2606,7 @@ def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
         tree = wt.stdout.strip()
         if wt.returncode != 0 or not tree:
             raise PreflightError(f"write-tree failed: {wt.stderr.strip()}")
-        # [S1]: name the key EXPLICITLY. A bare `-S` makes Git choose the signer
+        # Name the key EXPLICITLY. A bare `-S` makes Git choose the signer
         # from `user.signingKey`, which is repository configuration -- so the
         # commit that becomes the trust root was signed by whichever key the
         # candidate's own config named. Pinning it per-invocation puts the
@@ -2612,7 +2622,7 @@ def _construct_signed_commit(repo: Path, head: str, manifest_bytes: bytes,
                 f"{ct.stderr.strip()}")
         # The blob id travels with the commit id so the index sync can install
         # it directly rather than re-deriving it from the worktree through a
-        # filter (FUR2).
+        # filter.
         return new, blob
 
 
@@ -2622,7 +2632,7 @@ def verify_constructed(repo: Path, new: str, head: str, *,
                        expected_fingerprint: str | None = None) -> None:
     """Verify the constructed commit **from the commit object**, before any ref
     moves: exact parent, exact changed path, exact manifest blob digest, exact
-    message, valid signature, pinned principal (code review CR2)."""
+    message, valid signature, pinned principal."""
     parents = _git("rev-parse", f"{new}^@", repo=repo).stdout.split()
     if parents != [head]:
         raise PreflightError(
@@ -2659,7 +2669,7 @@ def verify_constructed(repo: Path, new: str, head: str, *,
     if signer not in principals:
         raise PreflightError(
             f"constructed commit is signed by an unpinned principal {signer!r}")
-    # [S1]: identity AND authorization, not one standing in for the other.
+    # Identity AND authorization, not one standing in for the other.
     #
     # The principal check asks "is this signer on the anchored roster"; it says
     # nothing about *which* rostered key signed. A second rostered key therefore
@@ -2680,7 +2690,7 @@ def _advance_both_refs(repo: Path, branch: str, new: str, *,
                        branch_old: str, anchor_old: str) -> tuple[bool, str]:
     """Advance the branch and the gate anchor in **one** expected-old transaction.
 
-    ``--no-deref`` so a symbolic target cannot redirect an update (CR4), on top
+    ``--no-deref`` so a symbolic target cannot redirect an update, on top
     of the direct-ref precondition checked separately.
     """
     stdin = (f"start\n"
@@ -2712,7 +2722,7 @@ def _sync_worktree(repo: Path, manifest_bytes: bytes, blob: str) -> None:
     Construction uses a temporary index, so before this the real index and
     worktree still carry the pre-blessing blob and ``git status`` reports the
     manifest as staged against the new trust root -- an immediate dirty state and
-    a staged rollback waiting to ride a later commit (code review CR3). Because
+    a staged rollback waiting to ride a later commit. Because
     construction touched neither, an aborted transaction leaves **no** residue at
     all, which is stronger than reporting one.
 
@@ -2720,7 +2730,7 @@ def _sync_worktree(repo: Path, manifest_bytes: bytes, blob: str) -> None:
     and already verified inside the blessed commit. It used to go through ``git
     add``, which re-reads the worktree file through any configured ``clean``
     filter -- a candidate-controlled transform standing between the bytes that
-    were verified and the bytes that land in the index (FUR2). ``update-index
+    were verified and the bytes that land in the index. ``update-index
     --cacheinfo`` names the object outright, so no filter is in the path.
     """
     (repo / _MANIFEST_REL).write_bytes(manifest_bytes)
@@ -2816,7 +2826,7 @@ def stage1(*, repo: Path = _REPO, package_out: Path,
                             if transition else None),
         "prospective_manifest_b64": base64.b64encode(manifest_bytes).decode(),
         "prospective_manifest_sha256": _sha256_bytes(manifest_bytes),
-        # [S1]: the identity of the key stage 1 probed. Stage 2 re-derives this
+        # The identity of the key stage 1 probed. Stage 2 re-derives this
         # from the key IT was given and refuses on any difference, which is what
         # makes "the probed key is the signing key" a checked property rather
         # than an assumption spanning two processes.
@@ -2849,7 +2859,7 @@ def apply_now(*, repo: Path = _REPO,
               out=sys.stderr) -> dict:
     """Validate the confirmed package, re-derive everything derivable, then bless.
 
-    **Security review [S2] retired the old claim in this docstring.** It used to
+    **This docstring used to overclaim.** It used to
     say "no handoff artifact is trusted" and "there is no authority-bearing
     file". That described the removed single-process design, and it is false of
     this one: stage 2 necessarily consumes the authorization package and takes
@@ -2863,8 +2873,8 @@ def apply_now(*, repo: Path = _REPO,
 
     * **No adjacent self-digest authenticates a file.** A digest carried inside
       the artifact it describes is a corruption check, not tamper evidence --
-      value and digest come from the same editable JSON, which code review CR1
-      falsified by re-hashing a tampered manifest and having it anchored.
+      value and digest come from the same editable JSON, which was falsified
+      by re-hashing a tampered manifest and having it anchored.
     * **The Maintainer's out-of-band confirmation authenticates the exact
       package bytes.** ``--confirm-package-sha256`` is over the file stage 1
       wrote, computed independently by the operator. That is the authority
@@ -2877,7 +2887,7 @@ def apply_now(*, repo: Path = _REPO,
     attacker-supplied digest without reading the report it covers. That is the
     boundary's nature, not a gap in it.
 
-    Code review CR1 established that a bundle carrying its own digests is a
+    A bundle carrying its own digests was established to be a
     corruption check, not tamper evidence: both value and digest come from the
     same editable JSON, and an execution probe re-hashed a tampered manifest and
     had it anchored. External review then rejected both an out-of-band digest
@@ -2890,7 +2900,7 @@ def apply_now(*, repo: Path = _REPO,
 
     That history is why the package's digest is **external** rather than
     adjacent. It is not why this paragraph used to conclude "there is no
-    authority-bearing file" ([S2]) -- there is one, and it is the package; what
+    authority-bearing file" -- there is one, and it is the package; what
     it is not is *self*-authenticating.
     ``check`` remains available as a non-mutating preview, and its output is a
     record for the operator to read, never an input here.
@@ -2905,7 +2915,7 @@ def apply_now(*, repo: Path = _REPO,
             "state actually being authorized.")
     # Re-validated here and not only at the CLI boundary: this is the one
     # function that moves the trust root, so the repository it moves must be the
-    # one the caller named, not one git discovered by walking upward (FUR5).
+    # one the caller named, not one git discovered by walking upward.
     repo = _require_worktree_root(repo)
 
     # ---- STAGE 2 ----------------------------------------------------------
@@ -2915,7 +2925,7 @@ def apply_now(*, repo: Path = _REPO,
     # below refuses instead of merely being unreachable by inspection.
     pkg = read_package(Path(package), confirmed_sha256=confirmed_package_sha256)
 
-    # [S1]: stage 2 is told WHICH KEY, and checks it is the one stage 1 probed.
+    # Stage 2 is told WHICH KEY, and checks it is the one stage 1 probed.
     #
     # Stage 2 previously received no key identity at all and signed with a bare
     # `-S`, so Git selected the signer from repository `user.signingKey`. The
@@ -2948,7 +2958,7 @@ def apply_now(*, repo: Path = _REPO,
     # The ordering is the finding. With this comparison placed after `check`,
     # every stale-package scenario refused -- but refused *at the checks*, on a
     # state that had already moved, so the comparison written to catch exactly
-    # this never executed. That is the [M2-1] shape: a control built, tested in
+    # this never executed. That is the recurring shape: a control built, tested in
     # isolation, and unreachable through the governing path. Here it is the
     # first thing stage 2 decides, so a stale package is rejected as a stale
     # package, with a diagnostic that says so.
@@ -2967,18 +2977,18 @@ def apply_now(*, repo: Path = _REPO,
                 f"package {field} is {pkg[field]!r}; this repository is now "
                 f"{expected!r}. A stale package cannot authorize a moved state.")
 
-    # C7. Stage 2 rebuilds the manifest from its OWN static re-derivation plus
-    # the two fields C6 declares candidate-only, and never from the candidate's
+    # Stage 2 rebuilds the manifest from its OWN static re-derivation plus
+    # the two fields declared candidate-only, and never from the candidate's
     # manifest -- which it does not have and must not need.
     #
     # This is what gives the exact-byte comparison below its teeth. Stage 1
     # built the package's bytes from the *candidate's* manifest; stage 2 builds
     # from a re-derivation with `collection` and `interpreter` grafted on. The
     # two agree byte-for-byte **only if** the candidate contributed nothing else
-    # -- so C6's closed executable-only list stops being an assertion in a
+    # -- so the closed executable-only list stops being an assertion in a
     # comment and becomes a property re-tested on every real run. A third
     # candidate-only field appearing anywhere makes stage 2 refuse, which is the
-    # answer the plan review asked for: it fails, it does not silently trust.
+    # answer that matters: it fails, it does not silently trust.
     static = rederive_static_manifest(pkg["candidate_head"], repo=repo)
     evidence = {
         "schema": EVIDENCE_SCHEMA,
@@ -2993,7 +3003,7 @@ def apply_now(*, repo: Path = _REPO,
         + b"\n")
     # Transition-mode revalidation, ahead of the checks for the same reason as
     # in stage 1: the closure check cannot admit a reviewed byte change it has
-    # not been told about. Defence in depth ([E3]) -- the loader has already
+    # not been told about. Defence in depth -- the loader has already
     # selected and started these bytes, so this cannot establish that the
     # selection was sound. It restates the loader's conclusions from inside so a
     # loader edited laxer than its recorded text is caught, and so the parsed
@@ -3017,7 +3027,7 @@ def apply_now(*, repo: Path = _REPO,
             anchor=_resolve(_ANCHOR_REF, repo=repo), repo=repo)
 
         # The two stages must agree about what is being admitted. The checkpoint
-        # is built from `transition` regardless ([C1]), so a mismatch can no
+        # is built from `transition` regardless, so a mismatch can no
         # longer forge the record -- but a package whose admitted set differs
         # from the one stage 2 just revalidated is tampered or stale, and
         # refusing says so instead of quietly overriding it.
@@ -3035,7 +3045,8 @@ def apply_now(*, repo: Path = _REPO,
         # sign a checkpoint whose message records "steady state -- no closure
         # change" for a run that changed the closure. The admitted set would be
         # absent from the durable record while the ref moved anyway, which is
-        # the [E4] failure with a signature on top.
+        # a durable record missing what it exists to record, with a
+        # signature on top.
         raise PackageError(
             "the package authorizes a reviewed-authority transition, but "
             "stage 2 was given no --transition-from-review. A transition "
@@ -3060,7 +3071,7 @@ def apply_now(*, repo: Path = _REPO,
         }
     _require_direct_ref(_ANCHOR_REF, repo=repo)
 
-    # [IC2]: commit the checker's Git-native identity, not the candidate's.
+    # Commit the checker's Git-native identity, not the candidate's.
     # `evidence["manifest"]` used to go in verbatim, which made the whole
     # re-derivation ceremonial -- computed, compared, discarded. The digest and
     # the message follow the bytes, so the checkpoint binds what is anchored.
@@ -3090,7 +3101,7 @@ def apply_now(*, repo: Path = _REPO,
                          manifest_sha256=committed_sha256,
                          branch=branch, expected_old=branch_old,
                          prospective_manifest=manifest_bytes,
-                         # Code review [C1]: the DURABLE RECORD comes from the
+                         # The DURABLE RECORD comes from the
                          # revalidated transition, never from the package.
                          #
                          # These read `pkg["review_manifest"]` before, while the
@@ -3101,8 +3112,7 @@ def apply_now(*, repo: Path = _REPO,
                          # dict was entirely unchecked. A package re-digested
                          # after tampering (the confirmation then matches
                          # perfectly) signed a full set of false rows with
-                         # every check
-                         # green, and dropping the `members` key signed
+                         # every check green, and dropping the `members` key signed
                          # "steady state -- no closure change" over a real
                          # closure change -- verbatim the failure the refusal
                          # above exists to prevent.
@@ -3117,7 +3127,7 @@ def apply_now(*, repo: Path = _REPO,
                                             if transition else None),
                          review_digest=review_digest)
 
-    # [M2-1], the governing path. Three separate obligations, none of which the
+    # The governing path. Three separate obligations, none of which the
     # reviewed bytes performed:
     #
     #   PRESENT  -- the complete report, not a count. The Maintainer authorizes
@@ -3140,7 +3150,7 @@ def apply_now(*, repo: Path = _REPO,
     # authority -- but re-deriving and then never comparing means the Maintainer
     # could authorize report R while stage 2 signs R'. In practice the state
     # comparison above makes them agree; "in practice" is exactly the reasoning
-    # that produced [M2-1], where the machinery was right and unreached.
+    # that left the machinery right and unreached before.
     #
     # Both halves are checked, because they fail differently. The package must
     # be internally consistent -- the body the Maintainer READ has to be the
