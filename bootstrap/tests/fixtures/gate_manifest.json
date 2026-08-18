@@ -14,7 +14,7 @@
     }
   },
   "collection": {
-    "node_count": 4261,
+    "node_count": 4277,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -1381,6 +1381,7 @@
       "bootstrap/tests/test_lifecycle_board.py::TestOwnerVocabulary::test_the_rendered_row_owner_matches_the_central_table[proposal-awaiting-decision]",
       "bootstrap/tests/test_lifecycle_board.py::TestOwnerVocabulary::test_the_rendered_row_owner_matches_the_central_table[proposal-awaiting-review]",
       "bootstrap/tests/test_lifecycle_board.py::TestOwnerVocabulary::test_the_rendered_row_owner_matches_the_central_table[proposal-revising]",
+      "bootstrap/tests/test_lifecycle_board.py::TestOwnerVocabulary::test_the_retained_historical_owner_rows_are_not_dead_weight",
       "bootstrap/tests/test_lifecycle_board.py::TestProviderContainment::test_a_broken_symlink_is_an_error_not_not_installed",
       "bootstrap/tests/test_lifecycle_board.py::TestProviderContainment::test_a_non_regular_launcher_is_refused",
       "bootstrap/tests/test_lifecycle_board.py::TestProviderContainment::test_a_symlinked_ancestor_is_not_a_false_refusal",
@@ -2064,14 +2065,15 @@
       "bootstrap/tests/test_lifecycle_contract.py::TestTheAcceptedVocabularyIsDeclared::test_every_declared_state_is_recognized_by_the_consumers",
       "bootstrap/tests/test_lifecycle_contract.py::TestTheAcceptedVocabularyIsDeclared::test_shape_b_covers_every_current_non_terminal_state",
       "bootstrap/tests/test_lifecycle_contract.py::TestTheAcceptedVocabularyIsDeclared::test_the_terminal_classification_did_not_move",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_each_legacy_state_keeps_a_forward_path",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_the_historical_tuples_are_still_empty_and_that_is_the_seam",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_the_three_pending_retirement_plan_tokens_are_still_legal[executing]",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_the_three_pending_retirement_plan_tokens_are_still_legal[open]",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_the_three_pending_retirement_plan_tokens_are_still_legal[review]",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_the_three_pending_retirement_proposal_tokens_are_still_legal[proposed]",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_the_three_pending_retirement_proposal_tokens_are_still_legal[reviewed]",
-      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensAreStillLegalUntilH1::test_the_three_pending_retirement_proposal_tokens_are_still_legal[revised]",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_each_legacy_state_now_has_no_forward_path",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_historical_tuples_are_no_longer_empty_and_that_is_the_seam",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_proposal_side_retirement_bites_the_same_way",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_three_retired_plan_tokens_are_no_longer_current[executing]",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_three_retired_plan_tokens_are_no_longer_current[open]",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_three_retired_plan_tokens_are_no_longer_current[review]",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_three_retired_proposal_tokens_are_no_longer_current[proposed]",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_three_retired_proposal_tokens_are_no_longer_current[reviewed]",
+      "bootstrap/tests/test_lifecycle_contract.py::TestTheLegacyTokensWereRetiredAtH1::test_the_three_retired_proposal_tokens_are_no_longer_current[revised]",
       "bootstrap/tests/test_lifecycle_contract.py::TestTheR6PredicateIsShared::test_every_new_target_reaches_the_gate_through_one_helper",
       "bootstrap/tests/test_lifecycle_contract.py::TestTheR6PredicateIsShared::test_scan_reports_the_shared_predicate_verbatim",
       "bootstrap/tests/test_lifecycle_contract.py::TestTheR6PredicateIsShared::test_the_closeout_predicate_has_exactly_one_definition",
@@ -2087,6 +2089,8 @@
       "bootstrap/tests/test_lifecycle_contract.py::test_archived_plan_with_dispositions_block_is_not_flagged",
       "bootstrap/tests/test_lifecycle_contract.py::test_archived_plan_with_legacy_followups_block_is_not_flagged",
       "bootstrap/tests/test_lifecycle_contract.py::test_archived_plan_with_neither_block_is_flagged",
+      "bootstrap/tests/test_lifecycle_contract.py::test_awaiting_decision_lists_revising_and_decision_targets",
+      "bootstrap/tests/test_lifecycle_contract.py::test_awaiting_review_lists_review_outcomes_not_a_direct_decision",
       "bootstrap/tests/test_lifecycle_contract.py::test_blockquote_inside_code_fence_does_not_count",
       "bootstrap/tests/test_lifecycle_contract.py::test_c1_floor_requires_a_conforming_pass_that_meets_the_declared_tier",
       "bootstrap/tests/test_lifecycle_contract.py::test_c2_a_near_miss_heading_is_not_a_pass_and_fails_closed[## Plan review -- R\\n\\n**Tier**: External\\n**Findings**: none\\n]",
@@ -2111,10 +2115,10 @@
       "bootstrap/tests/test_lifecycle_contract.py::test_c6_a_form_that_does_not_name_a_tier_fails_closed[required]",
       "bootstrap/tests/test_lifecycle_contract.py::test_c6_every_live_required_form_resolves_to_exactly_one_tier",
       "bootstrap/tests/test_lifecycle_contract.py::test_c7_external_satisfies_an_internal_floor_and_a_human_declares_it",
-      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_executing_gate_agree_on_the_same_record[## Plan review -- R -- 2026-05-01\\n\\n**Reviewed commit**: 0123456789abcdef0123456789abcdef01234567\\n**Target**: chunks A-C\\n**Prior findings**: none\\n**Assurance path**: standard\\n**Tier**: External\\n**Findings**: none\\n\\nthe reading.\\n\\n]",
-      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_executing_gate_agree_on_the_same_record[## Plan review -- R -- 2026-05-01\\n\\n**Reviewed commit**: 0123456789abcdef0123456789abcdef01234567\\n**Target**: chunks A-C\\n**Prior findings**: none\\n**Assurance path**: standard\\n**Tier**: External\\n**Findings**: raised\\n\\nthe reading.\\n\\n]",
-      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_executing_gate_agree_on_the_same_record[## Plan review -- R -- 2026-05-01\\n\\n**Reviewed commit**: 0123456789abcdef0123456789abcdef01234567\\n**Target**: chunks A-C\\n**Prior findings**: none\\n**Assurance path**: standard\\n**Tier**: Internal\\n**Findings**: none\\n\\nthe reading.\\n\\n]",
-      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_executing_gate_agree_on_the_same_record[## Plan review\\n\\n(a bare container)\\n]",
+      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_implementing_gate_agree_on_the_same_record[## Plan review -- R -- 2026-05-01\\n\\n**Reviewed commit**: 0123456789abcdef0123456789abcdef01234567\\n**Target**: chunks A-C\\n**Prior findings**: none\\n**Assurance path**: standard\\n**Tier**: External\\n**Findings**: none\\n\\nthe reading.\\n\\n]",
+      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_implementing_gate_agree_on_the_same_record[## Plan review -- R -- 2026-05-01\\n\\n**Reviewed commit**: 0123456789abcdef0123456789abcdef01234567\\n**Target**: chunks A-C\\n**Prior findings**: none\\n**Assurance path**: standard\\n**Tier**: External\\n**Findings**: raised\\n\\nthe reading.\\n\\n]",
+      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_implementing_gate_agree_on_the_same_record[## Plan review -- R -- 2026-05-01\\n\\n**Reviewed commit**: 0123456789abcdef0123456789abcdef01234567\\n**Target**: chunks A-C\\n**Prior findings**: none\\n**Assurance path**: standard\\n**Tier**: Internal\\n**Findings**: none\\n\\nthe reading.\\n\\n]",
+      "bootstrap/tests/test_lifecycle_contract.py::test_c8_scan_and_the_implementing_gate_agree_on_the_same_record[## Plan review\\n\\n(a bare container)\\n]",
       "bootstrap/tests/test_lifecycle_contract.py::test_c9a_a_pass_outside_the_manifest_gets_no_exemption_whatever_its_date[0000-00-00]",
       "bootstrap/tests/test_lifecycle_contract.py::test_c9a_a_pass_outside_the_manifest_gets_no_exemption_whatever_its_date[2020-01-01]",
       "bootstrap/tests/test_lifecycle_contract.py::test_c9a_a_pass_outside_the_manifest_gets_no_exemption_whatever_its_date[2026-05-01]",
@@ -2152,11 +2156,9 @@
       "bootstrap/tests/test_lifecycle_contract.py::test_markdown_line_splitter_matches_splitlines_without_carriers",
       "bootstrap/tests/test_lifecycle_contract.py::test_module_source_has_no_write_or_commit_primitive",
       "bootstrap/tests/test_lifecycle_contract.py::test_p5_the_fixture_stem_is_in_neither_legacy_manifest",
-      "bootstrap/tests/test_lifecycle_contract.py::test_plan_open_not_required_lists_executing",
-      "bootstrap/tests/test_lifecycle_contract.py::test_plan_open_required_lists_awaiting_review",
-      "bootstrap/tests/test_lifecycle_contract.py::test_proposed_lists_reviewed_as_only_transition",
+      "bootstrap/tests/test_lifecycle_contract.py::test_plan_open_not_required_lists_implementing",
+      "bootstrap/tests/test_lifecycle_contract.py::test_plan_required_review_is_offered_no_fast_path",
       "bootstrap/tests/test_lifecycle_contract.py::test_review_scaffold_carries_no_reviewer_attribution",
-      "bootstrap/tests/test_lifecycle_contract.py::test_reviewed_lists_revised_and_decision_targets",
       "bootstrap/tests/test_lifecycle_contract.py::test_scan_clean_corpus_exits_zero",
       "bootstrap/tests/test_lifecycle_contract.py::test_scan_flags_accepted_without_decision",
       "bootstrap/tests/test_lifecycle_contract.py::test_scan_flags_decision_without_blockquote",
@@ -2431,6 +2433,22 @@
       "bootstrap/tests/test_merge_module.py::test_parse_slots_fails_closed_on_malformation",
       "bootstrap/tests/test_merge_module.py::test_single_identity_across_consumers",
       "bootstrap/tests/test_merge_module.py::test_three_way_merge_roundtrip_clean_and_needs_value",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestHistoricalTokensStayResolvable::test_no_current_token_is_a_prefix_of_a_historical_one_or_vice_versa",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestHistoricalTokensStayResolvable::test_the_enum_carries_both_the_current_and_the_historical_states",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestHistoricalTokensStayResolvable::test_the_historical_group_comes_last_because_order_is_load_bearing",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[archived 2026-05-14 (superseded by x)-archived]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[awaiting-code-review-awaiting-code-review]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[executing (chunk C)-executing]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[executing-executing]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[implementing-implementing]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[open -- since 2026-05-14-open]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[open-open]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[review-review]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[reviewed-review]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_a_free_text_status_resolves_to_its_enum_token[reviewed; awaiting code review-review]",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_an_empty_status_is_empty_rather_than_a_neighbouring_token",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestNormalizationIsStableAcrossTheMigration::test_an_unknown_token_falls_through_to_the_raw_lead",
+      "bootstrap/tests/test_metrics_status_normalization.py::TestTheGuardCanActuallyFail::test_dropping_the_historical_half_reintroduces_the_regression",
       "bootstrap/tests/test_model_selection_stub.py::TestFidelityCheck::test_cli_failure_message_mentions_fill_me",
       "bootstrap/tests/test_model_selection_stub.py::TestFidelityCheck::test_cli_success_no_error_output",
       "bootstrap/tests/test_model_selection_stub.py::TestFidelityCheck::test_fill_me_in_comment_fails",
@@ -3273,20 +3291,17 @@
       "bootstrap/tests/test_scope_reduction_trap.py::test_scope_reduction_obligation_present[templates/modules/team-gated/dual-review.md::only the Maintainer may concede a baseline outcome]",
       "bootstrap/tests/test_scope_reduction_trap.py::test_scope_reduction_obligation_present[templates/modules/team-gated/dual-review.md::scope-cut is reserved for claim correction]",
       "bootstrap/tests/test_scope_reduction_trap.py::test_the_canonical_section_exists_and_sits_beside_its_mirror",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_declared_reduction_boundary_holds[absent]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_declared_reduction_boundary_holds[degraded with allowance]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_declared_reduction_boundary_holds[degraded without allowance]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_declared_reduction_boundary_holds[lost without allowance]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_declared_reduction_boundary_holds[preserved]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_emitted_scaffold_carries_the_declaration[plan->executing]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_emitted_scaffold_carries_the_declaration[proposal->revised]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_planner_does_not_gate_on_a_missing_declaration[plan->executing0]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_planner_does_not_gate_on_a_missing_declaration[plan->executing1]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_planner_does_not_gate_on_a_missing_declaration[proposal->revised]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_do_not_contradict_the_offered_values[plan->executing]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_do_not_contradict_the_offered_values[proposal->revised]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_print_the_same_declaration_grammar[plan->executing]",
-      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_print_the_same_declaration_grammar[proposal->revised]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_emitted_scaffold_asks_each_entry_for_its_disposition[plan->awaiting-plan-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_emitted_scaffold_asks_each_entry_for_its_disposition[proposal->awaiting-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_emitted_scaffold_carries_the_declaration[plan->awaiting-plan-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_emitted_scaffold_carries_the_declaration[proposal->awaiting-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_planner_does_not_gate_on_a_missing_declaration[plan->ready-to-implement0]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_planner_does_not_gate_on_a_missing_declaration[plan->ready-to-implement1]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_planner_does_not_gate_on_a_missing_declaration[proposal->awaiting-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_do_not_contradict_the_offered_values[plan->awaiting-plan-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_do_not_contradict_the_offered_values[proposal->awaiting-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_print_the_same_declaration_grammar[plan->awaiting-plan-review]",
+      "bootstrap/tests/test_scope_reduction_trap.py::test_the_scaffolds_print_the_same_declaration_grammar[proposal->awaiting-review]",
       "bootstrap/tests/test_scope_reduction_trap.py::test_the_two_planner_twins_stay_byte_identical",
       "bootstrap/tests/test_security_capability_install.py::test_adopt_module_records_api_access_security_into_an_existing_lockfile",
       "bootstrap/tests/test_security_capability_install.py::test_an_exact_modules_list_installs_both_capabilities",
@@ -3884,10 +3899,11 @@
       "bootstrap/tests/test_transition_lint.py::TestShapeB::test_a_status_beyond_the_header_bound_is_not_read",
       "bootstrap/tests/test_transition_lint.py::TestShapeB::test_a_template_file_is_never_examined",
       "bootstrap/tests/test_transition_lint.py::TestShapeB::test_an_open_commit_with_a_baked_in_review_flags_once_per_section",
-      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_review_status_plan_open_is_now_shape_b_eligible",
-      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_revised_proposal_open_is_now_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_historical_opening_plan_status_stays_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_review_status_plan_open_is_not_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_revised_proposal_open_is_not_shape_b_eligible",
       "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_absent_status_stays_a_silent_skip_not_an_advisory",
-      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_executing_plan_open_is_now_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_executing_plan_open_is_not_shape_b_eligible",
       "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_unrecognized_status_produces_an_advisory_b_question_finding",
       "bootstrap/tests/test_transition_lint.py::TestSourceLevelBans::test_every_pinned_sha_constant_is_a_full_40_hex",
       "bootstrap/tests/test_transition_lint.py::TestSourceLevelBans::test_no_corpus_node_carries_a_head_relative_range",
@@ -5430,10 +5446,11 @@
       "bootstrap/tests/test_transition_lint.py::TestShapeB::test_a_status_beyond_the_header_bound_is_not_read",
       "bootstrap/tests/test_transition_lint.py::TestShapeB::test_a_template_file_is_never_examined",
       "bootstrap/tests/test_transition_lint.py::TestShapeB::test_an_open_commit_with_a_baked_in_review_flags_once_per_section",
-      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_review_status_plan_open_is_now_shape_b_eligible",
-      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_revised_proposal_open_is_now_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_historical_opening_plan_status_stays_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_review_status_plan_open_is_not_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_a_revised_proposal_open_is_not_shape_b_eligible",
       "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_absent_status_stays_a_silent_skip_not_an_advisory",
-      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_executing_plan_open_is_now_shape_b_eligible",
+      "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_executing_plan_open_is_not_shape_b_eligible",
       "bootstrap/tests/test_transition_lint.py::TestShapeBWideningAndAdvisory::test_an_unrecognized_status_produces_an_advisory_b_question_finding",
       "bootstrap/tests/test_transition_lint.py::TestSourceLevelBans::test_every_pinned_sha_constant_is_a_full_40_hex",
       "bootstrap/tests/test_transition_lint.py::TestSourceLevelBans::test_no_corpus_node_carries_a_head_relative_range",
@@ -5963,8 +5980,8 @@
     },
     "bootstrap/tests/test_lifecycle_board.py": {
       "mode": "100644",
-      "oid": "515e316df8f74ea3ca1797446ff79df168ef65d0",
-      "sha256": "67a0b4ae7ebd6699e78575a97a3058acb47af049d0c03424c078253dc1eff674"
+      "oid": "c137aa48e9f19f14fc665cea33dd66bcb91b05e0",
+      "sha256": "73c9f2932a0159981467851d14bfd30c3d9b3cbd06e75bb2f3be08942c0f7d8c"
     },
     "bootstrap/tests/test_lifecycle_brief.py": {
       "mode": "100644",
@@ -5978,8 +5995,8 @@
     },
     "bootstrap/tests/test_lifecycle_contract.py": {
       "mode": "100644",
-      "oid": "064ed95e8d69856ef1b0126116da6ee237fddcaa",
-      "sha256": "105beece7ac658766e0a021b42ba614dd4a46b27efd308b0fd92daccfdbac062"
+      "oid": "d71035e7d28d5831d49db5d566a11f0f0578f09d",
+      "sha256": "f32a6c59ef8f540012bf038ca67416f0161a63aef103a263115a34c33f6f6912"
     },
     "bootstrap/tests/test_lifecycle_failsafe.py": {
       "mode": "100644",
@@ -6035,6 +6052,11 @@
       "mode": "100644",
       "oid": "6bb33de526d2863c4d25336dfdbc0ff10a20fb1c",
       "sha256": "37855f076687d8f471356c559af9deb9cab09a3e7485bf57ea81533c8cc6ffc7"
+    },
+    "bootstrap/tests/test_metrics_status_normalization.py": {
+      "mode": "100644",
+      "oid": "0b672bfc4a64d2a5470b6074497b9420bd749e7d",
+      "sha256": "2a910984584c320e1bebbf2547fc397edc4591b6308d10d34edee52443e6116b"
     },
     "bootstrap/tests/test_model_selection_stub.py": {
       "mode": "100644",
@@ -6093,8 +6115,8 @@
     },
     "bootstrap/tests/test_pilot_evidence.py": {
       "mode": "100644",
-      "oid": "80d4fda82a88b79bb57e64886bd3cdf5fa2374d1",
-      "sha256": "bab52f8af6dfab58d7208bb0303e0b306a8811e606723b098af793b9bca1d3a4"
+      "oid": "71c85f0cc71a18dbbdbda967e7ff7996ce555272",
+      "sha256": "f081c8f43cdb94b4780431f8cb0cee6402e0dafd8fe99093e5eeb7a5f0d064b1"
     },
     "bootstrap/tests/test_portable_security_sweeps.py": {
       "mode": "100644",
@@ -6173,8 +6195,8 @@
     },
     "bootstrap/tests/test_scope_reduction_trap.py": {
       "mode": "100644",
-      "oid": "9e436783cdd248d51eacd9c8eaed52438e725e6b",
-      "sha256": "4cae1f39ef8d7571390da6979ff19018d49fbfebab6df8f718c4505050239335"
+      "oid": "8d4cbf32ca2bf4b2a9bee1c63a148a9b45a851bb",
+      "sha256": "e50bd673376ac5ab1a03de18325df13510bbcccaaddc9266cb308765b7b8524f"
     },
     "bootstrap/tests/test_security_capability_install.py": {
       "mode": "100644",
@@ -6263,8 +6285,8 @@
     },
     "bootstrap/tests/test_transition_lint.py": {
       "mode": "100644",
-      "oid": "fd6322819fda019c77804e981f0034079834decf",
-      "sha256": "c8fd8b0ff686eec0ea0454f835416ddbb122f6c0a5c31cceba85049832ef24a8"
+      "oid": "45a094fc93538013018eaf7d2c448668c11fd4dc",
+      "sha256": "4395db8ec7df2812947e3925694b2336f105aaa5d424ccce8dbbb6b3e049606b"
     },
     "bootstrap/tests/test_trigger_evaluation_action.py": {
       "mode": "100644",
@@ -6463,8 +6485,8 @@
     },
     "templates/modules/default-on/_lifecycle_metrics/extract.py": {
       "mode": "100644",
-      "oid": "266c01a3af24dc89d58bef9fe4e8f541e565359f",
-      "sha256": "57b9e9fca55febeae56634806200d84ebf1795cd0e25f1dc6c6c5504f8400e09"
+      "oid": "51cc2c3cb6767d8cd970b9ec4c9d31734c1be7e7",
+      "sha256": "9ebf20024ce435960db1a2e4a3c5444f5d760f04ec6c3da5df037f87db90d9ab"
     },
     "templates/modules/default-on/_lifecycle_metrics/gitmeta.py": {
       "mode": "100644",
