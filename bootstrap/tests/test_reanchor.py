@@ -847,7 +847,7 @@ class TestEveryPublicCommandIsExercised:
     repository keeps finding."""
 
     PUBLIC_COMMANDS = ("validate", "stage1", "show-report", "hash-package",
-                       "stage2")
+                       "stage2", "steps", "step-ids")
 
     def test_the_dispatch_knows_exactly_these_commands(self):
         text = _ARTIFACT.read_text(encoding="utf-8")
@@ -1344,3 +1344,69 @@ class TestTheLauncherMemberSetMatchesTheOtherTwo:
         assert "$(cat " not in code and "`cat " not in code
         for line in code.splitlines():
             assert not line.strip().startswith("cat "), line
+
+
+# --------------------------------------------------------------------------
+# the procedure-step registry
+# --------------------------------------------------------------------------
+
+class TestTheStepRegistry:
+    """A closed, ordered registry: stable ID, stage, command, and the
+    security-relevant outcome each step establishes.
+
+    **What this delivers is a drift signal on the procedure's SHAPE.** A step
+    added to the code and never documented, or documented and never
+    implemented, fails. It attests nothing about whether the surrounding
+    explanation is accurate -- that prose is reviewed, not machine-checked --
+    and these tests are named so they cannot be mistaken for the stronger
+    claim, which the proposal withdrew for exactly that reason.
+    """
+
+    def _ids(self) -> list[str]:
+        r = _run("step-ids")
+        assert r.returncode == 0, r.stderr
+        return r.stdout.split()
+
+    def test_the_registry_is_ordered_and_has_no_duplicates(self):
+        ids = self._ids()
+        assert ids, "the registry is empty"
+        assert ids == sorted(ids), f"the registry is not in order: {ids}"
+        assert len(ids) == len(set(ids)), "a step ID appears twice"
+
+    def test_every_id_is_reachable_through_the_public_command(self):
+        """`step-ids` derives from `steps`, so the two cannot disagree. A test
+        against a retyped list would be checking the registry against itself."""
+        rendered = _run("steps")
+        assert rendered.returncode == 0, rendered.stderr
+        for sid in self._ids():
+            assert sid in rendered.stdout
+
+    def test_every_stage_of_the_ceremony_is_represented(self):
+        """A registry that documented only the stages someone remembered would
+        be a drift signal with a blind spot."""
+        rendered = _run("steps").stdout
+        for stage in ("pre-candidate", "stage 1", "between", "stage 2",
+                      "after"):
+            assert stage in rendered, f"no step is in stage {stage!r}"
+
+    def test_the_registry_names_where_candidate_code_starts(self):
+        """The single most important fact about the ordering. An operator who
+        cannot find this line cannot tell which half of the procedure is
+        running on reviewed bytes."""
+        rendered = _run("steps").stdout
+        assert "FIRST CANDIDATE BYTE" in rendered
+
+    def test_the_registry_does_not_claim_the_prose_is_checked(self):
+        """The withdrawn semantic claim must stay withdrawn. A registry that
+        implied its citations were validated for meaning would be asserting
+        the property the proposal removed."""
+        text = _ARTIFACT.read_text(encoding="utf-8")
+        block = text.split("# the procedure-step registry", 1)[1][:2500]
+        assert "attests NOTHING" in block or "attests nothing" in block, (
+            "the registry must state what it does not deliver, beside what it "
+            "does")
+
+    def test_steps_takes_no_arguments(self):
+        r = _run("steps", "extra")
+        assert r.returncode != 0
+        assert "takes no arguments" in r.stderr

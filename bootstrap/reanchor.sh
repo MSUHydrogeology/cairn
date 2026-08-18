@@ -614,6 +614,100 @@ if sig:
 ' "$V_package"
 }
 
+# --------------------------------------------------------------------------
+# the procedure-step registry
+# --------------------------------------------------------------------------
+#
+# A CLOSED, ORDERED registry of the ceremony's steps: stable ID, stage, the
+# command that performs it, its inputs, and its security-relevant outcome.
+#
+# WHAT THIS DELIVERS, and what it does not. The runbook cites every ID exactly
+# once and uses no unknown ID, and a test compares the two structures. That is a
+# drift signal on the procedure's SHAPE -- a step added to the code and never
+# documented, or documented and never implemented, fails. It attests NOTHING
+# about whether the surrounding explanation is accurate. That prose is reviewed,
+# not machine-checked, and this comment says so rather than letting the presence
+# of a check imply more than the check does.
+#
+# The IDs are stable. Renumbering them silently rewrites every citation in the
+# runbook, so a retired step keeps its ID and is marked retired.
+
+print_steps() {
+    printf '%s\n' '== the ceremony, step by step =='
+    printf '\n'
+    printf '%-8s %-13s %-14s %s\n' 'ID' 'STAGE' 'COMMAND' 'WHAT IT ESTABLISHES'
+    printf '%s\n' '--------------------------------------------------------------------------'
+
+    printf '%-8s %-13s %-14s %s\n' 'RA-01' 'pre-candidate' 'launcher' \
+        'the values file parses under the closed schema; every executable the'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'launcher will run is a recorded, symlink-free, executable regular file'
+
+    printf '%-8s %-13s %-14s %s\n' 'RA-02' 'pre-candidate' 'launcher' \
+        'the packet on disk is the packet the review bound into the launcher'
+    printf '%-8s %-13s %-14s %s\n' 'RA-03' 'pre-candidate' 'launcher' \
+        'the bytes parsed are the bytes hashed -- detects a lossy snapshot and a'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'same-user rewrite between the two reads (it detects; it does not prevent)'
+    printf '%-8s %-13s %-14s %s\n' 'RA-04' 'pre-candidate' 'launcher' \
+        'the packet names EXACTLY the authority closure fixed in the launcher'
+    printf '%-8s %-13s %-14s %s\n' 'RA-05' 'pre-candidate' 'launcher' \
+        'the ceremony artifact is a closure member by construction, not by'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'assertion: one row, matching digest, and the path the launcher starts'
+    printf '%-8s %-13s %-14s %s\n' 'RA-06' 'pre-candidate' 'launcher' \
+        'the candidate is resolved ONCE to a full object id'
+    printf '%-8s %-13s %-14s %s\n' 'RA-07' 'pre-candidate' 'launcher' \
+        'every closure blob at that id matches its reviewed digest'
+    printf '%-8s %-13s %-14s %s\n' 'RA-08' 'pre-candidate' 'launcher' \
+        'the extracted ceremony artifact matches its reviewed digest'
+    printf '%-8s %-13s %-14s %s\n' 'RA-09' 'pre-candidate' 'launcher' \
+        'the review manifest is COMPOSED from the packet and the resolution;'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'nothing in it is read from the candidate'
+
+    printf '%-8s %-13s %-14s %s\n' 'RA-10' 'stage 1' 'stage1' \
+        'THE FIRST CANDIDATE BYTE RUNS. Everything above ran on reviewed bytes'
+    printf '%-8s %-13s %-14s %s\n' 'RA-11' 'stage 1' 'stage1' \
+        'the complete effective configuration is shown while it is still free'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'to stop'
+    printf '%-8s %-13s %-14s %s\n' 'RA-12' 'stage 1' 'stage1' \
+        'the key channel is PROBED and the stage refuses if it can sign'
+    printf '%-8s %-13s %-14s %s\n' 'RA-13' 'stage 1' 'stage1' \
+        'the read-only checks pass and the authorization package is written.'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'No key is held and no ref moves'
+
+    printf '%-8s %-13s %-14s %s\n' 'RA-14' 'between' 'show-report' \
+        'what the digest binds is READ, not just confirmed'
+    printf '%-8s %-13s %-14s %s\n' 'RA-15' 'between' 'hash-package' \
+        'the digest is computed over the bytes on disk, by you'
+    printf '%-8s %-13s %-14s %s\n' 'RA-16' 'between' '(Maintainer)' \
+        'the ceremony key is made available -- the one act that stays human'
+
+    printf '%-8s %-13s %-14s %s\n' 'RA-17' 'stage 2' 'stage2' \
+        'the confirmed package is validated against YOUR digest, re-extracted'
+    printf '%-8s %-13s %-14s %s\n' '' '' '' \
+        'and re-verified; no candidate code runs in this stage'
+    printf '%-8s %-13s %-14s %s\n' 'RA-18' 'stage 2' 'stage2' \
+        'the checkpoint is signed and branch and anchor move in ONE transaction'
+    printf '%-8s %-13s %-14s %s\n' 'RA-19' 'after' '(Maintainer)' \
+        'the key is put away, and the two refs are published in one atomic push'
+    printf '\n'
+}
+
+#: Just the IDs, one per line, in order. This is what the documentation-
+#: agreement test consumes: it must read the registry rather than a retyped
+#: list, or the test would be checking the runbook against itself.
+print_step_ids() {
+    print_steps | while IFS= read -r _psi_line; do
+        case $_psi_line in
+            RA-[0-9][0-9]*) printf '%s\n' "${_psi_line%% *}" ;;
+        esac
+    done
+}
+
 usage() {
     # NOT a heredoc into `cat`. `usage` runs before any values file has been
     # parsed, so the validated `cat` path does not exist yet -- and invoking
@@ -632,6 +726,8 @@ usage() {
         '  hash-package   the digest you confirm, over the bytes on disk' \
         '  stage2         confirm, sign, and move both refs in one' \
         '                 transaction. Needs --confirm-package-sha256.' \
+        '  steps          the closed, ordered procedure-step registry' \
+        '  step-ids       just the step IDs, in order' \
         '' \
         '  transition mode adds --review-manifest and --reviewed-candidate' \
         '  to stage1 and stage2; the launcher supplies both.' \
@@ -667,6 +763,14 @@ main() {
         ;;
     stage2)
         cmd_stage2 "$@"
+        ;;
+    steps)
+        [ "$#" -eq 0 ] || refuse "steps takes no arguments"
+        print_steps
+        ;;
+    step-ids)
+        [ "$#" -eq 0 ] || refuse "step-ids takes no arguments"
+        print_step_ids
         ;;
     -h|--help|help)
         usage
