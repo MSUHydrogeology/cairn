@@ -3,12 +3,23 @@
 **Source proposal**: `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`,
 accepted as revised at Revision 4 (`## Decision -- Anthony Kendall (Maintainer)
 -- 2026-08-13`).
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(**External Security Review**) — set by the Decision.
 Four External passes shaped this contract and each found a real defect; the
 implementation changes what executes during the trust-root ceremony.
-**Last update**: 2026-08-13
+**DISCHARGED** by the fifth pass at `11a8dde` — `**Findings**: none`, *"Verdict:
+SHIP"* — reviewed against the contract bytes at `36808ea`. The only plan bytes
+added since are the appended `## Ceremony evidence` section (`281acb6`), which
+changes no cell and asks for no re-review.
+**Last update**: 2026-08-18
 **Opened**: 2026-08-13
+
+> **Start state.** Implementation begins at **Chunk A**, which the accepted
+> scope fence makes non-reorderable. **Chunk G's gate is not yet satisfiable and
+> does not need to be yet**: the owning commit
+> (`comprehension-outlives-the-artifact` Chunk C) must be an ancestor before the
+> **stable-bytes line**, not before Chunk A. That plan is now unblocked — its
+> `review-efficient-lifecycle` precondition archived at `239cea1`.
 
 ## Source proposal
 
