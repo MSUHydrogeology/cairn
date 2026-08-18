@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/measurement/pilot-activation.md -->
 
 # Collaboration agreement — Cairn
 
@@ -115,14 +114,23 @@ Maintainer prompts) and, once the boundary is reached, a line naming the
 trigger and stating that the Maintainer's Decision is due.
 
 <!-- cairn:slot monitoring-status -->
-**Current status** (verified 2026-08-12): no monitoring window has opened.
-`dev/measurement/pilot-activation.md` does not exist yet — it lands as a
-data-only, Maintainer-gated commit (fence **M2**) after Boundary B2 — so
-`pilot-report` reports `activation: NONE`, `counted plan stems: 0/6`,
-`pauses: none active`, and closes `report: INCOMPLETE (exit 3)`. Absence of
-an activation record is absence of *evidence*; it says nothing about the
-allocation above, which is already in force. Refresh this note whenever the
-window opens, a pause is set or cleared, or the boundary is reached.
+**Current status** (verified 2026-08-18): **a monitoring window is open.** It was
+opened by a data-only commit at the Maintainer's explicit instruction, after the
+Boundary B2 verification it measures.
+
+`python tools/lifecycle.py pilot-report` reports `complete` (exit 0):
+`counted plan stems: 0 / 6`, `pauses: none active`, all measures zero, and the
+window running **2026-08-18 .. 2026-10-16** (60 calendar days, both ends
+inclusive). The activation date is *derived* — it is the author date of the
+commit that first introduced the activation record's exact bytes, so the record
+cannot move its own start — and the machinery it measures is bound to the
+Boundary B2 evidence section, which is read at that commit and must genuinely
+attest the named commit or activation refuses.
+
+An open window measures the allocation; it does not authorize it. The allocation
+has been in force since 2026-08-11 regardless, and neither an open nor a closed
+window may be read as the policy being on or off. Refresh this note whenever a
+pause is set or cleared, a stem is counted, or the boundary is reached.
 <!-- cairn:end monitoring-status -->
 
 **The Decision at the boundary (fence M6 — the Maintainer's; describing it
