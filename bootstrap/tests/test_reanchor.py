@@ -1410,3 +1410,108 @@ class TestTheStepRegistry:
         r = _run("steps", "extra")
         assert r.returncode != 0
         assert "takes no arguments" in r.stderr
+
+
+# --------------------------------------------------------------------------
+# Chunk G: the gate, not the edit
+# --------------------------------------------------------------------------
+
+class TestTheCeremonyClosureCarriesNoUnexplainedTag:
+    """Chunk G2. The finding-tag pass over this repository is owned by
+    `dev/plans/comprehension-outlives-the-artifact.md`, not by this plan --
+    both plans would otherwise edit the same closure members and collide.
+
+    **That plan owns the edit; this plan owns the gate.** So this node is not a
+    duplicate of their check: it is the evidence that the outcome was delivered
+    *for the ceremony's own surface*, whoever made the edit. If their pass ever
+    regresses on these files, this fails here, in the plan that depends on it.
+
+    What counts as unexplained: a bare finding label with no reason beside it.
+    `[FUR5]` alone tells a reader nothing -- it points into a deliberation they
+    cannot open. The same label followed by what it means is fine, because the
+    sentence now carries its own reason.
+
+    **Live domain vocabulary is not a finding tag and is not swept.** `N4`
+    names a Maintainer fence in the series N4-N8 that the plan's intervention
+    table, the runbook and an operator-facing refusal all still resolve; `R1`
+    and `R6` name live gate rules. The distinction that governs here, and the
+    one the owning plan's ledger records: a coordinate that still resolves to
+    something live is domain vocabulary and stays; a coordinate that points
+    into a closed deliberation goes.
+    """
+
+    #: The ceremony's own surface -- the files this plan is responsible for.
+    #: Not the whole closure: the other members belong to other work, and a
+    #: gate that failed on somebody else's file would be this plan reaching
+    #: past its own scope.
+    CEREMONY_FILES = (
+        "bootstrap/reanchor.sh",
+        "bootstrap/reanchor-launcher.template.sh",
+        "bootstrap/reanchor-values.example",
+        "bootstrap/tests/test_reanchor.py",
+    )
+
+    #: A bare finding label: `[FUR5]`, `[S1]`, `[M2-R1]`, `[R2-E2]`, `[X7]`.
+    TAG = r"\[(?:[A-Z]{1,4}\d{1,2}(?:-[A-Z]?\d{1,2})?|FUR\d{1,2})\]"
+
+    #: LIVE COORDINATES, exempted by name rather than by pattern.
+    #:
+    #: This list exists because the pattern above cannot tell them apart, and
+    #: the two-sided node below caught exactly that: `[N4]` matched, so a sweep
+    #: driven by this detector would have removed a Maintainer fence that the
+    #: plan's intervention table, the runbook and an operator-facing refusal
+    #: all still resolve. Shape does not distinguish a live coordinate from a
+    #: dead citation -- only knowing what still points at it does -- so the
+    #: exemption is a named list a reviewer can audit, never a cleverer regex.
+    LIVE = frozenset({"N4", "N5", "N6", "N7", "N8",   # Maintainer fences
+                      "R1", "R6"})                     # live gate rules
+
+    def _offenders(self, path):
+        import re
+        text = (_REPO / path).read_text(encoding="utf-8")
+        out = []
+        for n, line in enumerate(text.splitlines(), 1):
+            for m in re.finditer(self.TAG, line):
+                if m.group(0).strip("[]") in self.LIVE:
+                    continue
+                # A tag is EXPLAINED when the same line carries prose beyond
+                # the label itself. A line that is only a label -- or a label
+                # and a bare noun -- is the shape that tells a reader nothing.
+                rest = (line[:m.start()] + line[m.end():]).strip(" #*-:.")
+                if len(rest.split()) < 4:
+                    out.append(f"{path}:{n}: {line.strip()[:100]}")
+        return out
+
+    def test_no_ceremony_file_carries_a_bare_finding_label(self):
+        offenders = []
+        for path in self.CEREMONY_FILES:
+            offenders += self._offenders(path)
+        assert not offenders, (
+            "these lines cite a finding and give no reason beside it, so a "
+            "reader who cannot open the deliberation learns nothing:\n  "
+            + "\n  ".join(offenders))
+
+    def test_the_detector_would_actually_catch_one(self):
+        """Mutation check. A tag scan that matches nothing would pass the node
+        above while proving nothing -- which is the exact failure shape this
+        whole plan keeps finding."""
+        import re
+        assert re.search(self.TAG, "    # [FUR5]"), "the pattern matches nothing"
+        assert re.search(self.TAG, "see [M2-R1]")
+        assert re.search(self.TAG, "per [S1]")
+
+    def test_live_domain_vocabulary_is_not_swept(self):
+        """The other direction, and the one that took a correction between two
+        sessions to get right: N4 names a live Maintainer fence, and a sweep
+        that removed it would break the runbook, the plan's intervention table
+        and an operator-facing refusal string."""
+        import re
+        for keeper in ("N4", "N5", "R1", "R6"):
+            assert keeper in self.LIVE, (
+                f"{keeper!r} is live vocabulary and is not exempted")
+        # `RA-nn` step IDs are exempt by SHAPE, not by the list: letters must be
+        # followed immediately by digits to match, and a hyphen intervenes.
+        assert not re.search(self.TAG, "[RA-01]")
+        # And the exemption must be narrow -- a real finding label must still
+        # be caught even though it is the same shape as an exempted one.
+        assert re.search(self.TAG, "[S1]") and "S1" not in self.LIVE
