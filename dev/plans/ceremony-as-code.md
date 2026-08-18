@@ -13,16 +13,17 @@ added since are the appended `## Ceremony evidence` section (`281acb6`), which
 changes no cell and asks for no re-review.
 **Last update**: 2026-08-18
 **Status detail**: implementing — A `3980ad1`, B `01157dd`, C `39fe015` +
-`1038c90`, D `0da586b`, E1 `70defc0`, H2–H4 `96d9283`.
+`1038c90`, D `0da586b`, E1 `70defc0`, G `d05db56`/`bf47bb6`, H2–H4
+`96d9283`. Next: F.
 
-**Three things are now blocked and none of them is blocked on me:**
-* **F5–F6** retarget and retire recorded-block tests in
-  `bootstrap/tests/test_gate_preflight.py`, which currently carries another
-  session's uncommitted finding-tag pass. F1–F4, F7 and E2 are free and are
-  the next work.
-* **G1** needs the `comprehension-outlives-the-artifact` Chunk C commit to be
-  an ancestor. That plan is `implementing`; its pass is written but not
-  committed.
+**Chunk G's gate is MET.** `comprehension-outlives-the-artifact` C1 landed at
+`d05db56`, and `git merge-base --is-ancestor d05db56 HEAD` passes, so the
+owning commit is an ancestor and this plan does not stop. G2's evidence node
+landed at `bf47bb6`. The `N4` keeps were re-verified in both closure members
+after that pass: 12 lines, every one stating the fence's substance, and the
+operator-facing refusal still names the fence a Maintainer looks up.
+
+**One thing remains blocked, and it is not blocked on me:**
 * **H1** is MAINTAINER-FENCED (N5) — the dedicated key's creation and the
   commit of its public half to `dev/.cairn/allowed_signers`. No agent performs
   it, and it must land **before** Boundary B and M2.
@@ -108,7 +109,7 @@ C   the ceremony artifact and its subcommands                [DONE 39fe015+1038c
 D   the packet, the launcher, and their binding              [DONE 0da586b]
 E   the step registry and the doc-agreement tests            [E1 DONE 70defc0; E2 rides with F]
 F   the runbook restructure                                  [commit]
-G   the finding-tag pass — OWNED ELSEWHERE, gated here        [gate]
+G   the finding-tag pass — OWNED ELSEWHERE, gated here        [G1 MET d05db56; G2 DONE bf47bb6]
 H   SECURITY.md adopter guidance                             [H2-H4 DONE 96d9283; H1 MAINTAINER-FENCED]
 --- stable bytes -----------------------------------------------------
 BB  Boundary B, full, on the stable pre-review commit        [record]
