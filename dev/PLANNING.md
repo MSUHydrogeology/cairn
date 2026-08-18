@@ -124,6 +124,41 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **The review-allocation pilot is built and reviewed, but has never been
+  switched on** *(homed 2026-08-13, when the plan that built it archived)* — the
+  machinery for measuring whether the lighter review allocation actually works
+  is in the tree and under test: a record naming the exact reviewed commit the
+  measurement applies to, an append-only ledger with one entry per plan counted
+  or pause taken, and counts derived from that ledger rather than stored
+  anywhere they could drift. Its mutation tests cover interrupted writes, a
+  stale writer overwriting a fresher one, and the off-by-one at the window's
+  final day. **None of it is running.** Two acts remain, and both are the
+  Maintainer's — recorded here because the plan that owned them is archived, and
+  an archive is a historical record rather than a work queue.
+
+  **Switching it on — possible now, nothing blocks it.** One commit adds the
+  activation record naming `089a9db` as the reviewed commit whose machinery is
+  being enabled, and the 60-day window starts from that commit's author date.
+  **That commit must contain data and nothing else**; if it carries code, the
+  activation is wrong and should be rejected rather than amended. Until it
+  lands the evidence report says *not installed* — deliberately, so an
+  un-activated pilot can never be mistaken for a pilot that ran and found
+  nothing.
+
+  **Deciding what it showed — about 60 days after switch-on, and only if you
+  want it.** The outcome is one of *keep the lighter allocation*, *change it*,
+  or *drop it and go back*. It is a judgement about evidence, not a formality,
+  and there is deliberately no "it worked" default. If that change touches any
+  executable, test, template or fixture byte it takes fresh integration evidence
+  and an independent code review of its own — it inherits nothing from the
+  archived plan's runs, because those measured a different tree.
+
+  **Why neither blocked the archive.** They are points where the plan was built
+  to stop and hand over, not work it left undone: an implementing agent may not
+  switch on the measurement of its own review budget, nor decide what the
+  measurement meant. *Trigger:* whenever you want the window to start. The
+  second follows about two months later, or never.
+
 * **The loop-fidelity gate covers one folder out of several** *(homed 2026-08-13
   from `review-efficient-lifecycle` [CF9], at the Maintainer's instruction; that
   plan measured it and deliberately did not widen it)* — `check_cairn`'s
