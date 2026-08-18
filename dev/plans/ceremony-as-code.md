@@ -3,7 +3,7 @@
 **Source proposal**: `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`,
 accepted as revised at Revision 4 (`## Decision -- Anthony Kendall (Maintainer)
 -- 2026-08-13`).
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(**External Security Review**) — set by the Decision.
 Four External passes shaped this contract and each found a real defect; the
 implementation changes what executes during the trust-root ceremony.
@@ -12,6 +12,7 @@ SHIP"* — reviewed against the contract bytes at `36808ea`. The only plan bytes
 added since are the appended `## Ceremony evidence` section (`281acb6`), which
 changes no cell and asks for no re-review.
 **Last update**: 2026-08-18
+**Status detail**: implementing — Chunk A landed at `3980ad1`.
 **Opened**: 2026-08-13
 
 > **Start state.** Implementation begins at **Chunk A**, which the accepted
@@ -76,7 +77,7 @@ precedes the surface work and is not reorderable.
 
 ```
 PR  External Security Review of this plan                    [required]
-A   the two key-probe corrections (the floor)                [commit]
+A   the two key-probe corrections (the floor)                [DONE 3980ad1]
 B   the values schema, parser, and `validate`                [commit]
 C   the ceremony artifact and its subcommands                [commit]
 D   the packet, the launcher, and their binding              [commit]
