@@ -5854,7 +5854,7 @@ class TestP3Grandfathering:
         arrive by edit -- and a manifest that appears here without a re-derivation
         is exactly the stale-data defect [CF4] recorded."""
         src = _PLANNER_PATH.read_text(encoding="utf-8")
-        start = src.index("# === P3 -- the complete current contract")
+        start = src.index("# === the complete current contract")
         end = src.index("def review_record_violations(")
         block = src[start:end]
         for forbidden in ("_LEGACY", "_is_legacy(", "hashlib", "_git_readonly",

@@ -33,7 +33,7 @@ The tool may **mechanize the assembly, the gates, and the formatting**;
 it must **never mechanize the judgment**.  Concretely, and enforced by
 construction here:
 
-1. **Structural attestation, not authenticity (R1).**  It attests the
+1. **Structural attestation, not authenticity.**  It attests the
    *structure and presence* of an authority-bearing artifact (a Decision
    blockquote is present and isolated; a Review section exists) and
    reports a *missing or malformed* one.  It **never certifies
@@ -65,7 +65,7 @@ manifest to **stdout** -- the operator copies it into the artifact and
 owns the transition.  The one consequence of a mis-run is text on the
 terminal, never a changed tree.
 
-Optional aid, not the minimum kernel (R2)
+Optional aid, not the minimum kernel
 =========================================
 
 The checker is **stdlib-only** and **vendor-neutral**, like the other
@@ -182,7 +182,7 @@ def _today() -> str:
     return _dt.date.today().isoformat()
 
 
-# --- the AI-vs-human identity model (R5) -------------------------------------
+# --- the AI-vs-human identity model -----------------------------------------
 #
 # Several preconditions turn on *who* authored a section: a review is
 # authored by a reviewer (an AI agent or a human), but a Decision is a
@@ -539,7 +539,7 @@ _HEADER_RE = re.compile(
 _KNOWN_KINDS = {
     "review", "response", "revised", "decision", "plan", "code",
     # `sharpening` was absent, which is why the scaffold's OWN emitted
-    # review block parsed to nothing (S7).  A document of exactly the shape
+    # review block parsed to nothing.  A document of exactly the shape
     # the planner emitted yielded [(2, 'Plan review')] -- the Sharpening
     # heading was discarded, so nothing could pair a raised finding with its
     # disposition.
@@ -552,36 +552,36 @@ _KNOWN_KINDS = {
 # Chunk C decides on it.  The split is deliberate -- a parser that also gates
 # cannot be landed green.
 
-#: S2 -- the two attestation lines, full-line anchored inside a pass body.
+#: The two attestation lines, full-line anchored inside a pass body.
 _TIER_LINE_RE = re.compile(r"^\*\*Tier\*\*:\s*(?P<value>.*?)\s*$", re.M)
 _FINDINGS_LINE_RE = re.compile(r"^\*\*Findings\*\*:\s*(?P<value>.*?)\s*$", re.M)
 
-#: S2 -- the closed vocabularies.  Comparison is case-insensitive; these are
+#: The closed vocabularies.  Comparison is case-insensitive; these are
 #: the canonical spellings.
 _TIERS = ("Internal", "External")
 _FINDINGS = ("none", "raised")
 
-#: S5 -- total order, External > Internal.  `declared >= required` satisfies
+#: Total order, External > Internal.  `declared >= required` satisfies
 #: the floor.  There is no third tier and no `Maintainer` tier: a human review
 #: declares External.
 _TIER_RANK = {"internal": 1, "external": 2}
 
-#: S7 -- a Sharpening heading, matched positionally inside a pass body.
+#: A Sharpening heading, matched positionally inside a pass body.
 _SHARPENING_RE = re.compile(r"^###\s+Sharpening\b", re.M)
 
-#: S6 step 1 -- the first parenthesised group of the `**Plan review**:` field.
+#: Step 1 -- the first parenthesised group of the `**Plan review**:` field.
 _REQUIRED_TIER_RE = re.compile(r"^required\s*\(([^)]*)\)", re.I)
 
-#: S6 step 3 -- the first alphabetic word inside that group.
+#: Step 3 -- the first alphabetic word inside that group.
 _FIRST_WORD_RE = re.compile(r"^[A-Za-z][A-Za-z-]*")
 
 
 def _parse_one_field(body: str, pattern: "re.Pattern[str]",
                      vocabulary: Tuple[str, ...], field: str
                      ) -> Tuple[Optional[str], Optional[str]]:
-    """Read one S2 attestation line -> ``(canonical_value, violation)``.
+    """Read one attestation line -> ``(canonical_value, violation)``.
 
-    Implements S3's three fail-closed directions, and **no condition yields a
+    Three fail-closed directions, and **no condition yields a
     silent pass**: absent -> ``missing``, out-of-vocabulary ->
     ``unrecognized``, repeated -> ``duplicate`` *even when the occurrences
     agree*, because agreement is a judgement a conformance backstop must not
@@ -634,13 +634,13 @@ def _parse_one_field(body: str, pattern: "re.Pattern[str]",
 
 
 def _parse_pass_date(raw: str) -> Tuple[bool, Optional[str]]:
-    """S1 -- the captured date must be a **real** date, not date-shaped.
+    """The captured date must be a **real** date, not date-shaped.
 
     ``_HEADER_RE`` matches the *shape* ``\\d{4}-\\d{2}-\\d{2}``, which accepts
     ``2026-99-99``, ``2026-02-30`` and ``0000-00-00``.  ``date.fromisoformat``
     is strict and rejects all three while accepting a real leap date.  A shape
     match whose value does not parse is a violation, never a silent pass --
-    and, under S9's enumerated legacy manifest, never an exemption either.
+    and, under the enumerated legacy manifest, never an exemption either.
     """
     if not raw:
         return False, None
@@ -654,9 +654,9 @@ def _parse_pass_date(raw: str) -> Tuple[bool, Optional[str]]:
 def _strip_emphasis_chars(raw: str) -> str:
     """Delete the Markdown emphasis characters, for tier/obligation comparison.
 
-    **One helper, both sides of R3's match**, deliberately: the declared clause is
+    **One helper, both sides of the match**, deliberately: the declared clause is
     read out of `**Plan review**: required(A + B)` and the pass's claim out of its
-    `**Obligation**:` line, and R3 requires the two to be compared *"after the
+    `**Obligation**:` line, and the two are compared *"after the
     same emphasis and whitespace normalization"*.  Two copies of this three-line
     loop is exactly how one side ends up admitting a spelling the other refuses.
     """
@@ -666,7 +666,7 @@ def _strip_emphasis_chars(raw: str) -> str:
 
 
 def normalize_required_tier(field: str) -> Tuple[Optional[str], Optional[str]]:
-    """S6 -- normalize the `**Plan review**:` field -> ``(tier, violation)``.
+    """Normalize the `**Plan review**:` field -> ``(tier, violation)``.
 
     Defined on the **first parenthesised group only**.  Text after the closing
     paren is ignored (every live plan has some); text after the first word
@@ -688,14 +688,14 @@ def normalize_required_tier(field: str) -> Tuple[Optional[str], Optional[str]]:
 
 
 def tier_satisfies(declared: str, required: str) -> bool:
-    """S5 -- ``declared >= required`` under the total order External > Internal."""
+    """``declared >= required`` under the total order External > Internal."""
     return _TIER_RANK.get(declared.casefold(), 0) >= _TIER_RANK.get(
         required.casefold(), 0)
 
 
 def normalize_required_obligations(
         field: str) -> Tuple[Tuple[Tuple[str, str], ...], Optional[str]]:
-    """R3 -- the DECLARED OBLIGATION CLAUSES of a `**Plan review**:` field.
+    """The DECLARED OBLIGATION CLAUSES of a `**Plan review**:` field.
 
     ``required(A + B)`` means *"two obligations and two distinct review passes"*.
     Returns ``((clause, required_tier), ...)`` in declaration order, plus one
@@ -705,8 +705,8 @@ def normalize_required_obligations(
     E's parent, `normalize_required_tier('required(**External** + **External
     Security Review**)')` returned ``('external', None)``: the second obligation
     was not merely unenforced, it was *discarded*, so today's tooling reported the
-    floor satisfied by a single pass.  That is this plan's own `[E3]`/`[G3]`
-    finding, and this plan's own declared tier.
+    floor satisfied by a single pass -- which is this module's own declared
+    tier, so the rule is exercised by the artifact that states it.
 
     `normalize_required_tier` is deliberately left alone -- it answers "what is
     the tier CEILING", still resolves to exactly one tier for every live form
@@ -827,7 +827,7 @@ def _has_isolated_blockquote(body: str) -> bool:
     a diff, or a markdown example, not an authorization quote, and must not
     count.  This is a **structural** check -- presence and isolation --
     never a judgment about whether the quoted text is an authentic
-    authorization (R1)."""
+    authorization."""
     in_fence = False
     prev_blank = True  # start-of-body counts as a preceding blank line
     for line in _split_lines(body):
@@ -867,14 +867,14 @@ def _read_artifact(path: Path) -> Artifact:
     return art
 
 
-#: **PUBLIC alias, added by Chunk P4, and the name is load-bearing.**
+#: **PUBLIC alias, and the name is load-bearing.**
 #:
-#: P1 published `ASSURANCE_PATHS` for exactly this reason and recorded why; this
-#: is the same move for the parser.  R6 requires that *"`scan`, `next`, and
+#: `ASSURANCE_PATHS` was published for exactly this reason; this
+#: is the same move for the parser.  The contract requires that *"`scan`, `next`, and
 #: accepted closeout tooling consume shared predicates rather than implement
-#: three interpretations of readiness"*, and Chunk E wrote P4's half of that
+#: three interpretations of readiness"*, and the scan side of that
 #: into this file by name (`status_evidence_violations`'s docstring: *"and, when
-#: P4 lands it, `closeout --dry-run`"*).  `status_evidence_violations`,
+#: contract is `closeout --dry-run`"*).  `status_evidence_violations`,
 #: `review_record_violations`, `blocked_by_violations` and
 #: `plan_inheritance_violations` are all already public and all take an
 #: `Artifact` -- so without a public way to *build* one, the only routes left to
@@ -903,7 +903,7 @@ read_artifact = _read_artifact
 #: This tests for a *marker*, not for review quality -- an author who writes the
 #: marker without reviewing still passes.  It moves the gate from "impossible to
 #: fail" to "requires a deliberate false statement", which is the honest limit of
-#: a text scanner; the residual is recorded in ``dev/PLANNING.md`` **[SP8-9]**.
+#: a text scanner; the residual is recorded in ``dev/PLANNING.md``.
 #: ALL ``## Code review`` sections are examined, not just the first: a plan may
 #: carry a placeholder section and a real reviewer's section further down.
 _CODE_REVIEW_SECTION_RE = re.compile(
@@ -1051,8 +1051,8 @@ def _has_code_review_marker(text: str) -> bool:
 # === the ONE runtime status vocabulary =======================================
 #
 # This module is the **single runtime owner** of the lifecycle status
-# vocabulary (`lifecycle-status-vocabulary` R5, as replaced by that proposal's
-# "R5 replacement -- contained consumers and corpus boundary").  It mirrors
+# vocabulary (`lifecycle-status-vocabulary`, under its accepted
+# "contained consumers and corpus boundary" replacement).  It mirrors
 # `doctrine/lifecycle-contract.md`, which stays the human contract.
 #
 # THREE consumers live OUTSIDE this file's package and read the names below by
@@ -1064,7 +1064,7 @@ def _has_code_review_marker(text: str) -> bool:
 #   * `scripts/transition_lint.py` (repository-only);
 #   * `tools/lifecycle.py` + its installed twin
 #     (`templates/skills/_lib/lifecycle.py`) -- added by Chunk P6a at `8bf1154`,
-#     which copied the A3 loader contract rather than re-deriving it.  Its twin
+#     which copied the loader contract rather than re-deriving it.  Its twin
 #     sits under `templates/skills/_lib/` beside this file's own twin, not under
 #     `templates/modules/default-on/` like the metrics consumer's; the two
 #     consumers ship through different install families, and only the paths
@@ -1077,18 +1077,18 @@ def _has_code_review_marker(text: str) -> bool:
 # not the other is the drift the audit exists to catch.  The count is pinned by
 # name in that module's own guard-on-the-guard, so this comment and the audit
 # cannot silently disagree about how many consumers there are -- which they did,
-# between P6a landing the third and this correction ([CF2]).
+# between the third landing and this correction.
 #
 # Five declarations, each with exactly one job.  Keeping them as *data* is what
 # made Chunk E's vocabulary change an edit to these tuples rather than a refactor
 # of every consumer -- which is exactly how it landed.
 #
-# === Chunk E + H1: the accepted next-action vocabulary, now the ONLY one ======
+# === the accepted next-action vocabulary, now the ONLY one ====================
 #
-# `lifecycle-status-vocabulary` R1'/R2' replace the flat tokens with next-action
+# `lifecycle-status-vocabulary` replaced the flat tokens with next-action
 # states.  Chunk E made the new tokens legal *additively*, because three live
 # artifacts still declared `executing` / `review` at the time and a hard
-# replacement would have redded all three.  **Chunk H1 completed the
+# replacement would have redded all three.  **The migration completed the
 # replacement on 2026-08-13**: every active artifact was migrated first (blob-
 # checked, refusing any row whose blob moved), the authoring templates were
 # fixed so newly opened artifacts cannot reintroduce a retired token, and only
@@ -1099,7 +1099,7 @@ def _has_code_review_marker(text: str) -> bool:
 # target, and still recognized everywhere a consumer reads an archived artifact
 # or longitudinal history.  Retiring a token removes it from the *current*
 # vocabulary; it must never stop a consumer parsing a record that predates the
-# migration (R7).  Three consumers depend on exactly that distinction and are
+# migration.  Three consumers depend on exactly that distinction and are
 # easy to break silently -- see `_plan_status_enum` in `_lifecycle_metrics`,
 # `_PROPOSAL_POST_REVIEW_STATES`, and the two `*_NEXT_OWNERS` tables, each of
 # which carries its own note.
@@ -1128,11 +1128,11 @@ PLAN_NON_TERMINAL_STATES = tuple(
 
 #: Legal next target states, as data.  `""` is the not-yet-created artifact.
 #:
-#: R1's cycle, verbatim:
+#: The proposal cycle, verbatim:
 #:     awaiting-review --blocking review--> revising --Response/revision-->
 #:     awaiting-review --clearing review--> awaiting-decision
 #:     awaiting-decision --Maintainer Decision--> accepted/rejected/superseded
-#: plus R1's explicit return arm: *"If it identifies a contract defect the
+#: plus its explicit return arm: *"If it identifies a contract defect the
 #: Maintainer wants corrected before Decision, the Maintainer returns the
 #: proposal to `revising`."*
 PROPOSAL_TRANSITIONS = {
@@ -1145,7 +1145,7 @@ PROPOSAL_TRANSITIONS = {
     "superseded": (),
 }
 
-#: R2's cycle, verbatim:
+#: The plan cycle, verbatim:
 #:     awaiting-plan-review <-> revising-plan
 #:               |
 #:               v
@@ -1173,22 +1173,22 @@ PLAN_TRANSITIONS = {
 #: than on the state machine: a `not required(...)` plan skips the review wait.
 #: Isolated and named so the conditionals are entries, not branches in a table.
 #:
-#: `""` is R2's *"Plan review is cleared, inherited, or not required"* opening,
+#: `""` is the *"Plan review is cleared, inherited, or not required"* opening,
 #: plus the accepted fast path: *"the plan-open commit may record `implementing`
 #: directly; it must contain the implementation evidence that makes the skipped
 #: `ready-to-implement` state true."*  The fast path is offered ONLY here --
 #: never from `awaiting-plan-review` -- because a plan that declares
-#: `required(...)` and has not cleared it is exactly R6's refusal case.
+#: `required(...)` and has not cleared it is exactly the refusal case.
 PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED = {
     "": ("ready-to-implement", "implementing"),
 }
 
 #: Historical tokens -- admitted ONLY for archived-artifact compatibility and
 #: longitudinal metrics.  **Never** legal for an active artifact and never a
-#: transition target: R7's *"After migration, old non-terminal values are
+#: transition target: *"After migration, old non-terminal values are
 #: invalid directly under active proposal and plan directories."*
 #:
-#: **Populated by Chunk H1 on 2026-08-13**, in the same change that migrated the
+#: **Populated on 2026-08-13**, in the same change that migrated the
 #: last active artifact off them -- the ordering matters in both directions.
 #: Listing a token here while a live artifact declares it makes the planner
 #: contradict the tree it scans; leaving it out of here after migration makes
@@ -1209,9 +1209,9 @@ HISTORICAL_PLAN_STATES: Tuple[str, ...] = ("open", "executing", "review")
 #: carried a landed review, which is only meaningful pre-review.
 #:
 #: `awaiting-review` and `awaiting-plan-review` are the accepted vocabulary's two
-#: initial states (R1/R2, "Initial state"); `proposed` and `open` are their
+#: initial states; `proposed` and `open` are their
 #: retired predecessors and stay listed for exactly the reason the filter below
-#: exists -- H1 moved them into the historical tuples, and they must remain
+#: exists -- the migration moved them into the historical tuples, and they must remain
 #: shape-(b) eligible for the old commits that added files declaring them.
 OPENING_STATES = ("awaiting-review", "awaiting-plan-review", "proposed", "open")
 
@@ -1219,13 +1219,13 @@ OPENING_STATES = ("awaiting-review", "awaiting-plan-review", "proposed", "open")
 #: non-terminal state, plus the historical opening states old commits need.
 #:
 #: Widened from `OPENING_STATES` alone (3 tokens) to every current non-terminal
-#: state (7 at Chunk A1, **16** once Chunk E made the accepted vocabulary legal)
-#: per the accepted R5 replacement, then **16 -> 12 at Chunk H1** as `reviewed`,
+#: state (7 originally, **16** once the accepted vocabulary became legal)
+#: per the accepted replacement, then **16 -> 12 at the migration** as `reviewed`,
 #: `revised`, `executing` and `review` stopped being *current* non-terminal
 #: states.  `proposed` and `open` re-enter through the filter below.
 #:
-#: **H1 kept the filter at historical OPENING statuses rather than all
-#: historical tokens, and that is the accepted R5 text, not a convenience**:
+#: **The filter stays at historical OPENING statuses rather than all
+#: historical tokens, and that is the accepted text, not a convenience**:
 #: *"every recognized current non-terminal status plus the historical opening
 #: statuses"*.  Widening it to all six would have held the set at 16 and made
 #: the narrowing trivially corpus-neutral, but it would also have contradicted
@@ -1255,26 +1255,26 @@ RECOGNIZED_STATES = tuple(dict.fromkeys(
 
 # === Chunk F: the `Next owner` column, as central data =======================
 #
-# R1 and R2 each declare a `Next owner` per status, and B1 requires the board's
+# The proposal and plan cycles each declare a `Next owner` per status, and the board's
 # `owner` field to come from *"the central lifecycle vocabulary"*.  Nothing here
 # read that column before, so the board would otherwise have had to carry a
-# consumer-local role table -- the exact thing B3 forbids (*"contains no
+# consumer-local role table -- the exact thing forbidden (*"contains no
 # consumer-local status, role, tier, verdict, or closeout vocabulary"*).  It
 # lives beside the state tuples for the same reason those are data: adding a
 # state and forgetting its owner is then one missing dict key, not a silent
 # fallback.
 #
-# **One spelling, not two.**  The tokens below are hyphenated rather than R1/R2's
+# **One spelling, not two.**  The tokens below are hyphenated rather than the cycles'
 # prose ("independent proposal reviewer"), because the compact row and the JSON
-# contract must carry the *same* value -- B2 makes JSON "full field values" of
+# contract must carry the *same* value -- JSON carries "full field values" of
 # the same projection, and two spellings of one vocabulary is the drift the
-# single-source rule exists to prevent.  Each entry names its R1/R2 phrase.
+# single-source rule exists to prevent.  Each entry names its source phrase.
 NEXT_OWNER_TERMINAL = "terminal"
 
-#: A status whose only reading is a PENDING-RETIREMENT (H1) legacy token that
-#: R7 maps to **more than one** successor state, so its next owner is genuinely
+#: A status whose only reading is a PENDING-RETIREMENT legacy token that
+#: maps to **more than one** successor state, so its next owner is genuinely
 #: not derivable.  Naming that is honest; picking one of the candidates would be
-#: the board guessing, which B1 forbids for `status` and which is no better here.
+#: the board guessing, which is forbidden for `status` and no better here.
 NEXT_OWNER_UNRESOLVED = "unresolved"
 
 #: No `**Status**:` line, or a token outside `RECOGNIZED_STATES`.
@@ -1287,8 +1287,8 @@ PROPOSAL_NEXT_OWNERS = {
     "accepted": NEXT_OWNER_TERMINAL,
     "rejected": NEXT_OWNER_TERMINAL,
     "superseded": NEXT_OWNER_TERMINAL,
-    # HISTORICAL (retired by H1) -- RETAINED DELIBERATELY, and the reason is the
-    # ACTIVE artifact, not the archived one.  Code review [C3] falsified an
+    # HISTORICAL (retired) -- RETAINED DELIBERATELY, and the reason is the
+    # ACTIVE artifact, not the archived one.  Review falsified an
     # earlier version of this note: measured over the real corpus, ZERO archived
     # artifacts declare a historical token (40 archived plans are `archived`; 54
     # archived proposals `accepted`, 4 `superseded`), and `next_owner`'s only
@@ -1299,10 +1299,10 @@ PROPOSAL_NEXT_OWNERS = {
     # a retired token -- mid-migration, or hand-authored from an old copy -- is
     # exactly the case the board must stay useful for.  With these rows it
     # renders `proposal-reviewer` / `implementation` and the operator can act;
-    # without them `next_owner` answers `unknown` and B1's whole point, saying
+    # without them `next_owner` answers `unknown` and the board's whole point, saying
     # whose move it is, degrades precisely when someone needs telling.
     #
-    # `proposed` had one R7 successor (`awaiting-review`); `reviewed` mapped to
+    # `proposed` had one successor (`awaiting-review`); `reviewed` mapped to
     # `revising|awaiting-decision` and `revised` to
     # `awaiting-review|awaiting-decision`, whose owners differ, so those two
     # report `unresolved` rather than guess.
@@ -1324,14 +1324,14 @@ PLAN_NEXT_OWNERS = {
     "revising-code": "implementation",         # Implementation
     "ready-to-archive": "implementation",      # Implementation
     "archived": NEXT_OWNER_TERMINAL,
-    # HISTORICAL (retired by H1) -- RETAINED DELIBERATELY, same reason as the
-    # proposal table above, and see [C3] there: the reachable case is an ACTIVE
+    # HISTORICAL (retired) -- RETAINED DELIBERATELY, same reason as the
+    # proposal table above: the reachable case is an ACTIVE
     # plan still declaring a retired token, NOT an archived one.  No archived
     # plan declares one (measured: all 40 are `archived`), and the archive tree
     # is not reachable from `next_owner`'s only call site.
     #
     # `open` -> `awaiting-plan-review` and `executing` -> `implementing` were
-    # each one R7 successor; `review` mapped to three
+    # each one successor; `review` mapped to three
     # (`awaiting-code-review|revising-code|ready-to-archive`) whose owners are
     # not the same, so it reports `unresolved` rather than guess.
     "open": "plan-reviewer",
@@ -1349,7 +1349,7 @@ NEXT_OWNERS = tuple(dict.fromkeys(
 
 
 def next_owner(kind: str, status: str) -> str:
-    """R1/R2's `Next owner` for one artifact kind + status.
+    """The declared `Next owner` for one artifact kind + status.
 
     Fail-closed: an absent or unrecognized status is `unknown`, never the owner
     of some neighbouring state.  A recognized status missing from its table is
@@ -1400,7 +1400,7 @@ def _has_kind(art: Artifact, prefix: str) -> bool:
     return any(s.kind.lower().startswith(prefix.lower()) for s in art.sections)
 
 
-#: S9(a) -- the legacy population, ENUMERATED.  ``stem -> {heading digest: n}``.
+#: The legacy population, ENUMERATED.  ``stem -> {heading digest: n}``.
 #: Generated by ``scripts/gen_legacy_passes.py``; do not hand-edit.  A pass is
 #: legacy iff its stem is here and it is the k-th occurrence of that digest with
 #: ``k <= n``.  Occurrence *counts* close the duplicate-append hole: re-appending
@@ -1443,20 +1443,20 @@ _LEGACY_PASSES: Dict[str, Dict[str, int]] = {
 }
 
 
-#: S1 -- the exact raw-heading grammar the review-pass record schema
+#: The exact raw-heading grammar the review-pass record schema
 #: defines.  Authored independently of ``scripts/gen_legacy_passes.py``'s own
 #: ``_PASS_RE`` -- the two must never become each other's oracle, even
-#: though both implement the same published S1 grammar and therefore read
+#: though both implement the same published grammar and therefore read
 #: alike.
 #:
-#: **CR1.** The earlier ``_pass_headings`` selected *Sections* the older,
+#: The earlier ``_pass_headings`` selected *Sections* the older,
 #: more permissive ``_HEADER_RE`` had already accepted, and never checked the
-#: raw line against S1 itself.  ``_HEADER_RE`` is a strict superset of this
+#: raw line against the grammar itself.  ``_HEADER_RE`` is a strict superset of this
 #: shape -- it tolerates arbitrary whitespace after ``##``, around ``--``,
 #: and before end-of-line -- so three shapes that must NOT be passes cleared
 #: the gate anyway: extra spaces after ``##``, doubled ``--`` separators, and
 #: trailing spaces after the date. The inverse also reproduced: a reviewer
-#: field containing literal parentheses (``Jane (Lab) Smith``) matches S1's
+#: field containing literal parentheses (``Jane (Lab) Smith``) matches the grammar's
 #: permissive ``[^\n]+?`` reviewer group, but ``_HEADER_RE``'s
 #: ``(?P<role>[^)\n]*)`` machinery cannot parse the line at all, so
 #: ``_parse_sections`` produced no Section for it and a conforming pass was
@@ -1468,16 +1468,16 @@ _S1_PASS_RE = re.compile(
 
 
 def _pass_body(lines: List[str], line_no: int, boundaries: List[int]) -> str:
-    """The body of the pass whose heading is at *line_no* (Chunk B, B1).
+    """The body of the pass whose heading is at *line_no*.
 
     **One ordered boundary set, used for every pass body of either record
     kind.**  A boundary is a level-<=2 Section *or* a raw S1-conforming pass
     line, so a pass heading the looser ``_HEADER_RE`` could not parse still
     terminates the pass above it.
 
-    Why this is not merely tidier: before B1 only *synthesized* sections were
+    Why this is not merely tidier: before this, only *synthesized* sections were
     sliced this way, and a recognized pass kept the body ``_parse_sections``
-    gave it.  ``_parse_sections`` knows nothing about raw S1 lines, so a later
+    gave it.  ``_parse_sections`` knows nothing about raw pass lines, so a later
     unparseable pass heading -- a reviewer field with parentheses outside the
     ``(<role>)`` position is enough -- was invisible to it.  The earlier pass's
     body then ran straight through the later heading and **swallowed its
@@ -1491,7 +1491,7 @@ def _pass_body(lines: List[str], line_no: int, boundaries: List[int]) -> str:
     computed end is always at or before the previous one.  That monotonicity is
     what makes applying it to already-recognized sections safe.
 
-    The ceiling half of B1 falls out of the same set rather than needing its own
+    The ceiling half falls out of the same set rather than needing its own
     rule: since ``286f07d`` the only surviving positional ceiling is
     ``### Sharpening``, which is scoped to a pass *body* -- so a correct body is
     a correct ceiling.
@@ -1507,7 +1507,7 @@ def _pass_body(lines: List[str], line_no: int, boundaries: List[int]) -> str:
 def _synthesize_pass_section(lines: List[str], line_no: int,
                              m: "re.Match[str]",
                              boundaries: List[int]) -> Section:
-    """A Section for an S1 pass line ``_HEADER_RE`` could not parse (CR1).
+    """A Section for a pass line ``_HEADER_RE`` could not parse.
 
     Only reached when a raw line matches `_S1_PASS_RE` but has no entry in
     ``art.sections`` -- e.g. a reviewer field carrying literal parentheses
@@ -1526,12 +1526,12 @@ def _synthesize_pass_section(lines: List[str], line_no: int,
 def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
     """Every S1-conforming pass in `art`, paired with its heading digest.
 
-    Matches the **raw heading line** against `_S1_PASS_RE` directly (CR1) --
+    Matches the **raw heading line** against `_S1_PASS_RE` directly --
     never derives a pass from a Section the looser `_HEADER_RE` happened to
     produce. Most S1-conforming lines already have a Section (`_HEADER_RE`
-    is a superset of S1's shape), and that Section is reused so its
+    is a superset of that shape), and that Section is reused so its
     precomputed body stays identical to every other parsed section's. A raw
-    line that matches S1 but that `_HEADER_RE` could not parse at all gets a
+    line that matches the grammar but that `_HEADER_RE` could not parse at all gets a
     Section synthesized by `_synthesize_pass_section`, so it is not silently
     dropped.
 
@@ -1554,7 +1554,7 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
     matches: List[Tuple[int, str, "Optional[re.Match[str]]"]] = [
         (i + 1, raw, _S1_PASS_RE.match(raw)) for i, raw in enumerate(lines)
     ]
-    # R4 -- ONE canonical boundary set, of BOTH record kinds.  Defined below
+    # ONE canonical boundary set, of BOTH record kinds.  Defined below
     # with the Code-review schema (Chunk C) because it needs that block's
     # heading grammar; resolved at call time, so the reading order is the only
     # thing that differs from defining it here.
@@ -1569,7 +1569,7 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
         else:
             body = _pass_body(lines, line_no, boundaries)
             if body != sec.body:
-                # B1: a recognized pass gets the SAME boundary rule as a
+                # A recognized pass gets the SAME boundary rule as a
                 # synthesized one.  Re-sliced into a **copy** -- `art.sections`
                 # is shared with every other consumer (`_has_disposition`,
                 # `_reviewers`, the Decision predicates), and narrowing a body
@@ -1587,7 +1587,7 @@ def _pass_headings(art: Artifact) -> List[Tuple[Section, str]]:
 
 
 def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
-    """S7 -- does a disposition follow `pass_sec`, in either house form?
+    """Does a disposition follow `pass_sec`, in either house form?
 
     Cairn disposition sections come in two shapes and the tree uses **both**,
     measured `as_of` 2026-08-05 across ``dev/plans`` + ``dev/plans/archive``:
@@ -1614,14 +1614,14 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     disposition between two landed reviews.  The artifact could then never
     conform, with no author action able to fix it.
 
-    `[E3]`'s property survives, because it was about a *neighbouring round's*
+    The property survives, because it was about a *neighbouring round's*
     disposition standing in for this one: a ``### Sharpening`` is still scoped
     to its own pass's body and never reaches a sibling, and a pass with **no**
     Response after it at all is still unsatisfied.  What is now allowed is the
     author saying, in one section, "these are answered" -- which is what the
     section already meant.
 
-    **CR2.** The documented second house form is specifically
+    The documented second house form is specifically
     ``## Response to plan review``, but the earlier check matched any kind
     whose text merely *started with* ``response`` -- so an unrelated
     ``## Response -- Author -- date`` or ``## Response to proposal review --
@@ -1630,9 +1630,9 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     """
     if _SHARPENING_RE.search(pass_sec.body):
         return True
-    # The group rule.  CR2's exactness is retained: the kind comparison is
+    # The group rule.  Exactness is retained: the kind comparison is
     # exact (case-insensitive), never a prefix, so `## Response -- ...` and
-    # `## Response to proposal review -- ...` still do not discharge S7.
+    # `## Response to proposal review -- ...` still do not discharge it.
     return any(
         sec.level == 2
         and sec.kind.strip().lower() == "response to plan review"
@@ -1641,14 +1641,14 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
     )
 
 
-# === Chunk B, B3: Code-review disposition -- exact `Answers:` binding ========
+# === Code-review disposition -- exact `Answers:` binding =====================
 #
 # **The two record types take deliberately OPPOSITE rules, and that is the
-# point of splitting B2 from B3.**
+# point of splitting the two predicates.**
 #
 #   * a *Plan* review is answered as a **round**, so one Response dispositions
 #     the whole group of passes above it (the group rule landed at `286f07d`,
-#     preserved verbatim by B2 above);
+#     preserved verbatim above);
 #   * a *Code* review's findings are answered **individually**, so each Response
 #     must name exactly which pass it answers.
 #
@@ -1656,12 +1656,12 @@ def _has_disposition(art: Artifact, pass_sec: Section) -> bool:
 # satisfy the earlier" assertion is what produced the contradiction the plan's
 # Chunk B records: an implementer following the collapsed sentence would have
 # restored the false ceiling the Maintainer had just directed away.  So the two
-# predicates are separate functions with separate tests, and B4 requires a
+# predicates are separate functions with separate tests, and the contract requires a
 # falsifier in each direction so neither can be weakened *into* the other
 # unnoticed.
 #
-# Contract: accepted `code-review-blindness` **R2''** ("the exact grammar",
-# which replaces R2's ordering and binding clauses) as sharpened by that
+# Contract: accepted `code-review-blindness`, its exact-grammar clause
+# (replacing the earlier ordering and binding clauses) as sharpened by that
 # proposal's Revision 3 -- the binding must resolve to **exactly one** prior raw
 # heading; zero or multiple matches refuse.
 
@@ -1675,7 +1675,7 @@ _RESPONSE_TO_CODE_REVIEW_RE = re.compile(
     r"^## Response to code review -- (?P<author>[^\n]+?) -- "
     r"(?P<date>\d{4}-\d{2}-\d{2})(?: \(round (?P<round>\d+)\))?$")
 
-#: R2'': **one full-line anchored field**.  Anchored on purpose -- an
+#: **One full-line anchored field**.  Anchored on purpose -- an
 #: ``Answers:`` appearing mid-sentence in prose is not a field, and treating it
 #: as one would let a Response discharge a pass by talking about answering it.
 _ANSWERS_LINE_RE = re.compile(r"^Answers:[ \t]*(?P<value>\S.*?)[ \t]*$", re.M)
@@ -1708,7 +1708,7 @@ def _code_review_pass_lines(art: Artifact) -> List[Tuple[int, str, str, Optional
 def _response_to_code_review_lines(art: Artifact) -> List[Tuple[int, int]]:
     """``(line_no, end_line)`` per Response-to-code-review section.
 
-    Bounded by the next level-<=2 heading, which is the same boundary rule B1
+    Bounded by the next level-<=2 heading, which is the same boundary rule
     unified for pass bodies -- so a Response cannot reach into the section below
     it to find a binding it does not carry.
     """
@@ -1731,20 +1731,20 @@ def _response_to_code_review_lines(art: Artifact) -> List[Tuple[int, int]]:
 def code_review_binding_violations(
         art: Artifact,
         skip_lines: Optional[Set[int]] = None) -> List[str]:
-    """Every ``Answers:`` binding defect in *art* (B3).
+    """Every ``Answers:`` binding defect in *art*.
 
     Six refusal directions, each named separately in the message so a reader is
     sent to the right place: **missing**, **duplicate**, **malformed**,
-    **unmatched**, **ambiguous**, and **precedes its target**.  R2'' lists the
+    **unmatched**, **ambiguous**, and **precedes its target**.  The grammar lists the
     first four; Revision 3 adds *ambiguous* by requiring exactly one match; the
-    last is R2''s "A Response positioned before its target refuses".
+    last is *"A Response positioned before its target refuses"*.
 
     *skip_lines* (Chunk C) names Response headings admitted by
     `_LEGACY_CODE_REVIEW_RECORDS`.  The ``Answers:`` field is **newer than every
     Response in this tree** -- 2 exist corpus-wide and neither carries it -- so
     without the exemption the gate reddens on a real archived record the moment
-    C1 wires it in, and R5's accepted blast radius says *"no existing artifact
-    violates"*.  Default `None` keeps the B3 signature callable, which is how
+    The accepted blast radius says *"no existing artifact
+    violates"*.  Default `None` keeps the signature callable, which is how
     the forward contract is expressed: a Response written after the baseline has
     no exemption to pass.
     """
@@ -1801,7 +1801,7 @@ def code_review_pass_is_dispositioned(art: Artifact, pass_line: int) -> bool:
     """Is the Code-review pass at *pass_line* answered by an exact binding?
 
     **Not** the plan-review group rule: a Response bound to a *later* pass never
-    satisfies an earlier one, which is the asymmetry B4 pins in both directions.
+    satisfies an earlier one, which is the asymmetry pinned in both directions.
     A Response with any binding defect dispositions nothing -- refusing is the
     fail-closed direction, since the alternative is a malformed binding clearing
     a pass it may not even name.
@@ -1828,22 +1828,22 @@ def code_review_pass_is_dispositioned(art: Artifact, pass_line: int) -> bool:
 # === Chunk C: the Code-review record schema ==================================
 #
 # Contract: accepted proposal `2026-08-10-claude-code-review-blindness`, whose
-# **R2 is superseded**.  The operative clauses are:
+# **The original archive clause is superseded**.  The operative clauses are:
 #
-#   R2'   the archive rule -- the latest applicable pass must CLEAR.  There is
+#   * the archive rule -- the latest applicable pass must CLEAR.  There is
 #         no disposition branch: a Response records the implementer's answer and
 #         does not clear archive; eligibility comes from a later independent
-#         pass.  ([R2-E1] -- letting an author's own Response convert `REVISE`
+#         pass.  (Letting an author's own Response convert `REVISE`
 #         into archive eligibility would weaken the accepted parent's
 #         correction-review boundary, which this amendment exists to *supply*.)
-#   R2''  the exact grammar -- document-order recency, the `(round N)` rules,
-#         and the full-line `Answers:` binding (implemented at B3 above).
-#   R3'   legacy, keyed non-replayably -- digest + occurrence count, pinned to
+#   * the exact grammar -- document-order recency, the `(round N)` rules,
+#         and the full-line `Answers:` binding (implemented above).
+#   * legacy, keyed non-replayably -- digest + occurrence count, pinned to
 #         one named baseline commit.
-#   R5''  one predicate, evaluating an explicit EFFECTIVE STATE, reached by both
+#   * one predicate, evaluating an explicit EFFECTIVE STATE, reached by both
 #         callers regardless of whether Plan review was required.
 #
-# **Why the effective state and not the status.**  [R3-E1] executed the bypass:
+# **Why the effective state and not the status.**  Review executed the bypass:
 # `review_record_violations` sat behind `requires_review`, so a plan declaring
 # `Plan review: not required(doc-only)` never reached it, and deleting the weak
 # `_has_kind` presence check would have made such a plan archive *clean* instead
@@ -1852,15 +1852,15 @@ def code_review_pass_is_dispositioned(art: Artifact, pass_line: int) -> bool:
 # declaration."  So the Code-review half is keyed on the effective state alone,
 # and only the Plan-review half consults the declaration.
 
-#: The effective states at which the Code-review record is evaluated (R5'').
+#: The effective states at which the Code-review record is evaluated.
 #: `scan` supplies the current status; `next`/closeout supplies the requested
 #: target.  `ready-to-archive` is named here **before** it exists in
-#: `PLAN_STATES`: the accepted status-vocabulary change introduces it, and R5''
+#: `PLAN_STATES`: the accepted status-vocabulary change introduces it, and the predicate
 #: names both tokens, so wiring it now makes that change a data edit rather than
 #: a second search for every archive-effective branch.
 CODE_REVIEW_EFFECTIVE_STATES = ("ready-to-archive", "archived")
 
-#: R2' -- the closed verdict vocabulary, two classes.  Chosen to cover what this
+#: The closed verdict vocabulary, two classes.  Chosen to cover what this
 #: tree already writes rather than to impose a new dialect: every value below
 #: appears in `dev/plans/`'s real Code-review sections.
 CODE_REVIEW_CLEARING_VERDICTS = ("SHIP", "Accept", "Accept-with-followups",
@@ -1873,7 +1873,7 @@ CODE_REVIEW_BLOCKING_VERDICTS = ("REVISE", "Request changes", "BLOCK")
 #: it alone has a vocabulary (`ASSURANCE_PATHS`).
 #:
 #: Chunk C introduced these as `_CODE_REVIEW_BASIS_FIELDS`, wired to the
-#: Code-review record only.  P1 renames them because the accepted parent's
+#: Code-review record only.  Renamed because the accepted parent's
 #: "Bounded current contracts" is explicit that the basis is *not* Code-review
 #: property: *"Every proposal, plan, and code review records"* these four lines.
 #: One tuple, three record kinds, one shared checker (`_review_basis_violations`)
@@ -1883,10 +1883,10 @@ _REVIEW_BASIS_FREE_FIELDS = ("Reviewed commit", "Target", "Prior findings")
 
 #: The closed assurance vocabulary -- **PUBLIC, and the name is load-bearing.**
 #:
-#: P1 declared this privately.  P2 publishes it without changing a value, because
+#: This was declared privately, then published without changing a value, because
 #: a *fourth* consumer now needs it: `tools/lifecycle.py`'s monitoring report must
 #: record a counted plan's resolved assurance path
-#: (`review-efficient-lifecycle` > `## Carried-forward obligations` > **[CF1]**),
+#: (`review-efficient-lifecycle` > `## Carried-forward obligations`),
 #: and P6a deliberately refused to close that early precisely because the only
 #: two ways available were to reach into a private name or to re-declare the two
 #: tokens in the CLI -- the second vocabulary Chunk A exists to prevent.  Its own
@@ -1911,7 +1911,7 @@ def _code_review_field_re(name: str) -> "re.Pattern[str]":
         Reviewed commit: <full commit id>
 
     -- while every real review in `dev/plans/` writes the same lines bolded
-    (`**Reviewed commit**:`), and R2 itself specifies `**Model**:`,
+    (`**Reviewed commit**:`), and the schema specifies `**Model**:`,
     `**Verdict**:`, `**Findings**:` with the bold.  Full-line anchored, so an
     ``Answers``-style prose mention cannot become a field.
     """
@@ -1920,7 +1920,7 @@ def _code_review_field_re(name: str) -> "re.Pattern[str]":
         r"(?P<value>.*?)[ \t]*$", re.M)
 
 
-#: One matcher per field name, from the one matcher factory.  P5 adds its three
+#: One matcher per field name, from the one matcher factory.  Three
 #: names here rather than compiling a fourth pattern of its own: `Contract
 #: non-expansion` and `Basis` are read from a Code-review pass's field scope, and
 #: `Inherited proposal basis` from a plan header, but all three are the same
@@ -1936,10 +1936,10 @@ _REVIEW_FIELD_RE = {
         # full-line shape, so the same matcher factory.
         "Plan readiness", "Contract expansion", "Scope delta",
         "Source proposal",
-        # Chunk E: R3's per-pass obligation binding, R4's orthogonal blocker, and
+        # The per-pass obligation binding, the orthogonal blocker, and
         # `Tier` -- which the Plan-review pass reads through the bold-only
         # `_TIER_LINE_RE`, but the PROPOSAL review record needs in the same
-        # emphasis-optional shape as its basis fields (E2 reads it there).  Same
+        # emphasis-optional shape as its basis fields.  Same
         # full-line shape, so the same matcher factory rather than a fourth regex.
         "Obligation", "Blocked by", "Tier")
 }
@@ -1967,17 +1967,17 @@ _VERDICT_CLAUSE_RE = re.compile(r"^[^.,;(/]*")
 #: makes it safe in both directions.
 _VALUE_CLAUSE_RE = re.compile(r"^[^.,;(/—]*?(?=\s+--\s|\s*[.,;(/—]|$)")
 
-#: R2: the mandatory fields sit **before the pass's first H3**.  Not decoration:
+#: The mandatory fields sit **before the pass's first H3**.  Not decoration:
 #: real passes carry a `### 4. Verdict & Archive Readiness` subsection that
 #: repeats the verdict, and reading the whole body would report the pass's own
 #: summary as a *duplicate field*.
 _FIRST_H3_RE = re.compile(r"^###\s", re.M)
 
-#: S9(a) for the Code-review record -- the legacy population, ENUMERATED.
+#: The Code-review record's legacy population, ENUMERATED.
 #: ``stem -> {raw-heading digest: n}``, the same shape as `_LEGACY_PASSES`, so
-#: `_is_legacy`'s k-th-occurrence anti-replay rule applies unchanged (R3').
+#: `_is_legacy`'s k-th-occurrence anti-replay rule applies unchanged.
 #:
-#: **Baseline commit `4ca44eb8d1b378a0214019270e1a2d83976c7bb0`.**  R3' requires
+#: **Baseline commit `4ca44eb8d1b378a0214019270e1a2d83976c7bb0`.**  The rule requires
 #: the baseline pinned to one named commit and recorded in the manifest; the
 #: generator, `scripts/gen_legacy_code_review_passes.py`, reads *that commit's*
 #: tree rather than the working tree, so the population is reproducible by
@@ -2042,7 +2042,7 @@ _LEGACY_CODE_REVIEW_RECORDS: Dict[str, Dict[str, int]] = {
     "verification-evidence-boundaries": {"3710ab6ae7910816": 1},
 }
 
-#: R3', final bullet: for a legacy pass whose verdict BLOCKS, the manifest
+#: For a legacy pass whose verdict BLOCKS, the manifest
 #: *"additionally names the specific admitted disposition heading that completes
 #: each record."*  ``stem -> {pass digest: disposition-heading digest}``.
 #:
@@ -2061,7 +2061,7 @@ _LEGACY_CODE_REVIEW_RECORDS: Dict[str, Dict[str, int]] = {
 #: already uses for the same reason, and
 #: ``gen_legacy_code_review_passes.py --report`` resolves it back to text.
 #:
-#: **The population is four, not the two R2' names.**  R2' names
+#: **The population is four, not the two the vocabulary names.**  It names
 #: `record-corrections` and `release-security-orchestration`, measured
 #: `as_of 2026-08-10`.  Re-derived at the baseline commit
 #: (`gen_legacy_code_review_passes.py --report`): `release-security-bar` and
@@ -2077,11 +2077,11 @@ _LEGACY_CODE_REVIEW_DISPOSITIONS: Dict[str, Dict[str, str]] = {
 
 
 def _record_boundaries(art: Artifact) -> List[int]:
-    """R4 -- the ONE canonical ordered boundary set, of **both** record kinds.
+    """The ONE canonical ordered boundary set, of **both** record kinds.
 
     Level-<=2 Sections, unioned with every raw conforming pass line of either
-    kind.  B1 built this from `_S1_PASS_RE` alone because the Code-review
-    grammar did not exist yet; R4 asks for both, and this completes it.
+    kind.  This was built from `_S1_PASS_RE` alone because the Code-review
+    grammar did not exist yet; both kinds are needed, and this completes it.
 
     Widening a boundary set can only ever **narrow** a body, never widen one, so
     applying it to already-recognized sections stays safe -- the property
@@ -2091,7 +2091,7 @@ def _record_boundaries(art: Artifact) -> List[int]:
     it, and that pass's body ran straight through it -- swallowing its
     attestation lines and reporting them as the *earlier* pass's duplicates.
 
-    P1 adds the proposal `## Review` record as a third kind, on the same
+    The proposal `## Review` record is a third kind, on the same
     argument and with the same measured safety: those lines occur only in
     proposals and plan passes only in plans, so no plan pass body changes by a
     byte -- and where a proposal review heading *is* parseable by `_HEADER_RE` it
@@ -2120,7 +2120,7 @@ def _code_review_records(art: Artifact) -> List[Tuple[int, str, str]]:
     """Every Code-review record heading in *art*, in document order.
 
     ``(line_no, raw_heading, kind)`` with *kind* one of ``pass`` (conforming per
-    R2''), ``container`` (a ``## Code review`` heading that is not a pass), or
+    the grammar), ``container`` (a ``## Code review`` heading that is not a pass), or
     ``response``.  One ordered stream, because the legacy fence counts
     occurrences and the count must be taken over the same sequence the generator
     walked.
@@ -2144,7 +2144,7 @@ def _code_review_pass_body(art: Artifact, line_no: int) -> str:
 
 
 def _parse_verdict(body: str) -> Tuple[Optional[str], Optional[str]]:
-    """R2' -- ``(clearing|blocking, violation)`` from one pass's field scope."""
+    """``(clearing|blocking, violation)`` from one pass's field scope."""
     found = _REVIEW_FIELD_RE["Verdict"].findall(_EMPHASIS_RE.sub("", body))
     if not found:
         return None, "missing Verdict"
@@ -2165,7 +2165,7 @@ def _parse_verdict(body: str) -> Tuple[Optional[str], Optional[str]]:
 
 def _code_review_ordering_violations(
         passes: List[Tuple[int, str, str, Optional[str]]]) -> List[str]:
-    """R2'' -- the ordering rules, over passes **sharing a date**.
+    """The ordering rules, over passes **sharing a date**.
 
     Document order is authoritative, and `(round N)` exists only to make round
     order and document order agree.  So among passes sharing one date: a round
@@ -2176,7 +2176,7 @@ def _code_review_ordering_violations(
     Two *unnumbered* passes sharing a date are **allowed** -- one archived plan
     has them, from two different reviewers on one day -- and the ambiguity that
     creates is answered where it actually bites, in the `Answers:` binding's
-    exactly-one-match rule ([R3-E2]), not by refusing the passes.
+    exactly-one-match rule, not by refusing the passes.
     """
     v: List[str] = []
     by_date: Dict[str, List[Tuple[int, Optional[str]]]] = {}
@@ -2205,9 +2205,9 @@ def _code_review_ordering_violations(
 
 
 def _code_review_violations(art: Artifact) -> List[str]:
-    """The Code-review record contract over one artifact (C1/C2/C4).
+    """The Code-review record contract over one artifact.
 
-    **Not a public entry point and not a second predicate.**  R5'' folds
+    **Not a public entry point and not a second predicate.**  It folds
     Code-review evaluation *into* `review_record_violations`, which already
     declares itself the one predicate (S12); this is that function's
     Code-review half, factored out for reading only, and it has exactly one
@@ -2219,7 +2219,7 @@ def _code_review_violations(art: Artifact) -> List[str]:
     v: List[str] = []
 
     # The legacy fence, walked over the ordered stream so occurrence k is the
-    # k-th appearance of that digest in the file (R3's anti-replay component).
+    # k-th appearance of that digest in the file (the anti-replay component).
     seen: Dict[str, int] = {}
     legacy: Dict[int, bool] = {}
     for line_no, raw, _kind in records:
@@ -2231,14 +2231,14 @@ def _code_review_violations(art: Artifact) -> List[str]:
     passes = _code_review_pass_lines(art)
     v.extend(_code_review_ordering_violations(passes))
 
-    # R2''s binding, with legacy Responses exempt.  A Response is a record about
+    # The binding, with legacy Responses exempt.  A Response is a record about
     # a pass, so its defects are reported whether or not a pass is the latest.
     v.extend(code_review_binding_violations(
         art, skip_lines={line_no for line_no, _raw, kind in records
                          if kind == "response" and legacy[line_no]}))
 
     if not passes:
-        # Presence.  R2: "Absent Code review on an `archived` plan remains the
+        # Presence.  "Absent Code review on an `archived` plan remains the
         # existing violation."  A legacy container satisfies it, but only with a
         # reviewer marker somewhere: grandfathering reaches records written
         # before the schema, not records with no reviewer identity at all.
@@ -2255,7 +2255,7 @@ def _code_review_violations(art: Artifact) -> List[str]:
             "code review while it reported success).")
         return v
 
-    line_no, reviewer, date, _round = passes[-1]   # R2'': document order
+    line_no, reviewer, date, _round = passes[-1]   # document order
     label = f"'## Code review -- {reviewer} -- {date}'"
     ok_date, date_violation = _parse_pass_date(date)
     if date_violation:
@@ -2263,7 +2263,7 @@ def _code_review_violations(art: Artifact) -> List[str]:
         # states: an exemption keyed on the heading would otherwise swallow the
         # date contract, which is how the replaced dated epoch failed.
         v.append(f"{label}: {date_violation}")
-    # P5 -- also BEFORE the fence, and for the same reason P1's basis check sits
+    # Also BEFORE the fence, and for the same reason the basis check sits
     # before `_LEGACY_PASSES`' `continue`.  `_LEGACY_CODE_REVIEW_RECORDS`
     # grandfathers records written before the Code-review schema existed; a plan
     # declaring `Inherited proposal basis:` necessarily post-dates P2-R, so no
@@ -2274,9 +2274,9 @@ def _code_review_violations(art: Artifact) -> List[str]:
         return v + _legacy_disposition_violations(art, stem, line_no, label)
 
     body = _code_review_pass_body(art, line_no)
-    # P1: the four-field basis is now ONE shared checker across all three record
+    # The four-field basis is ONE shared checker across all three record
     # kinds (`_review_basis_violations`).  `**Model**:` stays here because it is
-    # R2's Code-review-only attestation, not part of the parent's basis.
+    # A Code-review-only attestation, not part of the parent's basis.
     v.extend(_review_basis_violations(body, label))
     v.extend(_single_field_violations(body, "Model", label))
     _find, findings_violation = _parse_one_field(
@@ -2286,11 +2286,11 @@ def _code_review_violations(art: Artifact) -> List[str]:
         if problem:
             v.append(f"{label}: {problem}")
     if verdict == "blocking":
-        # R2', the whole point: no disposition branch.  A `## Response to code
+        # The whole point: no disposition branch.  A `## Response to code
         # review` records the implementer's answer and does NOT clear archive --
         # eligibility comes from a later pass by an independent correction
         # reviewer, which is the accepted parent's boundary this amendment was
-        # written to supply rather than weaken ([R2-E1]).
+        # written to supply rather than weaken.
         v.append(
             f"{label} carries a BLOCKING verdict, so this state is refused. A "
             "'## Response to code review' does not clear it: correct the "
@@ -2298,13 +2298,13 @@ def _code_review_violations(art: Artifact) -> List[str]:
             "range, and have an independent correction reviewer append a new "
             "pass. Archive eligibility comes from THAT pass's clearing verdict.")
     # 'Findings: raised' with a clearing verdict is a COMPLETE record and does
-    # not block ([A1] -- the common case; a schema must not criminalise it).
+    # not block -- the common case; a schema must not criminalise it.
     return v
 
 
 def _legacy_disposition_violations(art: Artifact, stem: str, line_no: int,
                                    label: str) -> List[str]:
-    """R3', final bullet -- a blocking legacy pass needs its named disposition.
+    """A blocking legacy pass needs its named disposition.
 
     Silent when the pass carries no verdict line (15 of the 38 corpus passes do
     not) or a clearing one: grandfathering exempts a legacy record from the
@@ -2332,7 +2332,7 @@ def _legacy_disposition_violations(art: Artifact, stem: str, line_no: int,
             "'scripts/gen_legacy_code_review_passes.py --report')"]
 
 
-# === P1 -- the four-field basis across all three record kinds ================
+# === the four-field basis across all three record kinds ======================
 #
 # The accepted `review-efficient-lifecycle` parent, "Bounded current contracts":
 #
@@ -2348,7 +2348,7 @@ def _legacy_disposition_violations(art: Artifact, stem: str, line_no: int,
 # **`## Review`** record, and adds the artifact-level `Assurance path:`
 # declaration from the parent's "Assurance paths" section.
 #
-# What the tool does and does not claim (unchanged from R1 and restated because
+# What the tool does and does not claim (restated because
 # this block is where a reader will look for it): it checks that the record
 # EXISTS and BINDS.  It never checks that the declared assurance path is the
 # *true* classification of the change -- the five high-assurance triggers are
@@ -2376,9 +2376,9 @@ _PROPOSAL_REVIEW_RECORD_RE = re.compile(r"^## Review -- \S.*$")
 
 
 #: **Grandfathering follows immutability, not directory.**  This is the shape
-#: Chunk D4 landed in `scripts/claim_check.py` for the same problem, reused here
+#: The same rule landed in `scripts/claim_check.py` for the same problem, reused here
 #: rather than re-invented -- its accepted contract
-#: (`claim-check-exemption-hygiene` R3) states it as: any file under
+#: (`claim-check-exemption-hygiene`) states it as: any file under
 #: `dev/proposals/archive/` or `dev/plans/archive/`; a proposal whose strictly
 #: parsed status is `accepted` / `rejected` / `superseded`; or a plan whose
 #: strictly parsed status is `archived`.
@@ -2424,7 +2424,7 @@ def _strict_header_status(text: str) -> Optional[str]:
 
     ``None`` means "not grandfathered".  A missing, duplicate, or unrecognized
     status therefore falls through *into* the requirement rather than silently
-    inheriting the exemption -- the fail-closed direction D4's contract names.
+    inheriting the exemption -- the fail-closed direction that contract names.
     """
     found: List[str] = []
     for line in _split_lines(text):
@@ -2448,18 +2448,18 @@ def _is_immutable(art: Artifact) -> bool:
 #: The commit at which the two enumerations below were derived, pinned and named
 #: so a reader can reproduce the population instead of trusting the literals.
 #: Records appearing after it conform to the forward schema or violate -- the
-#: contract is forward-only, exactly as R3' requires of the Chunk C manifest.
+#: contract is forward-only, exactly as the accepted rule requires of the manifest.
 _BASIS_BASELINE_COMMIT = "50a32237c54cbce437b0834c48bd9c5645b9cd7a"
 
-#: S9(a)-shaped legacy population for the **basis requirement specifically**.
+#: The legacy population for the **basis requirement specifically**.
 #: ``stem -> {raw-heading digest: occurrence count}`` -- `_LEGACY_PASSES`' shape,
 #: so `_is_legacy`'s k-th-occurrence anti-replay rule applies unchanged: an
 #: appended heading byte-identical to an admitted one is occurrence ``n + 1`` and
 #: is refused.
 #:
 #: **This is deliberately NOT `_LEGACY_PASSES`.**  That enumeration exempts a
-#: pass from S2/S3/S7 (Tier, Findings, disposition).  Every record below already
-#: satisfies S2/S3/S7 today, so folding them into `_LEGACY_PASSES` would *weaken*
+#: pass on Tier, Findings and disposition.  Every record below already
+#: satisfies all three today, so folding them into `_LEGACY_PASSES` would *weaken*
 #: the gate for those records while appearing to do nothing but grandfather. A
 #: separate manifest, scoped to the one obligation it grandfathers, is what keeps
 #: each exemption saying only what it means.
@@ -2472,7 +2472,7 @@ _BASIS_BASELINE_COMMIT = "50a32237c54cbce437b0834c48bd9c5645b9cd7a"
 #: omission** -- `_is_immutable` is the predicate that does the rest of the work,
 #: and it is tested directly.
 #:
-#: **Hand-authored, and no generator.**  Chunk C3 built a generator over a named
+#: **Hand-authored, and no generator.**  A generator over a named
 #: baseline for its 38 records, plus an independently-typed second derivation as
 #: the oracle, because nobody can eyeball a 38-entry table.  Eight entries in
 #: three artifacts is not that problem: a second shipped script, a
@@ -2555,16 +2555,16 @@ def _review_basis_violations(body: str, label: str) -> List[str]:
 
 def _pass_obligation(field_scope: str,
                      declared: Tuple[Tuple[str, str], ...]) -> Optional[str]:
-    """R3 -- the ONE declared clause a Plan-review pass binds itself to.
+    """The ONE declared clause a Plan-review pass binds itself to.
 
     *field_scope* is the pass body up to its first H3 (`_record_field_scope`),
-    because R3 places the field *"before its first H3"* -- the same scope the
+    because the field sits *"before its first H3"* -- the same scope the
     four-field basis uses, so a field parked under a subsection does not count.
 
-    ``None`` is returned for every one of R3's four fail-closed conditions --
+    ``None`` is returned for every one of the four fail-closed conditions --
     *"Missing, duplicate, undeclared, or repeated-obligation values do not clear
     the floor"* -- and ``None`` means exactly that: the pass clears nothing.  It
-    is deliberately not a per-pass violation, because R3 states the consequence as
+    is deliberately not a per-pass violation, because the contract states the consequence as
     a floor consequence, and because the failure direction is the safe one: a
     typo'd obligation makes the floor *harder* to satisfy, never easier.
 
@@ -2585,7 +2585,7 @@ def _pass_obligation(field_scope: str,
 
 def _record_field_scope(lines: List[str], line_no: int,
                         boundaries: List[int]) -> str:
-    """One record's body, cut at its first H3 -- the field scope R2 names.
+    """One record's body, cut at its first H3 -- the declared field scope.
 
     The H3 cut is not tidiness and was measured on real records: a review pass
     routinely carries a `### 4. Verdict & Archive Readiness` or `### Coverage`
@@ -2613,11 +2613,11 @@ def _proposal_review_records(art: Artifact) -> List[Tuple[int, str]]:
 
 
 def proposal_review_basis_violations(art: Artifact) -> List[str]:
-    """P1 -- the review basis over a proposal's `## Review` records.
+    """The review basis over a proposal's `## Review` records.
 
     Public because **both** gate surfaces consume it: `_conformance_violations`
     (what `scan` reports) and `_gating_preconditions` (what `next --to <target>`
-    reports).  Wiring only the first is the exact defect [R3-E1] executed on the
+    reports).  Wiring only the first is the exact defect executed on the
     Code-review half -- one surface tightens, the other stays presence-only, and
     the loose one is the one an author drives.
     """
@@ -2640,11 +2640,11 @@ def proposal_review_basis_violations(art: Artifact) -> List[str]:
 
 
 def assurance_declaration_violations(art: Artifact) -> List[str]:
-    """P1 -- the proposal's artifact-level `Assurance path:` declaration.
+    """The proposal's artifact-level `Assurance path:` declaration.
 
     The accepted parent's "Assurance paths": *"A proposal-worthy change declares
     `standard` or `high-assurance`."*  It is the **proposal** that declares --
-    the plan carries the inheritance metadata instead, which is P2's cell.
+    the plan carries the inheritance metadata instead.
 
     **It never defaults to `standard`.**  Missing, duplicated and
     out-of-vocabulary all refuse; the parent is explicit that *"Uncertainty
@@ -2698,9 +2698,9 @@ def _iter_header_lines(text: str):
 
 
 def _near_miss_headings(art: Artifact) -> List[str]:
-    """Every heading that begins `Plan review` but is **not** an S1 pass.
+    """Every heading that begins `Plan review` but is **not** a conforming pass.
 
-    S8 requires the refusal to *quote* these: an author who wrote
+    The refusal must *quote* these: an author who wrote
     ``### Plan review -- R -- 2026-05-01`` (H3), ``## Plan review -- R``
     (undated), a bare ``## Plan review`` container, or ``## Plan reviewers``
     is told which heading did not count, instead of being left to guess which
@@ -2722,18 +2722,18 @@ def _near_miss_headings(art: Artifact) -> List[str]:
 
 def _is_legacy(stem: str, dig: str, seen: Dict[str, int],
                manifest: Optional[Dict[str, Dict[str, int]]] = None) -> bool:
-    """S9(b) -- is this the k-th occurrence of `dig`, with k <= manifest count?
+    """Is this the k-th occurrence of `dig`, with k <= manifest count?
 
     **One k-th-occurrence rule, two manifests.**  Chunk C adds a second
     enumeration (`_LEGACY_CODE_REVIEW_RECORDS`) for the Code-review record, and
-    the accepted `code-review-blindness` **R3'** requires that it match
+    the accepted `code-review-blindness` requires that it match
     `_LEGACY_PASSES`' shape *"so ``_is_legacy``'s k-th-occurrence rule applies
     unchanged"*.  A default argument is how that stays literally true: writing a
     sibling `_is_legacy_code_review` would put two implementations of one
     anti-replay rule in the file, and the next person to fix a bug in one of
     them would not know to fix the other.
 
-    P1 adds a **third** enumeration through the same argument
+    A **third** enumeration goes through the same argument
     (`_LEGACY_UNDECLARED_BASIS`), which is what the default argument was built
     for: one anti-replay rule, now three scoped populations.
     """
@@ -2742,7 +2742,7 @@ def _is_legacy(stem: str, dig: str, seen: Dict[str, int],
     return seen.get(dig, 0) <= admitted
 
 
-# === P5 -- the `Contract non-expansion` attestation (binds into C) ===========
+# === the `Contract non-expansion` attestation ================================
 #
 # The accepted `review-efficient-lifecycle` parent, "Standard-path
 # plan-readiness inheritance":
@@ -2762,22 +2762,22 @@ def _is_legacy(stem: str, dig: str, seen: Dict[str, int],
 # The amendment (`code-review-blindness`, "Contract non-expansion") bounds what
 # this chunk may do: it *"validates its **presence and binding shape** when the
 # plan declares inheritance, and treats `NOT VERIFIED` as blocking. It does not
-# attempt to validate the semantic claim"*, and its **R6** lists "Semantic
+# attempt to validate the semantic claim"*, and it lists "Semantic
 # verification of `Contract non-expansion`" as a deliberate exclusion.
 #
-# So the whole of P5 is: PRESENCE, the closed VOCABULARY, and the three
+# So the whole of it is: PRESENCE, the closed VOCABULARY, and the three
 # bindings' SHAPE.  Nothing here reads the plan's prose, compares contracts, or
 # forms an opinion about whether the attested claim is true -- and no future
 # widening of this block may, without returning to the proposal boundary.
 #
-# **What P5 deliberately does NOT do, and where it lives instead.**  It does not
+# **What this deliberately does NOT do, and where it lives instead.**  It does not
 # check that `Basis: proposal=<X>` *equals* the commit the plan's own
 # `Inherited proposal basis` names.  That cross-artifact equality is a real
 # check and it is **P2-R's and P8-R's** ("changed review or accepted-proposal
 # SHA refuses" -- the Maintainer-directed contract revision's required test
-# matrix), which own the inheritance field's value grammar.  P5 lands *before*
-# P2 in `## Sequence`, so hard-coding a second, earlier reading of that grammar
-# here is how the two would come to disagree.  P5 therefore keys on the field's
+# matrix), which own the inheritance field's value grammar.  This landed *before*
+# that field existed, so hard-coding a second, earlier reading of the grammar
+# here is how the two would come to disagree.  It therefore keys on the field's
 # PRESENCE and never parses its value.
 
 
@@ -2797,7 +2797,7 @@ def _is_legacy(stem: str, dig: str, seen: Dict[str, int],
 #:     Inherited proposal basis: review=<full External-review commit>;
 #:                                 proposal=<full accepted commit>
 #:
-#: P2-R implements that field.  P5 keys on it by name so the two chunks meet at
+#: The field is implemented elsewhere; this keys on it by name so the two meet at
 #: one key rather than inventing a second spelling of "this plan is inherited";
 #: `Plan review: inherited(...)` is NOT a trigger here, because the revision
 #: removed it and a plan under the current contract declares `required(Internal)`
@@ -2863,7 +2863,7 @@ def _declares_inheritance(art: Artifact) -> bool:
       triggers -- which is the fail-closed direction, because the alternative
       (requiring a parseable value before the attestation is owed) lets a
       half-written declaration buy silence on the backstop.  The value's own
-      grammar is P2-R's obligation and refuses there; P5 does not read it.
+      grammar is the field owner's obligation and refuses there; this does not read it.
     """
     if art.kind != "plan":
         return False
@@ -2927,7 +2927,7 @@ def _basis_binding_violations(
     or manifest", two different notations, and a pattern narrow enough to
     validate one would refuse the other.
 
-    **One rule, two fields.**  P5 wrote this for the Code-review `Basis:` line's
+    **One rule, two fields.**  This was written for the Code-review `Basis:` line's
     three bindings; P2-R's `Inherited proposal basis` is the same grammar with two
     keys and no free-text member, so it is passed in rather than given a second
     implementation -- the shape `_is_legacy` already uses for its three manifests.
@@ -2977,7 +2977,7 @@ def _basis_binding_violations(
 
 def _non_expansion_violations(art: Artifact, line_no: int,
                               label: str) -> List[str]:
-    """P5 -- the backstop over the latest Code-review pass of an *inherited* plan.
+    """The backstop over the latest Code-review pass of an *inherited* plan.
 
     Silent for every plan that does not declare inheritance, which today is
     **every plan in this tree** (measured: zero `Inherited proposal basis`
@@ -3103,12 +3103,12 @@ def _non_expansion_violations(art: Artifact, line_no: int,
 # checkable from repository bytes, because a commit cannot contain its own id, so
 # a binding to the Decision commit could never be more than a shape.  So
 # `proposal=` is the reviewed-and-accepted proposal commit, which every
-# conforming `## Review` record already carries as P1's `Reviewed commit:`, and
+# conforming `## Review` record already carries as its `Reviewed commit:`, and
 # the equality below is what makes the binding *exact* rather than well-formed.
 #
 # WHY THE PARENT'S `Basis:` LINE ON THE READINESS RECORD IS NOT A THIRD FIELD.
 # The parent asks the readiness record to carry "<full reviewed proposal commit
-# and complete-current-contract heading>".  P1 already lands both of those as
+# and complete-current-contract heading>".  Both of those already land as
 # mandatory fields of every review record -- `Reviewed commit:` ("full commit
 # id") and `Target:` ("complete current-contract section") -- so requiring a
 # second spelling of the same two facts would fork a vocabulary, which is the
@@ -3133,7 +3133,7 @@ def _non_expansion_violations(art: Artifact, line_no: int,
 #     has to add the reach explicitly rather than arrive by edit.
 #   * **Whether the plan's chunks really translate the accepted contract**, in
 #     either direction.  Both delta declarations below are AUTHOR DECLARATIONS,
-#     exactly as P2's own cell requires: *"Semantic triggers are author
+#     exactly as that field requires: *"Semantic triggers are author
 #     declarations, not inferences ... the tooling checks that the record exists
 #     and binds, never the truth of the classification."*  An UNDECLARED
 #     expansion or reduction is invisible here.  For the reduction direction that
@@ -3213,7 +3213,7 @@ _ANY_HEADING_RE = re.compile(r"^#{1,6} ")
 #: speaks of inheriting but is not the exact field name is a *near miss* -- and a
 #: near miss here is silent by construction, because a plan that fails to declare
 #: inheritance is simply not an inherited plan.  Amendment D requires it to
-#: refuse, so it is detected the way S8 already detects a near-miss review
+#: refuse, so it is detected the way a near-miss review heading already is
 #: heading: recognize the neighbourhood, then quote the line that did not count.
 #: Deliberately keyed on the word `inherit`, which is what every plausible
 #: misspelling of this field retains (`Inherited basis`, `Inherited proposal`,
@@ -3221,7 +3221,7 @@ _ANY_HEADING_RE = re.compile(r"^#{1,6} ")
 _INHERITANCE_NEAR_MISS_RE = re.compile(
     r"^(?:\*\*|__)?(?P<label>[^:\n]*inherit[^:\n]*?)(?:\*\*|__)?:", re.I)
 
-#: The RETIRED parent spelling, refused at the `**Plan review**:` field.  P5 filed
+#: The RETIRED parent spelling, refused at the `**Plan review**:` field.  Filed
 #: this gap explicitly at P2-R (`test_the_retired_parent_spelling_is_not_the_
 #: trigger`: *"Refusing the retired spelling AT the `Plan review:` field is the
 #: `Plan review` vocabulary's business (P2-R / Chunk E), not this block's"*), and
@@ -3232,7 +3232,7 @@ _INHERITANCE_NEAR_MISS_RE = re.compile(
 #: plan-review obligation checked at all.
 _RETIRED_INHERITED_PLAN_REVIEW_RE = re.compile(r"^\s*inherited\s*\(", re.I)
 
-#: [CF1] -- the third value the monitoring ledger's `assurance_path` field may
+#: The third value the monitoring ledger's `assurance_path` field may
 #: carry, and it is NOT an assurance path: it is the resolved fact that a plan
 #: declares no inheritance chain, so there is no proposal declaration to inherit.
 #: A positive answer, not a default -- the two real tokens stay exactly
@@ -3355,9 +3355,9 @@ def _canonical_readiness(raw: str) -> Optional[str]:
 def plan_readiness_violations(art: Artifact) -> List[str]:
     """P2-R -- the proposal-side `Plan readiness:` declaration's SHAPE.
 
-    Public because both gate surfaces consume it, the rule P1's two predicates
+    Public because both gate surfaces consume it, the rule the two predicates
     already follow: wiring only `scan` leaves `next` presence-only, and the loose
-    surface is the one an author drives ([R3-E1]).
+    surface is the one an author drives.
 
     Shape only: presence is optional (a reviewer *may* record readiness -- the
     parent's word), a duplicate within one record refuses, and a value outside
@@ -3461,7 +3461,7 @@ def _declared_reduction(art: Artifact) -> List[Tuple[int, str, bool]]:
     visually-isolated authorization blockquote -- the identical idiom, and the
     identical predicate (`_has_isolated_blockquote`), that a `## Decision` uses
     for the Maintainer's verbatim words under `AGENTS.md`'s scribing guard-rail.
-    As there, the tool attests **structure, never authenticity** (R1): the
+    As there, the tool attests **structure, never authenticity**: the
     committing operator remains the guarantor that the quoted words were said.
 
     A `preserved`, absent, or unrecognized value yields nothing.  That is not an
@@ -3493,7 +3493,7 @@ def plan_inheritance_violations(art: Artifact) -> List[str]:
     Silent for every plan that does not declare inheritance, which today is
     **every plan in this tree** (measured 2026-08-12: zero of 94 artifacts carry
     a header `Inherited proposal basis:`).  The trigger is `_declares_inheritance`
-    -- P5's, deliberately the *same* predicate, so the two chunks meet at one key
+    -- deliberately the *same* predicate, so the two meet at one key
     rather than at two spellings of "this plan is inherited".
 
     Every direction below is a refusal and **none defaults to `READY`**
@@ -3653,7 +3653,7 @@ def plan_inheritance_violations(art: Artifact) -> List[str]:
 
 
 def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
-    """[CF1] -- the assurance path a PLAN carries, through P2-R's chain.
+    """The assurance path a PLAN carries, through the inheritance chain.
 
     Returns ``(value, [])`` where *value* is one of `ASSURANCE_PATHS` or
     `ASSURANCE_NOT_INHERITED`, or ``(None, problems)``.  **Never guesses**: a plan
@@ -3661,7 +3661,7 @@ def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
     reasons, so the caller refuses loudly instead of recording a default.
 
     This exists because a plan has no artifact-level assurance declaration of its
-    own -- P1 pinned that absence deliberately
+    own -- that absence is pinned deliberately
     (`test_a_plan_carries_no_artifact_level_declaration`: *"the plan carries the
     inheritance metadata instead"*) -- so the only honest way to answer "what
     assurance path did this plan run under" is to follow the chain to the
@@ -3695,7 +3695,7 @@ def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
     return value, []
 
 
-# === P3 -- the complete current contract and its withdrawal ledger ===========
+# === the complete current contract and its withdrawal ledger ==================
 #
 # The accepted `review-efficient-lifecycle` parent, "Bounded current contracts"
 # (`dev/proposals/archive/2026-08-10-codex-review-efficient-lifecycle.md`,
@@ -3754,7 +3754,7 @@ def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
 # immutable** -- 51 by archive location and `2026-08-11-claude-metrics-events-not-
 # prose.md` by its terminal `accepted` status.  The 15 archived proposals with a
 # Response and no revision section at all are likewise immutable to the last one.
-# So unlike P1 and C, this obligation ships with **no legacy manifest**: there is
+# So unlike its siblings, this obligation ships with **no legacy manifest**: there is
 # nothing live for one to hold, and a manifest with no entries is a maintenance
 # burden pretending to be a control.  The consequence is that the live trigger set
 # is EMPTY, which is why every refusal below is proven on a synthetic fixture and
@@ -3779,7 +3779,7 @@ _ATX_HEADING_RE = re.compile(r"^(?P<hashes>#{1,6})[ \t]+(?P<text>.*?)[ \t]*$")
 #: `## Response to the External security review` (measured: 30 distinct heading
 #: lines across the corpus, all of them opening with the word).  `Revised
 #: proposal|Revision` likewise covers all 39 revision headings, including
-#: `## Revised proposal, round 3 -- ...` and `## Revision after the [I2]
+#: `## Revised proposal, round 3 -- ...` and `## Revision after the
 #: direction -- ...`.  Word-anchored, so `## Revisiting the loader` is not a
 #: revision.
 _RESPONSE_NORM_RE = re.compile(r"response\b")
@@ -3793,7 +3793,7 @@ _LEDGER_LEVEL = 3
 #: Whitespace around the slash is normalized away before the comparison, so
 #: `### Withdrawn/superseded commitments` conforms.  Tolerant on FORMATTING,
 #: strict on WORDS and LEVEL: a word variant or a wrong level is reported as a
-#: near miss with the offending line quoted (S8's rule, reused), never silently
+#: near miss with the offending line quoted, never silently
 #: accepted and never left as a bare "missing" for the author to guess at.
 _LEDGER_SLASH_RE = re.compile(r"[ \t]*/[ \t]*")
 
@@ -3906,11 +3906,11 @@ def _ledger_value_is_written(text: str, start: int, end: int) -> bool:
 
 
 def current_contract_violations(art: Artifact) -> List[str]:
-    """P3 -- the complete current-contract revision and its withdrawal ledger.
+    """The complete current-contract revision and its withdrawal ledger.
 
-    Public because **both** gate surfaces consume it, the rule P1's and P2's
+    Public because **both** gate surfaces consume it, the rule the sibling
     predicates already follow: wiring only `scan` leaves `next` presence-only, and
-    the loose surface is the one an author drives ([R3-E1]).
+    the loose surface is the one an author drives.
 
     Silent for a plan (the contract's next paragraph gives the plan the opposite
     rule -- *"Its appended Response is a finding-disposition table that ... does
@@ -4001,12 +4001,12 @@ def review_record_violations(art: Artifact,
 
     Both gate call sites -- ``_conformance_violations`` and
     ``_gating_preconditions`` -- go through this function, so the two cannot
-    drift into disagreeing about the same record.  A pass that fails S1 is
+    drift into disagreeing about the same record.  A pass that fails the grammar is
     **neither a pass nor a violation**: it can no longer clear anything, because
-    clearing requires an S1 match, and near misses therefore fail closed as
+    clearing requires a grammar match, and near misses therefore fail closed as
     "no conforming pass has landed" rather than as "a pass with problems".
 
-    *effective_state* (R5'') is the state being asserted, **explicitly**: the
+    *effective_state* is the state being asserted, **explicitly**: the
     current status for `scan`, the requested target for `next`/closeout.  It
     decides only the Code-review half; the Plan-review half is decided by the
     plan's own declaration.  `None` means "the artifact's current status", which
@@ -4016,7 +4016,7 @@ def review_record_violations(art: Artifact,
     Plan-review obligations are evaluated only when the plan declares
     `required(...)`; Code-review obligations are evaluated whenever the effective
     state is archive-effective, *regardless* of that declaration.  Keying the
-    Code-review half on the declaration is the bypass [R3-E1] executed: a plan
+    Code-review half on the declaration is the bypass review executed: a plan
     declaring `Plan review: not required(doc-only)` never reached this predicate
     at all, so deleting the weak `_has_kind` presence check would have made such
     a plan archive **clean**.
@@ -4035,11 +4035,11 @@ def review_record_violations(art: Artifact,
     if tier_violation:
         v.append(f"'**Plan review**:' {tier_violation}")
     if obligation_violation and obligation_violation != tier_violation:
-        # R3 -- a `+` declaration whose clauses cannot be resolved is reported
+        # A `+` declaration whose clauses cannot be resolved is reported
         # once against the DECLARATION.  It also leaves `obligations` empty, so
         # nothing below can clear a floor whose shape is unknown.
         v.append(f"'**Plan review**:' {obligation_violation}")
-    # R3 -- "`Plan review: required(A + B)` means two obligations and two
+    # "`Plan review: required(A + B)` means two obligations and two
     # distinct review passes."  The one-obligation schema is unchanged, so the
     # per-pass `**Obligation**:` binding is required only under a `+`.
     multi = len(obligations) > 1
@@ -4052,21 +4052,21 @@ def review_record_violations(art: Artifact,
     boundaries = _record_boundaries(art)
     for sec, dig in _pass_headings(art):
         seen[dig] = seen.get(dig, 0) + 1
-        # S1 IS CHECKED BEFORE THE S9 FENCE, and the order is load-bearing.
-        # The enumeration exempts a pass from S2, S3 and S7 (S9(b)) -- never
-        # from S1.  With the fence first, an exemption keyed on the heading
+        # THE GRAMMAR IS CHECKED BEFORE THE LEGACY FENCE, and the order is load-bearing.
+        # The enumeration exempts a pass from Tier, Findings and disposition --
+        # never from the grammar.  With the fence first, an exemption keyed on the heading
         # swallows the date contract, which is exactly how the replaced dated
         # epoch failed: `0000-00-00` sorts before every epoch, so the
         # impossible value bought the exemption *and* silenced the
-        # malformed-date violation.  Checking S1 first leaves no fence,
+        # malformed-date violation.  Checking the grammar first leaves no fence,
         # present or future, able to swallow it.
         ok_date, date_violation = _parse_pass_date(sec.date)
         if date_violation:
             v.append(f"'{sec.kind} -- {sec.name}': {date_violation}")
-        # P1 -- the four-field basis, checked BEFORE the `_LEGACY_PASSES` fence
-        # below and against its OWN enumeration, for the same reason S1 is.
-        # `_LEGACY_PASSES` exempts a pass from S2/S3/S7 only; every pass this
-        # requirement newly reaches already satisfies S2/S3/S7, so letting that
+        # The four-field basis, checked BEFORE the `_LEGACY_PASSES` fence
+        # below and against its OWN enumeration, for the same reason the grammar is.
+        # `_LEGACY_PASSES` exempts the three field checks only; every pass this
+        # requirement newly reaches already satisfies them, so letting that
         # fence's `continue` swallow the basis check would weaken the gate for
         # those records while looking like grandfathering.
         if not immutable and not _is_legacy(stem, dig, seen,
@@ -4075,7 +4075,7 @@ def review_record_violations(art: Artifact,
                 _record_field_scope(lines, sec.line_no, boundaries),
                 f"'{sec.kind} -- {sec.name} -- {sec.date}'"))
         if _is_legacy(stem, dig, seen):
-            # Exempt from S2/S3/S7; satisfies the floor by presence, as the
+            # Exempt from the three field checks; satisfies the floor by presence, as the
             # Maintainer accepted these records before the schema existed.
             #
             # **And it satisfies the floor AS A WHOLE, including a `+` floor.**
@@ -4086,12 +4086,12 @@ def review_record_violations(art: Artifact,
             # `verification-evidence-boundaries` -- and every one of their passes
             # is admitted by `_LEGACY_PASSES`.  Requiring the new binding of them
             # would red three immutable artifacts that are green today, for a
-            # field that cannot be added to a record nobody may edit.  R3 assigns
+            # field that cannot be added to a record nobody may edit.  The contract assigns
             # exactly this population to migration, not here: *"Existing
             # multi-obligation passes are append-only.  Migration enumerates them
             # by artifact, raw-heading digest, and occurrence count, then records
             # which exact obligation each admitted pass satisfied."*  That
-            # enumeration is Chunk H1's, and it is the named residual of this
+            # enumeration is the migration's, and it is the named residual of this
             # chunk.
             grandfathered = True
             continue
@@ -4102,7 +4102,7 @@ def review_record_violations(art: Artifact,
             if problem:
                 v.append(f"'{sec.kind} -- {sec.name} -- {sec.date}': {problem}")
         if find == "raised" and not _has_disposition(art, sec):
-            # S7 -- positional, and it accepts EITHER house form.  See
+            # Positional, and it accepts EITHER house form.  See
             # _has_disposition: the tree uses both, roughly evenly, so a gate
             # that demanded one would redden half the existing dispositions
             # while enforcing a convention the project does not hold.
@@ -4114,10 +4114,10 @@ def review_record_violations(art: Artifact,
         if not (ok_date and tier and find):
             continue
         if multi:
-            # R3 -- ONE pass binds itself to ONE clause, so one pass structurally
+            # ONE pass binds itself to ONE clause, so one pass structurally
             # cannot clear two.  A pass whose `**Obligation**:` is missing,
             # duplicated, or undeclared clears nothing and is NOT reported here:
-            # R3's consequence for those values is verbatim *"do not clear the
+            # The consequence for those values is verbatim *"do not clear the
             # floor"*, and the floor's own message below is what surfaces it.
             # Reporting them per-pass instead would red this plan's own landed
             # Internal review, whose `**Obligation**:` names its authorizing
@@ -4157,16 +4157,16 @@ def review_record_violations(art: Artifact,
     return v
 
 
-# === Chunk E, E2: the R6 status/evidence contradiction predicates ============
+# === the status/evidence contradiction predicates =============================
 #
-# R6 lists eight contradictions `scan`, `next` and the accepted closeout command
+# The contract lists eight contradictions `scan`, `next` and the accepted closeout command
 # must refuse, and is explicit that they *"consume shared predicates"* -- so this
 # is ONE function taking the state as a parameter, on the same S12 pattern
 # `review_record_violations` already uses.  `scan` passes the current status,
-# `next` the requested target, and P4's `closeout --dry-run` will pass
+# `next` the requested target, and `closeout --dry-run` will pass
 # `ready-to-archive`; three call sites, one interpretation.
 #
-# **What these predicates can and cannot see.**  R6: *"The tools verify record
+# **What these predicates can and cannot see.**  *"The tools verify record
 # structure, not reviewer competence, authorization, or semantic truth."*  Each
 # refusal below is a claim about a record's SHAPE.  Two limits are named where
 # they bite rather than left for a reader to discover:
@@ -4180,7 +4180,7 @@ def review_record_violations(art: Artifact,
 #     already checks.  Whether the *content* of a disposition is honest is not
 #     reachable and is not claimed.
 
-#: R6 bullet 4 -- the plan states that assert plan review has CLEARED.  Not
+#: The plan states that assert plan review has CLEARED.  Not
 #: `awaiting-plan-review` and not `revising-plan`: at those two the review is
 #: outstanding or blocking by definition, so demanding a clearing pass there
 #: would make the two states unreachable.
@@ -4191,17 +4191,17 @@ PLAN_REVIEW_CLEARED_STATES = ("ready-to-implement", "implementing",
 #: must exist and must not be the author's own.  Both vocabularies, because the
 #: check is about the record and not about the token.
 #:
-#: **H1 deliberately did NOT narrow this tuple, departing from its own cost
+#: **The migration deliberately did NOT narrow this tuple, departing from its own cost
 #: list, because narrowing it disables a real check rather than merely changing
 #: a message.**
 #:
-#: Code review [C4] falsified the measurement an earlier version of this note
+#: Review falsified the measurement an earlier version of this note
 #: gave, and the corrected one is worse, not better. That version claimed the
 #: narrowing leaves `unknown proposal status` behind and that *"scan still exits
 #: 1 either way"*. It does not: it was taken against a partially-applied
 #: retirement. On the finished state, for a self-reviewed **archived** proposal
 #: declaring `reviewed`, narrowing this tuple yields **zero violations and exit
-#: 0** -- because [H1-D2] correctly exempts archived artifacts from the status
+#: 0** -- because archived artifacts are correctly exempt from the status
 #: check, so nothing at all remains to be non-zero about. The regression is
 #: therefore fully silent for archived artifacts, not merely camouflaged.
 #:
@@ -4215,7 +4215,7 @@ _PROPOSAL_POST_REVIEW_STATES = (
     "reviewed", "revised",
     "accepted", "rejected", "superseded")
 
-#: R4 -- the one optional plan metadata line.  Read from the HEADER region only,
+#: The one optional plan metadata line.  Read from the HEADER region only,
 #: for the reason `assurance_declaration_violations` reads its field there: a
 #: `**Blocked by**:` line quoted inside an appended review section is a historical
 #: restatement, not the plan's own declaration.
@@ -4223,7 +4223,7 @@ _BLOCKED_BY_FIELD = "Blocked by"
 
 
 def blocked_by_violations(art: Artifact) -> List[str]:
-    """R4 -- the orthogonal `**Blocked by**:` field's SHAPE, and nothing more.
+    """The orthogonal `**Blocked by**:` field's SHAPE, and nothing more.
 
     *"Absence means no recorded external blocker.  The field never changes the
     legal state machine and never substitutes for a status."*  So this returns
@@ -4232,7 +4232,7 @@ def blocked_by_violations(art: Artifact) -> List[str]:
     with no rule to pick one) and an empty value (a field that records nothing
     while looking like a record).
 
-    **What it deliberately does not check, because it cannot.**  R4 requires the
+    **What it deliberately does not check, because it cannot.**  The contract requires the
     value to *"name a falsifiable condition whose resolution is observable"* --
     that is a judgement about English, not a shape, and no scanner reaches it.  It
     also *"grants no authority and is not evidence that a gate passed"*: this
@@ -4283,7 +4283,7 @@ def _independent_review(art: Artifact) -> bool:
     """Does any `## Review` carry a byline distinct from the proposal author?
 
     Factored out of `_gating_preconditions`, where it was a local comprehension,
-    because E2's `awaiting-decision` predicate needs the same answer and a second
+    because the `awaiting-decision` predicate needs the same answer and a second
     copy is how the two surfaces come to disagree (S12).  It reads bylines: a
     review that IS independent but signed with the author's name reads as
     dependent, and a review signed with someone else's name reads as independent.
@@ -4301,7 +4301,7 @@ def _latest_proposal_review(art: Artifact) -> Tuple[Optional[int], Optional[str]
     """The latest `## Review` record's disposition -- ``(line, tier, findings, v)``.
 
     Document order is authoritative, exactly as it is for the Code-review record
-    (R2''): the last record in the file is the current one.  *tier* and *findings*
+    the last record in the file is the current one.  *tier* and *findings*
     are read from that record's field scope through the same closed vocabularies
     the Plan-review pass uses, and *v* carries the fail-closed reasons when either
     cannot be resolved.
@@ -4322,7 +4322,7 @@ def _latest_proposal_review(art: Artifact) -> Tuple[Optional[int], Optional[str]
 
 
 def _closeout_violations(art: Artifact, state: str) -> List[str]:
-    """R6 bullets 7 + 8 -- the closeout preconditions, on ONE predicate.
+    """The two closeout preconditions, on ONE predicate.
 
     Bullet 8 is *"`archived` when the same closeout predicate would reject
     `ready-to-archive`"*, which is a statement about *sharing*, not about two
@@ -4344,23 +4344,23 @@ def _closeout_violations(art: Artifact, state: str) -> List[str]:
 
 
 def status_evidence_violations(art: Artifact, state: str) -> List[str]:
-    """R6 -- every status/evidence contradiction for ONE explicit *state*.
+    """Every status/evidence contradiction for ONE explicit *state*.
 
     Public because three surfaces consume it: `_conformance_violations` (what
     `scan` reports for the current status), `_gating_preconditions` (what `next
-    --to <target>` requires) and, when P4 lands it, `closeout --dry-run`.  Wiring
-    only one is the defect [R3-E1] executed on the Code-review half -- one surface
+    --to <target>` requires) and `closeout --dry-run`.  Wiring
+    only one is the defect review executed on the Code-review half -- one surface
     tightens, the other stays loose, and the loose one is the one an author drives.
 
-    Returns the violations *R6* names.  It is not the whole conformance contract:
+    Returns the contradiction violations.  It is not the whole conformance contract:
     the identity model's Decision checks, the `**Status**:`/`**Plan review**:`
-    floors and P1's declaration checks are their own predicates and stay in
+    floors and the declaration checks are their own predicates and stay in
     `_conformance_violations`, which composes this one.
 
     **The status condition is deliberate, and the earlier note survives here.**
     The plan arm asserts that the ASSERTED state is structurally supported, so an
     `awaiting-plan-review` plan waiting for its review is not a violation -- and
-    the evaluate-as-if-transitioning read ([E4]) is `next`'s, reached by passing
+    the evaluate-as-if-transitioning read is `next`'s, reached by passing
     the *target*.  That is exactly why the state is a parameter rather than read
     off `art.status` inside: one predicate cannot serve both readings unless the
     caller says which state it means.
@@ -4369,7 +4369,7 @@ def status_evidence_violations(art: Artifact, state: str) -> List[str]:
     if art.kind == "proposal":
         _line, tier, find, problems = _latest_proposal_review(art)
         if state == "revising":
-            # R6 bullet 1 -- "proposal `revising` without a blocking review
+            # "proposal `revising` without a blocking review
             # record".  `revising` says the author owes a Response to a critique;
             # a latest review declaring `Findings: none` is the contradiction.
             if _line is None:
@@ -4388,7 +4388,7 @@ def status_evidence_violations(art: Artifact, state: str) -> List[str]:
                     "readable '**Findings**: none | raised' -- the field is what "
                     "makes a review blocking, and there is no default."])
         elif state == "awaiting-decision":
-            # R6 bullet 2, with R1's replacement text: "At least one proposal
+            # With the replacement text: "At least one proposal
             # review at the Internal floor or above has cleared the current
             # contract ... and no blocking proposal-review finding remains."
             if _line is None:
@@ -4421,12 +4421,12 @@ def status_evidence_violations(art: Artifact, state: str) -> List[str]:
     requires_review = art.plan_review.lower().startswith("required")
     if state in CODE_REVIEW_EFFECTIVE_STATES or (
             state in PLAN_REVIEW_CLEARED_STATES and requires_review):
-        # R6 bullet 4 (`ready-to-implement` / `implementing` before every required
-        # plan-review OBLIGATION clears -- the multi-obligation rule E1 supplies)
+        # `ready-to-implement` / `implementing` before every required
+        # plan-review OBLIGATION clears, under the multi-obligation rule
         # and bullets 5-8's Code-review half, both through the one predicate.
         v.extend(review_record_violations(art, state))
     if state == "revising-plan":
-        # R6 bullet 3 -- "plan `revising-plan` without a blocking plan-review
+        # "plan `revising-plan` without a blocking plan-review
         # pass".  Read off the latest S1-conforming pass's own `Findings:` field.
         passes = _pass_headings(art)
         if not passes:
@@ -4451,7 +4451,7 @@ def status_evidence_violations(art: Artifact, state: str) -> List[str]:
     if state == "awaiting-code-review":
         v.extend(_stable_evidence_contradictions(art))
     if state == "revising-code":
-        # R6 bullet 6 -- "`revising-code` without a latest blocking Code review".
+        # "`revising-code` without a latest blocking Code review".
         # The inverse of the archive rule: `review_record_violations` refuses
         # `ready-to-archive` when the latest pass BLOCKS, and this refuses
         # `revising-code` when it does not.
@@ -4480,9 +4480,9 @@ def status_evidence_violations(art: Artifact, state: str) -> List[str]:
 
 
 def _stable_evidence_contradictions(art: Artifact) -> List[str]:
-    """R6 bullet 5 -- `awaiting-code-review` without a valid stable evidence record.
+    """`awaiting-code-review` without a valid stable evidence record.
 
-    Two conditions, and the second is R2's word *"replacement"* made checkable:
+    Two conditions, and the second is the word *"replacement"* made checkable:
     `revising-code` returns to `awaiting-code-review` on *"a replacement stable
     record"*, so a Boundary B record that predates the blocking Code review it is
     supposed to replace is stale, not evidence.  On the FIRST arrival at
@@ -4523,7 +4523,7 @@ def _stable_evidence_contradictions(art: Artifact) -> List[str]:
 # documentary attestations the artifact carries -- the machine-verifiable
 # half.  Each returned string is a violation; an empty list means the
 # current state is structurally sound (NOT that the quotes are authentic --
-# the tool never asserts authenticity, R1).
+# the tool never asserts authenticity).
 
 
 def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[str]:
@@ -4543,7 +4543,7 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 "conformance check."
             )
         elif s in HISTORICAL_PROPOSAL_STATES:
-            # H1: retired, not unrecognized -- and the two must not be conflated.
+            # Retired, not unrecognized -- and the two must not be conflated.
             # An ARCHIVED proposal legitimately still declares one of these, so
             # reading history is never a violation; an ACTIVE one declaring it
             # is exactly what retirement refuses, and it gets the migration
@@ -4558,7 +4558,7 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 )
         elif s not in _PROPOSAL_STATES:
             v.append(f"unknown proposal status {s!r}")
-        # P1 -- the artifact-level declaration and the review basis, on the same
+        # The artifact-level declaration and the review basis, on the same
         # predicates `_gating_preconditions` consumes (S12's one-predicate rule
         # applied to the proposal side).  Unconditional on status: the accepted
         # parent has a proposal-worthy change declare its assurance path, and a
@@ -4571,14 +4571,14 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
         # the field is present; what it refuses is a present one that cannot be
         # read as exactly one of the two closed values.
         v.extend(plan_readiness_violations(art))
-        # P3 -- the complete current-contract revision and its withdrawal ledger.
-        # Unconditional on status for the reason P1's pair is: the obligation
+        # The complete current-contract revision and its withdrawal ledger.
+        # Unconditional on status for the same reason the sibling pair is: the obligation
         # arrives with the Response, not at some later state, and an author who
         # discovered the refusal only at the transition would already have asked a
         # reviewer to read a contract that was never restated.
         v.extend(current_contract_violations(art))
-        # E2 -- R6's proposal contradictions, on the shared predicate `next` and
-        # (at P4) `closeout` consume.  Placed here so a status/evidence
+        # The proposal contradictions, on the shared predicate `next` and
+        # `closeout` consume.  Placed here so a status/evidence
         # contradiction is reported beside the declarations it depends on.
         v.extend(status_evidence_violations(art, s))
         if s in _PROPOSAL_POST_REVIEW_STATES:
@@ -4645,10 +4645,10 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                     )
                 # cls == "human": the byline is a recognized Maintainer. The tool
                 # still does not authenticate the quoted authorization itself --
-                # that remains the committing operator's guarantee (R1).
+                # that remains the committing operator's guarantee.
     else:  # plan
         if s and s in HISTORICAL_PLAN_STATES:
-            # H1 -- see the proposal-side note above; archived plans keep theirs.
+            # See the proposal-side note above; archived plans keep theirs.
             if not _is_immutable(art):
                 v.append(
                     f"retired plan status {s!r} -- the accepted vocabulary "
@@ -4665,18 +4665,18 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
                 "no '**Plan review**:' line (mandatory: 'required(<tier>)' or "
                 "'not required(<rationale>)'; a missing line is a finding)."
             )
-        # E2 -- R6's plan contradictions, ONE predicate, THREE call sites.  This
+        # The plan contradictions, ONE predicate, THREE call sites.  This
         # replaces the two status-keyed blocks that stood here (the
         # `review_record_violations` call for `executing`/`review`/archive-
         # effective states, and the two archive attestations for `archived`) --
         # both moved INTO `status_evidence_violations`, which takes the state as a
         # parameter.  Nothing about either check changed; what changed is that
-        # `next --to <new state>` and P4's `closeout` now reach the same code
+        # `next --to <new state>` and `closeout` now reach the same code
         # instead of each growing its own opinion, which is the drift S12 exists
-        # to prevent and which R6 requires by name: "`scan`, `next`, and accepted
+        # to prevent and which the contract requires by name: "`scan`, `next`, and accepted
         # closeout tooling consume shared predicates."
         v.extend(status_evidence_violations(art, s))
-        # R4 -- the optional `**Blocked by**:` metadata, checked UNCONDITIONALLY on
+        # The optional `**Blocked by**:` metadata, checked UNCONDITIONALLY on
         # status.  That is the field's whole point: it is orthogonal to the state
         # machine, so it can neither be keyed on a state nor gate one.
         v.extend(blocked_by_violations(art))
@@ -4694,14 +4694,14 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
 # For each legal target, the *gating* preconditions: structural facts that
 # must already hold for the transition to be valid, each reported met/unmet
 # from the file.  When a gate is unmet the tool reports the missing
-# attestation -- it never presents the transition as ready (R3 / contract
+# attestation -- it never presents the transition as ready (contract
 # clause 3).
 
 
 def _r6_gate(art: Artifact, state: str, description: str) -> Tuple[bool, str]:
     """One gate whose predicate IS `status_evidence_violations` for *state*.
 
-    R6 requires `scan`, `next` and closeout to *"consume shared predicates rather
+    The contract requires `scan`, `next` and closeout to *"consume shared predicates rather
     than implement three interpretations of readiness"*.  Routing every new
     target's gate through this one function is how that requirement is met
     structurally: there is no second place to tighten or loosen, and the gate
@@ -4720,10 +4720,10 @@ def _gating_preconditions(art: Artifact, target: str,
     revs = _reviewers(art)
     independent_review = _independent_review(art)
     if art.kind == "proposal":
-        # P1 -- the SAME two predicates `_conformance_violations` uses, so the
+        # The SAME two predicates `_conformance_violations` uses, so the
         # two gate surfaces cannot drift.  Reported on every forward transition
         # because neither obligation begins at some later state, and because a
-        # gate wired to only one surface is the defect [R3-E1] executed on the
+        # gate wired to only one surface is the defect review executed on the
         # Code-review half: the loose surface is the one an author drives.
         for problems, name in (
                 (assurance_declaration_violations(art),
@@ -4745,7 +4745,7 @@ def _gating_preconditions(art: Artifact, target: str,
             detail = "" if not problems else "  UNMET: " + "; ".join(problems)
             gates.append((not problems, name + detail))
         if target in ("awaiting-review", "reviewed"):
-            # Chunk E: `awaiting-review` is R1's initial state AND the state a
+            # `awaiting-review` is the initial state AND the state a
             # Response returns the proposal to, so the return arm gets its own
             # gate while the opening arm has nothing to attest yet.
             if art.status == "revising":
@@ -4760,7 +4760,7 @@ def _gating_preconditions(art: Artifact, target: str,
             gates.append((bool(revs),
                           "a prior '## Review' section exists"))
             if target == "revising":
-                # E2 / R6 bullet 1, on the shared predicate.
+                # Contradiction 1, on the shared predicate.
                 gates.append(_r6_gate(
                     art, "revising",
                     "the LATEST '## Review' declares '**Findings**: raised' -- a "
@@ -4772,7 +4772,7 @@ def _gating_preconditions(art: Artifact, target: str,
                           "current-contract revision it owes (with its "
                           f"'### {_LEDGER_HEADING}' ledger); append-only."))
         elif target == "awaiting-decision":
-            # E2 / R6 bullet 2 with R1's replacement text.  No instruction gate:
+            # Contradiction 2 with the replacement text.  No instruction gate:
             # this transition appends nothing -- the clearing REVIEW is what
             # selects it, and that record already landed.
             gates.append(_r6_gate(
@@ -4798,8 +4798,8 @@ def _gating_preconditions(art: Artifact, target: str,
     else:  # plan
         requires_review = art.plan_review.lower().startswith("required")
         # P2-R -- the SAME predicate `_conformance_violations` uses, reported on
-        # every forward transition for the reason P1's proposal-side pair is: a
-        # gate wired to only one surface is [R3-E1] executed, and the loose
+        # every forward transition for the reason the proposal-side pair is: a
+        # gate wired to only one surface is the defect executed, and the loose
         # surface is the one an author drives.  Silent for a plan that declares
         # no inheritance.
         inheritance = plan_inheritance_violations(art)
@@ -4818,7 +4818,7 @@ def _gating_preconditions(art: Artifact, target: str,
                           "'Plan review: required(<tier>)' (else the plan goes "
                           "straight to ready-to-implement)"))
         elif target == "revising-plan":
-            # R6 bullet 3, on the shared predicate.
+            # Contradiction 3, on the shared predicate.
             gates.append(_r6_gate(
                 art, "revising-plan",
                 "the LATEST conforming '## Plan review' pass declares "
@@ -4853,8 +4853,8 @@ def _gating_preconditions(art: Artifact, target: str,
                               "'Plan review: not required' -- execution may "
                               "combine with plan-open."))
         elif target in ("ready-to-implement", "implementing"):
-            # Chunk E / R6 bullet 4: BOTH states assert every required plan-review
-            # obligation has cleared, and under E1's `+` rule "cleared" means one
+            # BOTH states assert every required plan-review
+            # obligation has cleared, and under the `+` rule "cleared" means one
             # distinct pass per declared clause.  Reached through `_r6_gate`, so
             # `next` cannot be looser than `scan` about the same record.
             if requires_review:
@@ -4879,7 +4879,7 @@ def _gating_preconditions(art: Artifact, target: str,
                               "makes the skipped 'ready-to-implement' true."))
         elif target in ("awaiting-code-review", "review"):
             if target == "awaiting-code-review":
-                # R6 bullet 5, and R2's word "replacement" made checkable.
+                # Contradiction 5, and the word "replacement" made checkable.
                 gates.append(_r6_gate(
                     art, "awaiting-code-review",
                     "a conforming '## Implementation verification -- <agent> -- "
@@ -4892,22 +4892,22 @@ def _gating_preconditions(art: Artifact, target: str,
                           "append a '## Code review' pass (reviewer is not the "
                           "implementing agent); append-only."))
         elif target == "revising-code":
-            # R6 bullet 6 -- the exact inverse of the archive rule below.
+            # Contradiction 6 -- the exact inverse of the archive rule below.
             gates.append(_r6_gate(
                 art, "revising-code",
                 "the LATEST '## Code review' pass carries a BLOCKING "
                 "'**Verdict**:' (REVISE / Request changes / BLOCK) -- a clearing "
                 "verdict sends the plan to 'ready-to-archive' instead"))
         elif target in ("ready-to-archive", "archived"):
-            # S12 / R5'' -- the SAME predicate `_conformance_violations` uses,
+            # The SAME predicate `_conformance_violations` uses,
             # on the requested TARGET as the effective state.  This replaces the
             # separate `art.has_code_review_marker` gate that stood here: two
             # surfaces asking one question in two strengths is the drift S12
             # exists to prevent, and the marker was the weaker of the two.
-            # Called regardless of the `Plan review:` declaration -- [R3-E1]
+            # Called regardless of the `Plan review:` declaration -- review
             # executed the bypass a declaration-keyed call leaves open.
             #
-            # **Chunk E: one branch for BOTH states, which is R6 bullet 8 stated
+            # **One branch for BOTH states, which is contradiction 8 stated
             # as code.**  "`archived` when the same closeout predicate would
             # reject `ready-to-archive`" is not two rules -- it is one rule
             # required to be shared.  A plan therefore cannot reach
@@ -4944,17 +4944,17 @@ def _gating_preconditions(art: Artifact, target: str,
 #
 # Each scaffold is emitted to STDOUT.  It carries placeholders the
 # operator fills; the tool NEVER fills a reviewer identity, a disposition,
-# a finding, or an authorization (R2 / contract clause 2).
+# a finding, or an authorization (contract clause 2).
 
 
-#: Chunk E / R4 ("Status and evidence move together") -- for each new-vocabulary
+#: "Status and evidence move together" -- for each new-vocabulary
 #: state, the record whose commit carries the flip.  Most new transitions append
 #: **nothing**: the accepted contract is explicit that *"Do not create empty
 #: commits merely to advance a label"* and that the review, Response,
 #: implementation, verification, Code-review or archive commit is the one that
 #: moves the status.  So the scaffold for these is a manifest saying *whose*
 #: commit does it -- not a section to paste, which would invite exactly the empty
-#: transition commit R4 forbids.  `awaiting-code-review` is the one exception: its
+#: transition commit the contract forbids.  `awaiting-code-review` is the one exception: its
 #: evidence record is a section, and it gets one.
 _STATUS_MOVES_WITH: Dict[str, str] = {
     "awaiting-review": "the author's '## Response' + complete current-contract "
@@ -4979,7 +4979,7 @@ _STATUS_MOVES_WITH: Dict[str, str] = {
 
 
 def _status_move_manifest(art: Artifact, target: str) -> List[str]:
-    """The manifest for a transition that appends no new section (R4)."""
+    """The manifest for a transition that appends no new section."""
     return [
         f"Status: {art.status or '(none)'} -> {target}",
         f"NO new section is appended for this flip. It rides on "
@@ -4992,13 +4992,13 @@ def _status_move_manifest(art: Artifact, target: str) -> List[str]:
 
 
 def _review_template(date: str) -> str:
-    """The reviewer's `## Review` section, re-homed by H1.
+    """The reviewer's `## Review` section, re-homed by the vocabulary migration.
 
     Emitted for the two arms a landing review selects (`revising` on a
-    blocking pass, `awaiting-decision` on a clearing one). Before H1 this
+    blocking pass, `awaiting-decision` on a clearing one). Before the migration this
     lived on the retired `-> reviewed` arm and would otherwise have been
     lost: it is the only place the tool states that THE REVIEWER fills their
-    own identity, which is the anti-attribution property [H1-S2] protects.
+    own identity, which is the anti-attribution property this protects.
     """
     return (
             "## Review -- <reviewer> (<role>) -- " + date + "\n\n"
@@ -5021,9 +5021,9 @@ def _response_template(date: str) -> str:
     """The author's `## Response` + complete-current-contract revision.
 
     Carries the `**Scope delta**` declaration. Emitted on the return arm out
-    of `revising`. Before H1 this lived on the retired `-> revised` arm; it
+    of `revising`. Before the migration this lived on the retired `-> revised` arm; it
     is the ONLY user-reachable surface that teaches the scope-reduction
-    grammar while an author is typing, so [H1-S1] re-homes rather than
+    grammar while an author is typing, so it re-homes rather than
     deletes it.
     """
     return (
@@ -5066,9 +5066,9 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
     """Return (status_from, status_to_or_note, [scaffold_block, manifest...]).
 
     **A status-move target may still carry a section template, and two must.**
-    R4 says these flips append no section *of their own* -- they ride on someone
+    These flips append no section *of their own* -- they ride on someone
     else's commit.  But the author writing that commit still needs its grammar,
-    and before H1 the only place it existed was the retired `-> reviewed` and
+    and before the migration the only place it existed was the retired `-> reviewed` and
     `-> revised` arms.  Retiring those without re-homing their templates would
     have deleted, from every user-reachable path, the one surface that teaches
     the `**Scope delta**` declaration while an author is typing -- which is
@@ -5076,7 +5076,7 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
     So the templates move to the live arms that carry the same authorial moment:
     the reviewer's `## Review` to the two arms a review selects, and the
     author's `## Response` + revision (carrying `Scope delta`) to the return arm
-    out of `revising`.  See [H1-S1] / [H1-S2] in
+    out of `revising`.  See the re-homing notes in
     `dev/plans/review-efficient-lifecycle.md`.
     """
     k = art.kind
@@ -5142,7 +5142,7 @@ def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str
                 ]
                 return (art.status, "awaiting-plan-review", manifest)
             # The author's Sharpening RETURN arm, `revising-plan ->
-            # awaiting-plan-review`.  H1 re-homed the plan-side `Scope delta`
+            # awaiting-plan-review`.  The migration re-homed the plan-side `Scope delta`
             # surface here: it previously lived only on `-> executing`, which
             # the retirement made unreachable, and losing it would have deleted
             # the plan half of scope-reduction-trap's mechanism.  Exactly
@@ -5275,7 +5275,7 @@ def cmd_next(args: argparse.Namespace) -> int:
     _emit_section(f"{art.kind}: {art.path.name}")
     _emit(f"current state: {art.status or '(no status line)'}")
 
-    # Surface any current-state structural violations up front (R1 honesty).
+    # Surface any current-state structural violations up front.
     violations = _conformance_violations(art, identity)
     if violations:
         _emit_section("structural conformance (current state)")
@@ -5334,14 +5334,14 @@ def cmd_next(args: argparse.Namespace) -> int:
     return 0
 
 
-# --- subcommand: scan (also the adopter fidelity scan, R3) -------------------
+# --- subcommand: scan (also the adopter fidelity scan) -----------------------
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
     """Run structural conformance over the local dev/ corpus; report violations.
 
     This is the read-only checker doing double duty as the **adopter-side
-    fidelity scan** (R3): the same structural checks `next` reports per
+    fidelity scan**: the same structural checks `next` reports per
     artifact, run across `dev/proposals/` + `dev/plans/` (live files).  Exit
     code is non-zero when any violation is found, so an adopter test wrapper
     can assert a clean corpus.
@@ -5419,11 +5419,11 @@ def cmd_scan(args: argparse.Namespace) -> int:
     return 0
 
 
-# --- subcommand: guard (advisory pre-commit orientation, R4) -----------------
+# --- subcommand: guard (advisory pre-commit orientation) --------------------
 
 
 def cmd_guard(args: argparse.Namespace) -> int:
-    """Advisory pre-commit pass -- warns, never blocks (R4).
+    """Advisory pre-commit pass -- warns, never blocks.
 
     Summarizes the staged set, runs `claim_check` on staged `dev/` docs if
     it is installed, and reminds that the **shipped work-intent hook** is
@@ -5479,35 +5479,28 @@ def cmd_guard(args: argparse.Namespace) -> int:
 
 
 # =============================================================================
-# Chunk F -- the derived orientation board (B0-B4, B7)
+# the derived orientation board
 # =============================================================================
 #
-# Source contract: accepted proposal
-# `dev/proposals/archive/2026-08-10-codex-lifecycle-status-vocabulary.md`.  The
-# operative board clauses are **not** all in one revision, and reading the wrong
-# one builds the wrong tool, so the resolution is recorded here:
-#
-#   B0  Revision 2                     purpose + authority boundary
-#   B1  Revision 3 ("B1 replacement")  rows, incl. `active_intent`
-#   B2  Revision 2                     `--format json`, filters, `--explain`
-#   B3  Revision 2 + Revision 3 add.   one parser/pass/no cache + the provider
-#   B4  Revision 4 ("final")           the terminal encoder
-#   B7  Rev 2 + Rev 3 add. + Rev 4     the falsifiers
-#
-# Revision 3 says it *"retains R0--R11 and Revision 2 except for the exact B1,
-# B3, B4, B6, B7, and B8 changes below"*, and its B3/B7/B8 headings say
-# **addition**, not replacement -- so Revision 2's B3 ("one parser, one pass, no
-# cache") is still binding and the provider clause is stacked on top of it.
-# Revision 4 *"replaces Revision 3's B4 and the corresponding Unicode bullet in
-# B7"* and nothing else.
-#
-# What the board IS (B0): a read-only projection over the same parser and
-# predicates `scan`, `next` and closeout use.  What it is NOT: a roadmap, a
+# **What the board IS**: a read-only projection over the same parser and
+# predicates `scan`, `next` and closeout use.  **What it is NOT**: a roadmap, a
 # queue, a priority engine, a review attestation, or a source of lifecycle
 # truth.  Nothing is written and nothing is cached; every invocation derives
 # fresh output and names the HEAD it observed.
+#
+# Five properties are load-bearing, and each is enforced below rather than
+# asserted here:
+#
+#   * one row per active artifact, including its active work-intent;
+#   * `--format json`, filters and `--explain`, so the view is scriptable;
+#   * **one parser, one pass, no cache** -- a second reading of the corpus is
+#     how a derived view comes to disagree with the thing it derives from;
+#   * the work-intent provider is *optional* and stacked on top of that rule,
+#     never a second parse and never a hard dependency;
+#   * one terminal encoder, because a row that can move the cursor or add a
+#     column is a row that can misrepresent the corpus on a terminal.
 
-# --- B4 (Revision 4) -- the one terminal encoder ------------------------------
+# --- the one terminal encoder -------------------------------------------------
 
 #: The board's serialization guard, **not** a detector policy.  Its population
 #: covers the union represented by content scan's `_ZERO_WIDTH`, `_BIDI`,
@@ -5562,7 +5555,7 @@ _DISPLAY_UNSAFE_RANGES: Tuple[Tuple[int, int], ...] = (
 _DISPLAY_UNSAFE_FLOOR = min(lo for lo, _hi in _DISPLAY_UNSAFE_RANGES)
 
 #: The compact projection's syntax.  A field value that contained one of these
-#: raw could add a column or a row -- B4 clause 3.  They are escaped by the same
+#: raw could add a column or a row.  They are escaped by the same
 #: encoder as everything else, so there is no second escaping rule to keep in
 #: step.  (`\n`/`\r`/`\t` are already non-printable, hence redundant with clause
 #: 1; naming them here makes the delimiter property assertable on its own.)
@@ -5573,7 +5566,7 @@ _DISPLAY_SYNTAX_CHARS = frozenset(
 
 
 def _display_unsafe_code_point(code_point: int) -> bool:
-    """Is *code_point* in `_DISPLAY_UNSAFE_RANGES`?  (B4 clause 2.)"""
+    """Is *code_point* in `_DISPLAY_UNSAFE_RANGES`?"""
     if code_point < _DISPLAY_UNSAFE_FLOOR:
         return False
     for low, high in _DISPLAY_UNSAFE_RANGES:
@@ -5593,7 +5586,7 @@ def _escape_code_point(char: str) -> str:
 
 
 def encode_display(value: str) -> str:
-    """B4 (Revision 4) -- the **one** terminal encoder, verbatim.
+    """The **one** terminal encoder.
 
     For each represented code point emit a printable ASCII code-point escape
     when any of these is true:
@@ -5603,7 +5596,7 @@ def encode_display(value: str) -> str:
     3. it is a row delimiter, field delimiter, backslash, or other syntax
        character whose raw form could alter the compact representation.
 
-    Clause 1 alone was the *rejected* design ([F1] in the source proposal): the
+    Clause 1 alone was the *rejected* design: the
     combining grapheme joiner, the Hangul fillers and the variation selectors are
     `Mn`/`Lo`, so ``isprintable()`` calls them printable while they are invisible
     on a terminal.  Clause 2 is what closes that residual, and it is why the
@@ -5625,7 +5618,7 @@ def encode_display(value: str) -> str:
     return "".join(out)
 
 
-# --- B3 (Revision 3 addition) -- the optional work-intent provider -----------
+# --- the optional work-intent provider ---------------------------------------
 
 #: The versioned machine contract `tools/_intent/cli.py` emits for `list
 #: --format json`.  The board consumes **only** this; it never scrapes the human
@@ -5634,7 +5627,7 @@ INTENT_LIST_SCHEMA = "cairn-intent-list/1"
 
 #: The launcher the board looks for beside itself.  Never imported: the intent
 #: engine is a *team-gated* module and the board is default-on, so an import
-#: would make the default-on planner depend on an optional module (B8 forbids
+#: would make the default-on planner depend on an optional module (forbidden
 #: exactly that).  A bounded subprocess keeps the dependency one-way.
 _INTENT_LAUNCHER_NAME = "intent.py"
 
@@ -5807,7 +5800,7 @@ def _intent_validate(payload: object) -> Tuple[Optional[str], str,
 
 
 def query_intent_provider(root: Path) -> Dict[str, object]:
-    """**One** bounded query for the whole board (B3, Revision 3 addition).
+    """**One** bounded query for the whole board.
 
     Returns ``{"state", "reason", "detail", "claims", "calls"}``.  `state` is one
     of `available` / `not-installed` / `error`; `calls` is the number of
@@ -5877,19 +5870,19 @@ def _intent_index(claims: List[Dict[str, object]]) -> Dict[str, List[Dict]]:
     return index
 
 
-# --- B1 (Revision 3) -- the row contract -------------------------------------
+# --- the row contract --------------------------------------------------------
 
-#: The versioned top-level JSON schema (B2).  Bumped, never widened silently.
+#: The versioned top-level JSON schema.  Bumped, never widened silently.
 BOARD_SCHEMA_VERSION = "cairn-lifecycle-board/1"
 
-#: B1's documented stable field order, verbatim and in order.  `owner` and
+#: The documented stable field order, verbatim and in order.  `owner` and
 #: `active_intent` are two fields and never collapse into one: a claim is
 #: *someone is editing this*, an owner is *whose move it is*, and merging them
 #: would let a claim read as authority.
 BOARD_FIELDS = ("kind", "artifact", "status", "owner", "active_intent",
                 "review", "evidence", "blocked_by", "validity", "source")
 
-#: Rows sort by artifact kind then filename stem (B1).  Kind order is declared
+#: Rows sort by artifact kind then filename stem.  Kind order is declared
 #: rather than alphabetical so it matches the order `scan` walks the tree in.
 BOARD_KIND_ORDER = ("proposal", "plan")
 
@@ -5907,9 +5900,9 @@ BOARD_REASON_CODES = (
     BOARD_VALID,
     "unreadable",          # the parser refused the file outright
     "status-vocabulary",   # missing status, or a token outside the vocabulary
-    "status-evidence",     # an R6 status/evidence contradiction
-    "declaration",         # a P1/P2/P3 declaration or binding defect
-    "blocked-by",          # R4's optional field, malformed
+    "status-evidence",     # a status/evidence contradiction
+    "declaration",         # a declaration or binding defect
+    "blocked-by",          # the optional blocker field, malformed
     "review-floor",        # the mandatory '**Plan review**:' line is absent
     "other",               # flagged by a predicate this table does not name
 )
@@ -5918,7 +5911,7 @@ BOARD_SOURCE_HEAD = "HEAD"
 BOARD_SOURCE_DIRTY = "WT-dirty"
 BOARD_SOURCE_UNTRACKED = "WT-untracked"
 
-#: B4: *"The board treats a Git failure as an explicit unbound-source condition;
+#: *"The board treats a Git failure as an explicit unbound-source condition;
 #: it does not silently label working-tree content as HEAD."*  This is a label,
 #: not an exit condition -- an unborn HEAD is a legitimate repository state, and
 #: the honest report is "I cannot bind these bytes to a commit", loudly, in every
@@ -5934,7 +5927,7 @@ _BOARD_SKIP_NAMES = ("_template.md", "README.md")
 def _board_artifact_paths(root: Path) -> List[Tuple[str, Path]]:
     """``(kind, path)`` for every active direct child, excluding templates.
 
-    Direct children only, and no archive tree: B1 scopes the board to *"active
+    Direct children only, and no archive tree: the board is scoped to *"active
     direct child of `dev/proposals/` and `dev/plans/`, excluding templates and
     archived trees"*.  Archived records are immutable history; a board that
     listed them would be an audit, which `scan --include-archive` already is.
@@ -5956,7 +5949,7 @@ def _board_artifact_paths(root: Path) -> List[Tuple[str, Path]]:
 def _board_git_state(root: Path) -> Tuple[Optional[str], bool, Set[str], Set[str]]:
     """Repository state in a **bounded batch** -> ``(head, bound, dirty, new)``.
 
-    B3: *"Repository state is obtained in a bounded batch, not through one Git
+    *"Repository state is obtained in a bounded batch, not through one Git
     subprocess per row."*  Two invocations, whatever the row count: one
     ``rev-parse`` for the observed HEAD and one pathspec-limited ``status`` for
     the difference set.  Machine-delimited (`-z`) so no filename needs unquoting,
@@ -6007,7 +6000,7 @@ def _board_source_label(rel: str, bound: bool, dirty: Set[str],
 
 
 def _board_declaration_violations(art: Artifact) -> List[str]:
-    """The P1/P2/P3 declaration predicates for *art*, through their own names.
+    """The three declaration predicates for *art*, through their own names.
 
     No new predicate and no copied rule -- this is a call list, so the board's
     `declaration` reason code cannot drift away from what `scan` reports.
@@ -6048,7 +6041,7 @@ def _board_validity(art: Artifact,
 
 
 def _board_review_summary(art: Artifact) -> str:
-    """B1's `review` -- *"declared obligations and mechanically supported
+    """`review` -- *"declared obligations and mechanically supported
     completion"*.
 
     A plan's obligations come from `normalize_required_obligations`, and
@@ -6058,10 +6051,10 @@ def _board_review_summary(art: Artifact) -> str:
     `CODE_REVIEW_EFFECTIVE_STATES` and `implementing` is not one.  So this
     isolates the half it needs without a private copy of the clearing rule.
 
-    A proposal declares no obligations of its own -- R1 makes its readiness rest
+    A proposal declares no obligations of its own -- its readiness rests
     on *"at least one proposal review at the Internal floor or above"* -- so the
     field reports that record's own two closed fields.  `flagged` is deliberately
-    not `blocking`: B1 forbids compressing a finding into a verdict, and the
+    not `blocking`: compressing a finding into a verdict is forbidden, and the
     board is reporting that the predicate said something, not judging what.
     """
     if art.kind == "proposal":
@@ -6084,7 +6077,7 @@ def _board_review_summary(art: Artifact) -> str:
 
 
 def _board_evidence_summary(art: Artifact) -> str:
-    """B1's `evidence` -- latest applicable review / Boundary B / Code review /
+    """`evidence` -- latest applicable review / Boundary B / Code review /
     closeout, as short ``key=value`` tokens.
 
     Every value is read from a record that exists; an absent record contributes
@@ -6120,7 +6113,7 @@ def _board_evidence_summary(art: Artifact) -> str:
 
 
 def _board_blocked_by(art: Artifact) -> str:
-    """R4's exact optional blocker metadata, or `-`.  Never a state transition.
+    """The exact optional blocker metadata, or `-`.  Never a state transition.
 
     Read from the header region through the same field pattern
     `blocked_by_violations` uses, so the board displays exactly what that
@@ -6140,7 +6133,7 @@ def _board_blocked_by(art: Artifact) -> str:
 
 def _board_active_intent(rel: str, provider: Dict[str, object],
                          index: Dict[str, List[Dict]]) -> str:
-    """B1's `active_intent`: a claimant summary, `-`, `multiple:<n>`, or a state.
+    """`active_intent`: a claimant summary, `-`, `multiple:<n>`, or a state.
 
     *"It never turns missing intent coverage into an assertion that no one holds
     a claim."*  So `not-installed` and `error` are their own values and are
@@ -6167,7 +6160,7 @@ def board_rows(root: Path, identity: "IdentityModel",
     """Every board row plus the header facts.  One parse per artifact, no cache.
 
     Returns ``(rows, header)``.  Each row's values are the **full** field values
-    (B2's automation contract); the compact renderer is what escapes them for a
+    (the automation contract); the compact renderer is what escapes them for a
     terminal.  Structural trouble never removes a row: an unreadable artifact
     still appears, with `validity` = `unreadable`, because *"one malformed record
     cannot hide the rest of the board"*.
@@ -6190,7 +6183,7 @@ def board_rows(root: Path, identity: "IdentityModel",
             # unreadable one.  Catching only `PlannerError` let a single
             # undecodable artifact abort the whole command with a traceback --
             # exactly the *"one malformed record cannot hide the rest of the
-            # board"* failure B3 forbids.  Found by this chunk's own test, not
+            # board"* failure that forbids.  Found by this module's own test, not
             # reasoned about afterwards.
             rows.append({
                 "kind": kind, "artifact": path.stem, "status": BOARD_ABSENT,
@@ -6227,7 +6220,7 @@ def board_rows(root: Path, identity: "IdentityModel",
     return rows, header
 
 
-# --- B2 -- filters, compact rendering, JSON, and focused inspection ----------
+# --- filters, compact rendering, JSON, and focused inspection ----------------
 
 
 def _board_usage(message: str) -> int:
@@ -6301,7 +6294,7 @@ def _board_explain(stem: str, rows: List[Dict[str, str]],
                    header: Dict[str, object], root: Path,
                    identity: "IdentityModel",
                    provider: Dict[str, object]) -> int:
-    """B2 -- expand ONE row into the evidence and unmet predicates `next`/`scan`
+    """Expand ONE row into the evidence and unmet predicates `next`/`scan`
     already have.
 
     *"An absent or ambiguous stem refuses rather than selecting the nearest
@@ -6397,7 +6390,7 @@ def _board_explain(stem: str, rows: List[Dict[str, str]],
 
 
 def cmd_board(args: argparse.Namespace) -> int:
-    """B0 -- the derived orientation board.  Read-only, uncached, HEAD-labelled.
+    """The derived orientation board.  Read-only, uncached, HEAD-labelled.
 
     Exit status: non-zero when any rendered row is structurally invalid or the
     optional provider is in `error`, **after** rendering every safely renderable

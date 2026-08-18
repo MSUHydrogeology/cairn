@@ -54,7 +54,7 @@ Two further subcommands are the lifecycle's **read-only navigation** surface --
 --dry-run` (the plan archive completeness preflight).  Neither writes, moves,
 commits, runs tests, or decides whether evidence is competent; both are
 deterministic, offline, standard-library-only extractors whose output derives
-only from repository bytes, git metadata and their arguments.  See the P4
+only from repository bytes, git metadata and their arguments.  See the
 section comment below.
 
 Run:
@@ -91,12 +91,12 @@ _REFLECTION_GRACE_DAYS = 14
 #: coordination surface at full handoff.  Independent of the reflection window on
 #: purpose: a reflection is a document, a claim is a lock.  Never applied to an
 #: *unreleased* claim -- that is a session that died holding a lock, so it is
-#: reported instead (proposal 2026-08-11-claude-intent-ledger-pruning, [H1]/[H2]).
+#: reported instead (proposal 2026-08-11-claude-intent-ledger-pruning).
 _INTENT_GRACE_DAYS = 30
 
 #: A handoff lease is considered *expired* after this many seconds without a
 #: heartbeat refresh.  Expiry alone never reclaims a lock -- it is one of two
-#: conditions; the other is affirmative proof the holder is dead (S1).
+#: conditions; the other is affirmative proof the holder is dead.
 _HANDOFF_LEASE_SECONDS = 900
 
 #: Where machine-local lifecycle state lives (gitignored members).  Mirrors the
@@ -141,9 +141,9 @@ def _safe_field(value, *, limit=_FIELD_LIMIT):
     """Render one externally sourced single-line value inert for the stream.
 
     **The escaping rule is `tools/lifecycle_planner.py`'s `encode_display`, and
-    this function no longer owns one.**  Chunk P4 of
+    this function no longer owns one.**  The encoder moved out of
     `dev/plans/review-efficient-lifecycle.md`: *"human output passes through the
-    **same** terminal encoder as F2 ... The existing `_safe_field` is **not**
+    **same** terminal encoder as the board ... The existing `_safe_field` is **not**
     this rule -- it translates a fixed escape table and truncates; it applies
     neither `str.isprintable()` nor `_DISPLAY_UNSAFE_RANGES` -- and is replaced,
     not wrapped."*
@@ -166,7 +166,7 @@ def _safe_field(value, *, limit=_FIELD_LIMIT):
     something else.
 
     An unloadable vocabulary **refuses** (`VocabularyUnavailable`, a
-    `LifecycleError` -> exit 1 with the reason).  That is the A3/A5 contract's
+    `LifecycleError` -> exit 1 with the reason).  That is the loader contract's
     own direction and it is deliberate here: the alternative -- falling back to
     a local escape table when the shared encoder cannot be reached -- is exactly
     the second, weaker path this change removes, and it would appear precisely
@@ -341,7 +341,7 @@ def _resolve_agent(root: Path) -> str:
     The value becomes part of a filename, so it is **sanitized to a safe slug**
     (`[A-Za-z0-9._-]` only): an unsanitized value such as ``../../etc/x`` must
     not be able to redirect the reflection write outside ``dev/reflections/``
-    (path-containment, S3).  An empty / fully-stripped value falls back to
+    (path-containment).  An empty / fully-stripped value falls back to
     ``agent``.
     """
     raw = os.environ.get("CAIRN_AGENT", "").strip()
@@ -378,7 +378,7 @@ def _resolve_session(root: Path) -> str:
     per-checkout token would re-introduce the very collision).  The trade is
     that re-running in one session may scaffold a *second* reflection rather
     than re-opening the first; a new file is recoverable, a clobber is not.
-    Sanitized to a filename-safe slug (path-containment, S3).
+    Sanitized to a filename-safe slug (path-containment).
     """
     raw = os.environ.get("CAIRN_SESSION", "").strip()
     if not raw:
@@ -413,7 +413,7 @@ def _state_dir(root: Path) -> Path:
 
 
 def _assert_within(path: Path, base: Path) -> None:
-    """Fail closed if `path` would resolve outside `base` (path-containment, S3).
+    """Fail closed if `path` would resolve outside `base` (path-containment).
 
     Defense in depth behind the agent-slug sanitization: every reflection /
     handoff write the CLI performs must land inside its declared surface, so a
@@ -680,7 +680,7 @@ def _skill_symlinks_available(root: Path) -> bool:
 
 def _assert_fanout_contained(dst: Path, target: Path) -> None:
     """Refuse a fan-out destination reached through a **symlinked parent** or
-    resolving **outside** *target* (S3).  ``dst`` itself may be the symlink we
+    resolving **outside** *target*.  ``dst`` itself may be the symlink we
     are about to (re)create, so only its parents are symlink-checked."""
     tr = target.resolve()
     for ancestor in dst.parents:
@@ -844,7 +844,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
     # containment refusal warns and continues; it never aborts the gather).  It
     # runs *before* the working-tree status below so a copy-mode .gitignore seed
     # is reflected in the reported state -- the routine never dirties a tree it
-    # has already reported clean (Codex code review P2 #1).
+    # has already reported clean.
     _emit_section("skills fan-out self-heal")
     try:
         healed = _heal_skills_fanout(root)
@@ -868,7 +868,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
         log = _git(["log", rng, "--format=%h %an  %s"], root).strip()
         _emit(f"range {rng}")
     else:
-        # EP4: a freshly-bootstrapped repo has no handoff commit yet -- fall
+        # A freshly-bootstrapped repo has no handoff commit yet -- fall
         # back to a sensible window rather than crashing on an empty range.
         log = _git(["log", f"-n{fallback_n}", "--format=%h %an  %s"], root).strip()
         _warn(
@@ -890,12 +890,12 @@ def cmd_session_start(args: argparse.Namespace) -> int:
         print(f"{_PREFIX} (no open proposals or plans)")
 
     # Resolve the project interpreter (resolve-don't-bake); a tampered
-    # local-env.json refuses here, before any sub-tool runs (S2).
+    # local-env.json refuses here, before any sub-tool runs.
     interpreter, interp_source = _resolve_interpreter(root)
 
     _surface_intents(root, interpreter)
 
-    # S2: make the (otherwise hidden) interpreter trust root visible.
+    # Make the (otherwise hidden) interpreter trust root visible.
     _emit_section("resolved project interpreter")
     _emit(f"interpreter: {interpreter}  (from {interp_source})")
     if interp_source == "fallback":
@@ -913,7 +913,7 @@ def cmd_session_start(args: argparse.Namespace) -> int:
 
 
 def _designation_marker_present(root: Path) -> bool:
-    """Whether the maintainer-designation marker is set (S6).
+    """Whether the maintainer-designation marker is set.
 
     The marker is an **anti-accidental-run / operating-mode gate, not an
     authorization boundary** -- it is trivially self-set, so it never proves the
@@ -950,15 +950,15 @@ def _pid_alive(pid: int) -> bool:
 class HandoffLock:
     """A fail-closed, single-owner lock for the destructive full-handoff path.
 
-    Implements the II2 disposition (R-i): a local atomic lockfile -- the only
+    A local atomic lockfile -- the only
     race-free mutual-exclusion primitive (an intents-log read carries a TOCTOU
-    race).  Per S1 the stale-lock escape is **not age-only**: a held lock is
+    race).  The stale-lock escape is **not age-only**: a held lock is
     reclaimed *only* when the lease has expired **and** the holder is provably
     dead (same host, pid gone).  Cross-host locks, live holders, and fresh
     leases all **fail closed**; a genuinely stuck lock needs manual cleanup.
 
     Used as a context manager so the lockfile is removed on **both clean exit
-    and unexpected exception** (EP1).
+    and unexpected exception**.
     """
 
     def __init__(self, root: Path, agent: str) -> None:
@@ -1046,7 +1046,7 @@ class HandoffLock:
         return self.acquire()
 
     def __exit__(self, *exc_info) -> bool:
-        self.release()  # EP1: released on clean exit AND exception
+        self.release()  # released on clean exit AND exception
         return False
 
 
@@ -1097,7 +1097,7 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
     # installed in the tree it operates on) but it matters here: the intent
     # engine computes its ledger path from its OWN location, so a root-blind
     # lookup would rewrite the installing tree's ledger while reporting on the
-    # target.  It also made this wiring untestable, which is why CR4 could
+    # target.  It also made this wiring untestable, which is why review could
     # replace the call with `pass` and see every suite stay green.
     intent_tool = root / "tools" / "intent.py"
     if not intent_tool.is_file():
@@ -1129,7 +1129,7 @@ def _surface_intents(root: Path, interpreter: str) -> None:
     still has claimed work).  Skip-with-note when the optional coordination
     tool is absent -- the default-on skill never hard-requires it.  Invoked as
     an explicit argv list under the resolved interpreter, never a shell string
-    (S2/S5).
+    (the interpreter-binding contract).
     """
     _emit_section("active work-intents")
     intent_tool = _sibling_tool("intent.py")
@@ -1292,7 +1292,7 @@ def _do_reflection(root: Path, dry_run: bool) -> None:
     # concurrent same-agent sessions from clobbering one reflection; the
     # goodnight reader globs <date>-*.md to gather every session.
     target = refl_dir / f"{_today()}-{agent}-{session}.md"
-    _assert_within(target, refl_dir)  # S3: never write outside dev/reflections/
+    _assert_within(target, refl_dir)  # never write outside dev/reflections/
 
     _emit_section("reflection scaffold")
     if target.exists():
@@ -1339,8 +1339,8 @@ def cmd_session_end(args: argparse.Namespace) -> int:
 
     Full handoff (`--handoff`): the mechanizable destructive steps (prune
     reflections, run metrics, surface intents) run **only** behind (1) a
-    mutation manifest, (2) the maintainer-designation marker (S6), and (3) the
-    fail-closed concurrent-handoff lock (II2/S1).  The roadmap scrub +
+    mutation manifest, (2) the maintainer-designation marker, and (3) the
+    fail-closed concurrent-handoff lock.  The roadmap scrub +
     NEXT_SESSION rewrite + handoff commit remain the owner's judgment steps.
     """
     root = _repo_root()
@@ -1364,7 +1364,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
     """The guarded destructive path: manifest -> marker -> lock -> steps."""
     grace = args.reflection_grace_days
 
-    # S6: always emit the mutation manifest before any real run.
+    # Always emit the mutation manifest before any real run.
     _emit_section("full-handoff mutation manifest")
     would_prune = _prune_reflections(root, grace, dry_run=True)
     names = ", ".join(p.name for p in would_prune) or "(none)"
@@ -1381,8 +1381,8 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
         _emit("[dry-run] manifest only -- nothing mutated, no marker required.")
         return 0
 
-    # S6: the marker is an anti-accidental-run gate (not an authorization
-    # control).  Refuse non-interactively -- never block on input (R5).
+    # The marker is an anti-accidental-run gate (not an authorization
+    # control).  Refuse non-interactively -- never block on input.
     if not _designation_marker_present(root):
         raise LifecycleError(
             "refusing the full handoff: no maintainer-designation marker. Set "
@@ -1394,8 +1394,8 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 
     interpreter, _ = _resolve_interpreter(root)
 
-    # II2/S1: fail-closed concurrent-handoff lock; released on clean exit AND
-    # exception (the context manager's __exit__, EP1).
+    # Fail-closed concurrent-handoff lock; released on clean exit AND
+    # exception (the context manager's __exit__).
     with HandoffLock(root, _resolve_agent(root)) as lock:
         _emit_section("pruning reflections")
         pruned = _prune_reflections(root, grace, dry_run=False)
@@ -1419,12 +1419,12 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
         _prune_intents(root, interpreter, args.intent_grace_days, dry_run=False)
         lock.heartbeat()
 
-        # Fold-back surfacing -- gated behind --handoff (F5 binding): fires
+        # Fold-back surfacing -- gated behind --handoff: fires
         # only in the full-handoff path, never in the reflection-only goodnight.
         _surface_foldback_candidates(root, interpreter)
         lock.heartbeat()
 
-        # Standing capture prompt (F5): invite the owner to scan today's
+        # Standing capture prompt: invite the owner to scan today's
         # doctrine activity for Cairn-portable fold-back candidates.
         _emit(
             "scan today's doctrine activity for Cairn-portable fold-back "
@@ -1463,7 +1463,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 # `retain | revise | retire`.
 #
 # **Two records, and the split is the security property** (the plan's Security
-# round 2, finding [T2], and round 1's [H3]).  A single mutable JSON state file
+# rounds 2 and 1).  A single mutable JSON state file
 # -- the shape this replaces -- is last-writer-wins, and "six plans reached the
 # boundary" is not a claim a last-writer-wins file can support:
 #
@@ -1473,7 +1473,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 #     commit or the activation date: both are DERIVED from git as the commit
 #     that first introduced this exact blob, and that commit's author date.
 #     Storing either would be self-referential -- a commit cannot contain its
-#     own id -- which is exactly the circularity [T2] refused.
+#     own id -- which is exactly the circularity that refused.
 #   * `dev/measurement/pilot-events.md` -- an APPEND-ONLY tracked event ledger,
 #     one block per counted plan stem or pause, each bound to its source
 #     artifact and source commit.  Counts, pause state and the whole report are
@@ -1485,7 +1485,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 #
 # **This file introduces neither record.**  The ledger ships with P6a carrying
 # zero events; the activation record is introduced later by P6d, the data-only
-# commit at Maintainer fence **M2**, because `machinery_sha` is the Boundary-B2
+# commit at the Maintainer fence, because `machinery_sha` is the Boundary-B
 # commit and that commit does not exist while P6a is being written.  Fabricating
 # a placeholder SHA here would put a false attestation in the tracked record.
 #
@@ -1493,8 +1493,8 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 # The one runtime status vocabulary -- contained loader (third consumer)
 # ---------------------------------------------------------------------------
 #
-# `lifecycle-status-vocabulary` R5, as replaced by that proposal's "R5
-# replacement -- contained consumers and corpus boundary"; the same A3/A5
+# `lifecycle-status-vocabulary`, under its accepted "contained consumers and
+# corpus boundary" replacement; the same loader
 # contract `scripts/transition_lint.py` and `tools/_lifecycle_metrics/
 # extract.py` implement.  The contract is restated here **per consumer** rather
 # than inherited by implication, because the containment is the security
@@ -1512,7 +1512,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 #     own **unresolved** location -- never from ambient `sys.path`, and no
 #     `tools/__init__.py` is created to manufacture a package.  Unresolved is
 #     load-bearing: a resolved path can never be a symlink, so a guard asking
-#     that question of one is dead by construction (found by A6's loader matrix
+#     that question of one is dead by construction (found by the loader matrix
 #     in both existing consumers, fixed at `94bda8b`);
 #   * before execution: refuse a missing or unreadable planner, a symlinked
 #     planner, a symlinked containing directory, and any planner whose
@@ -1567,10 +1567,10 @@ _PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
 #: planner that loads but has lost an export is a refusal, not an
 #: `AttributeError` at the first counted plan.
 #:
-#: **P2 adds three names, and every one of them is a vocabulary this file must not
-#: own.**  [CF1] of `review-efficient-lifecycle` requires a counted plan's
+#: **Three names here are each a vocabulary this file must not
+#: own.**  `review-efficient-lifecycle` requires a counted plan's
 #: resolved assurance path on its event so the report can split eligible from
-#: ineligible plans.  A plan carries no assurance declaration of its own -- P1
+#: ineligible plans.  A plan carries no assurance declaration of its own -- the
 #: pinned that absence -- so the value comes from P2-R's inheritance chain, which
 #: the planner owns end to end: `ASSURANCE_PATHS` is the closed vocabulary,
 #: `ASSURANCE_NOT_INHERITED` the resolved third answer for a plan that declares no
@@ -1579,15 +1579,15 @@ _PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
 #: the second vocabulary the single-source rule forbids, and the reason P6a
 #: deliberately left this open rather than closing it early.
 #:
-#: **P4 adds six more, and the reason is the same rule read from the other
-#: end.**  `encode_display` is the one terminal encoder (Chunk F2); every human
+#: **Six more, and the reason is the same rule read from the other
+#: end.**  `encode_display` is the one terminal encoder; every human
 #: line this file prints goes through it, so it is required *unconditionally*,
 #: not only by the two new subcommands.  `read_artifact` is the one artifact
-#: parser -- R6 requires that *"`scan`, `next`, and accepted closeout tooling
+#: parser -- the contract requires that *"`scan`, `next`, and accepted closeout tooling
 #: consume shared predicates rather than implement three interpretations of
 #: readiness"*, and the four predicates below all take the object it builds.
 #: `status_evidence_violations` is the closeout preflight itself (its own
-#: docstring names this caller: *"and, when P4 lands it, `closeout --dry-run`"*);
+#: docstring names this caller: *"`closeout --dry-run`"*);
 #: `review_record_violations`, `blocked_by_violations` and
 #: `plan_inheritance_violations` are the other three the same reports read.
 #: Every one of them is *the planner's*, reached through this loader -- there is
@@ -1684,7 +1684,7 @@ def _vocabulary():
 #:
 #: **It is absent from the vocabulary as this lands** -- measured 2026-08-12,
 #: `PLAN_STATES == ('open', 'awaiting-plan-review', 'executing', 'review',
-#: 'archived')`.  Chunk E of `review-efficient-lifecycle` introduces it (its E1
+#: 'archived')`.  `review-efficient-lifecycle` introduces it (the
 #: row: the proposal and plan state tables).  Until then every counting
 #: derivation refuses and names the dependency.  It must never quietly count
 #: zero: a zero from an unavailable rule is indistinguishable from a working
@@ -1703,7 +1703,7 @@ def _assurance_values() -> Tuple[str, ...]:
 
     Two real assurance paths plus the resolved *not-inherited* answer, all three
     read from `tools/lifecycle_planner.py`.  **Never assembled here from
-    literals** -- that would be the fork [CF1] exists to avoid, and it would
+    literals** -- that would be the fork this exists to avoid, and it would
     silently disagree with the planner the moment either changed.
     """
     planner = _vocabulary()
@@ -1711,7 +1711,7 @@ def _assurance_values() -> Tuple[str, ...]:
 
 
 def _resolved_assurance_path(root: Path, rel: str) -> str:
-    """[CF1] -- the assurance path of the plan at *rel*, or a clean refusal.
+    """The assurance path of the plan at *rel*, or a clean refusal.
 
     Derived, never typed.  The reason is the one the ledger's own record gives
     for `plan_state`: a governance field a human types is an author's claim, and
@@ -1765,7 +1765,7 @@ _ACTIVATION_FENCE = "cairn-pilot-activation"
 _EVENT_FENCE = "cairn-pilot-event"
 _ACTIVATION_SCHEMA = "cairn-pilot-activation/1"
 
-#: **Bumped to /2 by P2 to close [CF1].**  P6a provisioned exactly this: *"Closing
+#: **Bumped to /2 to close the carried-forward obligation.**  Provisioned exactly for this: *"Closing
 #: either is a `cairn-pilot-event/2` schema bump; the version field exists for
 #: that, and an unknown version refuses rather than being half-read."*  The bump
 #: adds one mandatory `plan-counted` key, `assurance_path`, so the derived report
@@ -2050,7 +2050,7 @@ def _introducing_commit(root: Path, rel: str, blob: str) -> Optional[str]:
 
     This is the *enabling* commit, derived rather than stored: a commit cannot
     contain its own id, so an `activation_sha` field naming the commit that
-    introduces the record is unsatisfiable ([T2]).  The path's own history is
+    introduces the record is unsatisfiable.  The path's own history is
     walked oldest-first and the first exact-blob match wins, so the answer is
     stable under later edits (a later edit is a different blob) and under
     reverts to the same bytes (the *first* introduction is the activation).
@@ -2175,7 +2175,7 @@ def _assert_machinery_binding(root: Path, record: dict, enabling: str,
     """Refuse a `machinery_sha` the named evidence record does not attest.
 
     Without this the field is unfalsifiable -- any 40-hex ancestor would pass --
-    and P6c's oracle ("a record whose `machinery_sha` is not the B2 commit
+    and the oracle ("a record whose `machinery_sha` is not the enabling commit
     refuses") would have nothing to observe.  So the record names the evidence
     section that *does* attest the commit, and the section is read **at the
     enabling commit**, where the record's own claim was fixed.
@@ -2223,7 +2223,7 @@ def _validate_event(record: dict, where: str, *, counted_state: Optional[str],
     when the vocabulary could not supply it -- in which case a `plan-counted`
     event refuses instead of being accepted against an unchecked token.
 
-    `assurance_values` is the same arrangement for [CF1]'s `assurance_path`
+    `assurance_values` is the same arrangement for the `assurance_path`
     field: the closed set comes from the planner, is computed **once** by the
     caller, and `None` means the vocabulary could not supply it -- so a
     `plan-counted` event refuses rather than being admitted against an unchecked
@@ -2498,7 +2498,7 @@ _ELIGIBLE_ASSURANCE_PATH = "standard"
 
 
 def _eligibility_split(counted: List[dict], stems: List[str]) -> List[str]:
-    """[CF1] -- the eligible / ineligible split the accepted parent requires.
+    """The eligible / ineligible split the accepted parent requires.
 
     The parent's report requirements include *"eligible and ineligible plans"*,
     and P6a could not derive it: no `plan-counted` field carried a plan's
@@ -2512,7 +2512,7 @@ def _eligibility_split(counted: List[dict], stems: List[str]) -> List[str]:
     high-assurance proposals may both receive `READY`, which makes high-assurance
     plans part of the population the policy now affects.  Those two sentences pull
     opposite ways on *whose* plans fill the six, and neither the revision nor
-    [CF1] resolves it -- [CF1] asks only that the report "split eligible from
+    The obligation resolves it -- it asks only that the report "split eligible from
     ineligible".  Re-deciding the quota would be an implementer choosing between
     two accepted texts, so the counted-stem count stays exactly as P6a landed it,
     the split is reported beside it, and the tension is printed rather than
@@ -2794,9 +2794,9 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
     return 0
 
 
-# === P4 -- review-brief and closeout --dry-run ===============================
+# === review-brief and closeout --dry-run =====================================
 #
-# Chunk P4 of `dev/plans/review-efficient-lifecycle.md`, implementing the
+# Implements the
 # accepted parent's Revision 1 -- the operative revision; its own opening words
 # are *"This section supersedes the operative requirements in the opening
 # Proposal, Pilot, Evidence, and Signals sections"*, so the two field lists
@@ -2824,7 +2824,7 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
 #   * **Read-only, and no artifact content is executed.**  Nothing below opens a
 #     file for writing, and the only subprocess is the module's one read-only
 #     `_git` helper.  An artifact is *parsed*, never imported or evaluated.
-#   * **One readiness reading, not a second one.**  R6 requires that *"`scan`,
+#   * **One readiness reading, not a second one.**  The contract requires that *"`scan`,
 #     `next`, and accepted closeout tooling consume shared predicates rather than
 #     implement three interpretations of readiness"*.  So the preflight below is
 #     literally `status_evidence_violations(art, "ready-to-archive")` -- the
@@ -2832,7 +2832,7 @@ def cmd_pilot_record(args: argparse.Namespace) -> int:
 #     and `next` call it.  There is no local re-derivation to tighten or loosen.
 #   * **The protected interpreter binding is untouched.**  `_resolve_interpreter`
 #     is not called, not read, and not reachable from either command; neither
-#     command spawns anything under the resolved path.  That is fence **M3** of
+#     command spawns anything under the resolved path.  That is the Maintainer fence of
 #     the plan, pinned by
 #     `bootstrap/tests/test_lifecycle_brief.py::TestInterpreterFence`.
 #
@@ -3110,7 +3110,7 @@ def _declared_assurance(root: Path, art, rel: str) -> Tuple[Optional[str],
                                                             List[str]]:
     """``(value, problems)``.  A plan INHERITS one; a proposal DECLARES one.
 
-    The plan arm is the planner's `resolve_plan_assurance_path` -- P2's chain,
+    The plan arm is the planner's `resolve_plan_assurance_path` -- the inheritance chain,
     not a second reading of it -- and the proposal arm reads the artifact's own
     header declaration against the planner's closed `ASSURANCE_PATHS`.
     """
@@ -3171,7 +3171,7 @@ def _contract_spans(art) -> List[dict]:
 
     Located, never judged: whether the section really *is* complete is the
     reader's job, and the accepted contract assigns it to one ("A reviewer
-    compares the complete revision to the previously reviewed contract").  P3's
+    compares the complete revision to the previously reviewed contract").  That predicate's
     `current_contract_violations` is the predicate; this is the pointer.
     """
     headings = _headings(art.text)
@@ -3574,7 +3574,7 @@ def _build_closeout(root: Path, art, rel: str) -> dict:
     # THE shared predicate.  `closeout` evaluates the state it is a preflight
     # FOR, exactly as `next --to <target>` does -- not `art.status`, which would
     # ask whether the plan is validly *where it is* rather than whether it may
-    # move (R6's own split, and the reason the state is a parameter).
+    # move (the contract's own split, and the reason the state is a parameter).
     target = "ready-to-archive"
     preflight = [_predicate_text(v)
                  for v in planner.status_evidence_violations(art, target)]

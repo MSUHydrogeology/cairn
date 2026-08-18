@@ -50,6 +50,11 @@ the stated method and is recorded here rather than absorbed silently.
 | `bootstrap/tests/_gate_preflight.py` | `SHA256` | The hash algorithm, in `"""Resolve the recorded key to ``(absolute path, SHA256 fingerprint)``."""`. Names the digest the function returns. |
 | `bootstrap/tests/_gate_preflight.py` | `N4` | **A live fence identifier, not a finding tag.** `N4` names the key-channel fence in the `N4`–`N8` Maintainer-intervention series of the `ceremony-as-code` plan (18 live citations; siblings `N5`–`N8` at 13/7/4/3), and `bootstrap/REANCHOR_RUNBOOK.md:500` states *"**N4 precondition** holds"*. A Maintainer reading a refusal needs the fence name to look up. Kept **and** given its reason inline, so the sentence no longer depends on the lookup. |
 | `bootstrap/tests/test_gate_preflight.py` | `N4` | Same fence, same reason. |
+| `tools/lifecycle_planner.py` + twin | `H2`, `H3` | Markdown heading levels, not coordinates. The parser's field scopes are literally defined as "the body above the pass's first H3". |
+| `tools/lifecycle_planner.py` + twin | `C0` | The Unicode C0 control-character block, in a rule about which code points are refused. |
+| `tools/lifecycle.py` + twin | `H2` | Markdown heading level, as above. |
+| `tools/lifecycle.py` + twin | `E1`, `S12`, `CF3` | **Examples of the pattern the code matches**, in `#: A bracketed finding id -- \`[E1]\`, \`[S12]\`, \`[CF3]\`, \`[M6-R]\``. The module parses finding ids, so naming their shapes is the docstring doing its job. |
+| `tools/lifecycle.py` + twin | `S1`, `S2`, `R2`, `R6`, `R7`, `R3` | **Inside a byte-pinned security fence.** Five lines sit within `_probe_interpreter` / `_resolve_interpreter` / `_warn_stale_once`, which `bootstrap/tests/test_lifecycle_brief.py` pins byte-and-AST-identical. `AGENTS.md` makes the local interpreter binding a Security-Review surface, and the pin's own message says a change "STOPS for a new Security Review". Re-pinning is that review's commit, not this pass's. Revised and then **reverted** when the fence caught it. |
 
 ---
 
@@ -96,3 +101,26 @@ things, and one was an error:
 
 The other four occurrences are inside string literals and code tokens, which the
 enumeration reports separately and never counts as candidates.
+
+
+---
+
+## A second correction: the pass ran into a security fence
+
+Five comment lines in `tools/lifecycle.py` were revised and then **put back**.
+They sit inside the three symbols `bootstrap/tests/test_lifecycle_brief.py`
+pins byte-and-AST-identical, guarding the local interpreter binding --
+a surface `AGENTS.md` lists as high-risk and Security-Review-gated.
+
+Nothing about the *prose* was wrong; the point is that on this surface the bytes
+themselves are the contract, so even a comment edit re-opens a review. The fence
+caught it, which is what it is for. The rule the ledger carries forward:
+**before revising a comment, check whether the enclosing symbol is pinned** --
+`grep` the test corpus for the symbol name, the same move as grepping the tree
+for a coordinate.
+
+**A side effect worth recording.** Removing a vendor name from one comment
+(`(Codex code review P2 #1)`) dropped the neutrality gate from **93 to 92**
+pre-existing failures. That is an improvement and it was incidental, not aimed
+at -- but it moves a baseline other records cite, so it is stated rather than
+left for someone to rediscover as an unexplained drift.
