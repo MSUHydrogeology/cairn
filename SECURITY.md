@@ -149,9 +149,21 @@ The re-anchor ceremony runs as **two separate processes**, not one paused one.
 
 * **Stage 1** executes candidate code — it produces the pytest collection, which
   nothing else can derive — and writes a single authorization package naming the
-  exact state it observed. It **holds no signing key**, and it probes the
-  configured key path with a non-interactive, timeout-bounded signing attempt
-  that is **required to fail** before it will run anything.
+  exact state it observed. It **holds no signing key**, it is invoked with **no
+  agent socket at all**, and it probes the configured key path with a
+  timeout-bounded signing attempt that is **required to fail** before it will
+  run anything.
+
+  **The probe is timeout-bounded but not silent, and an operator needs to know
+  that in advance.** `ssh-keygen` reads a passphrase from `/dev/tty`, not from
+  standard input, so on a terminal an encrypted key produces an ordinary
+  `Enter passphrase for ...` prompt — indistinguishable from every other
+  passphrase prompt of the day. **That prompt is the refusal working.** It is
+  the ceremony asking whether the key is reachable; typing the passphrase
+  answers *yes*, which makes the probe succeed, which is the failure case.
+  **Decline it.** Declining is the act that establishes the precondition for
+  that run. Nothing else in the ceremony asks you to withhold something, so
+  nothing else is this easy to get backwards.
 * Between the stages the Maintainer confirms the package's digest independently,
   reads the report it carries, and *only then* makes the ceremony key available.
 * **Stage 2** re-extracts and hash-verifies its own checker bytes, seals
@@ -177,6 +189,43 @@ single-process wording claimed protection at a strength it did not deliver:
   2 is acting on exactly the file stage 1 wrote. Whether the state that file
   describes *should* be anchored is the Maintainer's reading of the report
   inside it, which no digest can perform.
+
+### The ceremony key is dedicated, and why a shared one is worse than it looks
+
+**Use a key that does nothing else.** Encrypted at rest, added to no agent, and
+used for no other purpose — not for signing your ordinary commits, and above all
+not the key you authenticate to a forge with.
+
+The requirement reads like hygiene and is not. The stage-1 precondition is that
+the key is unreachable while candidate code runs, and **a shared authentication
+key is one you are constantly making reachable on purpose.**
+
+* **Agent auto-loading re-breaks the precondition between attempts.** A
+  `~/.ssh/config` carrying `AddKeysToAgent yes` (or macOS `UseKeychain yes`) for
+  that key means any ordinary use of it — one `git fetch`, one `ssh` to a host —
+  silently re-adds it to the agent. The operator cannot satisfy the precondition
+  *once*; they must re-satisfy it before every stage-1 attempt, against a
+  configuration that keeps undoing it. **A dedicated key that is auto-loaded is
+  not dedicated**, so check those settings before the rollover rather than
+  after.
+* **Removing a shared key from the agent breaks the rest of your day.** The
+  operator who follows the instruction discovers their forge access is gone,
+  puts the key back, and has now quietly reverted the control. A dedicated key
+  can be withheld at no cost, which is the only version of this instruction that
+  survives contact with a working day.
+* **The roster is what makes a key the ceremony key.** A dedicated key that the
+  anchored `allowed_signers` roster does not name cannot verify — and the
+  ceremony discovers that at stage 2, one stage and one full authorization
+  package later. Rolling over therefore means committing the new public half to
+  the roster *in the same reviewed transition* that blesses it; the old anchored
+  key authorizes exactly that one transition, and every ceremony after it uses
+  the new key.
+
+**Only the public half is ever committed.** Key creation and all private-key
+handling are the Maintainer's, and no automated agent generates, moves,
+encrypts, or loads it. That is a fence rather than a preference: an agent that
+can load the ceremony key is an agent that can perform the ceremony, which is
+the one thing the two-stage split exists to prevent.
 
 ### Residuals, accepted and dated
 
