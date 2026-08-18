@@ -39,11 +39,23 @@ because every chunk below is measured against it rather than against size:
 
 ## Proposed paths
 
-Proposed paths:
-- `bootstrap/reanchor.sh` — the ceremony artifact named by the Decision; created in Chunk C, joins the authority closure at M3.
-- `bootstrap/reanchor-values.example` — the values-file template a Maintainer copies and fills outside the repository; created in Chunk B.
-- `bootstrap/reanchor-launcher.template.sh` — the launcher's reviewed source with a single `@PACKET_SHA256@` slot; created in Chunk D, instantiated by M2 at N6.
-- `bootstrap/tests/test_reanchor.py` — the artifact's own contract tests; created in Chunk B and grown through F.
+**All four have now materialized** (B–D), so the forward-reference declarations
+that exempted them are removed: a `Proposed paths:` block naming a path that
+exists exempts nothing, and the claim checker hard-flags it rather than letting
+a stale declaration sit as though it were still doing work.
+
+- [`bootstrap/reanchor.sh`](../../bootstrap/reanchor.sh) — the ceremony artifact
+  named by the Decision; created in Chunk B–C, joined the authority closure at
+  `1038c90` (**not** at M3 as this row first said — the closure edit is
+  candidate code and had to land before M2).
+- [`bootstrap/reanchor-values.example`](../../bootstrap/reanchor-values.example)
+  — the values-file template a Maintainer copies and fills outside the
+  repository; created in Chunk B.
+- [`bootstrap/reanchor-launcher.template.sh`](../../bootstrap/reanchor-launcher.template.sh)
+  — the launcher's reviewed source with a single `@PACKET_SHA256@` slot; created
+  in Chunk D, instantiated by M2 at N6.
+- [`bootstrap/tests/test_reanchor.py`](../../bootstrap/tests/test_reanchor.py) —
+  the artifact's own contract tests; created in Chunk B and grown through F.
 
 ## Scope
 
