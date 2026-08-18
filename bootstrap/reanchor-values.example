@@ -1,0 +1,75 @@
+# Cairn re-anchor ceremony -- values file (TEMPLATE)
+#
+# Copy this file OUTSIDE the repository, fill in every value, and pass the copy
+# to bootstrap/reanchor.sh. It is mutable operational configuration, not
+# authority: it carries no secret material and no authority value. The reviewed
+# candidate OID and the ceremony artifact's digest deliberately are NOT here --
+# they arrive through the reviewed launcher, because a value that decides what
+# is trusted must not sit in a file the ceremony itself invites you to edit.
+#
+# EDITING THIS FILE CAN REDIRECT WHAT THE CEREMONY READS. That sits inside
+# Cairn's accepted same-user residual and is not closed here. File ownership and
+# mode are hygiene; they do not distinguish you from an agent running as the
+# same OS user.
+#
+# GRAMMAR (refusals are fail-closed, and there is no ambient fallback of any
+# kind -- an absent field refuses rather than being filled from PATH, HOME or
+# Git config):
+#
+#   * one record per line: the key, exactly ONE space, then the value verbatim
+#     to end of line
+#   * no leading whitespace on any line; `#` is a comment only at column 0
+#   * trailing whitespace REFUSES rather than being trimmed -- trimming would
+#     silently change a path
+#   * no control characters; LF line endings; max 4096 bytes per line and
+#     64 KiB per file
+#   * every path is absolute, and no component of it may be a symbolic link
+#   * unknown key, duplicate key, missing key, wrong file type or a missing
+#     executable bit all refuse
+#
+# RECORDING THE EXECUTABLE PATHS, AND REFRESHING THEM. Record the RESOLVED
+# REGULAR FILE, not a convenience symlink: on a Homebrew host
+# /opt/homebrew/bin/git is a symlink into a version-pinned Cellar path, and this
+# schema refuses it. Resolve it once (for example with `readlink -f`) and record
+# what comes out. That also means the entry GOES STALE at the next toolchain
+# upgrade, when the Cellar path changes -- so re-run `validate` after any
+# upgrade of git, python or the coreutils. The refusal you get is correct and
+# is not a reason to loosen the rule.
+
+# The exact schema token this artifact reads. Any other value refuses.
+schema cairn-ceremony-values/v1
+
+# The repository being blessed. Must be a worktree TOP LEVEL: `git -C`
+# discovers upward, so a path beneath a repository would bless one never named.
+checkout /absolute/path/to/the/checkout
+
+# The ceremony signing key's PUBLIC half. Stage 1 probes this channel and
+# refuses if it finds it can sign; stage 2 signs with it. This is the key whose
+# fingerprint must appear in dev/.cairn/allowed_signers.
+signing_key /absolute/path/to/cairn_signing.pub
+
+# Where the authorization package is written by stage 1 and read by stage 2.
+# The leaf MUST NOT exist at stage 1 and MUST exist at stage 2; the parent must
+# be an existing, symlink-free directory. Keep it OUTSIDE the checkout: a
+# package written into the tree becomes part of the state it authorizes.
+package /absolute/path/to/authorization-package.json
+
+# HOME for the signing backend. Recorded rather than inherited.
+home /absolute/path/to/your/home
+
+# --- executables this ceremony runs -------------------------------------
+# Each is invoked by absolute path, which no inherited shell function or alias
+# can shadow. Each must be an existing, symlink-free, executable regular file.
+env /usr/bin/env
+git /absolute/path/to/git
+python /absolute/path/to/python3.13
+mktemp /usr/bin/mktemp
+mkdir /bin/mkdir
+shasum /usr/bin/shasum
+sort /usr/bin/sort
+
+# `cat` is here for the same reason the others are. The launcher snapshots the
+# authorization packet through it before parsing, so it is executed -- and an
+# executable that is trusted but unbound can only be found through ambient
+# PATH, which is exactly the gap the recorded paths above close.
+cat /bin/cat
