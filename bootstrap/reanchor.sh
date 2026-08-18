@@ -39,6 +39,17 @@ refuse() {
     exit 1
 }
 
+#: The checker is located RELATIVE TO THIS ARTIFACT, never taken as an
+#: argument and never found on PATH. Both files arrive in the same verified
+#: extraction, so resolving one from the other keeps them a matched pair: a
+#: checker path supplied from outside would let a verified artifact drive an
+#: unverified checker, which is the whole hazard inverted.
+case $0 in
+    */*) ARTIFACT_DIR=${0%/*} ;;
+    *)   ARTIFACT_DIR=. ;;
+esac
+CHECKER=$ARTIFACT_DIR/tests/_gate_preflight.py
+
 # --------------------------------------------------------------------------
 # path predicates
 # --------------------------------------------------------------------------
@@ -333,6 +344,276 @@ print_effective_configuration() {
     printf '\n'
 }
 
+# --------------------------------------------------------------------------
+# the stage commands
+# --------------------------------------------------------------------------
+
+#: Both stages run the checker under a recorded, emptied environment. Nothing
+#: is inherited: an ambient PATH is what once let a replacement `shasum` vouch
+#: for bytes it had just rewritten, and an ambient GIT_* variable can steer git
+#: at a repository nobody named.
+#:
+#: THE TWO STAGES DIFFER IN EXACTLY ONE ENVIRONMENT ENTRY, and the difference
+#: is the boundary the ceremony exists to create:
+#:
+#:   stage 1 gets NO `SSH_AUTH_SOCK`. Its contract is that it cannot sign -- it
+#:   runs candidate code to build an authorization package and exits -- so an
+#:   agent socket buys it nothing while handing that candidate code a live
+#:   signing channel. The channel is removed, not measured.
+#:
+#:   stage 2 forwards `SSH_AUTH_SOCK`, because stage 2 is the stage that signs.
+#:   Without it `git commit-tree` invokes the signer with no controlling
+#:   terminal, falls back to `ssh-askpass`, and dies naming a path that does
+#:   not exist on a stock host.
+#:
+#: So the key is made available BETWEEN the stages and put away after. A later
+#: cleanup that made these two blocks symmetric would break the ceremony in one
+#: direction and the boundary in the other.
+
+require_checker() {
+    if [ ! -e "$CHECKER" ]; then
+        refuse "the checker is not beside this artifact ($CHECKER). Both" \
+               "arrive in one verified extraction; a missing one means this" \
+               "artifact is running somewhere it was not placed"
+    fi
+    no_symlink_on_path "checker" "$CHECKER"
+    if [ ! -f "$CHECKER" ]; then
+        refuse "checker: '$CHECKER' is not a regular file"
+    fi
+}
+
+#: Collect the optional transition arguments into the positional parameters.
+#: `set --` is how POSIX sh builds an argument list without an array and
+#: without `eval`; the alternative -- assembling a string and re-splitting it --
+#: is word-splitting a path, which is how a path with a space becomes two
+#: arguments.
+TRANSITION_MANIFEST=''
+TRANSITION_CANDIDATE=''
+
+take_transition_options() {
+    while [ "$#" -gt 0 ]; do
+        case $1 in
+        --review-manifest)
+            [ "$#" -ge 2 ] || refuse "--review-manifest needs a value"
+            TRANSITION_MANIFEST=$2
+            shift 2 ;;
+        --reviewed-candidate)
+            [ "$#" -ge 2 ] || refuse "--reviewed-candidate needs a value"
+            TRANSITION_CANDIDATE=$2
+            shift 2 ;;
+        *)
+            refuse "unexpected argument '$1'" ;;
+        esac
+    done
+
+    # Both or neither. A manifest without the OID it was reviewed against, or
+    # an OID with no reviewed member set, is half a transition -- and half a
+    # transition is an authority change with one of its two inputs missing.
+    if [ -n "$TRANSITION_MANIFEST" ] && [ -z "$TRANSITION_CANDIDATE" ]; then
+        refuse "--review-manifest without --reviewed-candidate"
+    fi
+    if [ -n "$TRANSITION_CANDIDATE" ] && [ -z "$TRANSITION_MANIFEST" ]; then
+        refuse "--reviewed-candidate without --review-manifest"
+    fi
+    if [ -n "$TRANSITION_MANIFEST" ]; then
+        require_regular_file "review manifest" "$TRANSITION_MANIFEST"
+    fi
+}
+
+cmd_stage1() {
+    [ "$#" -ge 1 ] || refuse "stage1 takes the values file, then options"
+    _s1_values=$1
+    shift
+    take_transition_options "$@"
+    parse_values "$_s1_values"
+    require_checker
+
+    # The package is a handoff, not a scratch file. Refusing to overwrite is
+    # what keeps stage 2 from confirming a digest over bytes some earlier run
+    # left behind.
+    if [ -e "$V_package" ]; then
+        refuse "package: '$V_package' already exists. Stage 1 writes it and" \
+               "must not overwrite: an existing file is either a run already" \
+               "in progress or a stale one, and neither is safe to bless"
+    fi
+
+    # The stop-point, and it is a real one: everything that could refuse has
+    # already refused, so what prints here is exactly what will run.
+    print_effective_configuration "$_s1_values"
+
+    set -- stage1 \
+        --repo "$V_checkout" \
+        --package-out "$V_package" \
+        --signing-key "$V_signing_key"
+    if [ -n "$TRANSITION_MANIFEST" ]; then
+        set -- "$@" --transition-from-review "$TRANSITION_MANIFEST" \
+                    --reviewed-candidate "$TRANSITION_CANDIDATE"
+    fi
+
+    printf '%s\n' "== stage 1: probing the key channel, then running the checks =="
+    printf '%s\n' "   (this stage holds no key and must not be able to sign)"
+    printf '\n'
+
+    # NO SSH_AUTH_SOCK. See the block comment above -- this is the control,
+    # not an omission.
+    "$V_env" -i \
+        PATH=/usr/bin:/bin \
+        HOME="$V_home" \
+        "$V_python" -E -s "$CHECKER" "$@"
+}
+
+cmd_stage2() {
+    [ "$#" -ge 3 ] || refuse "stage2 takes the values file and" \
+                             "--confirm-package-sha256 <digest>"
+    _s2_values=$1
+    shift
+    _s2_confirm=''
+    _s2_rest_manifest=''
+    _s2_rest_candidate=''
+    while [ "$#" -gt 0 ]; do
+        case $1 in
+        --confirm-package-sha256)
+            [ "$#" -ge 2 ] || refuse "--confirm-package-sha256 needs a value"
+            _s2_confirm=$2
+            shift 2 ;;
+        --review-manifest)
+            [ "$#" -ge 2 ] || refuse "--review-manifest needs a value"
+            _s2_rest_manifest=$2
+            shift 2 ;;
+        --reviewed-candidate)
+            [ "$#" -ge 2 ] || refuse "--reviewed-candidate needs a value"
+            _s2_rest_candidate=$2
+            shift 2 ;;
+        *)
+            refuse "unexpected argument '$1'" ;;
+        esac
+    done
+    [ -n "$_s2_confirm" ] || refuse "stage2 requires --confirm-package-sha256." \
+        "The digest is YOURS: compute it over the file with 'hash-package' and" \
+        "compare it to what stage 1 printed. No digest inside the package can" \
+        "satisfy this, because a package can carry its own digest"
+
+    parse_values "$_s2_values"
+    require_checker
+    TRANSITION_MANIFEST=$_s2_rest_manifest
+    TRANSITION_CANDIDATE=$_s2_rest_candidate
+    take_transition_options
+
+    require_regular_file "package" "$V_package"
+
+    print_effective_configuration "$_s2_values"
+
+    set -- stage2 \
+        --repo "$V_checkout" \
+        --package "$V_package" \
+        --signing-key "$V_signing_key" \
+        --confirm-package-sha256 "$_s2_confirm"
+    if [ -n "$TRANSITION_MANIFEST" ]; then
+        set -- "$@" --transition-from-review "$TRANSITION_MANIFEST" \
+                    --reviewed-candidate "$TRANSITION_CANDIDATE"
+    fi
+
+    printf '%s\n' "== stage 2: confirm, sign, and move both refs in ONE transaction =="
+    printf '%s\n' "   (the key must be available NOW, and put away afterwards)"
+    printf '\n'
+
+    # SSH_AUTH_SOCK IS forwarded here, and only here. See the block comment
+    # above: stage 2 signs, and without the socket the signer has no terminal
+    # and dies on a missing ssh-askpass.
+    "$V_env" -i \
+        PATH=/usr/bin:/bin \
+        HOME="$V_home" \
+        SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
+        "$V_python" -E -s "$CHECKER" "$@"
+}
+
+# --------------------------------------------------------------------------
+# the two steps that previously had no command at all
+# --------------------------------------------------------------------------
+
+cmd_hash_package() {
+    [ "$#" -eq 1 ] || refuse "hash-package takes exactly one argument:" \
+                             "the values file"
+    parse_values "$1"
+    require_regular_file "package" "$V_package"
+
+    # Over the BYTES ON DISK, with the recorded shasum. Never a digest read
+    # out of the package: a file can carry any digest it likes about itself,
+    # and confirming that one confirms nothing.
+    printf '%s\n' "== the digest you confirm =="
+    printf '%s\n' "   computed over the bytes at $V_package"
+    printf '%s\n' "   compare it with what stage 1 printed, then pass it to"
+    printf '%s\n' "   stage2 --confirm-package-sha256"
+    printf '\n'
+    "$V_shasum" -a 256 "$V_package"
+}
+
+cmd_show_report() {
+    [ "$#" -eq 1 ] || refuse "show-report takes exactly one argument:" \
+                             "the values file"
+    parse_values "$1"
+    require_regular_file "package" "$V_package"
+
+    # A confirmed digest over an unread report authorizes something you have
+    # not seen. This is the command that makes the report readable -- the step
+    # the runbook asked for and provided no way to perform.
+    #
+    # Rendered by the recorded interpreter rather than by shell string-cutting:
+    # a JSON reader written in `sed` is a second parser of an authority
+    # artifact, and the two would disagree eventually. The script below is part
+    # of this reviewed artifact, exactly like the shell around it.
+    "$V_python" -E -s -c '
+import json, sys
+
+LIMIT = 40          # per class; anything dropped is COUNTED, never silent
+
+with open(sys.argv[1], "rb") as fh:
+    pkg = json.load(fh)
+
+report = pkg.get("range_report")
+if report is None:
+    sys.stderr.write("REFUSE: the package carries no range report" + chr(10))
+    raise SystemExit(1)
+
+print("== what you are authorizing ==")
+print()
+print("  anchor          %s" % report.get("anchor"))
+print("  candidate head  %s" % report.get("candidate_head"))
+print("  branch          %s" % report.get("branch"))
+print("  expected old    %s" % report.get("expected_old"))
+print("  manifest sha256 %s" % report.get("manifest_sha256"))
+print()
+
+counts = report.get("counts") or {}
+print("  changed paths by class:")
+for name in sorted(counts):
+    print("    %-24s %d" % (name, counts[name]))
+print()
+
+by_class = report.get("by_class") or {}
+for name in sorted(by_class):
+    paths = by_class[name] or []
+    if not paths:
+        continue
+    print("  %s (%d):" % (name, len(paths)))
+    for p in paths[:LIMIT]:
+        print("    %s" % p)
+    if len(paths) > LIMIT:
+        # Named, not hidden. A truncated list that does not say it was
+        # truncated reads as "that was all of it".
+        print("    ... and %d more NOT SHOWN (bounded at %d per class)"
+              % (len(paths) - LIMIT, LIMIT))
+    print()
+
+sig = report.get("signatures") or {}
+if sig:
+    print("  signatures over the range:")
+    for k in sorted(sig):
+        print("    %-24s %s" % (k, sig[k]))
+    print()
+' "$V_package"
+}
+
 usage() {
     # NOT a heredoc into `cat`. `usage` runs before any values file has been
     # parsed, so the validated `cat` path does not exist yet -- and invoking
@@ -340,10 +621,20 @@ usage() {
     # unbound-executable gap this contract closes everywhere else. `printf` is
     # a shell builtin and reaches for nothing.
     printf '%s\n' \
-        'usage: reanchor.sh <command> <values-file>' \
+        'usage: reanchor.sh <command> <values-file> [options]' \
         '' \
-        '  validate   parse the values file, refuse on any violation, and' \
-        '             print the complete effective configuration' \
+        '  validate       parse the values file, refuse on any violation, and' \
+        '                 print the complete effective configuration' \
+        '  stage1         probe the key channel, run the checks, write the' \
+        '                 authorization package. Holds no key.' \
+        '  show-report    render what the package authorizes, in bounded' \
+        '                 human-readable form' \
+        '  hash-package   the digest you confirm, over the bytes on disk' \
+        '  stage2         confirm, sign, and move both refs in one' \
+        '                 transaction. Needs --confirm-package-sha256.' \
+        '' \
+        '  transition mode adds --review-manifest and --reviewed-candidate' \
+        '  to stage1 and stage2; the launcher supplies both.' \
         '' \
         'The values file is documented in bootstrap/reanchor-values.example.'
 }
@@ -364,6 +655,18 @@ main() {
         parse_values "$1"
         print_effective_configuration "$1"
         printf '%s\n' "OK: the values file satisfies the closed schema."
+        ;;
+    stage1)
+        cmd_stage1 "$@"
+        ;;
+    show-report)
+        cmd_show_report "$@"
+        ;;
+    hash-package)
+        cmd_hash_package "$@"
+        ;;
+    stage2)
+        cmd_stage2 "$@"
         ;;
     -h|--help|help)
         usage

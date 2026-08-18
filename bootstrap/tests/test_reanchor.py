@@ -515,3 +515,353 @@ class TestTheCommandSurface:
         for line in code.splitlines():
             stripped = line.strip()
             assert not stripped.startswith("cat "), stripped
+
+
+# --------------------------------------------------------------------------
+# the operator command surface
+# --------------------------------------------------------------------------
+
+#: A stand-in for the checker that records exactly how it was invoked and then
+#: exits cleanly. It is NOT a stub of the artifact: the values parsing, the
+#: refusals, the argument assembly and the environment construction below are
+#: all the real thing. Only the far end of the invocation is replaced, because
+#: a genuine stage 1 needs a real gate anchor and a real ceremony -- which is
+#: the end-to-end node's job, not this one's.
+#: The record path is BAKED IN rather than passed through the environment.
+#: It has to be: the artifact invokes the checker under `env -i`, so nothing
+#: from the caller's environment survives -- which is the property
+#: `test_stage1_runs_under_an_emptied_environment` exists to assert. A stub
+#: that needed an inherited variable could only work by weakening it.
+_RECORDING_CHECKER = '''\
+import json, os, sys
+record = {"argv": sys.argv[1:], "env": dict(os.environ)}
+with open(r"@RECORD@", "w") as fh:
+    json.dump(record, fh)
+print("[stub] checker invoked")
+'''
+
+
+@pytest.fixture
+def staged(bed, tmp_path):
+    """The artifact placed as it is placed in a real ceremony: `reanchor.sh`
+    beside `tests/_gate_preflight.py`.
+
+    The artifact resolves the checker RELATIVE TO ITSELF, so this layout is the
+    contract, not a convenience. Copying it here is also what lets the checker
+    be a recorder without touching the repository's real one.
+    """
+    root = tmp_path / "extracted"
+    (root / "tests").mkdir(parents=True)
+    shutil.copy2(_ARTIFACT, root / "reanchor.sh")
+    record = tmp_path / "invocation.json"
+    (root / "tests" / "_gate_preflight.py").write_text(
+        _RECORDING_CHECKER.replace("@RECORD@", str(record)))
+    return {"artifact": root / "reanchor.sh", "record": record}
+
+
+def _run_staged(staged, *args, env=None, record=True):
+    child = dict(env or os.environ)
+    r = subprocess.run(["/bin/sh", str(staged["artifact"]), *args],
+                       capture_output=True, text=True, check=False, env=child)
+    invocation = None
+    if record and staged["record"].exists():
+        import json as _json
+        invocation = _json.loads(staged["record"].read_text())
+    return r, invocation
+
+
+class TestStage1RunsTheCheckerWithTheRecordedValues:
+
+    def test_stage1_passes_every_recorded_value_through(self, bed, staged):
+        r, inv = _run_staged(staged, "stage1", _write_values(bed))
+        assert r.returncode == 0, r.stderr
+        assert inv is not None, f"the checker was never invoked:\n{r.stderr}"
+        argv = inv["argv"]
+        assert argv[0] == "stage1"
+        assert "--repo" in argv
+        assert argv[argv.index("--repo") + 1] == bed["values"]["checkout"]
+        assert argv[argv.index("--package-out") + 1] == bed["values"]["package"]
+        assert argv[argv.index("--signing-key") + 1] == \
+            bed["values"]["signing_key"]
+
+    def test_stage1_prints_the_effective_configuration_before_running(
+            self, bed, staged):
+        """The contract puts the stop-point *before stage 1*, and the launcher
+        invokes stage1 directly -- it never calls `validate`. A stop-point on a
+        command nobody runs is not a stop-point."""
+        r, _inv = _run_staged(staged, "stage1", _write_values(bed))
+        assert "effective ceremony configuration" in r.stdout
+        assert r.stdout.index("effective ceremony configuration") < \
+            r.stdout.index("[stub] checker invoked"), (
+                "the configuration must print BEFORE the checker runs, or the "
+                "operator sees it only after the thing they might have stopped")
+
+    def test_stage1_receives_no_agent_socket(self, bed, staged):
+        """Chunk A's decision, enforced in the artifact as well as the runbook.
+
+        Stage 1 runs candidate code. Handing it a live signing channel buys the
+        stage nothing -- it cannot sign by contract -- and hands that candidate
+        code exactly what the ceremony's boundary exists to withhold.
+        """
+        env = dict(os.environ)
+        env["SSH_AUTH_SOCK"] = "/tmp/cairn-test-agent-socket"
+        r, inv = _run_staged(staged, "stage1", _write_values(bed), env=env)
+        assert r.returncode == 0, r.stderr
+        assert "SSH_AUTH_SOCK" not in inv["env"], (
+            "stage 1 was handed an agent socket; the channel is removed, not "
+            "measured")
+
+    def test_stage1_runs_under_an_emptied_environment(self, bed, staged):
+        """Nothing is inherited. An ambient GIT_* variable can steer git at a
+        repository nobody named, and an ambient PATH is what let a replacement
+        utility vouch for bytes it had just rewritten."""
+        env = dict(os.environ)
+        env["GIT_DIR"] = "/tmp/somewhere-else/.git"
+        env["CAIRN_LEAKED"] = "should-not-arrive"
+        r, inv = _run_staged(staged, "stage1", _write_values(bed), env=env)
+        assert r.returncode == 0, r.stderr
+        assert "GIT_DIR" not in inv["env"]
+        assert "CAIRN_LEAKED" not in inv["env"]
+        assert inv["env"]["PATH"] == "/usr/bin:/bin"
+        assert inv["env"]["HOME"] == bed["values"]["home"]
+
+    def test_stage1_refuses_to_overwrite_an_existing_package(self, bed, staged):
+        """An existing package is either a run already in progress or a stale
+        one, and neither is safe to bless."""
+        Path(bed["values"]["package"]).write_text("{}\n")
+        r, inv = _run_staged(staged, "stage1", _write_values(bed))
+        _assert_refused(r, "already exists")
+        assert inv is None, "the checker ran despite the refusal"
+
+    def test_stage1_refuses_when_the_checker_is_not_beside_it(self, bed,
+                                                              tmp_path):
+        """The artifact and the checker arrive in one verified extraction. A
+        missing checker means this artifact is running somewhere it was not
+        placed -- and the alternative, searching for one, is how a verified
+        artifact ends up driving an unverified checker."""
+        lonely = tmp_path / "lonely"
+        lonely.mkdir()
+        shutil.copy2(_ARTIFACT, lonely / "reanchor.sh")
+        r = subprocess.run(
+            ["/bin/sh", str(lonely / "reanchor.sh"), "stage1",
+             _write_values(bed)],
+            capture_output=True, text=True, check=False)
+        _assert_refused(r, "not beside this artifact")
+
+
+class TestStage2IsTheStageThatSigns:
+
+    def _values(self, bed):
+        Path(bed["values"]["package"]).write_text('{"schema": "x"}\n')
+        return _write_values(bed)
+
+    def test_stage2_forwards_the_agent_socket(self, bed, staged):
+        """The deliberate asymmetry with stage 1. Without the socket
+        `git commit-tree` invokes the signer with no controlling terminal,
+        falls back to `ssh-askpass`, and dies naming a path that does not exist
+        on a stock host."""
+        env = dict(os.environ)
+        env["SSH_AUTH_SOCK"] = "/tmp/cairn-test-agent-socket"
+        r, inv = _run_staged(staged, "stage2", self._values(bed),
+                             "--confirm-package-sha256", "abc123", env=env)
+        assert r.returncode == 0, r.stderr
+        assert inv["env"].get("SSH_AUTH_SOCK") == \
+            "/tmp/cairn-test-agent-socket", (
+                "stage 2 lost the agent socket; it is the stage that signs")
+
+    def test_stage2_passes_the_confirmation_digest_through(self, bed, staged):
+        r, inv = _run_staged(staged, "stage2", self._values(bed),
+                             "--confirm-package-sha256", "abc123")
+        assert r.returncode == 0, r.stderr
+        argv = inv["argv"]
+        assert argv[0] == "stage2"
+        assert argv[argv.index("--confirm-package-sha256") + 1] == "abc123"
+        assert argv[argv.index("--package") + 1] == bed["values"]["package"]
+
+    def test_stage2_without_a_confirmation_digest_refuses(self, bed, staged):
+        """The digest is the Maintainer's act. A stage 2 that defaulted it
+        would be confirming on their behalf."""
+        r, inv = _run_staged(staged, "stage2", self._values(bed),
+                             "--review-manifest", "/x", "--reviewed-candidate",
+                             "y")
+        _assert_refused(r, "requires --confirm-package-sha256")
+        assert inv is None
+
+    def test_stage2_refuses_when_the_package_is_missing(self, bed, staged):
+        r, inv = _run_staged(staged, "stage2", _write_values(bed),
+                             "--confirm-package-sha256", "abc123")
+        _assert_refused(r, "does not exist")
+        assert inv is None
+
+
+class TestTransitionModeTakesBothInputsOrNeither:
+    """A manifest without the OID it was reviewed against, or an OID with no
+    reviewed member set, is half an authority change."""
+
+    def test_both_transition_inputs_reach_the_checker(self, bed, staged,
+                                                      tmp_path):
+        manifest = tmp_path / "review-manifest.txt"
+        manifest.write_text("schema x\n")
+        r, inv = _run_staged(staged, "stage1", _write_values(bed),
+                             "--review-manifest", str(manifest),
+                             "--reviewed-candidate", "deadbeef")
+        assert r.returncode == 0, r.stderr
+        argv = inv["argv"]
+        assert argv[argv.index("--transition-from-review") + 1] == str(manifest)
+        assert argv[argv.index("--reviewed-candidate") + 1] == "deadbeef"
+
+    def test_a_manifest_without_a_candidate_refuses(self, bed, staged,
+                                                    tmp_path):
+        manifest = tmp_path / "review-manifest.txt"
+        manifest.write_text("schema x\n")
+        r, inv = _run_staged(staged, "stage1", _write_values(bed),
+                             "--review-manifest", str(manifest))
+        _assert_refused(r, "without --reviewed-candidate")
+        assert inv is None
+
+    def test_a_candidate_without_a_manifest_refuses(self, bed, staged):
+        r, inv = _run_staged(staged, "stage1", _write_values(bed),
+                             "--reviewed-candidate", "deadbeef")
+        _assert_refused(r, "without --review-manifest")
+        assert inv is None
+
+    def test_a_symlinked_review_manifest_refuses(self, bed, staged, tmp_path):
+        real = tmp_path / "real-manifest.txt"
+        real.write_text("schema x\n")
+        link = tmp_path / "linked-manifest.txt"
+        link.symlink_to(real)
+        r, inv = _run_staged(staged, "stage1", _write_values(bed),
+                             "--review-manifest", str(link),
+                             "--reviewed-candidate", "deadbeef")
+        _assert_refused(r, "is a symbolic link")
+        assert inv is None
+
+    def test_an_unexpected_argument_refuses(self, bed, staged):
+        r, inv = _run_staged(staged, "stage1", _write_values(bed),
+                             "--bless-anyway")
+        _assert_refused(r, "unexpected argument")
+        assert inv is None
+
+
+class TestHashPackage:
+    """The step whose absence made the Maintainer improvise a command."""
+
+    def test_the_digest_is_computed_over_the_bytes_on_disk(self, bed):
+        import hashlib
+        pkg = Path(bed["values"]["package"])
+        payload = b'{"schema": "cairn-authorization-package/v1"}\n'
+        pkg.write_bytes(payload)
+        expected = hashlib.sha256(payload).hexdigest()
+        r = _run("hash-package", _write_values(bed))
+        assert r.returncode == 0, r.stderr
+        assert expected in r.stdout, (
+            f"expected {expected} over the file's bytes:\n{r.stdout}")
+
+    def test_a_digest_inside_the_package_is_not_the_answer(self, bed):
+        """A package can carry any digest it likes about itself. The confirmed
+        digest is computed over the file, never read out of it."""
+        import hashlib
+        pkg = Path(bed["values"]["package"])
+        lie = "0" * 64
+        payload = ('{"self_sha256": "%s"}\n' % lie).encode()
+        pkg.write_bytes(payload)
+        r = _run("hash-package", _write_values(bed))
+        assert r.returncode == 0, r.stderr
+        assert hashlib.sha256(payload).hexdigest() in r.stdout
+        assert r.stdout.count(lie) == 0 or "self_sha256" not in r.stdout, (
+            "the command echoed a digest the package asserted about itself")
+
+    def test_hash_package_refuses_when_the_package_is_absent(self, bed):
+        r = _run("hash-package", _write_values(bed))
+        _assert_refused(r, "does not exist")
+
+    def test_hash_package_takes_exactly_one_argument(self, bed):
+        r = _run("hash-package")
+        assert r.returncode != 0
+        assert "exactly one argument" in r.stderr
+
+
+class TestShowReport:
+    """A confirmed digest over an unread report authorizes something you have
+    not seen. This is the command that makes the report readable."""
+
+    def _package(self, bed, *, paths_per_class=3):
+        pkg = Path(bed["values"]["package"])
+        by_class = {
+            "frozen": [f"bootstrap/tests/frozen_{i}.py"
+                       for i in range(paths_per_class)],
+            "outside_coverage": [f"docs/note_{i}.md"
+                                 for i in range(paths_per_class)],
+        }
+        pkg.write_text(__import__("json").dumps({
+            "schema": "cairn-authorization-package/v1",
+            "range_report": {
+                "anchor": "a" * 40,
+                "candidate_head": "b" * 40,
+                "branch": "master",
+                "expected_old": "c" * 40,
+                "manifest_sha256": "d" * 64,
+                "by_class": by_class,
+                "counts": {k: len(v) for k, v in by_class.items()},
+                "signatures": {"total": 3, "unsigned": 0},
+            },
+        }, indent=2))
+        return _write_values(bed)
+
+    def test_the_report_renders_what_is_being_authorized(self, bed):
+        r = _run("show-report", self._package(bed))
+        assert r.returncode == 0, r.stderr
+        for expected in ("a" * 40, "b" * 40, "master", "d" * 64,
+                         "bootstrap/tests/frozen_0.py", "docs/note_0.md"):
+            assert expected in r.stdout, f"{expected!r} missing:\n{r.stdout}"
+
+    def test_the_counts_are_rendered(self, bed):
+        r = _run("show-report", self._package(bed))
+        assert "frozen" in r.stdout and "outside_coverage" in r.stdout
+
+    def test_a_long_class_is_bounded_and_SAYS_it_was_bounded(self, bed):
+        """Bounded, not silently truncated. A cut list that does not say it was
+        cut reads as 'that was all of it' -- which is exactly the wrong thing to
+        believe about a set of changes you are authorizing."""
+        r = _run("show-report", self._package(bed, paths_per_class=120))
+        assert r.returncode == 0, r.stderr
+        assert "NOT SHOWN" in r.stdout, (
+            "a bounded render must name what it dropped")
+        assert "80 more" in r.stdout, r.stdout[-1500:]
+
+    def test_a_package_with_no_report_refuses(self, bed):
+        Path(bed["values"]["package"]).write_text('{"schema": "x"}\n')
+        r = _run("show-report", _write_values(bed))
+        assert r.returncode != 0
+        assert "no range report" in r.stderr
+
+    def test_show_report_refuses_when_the_package_is_absent(self, bed):
+        r = _run("show-report", _write_values(bed))
+        _assert_refused(r, "does not exist")
+
+
+class TestEveryPublicCommandIsExercised:
+    """The contract requires every public command to be exercised through its
+    public path. This node fails if a command is added and never driven -- the
+    'built, unit-tested, and never reached by the governing path' shape this
+    repository keeps finding."""
+
+    PUBLIC_COMMANDS = ("validate", "stage1", "show-report", "hash-package",
+                       "stage2")
+
+    def test_the_dispatch_knows_exactly_these_commands(self):
+        text = _ARTIFACT.read_text(encoding="utf-8")
+        dispatch = text.split("    case $_main_cmd in", 1)[1].split("\n    esac", 1)[0]
+        arms = [l.strip().rstrip(")") for l in dispatch.splitlines()
+                if l.strip().endswith(")") and not l.strip().startswith("#")]
+        named = [a for a in arms if a not in ("*", "-h|--help|help")]
+        assert sorted(named) == sorted(self.PUBLIC_COMMANDS), (
+            f"the dispatch offers {sorted(named)}; this test knows "
+            f"{sorted(self.PUBLIC_COMMANDS)}. A command with no test is a "
+            f"command the ceremony has not been shown to have")
+
+    def test_the_usage_text_documents_every_public_command(self):
+        text = _ARTIFACT.read_text(encoding="utf-8")
+        usage = text.split("usage() {", 1)[1].split("\n}", 1)[0]
+        for cmd in self.PUBLIC_COMMANDS:
+            assert cmd in usage, f"'{cmd}' is undocumented in usage"
