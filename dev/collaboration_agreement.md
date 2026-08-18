@@ -75,7 +75,7 @@ a complete contract, followed by a fresh-context **Internal** plan review,
 with External or Security Code review reserved for explicit escalation — is
 **already the default now**, adopted at the Maintainer's direction in the
 *Maintainer-directed contract revision* of
-[`dev/plans/review-efficient-lifecycle.md`](plans/review-efficient-lifecycle.md)
+[`dev/plans/archive/review-efficient-lifecycle.md`](plans/archive/review-efficient-lifecycle.md)
 (2026-08-11). `tools/lifecycle.py` ships **monitoring-evidence** machinery
 (`pilot-report` derives and prints; `pilot-record` is the ledger's only
 writer) that watches that default after the fact, over a bounded window: six

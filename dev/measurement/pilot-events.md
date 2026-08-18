@@ -7,7 +7,7 @@ allocation** actually cost and caught, one event per counted plan stem or
 pause. Counts, pause state, the window, and the whole report are **derived
 from this file** by `python tools/lifecycle.py pilot-report` and are stored
 nowhere. Established by Chunk P6a of
-[`dev/plans/review-efficient-lifecycle.md`](../plans/review-efficient-lifecycle.md).
+[`dev/plans/archive/review-efficient-lifecycle.md`](../plans/archive/review-efficient-lifecycle.md).
 
 **This ledger measures a policy that is already in force.** The allocation is
 the default now; this is monitoring evidence, not a permission gate. Two
@@ -75,7 +75,7 @@ printable ASCII, at most 200 characters, and contain no backslash, backtick,
 or pipe.
 
 **`/1` is retired, and a `/1` block now refuses.** Chunk P2 of
-[`review-efficient-lifecycle`](../plans/review-efficient-lifecycle.md) bumped the
+[`review-efficient-lifecycle`](../plans/archive/review-efficient-lifecycle.md) bumped the
 version to add `assurance_path` and close the eligible / ineligible gap recorded
 below. A `/1` block carries no `assurance_path`, so reading one as `/2` would be
 exactly the half-read the version field exists to prevent. Nothing recorded is

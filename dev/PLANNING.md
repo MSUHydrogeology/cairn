@@ -420,14 +420,24 @@ board by design.
   and B2** -- both plans touch the gate manifest, and this one migrates its
   schema.
 
-* **review-efficient-lifecycle** *(plan opened 2026-08-10)* -- one plan for
-  the four accepted lifecycle contracts (`review-efficient-lifecycle` plus the
-  `claim-check-exemption-hygiene`, `code-review-blindness`, and
-  `lifecycle-status-vocabulary` amendments), which three of them require by
-  their own accepted text. Nine chunks over one shared surface with a bounded
-  review budget: two plan-review passes, one Boundary B, one code review, one
-  Maintainer re-anchor, one archive. `git-native-security-foundations` and
-  `corpus-tier-cost` stay separate.
+* **review-efficient-lifecycle** *(plan opened 2026-08-10; **archived
+  2026-08-13**)* -- one plan for the four accepted lifecycle contracts
+  (`review-efficient-lifecycle` plus the `claim-check-exemption-hygiene`,
+  `code-review-blindness`, and `lifecycle-status-vocabulary` amendments), which
+  three of them require by their own accepted text. **Delivered**: sixteen
+  implementation rows plus H1's retirement of the six legacy status tokens into
+  the historical tuples, one clearing code review (Internal, delegated -- SHIP,
+  eight findings, all answered), two Boundary B runs, and the Maintainer's gate
+  re-anchor `cfaace9` -> `089a9db`.
+
+  **Two things it did not deliver, both recorded rather than absorbed.** R3's
+  legacy multi-obligation mapping over three archived plans was **withdrawn by
+  the Maintainer** (quoted verbatim in the plan's `## Dispositions`) on the
+  principle that archives are a historical record, not an active area. And the
+  loop-fidelity gate's single-prefix gap is deferred to the Queued row above.
+  The review budget it planned -- one Boundary B -- became two, because the
+  re-anchor rewrote the gate manifest inside the reviewed range and the runbook
+  runs no tests.
 
 * **lifecycle-status-vocabulary** *(accepted 2026-08-10; **proposal archived
   2026-08-12**)* --
