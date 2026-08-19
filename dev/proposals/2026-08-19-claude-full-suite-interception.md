@@ -13,7 +13,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change edits
 `bootstrap/tests/conftest.py`, which is gate-frozen and already carries the
 release-gate outcome rule, and it can **refuse to run the suite**. *(Metadata
@@ -1918,3 +1918,212 @@ distinct plan/code Security Review remains owed.
 
 **Next round:** limited to Z5-Z6. Preserve pre-existing collection failure and
 make the evidence table express the file-count policy exactly.
+
+## Response -- Claude -- 2026-08-19 (round 4)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `0872f96`. Both reproduce.
+
+**[Z5] accept.** Built 41 valid test files plus one syntax-error file. **Control:
+exit 2** — pytest's collection-error disposition. **Guarded: exit 4** — the
+guard saw 41 files, raised, and replaced that disposition with its own usage
+error. The error text stayed on screen, but the exit code — the part a script,
+a gate, or another agent reads — now says "usage error" where it said "collection
+error".
+
+That is a cost-control feature **overwriting stronger test evidence**, which is
+the wrong precedence in a way I did not consider: I reasoned about the guard
+against *clean* broad runs and never asked what it does to a run that had already
+failed. The fix is a precondition, not a message change.
+
+**[Z6] accept — my Evidence row contradicted my own policy.** Measured on the
+live suite, `--ignore=bootstrap/tests/test_notice_install.py` leaves **114 files
+and 4,443 items**, which the guard correctly refuses at the `>40` threshold. Yet
+Revision 4's table listed `--ignore` under *"A narrowed run is never refused"*.
+Both statements cannot hold, and the table was the wrong one: **the guard measures
+final breadth, deliberately, and has no opinion about selectors.** A broad `-k` or
+`-m` has exactly the same shape.
+
+This matters beyond tidiness. An evidence row promising selector-based behaviour
+is an invitation for a later implementation to start parsing selectors — the
+command-grammar design this proposal already abandoned once. The invariant is
+restated below in the only terms the mechanism actually implements.
+
+## Revision 5
+
+The complete current contract, self-contained. Supersedes Revision 4 in full.
+
+**Section inventory carried forward from Revision 4** — Assurance path · Scope ·
+The guard · The child environment · The bypass · The cost of the mechanism ·
+Evidence · Security preflight · Known omissions · Withdrawn ledger. **No section
+is absent.** (This practice is adopted from the sibling proposal's E19, where two
+accepted sections were silently dropped across two revisions because a ledger
+written from memory cannot see an omission.)
+
+### Assurance path
+
+**high-assurance.** Edits `bootstrap/tests/conftest.py` and
+`scripts/quality_gate.py`, **both gate-frozen**, so this carries a re-anchor. It
+adds no executable path and no new file. The trigger is that it can **refuse to
+run the suite**, from the file that already owns the release-gate outcome rule.
+
+### Scope
+
+**In**: a broad-run guard in `bootstrap/tests/conftest.py`; an additive child
+environment in `scripts/quality_gate.py`; one vendor-neutral sentence under
+*Verification boundaries* in `AGENTS.md` and its twin; one new test file.
+
+**Withdrawn and not deferred**: everything under `.claude/`, the command grammar,
+the blocked-form enumeration, the `agent_id` predicate, `tools/verify.py`, the
+Boundary A block, the `_gate_manifest.py` glob extension, the `[TRU-4]` folding,
+and the root `CLAUDE.md` entry. **`templates/core/VENDOR.md` untouched.**
+
+### The guard
+
+In `bootstrap/tests/conftest.py`:
+
+```python
+def pytest_collection_finish(session): ...
+```
+
+**`pytest_collection_finish` is contract, and `trylast` is refused.** A
+`trylast=True` `pytest_collection_modifyitems` is only a priority *among
+equal-priority implementations*, so registration order decides whether it sees the
+post-filter list. `collection_finish` runs after collection has been performed
+**and modified**, and reads `session.items` directly.
+
+**The discriminator is distinct test files.** Measured: a full collection spans
+**115** files; the six-file scoped mapping this project used spans **6** and ran
+roughly 1,140 tests — so counts barely separate while file span separates by
+nearly twenty times.
+
+**Threshold: more than 40 distinct test files.** A **cost policy**, not a
+statement about test completeness.
+
+**The refusal precondition — collection must have completed cleanly.** The guard
+raises **only when there is no pre-existing failure**: at minimum
+`session.testsfailed == 0`, together with whatever stop/fail state the
+implementation consults. Measured, without this precondition a 41-file suite
+containing one syntax-error file exits **4** under the guard where the control
+exits **2**, so the guard would replace pytest's collection-error disposition with
+its own. **A cost prompt must never overwrite stronger test evidence**, and the
+exit code is the part that machines read.
+
+**Refusal is `pytest.UsageError`, exit 4** — measured, against 0 when allowed, and
+it fires before any test runs.
+
+**Exemptions**: `CAIRN_FULL_SUITE=1`; **release mode**, via the module's existing
+strict-equality predicate; and **`--collect-only`**, since nothing executes —
+which also keeps `_gate_manifest.py`'s own collector working.
+
+### The child environment — additive
+
+`scripts/quality_gate.py` spawns a full pytest run per seed for the
+order-independence sub-gate, which this guard would refuse. It must supply the
+override, and **the construction is bound**:
+
+> Copy the **complete parent environment**, set exactly `CAIRN_FULL_SUITE=1` on
+> that copy, and pass the copy to the child.
+
+A fresh mapping would drop `CAIRN_RELEASE_GATE_ACTIVE`, which
+`bootstrap/security_check.py` passes in explicitly and the grandchild currently
+inherits — and a release run would then stop refusing skips as evidence while
+every test still passed.
+
+### The bypass, recorded rather than claimed away
+
+**A conftest does not reach every pytest session.** Measured,
+`pytest bootstrap/tests --collect-only -q --noconftest` collects **4,455** tests
+without loading `bootstrap/tests/conftest.py`, confirmed by the conftest's own
+option becoming unrecognized in that invocation. `--noconftest` and equivalent
+suppression are a **known bypass**.
+
+Acceptable only because of what the guard is: a deliberation prompt under a
+cost-control threat model, with a documented one-token override. It is **not** a
+security boundary and must never be described as one. A probe pins the bypass so
+prose cannot drift back to universal coverage, and **no further layer is added**.
+
+### The cost of the mechanism
+
+**The role distinction is lost.** A conftest runs in-process with no `agent_id`,
+so the guard can *state* that verification returns to the spawner but cannot
+enforce it differentially. Enforcement of the routing decision remains a rule the
+spawner follows. **And this is a refusal, not a speed bump** — it blocks,
+including a human, until one token is set.
+
+### Evidence
+
+The invariant is stated in the only terms the mechanism implements — **final
+breadth, never selectors**:
+
+| invariant | falsifier |
+|---|---|
+| **A cleanly collected run spanning ≤ 40 files is never refused, however it got there** | a single file; a node id; `-k`; `-m`; `--ignore` down to ≤ 40 files; `PYTEST_ADDOPTS='-k …'`; the six-file mapping — assert each runs |
+| **A cleanly collected run spanning > 40 files is refused, whatever the selector** | the bare run; `cd <repo> && …`; env-prefixed; absolute interpreter; the canonical Boundary B argv; **and `--ignore` of one file, measured at 114 files / 4,443 items** — assert exit 4 in each |
+| The boundary itself | a 41-file selection refuses; a 40-file selection runs |
+| **A pre-existing collection failure is never masked** | 41 valid files **plus one syntax-error file**; assert the guarded run keeps the control's **exit 2** and its collection-error diagnostic, and that the refusal message is **absent**. Keep the clean 41-file control at exit 4 |
+| `collection_finish` sees the final list | register a **competing late modifier**; assert the guard's count equals `len(session.items)` after it |
+| The override allows | `CAIRN_FULL_SUITE=1`; assert exit 0 and full execution |
+| Release mode is exempt | the module's existing predicate at its one recognized value; assert the suite runs; assert `…=0` does **not** exempt |
+| `--collect-only` is exempt | assert the gate manifest's own collector still builds |
+| **The release token survives the gate** | exercise the real `security_check → quality_gate → pytest` path with a **release-refused outcome**; assert the guard does not refuse it **and** the release phase is still non-zero. "The quality gate still runs" does not discharge this row |
+| The child environment is additive | assert the spawn passes a copy of the parent environment, not a fresh mapping |
+| The bypass is real and bounded | `--noconftest` collects without loading the conftest; assert the guard does not fire |
+
+**Boundary B mode: `full`** — two gate-frozen files under a re-anchor ceremony,
+and work under a security ceremony. Its command carries the override.
+
+### Security preflight
+
+**S1 — Who supplied it?** The guard reads `session.items`, `session.testsfailed`,
+two environment variables and pytest's config. Nothing is executed; no document-
+or command-supplied string is interpreted.
+
+**S2 — Can it fail?** Two load-bearing falsifiers: the competing-late-modifier
+row, which distinguishes "the guard sees the final list" from "the guard saw *a*
+list"; and the collection-error row, which is what proves the precondition is
+present — without it the guarded and control exits differ, measured.
+
+**S3 — What fires it, over what?** Every pytest session over `bootstrap/tests`
+**that loads Cairn's conftest**, in any harness, for any agent and for a human.
+`--noconftest` is outside that boundary, stated rather than assumed. **Cairn has
+no CI.**
+
+**S4 — Which way does it break?** Toward **refusing** — the opposite of the
+withdrawn design. A guard bug blocks verification rather than permitting an
+unmeasured run. Defensible only because the failure is loud, immediate, carries
+its remedy in the message, and is one token away. **With one exception now bound
+in the other direction**: where a run has already failed, the guard stands down
+entirely, because the pre-existing failure is the stronger evidence.
+
+**S5 — Who still wins?** An attacker who can write `bootstrap/tests/conftest.py`
+already owns the suite; this adds no capability and no new surface. **Nothing here
+is outside the frozen set.** The `[TRU-4]` gap is neither created nor closed.
+
+### Known omissions
+
+* **`--noconftest` and equivalent suppression bypass the guard entirely.**
+* **The routing decision is stated, not enforced.**
+* **No durable record of an override** — the sibling proposal's ledger is what
+  would make it countable.
+* **In-process `pytest.main()`** inside a test falls under the threshold and is
+  unaffected — deliberate.
+* **A human is refused too**; no exemption distinguishes them, because a
+  mechanism that could would be one an agent could claim.
+* **A broad run that has already failed is not prompted at all** — the Z5
+  precondition means the cost signal is skipped exactly when a failure is
+  present. That is the correct precedence, and it does mean some broad runs go
+  uncounted.
+* **Whether the prompt changes behaviour is unmeasured** until that ledger exists.
+
+### Withdrawn / superseded commitments
+
+* **The unconditional refusal** — withdrawn (Z5); it replaced a collection
+  error's exit 2 with its own exit 4, measured. Replaced by a precondition that
+  the collection completed without a pre-existing failure.
+* **"A narrowed run is never refused", and listing `--ignore` under it** —
+  withdrawn (Z6) as contradicting this contract's own policy: `--ignore` of one
+  file leaves 114 files and is correctly refused. Replaced by an invariant stated
+  in final-breadth terms on both sides of the 40-file boundary, so no later
+  implementation can read the table as licence to parse selectors.
