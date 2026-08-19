@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -1747,3 +1747,278 @@ re-anchor ceremony.
 **Next round:** limited to E15-E18. Restore per-file time, pair exact canonical
 argv with resolved scope checks, make Unicode/skeleton encoding total, and
 follow `commondir` while asserting the worktree SHA.
+
+## Response -- Claude -- 2026-08-19 (round 4)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `c889d2f`. **All four reproduce.** One of them is a scope
+regression I introduced by pasting a pre-review fix without checking what it
+cost.
+
+**[E15] accept — and the provenance is worth recording.** Revisions 1 and 2 both
+defined `by_file` as `{path: seconds}`, "the 25 most expensive". Revision 3
+changed it to an **integer node count**. That came from the pre-review, whose
+finding was that the value type was undeclared and the eviction order undefined —
+both true. Its proposed fix declared the type as a node count, and I pasted it
+because it answered the stated defect, without noticing it **destroyed the
+field's purpose**. A cost ledger whose per-file map holds node counts cannot
+answer which files make the suite expensive: a file with one ten-minute test
+would be evicted before a file with many millisecond tests. The reviewer is right
+that this removes accepted scope rather than compacting it.
+
+The lesson generalises past this row: **an adversarial pre-review optimises for
+the defect it names, not for the artifact's purpose**, and a pasted fix needs the
+same "does this still do the job" check as any other edit. Restored below as
+**integer milliseconds**, which keeps the compactness the pre-review wanted and
+the meaning it discarded.
+
+**[E16] accept.** Reproduced: a six-test directory run with
+`--ignore=<one two-test file>` reports `args=['.']`, `inipath=None`,
+`PYTEST_ADDOPTS=None`, `deselected=0`, `collected=4`, exit 0. Every Revision 3
+`full` clause holds while a third of the suite was excluded, because `--ignore`
+prunes before collection and so shows up in none of the runtime postconditions.
+The fix is to **combine** the channels rather than choose between them — an exact
+closed family of raw canonical argv **and** the resolved postconditions — which is
+not a return to the discarded allowlist, because the family is tiny and closed
+rather than a general option vocabulary.
+
+**[E17] accept; the sanitizer is simply wrong.** Executed over four inputs:
+
+| input | `encode("utf-8","backslashreplace").decode("ascii")` | `encode("ascii","backslashreplace").decode("ascii")` |
+|---|---|---|
+| `ok` | `'ok'` | `'ok'` |
+| `café` | **UnicodeDecodeError** | `'caf\xe9'` |
+| emoji | **UnicodeDecodeError** | `'x\U0001f600'` |
+| lone surrogate | `'a\udcff'` | `'a\udcff'` |
+
+`backslashreplace` fires only on *encoding* errors, and UTF-8 encodes everything
+except surrogates — so ordinary accented text produces non-ASCII bytes that then
+fail the ASCII decode. My procedure worked for exactly the exotic case I designed
+it for and broke on the common one. The `ascii` codec is the correct encode
+target. Also accepted: the skeleton fallback must be **total**, so non-finite
+timings are normalised before it, since `allow_nan=False` could otherwise reject
+the skeleton itself.
+
+**[E18] accept.** Inspected a live linked worktree: `.git` is a file naming
+`…/.git/worktrees/<name>`; that directory holds `HEAD` and a `commondir` of
+`../..`; and the branch ref is **absent** from the worktree gitdir while
+`commondir` resolves to the common `.git`. Worth recording precisely: the
+worktree I inspected has a **detached** `HEAD`, so Revision 3's procedure would
+have passed there *by luck*. The symbolic-ref case — the routine one — returns
+`null`. The falsifier must therefore use a worktree **on a branch** and assert the
+**expected SHA**, since `head: null` is already the malformed-state fallback and a
+presence-only assertion would pass without proving anything.
+
+## Revision 4
+
+The complete current contract, self-contained. Supersedes Revision 3 in full.
+
+### Assurance path
+
+**high-assurance.** Edits gate-frozen `bootstrap/tests/conftest.py` (re-anchor
+required); adds a file write to every non-child, non-release session in the one
+file that can already decide a session's exit status. **Executes nothing.**
+
+### Scope
+
+**In**: five hooks in `bootstrap/tests/conftest.py`; a gitignored JSONL ledger at
+`dev/measurement/suite-runs.jsonl`; its `.gitignore` rule; a reader in `tools/`;
+one new test file; a note in `dev/measurement/README.md`.
+
+**Excluded**: any subprocess; any doctrine, canonical-command, template or adopter
+surface; any dependency; any enforcement.
+
+### Hooks, and inertness at every one
+
+`pytest_configure` (claim marker), `pytest_runtest_logreport`,
+`pytest_collectreport`, `pytest_deselected`, `pytest_sessionfinish`. **Each is
+individually wrapped**; measured unguarded, a raising report hook gives
+`INTERNALERROR`, exit 3 and "no tests ran". In all three pre-existing hooks the
+release-evidence logic runs to completion first and the ledger block last;
+ordering is defence in depth, **not** the guarantee — measured over an 8-cell
+matrix, order changed nothing and only the guard did. The `sessionfinish` ledger
+block is wrapped in **`except BaseException`**, because a `KeyboardInterrupt` in
+the retry loop otherwise turns exit 1 with a release report into exit 130 with
+none.
+
+### Node accounting and outcome precedence
+
+`collected` is `session.testscollected`; `executed` is nodes emitting ≥1 runtest
+report; `not_run` is the difference. Asserted: **`0 <= executed <= collected`**
+(the tautological identity is withdrawn), the seven counts sum to `executed` as a
+schema check only, and **reconciliation against `terminalreporter.stats`** in the
+test file is what actually validates the numbers.
+
+Precedence per node: `failed` in setup/teardown → **`errors`**; `failed` in call →
+**`failed`**; `wasxfail` → **`xpassed`**/**`xfailed`**; any `skipped` → **`skipped`**;
+a passing setup with **no call report** → **`aborted`**; else **`passed`**.
+
+### The row schema
+
+`ts_start`, `ts_end`, `wall_s`, `collector_ms`, `head`, `interpreter`,
+`invocation`, `scope`, `label`, `collected`, `executed`, `not_run`, `deselected`,
+the seven outcome counts, `collection_errors`, `exitstatus`, `interrupted`,
+`truncated`, `by_file`, `by_file_total`, `by_file_kept`.
+
+**`by_file` holds cost.** It maps a repo-relative path (≤ 160 bytes) to **integer
+milliseconds** — integers so no non-finite float can reach the encoder, and
+milliseconds so the map stays compact. **Eviction is smallest duration first**,
+ties broken by longest path. `by_file_total` and `by_file_kept` are recorded so a
+pruned breakdown is never mistaken for a complete one. A node-count breakdown is
+deliberately **not** added: it would spend budget the cost map needs, and it is
+not what the reader exists to answer.
+
+**`head` is resolved by procedure.** Read `.git`; if it is a **file**, follow its
+`gitdir:` line. Read `HEAD` from that directory. If `HEAD` is a 40-hex value, done.
+If it is `ref: <path>`, resolve **`commondir`** when present — validating that it
+resolves inside a real git directory — and look for the loose ref there, falling
+back to that directory's `packed-refs`. A 40-hex result, otherwise `null`.
+Revision 3 stopped at the worktree gitdir, where the branch ref does not live.
+
+### Scope — both channels, combined
+
+Revision 3 read only resolved state, and `--ignore` defeats it: measured,
+`--ignore` excluded a third of a suite while `args`, `inipath`, `PYTEST_ADDOPTS`,
+`deselected` and the error counts all looked like a full run.
+
+`full` requires **both**:
+
+1. **The raw invocation is a member of an exact closed family** — the ordinary
+   canonical command, and the order-independence command with its known harmless
+   display/shuffle options (`--quality-gate-shuffle-seed=<int>`, `-q`,
+   `--no-header`, `--no-summary`). **Any other token — including `--ignore`,
+   `--ignore-glob`, plugin options, and any future option — yields `unknown`.**
+2. **The resolved postconditions hold** — `config.args` resolves to the suite
+   root; `config.inipath is None`; `PYTEST_ADDOPTS` and `PYTEST_PLUGINS` unset;
+   `collected > 0` and `executed > 0`; `deselected == 0`; `collection_errors == 0`;
+   `not_run == 0`; `interrupted` false; `truncated` false.
+
+This is not the discarded allowlist: that was a general option vocabulary asked to
+certify anything it recognised. This family is tiny, closed, and paired with
+runtime checks that catch the environment and early-stop narrowing raw argv cannot
+see. `--collect-only` is never `full`. A recognized strict-subset path is
+`targeted`; everything else is `unknown`. The reader re-derives `scope` from the
+stored fields.
+
+### The encoded-row budget
+
+**4096 bytes of the final encoded line**, excluding the newline. **Encoder
+pinned**: `json.dumps(row, ensure_ascii=True, separators=(",", ":"),
+allow_nan=False, sort_keys=True)` — measured, the same row moves 1,626 → 3,930
+bytes between `ensure_ascii=False` and `True`.
+
+**Sanitize to ASCII, then cap.** The transformation is
+`s.encode("ascii", "backslashreplace").decode("ascii")`. Revision 3 specified
+`encode("utf-8", …)`, which **raises `UnicodeDecodeError` on ordinary accented
+text and emoji** — `backslashreplace` fires only on encoding errors, and UTF-8
+encodes everything but surrogates. The `ascii` target is what actually guarantees
+ASCII, and it handles lone surrogates too. Caps apply to the sanitized string:
+`label` 128 bytes; `invocation` ≤ 64 tokens, ≤ 128 bytes each, ≤ 1,024 total.
+**JSON re-escapes backslashes and quotes, so only the pinned encoding establishes
+the budget** — the caps bound the input, the line-level rule bounds the output.
+
+Then: encode; if ≤ 4096, write. Otherwise evict `by_file` entries smallest-duration
+first, re-encoding, until it fits or the map is empty. If it still exceeds, or the
+encode raised, **write the skeleton row**: `label` and `invocation` `null`,
+`by_file` empty, `truncated` true, `scope` `unknown`. **The skeleton is total** —
+non-finite timings are normalised to `null` before it is built, so `allow_nan=False`
+cannot reject the fallback itself. Measured skeleton overhead 451 bytes.
+
+**Row-per-session invariant.** Every session reaching `sessionfinish` past the
+guards that acquires the lock appends **exactly one** line. The only paths
+appending nothing are the guards, `CAIRN_SUITE_LEDGER=0`, an absent directory, and
+lock-deadline expiry — so the ledger's session count is a **lower bound**, which
+the reader states whenever it reports totals.
+
+### Durability
+
+`LOCK_NB` retry, **250 ms deadline, 10 ms interval**; expiry yields no row.
+**Repair the tail before appending** — with the lock held, if the file does not end
+in a newline, write one first; measured, otherwise a truncated fragment fuses with
+the next row and both are lost. One `os.write`; check the returned byte count.
+POSIX only; network filesystems excluded.
+
+### The five guards
+
+1. **Outcome-inert** — every hook individually guarded; the ledger paths never
+   read or write `session.exitstatus`.
+2. **Reentrancy with ownership** — `CAIRN_SUITE_LEDGER_SESSION=1` claimed in
+   `pytest_configure`; a pre-existing marker means child; unset in `finally` only
+   if owned.
+3. **Containment** — skip when the **resolved** ledger directory is under the
+   **resolved** `tempfile.gettempdir()`; both sides resolved, because
+   `/var/folders/...` versus `/private/var/folders/...` makes the one-sided
+   comparison false for a directory plainly inside the temp tree.
+4. **Release mode** — the module's existing **strict-equality** predicate, never a
+   presence test.
+5. **Opt-out** — `CAIRN_SUITE_LEDGER=0`; no-op when `dev/measurement/` is absent.
+
+### Failure dispositions
+
+Every path closes toward doing nothing: unwritable or absent directory,
+lock-deadline expiry. **Two states are explicitly not on that list**: an
+unreadable or unrecognized `.git` yields `head: null` **and a row**; an
+over-budget or unencodable row yields the **skeleton row**, not silence.
+
+### Evidence
+
+| invariant | falsifier |
+|---|---|
+| Exit status and outcomes never change | fault-inject **each of the five hooks separately**; compare against a collector-disabled control |
+| A diagnostics fault never suppresses release evidence | inject **with the ledger's own guard removed** — otherwise guard 4 makes every cell identical and the row passes on a broken implementation. Run twice: `Exception` from the accumulator, `BaseException` from the `sessionfinish` block; assert the `RELEASE MODE` report prints with its nodeids and exit is 1 |
+| Node accounting | `-x` early and final-node failure, `--maxfail=2`, `pytest.exit()`, `KeyboardInterrupt`, setup error, teardown error, module-level skip; assert `0 <= executed <= collected` and **reconciliation against `terminalreporter.stats`** |
+| Scope | `--ignore` and `--ignore-glob` (**each must be `unknown`, not `full`**); `PYTEST_ADDOPTS="-k …"`; ini `addopts`; `-p no:python`; zero positionals; module-level skip; `importorskip`; the order-independence argv (**must be `full`**); the canonical argv (**must be `full`**) |
+| `by_file` holds cost, and eviction preserves it | a low-node/high-duration file must survive ahead of a high-node/low-duration file; assert the surviving map and `by_file_kept` |
+| Sanitizer is total | `ok`, `café`, emoji, lone surrogate, and a mixed string — assert **the intended sanitized and capped field survives** with the specified `truncated` value, not merely that some valid line exists |
+| Skeleton is total | force a non-finite timing into the fallback path; assert a row is still written |
+| Encoded budget | oversized label, 64+ tokens, control characters, all 115 real paths; assert **exactly one line**, ≤ 4096 bytes, and `json.loads` round-trips |
+| Encoder pinning | assert the call site matches the exact signature |
+| `head` in a linked worktree | a worktree **on a branch** (not detached — a detached worktree passes by luck); assert the **expected SHA**, not merely that a row exists |
+| `head` elsewhere | main checkout, packed-refs checkout, malformed `.git`; assert a row in every case |
+| Containment | a ledger directory under `gettempdir()` via the unresolved `/var` spelling; assert no row |
+| Bounded lock | hold the lock externally; assert completion within 1 s of a control and no row |
+| Tail repair | partial tail then normal append; reader reports the fragment **and** returns the later row |
+| Reentrancy | nested pytest writes nothing; two sequential `pytest.main()` write two rows; a pre-existing marker survives |
+
+Standing gates: `test_gate_manifest.py`, `test_gate_preflight.py`,
+`test_security_check.py`, `test_python_floor.py`.
+**Boundary B mode: `full`** — gate-frozen file under a re-anchor ceremony.
+
+### Settled under probe — not open questions
+
+The five-hook guard requirement (fault injection). `pytest_collectreport` fires
+for collection errors without Package/Module double-count. Module state does not
+leak across sequential in-process `pytest.main()` calls. `_release_child_env`,
+`_gate_manifest._collect`, `test_security_check._child_pytest` and
+`quality_gate._run_order_independence` pass the environment through as a superset,
+so **no suite-spawned child writes a row**. Path re-spellings resolve. Adding one
+test file does not break the gate manifest. Shuffling does not perturb `by_file`,
+since attribution is by nodeid. The 250 ms deadline is generous for a single
+`open`+`flock`+`write`+`close`.
+
+### Known omissions
+
+Dirty-tree state deferred behind its own Security Review; release-mode and nested
+sessions unmeasured by design; Windows unclaimed; network filesystems excluded;
+plan attribution manual unless `CAIRN_SUITE_LEDGER_LABEL` is set; in-process
+`pytest.main()` treated as children; collector overhead unmeasured until
+implementation. The session count is a **lower bound**.
+
+### Withdrawn / superseded commitments
+
+* **`by_file` as an integer node count** — withdrawn (E15) as an accepted-scope
+  regression I introduced from a pre-review fix. Restored as integer
+  milliseconds, with eviction by smallest **duration**.
+* **`scope` from resolved state alone** — withdrawn (E16); `--ignore` prunes
+  before collection and is invisible to every runtime postcondition. Replaced by
+  an exact closed argv family **combined with** the postconditions.
+* **`s.encode("utf-8", "backslashreplace").decode("ascii")`** — withdrawn (E17);
+  raises on ordinary accented text and emoji. Replaced by the `ascii` encode
+  target.
+* **A skeleton row that could itself fail to encode** — withdrawn (E17);
+  non-finite timings are normalised before the fallback.
+* **`head` resolution stopping at the worktree gitdir** — withdrawn (E18); the
+  branch ref lives under `commondir`, so the symbolic-ref case returned `null`.
+* **A presence-only worktree falsifier** — withdrawn (E18); it would pass on a
+  detached worktree without proving worktree support.
