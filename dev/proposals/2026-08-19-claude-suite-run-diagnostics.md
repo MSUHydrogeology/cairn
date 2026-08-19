@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -1171,3 +1171,108 @@ is closed **by construction**; write-path targeting only **by enumeration**.
 * **The header's "and a subprocess invocation" clause** — corrected in place as
   metadata rather than left to be resolved from history; the `high-assurance`
   value never depended on it.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `b66aff352eacb41a96f0af1aea6859e7070aacd2`
+Target: Revision 2, limited to E7-E10 and their replacement contract
+Prior findings: E7-E10 in the Codex External review committed at `e3aa98c85376bf8eb21a5632e792ba69844debfe`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** Revision 2 closes the invocation-source error, ordinary-
+skip precedence, damaged-tail recovery, and blocking-lock mechanism in
+principle. Two interactions in the replacement contract still fail under
+execution: stopped sessions have collected nodes with no outcome report, and an
+exception in any newly added report hook can turn pytest into an internal error.
+The remaining bounds also need actual values before their falsifiers can assert
+them. These are small schema and guard repairs; the architecture is settled.
+
+### Findings
+
+**[E11 - BLOCKING, E7/E8 continuation] Collected-but-unrun nodes break both the
+outcome identity and scope audit.** Under Python 3.13.13 I ran a two-node suite
+with the first node failing under `-x`. At `pytest_sessionfinish`, pytest reported
+`session.testscollected == 2`, but only one node id had emitted any runtest
+report. The five proposed outcome counts can therefore sum to 1, not the claimed
+`collected == 2`. Interruption can create the same population.
+
+Keep `collected` as pytest's actual collection count, add an explicit `not_run`
+(or equivalently named) count, and define `executed` as the population reduced
+by the five outcome categories. Assert `five outcomes == executed` and
+`executed + not_run == collected`. Then derive `scope` from the **whole recorded
+row**, not “invocation alone”: collection errors, interruption, and early stop
+are runtime facts. The reader can still audit the classification without
+trusting the stored `scope`, but it needs those row fields. Test `-x` with both
+an early failure and a failure in the final node, plus interruption before all
+collected nodes report.
+
+**[E12 - BLOCKING, E8 continuation] Outcome-inertness must surround all four
+diagnostics hooks, not only the writer helper.** I installed a
+`pytest_runtest_logreport` hook that raises `RuntimeError`. Pytest stopped before
+running the test and exited 3 with `INTERNALERROR`. Revision 2 adds diagnostics
+work to `pytest_configure`, `pytest_runtest_logreport`, and
+`pytest_collectreport`, but its falsifier only forces “the helper” to raise and
+its guard still says the wrapped work “runs last,” which describes only
+`sessionfinish`.
+
+Specify an exception boundary around every newly added diagnostics path. In the
+two existing report hooks, the release-evidence logic must run independently of
+and before the fallible ledger accumulator so diagnostics failure cannot suppress
+the gate's evidence. Fault-inject each lifecycle phase through a real pytest
+session and compare exit/outcomes to a collector-disabled control. Marker cleanup
+still belongs in `sessionfinish`'s `finally` path.
+
+**[E13 - BLOCKING, E7 continuation] The 4096-byte invariant is not enforced by
+25 `by_file` entries.** `label`, invocation tokens, and paths are repository- or
+environment-supplied. A minimal JSON row containing only a 5,000-character label
+and one invocation token encoded to 5,046 bytes. Revision 2 says argv and paths
+are length-capped but gives no values, does not cap `label`, and tests only the
+25 longest paths currently present. That cannot establish the row-wide bound.
+
+Define the encoded-byte budget over the final JSON line. Cap every variable-
+length field, including total invocation and label, and specify the disposition
+when preserving an auditable invocation would exceed the budget (for example,
+record a truncation marker and force `scope=unknown`, or emit no row). Falsify it
+with oversized labels, tokens, escaped control characters, and long paths, then
+assert the **encoded line**, not an input count, is at most 4096 bytes.
+
+**[E14 - SUBSTANTIVE, E7/E10 continuation] Two contracts called closed remain
+open-ended prose.** A “closed” safe-option allowlist cannot end in “and similar”:
+enumerate the admitted spellings and arities so `-p value`, `--durations=10`, and
+future plugin options have one result. Likewise, “on the order of a second” does
+not define the lock deadline or the completion bound the test should assert.
+Name the monotonic deadline, retry interval/cap, and test allowance. The chosen
+numbers are implementation judgment; their existence is the contract.
+
+### Closed findings
+
+E9 is closed: repairing a missing delimiter under the held lock before the next
+append preserves the following valid row, and the public-path falsifier now
+tests the actual failure sequence. E10's blocking-lock defect is closed at the
+mechanism level by `LOCK_NB` retry; E14 only asks the revision to bind its stated
+budget. E7's use of `config.invocation_params.args` and E8's all-phase outcome
+precedence are correct; E11-E13 address the newly exposed populations and bounds
+around those correct choices.
+
+### Coverage
+
+**Covered:** Revision 2 in full; canonical Python 3.13.13 execution of an
+early-`-x` two-node session (`2 collected`, `1 reported`); fault injection in
+`pytest_runtest_logreport` (pytest exit 3); encoded JSON size with an oversized
+label; current conftest hook ordering; and the E7-E10 replacement tests and
+failure directions by inspection.
+
+**Not covered:** no implementation exists, so I did not run the Cairn suite,
+stress successful concurrent writers, simulate disk exhaustion, or test NFS or
+Windows. The implementation still owes its declared Security Review and
+re-anchor ceremony.
+
+**Next round:** limited to E11-E14. Add the unrun-node account, guard every
+diagnostics hook, bind the final encoded-row budget, and enumerate the option and
+lock bounds. No further architectural expansion is requested.
