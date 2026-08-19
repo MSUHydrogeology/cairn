@@ -12,7 +12,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: ready-to-implement
+**Status**: awaiting-code-review
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -2378,3 +2378,64 @@ the re-anchor ceremony — which is also where the integration evidence for this
 change belongs, since the ceremony rewrites the AST baseline, the gate manifest
 and the install lockfile, and changed fixture bytes would invalidate any
 Boundary B record taken before it.
+
+## Implementation verification -- Claude -- 2026-08-19
+
+**Range**: `29d3cf0`..`74a4bbd` (44 commits carrying this plan's stem, of 100
+on `master` in the window — the rest belong to `ceremony-as-code` and two
+proposal reviews running concurrently).
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13), the
+canonical interpreter, with `PYTHONDONTWRITEBYTECODE=1` throughout.
+**Boundary B mode**: **not run — waived by the Maintainer**, recorded in the
+section above with the decision quoted. What follows is therefore the
+Boundary A record in full, not a summary of a Boundary B run, and the code
+reviewer should read it as such.
+
+### What was verified, per chunk
+
+| Chunk | Verification |
+|---|---|
+| A, B | Prose. `claim_check.py` clean; `quality_gate.py --sub neutrality --sub redundancy` fail=0. |
+| C (three classes) | Every batch ran its own mapped suites before commit — roughly 25 scoped runs, largest 913 passed. |
+| C (widened classes) | Same discipline; the twin pairs additionally re-verified **byte-identical** after edit, since `install.py`'s divergence check reads a drift as a fork. |
+| D | **842 passed** across the three files holding all 38 renames, at `75687c8`. Old names grepped tree-wide first; one live engine cross-reference updated. |
+| E | `claim_check.py` clean on `dev/PLANNING.md`. |
+
+### Known non-pass outcomes at this commit — four, none from tag content
+
+1. `test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`
+   — 15 review-basis violations against this file. Maintainer decision recorded
+   above; clears when this plan archives.
+2. `test_ast_attest.py` ×2 — the attestation baseline is **35 CHANGED symbols**
+   out of date (`upgrade.py` 22 nodes, `install.py` 18, `slotmerge.py` 10,
+   `merge.py` 8, `config.py` 6, `lockfile.py` 4, `security.py` 2). Docstrings are
+   AST nodes; comments are not, verified by running the attestation with and
+   without a comment-only edit. Re-anchor ceremony.
+3. `test_portable_security_sweeps.py::test_cairns_own_install_records_all_three_files_in_the_lockfile`
+   — the lockfile digest for `run_portable_security_sweeps.py`. Re-anchor ceremony.
+4. `test_verify_ref.py::test_cairn_roster_names_one_principal` — **not from this
+   change.** `a62be6a` added the ceremony key's public half as a second
+   principal; the node asserts exactly one. Proved by running it against HEAD's
+   copy of the file with this plan's edit reverted: it fails there too. Owned by
+   `ceremony-as-code`.
+
+### Known omissions, stated rather than left to be discovered
+
+* **D2 is unexecuted and MAINTAINER-GATED.**
+  `bootstrap/tests/fixtures/gate_manifest.json` pins **335 node ids** naming
+  classes D1 renamed, and its frozen-file set has moved besides. It regenerates
+  under the re-anchor, never here.
+* **No full-suite run exists for this range.** Boundary A was scoped per batch
+  throughout. A reviewer wanting a single integration figure will not find one,
+  by decision rather than by omission.
+* **One `claim_check` hard flag persists** at `:1097` — the round-2 reviewer's
+  citation into `REANCHOR_RUNBOOK.md`, stale since that file was rewritten at
+  `482f0f6`. Left because a reviewer's text is not the author's to correct;
+  explained at `aca7d03`.
+* **Two occurrences left in place by scope**, both recorded in the ledger: a
+  dead `M5` inside an assertion-message f-string (`test_gate_manifest.py:394`),
+  and plan-filename citations in two module docstrings. Neither is one of the
+  five tag classes.
+
+**Status** -> `awaiting-code-review`. The floor is **not the implementing
+agent**: a same-type agent in an independent context.
