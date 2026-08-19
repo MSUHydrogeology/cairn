@@ -53,7 +53,7 @@ def test_skipped_vendor_absent_is_a_calm_no_action_line(
 ) -> None:
     """A fresh scaffold target has no `.claude/` directory yet, so the
     claude-code symlink-tier row hits skipped-vendor-absent -- the
-    NORMAL first-install state (R11), not a fault."""
+    NORMAL first-install state, not a fault."""
     rc = _scaffold(tmp_path)
     assert rc == 0
     assert not (tmp_path / ".claude").exists()

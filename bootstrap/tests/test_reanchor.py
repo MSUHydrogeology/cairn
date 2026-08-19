@@ -1174,7 +1174,7 @@ class TestTheClosureIsVerifiedAtTheResolvedOid:
 
 
 class TestTheArtifactIsAClosureMemberByConstruction:
-    """R10's two constraints. The artifact is IN the closure by construction,
+    """Two constraints. The artifact is IN the closure by construction,
     rather than being an executable the packet happens to name alongside it."""
 
     def test_an_artifact_path_matching_no_row_refuses(self, ceremony):

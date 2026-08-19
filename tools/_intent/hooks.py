@@ -79,7 +79,7 @@ def _build_hook_block(python_exe: str, intent_path: Path) -> str:
     ``shlex.quote`` (single-quoted), so a path containing a space, a
     double-quote, or shell metacharacters (``$(...)`` / backticks) cannot
     break the hook or be evaluated by ``/bin/sh`` -- double-quoting would
-    still expand ``$`` and command substitution (security-hardening R13).
+    still expand ``$`` and command substitution (security hardening).
     """
     py_q = shlex.quote(python_exe)
     path_q = shlex.quote(str(intent_path))

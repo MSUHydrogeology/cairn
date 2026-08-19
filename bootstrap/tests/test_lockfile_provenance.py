@@ -5,7 +5,7 @@
 Covers:
 
 * Reader nodes -- `_cairn_provenance`'s degrade/parse behavior, including
-  the load-bearing regression case (R12a): CITATION.cff's `license:` block
+  the load-bearing regression case: CITATION.cff's `license:` block
   is immediately followed by a `keywords:` block with its own `- ` items.
 * Writer nodes -- a fresh install and `--init-lock` both carry the fields.
 * Upgrade nodes -- the three-case `--stage`/`--apply` compatibility matrix:
@@ -74,7 +74,7 @@ def test_cairn_provenance_degrades_on_absent_citation(tmp_path):
 
 
 def test_cairn_provenance_stops_license_block_at_keywords(tmp_path):
-    # The load-bearing regression case (R12a): a scanner that kept consuming
+    # The load-bearing regression case: a scanner that kept consuming
     # past the license: block would silently record keywords as licenses.
     (tmp_path / "CITATION.cff").write_text(
         'repository-code: "https://example.com/x"\n'
@@ -212,7 +212,7 @@ def test_apply_preserves_absence_from_old_stage_no_null(tmp_path):
 
 def test_finalize_preserves_but_does_not_backfill_provenance(tmp_path):
     """--finalize preserves whatever provenance the lockfile already has (or
-    lacks) verbatim -- it does not backfill (R3a's stated limit:
+    lacks) verbatim -- it does not backfill (a stated limit:
     --finalize/--adopt-module do not backfill, only preserve)."""
     assert _install(tmp_path) == 0
     lock_path = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"

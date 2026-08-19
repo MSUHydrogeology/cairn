@@ -2264,7 +2264,7 @@ def test_reduced_mode_is_reachable_without_any_source_change(
 
 
 def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
-    """M52: the screen adds runner-owned Git calls, and each must be declared
+    """The screen adds runner-owned Git calls, and each must be declared
     before Chunk I's oracle runs or the oracle reads as an adapter defect.
     A second runner-owned call was added (``rev-parse --git-common-dir``,
     ahead of the screen's own ``config`` listing) to discover the screen's

@@ -716,7 +716,7 @@ def main(argv: list[str] | None = None) -> int:
     # point of the note is that installing a ROUTE is not gathering
     # evidence.  Runs no host tool, on the `coordination-tiers` precedent
     # just above: the scaffold prints a command for the adopter to run and
-    # never runs it (T35 makes that mechanical -- every subprocess the
+    # never runs it (mechanically -- every subprocess the
     # install makes must be `git`, and none may name the dispatcher).
     if "security-verification" in modules:
         print(

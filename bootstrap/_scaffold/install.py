@@ -153,7 +153,7 @@ _DEV_DIRS: tuple[str, ...] = (
     "dev/plans",
     "dev/plans/archive",
     # The strategy-doc lifecycle directory (Antigravity External
-    # code review A-P3 on commit 96b7fba): scaffolded by default so
+    # code review on commit 96b7fba): scaffolded by default so
     # adopters who use the commit-permission exception extension's
     # `dev/strategy/` coverage don't have to `mkdir` manually.
     "dev/strategy",

@@ -108,7 +108,7 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     # `content-security`, so a stock install now exits 0 with the NOT
     # APPLICABLE line, matching the plan's original intent.  Re-measured, not
     # carried forward: see `test_security_verification.py`'s
-    # `test_the_dispatcher_runs_from_a_real_fresh_scaffold` (formerly the T33
+    # `test_the_dispatcher_runs_from_a_real_fresh_scaffold` (formerly the
     # characterization node) and `TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic`.
     "security-verification",
 )

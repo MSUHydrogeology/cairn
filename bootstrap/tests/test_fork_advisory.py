@@ -857,7 +857,7 @@ def test_node13_unsafe_destination_shapes_refuse_and_retain(
     * the *candidate gate* runs ahead of every guard and joins
       ``target_root / engine_rel`` unchecked, so for ``absolute``, ``dotdot``
       and ``symlinked-parent`` it stats and globs an engine directory outside
-      the target -- candidate **selection**, residual **R10**, out of this
+      the target -- candidate **selection** is a residual, out of this
       plan's scope and recorded at the gate in ``lockfile.py``;
     * the guard itself must ``lstat`` what it is about to refuse, so for
       ``symlink`` and ``symlinked-parent`` it ``is_symlink``-stats the escape
@@ -1146,7 +1146,7 @@ def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
     ``cmd_upgrade`` caller.
 
     (Removing ``hash`` drops the record from the *candidate* gate, which is
-    R10, out of scope and stated as such -- so that row asserts the honest
+    a residual, out of scope and stated as such -- so that row asserts the honest
     outcome rather than pretending otherwise.)
 
     Perturbation: key suppression on any one of the four -> that parameter
@@ -1159,7 +1159,7 @@ def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
 
     _rc, err = upgrade_stderr(target, capsys)
     if overrides == {"hash": None}:
-        # R10, recorded rather than papered over: candidate selection is still
+        # Recorded rather than papered over: candidate selection is still
         # lock-derived, so a record with no `hash` is not examined at all.
         assert "tools/_intent" not in err
     else:

@@ -544,7 +544,7 @@ def test_f5b_an_unrecognized_lockfile_key_is_silently_ignored_by_verify(
 
 # Where the vocabulary IS satisfied: the closed-vocabulary refusal that
 # NAMES the unrecognized key lives in the DISPATCHER's lockfile-record
-# reader (owned and tested by `security-verification-activation`, its T44),
+# reader (owned and tested by `security-verification-activation`),
 # not in `bootstrap/verify_integrity.py`. Closing the `verify_integrity`
 # half is a change to that file, which is outside this plan's declared
 # symbol delta and outside its Proposed paths -- it does not land here or

@@ -88,7 +88,7 @@ class TestInstallPath:
     def test_default_install_scaffolds_strategy_dirs(
         self, tmp_path: Path,
     ) -> None:
-        """Antigravity A-P3 (commit 96b7fba sharpening): the
+        """Sharpened at commit 96b7fba: the
         extended commit-permission exception covers
         `dev/strategy/`; the scaffold should create the directory
         by default so adopters who use the exception don't have

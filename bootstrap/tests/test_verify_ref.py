@@ -1273,7 +1273,7 @@ def test_two_candidates_publishing_the_same_tag_name(lab: Lab, tmp_path: Path):
     assert run_b.returncode != 0 or obj_b in run_b.stdout
 
 
-# --------------------------------------------------------------- E10, rotation
+# --------------------------------------------------------------- rotation
 ROTATION_BOUNDARY = "20260101"
 BEFORE_BOUNDARY = "2025-06-01T12:00:00Z"
 AFTER_BOUNDARY = "2026-06-01T12:00:00Z"
@@ -1300,14 +1300,14 @@ def rotation(lab: Lab, tmp_path: Path):
 
 
 def test_retired_key_refuses_a_tag_dated_after_retirement(lab: Lab, rotation):
-    """E10.  A ``valid-before`` window must actually be enforced."""
+    """A ``valid-before`` window must actually be enforced."""
     repo, retired = rotation
     r = lab.verify("--signers", retired, repo, "dated-after")
     assert r.returncode == REFUSED, f"{r.stdout}{r.stderr}"
 
 
 def test_retired_key_still_verifies_a_tag_dated_before_retirement(lab: Lab, rotation):
-    """E10, and the git-floor probe.  This node and the one above together
+    """Rotation, and the git-floor probe.  This node and the one above together
     establish, by BEHAVIOUR rather than by parsing a version string, that git
     judges the window against the **tagger timestamp inside the signed payload**
     and not against the current clock: 'now' is after both boundaries, so a git

@@ -1,5 +1,5 @@
 """Tests for the lockfile-backed install-integrity check (security-hardening
-Chunk 12 / R10).
+Chunk 12).
 
 ``bootstrap/verify_integrity.py`` recomputes each lockfile-recorded file's
 SHA-256 against the on-disk tree and **fails closed** on any mismatch /

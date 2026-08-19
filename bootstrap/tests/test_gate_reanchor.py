@@ -98,7 +98,7 @@ def _two_stage_repo(tmp_path):
     _git(repo, "config", "user.email", "t@t")
     _git(repo, "config", "user.name", "t")
     (repo / SENSITIVE_REL).write_text("ENGINE = 0\n")
-    # P's gate manifest pins the executing authority code (trust root for F1b).
+    # P's gate manifest pins the executing authority code (the trust root).
     (repo / R._MANIFEST_REL).write_text(
         json.dumps({"frozen_files": _trusted_frozen_files()}, indent=2, sort_keys=True) + "\n")
     P = _commit_all(repo, "P prior gate state")
@@ -119,7 +119,7 @@ def _two_stage_repo(tmp_path):
 
     manifest = G.PromotionManifest(
         nonce="audit-1", prior_anchor=P, candidate_sha=C,
-        checker_hash=G.sha256_file(R.G.__file__),          # the EXECUTING checker (F1b)
+        checker_hash=G.sha256_file(R.G.__file__),          # the EXECUTING checker
         evidence_hash=evidence.digest(),
         prospective_manifest_hash=evidence.prospective_manifest_hash,
         files={SENSITIVE_REL: G.sha256_git_object(repo, C, SENSITIVE_REL)})
@@ -178,7 +178,7 @@ def test_wrong_evidence_hash_refuses(tmp_path):
     assert not res.ok and any("evidence_hash" in r for r in res.refusals)
 
 
-# --- round-5 F1a: authority-anchor authenticity ---------------------------------
+# --- authority-anchor authenticity ---------------------------------
 
 def test_authority_anchor_must_be_one_parent_on_P(tmp_path):
     b = _two_stage_repo(tmp_path)
@@ -195,7 +195,7 @@ def test_authority_anchor_bounded_diff(tmp_path):
     assert not res.ok and not res.checks["authority_bounded_diff"]
 
 
-# --- round-5 F1b: executing authority-code pin ----------------------------------
+# --- executing authority-code pin ----------------------------------
 
 def test_untrusted_authority_code_refuses(tmp_path):
     """If P's trusted manifest pins a different hash for a verifier module than the

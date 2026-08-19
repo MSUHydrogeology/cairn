@@ -387,7 +387,7 @@ def promote_data_only(
         evidence.scenario_results.get(s) == "match" for s in trusted_act.required_scenarios) \
         and bool(trusted_act.required_scenarios)
 
-    # (2a) Authority-anchor AUTHENTICITY (round-5 F1a): A must be a one-parent
+    # (2a) Authority-anchor AUTHENTICITY: A must be a one-parent
     #      authorization commit on P whose diff from P is ONLY the bounded
     #      authorization artifacts — so an attacker cannot mint a self-consistent A
     #      that also smuggles candidate content. (The fixed authorization ref that A
@@ -399,7 +399,7 @@ def promote_data_only(
     a_diff = _diff_name_only(trusted_repo, P, A_sha) if checks["gate_ref_at_prior"] else ["<prior-unknown>"]
     checks["authority_bounded_diff"] = (bool(a_diff) and set(a_diff) <= {authz_rel, trusted_act_rel})
 
-    # (2b) Authority-CODE pin (round-5 F1b): the executing verifier code must match
+    # (2b) Authority-CODE pin: the executing verifier code must match
     #      P's trusted gate manifest — reading authority DATA from A is not enough.
     code_ok, code_holds = _verify_executing_authority_code(trusted_repo, P) \
         if checks["gate_ref_at_prior"] else (False, ["prior gate state unknown — cannot pin authority code"])

@@ -219,7 +219,7 @@ class TestMergeConflictDeferred:
         assert "Module-contributed body." not in text
 
     def test_per_slot_side_file_avoids_clobber(self, tmp_path: Path) -> None:
-        """Antigravity B-P1: two conflicts on the same target file
+        """Two conflicts on the same target file
         must write to distinct side-files (one per slot)."""
         dst = tmp_path / "two_slots.md"
         dst.write_text(
@@ -301,7 +301,7 @@ class TestFidelityCheck:
     def test_indented_slot_does_not_false_positive(
         self, tmp_path: Path,
     ) -> None:
-        """Antigravity B-P2: a slot nested in a list item or
+        """A slot nested in a list item or
         blockquote carries leading indentation; the fidelity check
         must normalize away leading whitespace before comparison.
         """

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cairn install-integrity check -- on-disk files vs. the lockfile (R10).
+"""Cairn install-integrity check -- on-disk files vs. the lockfile.
 
 A Cairn install records every written file's SHA-256 in
 ``dev/.cairn/cairn-lock.yml`` (the module-upgrade arc owns that schema). This

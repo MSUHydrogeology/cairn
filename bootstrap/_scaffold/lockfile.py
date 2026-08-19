@@ -493,7 +493,7 @@ def forked_facade_findings(
             continue
         h = rec.get("hash")
         base = rec.get("base_hash")
-        # R10 -- CANDIDATE SELECTION IS STILL LOCK-DERIVED, and deliberately so
+        # CANDIDATE SELECTION IS STILL LOCK-DERIVED, and deliberately so
         # within this scope: `hash`, `base_hash`, `dst` and the engine-directory
         # probe decide *which* records are examined. A lockfile asserting
         # `hash == base_hash` evades the advisory entirely. What this change

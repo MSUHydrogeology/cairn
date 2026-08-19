@@ -1391,7 +1391,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                 record["git_version"] = probe.stdout.strip()
 
             # The runner-owned pre-execution screen, exercised through the shim
-            # so its Git call appears in the invocation multiset -- M52's third
+            # so its Git call appears in the invocation multiset -- the third
             # call, declared rather than discovered.
             if real_git:
                 shim_lexical = os.path.join(shim_dir, "git")

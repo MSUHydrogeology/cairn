@@ -94,7 +94,7 @@ def _identity_model(tmp_path: Path, *, humans=None, ai=None):
 _ROSTER = ["Anthony Kendall"]
 
 
-# --- A13: the behaviour table ------------------------------------------------
+# --- the behaviour table ------------------------------------------------
 #
 # Transcribed from the accepted proposal's Evidence table (`Evidence /
 # verification plan`, roster ``["Anthony Kendall"]``), which was committed

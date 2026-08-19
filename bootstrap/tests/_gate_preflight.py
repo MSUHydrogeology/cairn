@@ -2869,7 +2869,7 @@ def apply_now(*, repo: Path = _REPO,
     its ``collection`` and ``interpreter`` fields, which static Git reads cannot
     derive. Leaving it in place was worse than an ordinary stale comment --
     security documentation shipped inside the deciding executable, contradicting
-    the protocol an operator is asked to trust. Chunk C10 required the
+    the protocol an operator is asked to trust. Review required the
     retraction; this is it.
 
     **The invariant that is actually true**, and the one to hold this code to:

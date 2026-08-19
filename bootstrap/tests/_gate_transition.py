@@ -171,7 +171,7 @@ def check_promotion(
     holds: list[str] = []
 
     # 1. The checker itself must be the pinned one — hashed from the EXECUTING module
-    #    file (re-review round-5 F1b), not the mutable target worktree, so the running
+    #    file, not the mutable target worktree, so the running
     #    verifier code is what is pinned (a candidate cannot alter the deciding code).
     if sha256_file(Path(__file__)) != manifest.checker_hash:
         return False, ["transition checker (executing code) does not match the pinned checker hash"]

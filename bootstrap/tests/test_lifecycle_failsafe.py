@@ -361,7 +361,7 @@ def test_stale_warning_fires_once_per_process(repo, tmp_path, monkeypatch, capsy
 
 
 def test_stale_binding_is_not_rewritten(repo):
-    """R11: the resolver contains no write path against `local-env.json`
+    """The resolver contains no write path against `local-env.json`
     today -- this is a forward regression guard against the explicitly-
     rejected auto-rebind alternative, not a guard against a mechanism that
     presently exists."""
@@ -527,7 +527,7 @@ def test_tampered_binding_warns_in_intent_whoami(repo, monkeypatch, capsys):
 
 def test_resolver_source_has_no_write_primitive():
     """Static proof the resolver carries no write/stage/commit call
-    against the state directory (R11's forward regression guard, matching
+    against the state directory (a forward regression guard, matching
     test_lifecycle_contract.py's `_PLANNER_PATH` source-scan pattern -- that
     file scans the *planner*, not this module, so it is a pattern to copy,
     not an existing guard covering this module)."""

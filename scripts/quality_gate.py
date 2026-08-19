@@ -49,8 +49,8 @@ Exit codes: ``0`` clean; ``1`` at least one ``fail`` finding;
 
 The sub-gates are intentionally heterogeneous in implementation
 (pytest invocation wrapper, regex denylist scan, n-gram overlap +
-AST walk), unified at the CLI + report surface per the proposal's
-L11 thesis.  Each sub-gate's failure mode is independent: a
+AST walk), unified at the CLI + report surface.
+Each sub-gate's failure mode is independent: a
 neutrality regression does not block a redundancy report, and
 vice versa.
 """

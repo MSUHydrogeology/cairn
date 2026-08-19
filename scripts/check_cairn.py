@@ -294,7 +294,7 @@ def _is_template_instruction(rel: str) -> bool:
 #: module, Cairn commit 4998abd).  An incident-tracker file's
 #: Markdown table header MUST carry these column names (in any
 #: order) for the cross-adopter harvest to parse it.  Per
-#: Antigravity External code review C-P2: validate Cairn-side
+#: Validate Cairn-side
 #: tracker artifacts at check_cairn time so schema drift surfaces
 #: locally rather than at upstream-harvest time.
 _INCIDENT_TRACKER_CANONICAL_COLUMNS: tuple[str, ...] = (
@@ -318,7 +318,7 @@ _TRACKER_SIGNAL_RE = re.compile(
 def _check_incident_tracker_schema(
     md: Path, root: Path, result: Result,
 ) -> None:
-    """Per Antigravity C-P2: validate any file that looks like an
+    """Validate any file that looks like an
     incident tracker carries the canonical 7-column semantic-field
     schema.
 

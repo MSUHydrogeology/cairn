@@ -13,7 +13,7 @@ Covers, per the executing plan (cairn-module-upgrade-3way-merge):
 * the upgrade subcommand: --plan writes nothing (P-2); --stage then
   --apply swaps + cleans; --apply rejects a stale stage and residual
   conflict markers; structural reconciliation; --to git-only
-  (P-4); R10 stale-citation; --init-lock review-only for token files
+  (P-4); stale-citation; --init-lock review-only for token files
   (the --init-lock migration).
 
 Run from the cairn repo root:
@@ -1459,7 +1459,7 @@ class TestDirtyTreeGuard:
 
 
 class TestManifestHomeAndSelfHeal:
-    """Chunk 2: the R10 citation check finds the manifest in `dev/.cairn/` first
+    """The citation check finds the manifest in `dev/.cairn/` first
     (legacy `dev/strategy/` fallback); a missing `profile.yml` self-heals
     from the lockfile (merging tokens + profile), composing with the #56
     dirty-tree guard."""
