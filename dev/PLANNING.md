@@ -294,8 +294,16 @@ with the plan's filename stem.
   everybody, and the next person to hit it will either hand-edit the install
   contract or delete it and start over.
 
-* **[SEC] Two install-contract artifacts are stale after the tag pass** *(filed
-  2026-08-19)* — `bootstrap/tests/fixtures/gate_manifest.json` has **35 frozen
+* **[SEC] ~~Two install-contract artifacts are stale after the tag pass~~ —
+  RESOLVED 2026-08-19 at `77d2b3b`.** The Maintainer ran all three corrections
+  under supervision: the AST baseline (37 symbols, every one verified
+  docstring-only against the baseline's own provenance commit before any
+  write), the lockfile (37 of 90 records), and the gate manifest (141 digests).
+  `_ast_attest verify` reports 173 baselined symbols **unchanged in count** —
+  the runbook's check that a correction happened rather than a full re-pin.
+  Every figure in the original row below was stale by the time it ran, which is
+  why the runbook forbids carrying a delta forward. Kept for the record:
+  *(filed 2026-08-19)* — `bootstrap/tests/fixtures/gate_manifest.json` has **35 frozen
   entries** whose bytes no longer match the tree, and
   `dev/.cairn/cairn-lock.yml` records a digest for
   `scripts/run_portable_security_sweeps.py` that disagrees with disk
@@ -315,7 +323,17 @@ with the plan's filename stem.
   more artifacts, one of which (`run_portable_security_sweeps.py`) is a named
   high-risk surface and the other of which is the install contract.
 
-* **[SEC] The interpreter-binding re-pin at `c29ead3` is unconfirmed** *(filed
+* **[SEC] The interpreter-binding re-pin at `c29ead3` — REPRODUCTION
+  CONFIRMED 2026-08-19, tier question still open.** A second agent re-derived
+  the docstring-stripped digests with its own stripper, on both twins, and got
+  the three recorded values exactly; the edit is comment-only and none of the
+  five gated properties changed. **What remains is not technical**: the
+  re-derivation rode an implementing commit, while the pin's own text says to
+  re-derive "in that review's own commit", and a same-agent-type confirmation
+  is a second reading rather than an independent tier. Also still open: the
+  `_has_symlink_component` coverage gap below — the fence pins the caller and
+  not the callee, so a behavioural change to symlink detection would not redden
+  it. Original row: *(filed
   2026-08-18 by the `comprehension-outlives-the-artifact` implementer)* — the
   four digests in
   `bootstrap/tests/test_lifecycle_brief.py::_INTERPRETER_SYMBOL_DIGESTS` were
