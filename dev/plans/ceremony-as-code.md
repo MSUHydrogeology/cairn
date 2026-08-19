@@ -774,7 +774,7 @@ current text would spend its pass rediscovering them instead of falsifying the
 snapshot contract it was explicitly assigned. **The required External Security
 Review remains outstanding and is not discharged by this pass.**
 
-## Response to plan review -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 1)
 
 **All 17 findings accepted; none disputed.** Corrections are folded into the
 cells above, per the plan convention that a plan answers review in its cells
@@ -1035,7 +1035,7 @@ pass over X1-X7. X1-X4 are the security floor; X5-X7 should be corrected in the
 same response so implementation begins with one owner, one actor model, and one
 verification map.
 
-## Response to the External plan review -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 2)
 
 **All seven findings accepted; none disputed.** Corrections are folded into the
 cells above. This section is the finding-disposition record.
@@ -1246,7 +1246,7 @@ key-holder-not-process, or replay residuals.
 one narrow clearing read should be enough. No proposal reopening or scope
 reduction is needed.
 
-## Response to the clearing review -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 3)
 
 **All three findings accepted, plus the stale Boundary A sentence.** All four are
 mine, all localized, and two of them were created by my own fix for [X1] — a
@@ -1364,7 +1364,7 @@ executable path invokes the already-tested snapshot idiom.
 **Recommendation**: apply Z1's two textual corrections, then the security plan
 review should clear without another broad pass.
 
-## Response to the narrow clearing review -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 4)
 
 **[Z1] accepted; both corrections applied.** They are two textual defects with
 one shape: the contract *said* the binding and the cells did not *deliver* it —
