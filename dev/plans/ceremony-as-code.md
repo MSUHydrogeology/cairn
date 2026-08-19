@@ -426,6 +426,12 @@ an External Security reviewer should not have to spend its one pass on, so that
 pass can be spent on the shell snapshot contract and the executable trust set —
 the work the Revision 4 reviewer explicitly assigned to it.
 **Reviewed commit**: `a1cdf86` (plan as opened)
+**Prior findings**: none — this is the first review of this plan. The proposal's
+X/Y/Z rounds are findings against the *proposal*, not this artifact, and are
+carried as contract rather than as open findings.
+**Assurance path**: standard. This is an Internal read that explicitly does not
+discharge the declared External Security Review, so it claims no high-assurance
+basis; see **Obligation** above.
 **Target**: the whole plan against the Revision 4 contract (R1–R10 plus the R5
 riders and every withdrawal ledger) in
 `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`, plus the plan's
