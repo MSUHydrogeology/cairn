@@ -12,9 +12,23 @@ SHIP"* — reviewed against the contract bytes at `36808ea`. The only plan bytes
 added since are the appended `## Ceremony evidence` section (`281acb6`), which
 changes no cell and asks for no re-review.
 **Last update**: 2026-08-18
-**Status detail**: implementing — A `3980ad1`, B `01157dd`, C `39fe015` +
-`1038c90`, D `0da586b`, E1 `70defc0`, G `d05db56`/`bf47bb6`, H2–H4
-`96d9283`. Next: F.
+**Status detail**: implementing — **every implementation chunk is landed.**
+A `3980ad1` · B `01157dd` · C `39fe015`+`1038c90` · D `0da586b` · E `70defc0`
+· F `cc6f51a`+`0c94524`+`6e782e1`+`482f0f6`+`a8ba374` · G `d05db56`/`bf47bb6`
+· H2–H4 `96d9283`.
+
+**The plan is at the stable-bytes line. What remains is not mine:**
+* **H1 — MAINTAINER-FENCED (N5).** The dedicated ceremony key is created by the
+  Maintainer and only its public half is committed to `dev/.cairn/allowed_signers`.
+  It lands **before** Boundary B, because the roster is a closure member and a
+  commit after M2 invalidates M2.
+* **Boundary B — blocked on two things that are not this plan's.** It is a full
+  run and bounded mode is refused. At HEAD the suite carries 5 pre-existing
+  `test_lifecycle_contract.py` failures (already failing before this plan's
+  first commit) and 1 lockfile-digest failure from another plan's work. Both
+  need dispositioning or fixing before a Boundary B record can be honest; a red
+  run filed as a pass with a footnote is not a record.
+* Then **CR**, **M2**, **M3**, **M4** in order.
 
 **Chunk G's gate is MET.** `comprehension-outlives-the-artifact` C1 landed at
 `d05db56`, and `git merge-base --is-ancestor d05db56 HEAD` passes, so the
@@ -107,8 +121,8 @@ A   the two key-probe corrections (the floor)                [DONE 3980ad1]
 B   the values schema, parser, and `validate`                [DONE 01157dd]
 C   the ceremony artifact and its subcommands                [DONE 39fe015+1038c90]
 D   the packet, the launcher, and their binding              [DONE 0da586b]
-E   the step registry and the doc-agreement tests            [E1 DONE 70defc0; E2 rides with F]
-F   the runbook restructure                                  [commit]
+E   the step registry and the doc-agreement tests            [DONE 70defc0 + cc6f51a]
+F   the runbook restructure                                  [DONE cc6f51a+0c94524+6e782e1+482f0f6+a8ba374]
 G   the finding-tag pass — OWNED ELSEWHERE, gated here        [G1 MET d05db56; G2 DONE bf47bb6]
 H   SECURITY.md adopter guidance                             [H2-H4 DONE 96d9283; H1 MAINTAINER-FENCED]
 --- stable bytes -----------------------------------------------------
