@@ -53,7 +53,7 @@ _GOVERNING = {
 }
 
 _REVIEW_LOOP = {
-    # X4 (External review): Codex deleted the reviewer-duty and specify-default
+    # A review deleted the reviewer-duty and specify-default
     # sentences from BOTH copies and saw 105 green, because neither obligation
     # was named here. `names the trap` was additionally satisfied by the
     # trailing `doctrine/dual-review.md` citation alone, so the paragraph could
@@ -103,7 +103,7 @@ _PLAN_TEMPLATE = {
         r"AS ACCEPTED|scope as accepted",
     "a reviewer cannot self-authorize the removal":
         r"cannot create that authority",
-    # D7 (clearing pass): C9 added the floor rule to the `## Scope` fence,
+    # A later pass added the floor rule to the `## Scope` fence,
     # where plan-open happens. The whole paragraph was deletable and stayed
     # green -- the pre-existing plan-review comment matched the same patterns.
     # This one is specific to the fence's own framing.
@@ -118,11 +118,11 @@ _BOARD_TAXONOMY = {
         r"is a \*{0,2}scope reduction",
     # R2-E1: the authority rule. Without this the shipped board could lose
     # its self-contained statement and stay green -- demonstrated by the
-    # code review (C3), which cut exactly that text and saw 51 passed.
+    # a code review, which cut exactly that text and saw 51 passed.
     "only the Maintainer may concede a baseline outcome":
         r"only the Maintainer may concede|[Nn]either author nor reviewer may "
         r"concede",
-    # D2 (clearing pass): C3's satisfier had two halves and only the authority
+    # The satisfier had two halves and only the authority
     # half landed. Each of these could be deleted from the shipped board while
     # the suite stayed green.
     "the baseline is the artifact's own commitments, both stages":
@@ -140,7 +140,7 @@ _TEAM_GATED_MODULE = {
         r"preserved.{0,300}degraded",
     "declining a review-proposed expansion is not a reduction":
         r"never in the baseline",
-    # R2-E1 again. The code review (C3) rewrote this module to say degraded
+    # The same shape again. A code review rewrote this module to say degraded
     # and lost "are for the author and reviewer to settle between them" --
     # the exact contradiction an External round was spent eliminating -- and
     # the suite stayed green.
@@ -149,7 +149,7 @@ _TEAM_GATED_MODULE = {
         r"\*{0,2}Maintainer'?.{0,4}s?\*{0,2} explicit allowance",
 }
 
-#: X1 (External review): the canonical rule requires each remainder entry to
+#: The canonical rule requires each remainder entry to
 #: carry FOUR things -- source section, reason, **a disposition**, and a revival
 #: or closure condition. All four templates and both emitted scaffolds asked for
 #: three, plus a group-level `Disposition/home` naming only a location. A home
@@ -195,7 +195,7 @@ _DOCTRINE_CANONICAL = {
     "the grouped remainder blocks archive":
         r"blocks\*{0,2}\s*\*{0,2}archive",
     # Codex deleted the words "a disposition" from this sentence and the whole
-    # suite stayed green (External review, X1). It is the source every
+    # suite stayed green. It is the source every
     # author-facing shape derives from.
     "each entry carries four things, including a disposition":
         r"source section, the reason, a disposition, and a revival",
@@ -222,7 +222,7 @@ _DOCTRINE_PROPOSALS = {
 _DOCTRINE_PLANS = {
     # NOT r"accepted scope is a floor" -- that is the section HEADING at
     # doctrine/plans.md:342, so the obligation was satisfied by its own title
-    # while the body could be emptied (D7). Pin body prose instead.
+    # while the body could be emptied. Pin body prose instead.
     "accepted scope is a floor, stated in the body":
         r"proposal's scope is the authority the plan drains|deviated from "
         r"approved scope",
@@ -247,7 +247,7 @@ _DOCTRINE_LIFECYCLE = {
 
 #: surface -> obligations. Every path here is one an adopter receives, except
 #: the `doctrine/` entries, which are the canonical home the others point at
-#: and were previously pinned only by their section heading (code review C7).
+#: and were previously pinned only by their section heading.
 _SURFACES = {
     "AGENTS.md": _GOVERNING,
     "templates/core/AGENTS.md": _GOVERNING,
@@ -322,17 +322,17 @@ def test_the_canonical_section_exists_and_sits_beside_its_mirror() -> None:
 #: a proposal revision (pre-Decision) and a plan-review Sharpening
 #: (post-Decision).
 #:
-#: Chunk H1 retired `reviewed`/`revised` from the live proposal vocabulary and
+#: The vocabulary migration retired `reviewed`/`revised` from the live proposal set and
 #: re-homed the Scope-delta declaration onto the RETURN arm out of `revising`
 #: -- `_response_template`, emitted by `_scaffold` for `revising ->
 #: awaiting-review` -- so the proposal row is re-pointed there.
 #:
 #: The plan row is left UNCHANGED and STILL POINTS AT THE RETIRED `executing`
-#: TOKEN. H1 did not re-home the plan-side scaffold: `_scaffold`'s plan branch
+#: TOKEN. It did not re-home the plan-side scaffold: `_scaffold`'s plan branch
 #: still only emits `**Scope delta**` for the literal string "executing",
 #: which is no longer reachable from any state in `PLAN_TRANSITIONS` or
 #: `PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED` (checked by hand against
-#: `tools/lifecycle_planner.py` at H1). There is currently NO live plan
+#: `tools/lifecycle_planner.py`). There is currently NO live plan
 #: transition that scaffolds the declaration -- not `ready-to-implement`
 #: (the reviewer's clearing move, using the generic `_status_move_manifest`
 #: with no declaration block) and not `revising-plan`'s return arm to
@@ -343,7 +343,7 @@ def test_the_canonical_section_exists_and_sits_beside_its_mirror() -> None:
 #: target here would assert a parity with the proposal side that does not
 #: exist in the code today. A later chunk that re-homes the plan-side
 #: scaffold should update this row alongside it.
-#: H1 re-homed BOTH surfaces onto the arm where an AUTHOR answers a review,
+#: The migration re-homed BOTH surfaces onto the arm where an AUTHOR answers a review,
 #: which is the moment scope can quietly narrow -- and the two are deliberately
 #: symmetric now, where before they were not (`reviewed -> revised` on one side,
 #: `awaiting-plan-review -> executing` on the other, both legacy-only).
@@ -381,7 +381,7 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
     # distinction is what must survive -- not either sentence. It used to say
     # "THE TOOL DOES NOT CHECK THIS" flatly; Amendment B then landed a refusal
     # for a declared loss carrying no Maintainer allowance, so the flat claim
-    # became false (second clearing pass, E1) and was corrected here.
+    # became false in a later pass and was corrected here.
     lowered = emitted.lower()
     assert re.search(r"missing(?: or malformed)? declaration", lowered), (
         f"the {kind} -> {target} manifest no longer says that a MISSING "
@@ -390,7 +390,7 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
     )
     # NOT "says what DOES refuse" -- that assertion was satisfied by the words
     # "NO TRANSITION REFUSES", so it could never have caught the false claim it
-    # was meant to guard (third clearing pass, F1). Nothing refuses today: the
+    # was meant to guard. Nothing refuses today: the
     # only consumer of `_declared_reduction` returns early for proposals and is
     # gated for plans on a field no artifact declares. The manifest must not
     # claim otherwise -- a scaffold that promises a check an author can rely on
@@ -403,9 +403,9 @@ def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
     )
 
 
-#: The one declaration grammar, across every surface that prints it. C8
+#: The one declaration grammar, across every surface that prints it. A review
 #: unified six surfaces on `preserved | degraded | lost`; the clearing pass
-#: (D5) then found the planner scaffolds still telling the author to "omit
+#: then found the planner scaffolds still telling the author to "omit
 #: entirely when preserved" one line above a list offering `preserved`, and
 #: NOTHING pinned the grammar -- reverting all six stayed green.
 _DECLARATION_VALUES = "**Scope delta**: preserved | degraded | lost"
@@ -413,7 +413,7 @@ _DECLARATION_VALUES = "**Scope delta**: preserved | degraded | lost"
 _GRAMMAR_TEMPLATES = (
     # The canonical statement FIRST -- it is the surface the other six were
     # unified onto, and it was the one the first version of this guard left
-    # unpinned (second clearing pass, E3). Reverting it alone stayed green.
+    # unpinned. Reverting it alone stayed green.
     "doctrine/proposals.md",
     "dev/proposals/_template.md",
     "templates/core/dev/proposals/_template.md",
@@ -450,7 +450,7 @@ def test_the_scaffolds_print_the_same_declaration_grammar(
                          ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
 def test_the_scaffolds_do_not_contradict_the_offered_values(
         kind: str, status: str, target: str) -> None:
-    """The exact D5 defect, pinned.
+    """The exact defect, pinned.
 
     A scaffold that offers `preserved` in its value list and tells the author
     to omit the block when preserved contradicts itself in adjacent lines. The
@@ -473,7 +473,7 @@ def test_the_scaffolds_do_not_contradict_the_offered_values(
 # This module used to carry five parametrised cases pinning `_declared_reduction`
 # directly. They are gone, and their absence is the fix rather than a loss.
 #
-# An External review (Codex, 2026-08-12) raised X2/X6: those cases covered value
+# An External review (2026-08-12) found those cases covered value
 # recognition only -- not heading-bounded scope, allowance position, isolation,
 # fence exclusion, or multiple declarations -- and they imported a private
 # predicate owned by the executing `review-efficient-lifecycle` plan, so a
@@ -523,13 +523,13 @@ def test_the_two_planner_twins_stay_byte_identical() -> None:
 
 
 #: A proposal at `revising`, i.e. one transition BEFORE the `-> awaiting-review`
-#: scaffold that carries the declaration (re-pointed at H1, which retired
+#: scaffold that carries the declaration (re-pointed by the migration, which retired
 #: `reviewed`/`revised` and re-homed the declaration onto this return arm --
 #: see `_SCAFFOLDED_TRANSITIONS` above). The source status matters: an
 #: artifact already at `awaiting-review` has legal targets
 #: `revising/awaiting-decision`, so sweeping `_legal_transitions`
 #: from there covers every transition EXCEPT the one under test. That was the
-#: defect in the first version of this fence (clearing pass, D1) -- the same
+#: defect in the first version of this fence -- the same
 #: named-enforcer-that-does-not-enforce shape it was written to close.
 _PROPOSAL_AWAITING_REVISION = """# Proposal: something
 
@@ -586,7 +586,7 @@ Narrowed chunk B away.
 #: A plan on the `not required` path, which reaches `ready-to-implement`
 #: straight from the not-yet-opened state (no `**Status**:` line, i.e.
 #: `art.status == ""`) -- the review-required fixture alone left that route
-#: unswept (E2).
+#: unswept.
 _PLAN_NO_REVIEW_REQUIRED = """# Plan: something
 
 **Plan review**: not required(single commit, single area)
@@ -614,7 +614,7 @@ def test_the_planner_does_not_gate_on_a_missing_declaration(
     """A bounded regression check over KNOWN gate placements -- not a proof
     that no presence gate exists.
 
-    **What this does not do** (External review, X3): it collects gate and
+    **What this does not do**: it collects gate and
     violation messages and rejects the phrases `scope delta` / `scope-remainder`.
     A gate worded off those phrases evades it -- Codex added a real unmet
     `proposal -> revised` gate described as "the narrowing record is complete"
@@ -647,7 +647,7 @@ def test_the_planner_does_not_gate_on_a_missing_declaration(
     art = planner._read_artifact(f)
     assert art.kind == kind, f"fixture parsed as {art.kind!r}, not {kind!r}"
 
-    # E5: the fence is pinned to vocabulary another plan is retiring. Without
+    # The fence is pinned to vocabulary another plan is retiring. Without
     # this, `reviewed -> revised` disappearing would leave these nodes passing
     # against a transition that no longer exists -- green forever, checking
     # nothing. This makes the retirement loud instead of silent.
@@ -662,12 +662,12 @@ def test_the_planner_does_not_gate_on_a_missing_declaration(
 
     # Both refusal surfaces. `_conformance_violations` reports structural
     # unsoundness; `_gating_preconditions` reports a transition as MISSING.
-    # Pinning only the first left a gate on the second entirely green (C4);
-    # pinning the second over the WRONG targets left it green again (D1).
+    # Pinning only the first left a gate on the second entirely green;
+    # pinning the second over the WRONG targets left it green again.
     # The scaffolded target AND every other legal target. The first version of
     # this fence swept `_legal_transitions` and missed the scaffolded ones
-    # (D1); the fix swept only the scaffolded ones and lost the rest, so a gate
-    # at `proposal -> accepted` went undetected (E2). Both, or neither is
+    # The fix swept only the scaffolded ones and lost the rest, so a gate
+    # at `proposal -> accepted` went undetected. Both, or neither is
     # covered.
     targets = {target, *planner._legal_transitions(art)}
     surfaces = {

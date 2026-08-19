@@ -1,17 +1,17 @@
-"""Tests for `api-web-security-modules` Chunk F, row **F5** -- the LANDING
+"""Tests for the capability LANDING
 part's acceptance criteria (F-1..F-6) for the two explicit-selection
 capability modules, `api-access-security` and `web-hosting-security`:
 the selection contract (explicit `modules_add` / an exact `modules:` list /
 `modules_remove`; absence from every preset and the default-on set),
 mapping-group completeness, the install-time capability notice, `upgrade`
-/ `--adopt-module` behaviour, and **B2's installer-record field
+/ `--adopt-module` behaviour, and **the installer-record field
 vocabulary** (three parts: the exact writer vocabulary; the tried
-impossibility at `verify_integrity`; and where B2 is actually satisfied --
+impossibility at `verify_integrity`; and where it is actually satisfied --
 recorded here, not implemented here).
 
-**Scope: the landing part (F1, F3-F6), plus row F2.** F2
+**Scope: the landing part, plus the policy destinations.** That row
 (`_LIVING_STATE_DSTS`) was fenced when the landing part was written and has
-since been authorized and landed, so the two F2 criteria that need a
+since been authorized and landed, so the two criteria that need a
 living-state record or a filled policy -- `test_f2_1_*` and `test_f2_2_*`
 -- live here too, at the end of the file. Chunk G (the activation registry)
 has NOT landed, and nothing here asserts its shape. This file measures the
@@ -44,7 +44,7 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 
 _CAPABILITY_MODULES = ("api-access-security", "web-hosting-security")
 
-#: The two adopter-filled policy destinations row F2 added to
+#: The two adopter-filled policy destinations added to
 #: `_LIVING_STATE_DSTS`. Stated literally, NOT derived from the engine's
 #: `_LIVING_STATE_DSTS` -- deriving it would make F2-2 vacuous under its own
 #: deletion mutant (drop the two entries and an engine-derived set goes
@@ -56,7 +56,7 @@ _POLICY_DESTINATIONS = frozenset({
     "dev/.cairn/web-hosting-policy.json",
 })
 
-# The four statements F-6 / Chunk F row F3 require the notice to carry, for
+# The four statements the notice must carry, for
 # BOTH capabilities. Checked as substrings against rendered output, not
 # reproduced as a full expected string, so this file does not silently pass
 # by re-deriving the renderer's own text.
@@ -105,9 +105,9 @@ def _summary_roster(output: str) -> set[str]:
 
 
 def _group_destinations(name: str) -> list[str]:
-    """The destinations F1 registered for *name*, read off
+    """The destinations registered for *name*, read off
     `_MODULE_MAPPINGS` itself (never hand-typed), so this file cannot
-    silently drift from what F1 actually wired."""
+    silently drift from what was actually wired."""
     return [spec.dst for spec in s._MODULE_MAPPINGS[name]]
 
 
@@ -322,7 +322,7 @@ def test_manifest_carries_exactly_the_fourteen_destinations() -> None:
     sibling scopes land; the durable invariant is that the manifest
     contains exactly one row per `_MODULE_MAPPINGS` destination for each
     capability group. Re-measured here at 7 destinations per group x 2
-    groups = 14, matching the already-landed F1 verification record's own
+    groups = 14, matching the landed verification record's own
     re-measurement (`python bootstrap/scaffold.py --manifest`: 114 rows,
     +14 over the pre-scope 100)."""
     rows = s.install_manifest(modules=None)
@@ -397,7 +397,7 @@ def test_hazard_a_tampered_engine_member_fails_the_fresh_install(
 ) -> None:
     """F-2 hazard perturbation: modify an installed engine member by one
     byte and confirm `verify_integrity` reports `modified (hash mismatch)`
-    -- the runner must NOT be living-state (F2 has not landed, and even
+    -- the runner must NOT be living-state (that has not landed, and even
     once it lands, `_LIVING_STATE_DSTS` only ever covers the two policy
     destinations, never an engine member -- see F2-1's own hazard)."""
     rc, target = _install(
@@ -439,11 +439,11 @@ def test_hazard_an_illegal_living_state_opt_out_still_refuses(
 
 
 # ---------------------------------------------------------------------------
-# B2's installer-record field vocabulary, in three parts (F5's own framing)
+# The installer-record field vocabulary, in three parts
 # ---------------------------------------------------------------------------
 
 def _expected_lockfile_keys() -> dict[str, frozenset[str]]:
-    """Per-destination expected key set (F5(a)) -- NOT one global set.
+    """Per-destination expected key set -- NOT one global set.
 
     Measured against the current tree (`write_install_lockfile`,
     `bootstrap/_scaffold/install.py`, the per-record dict-literal block just
@@ -454,14 +454,14 @@ def _expected_lockfile_keys() -> dict[str, frozenset[str]]:
     destination (the two doctrine `.md` files + the two policy stubs, four
     of the fourteen) additionally carries BOTH `base_cache` and `base_hash`.
 
-    **Coupling to Chunk F row F2 -- LANDED.** F2 added the two
+    **Coupling to the policy destinations -- LANDED.** That row added the two
     `dev/.cairn/*-policy.json` destinations
     (`dev/.cairn/api-access-policy.json`,
     `dev/.cairn/web-hosting-policy.json`) to `_LIVING_STATE_DSTS`, so
     `write_install_lockfile`'s `if dst_rel in _LIVING_STATE_DSTS` branch
     (`bootstrap/_scaffold/install.py`) now adds a `living_state: true` key
     to EXACTLY those two records and no others. This map is per-destination
-    for exactly that reason: F2 extended those two entries in place and the
+    for exactly that reason: it extended those two entries in place and the
     other twelve are untouched.
     """
     expected: dict[str, frozenset[str]] = {}
@@ -479,7 +479,7 @@ def _expected_lockfile_keys() -> dict[str, frozenset[str]]:
 def test_f5a_the_lockfile_record_key_set_is_exact_per_destination(
     tmp_path: Path,
 ) -> None:
-    """F5(a), exact writer vocabulary. `write_install_lockfile`'s
+    """Exact writer vocabulary. `write_install_lockfile`'s
     per-record dict is a source-owned exact dict literal, so an extra key
     is structurally unreachable at write time; this asserts the key set
     rather than inferring that impossibility."""
@@ -493,7 +493,7 @@ def test_f5a_the_lockfile_record_key_set_is_exact_per_destination(
     expected = _expected_lockfile_keys()
     for dst, expected_keys in expected.items():
         rec = by_dst[dst]
-        # F2 COUPLING (see _expected_lockfile_keys docstring): F2 HAS
+        # POLICY-DESTINATION COUPLING (see _expected_lockfile_keys docstring): it HAS
         # landed, so exactly these two destinations carry `living_state`
         # and no other destination in either group does.
         if dst in _POLICY_DESTINATIONS:
@@ -514,13 +514,13 @@ def test_f5a_the_lockfile_record_key_set_is_exact_per_destination(
 def test_f5b_an_unrecognized_lockfile_key_is_silently_ignored_by_verify(
     tmp_path: Path,
 ) -> None:
-    """F5(b), the tried impossibility -- a CHARACTERIZATION test.
+    """The tried impossibility -- a CHARACTERIZATION test.
 
-    A green result here is a recorded GAP, not B2 satisfied:
+    A green result here is a recorded GAP, not the vocabulary satisfied:
     `bootstrap/verify_integrity.py` reads each record with `rec.get(...)`
     and never enumerates the permitted keys, so hand-adding an unrecognized
-    key to an installed record is silently ignored, not refused. B2's
-    closed-vocabulary refusal is NOT implemented by this file -- see F5(c)
+    key to an installed record is silently ignored, not refused. The
+    closed-vocabulary refusal is NOT implemented by this file -- see the
     below.
     """
     rc, target = _install(
@@ -542,7 +542,7 @@ def test_f5b_an_unrecognized_lockfile_key_is_silently_ignored_by_verify(
     )
 
 
-# F5(c), where B2 is actually satisfied: the closed-vocabulary refusal that
+# Where the vocabulary IS satisfied: the closed-vocabulary refusal that
 # NAMES the unrecognized key lives in the DISPATCHER's lockfile-record
 # reader (owned and tested by `security-verification-activation`, its T44),
 # not in `bootstrap/verify_integrity.py`. Closing the `verify_integrity`
@@ -659,10 +659,10 @@ def test_adopt_module_records_api_access_security_into_an_existing_lockfile(
 
 
 # ---------------------------------------------------------------------------
-# Chunk F row F2 -- the living-state policy destinations
+# the living-state policy destinations
 #
 # These are the criteria that need a FILLED policy or a living-state record,
-# which is why they are F2's and not the landing part's. F2's authorization
+# which is why they are the policy row's and not the landing part's. Its authorization
 # and its owed Security Review are recorded in
 # `dev/plans/api-web-security-modules.md`.
 # ---------------------------------------------------------------------------
@@ -685,12 +685,12 @@ def test_f2_1_a_filled_policy_stays_ok_and_only_the_policy_does(
 ) -> None:
     """F2-1. `verify_integrity` reports OK on the fresh install AND still
     reports OK after the adopter fills a policy -- the living-state
-    property, which is F2's entire purpose.
+    property, which is that row\'s entire purpose.
 
     Hazard, in the same test so the two cannot drift apart: an installed
     ENGINE member modified by one byte must still report `modified (hash
     mismatch)`. The runner and its engine members are verbatim and are NOT
-    living-state; F2 covers only the two adopter-filled policy files.
+    living-state; the policy row covers only the two adopter-filled files.
 
     Deletion mutant (F2-1's own, run by hand): add an engine destination to
     `_LIVING_STATE_DSTS` in `bootstrap/_scaffold/lockfile.py`; the hazard

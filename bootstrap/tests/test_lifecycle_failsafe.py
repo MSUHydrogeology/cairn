@@ -3,17 +3,17 @@
 
 Covers the load-bearing safety properties:
 
-* **Layer-2 fail-safe (Decision 2 / R5).**  `session-end` defaults to
+* **Layer-2 fail-safe.**  `session-end` defaults to
   reflection-only; `--handoff` without the designation marker refuses
   non-interactively (exits non-zero, never blocks on input); with the marker it
   proceeds.
-* **`--handoff --dry-run` mutation manifest (S6).**  Emits the manifest, mutates
+* **`--handoff --dry-run` mutation manifest.**  Emits the manifest, mutates
   nothing, needs no marker.
-* **II2 + S1 concurrent-handoff lock.**  A second handoff fails closed while a
+* **The concurrent-handoff lock.**  A second handoff fails closed while a
   live holder holds the lock *even past the lease interval*; the lock is removed
-  on an ordinary exception (EP1); a hard-killed (provably-dead) holder with an
+  on an ordinary exception; a hard-killed (provably-dead) holder with an
   expired lease is reclaimable -- but an age-only-stale lock is **not** stolen.
-* **R3/S2 resolve-don't-bake, absent degrades / present-but-wrong refuses.**
+* **Resolve-don't-bake: absent degrades, present-but-wrong refuses.**
   The interpreter is resolved from `dev/.cairn/local-env.json` and reported;
   a structurally-valid-but-absent path degrades to the current interpreter
   with a warning naming the stale path and the substitute, exactly once per
@@ -61,7 +61,7 @@ lifecycle = _load()
 
 @pytest.fixture(autouse=True)
 def _reset_stale_warned_sentinel():
-    """F0 (ETR2): the module-level ``_STALE_WARNED`` sentinel persists across
+    """The module-level ``_STALE_WARNED`` sentinel persists across
     test *nodes* (the module loads once per session via `_load()` above), so
     without this reset the first stale-path test to run would trip the
     sentinel and every subsequent node would silently observe zero warnings.
@@ -151,12 +151,12 @@ def test_handoff_marker_via_state_file(repo, capsys):
     assert "full-handoff mechanizable steps complete" in capsys.readouterr().out
 
 
-# --- II2 + S1 concurrent-handoff lock ---------------------------------------
+# --- the concurrent-handoff lock ---------------------------------------------
 
 
 def test_live_holder_blocks_even_past_lease(repo, monkeypatch):
     # A lock held by a LIVE pid (our own) blocks a second handoff regardless of
-    # how old the lease is -- the age-only-stale path must never steal it (S1).
+    # how old the lease is -- the age-only-stale path must never steal it.
     lock_path = lifecycle._state_dir(repo)
     lock_path.mkdir(parents=True)
     import socket
@@ -181,7 +181,7 @@ def test_lock_released_on_exception(repo):
         with lock:
             assert (lifecycle._state_dir(repo) / "handoff.lock").exists()
             raise RuntimeError("boom")
-    # EP1: released on exception, not just clean exit.
+    # Released on exception, not just clean exit.
     assert not (lifecycle._state_dir(repo) / "handoff.lock").exists()
 
 
@@ -230,7 +230,7 @@ def test_dead_holder_but_fresh_lease_not_stolen(repo):
         lifecycle.HandoffLock(repo, "owner").acquire()
 
 
-# --- R3/S2 resolve-don't-bake: absent degrades, present-but-wrong refuses ---
+# --- resolve-don't-bake: absent degrades, present-but-wrong refuses ---------
 
 
 def test_interpreter_resolved_from_local_env_and_reported(repo, capsys):
@@ -264,14 +264,14 @@ def _make_exe(path: Path, body: str = "#!/bin/sh\nexit 0\n") -> Path:
     return path
 
 
-# F1 (relocated at ETR1's original C1 revision): the two absent-path values
+# The two absent-path values
 # (`/usr/bin/python --foo`, `/no/such/python`) that used to live in this
 # parametrize now DEGRADE, not refuse (see test_stale_interpreter_path_
 # degrades_with_guidance below) -- replaced with a present-non-executable
 # file and a present directory, materialized in the body via a
 # non-id-representable sentinel dict (module-level parametrize values cannot
 # use the `repo` fixture, and `_make_exe` is defined above but the file it
-# writes needs a per-test tmp path). `ids=` pinned explicitly (R5): an
+# writes needs a per-test tmp path). `ids=` pinned explicitly: an
 # all-dict-except-one-string parametrize list silently drops a node from
 # collection, verified empirically this session's plan-review.
 @pytest.mark.parametrize("bad", [
@@ -299,7 +299,7 @@ def test_tampered_local_env_refuses(repo, bad):
     assert rc == 1
 
 
-# F2 (ETR5): materialized from the test's resolved `repo` path, not hardcoded
+# Materialized from the test's resolved `repo` path, not hardcoded
 # POSIX literals -- `/usr/bin/python --foo` / `/no/such/python` are not
 # absolute under PureWindowsPath, so on Windows they would hit the
 # "must be an absolute path" fatal branch instead of the accepted
@@ -322,7 +322,7 @@ def test_stale_interpreter_path_degrades_with_guidance(repo, stale_kind, capsys)
     assert rc == 0
     assert "(from fallback-stale)" in out
     assert lifecycle._REBIND_REMEDY in err
-    # PR6: the Decision's binding condition requires both the stale value and
+    # The Decision's binding condition requires both the stale value and
     # the substituted interpreter named in the warning, not merely a generic
     # remedy string.
     assert stale in err
@@ -330,7 +330,7 @@ def test_stale_interpreter_path_degrades_with_guidance(repo, stale_kind, capsys)
 
 
 def test_stale_warning_fires_once_per_process(repo, tmp_path, monkeypatch, capsys):
-    """R4's count fix, not presence: the resolver is reached up to four times
+    """A count fix, not presence: the resolver is reached up to four times
     in one `session-end --handoff` (`_intent_whoami`, `cmd_session_start`,
     `_do_reflection`, `_do_full_handoff`). CAIRN_AGENT/CAIRN_SESSION are left
     UNSET (unlike the `repo` fixture's default) so `_resolve_agent`/
@@ -399,7 +399,7 @@ def test_uninspectable_interpreter_path_refuses(repo):
 
 def test_parent_traversal_segment_refuses(repo):
     """A `..` component raises before ever reaching `_probe_interpreter`
-    (the narrowed A3 guard -- ETR4)."""
+    (the narrowed guard)."""
     sd = lifecycle._state_dir(repo)
     sd.mkdir(parents=True)
     dotdot = str(repo / "a" / ".." / "python")
@@ -411,7 +411,7 @@ def test_parent_traversal_segment_refuses(repo):
 
 
 def test_symlinked_parent_with_absent_leaf_still_refuses(repo):
-    """The required probe ordering (R3): the symlink walk runs before
+    """The required probe ordering: the symlink walk runs before
     absence classification, so a symlinked parent whose leaf does not exist
     still refuses -- it does not degrade."""
     if not hasattr(os, "symlink"):
@@ -498,7 +498,7 @@ def test_full_handoff_surfaces_intents(repo, tmp_path, monkeypatch, capsys):
 
 
 def test_tampered_binding_warns_in_intent_whoami(repo, monkeypatch, capsys):
-    """C3, corrected per ETR3: a present-but-wrong binding does NOT make
+    """A present-but-wrong binding does NOT make
     `_intent_whoami` return `None` when a valid sibling tool exists -- the
     fallback actually runs the sibling under `sys.executable` and returns
     its real output. The only remaining signal is the original refusal
@@ -526,7 +526,7 @@ def test_tampered_binding_warns_in_intent_whoami(repo, monkeypatch, capsys):
 
 
 def test_resolver_source_has_no_write_primitive():
-    """F8: static proof the resolver carries no write/stage/commit call
+    """Static proof the resolver carries no write/stage/commit call
     against the state directory (R11's forward regression guard, matching
     test_lifecycle_contract.py's `_PLANNER_PATH` source-scan pattern -- that
     file scans the *planner*, not this module, so it is a pattern to copy,

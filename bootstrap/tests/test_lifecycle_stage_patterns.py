@@ -204,7 +204,7 @@ def test_t1_live_corpus_subjects_classify_as_judged(
 #: **Repaired 2026-08-10** by adding the ``(?!-)`` hyphen guard to the
 #: shipped ``reviewed`` arm -- the same ``(?<!-)`` / ``(?!-)`` idiom the
 #: scoped patterns already use, applied one level up.  ``stage-commit-patterns``
-#: deliberately left the shipped defaults byte-unchanged (Revision P1, to keep
+#: deliberately left the shipped defaults byte-unchanged (to keep
 #: it additive) and archived recording this as an accepted residual; the
 #: Maintainer then directed the repair separately.  The subject now
 #: classifies as ``None``: no scope prefix, so the gate declines it rather
@@ -321,7 +321,7 @@ def test_t2b_scoped_non_transitions_are_a_priced_residual(
 
 
 # ---------------------------------------------------------------------------
-# T3 -- `dev/plans:` never classifies (the R3 narrowing)
+# T3 -- `dev/plans:` never classifies (the ratified narrowing)
 # ---------------------------------------------------------------------------
 
 #: Every live ``dev/plans: open …`` subject in the proposal corpus.  Each
@@ -463,7 +463,7 @@ _T6_DECISION_FORMS: List[Tuple[str, Optional[str]]] = [
     # constructed -- reaches arm 2 only
     ("dev/proposals: licensing -- Maintainer Decision -- ACCEPT", "decision"),
     # constructed -- reaches arm 2 only; without it this reads `reviewed`,
-    # which is the R2 wrong-stage-at-`Exact` bug the arm exists to close.
+    # which is the wrong-stage-at-`Exact` bug the arm exists to close.
     ("dev/proposals: transition-lint -- Maintainer Decision "
      "-- ACCEPT (post Internal review)", "decision"),
     # documented, accepted false negative: a Decision written without the
@@ -489,7 +489,7 @@ def test_t6_decision_forms(subject: str, expected: Optional[str]) -> None:
 # ---------------------------------------------------------------------------
 
 def test_t7a_scoped_reviewed_has_no_sharpening_exclusion() -> None:
-    """T7a -- the R4 widening this design refuses.
+    """T7a -- the widening this design refuses.
 
     Adding ``(?!.*\\bsharpening\\b)`` to the **scoped** ``reviewed``
     pattern flips this ``reviewed -> None``.
@@ -614,7 +614,8 @@ def test_t9_a_second_open_commit_does_not_fall_through_to_revised(
     and carries a ``respond to`` token in its stage phrase; under a
     restored fall-through loop ``revised`` takes commit 2.
 
-    **This synthetic history is the only thing pinning P2** -- running
+    **This synthetic history is the only thing pinning the byte-unchanged
+    defaults** -- running
     both loop shapes over the live corpus's per-file histories produced
     identical results for every proposal file, so the live tree does not
     exercise it.
