@@ -3055,10 +3055,19 @@ class TestBasisLegacyEnumerations:
                         planner._LEGACY_UNDECLARED_BASIS) is (k <= n), (
                             stem, dig, k)
                 checked += 1
-        assert checked == 2, (
+        assert checked == 0, (
             "the enumeration changed size; re-derive it against "
             "`_BASIS_BASELINE_COMMIT` and update this figure deliberately "
             f"(found {checked})")
+        # 2 -> 0 on 2026-08-19, deliberately, and for the fourth time for the
+        # same reason: `review-efficient-lifecycle` archived, `_is_immutable`
+        # began covering it, and the two liveness nodes reddened on the stem.
+        # Two digests left with it, which empties the enumeration.  An empty
+        # table is the predicate having absorbed the whole population, not a
+        # broken control -- every record this once grandfathered is now
+        # unrewritable history, and a future live record that needs the
+        # exemption adds its own entry.  The loop above becomes vacuous, so
+        # this figure is the only thing still asserting the size.
         # 4 -> 2 on 2026-08-13, deliberately, and for the third time for the
         # same reason -- this time a PLAN closing rather than a proposal.
         # `git-native-security-foundations` archived when its ceremony ran
@@ -3386,10 +3395,10 @@ class TestP5InheritanceTrigger:
         assert _p5_field_violations(v), (value, v)
 
     def test_the_declaration_is_read_from_the_header_only(self, tmp_path):
-        """Not tidiness -- a live artifact depends on it.  The plan that
-        SPECIFIES this field quotes it inside an appended revision section, so a
-        whole-text search would make that plan declare inheritance about itself
-        and fire this gate on the artifact that defines it."""
+        """Not tidiness.  A plan that specifies this field quotes it inside an
+        appended revision section, so a whole-text search would make such a plan
+        declare inheritance about itself and fire this gate on the very artifact
+        that defines the field.  Reading the header only is what prevents that."""
         art = _plan_art(
             tmp_path,
             "## Maintainer-directed contract revision -- 2026-08-11\n\n"
@@ -3399,17 +3408,6 @@ class TestP5InheritanceTrigger:
             status="archived", plan_review="not required(x)", stem=_P5_STEM)
         assert planner._declares_inheritance(art) is False
         assert planner.review_record_violations(art, "archived") == []
-
-    def test_the_plan_that_specifies_the_field_does_not_declare_it(self):
-        """The live instance of the node above, asserted against the real tree:
-        `review-efficient-lifecycle.md` writes the literal field name five times
-        and must still not be an inherited plan."""
-        path = CAIRN_ROOT / "dev" / "plans" / "review-efficient-lifecycle.md"
-        text = path.read_text(encoding="utf-8")
-        assert "Inherited proposal basis" in text, (
-            "this node's premise moved -- the plan no longer quotes the field")
-        assert planner._declares_inheritance(
-            planner._read_artifact(path)) is False
 
     def test_the_retired_parent_spelling_is_not_the_trigger(self, tmp_path):
         """A RESIDUAL, pinned rather than hidden.  The accepted parent folded the
@@ -4283,15 +4281,27 @@ class TestMultiObligationPlanReview:
                     review="required(External + External)")
         assert any("duplicate obligation clause" in m for m in v), v
 
-    def test_this_plans_own_record_resolves_both_clauses(self):
-        """**The live self-test.**  `review-efficient-lifecycle` declares exactly
-        this two-obligation tier and carries real `**Obligation**:` lines, so the
-        fix is evaluated against the record it was written for: both clearing
-        passes resolve, the Internal review of the Maintainer-directed revision
-        resolves to NO clause (its obligation names that revision section, not a
-        declared clause), and the artifact stays sound."""
-        path = CAIRN_ROOT / "dev" / "plans" / "review-efficient-lifecycle.md"
-        art = planner._read_artifact(path)
+    def test_an_extra_pass_binding_to_no_clause_leaves_the_artifact_sound(
+            self, tmp_path):
+        """Both clauses cleared, plus a third pass whose `**Obligation**:` names
+        something that is not a declared clause at all -- a contract revision,
+        say, rather than a review obligation.
+
+        That pass binds to NO clause, and the artifact must still be sound: the
+        floor requires every declared clause to be cleared, not every pass to
+        clear one. Without this, a plan could not carry a review of anything
+        outside its declared obligations without tripping its own gate.
+
+        Distinct from the undeclared-value node above, which has only two passes,
+        so the unmatched one leaves a real clause outstanding. Here nothing is
+        outstanding and the extra pass is simply not load-bearing."""
+        art = _plan_art(
+            tmp_path,
+            self._pass("External")
+            + self._pass("External Security Review", date="2026-05-02")
+            + self._pass("the Maintainer-directed contract revision",
+                         tier="Internal", date="2026-05-03"),
+            plan_review=self._MULTI, stem=_E_STEM)
         obligations, violation = planner.normalize_required_obligations(
             art.plan_review)
         assert violation is None

@@ -2487,12 +2487,17 @@ _BASIS_BASELINE_COMMIT = "50a32237c54cbce437b0834c48bd9c5645b9cd7a"
 #: `_LEGACY_PASSES`.  Splitting it per field would need per-field manifest data
 #: to grandfather records whose bytes are append-only and will not change.
 _LEGACY_UNDECLARED_BASIS: Dict[str, Dict[str, int]] = {
-    # `git-native-security-foundations` was removed on 2026-08-13 when it
+    # Empty, and legitimately so. `git-native-security-foundations` was removed
+    # on 2026-08-13 and `review-efficient-lifecycle` on 2026-08-19, each when it
     # archived: an archived artifact is already covered by `_is_immutable`, so
     # the entry became dead weight and the contract test says so. This set only
     # ever shrinks, and archiving is one of the two ways it does.
-    "review-efficient-lifecycle": {
-        "59f58c6aaced549e": 1, "8dd3a11df9f938af": 1},
+    #
+    # An empty table is not a defect here -- it is the predicate above having
+    # absorbed the whole population. Every record this once grandfathered is now
+    # unrewritable history. A future live record that needs the exemption adds
+    # its own entry; until then the enumeration holds nothing because there is
+    # nothing live left for it to hold.
 }
 
 #: The artifact-level counterpart: live proposals that carried no
