@@ -1802,3 +1802,34 @@ I would not choose among these. I will say that option 2 costs least and
 preserves the attribution, and that whichever is chosen, **the two entries
 should not stand uncorrected in a security record** — the next reader has no way
 to know which parts of a ledger were measured.
+
+## Code-review disposition -- Anthony Kendall (Maintainer) -- 2026-08-19
+
+Scribed by Claude on the Maintainer's explicit instruction. The authorizing
+words, verbatim and unaltered:
+
+> **Accept as-is**
+
+**Effect.** The code review at `e762a14` stands: **PASS, no findings**. Its
+`ready-to-archive` status flip stands with it. The two ledger defects recorded
+in the Response above are **accepted as ledger-quality rather than
+finding-quality** — no missed finding was demonstrated, and every property the
+ledger claims is one this plan carries its own tests for.
+
+**The defects remain on the record and are not withdrawn.** They stay legible to
+the next reader precisely because a security record whose ledger has been
+quietly tidied is worth less than one that shows where it was wrong. The
+correction was declined; the measurement was not.
+
+**What this disposition does NOT cover, flagged rather than assumed.** The
+plan's sequence still holds three unexecuted steps after CR — **M2** (the
+exact-byte External Security Review producing the launcher/packet pair), **M3**
+(the ceremony), and **M4** (atomic publication), all Maintainer-fenced. The
+status reads `ready-to-archive` because the reviewer set it in their own commit,
+not because those steps are done.
+
+So `ready-to-archive` here means *the code review has cleared*, not *the work is
+finished*. **Whether this plan archives now with M2-M4 tracked elsewhere, or
+holds until M4, is a separate decision and has not been made.** Archiving it
+today would close a plan with three live Maintainer obligations in its own
+sequence table, which is the state most likely to lose them.
