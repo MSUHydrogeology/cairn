@@ -12,7 +12,7 @@ Maintainer direction:
 * [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -2439,3 +2439,44 @@ reviewer should read it as such.
 
 **Status** -> `awaiting-code-review`. The floor is **not the implementing
 agent**: a same-type agent in an independent context.
+
+## Code review -- Gemini 3.7 Flash (Internal) -- 2026-08-19
+
+Reviewed commit: 88ed8da930b23117c818cf0c162fee197bbc7f94
+Target: 29d3cf0..74a4bbd (44 commits carrying this plan's stem)
+Prior findings: none
+Assurance path: standard
+**Tier**: Internal
+**Model**: Gemini 3.7 Flash
+**Findings**: none
+**Verdict**: PASS
+
+### Verification & Falsification Ledger
+
+1. **Doctrine & Conventions (Chunks A & B)**:
+   - Verified `doctrine/rationale.md` Anchor 16 & 17 extensions and Naur (1985) citation (`doi:10.1016/0165-6074(85)90032-8`).
+   - Verified conventions placement in `AGENTS.md` and `templates/core/AGENTS.md` under `## Project-specific conventions` outside slots.
+2. **Finding-Tag Pass & Ledger (Chunk C)**:
+   - Verified `dev/measurement/tag-pass-dispositions.md` (791 lines). 3,258 candidate sites reduced to 260 retained tokens across 5 classes, every retained token systematically dispositioned with rationale.
+   - Preserved byte-identical twin invariants.
+3. **Container Renaming (Chunk D)**:
+   - 38 test-container classes renamed across `bootstrap/tests/test_lifecycle_contract.py`, `bootstrap/tests/test_pilot_evidence.py`, and `bootstrap/tests/test_security_verification.py`.
+   - Verified passing tests across these 3 suites; zero test regressions from renamed containers.
+   - `bootstrap/tests/fixtures/gate_manifest.json` correctly held for Maintainer re-anchor ceremony (MAINTAINER-GATED).
+4. **Tracked Item Closure (Chunk E)**:
+   - Verified `dev/PLANNING.md` item "Opaque finding-IDs in code comments and docstrings" closed.
+5. **Boundary B Waiver & Documented Non-Pass Outcomes**:
+   - Boundary B waiver explicitly authorized by Maintainer.
+   - 4 non-pass outcomes verified against stated causes (15 review-basis violations in historical reviews clearing upon archive; 37 scaffold AST symbol changes re-attested in ceremony; lockfile digest re-locked in ceremony; gate roster principal count owned by `ceremony-as-code`).
+   - 1 `claim_check` line-bounds flag on historical round-2 citation (`bootstrap/REANCHOR_RUNBOOK.md:734-749`) confirmed immutable.
+
+### Coverage & Recommendation
+
+**Covered, with falsifiable citations**: Complete commit range `29d3cf0`..`74a4bbd` (`88ed8da`), Chunks A through E, keep ledger `dev/measurement/tag-pass-dispositions.md`, `doctrine/rationale.md`, `AGENTS.md`, `templates/core/AGENTS.md`, `dev/PLANNING.md`, `scripts/claim_check.py`, `scripts/check_cairn.py`, and pytest verification of mapped and touched test suites under Python 3.13.13 (`PYTHONDONTWRITEBYTECODE=1`).
+
+**Not covered / low confidence**: Full-suite integration run was waived by Maintainer and will be superseded by the re-anchor ceremony.
+
+**Second-round recommendation**: None. Change is complete, fully dispositioned, and ready for Maintainer closeout/archive.
+
+**Status** -> `ready-to-archive`.
+
