@@ -2025,5 +2025,111 @@ f8f94efa73eea79d6b366f280024d2bace4d13b4b111f12c65d9ae0f85c9d2c4  bootstrap/test
 
 This is the lifecycle-status projection of the immediately preceding M2 exact-byte External Security Review. Finding M2-X1 is closed, the authority closure and operative launcher template are verified, and the authority packet and instantiated launcher have been composed and verified.
 
+## M2 exact-byte security review -- Codex -- 2026-08-19 (round 2)
 
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External Security Review
+**Reviewed commit**: `67651a5a1c29de6c8025e00f548941c68c655136`
+**Findings**: none
+**Verdict**: **CLEAR -- M2 passes. Authority pair independently composed and
+delivered to the Maintainer outside the repository.**
+
+I did not implement this plan. I performed this pass independently of the
+preceding Antigravity review and produced a separately bound authority pair.
+The ten closure members, launcher template, repaired tests, and durable safety
+explanation are byte-identical between the reviewed commit and the pre-review
+HEAD (`eeda93936606843fd29aa68e1b7b8dce0666cf15`).
+
+### Exact-byte record
+
+I re-derived the closure from the Git blobs at the reviewed commit, in
+`LC_ALL=C` path order:
+
+```text
+ff4a581fdbf998734d77e833e125ec640bbf7be08be7e4ecfef6cf7a24e42bed  bootstrap/REANCHOR_RUNBOOK.md
+daaaf483c53b708220b1785f4bfb871e65b66272bdd5c7a7515b2283673c0e59  bootstrap/reanchor.sh
+7f2bd98a5cd638ee4bbb7d4a11f60679eef95151df0ff061f0231a007ba1f6a2  bootstrap/tests/_gate_manifest.py
+8a6de3efc1e9e5a5e4a683556ed058b81bb30ca2264552444e03077167af6e06  bootstrap/tests/_gate_preflight.py
+3cd5d39ec6b64296557bda4ee41d838158c40e89699fc6b3372f4c412466be7c  bootstrap/tests/_gate_reanchor.py
+545625aea1d229d3977abd52118151477caf1bc5d87479d2e0a3cc08436bca17  bootstrap/tests/_gate_transition.py
+afc9951ecbbc2693caba76ad14843d4d38560e1c524dddbad37e04e1c3896bed  bootstrap/tests/_oracle.py
+f8f94efa73eea79d6b366f280024d2bace4d13b4b111f12c65d9ae0f85c9d2c4  bootstrap/tests/_oracle_activation.py
+725692f9ad21f1276532dcba7ae49ed307fbd9c18bfdc25212fb048de0c63f42  bootstrap/tests/_oracle_trust.py
+8b7fa2f745f187cc06316732a27a2d9f552a6244d57393d95dd3e1a8e923c242  dev/.cairn/allowed_signers
+```
+
+The remaining bindings are:
+
+* **Ceremony artifact** (`bootstrap/reanchor.sh`):
+  `daaaf483c53b708220b1785f4bfb871e65b66272bdd5c7a7515b2283673c0e59`
+* **Reviewed launcher template**:
+  `2d3e0f991c131b352df7d269f0762bd5def514a26c26ada077e6117d4454ac39`
+* **Codex authorization packet**:
+  `411bed0184d3d29898530729ba77bf98ed63bf521e997cffc821cc925370be52`
+* **Codex instantiated launcher**:
+  `9c8cf374e6ce9d9b2679dd43725181171649e0cc2970e83115fb59ef19585575`
+
+The packet carries no candidate OID. A byte comparison confirmed that the
+instantiated launcher differs from the reviewed template only by replacing its
+single `@PACKET_SHA256@` slot with the packet digest above. The delivered files
+re-hashed to those two recorded values after delivery.
+
+### Security adjudication
+
+**M2-X1 is closed on both execution paths.** I constructed a real blob-filtered
+promisor checkout with a genuinely missing object, repointed its repository-
+local promisor remote to an executable `ext::` transport helper, and verified
+the control first: absent `GIT_NO_LAZY_FETCH`, `git cat-file` executed the
+helper and then failed. Through the complete revised launcher, the candidate
+ref resolved, the missing closure blob refused, and the helper marker remained
+absent. Invoking `_gate_preflight.py`'s real `_git` path against the same
+checkout also refused with the helper absent. This verifies the launcher and
+the stage-two checker rather than merely inspecting their environment maps.
+
+I also swept the pre-candidate Git calls and both artifact stage environments
+for the broader failure class: an emptied environment whose safe state depends
+on a variable being present. I found no second candidate-controlled process-
+execution route. Automatic object retrieval was the missing negative control;
+it is now explicitly disabled after inherited `GIT_*` values are dropped. The
+existing pins still close replacement refs, hooks, filesystem monitors, Git
+signature-program selection, external diffs, paging, and SSH default-key
+command discovery at the call sites where those mechanisms can act.
+
+The other M2 properties held. The packet digest is checked before parsing; an
+unfilled template and a swapped packet refuse. The trailing-byte-preserving
+snapshot is re-hashed, so trailing newlines remain data while an embedded NUL
+or a changed second read refuses. The launcher compares its literal ten-path
+set before candidate resolution or extraction. The artifact is bound to one
+matching closure row and digest. Candidate code begins only at the final,
+mutually exclusive `exec` paths after closure and artifact verification.
+
+### Execution evidence and limits
+
+Under the canonical Python 3.13.13 interpreter,
+`test_reanchor.py` plus `test_gate_preflight.py` completed with **503 passed in
+102.50 seconds**. I separately ran the full-launcher promisor attack and its
+non-vacuity control, the checker's matching public path, and a final invocation
+using the delivered pair; the latter refused on the deliberately absent blob
+without executing the hostile helper.
+
+I did **not** run the Maintainer ceremony, load the private key, move either
+ref, or publish. I did not re-litigate the accepted same-user two-read window,
+key-holder-not-process limit, or no-nonce replay posture. M7 still applies: any
+later byte change to a closure member, the launcher, or the artifact invalidates
+this review and its pair; a candidate-OID advance alone does not.
+
+## Code review -- Codex (External Security, M2 round 2) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Reviewed commit**: `67651a5a1c29de6c8025e00f548941c68c655136`
+**Target**: the exact M2 authority closure and operative launcher-template bytes
+**Prior findings**: M2-X1 in the Codex External Security review at `a31b786`
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict**: **PASS.**
+
+This is the lifecycle-status projection of the immediately preceding M2
+exact-byte External Security Review, not a separate review. M2-X1 is closed on
+the launcher and checker paths, and the separately bound Codex authority pair
+was composed, verified, and delivered outside the repository.
 
