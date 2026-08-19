@@ -11,7 +11,7 @@ Covers:
 * Upgrade nodes -- the three-case `--stage`/`--apply` compatibility matrix:
   a new stage backfills; an old stage preserves an existing provenance-
   bearing lock's values; an old stage preserves a pre-provenance lock's
-  *absence*, never writing a JSON `null` (the case EPR1 found the original
+  *absence*, never writing a JSON `null` (the case the original
   `.get()`-chain design gets wrong). Plus a `--finalize` round-trip, which
   preserves but does not backfill.
 * The shipped `run_security_audit.py` reader (which parses the lockfile
@@ -129,7 +129,7 @@ def test_init_lock_synthesized_lockfile_carries_provenance(tmp_path):
     assert lock["migrated"] is True
 
 
-# --- Upgrade nodes -- the three-case compatibility matrix (EPR1) ---------
+# --- Upgrade nodes -- the three-case compatibility matrix ---------------
 
 
 def test_apply_backfills_provenance_from_new_stage(tmp_path):
@@ -178,8 +178,8 @@ def test_apply_preserves_existing_provenance_from_old_stage(tmp_path):
 
 def test_apply_preserves_absence_from_old_stage_no_null(tmp_path):
     """(iii) old stage + pre-provenance lock -- absence preserved, never a
-    JSON null. The case EPR1 found the original .get()-chain design gets
-    wrong (reproduced by mutation-testing C2 during implementation)."""
+    JSON null -- the case the original .get()-chain design got wrong,
+    reproduced by mutation testing during implementation."""
     assert _install(tmp_path) == 0
     lock_path = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"
     lock = _read_lock_json(lock_path)
@@ -231,7 +231,7 @@ def test_finalize_preserves_but_does_not_backfill_provenance(tmp_path):
     assert "source_licenses" not in lock_after
 
 
-# --- run_security_audit.py compatibility (R9) -----------------------------
+# --- run_security_audit.py compatibility ---------------------------------
 
 
 def _load(name: str, path: Path):
@@ -271,7 +271,7 @@ def test_emitted_lockfile_header_states_declared_not_attested():
     assert "declared" in out
 
 
-# --- Facade-identity coverage for _cairn_provenance (EPR5 / RR1) -----------
+# --- Facade-identity coverage for _cairn_provenance -----------------------
 # NOT bootstrap/tests/test_lockfile_module.py's _MOVED tuple -- that file is
 # FROZEN in the gate manifest; this assertion lands here instead.
 

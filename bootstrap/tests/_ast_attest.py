@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AST source-motion attestation — scaffold-split plan, Stage 0A.4 (SR3 / P2#4).
+"""AST source-motion attestation.
 
 The scaffold-split refactor claims each extraction stage is **pure motion**:
 a function/class/constant moves from ``bootstrap/scaffold.py`` into an owning
@@ -21,7 +21,7 @@ identity tests are the behavioral guards (plan Verification).
 Workflow
 --------
 
-**Interpreter pinning (code review C2).** ``ast.dump`` output and the AST node
+**Interpreter pinning.** ``ast.dump`` output and the AST node
 structure vary across Python *minor* versions (e.g. 3.12 vs 3.13). The baseline
 artifact and every ``verify`` run **must** use the project's canonical
 interpreter (the ``lhm`` env, Python 3.13) — generating the baseline on one
@@ -115,7 +115,8 @@ def digest_module(path: str | Path) -> dict[str, dict]:
 
 def _merge_current(paths: list[str | Path]) -> tuple[dict[str, list[tuple[str, str]]], list[str]]:
     """Merge the digests of several modules. Returns ``({key: [(digest, file)...]}, errors)``.
-    A key appearing in >1 file (a duplicate definition) is an error (S5 single-source)."""
+    A key appearing in >1 file (a duplicate definition) is an error: one
+    definition, one source."""
     merged: dict[str, list[tuple[str, str]]] = {}
     for p in paths:
         rel = str(p)
@@ -125,7 +126,7 @@ def _merge_current(paths: list[str | Path]) -> tuple[dict[str, list[tuple[str, s
 
 
 # Symbols whose digest the surgical ``update-symbol`` path may rewrite
-# (Antigravity R1 / Codex S2). Each maps the bare symbol name to its baseline
+# Each maps the bare symbol name to its baseline
 # node-kind, so the path resolves the exact baseline key ``<kind>:<name>`` rather
 # than assuming ``Assign:``. Restricted to:
 #   * the three registry mapping symbols a package/skill/core-file install
@@ -178,7 +179,7 @@ def _classify(baseline: dict[str, dict], merged: dict[str, list[tuple[str, str]]
     for key, info in baseline.items():
         if info.get("type") in ("Import", "ImportFrom") or key.split("#", 1)[0] == "Docstring":
             # Per-module necessities, not single-source "moved symbols":
-            # - imports (code review C3): the same ``import sys`` recurs across
+            # - imports: the same ``import sys`` recurs across
             #   split modules (false-DUPLICATE); a relocated import is not lost.
             # - module docstrings (re-review-2 finding 3): every split module
             #   carries one. Executable top-level expressions stay enforced.
@@ -239,7 +240,7 @@ def update_symbol(
     digest), and — onboarding-split phase B — the ``install_onboarding`` engine
     function gains a verbatim ``_onboarding/`` package fan-out beside the helper
     copy (a single-symbol body change, NO new top-level symbol). Hardened so a
-    one-key rewrite cannot bless an unintended mutation (Codex S2):
+    one-key rewrite cannot bless an unintended mutation:
 
     * the symbol must be in :data:`_UPDATE_ALLOWLIST` (the 3 registry mappings +
       the ``install_onboarding`` engine function), which also supplies its kind;

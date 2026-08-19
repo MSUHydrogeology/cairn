@@ -1,4 +1,4 @@
-"""Contract for the AST source-motion attestation tool (scaffold-split 0A.4 / SR3).
+"""Contract for the AST source-motion attestation tool.
 
 Pins: the digest is position/comment-insensitive but logic-sensitive; the
 committed baseline matches the live `scaffold.py` (a staleness guard — if the
@@ -59,7 +59,7 @@ def test_committed_baseline_accounted_for_across_the_engine_package():
     #
     # If this fails with CHANGED, a symbol's logic changed (regenerate only if
     # intentional, under the canonical interpreter -- lhm / Python 3.13 -- since
-    # ast.dump structure varies across minors, C2). MISSING/DUPLICATE => a symbol
+    # ast.dump structure varies across minors). MISSING/DUPLICATE => a symbol
     # was dropped or single-source was broken by an extraction.
     assert _BASELINE.is_file(), "the pre-split AST baseline artifact is missing"
     modules = sorted(_SCAFFOLD.parent.glob("*.py"))
@@ -126,7 +126,7 @@ def test_duplicate_symbol_fails(tmp_path):
 
 
 def test_shared_imports_across_modules_do_not_fail(tmp_path):
-    # Code review C3: the same import recurring across split modules is a
+    # The same import recurring across split modules is a
     # per-module necessity, NOT a single-source violation -- it must not
     # DUPLICATE-fail the pure-motion gate. Functions still must move exactly once.
     src = "import sys\nimport os\n\ndef f(x):\n    return x\n"
@@ -138,7 +138,7 @@ def test_shared_imports_across_modules_do_not_fail(tmp_path):
 
 
 def test_function_still_duplicate_fails_even_with_shared_imports(tmp_path):
-    # The C3 carve-out is imports-only: a real symbol duplicated still fails.
+    # The carve-out is imports-only: a real symbol duplicated still fails.
     base = A.digest_module(_write(tmp_path, "mono.py", "import sys\n\ndef f(x):\n    return x\n"))
     (tmp_path / "base.json").write_text(json.dumps(base), encoding="utf-8")
     m1 = _write(tmp_path, "m1.py", "import sys\n\ndef f(x):\n    return x\n")
@@ -155,7 +155,7 @@ def test_missing_symbol_fails(tmp_path):
 
 # --- update-symbol: the hardened single-symbol cascade baseline rewrite ----------
 # (scaffold six-proposal superplan, pre-run gate-control prerequisite; Antigravity
-# R1 + Codex S2). The ONLY legitimate baseline mutation during the cascade is a
+# The ONLY legitimate baseline mutation during the cascade is a
 # registry mapping symbol gaining an InstallSpec, changing exactly that symbol's
 # digest. These pin: rewrites exactly one allowlisted key (others byte-for-byte),
 # and every refusal path (non-allowlist, expect-old mismatch, unrelated drift,
@@ -362,8 +362,8 @@ def test_update_symbol_refuses_deleted_known_new_key(tmp_path, capsys):
 
 
 # ---------------------------------------------------------------------------
-# ast-known-new-repin plan, Chunk B3 — Import:/Docstring# exemption from the
-# NEW-symbol strictness check (both loops: unpinned-NEW and MISSING-KNOWN-NEW)
+# Import:/Docstring# exemption from the NEW-symbol strictness check
+# (both loops: unpinned-NEW and MISSING-KNOWN-NEW)
 # ---------------------------------------------------------------------------
 
 
@@ -386,7 +386,7 @@ def test_update_symbol_allows_a_fresh_unpinned_import_with_no_known_new(tmp_path
 
 
 def test_update_symbol_ignores_a_stale_pinned_import_key_missing_from_live(tmp_path):
-    # plan-review PR2: a known_new manifest that still pins an Import: key
+    # A known_new manifest that still pins an Import: key
     # whose exact line no longer exists in the live set must NOT refuse via
     # MISSING-KNOWN-NEW -- that loop needs the same exemption as the
     # unpinned-NEW loop, or the two can drift out of symmetry.

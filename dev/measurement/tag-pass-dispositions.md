@@ -460,3 +460,52 @@ amendment R1", "**R1.1**" — was removed. Same token, same tree, both in
 production code under `scripts/` and `bootstrap/`. Nothing about the token's
 *shape* separates them and nothing about its *location* does either; only
 opening the referent does.
+
+### Batch: the attestation tool, the engine loader, and lockfile provenance
+
+| File | Before | After |
+|---|---:|---:|
+| `bootstrap/tests/_ast_attest.py` | 8 | 0 |
+| `bootstrap/tests/test_ast_attest.py` | 8 | 0 |
+| `bootstrap/tests/_loader_proto.py` | 8 | 0 |
+| `bootstrap/tests/test_loader_identity.py` | 7 | 0 |
+| `bootstrap/tests/test_lockfile_provenance.py` | 7 | 0 |
+
+**A homograph against a *live* scheme, which is the dangerous direction.**
+`_loader_proto.py` described "the reproduced **S1** attack", and `S1` is live
+vocabulary: `templates/core/dev/proposals/_template.md:347` ships
+`**S1 — Who supplied it?**` as the first security-preflight question. A
+grep-for-liveness returns that hit and it is genuinely live — and it is not this
+`S1`, which named a Security Review finding about import hijack. The earlier
+near-misses (`RR2`, `C4`) collided with *dead* schemes, where a wrong keep costs
+only a surviving tag. Colliding with a live one is worse: the evidence for
+keeping looks strong, and keeping it preserves a pointer that reads as a
+citation of the shipped preflight and is not one.
+
+**Two pre-existing failures were checked, not assumed.**
+`test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set`
+and its baseline sibling fail at this commit. They are the filed AST-baseline
+drift (`191fb93`), not this batch: every symbol in the failure output resolves
+to `bootstrap/_scaffold/`, and this batch modified zero files under that path.
+Naming the mechanism rather than the count is the point — "these were already
+failing" is the sentence that hid a real regression once already in this pass.
+
+### A convention has a form, and knowing it by name is not knowing it
+
+Recorded from a cross-session exchange with the `ceremony-as-code` implementer,
+because it generalises past the incident. This plan's four Response headings
+read `## Response to plan review (round 2) -- Claude -- 2026-08-13`. The
+disposition predicate compares a section's **kind** — everything before the
+first ` -- ` — exactly, so the round marker landed *inside* the compared span
+and four conformance obligations silently went undischarged. The sibling plan
+wrote the same marker after the date and conformed.
+
+Both of us had reached "the checker is broken" first; the checker was right both
+times. The sibling's drift was to more informative heading variants
+(`## Response to the clearing review`) — a small deliberate liberty. This one
+was worse, because at no point did it feel like a shortcut: the intent was
+compliance, the convention was known by name, and the form was wrong. The
+sibling then added the honest coda — its own headings passed because it copied
+a template that happened to be canonical, not because it had read the
+predicate. **"It passes" and "the author knows why" are different states, and
+only the second survives the next edit.**

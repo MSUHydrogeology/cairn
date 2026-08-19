@@ -1,6 +1,6 @@
 """Contract for the fail-closed file-relative engine loader (scaffold-split 0A.2).
 
-Pins SR1 (fail-closed against import hijack / path escape) and P1#3 (one
+Pins the fail-closed behaviour against import hijack / path escape, and (one
 canonical ``sys.modules`` identity per implementation file). The loader is a
 **prototype** at 0A; these contracts are re-run on the *landed* substrate at
 0B.4 (the real launcher + ``_scaffold/`` package). Exercising them now against a
@@ -58,7 +58,7 @@ def test_loads_under_single_canonical_identity(tmp_path, clean_modules):
 
 
 def test_load_engine_is_idempotent_one_object_per_file(tmp_path, clean_modules):
-    """P1#3: a second load returns the SAME object — the engine's mutable
+    """A second load returns the SAME object — the engine's mutable
     singletons are never duplicated into divergent copies."""
     pkg = _make_engine(tmp_path)
     name = "bootstrap._scaffold_t_idem"
@@ -70,7 +70,7 @@ def test_load_engine_is_idempotent_one_object_per_file(tmp_path, clean_modules):
 
 
 def test_file_relative_ignores_a_hostile_path_decoy(tmp_path, monkeypatch, clean_modules):
-    """SR1 / the reproduced S1 attack: a decoy ``bootstrap/`` injected on
+    """A decoy ``bootstrap/`` injected on
     ``sys.path`` (hostile PYTHONPATH) must NOT hijack the engine — the loader
     resolves the package from the verified absolute dir, never via sys.path."""
     real = _make_engine(tmp_path / "real", marker="real")
@@ -86,7 +86,7 @@ def test_file_relative_ignores_a_hostile_path_decoy(tmp_path, monkeypatch, clean
 
 
 def test_fails_closed_when_package_dir_escapes_root(tmp_path, clean_modules):
-    """SR1: a package dir outside the declared Cairn root is refused (fail-closed),
+    """A package dir outside the declared Cairn root is refused (fail-closed),
     not loaded — the symlink/escape signature."""
     pkg = _make_engine(tmp_path / "elsewhere")
     bogus_root = tmp_path / "cairn_root"   # the engine is NOT under here
@@ -113,7 +113,7 @@ def test_failed_load_leaves_no_half_initialized_entry(tmp_path, clean_modules):
 
 
 def test_submodule_without_parent_fails_closed(tmp_path, clean_modules):
-    """Code review C1: loading a submodule before its parent package is
+    """Loading a submodule before its parent package is
     initialized must fail closed with a clear error, not exec a module whose
     package-relative imports would raise an opaque parent-module error."""
     pkg = _make_engine(tmp_path)

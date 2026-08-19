@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed file-relative engine loader — scaffold-split 0A.2 (SR1 / P1#3).
+"""Fail-closed file-relative engine loader.
 
 **Prototype, not yet wired as production** (it is wired into the launcher at
 Stage 0B). It exists now so the *contract* — one canonical identity per file,
@@ -10,7 +10,7 @@ Why a bespoke loader at all
 ---------------------------
 ``bootstrap/`` is a **namespace package** (no ``__init__.py``), so an attacker
 who lands a ``bootstrap/`` earlier on ``sys.path`` (a hostile ``PYTHONPATH``)
-can shadow the engine — the reproduced S1 attack. A plain ``import
+can shadow the engine. A plain ``import
 bootstrap._scaffold`` trusts ``sys.path`` resolution; this loader does **not**.
 It loads the engine package from a **verified absolute directory** computed
 relative to the launcher's own ``__file__`` (the stable on-disk location), and
@@ -18,8 +18,8 @@ relative to the launcher's own ``__file__`` (the stable on-disk location), and
 root (``ScaffoldLoaderError``). ``sys.path`` is never consulted for engine
 resolution, so a decoy ``bootstrap/`` on the path cannot hijack it.
 
-Canonical identity (P1#3)
--------------------------
+Canonical identity
+------------------
 The engine is registered under the single canonical name ``bootstrap._scaffold``
 in ``sys.modules``; ``load_engine`` is **idempotent** — a second call returns the
 same object. That guarantees **one ``sys.modules`` entry / one object identity
@@ -39,14 +39,14 @@ from types import ModuleType
 
 
 class ScaffoldLoaderError(RuntimeError):
-    """Fail-closed loader rejection (SR1): the engine package is missing/malformed,
+    """Fail-closed loader rejection: the engine package is missing/malformed,
     or a module it loads resolves to a path outside the Cairn root (import hijack)."""
 
 
 def _verify_within_root(path: Path, cairn_root: Path) -> Path:
     """Return ``path`` resolved, or raise if it escapes ``cairn_root``.
 
-    The fail-closed core (SR1): a loaded engine module whose real on-disk path is
+    The fail-closed core: a loaded engine module whose real on-disk path is
     not under the Cairn root is refused — that is precisely the import-hijack /
     symlink-escape signature."""
     resolved = path.resolve()
@@ -69,7 +69,7 @@ def load_engine(
     File-relative (``package_dir`` is an absolute directory, never resolved via
     ``sys.path``) and fail-closed (every loaded file is verified within
     ``cairn_root``). **Idempotent**: if ``canonical_name`` is already loaded, the
-    existing object is returned — one identity per file (P1#3)."""
+    existing object is returned — one identity per file."""
     package_dir = Path(package_dir)
     cairn_root = Path(cairn_root)
 
@@ -119,7 +119,7 @@ def load_submodule(
     if cached is not None:
         return cached
 
-    # Fail closed if the parent package is not yet initialized (code review C1):
+    # Fail closed if the parent package is not yet initialized:
     # a submodule's package-relative imports (``from . import config``) resolve
     # against the registered parent in sys.modules, so exec'ing it first would
     # raise an opaque import-time error. Require load_engine() first.
