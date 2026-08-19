@@ -3,7 +3,7 @@
 **Source proposal**: `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`,
 accepted as revised at Revision 4 (`## Decision -- Anthony Kendall (Maintainer)
 -- 2026-08-13`).
-**Status**: ready-to-archive
+**Status**: revising-code
 **Plan review**: required(**External Security Review**) — set by the Decision.
 Four External passes shaped this contract and each found a real defect; the
 implementation changes what executes during the trust-root ceremony.
@@ -1833,3 +1833,119 @@ finished*. **Whether this plan archives now with M2-M4 tracked elsewhere, or
 holds until M4, is a separate decision and has not been made.** Archiving it
 today would close a plan with three live Maintainer obligations in its own
 sequence table, which is the state most likely to lose them.
+
+## M2 exact-byte security review -- Codex -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External Security Review
+**Reviewed commit**: `682f8e4d9c6f27003e30140b3a05fae6bdecf7b8`
+**Findings**: one blocking
+**Verdict**: **REVISE — M2 does not clear.**
+
+I did not implement this plan. I reviewed the exact bytes independently and
+produced **no authorization packet and no operative launcher**. Under M2, a
+pair from a review with an unresolved finding would carry no authority.
+
+### Exact-byte record
+
+I re-derived every digest from the Git blobs at the reviewed commit. All ten
+match the supplied starting list:
+
+```text
+ff4a581fdbf998734d77e833e125ec640bbf7be08be7e4ecfef6cf7a24e42bed  bootstrap/REANCHOR_RUNBOOK.md
+daaaf483c53b708220b1785f4bfb871e65b66272bdd5c7a7515b2283673c0e59  bootstrap/reanchor.sh
+7f2bd98a5cd638ee4bbb7d4a11f60679eef95151df0ff061f0231a007ba1f6a2  bootstrap/tests/_gate_manifest.py
+0cad65641dfdcdd6f64a114c6375fe16848ae9091f32ccd334465159e4dc3d4b  bootstrap/tests/_gate_preflight.py
+3cd5d39ec6b64296557bda4ee41d838158c40e89699fc6b3372f4c412466be7c  bootstrap/tests/_gate_reanchor.py
+545625aea1d229d3977abd52118151477caf1bc5d87479d2e0a3cc08436bca17  bootstrap/tests/_gate_transition.py
+afc9951ecbbc2693caba76ad14843d4d38560e1c524dddbad37e04e1c3896bed  bootstrap/tests/_oracle.py
+f8f94efa73eea79d6b366f280024d2bace4d13b4b111f12c65d9ae0f85c9d2c4  bootstrap/tests/_oracle_activation.py
+725692f9ad21f1276532dcba7ae49ed307fbd9c18bfdc25212fb048de0c63f42  bootstrap/tests/_oracle_trust.py
+8b7fa2f745f187cc06316732a27a2d9f552a6244d57393d95dd3e1a8e923c242  dev/.cairn/allowed_signers
+```
+
+The reviewed ceremony artifact digest is therefore
+`daaaf483c53b708220b1785f4bfb871e65b66272bdd5c7a7515b2283673c0e59`.
+The reviewed launcher-template digest is
+`e363e4bb5482c7691b60836d418261168d588cfec449be72b3106197b80cf793`.
+The closure and template were unchanged between the reviewed commit and the
+pre-review HEAD. There is intentionally **no packet digest and no instantiated-
+launcher digest** in this record.
+
+### Finding
+
+**[M2-X1 — BLOCKING, HIGH] Candidate-controlled partial-clone configuration can
+execute an unlisted transport helper before the first candidate artifact
+byte.** `sterile_git` clears the inherited environment and pins replacement
+objects, hooks, and the filesystem monitor, but it permits Git's automatic
+lazy fetch. A repository-local promisor configuration can therefore make
+`git cat-file` invoke a transport selected by that same local configuration.
+That expands the pre-candidate executable trust set beyond Rule 13's six
+recorded tools.
+
+I reproduced this through the complete reviewed launcher, not an extracted
+helper. I made a blob-filtered local clone containing the reviewed commit,
+then set its repository-local promisor remote to an `ext::` helper and admitted
+that protocol in the same local config. I launched an independently
+instantiated probe copy with a packet carrying the ten verified rows above.
+Before `bootstrap/reanchor.sh` could execute, the external helper wrote its
+marker. Git then failed to retrieve the first closure blob and the launcher
+refused. Refusal after the helper ran does not restore the boundary: an
+executable outside the reviewed trust set had already run.
+
+This is within the surface M2 is specifically meant to police. The checkout's
+Git metadata is candidate-controlled input, and Rule 13 says the pre-candidate
+set is enumerated. The current bytes do not deliver that claim.
+
+**Tested repair.** Adding `GIT_NO_LAZY_FETCH=1` to the environment constructed
+by `sterile_git` made the same full-launcher probe fail closed on the missing
+blob with the transport-helper marker absent. The revision should bind that
+environment value in the launcher, add a public-path regression using a
+promisor checkout and executable marker, and update the durable explanation so
+future edits know automatic object fetching is part of the pre-candidate
+boundary. The revised launcher bytes then require a fresh M2 exact-byte review;
+the pair must still be produced only by that clearing reviewer.
+
+### Other attacks completed
+
+The remaining requested properties held under independent probes:
+
+* An unfilled template refused, and swapping a packet after launcher
+  instantiation failed the embedded-digest comparison before candidate
+  resolution.
+* Ordinary and additional trailing newlines survived the packet snapshot.
+  An embedded NUL and a different second read both failed the snapshot re-hash.
+  The code and prose agree that the two-read race is detected, not prevented.
+* Self-consistent packets with one member dropped or one added failed the
+  launcher's literal member-set comparison. A marker `git` executable remained
+  absent, proving resolution had not begun.
+* The artifact is bound to exactly one matching closure row and its separately
+  stated digest. Candidate execution is confined to the final mutually
+  exclusive `exec /bin/sh ...` paths; no launcher instruction follows it.
+
+### Coverage and residuals
+
+**Covered:** the launcher template in full; packet binding and snapshot
+semantics; fixed-set ordering; pre-candidate values and Git boundary; the point
+where candidate code starts; the ten closure blobs; and the R6/R9/R10 and M7
+invalidation contracts.
+
+**Not covered because this round blocks first:** no authority pair was composed
+or delivered, no Maintainer ceremony was run, no key was loaded, no ref moved,
+and no publication occurred. The accepted same-user two-read window,
+key-holder-not-process limit, and no-nonce replay posture were not re-litigated.
+
+## Code review -- Codex (External Security, M2) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+Reviewed commit: `682f8e4d9c6f27003e30140b3a05fae6bdecf7b8`
+Target: the exact M2 authority closure and operative launcher-template bytes
+Prior findings: none
+Assurance path: high-assurance
+**Findings**: raised
+**Verdict**: **REVISE.**
+
+This is the lifecycle-status projection of the immediately preceding M2
+exact-byte External Security Review, not a second review. Finding M2-X1 is
+blocking, no authority pair was produced, and corrected bytes require a
+replacement Boundary B record, independent code review, and a fresh M2 pass.
