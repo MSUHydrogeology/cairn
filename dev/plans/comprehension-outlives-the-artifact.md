@@ -2281,3 +2281,30 @@ that still resolves to something live stays. `M2-4` and `M2-5` in
 means every *dead* coordinate in the widened corpus, not every token matching a
 pattern — sweeping a live fence because a ruling said "all" would be the same
 mechanical error this plan exists to prevent.
+
+### Correction to the scope allowance -- Claude -- 2026-08-19
+
+The allowance above states that `M2-4` and `M2-5` in
+`bootstrap/tests/_gate_manifest.py` "cite `M2`, a live row in the in-flight
+`ceremony-as-code` plan" and must be kept. **That was wrong, and the reasoning
+was the exact error this pass keeps recording.**
+
+`M2` *is* live in that plan — it is the exact-byte External Security Review
+step. But `M2-4` and `M2-5` appear in it **zero times**, and they are not
+sub-rows of that step: they are findings from a different review round
+entirely, whose numbering happens to start `M2`. Liveness was inferred from
+the *parent token* rather than checked on the *occurrence*, which is the
+homograph trap in a new direction — previously it produced false removals of
+live tokens, here it nearly produced a false keep of dead ones.
+
+Both are removed, along with `A2`, `A4`, `IC3`, `IC6` and `S2` in the same
+file. `A2` and `A4` also have live homographs in `ceremony-as-code` (rows about
+`ssh-keygen` prompting and the runbook's own claim); this file's are from
+`git-native-security-foundations`, which the comment named outright.
+
+**`bootstrap/tests/test_reanchor.py` is kept in full — all 12.** It is
+`TestTheCeremonyClosureCarriesNoUnexplainedTag`, the ceremony plan's **gate on
+this plan's output**: its tags are specimens in a regex spec and worked examples
+in a docstring explaining the live-vs-dead rule, and its `LIVE` frozenset names
+`N4`–`N8`, `R1`, `R6` exactly as this ledger dispositioned them. Sweeping it
+would have deleted a test *about* not sweeping live coordinates.

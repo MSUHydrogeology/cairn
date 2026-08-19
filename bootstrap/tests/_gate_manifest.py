@@ -3,7 +3,7 @@
 
 "Tests green" is not an independent gate when the same unattended actor that the
 gate governs may weaken, delete, skip, xfail, re-baseline, or allow-list the very
-test that failed (Codex S2 / R2-2). This tool freezes a **pre-run manifest** of
+test that failed. This tool freezes a **pre-run manifest** of
 what the gate surface *is*, so any later tampering is mechanically detectable.
 
 Two file classes
@@ -153,7 +153,7 @@ _INTERPRETER_NOTE = ("ast.dump / differential-oracle digests are interpreter-min
 # The guarded Git boundary for THIS module
 # ---------------------------------------------------------------------------
 #
-# Plan `git-native-security-foundations`, Chunk A4. There is **one guarded
+# There is **one guarded
 # launcher per executable boundary**, not one shared module: this file,
 # `_gate_preflight.py`, `bootstrap/security_check.py` and
 # `bootstrap/container/verify-ref.sh` are four independently executable entry
@@ -198,21 +198,21 @@ def _git(*args: str, repo: Path,
     overrides: list[str] = []
     for key, value in _STERILE_CONFIG.items():
         overrides += ["-c", f"{key}={value}"]
-    # Code review [IC6]: bind the invocation to *this* directory. `git -C <path>`
+    # Bind the invocation to *this* directory. `git -C <path>`
     # **discovers upward**, so without this a non-repository directory nested
     # anywhere under a checkout answers with that checkout -- and the path this
-    # bites is the one Chunk D was rebuilt around: `produce`'s repository is
+    # bites is `produce`'s own: its repository is
     # `raw_tree`'s `tempfile.mkdtemp()`, so a `TMPDIR` under a checkout would
     # make `produce` read *that* repository's object format and HEAD tree and
     # stamp its modes and oids into the candidate manifest.
     #
-    # A2's ownership table names repository binding as one of five properties
+    # Repository binding is one of five properties required
     # per guarded boundary; this launcher had the other four.
     # `_gate_preflight._require_worktree_root` is the same idea enforced by
     # refusal; here the correct behaviour for a non-repository is to *report*
     # that (`_object_format` returns None), so the binding is a config pin
     # rather than a raise.
-    # [M2-5]: resolve the start path before ceiling it. `GIT_CEILING_DIRECTORIES`
+    # Resolve the start path before ceiling it. `GIT_CEILING_DIRECTORIES`
     # is compared against the *logical* path, so a symlink pointing at a nested
     # non-repository directory escaped the ceiling entirely and discovered the
     # target repository -- measured by the security review against the previous
@@ -224,7 +224,7 @@ def _git(*args: str, repo: Path,
         env={**_sterile_env(),
              "GIT_CEILING_DIRECTORIES": str(start.parent),
              "GIT_DISCOVERY_ACROSS_FILESYSTEM": "0",
-             # [M2-4]'s pin applies to this boundary too: it is documented
+             # The same pin applies to this boundary: it is documented
              # read-only and had the same optional-index-write behaviour.
              "GIT_OPTIONAL_LOCKS": "0"},
     )
@@ -584,7 +584,7 @@ def verify(manifest_path: str | Path, *, anchor_ref: str | None = None,
             holds.append(f"OBJECT-FORMAT: {exc}")
             live_fmt = None
         if live_fmt is None:
-            # Code review [IC3]. This branch did not exist: when the format was
+            # This branch did not exist: when the format was
             # merely *undeterminable*, neither arm fired, `live_blobs` stayed
             # empty, and every mode/oid comparison below was skipped in silence
             # -- so a mode-flipped tree that HOLDs with `.git` present reported
