@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -2119,3 +2119,329 @@ implementation Security Reviews remain owed.
 
 **Next round:** limited to E19-E20. Restore the reader/security contract and
 record the compact scope basis it needs; no collector redesign is requested.
+
+## Response -- Claude -- 2026-08-19 (round 5)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `318baf8`. Both reproduce.
+
+**[E19] accept — and it is worse than a one-round slip, which is the part worth
+recording.** I enumerated the `###` headings of every revision:
+
+| section | R1 | R2 | R3 | R4 |
+|---|---|---|---|---|
+| The reader | ✓ | ✓ | — | — |
+| Security preflight | ✓ | ✓ | — | — |
+
+**Both were dropped at Revision 3 and neither I nor the reviewer noticed for two
+rounds.** They were accepted outcomes, not decoration: the reader contract is
+what made the collector worth building.
+
+**This is the second accepted-scope regression in three rounds** — E15 was the
+same shape, where `by_file` silently changed from cost to node count. The common
+cause is structural: writing a *complete self-contained contract* each round
+makes **silent section loss the default failure mode**, and the withdrawal ledger
+did not catch it because I only listed what I *consciously* changed — which is
+precisely the blind spot the ledger exists to cover. A ledger populated from
+memory cannot see an omission.
+
+The mitigation is mechanical and starts here: **each revision carries forward the
+prior revision's section inventory and accounts for every absence**, so a dropped
+section must be either present or explicitly withdrawn with a reason. Revision 5
+below does that, and the inventory is stated rather than implied.
+
+**[E20] accept.** Reproduced exactly. The same invocation run twice — once with
+`PYTEST_ADDOPTS` absent, once with `PYTEST_ADDOPTS='-q'` — produced **byte-identical
+stored rows**:
+
+```
+{"collected":3,"exitstatus":0,"inipath":null,
+ "invocation":["test_v.py","-q","-p","no:cacheprovider"],
+ "resolved_args":["test_v.py"]}
+```
+
+Yet Revision 4's classifier distinguishes them, because one has an environment
+variable set that the row never records. So *"the reader re-derives `scope` from
+the stored fields"* was false: it re-derives from fields that do not contain the
+classifier's inputs. A harmless ini file or a no-op `PYTEST_PLUGINS` has the same
+gap. Fixed by recording a compact **scope basis** — resolved targets, `inipath`
+presence, and one boolean per consulted environment source, with **no environment
+values copied into the ledger**.
+
+**Accepted as implementation precision, not a blocker**: per-file phase durations
+are summed first and converted to milliseconds **once**, so repeated
+sub-millisecond reports do not vanish individually.
+
+## Revision 5
+
+The complete current contract, self-contained. Supersedes Revision 4 in full.
+
+**Section inventory carried forward from Revision 4**, per the E19 mitigation:
+Assurance path · Scope · Hooks and inertness · Node accounting and outcome
+precedence · The row schema · Scope · The encoded-row budget · Durability · The
+five guards · Failure dispositions · Evidence · Settled under probe · Known
+omissions · Withdrawn ledger — **plus the two restored sections, The reader and
+Security preflight.** No section from Revision 4 is absent.
+
+### Assurance path
+
+**high-assurance.** Edits gate-frozen `bootstrap/tests/conftest.py` (re-anchor
+required); adds a file write to every non-child, non-release session in the one
+file that can already decide a session's exit status. **Executes nothing.**
+
+### Scope
+
+**In**: five hooks in `bootstrap/tests/conftest.py`; a gitignored JSONL ledger at
+`dev/measurement/suite-runs.jsonl`; its `.gitignore` rule; the reader
+`tools/suite_cost.py`; one new test file; a note in `dev/measurement/README.md`.
+
+**Excluded**: any subprocess; any doctrine, canonical-command, template or adopter
+surface; any dependency; any enforcement.
+
+### Hooks, and inertness at every one
+
+`pytest_configure` (claim marker), `pytest_runtest_logreport`,
+`pytest_collectreport`, `pytest_deselected`, `pytest_sessionfinish`. **Each
+individually wrapped** — measured unguarded, a raising report hook gives
+`INTERNALERROR`, exit 3, "no tests ran". In all three pre-existing hooks the
+release-evidence logic runs first and the ledger block last; ordering is defence
+in depth, **not** the guarantee. The `sessionfinish` ledger block uses **`except
+BaseException`**, because a `KeyboardInterrupt` in the retry loop otherwise turns
+exit 1 with a release report into exit 130 with none.
+
+### Node accounting and outcome precedence
+
+`collected` is `session.testscollected`; `executed` is nodes emitting ≥1 runtest
+report; `not_run` is the difference. Asserted: **`0 <= executed <= collected`**,
+the seven counts sum to `executed` as a schema check only, and **reconciliation
+against `terminalreporter.stats`** is what validates the numbers.
+
+Precedence per node: `failed` in setup/teardown → **`errors`**; `failed` in call →
+**`failed`**; `wasxfail` → **`xpassed`**/**`xfailed`**; any `skipped` →
+**`skipped`**; a passing setup with **no call report** → **`aborted`**; else
+**`passed`**.
+
+### The row schema
+
+`ts_start`, `ts_end`, `wall_s`, `collector_ms`, `head`, `interpreter`,
+`invocation`, `scope`, **`scope_basis`**, `label`, `collected`, `executed`,
+`not_run`, `deselected`, the seven outcome counts, `collection_errors`,
+`exitstatus`, `interrupted`, `truncated`, `by_file`, `by_file_total`,
+`by_file_kept`.
+
+**`by_file`** maps a repo-relative path (≤ 160 bytes) to **integer milliseconds**.
+Per-file phase durations are **summed first and converted once**, so repeated
+sub-millisecond reports are not each rounded to zero. Eviction is **smallest
+duration first**, ties by longest path; `by_file_total` and `by_file_kept` record
+what was pruned.
+
+**`head`** is resolved by procedure: read `.git`; if a **file**, follow its
+`gitdir:`; read `HEAD` there; if 40-hex, done; if `ref: <path>`, resolve and
+validate **`commondir`** and search that directory's loose refs then
+`packed-refs`. Otherwise `null`.
+
+**`scope_basis`** is new, and exists so the reader can actually audit `scope`:
+
+* `targets` — the normalized resolved `config.args`, repo-relative;
+* `inipath` — a **boolean**, whether `config.inipath` is non-`None`;
+* `addopts_set`, `plugins_set` — **booleans** for `PYTEST_ADDOPTS` and
+  `PYTEST_PLUGINS`.
+
+**No environment value is ever copied into the ledger** — only whether each was
+set. If any variable-length member is capped, **`scope` is forced `unknown`**, for
+the same reason a capped invocation is: a classification that cannot be
+re-derived must not be asserted.
+
+### Scope — both channels, combined
+
+`full` requires **both**:
+
+1. **The raw invocation is a member of an exact closed family** — the ordinary
+   canonical command, and the order-independence command with its known harmless
+   display/shuffle options (`--quality-gate-shuffle-seed=<int>`, `-q`,
+   `--no-header`, `--no-summary`). **Any other token — including `--ignore`,
+   `--ignore-glob`, plugin options, and future options — yields `unknown`.**
+2. **The resolved postconditions hold** — `scope_basis.targets` resolves to the
+   suite root; `inipath` false; `addopts_set` and `plugins_set` false;
+   `collected > 0` and `executed > 0`; `deselected == 0`;
+   `collection_errors == 0`; `not_run == 0`; `interrupted` false; `truncated`
+   false.
+
+`--collect-only` is never `full`. A recognized strict-subset path is `targeted`;
+everything else `unknown`.
+
+### The encoded-row budget
+
+**4096 bytes of the final encoded line**, excluding the newline. **Encoder
+pinned**: `json.dumps(row, ensure_ascii=True, separators=(",", ":"),
+allow_nan=False, sort_keys=True)`.
+
+**Sanitize to ASCII, then cap**: `s.encode("ascii", "backslashreplace").decode("ascii")`.
+Caps apply to the sanitized string — `label` 128 bytes; `invocation` ≤ 64 tokens,
+≤ 128 bytes each, ≤ 1,024 total; `scope_basis.targets` ≤ 16 entries of ≤ 160
+bytes. JSON re-escapes backslashes and quotes, so **only the pinned encoding
+establishes the budget**.
+
+Then: encode; if ≤ 4096, write. Otherwise evict `by_file` smallest-duration first
+and re-encode until it fits or the map is empty. If it still exceeds, or the
+encode raised, write the **skeleton row**: `label`, `invocation` and
+`scope_basis` `null`, `by_file` empty, `truncated` true, `scope` `unknown`. The
+skeleton is **total** — non-finite timings are normalised before it is built.
+Measured skeleton overhead 451 bytes.
+
+**Row-per-session invariant.** Every session reaching `sessionfinish` past the
+guards that acquires the lock appends **exactly one** line; the only paths
+appending nothing are the guards, `CAIRN_SUITE_LEDGER=0`, an absent directory,
+and lock-deadline expiry. The session count is therefore a **lower bound**.
+
+### Durability
+
+`LOCK_NB` retry, **250 ms deadline, 10 ms interval**; expiry yields no row.
+**Repair the tail before appending** — if the file does not end in a newline,
+write one first. One `os.write`; check the returned byte count. POSIX only;
+network filesystems excluded.
+
+### The five guards
+
+1. **Outcome-inert** — every hook individually guarded; the ledger paths never
+   read or write `session.exitstatus`.
+2. **Reentrancy with ownership** — `CAIRN_SUITE_LEDGER_SESSION=1` claimed in
+   `pytest_configure`; a pre-existing marker means child; unset in `finally` only
+   if owned.
+3. **Containment** — skip when the **resolved** ledger directory is under the
+   **resolved** `tempfile.gettempdir()`; both sides resolved.
+4. **Release mode** — the module's existing **strict-equality** predicate.
+5. **Opt-out** — `CAIRN_SUITE_LEDGER=0`; no-op when `dev/measurement/` is absent.
+
+### Failure dispositions
+
+Every path closes toward doing nothing: unwritable or absent directory,
+lock-deadline expiry. **Two states are explicitly not on that list**: an
+unreadable or unrecognized `.git` yields `head: null` **and a row**; an
+over-budget or unencodable row yields the **skeleton row**, not silence.
+
+### The reader — restored
+
+`tools/suite_cost.py` renders the ledger for a human. These are **accepted
+outcomes**, not decoration, and they are what made the collector worth building:
+
+* **It opens by telling the reader not to re-run the suite** — that is the action
+  it exists to prevent.
+* **Every figure carries its conditions** — date, commit, interpreter, and
+  whether the session overlapped another. A renderer that repeats the
+  conditions-free table is rebuilding the problem in a new place.
+* **Cost concentration and trend**, from `by_file`, stating `by_file_total` and
+  `by_file_kept` whenever a breakdown was pruned.
+* **`full` runs per day — and never per plan.** No field binds a run to a plan;
+  plan attribution stays manual unless `CAIRN_SUITE_LEDGER_LABEL` was set.
+* **Overlap is reported only as "overlapped another recorded top-level
+  session"**, computed from row intervals — never as "another suite was running",
+  because release, nested, opted-out, crashed and uninstrumented sessions are
+  invisible.
+* **Malformed lines are reported**, never silently skipped.
+* **Session frequency is stated as a lower bound**, per the row-per-session
+  invariant.
+* **It names its own limits** — release, nested, opted-out, crashed and
+  uninstrumented omissions.
+* **Dirty-tree state is reported as `unknown`, never as measured.** The field was
+  deferred at E1 behind its own Security Review; until that lands the reader must
+  not imply it observed a condition it never collected.
+* **It re-derives `scope`** from `invocation`, `scope_basis` and the runtime
+  fields rather than trusting the stored value, and **reports a disagreement**.
+* **No bare identifiers**; a reader with no plan open must be able to act on it.
+
+### Security preflight — restored
+
+**S1 — Who supplied it?** The collector decides only whether and what to write.
+Inputs: `os.environ` (three markers plus two presence checks), the pytest
+`session`/`config` objects, `tempfile.gettempdir()`, and **direct file reads** of
+`.git`, `HEAD`, `commondir`, loose refs and `packed-refs`. The repository under
+test supplies the ref bytes, the invocation argv, the resolved targets and the
+`by_file` paths. **Nothing is executed** — Revision 1 removed all subprocess use
+under E1 and none has returned. Ref bytes are shape-validated as 40-hex or
+discarded to `null`; `commondir` is validated to resolve inside a real git
+directory; argv, targets and paths are opaque strings subject to sanitisation and
+length caps; environment variables contribute **booleans only**, never values.
+
+**S2 — Can it fail?** Each invariant below names its falsifier, and the
+load-bearing ones derive their expectation from a control run with the collector
+disabled rather than from the collector.
+
+**S3 — What fires it, over what?** No selector — hooks on every non-child,
+non-release session under `bootstrap/tests/`. The reader is run by a person or the
+goodnight routine. **Cairn has no CI.**
+
+**S4 — Which way does it break?** Every path lands on *less* authority. All five
+guards and the lock deadline are skip conditions, so an unrecognised state
+produces silence rather than a write. Guards 2 and 3 fail toward *not measuring*,
+never toward writing into a fixture tree.
+
+**S5 — Who still wins?** The assumed attacker already runs arbitrary code in the
+session, since the suite executes this repository's own code. **This adds no
+execution capability.** It adds a write to a path derived from the conftest's
+location, contained by guard 3 and by the row carrying no attacker-chosen content
+beyond file paths, argv tokens and resolved targets — all sanitised and capped.
+Exit-status influence is closed **by construction**; write-path targeting only
+**by enumeration**.
+
+### Evidence
+
+| invariant | falsifier |
+|---|---|
+| Exit status and outcomes never change | fault-inject **each of the five hooks separately**; compare against a collector-disabled control |
+| A diagnostics fault never suppresses release evidence | inject **with the ledger's own guard removed**; run twice — `Exception` from the accumulator, `BaseException` from the `sessionfinish` block; assert the `RELEASE MODE` report prints with its nodeids and exit is 1 |
+| Node accounting | `-x` early and final-node failure, `--maxfail=2`, `pytest.exit()`, `KeyboardInterrupt`, setup error, teardown error, module-level skip; assert `0 <= executed <= collected` and **reconciliation against `terminalreporter.stats`** |
+| Scope | `--ignore`, `--ignore-glob`, `PYTEST_ADDOPTS`, ini `addopts`, `-p no:python`, zero positionals, module-level skip, `importorskip` — each `unknown`; the canonical and order-independence argv — each `full` |
+| **`scope` is re-derivable** | run the same invocation with and without `PYTEST_ADDOPTS` set; assert the two rows **differ in `scope_basis`**, and that the reader's re-derived `scope` matches the stored one. Then store a deliberately wrong `scope` and assert the reader **reports the disagreement** |
+| A capped basis forces `unknown` | over-long targets; assert `scope == "unknown"` |
+| `by_file` holds cost, eviction preserves it | a low-node/high-duration file survives ahead of a high-node/low-duration file |
+| Sub-millisecond files are not lost | many sub-ms reports in one file; assert the summed total survives conversion |
+| Sanitizer is total | `ok`, `café`, emoji, lone surrogate, mixed; assert the intended sanitized field survives with the specified `truncated` value |
+| Skeleton is total | force a non-finite timing into the fallback; assert a row is still written |
+| Encoded budget | oversized label, 64+ tokens, control characters, all 115 real paths; assert **exactly one line**, ≤ 4096 bytes, `json.loads` round-trips |
+| Encoder pinning | assert the call site matches the exact signature |
+| `head` in a linked worktree | a worktree **on a branch**, not detached; assert the **expected SHA** |
+| `head` elsewhere | main checkout, packed-refs checkout, malformed `.git`; assert a row in every case |
+| Containment | a ledger directory under `gettempdir()` via the unresolved `/var` spelling; assert no row |
+| Bounded lock | hold the lock externally; assert completion within 1 s of a control and no row |
+| Tail repair | partial tail then normal append; reader reports the fragment **and** returns the later row |
+| Reentrancy | nested pytest writes nothing; two sequential `pytest.main()` write two rows; a pre-existing marker survives |
+| **Reader outcomes** | assert the rendered output opens with the do-not-re-run instruction; reports `full` runs per day and **not** per plan; phrases overlap as "another recorded top-level session"; reports a malformed line; states the lower bound; and reports dirty state as `unknown` |
+
+Standing gates: `test_gate_manifest.py`, `test_gate_preflight.py`,
+`test_security_check.py`, `test_python_floor.py`.
+**Boundary B mode: `full`** — gate-frozen file under a re-anchor ceremony.
+
+### Settled under probe — not open questions
+
+The five-hook guard requirement. `pytest_collectreport` fires for collection
+errors without double-count. Module state does not leak across sequential
+in-process `pytest.main()` calls. `_release_child_env`, `_gate_manifest._collect`,
+`test_security_check._child_pytest` and `quality_gate._run_order_independence`
+pass the environment through as a superset, so **no suite-spawned child writes a
+row**. Path re-spellings resolve. Adding one test file does not break the gate
+manifest. Shuffling does not perturb `by_file`, since attribution is by nodeid.
+The 250 ms deadline is generous for a single `open`+`flock`+`write`+`close`.
+
+### Known omissions
+
+Dirty-tree state deferred behind its own Security Review, and **reported as
+`unknown` rather than as measured**; release-mode and nested sessions unmeasured
+by design; Windows unclaimed; network filesystems excluded; plan attribution
+manual unless `CAIRN_SUITE_LEDGER_LABEL` is set; in-process `pytest.main()`
+treated as children; collector overhead unmeasured until implementation. The
+session count is a **lower bound**.
+
+### Withdrawn / superseded commitments
+
+* **The dropped `The reader` and `Security preflight` sections** — withdrawn *as
+  an omission*, which is the point: they were accepted outcomes present in
+  Revisions 1 and 2, absent from 3 and 4, and never listed in any ledger.
+  Restored above. The mitigation — a carried-forward section inventory — is now
+  part of every revision.
+* **"the reader re-derives `scope` from the stored fields"** — withdrawn (E20) as
+  false; the classifier's inputs were not in the row. Replaced by `scope_basis`
+  plus a falsifier that stores a disagreeing `scope`.
+* **Per-file millisecond conversion before summation** — withdrawn; sub-millisecond
+  reports would each round to zero. Summed first, converted once.
