@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -2445,3 +2445,58 @@ session count is a **lower bound**.
   plus a falsifier that stores a disagreeing `scope`.
 * **Per-file millisecond conversion before summation** — withdrawn; sub-millisecond
   reports would each round to zero. Summed first, converted once.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: none
+
+Reviewed commit: `64830d961f378a72e3f16a5313abfb9bb7f0891e`
+Target: Revision 5, limited to E19-E20 and the complete restored contract
+Prior findings: E19-E20 in the Codex External review committed at `08a78ed3293c8b54b6b6364588a2fdbc6c461117`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: SHIP.** E19 and E20 are closed. Revision 5 restores every accepted
+reader outcome and the current Security preflight, then adds exactly the compact
+scope evidence the reader lacked. The proposal is ready for the Maintainer's
+Decision. Its derived plan still takes the declared External review, and the
+gate-frozen implementation still takes its distinct Security Review and
+re-anchor ceremony.
+
+### Adjudication
+
+**E19 — closed.** The current contract again binds the reader's purpose and
+human interface: do-not-rerun opening, conditioned cost/trend and concentration,
+full-run frequency without invented plan attribution, precise recorded-session
+overlap language, malformed-row visibility, lower-bound disclosure, omissions,
+dirty state as `unknown`, and actionable identifiers. The Security preflight is
+restored against the actual direct-read design. I independently compared the H3
+inventory: Revision 5 carries every Revision 4 section and adds the two restored
+sections, so the mitigation is real rather than a prose promise.
+
+**E20 — closed.** `scope_basis` records normalized resolved targets, ini-file
+presence, and booleans for the two consulted pytest environment sources. That is
+the missing distinction reproduced in the prior round: the absent and
+`PYTEST_ADDOPTS='-q'` runs now necessarily differ without placing the variable's
+value in the ledger. `invocation`, the basis, and existing runtime fields are
+sufficient to re-derive the conjunction; capped or skeletonized evidence forces
+`unknown`; and a deliberately inconsistent stored scope must be reported.
+
+The section-inventory discipline is a useful local response to the two silent
+scope regressions in this review history. It does not replace the withdrawal
+ledger or independent review, and Revision 5 does not claim that it does.
+
+### Coverage
+
+**Covered:** Revision 5 in full; E19-E20; H3 inventory against Revision 4;
+reader outcomes and dirty-state disposition; all `scope_basis` producers and
+consumers named by contract; the 4,096-byte cap/skeleton interaction; the prior
+executed Python 3.13.13 paired-run probe; and current lifecycle declarations.
+
+**Not covered:** no implementation exists, so I did not execute the future
+writer or reader, run the full suite, stress concurrent writes, exercise the
+re-anchor, or test Windows/NFS. Those remain plan, code-review, and ceremony
+work rather than proposal blockers.
