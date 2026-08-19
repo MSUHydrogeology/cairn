@@ -267,6 +267,18 @@ def _sterile_env(index: str | None = None) -> dict[str, str]:
     """
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
     env["GIT_TERMINAL_PROMPT"] = "0"
+    # Dropping every GIT_* is safe for the variables that STEER git, because
+    # absent is the safe value for those. It is NOT safe here: absent means Git
+    # lazily fetches a missing object from a promisor remote named by the
+    # candidate repository's own local config, so a blob-filtered checkout whose
+    # promisor is `ext::<program>` runs <program> on the first object this
+    # process cannot find locally. That is an executable outside the recorded
+    # set, and in stage 2 it would run after the ceremony key is loaded.
+    #
+    # Found by an M2 exact-byte review against the launcher's `sterile_git`,
+    # and the same hole was here: the drop-everything rule that makes the rest
+    # of this function safe is exactly what leaves this one open.
+    env["GIT_NO_LAZY_FETCH"] = "1"
     # `_READ_ONLY_GIT` keeps content- and ref-writing
     # subcommands behind `_git_write`, but "read-only" was a claim about
     # subcommands, not about the repository: `git status` refreshes cached stat

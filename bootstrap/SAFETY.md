@@ -624,6 +624,17 @@ named one, and a replacement `shasum` vouch for bytes it had just rewritten.
 | `mkdir` | creates its subdirectories |
 | `cat` | **snapshots the packet into memory before it is parsed** |
 
+**Automatic object fetching is part of this boundary**, and it is not a
+seventh tool — it is a way for the candidate to introduce one. A blob-filtered
+checkout names its *promisor remote* in its own local config, which is
+candidate-controlled input; pointing that at `ext::<program>` makes `git` run
+`<program>` the first time it reads an object the checkout lacks. So both
+sterile git environments bind **`GIT_NO_LAZY_FETCH=1`**, and they bind it rather
+than inherit it: they run under `env -i`, where **absent means enabled**. An
+emptied environment is not a safe environment when the safe state requires a
+variable to be present. Found by exact-byte security review, reproduced through
+the full launcher, and regression-tested against a real promisor checkout.
+
 `printf`, `read`, `case`, `cd` and `pwd` are shell builtins and reach for
 nothing, which is why the launcher prefers them wherever a utility would
 otherwise be needed — the digest field is split with `${d%% *}` rather than

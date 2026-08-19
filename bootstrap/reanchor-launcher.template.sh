@@ -452,8 +452,25 @@ parse_packet
 # --- the sterile git child -------------------------------------------------
 # Object replacement, hooks and monitors off BEFORE the first read, and the
 # environment emptied so no GIT_* variable steers the loader.
+# GIT_NO_LAZY_FETCH IS SET, NOT INHERITED, AND `env -i` IS WHY IT MUST BE.
+#
+# Emptying the environment is right for every variable that STEERS git, because
+# absent is safe for those. It is wrong for this one: absent means Git will
+# lazily fetch a missing object from the promisor remote, and the remote is
+# named by the candidate repository's OWN local config. A blob-filtered checkout
+# whose promisor points at `ext::<program>` therefore runs <program> the first
+# time this function reads an object it does not have locally -- an executable
+# outside the recorded six, before a single candidate artifact byte.
+#
+# Reproduced through the full launcher, not a helper: the transport program's
+# marker appeared, and git then failed and the launcher refused. **Refusal after
+# the helper ran does not restore the boundary.** With this variable set the
+# same probe fails closed and the marker never appears.
+#
+# The general shape, worth more than the fix: an emptied environment is not a
+# safe environment when the safe state requires a variable to be PRESENT.
 sterile_git() {
-    "$L_env" -i HOME=/nonexistent \
+    "$L_env" -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 \
         "$L_git" --no-replace-objects \
                  -c core.useReplaceRefs=false \
                  -c core.hooksPath=/dev/null \

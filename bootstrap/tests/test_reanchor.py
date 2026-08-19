@@ -1880,3 +1880,117 @@ class TestTheMaintainerCanPerformTheWholeCeremony:
         for command in ("show-report", "hash-package", "--stage2"):
             assert command in src, (
                 f"the end-to-end node no longer exercises {command!r}")
+
+
+class TestLazyFetchCannotRunAnUnlistedTransportHelper:
+    """**[M2-X1]**, found by exact-byte security review and reproduced here.
+
+    `sterile_git` empties the environment and pins replacement objects, hooks
+    and the filesystem monitor. It did not stop Git's **automatic lazy fetch**.
+
+    A blob-filtered checkout carries a *promisor remote* in its own local
+    config, and that config is candidate-controlled input. Point the promisor at
+    `ext::<program>` and Git runs `<program>` the first time it reads an object
+    the checkout does not hold locally -- an executable outside the six recorded
+    in `SAFETY.md` Rule 13, executing before any candidate artifact byte.
+
+    **The refusal that follows does not restore the boundary.** Git fails, the
+    launcher refuses, and the helper has already run. A control that fires after
+    the thing it was guarding has happened is a report, not a boundary.
+
+    **`env -i` is what left it open**, which is the part worth remembering.
+    Emptying the environment is correct for every variable that *steers* git,
+    because absent is the safe value for those. For `GIT_NO_LAZY_FETCH` absent
+    means *enabled*. An emptied environment is not a safe environment when the
+    safe state requires a variable to be **present**.
+    """
+
+    def _promisor_checkout(self, tmp_path, marker):
+        """A checkout with a genuinely missing object and a hostile promisor.
+
+        The object has to be really absent -- an earlier version of this fixture
+        proved nothing because a probe lazily fetched the blob from the real
+        origin before the promisor was repointed, leaving it local. The
+        `--missing=print` assertion below is what stops that recurring.
+        """
+        git = shutil.which("git")
+        assert git, "no git on this host"
+        helper = tmp_path / "transport-helper.sh"
+        helper.write_text(
+            "#!/bin/sh\n"
+            f"printf 'ran\\n' > {marker}\n"
+            "exit 1\n")
+        helper.chmod(0o755)
+
+        origin = tmp_path / "origin"
+        origin.mkdir()
+        run = lambda *a, **k: subprocess.run(a, check=True, capture_output=True, **k)
+        run(git, "init", "-q", str(origin))
+        (origin / "blob.txt").write_text("payload\n")
+        run(git, "-C", str(origin), "add", "-A")
+        run(git, "-C", str(origin), "-c", "user.email=t@t", "-c", "user.name=t",
+            "commit", "-qm", "one")
+        # The origin must permit filtering or the clone silently takes the blob
+        # and the fixture tests nothing.
+        run(git, "-C", str(origin), "config", "uploadpack.allowfilter", "true")
+
+        work = tmp_path / "work"
+        run(git, "clone", "-q", "--no-local", "--no-checkout",
+            "--filter=blob:none", f"file://{origin}", str(work))
+
+        missing = subprocess.run(
+            [git, "-C", str(work), "rev-list", "--objects", "--all",
+             "--missing=print"], capture_output=True, text=True)
+        assert any(l.startswith("?") for l in missing.stdout.splitlines()), (
+            "no object is promisor-deferred, so this fixture cannot trigger a "
+            "lazy fetch and would pass without testing anything")
+
+        run(git, "-C", str(work), "config", "remote.origin.url",
+            f"ext::{helper} %S")
+        run(git, "-C", str(work), "config", "protocol.ext.allow", "always")
+        return work
+
+    def _read_blob(self, work, marker, *, extra_env):
+        git = shutil.which("git")
+        env = {"HOME": "/nonexistent", **extra_env}
+        subprocess.run(
+            [git, "--no-replace-objects", "-c", "core.useReplaceRefs=false",
+             "-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false",
+             "-C", str(work), "cat-file", "blob", "HEAD:blob.txt"],
+            capture_output=True, env=env)
+        return marker.exists()
+
+    def test_an_emptied_environment_alone_lets_the_helper_run(self, tmp_path):
+        """The non-vacuity half, and the finding itself.
+
+        Without this the repair node below would pass on a fixture that could
+        never have triggered a fetch, which is how a security test comes to
+        report success while testing nothing.
+        """
+        marker = tmp_path / "HELPER-RAN"
+        work = self._promisor_checkout(tmp_path, marker)
+        assert self._read_blob(work, marker, extra_env={}), (
+            "the fixture did not trigger the transport helper, so the repair "
+            "node proves nothing")
+
+    def test_GIT_NO_LAZY_FETCH_stops_it(self, tmp_path):
+        marker = tmp_path / "HELPER-RAN"
+        work = self._promisor_checkout(tmp_path, marker)
+        assert not self._read_blob(
+            work, marker, extra_env={"GIT_NO_LAZY_FETCH": "1"}), (
+            "the transport helper ran despite GIT_NO_LAZY_FETCH=1")
+
+    def test_the_launcher_binds_it(self):
+        """Set, not inherited: the launcher runs under `env -i`, so a value the
+        operator happens to export does not survive."""
+        text = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+        block = text.split("sterile_git() {", 1)[1].split("}", 1)[0]
+        assert "GIT_NO_LAZY_FETCH=1" in block, (
+            "sterile_git does not bind GIT_NO_LAZY_FETCH; a promisor checkout "
+            "can run an unlisted transport helper before candidate code")
+
+    def test_the_checker_binds_it_too(self):
+        """The review found this in the launcher. The checker's own git
+        environment had the identical gap, and in stage 2 that helper would run
+        after the ceremony key is loaded."""
+        assert P._sterile_env().get("GIT_NO_LAZY_FETCH") == "1"

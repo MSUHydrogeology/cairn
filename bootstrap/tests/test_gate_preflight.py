@@ -739,10 +739,32 @@ class TestSterileGitLauncher:
         # survives, and a loose filter would let an inherited one through under
         # a plausible name. `GIT_OPTIONAL_LOCKS` is set because `git status`
         # refreshes the index lock otherwise.
-        deliberate = {"GIT_TERMINAL_PROMPT", "GIT_OPTIONAL_LOCKS"}
+        deliberate = {"GIT_TERMINAL_PROMPT", "GIT_OPTIONAL_LOCKS",
+                      "GIT_NO_LAZY_FETCH"}
         assert not [k for k in env
                     if k.startswith("GIT_") and k not in deliberate]
         assert env["GIT_OPTIONAL_LOCKS"] == "0"
+
+    def test_lazy_fetch_is_off_even_when_the_caller_asks_for_it(self,
+                                                                monkeypatch):
+        """`GIT_NO_LAZY_FETCH` is the one GIT_* where **absent is unsafe**.
+
+        Every other variable here is dropped because inheriting it lets the
+        caller steer git. This one is dropped and then *set*, because absent
+        means Git will lazily fetch a missing object from a promisor remote the
+        candidate repository names in its own config -- and `ext::<program>`
+        makes that an arbitrary executable, run before any candidate byte.
+
+        So the deliberate value must beat an inherited one in both directions:
+        a caller who exports `0`, or who exports nothing, gets `1` either way.
+        """
+        monkeypatch.setenv("GIT_NO_LAZY_FETCH", "0")
+        assert P._sterile_env()["GIT_NO_LAZY_FETCH"] == "1", (
+            "an inherited GIT_NO_LAZY_FETCH=0 survived and re-enabled lazy "
+            "fetching; the ceremony would run a candidate-named transport "
+            "helper")
+        monkeypatch.delenv("GIT_NO_LAZY_FETCH", raising=False)
+        assert P._sterile_env()["GIT_NO_LAZY_FETCH"] == "1"
 
     def test_the_index_is_threaded_not_exported(self, monkeypatch):
         """Mutating os.environ leaked the temporary index into every unrelated
