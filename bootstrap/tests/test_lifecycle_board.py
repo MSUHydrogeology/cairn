@@ -1851,7 +1851,15 @@ class TestBoardIsNotAuthority:
         property is that it *reads* the central declarations rather than
         redefining them."""
         text = _PLANNER_TEMPLATE.read_text(encoding="utf-8")
-        block = text[text.index("# Chunk F -- the derived orientation board"):]
+        # Anchored on the board section's own header.  A comment is a brittle
+        # landmark -- it moves whenever the prose is edited -- but the board has
+        # no module or class boundary to slice on, so the marker is asserted
+        # first and the failure says which of the two drifted.
+        marker = "# the derived orientation board"
+        assert marker in text, (
+            f"the board section header {marker!r} is gone from the planner; "
+            "this slice needs a new landmark, not a restored comment")
+        block = text[text.index(marker):]
         for name in ("PROPOSAL_STATES = (", "PLAN_STATES = (",
                      "CODE_REVIEW_CLEARING_VERDICTS = (",
                      "CODE_REVIEW_BLOCKING_VERDICTS = (",

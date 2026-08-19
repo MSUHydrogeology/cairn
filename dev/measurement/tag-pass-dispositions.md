@@ -209,60 +209,56 @@ beside the re-pin rather than left in two chat logs.
 
 ---
 
-## The frozen gate surface — why this pass leaves the gate red
+## The frozen gate surface — corrected
 
-**82% of Chunk C's remaining work is on frozen gate surface**, and neither the
-plan nor its five review rounds anticipated it.
+**An earlier version of this section, and the C2c commit body, claimed five
+`test_gate_manifest.py` failures and `FROZEN-MODIFIED` breakage. That does not
+reproduce.** `test_gate_manifest.py` passes 21/0. The `ceremony-as-code` agent
+measured it in an isolated worktree and was right; this is the correction.
 
-`bootstrap/tests/_gate_manifest.py::_frozen_files()` globs `bootstrap/*.py`,
-`bootstrap/tests/**/*.py`, `templates/modules/**/*.py` **and** `scripts/*.py`.
-Any byte change to those files — a comment included — puts them out of sync with
-`bootstrap/tests/fixtures/gate_manifest.json` and reports `FROZEN-MODIFIED`.
+**What is actually true.** `_frozen_files()` does glob `bootstrap/*.py`,
+`bootstrap/tests/**/*.py`, `templates/modules/**/*.py` and `scripts/*.py`, and
+**35 entries in the committed `bootstrap/tests/fixtures/gate_manifest.json` now
+differ from the tree**. But no test in the ordinary suite compares that
+committed fixture against the tree — the gate-manifest tests `produce()` a fresh
+manifest and verify against *that*. So the suite is green and the committed
+fixture is stale, which are different things and were conflated.
 
-Measured at the C2c commit:
+**Consequence: the frozen surface never blocked this pass.** The earlier "82% of
+remaining work is blocked" framing was wrong. Editing a frozen file does not
+redden anything; it makes the committed manifest stale, which matters only at
+re-anchor time.
 
-| Surface | Files | Remaining candidates |
-|---|---:|---:|
-| frozen gate surface | 120 | **1543** |
-| free surface | 17 | 336 |
+**And the right framing for the re-anchor**, from the same agent: *"whatever the
+anchor is at ceremony time covers whatever is committed at ceremony time."*
+Coverage comes from **sequencing**, not from expanding another plan's scope. The
+real open question is narrower — **who regenerates `gate_manifest.json` and
+re-records the lockfile, and under what review** — which is the same
+self-certification question the interpreter re-pin raised.
 
-**What this pass did not do.** It did **not** regenerate the gate manifest.
-Regeneration is step 2 of `bootstrap/REANCHOR_RUNBOOK.md`, whose step 3 is a
-supervised **Maintainer-authored** commit, and the runbook states that
-confirming the hashes out of band *"is what makes this a reviewed pin and not a
-self-generated one."* The plan already fences exactly this for Chunk D (D2,
-MAINTAINER-GATED); it simply did not foresee that Chunk C's comment edits land
-on the same surface.
+**How the wrong figure was produced.** The C2c verification diffed the 34-file
+scoped failure list against a baseline file that held the failures of **one**
+test module, so every failure outside that module read as "introduced". The
+scoped baseline's count (5) had been captured; its failure *names* had not. A
+count is not a baseline.
 
-**Maintainer decision, 2026-08-19:**
+### Two real failures, not six
 
-> *"I think we should land this one -- the other plan will re-anchor"*
+| Failure | Status |
+|---|---|
+| `test_lifecycle_board.py::…test_the_board_contains_no_second_status_or_verdict_vocabulary` | **fixed** — see below |
+| `test_portable_security_sweeps.py::test_cairns_own_install_records_all_three_files_in_the_lockfile` | **open** — real; the lockfile digest for `scripts/run_portable_security_sweeps.py` disagrees with disk |
 
-So C2c lands with the gate red, and the re-anchor is batched into the
-`ceremony-as-code` plan's own ceremony, which covers this surface anyway. One
-ceremony then clears C2c, the remaining 1543 frozen candidates, and Chunk D's
-renames together.
+**The board failure is the one worth learning from.** It died on
+`text.index("# Chunk F -- the derived orientation board")` — a **live consumer of
+a comment this pass deleted**. It is exactly the failure mode the peer named when
+C2 began: *ask whether anything executes against the id, not just whether prose
+cites it.* A comment header consumed by `str.index` has no citation anywhere and
+greps as pure prose, so the tree-grep rule does not reach it. The slice is
+retargeted and now **asserts its landmark first**, so a future edit gets a
+sentence saying which of the two drifted instead of `ValueError: substring not
+found`.
 
-**The red gate is accurate, not a defect**: the frozen surface genuinely did
-change. What would be a defect is a green gate over changed bytes.
-
-**Maintainer ruling on the review tier, 2026-08-19:**
-
-> *"We don't need to review the re-anchor though. We are doing precisely this
-> work and that other plan. No review is needed on our own reviewed work.
-> Review is needed on external contributions."*
-
-The runbook's *"a reviewed pin and not a self-generated one"* is a control
-against the **checker blessing its own bytes** — satisfied by Maintainer
-supervision of the ceremony, not by an additional review tier over work that
-already came through an accepted, reviewed plan. The threat model these gates
-are written against is explicitly *trusted-contributor, single-maintainer*
-(`bootstrap/tests/_gate_preflight.py`), and an in-house pass under an accepted
-plan is not the untrusted candidate the ceremony is defending against.
-
-**Consequence for this pass**: the frozen surface is not a blocker. The
-remaining frozen candidates are revised in the ordinary way and the whole delta
-is re-anchored once, by the `ceremony-as-code` plan's ceremony. What remains
-non-negotiable is only that *this* agent does not regenerate the manifest
-itself — that step stays with the ceremony, which is a mechanical anti-tamper
-control rather than a review obligation.
+**The rule this adds**, and it is the third refinement of the same test:
+*before deleting a comment, grep the test corpus for its literal text* — not just
+for the coordinate inside it.
