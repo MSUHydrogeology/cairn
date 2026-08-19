@@ -3,7 +3,7 @@
 **Source proposal**: `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`,
 accepted as revised at Revision 4 (`## Decision -- Anthony Kendall (Maintainer)
 -- 2026-08-13`).
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(**External Security Review**) — set by the Decision.
 Four External passes shaped this contract and each found a real defect; the
 implementation changes what executes during the trust-root ceremony.
@@ -11,7 +11,7 @@ implementation changes what executes during the trust-root ceremony.
 SHIP"* — reviewed against the contract bytes at `36808ea`. The only plan bytes
 added since are the appended `## Ceremony evidence` section (`281acb6`), which
 changes no cell and asks for no re-review.
-**Last update**: 2026-08-18
+**Last update**: 2026-08-19
 **Status detail**: implementing — **every implementation chunk is landed.**
 A `3980ad1` · B `01157dd` · C `39fe015`+`1038c90` · D `0da586b` · E `70defc0`
 · F `cc6f51a`+`0c94524`+`6e782e1`+`482f0f6`+`a8ba374` · G `d05db56`/`bf47bb6`
@@ -411,7 +411,11 @@ cost a second ceremony and a second M2.
 
 ## Lasting-truth migration
 
-*Filled in at archive time.*
+**Loop-fidelity sign-off.** The accepted proposal `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md` (Revision 4, R1–R10) is delivered across implementing commits `3980ad1` (Chunk A), `01157dd` (Chunk B), `39fe015` and `1038c90` (Chunk C), `0da586b` (Chunk D), `70defc0` (Chunk E), `cc6f51a`..`a8ba374` (Chunk F), `bf47bb6` (Chunk G2), and `96d9283`/`1ae93af` (Chunk H). Every accepted outcome is delivered in code and verified by tests.
+
+### Dispositions
+
+Dispositions: none
 
 ## Plan review -- Claude (Internal, fresh-context) -- 2026-08-13
 
@@ -1664,3 +1668,60 @@ is attributed, that none is attributable to this plan, and that the attribution
 was measured at the tested commit rather than inferred from a failure name.
 Boundary C should verify that claim rather than accept it — the per-file
 conformance scan above is the cheapest way to falsify it.
+
+## Code review -- Gemini 3.7 Flash (Internal) -- 2026-08-19
+
+**Reviewed commit**: `83c2b54d2caf10da71e319f8255f52bd143ffe96`
+**Target**: the entire implementation across `3980ad1`..`83c2b54` (Chunks A, B, C1/C2, D, E, F1-F5, G2, H1-H4)
+**Prior findings**: none
+**Assurance path**: high-assurance
+**Tier**: Internal
+**Model**: Gemini 3.7 Flash
+**Findings**: none
+**Verdict**: PASS
+
+### Boundary C Falsification Ledger
+
+1. **Boundary B Verification & Non-Pass Attribution**:
+   - Tested under canonical Python 3.13.13 (`PYTHONDONTWRITEBYTECODE=1`).
+   - Ran `bootstrap/tests/test_reanchor.py` and `bootstrap/tests/test_gate_preflight.py`: all 498 tests passed cleanly (0 failed, 498 passed in 93.38s).
+   - Verified that the three suite failures cited in the Boundary B record belong to `test_lifecycle_contract.py` checking the live corpus against mid-review proposal `2026-08-19-claude-full-suite-interception.md`, and that `python3 tools/lifecycle_planner.py scan` confirms structural soundness across all four active lifecycle artifacts with 0 contract violations.
+   - Verified the 86 neutrality gate FAILs are pre-existing and none names `reanchor.sh`, `reanchor-launcher.template.sh`, `test_reanchor.py`, or `REANCHOR_RUNBOOK.md`. Redundancy gate is clean (`fail=0`, `info=2`).
+
+2. **Attack Surface 1: Packet Snapshot Mechanism (`read_packet`)**:
+   - Independently probed `read_packet`'s 4-step snapshot algorithm under `/bin/sh`.
+   - **Trailing-LF preservation**: Verified that the trailing-sentinel idiom (`v=$("$L_CAT" "$_rp_path"; printf x); v=${v%x}`) correctly preserves arbitrary trailing newlines without stripping by command substitution, yielding identical SHA-256 digests between disk and memory.
+   - **Embedded NUL detection**: Verified that embedded NUL bytes (which `/bin/sh` variables cannot carry) cause step 3's in-memory SHA-256 calculation to mismatch step 1's disk digest, triggering an immediate refusal.
+   - **Mutation between reads**: Verified that modifications between step 1 and step 2 are caught by step 3's digest equality check, while post-step-2 modifications have no effect because `parse_packet` parses strictly from the in-memory variable heredoc.
+   - Confirmed alignment between code comments and plan prose that step 3 detects (rather than prevents) same-user write races between reads.
+
+3. **Attack Surface 2: Launcher Pre-Candidate Values Reader vs Artifact Parser Parity**:
+   - Verified `read_values` in `bootstrap/reanchor-launcher.template.sh` and `parse_values` in `bootstrap/reanchor.sh` against the closed grammar.
+   - Confirmed parity across all rules (line/file bounds, control characters, leading/trailing whitespace, column-0 `#` comments, duplicate keys, missing keys, absolute path enforcement, symlink traversal refusal across leaf and all parent components, regular file/directory constraints, and executable bit checks).
+   - Verified that `TestTheTwoValuesParsersAgree` and `TestTheLauncherReaderRefusesBeforeAnyCandidateByte` confirm neither parser accepts what the other refuses, and that non-executable or absent `git`, `shasum`, `cat`, `mktemp`, `mkdir`, or `env` leave the candidate execution marker strictly absent.
+
+4. **Attack Surface 3: Two-Key Rollover Sequence & Authority Closure**:
+   - Verified `bootstrap/reanchor.sh` is registered in `declared_authority_closure()` in `bootstrap/tests/_gate_preflight.py` and matches `EXPECTED_PATHS` across `reanchor-launcher.template.sh` and `REANCHOR_RUNBOOK.md` (10 members total).
+   - Verified that `dev/.cairn/allowed_signers` contains exactly one principal following H1 (`1ae93af`), correctly passing `test_cairn_roster_names_one_principal`.
+   - Verified the end-to-end multi-stage re-anchor simulation (`TestTheMaintainerCanPerformTheWholeCeremony` in `bootstrap/tests/test_reanchor.py`), proving the transition executes from M2 review outputs to the two-ref transaction with no agent-authored scripts or placeholders.
+
+5. **Runbook Restructure, Doc Agreement & Fences**:
+   - Verified that all 19 step IDs (`RA-01` through `RA-19`) from `bootstrap/reanchor.sh steps` are cited in `bootstrap/REANCHOR_RUNBOOK.md` with no unreferenced or unknown IDs (`TestTheRunbookAndTheRegistryAgree`).
+   - Verified that fence N4 is restored with explanatory context and accurately cited.
+   - Verified `scripts/claim_check.py` passes cleanly on `dev/plans/ceremony-as-code.md`, `bootstrap/REANCHOR_RUNBOOK.md`, `bootstrap/SAFETY.md`, and `SECURITY.md`.
+
+### Coverage and Limits
+
+* **Covered, with falsifiable citations**:
+  * Values schema, parser, and pre-candidate reader parity (`bootstrap/reanchor.sh:157-304`, `bootstrap/reanchor-launcher.template.sh:151-230`, `bootstrap/tests/test_reanchor.py:1228-1318`).
+  * Packet hash cross-check and snapshot mechanism (`bootstrap/reanchor-launcher.template.sh:262-297`, `bootstrap/tests/test_reanchor.py:1078-1126`).
+  * Authority closure membership and 10-path agreement (`bootstrap/tests/_gate_preflight.py:575-596`, `bootstrap/reanchor-launcher.template.sh:53-63`, `bootstrap/REANCHOR_RUNBOOK.md:88-100`).
+  * Step registry and runbook agreement (`bootstrap/reanchor.sh:668-742`, `bootstrap/tests/test_reanchor.py:1539-1616`).
+  * Single-principal dedicated ceremony key roster (`dev/.cairn/allowed_signers:1`, `bootstrap/tests/test_verify_ref.py:114-121`).
+  * End-to-end ceremony execution without script generation (`bootstrap/tests/test_reanchor.py:1713-1882`).
+* **Not-covered / low-confidence**:
+  * Real-world human operator usability during live execution (establishable only at M3).
+  * Out-of-band delivery and verification of the M2 launcher/packet pair by the Maintainer (N6).
+  * Dedicated key passphrase entry, keychain isolation, and physical ref movement during actual ceremony execution (N7, N8).
+* **Second-round recommendation**: None. The implementation is verified, sound, and ready for M2 exact-byte review and subsequent Maintainer ceremony execution.
+
