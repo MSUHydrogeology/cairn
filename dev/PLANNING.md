@@ -1211,6 +1211,54 @@ point rather than being copied into another backlog.
   for non-text module files.
 
 **[TRU / VER] Security apparatus**
+* **[VER-3] A security test whose oracle is elapsed time fails open**
+  *(found 2026-08-19 by adversarial review; confirmed independently by a second
+  session; neither owns the file, so it is filed rather than fixed in passing)* —
+  `bootstrap/tests/test_security_stack.py`,
+  `test_a_t6_descendants_do_not_outlive_the_timeout`. The test spawns a
+  SIGTERM-ignoring grandchild that sleeps 3s then writes a sentinel, forces the
+  parent's timeout to 1.5s with a 0.5s kill grace, sleeps 4s, and asserts the
+  sentinel does not exist.
+
+  **The oracle is *absence of a sentinel within a window*, and absence has two
+  causes it cannot distinguish**: the grandchild died — the property holds — or
+  the grandchild is merely slow, in which case the property is violated and
+  unobserved. Nominal timing puts the write at T≈3 and the check at T≈6, so the
+  verdict rests on about **three seconds of scheduler luck**, and the failure
+  direction is the harmful one. A saturated machine does not make this test
+  flaky; it makes it **quietly green** — a security test reporting success
+  without testing its property, which `AGENTS.md` names as worse than no test
+  because it is silent.
+
+  **The design intent was sound and should be preserved.** The comment states
+  the oracle is deliberately the grandchild's own observable side effect rather
+  than "any status this code returns" — that judgement is right. The defect is
+  the *choice* of observable, not the philosophy.
+
+  **Its neighbour is the instructive contrast.**
+  `test_a_t2_timeout_is_enforced_and_bounded` asserts `elapsed < 10` against a
+  ~2s nominal, so load pushes it toward failure: it fails **closed**. The pair
+  reads as uniform and is not, so a reader who checks one and generalises gets
+  the wrong answer about the other.
+
+  *Fix direction:* assert on process state rather than elapsed time — a signal-0
+  probe or `waitpid` on the process group turns *"I did not see it"* into *"it is
+  not there"*. Note this is a real change, not a one-line swap: the fixture does
+  not surface the grandchild's pid, since the grandchild is spawned by a
+  `subprocess.Popen` inside a generated child program.
+
+  *Generalises:* any other time-window oracle in the suite has the same defect,
+  so the fix should be written as a claim about what makes a security test
+  trustworthy, not as a local patch.
+
+  *Trigger — and this is the load-bearing one:* **any evaluation of parallel test
+  execution must fix this first.** Today the silent pass is rare; under `pytest
+  -n auto` it becomes routine, and the evaluation would be reading a green
+  security test that is not testing anything. Fixing it edits a gate-frozen file,
+  so it **joins the re-anchor ceremony already owed** rather than creating a new
+  obligation — alongside the AST attestation baseline (`191fb93`), the
+  interpreter-binding re-pin confirmation (`017b2f2`), and the two stale
+  install-contract artifacts (`fbd34ed`).
 * **[TRU-4] The trust apparatus is protected by a glob, not by being named**
   *(found 2026-08-19 by an adversarial review of a proposed fence narrowing;
   not yet proposed)* — sixteen files that decide whether the gates pass are
