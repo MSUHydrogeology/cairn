@@ -191,6 +191,73 @@ with the plan's filename stem.
   format contract is most likely to be broken exactly where following it feels
   like pedantry.
 
+* **[SEC] M2 conflates "review" with "produce", so a second clearing review
+  manufactures a competing authority pair** *(filed 2026-08-19, from the
+  `ceremony-as-code` M2)* — the plan's M2 row says *"the **reviewer** produces
+  and self-records the launcher/packet pair"*, singular. It assumes one
+  reviewer. **Two independent External Security reviews cleared round 2**
+  (Antigravity and Codex), so two valid authority pairs now exist:
+
+  | reviewer | packet | instantiated launcher |
+  |---|---|---|
+  | Antigravity | `c18c0a17…` | `391ceb9b…` |
+  | Codex | `411bed01…` | `9c8cf374…` |
+
+  **The review redundancy is a gain; the pair redundancy is a liability.** They
+  cannot be *mixed* — each launcher carries its own packet's digest, so a
+  cross-pair combination fails the binding check — but nothing says which pair
+  is canonical, and nothing stops someone later finding the unused one and
+  running it in good faith. Codex's was used at M3; Antigravity's was never
+  delivered to disk and is void by circumstance rather than by rule.
+
+  **What is owed is one sentence in the contract**, not a mechanism: a second
+  clearing review confirms the same bytes and **produces no pair** unless the
+  first is withdrawn. Cheap, and it removes the ambiguity entirely.
+
+  **Filed because the archived plan is not a home.** The `ceremony-as-code`
+  lasting-truth section named this observation and said *"filed rather than
+  fixed here"* while its disposition block read `Dispositions: none` — an
+  attestation that was accurate when written and false by the time the section
+  around it grew. See the row below on the archive gate, which is the general
+  form of that failure.
+
+* **The lasting-truth attestation is written once and the section grows after
+  it, and nothing re-checks** *(filed 2026-08-19, the general form of the M2 row
+  above)* — a plan can archive attesting `Dispositions: none` while its own
+  section names follow-ups in prose. Measured on `ceremony-as-code`: the
+  attestation was accurate when written, three durable observations were
+  appended below it, and the archive gate passed because it reads the
+  attestation and never compares it to the section around it.
+
+  **Two sentences in the instructions do most of the work.**
+
+  1. *"Only `defer` needs a durable home outside the plan; the other
+     dispositions **are** the home."* True for `accept` when a change actually
+     landed — a commit, a comment, a test a reader will meet. **False for an
+     observation**, where `accept` means nothing was written anywhere living
+     and the plan is about to stop being read. The sentence invites reading
+     `accept` as "no further action", which is right for a fixed bug and wrong
+     for a durable truth.
+  2. *"Filled in at archive time"* implies one moment, while
+     *"append-only once written"* guarantees the section accretes. Nothing says
+     **an append re-opens the attestation**.
+
+  **Suggested wording, not applied** — this is `templates/core` doctrine and
+  wants a decision rather than an edit in passing:
+
+  * qualify the first: *"`accept` is the home only when the accepting change
+    landed somewhere a reader will meet. An observation with no landing place
+    is a `defer` and needs a row."*
+  * add to the second: *"Appending to this section re-opens the attestation. If
+    you add content, restate or amend the disposition line."*
+
+  **Why prose rather than a mechanism.** The predicate already learned this
+  lesson once — its own comment reads *"Presence of the label is never enough
+  -- that is the defect this predicate exists to close."* The remaining gap is
+  one level up and is a **consistency** question between an attestation and
+  free prose, which a regex answers badly. The cheap honest fix is to tell the
+  author when to look again.
+
 * **[SEC] The lockfile has no regeneration procedure for an existing lockfile**
   *(filed 2026-08-19, found while executing the install-contract batch)* —
   `test_cairns_own_install_records_all_three_files_in_the_lockfile` states the
