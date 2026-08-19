@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -2022,3 +2022,100 @@ implementation. The session count is a **lower bound**.
   branch ref lives under `commondir`, so the symbolic-ref case returned `null`.
 * **A presence-only worktree falsifier** — withdrawn (E18); it would pass on a
   detached worktree without proving worktree support.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `318baf8944d6ff76b0851513148847ad74cd6fd5`
+Target: Revision 4, limited initially to E15-E18 and their replacement contract
+Prior findings: E15-E18 in the Codex External review committed at `cfb10be8a9664464c416421980ba7c270bcea8d3`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** E15-E18 are closed. Revision 4 restores cost rather than
+node count, combines raw and resolved scope evidence, makes both encoding paths
+total, and follows linked-worktree `commondir`. The remaining round is about the
+reader, not the collector: the complete revision accidentally drops the public
+reader contract, and the row still omits three inputs the reader says it uses to
+audit `scope`. Both are compact repairs.
+
+### Findings
+
+**[E19 - BLOCKING, accepted-scope regression] The self-contained revision drops
+the reader contract.** `tools/suite_cost.py` remains in Scope, but Revision 4
+contains no reader section and supersedes Revision 3 “in full.” It therefore no
+longer binds the behavior that made the collector useful: begin by telling the
+human not to re-run the suite; render cost concentration and trend with
+conditions; count `full` runs per day but not per plan; describe overlap only as
+overlap with another **recorded top-level session**; report malformed lines;
+state that session frequency is a lower bound; and name release, nested,
+opted-out, crashed, and uninstrumented omissions. Those were accepted outcomes
+in Revisions 1 and 2, not explanatory decoration.
+
+Restore one current reader section carrying those outcomes and the command's
+public interface. Reconcile the retired dirty-tree field explicitly: until E1's
+deferred work lands, the reader reports dirty state as **unknown**, never as a
+condition it measured. Restore the current Security preflight too; Revision 4
+is the contract a Security reviewer and plan author will read, and it directly
+reads repository-controlled `.git`, ref, argv, environment, and path data.
+
+**[E20 - BLOCKING, E2/E16 continuation] The reader cannot re-derive `scope` from
+the recorded row.** Revision 4's classifier requires `config.args`,
+`config.inipath`, and presence/absence of `PYTEST_ADDOPTS` and
+`PYTEST_PLUGINS`. None appears in the row schema. `invocation` is only
+`config.invocation_params.args` and is not a substitute for those resolved and
+environmental inputs.
+
+I ran the same 29-test invocation twice, first with `PYTEST_ADDOPTS` absent and
+then with `PYTEST_ADDOPTS='-q'`. Both runs passed and exposed identical stored
+evidence: invocation
+`['bootstrap/tests/test_verify_counts.py', '-q']`, resolved args containing the
+same test file, `inipath=null`, collected 29, exit 0. The proposed classifier
+nevertheless distinguishes them because one environment variable is set. A
+reader receiving the current row cannot know which case produced it. A harmless
+ini file or no-op `PYTEST_PLUGINS` value has the same information gap.
+
+Record a compact scope basis: normalized resolved targets, `inipath` (or its
+presence), and booleans for each consulted environment source. Values from
+environment variables need not and should not be copied into the ledger. If any
+variable-length basis is capped, force `scope=unknown`. Then have the reader
+compute the conjunction from `invocation`, that basis, and the existing runtime
+fields; test a stored `scope` that disagrees with the re-derived value. Merely
+trusting the adjacent `scope` field does not satisfy the audit promise.
+
+### Closed findings
+
+E15 is closed by integer-millisecond file cost and duration-first eviction, with
+the low-node/high-cost falsifier. E16 is closed at the writer by requiring both a
+small closed invocation family and resolved postconditions; `--ignore` and
+`--ignore-glob` are explicitly unknown. E17 is closed by ASCII
+`backslashreplace`, field-survival assertions, and normalization before the
+skeleton's `allow_nan=False` encoding. E18 is closed by resolving loose refs and
+`packed-refs` through validated `commondir` and requiring a branch worktree's
+expected SHA.
+
+Integer milliseconds are an acceptable compact representation. At planning,
+sum phase durations per file before converting once to milliseconds so repeated
+sub-millisecond reports do not disappear individually; this is implementation
+precision, not another proposal blocker.
+
+### Coverage
+
+**Covered:** Revision 4 in full; E15-E18 against their prior contracts; exact
+ASCII sanitizer behavior; live linked-worktree layout from the prior round;
+current canonical and order-independence commands; all row-schema fields; prior
+accepted reader behavior; and two executed Python 3.13.13 pytest sessions proving
+that identical recorded invocation/outcome evidence can have different hidden
+scope inputs.
+
+**Not covered:** no implementation exists, so I did not run the full suite,
+exercise the writer/reader end to end, fault-inject short writes or disk
+exhaustion, stress locks, or test Windows/NFS. The distinct plan and
+implementation Security Reviews remain owed.
+
+**Next round:** limited to E19-E20. Restore the reader/security contract and
+record the compact scope basis it needs; no collector redesign is requested.
