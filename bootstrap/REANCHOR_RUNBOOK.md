@@ -45,7 +45,7 @@ package.
 | 1 | **The instantiated launcher** | The External Security review that read it. Delivered out of band, with its SHA-256, which you verify against the review's record before running it. |
 | 2 | **The authorization packet** | The same review, as a pair with the launcher. You do not verify it separately — its digest is bound into the launcher, so checking the launcher's digest covers both. |
 | 3 | **Your values file** | You, once. Copy `bootstrap/reanchor-values.example`, fill it in outside the repository, and keep it. See the refresh note below. |
-| 4 | **The ceremony key** | You. Dedicated, encrypted at rest, in no agent, used for nothing else. See `SECURITY.md` > *The ceremony key is dedicated*. |
+| 4 | **The ceremony key** | You. Dedicated, encrypted at rest, in no agent, used for nothing else — the **N4** precondition, and the one fence in this ceremony that no code can enforce. See `SECURITY.md` > *The ceremony key is dedicated*. |
 | 5 | **The candidate ref** | The commit you are re-anchoring to. An argument to the launcher, never a value inside a reviewed artifact. |
 
 **The values file goes stale, and that is not a malfunction.** It records
@@ -156,7 +156,7 @@ sh bootstrap/reanchor.sh hash-package   <values>
   take a digest from inside the package — a file can assert anything about
   itself.
 * **[RA-16]** **Now** make the ceremony key available, and not before. Until
-  this moment the key-at-rest precondition holds and stage 1 proved it could not
+  this moment the **N4** key-at-rest precondition holds and stage 1 proved it could not
   sign; loading it earlier collapses the boundary the two stages exist to
   create.
 

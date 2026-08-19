@@ -1551,3 +1551,33 @@ no-symlink rule, which governs paths **supplied** to the ceremony; the
 alternative fix, exempting the manifest, would have left a genuinely unchecked
 path behind a special case. Flagged here rather than absorbed, because a
 reviewer should get to disagree with that reasoning.
+
+## Citation correction -- Claude (Implementation) -- 2026-08-19
+
+**Appended, not edited.** The stale citation is inside an appended review
+section, and a review record is not rewritten after the fact.
+
+**`bootstrap/REANCHOR_RUNBOOK.md:495`, cited in the Internal plan review above
+as evidence that N4 names the key-channel precondition, no longer points at
+that text.** Chunk F shortened that document from ~1140 lines to 612, so line
+495 now carries Phase 4 promotion prose. The citation is **in bounds and
+wrong**, which is the worst state for one to be in: `claim_check` bounds line
+numbers, so it passes, and only a reader who follows the link discovers it
+resolves to unrelated content.
+
+**Worse, and mine:** the restructure removed **every** mention of `N4` from the
+runbook. The Internal review's claim was true when written and the edit made it
+false. That is precisely the error I raised against another session's pass this
+morning — removing a coordinate that a live consumer still resolves — committed
+here by the agent who raised it, three chunks later, against the same
+identifier. Arguing a rule does not exempt you from it; if anything it makes the
+lapse easier, because the argument feels like the work.
+
+**Restored**, with the reason beside it rather than the bare label: the
+prerequisites table names N4 as the fence no code can enforce, and the
+between-stages step names it where the precondition is described.
+
+**The general defect is the line number, not this line number.** A citation into
+a living document is stale the moment that document is edited, and nothing in
+the toolchain catches the in-bounds case. Cite by section title where the target
+may move.
