@@ -1,4 +1,4 @@
-"""Engine import-boundary guard — scaffold-split, substrate Security re-review R1.
+"""Engine import-boundary guard.
 
 The launcher (`bootstrap/scaffold.py`) defends the *launcher* load path. But the
 accepted architecture also imports engine submodules **directly**
@@ -42,7 +42,7 @@ _CANONICAL = "bootstrap._scaffold"
 
 
 class ScaffoldLoaderError(RuntimeError):
-    """Fail-closed engine-import rejection (SR1): a `bootstrap._scaffold.*` module
+    """Fail-closed engine-import rejection: a `bootstrap._scaffold.*` module
     resolves to a path outside the Cairn root (import hijack / symlink escape)."""
 
 

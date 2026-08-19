@@ -17,7 +17,7 @@ adopter-tree writes (the install-time WRITER ``write_install_lockfile`` stays in
 the engine -- it couples to onboarding/install symbols -- and joins install.py at
 Stage 6; ``_lock_file_list`` likewise couples to the manifest). **This module**
 owns no writes and no CLI/upgrade execution; importing it defines names only
-(import-purity, SR2). That is an *ownership* property, not a runtime-loading
+(import-purity). That is an *ownership* property, not a runtime-loading
 boundary: importing ``bootstrap._scaffold.lockfile`` runs the eager package facade
 first, which loads the whole engine (see the
 ``test_trust_anchor_imports_are_owner_specific_not_runtime_isolated`` regression).
@@ -38,14 +38,14 @@ from typing import Any, NamedTuple
 from .config import PresetError  # the secret-token guard raises this (downward dep)
 # The fork advisory reads two files off disk and must not be talked out of
 # either root.  It reuses the engine's ONE containment primitive rather than
-# growing a second, unreviewed copy inside this near-leaf (proposal B7); the
+# growing a second, unreviewed copy inside this near-leaf; the
 # layering assertion in bootstrap/tests/test_lockfile_module.py admits exactly
 # {config, security} because of this line.
 from .security import ScaffoldSecurityError, _assert_safe_write
 
 
 _LOCKFILE_REL = "dev/.cairn/cairn-lock.yml"        # tracked machinery (in .cairn/ with its kin)
-_BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache (R1/I4)
+_BASE_CACHE_REL = "dev/.cairn/base"         # tracked raw-template cache
 _PROFILE_REL = "dev/.cairn/profile.yml"     # canonical committed install-config (BOOTSTRAP.md)
 _LOCK_SCHEMA = 1
 #: An additive optional top-level lockfile field does NOT bump this --
@@ -95,7 +95,7 @@ _LIVING_STATE_DSTS: frozenset[str] = frozenset({
     # verify_integrity never flags an adopter edit as tampering, and the
     # lockfile divergence check does not prevent writing on first-fill.
     "dev/.cairn/model-selection-mapping.yml",
-    # api-web-security-modules, row F2: the two network-security capability
+    # The two network-security capability
     # policies are adopter-filled configuration.  Each installs as an
     # unconfigured ``configured: false`` stub and is then filled in place with
     # local principals and operations, so hash-pinning it would report ordinary
@@ -112,7 +112,7 @@ _LIVING_STATE_DSTS: frozenset[str] = frozenset({
 })
 
 
-#: Token names that must never be recorded in the lockfile (R9): a
+#: Token names that must never be recorded in the lockfile: a
 #: substitution token bearing a secret would leak it into a tracked file.
 #: Matched as a **substring anywhere** in the token name (case-insensitive)
 #: so camelCase / flatcase keys are caught too -- `apiKey`, `secretToken`,
@@ -213,7 +213,7 @@ def _behind_by_n(cairn_root: Path, lock_commit: str | None,
     the adopter's installed Cairn ref (*lock_commit*) is behind canonical
     (*new_commit*).
 
-    **Degrades gracefully (R1).** If either ref is missing or the ``unknown``
+    **Degrades gracefully.** If either ref is missing or the ``unknown``
     sentinel (a non-git / packaged-release source, per ``_cairn_commit``), or
     git is unavailable, it returns an explicit *unavailable* message rather
     than running a git compare on a bad ref. Informational only -- the caller
@@ -243,7 +243,7 @@ def _behind_by_n(cairn_root: Path, lock_commit: str | None,
 def _refuse_secret_tokens(
     tokens: dict[str, str], allow: tuple[str, ...] = (),
 ) -> None:
-    """Raise PresetError if any token name looks secret-bearing (R9)."""
+    """Raise PresetError if any token name looks secret-bearing."""
     allowed = {a.lower() for a in allow}
     offending = sorted(
         name for name in tokens
@@ -357,13 +357,13 @@ class UpstreamSource(NamedTuple):
       lockfile record's ``src``.
     * ``ref`` -- a human-readable identifier for that checkout (its Cairn
       version), printed in the note so an operator can see whose bytes decided
-      it (residual R1).
+      it (a residual gap).
 
     **Not established by this type**: containment is a *path* property. A
     tampered file **inside** ``templates_root``, or a symlinked
     ``templates_root`` itself, passes every check below by construction.
     Authenticating the checkout that supplies the comparison bytes is residual
-    **R1** and is `release-authenticity`'s job, not this module's.
+    That is `release-authenticity`'s job, not this module's.
     """
 
     templates_root: Path
@@ -411,7 +411,7 @@ def forked_facade_findings(
 
     **Detection only** -- it reads, never mutates, never deletes.
     """
-    # F6 / C3: resolve *target* ONCE, here, and use the resolved root for the
+    # Resolve *target* ONCE, here, and use the resolved root for the
     # containment check, the destination join AND the engine-directory probe --
     # so containment can never depend on the caller's resolution ordering.
     unresolvable_target = False
@@ -446,7 +446,7 @@ def forked_facade_findings(
             return None, (f"{what} path is not a repo-relative POSIX path: "
                           f"{rel}")
         candidate = root / p
-        # R6 -- this is a WRITE-flavoured guard used on a READ path. The three
+        # This is a WRITE-flavoured guard used on a READ path. The three
         # checks it performs (symlinked destination, symlinked parent, escape
         # from root) are exactly the ones a read needs, and growing the
         # security leaf with a read-flavoured sibling for one caller was
@@ -474,7 +474,7 @@ def forked_facade_findings(
         except OSError:
             templates_root = None
 
-    # Source-version skew (O9): an annotation, computed once, attached to
+    # Source-version skew: an annotation, computed once, attached to
     # findings that already exist. It never creates one.
     skew: str | None = None
     if upstream is not None:
@@ -499,7 +499,7 @@ def forked_facade_findings(
         # `hash == base_hash` evades the advisory entirely. What this change
         # fixes is the *verdict* (below), which is now decided by two reads off
         # disk. Selection stays unfixable while `base_hash` is a lockfile field
-        # (R2); revisit together with R2.
+        # revisit the two together.
         if not (isinstance(h, str) and isinstance(base, str) and h != base):
             continue
         dst_rel = rec.get("dst")
@@ -549,7 +549,7 @@ def forked_facade_findings(
                     if disk_bytes is None:
                         reason = why
                     elif disk_bytes == up_bytes:
-                        # THE ONLY SUPPRESSION PATH (F5): byte-equality between
+                        # THE ONLY SUPPRESSION PATH: byte-equality between
                         # two validated reads. Nothing the lockfile asserts can
                         # reach this branch.
                         continue

@@ -43,7 +43,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, NamedTuple
 
-# Engine import boundary (substrate Security re-review R1): install BEFORE any
+# Engine import boundary: install BEFORE any
 # `from . import <child>` below (Stages 1-8) and before any direct
 # `import bootstrap._scaffold.<m>` can resolve a child -- the engine __init__ is
 # the one place that necessarily runs first for every engine submodule import,
@@ -69,11 +69,11 @@ from ._guard import install as _install_engine_guard
 
 _install_engine_guard(_ENGINE_DIR, _CAIRN_ROOT)
 
-# Containment leaf (Stage 1, SR5): the single ScaffoldSecurityError identity and
+# Containment leaf: the single ScaffoldSecurityError identity and
 # the two adopter-write guards live in `security.py`. Imported here through the
 # verifying finder (installed just above), so every raise/except site in this
 # module and every `_assert_safe_write` / `_assert_fanout_contained` call site
-# resolves to that one class / those leaf functions (single-identity, SR5).
+# resolves to that one class / those leaf functions (single-identity).
 from .security import (  # noqa: E402
     ScaffoldSecurityError,
     _assert_safe_write,
@@ -265,11 +265,11 @@ from .upgrade import (  # noqa: F401  (re-exported for the facade)
 #     ancestor + the install-side provenance record.  Tool-owned (only
 #     ``scaffold.py`` reads/writes it), not a human-readable document, so it
 #     lives with the other Cairn machinery under ``dev/.cairn/`` rather than at
-#     the ``dev/`` root.  (Reverses the original R2 "visible at dev/ root"
+#     the ``dev/`` root.  (Reverses the original "visible at dev/ root"
 #     placement: a ``.cairn/`` dotfolder does not hide the file from agents, and
 #     keeping it out of the ``dev/`` listing leaves that listing human-meaningful.)
 #   * ``dev/.cairn/base/`` -- a *tracked* cache of the **raw** upstream
-#     templates for the mergeable ``.md`` installs (R1/I4): so the merge's
+#     templates for the mergeable ``.md`` installs: so the merge's
 #     ``base`` is on disk under any distribution mode (no Cairn git history
 #     needed) and only the mergeable set is shadow-copied.
 

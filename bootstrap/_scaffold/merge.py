@@ -1,9 +1,9 @@
 """Scaffold engine -- token- + slot-aware 3-way merge engine (scaffold-split Stage 3).
 
-The upgrade-time text merge: strict (fail-closed) ``cairn:slot`` parsing (R8), the
+The upgrade-time text merge: strict (fail-closed) ``cairn:slot`` parsing, the
 slot-transplant that holds adopter-owned bodies identical across the three inputs,
 and the ``git merge-file`` 3-way merge that merges surrounding prose while leaving
-slots and unfilled new-upstream tokens fail-closed (R4). Depends only on the
+slots and unfilled new-upstream tokens fail-closed. Depends only on the
 ``slotmerge`` leaf (token substitution + the slot regexes) and the stdlib --
 install / upgrade depend on it, never the reverse.
 
@@ -29,14 +29,14 @@ from .slotmerge import (
 
 
 # ---------------------------------------------------------------------------
-# Fail-closed slot parsing (R8) -- the merge engine relies on slots being
+# Fail-closed slot parsing -- the merge engine relies on slots being
 # well-formed before it transplants adopter-owned bodies.  Stricter than the
 # set-level ``find_unpaired_slots`` (which only computes open ^ close and is
 # blind to ordering / nesting / duplicates).
 # ---------------------------------------------------------------------------
 
 class SlotError(ValueError):
-    """Raised on a malformed ``cairn:slot`` structure (R8, fail-closed)."""
+    """Raised on a malformed ``cairn:slot`` structure (fail-closed)."""
 
 
 class Slot(NamedTuple):
@@ -52,7 +52,7 @@ def parse_slots(text: str) -> list[Slot]:
     """Strictly parse ``cairn:slot`` / ``cairn:end`` regions; **fail closed**.
 
     Raises :class:`SlotError` on any malformation a merge must not silently
-    mis-handle (R8): a **nested** opener (a second slot opened before the
+    mis-handle: a **nested** opener (a second slot opened before the
     current one closes), a **duplicate** slot name in one file, a
     ``cairn:end`` **before any** opener (end-before-start), a **mismatched**
     closer name, or an **unclosed** opener.  On success returns the slots in
@@ -102,7 +102,7 @@ def parse_slots(text: str) -> list[Slot]:
 
 
 # ---------------------------------------------------------------------------
-# The token- + slot-aware 3-way merge engine (R4)
+# The token- + slot-aware 3-way merge engine
 # ---------------------------------------------------------------------------
 
 class MergeResult(NamedTuple):
@@ -115,7 +115,7 @@ class MergeResult(NamedTuple):
 
 def _transplant_slots(target_text: str, ours_text: str) -> str:
     """Return *target_text* with each slot also present in *ours_text*
-    replaced by **ours' exact slot lines** (R4 slot-transplant).  Slots in
+    replaced by **ours' exact slot lines** (slot-transplant).  Slots in
     the target but absent from ours (e.g. a slot newly added upstream) are
     left untouched.
 
@@ -127,7 +127,7 @@ def _transplant_slots(target_text: str, ours_text: str) -> str:
         tslots = parse_slots(target_text)
         our_slots = {s.name: s for s in parse_slots(ours_text)}
     except SlotError:
-        return target_text  # caller validates ours separately (R8)
+        return target_text  # caller validates ours separately
     ours_lines = ours_text.splitlines(keepends=True)
     lines = target_text.splitlines(keepends=True)
     for sl in sorted(tslots, key=lambda s: s.open_line, reverse=True):
@@ -180,7 +180,7 @@ def merge_file(
     * ``theirs`` = the same tokens substituted into the **new** upstream
       template; any upstream token with no recorded value stays as a raw
       ``{{token}}`` and is reported as *needs-value*.
-    * **Slot-transplant (R4)**: ``ours``' slot bodies are copied into the
+    * **Slot-transplant**: ``ours``' slot bodies are copied into the
       same-named slots of ``base`` and ``theirs`` so all three inputs are
       identical inside slots -> ``git merge-file`` produces zero
       changes/conflicts there while the surrounding prose merges.
@@ -188,7 +188,7 @@ def merge_file(
       **fail-closed** flagged decision (status ``slot-removed``) -- the
       adopter's filled content would otherwise be orphaned.
 
-    ``ours`` is parsed strictly (R8); a malformed ``ours`` raises
+    ``ours`` is parsed strictly; a malformed ``ours`` raises
     :class:`SlotError` to the caller (never silently mis-merged).
     """
     base = substitute_tokens(base_raw, tokens)
@@ -197,7 +197,7 @@ def merge_file(
     # New upstream tokens with no recorded value remain as {{token}}.
     needs_value = sorted(set(find_unfilled_tokens(theirs)))
 
-    our_slots = parse_slots(ours)              # strict (R8); may raise
+    our_slots = parse_slots(ours)              # strict; may raise
     our_bodies = {s.name: s.body for s in our_slots}
     their_names = {s.name for s in parse_slots(theirs)}
 

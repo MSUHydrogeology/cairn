@@ -4,7 +4,7 @@ The pure templating mechanics: ``{{token}}`` substitution, ``cairn:slot`` block
 parsing, and the module-into-slot merge helpers (Proposal B: scaffold-merge UX).
 A near-leaf -- it imports only the stdlib plus the ``security`` containment leaf
 (``_assert_safe_write``, used by ``merge_module_into_slot`` to refuse a write that
-escapes the adopter root -- final Security Review P1 #1); a downward edge, no
+escapes the adopter root); a downward edge, no
 cycle. install / upgrade / the 3-way merge engine depend on it, never the reverse.
 The templating symbols are pure motion from the pre-split monolith (Stage 2);
 ``merge_module_into_slot`` gained its containment guards as an explicit post-motion
@@ -26,7 +26,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .security import _assert_safe_write  # containment guard for module-merge writes (P1 #1)
+from .security import _assert_safe_write  # containment guard for module-merge writes
 
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ _SLOT_END_RE = re.compile(r"<!--\s*cairn:end\s+(\S+)\s*-->", re.IGNORECASE)
 # * Target slot empty -> insert + report ``inserted``.
 # * Target slot non-empty AND matches verbatim -> ``already-current``.
 # * Target slot carries ``<!-- cairn:customized -->`` marker
-#   (Antigravity P2) -> ``customized`` (skip fidelity check).
+#   -> ``customized`` (skip fidelity check).
 # * Target slot non-empty AND differs -> conflict mode:
 #   * Interactive (stdin is TTY): prompt a/b/c.
 #   * Non-interactive: default to (c) defer -- write the merge to
@@ -81,7 +81,7 @@ _MERGE_CONTENT_END_RE = re.compile(
     r"<!--\s*cairn:merge-content-end\s*-->", re.IGNORECASE,
 )
 
-#: Adopter marker (Antigravity P2): a slot carrying this comment is
+#: Adopter marker: a slot carrying this comment is
 #: intentionally customized; the fidelity check skips substring-match
 #: and the merge helper preserves the existing content.
 _CUSTOMIZED_MARKER_RE = re.compile(
@@ -90,7 +90,7 @@ _CUSTOMIZED_MARKER_RE = re.compile(
 
 
 class ModuleMergeError(Exception):
-    """Raised on module-merge parse-time error (Antigravity P3:
+    """Raised on module-merge parse-time error (
     duplicate slot names within a template; module declares an
     unparseable directive)."""
 
@@ -151,7 +151,7 @@ def parse_module_merge_directives(
 
 
 def validate_unique_slot_names(template_text: str, src_label: str) -> None:
-    """Antigravity P3: a `<!-- cairn:slot NAME -->` opener appearing
+    """A `<!-- cairn:slot NAME -->` opener appearing
     twice in the same template is a structural error.  Raise
     ``DuplicateSlotError`` naming the template, slot name, and both
     line numbers BEFORE any merge is attempted.
@@ -205,7 +205,7 @@ def _slot_is_empty(body: str) -> bool:
 
 def _slot_is_customized(body: str) -> bool:
     """A slot is "customized" if it carries the
-    ``<!-- cairn:customized -->`` marker (Antigravity P2 disposition).
+    ``<!-- cairn:customized -->`` marker.
     The helper preserves the existing content + the fidelity check
     skips substring-match for such slots.
     """
@@ -214,8 +214,8 @@ def _slot_is_customized(body: str) -> bool:
 
 def _normalize_for_compare(text: str) -> str:
     """Whitespace-collapsed + line-ending-normalized form for the
-    ``already-current`` comparison.  Per Antigravity External code
-    review B-P2: BOTH leading and trailing whitespace are stripped
+    ``already-current`` comparison.  BOTH leading and trailing
+    whitespace are stripped
     per-line so a slot nested inside a list item or blockquote
     (adopter file carries leading indentation; module's
     contributed text does not) doesn't false-positive as
@@ -348,23 +348,19 @@ def merge_module_into_slot(
     * Target file missing: status ``missing-target``.
     * Slot anchor pair missing in target: status ``missing-slot``.
     * Slot body customized (carries ``<!-- cairn:customized -->``):
-      status ``customized`` (preserve existing content per
-      Antigravity P2).
+      status ``customized`` (preserve existing content).
     * Slot body empty: insert + status ``inserted``.
     * Slot body matches *content* under whitespace-collapse:
       status ``already-current``.
     * Slot body differs: write the conflict to a per-slot side-file
-      ``<target>.<slot-name>.cairn-merge-pending`` (Antigravity B-P1:
+      ``<target>.<slot-name>.cairn-merge-pending`` (a
       per-slot path so two slots on the same target don't clobber
       each other) and return ``conflict-deferred``.
 
     The ``non_interactive`` parameter is reserved for the future
     interactive prompt branch (per the original Proposal B's
     a/b/c three-option prompt).  The current implementation always
-    defers to a side-file (the safer default per the original
-    Antigravity P1 disposition); the parameter is plumbed through
-    so the interactive branch can be added without an API change
-    (Antigravity B-P3 documentation note).
+    defers to a side-file (the safer default); the parameter is plumbed through.
 
     The decision itself is NOT made here -- it comes from
     :func:`resolve_slot_merge`, the one function the lockfile writer's
@@ -374,7 +370,7 @@ def merge_module_into_slot(
     """
     del non_interactive  # reserved for future interactive prompt branch
     dst = target_root / target_rel
-    # Containment (SR6, final Security Review P1 #1): a module's merge-target
+    # Containment (a Class-A write; see SECURITY_MUTATIONS.md): a module's merge-target
     # path is module-template-controlled, so an absolute / ``..`` / symlinked
     # target_rel could redirect the read or the write outside the adopter root.
     # Guard the destination before touching disk -- refuses a symlinked dst, a
@@ -400,16 +396,16 @@ def merge_module_into_slot(
     if status == "already-current":
         return ModuleMergeResult(target_rel, slot_name, "already-current")
     # Conflict.  In this implementation, always defer to side-file
-    # (non-interactive is the safe default per Antigravity P1's
-    # author-modification: never silently keep, since that loses
+    # (non-interactive is the safe default; on an
+    # author-modification never silently keep, since that loses
     # the module's contributed prose without recording it).
-    # Side-file path includes the slot name per Antigravity B-P1:
+    # Side-file path includes the slot name:
     # two conflicting slots on the same target file would otherwise
     # clobber the side-file when written sequentially.
     side_path = dst.with_name(
         f"{dst.name}.{slot_name}.cairn-merge-pending",
     )
-    _assert_safe_write(side_path, target_root)  # the conflict side-file is a write too (P1 #1)
+    _assert_safe_write(side_path, target_root)  # the conflict side-file is a write too
     if not dry_run:
         side_path.write_text(
             "<<<<<<< Cairn (module contribution)\n"

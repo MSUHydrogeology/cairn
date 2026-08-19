@@ -4,7 +4,8 @@ Two contracts:
 
 * **Guard-routing regression** — every guarded adopter-tree write function still routes its
   destination through a containment guard, so an extraction stage cannot silently
-  drop a guard (the Class-A inventory below is the pinned set).
+  drop a guard.  The pinned set is Class A of the engine's mutation
+  inventory, `bootstrap/_scaffold/SECURITY_MUTATIONS.md`.
 * **Single identity** — `ScaffoldSecurityError` is defined exactly once
   (in the leaf) and every consumer (engine, facade) resolves to that one class;
   the two guards likewise resolve to the leaf functions.
@@ -22,7 +23,8 @@ import pytest
 _PKG = Path(__file__).resolve().parents[1] / "_scaffold"
 _GUARD_CALLS = {"_assert_safe_write", "_assert_fanout_contained"}
 
-#: Class A: functions that perform GUARDED adopter-tree writes.
+#: Class A of `bootstrap/_scaffold/SECURITY_MUTATIONS.md`: functions that
+#: perform GUARDED adopter-tree writes.
 #: Each must call a containment guard on its destination. Pinned so a later
 #: extraction that relocates one without its guard fails this test.
 _GUARDED_WRITE_FUNCS = {

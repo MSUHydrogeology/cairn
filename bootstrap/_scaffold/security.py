@@ -1,4 +1,4 @@
-"""Scaffold engine — containment leaf (scaffold-split Stage 1, SR5).
+"""Scaffold engine — containment leaf.
 
 The Layer-4 executable hardening for adopter-tree writes: the single
 ``ScaffoldSecurityError`` identity and the two containment guards
@@ -77,7 +77,7 @@ def _assert_safe_write(dst: Path, target: Path) -> None:
 
 
 def _assert_fanout_contained(dst: Path, target: Path) -> None:
-    """Containment for a fan-out destination (S3).
+    """Containment for a fan-out destination.
 
     Like :func:`_assert_safe_write` but permits ``dst`` *itself* to be a symlink
     (the symlink we are about to (re)create): it still refuses a **symlinked

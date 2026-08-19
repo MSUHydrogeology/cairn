@@ -231,14 +231,14 @@ def _minimal_yaml_parse(text: str, source: str = "<profile>") -> dict[str, Any]:
     the profile is refused:
 
     ==  ==========================================================
-    L1  a blank line, or a comment line (first non-space is ``#``)
-    L2  a single leading ``---`` document marker
-    L3  ``key: <plain scalar>``
-    L4  ``key: '<single-quoted>'`` (``''`` unescapes to ``'``)
-    L5  ``key: "<double-quoted>"`` (no backslash, no interior ``"``)
-    L6  ``key: []``
-    L7  a bare ``key:`` (value ``None`` unless list items follow)
-    L8  ``- <scalar>`` at a consistent indent under an open bare key
+    -  a blank line, or a comment line (first non-space is ``#``)
+    -  a single leading ``---`` document marker
+    -  ``key: <plain scalar>``
+    -  ``key: '<single-quoted>'`` (``''`` unescapes to ``'``)
+    -  ``key: "<double-quoted>"`` (no backslash, no interior ``"``)
+    -  ``key: []``
+    -  a bare ``key:`` (value ``None`` unless list items follow)
+    -  ``- <scalar>`` at a consistent indent under an open bare key
     ==  ==========================================================
 
     Plus two whole-document rules: a literal ``{}`` document is an empty

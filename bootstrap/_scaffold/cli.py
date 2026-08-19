@@ -203,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write(format_manifest())
         return 0
 
-    # --summary is the pre-install acceptance artifact (P4): resolve the
+    # --summary is the pre-install acceptance artifact: resolve the
     # profile and print it WITHOUT installing.  Needs --config, not --target.
     if args.summary:
         if not args.config:
@@ -232,7 +232,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             if summary_cfg.get("preset"):
                 sys.stdout.write(format_profile_summary(summary_cfg))
-                # api-web-security-modules Chunk F (F4, Δ3 call site 1 of
+                # Capability install notice (call site 1 of
                 # 2): the capability install notice, on the pre-install
                 # `--summary` acceptance artifact -- both capabilities are
                 # explicit-selection only, so a Maintainer accepting a
@@ -326,8 +326,8 @@ def main(argv: list[str] | None = None) -> int:
         if isinstance(k, str) and k in KNOWN_TOKENS and v
     }
     # Module selection (BOOTSTRAP.md Act I-5).  Three mutually-exclusive
-    # shapes, plus the P4 preset fast path:
-    #   * `preset:` (P4) -> expand to a roster via the pinned ordered merge
+    # shapes, plus the preset fast path:
+    #   * `preset:` -> expand to a roster via the pinned ordered merge
     #     (resolve axes -> gate-derived baseline -> add/remove); `resolved_axes`
     #     is the preset point + adopter overrides.
     #   * `modules:` alone -> today's exact-list semantics (`modules: []` opts
@@ -397,7 +397,7 @@ def main(argv: list[str] | None = None) -> int:
     # dimension axes — e.g. the human-team axis selects CONTRIBUTING.md
     # at small-multi / large-multi.  Fed the RESOLVED axes (preset point +
     # overrides when a `preset:` is used, else the raw profile) per the
-    # seam foldback #10 left for P4.
+    # seam foldback #10 left for the preset path.
     optional = select_optional_templates(resolved_axes)
     if optional:
         names = ", ".join(dst for _, dst in optional)
@@ -410,7 +410,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     # Default the reference-script command tokens to the exact paths the
-    # scaffold installs the scripts to (I5), unless the profile already
+    # scaffold installs the scripts to, unless the profile already
     # supplied a value.  This makes the shipped scripts immediately
     # runnable via the documented {{claim_check_command}} /
     # {{metrics_command}} line, and keeps the doc's invocation and the
@@ -419,7 +419,7 @@ def main(argv: list[str] | None = None) -> int:
         tokens.setdefault(token, value)
 
     # Selected-module required-token preflight (security-apparatus-enrichment
-    # B0 / Codex External plan review P1 #1).  A selected module may declare
+    # preflight).  A selected module may declare
     # inline tokens that have no safe default (e.g. python-security's
     # {{python_package}}); rendering its files with the token unfilled would
     # leave a partially-installed, lockfile-recorded security stack containing
@@ -472,7 +472,7 @@ def main(argv: list[str] | None = None) -> int:
             "SKILL.md (+ untracked dev/.cairn/local-env.json)"
         )
         for mod in modules:
-            for entry in _GITIGNORE_SEEDS.get(mod, ()):  # C6 dry-run
+            for entry in _GITIGNORE_SEEDS.get(mod, ()):  # dry-run
                 would = seed_gitignore(target, (entry,), dry_run=True)
                 if would:
                     print(f"[dry-run] Would seed .gitignore: {entry}")
@@ -523,7 +523,7 @@ def main(argv: list[str] | None = None) -> int:
     # Fan the canonical skills out to in-use vendor read-paths (symlink, or a
     # gitignored generated copy where symlinks are unavailable).  A containment
     # violation here is reported as a crisp non-zero exit, not a traceback
-    # (Codex P1#2); local-env.json is already gitignored by this point.
+    # local-env.json is already gitignored by this point.
     try:
         fanout = fan_out_skills(templates_root, target, force=args.force)
     except ScaffoldSecurityError as exc:
@@ -532,7 +532,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     for name, tier, status in fanout:
         if status == "skipped-vendor-absent":
-            # The normal first-install state (F1/R11): the harness config
+            # The normal first-install state: the harness config
             # dir doesn't exist until the adopter's first launch, so this
             # is expected, not a fault -- a calm no-action line, never
             # "skipped"/"error" (session-start's self-heal fans out the
@@ -548,9 +548,9 @@ def main(argv: list[str] | None = None) -> int:
     # Install progressive-onboarding content.  Must run AFTER
     # install_core because it edits the just-installed
     # dev/PLANNING.md's `onboarding-tasks` slot.  Always installs the
-    # helper script + seeds the activation log (Chunk P1.2); only
+    # helper script + seeds the activation log; only
     # populates the slot + copies the preset source file when a
-    # `preset:` is selected (Chunk P1.1).
+    # `preset:` is selected.
     preset_name = str(cfg.get("preset") or "").strip() or None
     label = (
         f"progressive onboarding ({preset_name})"
@@ -558,7 +558,7 @@ def main(argv: list[str] | None = None) -> int:
         else "progressive onboarding (helper + log only; no preset)"
     )
     print(f"Installing {label} ...")
-    # R4: install_onboarding fails closed (ScaffoldSecurityError) on an incomplete
+    # install_onboarding fails closed (ScaffoldSecurityError) on an incomplete
     # always-on launcher+engine completeness group BEFORE any write. Convert that
     # to a crisp non-zero exit (no traceback), mirroring the skills-fanout guard.
     try:
@@ -621,7 +621,7 @@ def main(argv: list[str] | None = None) -> int:
     # directives are silently skipped (transitional; not every
     # module ships directives yet).  Non-interactive defer is the
     # safe default; explicit --non-interactive or non-TTY stdin
-    # forces it (Antigravity P1 disposition).
+    # forces it.
     non_interactive = args.non_interactive or not sys.stdin.isatty()
     try:
         merge_results, fidelity_warnings = run_module_merge_pass(
@@ -664,7 +664,7 @@ def main(argv: list[str] | None = None) -> int:
                   f"{_MODEL_SELECTION_MAPPING_REL} and run "
                   "`python scripts/check_model_selection.py`.", file=sys.stderr)
 
-    # api-web-security-modules Chunk F (F4, Δ3 call site 2 of 2): the
+    # Capability install notice (call site 2 of 2): the
     # capability install notice, printed post-install beside the
     # model-selection notice just above -- same "adoption must not be
     # silent" principle Chunk C established for security-verification.
@@ -678,9 +678,9 @@ def main(argv: list[str] | None = None) -> int:
     if skills_ignored:
         print(f"\nSeeded .gitignore (skills): {', '.join(skills_ignored)}")
 
-    # Seed adopter-owned .gitignore for selected modules (Cairn v0.2 P5,
-    # C6: non-clobber + idempotent), and print the OPT-IN hook command --
-    # the scaffold never mutates .git/hooks itself (C2).
+    # Seed adopter-owned .gitignore for selected modules
+    # (non-clobber + idempotent), and print the OPT-IN hook command --
+    # the scaffold never mutates .git/hooks itself.
     for mod in modules:
         entries = _GITIGNORE_SEEDS.get(mod, ())
         if not entries:

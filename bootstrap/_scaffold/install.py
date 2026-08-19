@@ -169,12 +169,12 @@ _DEV_DIRS: tuple[str, ...] = (
     "dev/modules",
     # Progressive-onboarding module's installed-source-file home.
     # Per plan 2026-05-28-claude-cairn-progressive-onboarding (Chunk
-    # P1.1, Codex P1-1 disposition): scaffold inlines a preset's seed
+    # scaffold inlines a preset's seed
     # tasks into `dev/PLANNING.md` and ALSO copies the full source
     # file here so the activation helper can discover deferred tasks
     # at goodnight.  The directory exists from install time onward.
     "dev/modules/onboarding",
-    # Progressive-onboarding state-file directory (Chunk P1.2 per
+    # Progressive-onboarding state-file directory (per
     # Codex P2-5 disposition: tracked, parallel to dev/intents.jsonl).
     # The scaffold creates this dir + writes an empty activation log
     # (`onboarding-activated.jsonl`) at install time so the helper
@@ -207,7 +207,7 @@ def seed_gitignore(
 ) -> list[str]:
     """Append *entries* to ``<target>/.gitignore`` if absent.
 
-    Adopter-owned-file contract (Cairn v0.2 P5, C6): **non-clobber**
+    Adopter-owned-file contract: **non-clobber**
     (existing content preserved verbatim), **idempotent** (an entry
     already present -- exact-line match, ignoring surrounding
     whitespace -- is never re-added, so repeated scaffolds add no
@@ -257,7 +257,7 @@ def _install_one(
     unpaired-slot warning, and the result's unfilled-token / block-slot
     lists are **empty** (a script's f-string braces or docstring must
     not be scanned as template tokens / slots, else the post-scaffold
-    report false-positives on code).  This is the I4 contract for the
+    report false-positives on code).  This is the contract for the
     1:many script-install path.
 
     Default-safe: if *dst* already exists and *force* is False, the
@@ -377,7 +377,7 @@ def write_local_env(
 ) -> InstallResult:
     """Write the untracked ``dev/.cairn/local-env.json`` interpreter binding.
 
-    Resolve-don't-bake (Decision 6 / R3): record the bootstrap interpreter's
+    Resolve-don't-bake: record the bootstrap interpreter's
     **fully-resolved** absolute path (``Path.resolve()`` dereferences every
     symlink component, so the strict tamper-aware schema the lifecycle CLI
     enforces is satisfied) so the wrapper invokes it directly instead of relying
@@ -393,7 +393,7 @@ def write_local_env(
         return (dst, [], [], "skipped-exists")
     if dry_run:
         return (dst, [], [], "dry-run")
-    # Seed the ignore entries FIRST (Codex P1#2): otherwise a failure between
+    # Seed the ignore entries FIRST: otherwise a failure between
     # this write and the later unconditional gitignore seed would leave an
     # unignored local-env.json carrying a local absolute path, exposed to a
     # broad `git add`. Seeding first makes it ignored the instant it exists.
@@ -423,10 +423,10 @@ def load_vendor_targets(templates_root: Path) -> list[dict[str, Any]]:
 def render_compatibility_matrix(templates_root: Path) -> str:
     """Render the skills compatibility matrix from the vendor-targets table.
 
-    Generated, never hand-authored (II3 / Decision 8): the published level for
+    Generated, never hand-authored: the published level for
     each target is the table's, and the table's levels are claimed-pending-
     fixture until Chunk 7's harness proves a target into ``native-tested``.  The
-    ``auto_suppress`` column makes the R4 gap visible per target rather than
+    ``auto_suppress`` column makes the gap visible per target rather than
     buried in prose.  Deterministic (sorted by target) so the drift gate is
     stable."""
     rows = sorted(load_vendor_targets(templates_root), key=lambda r: r["target"])
@@ -468,7 +468,7 @@ def render_compatibility_matrix(templates_root: Path) -> str:
 
 def _symlinks_available(target: Path) -> bool:
     """Probe whether ``os.symlink`` works in *target* (False on Windows without
-    Developer Mode / Administrator -- the copy-fallback trigger, R2)."""
+    Developer Mode / Administrator -- the copy-fallback trigger)."""
     import os
 
     probe = target / ".cairn-symlink-probe"
@@ -512,7 +512,7 @@ def _emit_skill_copy_fallback(
     The generated copy is a **vendor-read supply-chain artifact**, not an
     author-owned file (the canonical ``.agents/skills/`` source is the single
     editable copy).  So a diverged copy must NOT stay the active read-path
-    (Codex code review P1#1, refining EP3's "never clobber", which applied to
+    (refining "never clobber", which applied to
     author-owned files, not this generated tier): the vendor harness would
     otherwise ingest stale / locally-edited / tampered instructions while the
     install reports success and the lockfile/security tests describe only the
@@ -577,7 +577,7 @@ def fan_out_skills(
     * **manual** -- a different-format target (compiled artifact / documented
       manual fallback); never a symlink to incompatible files.
 
-    Every destination is containment-checked **before** any write (S3); the
+    Every destination is containment-checked **before** any write; the
     divergence guard runs only after containment validates the target.
     """
     canonical = target / ".agents" / "skills"
@@ -760,7 +760,7 @@ def capture_model_selection_mapping(
 
 
 # ---------------------------------------------------------------------------
-# api-web-security-modules Chunk F (F3, Δ4 + Δ5): the capability install
+# The capability install
 # notice
 # ---------------------------------------------------------------------------
 # Both `api-access-security` and `web-hosting-security` are explicit-
@@ -941,7 +941,7 @@ def _rendered_onboarding_overlay(
     content) matches ``strip_conditional_regions``'s own conservative
     default.
 
-    **Single source of truth (plan-review PR1).** Both places that need
+    **Single source of truth.** Both places that need
     this rendering -- the live install (``install_onboarding``) and the
     lockfile's expected-clean-install computation
     (``write_install_lockfile``) -- call this one function, so they
@@ -976,7 +976,7 @@ def _substitute_slot(
 
 
 #: The activation helper script Cairn ships to every adopter (Chunk
-#: P1.2 -- ALWAYS installed alongside any progressive-onboarding
+#: ALWAYS installed alongside any progressive-onboarding
 #: deployment).  The source lives under templates/modules/default-on/
 #: parallel to the foldback_suggest.py + claim_check.py precedent;
 #: the destination is the adopter's scripts/ tree, invoked at
@@ -984,7 +984,7 @@ def _substitute_slot(
 _ONBOARDING_HELPER_SRC_REL = "modules/default-on/onboarding_activate.py"
 _ONBOARDING_HELPER_DST_REL = "scripts/onboarding_activate.py"
 
-#: The activation log path the helper appends to (Chunk P1.2 per
+#: The activation log path the helper appends to (per
 #: Codex P2-5: tracked, parallel to dev/intents.jsonl).
 _ONBOARDING_LOG_REL = "dev/.cairn/onboarding-activated.jsonl"
 
@@ -1010,7 +1010,7 @@ _ONBOARDING_DOC_DST_DIR_REL = "dev/modules/onboarding"
 
 def missing_always_on_sources(templates_root: Path) -> list[str]:
     """The always-on completeness-group source members absent under
-    ``templates/modules/`` (R4) -- empty list means a complete group.
+    ``templates/modules/`` -- empty list means a complete group.
 
     The onboarding launcher + its ``_onboarding/`` engine are a REQUIRED
     completeness group: a present launcher delivered/tracked over an absent
@@ -1027,8 +1027,7 @@ def missing_always_on_sources(templates_root: Path) -> list[str]:
 
 def assert_always_on_complete(templates_root: Path) -> None:
     """Fail closed unless the always-on launcher+engine group is **well-formed**
-    before any install -- source-complete AND uniquely-owned destinations (R4 /
-    External-Security review P1#2).
+    before any install -- source-complete AND uniquely-owned destinations.
 
     Two fail-closed checks, both raising :class:`ScaffoldSecurityError` (the CLI
     converts the raise to a crisp non-zero exit) BEFORE any facade/engine write:
@@ -1040,7 +1039,7 @@ def assert_always_on_complete(templates_root: Path) -> None:
        second always-on spec OR by a ``core``/``skills`` destination.  Without
        this, two specs mapping one ``dst`` let ``--force`` write both in
        sequence, silently replacing the launcher with another source and
-       returning success (the reproduced P1#2 install path).  ``install_manifest``
+       returning success.  ``install_manifest``
        carries the global (all-tier) refusal for the manifest/lockfile path."""
     missing = missing_always_on_sources(templates_root)
     if missing:
@@ -1078,12 +1077,11 @@ def install_onboarding(
     dry_run: bool = False,
     force: bool = False,
 ) -> list[InstallResult]:
-    """Install the progressive-onboarding artifacts (Chunk P1.1 +
-    P1.2).
+    """Install the progressive-onboarding artifacts.
 
     Three categories of writes:
 
-    **Always (regardless of preset selection)** -- per Chunk P1.2:
+    **Always (regardless of preset selection)**:
 
     A. Install the activation helper script to
        ``<target>/scripts/onboarding_activate.py`` (verbatim copy).
@@ -1091,7 +1089,7 @@ def install_onboarding(
        ``<target>/dev/.cairn/onboarding-activated.jsonl`` (header-
        comment-only; the helper appends to it at goodnight).
 
-    **Only when a named preset is selected** -- per Chunk P1.1:
+    **Only when a named preset is selected**:
 
     C. Inline seed tasks + the ``<!-- preset: <name> -->`` metadata
        comment into ``dev/PLANNING.md``'s ``onboarding-tasks`` slot.
@@ -1128,13 +1126,13 @@ def install_onboarding(
     when ``preset_name`` is one of the three named presets).
 
     Per plan 2026-05-28-claude-cairn-progressive-onboarding Chunks
-    P1.1 (slot subst + preset source copy) + P1.2 (helper script
+    slot substitution + preset source copy, plus the helper script
     install + activation log seed) + Codex External Review P1-1 /
     P2-4 / P2-5 dispositions.
     """
     results: list[InstallResult] = []
 
-    # R4: fail closed BEFORE any facade/engine write unless the FULL always-on
+    # Fail closed BEFORE any facade/engine write unless the FULL always-on
     # launcher+engine source set resolves -- a partial group must never ship a
     # facade over an absent engine member. Raises ScaffoldSecurityError (the CLI
     # converts it to a crisp non-zero exit); the per-member warn below is then
@@ -1152,7 +1150,7 @@ def install_onboarding(
     # import (parity with the team-gated ``tools/_intent/`` package install).  Each
     # member is copied byte-for-byte through the containment guard.  The group's
     # source-completeness is enforced fail-closed by the caller via
-    # ``assert_always_on_complete`` BEFORE this runs (R4), so a present launcher is
+    # ``assert_always_on_complete`` BEFORE this runs, so a present launcher is
     # never installed over an absent engine member; the per-member ``[warn]`` below
     # is unreachable defense-in-depth.
     for spec in _ALWAYS_ON_MAPPINGS:
@@ -1504,7 +1502,7 @@ def install_manifest(
     for name in names:
         for spec in _MODULE_MAPPINGS.get(name, []):
             entries.append((f"modules/{spec.src}", spec.dst, spec.verbatim))
-    # Destination-ownership refusal (External-Security review P1#2): the published
+    # Destination-ownership refusal: the published
     # manifest -- and the lockfile derived from it -- must not emit two rows for
     # one destination (one source would silently shadow another). Refuse a
     # malformed mapping before it propagates. No-op on well-formed Cairn.
@@ -1526,7 +1524,7 @@ def trusted_upstream(cairn_root: Path) -> UpstreamSource:
     ``CAIRN_ROOT`` (from ``__file__``), ``cmd_upgrade``'s ``cairn_root``. The
     resulting note means *differs from the upstream in the checkout you ran*.
 
-    **A1, the contract, in writing.** ``src_for_dst`` is the destination ->
+    **The contract, in writing.** ``src_for_dst`` is the destination ->
     source map of ``install_manifest(modules=None)`` -- the **full published
     catalog**, four in-memory mapping literals in ``_scaffold/config.py``, zero
     filesystem reads. This helper therefore **takes no module list**, and must
@@ -1540,7 +1538,7 @@ def trusted_upstream(cairn_root: Path) -> UpstreamSource:
 
     **Not established.** This resolves a *caller-controlled* upstream, not a
     cryptographically anchored one: nothing here attests that ``cairn_root``
-    is a genuine Cairn release. That is residual **R1**.
+    is a genuine Cairn release. That gap is residual.
     """
     root = Path(cairn_root)
     return UpstreamSource(
@@ -1645,14 +1643,14 @@ def write_install_lockfile(
     this refuses (returns ``None``, prints guidance) if any tracked file on
     disk differs from a clean install -- e.g. a ``skipped-exists`` file the
     adopter customized.  On a fresh install every file matches, so the
-    lockfile + cache are written.  Token-secret guard runs first (R9).
+    lockfile + cache are written.  Token-secret guard runs first.
 
     The base cache stores the **raw** (pre-substitution) template for each
-    **non-verbatim** install only (I4: verbatim scripts use the hash policy,
+    **non-verbatim** install only (verbatim scripts use the hash policy,
     not a cached base).
 
     ``onboarding_preset`` (per plan 2026-05-28-claude-cairn-progressive-
-    onboarding Chunk P1.1): when set, the lockfile's "clean install"
+    onboarding): when set, the lockfile's "clean install"
     computation for ``dev/PLANNING.md`` includes the post-install
     onboarding-slot substitution + preset metadata write, so the file's
     on-disk content matches the expected ``would`` despite
@@ -1668,7 +1666,7 @@ def write_install_lockfile(
     """
     _refuse_secret_tokens(tokens, allow_secret_tokens)
 
-    # R4: refuse to record a PARTIAL always-on completeness group. The file loop
+    # Refuse to record a PARTIAL always-on completeness group. The file loop
     # below silently skips a missing source (`if not src.exists(): continue`), so
     # without this an incomplete launcher+engine would yield a lockfile that
     # tracks only the members present -- the side-door blind spot, re-expressed in
@@ -1693,7 +1691,7 @@ def write_install_lockfile(
     # `would` calculation in the loop below can apply the same slot
     # substitution `install_onboarding` did at install time -- INCLUDING
     # the same roster-gated strip (first-session-survivability finding 3,
-    # plan-review PR1): `install_onboarding` and this precompute must call
+    # `install_onboarding` and this precompute must call
     # the SAME `_rendered_onboarding_overlay` helper with the SAME axes
     # map, or a roster-unstaffing axes override makes the actual on-disk
     # PLANNING.md (stripped) diverge from this `would` (previously
@@ -1757,7 +1755,7 @@ def write_install_lockfile(
         else:
             substituted = substitute_tokens(raw, tokens)
             # Profile-size the always-on surface (cairn-profile-sized-assembly
-            # P2): strip `cairn:if` regions the embedded profile does not select,
+            # strip `cairn:if` regions the embedded profile does not select,
             # keyed off the SAME `profile["axes"]` `install_core` stripped the
             # on-disk file with -- so this expected-clean-install `would` matches
             # the stripped install and the divergence check below stays clean for
