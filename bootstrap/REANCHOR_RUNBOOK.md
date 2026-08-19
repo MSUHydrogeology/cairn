@@ -26,6 +26,171 @@ silently by the promotion command (round-6 Finding 1).
 
 ---
 
+## Before you start — what you need, and what performs each step
+
+**One command performs the ceremony.** The stages below are no longer typed out
+of this document: the procedure is `bootstrap/reanchor.sh`, frozen into the
+authority closure, started by a launcher an External Security review produced.
+This document explains what each step establishes and why; it is not the thing
+you copy.
+
+### Prerequisites
+
+Have all of these before you begin. Every one of them is a thing the ceremony
+refuses without, and discovering that at stage 2 costs a full authorization
+package.
+
+| | what | where it comes from |
+|---|---|---|
+| 1 | **The instantiated launcher** | The External Security review that read it. Delivered out of band, with its SHA-256, which you verify against the review's record before running it. |
+| 2 | **The authorization packet** | The same review, as a pair with the launcher. You do not verify it separately — its digest is bound into the launcher, so checking the launcher's digest covers both. |
+| 3 | **Your values file** | You, once. Copy `bootstrap/reanchor-values.example`, fill it in outside the repository, and keep it. See the refresh note below. |
+| 4 | **The ceremony key** | You. Dedicated, encrypted at rest, in no agent, used for nothing else. See `SECURITY.md` > *The ceremony key is dedicated*. |
+| 5 | **The candidate ref** | The commit you are re-anchoring to. An argument to the launcher, never a value inside a reviewed artifact. |
+
+**The values file goes stale, and that is not a malfunction.** It records
+*resolved* executable paths, because a symlinked executable is a path whose
+target can change between the check and the execution. On a Homebrew host the
+resolved `git` is a version-pinned Cellar path, so **a toolchain upgrade breaks
+it**. Re-run `validate` after upgrading git, python, or the coreutils:
+
+```
+sh bootstrap/reanchor.sh validate /path/to/your/values
+```
+
+The refusal you get from a stale path is correct. Fix the path; do not relax
+the rule.
+
+### The step registry is the authority on what happens
+
+`sh bootstrap/reanchor.sh steps` prints the closed, ordered registry — every
+step's stable ID, its stage, the command that performs it, and what it
+establishes. **The IDs below are that registry's**, cited here so the two cannot
+drift apart: a step in the code and not in this document, or the reverse, fails
+a test.
+
+What this buys is a drift signal on the procedure's *shape*. It attests nothing
+about whether the prose around each citation is accurate — that is reviewed, not
+machine-checked, and this sentence is here so the presence of a check is not
+mistaken for the stronger claim.
+
+### Where each thing comes from — the two questions this runbook used not to answer
+
+**"Where does the review manifest come from?"** The launcher composes it.
+It is not a file you write, and it is not a file the review hands
+you: every value in it comes either from the packet (the review's own output) or
+from the candidate OID the launcher resolved itself. Nothing in it is
+read from the candidate. That is what removes the last point at which a human or
+an agent had to assemble an authority input by hand.
+
+**"How do I read the report?"** `sh bootstrap/reanchor.sh show-report <values>`.
+The digest you confirm binds a *state*, and the report is that state.
+A confirmed digest over an unread report authorizes something you have not seen,
+so this step is not optional politeness — it is the only step at which you
+exercise judgement rather than checking arithmetic.
+
+### The ceremony, step by step
+
+Each step below cites its registry ID once. Run
+`sh bootstrap/reanchor.sh steps` for the registry itself.
+
+**You run two commands.** The launcher, and then stage 2. Everything between
+them is you looking at what you are about to authorize.
+
+#### The one command that does the pre-candidate work
+
+```
+sh /path/to/reanchor-launcher.sh  <packet>  <values>  <candidate-ref>
+```
+
+Everything in this phase runs on **reviewed bytes** — the launcher the review
+produced, the packet bound into it, and your own values file. No candidate byte
+executes until the last step of it.
+
+* **[RA-01]** Your values file is read by the launcher's *own* reader, under the
+  same closed grammar the ceremony artifact uses. It is deliberately a second
+  parser: the launcher needs `git`, `shasum` and `cat` before it can verify the
+  artifact, and the artifact's parser is candidate code it has not yet cleared.
+* **[RA-02]** The packet on disk is hashed and compared against the digest bound
+  into the launcher. This is the comparison that makes the pair a pair.
+* **[RA-03]** The packet is snapshotted into memory and **re-hashed**, and the
+  two digests must agree. This catches a byte the shell could not carry, and a
+  rewrite between the two reads. It **detects**; it does not prevent — see the
+  residual below.
+* **[RA-04]** The packet's member set is compared against the closure fixed
+  *in the launcher*. Everything else validates the packet against itself; a
+  packet that dropped a member parses cleanly and hashes correctly, and only
+  this comparison catches it.
+* **[RA-05]** The ceremony artifact is confirmed to be a closure member by
+  construction: exactly one row names it, that row's digest is its digest, and
+  the launcher will start no other file.
+* **[RA-06]** The candidate ref is resolved **once**, to a full object id. A
+  moving ref read twice is two different answers wearing one name.
+* **[RA-07]** Every closure blob is read at that object id and checked against
+  its reviewed digest. Not a sample — every one.
+* **[RA-08]** The extracted ceremony artifact is hashed and checked again,
+  separately.
+* **[RA-09]** The review manifest is **composed** from the packet and the
+  resolution the launcher just performed. Nothing in it is read from the
+  candidate.
+* **[RA-10]** **The first candidate byte runs.** The artifact starts, and it
+  starts only because its digest matched.
+* **[RA-11]** The complete effective configuration prints. This is your
+  stop-point: everything that could refuse already has, so what you see is what
+  will run. Read it before letting it continue.
+* **[RA-12]** The key channel is probed. **If a passphrase prompt appears,
+  decline it** — the prompt is the ceremony asking whether the key is reachable,
+  and answering it makes the probe succeed, which is the failure case.
+* **[RA-13]** The read-only checks run and the authorization package is written.
+  No key is held and no ref moves.
+
+#### Between the stages — the part that is yours
+
+```
+sh bootstrap/reanchor.sh show-report    <values>
+sh bootstrap/reanchor.sh hash-package   <values>
+```
+
+* **[RA-14]** Read the report. The digest binds a state; this is the state.
+* **[RA-15]** Compute the package digest yourself, over the bytes on disk. Never
+  take a digest from inside the package — a file can assert anything about
+  itself.
+* **[RA-16]** **Now** make the ceremony key available, and not before. Until
+  this moment the key-at-rest precondition holds and stage 1 proved it could not
+  sign; loading it earlier collapses the boundary the two stages exist to
+  create.
+
+#### The command that signs
+
+```
+sh bootstrap/reanchor.sh stage2 <values> --confirm-package-sha256 <the digest you computed>
+```
+
+* **[RA-17]** The package is validated against **your** digest, and stage 2
+  re-extracts and re-verifies its own bytes rather than reusing stage 1's. No
+  candidate code runs in this stage at all.
+* **[RA-18]** The checkpoint is signed and **branch and anchor move in one
+  transaction**.
+* **[RA-19]** Put the key away, then publish both refs in one atomic push.
+
+#### What this does not close
+
+**The two stages want opposite states**, and that is the boundary, not a
+copying slip: stage 1 is invoked with no agent socket and refuses if the key can
+sign anyway; stage 2 needs the socket, because without it the signer has no
+controlling terminal and dies naming an `ssh-askpass` that does not exist on a
+stock host. So the key goes in between the stages and comes out after.
+
+**The packet is read twice** — once to hash, once to snapshot — so a writer
+running as you can change it in between. Re-hashing the snapshot detects that.
+It does not prevent it. That is the accepted same-user residual, unchanged.
+
+**Sequencing is not containment.** Candidate code that ran in stage 1 shared the
+machine with the key stage 2 loads. Splitting the processes removes the
+simultaneity, not the residual.
+
+---
+
 ## Phase 0 — establish the trust root (supervised, one-time)
 
 The mechanism reuses the **existing gate-manifest prerequisite-commit flow**

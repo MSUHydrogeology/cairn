@@ -1515,3 +1515,89 @@ class TestTheCeremonyClosureCarriesNoUnexplainedTag:
         # And the exemption must be narrow -- a real finding label must still
         # be caught even though it is the same shape as an exempted one.
         assert re.search(self.TAG, "[S1]") and "S1" not in self.LIVE
+
+
+# --------------------------------------------------------------------------
+# the runbook and the registry describe one procedure
+# --------------------------------------------------------------------------
+
+_RUNBOOK = _REPO / "bootstrap/REANCHOR_RUNBOOK.md"
+
+
+class TestTheRunbookAndTheRegistryAgree:
+    """The documentation-agreement check.
+
+    A step that exists in the code and not in the document, or in the document
+    and not in the code, is drift the next operator pays for -- they follow a
+    procedure that is missing a step, or look for one that no longer runs.
+
+    **What this delivers is a signal on the procedure's SHAPE only.** It
+    compares two structures; it establishes nothing about whether the prose
+    around each citation is accurate. That prose is reviewed, not
+    machine-checked. This paragraph is here because a check whose strength is
+    assumed rather than stated is how a reader ends up trusting more than was
+    measured.
+    """
+
+    def _registry_ids(self) -> list[str]:
+        r = _run("step-ids")
+        assert r.returncode == 0, r.stderr
+        return r.stdout.split()
+
+    def test_the_runbook_cites_every_registry_id_exactly_once(self):
+        text = _RUNBOOK.read_text(encoding="utf-8")
+        wrong = {sid: text.count(sid) for sid in self._registry_ids()
+                 if text.count(sid) != 1}
+        assert not wrong, (
+            "these registry steps are not cited exactly once in the runbook "
+            f"(id: count): {wrong}. A step cited twice has two explanations "
+            "that can disagree; a step cited zero times is one the operator "
+            "will not know to perform")
+
+    def test_the_runbook_cites_no_unknown_step_id(self):
+        """The other direction. A citation with no step behind it sends the
+        reader to `steps` to look for something that is not there."""
+        import re
+        text = _RUNBOOK.read_text(encoding="utf-8")
+        unknown = set(re.findall(r"RA-\d{2}", text)) - set(self._registry_ids())
+        assert not unknown, f"the runbook cites steps that do not exist: {unknown}"
+
+    def test_the_runbook_answers_where_the_review_manifest_comes_from(self):
+        """One of the two questions the runbook previously left unanswered. An
+        operator who cannot find this writes the manifest by hand, which is the
+        exact failure the launcher exists to remove."""
+        text = _RUNBOOK.read_text(encoding="utf-8")
+        assert "Where does the review manifest come from?" in text
+        assert "launcher composes it" in text
+
+    def test_the_runbook_answers_how_to_read_the_report(self):
+        """The other one. A confirmed digest over an unread report authorizes
+        something the Maintainer has not seen, and until now no command
+        rendered it."""
+        text = _RUNBOOK.read_text(encoding="utf-8")
+        assert "How do I read the report?" in text
+        assert "show-report" in text
+
+    def test_the_runbook_lists_the_prerequisites(self):
+        """Every prerequisite is something the ceremony refuses without, and
+        discovering that at stage 2 costs a full authorization package."""
+        text = _RUNBOOK.read_text(encoding="utf-8")
+        assert "### Prerequisites" in text
+        for needed in ("instantiated launcher", "authorization packet",
+                       "values file", "ceremony key", "candidate ref"):
+            assert needed in text, f"the prerequisites omit {needed!r}"
+
+    def test_the_runbook_tells_the_operator_the_values_file_goes_stale(self):
+        """A version-pinned executable path breaks at the next toolchain
+        upgrade. An operator who is not told that reads a correct refusal as a
+        broken tool -- and the tempting fix is to relax the rule."""
+        text = _RUNBOOK.read_text(encoding="utf-8")
+        assert "goes stale, and that is not a malfunction" in text
+
+    def test_the_runbook_says_the_agreement_check_is_shape_only(self):
+        """The withdrawn semantic claim must stay withdrawn in the document as
+        well as in the code. A runbook that implied its citations were
+        validated for meaning would reinstate it where an operator reads."""
+        text = _RUNBOOK.read_text(encoding="utf-8")
+        assert "attests nothing" in text and "reviewed, not\nmachine-checked" in text, (
+            "the runbook must state the limit of its own agreement check")
