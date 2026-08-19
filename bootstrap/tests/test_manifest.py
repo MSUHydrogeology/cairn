@@ -1,5 +1,5 @@
 """
-Tests for the Layer-1 install manifest + provenance warning (P2 Chunk 2).
+Tests for the Layer-1 install manifest + provenance warning.
 
 * The emitted manifest matches what an actual all-modules scaffold writes
   (no drift) and every manifest source exists under templates/.
@@ -72,7 +72,7 @@ class TestInstallManifest:
         cfg = tmp_path / "profile.yml"
         # python-security declares a required token (python_package); installing
         # the full module set must supply it or the selected-module required-token
-        # preflight (B0) fails the install closed before any write.
+        # preflight fails the install closed before any write.
         cfg.write_text(
             "project_name: ManifestTest\ntest_command: pytest\n"
             "python_package: manifest_pkg\nmodules:\n"

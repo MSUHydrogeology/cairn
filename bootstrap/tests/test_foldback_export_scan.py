@@ -253,11 +253,10 @@ class TestSmokes:
 
 class TestFoldbackAcceptMarker:
     """The ``foldback-accept: <reason>`` per-line marker -- documented
-    false-positive escape hatch.  Code-review N1 (Codex 2026-05-28)
-    surfaced that the agent prompt + module docs promised this
-    mechanism but the scanner had no parser; this class pins one
-    suppression case per detector + the empty-rationale failure path
-    + a no-match smoke test for the marker shape itself.
+    false-positive escape hatch.  The agent prompt and module docs once
+    promised this mechanism while the scanner had no parser for it, so this
+    class pins one suppression case per detector, the empty-rationale path,
+    and a no-match smoke test for the marker shape itself.
     """
 
     def test_marker_suppresses_credential_finding(self, fes, tmp_path):
@@ -385,7 +384,7 @@ class TestFoldbackAcceptMarker:
 
 class TestMultiFileInvocation:
     """The scanner accepts multiple file paths in a single
-    invocation (per code-review N2: the PR-shape filing path needs
+    invocation (the PR-shape filing path needs
     to scan the PR body AND every changed file in the diff).
     """
 

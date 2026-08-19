@@ -12,7 +12,7 @@ Every lifecycle SKILL.md must:
 * keep its body under the 200-line threshold (II4a) -- a body that restated the
   routine's rationale would blow this budget, so the threshold *is* the
   enforceable half of the no-restate guard;
-* carry a dry, anti-semantic ``description`` (R4) -- it names the routine as
+* carry a dry, anti-semantic ``description`` -- it names the routine as
   manual and explicitly *not* a conversational helper, so a harness that
   auto-triggers by description does not fire the lifecycle from chatter.
 
@@ -99,7 +99,7 @@ def test_skill_contract(skill: Path):
         f"(>= {BODY_LINE_THRESHOLD}); it may be restating doctrine."
     )
 
-    # Anti-semantic description (R4): names itself manual + not-conversational so
+    # Anti-semantic description: names itself manual + not-conversational so
     # a description-triggering harness does not fire it from chatter.
     desc = meta["description"].lower()
     assert "manual" in desc

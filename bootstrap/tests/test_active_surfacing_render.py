@@ -1,10 +1,9 @@
-"""Tests for per-preset active-surfacing prompt content rendering
-(Chunk P1.10b).
+"""Tests for per-preset active-surfacing prompt content rendering.
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 
 Validates the 12 fixture combinations (4 active-surfacing rows ×
-3 presets) per the plan's P1.10b spec.  For each combination:
+3 presets).  For each combination:
 
 * The prompt content extracted from the preset source file is
   non-empty.

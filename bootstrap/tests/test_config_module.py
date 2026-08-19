@@ -6,7 +6,7 @@ Contracts:
   best-effort import inside a try/except); it holds the static install schema and
   resolution logic and must never import back into the engine package, nor hold
   adopter-tree writes (those stay in the engine and consume this data).
-* **Trust-anchor narrow import (plan 0B.3 / SR2)** — the release-security scanner
+* **Trust-anchor narrow import** — the release-security scanner
   `bootstrap/security_check.py` imports the `_MODULE_MAPPINGS` trust anchor from
   its *narrowest owner* (`bootstrap._scaffold.config`), not the broad facade.
 * **Single identity** — every moved symbol resolves to the one `config` object
@@ -204,7 +204,7 @@ def test_strip_conditional_identity_no_directives():
 
 
 def test_strip_conditional_determinism():
-    """Semantic F4: same (text, axes) → byte-identical output every call."""
+    """Semantic: same (text, axes) → byte-identical output every call."""
     from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415
 
     text = (

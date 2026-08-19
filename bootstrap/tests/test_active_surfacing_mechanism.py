@@ -1,9 +1,9 @@
-"""Tests for active-surfacing emission machinery (Chunk P1.10a).
+"""Tests for active-surfacing emission machinery.
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 
 Covers the surfacing mechanism (NOT the per-preset content -- that
-lives in test_active_surfacing_render.py, P1.10b):
+lives in test_active_surfacing_render.py):
 
 * Priority order: when multiple rows would fire, the helper
   selects the highest-priority unmuted one.

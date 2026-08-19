@@ -200,7 +200,7 @@ class TestInvocationPatterns:
 
 
 class TestPRChangedFileScanning:
-    """Code-review N2 (Codex 2026-05-28): the PR template's
+    """The PR template's
     affirmation covers BOTH the body AND every changed file in the
     diff.  The prompt's Step 4 must instruct the agent + maintainer
     to scan both -- otherwise the PR affirmation is a false
@@ -241,7 +241,7 @@ class TestPRChangedFileScanning:
 
 
 class TestFoldbackAcceptMarkerDocumented:
-    """Code-review N1: the prompt's documented-false-positive
+    """The prompt's documented-false-positive
     disposition must point at the actual `foldback-accept:` marker
     grammar the scanner implements -- not at the abandoned
     `cairn-accept`-style placeholder.

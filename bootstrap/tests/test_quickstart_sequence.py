@@ -9,7 +9,7 @@ silently across releases unless tested.  This module is the
 regression gate.
 
 **Two layers, separately named** (per accepted Plan-review
-finding P2):
+finding):
 
 * **Layer A (deterministic shell coverage)**: drives the literal
   shell commands in Steps 1-3 of the quickstart against a temp
@@ -211,7 +211,7 @@ class TestLayerAStepsOneThroughThree:
                 f"quickstart Step 3 should install {relative}; not present after run"
             )
         # Drift-gate -- close the prose<->runtime loop (the 2026-06-12
-        # adopter-friction audit's F1). NO hardcoded count lives here: the
+        # adopter-friction audit). NO hardcoded count lives here: the
         # quickstart's two load-bearing numbers are read FROM the doc and
         # compared to what the live solo-greenfield install actually
         # produced, so the gate fires the moment the default-on set (and

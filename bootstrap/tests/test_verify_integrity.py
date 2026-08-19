@@ -72,7 +72,7 @@ def _write_lock(target: Path, files: list) -> None:
 def test_escaping_dst_fails_closed(tmp_path: Path) -> None:
     """A lockfile record whose dst escapes the target (`../outside`) must
     FAIL CLOSED -- never read or attest an out-of-tree file even if its hash
-    matches (Codex code-review F1). The lockfile is itself a tamper target."""
+    matches. The lockfile is itself a tamper target."""
     outside = tmp_path / "outside.txt"
     outside.write_text("secret", encoding="utf-8")
     target = tmp_path / "repo"
@@ -97,7 +97,7 @@ def test_malformed_records_fail_closed(tmp_path: Path) -> None:
 
 def test_main_documented_invocation(tmp_path: Path) -> None:
     """The documented `--target` CLI shape returns 0 on a clean install
-    (Codex F3 smoke -- protects the invocation SECURITY.md publishes)."""
+    (smoke test -- protects the invocation SECURITY.md publishes)."""
     assert _install(tmp_path) == 0
     assert verify_integrity.main(["--target", str(tmp_path)]) == 0
 

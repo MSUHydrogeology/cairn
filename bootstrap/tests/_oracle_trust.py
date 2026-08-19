@@ -162,7 +162,7 @@ def extract_ref_tree(ref: str, dest: Path, repo: Path) -> Path:
     files, duplicate normalized paths, and file↔directory collisions; enforces the
     fixed v1 budgets (raw archive / member count / per-file / total expanded).
     """
-    # Stream stdout with a HARD pre-buffer cap (P2.5): abort the moment the raw
+    # Stream stdout with a HARD pre-buffer cap: abort the moment the raw
     # archive exceeds RAW_ARCHIVE_MAX, before the whole thing is buffered.
     proc = subprocess.Popen(
         ["git", "-C", str(repo), "archive", "--format=tar", ref],
@@ -255,7 +255,7 @@ def _validate_and_extract(raw: bytes, dest: Path) -> Path:
 
 
 def preflight(engine: Path, repo: Path) -> bool:
-    """A minimal baseline-executability check (plan Phase 1.3 / Antigravity S4):
+    """A minimal baseline-executability check:
     can the extracted baseline engine run *at all* under the current interpreter
     / environment? Returns ``False`` so the caller can report *"baseline not
     runnable here"* instead of surfacing an environment incompatibility as a
