@@ -191,6 +191,42 @@ with the plan's filename stem.
   format contract is most likely to be broken exactly where following it feels
   like pedantry.
 
+* **[SEC] The lockfile has no regeneration procedure for an existing lockfile**
+  *(filed 2026-08-19, found while executing the install-contract batch)* —
+  `test_cairns_own_install_records_all_three_files_in_the_lockfile` states the
+  rule in its own docstring: *"the lockfile is regenerated, never
+  hand-edited."* **There is no command that regenerates an existing one.**
+  `scaffold.py upgrade --init-lock` is the only writer, and it refuses when the
+  file is already present — measured `as_of 2026-08-19`, run against a
+  throwaway worktree copy: `[info] dev/.cairn/cairn-lock.yml already exists;
+  nothing to migrate.`, **0 lines changed**.
+
+  So a stale digest leaves an operator with two options the project forbids:
+  delete-and-reinit, which discards the 89 records that were correct and
+  rewrites `migrated`/`cairn_commit`/`profile` besides; or hand-editing, which
+  is what the docstring rules out. **This is the `AGENTS.md` named-trigger rule
+  failing on an artifact rather than a document** — *"a named trigger is
+  checked by opening it and confirming the procedure is there"* — and it was
+  invisible until someone needed the procedure, because the sentence reads like
+  it describes one.
+
+  **What was done instead**, so this row is not read as an open failure: a
+  purpose-built correction script, dry-run-verified and Maintainer-applied at
+  `77d2b3b`. It rewrites only records whose recorded digest disagrees with
+  disk, and moves a verbatim record's `hash` *and* `base_hash` only after
+  proving the installed file is byte-identical to its template. That script is
+  a one-off in a scratchpad, deliberately: shipping it would answer the wrong
+  question.
+
+  **What is actually owed is a decision, not a script.** Either the writer
+  grows a targeted refresh (a subcommand that re-records named files against
+  disk, with the same byte-identical proof), or the test's docstring stops
+  naming a procedure that does not exist and names the real one. The first is
+  better; the second is the minimum. **Leaving both undone is the state that
+  produced this row**: the instruction is followed by nobody and believed by
+  everybody, and the next person to hit it will either hand-edit the install
+  contract or delete it and start over.
+
 * **[SEC] Two install-contract artifacts are stale after the tag pass** *(filed
   2026-08-19)* — `bootstrap/tests/fixtures/gate_manifest.json` has **35 frozen
   entries** whose bytes no longer match the tree, and
