@@ -1,4 +1,4 @@
-"""Contract for the differential-oracle harness (scaffold-split 0A.3 / P2#5/#7).
+"""Contract for the differential-oracle harness.
 
 Two halves:
 
@@ -75,7 +75,7 @@ def test_provenance_difference_is_normalized_away():
 
 
 def test_per_file_content_hash_difference_is_NOT_normalized():
-    """The crucial guard (P2#5): the normalization must be narrow enough that a
+    """The crucial guard: the normalization must be narrow enough that a
     real content change — surfacing as a changed per-file hash — still fails."""
     frozen = {_LOCK: _lockfile(agents_hash="sha256:deadbeef")}
     current = {_LOCK: _lockfile(agents_hash="sha256:00000000")}
@@ -160,7 +160,7 @@ def test_oracle_fails_closed_on_untrusted_baseline(tmp_path):
     reason="templates/skills not available",
 )
 def test_oracle_privileged_workflows_preserved(tmp_path):
-    """F3: the privileged workflows — upgrade stage/apply, containment refusal,
+    """The privileged workflows — upgrade stage/apply, containment refusal,
     dirty-tree refusal — are behaviorally identical between the materialized
     baseline engine and the current launcher+engine."""
     if not O._git_available():
@@ -172,7 +172,7 @@ def test_oracle_privileged_workflows_preserved(tmp_path):
 
 
 def test_oracle_gate_does_not_silently_skip_required_scenarios(tmp_path, monkeypatch):
-    """R2: with git unavailable the gate must FAIL closed (a required scenario
+    """With git unavailable the gate must FAIL closed (a required scenario
     becomes `error`), not pass after running only containment."""
     engines = _engines(tmp_path)
     monkeypatch.setattr(O, "_git_available", lambda: False)
@@ -184,7 +184,7 @@ def test_oracle_gate_does_not_silently_skip_required_scenarios(tmp_path, monkeyp
     assert not any(r["status"] == "error" for r in explore)
 
 
-# --- P1.2: trusted verifier measures the TARGET, not itself --------------------
+# --- The trusted verifier measures the TARGET, not itself ---------------------
 
 def _copy_target(dst: Path) -> Path:
     shutil.copytree(O.CAIRN_ROOT, dst,
@@ -213,7 +213,7 @@ def test_oracle_measures_target_not_verifier(tmp_path):
     reason="templates/skills not available",
 )
 def test_oracle_teeth_target_engine_diverges(tmp_path):
-    """Teeth (P1.2): the target's current engine is behaviorally changed (writes a
+    """Teeth: the target's current engine is behaviorally changed (writes a
     sentinel into every install) while the trusted baseline is unchanged — the
     trusted-checkout invocation must report a diff."""
     target = _copy_target(tmp_path / "target")
@@ -239,7 +239,7 @@ def test_oracle_teeth_target_engine_diverges(tmp_path):
     assert any("TEETH_SENTINEL" in p for p in paths), report
 
 
-# --- F2 (re-review): the shipped CLI gates a TARGET, never itself -----------------
+# --- The shipped CLI gates a TARGET, never itself --------------------------------
 
 def _git_init_target(root: Path) -> str:
     """Make ``root`` a one-commit git checkout so gate mode can pin its candidate
@@ -254,7 +254,7 @@ def _git_init_target(root: Path) -> str:
 
 
 def test_oracle_cli_gate_refuses_self_target(tmp_path):
-    """F2: the shipped CLI in --gate mode refuses target == trusted checkout — the
+    """The shipped CLI in --gate mode refuses target == trusted checkout — the
     default-self self-measurement a trusted-checkout caller would otherwise get."""
     import subprocess
     proc = subprocess.run(
@@ -267,7 +267,7 @@ def test_oracle_cli_gate_refuses_self_target(tmp_path):
 
 
 def test_oracle_cli_gate_requires_target_root(tmp_path):
-    """F2: --gate without an explicit --target-root is a usage error (no silent
+    """--gate without an explicit --target-root is a usage error (no silent
     default-self)."""
     import subprocess
     proc = subprocess.run(
@@ -283,7 +283,7 @@ def test_oracle_cli_gate_requires_target_root(tmp_path):
     reason="templates/skills not available",
 )
 def test_oracle_cli_gate_teeth_subprocess(tmp_path):
-    """Teeth via the SHIPPED CLI (F2, not only the in-process function): a
+    """Teeth via the SHIPPED CLI, not only the in-process function: a
     behaviorally-changed evaluated target, gated from a trusted checkout, makes the
     CLI exit non-zero and pins the target's candidate SHA in the report."""
     import json as _json

@@ -254,8 +254,7 @@ def _scan_neutrality_file(
     # tokens -- since exemption directives are forbidden in templates,
     # any vendor token there is itself a fail (there's no honest way to
     # exempt it).  Returning early after the directive check would
-    # silently let a token leak through unexamined (P1 code-review
-    # finding, 2026-05-28).
+    # silently let a token leak through unexamined.
     if rel.startswith("templates/"):
         for lineno, line in enumerate(lines, start=1):
             if _ANY_DIRECTIVE_RE.search(line) and _is_directive_only_line(line):
@@ -757,7 +756,7 @@ def _print_report(
         # 40 lines of pytest stderr) are flattened with `\\n` escapes
         # so downstream line-oriented tooling can parse cleanly.  A
         # consumer that wants the original line shape can replace
-        # `\\n` -> newline.  P2 code-review finding 2026-05-28.
+        # `\\n` -> newline.
         for f in report.findings:
             flat = f.message.replace("\\", "\\\\").replace("\n", "\\n")
             print(

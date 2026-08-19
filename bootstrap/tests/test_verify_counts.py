@@ -7,12 +7,12 @@ exercise the real files, not a re-implementation.
 
 Pins the proposal/plan provisions:
 
-* RR1 -- same-line annotation window; registry-authoritative ``as_of``;
+* same-line annotation window; registry-authoritative ``as_of``;
   a ``Snapshot`` is never re-measured.
-* RR2 -- an absent ``Invariant`` root degrades to a *visible* skip (exit 3),
+* an absent ``Invariant`` root degrades to a *visible* skip (exit 3),
   never a silent pass or a hard failure.
 * Refusal -- an unregistered verify key is refused (exit 1), no silent pass.
-* IR3 (Security) -- the ``count_*`` functions cannot escape their code-given
+* (Security) the ``count_*`` functions cannot escape their code-given
   ``root`` via a symlink, and ``git_commits_in_range`` rejects an unsafe
   rev-range and runs git ``shell=False``.
 
@@ -66,7 +66,7 @@ def _file_of_n_lines(root: Path, name: str, n: int) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# RR1 -- annotation parsing (the same-line, immediately-preceding window).
+# Annotation parsing (the same-line, immediately-preceding window).
 # ---------------------------------------------------------------------------
 
 
@@ -126,7 +126,7 @@ class TestInvariant:
 
     def test_missing_target_is_error_not_skip(self, vc, m, tmp_path):
         # root present but target absent -> a measurement error (the
-        # registry is wrong), exit 1 -- distinct from RR2's absent-root skip.
+        # registry is wrong), exit 1 -- distinct from the absent-root skip.
         registry = {"k": m.Invariant(tmp_path, "count_lines", "gone.py")}
         results = vc.verify_text(
             "42 `<!-- verify: k -->`", tmp_path / "doc.md", registry, m,
@@ -136,7 +136,7 @@ class TestInvariant:
 
 
 # ---------------------------------------------------------------------------
-# RR2 -- absent root skips visibly.
+# An absent root skips visibly.
 # ---------------------------------------------------------------------------
 
 
@@ -189,13 +189,13 @@ class TestRefusal:
 
 
 # ---------------------------------------------------------------------------
-# RR1 -- Snapshot is never re-measured.
+# A Snapshot is never re-measured.
 # ---------------------------------------------------------------------------
 
 
 class TestSnapshot:
     def test_snapshot_passes_on_value_and_iso_date(self, vc, m, tmp_path):
-        # RR1: the annotation sits immediately after the number; the ISO
+        # The annotation sits immediately after the number; the ISO
         # as_of date appears elsewhere on the line (here, after it).
         registry = {"k": m.Snapshot(728, "2026-05-11")}
         results = vc.verify_text(
@@ -235,7 +235,7 @@ class TestSnapshot:
 
 
 # ---------------------------------------------------------------------------
-# IR3 (Security) -- root containment + no shell.
+# Security: root containment + no shell.
 # ---------------------------------------------------------------------------
 
 
@@ -351,7 +351,7 @@ class TestMeasurePrimitives:
 
 class TestSeedRegistryAndMain:
     def test_seed_registry_keys_are_small_and_valid(self, m):
-        # RR3 soft cap; every entry is an Invariant or Snapshot with an
+        # Soft cap; every entry is an Invariant or Snapshot with an
         # allowlisted fn.
         assert len(m.REGISTRY) <= 10
         for entry in m.REGISTRY.values():

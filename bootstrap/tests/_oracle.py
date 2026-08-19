@@ -28,15 +28,15 @@ in a **fixed, recorded matrix**, it:
 3. **normalizes only the enumerated provenance fields** (``cairn_version`` /
    ``cairn_commit`` in the lockfile) so a commit/version advancing *between* the
    two runs cannot masquerade as a behavior diff. A broad normalization that
-   could hide a content diff is rejected (P2#5) — in particular **per-file
+   could hide a content diff is rejected — in particular **per-file
    content hashes are NOT normalized**: they are the content guard;
 4. enumerates the **location-dependent** untracked files (the interpreter
    binding embeds each tree's own absolute path, so it differs by construction)
    — presence parity is still asserted, but bytes are not compared;
 5. emits a **machine-readable JSON report** so the per-stage gate is bounded and
-   auditable rather than a hand-recorded "green" (P2#7).
+   auditable rather than a hand-recorded "green".
 
-Coverage (substrate Security Review F3): the matrix is not only fresh install.
+Coverage: the matrix is not only fresh install.
 It also exercises the **privileged workflows** most likely to change when
 subsystems move — ``upgrade --stage`` + ``--apply`` (the lockfile + base-cache
 write path, via a real upstream template delta), the **containment refusal**
@@ -80,7 +80,7 @@ except ImportError:  # script mode: `python bootstrap/tests/_oracle.py`
 
 REPORT_SCHEMA = "cairn.scaffold_split.oracle/v1"
 
-# The fixed, recorded fixture matrix (P2#7: bounded + auditable). The three
+# The fixed, recorded fixture matrix -- bounded and auditable. The three
 # shipped presets span minimal -> rich module rosters, so the install path is
 # exercised across core + skills + onboarding + the team-gated module set.
 FIXTURES: tuple[dict[str, str], ...] = (
@@ -187,7 +187,7 @@ def _compare(frozen: dict[str, bytes], current: dict[str, bytes]) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Privileged-workflow differential scenarios (substrate Security Review F3).
+# Privileged-workflow differential scenarios.
 #
 # Fresh-install parity (above) is necessary but not sufficient: the high-authority
 # paths most likely to change when subsystems move are upgrade stage/apply (the
@@ -230,7 +230,7 @@ def _git(target: Path, *args: str):
 
 def _git_init_commit(target: Path) -> None:
     """Init + commit; raise (don't let a git setup failure flow silently into the
-    later scenario, re-review R2)."""
+    later scenario)."""
     for args in (("init", "-q"), ("add", "-A"),
                  ("-c", "user.email=oracle@test", "-c", "user.name=oracle",
                   "commit", "-q", "-m", "init")):
@@ -270,7 +270,7 @@ def _neutralize_profile_directives(cairn_root: Path) -> None:
 def _copy_cairn(dst: Path, src: Path = CAIRN_ROOT) -> None:
     """An editable copy of a Cairn tree (templates included) so an upstream
     template delta can be introduced for upgrade scenarios. *src* is the
-    **evaluated target** root (P1.2), not necessarily where the verifier code runs.
+    **evaluated target** root, not necessarily where the verifier code runs.
     .git is excluded; profile-conditional directives are neutralized."""
     shutil.copytree(src, dst,
                     ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"))
@@ -308,7 +308,7 @@ def _upgrade_apply_scenario(workdir: Path, engines, target_root: Path = CAIRN_RO
     `upgrade --stage` + `--apply` each with its own engine; byte-compare the
     resulting trees. ``engines`` = ``[(label, engine, run_root), ...]`` with
     ``engines[0]`` the baseline and ``engines[1]`` the current; templates come
-    from the evaluated ``target_root`` (P1.2)."""
+    from the evaluated ``target_root``."""
     cairn_copy = workdir / "cc_apply"
     _copy_cairn(cairn_copy, target_root)
     trees: dict[str, Path] = {}
@@ -445,7 +445,7 @@ def run_oracle(workdir: Path, baseline_ref: str | None = None,
     """**Refactor-scoped** differential run. *repo* is the **trusted checkout**
     that supplies the verifier logic + baseline authority; *target_root* is the
     **evaluated target** that supplies the *current* engine + templates being
-    measured (P1.2 — they may differ; the verifier never measures itself). It
+    measured — they may differ; the verifier never measures itself. It
     runs only when a baseline ref *and* an out-of-band trusted ref are configured;
     no baseline → **not applicable**; a baseline that cannot be trust-verified
     **fails closed** (``materialize`` raises before any extraction or execution).

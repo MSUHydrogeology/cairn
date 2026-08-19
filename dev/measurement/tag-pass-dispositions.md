@@ -318,3 +318,43 @@ family, but a plan *filename* is not one of the three tag classes this pass
 enumerates, so they were left. Widening the pass mid-execution to a class the
 review never scoped would be a deviation; if they should go, that is a separate
 proposal, not a silent extension of this one.
+
+### Batch: the quality gate, verify_counts, and the differential oracle
+
+| File | Before | After | Kept, and why |
+|---|---:|---:|---|
+| `scripts/quality_gate.py` | 16 | 14 | `R1` / `R6` / `R7` — see below. Removed: two `P1`/`P2` code-review citations. |
+| `scripts/verify_counts.py` | 7 | 0 | — |
+| `bootstrap/tests/test_verify_counts.py` | 10 | 0 | — |
+| `bootstrap/tests/test_oracle.py` | 10 | 0 | — |
+| `bootstrap/tests/_oracle.py` | 9 | 0 | — |
+
+**`R1`/`R6`/`R7` are live, and the evidence is published doctrine.**
+`doctrine/consolidation-review.md` *defines* them — `R1` is the n-gram overlap
+detector, `R6` the unreferenced-def AST walk, `R7` the per-dimension capability
+checklist — and its dispositions log records entries under `redundancy / R6`.
+The gate then **emits the token at runtime**: a redundancy run prints
+`R6 def <name> is never referenced ...`, and the exemption file
+`scripts/quality_gate_unused_def_whitelist.py` is described as "the `R6`
+whitelist". A reader who meets `R6` in a comment can resolve it in one hop to a
+living document and to output they can reproduce. That is the liveness test
+passing on all three legs at once — defined, cited, executed.
+
+**`RR1`/`RR2`/`RR3`/`IR3` in `verify_counts.py` look identical and are not.**
+Its module docstring also defines them inline — "`RR1` -- the annotation
+contract", "`RR2` -- absent root skips visibly". But **self-definition is not
+liveness.** Nothing emits them, no whitelist is named for them, and the
+originating plan (`dev/plans/archive/lockfile-provenance-fields.md`) is
+archived; they are paragraph numbering with the real name sitting immediately
+after it. Each became a bold descriptive lead — *"**The annotation contract.**"*
+— which is what the reader needed in the first place.
+
+**The near-miss worth recording.** Grepping the tree for `RR2` returns
+`test_scaffold_substrate.py::test_RR2_symlinked_guard_refused_via_launcher`,
+pinned by name in `bootstrap/tests/fixtures/gate_manifest.json`. That is a
+**different plan's `RR2`**, in a different file, frozen into a manifest. Had the
+grep been read as "`RR2` is live, keep it", the wrong tokens would have survived
+here; had it been read as "the manifest pins it, so rename it", it would have
+broken a frozen surface. A tree-grep on a short token returns homographs — the
+hit has to be opened and shown to be *this* coordinate, not merely the same
+string. Those test **names** are Chunk D's problem and are gated there.
