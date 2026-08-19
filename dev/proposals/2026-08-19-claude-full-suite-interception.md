@@ -13,7 +13,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-decision
+**Status**: accepted
 **Assurance path**: **high-assurance** — the change edits
 `bootstrap/tests/conftest.py`, which is gate-frozen and already carries the
 release-gate outcome rule, and it can **refuse to run the suite**. *(Metadata
@@ -2183,3 +2183,20 @@ previously measured broad `--ignore` case.
 suite, inspect implementation bytes, execute the release chain, or perform the
 re-anchor. The declared External plan review and independently triggered
 Security Review remain required.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-19
+
+**ACCEPTED as revised (Revision 5).** Authorization, quoted verbatim and visually isolated:
+
+> "I authorize you to script my acceptance of both proposals. For the full-suite-interception proposal, please append this statement "Boundary B's canonical pair now requires CAIRN_FULL_SUITE=1; verification records written before this guard cite the bare form and are accurate for the runs they describe.""
+
+**Summary of accepted terms (Revision 5)**:
+- **In-Suite Broad-Run Guard**: Implemented via `pytest_collection_finish(session)` in `bootstrap/tests/conftest.py`, raising `pytest.UsageError` (exit code 4) when cleanly collected items span more than 40 distinct test files.
+- **Pre-existing Failure Precedence**: The guard triggers only when collection completes without pre-existing failure (`session.testsfailed == 0`), preserving syntax/collection-error diagnostics (exit 2).
+- **Explicit Exemptions**: `CAIRN_FULL_SUITE=1`, `--collect-only`, and release mode (`CAIRN_RELEASE_GATE_ACTIVE=1`).
+- **Additive Child Environment**: `scripts/quality_gate.py` (order-independence sub-gate) explicitly copies the complete parent environment and adds `CAIRN_FULL_SUITE=1` so release tokens are preserved.
+- **Verification Rule Clarification**: Boundary B's canonical pair now requires `CAIRN_FULL_SUITE=1`; verification records written before this guard cite the bare form and are accurate for the runs they describe.
+- **Plan Review Requirement**: The derived plan takes `Plan review: required(External)`.
+
+**Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
+
