@@ -8,8 +8,8 @@ allow-directive family was ported into Cairn (commit pending).
 
 Covers:
 
-* ``claim-check-allow`` path-exemption directive -- R1 narrow-glob
-  validation (the ``allow_glob_error`` rules), R2 exact-token reporting,
+* ``claim-check-allow`` path-exemption directive -- narrow-glob
+  validation (the ``allow_glob_error`` rules), exact-token reporting,
   matching vs. non-matching behavior, the "local-line-bounds not
   silenced" boundary, prose-shown-not-parsed.
 * The ``CheckResult.exempted`` field and the stdout-side audit lines
@@ -89,12 +89,12 @@ def _make_repo(root: Path) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# R1 -- ``claim-check-allow`` globs must be narrow.
+# ``claim-check-allow`` globs must be narrow.
 # ---------------------------------------------------------------------------
 
 
 class TestAllowGlobValidation:
-    """R1 -- a wildcard must be preceded by >= 2 literal path segments
+    """A wildcard must be preceded by >= 2 literal path segments
     (or the glob must be fully literal), so a directive cannot exempt a
     whole top-level directory or everything; the final path segment
     must also carry a literal filename stem (no ``dir/sub/*``).
@@ -139,7 +139,7 @@ class TestAllowGlobValidation:
 
 class TestClaimCheckAllowDirective:
     """Exempts matching would-be-hard path / line-bounds tokens
-    document-wide (R1 narrow-glob validation, R2 exact-token report),
+    document-wide (narrow-glob validation, exact-token report),
     without editing any append-only review block.
     """
 
@@ -153,7 +153,7 @@ class TestClaimCheckAllowDirective:
         assert hard == []
 
     def test_directive_records_exact_exemption(self, cc, tmp_path):
-        # R2: the exempted token + matching glob are on the result.
+        # The exempted token + matching glob are on the result.
         _make_repo(tmp_path)
         doc = tmp_path / "d.md"
         doc.write_text(
@@ -189,7 +189,7 @@ class TestClaimCheckAllowDirective:
         assert hard[0].kind == "path"
 
     def test_too_broad_glob_hard_flags_and_does_not_exempt(self, cc, tmp_path):
-        # R1: `dev/*` is rejected -> a `directive` hard flag, AND the
+        # `dev/*` is rejected -> a `directive` hard flag, AND the
         # path it would have exempted still hard-flags.
         _make_repo(tmp_path)
         text = (
@@ -203,7 +203,7 @@ class TestClaimCheckAllowDirective:
     def test_exemption_reported_with_exact_token(
         self, cc, tmp_path, capsys
     ):
-        # R2: main() names the exact exempted token in its output.
+        # main() names the exact exempted token in its output.
         _make_repo(tmp_path)
         doc = tmp_path / "d.md"
         doc.write_text(
@@ -325,7 +325,7 @@ class TestDefaultExemptFrameworkPaths:
         assert [f.token for f in hard] == ["dev/.cairn-upgrade-bak/x.txt"]
 
     def test_exact_path_does_not_exempt_suffix(self, cc, tmp_path):
-        # R3 (External review): dev/intents.jsonl.bak must NOT inherit the
+        # dev/intents.jsonl.bak must NOT inherit the
         # exemption of the exact entry dev/intents.jsonl.
         _make_repo(tmp_path)
         hard, _soft = cc.check_text("a stale `dev/intents.jsonl.bak`", tmp_path)
@@ -333,7 +333,7 @@ class TestDefaultExemptFrameworkPaths:
 
     def test_committed_lockfile_under_cairn_still_checked(self, cc, tmp_path):
         # The .cairn/ subtree is NOT blanket-exempt: a non-existent
-        # committed-class file under it still hard-flags (R3 breadth concern).
+        # committed-class file under it still hard-flags.
         _make_repo(tmp_path)
         hard, _soft = cc.check_text("missing `dev/.cairn/cairn-lock.yml`", tmp_path)
         assert [f.token for f in hard] == ["dev/.cairn/cairn-lock.yml"]
@@ -407,7 +407,7 @@ class TestCountSoftFlagRetired:
         assert "OK, no claim-check flags" in capsys.readouterr().out
 
 
-# --- `path::node` node citations (board-drain-guards R1/R2) -------------------
+# --- `path::node` node citations -------------------------------------------
 #
 # `doctrine/lifecycle.md` > "Archive precondition" mandates `path::node` as the
 # citation form for a `guard` disposition. Before this fix the checker resolved
@@ -463,7 +463,7 @@ def test_line_bounds_citation_is_unchanged_by_the_node_fix(cc, tmp_path):
 
 
 def test_parametrised_node_id_is_not_flagged(cc, tmp_path):
-    """Guards plan-review [P7]: the first assertion must not be passing
+    """The first assertion must not be passing
     via the placeholder exemption. Brackets are NOT in
     ``_PLACEHOLDER_CHARS``, so a parametrised id genuinely reaches the
     check rather than being waived upstream."""
@@ -476,7 +476,7 @@ def test_parametrised_node_id_is_not_flagged(cc, tmp_path):
 
 
 def test_node_citation_whose_path_half_is_a_directory_is_flagged(cc, tmp_path):
-    """Code-review [C3]: a node citation names a test node, which lives in
+    """A node citation names a test node, which lives in
     a FILE. `.exists()` let a directory path half through, which is a
     fail-open widening the bare-path branch does not have."""
     hard = _hard(cc, tmp_path, "A guard cites `bootstrap/tests::test_x`.\n")
@@ -484,26 +484,26 @@ def test_node_citation_whose_path_half_is_a_directory_is_flagged(cc, tmp_path):
 
 
 def test_bare_directory_path_is_still_accepted(cc, tmp_path):
-    """The [C3] fix must not spill onto the bare-path branch: a directory
+    """The fix must not spill onto the bare-path branch: a directory
     is a legitimate path claim when cited without a `::node`."""
     hard = _hard(cc, tmp_path, "See `bootstrap/tests`.\n")
     assert hard == [], [f.message for f in hard]
 
 
 # ---------------------------------------------------------------------------
-# Chunk D1 -- exact lifecycle active-to-archive resolution (accepted
-# `claim-check-exemption-hygiene` proposal, Section 1 / Revision 1 R2).
+# Exact lifecycle active-to-archive resolution (accepted
+# `claim-check-exemption-hygiene` proposal, Section 1).
 #
-# Scope note: this covers only what D1 makes testable -- the resolution
+# Scope note: this covers only the resolution
 # mechanism itself (exact same-family fallback, direct-path priority, the
 # archived-file line-bounds check, and claim-check's own defense-in-depth
 # duplicate-identity refusal).  Typed-declaration registry exactness and
-# unused-glob / archive-redundant-glob liveness classification are D3/D4
+# unused-glob / archive-redundant-glob liveness classification are
 # (Opus tier, not implemented here) -- see the plan's Chunk D table.
 #
 # `_make_lifecycle_repo` is deliberately self-contained rather than an
 # extension of `_make_repo` above, to avoid coupling this chunk's fixture
-# needs to whatever shape the D3/D4 registry/liveness tests end up wanting
+# needs to whatever shape the registry/liveness tests end up wanting
 # from the shared helper.
 # ---------------------------------------------------------------------------
 
@@ -528,7 +528,7 @@ def _write_lines(path: Path, n: int) -> None:
 
 
 class TestLifecycleArchiveResolution:
-    """D1: exact `dev/{proposals,plans}/<file>.md` -> `.../archive/<file>.md`
+    """Exact `dev/{proposals,plans}/<file>.md` -> `.../archive/<file>.md`
     resolution, direct-path priority, and archived-file line bounds."""
 
     def test_exact_archive_sibling_resolves(self, cc, tmp_path):
@@ -600,7 +600,7 @@ class TestLifecycleArchiveResolution:
     def test_duplicate_active_and_archived_identity_hard_flags(
         self, cc, tmp_path
     ):
-        # R2: "Claim-check also fails closed if it encounters both
+        # "Claim-check also fails closed if it encounters both
         # candidates while resolving a lifecycle token."  Direct-path
         # priority does not silently normalize a duplicate identity.
         _make_lifecycle_repo(tmp_path)
@@ -642,7 +642,7 @@ class TestLifecycleArchiveResolution:
 
     def test_archive_resolution_limited_to_lifecycle_dirs(self, cc, tmp_path):
         # "the path-limited historical predicate for the dropped prefix"
-        # (D5 cell): the resolution rule is limited to exactly the two
+        # The resolution rule is limited to exactly the two
         # `dev/proposals/` and `dev/plans/` prefixes -- a missing file
         # under any OTHER top-level directory must not resolve against a
         # same-shaped `<dir>/archive/<file>` sibling, even though one
@@ -659,10 +659,10 @@ class TestLifecycleArchiveResolution:
 
 
 # ---------------------------------------------------------------------------
-# Chunk D3/D4 -- the typed-declaration registry and liveness (accepted
-# `claim-check-exemption-hygiene` proposal, Section 2 / Revision 1 R3).
+# The typed-declaration registry and liveness (accepted
+# `claim-check-exemption-hygiene` proposal, Section 2).
 #
-# These are the two D5 cells left by the D1/D2/D5 commit (`4723107`):
+# These are the two cells left by `4723107`:
 # **registry exactness** and **liveness**.  Liveness is only decidable per
 # artifact, so every node here goes through `check_file` with the document
 # written *inside* the fixture repo -- `check_text`, which takes text and no
@@ -701,7 +701,7 @@ def _check(cc: ModuleType, root: Path, rel: str, body: str):
 
 
 class TestTypedRegistryExactness:
-    """D3: a marker block is a document registry of **literal** paths --
+    """A marker block is a document registry of **literal** paths --
     document-wide, exact, and reported with the authorizing declaration."""
 
     def test_declared_path_is_exempt_where_it_recurs_outside_its_block(
@@ -853,7 +853,7 @@ class TestTypedRegistryExactness:
     def test_registry_never_silences_a_flag_on_a_path_that_exists(
         self, cc, tmp_path,
     ):
-        # R2 parity with the allow-directive: an out-of-range line-bounds
+        # Parity with the allow-directive: an out-of-range line-bounds
         # citation into a REAL file is the stale-anchor class claim_check
         # exists to catch, and no declaration may waive it.
         _make_registry_repo(tmp_path)
@@ -878,7 +878,7 @@ class TestTypedRegistryExactness:
 
 
 class TestLiveness:
-    """D4: on a non-terminal lifecycle artifact an exemption must still be
+    """On a non-terminal lifecycle artifact an exemption must still be
     doing work; an immutable artifact is grandfathered; and a redundancy
     *this change* created reports as a migration item, never a hard flag."""
 
@@ -939,7 +939,7 @@ class TestLiveness:
 
     def test_a_materialized_declaration_hard_fails(self, cc, tmp_path):
         # "A proposed entry whose local path has materialized is unused"
-        # (Revision 1 R3).
+        # (Revision 1).
         _make_registry_repo(tmp_path)
         (tmp_path / "scripts" / "landed.py").write_text("# landed\n")
         result = _check(cc, tmp_path, "dev/plans/host.md", _PLAN_HEADER + (
@@ -1003,7 +1003,7 @@ class TestLiveness:
     def test_terminal_status_grandfathers_a_non_archived_proposal(
         self, cc, tmp_path, status,
     ):
-        # [C3]: grandfather on immutability, not on directory -- a proposal
+        # Grandfather on immutability, not on directory -- a proposal
         # still sitting in `dev/proposals/` is immutable once terminal.
         _make_registry_repo(tmp_path)
         result = _check(
@@ -1041,7 +1041,7 @@ class TestLiveness:
         self, cc, tmp_path, header,
     ):
         # "A missing, duplicate, or unrecognized lifecycle status does not
-        # silently gain grandfathering" (Revision 1 R3).  Fail closed INTO
+        # silently gain grandfathering" (Revision 1).  Fail closed INTO
         # liveness.
         _make_registry_repo(tmp_path)
         result = _check(
@@ -1056,7 +1056,7 @@ class TestLiveness:
     def test_liveness_does_not_run_on_a_non_lifecycle_surface(
         self, cc, tmp_path,
     ):
-        # R4's scope fence: strategy / doctrine / module / changelog /
+        # The scope fence: strategy / doctrine / module / changelog /
         # template surfaces keep their existing behavior by declaration.
         _make_registry_repo(tmp_path)
         for rel in ("docs/notes.md", "dev/plans/_template.md",

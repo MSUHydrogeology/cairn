@@ -6,18 +6,13 @@ Source contract: accepted proposal
 operative board clauses are spread across three revisions and the delta
 statements resolve them:
 
-* **B0** Revision 2 -- purpose and authority boundary.
-* **B1** Revision 3's *"B1 replacement"* -- the row contract, including
-  ``active_intent``.  Revision 2's B1 is superseded.
-* **B2** Revision 2 -- ``--format json``, the three filters, ``--explain``.
-* **B3** Revision 2 (*"one parser, one pass, no cache"*) **plus** Revision 3's
-  *"B3 addition"* (the optional provider).  Revision 3 says *addition*, so the
-  Revision 2 clause is still binding.
-* **B4** Revision 4's *"B4 final replacement"* -- ``isprintable()`` plus the
-  explicit unsafe-range table.  It replaces Revision 3's category-only rule,
-  which replaced Revision 2's.
-* **B7** Revision 2 + Revision 3's *"B7 additions"*, with the Unicode bullet
-  replaced by Revision 4's *"B7 final Unicode falsifier"*.
+* purpose and authority boundary -- what the board is, and what it is not.
+* the row contract, including ``active_intent``.
+* ``--format json``, the three filters, ``--explain``.
+* one parser, one pass, no cache, plus the optional work-intent provider
+  stacked on top of that rule rather than replacing it.
+* one terminal encoder: ``isprintable()`` plus the delimiter guard.
+* the falsifiers, including the Unicode one.
 
 The load-bearing shape of this module is that the Unicode oracle is
 **directional**: the expanded content-scan display-unsafe population must be a
@@ -186,7 +181,7 @@ def _cells(out: str) -> list[dict]:
 
 
 # =============================================================================
-# B1 -- the compact row contract
+# the compact row contract
 # =============================================================================
 
 
@@ -194,7 +189,7 @@ class TestCompactRows:
 
     def test_one_row_per_active_artifact_in_declared_order(
             self, tmp_path, monkeypatch, capsys):
-        """B1: one line per active direct child, sorted by kind then stem, with
+        """One line per active direct child, sorted by kind then stem, with
         templates and the archive tree excluded."""
         repo = _make_repo(tmp_path)
         _write_proposal(repo, "b-prop", status="awaiting-review")
@@ -258,7 +253,8 @@ class TestCompactRows:
 
 
 class TestOwnerVocabulary:
-    """B1's `owner` comes from the central vocabulary, and B3 forbids a
+    """`owner` comes from the central vocabulary, and a second local table is
+    forbidden -- a
     consumer-local role table.  These nodes bind the new table to the state
     machine that already existed rather than to a hand-written expectation."""
 
@@ -293,9 +289,9 @@ class TestOwnerVocabulary:
         assert planner.next_owner("proposal", "") == planner.NEXT_OWNER_UNKNOWN
 
     def test_the_legacy_multi_successor_tokens_report_unresolved(self):
-        """R7 maps `reviewed`, `revised` and `review` to more than one successor
+        """`reviewed`, `revised` and `review` map to more than one successor
         state whose owners differ, so the board says so instead of guessing --
-        the same refusal B1 requires for `status`."""
+        the same refusal required for `status`."""
         assert planner.next_owner("proposal", "reviewed") == \
             planner.NEXT_OWNER_UNRESOLVED
         assert planner.next_owner("proposal", "revised") == \
@@ -306,14 +302,14 @@ class TestOwnerVocabulary:
     def test_the_retained_historical_owner_rows_are_not_dead_weight(self):
         """The other three retained rows, which nothing else visits.
 
-        Code review [C2]: after H1 retired the six tokens, `TestOwnerVocabulary`'s
+        After the migration retired the six tokens, `TestOwnerVocabulary`'s
         general coverage iterates the CURRENT tuples, so it stops visiting the
         historical rows entirely. The sibling node above pins `reviewed`,
         `revised` and `review` because they resolve to `unresolved`; these three
         resolve to a REAL owner and were pinned by nothing at all -- deleting
         them as dead weight passed the whole suite.
 
-        Why they must stay ([C3] corrected the reason): not for archived
+        Why they must stay: not for archived
         artifacts -- none declares a historical token, and the archive tree is
         unreachable from `next_owner`'s only call site -- but for an artifact
         still ACTIVE on a retired token, mid-migration or hand-copied from an
@@ -409,7 +405,7 @@ class TestReviewAndEvidenceSummaries:
 
     def test_boundary_b_and_a_blocking_code_review_both_appear(
             self, tmp_path, monkeypatch, capsys):
-        """B1: *"The board does not compress a blocking finding into a clearing
+        """*"The board does not compress a blocking finding into a clearing
         verdict."*  The verdict class is read through the shared
         `_parse_verdict`, so `blocking` reaches the row verbatim."""
         repo = _make_repo(tmp_path)
@@ -450,7 +446,7 @@ class TestReviewAndEvidenceSummaries:
 
 
 class TestBlockedByHasNoAuthority:
-    """R4: the field *"never changes the legal state machine and never
+    """The field *"never changes the legal state machine and never
     substitutes for status"*.  The board displays it and nothing more."""
 
     def test_the_exact_value_is_displayed(self, tmp_path, monkeypatch, capsys):
@@ -498,7 +494,7 @@ class TestBlockedByHasNoAuthority:
 
 
 # =============================================================================
-# B1 / B3 -- validity, visibility, and exit status
+# validity, visibility, and exit status
 # =============================================================================
 
 
@@ -523,7 +519,7 @@ _R6_CONTRADICTIONS = {
 
 
 class TestOneReasonThroughEverySurface:
-    """B7: *"every R6 contradiction producing the same stable reason through
+    """*"every contradiction producing the same stable reason through
     `scan`, `next`, compact board, and JSON"*."""
 
     @pytest.mark.parametrize("case", sorted(_R6_CONTRADICTIONS))
@@ -652,7 +648,7 @@ class TestMalformedRecordsStayVisible:
 
 
 # =============================================================================
-# B1 -- source labels; B3 -- bounded git, no writes, no cache
+# source labels; bounded git, no writes, no cache
 # =============================================================================
 
 
@@ -690,7 +686,7 @@ class TestSourceLabels:
 
     def test_git_unavailable_is_unbound_never_head(
             self, tmp_path, monkeypatch, capsys):
-        """B4: *"it does not silently label working-tree content as HEAD"*.  An
+        """*"it does not silently label working-tree content as HEAD"*.  An
         unborn HEAD is the reachable case -- a repository with no commit."""
         repo = _make_repo(tmp_path)
         _write_plan(repo, "p", status="implementing")
@@ -759,7 +755,7 @@ class TestReadOnlyBoundedAndUncached:
 
     def test_git_invocation_count_does_not_grow_with_rows(
             self, tmp_path, monkeypatch, capsys):
-        """B3: *"Repository state is obtained in a bounded batch, not through one
+        """*"Repository state is obtained in a bounded batch, not through one
         Git subprocess per row."*  Two fixture repos differing only in row count
         must cost the same number of git invocations."""
         counts = {}
@@ -786,7 +782,7 @@ class TestReadOnlyBoundedAndUncached:
 
 
 # =============================================================================
-# B2 -- filters, JSON contract, focused inspection
+# filters, JSON contract, focused inspection
 # =============================================================================
 
 
@@ -828,7 +824,7 @@ class TestFiltersAndJson:
     ])
     def test_unknown_filter_values_fail_closed_with_usage_error(
             self, tmp_path, monkeypatch, capsys, argv):
-        """B2: *"Unknown filter values fail closed with usage error."*  Never an
+        """*"Unknown filter values fail closed with usage error."*  Never an
         empty board, which would read as "nothing matches"."""
         repo = _make_repo(tmp_path, name="repo-" + argv[1].strip("-"))
         _write_plan(repo, "p", status="implementing")
@@ -866,7 +862,7 @@ class TestFiltersAndJson:
                         ["board", "--format", "json"])[1]
         assert first == second
         assert first.isascii(), "ensure_ascii=True must hold for the payload"
-        # The full value survives in JSON (B2), escaped by the stdlib encoder --
+        # The full value survives in JSON, escaped by the stdlib encoder --
         # the terminal encoder governs the compact projection, not this one.
         assert json.loads(first)["rows"][0]["blocked_by"] == \
             "caf\u00e9 \u4e2d\u6587 \u200b"
@@ -907,7 +903,7 @@ class TestFiltersAndJson:
 
 
 # =============================================================================
-# B4 (Revision 4) -- the terminal encoder, and B7's DIRECTIONAL drift oracle
+# the terminal encoder, and its DIRECTIONAL drift oracle
 # =============================================================================
 
 
@@ -915,7 +911,7 @@ def _scanner_display_unsafe_population() -> set[str]:
     """Expand **every** member and **every code point** of the reviewed
     content-scan inventory.
 
-    Revision 4's B7: *"It imports the Cairn content scanner in the test
+    *"It imports the Cairn content scanner in the test
     environment, expands every member of the three sets, every code point in
     `_IGNORABLE_RANGES` and `_NONCHARACTER_RANGES`, the complete `_TAG_RANGE`,
     and `_ASCII_GUARD`."*  Not a hand-copied sample: the sets are read from the
@@ -946,7 +942,7 @@ class TestDirectionalDriftGuard:
     """
 
     def test_the_population_under_test_is_not_a_token_sample(self):
-        """A guard on the guard.  [F1] was raised because a three-set population
+        """A guard on the guard.  Raised because a three-set population
         *could not contain* its own counterexamples; if this population ever
         shrinks to a handful, the subset assertion below goes quietly green."""
         population = _scanner_display_unsafe_population()
@@ -1156,7 +1152,7 @@ class TestInjectionThroughEveryCompactFieldPosition:
 
 
 # =============================================================================
-# B3 (Revision 3 addition) -- the optional work-intent provider
+# the optional work-intent provider
 # =============================================================================
 
 
@@ -1245,7 +1241,7 @@ class TestProviderInvocation:
 
     def test_exactly_one_subprocess_per_board_whatever_the_row_count(
             self, tmp_path, monkeypatch, capsys):
-        """B3: *"The board obtains all active claims in one bounded query, not one
+        """*"The board obtains all active claims in one bounded query, not one
         subprocess per row."*"""
         repo, record, module = _provider_repo(
             tmp_path, "one-call", payload=_payload([]))
@@ -1646,7 +1642,7 @@ class TestActiveIntentColumn:
 
     def test_explain_shows_each_claims_full_record_encoded(
             self, tmp_path, monkeypatch, capsys):
-        """B1: *"`board --explain` shows each intersecting claim's id, recorded
+        """*"`board --explain` shows each intersecting claim\'s id, recorded
         agent, timestamp, action, and files after the same terminal-safe
         encoding"*."""
         repo, _record, module = _provider_repo(
@@ -1680,7 +1676,7 @@ class TestActiveIntentColumn:
 
 
 # =============================================================================
-# B8 -- the versioned intent JSON, and twin parity
+# the versioned intent JSON, and twin parity
 # =============================================================================
 
 
@@ -1824,7 +1820,7 @@ class TestTwinParity:
 
 
 class TestBoardIsNotAuthority:
-    """B0: *"It is not a new roadmap, queue, priority engine, review
+    """*"It is not a new roadmap, queue, priority engine, review
     attestation, or source of lifecycle truth."*"""
 
     def test_the_board_writes_no_generated_file(self, tmp_path, monkeypatch,
@@ -1848,7 +1844,7 @@ class TestBoardIsNotAuthority:
         assert "derived view" in out
 
     def test_the_board_contains_no_second_status_or_verdict_vocabulary(self):
-        """B3: *"contains no consumer-local status, role, tier, verdict, or
+        """*"contains no consumer-local status, role, tier, verdict, or
         closeout vocabulary"*.  The board section is inside the planner, so the
         property is that it *reads* the central declarations rather than
         redefining them."""

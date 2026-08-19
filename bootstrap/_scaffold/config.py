@@ -9,7 +9,7 @@ preset / six-axis resolution that derives a module roster + profile summary.
 A **pure stdlib leaf**: it imports only the standard library and holds no
 adopter-tree writes (the dev-tree / gitignore / fan-out writers stay in the
 engine; they consume this module's data). **This module** owns no file writes and
-no CLI/upgrade execution; importing it defines names only (import-purity, SR2).
+no CLI/upgrade execution; importing it defines names only (import-purity).
 Note this is an *ownership* property, not a runtime-loading boundary: importing
 ``bootstrap._scaffold.config`` runs the eager package facade
 (``bootstrap._scaffold.__init__``) first, which loads the whole engine
@@ -67,7 +67,7 @@ KNOWN_TOKENS: frozenset[str] = frozenset(
         "claim_check_command",
         "metrics_command",
         # The repo-relative Python package a python-security adopter scans
-        # (security-apparatus-enrichment Chunk B0 / C; RV2).  A *required*
+        # A *required*
         # token for that module -- see ``_MODULE_REQUIRED_TOKENS`` and the
         # selected-module required-token preflight that fails closed before
         # any write when a selected module's required token is unfilled.
@@ -537,7 +537,7 @@ def load_config(config_path: Path) -> dict[str, Any]:
 _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # repo root
     ("core/AGENTS.md",                              "AGENTS.md"),
-    # Licensing notice (adopter-licensing-compliance P1): discharges the MIT
+    # Licensing notice: discharges the MIT
     # notice-retention + CC-BY attribution obligations for the whole
     # installed tree with one file. Installs unconditionally, like AGENTS.md.
     ("core/NOTICE.md",                              "NOTICE.md"),
@@ -714,7 +714,7 @@ def duplicate_destinations(
     """Map each destination claimed by **more than one** owner to its owner
     labels; empty dict means every destination is uniquely owned.
 
-    The shared destination-ownership preflight (External-Security review P1#2): a
+    The shared destination-ownership preflight: a
     duplicate destination means one ``InstallSpec`` silently shadows another on a
     ``--force`` install, or the published manifest emits two rows for one path.
     Each entry is ``(owner_label, dst)``.  Pure leaf logic; the callers choose the
@@ -729,7 +729,7 @@ def duplicate_destinations(
 # Module name → list of InstallSpec (1:many).  Most modules install a
 # single substituted ``.md`` doctrine file; the two default-on
 # discipline modules also install their reference *script* verbatim
-# (Cairn v0.2 P1).  The script ``dst`` paths are the single source of
+# The script ``dst`` paths are the single source of
 # truth for the command-token defaults below (see
 # ``_REFERENCE_SCRIPT_TOKEN`` and ``reference_script_token_defaults``)
 # so the doc's "run it via {{...}}" line and the install destination
@@ -889,8 +889,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
     "coordination-tiers": [
         InstallSpec("team-gated/coordination-tiers.md",
                     "dev/modules/coordination-tiers.md"),
-        # Cairn v0.2 P5: the work-intent tool ships verbatim alongside the
-        # doctrine (1:many, the P1 claim-check/lifecycle-metrics pattern).
+        # The work-intent tool ships verbatim alongside the
+        # doctrine (1:many, the claim-check / lifecycle-metrics pattern).
         InstallSpec("team-gated/intent.py",
                     "tools/intent.py", verbatim=True),
         # intent-split (phase A, 2026-06): intent.py is now a thin launcher/facade
@@ -930,7 +930,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         # single Cairn-generic tool shipped with the module that prescribes
         # label-axis doctrine.  The additive-only flag absorbs the LHM
         # divergence (legacy-label note); no project-specific references.
-        # Auth R2: both scripts emit a clear "set GITLAB_PRIVATE_TOKEN /
+        # Both scripts emit a clear "set GITLAB_PRIVATE_TOKEN /
         # GITHUB_TOKEN" error when no credential is found.
         InstallSpec(
             "team-gated/issue-capture/bootstrap_gitlab_labels.py",
@@ -966,8 +966,8 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
             verbatim=True,
         ),
     ],
-    # Practice-discipline modules (Cairn v0.2 P3).  Team-gated -- a
-    # governance preset (P4) turns them on per profile rather than
+    # Practice-discipline modules.  Team-gated -- a
+    # governance preset turns them on per profile rather than
     # doubling the default-on auto-install set.  Doctrine-only (single
     # substituted .md each; no scripts).
     "testing-discipline": [
@@ -978,7 +978,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/doc-drift-prevention.md",
                     "dev/modules/doc-drift-prevention.md"),
         # Cairn v0.2 foldback: the module flips from doctrine-only to
-        # doctrine + stack-neutral runnable tooling (1:many, the P1
+        # doctrine + stack-neutral runnable tooling (1:many, the
         # claim-check pattern).  Two verbatim stdlib-only scripts -- the
         # link half and the snippet-sync.  The claim half is NOT shipped
         # here: the default-on claim-check module already installs
@@ -995,7 +995,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/examples-gallery.md",
                     "dev/modules/examples-gallery.md"),
     ],
-    # Cairn v0.2 security-hardening (R9): the content-integrity scanner,
+    # Security hardening: the content-integrity scanner,
     # shipped to adopters so their agents can scan working-tree files /
     # incoming PRs for prompt-injection patterns before ingesting them. The
     # verbatim script is single-sourced here (Cairn's own check_cairn composes
@@ -1019,12 +1019,12 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
         InstallSpec("team-gated/content_scan_allowlist.txt",
                     "scripts/content_scan_allowlist.txt", verbatim=True),
     ],
-    # The Python security gate stack (security-apparatus-enrichment, RV1
+    # The Python security gate stack (
     # surface 3).  Team-gated + opt-in -- never default-on, and never
     # installed for a non-Python adopter.  v1 self-audit scope only (a
     # drift / content-injection tripwire on the adopter's *own trusted
     # tree*), explicitly NOT a reviewer for untrusted PRs that can modify
-    # the apparatus itself.  Chunk B0 lands the module doctrine stub + its
+    # the apparatus itself.  This lands the module doctrine stub + its
     # required-token registration (``python_package``, below); Chunk C adds
     # the orchestrator (``run_security_audit.py``), the templated bandit
     # gate, and the adopted-executable source gate.  ``python_package`` has
@@ -1165,14 +1165,14 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
 # module's installed reference script.  The default value is derived
 # from the verbatim spec's ``dst`` (below), so the token the module doc
 # resolves (``{{claim_check_command}}`` etc.) and the path the scaffold
-# installs to are one source of truth (I5).
+# installs to are one source of truth.
 _REFERENCE_SCRIPT_TOKEN: dict[str, str] = {
     "claim-check": "claim_check_command",
     "lifecycle-metrics": "metrics_command",
 }
 
 #: Module → ``.gitignore`` entries the scaffold seeds when the module is
-#: selected.  Cairn v0.2 P5: the work-intent log is session-local
+#: selected.  The work-intent log is session-local
 #: coordination state, never a tracked artifact, so selecting
 #: ``coordination-tiers`` seeds the substrate path.  Seeding is
 #: non-clobber + idempotent (see :func:`seed_gitignore`).
@@ -1247,7 +1247,7 @@ def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# Selected-module required-token preflight (security-apparatus-enrichment B0)
+# Selected-module required-token preflight
 # ---------------------------------------------------------------------------
 #
 # A few modules carry inline tokens that have **no safe default** -- the
@@ -1255,7 +1255,7 @@ def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
 # value.  ``python-security`` is the first: its gate scans the adopter's own
 # ``{{python_package}}`` directory, so an unfilled token would install a
 # partially-rendered, lockfile-recorded security stack still containing the
-# literal ``{{python_package}}`` (Codex External plan review, P1 #1).
+# literal ``{{python_package}}``.
 #
 # Adding such a token to ``KNOWN_TOKENS`` is **not** enough: the scaffold
 # installs rendered files first and only *warns* about leftover inline tokens
@@ -1266,7 +1266,7 @@ def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
 # as a pre-write gate (see ``cli.main`` and ``upgrade``).  This is generic --
 # any future module declares its required tokens here and inherits the gate.
 _MODULE_REQUIRED_TOKENS: dict[str, tuple[str, ...]] = {
-    # python-security's bandit/source gate scans {{python_package}} (RV2);
+    # python-security's bandit/source gate scans {{python_package}};
     # there is no safe default for an adopter's own package directory.
     "python-security": ("python_package",),
 }
@@ -1314,7 +1314,7 @@ def missing_required_tokens(
     The check is deliberately generic -- token *presence + fill*, not
     module-specific *value validity* (e.g. python-security's containment +
     is-a-directory checks on ``python_package`` live in that module's own
-    gate, Chunk C).  B0 only guarantees a required token reaches the renderer
+    gate).  This only guarantees a required token reaches the renderer
     with a real value; the module validates what that value means.
     """
     missing: list[tuple[str, str]] = []
@@ -1331,7 +1331,7 @@ def missing_required_tokens(
 
 
 # ---------------------------------------------------------------------------
-# Governance presets (Cairn v0.2 P4)
+# Governance presets
 # ---------------------------------------------------------------------------
 #
 # Presets are *named points in the six-axis dimension model*, not a parallel
@@ -1386,7 +1386,7 @@ def unrecognized_profile_keys(cfg: dict[str, Any]) -> list[str]:
 #: each module.  These are the ONLY part of the I-5 gate evaluated as runtime
 #: code; the non-axis gate conditions (trust boundary, issue tracker, domain
 #: partitioning, legacy readiness) are baked into each preset's authored
-#: baseline below (the "gate-table encoding" split from the P4 plan).
+#: baseline below (the "gate-table encoding" split).
 #:
 #: The two modules gate **differently** (fold-back #40): ``coordination-tiers``
 #: serves any *concurrent* team -- multiple same-type agents collide on shared
@@ -1421,7 +1421,7 @@ def _can_staff_module(name: str, axes: dict[str, str]) -> bool:
 #: plus the non-axis rows the preset's profile assumes).  The team-staffing
 #: modules (``dual-review`` / ``coordination-tiers``) are NOT listed here --
 #: they are added at expand time iff the *resolved* agent-team axis staffs
-#: them, so an adopter's real team is ground truth (F3).  ``_DEFAULT_ON_MODULES``
+#: them, so an adopter's real team is ground truth.  ``_DEFAULT_ON_MODULES``
 #: is always the floor.  Derivation is documented row-by-row in BOOTSTRAP.md.
 _PRESETS: dict[str, dict[str, object]] = {
     "solo-greenfield": {
@@ -1501,7 +1501,7 @@ def _canonical_order(modules: set[str]) -> list[str]:
 def resolve_axes(preset_name: str, cfg: dict[str, object]) -> dict[str, str]:
     """Resolve the six-axis point: the preset's canonical point overridden by
     any flat axis key the adopter supplied.  An unknown enum value is a hard
-    error; an absent axis key falls back to the preset's value (F3 / P-2)."""
+    error; an absent axis key falls back to the preset's value."""
     canonical = dict(_PRESETS[preset_name]["axes"])  # type: ignore[arg-type]
     resolved = dict(canonical)
     for axis, allowed in _AXES.items():
@@ -1643,7 +1643,7 @@ def strip_conditional_regions(text: str, axes: dict[str, object]) -> str:
 def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]:
     """Expand a ``preset:``-bearing profile into a module roster + a summary.
 
-    The pinned ordered merge (P4 Decision):
+    The pinned ordered merge:
 
     1. Resolve axes = preset canonical point overridden by adopter axis keys.
     2. Baseline = ``_DEFAULT_ON_MODULES`` (always) + the preset's authored
@@ -1692,7 +1692,7 @@ def expand_preset(cfg: dict[str, object]) -> tuple[list[str], dict[str, object]]
 
     warnings: list[str] = []
     # Adds first.  An add of a team-staffing module the resolved team can't
-    # staff installs anyway (adopter intent wins) with a loud warning (I1).
+    # staff installs anyway (adopter intent wins) with a loud warning.
     for name in adds:
         if name in _TEAM_STAFFING_GATED and not _can_staff_module(
             name, resolved_axes

@@ -1,28 +1,28 @@
 """
-Tests for the Cairn v0.2 P5 work-intent tool (coordination-tiers).
+Tests for the work-intent tool (coordination-tiers).
 
 Covers, per the executing plan (cairn-v0.2-p5-intents-tool):
 
 * install-path: the tool lands verbatim in ``tools/intent.py``; the
   ``.md`` doctrine lands in ``dev/modules/``; ``.gitignore`` is seeded;
   skip-if-exists / ``--force`` respected.
-* C6: ``.gitignore`` seeding is non-clobber, idempotent, ``--dry-run``
+* ``.gitignore`` seeding is non-clobber, idempotent, ``--dry-run``
   aware.
-* C3 / P-2: identity resolves via ``CAIRN_AGENT`` override, the built-in
+* identity resolves via ``CAIRN_AGENT`` override, the built-in
   harness registry, an **adopter-supplied** registry entry (the
   portability contract), and a static config ``agent``.
 * P-3: a ``CAIRN_AGENT`` override that shadows an available harness
   session var emits a warning.
-* I4 / P-5: the post-commit hook installer chains onto a plain hook and
+* the post-commit hook installer chains onto a plain hook and
   **refuses without mutation** (bytes + mode unchanged) for
   framework-managed / non-shell / non-executable hooks.
-* C5: the generated hook captures the install-time interpreter, and the
+* the generated hook captures the install-time interpreter, and the
   full claim -> commit -> auto-release arc works off the CLI.
-* F4: install-hook on a no-git target degrades with a clear diagnostic,
+* install-hook on a no-git target degrades with a clear diagnostic,
   not a stack trace; a ``main``-default repo works.
-* C4: the installed tool and the generated hook carry no
+* the installed tool and the generated hook carry no
   modflow_tools residue.
-* F1: the installed tool is standard-library only (no ``yaml`` import).
+* the installed tool is standard-library only (no ``yaml`` import).
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -173,7 +173,7 @@ def _run_tool(tool: Path, args: list[str], *, cwd: Path,
 class TestInstallPath:
     def test_tool_registered_1many(self) -> None:
         """coordination-tiers installs both the doctrine .md and the
-        verbatim tool .py (1:many, the P1 pattern)."""
+        verbatim tool .py (1:many)."""
         specs = _MODULE_MAPPINGS["coordination-tiers"]
         dsts = {s.dst: s for s in specs}
         assert "dev/modules/coordination-tiers.md" in dsts
@@ -210,7 +210,7 @@ class TestInstallPath:
 
 
 # ---------------------------------------------------------------------------
-# .gitignore seeding contract (C6)
+# .gitignore seeding contract
 # ---------------------------------------------------------------------------
 
 class TestGitignoreSeeding:
@@ -240,7 +240,7 @@ class TestGitignoreSeeding:
 
 
 # ---------------------------------------------------------------------------
-# Identity resolution (C3, P-2, P-3)
+# Identity resolution
 # ---------------------------------------------------------------------------
 
 class TestIdentity:
@@ -451,7 +451,7 @@ class TestSessionTokenLink:
 
 
 # ---------------------------------------------------------------------------
-# Hook diversity + refusal-before-mutation (I4, P-5)
+# Hook diversity + refusal-before-mutation
 # ---------------------------------------------------------------------------
 
 class TestHookDiversity:
@@ -556,7 +556,7 @@ class TestHookDiversity:
 
 
 # ---------------------------------------------------------------------------
-# F4 -- VCS robustness
+# VCS robustness
 # ---------------------------------------------------------------------------
 
 class TestVcsRobustness:
@@ -584,7 +584,7 @@ class TestVcsRobustness:
 
 
 # ---------------------------------------------------------------------------
-# Interpreter contract + end-to-end auto-release (C5)
+# Interpreter contract + end-to-end auto-release
 # ---------------------------------------------------------------------------
 
 class TestInterpreterAndEndToEnd:
@@ -608,7 +608,7 @@ class TestInterpreterAndEndToEnd:
         assert "python -m" not in text
 
     def test_end_to_end_claim_commit_autorelease(self, tmp_path) -> None:
-        """C5: the ACTUAL generated hook (not just the CLI) releases the
+        """The ACTUAL generated hook (not just the CLI) releases the
         committing agent's claim, including on the root commit."""
         tool = _git_repo(tmp_path)
         env = _clean_env(CAIRN_AGENT="e2e-agent")
@@ -629,7 +629,7 @@ class TestInterpreterAndEndToEnd:
 
 
 # ---------------------------------------------------------------------------
-# C4 -- literal-audit (no modflow_tools residue)
+# Literal audit (no modflow_tools residue)
 # ---------------------------------------------------------------------------
 
 class TestLiteralAudit:
@@ -664,7 +664,7 @@ class TestLiteralAudit:
 
 
 # ---------------------------------------------------------------------------
-# F1 -- stdlib-only (no PyYAML)
+# stdlib-only (no PyYAML)
 # ---------------------------------------------------------------------------
 
 class TestDependencyGate:
@@ -685,7 +685,7 @@ class TestDependencyGate:
         )
 
     def test_no_yaml_anywhere(self) -> None:
-        """C3: the dropped YAML config tier leaves no `yaml` reference --
+        """The dropped YAML config tier leaves no `yaml` reference --
         the tool never fails when PyYAML is absent."""
         assert "yaml" not in TOOL_TEMPLATE.read_text()
 
@@ -804,7 +804,7 @@ class TestPrecommitInstall:
         assert "pre-commit (work-intent check): installed" in res.stdout
 
     def test_status_suggests_installed_command_shape(self, tmp_path) -> None:
-        """Codex review P2: the suggested follow-up commands must be the
+        """The suggested follow-up commands must be the
         installed script shape (`python tools/intent.py ...`), not a bare
         `intent` console command Cairn never installs."""
         tool = _git_repo(tmp_path)
@@ -835,7 +835,7 @@ class TestPrecommitCheck:
         assert "dev/a.md" in res.stderr
 
     def test_claimed_by_this_session_silent(self, tmp_path) -> None:
-        # N1: own-claim suppression requires a per-session token (a harness
+        # Own-claim suppression requires a per-session token (a harness
         # session var) -- a static agent name collides across same-type
         # sessions and cannot prove "own".
         tool = _git_repo(tmp_path)
@@ -990,7 +990,7 @@ class TestPrecommitCheck:
         auto-release uses, so a claim made in-session is recognized as own
         and then auto-released on commit."""
         tool = _git_repo(tmp_path)
-        # N1: a token-bearing identity (harness session var) so the
+        # A token-bearing identity (harness session var) so the
         # in-session claim is recognized as own (not the static-name path).
         env = _clean_env(CLAUDE_CODE_SESSION_ID="sess-own")
         log = str(self._log(tmp_path))
@@ -1039,7 +1039,7 @@ class TestPrecommitCheck:
 
 
 class TestEnforceModeAndN1:
-    """Layer-2 enforce modes (#53) + the N1 token-gated own-claim match
+    """Layer-2 enforce modes (#53) + the token-gated own-claim match
     (cairn-concurrent-session-coordination)."""
 
     def _log(self, repo: Path) -> Path:
@@ -1072,7 +1072,7 @@ class TestEnforceModeAndN1:
         assert "enforce=block" in res.stderr
 
     def test_no_config_blocks_cross_claim_by_default(self, tmp_path) -> None:
-        """foldback-drain Fold A / R2: the shipped default flipped warn→block.
+        """The shipped default flipped warn→block.
         With NO ``dev/intent-config.json``, a token-bearing committer facing a
         *different* live session's claim is now refused (not merely warned)."""
         tool = _git_repo(tmp_path)
@@ -1117,7 +1117,7 @@ class TestEnforceModeAndN1:
         assert res.returncode == 0
 
     def test_static_identity_does_not_suppress_own(self, tmp_path) -> None:
-        """N1: a no-token (static agent name) committer cannot prove own, so
+        """A no-token (static agent name) committer cannot prove own, so
         even its own claim surfaces as other-session -- fail-safe over-warn,
         never a silent coordination miss (two same-type sessions would
         otherwise share the static identity and false-suppress)."""
@@ -1143,7 +1143,7 @@ class TestEnforceModeAndN1:
         assert "WITHHELD" in res.stderr  # block downgraded, not silently absent
 
     def test_confirm_no_tty_degrades_to_block(self, tmp_path, monkeypatch) -> None:
-        """F4/R2: confirm with no controlling terminal -> block."""
+        """Confirm with no controlling terminal -> block."""
         src = (Path(__file__).resolve().parents[2] / "templates" / "modules"
                / "team-gated" / "intent.py")
         mod = _load_tool(src, name="intent_confirm_unit")
@@ -1152,7 +1152,7 @@ class TestEnforceModeAndN1:
 
 
 # ---------------------------------------------------------------------------
-# Claim TTL (foldback-drain Fold A / R1) + the N3 offset-aware / fail-safe
+# Claim TTL + the offset-aware / fail-safe
 # parse contract
 # ---------------------------------------------------------------------------
 
@@ -1179,7 +1179,7 @@ def _age_claims(log_path: Path, *, hours: float) -> None:
 
 
 class TestClaimTTL:
-    """The net-new claim TTL (R1) + N3 offset-aware / fail-safe contract.
+    """The net-new claim TTL + offset-aware / fail-safe contract.
 
     A *stale* (past-TTL) cross-claim still WARNS but never blocks (a crashed /
     abandoned session must not wedge a live committer); a malformed / naive
@@ -1254,7 +1254,7 @@ class TestClaimTTL:
         assert "HELD BY ANOTHER" in res_narrow.stderr
 
     def test_malformed_ts_does_not_crash_or_block(self, tmp_path) -> None:
-        """N3 fail-safe: a malformed (unparseable) ``ts`` degrades to
+        """Fail-safe: a malformed (unparseable) ``ts`` degrades to
         non-blocking and never crashes the hook (no traceback)."""
         tool = _git_repo(tmp_path)
         self._claim_other_session(tool, tmp_path, "dev/a.md")
@@ -1269,7 +1269,7 @@ class TestClaimTTL:
         assert "Traceback" not in res.stderr  # and never crash the hook
 
     def test_naive_offset_ts_does_not_crash(self, tmp_path) -> None:
-        """N3: a naive (offset-less) old ``ts`` -- the aware/naive mismatch
+        """A naive (offset-less) old ``ts`` -- the aware/naive mismatch
         that would raise TypeError -- is handled without crashing; an old
         naive ts is treated as stale -> non-blocking."""
         import datetime as _dt
@@ -1325,8 +1325,8 @@ class TestClaimTTL:
 # ---------------------------------------------------------------------------
 # Sensing write-path (self-evolution-loop Part B) -- the pre-commit hook
 # records a work-intent collision as an incident-trackers row. Best-effort &
-# fail-safe (R1); the test drives a REAL git commit through the hook (F2);
-# tagging mirrors P4's Design 2 (S4): blocked -> prevented, override ->
+# fail-safe; the test drives a REAL git commit through the hook;
+# tagging mirrors the recorded design: blocked -> prevented, override ->
 # occurred, no-token -> NO incident (unprovable -> would over-count the gate).
 # ---------------------------------------------------------------------------
 
@@ -1345,7 +1345,7 @@ class TestSensingWritePath:
         return repo / "dev" / "measurement" / "collision_log.md"
 
     def test_block_records_prevented_real_commit(self, tmp_path) -> None:
-        """F2: a real `git commit` blocked by the default-block hook records a
+        """A real `git commit` blocked by the default-block hook records a
         `prevented` incident row (the collision was caught by the gate)."""
         tool = _git_repo(tmp_path)
         env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
@@ -1400,8 +1400,8 @@ class TestSensingWritePath:
         assert not self._tracker(tmp_path).exists()
 
     def test_record_failure_does_not_break_the_block(self, tmp_path) -> None:
-        """R1: a recording failure (unwritable log path) must NOT change the
-        enforce decision and must NOT crash the hook -- it warns visibly (F4)
+        """A recording failure (unwritable log path) must NOT change the
+        enforce decision and must NOT crash the hook -- it warns visibly
         and the commit is still blocked."""
         tool = _git_repo(tmp_path)
         env_mine = _clean_env(CLAUDE_CODE_SESSION_ID="sess-MINE")
@@ -1421,7 +1421,7 @@ class TestSensingWritePath:
         )
         assert res.returncode != 0              # block still fires
         assert "Traceback" not in res.stderr    # never crashes
-        assert "could not record" in res.stderr  # F4: visible skip
+        assert "could not record" in res.stderr  # visible skip
 
     def test_confirm_ack_records_occurred(self, tmp_path, monkeypatch) -> None:
         """A confirm-acknowledged proceed past a different live session's claim
@@ -1468,7 +1468,7 @@ class TestSensingWritePath:
 #
 # The intent log is a coordination surface, not an archive. Three invariants
 # make pruning safe, and each has a mutant below:
-#   [H1] pairwise only -- a lone release would RESURRECT its claim as active
+#   Pairwise only -- a lone release would RESURRECT its claim as active
 #   [H2] an unreleased claim is reported, never deleted (it is a dead lock)
 #   [H3] an unparseable line is preserved (read_log skips them; a rebuild
 #        from parsed records would silently delete them)
@@ -1657,7 +1657,7 @@ class TestIntentSurfacePruning:
     def test_cr2_a_hostile_symlink_at_the_temp_path_cannot_be_truncated(
         self, tmp_path: Path,
     ) -> None:
-        """CR2 regression. The original fixed `.prune-tmp` name written via
+        """A regression guard. The original fixed `.prune-tmp` name written via
         Path.write_text FOLLOWED a pre-existing symlink: the link target was
         truncated to zero bytes and os.replace then made the ledger itself the
         symlink. O_EXCL|O_NOFOLLOW on a unique name closes both."""
@@ -1688,7 +1688,7 @@ class TestIntentSurfacePruning:
     def test_cr1_a_ledger_that_changed_mid_prune_skips_instead_of_dropping(
         self, tmp_path: Path,
     ) -> None:
-        """CR1, narrowed not closed. A concurrent append between snapshot and
+        """Narrowed, not closed. A concurrent append between snapshot and
         replace would not survive the replace; the pre-replace size check turns
         that into a skipped prune. Simulated by growing the file after the
         snapshot via a monkeypatched stat-time append."""
