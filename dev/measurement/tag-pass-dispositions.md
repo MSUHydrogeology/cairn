@@ -731,3 +731,60 @@ match: **single letter with multiple digits** (`S12`, `R10`, `D14`) and
 tree-wide, excluding lint-style codes. Not swept — the three classes are the
 reviewed scope — and filed in `dev/PLANNING.md` with the number, alongside the
 142 deferred occurrences, so both land in front of the Maintainer together.
+
+## The widened rule, and the final picture
+
+The Maintainer widened the matching rule from three tag classes to five —
+*"Let's just get all of them done before reanchor"* — which also withdrew the
+142-occurrence deferral. Both are complete.
+
+**Two shapes were added**, and both had been invisible for the same mechanical
+reason. Class 3 matched `[A-Z]\d` with a trailing boundary, so:
+
+* `S12`, `R10`, `D14`, `M52` — one letter, **two digits** — matched neither
+  class 2 (needs ≥2 letters) nor class 3 (the boundary rejects the second digit).
+* `P6a`, `P6c`, `F1b`, `T31b`, `R12a` — a **lowercase suffix** fails the same
+  boundary. `A-P3`, `B-P1`, `C-P2` fail it on the hyphen.
+
+`P6a` alone appeared 42 times. `S12` 24. Neither is a marginal case; both are
+plan-row coordinates of exactly the kind the pass exists to remove, and the
+original rule could not see them. **The rule's blind spot was in its boundary
+assertion, not in its letter classes** — which is why re-reading the classes
+would never have found it, and why it surfaced only when a docstring was read
+by eye during Chunk D.
+
+### Final corpus
+
+**3,258 → 260 occurrences, across 33 files.** Every one is a keep:
+
+| Kept because | Where |
+|---|---|
+| Markdown heading levels (`H2`/`H3`) | the lifecycle parsers, metrics extractors, and twins |
+| Unicode control classes (`C0`/`C1`) | profile grammar, byline identity, security stack, sweep runners |
+| The redundancy gate's published detectors (`R1`/`R6`/`R7`) | `quality_gate.py`, its whitelist, its suite |
+| Self-defined in-file schemes | `test_transition_lint.py` (`A1`–`E9`, 36 lines, no strays), `test_lifecycle_stage_patterns.py` (`T1`–`T12`) |
+| Live Maintainer fences | `N4` (gate preflight pair), `M3` (interpreter binding) |
+| A live principal ordinal | `P1`, in `CAIRN_API_P1_CREDENTIAL` |
+| A live document's own title | `SR6`, in `_scaffold/SECURITY_MUTATIONS.md` |
+| Specimens in a regex spec | `tools/lifecycle.py:2909` and twin; `test_reanchor.py`'s tag block |
+
+### What the pass learned about measuring
+
+Six errors in this pass were the same shape, and none was a judgement error
+about a tag. Each was an **instrument that could not observe what it was aimed
+at, returning a clean and confident wrong answer**:
+
+1. a **count** kept as a baseline, with no failure identities
+2. a **truncated repr** read as the whole result
+3. a needle matching the **wrong line**, silently
+4. a regex anchored to a **prefix the target lines never carry** — which nearly
+   overwrote a correct Maintainer-facing record with a false correction
+5. **liveness inferred from a parent token** (`M2`) instead of checked on the
+   occurrence (`M2-4`), nearly keeping two dead coordinates
+6. a liveness grep **scoped to `dev/` and `doctrine/`** but not the engine tree,
+   which did remove two live pointers to `SECURITY_MUTATIONS.md` before they
+   were restored
+
+The remedy is one sentence and it is cheap: **confirm the instrument can see a
+positive case before trusting a negative one.** Every one of these would have
+been caught by checking that the pattern matched something known to be there.

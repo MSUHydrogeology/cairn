@@ -1069,55 +1069,37 @@ therefore *"when that proposal reaches implementation"*, not a date.
   inconsistency that only surfaced when the two were first exercised together.
   This is also **adopter-facing doctrine**: what Cairn tells adopters about
   ceremony key hygiene, not just this laptop's setup.
-* **Opaque finding-IDs in code comments and docstrings** — **DRAINED except two
-  named, blocked sets** *(closed 2026-08-19 by the plan
-  `comprehension-outlives-the-artifact`)*. Raised by the Maintainer 2026-08-13:
-  *"They don't inform anyone anything. I don't know what FUR5 is."* The plan
-  swept the corpus from **3,258 occurrences to 339**, and the dispositions
-  ledger (`dev/measurement/tag-pass-dispositions.md`) records every keep with
-  its reason and every judgement call with its evidence.
+* **Opaque finding-IDs in code comments and docstrings** — **DONE** *(closed
+  2026-08-19 by the plan `comprehension-outlives-the-artifact`)*. Raised by the
+  Maintainer 2026-08-13: *"They don't inform anyone anything. I don't know what
+  FUR5 is."*
 
-  **Scope delta: NOT preserved — 142 occurrences remain undelivered**, and the
-  plan's Chunk E text ("nothing is deferred") is no longer true of the finished
-  work. Both deferrals arose during implementation, for reasons the plan could
-  not have known at review time:
+  **3,258 occurrences to 260, and the actionable set is empty.** Every remaining
+  occurrence is an adjudicated keep, each with its reason in the dispositions
+  ledger (`dev/measurement/tag-pass-dispositions.md`): Markdown heading levels
+  (`H2`/`H3`), Unicode control classes (`C0`/`C1`), the redundancy gate's
+  published detectors (`R1`/`R6`/`R7`), two self-defined in-file schemes
+  (`test_transition_lint.py`'s `A1`–`E9`, `test_lifecycle_stage_patterns.py`'s
+  `T1`–`T12`), two live Maintainer fences (`N4`, `M3`), one live principal
+  ordinal (`P1` in `CAIRN_API_P1_CREDENTIAL`), the `SR6` mutation inventory's
+  own title, and the bracketed specimens in two finding-id regex specs.
 
-  * **123 in `bootstrap/_scaffold/`** — the AST attestation baseline pins that
-    package and is already 13 CHANGED symbols out of date from earlier in the
-    same plan. Editing docstrings there deepens a re-anchor the Maintainer has
-    not yet run. (Comments are AST-invisible and were safe; docstrings are not.)
-  * **19 in `bootstrap/tests/test_reanchor.py` and `_gate_manifest.py`** — both
-    sit inside the re-anchor ceremony surface, and `_gate_manifest.py`'s
-    `M2-4` / `M2-5` cite `M2`, a **live** row in the in-flight `ceremony-as-code`
-    plan. Those coordinates are not dead yet.
+  **The earlier scope delta is withdrawn and delivered.** An interim state of
+  this row deferred 142 occurrences (the frozen `bootstrap/_scaffold/` package
+  and the re-anchor ceremony surface) and filed a 246-occurrence blind spot in
+  the plan's own three-class matching rule. The Maintainer ruled *"Let's just
+  get all of them done before reanchor"*, the rule was widened to five classes
+  on that allowance, and both sets are complete. One re-anchor now covers
+  everything instead of two.
 
-  **This needs the Maintainer's explicit allowance**, because accepted scope is
-  a floor (`AGENTS.md` > Git and commit workflow). The options are: allow the
-  reduction and let a successor take the 142 after the ceremony; or hold the
-  plan open until the re-anchor lands and finish them under it. The implementer
-  has not chosen — the row is written to make the delta visible rather than to
-  let it pass as completion.
+  **What the re-anchor batch must carry**, all of it caused by this work and
+  none of it self-serviceable: the AST attestation baseline (**35 CHANGED
+  symbols**, up from 13 — `upgrade.py` 22 nodes, `install.py` 18, `slotmerge.py`
+  10, `merge.py` 8, `config.py` 6, `lockfile.py` 4, `security.py` 2); the gate
+  manifest, whose frozen-file set and 335 pinned node ids both moved (Chunk D
+  renamed 38 containers); and the install lockfile's digest for
+  `run_portable_security_sweeps.py`.
 
-* **The tag pass's own matching rule has a measured blind spot** *(filed
-  2026-08-19)* — the plan defines three tag classes: bracketed (`[S1]`), bare
-  with ≥2 leading letters (`FUR5`), and bare single-letter-plus-single-digit
-  (`F5`). Two shapes that are unmistakably the same thing fall through all
-  three: **single letter with multiple digits** (`S12`, `R10`, `D14`) and
-  **letter-digit-lowercase** (`P6a`, `P6c`, `F1b`, `T31b`).
-
-  **Measured: 246 occurrences across the tree**, after excluding lint-style
-  codes (`E402`, `F401`, `B613` — live tool vocabulary, and the plan already
-  denylists that family). The largest are `P6a` (42), `S12` (24), `R10` (11).
-  A share of the remainder are `T`-labels inside schemes already adjudicated as
-  live keeps, so the genuinely-dead subset is smaller than 246 and has not been
-  separated.
-
-  **Not swept, deliberately.** The three classes are the reviewed scope;
-  widening them mid-implementation would be exactly the deviation the same rule
-  forbids in the other direction. Recorded with the number so the decision is
-  the Maintainer's and the work does not evaporate. It is cheap to finish — the
-  enumeration script already exists — and it belongs with whatever takes the 142
-  above.
 * **The shared *working tree* is an uncovered coordination hazard** *(no closure
   change)*. On 2026-08-12 a concurrent session's path-scoped commit swept
   another agent's **uncommitted** review section into it; the author noticed and
