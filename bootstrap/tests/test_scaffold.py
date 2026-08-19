@@ -204,7 +204,7 @@ class TestMinimalYamlParse:
     def test_mixed_indent_list_is_refused(self) -> None:
         """Mixed indented and unindented items under one key is not valid
         YAML -- PyYAML raises ``ParserError`` on it -- so the recognizer
-        **refuses** it (profile-parse-fail-open Chunk E1).  This test used to
+        **refuses** it.  This test used to
         assert the opposite, endorsing the best-effort posture that change
         reverses."""
         text = textwrap.dedent("""\
@@ -248,7 +248,7 @@ class TestLoadConfig:
 
     def test_raises_on_invalid_yaml(self, tmp_path: Path) -> None:
         """A bare list is not a mapping, so the profile is refused with a line
-        number (profile-parse-fail-open Chunk E2).
+        number.
 
         This node previously asserted **nothing** -- a `write_text` followed by
         three comment lines ending "We tolerate the minimal parser's inaccuracy
@@ -303,9 +303,8 @@ class TestCreateDevTree:
 # templates) and the pointer clause (plan templates). Each is typed once, at
 # authoring time, from the accepted proposal / this plan -- not derived at run
 # time from a template. The gate phrase is split into HEAD/TAIL because the
-# pinned 43-line extraction wraps it across a line break (plan Response,
-# amendment A-1); both halves stay raw substrings so the code-point pin (P7)
-# keeps its force.
+# pinned 43-line extraction wraps it across a line break; both halves stay
+# raw substrings so the code-point pin keeps its force.
 _SECURITY_PREFLIGHT_HEADINGS = (
     "S1 — Who supplied it?",
     "S2 — Can it fail?",
@@ -477,7 +476,7 @@ class TestInstallCore:
         than asserting inline, so every group runs on every invocation --
         a sequential first-failure shape would leave later groups
         unobserved for perturbations whose earlier group already fails
-        (plan Response, amendment A-2 / finding [I2]).
+        already fails.
 
         (a) SHIPPED SIDE, presence -- over the INSTALLED templates.
         (b) SELF-HOST SIDE, presence -- read from Cairn's own tree.
@@ -495,7 +494,7 @@ class TestInstallCore:
         wider dev/**/_template.md twin-parity gap (no test covers those
         twins at all today; see test_notice_install.py, which covers only
         the scripts/ and tools/ .py twins) stays open outside this
-        sub-block, by design (plan residual R5).
+        sub-block, by design.
         """
         cairn_root = Path(__file__).resolve().parent.parent.parent
         templates_root = cairn_root / "templates"
@@ -639,8 +638,7 @@ class TestNewTeamGatedModules:
     sync (security-review, issue-capture). Each must be registered in
     _MODULE_MAPPINGS and installable when its gate selects it -- a
     documented module file that is never selectable would satisfy the
-    docs but not the scaffold (Codex External finding 1 / Antigravity
-    R8)."""
+    docs but not the scaffold."""
 
     def test_new_module_registered_security_review(self) -> None:
         from bootstrap.scaffold import _MODULE_MAPPINGS
@@ -1085,8 +1083,7 @@ class TestCLI:
     ) -> None:
         """Re-running the scaffold against an already-installed target
         preserves the existing files (so an adopter's filled block slots
-        survive a second run).  Filed under External Review F2 from
-        Antigravity, 2026-05-20."""
+        survive a second run)."""
         cairn_root = Path(__file__).resolve().parent.parent.parent
         if not (cairn_root / "templates").exists():
             pytest.skip("Cairn templates not available")

@@ -1,13 +1,13 @@
 """
-Tests for the Cairn v0.2 P3 practice-discipline modules + maturity ladder.
+Tests for the practice-discipline modules + maturity ladder.
 
 * Install-path: each new module installs to the modules tree on selection
   and respects skip-if-exists.
-* Classification (I2): the three modules are team-gated and NOT default-on
+* Classification: the three modules are team-gated and NOT default-on
   (an omit-`modules:` install does not pull them in).
-* Ladder correspondence (I5): the maturity ladder in on-ramp/README.md
+* Ladder correspondence: the maturity ladder in on-ramp/README.md
   maps 1:1 onto the three on-ramp adoption levels -- dogfooding the
-  doc-drift discipline P3 itself ships.
+  doc-drift discipline this module set itself ships.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -44,7 +44,7 @@ pytestmark = pytest.mark.skipif(
 
 
 # ---------------------------------------------------------------------------
-# Classification (I2)
+# Classification
 # ---------------------------------------------------------------------------
 
 class TestClassification:
@@ -69,7 +69,7 @@ class TestClassification:
 
     @pytest.mark.parametrize("module", _PRACTICE_MODULES)
     def test_not_default_on(self, module: str) -> None:
-        # I2: must not double the auto-installed default set -- P4 presets
+        # must not double the auto-installed default set -- the presets
         # turn them on per profile.
         assert module not in _DEFAULT_ON_MODULES
 
@@ -122,7 +122,7 @@ class TestInstallPath:
 
 
 # ---------------------------------------------------------------------------
-# Ladder <-> adoption-level correspondence (I5)
+# Ladder <-> adoption-level correspondence
 # ---------------------------------------------------------------------------
 
 class TestLadderCorrespondence:

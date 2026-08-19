@@ -79,7 +79,7 @@ _CAIRN_ROOT = _HERE.parent
 #: a guard asking that question of a resolved path is dead by construction and
 #: only reachable by monkeypatching ``Path.is_symlink``.  The contained loaders
 #: below therefore derive their symlink checks from these, and compare
-#: *resolved* forms on both sides for containment.  Found by Chunk A6's loader
+#: *resolved* forms on both sides for containment.  Found by the loader
 #: matrix; the same defect existed in both consumers.
 _HERE_RAW = Path(__file__).absolute().parent
 _CAIRN_ROOT_RAW = _HERE_RAW.parent
@@ -223,9 +223,8 @@ WHITELIST: dict[str, str] = _load_whitelist()
 # The one runtime status vocabulary -- contained loader
 # ---------------------------------------------------------------------------
 #
-# `lifecycle-status-vocabulary` R5, as replaced by that proposal's "R5
-# replacement -- contained consumers and corpus boundary".  This file used to
-# declare its own `_OPEN_STATUSES`; the planner declares the vocabulary and this
+# This file used to declare its own `_OPEN_STATUSES`; the planner now
+# declares the vocabulary and this
 # is one of exactly two consumers that read it.  The contract is restated here
 # **per consumer** rather than inherited by implication, because the containment
 # is the security property and a reader of this file must be able to check it
@@ -252,7 +251,7 @@ class VocabularyUnavailable(RuntimeError):
     """The single vocabulary source could not be loaded *safely*.
 
     Raised in place of falling back to a local status tuple.  The fallback is
-    the exact defect R5 removes: this file carried its own opening-status tuple
+    the exact defect containment removes: this file carried its own opening-status tuple
     and drifted from the planner's state machine, which is how shape (b) went
     silent for plans.  A tool that cannot read the vocabulary says so.
     """

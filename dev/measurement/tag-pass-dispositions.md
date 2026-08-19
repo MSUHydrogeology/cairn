@@ -392,3 +392,37 @@ know the escape set comes from `encode_display` **so the two cannot drift**.
 Four lines of history became one line of reason. Removing a tag often exposes
 that the sentence holding it was about the process too — and the rule is the
 same one, not a second one.
+
+### Batch: vocabulary, practice modules, scaffold, self-heal, transition_lint
+
+| File | Before | After |
+|---|---:|---:|
+| `bootstrap/tests/test_lifecycle_vocabulary.py` | 8 | 0 |
+| `bootstrap/tests/test_practice_modules.py` | 7 | 0 |
+| `bootstrap/tests/test_scaffold.py` | 7 | 0 |
+| `bootstrap/tests/test_skills_self_heal.py` | 5 | 0 |
+| `scripts/transition_lint.py` | 3 | 0 |
+
+`A6` traces to `dev/plans/review-efficient-lifecycle.md`, **archived in this
+session** (`8708705` disposed of its residue). It is the pass's cleanest
+demonstration of the decay the principle names: `A6` was resolvable a week ago
+and is a dead pointer now, and nothing about the comment carrying it changed.
+
+**`transition_lint.py` shows why the pass touches production code, not only
+tests.** Its containment section opened by citing a proposal's `R5` and the
+replacement text that superseded it — two coordinates and a supersession, before
+the reader learns anything. What they need is one sentence: this file used to
+declare its own `_OPEN_STATUSES`, the planner declares them now, and the
+contract is restated per consumer because *the containment is the security
+property.* That last clause was already there and was the only load-bearing one.
+
+**Vendor names came out with the coordinates.** `test_scaffold.py` and
+`test_skills_self_heal.py` carried "Codex External finding 1 / Antigravity R8",
+"Filed under External Review F2 from Antigravity", "Codex code review P2 #1".
+These are outside the neutrality gate's corpus (it scans doctrine and
+templates, not `bootstrap/tests/`), so nothing was flagging them — they were
+removed here because the *sentence* was process narration, not because a gate
+asked. Worth noting for whoever next reviews the neutrality gate's scope: the
+tree carries vendor names in places the gate does not look, and the reason they
+are unproblematic is that they sit in dead prose, which this pass is deleting
+anyway.

@@ -1,4 +1,4 @@
-"""Session-start skills fan-out self-heal (foldback-drain plan, Chunk B1).
+"""Session-start skills fan-out self-heal.
 
 The runtime self-heal lives in the lifecycle backend (`templates/skills/_lib/
 lifecycle.py`, propagated to adopters as `tools/lifecycle.py`), *not* in the
@@ -8,7 +8,7 @@ exercise the **real backend** (`_heal_skills_fanout`, and the full
 Cairn checkout: every fixture is a standalone adopter tree under `tmp_path`
 carrying only the *installed* `.agents/skills/` + `_data/vendor_targets.yml`.
 
-Matrix (all required by the plan's B1.4 / Codex P1 #2 + P2 #3):
+Matrix:
 * absent symlink-tier read-path -> idempotently created;
 * already-correct -> preserved (no rewrite);
 * wrong symlink -> re-pointed; non-symlink target -> left untouched (never clobbered);
@@ -142,7 +142,7 @@ def test_copy_fallback_when_symlinks_unavailable(tmp_path, monkeypatch):
 
 
 def test_copy_seed_does_not_duplicate_an_existing_dir_ignore(tmp_path, monkeypatch):
-    """Codex code review P2 #1: a repo that already ignores the path (without a
+    """A repo that already ignores the path (without a
     trailing slash) must not get a duplicate ``.claude/skills/`` appended -- the
     routine must never dirty a tree it just reported clean."""
     root = _adopter_tree(tmp_path.resolve())
@@ -178,7 +178,7 @@ def test_divergent_copy_is_quarantined_not_clobbered(tmp_path, monkeypatch):
     assert "name: session-start" in copied.read_text()
 
 
-# --- containment (S3) --------------------------------------------------------
+# --- containment --------------------------------------------------------------
 
 
 def test_symlinked_parent_is_refused(tmp_path):
@@ -191,7 +191,7 @@ def test_symlinked_parent_is_refused(tmp_path):
         lifecycle._heal_skills_fanout(root)
 
 
-# --- the real session-start entry point (Codex P1 #2) ------------------------
+# --- the real session-start entry point --------------------------------------
 
 
 def _init_repo(root: Path) -> None:

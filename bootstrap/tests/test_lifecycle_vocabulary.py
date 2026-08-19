@@ -1,10 +1,5 @@
 """Tests for the single runtime status vocabulary and its two contained loaders.
 
-Source proposal ``dev/proposals/2026-08-10-codex-lifecycle-status-vocabulary.md``
-> "R5 replacement -- contained consumers and corpus boundary" (the authoritative
-text, superseding the earlier ``### R5`` in the same file); plan
-``dev/plans/review-efficient-lifecycle.md`` > Chunk A, row A6.
-
 ``tools/lifecycle_planner.py`` (and its byte-identical twin
 ``templates/skills/_lib/lifecycle_planner.py``) is the single runtime owner of
 the lifecycle status vocabulary.  Consumers read it, each through its own
@@ -66,7 +61,7 @@ assertion.
 4. ``TestMetricsLocationCases`` -- the three metrics-location cases: the
    installed pair resolves and succeeds; the byte-identical template twin, AT
    ITS SOURCE TREE LOCATION, refuses cleanly because no planner is installed
-   beside it (proposal round 3, [E4]); and the two ``extract.py`` copies are
+   beside it; and the two ``extract.py`` copies are
    byte-identical, so the refusal is a location/environment fact and not code
    drift between them.
 """
@@ -419,7 +414,7 @@ class TestSourceAudit:
 # ---------------------------------------------------------------------------
 #
 # Plan invariant (Author-accounting): "shape (b) fires for every current
-# non-terminal opening state. Enforced by A6's synthetic matrix. Corpus tests
+# non-terminal opening state. Enforced by the synthetic matrix. Corpus tests
 # are complementary and are NOT the oracle: the pinned corpus contains no new
 # token, so it cannot witness this class."  Every fixture here is therefore
 # synthetic (a throwaway git repo), never the pinned Cairn history window
@@ -910,7 +905,7 @@ class TestOutOfRootResolution:
 # The three metrics-location cases
 # ---------------------------------------------------------------------------
 #
-# Plan row A6, final clause: "Plus the three metrics-location cases."  Reading
+# The three metrics-location cases.  Reading
 # adopted here, stated explicitly per the task brief:
 #
 #   1. the INSTALLED location -- tools/_lifecycle_metrics/extract.py beside
@@ -921,8 +916,7 @@ class TestOutOfRootResolution:
 #      Cairn's OWN tools/ tree already IS an installed adopter tree);
 #   2. the byte-identical TEMPLATE TWIN, at its own SOURCE TREE location
 #      (templates/modules/default-on/_lifecycle_metrics/extract.py), refuses
-#      cleanly -- proposal round 3 [E4]'s required satisfier: "Say it
-#      explicitly and pin it with a test," because no
+#      cleanly -- said explicitly and pinned here, because no
 #      templates/modules/default-on/lifecycle_planner.py exists to be its
 #      sibling;
 #   3. the two extract.py files are BYTE-IDENTICAL -- proving case 2's
@@ -954,7 +948,7 @@ class TestMetricsLocationCases:
         # at ITS OWN location: the sibling it derives is
         # templates/modules/default-on/lifecycle_planner.py, which does not
         # exist.  Fail-closed refusal is the documented CORRECT behaviour
-        # (E4), not a defect -- pinned here so a later "fix" (a sys.path
+        # -- not a defect -- pinned here so a later "fix" (a sys.path
         # fallback) would be a test failure, not a quiet improvement.
         assert not (METRICS_PKG_TEMPLATE_SRC.parent / "lifecycle_planner.py").exists(), (
             "fixture assumption broken: a planner now exists beside the "
