@@ -983,7 +983,10 @@ def revalidate_transition(manifest: dict, reviewed_candidate: str, head: str,
             "the authority closure is identical at the anchor and the "
             "candidate, so there is no reviewed transition to perform. This "
             "mode is not a flag: it exists only to carry a closure change that "
-            "an external review has approved. Use the steady-state loader.")
+            "an external review has approved. There is no steady-state loader "
+            "to switch to: the launcher MEASURES the mode by comparing the "
+            "closure at the anchor against the candidate, so this refusal "
+            "means it measured no change. Re-run without expecting one.")
 
     declared = set(declared_authority_closure())
     named = set(manifest["members"])

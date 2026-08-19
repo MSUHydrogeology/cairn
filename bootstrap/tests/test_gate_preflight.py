@@ -1999,26 +1999,42 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert _run("git", "log", "-1", "--format=%G?",
                     cwd=repo).stdout.strip() == "G", "the checkpoint is unsigned"
 
-    def test_the_recorded_transition_stage2_carries_both_flags(self):
-        """A transition's stage 2 has no recorded form without them.
+    def test_a_transition_stage2_gets_both_flags_without_the_operator(self):
+        """A transition's stage 2 is unusable without them, and the operator no
+        longer has to know that.
 
-        This is the shape of gap that keeps recurring here: the transition
-        loader was updated to end at stage 1, and stage 2 got a recorded block
-        -- but only the steady-state one. A Maintainer running a real transition
-        would have reached the signing step with no recorded command for it, and
-        the flags are now a refusal rather than an option, so improvising would
-        have been a hard stop mid-ceremony with the key already loaded.
+        This is the shape of gap that kept recurring: the transition loader was
+        updated to end at stage 1 and stage 2 got a recorded block -- but only
+        the steady-state one. A Maintainer running a real transition reached the
+        signing step with no recorded command for it, and the flags are a
+        refusal rather than an option, so improvising was a hard stop
+        mid-ceremony with the key already loaded.
+
+        The gap is now closed by construction rather than by a document: stage 2
+        runs through the launcher, which knows the manifest it composed and the
+        candidate it resolved, and passes both. There is nothing for an operator
+        to carry and nothing for a runbook to omit.
         """
-        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        section = text.split("#### Stage 2 in transition mode")[1].split(
-            "\n### ")[0]
-        assert "--transition-from-review" in section
-        assert "--reviewed-candidate" in section
-        assert "REVIEW_MANIFEST=" in section and "RESOLVED=" in section
-        # And it must say where RESOLVED comes from: re-resolving a ref here
-        # would defeat the transition loader's resolve-once discipline.
-        assert "never re-resolved here" in section
+        launcher = _launcher_text()
+        stage2 = launcher.split('if [ -n "$STAGE2_CONFIRM" ]; then', 1)[1]
+        stage2 = stage2.split("\nfi\n", 1)[0]
+        assert "--confirm-package-sha256" in stage2
+        assert "--review-manifest" in stage2 and "$MANIFEST" in stage2, (
+            "a transition stage 2 does not receive the composed manifest")
+        assert "--reviewed-candidate" in stage2 and "$RESOLVED" in stage2, (
+            "a transition stage 2 does not receive the resolved candidate")
+
+    def test_a_steady_state_stage2_gets_neither_flag(self):
+        """The other half, and it is not symmetry for its own sake: passing a
+        manifest when the closure did not change makes the checker refuse a
+        ceremony that is entirely correct."""
+        launcher = _launcher_text()
+        stage2 = launcher.split('if [ -n "$STAGE2_CONFIRM" ]; then', 1)[1]
+        stage2 = stage2.split("\nfi\n", 1)[0]
+        tail = stage2.rsplit("exec /bin/sh", 1)[1]
+        assert "--review-manifest" not in tail and "--reviewed-candidate" not in tail, (
+            "the steady-state stage 2 passes transition flags; the checker "
+            "refuses a transition with nothing to carry")
 
     def test_the_transition_stage2_extracts_from_the_candidate_not_the_anchor(
             self):
@@ -4033,6 +4049,80 @@ class TestTheTwoStagesWantOppositeAgentStates:
         assert "/dev/tty" in doc
         assert "decline" in doc.lower()
 
+
+
+class TestTheCeremonyArtifactIsAClosureMember:
+    """`bootstrap/reanchor.sh` IS the procedure, so its bytes decide what
+    executes at the next ceremony -- which is the definition the closure uses,
+    and the reason the runbook and the roster are already in it.
+
+    It is not a Python module, so `_gate_manifest._frozen_files()` cannot cover
+    it: that function globs Python. Membership is therefore explicit, and these
+    nodes are what stop it from being explicit-but-forgotten.
+
+    (Restored after being deleted by a positional splice during the runbook
+    restructure. The suite stayed green while six nodes vanished, which is why
+    the closure arity is asserted against a retyped expectation below rather
+    than only against whatever the code currently returns.)
+    """
+
+    #: Retyped, not imported. A count derived from the thing under test agrees
+    #: with it by construction; this is the statement that a member silently
+    #: added or dropped has to disagree with.
+    EXPECTED_MEMBERS = 10
+
+    def test_the_artifact_is_in_the_declared_closure(self):
+        assert "bootstrap/reanchor.sh" in P.declared_authority_closure()
+
+    def test_the_closure_has_exactly_the_expected_arity(self):
+        actual = len(P.declared_authority_closure())
+        assert actual == self.EXPECTED_MEMBERS, (
+            f"the authority closure has {actual} members, not "
+            f"{self.EXPECTED_MEMBERS}. A member added or removed changes what "
+            f"a ceremony blesses, so it is a deliberate act with a review, "
+            f"never a side effect")
+
+    def test_the_frozen_manifest_still_cannot_cover_it(self):
+        """The reason membership had to be explicit, asserted rather than
+        assumed. If this ever becomes false the explicit pin is redundant --
+        and silently keeping both is how two sources of truth start."""
+        frozen = set(G._frozen_files(P._REPO))
+        assert "bootstrap/reanchor.sh" not in frozen, (
+            "the manifest now covers the artifact; the explicit closure pin "
+            "and the manifest are two answers to one question")
+
+    def test_the_launcher_expects_exactly_the_declared_closure(self):
+        """The launcher's fixed list is compared BEFORE candidate resolution,
+        so it is the one place the member set is established out of band. If it
+        and `declared_authority_closure()` disagree, either the launcher
+        refuses a correct ceremony or it admits a member nobody declared.
+
+        This used to read the runbook's copy of the list. The runbook no longer
+        carries one -- it explains the procedure rather than holding it -- so
+        the single out-of-band statement is the launcher's."""
+        text = (_REPO / "bootstrap/reanchor-launcher.template.sh").read_text(
+            encoding="utf-8")
+        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
+        recorded = [l for l in block.splitlines() if l]
+        assert recorded == sorted(P.declared_authority_closure()), (
+            f"the launcher's fixed set {recorded} is not the declared closure "
+            f"{sorted(P.declared_authority_closure())}")
+
+    def test_the_launcher_list_is_in_LC_ALL_C_order(self):
+        """Canonical because it is independently derivable, so no hidden list
+        decides what 'correct order' means. Sorted order also makes duplicates
+        and omissions detectable by the same comparison."""
+        text = (_REPO / "bootstrap/reanchor-launcher.template.sh").read_text(
+            encoding="utf-8")
+        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
+        recorded = [l for l in block.splitlines() if l]
+        assert recorded == sorted(recorded)
+        assert len(recorded) == len(set(recorded)), "a path is listed twice"
+
+    def test_LOADED_MODULES_tracks_the_closure_rather_than_a_retyped_list(self):
+        """Derived, so the fixture set and the closure cannot drift."""
+        assert set(_LOADED_MODULES) == set(P.declared_authority_closure())
+        assert "bootstrap/reanchor.sh" in _LOADED_MODULES
 
 class TestReadBoundaryIsRepositoryReadOnly:
     """`_READ_ONLY_GIT` bounds *subcommands*; it said

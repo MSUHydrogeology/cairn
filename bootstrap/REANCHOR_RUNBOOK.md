@@ -204,7 +204,7 @@ command is *itself* a trust boundary, and a weaker one than it looks: an
 alternate runbook is the instruction source, so it can simply omit the loader.
 An earlier version of this section claimed to use "the same sterile invocation
 the loader below uses" and did not — it had no environment scrub, and an
-inherited `GIT_DIR` redirected `cat-file` away from the explicitly named `-C`
+inherited `GIT_DIR` redirected `cat-file` away (**FUR7**) from the explicitly named `-C`
 checkout to a second repository, returning 0 and emitting *that* repository's
 runbook (FUR7, reproduced). The command below is the real thing:
 
@@ -221,643 +221,117 @@ runbook (FUR7, reproduced). The command below is the real thing:
 This one command is irreducibly the operator's to know — it is the bootstrap of
 the bootstrap — and it lives in the residual trust set.
 
-**The loader is its own trust boundary.** Everything below runs *before* the
-checker exists, so none of the checker's internal pinning protects it. Reviewed
-as its own unit (FUR6): an earlier version obtained the checkout by ambient
-discovery and extracted with `git archive`, and repository-local object
-substitution caused the literal block to execute substituted checker bytes while
-returning success — the same trust-source failure as FUR1, one step earlier.
-
-```
-# The whole loader is handed to a CLEAN CHILD SHELL. Pinning the utilities was
-# not enough: the block was still interpreted by the operator's inherited shell,
-# and an inherited `echo` function rewrote the extracted checker and wrote the
-# rewritten file's digest into the checklist, so the pinned absolute `shasum`
-# dutifully verified the wrong list and reported success (FUR9). Pinning `echo`
-# would not have closed it either -- `read`, `cd`, `[`, and the redirections are
-# the same class. One boundary removes inherited functions, aliases, startup
-# files and exported-function environment entries together.
-#
-# `PATH` is real here, unlike an earlier version of this block that set it only
-# inside the git child and then claimed it covered the utilities.
-# `HOME` is recorded because the signing backend needs it.
-#
-# `SSH_AUTH_SOCK` IS NOT FORWARDED TO STAGE 1, and its absence here is the
-# control, not an omission. Stage 1's whole contract is that it CANNOT SIGN: it
-# runs candidate code to build an authorization package and exits. An agent
-# socket therefore buys stage 1 nothing, while handing that candidate code a
-# live signing channel -- so the channel is REMOVED rather than measured. An
-# earlier version forwarded it and relied on the key probe to establish that
-# nothing could sign through it, which measured a channel the code beneath it
-# could still use. Removing a channel beats measuring one. Stage 2 forwards the
-# socket, because stage 2 is the stage that signs.
-#
-# THE SHELL IS `/bin/sh`, LITERALLY -- do not substitute your own. This is not a
-# recorded value and not a preference: a non-interactive `/bin/sh` reads no
-# startup file, which is the entire reason the clean child is clean. The obvious
-# alternative on this host is the login default `/bin/zsh`, and `zsh` sources
-# `$HOME/.zshenv` even here -- non-interactive, under `env -i`, with the recorded
-# HOME -- which puts the operator's own command definitions straight back inside
-# the supposedly clean child. An earlier version left this as a recorded choice
-# while claiming the boundary removed startup files (FUR10).
-<maintainer-recorded-env> -i \
-    PATH=/usr/bin:/bin \
-    HOME=<maintainer-recorded-home> \
-    /bin/sh <<'LOADER'
-# Every value here is recorded by the Maintainer at first use. NOTHING is
-# discovered: ambient discovery is what let a substituted repository answer for
-# the named one, and an ambient `PATH` is what let a replacement `shasum` vouch
-# for bytes it had just rewritten (FUR8). Utilities are invoked by absolute
-# path, which no inherited shell function or alias can shadow.
-CHECKOUT=<absolute-path-of-the-checkout-to-bless>
-ENV=<maintainer-recorded-env>
-GIT=<maintainer-recorded-git>
-PY=<maintainer-recorded-interpreter>
-MKTEMP=<maintainer-recorded-mktemp>
-MKDIR=<maintainer-recorded-mkdir>
-SHASUM=<maintainer-recorded-shasum>
-SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
-PACKAGE_OUT=<absolute-path-for-the-authorization-package-must-not-exist>
-
-T=$("$MKTEMP" -d) || exit 1
-
-# Object replacement, hooks and monitors are disabled BEFORE the first read, and
-# the environment is emptied so no GIT_* variable steers the loader.
-sterile_git() {
-    "$ENV" -i HOME=/nonexistent \
-        "$GIT" --no-replace-objects \
-               -c core.useReplaceRefs=false \
-               -c core.hooksPath=/dev/null \
-               -c core.fsmonitor=false \
-               -C "$CHECKOUT" "$@"
-}
-
-# `cat-file blob` reads raw object bytes. `git archive` was used here and is
-# attribute-aware, so a candidate `.gitattributes` could reshape what landed.
-# The heredoc feeds `while` by redirect, not by pipe: a pipe would run the loop
-# in a subshell where `exit 1` aborts nothing.
-: > "$T/RECORDED.sha256" || exit 1
-while read -r sum path; do
-    [ -n "$path" ] || continue
-    "$MKDIR" -p "$T/${path%/*}" || exit 1
-    sterile_git cat-file blob "refs/cairn/gate-anchor:$path" > "$T/$path" || exit 1
-    echo "$sum  $path" >> "$T/RECORDED.sha256"
-done <<'HASHES'
-<maintainer-recorded-first-use-hashes>
-HASHES
-
-# Decisive check: whatever route the bytes took, they must be the reviewed ones.
-( cd "$T" && "$SHASUM" -a 256 -c RECORDED.sha256 ) || {
-    echo "REFUSE: extracted bytes do not match the reviewed first-use set" >&2
-    exit 1
-}
-
-# STAGE 1 ONLY. This writes the authorization package and exits; it never
-# holds the signing key. Stage 2 is a separate invocation, below.
-"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
-    stage1 --repo "$CHECKOUT" --package-out "$PACKAGE_OUT" \
-           --signing-key "$SIGNING_KEY"
-LOADER
-```
-
-**Why each line is the way it is.** `CHECKOUT` is *typed*, not derived: `git -C`
-**discovers upward**, so an extraction beneath any repository would otherwise
-find *that* one and report against a target never named. `--repo` is not
-optional — the checker runs from `$T`, so its own location is the extraction
-directory, and it refuses any path that is not a worktree top level. The hash
-comparison is the control that makes the extraction route non-load-bearing: it
-runs before any Python executes, and its expected values come from the
-Maintainer's out-of-band review (step M2 below), never from the checkout.
-`shasum -a 256` is macOS/BSD; use `sha256sum -c` where that is what exists.
-
-`apply` re-derives every field it can. **It does consume one handoff artifact**
-in the two-stage protocol below, and the narrower true claim is: *no adjacent
-self-digest authenticates a file.* The Maintainer confirms a package digest
-computed over the exact bytes stage 1 wrote, and stage 2 re-derives everything
-that is derivable. `check` is available as a non-mutating preview; its output is
-a record to read, not an input.
-
-There is **no flag that turns a refusal into a pass.** A refusal routes here, to
-the manual steps below.
-
-### Phase 0 transition mode — a reviewed authority change
-
-**Two modes, explicit, never inferred.** The block above is **steady state**: it
-extracts the checker from `refs/cairn/gate-anchor`, which is correct exactly when
-the anchor already pins the bytes that should run.
-
-It cannot be used when the authority closure itself is changing, and the reason
-is structural rather than incidental: **the anchored checker cannot contain a
-mode added to its successor.** Extracting from the anchor to run a transition is
-asking the old authority to vouch for its replacement, which is the property this
-whole ceremony exists to deny.
-
-So a transition run extracts from the **candidate commit**, and what makes that
-safe is not the candidate — it is an **out-of-band review manifest** recorded by
-the Maintainer from a completed exact-byte External Security Review. The
-selection predicate below is **complete in this loader**. The checker re-checks
-the same facts once it starts, but that re-check is *defence in depth and never
-the establishing control*: it runs after the bytes it would judge have already
-been chosen and executed.
-
-**The review manifest format.** One bounded, line-oriented file the Maintainer
-records out of band. It is never read from the candidate tree, and its expected
-values are never recomputed from the candidate.
-
-```
-schema cairn-review-manifest/v1
-candidate <full 64-hex commit OID, exactly as reviewed>
-provenance <one line, <=120 chars, no control characters>
-member <64-hex sha256> <path>
-member <64-hex sha256> <path>
-...
-```
-
-`member` rows are in **`LC_ALL=C` sorted path order** — canonical because it is
-independently derivable, so no hidden list decides what "correct order" means.
-Sorted order also makes duplicates and omissions detectable by the same check.
-
-```
-# TRANSITION MODE. Same clean-child-shell discipline as the steady-state loader
-# above -- see that block for why /bin/sh is literal, why every utility is
-# recorded by absolute path, and why the environment is emptied. Only the
-# SOURCE of the bytes and the verification that precedes them differ.
-<maintainer-recorded-env> -i \
-    PATH=/usr/bin:/bin \
-    HOME=<maintainer-recorded-home> \
-    /bin/sh <<'TRANSITION'
-CHECKOUT=<absolute-path-of-the-checkout-to-bless>
-CANDIDATE=<candidate-ref-or-oid-to-transition-to>
-REVIEW_MANIFEST=<absolute-path-of-the-maintainer-recorded-review-manifest>
-ENV=<maintainer-recorded-env>
-GIT=<maintainer-recorded-git>
-PY=<maintainer-recorded-interpreter>
-MKTEMP=<maintainer-recorded-mktemp>
-MKDIR=<maintainer-recorded-mkdir>
-SHASUM=<maintainer-recorded-shasum>
-SORT=<maintainer-recorded-sort>
-SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
-PACKAGE_OUT=<absolute-path-for-the-authorization-package-must-not-exist>
-
-T=$("$MKTEMP" -d) || exit 1
-
-sterile_git() {
-    "$ENV" -i HOME=/nonexistent \
-        "$GIT" --no-replace-objects \
-               -c core.useReplaceRefs=false \
-               -c core.hooksPath=/dev/null \
-               -c core.fsmonitor=false \
-               -C "$CHECKOUT" "$@"
-}
-
-die() { echo "REFUSE: $1" >&2; exit 1; }
-
-# ---- parse and validate the review manifest -------------------------------
-# Every rejection below is a refusal BEFORE any Python starts. A malformed
-# manifest is not a manifest with a problem; it is an unreviewed input.
-[ -f "$REVIEW_MANIFEST" ] || die "review manifest is not a regular file"
-[ -L "$REVIEW_MANIFEST" ] && die "review manifest is a symlink"
-
-REVIEWED_OID=""
-PROVENANCE=""
-GOT_PATHS=""
-SCHEMA_SEEN=0
-: > "$T/members.sha256" || exit 1
-: > "$T/paths" || exit 1
-
-while IFS= read -r line || [ -n "$line" ]; do
-    # Control characters are rejected wholesale: a manifest is a recorded human
-    # artifact, and an embedded newline or escape is not a formatting quirk.
-    case $line in
-        *[![:print:][:space:]]*) die "control character in the review manifest" ;;
-    esac
-    set -- $line
-    # Leading whitespace is rejected on both sides -- but only for lines that
-    # are ROWS. Code review [D1]: an earlier version ran this check before the
-    # blank/comment case below, so an indented comment, a whitespace-only line
-    # and a trailing line of spaces were refused here and accepted by the Python
-    # revalidation. That relocated the [C4] divergence rather than removing it,
-    # and it made an ordinary editor artifact -- a trailing line containing a
-    # space -- abort the ceremony with a message about a row that does not
-    # exist. Testing `$1` first means both sides agree on what counts as a row
-    # before either judges its shape.
-    case $1 in
-        ""|\#*) : ;;
-        *) case $line in
-               " "*|"	"*) die "row has leading whitespace" ;;
-           esac ;;
-    esac
-    case $1 in
-    schema)
-        [ $# -eq 2 ] || die "malformed schema row"
-        [ "$2" = "cairn-review-manifest/v1" ] || die "unknown manifest schema $2"
-        SCHEMA_SEEN=1
-        ;;
-    candidate)
-        [ $# -eq 2 ] || die "malformed candidate row"
-        [ -z "$REVIEWED_OID" ] || die "duplicate candidate row"
-        [ ${#2} -eq 40 ] || [ ${#2} -eq 64 ] || die "candidate OID is not a full object id"
-        case $2 in *[!0-9a-f]*) die "candidate OID is not lowercase hex" ;; esac
-        REVIEWED_OID=$2
-        ;;
-    provenance)
-        [ $# -ge 2 ] || die "malformed provenance row"
-        [ -z "$PROVENANCE" ] || die "duplicate provenance row"
-        PROVENANCE=${line#provenance }
-        [ ${#PROVENANCE} -le 120 ] || die "provenance exceeds 120 characters"
-        ;;
-    member)
-        [ $# -eq 3 ] || die "malformed member row"
-        [ ${#2} -eq 64 ] || die "member digest is not 64 characters"
-        case $2 in *[!0-9a-f]*) die "member digest is not lowercase hex" ;; esac
-        case $3 in
-            /*|*..*) die "member path is not repository-relative" ;;
-        esac
-        echo "$2  $3" >> "$T/members.sha256" || exit 1
-        echo "$3" >> "$T/paths" || exit 1
-        # Accumulated in the shell, for the fixed-set comparison below. The
-        # loop runs in THIS shell (redirect, not pipe), so the variable
-        # survives it.
-        GOT_PATHS="$GOT_PATHS$3
-"
-        ;;
-    ""|\#*) : ;;
-    *)  die "unknown row type $1" ;;
-    esac
-done < "$REVIEW_MANIFEST"
-
-[ "$SCHEMA_SEEN" -eq 1 ] || die "no schema row"
-[ -n "$REVIEWED_OID" ] || die "no candidate row"
-[ -n "$PROVENANCE" ]   || die "no provenance row"
-[ -s "$T/paths" ]      || die "no member rows"
-
-# Sorted order is the canonical order, so this one check catches wrong order
-# AND duplicates. `sort -c -u` fails on either.
-LC_ALL=C "$SORT" -c -u "$T/paths" 2>/dev/null \
-    || die "member paths are not in unique LC_ALL=C sorted order"
-
-# ---- THE EXPECTED SET IS FIXED HERE, and compared BEFORE anything else -----
-# Security review [M2-R1]. Everything above validates the manifest against
-# ITSELF -- rows well-formed, paths sorted and unique, digests matching the
-# bytes extracted for those paths. None of it establishes WHICH FILES the
-# checker consists of, so a manifest that dropped a member or added one parsed
-# cleanly, extracted cleanly, and started Python; the first exact-set comparison
-# was `revalidate_transition()` INSIDE the candidate bytes the loader had
-# already selected and run. Reproduced in both directions with a marker
-# interpreter: `python_started=True`.
-#
-# That is fail-closed for ref movement and still wrong. A later check performed
-# BY the candidate cannot establish that the candidate was safe to start; that
-# is the bootstrap property this loader exists to provide, and only a fixed,
-# reviewed, out-of-band list can provide it.
-#
-# The list is literal and in LC_ALL=C order. It is compared with the shell's own
-# string equality -- no `cmp`, no `diff` -- so **no utility is added to the
-# residual trust set** by this check. It costs one shell variable and is
-# byte-for-byte.
-EXPECTED_PATHS='bootstrap/REANCHOR_RUNBOOK.md
-bootstrap/reanchor.sh
-bootstrap/tests/_gate_manifest.py
-bootstrap/tests/_gate_preflight.py
-bootstrap/tests/_gate_reanchor.py
-bootstrap/tests/_gate_transition.py
-bootstrap/tests/_oracle.py
-bootstrap/tests/_oracle_activation.py
-bootstrap/tests/_oracle_trust.py
-dev/.cairn/allowed_signers
-'
-[ "$GOT_PATHS" = "$EXPECTED_PATHS" ] \
-    || die "the review manifest is not the authority closure -- the member set \
-differs from the ten paths recorded in this loader"
-
-# ---- bind the candidate ONCE ----------------------------------------------
-# Resolved once, to a full object id, and every later read uses that id. A
-# moving ref read twice is two different answers wearing one name.
-RESOLVED=$(sterile_git rev-parse --verify --end-of-options "$CANDIDATE^{commit}") \
-    || die "candidate does not resolve to a commit"
-[ "$RESOLVED" = "$REVIEWED_OID" ] \
-    || die "candidate resolves to $RESOLVED, review manifest names $REVIEWED_OID"
-
-# ---- extract BY OID, never by ref -----------------------------------------
-while read -r sum path; do
-    [ -n "$path" ] || continue
-    "$MKDIR" -p "$T/${path%/*}" || exit 1
-    sterile_git cat-file blob "$RESOLVED:$path" > "$T/$path" \
-        || die "candidate $RESOLVED has no blob at $path"
-done < "$T/members.sha256"
-
-# ---- the decisive check, still before any Python ---------------------------
-( cd "$T" && "$SHASUM" -a 256 -c members.sha256 ) \
-    || die "extracted bytes do not match the reviewed manifest"
-
-# The extracted set was established as EXACTLY the fixed ten above, before any
-# of this ran. That comment used to sit here with no check behind it, which is
-# how [M2-R1] survived: a claim in a comment is not a control.
-# STAGE 1 ONLY, as in steady state. The transition changes which bytes run,
-# not the two-stage protocol.
-"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
-    stage1 --repo "$CHECKOUT" --package-out "$PACKAGE_OUT" \
-           --signing-key "$SIGNING_KEY" \
-           --transition-from-review "$REVIEW_MANIFEST" \
-           --reviewed-candidate "$RESOLVED"
-TRANSITION
-```
-
-**What this loader establishes, and what it does not.** It establishes that the
-Python about to run is byte-identical to a set a named external review approved,
-at one resolved commit id, with no member added, dropped, reordered or
-duplicated — and that **no Python starts at all** if any of that fails.
-
-**The member set is fixed here, not taken from the manifest.** This paragraph
-made the claim above before the code supported it (security review [M2-R1]): the
-loader validated the manifest against itself and left the exact-set comparison
-to `revalidate_transition()`, which runs *inside* the candidate Python the loader
-had already started. The ten expected paths are now literal in the block and
-compared before candidate resolution, extraction or Python — because a check
-performed by the candidate cannot establish that the candidate was safe to run.
-The comparison uses the shell's own string equality, so **the residual trust set
-is unchanged**: no comparison utility was admitted to it.
-
-It does **not** establish its own authenticity. The fixed loader text remains an
-**M2 out-of-band trust input**, exactly like the steady-state block: a loader
-cannot bootstrap the trust in itself. `SORT` joins the recorded utilities in the
-residual trust set for the same reason the others are there.
-
-**Transition mode is not a flag to reach for.** It refuses when the closure has
-no delta, and every use costs a fresh exact-byte External Security Review of the
-new closure. That cost *is* the control — repeatable under new review authority
-is not the same thing as habitually available.
-
-**Residual trust set — where the chain actually ends.** **The loader's own
-inputs, which nothing above them can check:** the recorded absolute paths
-`ENV`, `GIT`, `MKTEMP`, `MKDIR`, `SHASUM` and `PY`; `/bin/sh` itself, which is
-fixed rather than recorded so it cannot be chosen wrongly; the recorded
-`CHECKOUT` and `HOME`; the recorded first-use hash set; and the operator's
-knowledge of the acquisition command in step 1. That set is the bootstrap of the bootstrap: the loader can
-verify the checker's bytes, but nothing verifies the loader's.
-
-*A correction worth keeping, because it is the kind of error this document
-exists to prevent.* An earlier version of this paragraph said these utilities
-came from `PATH=/usr/bin:/bin`. That was **false**: the `PATH` assignment lived
-only inside the `env -i` child used for git, and every other utility —
-`mktemp`, `mkdir`, and decisively `shasum` — was resolved through the operator's
-ambient environment. A replacement `shasum` earlier on `PATH` rewrote the
-extracted checker, reported success, and the rewritten checker ran (FUR8). The
-recorded absolute paths above are what actually holds; the sentence they replace
-described a protection that did not exist. **The signature backend `/usr/bin/ssh-keygen`**,
-which the checker pins
-by absolute path and uses for both signing and verification — an earlier version
-let repository config choose it, and a fake verifier made a commit signed by a
-key *absent from the roster* report a good signature under a rostered name; the
-Maintainer-recorded interpreter path; `PATH` and `HOME` in the operator's shell,
-which the checker deliberately does **not** scrub because signing needs them; the
-operator's discipline of reading this invocation from the anchor rather than the
-checkout; and **local write access to `refs/cairn/gate-anchor` itself** — whoever
-can move that ref chooses what executes. That last one is not closable here:
-moving that ref *is* the authority this ceremony protects. It is in scope only
-under the accepted trusted-contributor posture.
-
-**What the checker does take out of the repository's hands.** Every git
-invocation — read *and* write — is pinned so that repository-local
-configuration, hooks, and attributes cannot steer it: replacement objects are
-disabled (they substituted anchored reads while `rev-parse` reported the real
-SHA), hooks are disabled including the default `.git/hooks` (a
-`reference-transaction` hook moved a *third* ref while the two-ref transaction
-reported success), the filesystem monitor is disabled (it executed a program
-during `git status`), and the tree is materialized from raw objects rather than
-`git archive` (which honours `.gitattributes`, so `export-ignore` hid a tracked
-file from the manifest while leaving it in the blessed tree). Each of these was
-reproduced as a working attack before it was closed.
-
-**The evidence stage executes candidate code.** It runs in a tree materialized
-without `.git` and with credential-shaped variables dropped and `HOME`
-redirected. That is best-effort isolation and **not containment** — the executed
-code retains filesystem access outside that tree, process creation, and network
-access. Accepted by Maintainer Decision under the dated posture; the tool prints
-this on every run.
-
-Its output is **not** wholly non-authoritative, and the runbook says so rather
-than leaving it implied: `check` independently re-derives every *static*
-manifest field from raw commit objects and refuses on any difference. What stays
-trusted to this stage is the pytest **collection** — which cannot be derived
-from object bytes, and is the reason the stage exists.
-
-### Phase 0 stage 2 — confirm, then sign
-
-**Between the two stages, three things happen and none of them is automatic.**
-
-1. **Confirm the package digest independently.** Stage 1 printed one; compute it
-   yourself over the file it wrote and compare:
-
-   ```
-   <maintainer-recorded-shasum> -a 256 <absolute-path-of-the-authorization-package>
-   ```
-
-   Do **not** take a digest from inside the package. That is the adjacent
-   self-digest this ceremony refuses by construction, and stage 2 will refuse it
-   too — but the discipline is yours first.
-
-2. **Read the report the package carries.** The digest binds a *state*; the
-   state is what you are authorizing. A confirmed digest over an unread report
-   authorizes something you have not seen.
-
-3. **Make the ceremony key available — and only now.** Until this moment the
-   **N4 precondition** holds: the key is encrypted at rest and in no agent, and
-   stage 1 proved it could not sign. Loading it earlier collapses the boundary
-   the two stages exist to create.
-
-**The two stages want opposite states, and the environment lines say so.** Stage
-1 is invoked with **no `SSH_AUTH_SOCK`** and refuses if the key can sign anyway;
-stage 2 forwards the socket and **fails without it**, because `git commit-tree`
-invokes the signer with no controlling terminal, falls back to `ssh-askpass`, and
-dies naming a path that does not exist on a stock host. So the key is made
-available **between** the stages, and put away after — the asymmetry in the two
-environment blocks below is the whole boundary, not a copying slip.
-
-**Stage 2 extracts and verifies its own bytes.** It does *not* reuse stage 1's
-temp directory. Candidate code ran in stage 1 — that is what stage 1 is for —
-so anything stage 1 left on disk had a window in which candidate code was
-executing as the same user. Re-extracting under the same recorded hashes costs
-one extra pass and removes the whole class; inheriting `$T` would hand the
-signing stage bytes the candidate had an opportunity to rewrite. This is D4's
-"separately hash-verified bytes", and the duplication below is deliberate.
-
-```
-<maintainer-recorded-env> -i \
-    PATH=/usr/bin:/bin \
-    HOME=<maintainer-recorded-home> \
-    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
-    /bin/sh <<'STAGE2'
-# Same recorded values as stage 1, and recorded the same way: nothing is
-# discovered, and nothing is carried over from the previous invocation. The one
-# deliberate difference is the environment line above: stage 2 forwards
-# `SSH_AUTH_SOCK` and stage 1 does not, because this is the stage that signs.
-CHECKOUT=<absolute-path-of-the-checkout-to-bless>
-ENV=<maintainer-recorded-env>
-GIT=<maintainer-recorded-git>
-PY=<maintainer-recorded-interpreter>
-MKTEMP=<maintainer-recorded-mktemp>
-MKDIR=<maintainer-recorded-mkdir>
-SHASUM=<maintainer-recorded-shasum>
-PACKAGE=<absolute-path-of-the-authorization-package>
-CONFIRMED=<the-64-hex-digest-you-verified-in-step-1>
-SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
-
-T=$("$MKTEMP" -d) || exit 1
-
-sterile_git() {
-    "$ENV" -i HOME=/nonexistent \
-        "$GIT" --no-replace-objects \
-               -c core.useReplaceRefs=false \
-               -c core.hooksPath=/dev/null \
-               -c core.fsmonitor=false \
-               -C "$CHECKOUT" "$@"
-}
-
-: > "$T/RECORDED.sha256" || exit 1
-while read -r sum path; do
-    [ -n "$path" ] || continue
-    "$MKDIR" -p "$T/${path%/*}" || exit 1
-    sterile_git cat-file blob "refs/cairn/gate-anchor:$path" > "$T/$path" || exit 1
-    echo "$sum  $path" >> "$T/RECORDED.sha256"
-done <<'HASHES'
-<maintainer-recorded-first-use-hashes>
-HASHES
-
-( cd "$T" && "$SHASUM" -a 256 -c RECORDED.sha256 ) || {
-    echo "REFUSE: extracted bytes do not match the reviewed first-use set" >&2
-    exit 1
-}
-
-"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
-    stage2 --repo "$CHECKOUT" \
-           --package "$PACKAGE" \
-           --confirm-package-sha256 "$CONFIRMED" \
-           --signing-key "$SIGNING_KEY"
-STAGE2
-```
-
-**Stage 2 executes no candidate code.** It seals candidate execution before it
-derives anything, reads and hashes the package before parsing it, rebuilds the
-prospective manifest independently and compares **exact bytes**, and takes from
-stage 1 only `collection` and `interpreter` — the two fields static
-re-derivation cannot produce, which is the sole reason stage 1 exists.
-
-**Why two invocations rather than one paused process.** R1-F step 5 originally
-said the already-running process signs; that is **amended** here. A separate
-invocation means the signing process never had candidate code in it at any
-point, the protocol is scriptable without a controlling terminal, and stage 1's
-inability to sign is observable *before* stage 2 exists. The safety of a second
-invocation rests on the checker bytes being hash-verified on every run, which
-both loaders above already do.
-
-**Still sequencing, not containment.** Candidate code that ran in stage 1 shared
-this machine with the key that stage 2 loads, and may have left persistence
-neither stage can see. That residual is accepted and unchanged.
-
-#### Stage 2 in transition mode
-
-**A transition's stage 2 carries the same two flags its stage 1 did**, and it is
-a refusal, not a convention: a stage 2 given no `--transition-from-review` for a
-package that authorizes a transition **stops**. Otherwise it would sign a
-checkpoint whose message reads *"steady state — no closure change"* over a run
-that changed the authority closure, and the admitted set would be missing from
-the durable record while the ref moved anyway.
-
-Stage 2 also requires the review manifest to be **the same artifact stage 1
-saw** — it compares the file's digest against the one recorded in the package —
-so the file named here must be byte-identical to the one the transition loader
-was given, not a re-export of it.
-
-**What `<maintainer-recorded-reviewed-candidate-hashes>` is.** Code review [D3]
-found this placeholder introduced with no definition, on the stage that signs.
-It is the **same checklist the transition loader used**: one
-`<sha256>  <path>` line for every member of the review manifest — that is, the
-**whole declared authority closure at the reviewed candidate**, not a subset and
-not the seven modules the loader happens to import. Produce it exactly once, at
-review time, and reuse those bytes here; do not regenerate it between the
-stages, because a set regenerated after stage 1 is a set nobody reviewed.
-
-Every mis-reading fails closed — a short set fails on import, a wrong set fails
-`shasum -c` — but "fails closed" is not the standard for a recorded value on the
-signing stage. FUR6 and FUR7 were both undefined-recorded-value defects.
-
-**And it extracts from the CANDIDATE, not from the anchor.** This is the whole
-subsection's reason for existing as a complete block rather than a one-line
-substitution. The steady-state stage 2 above extracts from
-`refs/cairn/gate-anchor`; a transition's stage 2 must extract by the reviewed
-candidate OID, exactly as its stage 1 did. Getting this wrong means stage 1 runs
-the candidate's checker and stage 2 runs the **old** one — which is precisely
-"asking the old authority to vouch for its replacement", the property this
-ceremony exists to deny. It fails closed (the old checker refuses the new
-closure) but it fails *after the key is loaded*, which is the worst place to
-discover it.
-
-Code review [C2] found this runbook saying "replace the final command in the
-block above". It is written out in full below for that reason: an instruction to
-edit one line of a nearby block produced a ceremony that ran the wrong bytes.
-
-```
-<maintainer-recorded-env> -i \
-    PATH=/usr/bin:/bin \
-    HOME=<maintainer-recorded-home> \
-    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \
-    /bin/sh <<'STAGE2T'
-CHECKOUT=<absolute-path-of-the-checkout-to-bless>
-ENV=<maintainer-recorded-env>
-GIT=<maintainer-recorded-git>
-PY=<maintainer-recorded-interpreter>
-MKTEMP=<maintainer-recorded-mktemp>
-MKDIR=<maintainer-recorded-mkdir>
-SHASUM=<maintainer-recorded-shasum>
-PACKAGE=<absolute-path-of-the-authorization-package>
-CONFIRMED=<the-64-hex-digest-you-verified-in-step-1>
-REVIEW_MANIFEST=<absolute-path-of-the-maintainer-recorded-review-manifest>
-RESOLVED=<the-full-commit-oid-the-transition-loader-resolved-and-printed>
-SIGNING_KEY=<maintainer-recorded-signing-key-public-path>
-
-T=$("$MKTEMP" -d) || exit 1
-
-sterile_git() {
-    "$ENV" -i HOME=/nonexistent \
-        "$GIT" --no-replace-objects \
-               -c core.useReplaceRefs=false \
-               -c core.hooksPath=/dev/null \
-               -c core.fsmonitor=false \
-               -C "$CHECKOUT" "$@"
-}
-
-# BY THE REVIEWED OID, never by a ref -- the same rule as the transition
-# loader's own extraction (A4).
-: > "$T/RECORDED.sha256" || exit 1
-while read -r sum path; do
-    [ -n "$path" ] || continue
-    "$MKDIR" -p "$T/${path%/*}" || exit 1
-    sterile_git cat-file blob "$RESOLVED:$path" > "$T/$path" || exit 1
-    echo "$sum  $path" >> "$T/RECORDED.sha256"
-done <<'MEMBERS'
-<maintainer-recorded-reviewed-candidate-hashes>
-MEMBERS
-
-( cd "$T" && "$SHASUM" -a 256 -c RECORDED.sha256 ) || {
-    echo "REFUSE: extracted bytes do not match the reviewed candidate set" >&2
-    exit 1
-}
-
-"$PY" -E -s "$T/bootstrap/tests/_gate_preflight.py" \
-    stage2 --repo "$CHECKOUT" \
-           --package "$PACKAGE" \
-           --confirm-package-sha256 "$CONFIRMED" \
-           --signing-key "$SIGNING_KEY" \
-           --transition-from-review "$REVIEW_MANIFEST" \
-           --reviewed-candidate "$RESOLVED"
-STAGE2T
-```
-
-`RESOLVED` is **recorded from stage 1's output, never re-resolved here**. A ref
-resolved a second time can name a different commit than the one the loader
-extracted and the review approved; that is the whole reason the transition
-loader resolves once and extracts by OID (A4).
+**The launcher is its own trust boundary.** Everything it does runs *before* the
+checker exists, so none of the checker's internal pinning protects it. It is
+reviewed as its own unit, and the reason is a real failure: an earlier
+arrangement obtained the checkout by ambient discovery and extracted with `git
+archive`, and repository-local object substitution caused the literal block to
+execute substituted checker bytes while returning success — the same
+trust-source failure as the acquisition command's (**FUR1**), one step
+earlier (**FUR6**).
+
+### Why the launcher looks the way it does
+
+Five properties, each of which was learned by a defect rather than designed in
+advance. They are recorded here because the launcher is now a file rather than a
+block you paste, and a reader who cannot see *why* a line is there will
+eventually simplify it away.
+
+* **Every utility is invoked by absolute recorded path.** An ambient `PATH` is
+  what once let a replacement `shasum` vouch for bytes it had just rewritten
+  (**FUR8**).
+  Absolute paths are what no inherited shell function or alias can shadow.
+* **An inherited shell function could rewrite what the loader verified**, so
+  the whole thing runs in a clean child: an inherited `echo` once rewrote the
+  extracted checker and wrote the rewritten file's digest into the checklist,
+  so the pinned absolute `shasum` verified the wrong list and reported success
+  (**FUR9**). Pinning `echo` would not have closed it either -- `read`, `cd`,
+  `[` and the redirections are the same class.
+* **The environment is emptied for every git read.** An inherited `GIT_DIR`
+  redirected `cat-file` away from the explicitly named `-C` checkout to a second
+  repository, returned 0, and emitted *that* repository's bytes.
+* **Object replacement, hooks and monitors are disabled before the first read**,
+  not after — a replacement ref configured in the candidate repository is read
+  by the very command that would otherwise discover it.
+* **`cat-file blob` reads raw object bytes; `git archive` is not used.** Archive
+  is attribute-aware, so a candidate `.gitattributes` can reshape what lands.
+* **The artifact is started by the literal `/bin/sh`.** Not a recorded value and
+  not a preference: a non-interactive `/bin/sh` reads no startup file, which is
+  the entire reason the child is clean. The obvious alternative on this host is
+  the login default `/bin/zsh` (**FUR10**), and `zsh` sources `$HOME/.zshenv` even
+  non-interactively — which puts the operator's own command definitions straight
+  back inside the supposedly clean child. An earlier version left this as a
+  recorded choice while claiming the boundary removed startup files.
+
+**One launcher, two modes, and the mode is measured.** The procedure used to
+carry two near-identical loaders — steady state and transition — and an
+instruction to "replace the final command" of one to get the other. That
+instruction produced a live failure: the edited block still extracted from
+`refs/cairn/gate-anchor`, so stage 1 ran the candidate's checker and stage 2 ran
+the old one — the old authority vouching for its own replacement, after the key
+was loaded. There is now **one** launcher, and it decides by comparing every
+closure member at the anchor against the resolved candidate. There is no second
+block to edit and no instruction to mis-follow.
+
+### The launcher, reproduced — **NOT the authority source**
+
+> **Do not copy this.** It is here so you can read what you are about to run.
+> The launcher you actually run is the one the External Security review
+> produced and delivered out of band, with its SHA-256 recorded in that
+> review — and its bytes differ from these by exactly one filled slot. Verify
+> the digest of *that* file against *that* record. A launcher assembled from
+> this document is a launcher nobody reviewed.
+>
+> The reviewed source lives at
+> [`bootstrap/reanchor-launcher.template.sh`](reanchor-launcher.template.sh),
+> and a test asserts that this section and that file do not drift apart.
+
+The shape of it, in the order it runs:
+
+| | what it does | why it is *there* and not later |
+|---|---|---|
+| 1 | reads your values file with its **own** parser | it needs `git`, `shasum` and `cat` before it can verify the artifact, and the artifact's parser is candidate code it has not yet cleared |
+| 2 | hashes the packet, compares against the digest **bound into itself** | this is the comparison that makes the launcher and the packet a pair |
+| 3 | snapshots the packet and **re-hashes the snapshot** | detects a byte the shell could not carry, and a rewrite between the two reads |
+| 4 | compares the packet's member set against its **own fixed list** | everything else validates the packet against itself; only a fixed list catches a packet that dropped a member |
+| 5 | resolves the candidate **once** | a moving ref read twice is two different answers wearing one name |
+| 6 | verifies **every** closure blob at that OID | not a sample |
+| 7 | composes the review manifest | so that nobody hands the ceremony an authority input |
+| 8 | **starts the artifact** | the first candidate byte, and only because its digest matched |
+
+**Stage 2 runs through the launcher too**, with `--stage2 <digest>`, and that is
+a security property rather than a convenience: it repeats the whole verification
+into a *fresh* directory. Candidate code ran in stage 1, as the same user, while
+stage 1's directory sat on disk — so reusing it would hand the signing stage
+bytes the candidate had a window to rewrite, after the key was loaded.
+
+### Phase 0 transition mode — measured, never chosen
+
+A **transition** is a ceremony that carries a change to the authority closure
+itself: the checker, the roster, the runbook, the ceremony artifact. A
+**steady-state** re-anchor carries none.
+
+**You do not select between them, and there is no flag.** The launcher compares
+every closure member at the anchor against the resolved candidate, and a single
+difference makes it a transition. That is deliberate: an operator who picks the
+mode can pick wrong in the unsafe direction, and declaring "steady state" over a
+real closure change is precisely the substitution the reviewed-transition path
+exists to prevent.
+
+**What a transition additionally requires** is a reviewed member set — which is
+what the authorization packet is. The launcher composes the review manifest from
+it and hands both the manifest and the resolved OID to the stage commands; in
+steady state it passes neither, because there is nothing to carry.
+
+**If the checker refuses saying the closure is identical**, this ceremony is not
+a transition and does not need one. Re-run without expecting a closure change:
+the launcher will detect steady state by itself.
+
+This section used to hold a second loader block for the transition case,
+alongside an instruction to "replace the final command" of the steady-state one.
+That instruction produced a live failure — the edited block still extracted from
+`refs/cairn/gate-anchor`, so stage 1 ran the candidate's checker and stage 2 ran
+the old one. One launcher removes the class.
 
 ### The dated posture, and what ends it
 
