@@ -53,7 +53,7 @@ _TREES = (
     "dev/proposals/archive",
 )
 
-#: This generator's OWN exact-anchored pass heading (the schema's S1 shape).
+#: This generator's OWN exact-anchored pass heading.
 #: Not imported from the planner -- see the module docstring.
 _PASS_RE = re.compile(
     r"^## Plan review -- (?P<reviewer>[^\n]+?) -- "
@@ -164,7 +164,7 @@ def report(root: Path) -> int:
                        if r["required"].lower().startswith("required")]
     unresolved: List[Tuple[str, str]] = []
     for r in review_required:
-        # S6 reads the FIRST PARENTHESISED GROUP ONLY; text after the closing
+        # The reader takes the FIRST PARENTHESISED GROUP ONLY; text after the closing
         # paren is rationale prose and is ignored.  Counting whole field values
         # instead reports one "form" per plan, which is a property of the prose
         # rather than of the grammar under test.

@@ -62,9 +62,8 @@ authenticated, and nothing cryptographically binds its output to a release
 tag. Running it, reading it, and recording it in the release notes is the
 Maintainer's act -- see ``SECURITY.md`` and ``bootstrap/PROVENANCE.md``.
 
-Security-hardening Chunk 7 / R1; manifest derivation per the
-``scan-coverage`` plan; four-phase orchestration per the
-``release-security-orchestration`` plan.
+Manifest derivation per the ``scan-coverage`` plan; four-phase
+orchestration per the ``release-security-orchestration`` plan.
 """
 from __future__ import annotations
 
@@ -109,8 +108,8 @@ _REQUIRED_FINDING_FIELDS = ("filename", "test_id", "issue_severity",
                             "line_number", "issue_text")
 _REQUIRED_ERROR_FIELDS = ("filename", "reason")
 
-#: The release-mode token, and its **one** recognized value (Binding
-#: amendment R1). ``bootstrap/tests/conftest.py`` reads exactly this pair and
+#: The release-mode token, and its **one** recognized value.
+#: ``bootstrap/tests/conftest.py`` reads exactly this pair and
 #: refuses skipped / xfailed / xpassed outcomes when it matches; any other
 #: value -- including the variable being absent -- leaves ordinary contributor
 #: behaviour untouched. The pair lives here because this command is the only
@@ -711,8 +710,8 @@ def scan_targets() -> list[str]:
     # the same shipped-verbatim-.py class as a module script, but delivered
     # unconditionally OUTSIDE _MODULE_MAPPINGS (install._ALWAYS_ON_MAPPINGS). They
     # were release-unscanned while side-door-delivered; including them here closes
-    # that PRE-EXISTING Bandit blind spot, not just a new one (R1 / side-door
-    # parity). Same `templates/modules/{src}` join as the module loop above.
+    # that PRE-EXISTING Bandit blind spot, not just a new one. Same
+    # `templates/modules/{src}` join as the module loop above.
     for spec in _ALWAYS_ON_MAPPINGS:
         if spec.verbatim and spec.src.endswith(".py"):
             targets.add(f"templates/modules/{spec.src}")
@@ -725,8 +724,8 @@ def scan_targets() -> list[str]:
             str(p.relative_to(CAIRN_ROOT))
             for p in (CAIRN_ROOT / sub).glob("*.py")
         )
-    # The scaffold engine package (post-split; plan 2026-06-05-scaffold-split,
-    # RR3/S4): RECURSE it -- every module under bootstrap/_scaffold/ is
+    # The scaffold engine package (post-split): RECURSE it -- every module
+    # under bootstrap/_scaffold/ is
     # privileged implementation, equal in authority to the old monolith, so the
     # non-recursive bootstrap/*.py glob above would leave the engine's guts
     # unscanned after the split. bootstrap/tests/ (intentional attack fixtures)
@@ -902,7 +901,7 @@ def run_bandit() -> int:
     # `errors` array, scans the rest, and exits 0 -- so the rc branch above
     # never fires and the run reports clean over a file it never opened.
     # Fail closed here, BEFORE allowlist filtering, matching the scanner-error
-    # posture above (scan-coverage plan, Chunk A / [I1]).
+    # posture above.
     errors = report.get("errors") or []
     if errors:
         detail = "\n".join(
@@ -974,7 +973,7 @@ def run_check_cairn() -> int:
 
 
 def _release_child_env() -> dict[str, str]:
-    """The child environment for phases 3 and 4 (**R1.1**).
+    """The child environment for phases 3 and 4.
 
     Built from a **copy** of ``os.environ`` and passed **explicitly** to both
     subprocesses. Three properties, each load-bearing:

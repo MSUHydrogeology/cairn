@@ -58,10 +58,8 @@ Usage::
 Exit codes: ``0`` clean; ``1`` at least one broken link / anchor / path;
 ``2`` usage error.
 
-Source proposal / plan: the
-``cairn-self-application-and-docs`` arc (Chunk 1) established this
-self-check; the Cairn v0.2 P1 ``reference-scripts`` arc unified its
-claim-path half onto the packaged generic checker.
+The ``reference-scripts`` arc unified this self-check's claim-path half
+onto the packaged generic checker, so the two cannot drift.
 """
 from __future__ import annotations
 
@@ -129,8 +127,8 @@ def _load_module(name: str, path: Path, what: str):
     return module
 
 
-# Compose the shipped claim-path checker (P1) and the content-integrity
-# scanner (P2 Layer 2/3) -- check_cairn runs the exact tools, no copies.
+# Compose the shipped claim-path checker and the content-integrity
+# scanner -- check_cairn runs the exact tools, no copies.
 claim_check = _load_module(
     'cairn_claim_check', _CLAIM_CHECK_SRC, 'claim-checker')
 content_scan = _load_module(
@@ -147,8 +145,7 @@ verify_counts = _load_module(
 
 #: File globs (relative to the repo root) whose backticked path-claims
 #: describe an EXTERNAL repository and must not be resolved against the
-#: Cairn tree.  Case studies write up other projects; folding this in is
-#: ledger item E (Cairn v0.2 P1).
+#: Cairn tree.  Case studies write up other projects.
 _EXTERNAL_ALLOW: list[str] = ['case-studies/*.md']
 
 #: #58 loop-fidelity gate -- Cairn-internal-only path prefixes: directories
@@ -270,7 +267,7 @@ def _check_counts(md: Path, text: str, result: Result) -> None:
 
     Only *failures* — drift, an unregistered-key refusal, or a measurement
     error — become check_cairn flags.  A visible *skip* (an ``Invariant``
-    whose sibling root is absent, RR2) is printed but does **not** fail the
+    whose sibling root is absent) is printed but does **not** fail the
     gate, so a contributor lacking a registered sibling checkout is not
     blocked; the seed registry's roots are local to the Cairn tree, so a
     skip is not normally reached here.
@@ -414,7 +411,7 @@ def _parse_allow_spec(spec: str) -> set[str]:
     """Path tokens listed before an optional ``reason=`` in a
     ``cairn-internal-ref`` marker. A token needs a path separator
     (``doctrine/dual-review.md``, or the bare prefix ``doctrine/``); a stray
-    prose word is ignored. **R1:** a bare directory name that *matches a known
+    prose word is ignored. A bare directory name that *matches a known
     internal prefix* (e.g. ``doctrine``) is normalized to ``doctrine/`` so an
     operator who omits the trailing slash is not silently dropped."""
     out: set[str] = set()
@@ -444,7 +441,7 @@ def _check_dangling_internal_refs(md: Path, root: Path, result: Result) -> None:
     reference to a Cairn-internal-only path (``doctrine/*``) that would dangle
     once installed in an adopter tree (the path is not in the install set).
 
-    Scans BOTH backticked path tokens and raw Markdown link targets (N1: a
+    Scans BOTH backticked path tokens and raw Markdown link targets (a
     relative ``[x](doctrine/..)`` link resolves in the Cairn source so
     ``link_check`` passes it, then breaks on adoption). Fail-closed. Exempt a
     deliberate deeper-why citation with a ``cairn-internal-ref-allow:

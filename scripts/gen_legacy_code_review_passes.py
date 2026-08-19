@@ -4,9 +4,8 @@
 
 """Generate the legacy **Code-review** record manifest from a named commit.
 
-Chunk C3 of plan `review-efficient-lifecycle`, implementing accepted proposal
-`2026-08-10-claude-code-review-blindness` **R3'** ("legacy, keyed
-non-replayably"), which requires four things this script supplies:
+The legacy population is keyed **non-replayably**, which requires four
+things this script supplies:
 
 * **pin the legacy baseline to one named commit**, recorded in the manifest --
   so this reads the *committed tree at that commit*, never the working tree.
@@ -34,14 +33,14 @@ A *record heading* is admitted when it is, at the baseline commit:
 1. a **conforming Code-review pass** heading
    (``## Code review -- <reviewer> -- YYYY-MM-DD[ (round N)]``), in a plan of
    any status.  A dated reviewer heading is a real review record whoever wrote
-   it, and R3' grandfathers every pass that existed at the implementing commit
-   -- including one in a plan still in flight, whose review has already
+   it, and the manifest grandfathers every pass that existed at the baseline
+   commit -- including one in a plan still in flight, whose review has already
    happened and must not be invalidated by a schema that postdates it;
 2. a ``## Response to code review`` heading, in a plan of any status.  The
    exact ``Answers:`` field these must now carry is *newer than every Response
    in the tree* (measured: 2 exist corpus-wide, both without it), so without
    this rule the archived plan carrying one reddens the moment the gate is
-   wired -- and R5's accepted blast radius says "no existing artifact
+   wired, and the accepted blast radius is "no existing artifact
    violates";
 3. a **non-conforming** ``## Code review...`` container heading -- the bare
    ``## Code review`` the plan template ships, or a decorated variant --
@@ -76,7 +75,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional
 
-#: The baseline commit R3' requires the manifest to pin.  Recorded here **and**
+#: The baseline commit the manifest pins.  Recorded here **and**
 #: in the planner's manifest docstring, so a reader of either sees the same
 #: commit and a mismatch between them is visible rather than inferred.
 BASELINE_COMMIT = "4ca44eb8d1b378a0214019270e1a2d83976c7bb0"
@@ -88,7 +87,7 @@ BASELINE_COMMIT = "4ca44eb8d1b378a0214019270e1a2d83976c7bb0"
 #: checks.
 _TREES = ("dev/plans", "dev/plans/archive")
 
-#: This generator's OWN exact-anchored Code-review pass heading (R2''s grammar).
+#: This generator's OWN exact-anchored Code-review pass heading.
 #: Not imported from the planner -- see the module docstring.
 _PASS_RE = re.compile(
     r"^## Code review -- (?P<reviewer>[^\n]+?) -- "
@@ -99,7 +98,7 @@ _PASS_RE = re.compile(
 #: `_PASS_RE` is the container population rule 3 governs.
 _ANY_CODE_REVIEW_RE = re.compile(r"^## Code review\b.*$")
 
-#: A Response-to-code-review heading (R2''s binding target section).
+#: A Response-to-code-review heading -- the section a pass binds to.
 _RESPONSE_RE = re.compile(
     r"^## Response to code review -- (?P<author>[^\n]+?) -- "
     r"(?P<date>\d{4}-\d{2}-\d{2})(?: \(round (?P<round>\d+)\))?$"

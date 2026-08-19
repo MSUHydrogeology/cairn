@@ -16,8 +16,8 @@ dogfood tool: they are **not** installed into adopter trees (not in
 ``_CORE_MAPPINGS``) and add nothing to an adopter's operational kernel.
 They run on Cairn's own docs.
 
-Security by construction (the proposal's Codex P1 #1, the plan's IR3)
-----------------------------------------------------------------------
+Security by construction
+------------------------
 A document annotation (``<!-- verify: <key> -->``) carries **only a
 registry key** -- never a path, never a command.  The key maps here to a
 code-controlled measurement whose ``root`` and ``fn`` are fixed in this
@@ -29,7 +29,7 @@ a **fixed argument vector** (``shell=False``) and a validated rev-range,
 never a shell string.  There is therefore no document-supplied path, no
 Markdown execution, and no shell-injection surface.
 
-Scope bound (the plan's RR3): no cache, no incremental layer.  Each
+Scope bound: no cache, no incremental layer.  Each
 measurement is a cheap, bounded stdlib scan or a bounded ``git log``
 range, and the registry stays small (soft cap ~10 keys).  If it ever
 wants a cache to stay fast, that is the curation-tax kill-signal -- shrink
@@ -87,7 +87,7 @@ def _resolve_within(root: Path, target: str) -> Path:
 
     Both sides are fully resolved (symlinks followed), so a symlink or a
     ``..`` segment inside *target* that would leave the tree is caught
-    (IR3 containment).  *root* must exist (the caller -- ``verify_counts``
+    (containment).  *root* must exist (the caller -- ``verify_counts``
     -- gates an absent root into a visible skip before reaching here).
     """
     root_real = root.resolve(strict=True)
@@ -112,7 +112,7 @@ def count_lines(root: Path, target: str) -> int:
 def count_files(root: Path, target: str) -> int:
     """Number of files (not directories) under the contained ``target``
     directory, excluding dot-entries (``.git`` and friends).  Bounded by
-    the target subtree (RR3 -- a registered target is a small dir)."""
+    the target subtree -- a registered target is a small dir."""
     path = _resolve_within(root, target)
     if not path.is_dir():
         raise NotADirectoryError(f'count_files: not a directory: {path}')
@@ -209,7 +209,7 @@ def measure(invariant: Invariant) -> int:
 
 
 #: The seed registry -- only the headline sizes that already drift across
-#: Cairn's docs (RR3 soft cap ~10 keys).  Keyed by a short, stable name a
+#: Cairn's docs (soft cap ~10 keys).  Keyed by a short, stable name a
 #: doc annotates with ``<!-- verify: <key> -->``.
 #:
 #: ``claim_check_watch_file_lines`` is the canonical drift case: the
@@ -223,7 +223,7 @@ REGISTRY: dict[str, Invariant | Snapshot] = {
         target='templates/modules/default-on/claim_check.py',
     ),
     # The `solo-greenfield` module count the quickstart states. Guards the
-    # adopter-entry drift the 2026-06-12 audit found (F1's module half) under
+    # adopter-entry drift the 2026-06-12 audit found (its module half) under
     # the check_cairn docs lens, complementing the install-path pytest gate in
     # test_quickstart_sequence.py (which also guards the slot count).
     'solo_greenfield_module_count': Invariant(

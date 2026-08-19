@@ -426,3 +426,37 @@ asked. Worth noting for whoever next reviews the neutrality gate's scope: the
 tree carries vendor names in places the gate does not look, and the reason they
 are unproblematic is that they sit in dead prose, which this pass is deleting
 anyway.
+
+### Batch: the reference scripts and the release security check
+
+| File | Before | After | Kept |
+|---|---:|---:|---|
+| `scripts/measurements.py` | 7 | 0 | — |
+| `scripts/check_cairn.py` | 7 | 0 | — |
+| `scripts/gen_legacy_code_review_passes.py` | 8 | 1 | `H2` — heading level |
+| `scripts/gen_legacy_passes.py` | 2 | 0 | — |
+| `bootstrap/security_check.py` | 6 | 0 | — |
+
+`R3'` and `R2''` — prime-marked findings from
+`dev/proposals/archive/2026-08-10-claude-code-review-blindness.md` — were the
+densest coordinates in the pass, and the most confidently wrong to keep. A
+prime mark means *the amended form of finding R3*, which is a fact about a
+review round and nothing else; a reader in a year meets `R3'` and cannot even
+tell it from a transposed typo.
+
+**A near-keep worth recording.** `gen_legacy_code_review_passes.py:79` read
+"The baseline commit `R3'` requires the manifest to pin," and the constraint is
+real and live — the generator does pin a baseline commit. But the *coordinate*
+was not doing the work: rewritten as "The baseline commit the manifest pins,"
+the sentence keeps every operative word and loses only the provenance. That is
+the test to apply when a dead coordinate sits next to a live obligation —
+**the obligation survives the coordinate's removal**, because the obligation
+lives in the code, not in the review that noticed it.
+
+**Two `R1`s, opposite dispositions, one commit apart.** `quality_gate.py`'s
+`R1` was kept (published doctrine defines it, the gate emits it);
+`security_check.py`'s `R1` — "Security-hardening Chunk 7 / R1", "Binding
+amendment R1", "**R1.1**" — was removed. Same token, same tree, both in
+production code under `scripts/` and `bootstrap/`. Nothing about the token's
+*shape* separates them and nothing about its *location* does either; only
+opening the referent does.
