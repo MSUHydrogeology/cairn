@@ -2308,3 +2308,73 @@ this plan's output**: its tags are specimens in a regex spec and worked examples
 in a docstring explaining the live-vs-dead rule, and its `LIVE` frozenset names
 `N4`–`N8`, `R1`, `R6` exactly as this ledger dispositioned them. Sweeping it
 would have deleted a test *about* not sweeping live coordinates.
+
+## Correction: the review-basis fields -- Claude -- 2026-08-19
+
+**The five Internal plan reviews in this artifact do not carry the four-field
+review basis, and the omission is recorded here rather than repaired.**
+
+The sections at lines 573, 950, 1319, 1591 and 1998 each declare `Reviewed
+commit` and none of `Target`, `Prior findings`, or `Assurance path`. The
+four-field basis became mandatory at `76bc678` (2026-08-12), **one day before
+those reviews landed**, so the obligation was in force and was not met.
+
+**Why this is a correction and not an amendment.** Those three fields are
+declarations by a reviewer about the read *they* performed — what it covered,
+what it carried forward, which assurance path it took. The reviewer was a
+fresh-context Internal pass that no longer exists. Anyone filling them in now
+is authoring a statement about someone else's read and signing it in their
+name, which is precisely what the attribution rule in `AGENTS.md` > Review
+exists to prevent. Amending would clear the conformance check fastest and would
+be the one option that puts a false statement into the record.
+
+**Maintainer decision**, taken on those three options (amend / append a
+correction / accept until archive):
+
+> append the correction, accept the red check
+
+**Consequence, stated so it is not rediscovered as a defect.**
+`bootstrap/tests/test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`
+reports **15 violations against this file and stays red until this plan
+archives** — the scan globs `dev/plans/*.md`, live artifacts only. The check is
+correct and the record is now honest; those are not in tension. A concurrent
+plan's Boundary B record carries this as an attributed non-pass disposition
+pointing here, which is the intended handling rather than a workaround.
+
+A related defect in the same sections **was** repairable and was repaired at
+`b977a18`: four `## Response to plan review` headings carried `(round N)` inside
+the kind span the disposition predicate compares, silently discharging nothing.
+Moving the marker after the date took the count from 19 to 15. Headings are the
+author's own; a reviewer's declarations are not.
+
+## Boundary B -- not run, by Maintainer decision -- 2026-08-19
+
+This plan's verification contract records `**Boundary B mode**: full`. It was
+not run. The Maintainer's decision:
+
+> Given that all we changed are docstrings, comments, and docs, I do not
+> believe that a Boundary B run is neeeded. This will be done elsewhere.
+
+**One qualification on the premise, recorded so the decision rests on accurate
+facts.** The change is *almost* entirely prose. The exception is **Chunk D,
+which renamed 38 test containers** — a real code change that alters class
+bindings and every pinned node id beneath them. What it received instead of
+Boundary B:
+
+* **842 tests passed** across the three files holding all 38 renames
+  (`test_lifecycle_contract.py`, `test_pilot_evidence.py`,
+  `test_security_verification.py`), at `75687c8`.
+* A tree-wide grep for each old name before renaming. Every hit outside its own
+  file was **prose** — proposals, plans, `dev/PLANNING.md`, `doctrine/` — except
+  one live cross-reference in engine code (`bootstrap/_scaffold/config.py:112`),
+  which was updated in the same commit and verified attestation-neutral.
+* The 38 new names were checked unique, and the matching rule returns **0**
+  afterwards.
+
+**The remaining hazard is the one Boundary B would not have caught either.**
+`bootstrap/tests/fixtures/gate_manifest.json` pins **335 node ids naming the
+renamed classes**. That is **D2**, MAINTAINER-GATED, and it regenerates under
+the re-anchor ceremony — which is also where the integration evidence for this
+change belongs, since the ceremony rewrites the AST baseline, the gate manifest
+and the install lockfile, and changed fixture bytes would invalidate any
+Boundary B record taken before it.
