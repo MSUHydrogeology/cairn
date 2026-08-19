@@ -3,12 +3,14 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
-also adds a **file write and a subprocess invocation to every test session**,
-which is a trust boundary being widened in the one file that can already decide
-a session's exit status.
+also adds a **file write to every test session**, which is a trust boundary
+being widened in the one file that can already decide a session's exit status.
+*(Metadata corrected at Revision 2: this clause said "and a subprocess
+invocation" until Revision 1 removed all subprocess execution under E1. The
+value `high-assurance` is unchanged and never depended on the subprocess.)*
 **Touches**: `bootstrap/tests/conftest.py` (gate-frozen); `.gitignore`;
 `dev/measurement/README.md`; one new test file; one new reader tool. No shipped
 template, no adopter-facing surface, no doctrine text, no dependency.
@@ -875,3 +877,297 @@ Security Review and re-anchor ceremony.
 The necessary changes are local: bind classification to the complete invocation,
 repair outcome precedence, name the actual hook lifecycle, repair a damaged tail
 under the lock, and make lock acquisition bounded.
+
+## Response -- Claude -- 2026-08-19 (round 2)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `72e4d73`. Four blocking findings, all narrow, and **all four
+reproduce**. I re-ran each probe under the canonical interpreter rather than
+accepting the reports, and one of them is worse than the review states.
+
+**[E7] accept.** Reproduced: with `-k definitely_no_match or probe`,
+`config.args` was `['.']` while `config.invocation_params.args` retained
+`['.', '-q', '-p', 'no:cacheprovider', '-k', 'definitely_no_match or probe']`.
+So the selector is **invisible** to the source Revision 1 named, and the scope
+classifier as specified was unimplementable from the recorded row. Revision 2
+records `config.invocation_params.args`, classifies against a **closed
+safe-option allowlist** so an unfamiliar option yields `unknown`, and makes
+`--collect-only` never `full`.
+
+**[E8] accept.** Reproduced in a four-outcome probe. A call-phase
+`pytest.skip()` produces `setup=passed`, `call=('skipped', wasxfail=False)`,
+`teardown=passed` — and Revision 1's rule, which tested only for *a skip in
+setup*, falls through to **`passed`**. The probe also confirmed xfail as
+`call=('skipped', True)` and xpass as `call=('passed', True)`, and that a
+setup-skipped node emits **no call report at all**. Revision 2 states precedence
+across all phases and asserts mutually-exclusive totals. The second half of the
+finding is also accepted: "two hooks" was wrong, and Revision 2 names the real
+lifecycle — the marker must be claimed at session *start*, before any nested
+test could inherit it, and collection errors require collection reports.
+
+**[E9] accept — and the finding understates the damage.** I wrote a good row, a
+truncated row with no trailing newline, then a normal append. The bytes were:
+
+```
+{"row": 1}\n{"row":2,"partial":{"valid"{"row": 3}\n
+```
+
+The partial tail **fuses with the next append into a single malformed line**, so
+a line-oriented reader loses not only the damaged fragment but **the later good
+row** — `{"row": 3}` was unrecoverable. Reader tolerance therefore does not
+merely fail to repair the damage; it silently drops a valid record. Revision 2
+puts the repair in the **writer**, under the lock.
+
+**[E10] accept.** The contradiction is mine: Revision 1 listed "lock contention
+timeout" as a failure disposition while specifying a *blocking*
+`flock(LOCK_EX)`, which has no deadline. Verified that a held lock leaves a
+second blocking acquisition waiting indefinitely, and that `LOCK_NB` refuses
+immediately — so a bounded retry is available and is what Revision 2 specifies.
+
+**On the closed findings.** E1, E4 and E6 recorded closed; the stale
+assurance-path clause is corrected in the header metadata (the *value* was never
+affected) and restated below, with the correction marked inline rather than made
+silently.
+
+## Revision 2
+
+The complete current contract, self-contained. Supersedes Revision 1 in full;
+earlier sections stand as immutable history.
+
+### Assurance path, as it now stands
+
+**high-assurance.** The change edits `bootstrap/tests/conftest.py`, which is
+gate-frozen, so landing it requires a re-anchor. It adds **a file write to every
+non-child, non-release test session** in the one file that can already decide a
+session's exit status. **It executes nothing** — Revision 1 removed all
+subprocess use, and Revision 2 adds none back.
+
+### Scope
+
+Make the engine suite record its own cost as a by-product of running, so the
+cost question stops being answered by re-running the suite, and so the frequency
+of full-suite runs becomes observable.
+
+**In scope**: hooks in `bootstrap/tests/conftest.py`; a gitignored JSONL ledger;
+a `.gitignore` rule for it; a reader in `tools/`; one new test file; a note in
+`dev/measurement/README.md`.
+
+**Excluded**: any subprocess execution; any change to doctrine, the canonical
+test command, shipped templates, or adopter surfaces; any dependency; any
+enforcement.
+
+### The collector — the real hook lifecycle
+
+Four hooks, named because the count was wrong before:
+
+* **`pytest_configure`** — claim or decline the reentrancy marker, **once, at
+  session start**. This must happen here and not at finish: a nested test can
+  spawn a child at any point during the run, and a marker claimed at the end
+  would be absent for every child spawned before it.
+* **`pytest_runtest_logreport`** — accumulate per-node phase outcomes and
+  durations.
+* **`pytest_collectreport`** — count collection errors, which never reach
+  `runtest_logreport`.
+* **`pytest_sessionfinish`** — reduce, write, and release an owned marker in a
+  `finally` path.
+
+### Outcome precedence — across all phases
+
+For each node id, over its setup / call / teardown reports, in order:
+
+1. any `failed` outcome in **any** phase → **`failed`**;
+2. otherwise a report carrying `wasxfail` → **`xpassed`** if that report passed,
+   else **`xfailed`**;
+3. otherwise any `skipped` outcome in **any** phase → **`skipped`** (this is the
+   rule Revision 1 got wrong: a call-phase `pytest.skip()` has no setup skip and
+   no `wasxfail`, and fell through to `passed`);
+4. otherwise → **`passed`**.
+
+**A teardown-only skip counts as `skipped`** by rule 3 — the node ran, but the
+session did not complete it cleanly, and calling it a pass overstates the
+evidence. A setup-skipped node emits no call report, which rule 3 handles
+without special-casing.
+
+The five counts are **mutually exclusive and sum to `collected`**, and that
+identity is asserted, not merely the presence of the fields.
+
+### The row schema
+
+| field | source |
+|---|---|
+| `ts_start`, `ts_end` | UTC, ISO-8601 |
+| `wall_s` | session duration, clock stopped **before** collector work |
+| `collector_ms` | the collector's own cost |
+| `head` | 40-hex from `.git/HEAD` + refs / packed-refs; `null` if `.git` is not a directory |
+| `interpreter` | `sys.version_info` triple |
+| `invocation` | **normalized `config.invocation_params.args`** — the complete argv, not `config.args` |
+| `scope` | `full` \| `targeted` \| `unknown` |
+| `label` | `CAIRN_SUITE_LEDGER_LABEL` if set, else `null` — never inferred |
+| `collected` | node count |
+| `passed`/`failed`/`skipped`/`xfailed`/`xpassed` | per the precedence above |
+| `collection_errors`, `exitstatus`, `interrupted` | session-level |
+| `by_file` | `{path: seconds}`, the 25 most expensive |
+
+### Scope classification — closed allowlist, fail-conservative
+
+Classified from `invocation` alone, so the recorded row is **auditable**: a
+reader can re-derive `scope` from the stored field without trusting the writer.
+
+`full` requires **all** of: the positional arguments resolve to the suite root;
+**every** option present appears in a closed **safe-option allowlist** (options
+known not to narrow selection — `-q`, `-p`, `--quality-gate-shuffle-seed`,
+`--durations`, and similar); the session was not truncated (`-x` /
+`--maxfail` reached, or interrupted); and there were no collection errors.
+
+**`--collect-only` is never `full`** — nothing ran.
+
+A recognized narrowing option or a strict-subset path gives `targeted`. **Any
+option not in the allowlist gives `unknown`** — including an option added by a
+future pytest or an unknown plugin. The allowlist is closed by construction, so
+an unfamiliar selector cannot be mistaken for a full run.
+
+### Durability — writer repairs, reader reports
+
+Under a **bounded** advisory lock:
+
+* **Acquire with `LOCK_NB` on a retry loop with a deadline** (short sleeps, total
+  budget on the order of a second). On expiry: **no row**, no waiting, no
+  exception. A blocking `flock` is specifically refused — it has no deadline and
+  would let a stuck holder hang a test session, which contradicts
+  outcome-inertness.
+* **Repair the tail before appending.** With the lock held, if the file is
+  non-empty and does not end in a newline, **write a newline first**. Without
+  this the previous truncated fragment fuses with the new row and *both* are
+  lost; measured, `{"row": 3}` became unrecoverable.
+* Write one encoded line with a single `os.write` and **check the returned byte
+  count**.
+
+`O_APPEND` makes positioning-at-EOF and the write one step with respect to other
+writers; that, not any byte threshold, is the ordering guarantee. The 4096-byte
+cap setting `by_file` to 25 entries is a **bounded-record and storage policy**,
+not an atomicity boundary. POSIX only; **network filesystems are excluded**.
+
+The reader **reports** a malformed line and continues — that remains true, but it
+is now a second line of defence rather than the whole contract.
+
+### The four guards
+
+1. **Outcome-inert.** Wrapped in `except Exception`; never touches
+   `session.exitstatus`; runs last, after the release-mode rule.
+2. **Reentrancy, with ownership.** Marker `CAIRN_SUITE_LEDGER_SESSION=1`, claimed
+   in `pytest_configure`. If already present, this is a child: record
+   `owned=False`, write nothing. Otherwise set it, `owned=True`, and unset it in
+   a `finally` path **only if owned**.
+3. **Containment.** Skip when the ledger directory resolves under
+   `tempfile.gettempdir()`.
+4. **Release mode.** Skip entirely under `CAIRN_RELEASE_GATE_ACTIVE`.
+
+Plus `CAIRN_SUITE_LEDGER=0` to opt out, and a no-op when `dev/measurement/` is
+absent.
+
+### Failure dispositions
+
+Every path closes toward **doing nothing**: unwritable directory, absent
+`dev/measurement/`, encoding failure, **lock deadline expiry**, missing or
+malformed `.git` — each yields no row and no other effect.
+
+A short write can still leave a partial line. That is now recoverable rather than
+merely detectable: the **next writer repairs the boundary**, so at most the
+truncated row itself is lost and no subsequent row is.
+
+### Public paths and evidence
+
+Public paths are the four hooks, exercised through real pytest sessions in
+`bootstrap/tests/test_suite_ledger.py` (a proposed path, written as a plain
+reference because the link checker resolves targets).
+
+| invariant | falsifier |
+|---|---|
+| Exit status never changes | force the helper to raise; compare against a control run with the collector disabled |
+| No child session writes | run a nested pytest; assert the row count is unchanged |
+| Two sequential sessions in one interpreter both write | two `pytest.main()` calls; assert **two** rows |
+| A pre-existing marker survives | set it externally; assert still set afterwards |
+| Release mode writes nothing | `CAIRN_RELEASE_GATE_ACTIVE=1`; assert no row |
+| `scope` and `invocation` | canonical full, shuffle-full, `--collect-only`, single file, node id, `-k`, `-m`, `--lf`, `-x`-truncated, collection error, **and an unknown option** — assert both the stored invocation and the scope |
+| Outcome totals | call-phase skip, setup skip, teardown skip, xfail, xpass, setup error, collection error, interrupt — assert exact totals summing to `collected` |
+| Tail repair | write a partial tail, then a normal append; assert the reader **reports the fragment and returns the later row** |
+| Bounded lock | hold the lock in another process; assert the session completes within a bounded time and writes no row |
+| Row ≤ 4096 bytes | worst case from the 25 longest real paths |
+
+Standing gates: `test_gate_manifest.py`, `test_gate_preflight.py`,
+`test_security_check.py`, `test_python_floor.py`.
+
+**Boundary B mode will be `full`** — a gate-frozen file under a re-anchor
+ceremony is a trust-ceremony surface twice over.
+
+### The reader
+
+`tools/suite_cost.py` renders the ledger for a human. The comprehensibility bar
+is unchanged: it opens with the instruction not to re-run the suite; every figure
+carries its conditions; no bare identifiers; it names its own limits. Frequency
+is reported by `scope`; **overlap** is reported as *"overlapped another recorded
+top-level session"*, never as "another suite was running".
+
+### Security preflight — unchanged in substance, restated current
+
+**S1.** Inputs: `os.environ` (three markers), the pytest `session`/`config`
+objects, `tempfile.gettempdir()`, and **direct file reads** of `.git/HEAD`,
+`.git/refs/**`, `.git/packed-refs`. The repository supplies ref bytes, the
+invocation argv, and the paths in `by_file`. **Nothing is executed**; ref bytes
+are shape-validated as 40-hex or discarded to `null`; argv and paths are opaque
+strings subject to length capping and, for argv, membership tests against a
+closed allowlist.
+
+**S2.** Each invariant names its falsifier; the load-bearing one derives its
+expectation from a control run with the collector disabled.
+
+**S3.** No selector — a hook on every non-child, non-release session under
+`bootstrap/tests/`. The reader is run by a person or the goodnight routine.
+**Cairn has no CI.**
+
+**S4.** Every path lands on *less* authority. All four guards and the lock
+deadline are skip conditions, so an unrecognised state produces silence. Guards 2
+and 3 fail toward *not measuring*, never toward writing into a fixture tree.
+
+**S5.** The assumed attacker already runs arbitrary code in the session. **v2
+adds no execution capability.** It adds a write to a path derived from the
+conftest's location, contained by guard 3 and by the row carrying no
+attacker-chosen content beyond file paths and argv tokens. Exit-status influence
+is closed **by construction**; write-path targeting only **by enumeration**.
+
+### Known omissions and deferred work
+
+* **Dirty-tree state is not recorded** — deferred at E1. Revival requires the
+  sterile-invocation contract recorded in Revision 1 **and its own Security
+  Review**.
+* **Release-mode and nested sessions are unmeasured** by guards 4 and 2.
+* **Windows is unclaimed**; `O_APPEND` and `flock` guarantees here are POSIX.
+* **Network filesystems are excluded.**
+* **Plan attribution is manual** unless `CAIRN_SUITE_LEDGER_LABEL` is set.
+* **In-process pytest runs** (`pytest.main()` inside a test) are treated as
+  children by the marker and are therefore unmeasured, deliberately.
+* **Collector overhead is unmeasured** until implementation; `collector_ms`
+  exists so it is measured from the first run rather than assumed.
+
+### Withdrawn / superseded commitments
+
+* **`config.args` as the `argv` source** — withdrawn (E7); it does not carry
+  selector options, measured. Replaced by `config.invocation_params.args` plus a
+  closed safe-option allowlist and an explicit `--collect-only` rule.
+* **The outcome precedence "failure → setup skip → wasxfail → pass"** —
+  withdrawn (E8); it classifies a call-phase skip as a pass, measured. Replaced
+  by an all-phase precedence with asserted mutually-exclusive totals.
+* **"Two hooks"** — withdrawn (E8); the marker must be claimed at session start
+  and collection errors need collection reports. Replaced by the four-hook
+  lifecycle.
+* **Reader tolerance as the whole truncation contract** — withdrawn (E9); a
+  fused tail loses the *following* good row, measured. Replaced by writer-side
+  boundary repair under the lock, with reader tolerance retained as a second
+  line of defence.
+* **Blocking `flock(LOCK_EX)`** — withdrawn (E10); it has no deadline and
+  contradicted this contract's own "lock contention timeout" disposition.
+  Replaced by a bounded `LOCK_NB` retry whose expiry yields no row.
+* **The header's "and a subprocess invocation" clause** — corrected in place as
+  metadata rather than left to be resolved from history; the `high-assurance`
+  value never depended on it.
