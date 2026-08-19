@@ -1,12 +1,11 @@
-"""Tests for the adopter-licensing-compliance plan (P1 + P2).
+"""Tests for adopter licensing compliance.
 
-* P2: every shipped ``templates/**/*.py`` manifest source carries the
-  SPDX/copyright header within its first 3 lines (after any shebang, per
-  plan-review R10); every self-hosted twin under ``scripts/``/``tools/``
-  carries the identical header AND stays byte-identical to its
-  ``templates/`` source (the parity check plan-review R3 flagged as
-  missing).
-* P1: the notice installs to a scratch target, is recorded in the lockfile
+* every shipped ``templates/**/*.py`` manifest source carries the
+  SPDX/copyright header within its first 3 lines (after any shebang);
+  every self-hosted twin under ``scripts/``/``tools/`` carries the identical
+  header AND stays byte-identical to its ``templates/`` source, so a header
+  applied to one side of a pair cannot silently diverge them.
+* the notice installs to a scratch target, is recorded in the lockfile
   ``files[]``, and appears in ``--manifest``.
 
 Run from the cairn repo root:
@@ -28,8 +27,8 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 
 _HEADER_TOKEN = "SPDX-License-Identifier: MIT"
 
-# Cairn's own non-shipped dev tooling under scripts/ (own-repo MIT hygiene,
-# not adopter self-propagation -- plan-review R3).
+# Cairn's own non-shipped dev tooling under scripts/ -- own-repo MIT
+# hygiene, not something an adopter's tree propagates.
 _OWN_ONLY_SCRIPTS = (
     "scripts/check_cairn.py",
     "scripts/measurements.py",
@@ -109,8 +108,7 @@ def test_every_self_hosted_twin_carries_spdx_header():
 
 
 def test_every_self_hosted_twin_stays_byte_identical_to_its_source():
-    """The parity check plan-review R3 flagged as absent: a header applied
-    to one side of a twin pair but not the other (or applied differently)
+    """A header applied to one side of a twin pair but not the other (or applied differently)
     would silently diverge Cairn's own self-hosted tree from what
     ``install.py``'s divergence/base-hash check expects."""
     mismatches = []
@@ -148,7 +146,7 @@ def test_content_scan_twin_is_present_and_byte_identical(
 
 def test_own_only_dev_scripts_carry_spdx_header():
     """Cairn's own non-shipped dev tooling -- own-repo MIT hygiene, not
-    adopter self-propagation (plan-review R3's second population)."""
+    adopter self-propagation."""
     missing = [
         rel for rel in _OWN_ONLY_SCRIPTS
         if not _has_header(CAIRN_ROOT / rel)
@@ -157,8 +155,8 @@ def test_own_only_dev_scripts_carry_spdx_header():
 
 
 def test_own_only_dev_scripts_are_not_shipped():
-    """Sanity guard on the P2 population split (plan-review, independently
-    re-derived): these files must have zero manifest rows, or they aren't
+    """Sanity guard on the population split: these files must have zero
+    manifest rows, or they aren't
     actually 'own-only' and belong in the propagating-set tests above."""
     rows = install_manifest(modules=None)
     shipped_dsts = {dst for _src, dst, _verbatim in rows}
@@ -166,7 +164,7 @@ def test_own_only_dev_scripts_are_not_shipped():
     assert not shipped, f"expected these to be unshipped, but found in manifest: {shipped}"
 
 
-# --- P1: the NOTICE.md install path ------------------------------------------
+# --- The NOTICE.md install path ------------------------------------------------
 
 
 def test_notice_is_a_core_mapping():

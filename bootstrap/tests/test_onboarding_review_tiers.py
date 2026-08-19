@@ -3,7 +3,7 @@ onboarding preset may claim that fresh-session / same-vendor review fills
 or staffs the External review tier (`doctrine/dual-review.md:46-47` -- the
 External floor requires a different agent type or a human).
 
-Two independent guards (plan `review-record-integrity`, R4/R5/R7/R8 -- the
+Two independent guards (plan `review-record-integrity` -- the
 proposal's original bare "External" + "fresh-session" co-occurrence spec
 false-positives on legitimate text in `collaborative-team.md` /
 `high-rigor-legacy.md`, verified during plan authoring, so this splits into
@@ -34,7 +34,7 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 ONBOARDING_DIR = CAIRN_ROOT / "templates" / "onboarding"
 
 # The two false-predication wordings the review-record-integrity fix
-# removed from templates/onboarding/solo-greenfield.md (plan-review R4).
+# removed from templates/onboarding/solo-greenfield.md.
 # Matched case-insensitively against whitespace-normalized text so a
 # reflow / line-wrap change can't dodge the guard.
 _FORBIDDEN_PHRASES = (
@@ -79,7 +79,7 @@ def test_no_forbidden_predication_in_any_preset() -> None:
 
 
 def test_solo_greenfield_external_tier_paragraphs_name_their_staffing() -> None:
-    """Positive-predication check (E1), scoped to solo-greenfield.md -- any
+    """Positive-predication check, scoped to solo-greenfield.md -- any
     paragraph naming "External" together with "tier" must name who staffs
     it. Not applied to the other two presets (see module docstring)."""
     path = ONBOARDING_DIR / "solo-greenfield.md"
@@ -105,12 +105,12 @@ def test_solo_greenfield_external_tier_paragraphs_name_their_staffing() -> None:
 
 
 def test_positive_fixture_both_tiers_named_together_passes() -> None:
-    """Synthetic positive fixture (plan-review R3/R8): a minimal snippet
+    """Synthetic positive fixture: a minimal snippet
     that correctly names both tiers in one passage must NOT trip the
     forbidden-phrase guard, even though it mentions "External" and
     "fresh-session" in the same paragraph -- this is exactly the shape
     Part A's own fix produces (Row 1's corrected text), and the original
-    bare co-occurrence spec would have wrongly flagged it (R8)."""
+    bare co-occurrence spec would have wrongly flagged it."""
     fixture = (
         "The roster makes the fresh-session Internal review tier "
         "reproducible; the External floor is filled by the human "

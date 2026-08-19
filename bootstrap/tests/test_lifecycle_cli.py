@@ -5,7 +5,7 @@ Covers Chunk 1 of the executing plan
 
 * session-start: gather of commits / tree-state / in-flight threads, plus
   the one idempotent write it always performs (the skills fan-out
-  self-heal -- see F4 below); the EP4 graceful fallback when no
+  self-heal -- see below); the graceful fallback when no
   handoff-marker commit exists yet.
 * session-start: optional intent.py is skipped-with-note (not a crash) when the
   coordination-tiers tool is not a sibling -- the default-on skill must not
@@ -108,7 +108,7 @@ def test_session_start_lists_commits_since_handoff(repo, monkeypatch, capsys):
 
 
 def test_session_start_ep4_fallback_without_handoff(repo, monkeypatch, capsys):
-    # No "Goodnight" commit exists -> EP4 graceful fallback, never a crash.
+    # No "Goodnight" commit exists -> graceful fallback, never a crash.
     monkeypatch.chdir(repo)
 
     rc = lifecycle.main(["session-start", "--fallback-commits", "5"])
@@ -328,7 +328,7 @@ def test_resolve_agent_defaults_to_agent_without_identity(repo, monkeypatch):
     assert lifecycle._resolve_agent(repo) == "agent"
 
 
-# --- fold-back surfacing gate (F5: --handoff only) ---------------------------
+# --- fold-back surfacing gate (--handoff only) -------------------------------
 
 #: A minimal foldback_suggest.py stub that prints one aging candidate line.
 _FOLDBACK_SUGGEST_STUB = """\
@@ -408,7 +408,7 @@ def test_session_end_without_handoff_does_NOT_surface_foldback(
     repo_with_foldback, monkeypatch, capsys
 ):
     """(g) session-end WITHOUT --handoff does NOT surface fold-back candidates
-    and does NOT emit the capture prompt (the F5 gate).
+    and does NOT emit the capture prompt (the --handoff-only gate).
     """
     root = repo_with_foldback
     monkeypatch.setenv("CAIRN_AGENT", "tester")
@@ -546,7 +546,7 @@ def test_snapshot_flag_via_main(lm_repo: Path, capsys) -> None:
     )
 
 
-# --- F4: session-start's self-description (first-session-survivability, C4) -
+# --- session-start's self-description (first-session survivability) --------
 
 
 def _subparser_help(parser: argparse.ArgumentParser, name: str) -> str:
@@ -586,13 +586,13 @@ def test_module_docstring_scopes_dry_run_claim_to_session_end() -> None:
         f"explicitly: {doc!r}"
     )
     # The blanket "every side-effecting subcommand honors --dry-run" claim
-    # this replaces would have been false for session-start (F4's defect);
+    # this replaces would have been false for session-start;
     # it must not have come back.
     assert "every side-effecting subcommand honors" not in doc.lower()
 
 
 # ---------------------------------------------------------------------------
-# CR4: the shipped full-handoff path must actually invoke the intent prune.
+# The shipped full-handoff path must actually invoke the intent prune.
 # The External review replaced the `_prune_intents(...)` call with `pass` and
 # every relied-on suite still reported 145 passed -- so a regression could
 # silently delete the feature. This test fails if the call is removed, moved
@@ -629,7 +629,7 @@ def _intent_repo(tmp_path: Path) -> Path:
 
 
 def test_handoff_prunes_the_intent_surface(tmp_path, monkeypatch, capsys):
-    """CR4: the real --handoff removes an old released pair and keeps an
+    """The real --handoff removes an old released pair and keeps an
     unreleased claim. Replacing the _prune_intents call with `pass` must fail
     this."""
     root = _intent_repo(tmp_path)

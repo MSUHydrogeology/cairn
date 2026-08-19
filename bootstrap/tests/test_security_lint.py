@@ -1,5 +1,5 @@
 """
-Cairn-dev-only Bandit gate (P2 Chunk 4, finding I3 + plan-review P3.7).
+Cairn-dev-only Bandit gate.
 
 Runs ``python -m bandit`` over the scaffold + Cairn's scripts and fails
 on any HIGH/MEDIUM finding not in a small, rationale'd allowlist.  This
@@ -37,7 +37,7 @@ sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap._scaffold.install import install_manifest  # noqa: E402
 # The derived scan-target set and the Bandit allowlist are single-sourced in
 # the release command (bootstrap/security_check.py); the dev gate imports
-# them so the two never drift (security-hardening Chunk 2 / R2 + Chunk 7).
+# them so the two never drift.
 from bootstrap.security_check import (  # noqa: E402
     ALLOWLIST as _ALLOWLIST,
     _rel as _rel,
@@ -53,7 +53,7 @@ from bootstrap.security_check import (  # noqa: E402
 # copied, and sharing a fail-open: an `issue_severity` in neither table read as
 # "below MEDIUM", so it was neither blocking here nor liveness-confirming in the
 # release command. `is_blocking` / `finding_key` are now imported like the data
-# (release-security-orchestration, D4).
+# (release-security-orchestration).
 
 #: Declared exclusions from the on-disk oracle below: repo-relative path ->
 #: MANDATORY rationale. **Empty today**, and it stays empty: disk and DISTINCT
@@ -172,7 +172,7 @@ def test_no_blocking_security_findings() -> None:
     # (bootstrap/security_check.py) fails closed on it; the dev gate consumes
     # the same report and had the same hole, so it applies the same rule here
     # -- fixing one and not the other is how the two drift (scan-coverage
-    # plan, Chunk A / [I1]).
+    # plan).
     scan_errors = report.get("errors") or []
     if scan_errors:
         pytest.fail(
@@ -210,7 +210,7 @@ def test_allowlist_entries_have_rationale() -> None:
     """Every allowlist entry carries a non-empty rationale -- a
     suppression without a reason is how the discipline rots.
 
-    Vacuous while ``ALLOWLIST`` is empty (it is, since D1's B310 retirement).
+    Vacuous while ``ALLOWLIST`` is empty (it is, since B310 was retired).
     Kept because it costs nothing and fires the moment an entry returns; the
     condition that is *not* vacuous today is liveness, in the release command.
     """
@@ -219,7 +219,7 @@ def test_allowlist_entries_have_rationale() -> None:
 
 
 def test_one_predicate_governs_both_allowlist_consumers() -> None:
-    """D4. This gate and the release command are the two consumers of one
+    """This gate and the release command are the two consumers of one
     ``ALLOWLIST``, and the release command's liveness rule is bound to *its*
     spelling of "blocking". A second spelling here could agree with the filter
     and disagree with liveness -- calling an entry live while suppressing
@@ -458,7 +458,7 @@ def test_the_two_session_lifecycle_tools_are_scanned_by_name() -> None:
 
 
 def test_scan_targets_recurses_the_scaffold_engine_package(tmp_path, monkeypatch) -> None:
-    """RR3/S4 (scaffold-split 0A.1): when the post-split engine package exists,
+    """When the post-split engine package exists,
     EVERY .py under bootstrap/_scaffold/ is scanned recursively (the engine's
     guts can't fall out of the release Bandit gate), while bootstrap/tests/
     (intentional attack fixtures) stays excluded. A no-op until Stage 0B creates

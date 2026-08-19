@@ -4,18 +4,18 @@
 The skills widen Cairn's agent-instruction supply chain (an executable CLI + a
 trusted activation `description`), so security is a first-class acceptance gate:
 
-* **S4 content-scan** over every agent-ingested artifact -- the canonical
+* **content-scan** over every agent-ingested artifact -- the canonical
   ``SKILL.md`` sources *and* the rendered/installed copies *and* the CLI --
   using the shipped ``content_scan`` tripwire (credential / exfiltration /
   prompt-injection patterns); a flag fails the build.
-* **S5 no-network / bounded surface** -- the CLI opens no in-process socket, and
+* **no-network / bounded surface** -- the CLI opens no in-process socket, and
   its source imports no network client.
-* **S3 path-containment** -- a crafted ``CAIRN_AGENT`` cannot redirect the
+* **path-containment** -- a crafted ``CAIRN_AGENT`` cannot redirect the
   reflection write outside ``dev/reflections/``.
 * **per-artifact integrity** -- each installed skill artifact's on-disk hash
   matches the ``dev/.cairn/cairn-lock.yml`` record (so an upgrade tells an adopter edit
   from tampering).
-* **generated-output leak test (D6)** -- the tracked / installed artifacts carry
+* **generated-output leak test** -- the tracked / installed artifacts carry
   no local path, IP, token, or maintainer alias.
 
 Run from the cairn repo root:
@@ -63,7 +63,7 @@ lifecycle = _load("cairn_lifecycle_sec", LIFECYCLE_SRC)
 content_scan = _load("cairn_content_scan", CONTENT_SCAN_SRC)
 
 
-# --- S4: content-scan over source + rendered artifacts ----------------------
+# --- content-scan over source + rendered artifacts --------------------------
 
 
 @pytest.mark.parametrize(
@@ -85,7 +85,7 @@ def test_installed_artifacts_pass_content_scan(tmp_path: Path):
         assert content_scan.scan_file(target / rel) == [], rel
 
 
-# --- S5: no network / bounded surface ---------------------------------------
+# --- no network / bounded surface -------------------------------------------
 
 
 def test_cli_source_imports_no_network_client():
@@ -112,7 +112,7 @@ def test_session_start_opens_no_socket(tmp_path, monkeypatch, capsys):
     assert opened["n"] == 0  # bounded surface: no in-process socket
 
 
-# --- S6: externally sourced orientation fields stay data --------------------
+# --- externally sourced orientation fields stay data ------------------------
 
 
 def _run_session_start(root: Path) -> bytes:
@@ -171,13 +171,12 @@ def test_safe_field_round_trips_international_text_below_cap():
 def test_capped_field_pins_every_reachable_partial_escape():
     """The marker is unauthenticated and counts escaped, not source, characters.
 
-    **Re-anchored by Chunk P4**, which replaced this module's fixed `_FIELD_ESCAPES`
-    translation table with `tools/lifecycle_planner.py`'s `encode_display` -- the one
-    terminal encoder (F2).  The property under test is unchanged: a cut that lands
+    The escape set comes from `tools/lifecycle_planner.py`'s `encode_display`
+    -- the one terminal encoder -- rather than a second translation table this
+    module owns, so the two cannot drift.  The property: a cut that lands
     inside an escape sequence must never leave a raw control or invisible character
     behind, and the partial prefix must be a genuine prefix of the full escape.  What
-    changed is where the escape set comes from -- the encoder's own rule rather than a
-    second table this module owned -- so the enumeration is over every code point the
+    The enumeration is over every code point the
     old table covered PLUS the ranges it missed (the encoder's `_DISPLAY_UNSAFE_RANGES`
     endpoints and the syntax characters), and the prefix set is bounded by the encoder's
     three escape widths instead of pinned as a table-shaped literal.
@@ -310,7 +309,7 @@ def test_git_hash_output_is_unchanged_by_stream_escaping(tmp_path):
     assert lifecycle._safe_stream(digest) == digest
 
 
-# --- S3: path-containment on the reflection write ---------------------------
+# --- path-containment on the reflection write -------------------------------
 
 
 def test_crafted_agent_cannot_escape_reflections(tmp_path, monkeypatch):
@@ -338,7 +337,7 @@ def test_assert_within_rejects_traversal(tmp_path):
         lifecycle._assert_within(base / ".." / ".." / "evil.md", base)
 
 
-# --- per-artifact integrity + D6 leak test ----------------------------------
+# --- per-artifact integrity + the generated-output leak test ----------------
 
 
 def test_installed_artifacts_match_lockfile_hash(tmp_path: Path):
@@ -368,7 +367,7 @@ def test_tracked_artifacts_have_no_local_path_or_token_leak(tmp_path: Path):
     ):
         text = (target / rel).read_text(encoding="utf-8")
         assert "/Users/" not in text and "/home/" not in text, rel
-        # The SPDX/copyright header (P2, adopter-licensing-compliance) is
+        # The SPDX/copyright header is
         # expected to name the copyright holder -- legitimate attribution,
         # not a maintainer-alias leak. Excluded from the "kendal" scan by
         # stripping the deterministic two-line header before checking; any

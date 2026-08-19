@@ -358,3 +358,37 @@ here; had it been read as "the manifest pins it, so rename it", it would have
 broken a frozen surface. A tree-grep on a short token returns homographs — the
 hit has to be opened and shown to be *this* coordinate, not merely the same
 string. Those test **names** are Chunk D's problem and are gated there.
+
+### Batch: skills security, lifecycle CLI, notice install, Bandit gate, review tiers
+
+| File | Before | After |
+|---|---:|---:|
+| `bootstrap/tests/test_skills_security.py` | 12 | 0 |
+| `bootstrap/tests/test_lifecycle_cli.py` | 10 | 0 |
+| `bootstrap/tests/test_notice_install.py` | 10 | 0 |
+| `bootstrap/tests/test_security_lint.py` | 10 | 0 |
+| `bootstrap/tests/test_onboarding_review_tiers.py` | 9 | 0 |
+
+Nothing kept — every coordinate here traced to a closed round, and in every case
+the descriptive name was already sitting beside it (`S4 content-scan` →
+`content-scan`; `# --- P1: the NOTICE.md install path` → `# --- The NOTICE.md
+install path`). The section banners are the clearest illustration of what the
+tag was costing: `# --- S5: no network / bounded surface ---` said the same
+thing twice, once resolvably and once not.
+
+**A second homograph, checked rather than assumed.**
+`test_lifecycle_cli.py:549` carried `first-session-survivability, C4`, and `C4`
+is a **live** id in `scripts/transition_lint.py`'s rule set. They are unrelated:
+the lint's `C4` is a rule the linter emits, this one was a plan chunk. Opening
+the hit settled it in one step — which is the whole procedure. On a corpus this
+size, single-letter-plus-digit tokens collide constantly, so *"the token appears
+elsewhere"* is never the finding; *"this occurrence resolves there"* is.
+
+**Two docstrings shed narration along with the tag.** `test_skills_security.py`
+opened a docstring with "**Re-anchored by Chunk P4**, which replaced this
+module's fixed `_FIELD_ESCAPES` table with ...", then spent three more lines on
+what changed and why. The next reader does not need the migration; they need to
+know the escape set comes from `encode_display` **so the two cannot drift**.
+Four lines of history became one line of reason. Removing a tag often exposes
+that the sentence holding it was about the process too — and the rule is the
+same one, not a second one.
