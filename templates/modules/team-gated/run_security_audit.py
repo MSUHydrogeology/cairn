@@ -18,7 +18,7 @@ library-only** command (no pytest, no dev dependency required to run it):
 4. **pip-audit** -- dependency CVE check (network egress is OPT-IN; off by
    default; a denied / offline lookup is reported unavailable, not clean).
 5. **adopted-executable source gate** -- bandit over the lockfile-recorded
-   ``.py`` files this install adopted (RV3; binary provenance is out of scope).
+   ``.py`` files this install adopted (binary provenance is out of scope).
 
 Self-audit scope (read this first)
 ----------------------------------
@@ -31,7 +31,7 @@ is **not** a reviewer for untrusted code that can modify the apparatus itself.
 checkout executes the attacker's audit. A clean result is **a tripwire, not a
 proof**.
 
-Aggregate exit table (P1 #3 -- a DISTINCT space; never collides with a
+Aggregate exit table (a DISTINCT space; never collides with a
 component's 0/1/2/3 or 127). Each component's raw outcome is printed
 separately; the aggregate is the worst tier, precedence
 degraded > findings > incomplete > clean:
@@ -92,7 +92,7 @@ _AGG_DEGRADED = 20
 
 # The apparatus + policy files each installed security module ships (relative to
 # the repo root). The SR-1 preflight derives the REQUIRED set from the installed
-# module roster (P1 #2): every file an installed module ships must be
+# module roster: every file an installed module ships must be
 # lockfile-recorded AND present AND hash-matched -- a missing record is a
 # failure, not a skip (else a surviving clean record would let an unrecorded,
 # tampered sibling load).
@@ -150,7 +150,7 @@ def _sha256_hex(data: bytes) -> str:
 
 def required_apparatus_dsts(lock: dict) -> list[str]:
     """The complete apparatus file set the INSTALLED security modules require
-    (P1 #2). Derived from the lockfile module roster, not from whichever
+    Derived from the lockfile module roster, not from whichever
     records happen to exist -- so a dropped record cannot shrink the checked
     set."""
     modules = set(lock.get("modules", []))
@@ -163,7 +163,7 @@ def required_apparatus_dsts(lock: dict) -> list[str]:
 
 def integrity_preflight(repo_root: Path, lock: dict) -> None:
     """Verify the COMPLETE apparatus + policy file set the installed security
-    modules require, against the lockfile (P1 #2 / SR-1).
+    modules require, against the lockfile.
 
     Standalone stdlib reimplementation of the lockfile-integrity check scoped
     to the security apparatus (Cairn's ``verify_integrity`` is an engine tool,
@@ -203,7 +203,7 @@ def integrity_preflight(repo_root: Path, lock: dict) -> None:
 
 
 # --------------------------------------------------------------------------
-# P2 #5 -- single contained python_package validation
+# single contained python_package validation
 # --------------------------------------------------------------------------
 
 def validate_python_package(repo_root: Path, lock: dict) -> Path:
@@ -316,7 +316,7 @@ class ToolRun(NamedTuple):
 
 
 def escape_controls(text: str) -> str:
-    """Neutralise terminal control characters in tool output (PS3).
+    """Neutralise terminal control characters in tool output.
 
     Tool output is relayed to the operator's terminal and is the evidence for a
     security decision. Left raw, a crafted filename carrying ``ESC [ 2K`` +
@@ -490,7 +490,7 @@ def _run_tool(argv: list[str], *, label: str,
               env: dict[str, str] | None = None,
               timeout: float | None = None,
               output_cap: int | None = None) -> ToolRun:
-    """Run a security tool with a trusted boundary (P1 #1 / Crit #2):
+    """Run a security tool with a trusted boundary:
 
     * ``shell=False`` + a fixed argument vector (no shell, no word-splitting);
     * the child interpreter runs in **isolated mode** (``python -I``: no cwd /
@@ -602,7 +602,7 @@ def _load_runner():
 
 
 def run_injection_pass(repo_root: Path, lock: dict) -> tuple[str, int]:
-    """Content-scan pass, gated on authoritative installed state (P1 #4).
+    """Content-scan pass, gated on authoritative installed state.
 
     Returns ``(status, tier_contribution)``. content-security NOT in the
     installed roster -> ``("not-applicable", 0)`` (printed loudly, never a
@@ -610,7 +610,7 @@ def run_injection_pass(repo_root: Path, lock: dict) -> tuple[str, int]:
     present -> the runner's 0/1/2/3 mapped to a tier (advisory findings (1)
     contribute 0; scan-failure (2) / stale (3) contribute DEGRADED)."""
     if "content-security" not in lock.get("modules", []):
-        # SR-4 / P1 #3: a not-applicable injection pass is INCOMPLETE coverage,
+        # A not-applicable injection pass is INCOMPLETE coverage,
         # a distinct non-clean tier -- automation must not read it as a scan
         # that ran clean.
         print("\n[injection] NOT APPLICABLE -- content-security is not an "
@@ -654,7 +654,7 @@ def run_bandit_pass(pkg: Path, repo_root: Path) -> tuple[str, int]:
 
 
 def run_adopted_executable_gate(repo_root: Path, lock: dict) -> tuple[str, int]:
-    """RV3 -- the Cairn-adopted-executable **source gate**: confirm every ``.py``
+    """The Cairn-adopted-executable **source gate**: confirm every ``.py``
     this install adopted (the lockfile-recorded ``dst``s) is byte-for-byte the
     vetted, lockfile-recorded source. It is an *integrity* gate, not a re-lint:
     Cairn's shipped scripts are already Cairn-bandit-gated and trusted, so the
@@ -744,7 +744,7 @@ _PINNED_ADVISORY_SOURCES = ("osv.dev (pip-audit --vulnerability-service osv)",)
 #: no vulnerabilities *and* when it holds no record for that name at all; the
 #: schema exposes no field distinguishing the two. So the count would be a
 #: structural zero, and a printed ``NO-MATCH 0`` reads as "every distribution
-#: had a record", which is the universal negative DAC3 withdrew. It does not
+#: had a record", which is the universal negative that was withdrawn. It does not
 #: move any tier -- NO-MATCH never gated the verdict, only UNKNOWN does -- so
 #: what is lost is report precision, not fail-closed behaviour. Stated here and
 #: in the run's own output so a reader cannot mistake the silence for coverage.
@@ -757,7 +757,7 @@ _NO_MATCH_NOT_OBSERVABLE = (
     "returned no vulnerabilities for this name' -- it does NOT establish that "
     "those sources carry a record for it")
 
-#: Bounds on the conda-metadata enumeration (D5). The directory is derived from
+#: Bounds on the conda-metadata enumeration. The directory is derived from
 #: ``sys.prefix`` and its records are package-controlled input, so the read is
 #: capped in both record count and per-record size.
 _CONDA_META_MAX_RECORDS = 20000
@@ -788,7 +788,7 @@ class Coverage(NamedTuple):
 
 
 class LocalBuilds(NamedTuple):
-    """The per-run residual classification (D4). **No baseline is stored.**"""
+    """The per-run residual classification. **No baseline is stored.**"""
 
     residual: int
     not_residual: int
@@ -797,7 +797,7 @@ class LocalBuilds(NamedTuple):
 
 
 class CondaScope(NamedTuple):
-    """Quantified non-coverage: what this leg did **not** audit (D5)."""
+    """Quantified non-coverage: what this leg did **not** audit."""
 
     applicable: bool
     records: int
@@ -806,7 +806,7 @@ class CondaScope(NamedTuple):
 
 
 def pip_audit_argv(*, cache_dir: Path) -> list[str]:
-    """The **fixed** argument vector for the pip-audit pass (DAC1).
+    """The **fixed** argument vector for the pip-audit pass.
 
     Every element is a literal or a path this function was handed; **no element
     is derived from ``os.environ``**. The vulnerability service, the output
@@ -1187,7 +1187,7 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
     if run.status != "ran":
         return f"pip-audit:{run.status}", _AGG_DEGRADED
     if run.code not in (0, 1):
-        # P2 #7: ONLY exit 1 is a valid vulnerability report (findings); any
+        # ONLY exit 1 is a valid vulnerability report (findings); any
         # other non-zero (usage / malformed-env / network/service error) is a
         # tool failure -> DEGRADED, never reported as vulnerabilities.
         return "pip-audit:error", _AGG_DEGRADED
@@ -1255,7 +1255,7 @@ def parse_pass_env(args: list[str]) -> tuple[str, ...]:
 
     The **only** way a variable outside the closed allowlist reaches a security
     tool. It is an argv decision, taken by the operator, and every name is
-    printed in the report (B2) -- inheritance is never silent."""
+    printed in the report -- inheritance is never silent."""
     names: list[str] = []
     for index, arg in enumerate(args):
         if arg == "--pass-env" and index + 1 < len(args):

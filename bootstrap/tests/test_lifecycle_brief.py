@@ -1,6 +1,6 @@
-"""Chunk P4 -- `review-brief`, `closeout --dry-run`, and the two fences around them.
+"""`review-brief`, `closeout --dry-run`, and the two fences around them.
 
-Plan: ``dev/plans/review-efficient-lifecycle.md`` > the ``P4`` row.  Source
+Source
 contract: ``dev/proposals/archive/2026-08-10-codex-review-efficient-lifecycle.md``
 > **Revision 1** -- the operative revision, whose own opening words are *"This
 section supersedes the operative requirements in the opening Proposal, Pilot,
@@ -18,20 +18,22 @@ only the ``tools/`` copy is invisible to this file except through
 
 Six groups:
 
-1. :class:`TestInterpreterFence` -- the plan's fence **M3**.  P4 does not modify
+1. :class:`TestInterpreterFence` -- **fence M3**, the local interpreter
+   binding.  These commands do not modify
    ``_resolve_interpreter``, its schema, validation order, fallback disposition,
    warning visibility, or **any subprocess use of the resolved path**.  Pinned by
    exact function-source digests, AST-shape digests, and the exact call-site and
    argv-construction sets, on **both** copies.
-2. :class:`TestTwinParity` -- byte identity for both installed twins P4 touches.
+2. :class:`TestTwinParity` -- byte identity for both installed twins these
+   commands touch.
 3. :class:`TestDisplayEncoder` -- ``_safe_field`` now *is* the planner's
-   ``encode_display`` (F2's one terminal encoder), with elision layered outside
+   ``encode_display`` (the one terminal encoder), with elision layered outside
    it rather than folded into it.
 4. :class:`TestReviewBrief` / 5. :class:`TestCloseout` -- the two commands:
    every field the operative contract names, determinism, read-only behavior,
    malformed records, control/invisible/delimiter injection, and the versioned
    ASCII-safe machine contract.
-6. :class:`TestLoaderMatrixForThisConsumer` -- the A6 loader cases for this
+6. :class:`TestLoaderMatrixForThisConsumer` -- the loader cases for this
    consumer that Chunk P6a did **not** already cover, named individually against
    the ones it did.
 7. :class:`TestNoGrammarDrift` -- the heading/field rules this file's subject
@@ -104,8 +106,9 @@ def _clean_private_planner_module():
 # `AGENTS.md` > *High-risk surfaces*: ``dev/.cairn/local-env.json``, its reader
 # ``_resolve_interpreter``, "and every call site that executes the path it
 # returns" are an untracked, gitignored, lockfile-uncovered **executable trust
-# root**.  The P4 cell fences the chunk off all of it and routes any need to
-# touch it to a new Security Review (fence **M3**).
+# root**.  These commands are fenced off all of it, and any need to touch it
+# routes to a new Security Review -- **fence M3**, which the ceremony plan
+# still cites by name.
 #
 # A fence nobody can observe is a promise.  These digests are the observation:
 # they were derived at this chunk's implementation parent from the file's own
@@ -153,7 +156,7 @@ _INTERPRETER_SPAWN_SITES = ("_intent_whoami", "_prune_intents",
                             "_run_evolution_infer", "_run_lifecycle_metrics",
                             "_surface_foldback_candidates", "_surface_intents")
 
-#: The two commands P4 adds.  Neither may reach any of the three sets above.
+#: The two commands.  Neither may reach any of the three sets above.
 _P4_ENTRY_POINTS = ("cmd_review_brief", "cmd_closeout")
 
 
@@ -260,7 +263,7 @@ class TestInterpreterFence:
             self, path: Path) -> None:
         """The fence as a *reachability* claim, not only a byte claim.
 
-        Pinning the resolver's bytes says P4 did not edit it.  This says P4 did
+        Pinning the resolver's bytes says these commands did not edit it.  This says they did
         not *wire* it: no call path from either new subcommand reaches the
         resolver, any consumer of a resolved path, or any argv that executes one.
         """
@@ -341,7 +344,7 @@ class TestInterpreterFence:
 
 
 class TestTwinParity:
-    """Both twins P4 touches, asserted in the same commit that changes either."""
+    """Both twins these commands touch, asserted in the same commit that changes either."""
 
     @pytest.mark.parametrize(
         "left,right",
@@ -362,7 +365,7 @@ class TestTwinParity:
 
 
 class TestDisplayEncoder:
-    """P4: *"The existing `_safe_field` is not this rule ... replaced, not wrapped."*"""
+    """*"The existing `_safe_field` is not this rule ... replaced, not wrapped."*"""
 
     def test_safe_field_is_the_planners_encoder_and_not_a_second_table(self) -> None:
         source = MODULE_PATH.read_text(encoding="utf-8")
@@ -619,8 +622,8 @@ class TestReviewBrief:
 
     def test_a_plans_assurance_path_comes_from_the_planners_chain(
             self, repo, monkeypatch, capsys) -> None:
-        """A plan carries no declaration of its own -- P1 pinned that absence --
-        so the value must come from P2's resolver, not from a local reading."""
+        """A plan carries no declaration of its own -- that absence is pinned --
+        so the value must come from the resolver, not from a local reading."""
         code, payload = _run_json(
             repo, ["review-brief", "worked-example", "--format", "json"],
             monkeypatch, capsys)
@@ -640,7 +643,7 @@ class TestReviewBrief:
             self, repo, monkeypatch, capsys) -> None:
         """Injected into fields that REACH the payload, which is the whole test.
 
-        An earlier draft of this node injected into the H1 title and into a
+        An earlier draft of this node injected into the heading title and into a
         verdict's trailing clause -- neither of which any reported field carries,
         so the node passed with `ensure_ascii=False` and proved nothing.  The
         mutation run in the implementing commit body is what surfaced that; the
@@ -784,7 +787,7 @@ class TestCloseout:
 
     def test_the_preflight_IS_the_shared_predicate_not_a_second_reading(
             self, repo, monkeypatch, capsys) -> None:
-        """R6: *"`scan`, `next`, and accepted closeout tooling consume shared
+        """*"`scan`, `next`, and accepted closeout tooling consume shared
         predicates rather than implement three interpretations of readiness."*
 
         Asserted by equality against the planner's own predicate over the same
@@ -922,7 +925,7 @@ class TestCloseout:
 #   * a planner that raises, purged and retried cleanly;
 #   * a poisoned pre-existing `sys.modules` entry.
 #
-# The P4 cell names five cases: *"decoy path, leaf and parent symlink,
+# Five cases: *"decoy path, leaf and parent symlink,
 # out-of-root, partial-import cleanup, clean retry"*.  Leaf and parent symlink
 # and the clean retry are the entries above.  The three below are what was thin:
 # the ambient-`sys.path` decoy, out-of-root resolution, and partial-import
@@ -930,7 +933,7 @@ class TestCloseout:
 
 
 class TestLoaderMatrixForThisConsumer:
-    """A6's remaining loader cases for `tools/lifecycle.py`."""
+    """The remaining loader cases for `tools/lifecycle.py`."""
 
     @staticmethod
     def _consumer(tmp_path: Path, name: str, *, with_planner: bool = True):

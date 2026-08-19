@@ -17,7 +17,7 @@ to **both** and restores both.
 Four groups:
 
 1. ``TestVocabularyLoader`` -- the contained loader for the third consumer of
-   the one runtime status vocabulary (the A3/A5 contract), and the fail-closed
+   the one runtime status vocabulary, and the fail-closed
    behavior of the counting rule while the vocabulary has no counted state.
 2. ``TestActivationRecord`` -- the immutable activation record: derived enabling
    commit and activation date, the machinery binding, and every malformed /
@@ -67,14 +67,14 @@ _PRIVATE_PLANNER_NAME = "_lifecycle_cli_lifecycle_planner"
 COUNTED_STATE = "ready-to-archive"
 
 
-#: The minimal planner surface `_REQUIRED_EXPORTS` names.  P2 added three
-#: names to it ([CF1]: a counted plan's resolved assurance path), so a stub
+#: The minimal planner surface `_REQUIRED_EXPORTS` names.  Three names were
+#: added for a counted plan's resolved assurance path, so a stub
 #: that declares only `PLAN_STATES` is now legitimately "missing an export"
 #: -- which is what `test_a_planner_missing_a_required_export_is_purged_not_
 #: cached` asserts.  These two nodes are about *other* loader properties, so
 #: they get a complete stub.
 #:
-#: **Chunk P4 added six more**, and the two nodes that use this stub reddened the
+#: **Six more were added later**, and the two nodes that use this stub reddened the
 #: day it landed -- correctly, which is the point: the completeness check is what
 #: makes a partially-exporting planner a refusal rather than an `AttributeError`
 #: at the first counted plan.  Kept in step here rather than loosened there.
@@ -168,7 +168,7 @@ def lifecycle_without_counted_state(tmp_path_factory) -> ModuleType:
     which is exactly the silent-tool defect `AGENTS.md` forbids; so the fixture is
     inverted instead and every assertion is preserved verbatim.
 
-    It is not a hypothetical.  Chunk H1 edits these same tuples (it moves `open` /
+    It is not a hypothetical.  The vocabulary migration edits these same tuples (it moves `open` /
     `executing` / `review` into the historical sets), and a future rename or a
     partially-applied vocabulary migration is precisely the condition the branch
     exists to survive.  A copy of the real planner with the token filtered out --
@@ -253,7 +253,7 @@ def _event_text(*blocks: str) -> str:
 #: The schema the subject reads, written here as an INDEPENDENT oracle -- these
 #: helpers do not import the subject's `_EVENT_SCHEMA`, so a version bump in the
 #: subject is a visible failure in this file rather than a silent agreement.
-#: Bumped to /2 by Chunk P2, which added the `assurance_path` key ([CF1]).
+#: Bumped to /2 when the `assurance_path` key was added.
 EVENT_SCHEMA = "cairn-pilot-event/2"
 
 #: The eligible assurance path, and the closed set an event may carry -- likewise
@@ -313,7 +313,7 @@ def repo(tmp_path: Path) -> Path:
     """A scratch repo with a machinery commit and a Boundary-B2 evidence record.
 
     Three commits, in the order the real contract requires:
-    ``machinery`` -> the plan carrying the B2 section that names it -> (the test
+    ``machinery`` -> the plan carrying the section that names it -> (the test
     adds the activation record, which becomes the derived enabling commit).
     """
     root = tmp_path.resolve()
@@ -360,7 +360,7 @@ def _activate(repo: Path, *, date: str = "2026-02-01", **kwargs) -> str:
 
 
 class TestVocabularyLoader:
-    """A3/A5's contained-loader contract, restated for this third consumer."""
+    """The contained-loader contract, restated for this third consumer."""
 
     def test_the_planner_is_the_sibling_of_the_unresolved_module_path(self) -> None:
         path = lifecycle._validated_planner_path()
@@ -475,7 +475,7 @@ class TestVocabularyLoader:
 
         Every assertion is the predecessor node's, verbatim; only the subject
         changed, from the real planner (which lacked the token before Chunk E) to
-        a copy with the token filtered out.  Chunk H1 edits these same tuples, so
+        a copy with the token filtered out.  The migration edits these same tuples, so
         "the vocabulary lost a token the engine needs" stays a reachable state --
         and an unavailable count must never quietly read as zero.
         """
@@ -499,7 +499,7 @@ class TestVocabularyLoader:
         assert lifecycle._COUNTED_PLAN_STATE != "archived"
         # And the neighbours it must not have drifted onto are still distinct
         # states, so the assertion above is a real discrimination.  "review" is
-        # retired as of Chunk H1 -- it moved from PLAN_STATES into
+        # retired by the migration -- it moved from PLAN_STATES into
         # HISTORICAL_PLAN_STATES, not out of the vocabulary entirely -- so the
         # membership check widens to both tuples rather than dropping the
         # neighbour or re-pointing onto a still-live state.
@@ -738,14 +738,14 @@ class TestEventLedger:
             lifecycle_ready._validate_event(record, "x", counted_state=COUNTED_STATE)
 
     @pytest.mark.parametrize("schema", [
-        "cairn-pilot-event/1",   # the RETIRED version, superseded by P2's bump
+        "cairn-pilot-event/1",   # the RETIRED version, superseded by the bump
         "cairn-pilot-event/3",   # a future version this tool has never read
         "cairn-pilot-event",     # unversioned
         "cairn-pilot-activation/1",  # the other record's schema
     ])
     def test_an_unknown_event_schema_refuses(self, lifecycle_ready, schema) -> None:
         """**Including `/1`, and that inclusion is the point.**  P6a wrote that
-        closing [CF1] *"is a `cairn-pilot-event/2` schema bump; the version field
+        closing it *"is a `cairn-pilot-event/2` schema bump; the version field
         exists for that, and an unknown version refuses rather than being
         half-read."*  A `/1` block carries no `assurance_path`, so reading it as
         `/2` would mean reading a record that never recorded the field -- the
@@ -1180,15 +1180,15 @@ def test_the_two_lifecycle_copies_are_byte_identical() -> None:
 
 
 # ---------------------------------------------------------------------------
-# [CF1] -- the resolved assurance path on the event, and the eligible /
+# The resolved assurance path on the event, and the eligible /
 # ineligible split it makes derivable.
 #
 # Filed at `9d5cbea` in `dev/plans/review-efficient-lifecycle.md` >
-# `## Carried-forward obligations` > **[CF1]**: P6a implements the five measures
+# `## Carried-forward obligations`: the five measures
 # `P6-R` names, but the accepted parent's fuller list also has the report record
 # *"eligible and ineligible plans"*, and P6a's derived report **cannot** split
 # them -- no `plan-counted` event recorded the plan's assurance path, and a plan
-# HAS none to read until P2-R's inheritance chain resolves one.  Chunk P2 closes
+# HAS none to read until the inheritance chain resolves one.  That closes
 # it through the `cairn-pilot-event/2` bump P6a provisioned.
 # ---------------------------------------------------------------------------
 
@@ -1202,7 +1202,7 @@ FIXTURE_REVIEW_SHA = "2b" * 20
 def _write_inheritance_chain(root: Path, *, assurance: str) -> None:
     """A proposal declaring *assurance* plus a plan that inherits its readiness.
 
-    Written as real files rather than mocked, because what [CF1] closes is a
+    Written as real files rather than mocked, because what this closes is a
     *derivation*: the CLI resolves the value from the plan through the planner,
     so a fixture that stubbed the answer would assert nothing about the chain.
     """
@@ -1430,7 +1430,7 @@ class TestCF1TheEligibilitySplit:
         high-assurance work "does not fill the sample"; the 2026-08-11 revision
         lets high-assurance proposals inherit, which makes their plans part of the
         population the policy affects.  Those two texts pull opposite ways on
-        WHOSE plans fill the six, and [CF1] asked only for the split -- so the
+        WHOSE plans fill the six, and the obligation asked only for the split -- so the
         counted-stem quota stays exactly as P6a landed it and the tension is
         PRINTED rather than resolved by an implementer."""
         self._activate(repo)

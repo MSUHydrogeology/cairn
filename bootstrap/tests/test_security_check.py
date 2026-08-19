@@ -2,7 +2,7 @@
 
 ``bootstrap/security_check.py`` is the release-facing counterpart to the dev
 Bandit gate: where the gate *skips* when Bandit is absent locally, the
-release check **fails closed** -- release evidence must be unskippable (R1).
+release check **fails closed** -- release evidence must be unskippable.
 """
 from __future__ import annotations
 
@@ -168,7 +168,7 @@ def test_postflight_passes_when_nothing_moved(repo) -> None:
 
 def test_detached_checkout_excludes_an_ignored_pytest_override(
         repo, capsys) -> None:
-    """CR1's reproduced false pass, through real Git and real pytest.
+    """The reproduced false pass, through real Git and real pytest.
 
     The source checkout is clean according to the production preflight even
     though an ignored root plugin can override the release hook at ``trylast``.
@@ -259,7 +259,7 @@ def test_detached_checkout_avoids_checkout_filter_execution(
 
 
 def test_state_git_calls_are_sterile(repo, monkeypatch) -> None:
-    """A2: the steering environment is stripped and execution-bearing config is
+    """The steering environment is stripped and execution-bearing config is
     disabled on the state check itself -- the check that decides whether a
     release may be cut must not be steerable by in-repo config or by the
     environment it inherits."""
@@ -343,7 +343,7 @@ def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> 
 
 def test_fail_closed_when_bandit_absent(monkeypatch) -> None:
     """A missing Bandit FAILS (nonzero), unlike the dev gate's local skip --
-    release evidence is unskippable (R1)."""
+    release evidence is unskippable."""
     class _Proc:
         returncode = 127
         stdout = ""
@@ -371,7 +371,7 @@ def test_fail_closed_on_bandit_file_errors(monkeypatch) -> None:
     Bandit records an unreadable/unparseable target in the JSON ``errors``
     array, scans the rest, and exits **0** -- so the rc-not-in-{0,1} branch
     never fires and the gate would print "clean over N shipped file(s)" over a
-    file it never read. Fail closed (scan-coverage plan, Chunk A / [I1])."""
+    file it never read. Fail closed."""
     class _Proc:
         returncode = 0
         stdout = json.dumps({
@@ -402,7 +402,7 @@ def test_fail_closed_when_the_manifest_refuses(monkeypatch, capsys) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Phases 3-4 -- the release-mode suite, the quality gate, and R1 propagation
+# Phases 3-4 -- the release-mode suite, the quality gate, and env propagation
 # ---------------------------------------------------------------------------
 
 def _spy_run(monkeypatch, rc: int = 0):
@@ -434,7 +434,7 @@ def test_the_release_token_name_and_value_are_pinned_literals() -> None:
 
 
 def test_the_release_token_reaches_both_direct_children(monkeypatch) -> None:
-    """**R1.3, direct half.** Both phase-3 and phase-4 children are handed the
+    """**The direct half.** Both phase-3 and phase-4 children are handed the
     token EXPLICITLY and at the EXACT recognized value.
 
     This half is necessary and **not sufficient**: an implementation that built
@@ -462,7 +462,7 @@ def test_the_release_token_reaches_both_direct_children(monkeypatch) -> None:
 
 
 def test_setting_the_token_does_not_leak_into_this_process(monkeypatch) -> None:
-    """R1.1: built from a **copy**. A mutation of ``os.environ`` would make the
+    """Built from a **copy**. A mutation of ``os.environ`` would make the
     parent's own pytest session release-mode too, and would survive into the
     Bandit and check_cairn phases that must not see it."""
     monkeypatch.delenv(security_check.RELEASE_GATE_ENV, raising=False)
@@ -528,7 +528,7 @@ def test_main_names_all_four_phases_in_order() -> None:
 
 def test_main_attempts_every_phase_after_the_first_failure(monkeypatch,
                                                            capsys) -> None:
-    """B1: one run yields a COMPLETE repair list. Short-circuiting on the first
+    """One run yields a COMPLETE repair list. Short-circuiting on the first
     failure would make a Maintainer re-run the whole gate per defect."""
     ran: list[str] = []
 
@@ -597,7 +597,7 @@ def test_main_refuses_when_only_the_postflight_fails(monkeypatch, capsys) -> Non
 
 
 def test_main_stops_at_a_failed_preflight_and_runs_no_phase(monkeypatch) -> None:
-    """A1: the preflight *stops the command*. Scanning a dirty tree and then
+    """The preflight *stops the command*. Scanning a dirty tree and then
     reporting the dirt would waste a five-minute run and, worse, print scanner
     output an operator could mistake for release evidence."""
     ran: list[str] = []
@@ -612,7 +612,7 @@ def test_main_stops_at_a_failed_preflight_and_runs_no_phase(monkeypatch) -> None
 
 
 def test_main_reports_the_full_head_on_a_clean_pass(monkeypatch, capsys) -> None:
-    """A3: release notes have to be able to bind the run to a commit id."""
+    """Release notes have to be able to bind the run to a commit id."""
     head = "c" * 40
     detached: list[str] = []
     monkeypatch.setattr(security_check, "repo_state_preflight",
@@ -627,7 +627,7 @@ def test_main_reports_the_full_head_on_a_clean_pass(monkeypatch, capsys) -> None
 
 
 # ---------------------------------------------------------------------------
-# Chunk C -- the release-mode outcome rule, and R1.3's decisive half
+# the release-mode outcome rule, and the decisive half of env propagation
 #
 # The subject here is a **conftest plugin**, so it can only be exercised by an
 # actual pytest session. Every test below copies the REAL
@@ -710,7 +710,7 @@ def test_release_mode_refuses_incomplete_evidence(tmp_path, body, label) -> None
     _MODULE_SKIP_AT_COLLECTION,
 ])
 def test_release_mode_refuses_collection_time_skips(tmp_path, body) -> None:
-    """CR2: collection reports do not pass through runtest_logreport."""
+    """Collection reports do not pass through runtest_logreport."""
     root = _fixture_tree(tmp_path, body)
     tests = root / "bootstrap" / "tests"
     (tests / "test_passing_control.py").write_text(
@@ -805,7 +805,7 @@ def _quality_gate_tree(tmp_path: Path, body: str) -> Path:
 ])
 def test_the_release_token_survives_the_real_grandchild_launcher(
         tmp_path, monkeypatch, body, expect_refusal) -> None:
-    """**R1.3, the decisive half.** The chain under test is the real one:
+    """**The decisive half.** The chain under test is the real one:
 
     ``security_check.run_quality_gate()`` -> ``scripts/quality_gate.py`` ->
     ``pytest`` -> ``bootstrap/tests/conftest.py``
@@ -941,12 +941,12 @@ def test_blocking_findings_and_stale_entries_are_reported_together(
 
 
 # ---------------------------------------------------------------------------
-# Chunk D5/D6 -- "successfully parsed" must mean VALIDATED, not merely JSON
+# "successfully parsed" must mean VALIDATED, not merely JSON
 #
 # The five shapes below were reproduced against this module's own bytes at
 # 745c927 before the fix: three printed "Bandit clean over 78 shipped file(s)"
 # and returned 0; two raised AttributeError -- non-zero, but a traceback where
-# a security message was owed. Once D1 emptied the ALLOWLIST, liveness is
+# a security message was owed. Once the ALLOWLIST was emptied, liveness is
 # vacuous, so report validation is the only thing between a malformed report
 # and release PASS.
 # ---------------------------------------------------------------------------
@@ -1058,7 +1058,7 @@ def test_a_well_formed_low_only_report_still_passes(monkeypatch, capsys) -> None
 
 
 def test_the_blocking_predicate_and_key_rule_are_single_functions() -> None:
-    """D4, release-side half. Suppression and liveness must not be able to
+    """The release-side half. Suppression and liveness must not be able to
     disagree about what "blocking" and "this finding's allowlist key" mean."""
     high = {"filename": str(CAIRN_ROOT / "scripts/check_cairn.py"),
             "test_id": "B999", "issue_severity": "HIGH"}
@@ -1070,7 +1070,7 @@ def test_the_blocking_predicate_and_key_rule_are_single_functions() -> None:
 
 
 def test_the_shipped_allowlist_is_empty_after_the_b310_retirement() -> None:
-    """D1. Measured 2026-08-05 under Bandit 1.9.4 / Python 3.13.13: the sole
+    """Measured 2026-08-05 under Bandit 1.9.4 / Python 3.13.13: the sole
     entry's finding was absent from the report. It was deleted rather than left
     as a latch, and this pins that -- re-adding an entry has to come with a
     finding the scan actually reports, which the liveness rule then enforces."""
