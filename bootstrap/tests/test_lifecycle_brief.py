@@ -130,8 +130,8 @@ _INTERPRETER_SYMBOL_DIGESTS = {
         "b05ee00ec73ed677ea2c4924b6c4cbb0f328c83ca32f82e724cc57d0b02594c5",
     ),
     "_resolve_interpreter": (
-        "a9641cec495d1c1461f8f43095d15dbbd0b8038c2aa6d7d26b5da4846fe99cb9",
-        "bf27a51bda55128c8d74dec929f18160a38e3939ebe7e4ced02317de879071e5",
+        "dc2e88095353dfdbd41d46bcd122b4070e35aa497cac8262e7f1a57e1534d176",
+        "419c0fa6d8cc8424d35a6f8e775b692dbdc9dc9343ae6a86c23316c1d5499431",
     ),
     "_warn_stale_once": (
         "d4868059458968a8470a5d02c1012d857661cba258284215816d236147e431ef",

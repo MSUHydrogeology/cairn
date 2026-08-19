@@ -433,7 +433,7 @@ def _has_symlink_component(path: Path) -> bool:
 
     The interpreter trust root must not be reachable through a symlink (leaf or
     parent), since a symlink can be retargeted out-of-band to redirect which
-    binary runs (S2).
+    binary runs.
     """
     cur = path
     while True:
@@ -474,11 +474,11 @@ def _probe_interpreter(interp: Path) -> str:
 def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     """Resolve the project interpreter the routines invoke sub-tools with.
 
-    Resolve-don't-bake (Decision 6 / R3): the interpreter binding lives in an
+    Resolve-don't-bake: the interpreter binding lives in an
     **untracked** ``dev/.cairn/local-env.json`` written at bootstrap, never
     baked into a tracked file.
 
-    **The trust-root contract, corrected on the record (S1).**
+    **The trust-root contract, corrected on the record.**
     ``dev/.cairn/local-env.json`` is an **operationally trusted executable
     binding**.  It is untracked, gitignored, mutable, and not
     lockfile-covered, so at read time it is user-controlled and carries no
@@ -502,7 +502,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     fallback** is the interpreter currently running this CLI -- safe because
     *this* tool is standard-library only, a rationale scoped to this tool's
     own execution and not to whatever sub-tool the resolved interpreter is
-    later used to run (R7) -- and the caller surfaces install guidance so the
+    later used to run -- and the caller surfaces install guidance so the
     hidden binding is never silently assumed.
     """
     cfg = _state_dir(root) / "local-env.json"
@@ -532,7 +532,7 @@ def _resolve_interpreter(root: Path) -> Tuple[str, str]:
     # dirs).  An appended-argument string like "/usr/bin/python -c ..." is not
     # a real path (nothing exists there), so under the revised classifier it
     # DEGRADES as an absent path -- it is never executed, only named in a
-    # warning -- not "caught" by any fatal check (finding 1; corrected R2/R6).
+    # warning -- not "caught" by any fatal check.
     if any(ord(ch) < 0x20 or ch == "\x7f" for ch in value):
         raise LifecycleError(
             f'{cfg}: "interpreter" must not contain control characters.'

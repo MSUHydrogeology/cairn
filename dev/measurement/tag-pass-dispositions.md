@@ -127,35 +127,44 @@ left for someone to rediscover as an unexplained drift.
 
 ---
 
-## Blocked — dead coordinates this pass could not remove
+## Blocked — RESOLVED 2026-08-18
 
-**These are not keeps.** They are the same archived-series coordinates the pass
-removes everywhere else; they remain in the code only because the enclosing
-symbols are byte-pinned. Recording them as keeps would make deferred work look
-dispositioned, so they are listed separately and counted separately.
+The five lines below were blocked by the byte pin on the local interpreter
+binding. **The Maintainer authorized the edit and the re-pin:**
 
-| File | Line | Text | Coordinate |
-|------|-----:|------|------------|
-| `tools/lifecycle.py` + twin | 436 | `binary runs (S2).` | `S2` |
-| `tools/lifecycle.py` + twin | 477 | `Resolve-don't-bake (Decision 6 / R3): ...` | `R3`, `Decision 6` |
-| `tools/lifecycle.py` + twin | 481 | `**The trust-root contract, corrected on the record (S1).**` | `S1` |
-| `tools/lifecycle.py` + twin | 505 | `later used to run (R7) -- ...` | `R7` |
-| `tools/lifecycle.py` + twin | 535 | `# warning -- not "caught" by any fatal check (finding 1; corrected R2/R6).` | `R2`, `R6`, `finding 1` |
+> *"Let's go ahead and edit them, since we'll re-pin with the other agent I'm
+> fine with this."*
 
-**Ten occurrences across two files** (five lines per twin).
+All five are now revised and the four digests in
+`bootstrap/tests/test_lifecycle_brief.py::_INTERPRETER_SYMBOL_DIGESTS` are
+re-derived. **Nothing is deferred, so the plan's "no revival row" claim holds
+again.**
 
-**Why they are blocked.** All five sit inside `_probe_interpreter`,
-`_resolve_interpreter` or `_warn_stale_once`, which
-`bootstrap/tests/test_lifecycle_brief.py` pins byte-and-AST-identical to guard
-the local interpreter binding. `AGENTS.md` lists that binding as a high-risk
-surface, and the pin's own failure message says a change *"STOPS for a new
-Security Review."* On this surface the bytes are the contract, so a comment edit
-re-opens the review; re-pinning belongs to that review's commit, not to this pass.
+**How the change was shown safe, rather than asserted.** The pin's own AST
+digest includes docstrings, so it cannot distinguish a docstring edit from a
+logic change. Each of the three fenced functions was therefore digested a second
+way — with *every* docstring stripped before `ast.dump` — before and after the
+edit:
 
-**What unblocks them.** A Security Review of the interpreter binding that
-re-derives the four digests in its own commit. Until then the coordinates stand.
+```
+_probe_interpreter       08856288621efb6f   unchanged
+_resolve_interpreter     92fdb64150ee4ef5   unchanged
+_warn_stale_once         d5d3de3acd75a08b   unchanged
+```
 
-**This is deferred scope, not completed scope**, and the plan states *"No revival
-row is created ... nothing is deferred."* That claim no longer holds for these
-five lines, and the discrepancy is the Maintainer's to resolve rather than this
-ledger's to absorb.
+Identical on both sides, which proves the executable AST is untouched and the
+change is comment- and docstring-only. That check is the reason the re-pin is
+reviewable rather than a self-generated pin: a reviewer can re-run it against
+the parent commit and get the same three values.
+
+**Still owed:** the other agent's ceremony work covers this surface and should
+confirm the re-pin. The digests were re-derived by the implementing agent under
+explicit Maintainer authorization, not by a Security Review.
+
+| File | Was | Now |
+|------|-----|-----|
+| `tools/lifecycle.py` + twin | `binary runs (S2).` | `binary runs.` |
+| `tools/lifecycle.py` + twin | `Resolve-don't-bake (Decision 6 / R3):` | `Resolve-don't-bake:` |
+| `tools/lifecycle.py` + twin | `... corrected on the record (S1).` | `... corrected on the record.` |
+| `tools/lifecycle.py` + twin | `later used to run (R7)` | `later used to run` |
+| `tools/lifecycle.py` + twin | `... any fatal check (finding 1; corrected R2/R6).` | `... any fatal check.` |
