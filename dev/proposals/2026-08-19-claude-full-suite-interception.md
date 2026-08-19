@@ -1092,3 +1092,150 @@ proposal should not land before [TRU-4] has an answer that covers it.
   surface is described vendor-neutrally in `AGENTS.md`, the paths in `CLAUDE.md`.
 * **Treating `--lf` / `--ff` / `-k` / `-m` as narrowing** — withdrawn; measured,
   each ran a whole suite.
+
+## Maintainer-directed contract revision -- 2026-08-19
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+The Maintainer directed that the frozen-set gap be brought into this proposal's
+scope:
+
+> It sounds like TRU-4 needs to be brought into the scope of this proposal,
+> correct?
+
+**Accepted in the narrow, additive form; declined in the broad form.** The
+reasoning is recorded because the boundary is the point.
+
+**What comes in.** Revision 2 shipped an executable trust root that the gate
+cannot see, and said so in S5 while leaving the consequence to a future
+proposal. That is not a defensible split: a proposal that *creates* an
+unanchored executable surface owns anchoring it. The frozen-set extension is
+therefore part of this contract, not a precondition on someone else.
+
+**What stays out.** `[TRU-4]` is a cluster, and the rest of it is about surfaces
+this proposal does not create: the repo-root `conftest.py` gap (`cf8bed7`), the
+trust-apparatus naming gap (`2ca02e8`), and the end-gate decision on whether the
+engine packages join `frozen_files`. Folding those in would subordinate a general
+question about the gate's authority to a specific convenience feature, and would
+invite the frozen-set decision to be made *in service of* landing this hook.
+
+**The direction of the change is what makes this safe.** The trust-apparatus row
+records an ordering constraint — *"enumerate the trust-apparatus files as named
+trust-ceremony surfaces first, land that, and only then reconsider the glob
+reading — never the reverse"* — because a **narrowing** decided under feature
+pressure opens the fence. This is an **addition**: it widens coverage, so the
+hazard that constraint guards against does not arise. Adding is safe in a
+direction narrowing is not, and the two must not be treated as one move.
+
+### The added scope
+
+`bootstrap/tests/_gate_manifest.py::_frozen_files` gains **two precisely scoped
+globs**, and the precision is contract:
+
+```
+".claude/*.json", ".claude/hooks/**/*.py"
+```
+
+**Never `.claude/**`.** Measured 2026-08-19: `.claude/**/*` matches **565 files**
+in this working tree, because `.claude/worktrees/` holds scratch worktrees each
+containing a full copy of the repository. Freezing those would make the gate
+report drift on every scratch checkout and would put another session's working
+copy inside this repository's trust root. The two scoped globs match **zero**
+files today and will match exactly the two artifacts this proposal creates.
+
+**Consequences, stated rather than discovered:**
+
+* `.claude/settings.json` and the hook script become **FROZEN-NEW** on the commit
+  that adds them, and are byte-hashed thereafter. Editing either then requires a
+  re-anchor — which is the intended cost, and the mechanism that makes the
+  Security-Review registration bite rather than merely advise.
+* `.claude/worktrees/` must be **gitignored** in the same change, so scratch
+  worktrees can never enter the tracked tree and therefore can never enter the
+  frozen set by a later glob widening.
+* `.claude/skills` is a symlink to a directory; `_frozen_files` skips it, since
+  `Path.is_file()` is false for it. A symlink to a *file* would be followed, so
+  the hook script is required above to be a **regular file**, which the settings
+  Evidence row already asserts.
+* Editing `_gate_manifest.py` is itself a gate-frozen change, so this proposal now
+  carries **two** frozen-file edits into the re-anchor it already owed.
+
+### What this closes, and what it does not
+
+It closes the S5 hole this proposal opened: the hook configuration and script are
+anchored on the day they land, so the gate notices them changing. **It does not
+close `[TRU-4]`.** The repo-root `conftest.py` still escapes every glob, the
+sixteen trust-apparatus files are still protected by a blanket glob rather than by
+being named, and the engine-package end-gate decision is still open. Revision 2's
+disposition — *"this proposal should not land before [TRU-4] has an answer that
+covers it"* — is **withdrawn and replaced**: this proposal now covers its own
+instance, and the remaining cluster is no longer a blocker on it.
+
+### Added evidence
+
+| invariant | falsifier |
+|---|---|
+| The hook surface is frozen | after landing, assert `_frozen_files()` contains `.claude/settings.json` and the hook script path, and that mutating either byte makes the gate report `FROZEN-MODIFIED` |
+| The glob cannot swallow a worktree | create a scratch path under `.claude/worktrees/`; assert `_frozen_files()` does not grow. Measured: the naive `.claude/**` matches 565 files in this tree, so this row is the guard against re-widening |
+| A symlinked hook script is refused | replace the script with a symlink to a regular file; assert the settings row goes red |
+
+### Withdrawn / superseded commitments
+
+* **"this proposal should not land before `[TRU-4]` has an answer that covers
+  it"** — withdrawn; this contract now anchors the surface it creates, so the
+  dependency is discharged inside the proposal rather than deferred.
+* **`.claude/**` as a candidate glob** — never proposed, and recorded as refused
+  with its measurement so a later reader does not reach for it: it matches 565
+  files here.
+* **Revision 2's scope line "any gate-frozen file" under *Also excluded*** —
+  withdrawn; this contract now edits `bootstrap/tests/_gate_manifest.py`, and the
+  re-anchor it already owed absorbs the second frozen-file edit.
+
+### What `.claude/` is, and what tracking one file there changes
+
+Raised by the Maintainer while this amendment was being written:
+
+> `.claude` is entirely outside of the repo, right? That's just our work here,
+> essentially scratchpad and local install info
+
+**Correct as to the current state, and verified**: nothing under `.claude/` is
+tracked (`git ls-files .claude/` is empty), the directory is *not* gitignored — it
+has shown as `??` in `git status` all along — and both its contents are local
+artifacts rather than authored ones. `.claude/skills` is a symlink that the
+`session-start` routine **self-heals** (`tools/lifecycle.py`), so it is generated
+by the tooling, not committed; `.claude/worktrees/` is scratch.
+
+**But the harness's own contract splits that directory**, and this is the fact the
+proposal turns on. Checked 2026-08-19: `.claude/settings.json` is documented as
+*"checked into source control and shared with your team"*, while
+`.claude/settings.local.json` is *"not checked in, useful for personal preferences
+and experimentation"* and is auto-excluded. So `.claude/` is designed to be
+**mixed** — one shared file plus local material — and tracking `settings.json`
+is its intended use, not a violation of it.
+
+**The consequence, stated because it is a real change in the directory's
+character**: this proposal makes `settings.json` the **first tracked artifact**
+under `.claude/` in this repository. That is not incidental, and three things
+follow.
+
+* **Tracking is a precondition of freezing, not a separate choice.**
+  `_frozen_files` globs the **working tree**, not the index. An untracked
+  `settings.json` would be hashed into a committed manifest and then be *absent*
+  from every fresh clone, so the gate would report it missing on a clean checkout.
+  Anchoring the hook therefore *requires* committing it; the two decisions are one
+  decision, and Revision 2's registration story does not work without it.
+* **`.claude/worktrees/` must be gitignored in the same change.** Once one file
+  under `.claude/` is tracked, the directory stops being uniformly ignorable by
+  habit, and scratch worktrees — 565 files in this tree today — become one careless
+  `git add .claude/` away from the repository.
+* **`.claude/skills` must stay untracked**, since the routine regenerates it. The
+  two scoped globs (`.claude/*.json`, `.claude/hooks/**/*.py`) do not match it,
+  and `_frozen_files` skips it regardless because `Path.is_file()` is false for a
+  symlink to a directory.
+
+**If the Maintainer prefers `.claude/` to remain wholly local**, that is a
+coherent position and it **kills Part 1 as designed** rather than shrinking it: a
+hook that is not in the repository cannot be reviewed as bytes, cannot be frozen,
+cannot be shared with another clone or another agent, and would be per-machine
+local configuration rather than a Cairn artifact — at which point it is a personal
+workflow tool and not proposal-worthy. That is a decision for the Decision, and it
+is recorded here as a live fork rather than assumed away.
