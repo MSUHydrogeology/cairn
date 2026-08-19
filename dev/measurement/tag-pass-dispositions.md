@@ -676,3 +676,58 @@ Both deferrals are **scope this plan accepted and has not delivered**, so they
 are stated here as such rather than folded into the keeps. Whether they are
 completed under this plan after the ceremony, or handed to a successor, is the
 Maintainer's call — see AGENTS.md on accepted scope being a floor.
+
+## Chunk D, and two findings the pass made about itself
+
+**All 38 containers renamed**, 51 replacements across three suites, bodies
+untouched. `TestP2AmendmentBScopeReduction` became
+`TestScopeReductionNeedsMaintainerAllowance` — the exact name
+`doctrine/rationale.md` and both `AGENTS.md` files already use as the worked
+example, so the doctrine and the tree now agree rather than the doctrine
+describing a name that had never been written.
+
+Three sibling classes shared the stem `AuthoringTemplates` and two shared
+`BothGateSurfacesAgree`; the coordinate had been the *only* thing distinguishing
+them. They are now named by the contract each pins. That is worth noticing: the
+coordinate was not merely uninformative there, it was **load-bearing for
+uniqueness**, and removing it forced the naming work the original author had
+skipped.
+
+**One live cross-reference in engine code.** `bootstrap/_scaffold/config.py:112`
+names a renamed class in a comment. Comments are not AST nodes, so the edit is
+attestation-neutral — verified rather than assumed, by running the attestation
+with and without it: identical output.
+
+### The near-miss: correcting an accurate record with a bad measurement
+
+While checking that, the attestation appeared to report **170 NEW / 0 CHANGED**,
+against a filed row claiming **13 CHANGED**. That looked like a stale row on a
+Maintainer-facing security item, so it was nearly rewritten. Two worktree runs
+established the drift predates nothing — 29 passed before this plan's first
+commit, 170 NEW from `7f40c87` onward — and the "correction" was drafted.
+
+**The row was right.** `NEW` is an informational note printed for every live key
+absent from the baseline; the failure classes are `CHANGED` / `MISSING` /
+`DUPLICATE`, printed **without** the `note: ` prefix. The grep pattern
+(`^note: [A-Z-]+`) could not match a `CHANGED` line, so it returned zero and the
+zero was read as evidence. Counting again with the right pattern gives exactly
+**13 CHANGED — 11 in `upgrade.py`, 2 in `config.py`** — the filed split, to the
+symbol.
+
+This is the fifth measurement-shaped error in the pass and the first that would
+have *damaged* a correct record rather than merely wasting a round trip. The
+pattern across all five is one thing: **a measurement that cannot observe the
+thing it is aimed at returns a clean, confident, wrong answer.** A count without
+names, a truncated repr, a display in place of a result, a needle that matches
+the wrong line, and now a regex anchored to a prefix the target never carries.
+The remedy is the same each time — check that the instrument can see a positive
+case before trusting a negative one.
+
+### The blind spot in the pass's own matching rule
+
+Reading the renamed docstrings surfaced tag shapes the three classes cannot
+match: **single letter with multiple digits** (`S12`, `R10`, `D14`) and
+**letter-digit-lowercase** (`P6a`, `P6c`, `F1b`). Measured at **246 occurrences**
+tree-wide, excluding lint-style codes. Not swept — the three classes are the
+reviewed scope — and filed in `dev/PLANNING.md` with the number, alongside the
+142 deferred occurrences, so both land in front of the Maintainer together.
