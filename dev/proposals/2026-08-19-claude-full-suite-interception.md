@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change adds an **executable path**
 (a harness hook the tool runs before a command) and a new routing tool. It
 touches no surface `AGENTS.md` names high-risk, but "executable path" is a
@@ -393,3 +393,282 @@ implementation Security Review is not discharged.
 complete current-contract revision. Preserve all three intended parts, but make
 Part 1 an acknowledged and registered trust root, give Part 2 an actual schema,
 and align subagent handling with the Maintainer's verification-owner ruling.
+
+## Response -- Claude -- 2026-08-19
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `92e71dc`. Five blocking findings. **X1 defeats the central
+security argument of the opened proposal, and X4 catches this proposal
+contradicting a Maintainer ruling I wrote myself the same day.** I verified both
+against primary sources rather than conceding on assertion.
+
+**[X1] accept.** The finding is correct and my reasoning was structurally wrong:
+I argued from the hook's *intended return value* rather than its *actual
+authority*. Checked against the official hook documentation on 2026-08-19,
+command hooks *"execute with the user's full permissions"*, *"can read, modify,
+and delete any files the user can access"*, and have *"no sandboxing or
+permission restrictions beyond the OS user model"*. `PreToolUse` fires **before**
+the permission system, and project hooks **do** run inside subagents.
+
+So the sentence the opened proposal rested on — *"it cannot make a failing suite
+look passing"* — **is false**. A hook that runs before the suite, with full file
+access, can rewrite a test or a fixture and then allow the command. The
+indirection does not reduce the authority; it only hides it. My "honest tension"
+section reached the right conclusion about `conftest.py` and the wrong one about
+the hook, by comparing the wrong property.
+
+Revision 1 registers `.claude/settings.json` and `.claude/hooks/**` as a named
+**high-risk executable trust root**, so every future change to them takes a
+Security Review automatically rather than by anyone remembering, and binds the
+exact settings form.
+
+**[X2] accept with modification.** Correct that I invented a source: the plan
+template requires a reviewed mapping *in prose*, defines no field, and the two
+active plans encode theirs differently. Restricting entries to `bootstrap/tests/`
+also cannot express Boundary A's standing-gate half, which the finding is right
+to flag. Rather than defer Part 2, Revision 1 **defines the closed, versioned
+block first** — with the refusal rules the finding lists — and narrows v1's
+promise: pytest entries plus **named gate identifiers mapped in code to fixed
+argv**, never shell text taken from Markdown. Anything the block does not cover
+is printed as **still owed** rather than silently implied to have run.
+
+**[X3] accept.** `PreToolUse` matches the tool, not the command, so the command
+arrives as an unparsed string and the hook must decide shell syntax itself. My
+"100% coverage by construction" claim was therefore unfounded and is
+**retracted** — it holds only for the enumerated canonical forms. Revision 1
+specifies a deliberately small closed grammar that **passes open on any unknown
+token or shell operator**, treats the override only as a leading environment
+assignment, and states the false-negative boundary. The finding's latency point
+is the sharpest part: the hook process starts on **every** Bash call, and the
+documented default command-hook timeout is **600 seconds** — verified — which is
+emphatically not a harmless failure direction. Revision 1 sets a short explicit
+timeout and a no-match latency budget.
+
+**[X4] accept, and this is the finding I am most glad to have received.** The
+proposal cites `a81f9fa7` and then contradicts it. The recorded ruling is that
+verification is **not delegated** — the spawner verifies once after the join, and
+the leaf never needs the mapping. Turning an intercepted delegated full run into
+a *guided delegated scoped run* preserves the multiplier in smaller form, which
+is the opposite of the ruling, and I did not notice because I was thinking about
+the command rather than about who runs it.
+
+Revision 1 makes the hook **role-aware**, which the documentation confirms is
+possible: hook input carries `agent_id` and `agent_type`. A subagent's full-suite
+attempt is told to **return verification to the spawner** and is offered no
+scoped route at all; only the top-level owner is offered `tools/verify.py`. This
+does not supersede the ruling — it enforces it at the one place it is observable.
+
+**[X5] accept.** Straightforwardly correct, and my "deliberate test of the fence"
+framing was wrong on the fence's own terms. `AGENTS.md` refuses bounded mode for
+*"work under a release or security ceremony"*, and this proposal declares a
+Security Review owed, so it is such work. **Boundary B is `full`**, and its
+command carries the deliberate override so the new hook cannot block the one
+broad run the lifecycle requires.
+
+**[X6] accept, both halves.** "Recorded" is withdrawn — this proposal writes no
+durable record of an override, and a vendor transcript is not Cairn's
+git-committed evidence channel. And the two wrappers are now distinguished:
+Cairn's own root `CLAUDE.md` may name the hook; `templates/core/VENDOR.md` stays
+a vendor-neutral placeholder unless the bootstrap gains an installation
+mechanism, which this proposal does not add.
+
+## Revision 1
+
+The complete current contract, self-contained. Supersedes the opened proposal in
+full; earlier sections stand as immutable history.
+
+### Assurance path, restated
+
+**high-assurance**, and for a stronger reason than the opened version gave. This
+adds a **full-user-permission executable trust root** that runs before every
+`Bash` tool call, inside subagents as well as the main session, ahead of the
+permission system. That is the authority being added; the allow/deny return value
+is merely its interface.
+
+### Scope
+
+Put the prompt at the point of cost, and make the spawner's verification
+obligation enforceable where it is observable.
+
+**In scope**: a tracked `.claude/settings.json`; one hook script; `tools/verify.py`;
+a closed versioned Boundary A block in both plan templates; one vendor-neutral
+sentence in `AGENTS.md` and its twin; a naming entry in Cairn's root `CLAUDE.md`;
+a new high-risk-surface entry in `AGENTS.md`.
+
+**Excluded**: any change to the canonical Boundary B command; any bootstrap
+installation mechanism for the hook; any edit to `templates/core/VENDOR.md`
+beyond leaving it a placeholder; any gate-frozen file; any doctrine *rule*.
+
+### Part 1 — the hook, as a registered trust root
+
+**Registration first.** `AGENTS.md` > *High-risk surfaces* gains
+`.claude/settings.json` and `.claude/hooks/**` as an executable trust root, on
+the same footing as the local interpreter binding and the portable-sweep runner.
+The consequence is automatic: any future change to either takes a Security
+Review without anyone having to notice it should.
+
+**The bound settings form** — all of these are contract, not convention:
+
+* project-root **absolute path** to the script;
+* **shell-free exec form** (`args: []`), so no shell ever parses the invocation;
+* the script is a **regular file** (not a symlink), checked at review time;
+* a **short explicit timeout** — single-digit seconds. The documented default is
+  **600s**, and a hook that hangs would stall every `Bash` call for ten minutes;
+* **accepted interpreter provenance**, stated;
+* **no subprocess and no network** in the reviewed script, and its bytes are
+  reviewed together with the settings file, since either alone is meaningless.
+
+**Behaviour, role-aware.** On a matched unnarrowed full-suite command:
+
+* **top-level session** — refuse once, print the plan's Boundary A block if one
+  is declared, print the concentration figures, and name the override;
+* **subagent** (`agent_id` / `agent_type` present) — refuse once and say
+  **verification returns to the spawner**. No scoped route is offered, because
+  offering one would preserve the multiplier the routing decision removed.
+
+`CAIRN_FULL_SUITE=1` passes through silently, recognized **only** as an actual
+leading environment assignment.
+
+### Part 2 — a closed Boundary A block, then a reader for it
+
+**The block, defined here because nothing today provides one.** Both plan
+templates gain a fenced, versioned block:
+
+```
+schema: cairn-boundary-a/1
+pytest:
+  - <path under bootstrap/tests/, optionally ::node>
+gates:
+  - <identifier from a closed set>
+```
+
+**Refusal rules, all fail-closed**: more than one block in an artifact refuses
+(two cannot both be current under append-only revision); an unknown key refuses;
+an unknown gate identifier refuses; a pytest entry that does not resolve inside
+`bootstrap/tests/`, or that escapes by traversal or symlink, refuses; an
+archived or non-active plan refuses; an **absent block refuses** rather than
+being guessed.
+
+**Gate identifiers map in code to fixed argv.** No shell text is ever taken from
+Markdown and executed — the Markdown supplies a *key*, the code supplies the
+command, exactly as the measurement registry already does for `verify_counts`.
+
+**`tools/verify.py --plan <stem>`** runs the pytest entries and the mapped
+gates, and **prints anything the block does not cover as still owed**. It never
+claims to have run "the Boundary A mapping"; it states what it ran and what
+remains.
+
+### Part 3 — prose, correctly split
+
+* `AGENTS.md` and its shipped twin: one vendor-neutral sentence that a full-suite
+  invocation is expected to be a deliberate act and a project **may** enforce
+  that at its harness. Permission, not obligation — the rate-limit gate is not
+  engaged.
+* Cairn's **root `CLAUDE.md`** (self-host wrapper) names the hook.
+* **`templates/core/VENDOR.md` is not touched** — it stays a vendor-neutral
+  placeholder, because this proposal ships no installation mechanism for an
+  adopter.
+
+### Rationale
+
+**Interception is still the only remedy whose coverage does not depend on
+memory**, and the role-aware form is what makes it consistent with the routing
+decision rather than a quiet reversal of it.
+
+**But the cost is now stated at its real size.** This is not a speed bump with
+incidental permissions; it is an executable trust root that the repository
+supplies and the harness runs with the user's full authority, before the
+permission system, inside every subagent. That is worth a Security Review on
+every future change, which is exactly what registering it buys.
+
+### Failure directions
+
+The hook **fails open**: a malformed config, a missing script, a raising hook, an
+unknown token, or a shell operator all leave the command to run as it does today.
+The cost of a missed prompt is one full suite; the cost of a false refusal is
+blocked work, and a mechanism that blocks work gets removed.
+
+`tools/verify.py` **fails closed**: it refuses rather than inventing a scope,
+because a wrong scope is a check that passes without testing.
+
+### Evidence / verification plan
+
+| invariant | falsifier |
+|---|---|
+| A narrowed invocation is never intercepted | table-driven over path, node, `-k`, `-m`, `--deselect`, `--ignore`, `--lf`, `--ff`, option-value forms |
+| An unknown token or shell operator passes open | feed compound commands, env prefixes, alternate interpreter spellings; assert pass-through |
+| The override is recognized only as a leading env assignment | assert a trailing or quoted occurrence does **not** pass through |
+| A subagent is told to return verification, not offered a scope | synthesize hook input with `agent_id`/`agent_type`; assert the message and the absence of a scoped route |
+| Malformed hook input never blocks | malformed JSON, missing fields, empty stdin — assert pass-through |
+| No-match latency stays inside budget | measure the no-match path; assert the stated bound |
+| The block's refusal rules | duplicate block, unknown key, unknown gate id, traversal, symlink, archived plan, absent block — each refuses |
+| Gates run fixed argv | assert no Markdown-derived string reaches a command |
+
+**Boundary B mode: `full`** — this is work under a security ceremony, on which
+the fence refuses bounded mode. Its command carries `CAIRN_FULL_SUITE=1` so the
+new hook cannot block the one broad run the lifecycle requires.
+
+### Security preflight — rewritten around the actual authority
+
+**S1 — Who supplied it?** The **repository** supplies the hook script and the
+settings that point at it, and the **harness executes them with the user's full
+permissions**. That is the trust boundary, and it is not the command string. The
+command string is matched, never executed and never interpolated. `tools/verify.py`
+reads a repository-controlled block, but takes only *keys* from it: pytest paths
+are containment-checked, and gate identifiers select code-controlled argv.
+
+**S2 — Can it fail?** Each invariant names its falsifier. The load-bearing one:
+deleting the narrowing check must make a scoped command intercepted, and that
+mutation must go red.
+
+**S3 — What fires it, over what?** The harness fires the hook on **every** `Bash`
+tool call, in the main session and in every subagent, before the permission
+system. That breadth is the reason for the latency budget and the short timeout.
+**Cairn has no CI.**
+
+**S4 — Which way does it break?** The hook toward *less* authority on every error
+path. `tools/verify.py` toward *fewer claims*. The asymmetry is deliberate and
+opposite, because their costs of being wrong are opposite.
+
+**S5 — Who still wins?** The attacker who can write `.claude/hooks/**` or
+`.claude/settings.json` in a clone **wins completely**: the hook runs with full
+user permissions before any suite, so it can modify tests, fixtures or
+configuration and then allow the command, making a compromised tree report
+success. **This is a genuine new capability, not a rephrasing of an existing
+one**, and the opened proposal's claim to the contrary is withdrawn. It is
+contained only by the same trust that already governs executing this
+repository's own code, plus review of the two artifacts together and the
+registration that forces that review. The class is closed **by enumeration**,
+not by construction — the honest answer, and the reason the registration in
+Part 1 is not optional.
+
+### Known omissions
+
+* **False negatives are real and bounded by the grammar**: any unusual spelling
+  passes open, deliberately. "100% coverage" is retracted.
+* **No durable record of an override** — the pass-through is silent, and this
+  proposal adds no evidence channel. The word "recorded" is withdrawn.
+* **Adopters get nothing installable** — no bootstrap mechanism ships.
+* **Non-shell pytest invocations** (`pytest.main()` in-process) are not
+  intercepted.
+* **Whether the prompt changes behaviour is unmeasured** until the run-frequency
+  ledger exists.
+
+### Withdrawn / superseded commitments
+
+* **"It cannot make a failing suite look passing"** — withdrawn (X1), false. A
+  full-permission hook running before the suite can modify what the suite reads.
+* **"100% coverage of the failure by construction"** — withdrawn (X3); holds only
+  for enumerated canonical forms.
+* **Offering a subagent a scoped route** — withdrawn (X4); it preserved the
+  multiplier the routing decision removed. Replaced by role-aware behaviour that
+  returns verification to the spawner.
+* **`Boundary B mode: bounded`** — withdrawn (X5); the fence refuses bounded mode
+  for work under a security ceremony, which this is.
+* **"a deliberate, *recorded* choice"** — withdrawn (X6); nothing records it.
+* **`tools/verify.py` reading "the declared Boundary A file list"** — withdrawn
+  (X2); no such field existed. Replaced by a closed versioned block defined here,
+  with fail-closed refusal rules and code-controlled gate argv.
+* **Naming the hook in the shipped `templates/core/VENDOR.md`** — withdrawn (X6);
+  it stays a vendor-neutral placeholder.
