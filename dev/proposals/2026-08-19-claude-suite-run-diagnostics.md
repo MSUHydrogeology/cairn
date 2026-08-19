@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write and a subprocess invocation to every test session**,
@@ -334,3 +334,139 @@ and a nested-run check confirming exactly one row appears.
 * **Row cap fights the data** — if twenty-five files stop covering the expensive
   head, the suite's cost has spread out, and the concentration premise this rests
   on no longer holds.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: d0e56678d6275677aee4dabfb295f323d80fed9b
+Target: the complete opened proposal, from Context through Signals the change is wrong
+Prior findings: none
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** The repository needs this measurement, and making it a
+by-product of the command people already run is the right architecture. The
+current contract nevertheless assigns inertness to an executable Git path,
+promises plan attribution and full-suite counts that its row cannot derive, and
+bases concurrent append correctness on a limit that does not govern regular
+files. Those are contract issues, not implementation polish.
+
+### Steelman
+
+The proposal correctly separates a frozen collector from an evolvable reader,
+keeps generated evidence out of Boundary B's clean-tree state, refuses the
+tempting unfrozen root-conftest shortcut, and gives deletion a real trigger if
+nobody uses the result. The release, nested-session, missing-directory and
+operator opt-out guards are the right kinds of explicit omissions. The measured
+cost history also supports the diagnosis: the current four points answer neither
+trend nor frequency reliably.
+
+### Findings
+
+**[E1 - BLOCKING] `git status` is an execution boundary, not just candidate
+output.** The S1/S5 analysis says Git contributes strings that are recorded or
+line-counted. In an isolated repository I set
+`core.fsmonitor=/definitely/not/a/real/fsmonitor-command` and ran exactly
+`git status --porcelain`; Git attempted that executable twice while still
+returning status 0. A repository-local config can therefore make the new
+every-session subprocess execute candidate-selected behavior. This reproduces
+the same boundary Cairn already treats explicitly in its portable-sweep work.
+
+Bind a sterile Git invocation before planning: fixed `cwd` at the collector's
+derived repository root; relevant `GIT_*` steering variables removed; global
+and system config disposition stated; `core.fsmonitor=false` pinned after any
+candidate config; a timeout; and a regression that installs an executable
+fsmonitor sentinel in `.git/config` and proves it never fires. Also state the
+accepted provenance of the `git` executable resolved from `PATH`, since this
+proposal deliberately adds that host executable to every session.
+
+**[E2 - BLOCKING] The reader promises observables the row cannot identify.** A
+row is written for every top-level invocation, including targeted files and
+node IDs, but no field or rule classifies `full`, `targeted`, or `unknown`.
+Counting rows therefore does not produce "full-suite runs per day." More
+importantly, no proposed field binds a run to a plan, and Known omissions
+correctly admits that the ledger records that a run happened, never why. HEAD
+and time cannot resolve concurrent dirty work to one plan.
+
+For v1, define a fail-conservative run-scope classifier and test canonical full,
+shuffle-full, file, node, `-k`, and collection-error invocations. Either remove
+"per plan" from the deliverable and say plan budgets remain manually attributed,
+or add a real attribution channel that the canonical workflow sets and whose
+absence is `unknown`, never guessed. Likewise render concurrency as "overlapped
+another recorded top-level session," not "another suite was running": release,
+nested, opted-out, crashed, and uninstrumented sessions remain invisible.
+
+**[E3 - BLOCKING] `PIPE_BUF` is the wrong atomicity rule, and partial writes
+contradict the failure disposition.** POSIX assigns `PIPE_BUF`'s non-interleaving
+guarantee to pipes and FIFOs. For a regular file, `O_APPEND` makes positioning at
+EOF plus the write one atomic step; the proposal's 4096-byte premise is not the
+reason. POSIX also permits a regular-file `write()` to return fewer bytes, for
+example at a file-size or storage limit. Catching an exception cannot turn
+bytes already written into "no row," so the full-disk claim is too strong.
+
+Choose and document the actual local-filesystem concurrency contract. At
+minimum: one encoded line per write, check the returned byte count, define the
+network-filesystem exclusion, and make the reader skip *and report* malformed
+or truncated records rather than losing the whole ledger. An advisory lock is
+also available in the standard library on the proposal's POSIX-only platform.
+Keep 4096 bytes as a bounded-record/storage policy if useful, but do not call it
+the regular-file atomicity boundary. Primary reference:
+https://pubs.opengroup.org/onlinepubs/9699919799/functions/write.html
+
+**[E4 - BLOCKING] The reentrancy marker needs ownership and cleanup semantics.**
+"Set it for our own children" leaves the marker in `os.environ` for the life of
+the Python process. A second `pytest.main()` session in that process is then
+silently classified as a child even though it is another top-level run. Fix the
+contract around an exact marker name/value, record whether this session owns
+the marker, preserve a pre-existing marker, and restore only an owned marker in
+a `finally` path after session finish. Add a two-sequential-sessions-in-one-
+interpreter regression; a nested subprocess alone does not test this leak.
+
+**[E5 - SUBSTANTIVE] The outcome and timing schema cannot yet explain the rows
+it keeps.** The schema names passed, failed, skipped and xfailed, but not session
+exit status, collection errors, xpasses or interruption. `runtest_logreport`
+also emits setup/call/teardown reports, so naive counters count one node more
+than once. Yet collection errors and KeyboardInterrupt are expressly claimed as
+handled. Define node/outcome de-duplication, record the final pytest exit status
+and the omitted outcome classes, and test that counts retain their meaning for
+setup failure, collection failure, xpass and interrupt. Define whether wall time
+stops before the diagnostic Git/write work; otherwise the instrument measures
+its own subprocess overhead.
+
+**[E6 - CORRECTION] Two dated claims did not reproduce as written.** The current
+`.gitignore` ignores `dev/measurement/suite-cost.md` and `snapshots/`, not
+`suite-runs.jsonl`; the exact ledger rule is future work, consistent with the
+header's `.gitignore` touch but not with "already carries the rule." Also, a
+source sweep found 52 test files containing *any* direct `subprocess` launcher,
+while the only literal executable `python -m pytest` sites I found are
+`_gate_manifest._collect` and `test_security_check` (the manifest also contains
+a non-executed command description). That does not reproduce "73 files ...
+across roughly 78 invocation sites." Reentrancy is necessary even with one
+child, so the design survives; record the measurement command and distinguish
+source files, call sites, test nodes and dynamic child sessions before retaining
+the figures.
+
+### Coverage
+
+**Covered:** current proposal in full at the reviewed commit; existing
+`bootstrap/tests/conftest.py` hook ordering and release behavior; live
+`.gitignore` and `dev/measurement/README.md`; claim checker (clean); isolated
+hostile-`core.fsmonitor` execution probe; direct nested-launcher and subprocess
+source sweeps; POSIX regular-file/pipe write semantics; schema derivability,
+reentrancy, failure direction, and verification mapping.
+
+**Not covered / low confidence:** no implementation exists, so I did not measure
+hook overhead, run concurrent append stress, test disk exhaustion, exercise NFS
+or Windows, or run the full suite. I did not independently reconstruct all four
+historical timing figures from their original commits. This is a different-agent-
+type External read, but not the separately owed implementation Security Review.
+
+**Second-round recommendation:** recommended, limited to E1-E6 against one
+complete current-contract revision. If that revision fixes the executable Git
+boundary and makes every rendered claim derivable from the row schema, it can
+earn `Plan readiness: READY`; the implementation still owes its named Security
+Review and re-anchor ceremony.
