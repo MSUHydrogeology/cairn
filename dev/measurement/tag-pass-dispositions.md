@@ -543,3 +543,46 @@ write function ...` → `* **Guard-routing regression** — ...`), and a banner
 comment where the tag is the only thing between the section name and the reader
 (`# Merge: customized marker (Antigravity P2)`). Neither needs judgement; both
 need the file open.
+
+### Batch: output scan, gate transition, gate manifest, drift surfacing
+
+| File | Before | After |
+|---|---:|---:|
+| `bootstrap/tests/test_generated_output_scan.py` | 4 | 0 |
+| `bootstrap/tests/test_gate_transition.py` | 5 | 0 |
+| `bootstrap/tests/test_gate_manifest.py` | 5 | 0 |
+| `bootstrap/tests/test_drift_surfacing.py` | 4 | 0 |
+| `bootstrap/tests/test_doc_drift_tools.py` | 5 | 0 |
+
+**Editing a frozen gate file makes the gate suite red until you commit, and it
+names your files while doing it.** Running the five edited suites produced
+`HOLD — 5 gate-integrity violation(s)`, one `FROZEN-MODIFIED` line per file
+just edited. Committing them and re-running gives **21 passed**. Nothing about
+the content mattered: `verify()` reads each frozen file's **committed** SHA via
+git and compares it to **disk**, so any uncommitted edit to a frozen file is
+indistinguishable from tampering — which is the correct behaviour for a
+tamper-detector and a trap for the person holding the editor.
+
+Two things follow, both operational:
+
+* **The failure names the right files for the wrong reason.** An agent seeing
+  five `FROZEN-MODIFIED` lines naming exactly the five files it just touched
+  will reasonably conclude its *edits* broke the gate. They did not; the
+  *uncommitted state* did. This is the fourth attribution trap in this pass and
+  the most persuasive one, because the evidence points precisely at the work.
+* **It corrects a nuance in the row filed at `fbd34ed`.** That row said
+  `test_gate_manifest.py` passes 21/0 because its tests `produce()` a fresh
+  manifest rather than reading the committed fixture. True of the *fixture*
+  comparison, and not of the frozen-file check, which does consult git. Green
+  suite and stale fixture are still different things; green suite and *clean
+  working tree* turn out to be coupled.
+
+**One occurrence left in place, deliberately.** `test_gate_manifest.py:394`
+carries `(fence M5)` inside an assertion-message f-string. `M5` is dead — it
+appears nowhere in either live plan — but a failure-message string is neither a
+comment nor a docstring, and the pass's reviewed scope is those two surfaces
+plus (in Chunk D) test names. The line above it, a comment carrying the same
+dead tag, was removed. The resulting inconsistency is real and is the honest
+report: **assertion messages are a third surface nobody scoped**, they are read
+by exactly the audience this plan cares about — someone staring at a failure —
+and they should be a follow-up rather than a silent widening here.
