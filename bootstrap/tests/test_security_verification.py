@@ -190,7 +190,7 @@ class TestRegistryIntegrity:
         entries as of this chunk -- no more, no dormant third. Asserted
         against the SHIPPED source, read independently -- never against
         ``mod`` (other tests monkeypatch its ``_REGISTRY``). The eleven-field
-        shape of each entry is TestChunkGRegistryShape's job, not this
+        shape of each entry is TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused's job, not this
         node's; this node is the closed-set membership claim it always
         made."""
         fresh = _load_fresh("cairn_security_verification_t1_fresh")
@@ -1566,8 +1566,8 @@ class TestTheNonSilentInstall:
 # activation registry admission
 # ===========================================================================
 #
-# Everything below except TestChunkGArgvVectorValidation and
-# TestChunkGDeclaredCapabilitySet drives the REAL two capability facades
+# Everything below except TestUnreachableTransportsAreRefusedAtRegistryConstruction and
+# TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic drives the REAL two capability facades
 # through the REAL dispatcher: a real scaffold install, the shipped,
 # un-monkeypatched ``_REGISTRY``, and
 # ``python scripts/run_security_verification.py local`` run as an actual
@@ -1633,7 +1633,7 @@ def _machine_object(proc) -> dict:
         [ln for ln in proc.stdout.splitlines() if ln.startswith("{")][-1])
 
 
-class TestChunkGRegistryShape:
+class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
     """The two admitted entries, all eleven fields explicit, none
     defaulted or inferred; each constructs from exactly its
     eleven fields, and a twelfth is refused by attempting it."""
@@ -1739,7 +1739,7 @@ class TestChunkGRegistryShape:
             assert bad_key in str(exc.value), (module_id, bad_key)
 
 
-class TestChunkGArgvVectorValidation:
+class TestUnreachableTransportsAreRefusedAtRegistryConstruction:
     """G-1's acceptance criterion: the dispatcher can reach ``local`` and
     cannot reach ``deployed-passive`` -- refused at registry construction,
     never at the child."""
@@ -1751,7 +1751,7 @@ class TestChunkGArgvVectorValidation:
         it never reaches ``_run_child`` / the child process. The plan's own
         perturbation ("patch the registry entry's argv_mode in a tmp_path
         copy") is exercised here at the unit the validation actually lives
-        in; TestChunkGRealFacadeThroughRealDispatcher's tests below cover
+        in; TestRealFacadesDrivenByTheRealDispatcher's tests below cover
         the shipped, un-patched real entries, which never carry this shape
         in the first place."""
         with pytest.raises(ValueError) as exc:
@@ -1783,7 +1783,7 @@ class TestChunkGArgvVectorValidation:
         assert entry.argv_mode == ("local", "--child-document")
 
 
-class TestChunkGDeclaredCapabilitySet:
+class TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic:
     """Change 2: the declared, source-owned capability set replacing the
     ``-security`` name-suffix heuristic."""
 
@@ -1823,7 +1823,7 @@ class TestChunkGDeclaredCapabilitySet:
         assert leg["child_launched"] is False
 
 
-class TestChunkGRealFacadeThroughRealDispatcher:
+class TestRealFacadesDrivenByTheRealDispatcher:
     """The end-to-end wiring both prior reviews missed: the REAL facades
     driven by the REAL dispatcher, never a synthetic fixture child and
     never the facade CLI invoked directly in place of the dispatcher.

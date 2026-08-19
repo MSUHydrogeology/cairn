@@ -109,7 +109,7 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     # APPLICABLE line, matching the plan's original intent.  Re-measured, not
     # carried forward: see `test_security_verification.py`'s
     # `test_the_dispatcher_runs_from_a_real_fresh_scaffold` (formerly the T33
-    # characterization node) and `TestChunkGDeclaredCapabilitySet`.
+    # characterization node) and `TestTheDeclaredCapabilitySetReplacesTheNameSuffixHeuristic`.
     "security-verification",
 )
 

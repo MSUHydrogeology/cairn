@@ -1230,7 +1230,7 @@ def _write_inheritance_chain(root: Path, *, assurance: str) -> None:
            "## Scope\n\nx\n")
 
 
-class TestCF1AssurancePathOnTheEvent:
+class TestTheAssurancePathFieldIsClosedMandatoryAndDerived:
     """The /2 field: closed vocabulary, mandatory, derived, never typed."""
 
     def _ledger(self, repo: Path, *blocks: str) -> None:
@@ -1372,7 +1372,7 @@ class TestCF1AssurancePathOnTheEvent:
         assert "assurance_path" not in events[0]
 
 
-class TestCF1TheEligibilitySplit:
+class TestTheEligibilitySplitTheAcceptedParentAskedFor:
     """The report line the accepted parent asked for and P6a could not derive."""
 
     def _activate(self, repo: Path, date: str = "2026-02-01") -> None:

@@ -3130,7 +3130,7 @@ def test_the_live_corpus_is_sound_under_the_p1_contract():
     assert bad == {}, bad
 
 
-class TestP1AuthoringTemplates:
+class TestTemplatesTeachTheReviewBasisAndAssurancePath:
     """The template half, pinned per surface rather than assumed.
 
     The plan's acceptance criteria require each documentation surface to be
@@ -3351,7 +3351,7 @@ def test_p5_the_fixture_stem_is_in_neither_legacy_manifest():
     assert _P5_STEM not in planner._LEGACY_UNDECLARED_BASIS
 
 
-class TestP5InheritanceTrigger:
+class TestTheInheritedBasisHeaderIsTheOnlyTrigger:
     """The ONE trigger: a plan header declaring `Inherited proposal basis:`."""
 
     def test_a_plan_declaring_no_inheritance_owes_no_attestation(self, tmp_path):
@@ -3465,7 +3465,7 @@ class TestP5InheritanceTrigger:
             f"'{_P5_FIELD}' with a well-formed 'Basis:' line: {declaring}")
 
 
-class TestP5AttestationVocabulary:
+class TestTheAttestationVocabularyIsClosedAndBlocking:
     """Presence, uniqueness, the closed vocabulary, and the blocking value."""
 
     def test_a_complete_backstop_is_silent(self, tmp_path):
@@ -3554,7 +3554,7 @@ class TestP5AttestationVocabulary:
         assert _p5_field_violations(v), (state, v)
 
 
-class TestP5BasisBindingShape:
+class TestBasisBindingsAreCheckedForShapeNeverForTruth:
     """The three bindings' SHAPE -- never their truth."""
 
     def test_the_basis_line_is_required(self, tmp_path):
@@ -3728,7 +3728,7 @@ def _p5_legacy_pass() -> tuple[str, str]:
     return "", ""
 
 
-class TestP5Placement:
+class TestWhereTheBasisCheckSitsAndWhatItRefusesToClaim:
     """Where the check sits, and what it refuses to claim."""
 
     def test_the_backstop_is_checked_before_the_legacy_fence(self, tmp_path):
@@ -4375,7 +4375,7 @@ class TestBlockedByIsNonAuthoritative:
         assert planner.blocked_by_violations(art) == []
 
 
-class TestR6ContradictionsThroughBothEntryPoints:
+class TestEveryContradictionRefusesThroughBothEntryPoints:
     """The eight refusals, each through `scan`\'s surface AND `next`\'s.
 
     *"`scan`, `next`, and accepted closeout tooling consume shared
@@ -4706,7 +4706,7 @@ class TestAReviewThatLeavesAnObligationOpenMovesNothing:
         assert all(met for met, _d in gates), gates
 
 
-class TestTheR6PredicateIsShared:
+class TestTheReadinessPredicateIsSharedNotReimplemented:
     """*"consume shared predicates rather than implement three
     interpretations of readiness."*  Asserted structurally, because the property
     is that no second interpretation EXISTS."""
@@ -4850,7 +4850,7 @@ def _p2(tmp_path: Path, **kw) -> list:
     return planner.plan_inheritance_violations(_p2_tree(tmp_path, **kw))
 
 
-class TestP2TheChainClears:
+class TestTheInheritanceChainClearsAndEveryRefusalHasAMutantGuard:
     """Matrix 1 -- the positive case, and the mutant guard for every refusal."""
 
     @pytest.mark.parametrize("assurance", ["standard", "high-assurance"])
@@ -4892,7 +4892,7 @@ class TestP2TheChainClears:
         assert _p2(tmp_path, inherited=line) == []
 
 
-class TestP2TheReadinessFinding:
+class TestWhoseReadinessFindingMayBeInheritedAndAtWhatValue:
     """Matrix 3 and 5 -- whose finding may be inherited, and which value."""
 
     def test_distinct_review_required_refuses(self, tmp_path):
@@ -4952,7 +4952,7 @@ class TestP2TheReadinessFinding:
         assert any("2 times" in m or "duplicate" in m for m in v), v
 
 
-class TestP2TheExactBinding:
+class TestTheCommitBindingIsExactAndSaysWhatExactCannotMean:
     """Matrix 4 -- and the honest boundary of what "exact" can mean here."""
 
     def test_a_changed_accepted_proposal_sha_refuses(self, tmp_path):
@@ -4989,7 +4989,7 @@ class TestP2TheExactBinding:
         assert v, "an unbindable readiness record must not clear"
 
 
-class TestP2AmendmentDMalformedNeverMeansReady:
+class TestAMalformedBasisNeverMeansReady:
     """Matrix 8 -- every shape Amendment D names, in its own words."""
 
     @pytest.mark.parametrize("value", [
@@ -5060,7 +5060,7 @@ class TestP2AmendmentDMalformedNeverMeansReady:
         assert any("REALLOCATES" in m for m in v), v
 
 
-class TestP2TheSourceProposalChain:
+class TestEveryLinkOutToTheProposalRefusesWhenBroken:
     """The chain out to the proposal, every link of which refuses when broken."""
 
     @pytest.mark.parametrize("line,expect", [
@@ -5100,7 +5100,7 @@ class TestP2TheSourceProposalChain:
         assert any("symlink" in m for m in v), v
 
 
-class TestP2ExpansionInvalidatesReadiness:
+class TestExpansionInvalidatesReadiness:
     """Matrix 6 -- every dimension the accepted parent names."""
 
     @pytest.mark.parametrize("dimension", [
@@ -5159,7 +5159,7 @@ class TestP2ExpansionInvalidatesReadiness:
                              "**Contract expansion**: invariant\n") == []
 
 
-class TestP2AmendmentBScopeReduction:
+class TestScopeReductionNeedsMaintainerAllowance:
     """Matrix 7 -- the seventh trigger, in the vocabulary that already exists."""
 
     _SHARPENING = "\n### Sharpening -- Author A -- 2026-08-07\n\n"
@@ -5225,7 +5225,7 @@ class TestP2AmendmentBScopeReduction:
                                        "dropping an accepted outcome)\n") == []
 
 
-class TestP2TheInternalPlanReviewIsStillRequired:
+class TestInheritanceReallocatesTheReadItDoesNotRemoveIt:
     """Matrix 2 -- inheritance reallocates the read; it does not remove it."""
 
     def test_no_conforming_internal_pass_refuses_at_an_implementing_state(
@@ -5250,7 +5250,7 @@ class TestP2TheInternalPlanReviewIsStillRequired:
         assert planner.plan_inheritance_violations(art) == []
 
 
-class TestP2BothGateSurfacesAgree:
+class TestOneInheritancePredicateServesBothGateSurfaces:
     """S12 -- one predicate, two call sites, verbatim."""
 
     def test_scan_and_next_report_the_same_finding(self, tmp_path):
@@ -5294,7 +5294,7 @@ class TestP2BothGateSurfacesAgree:
                    for met, desc in gates), gates
 
 
-class TestP2LiveCorpusAndSourceFences:
+class TestTheMeasuredBlastRadiusAndTheFencesHoldingIt:
     """The measured blast radius, and the fences that keep it that way."""
 
     def test_the_live_corpus_is_sound_under_the_p2_contract(self):
@@ -5352,7 +5352,7 @@ class TestP2LiveCorpusAndSourceFences:
         assert any("all three are required" in m for m in v), v
 
 
-class TestP2CarriedForwardObligationCF1:
+class TestThePlanSideAssurancePathTheMonitoringReportNeeds:
     """The plan-side assurance path the monitoring report needs."""
 
     def test_the_vocabulary_is_public_and_unchanged(self):
@@ -5404,7 +5404,7 @@ class TestP2CarriedForwardObligationCF1:
         assert any("is not a plan" in m for m in problems), problems
 
 
-class TestP2AuthoringTemplates:
+class TestTemplatesTeachPlanReadinessInheritance:
     """The template half, pinned per surface in the same idiom.
 
     The plan's acceptance criteria require each documentation surface to be
@@ -5597,7 +5597,7 @@ def _p3(tmp_path: Path, **kw) -> list:
         _p3_prop(tmp_path, _p3_body(**kw), **prop_kw))
 
 
-class TestP3TheContractClears:
+class TestTheContractClearsAndEveryRefusalHasAMutantGuard:
     """The positive cases -- and the mutant guard for every refusal below."""
 
     def test_a_response_with_a_complete_revision_and_a_ledger_clears(
@@ -5687,7 +5687,7 @@ class TestP3TheContractClears:
         assert planner.current_contract_violations(art) == []
 
 
-class TestP3TheRevisionIsMandatory:
+class TestAResponseWithoutACompleteCurrentContractRefuses:
     """Obligation A -- a Response without a complete current contract refuses."""
 
     def test_a_response_with_no_revision_refuses(self, tmp_path):
@@ -5733,7 +5733,7 @@ class TestP3TheRevisionIsMandatory:
         assert any("no complete current-contract revision" in m for m in v), v
 
 
-class TestP3TheLedgerIsMandatory:
+class TestEveryRevisionCarriesExactlyOneLedgerWithAValue:
     """Obligation B -- every revision carries exactly one ledger, with a value."""
 
     def test_a_revision_with_no_ledger_refuses(self, tmp_path):
@@ -5778,7 +5778,7 @@ class TestP3TheLedgerIsMandatory:
         assert not any("Revision 2" in m for m in v), v
 
 
-class TestP3WhatIsNotAHeading:
+class TestTheFalseClearChannelsMeasuredOnRealBytes:
     """The false-CLEAR channels -- each measured on real bytes, not imagined."""
 
     def test_a_ledger_quoted_inside_a_fence_does_not_satisfy_it(self, tmp_path):
@@ -5818,7 +5818,7 @@ class TestP3WhatIsNotAHeading:
         assert len(v) == 1, v
 
 
-class TestP3NearMisses:
+class TestANearMissQuotesTheHeadingThatDidNotCount:
     """The near-miss rule reused: quote the heading that did not count."""
 
     @pytest.mark.parametrize("heading", [
@@ -5853,7 +5853,7 @@ class TestP3NearMisses:
         assert "nearest heading is" not in v[0], v
 
 
-class TestP3Grandfathering:
+class TestImmutabilityHoldsInBothDirectionsAndFailsClosed:
     """`_is_immutable`, in both directions and in the fail-closed direction."""
 
     @pytest.mark.parametrize("status", ["accepted", "rejected", "superseded"])
@@ -5962,7 +5962,7 @@ def test_every_pre_ledger_proposal_is_covered_by_immutability_alone(
         f"reaching the records it was measured against: {len(owing)}")
 
 
-class TestP3BothGateSurfacesAgree:
+class TestAPredicateWiredToOneSurfaceLeavesTheOtherLoose:
     """The rule: a predicate wired to one surface leaves the other loose,
     and the loose surface is the one an author drives."""
 
@@ -6004,7 +6004,7 @@ class TestP3BothGateSurfacesAgree:
         assert src.count("current_contract_violations(art)") == 3
 
 
-class TestP3TheRealContractIsTheORACLE:
+class TestTheAcceptedContractsOwnBytesAreTheOracle:
     """The strongest available oracle: the accepted contract's own bytes."""
 
     def test_the_accepted_contract_clears_when_it_is_made_live(self, tmp_path):
@@ -6034,7 +6034,7 @@ class TestP3TheRealContractIsTheORACLE:
         assert found == [_P3_LEDGER], found
 
 
-class TestP3AuthoringTemplates:
+class TestTemplatesTeachTheContractRevisionAndItsLedger:
     """The template half, pinned per surface in the same idiom as its siblings.
 
     The plan's acceptance criteria require each documentation surface to be
@@ -6356,7 +6356,7 @@ class TestScopeDeltaParserContract:
 #
 #   1. **Checks the delegation.**  `_P6C_COVERAGE` names, per cell, the sibling
 #      node that carries it and the falsifier that was run to prove that node
-#      can actually fail.  `TestP6cTheCoverageMapResolves` reddens if a covering
+#      can actually fail.  `TestTheCoverageMapResolvesInsteadOfAssertingDelegation` reddens if a covering
 #      node is renamed or deleted, so this chunk's discharge cannot quietly
 #      become false while the suite stays green.
 #   2. **Closes the gaps the falsification run found.**  Every "already covered"
@@ -6445,7 +6445,7 @@ cli = _load_lifecycle_cli()
 
 
 #: The ten cells of the `P6c` row, transcribed from the plan.  Written here so
-#: `TestP6cTheCoverageMapResolves` can assert the map covers all ten rather than
+#: `TestTheCoverageMapResolvesInsteadOfAssertingDelegation` can assert the map covers all ten rather than
 #: whatever subset an implementer happened to fill in.
 _P6C_CELLS = (
     "absent record",
@@ -6502,7 +6502,7 @@ _P6C_COVERAGE = {
     "interrupted write": (
         ("TestEventLedger.test_no_temp_file_survives_a_refused_append",
          "the temp-file `finally` clause is removed"),
-        ("HERE: TestP6cAnInterruptedAppendRefusesAndWritesNothing",
+        ("HERE: TestAnInterruptedAppendRefusesAndWritesNothing",
          "a failed write is swallowed instead of refusing -- SURVIVED the "
          "sibling suite, which is why this node exists"),
     ),
@@ -6516,7 +6516,7 @@ _P6C_COVERAGE = {
          "the inclusive-window off-by-one"),
         ("TestDerivedReport.test_boundary_day_arithmetic",
          "the inclusive-window off-by-one (day 61 param red)"),
-        ("HERE: TestP6cTheDeadlineBoundaryDay",
+        ("HERE: TestTheDayTheDeadlineIsCompared",
          "`now > last` -> `now >= last`, in the deadline test and in the "
          "OPEN/ELAPSED label -- BOTH SURVIVED the sibling suite"),
     ),
@@ -6540,7 +6540,7 @@ _P6C_COVERAGE = {
         ("TestActivationRecord.test_an_unknown_key_refuses",
          "the `_require_exact_keys` call is removed -- the wiring the "
          "unconstructibility pin below depends on"),
-        ("HERE: TestP6cTheDerivedEnablingCommitHasNoStoredCounterpart",
+        ("HERE: TestTheDerivedEnablingCommitHasNoStoredCounterpart",
          "UNCONSTRUCTIBLE: the enabling commit is derived and never stored, so "
          "there is no second value for it to disagree with"),
     ),
@@ -6566,7 +6566,7 @@ def _p6c_defined_nodes(path: Path) -> set:
     return names
 
 
-class TestP6cTheCoverageMapResolves:
+class TestTheCoverageMapResolvesInsteadOfAssertingDelegation:
     """The delegation, checked instead of asserted.
 
     Without this, "cell N is covered in the sibling" is a sentence in a commit
@@ -6608,9 +6608,9 @@ class TestP6cTheCoverageMapResolves:
                       for entries in _P6C_COVERAGE.values()
                       for node, _f in entries if node.startswith("HERE: "))
         assert here == [
-            "TestP6cAnInterruptedAppendRefusesAndWritesNothing",
-            "TestP6cTheDeadlineBoundaryDay",
-            "TestP6cTheDerivedEnablingCommitHasNoStoredCounterpart",
+            "TestAnInterruptedAppendRefusesAndWritesNothing",
+            "TestTheDayTheDeadlineIsCompared",
+            "TestTheDerivedEnablingCommitHasNoStoredCounterpart",
         ]
         defined_here = _p6c_defined_nodes(Path(__file__).resolve())
         for name in here:
@@ -6699,7 +6699,7 @@ def _p6c_repo(tmp_path: Path, *, activation_date: str = "2026-02-01",
     return root
 
 
-class TestP6cTheDeadlineBoundaryDay:
+class TestTheDayTheDeadlineIsCompared:
     """Cell 8's other half: the day the 60-day deadline is *compared*.
 
     The sibling covers the window's own arithmetic well -- `_window_bounds` and
@@ -6756,7 +6756,7 @@ class TestP6cTheDeadlineBoundaryDay:
         assert "monitoring boundary: REACHED via the 60-day deadline" in report
 
 
-class TestP6cAnInterruptedAppendRefusesAndWritesNothing:
+class TestAnInterruptedAppendRefusesAndWritesNothing:
     """Cell 6's other half: the write that fails part-way, not the residue.
 
     The sibling proves no temp file survives a *refused* append -- the
@@ -6798,7 +6798,7 @@ class TestP6cAnInterruptedAppendRefusesAndWritesNothing:
                 "a failed append left residue in the records directory")
 
 
-class TestP6cTheDerivedEnablingCommitHasNoStoredCounterpart:
+class TestTheDerivedEnablingCommitHasNoStoredCounterpart:
     """Cell 10's second clause -- **unconstructible**, and pinned as such.
 
     The `P6c` row asks for "a derived-enabling-commit mismatch" to refuse.  It
@@ -6825,7 +6825,7 @@ class TestP6cTheDerivedEnablingCommitHasNoStoredCounterpart:
     `test_the_enabling_commit_and_date_are_derived_from_git` (red when the date
     or the introducing-commit lookup stops being derived) and
     `test_an_unknown_key_refuses` (red when the closed-schema call is removed
-    from `_read_activation`).  `TestP6cTheCoverageMapResolves` is what keeps
+    from `_read_activation`).  `TestTheCoverageMapResolvesInsteadOfAssertingDelegation` is what keeps
     those two citations honest.
     """
 
