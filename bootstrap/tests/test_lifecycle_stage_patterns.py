@@ -599,7 +599,7 @@ def _write_proposal(root: Path, body: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# T9 -- P2: classify once, no fall-through
+# T9 -- classify once, no fall-through
 # ---------------------------------------------------------------------------
 
 def test_t9_a_second_open_commit_does_not_fall_through_to_revised(

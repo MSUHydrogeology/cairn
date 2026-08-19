@@ -620,3 +620,59 @@ The same file's other tokens (`H2` in a docstring about review-record headings)
 are heading levels, already adjudicated. So the twin pair needed no edit at
 all — recorded here because a completion check must be able to tell "audited,
 nothing to do" from "not yet audited."
+
+## Chunk C — the completion picture
+
+**The actionable set is empty.** The corpus stands at **339 occurrences across
+54 files**, down from **3,258**, and every remaining occurrence falls into one
+of three accounted classes. The enumeration that produced this is the same one
+recorded at the top of this ledger, re-run at the Chunk C head commit.
+
+| Class | Occurrences | Files |
+|---|---:|---:|
+| Adjudicated keeps | 197 | 30 |
+| Deferred — `bootstrap/_scaffold/` (AST baseline frozen) | 123 | 9 |
+| Deferred — ceremony territory | 19 | 2 |
+
+### The keeps, grouped by why
+
+* **Markdown heading levels** — `H2` / `H3`, in the lifecycle parsers, the
+  metrics extractors and their template twins. `##` and `###`.
+* **Unicode control classes** — `C0` / `C1`, in the profile grammar, the byline
+  identity scan, the security stack and the portable sweep runners.
+* **The redundancy sub-gate's detectors** — `R1` / `R6` / `R7`, defined in
+  `doctrine/consolidation-review.md`, cited in its dispositions log, and emitted
+  at runtime by `scripts/quality_gate.py`.
+* **Two self-defined in-file schemes** — `test_transition_lint.py`'s `A1`–`E9`
+  (36 lines, no strays) and `test_lifecycle_stage_patterns.py`'s `T1`–`T9`. In
+  both, the label names a row the code enumerates.
+* **Two live fences** — `N4` (the gate preflight pair) and `M3` (the interpreter
+  binding), each cited by an active plan.
+* **One live principal ordinal** — `P1`, in `CAIRN_API_P1_CREDENTIAL`.
+* **Four specimens** — the bracketed examples in `tools/lifecycle.py`'s
+  finding-id regex comment and its twin.
+
+**One stray was found inside a live scheme, at the very end.**
+`test_lifecycle_stage_patterns.py:602` read `# T9 -- P2: classify once`. `T9` is
+live, `P2` was a dead plan coordinate riding along beside it. Every earlier
+sweep had treated that file as wholly keep and skipped it. **A file classified
+as a keep still has to be read line by line** — the classification applies to a
+scheme, not to a file, and a dead tag is perfectly happy sitting next to a live
+one.
+
+### What is deferred, and on whose authority
+
+* **`bootstrap/_scaffold/` (123)** — the AST attestation baseline pins this
+  package and is already out of date by 13 CHANGED symbols from earlier in this
+  plan. Editing docstrings here adds to a re-anchor the Maintainer has not yet
+  run. Filed at `191fb93`.
+* **`test_reanchor.py` and `_gate_manifest.py` (19)** — both sit inside the
+  re-anchor ceremony's surface, and `_gate_manifest.py`'s `M2-4` / `M2-5` cite
+  `M2`, a **live** row in the active `ceremony-as-code` plan. Two reasons to
+  leave them: the coordinates are not dead yet, and the files belong to another
+  agent's in-flight work.
+
+Both deferrals are **scope this plan accepted and has not delivered**, so they
+are stated here as such rather than folded into the keeps. Whether they are
+completed under this plan after the ceremony, or handed to a successor, is the
+Maintainer's call — see AGENTS.md on accepted scope being a floor.
