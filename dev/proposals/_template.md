@@ -12,7 +12,7 @@
 > **This is the proposal template.** To open a proposal, copy the
 > section template below the horizontal rule into
 > `dev/proposals/<YYYY-MM-DD>-<author>-<short-slug>.md`, fill it,
-> and commit it with status `proposed`. The lifecycle, triage,
+> and commit it with status `awaiting-review`. The lifecycle, triage,
 > forward-reference-path, file-move, archive-precondition, count-claim,
 > and Response-grammar doctrine above the rule live in
 > `doctrine/proposals.md` — read it once, then work from the

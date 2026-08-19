@@ -3166,6 +3166,39 @@ class TestP1AuthoringTemplates:
                    if needle not in text]
         assert not missing, (path, missing)
 
+    #: Every status token the live vocabulary has retired, from both kinds.
+    #: Derived, never hardcoded -- a literal list here would drift the moment
+    #: the vocabulary moves, which is the failure this test exists to catch.
+    RETIRED_STATUS_TOKENS = (tuple(planner.HISTORICAL_PROPOSAL_STATES)
+                             + tuple(planner.HISTORICAL_PLAN_STATES))
+
+    @pytest.mark.parametrize("rel", sorted(SURFACES))
+    @pytest.mark.parametrize("shipped", [False, True])
+    def test_no_authoring_template_names_a_retired_status_token(self, rel, shipped):
+        """An authoring template is read as instruction, so a status token it
+        names is one an author will write -- and a retired token is one the
+        conformance check refuses on an active artifact. That hands the author a
+        record the tooling rejects, for having followed the instructions.
+
+        Both copies are checked because the shipped one reaches adopters, who
+        have no way to notice the vocabulary moved underneath it.
+
+        The check is deliberately blunt: *any* backticked retired token fails,
+        rather than a pattern matching phrasings like "set `Status:` to X". Two
+        real instances were found here, and a narrower pattern written for the
+        first one missed the second -- which sat in the opening paragraph and
+        governed every proposal ever opened. If a template ever needs to name a
+        retired token legitimately, give this test an explicit allowlist entry
+        with the reason; do not loosen the match.
+        """
+        path = CAIRN_ROOT / (f"templates/core/{rel}" if shipped else rel)
+        text = path.read_text(encoding="utf-8")
+        found = sorted(tok for tok in self.RETIRED_STATUS_TOKENS
+                       if f"`{tok}`" in text)
+        assert not found, (
+            f"{path} names retired status token(s) {found}; "
+            f"live vocabulary is {planner.PROPOSAL_STATES + planner.PLAN_STATES}")
+
     def test_the_shipped_proposal_template_carries_an_unfilled_trigger_slot(self):
         """The two `_template.md` copies are **not** byte-identical twins, by
         design: the shipped copy carries fill-slots and Cairn's copy is the
