@@ -1,24 +1,24 @@
 """
-Tests for the Cairn v0.2 P4 governance presets + the preset-merge engine.
+Tests for the governance presets + the preset-merge engine.
 
 Covers, per the executing plan (cairn-v0.2-p4-governance-presets):
 
 * expansion: each named preset expands to its expected baseline roster.
-* composability (F2): preset + modules_add / modules_remove both
+* composability: preset + modules_add / modules_remove both
   directions; **remove wins** on a same-module conflict.
-* staffability (I1/F3): an explicit add of an unstaffable module installs
+* staffability: an explicit add of an unstaffable module installs
   with a warning; an adopter whose real agent-team can't staff the
   coordination modules gets none in the baseline (team profile wins).
-* backward-compat (F2): modules: alone = exact list; modules: [] = none;
+* backward-compat: modules: alone = exact list; modules: [] = none;
   modules: + preset: = hard error; neither = default-on.
-* PyYAML / stdlib parity (F4): the flat schema resolves identically via
+* PyYAML / stdlib parity: the flat schema resolves identically via
   PyYAML and via _minimal_yaml_parse.
-* profile summary (F5): format_profile_summary shows preset + axes +
+* profile summary: format_profile_summary shows preset + axes +
   roster + overrides + staffability warnings.
 * config type validation (P-5): scalar-where-list and unknown enum are
   friendly hard errors.
 * unknown module / unknown preset -> error.
-* roster integrity (I4): every module any preset names is real.
+* roster integrity: every module any preset names is real.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -98,7 +98,7 @@ class TestExpansion:
 
 
 # ---------------------------------------------------------------------------
-# Composability (F2) -- add / remove, remove wins
+# Composability -- add / remove, remove wins
 # ---------------------------------------------------------------------------
 
 class TestComposability:
@@ -134,7 +134,7 @@ class TestComposability:
 
 
 # ---------------------------------------------------------------------------
-# Staffability (I1 / F3)
+# Staffability
 # ---------------------------------------------------------------------------
 
 class TestStaffability:
@@ -143,7 +143,7 @@ class TestStaffability:
             "preset": "solo-greenfield",  # agent_team=single
             "modules_add": ["dual-review"],
         })
-        assert "dual-review" in modules  # adopter intent wins (I1)
+        assert "dual-review" in modules  # an explicit add outranks the preset
         assert any(
             "dual-review" in w for w in summary["staffability_warnings"]
         )
@@ -151,7 +151,7 @@ class TestStaffability:
     def test_team_profile_wins_suppresses_coordination(self) -> None:
         # collaborative-team's canonical point staffs the coordination
         # modules; an adopter whose real agent-team is single must not get
-        # them in the baseline (F3).
+        # them in the baseline.
         roster = _roster({
             "preset": "collaborative-team", "agent_team": "single",
         })
@@ -279,7 +279,7 @@ class TestBackwardCompat:
 
 
 # ---------------------------------------------------------------------------
-# PyYAML / stdlib parity (F4)
+# PyYAML / stdlib parity
 # ---------------------------------------------------------------------------
 
 class TestParserParity:
@@ -309,7 +309,7 @@ class TestParserParity:
 
 
 # ---------------------------------------------------------------------------
-# Profile summary (F5)
+# Profile summary
 # ---------------------------------------------------------------------------
 
 class TestProfileSummary:
@@ -324,7 +324,8 @@ class TestProfileSummary:
         assert "dual-review" in text          # roster + explicit add
         assert "Explicit add" in text
         # Unstaffable add surfaced in the SAME format as the installer path
-        # (`[warn] staffability: ...`) -- standardized per code-review P1.1.
+        # (`[warn] staffability: ...`), so an adopter reading either surface
+        # sees one warning shape rather than two.
         assert "[warn] staffability:" in text
 
     def test_summary_cli_exits_without_installing(self, tmp_path: Path) -> None:
@@ -337,7 +338,7 @@ class TestProfileSummary:
 
 
 # ---------------------------------------------------------------------------
-# Roster integrity (I4) -- every preset module is real
+# Roster integrity -- every preset module is real
 # ---------------------------------------------------------------------------
 
 class TestRosterIntegrity:
@@ -426,8 +427,8 @@ class TestSoloLegacyRecipe:
         assert summary["staffability_warnings"] == []
 
     def test_literal_recipe_yaml_also_parses_via_pyyaml(self) -> None:
-        # Parity check (F4's existing convention): both parsers must agree
-        # on the recipe's flat schema, so neither path is silently wrong.
+        # Parity check: both parsers must agree on the recipe's flat
+        # schema, so neither path is silently wrong.
         text = _SOLO_LEGACY_RECIPE.read_text(encoding="utf-8")
         yaml_text = _extract_marked_yaml(text, _SOLO_LEGACY_MARKER)
         assert _roster(_yaml_load(yaml_text)) == _roster(_minimal_yaml_parse(yaml_text))
@@ -435,11 +436,10 @@ class TestSoloLegacyRecipe:
     def test_summary_cli_under_a_genuinely_forced_no_pyyaml_path(
         self, tmp_path: Path,
     ) -> None:
-        # Closes the residual verification item both proposal-stage reviews
-        # flagged as unexercised: the real CLI / stderr `--summary` path
-        # (format_profile_summary, mirroring test_summary_cli_exits_
-        # without_installing's F5 pattern), not just _minimal_yaml_parse
-        # called directly. Runs in a SUBPROCESS under sys.executable (the
+        # Exercises the real CLI / stderr `--summary` path
+        # (format_profile_summary), not just _minimal_yaml_parse called
+        # directly -- the direct call cannot catch a break in the CLI's own
+        # formatting. Runs in a SUBPROCESS under sys.executable (the
         # same interpreter running this test suite, so this is portable --
         # no hardcoded /usr/bin/python3 path) with `sys.modules["yaml"] =
         # None` set before bootstrap.scaffold is ever imported, which

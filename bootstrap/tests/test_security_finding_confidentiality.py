@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
-"""The cross-runner confidentiality sweep — Chunk D, the AW6/AW8 gate.
+"""The cross-runner confidentiality sweep.
 
 Every test here drives an **installed facade as a subprocess** against a
 loopback fixture whose raw bytes the test authors, then sweeps *every* sink the
@@ -104,7 +104,7 @@ HOSTING_POLICY_REL = "dev/.cairn/web-hosting-policy.json"
 
 
 # ---------------------------------------------------------------------------
-# Markers — one per channel, planted independently (D1)
+# Markers — one per channel, planted independently
 # ---------------------------------------------------------------------------
 # High-entropy, ASCII, and free of HTTP structural bytes, so a marker can sit in
 # a status line, a header value, a cookie, a JSON string or an environment
@@ -342,7 +342,7 @@ def serve():
 
 
 # ---------------------------------------------------------------------------
-# Policies and fixtures the test owns (D1)
+# Policies and fixtures the test owns
 # ---------------------------------------------------------------------------
 
 API_CREDS = {
@@ -1193,7 +1193,7 @@ def test_d6_the_control_filter_is_what_stops_it(tmp_path, tmproot, serve):
 
 
 # ===========================================================================
-# D6 (plan row) — ordinal principals
+# Ordinal principals
 # ===========================================================================
 
 
@@ -1279,7 +1279,7 @@ def test_d6row_the_credential_name_is_derived_and_a_role_never_appears(
 
 
 # ===========================================================================
-# D7 (plan row) — the ephemeral keyed fingerprint
+# The ephemeral keyed fingerprint
 # ===========================================================================
 
 
@@ -1407,7 +1407,7 @@ def test_d7_absent_randomness_is_degraded_before_the_first_request(
 # **Why the reachable leg is the unfilled-policy-stub INCOMPLETE result,
 # never a live FINDINGS run.** Measured directly against the dispatcher's
 # own source:
-#   * `_CHILD_ENV_ALLOWLIST` (T7, `run_security_verification.py`) is a
+#   * `_CHILD_ENV_ALLOWLIST` (`run_security_verification.py`) is a
 #     CLOSED set -- `PATH`, `HOME`, `LANG`, `TMPDIR`/`TEMP`/`TMP`, a handful
 #     of Windows-minimum names, and an `LC_` prefix. It does not include
 #     `CAIRN_API_P1_CREDENTIAL` / `CAIRN_API_P2_CREDENTIAL` or
@@ -1429,7 +1429,7 @@ def test_d7_absent_randomness_is_degraded_before_the_first_request(
 # malicious dispatcher spawns cannot be handed a real credential or a real
 # trust anchor), not a gap in this test's fixture. It forecloses a live,
 # network-observed marker reaching the dispatcher for EITHER capability --
-# D1/D2's own scenario included -- so this section instead drives the one
+# the planted-marker scenarios above included -- so this section drives the one
 # leg that IS reachable through the real subprocess chain with no network
 # and no credential at all: the unfilled policy stub's INCOMPLETE result.
 # `render_details` runs on that leg exactly as it would on any other, so it
@@ -1563,7 +1563,8 @@ class TestTheDispatcherAggregateReportIsANewSweptSink:
         planted anywhere on this leg to begin with), swept over the
         dispatcher's own stdout/stderr/tmp sinks -- established here as
         what the next test's mutation is compared against, and reusing the
-        SAME ``MARKERS`` set D1/D2 sweep for, so this really is "the
+        SAME ``MARKERS`` set the planted-marker sweeps above use, so this
+        really is "the
         existing planted-marker assertions, re-checked against this new
         sink"."""
         root = install(tmp_path, "hosting", None, name="dispatcher-clean")

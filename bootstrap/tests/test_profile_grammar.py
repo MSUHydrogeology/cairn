@@ -80,7 +80,7 @@ def _lock_with_profile() -> dict:
 
 
 class TestResolveCurrentProfileIsAudible:
-    """A2: an unreadable / ungrammatical committed profile makes
+    """An unreadable / ungrammatical committed profile makes
     ``_resolve_current_profile`` say so **and** still fall back.
 
     Both halves are asserted, so a future change that makes the fallback
@@ -250,7 +250,7 @@ def _generated_profiles() -> list[str]:
 
 
 class TestGrammarSoundness:
-    """B6: every input the grammar accepts parses to ``yaml.safe_load``'s
+    """Every input the grammar accepts parses to ``yaml.safe_load``'s
     value.  Verified over a finite corpus -- this samples the grammar, it does
     not prove that no accepted input diverges."""
 
@@ -300,13 +300,14 @@ class TestGrammarSoundness:
 
 
 class TestGrammarTotality:
-    """B7: part (b) of the invariant -- **no content line is ever silently
+    """Part (b) of the invariant -- **no content line is ever silently
     dropped**.  Structural: the parse loop refuses any line matching no form,
     so every row below raises, with a line number, and returns nothing."""
 
     #: ``(label, text, expected line number)``.  Contains every row from the
-    #: review findings [I1] (empty / indented), [I2] (comments), [I3] (the
-    #: writers' own shapes) and [I4] (truncation / folded blocks) by name.
+    #: four families that broke earlier parsers: empty / indented lines,
+    #: comments, the writers' own output shapes, and truncation / folded
+    #: blocks.  Each row is named, so a failure says which family regressed.
     ROWS: tuple[tuple[str, str, int], ...] = (
         ("I1 zero-byte", "", 1),
         ("I1 whitespace-only", "   \n \n", 1),
@@ -367,7 +368,7 @@ class TestGrammarTotality:
             pytest.fail(f"{label}: returned {got!r} instead of refusing")
 
     def test_a_refusal_names_the_rewrite_not_a_dependency(self) -> None:
-        """B3: "install PyYAML" is never an acceptable remedy in a
+        """"install PyYAML" is never an acceptable remedy in a
         zero-dependency project."""
         for _label, text, _lineno in self.ROWS:
             message = _refusal(text)
@@ -378,7 +379,7 @@ class TestGrammarTotality:
 
 
 class TestCommentConvention:
-    """B8: a ``#`` opens a comment **only** at the start of a value or when
+    """A ``#`` opens a comment **only** at the start of a value or when
     preceded by a space -- both directions.  A **tab** is refused outright:
     PyYAML rejects a tab inside a plain scalar, so accepting one would break
     the equality half of the invariant."""
@@ -406,7 +407,7 @@ class TestCommentConvention:
 
 
 class TestLineEndings:
-    """B9: CRLF and a lone ``\\r`` introduce **no divergence class of their
+    """CRLF and a lone ``\\r`` introduce **no divergence class of their
     own** -- measured, not assumed.  Perturbation: split the grammar's lines
     with ``text.split("\\n")`` instead of ``text.splitlines()`` and the
     lone-``\\r`` row regresses."""
@@ -817,7 +818,7 @@ class TestImplicitResolverTokens:
 # ---------------------------------------------------------------------------
 
 class TestRecognizedProfileKeys:
-    """C6: the recognized set is **derived**.  The expected value is rebuilt
+    """The recognized set is **derived**.  The expected value is rebuilt
     here from the three source definitions read independently -- asserting the
     constant against itself would be the oracle collapse in a different
     costume."""
@@ -859,7 +860,7 @@ _TYPO_ROWS: tuple[tuple[str, str], ...] = (
 
 
 class TestUnknownKeysRefuseBeforeAnyWrite:
-    """C7: no profile key is honoured or discarded without being named."""
+    """No profile key is honoured or discarded without being named."""
 
     def _run(self, args: list[str]) -> subprocess.CompletedProcess:
         return subprocess.run(
@@ -905,7 +906,7 @@ class TestUnknownKeysRefuseBeforeAnyWrite:
 
 
 class TestReservedSchemaKey:
-    """C8: ``schema`` is read **first**, so a profile from a future engine
+    """``schema`` is read **first**, so a profile from a future engine
     refuses with the version message rather than an unknown-key list.  Without
     that ordering the reserved key buys nothing."""
 
@@ -1114,7 +1115,7 @@ class TestParityCorpusSweep:
     def test_the_apostrophe_round_trip_is_the_writers_own(
         self, tmp_path: Path,
     ) -> None:
-        """D3, sharpened: the value the writer wrote comes back **unchanged**.
+        """The value the writer wrote comes back **unchanged**.
         Perturbation: delete the ``''`` -> ``'`` unescape and this fails while
         the sweep above still passes on the other entries."""
         from bootstrap._scaffold.config import load_config  # noqa: PLC0415
@@ -1135,8 +1136,8 @@ class TestParityCorpusSweep:
 
 
 class TestNoRuntimeYamlDependency:
-    """D5: the engine takes the same path with and without PyYAML, because
-    since the Maintainer amendment there is only one runtime parser."""
+    """The engine takes the same path with and without PyYAML, because
+    there is only one runtime parser."""
 
     _DRIVER = (
         "import sys\n"

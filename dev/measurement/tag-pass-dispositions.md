@@ -285,3 +285,36 @@ the right environment and no names; theirs had the right names and the wrong
 environment. **Same defect: a baseline is a set of failure identities, and a
 count is not a baseline.** The remedy is identical — record the identities, and
 record what produced them (commit, interpreter, and the exact node set).
+
+### Batch: five install / security / grammar suites
+
+| File | Before | After | Kept, and why |
+|---|---:|---:|---|
+| `bootstrap/tests/test_profile_grammar.py` | 17 | 1 | `C0`/`C1` — Unicode control-character classes, named by `_PROFILE_CONTROL_RE`. Domain vocabulary; the code enumerates them. |
+| `bootstrap/tests/test_presets.py` | 19 | 0 | — |
+| `bootstrap/tests/test_security_finding_confidentiality.py` | 14 | 3 | `P1` — the **principal ordinal** in `CAIRN_API_P1_CREDENTIAL`, read at line 397 and parametrized at 1200, and named in two sibling suites. The docstring is *about* why only `P1` isolates. |
+| `bootstrap/tests/test_upgrade_side_door_parity.py` | 14 | 0 | — |
+| `bootstrap/tests/test_reference_scripts.py` | 12 | 0 | — |
+
+The removed sets trace to `dev/plans/archive/profile-parse-fail-open.md`
+(`A2`/`B3`/`B6`–`B9`/`C6`–`C8`/`D3`/`D5`/`I1`–`I4`) and to
+`dev/plans/archive/api-web-security-modules.md` (`AW6`/`AW8`) and
+`dev/plans/archive/security-verification-activation.md` (`T7`) — all archived,
+nothing executes against any of them.
+
+**`P1` is the fourth live keep, and the first found by reading the code rather
+than by grepping documents.** `N4` and `M3` were fences cited in active plans, so
+a tree-grep found them; `C0`/`C1` are a published Unicode vocabulary. `P1` is
+neither: it resolves *inside this file*, to a string the test builds and a
+subprocess reads. The grep that finds it is not `grep -r P1 dev/` but
+`grep -n P1 <the file itself>` — **the coordinate's referent may be one line
+away, in code.** Class-3 tokens make this common: a single letter and a digit is
+exactly the shape both a finding id and an ordinal take.
+
+**One boundary held deliberately.** Two of these docstrings open by citing the
+plan that produced the file (`cairn-v0.2-p1-reference-scripts`,
+`2026-06-10-...-side-door-parity`). Those are process citations of the same
+family, but a plan *filename* is not one of the three tag classes this pass
+enumerates, so they were left. Widening the pass mid-execution to a class the
+review never scoped would be a deviation; if they should go, that is a separate
+proposal, not a silent extension of this one.

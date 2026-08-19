@@ -1,18 +1,18 @@
 """
-Tests for the Cairn v0.2 P1 reference-script install + generalization.
+Tests for the reference-script install + generalization.
 
 Covers, per the executing plan (cairn-v0.2-p1-reference-scripts):
 * install-path: scripts land verbatim in scripts/ + tools/; the .md
   doctrine lands in dev/modules/; skip-if-exists / --force respected.
-* I4: a verbatim-installed script produces no spurious unfilled-token /
+* a verbatim-installed script produces no spurious unfilled-token /
   block-slot warnings.
-* I5: the install destination agrees with the default command token.
+* the install destination agrees with the default command token.
 * generalization gate (load-bearing): both installed scripts RUN against
   a fresh non-modflow_tools target.
 * E: the file-scoped external-path allowance exempts case-study-style
   files; a genuine broken local path still flags.
-* F1: the installed scripts are standard-library only.
-* F4: lifecycle_metrics degrades on no-git / main-branch targets.
+* the installed scripts are standard-library only.
+* lifecycle_metrics degrades on no-git / main-branch targets.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -163,7 +163,7 @@ class TestMultiScriptModules:
 
 
 # ---------------------------------------------------------------------------
-# Install-path (verbatim) + I4 + I5
+# Install-path (verbatim): warning cleanliness + destination/token agreement
 # ---------------------------------------------------------------------------
 
 class TestInstallPath:
@@ -186,7 +186,7 @@ class TestInstallPath:
     def test_verbatim_install_no_spurious_token_or_slot_warnings(
         self, tmp_path: Path
     ) -> None:
-        """I4: a verbatim-installed script's InstallResult carries empty
+        """A verbatim-installed script's InstallResult carries empty
         unfilled-token and block-slot lists -- a code file's braces must
         not be scanned as template tokens / slots."""
         (tmp_path / "dev" / "modules").mkdir(parents=True)
@@ -225,7 +225,7 @@ class TestInstallPath:
         assert installed.read_bytes() == source.read_bytes()
 
     def test_command_token_agrees_with_install_dst(self) -> None:
-        """I5: the default command-token value points at the exact path
+        """The default command-token value points at the exact path
         the scaffold installs the script to."""
         defaults = reference_script_token_defaults(
             ["claim-check", "lifecycle-metrics"]
@@ -296,7 +296,7 @@ class TestGeneralizationGate:
 
 
 # ---------------------------------------------------------------------------
-# P2 (Antigravity) -- mixed/upper-case author names in slug pairing
+# Mixed / upper-case author names in slug pairing
 # ---------------------------------------------------------------------------
 
 class TestProposalSlugPairing:
@@ -319,7 +319,7 @@ class TestProposalSlugPairing:
 
 
 # ---------------------------------------------------------------------------
-# P3 (Antigravity) -- line-bounds (path:N) negative / boundary coverage
+# Line-bounds (path:N) negative / boundary coverage
 # ---------------------------------------------------------------------------
 
 class TestLineBoundsChecking:
@@ -407,7 +407,7 @@ class TestExternalPathAllowance:
 
 
 # ---------------------------------------------------------------------------
-# F1 -- dependency gate (stdlib-only)
+# Dependency gate (stdlib-only)
 # ---------------------------------------------------------------------------
 
 class TestDependencyGate:
@@ -438,7 +438,7 @@ class TestDependencyGate:
 
 
 # ---------------------------------------------------------------------------
-# F4 -- VCS robustness (lifecycle_metrics)
+# VCS robustness (lifecycle_metrics)
 # ---------------------------------------------------------------------------
 
 class TestVcsRobustness:

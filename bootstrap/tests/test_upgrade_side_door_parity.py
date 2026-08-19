@@ -5,21 +5,20 @@
 (`scripts/onboarding_activate.py`) + its `_onboarding/` engine package out
 UNCONDITIONALLY but OUTSIDE the manifest/lockfile -- a side door: `upgrade`
 could not enumerate/refresh/attest them and the release Bandit scan never
-covered them. This pins the parity fix and the Codex External-Security review
-dispositions:
+covered them. This pins the parity fix:
 
-* **R1** -- one scanned shipped-executable authority: every verbatim always-on
+* **one scanned shipped-executable authority: every verbatim always-on
   `.py` is a `scan_targets()` entry; a fresh install tracks the launcher+engine
   and `verify_integrity` attests them.
-* **R2** -- a surfaced verbatim launcher fork records `base_hash = upstream`
+* **a surfaced verbatim launcher fork** records `base_hash = upstream`
   (shared `_record_fork_entry`), so it survives two upstream versions as
   `locally-modified`, never `update`.
-* **R3** -- the existing-adopter migration composes with the sibling
+* **the existing-adopter migration** composes with the sibling
   `--adopt-collisions` (keep-mine) + remove-and-re-stage (accept-upstream); no
   new backfill command.
-* **R4** -- the launcher + engine are a required completeness group: install,
+* **the launcher + engine are a required completeness group**: install,
   lockfile write, and upgrade advancement fail closed on a partial group.
-* **R5** -- the new-core enumeration mirrors the new-module occupied-destination
+* **the new-core enumeration** mirrors the new-module occupied-destination
   split: present-unlocked (adoptable), absent-but-locked (not a collision), and
   present-and-locked-under-another-source (a distinct, non-adoptable conflict).
 
@@ -134,7 +133,7 @@ def _doctored_templates(tmp_path: Path, drop: str) -> Path:
 
 
 # ===========================================================================
-# R1 -- one scanned shipped-executable authority
+# One scanned shipped-executable authority
 # ===========================================================================
 
 def test_fresh_install_tracks_launcher_and_engine(tmp_path: Path):
@@ -156,7 +155,7 @@ def test_fresh_install_tracks_launcher_and_engine(tmp_path: Path):
 
 
 def test_always_on_executables_are_release_scan_targets():
-    # R1: every verbatim always-on .py enters the release Bandit scan -- closing
+    # Every verbatim always-on .py enters the release Bandit scan -- closing
     # the pre-existing blind spot (they shipped outside _MODULE_MAPPINGS).
     from bootstrap.security_check import scan_targets  # noqa: PLC0415
     targets = set(scan_targets())
@@ -169,7 +168,7 @@ def test_always_on_executables_are_release_scan_targets():
 
 
 # ===========================================================================
-# R5 -- new-core occupied-destination collision split
+# New-core occupied-destination collision split
 # ===========================================================================
 
 def test_present_unlocked_launcher_is_an_adoptable_new_core_collision(tmp_path: Path):
@@ -242,7 +241,7 @@ def test_present_and_locked_under_another_source_is_a_distinct_conflict(tmp_path
 
 
 # ===========================================================================
-# R3 -- keep-mine via --adopt-collisions; accept-upstream via remove-and-re-stage
+# Keep-mine via --adopt-collisions; accept-upstream via remove-and-re-stage
 # ===========================================================================
 
 def test_keep_mine_launcher_fork_via_adopt_collisions(tmp_path: Path):
@@ -277,7 +276,7 @@ def test_keep_mine_launcher_fork_via_adopt_collisions(tmp_path: Path):
 
 
 def test_launcher_fork_survives_two_upstream_versions(tmp_path: Path):
-    # R2: a verbatim launcher fork must record base_hash=upstream, NOT only its own
+    # A verbatim launcher fork must record base_hash=upstream, NOT only its own
     # hash, or a later upstream change classifies `update` and overwrites the fork.
     target = tmp_path.resolve()
     _install(target)
@@ -324,7 +323,7 @@ def test_accept_upstream_via_remove_and_restage(tmp_path: Path):
 
 
 # ===========================================================================
-# R4 -- the launcher + engine are a required completeness group
+# The launcher + engine are a required completeness group
 # ===========================================================================
 
 def test_install_onboarding_fails_closed_on_missing_launcher(tmp_path: Path):
@@ -384,7 +383,7 @@ def test_upgrade_fails_closed_when_a_group_source_is_missing(tmp_path: Path):
 
 
 def test_adopt_collisions_refuses_a_partial_group(tmp_path: Path):
-    # External-Security review P1#1: an occupied-unlocked launcher must NOT be
+    # An occupied-unlocked launcher must NOT be
     # adoptable while an engine source is missing -- adopting it would advance the
     # lockfile authority for a partial group. The post-pass converts the occupied
     # launcher to the incomplete-group hard block (no longer adoptable), so
@@ -413,7 +412,7 @@ def test_adopt_collisions_refuses_a_partial_group(tmp_path: Path):
 
 
 def test_install_onboarding_refuses_a_duplicate_destination(tmp_path: Path, monkeypatch):
-    # External-Security review P1#2: two always-on specs claiming one destination
+    # Two always-on specs claiming one destination
     # must fail closed BEFORE any write -- otherwise `--force` writes both in
     # sequence and silently shadows the launcher. Destination ownership is checked
     # alongside source completeness in `assert_always_on_complete`.
@@ -434,7 +433,7 @@ def test_install_onboarding_refuses_a_duplicate_destination(tmp_path: Path, monk
 
 
 def test_install_manifest_refuses_a_duplicate_destination(monkeypatch):
-    # External-Security review P1#2: the published manifest -- and the lockfile
+    # The published manifest -- and the lockfile
     # derived from it -- must refuse two rows for one destination.
     import bootstrap._scaffold.install as inst  # noqa: PLC0415
     from bootstrap._scaffold.config import InstallSpec  # noqa: PLC0415
