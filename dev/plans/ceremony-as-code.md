@@ -3,7 +3,7 @@
 **Source proposal**: `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`,
 accepted as revised at Revision 4 (`## Decision -- Anthony Kendall (Maintainer)
 -- 2026-08-13`).
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**External Security Review**) — set by the Decision.
 Four External passes shaped this contract and each found a real defect; the
 implementation changes what executes during the trust-root ceremony.
@@ -410,6 +410,27 @@ the new key. R8 specified this; it is restated here because splitting it would
 cost a second ceremony and a second M2.
 
 ## Lasting-truth migration
+
+**Delivered end to end.** The proposal's objective was not merely implemented
+but *performed*: M2 cleared (after one blocking finding), M3 moved the trust
+root, M4 published it. See `## Ceremony record` below for the digests and the
+anchor movement.
+
+**Three durable observations, carried out of this plan because they outlive it:**
+
+1. **An emptied environment is not a safe environment when the safe state
+   requires a variable to be PRESENT.** `env -i` and drop-every-`GIT_*` are
+   correct for values that *steer*; they are exactly wrong wherever absent is
+   the dangerous state. That is [M2-X1] in general form, and it was found by
+   review rather than by any test, in code that had already passed one.
+2. **Removing an agent from the trust path does not remove it from the
+   guidance path**, and the guidance path is where this ceremony failed. Six
+   attempts, four of them caused by the assisting agent's instructions rather
+   than by the code. Tests that drive commands directly cannot see this class
+   at all.
+3. **M2 conflates "review" with "produce".** Two clearing reviews produced two
+   valid authority pairs, and nothing in the contract says which is canonical
+   or that the second should abstain. Filed rather than fixed here.
 
 **Loop-fidelity sign-off.** The accepted proposal `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md` (Revision 4, R1–R10) is delivered across implementing commits `3980ad1` (Chunk A), `01157dd` (Chunk B), `39fe015` and `1038c90` (Chunk C), `0da586b` (Chunk D), `70defc0` (Chunk E), `cc6f51a`..`a8ba374` (Chunk F), `bf47bb6` (Chunk G2), and `96d9283`/`1ae93af` (Chunk H). Every accepted outcome is delivered in code and verified by tests.
 
@@ -2133,3 +2154,82 @@ exact-byte External Security Review, not a separate review. M2-X1 is closed on
 the launcher and checker paths, and the separately bound Codex authority pair
 was composed, verified, and delivered outside the repository.
 
+## Ceremony record — M2, M3, M4 — 2026-08-19
+
+**The plan's objective was performed.** Recorded here because the sequence table
+names these three steps and nothing else in this artifact says they happened;
+a plan archived without them would lose its own outcome.
+
+### M2 — exact-byte External Security Review
+
+**Round 1 BLOCKED** (`Codex`, at `682f8e4`) on **[M2-X1]**: `sterile_git`
+permitted Git's automatic lazy fetch, so a candidate-controlled promisor
+configuration could execute an `ext::` transport helper — an executable outside
+`SAFETY.md` Rule 13's recorded six — before the first candidate artifact byte.
+Correctly, **no pair was produced**. Repaired at `67651a5`; the repair also
+covered `_sterile_env` in the checker, which the finding did not name and which
+had the identical gap in stage 2, after the key is loaded.
+
+**Round 2 CLEARED, twice independently**, both at `67651a5`:
+
+| reviewer | packet | instantiated launcher |
+|---|---|---|
+| Antigravity (Gemini 3.7 Flash) | `c18c0a17…` | `391ceb9b…` |
+| Codex (GPT-5) | `411bed01…` | `9c8cf374…` |
+
+Both re-derived the ten closure digests independently and both matched. Codex
+additionally swept for the wider failure class and reported no second
+candidate-controlled execution route.
+
+**Codex's pair was used.** Antigravity's was never delivered to disk and must be
+treated as void.
+
+### M3 — the ceremony
+
+Performed by the Maintainer. Anchor `089a9db` → **`5f992736`**, with
+`refs/heads/master` advanced to the same commit **in one expected-old
+transaction**. The checkpoint verifies **`G`** against the *previous* anchored
+roster and `U` against its own — which is the rollover working: the old roster
+authorised the single transition that installed the new one.
+
+**The roster now names one principal**, the dedicated `cairn_signing`
+(`SHA256:8R549gtP…`). The Maintainer's general-purpose GitHub key is no longer
+ceremony-capable. `[TRU-7]` is closed on a genuinely dedicated trust root.
+
+### M4 — publication
+
+One atomic push of `refs/heads/master` and `refs/cairn/gate-anchor`, both
+published at `5f992736`.
+
+### Post-review addition, declared — `d091cdd`
+
+Four operator-surface fixes made **after** the code review and after the
+ceremony, so outside the reviewed range and declared rather than absorbed:
+stage 1 refuses a signing key the anchored roster does not name; stage 1 prints
+the launcher's stage-2 command rather than its own; both stages state what to do
+at a passphrase prompt; stage 2 names a missing agent. `reanchor.sh` is a
+closure member, so these bytes are **not** covered by the current anchor and the
+next re-anchor requires a fresh M2 — which any change to the closure would have
+required anyway.
+
+### What running it actually showed
+
+**The mechanism held; the operator surface did not.** The ceremony took six
+attempts. Every stall was guidance or presentation rather than the controls:
+a placeholder path taken literally, the stage-1 "decline the prompt" rule
+applied at stage 2 where the answer is the opposite, a values file naming the
+new key when a rollover must sign with the old one, and stage 1 printing a
+stage-2 command that routed around the fresh-extraction property.
+
+**Four of those were the assisting agent's, not the Maintainer's** — which is
+the finding worth carrying: this plan removed the agent from the *trust* path
+and left it squarely in the *guidance* path, where it caused every failure of
+the day. No test in the suite could have caught any of them, because the tests
+drive the commands directly and never read the prose.
+
+**What the controls did catch, unaided**: an agent socket auto-re-added by
+`AddKeysToAgent` mid-ceremony was harmless, because stage 1 receives no socket
+(Chunk A); a signing key absent from the anchored roster produced a refusal
+rather than a bad checkpoint; M7 voided a review the moment reviewed bytes
+changed; and a reviewer produced no authority artifact from an unresolved
+review.
