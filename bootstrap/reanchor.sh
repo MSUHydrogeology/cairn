@@ -460,6 +460,39 @@ cmd_stage1() {
         PATH=/usr/bin:/bin \
         HOME="$V_home" \
         "$V_python" -E -s "$CHECKER" "$@"
+    _s1_status=$?
+
+    # HAND THE OPERATOR THE NEXT COMMAND, exactly as it must be typed.
+    #
+    # Not a convenience. In transition mode stage 2 needs the review manifest
+    # and the resolved candidate, and BOTH are things this run produced: the
+    # manifest lives in a temporary directory the launcher created, and the
+    # candidate is what the launcher resolved. An operator working from the
+    # runbook alone would type the steady-state command and be refused, or --
+    # worse -- go looking for a manifest to supply and hand-write one, which is
+    # the exact act this whole design exists to remove.
+    if [ "$_s1_status" -eq 0 ]; then
+        printf '\n%s\n' "== next: confirm, then sign =="
+        printf '%s\n' "  1. read what you are authorizing:"
+        printf '%s\n' "       sh $0 show-report $_s1_values"
+        printf '%s\n' "  2. compute the digest yourself:"
+        printf '%s\n' "       sh $0 hash-package $_s1_values"
+        printf '%s\n' "  3. make the ceremony key available, and only now"
+        printf '%s\n' "  4. sign and move both refs:"
+        if [ -n "$TRANSITION_MANIFEST" ]; then
+            printf '%s\n' "       sh $0 stage2 $_s1_values \\"
+            printf '%s\n' "         --confirm-package-sha256 <the digest from step 2> \\"
+            printf '%s\n' "         --review-manifest $TRANSITION_MANIFEST \\"
+            printf '%s\n' "         --reviewed-candidate $TRANSITION_CANDIDATE"
+            printf '\n%s\n' "  KEEP THAT MANIFEST PATH. It is in a temporary"
+            printf '%s\n'   "  directory, it was composed by this run, and stage 2"
+            printf '%s\n'   "  revalidates against it."
+        else
+            printf '%s\n' "       sh $0 stage2 $_s1_values \\"
+            printf '%s\n' "         --confirm-package-sha256 <the digest from step 2>"
+        fi
+    fi
+    return "$_s1_status"
 }
 
 cmd_stage2() {

@@ -1658,144 +1658,50 @@ def _recorded_hashes(repo: Path, ref: str = P._ANCHOR_REF) -> str:
     return "\n".join(lines)
 
 
-def _runbook_block(containing: str) -> str:
-    """The fenced block under Phase 0 pre-flight that contains `containing`.
+_LAUNCHER_TEMPLATE_PATH = _REPO / "bootstrap/reanchor-launcher.template.sh"
+_ARTIFACT_PATH = _REPO / "bootstrap/reanchor.sh"
 
-    Selected by content, not by index: the section now holds both the
-    acquisition command and the loader, and an index would silently start
-    testing the wrong one the next time a block is added.
+
+def _launcher_text() -> str:
+    """The launcher's reviewed source.
+
+    This replaces four fenced blocks the runbook used to carry -- a steady-state
+    loader, a transition loader, and a stage-2 block for each. **One launcher
+    now covers both modes**, and it decides which by measuring whether the
+    closure changed rather than by the operator choosing.
+
+    That collapse removes a defect class rather than testing for it. The
+    two-block arrangement produced a live failure: the runbook told the operator
+    to "replace the final command" of the steady-state block for a transition,
+    which left the extraction reading the anchor ref, so stage 1 ran the
+    candidate's checker and stage 2 the old one -- the old authority vouching for
+    its replacement, after the key was loaded. With one launcher there is no
+    second block to edit and no instruction to mis-follow.
     """
-    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    # Bounded at the transition-mode subsection as well as the next `##`.
-    # Chunk A added a SECOND loader that also contains `_gate_preflight.py`,
-    # so without this bound the "exactly one" assertion below fires -- which is
-    # the helper working correctly, and is why it is bounded rather than
-    # loosened to "the first match".
-    section = (text.split("### Phase 0 pre-flight")[1]
-                   .split("\n### Phase 0 transition mode")[0]
-                   .split("\n## ")[0])
-    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
-    matching = [b for b in blocks if containing in b]
-    assert len(matching) == 1, (
-        f"expected exactly one Phase 0 block containing {containing!r}, "
-        f"found {len(matching)}")
-    return matching[0]
+    return _LAUNCHER_TEMPLATE_PATH.read_text(encoding="utf-8")
 
 
-def _transition_block() -> str:
-    """The Chunk A transition loader, lifted verbatim from the runbook.
+def _artifact_text() -> str:
+    """The ceremony artifact's source."""
+    return _ARTIFACT_PATH.read_text(encoding="utf-8")
 
-    Same discipline as `_runbook_block`: the recorded steps ARE the ceremony, so
-    the script under test comes out of the document rather than being
-    transcribed into Python where it could be written correct while the recorded
-    steps stayed broken.
+
+def _artifact_region(func: str) -> str:
+    """One shell function's body, selected by name rather than by slicing on a
+    comment.
+
+    Selected by name because a comment landmark is a coordinate whose only
+    consumer is the slice itself: it survives no comment pass, and when it goes
+    the failure is `substring not found` rather than a sentence naming what
+    drifted. A function name is load-bearing in the file's own terms.
     """
-    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    section = text.split("### Phase 0 transition mode")[1].split("\n## ")[0]
-    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
-    matching = [b for b in blocks if "TRANSITION" in b]
-    assert len(matching) == 1, (
-        f"expected exactly one transition loader block, found {len(matching)}")
-    return matching[0]
-
-
-def _stage2_block() -> str:
-    """The recorded stage-2 invocation, lifted verbatim from the runbook.
-
-    Same discipline as every other recorded block: the document is the ceremony.
-    A stage-2 script transcribed into Python could be written correct while the
-    recorded one stayed broken -- and stage 2 is the
-    invocation that signs and moves the trust root, so it is the last place to
-    accept a recorded-but-never-executed procedure.
-    """
-    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    section = text.split("### Phase 0 stage 2")[1].split(
-        "\n#### Stage 2 in transition mode")[0].split("\n## ")[0]
-    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
-    matching = [b for b in blocks if "STAGE2" in b]
-    assert len(matching) == 1, (
-        f"expected exactly one recorded stage-2 block, found {len(matching)}")
-    return matching[0]
-
-
-def _stage2_transition_block() -> str:
-    """The transition's OWN complete stage-2 block.
-
-    Selected separately because it *is* separate: the
-    runbook telling the operator to "replace the final command" of the
-    steady-state block, which left the extraction reading
-    `refs/cairn/gate-anchor`. Stage 1 then ran the candidate's checker and stage
-    2 the old one -- the old authority vouching for its replacement, after the
-    key was loaded.
-    """
-    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
-    section = text.split("#### Stage 2 in transition mode")[1].split("\n### ")[0]
-    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
-    matching = [b for b in blocks if "STAGE2T" in b]
-    assert len(matching) == 1, (
-        f"expected exactly one transition stage-2 block, found {len(matching)}")
-    return matching[0]
-
-
-def _recorded(repo: Path) -> dict[str, str]:
-    """The values a Maintainer records at first use. Nothing is discovered by
-    the runbook itself -- discovery was the defect -- so the fixtures stand in for
-    the Maintainer and supply them explicitly."""
-    values = {
-        "<absolute-path-of-the-checkout-to-bless>": str(repo),
-        "<maintainer-recorded-interpreter>": sys.executable,
-        "<maintainer-recorded-env>": shutil.which("env"),
-        "<maintainer-recorded-git>": shutil.which("git"),
-        "<maintainer-recorded-mktemp>": shutil.which("mktemp"),
-        "<maintainer-recorded-mkdir>": shutil.which("mkdir"),
-        "<maintainer-recorded-shasum>": shutil.which("shasum"),
-        "<maintainer-recorded-sort>": shutil.which("sort"),
-        # The fixture's own throwaway signing key. `_n4_precondition` withholds
-        # its private half for the duration of a stage-1 run, which is what the
-        # ceremony asks a Maintainer to do.
-        "<maintainer-recorded-signing-key-public-path>":
-            str(repo.parent / "maint.pub"),
-        # Per-fixture and deliberately NOT inside the repo: the package is a
-        # ceremony artifact, and writing it into the tree being blessed would
-        # make it part of the state it authorizes.
-        "<absolute-path-for-the-authorization-package-must-not-exist>":
-            str(repo.parent / "authorization-package.json"),
-        # Stage 2 names the same artifact, as an existing file this time.
-        "<absolute-path-of-the-authorization-package>":
-            str(repo.parent / "authorization-package.json"),
-        "<maintainer-recorded-home>": os.environ.get("HOME", "/nonexistent"),
-    }
-    missing = [k for k, v in values.items() if not v]
-    assert not missing, f"cannot resolve recorded utilities: {missing}"
-    return values
-
-
-def _substitute(block: str, repo: Path, *, hashes: bool = True,
-                candidate: str | None = None) -> str:
-    """Fill the Maintainer-recorded placeholders in a recorded block.
-
-    ``candidate`` supplies the transition's own checklist: the reviewed
-    candidate's bytes, recorded at that OID. It is a separate placeholder from
-    the first-use set on purpose -- a transition's stage 2 extracts by the
-    reviewed OID and must verify against **that** commit's hashes, and reusing
-    the anchor's set is exactly that confusion in a different key.
-    """
-    for placeholder, value in _recorded(repo).items():
-        if placeholder in block:
-            block = block.replace(placeholder, shlex.quote(value))
-    residual = block.replace("<maintainer-recorded-first-use-hashes>", "") \
-                    .replace("<maintainer-recorded-reviewed-candidate-hashes>", "")
-    assert "<maintainer-recorded" not in residual, (
-        f"an unrecorded placeholder survived substitution:\n{block}")
-    if candidate is not None:
-        assert "<maintainer-recorded-reviewed-candidate-hashes>" in block
-        block = block.replace("<maintainer-recorded-reviewed-candidate-hashes>",
-                              _recorded_hashes(repo, candidate))
-    if hashes:
-        assert "<maintainer-recorded-first-use-hashes>" in block
-        block = block.replace("<maintainer-recorded-first-use-hashes>",
-                              _recorded_hashes(repo))
-    return block
+    text = _artifact_text()
+    marker = f"\n{func}() {{\n"
+    assert marker in text, (
+        f"the artifact has no shell function {func!r}; this selector needs a "
+        f"real landmark, and a comment is not one")
+    body = text.split(marker, 1)[1]
+    return body.split("\n}\n", 1)[0]
 
 
 #: The ceremony is no longer typed out of the runbook, so the helpers that used
@@ -1889,8 +1795,46 @@ def _launcher_pair(repo: Path, oid: str, *, packet: str | None = None,
     return launcher, packet_path
 
 
+def _manifest_from(completed) -> str:
+    """The review-manifest path, read out of stage 1's own output.
+
+    This is not a test shortcut -- it is the operator's route. The launcher
+    composes the manifest into a temporary directory, so the only way anyone
+    learns the path is that the ceremony prints it. A test that reached around
+    that would be proving the ceremony usable by a means the operator does not
+    have.
+    """
+    for stream in (completed.stdout, completed.stderr):
+        for line in (stream or "").splitlines():
+            if "review-manifest.txt" in line:
+                for word in line.split():
+                    if word.endswith("review-manifest.txt"):
+                        return word
+    raise AssertionError(
+        "stage 1 printed no review-manifest path, so a transition stage 2 "
+        f"cannot be run from what the operator sees:\n{completed.stdout[-1500:]}")
+
+
 def _stage2_script(repo: Path, confirmed: str, *, values: str | None = None,
-                   oid: str | None = None) -> str:
+                   oid: str | None = None, manifest: str | None = None) -> str:
+    """Stage 2, run THROUGH THE LAUNCHER so it re-extracts its own bytes.
+
+    Reusing stage 1's directory would hand the signing stage bytes the
+    candidate had a window to rewrite -- candidate code ran in stage 1, as the
+    same user, while that directory sat on disk. A second launcher invocation
+    repeats the whole pre-candidate verification into a fresh directory.
+    """
+    head = oid or _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
+    launcher, packet = _launcher_pair(repo, head)
+    return " ".join(shlex.quote(x) for x in
+                    ["/bin/sh", str(launcher), str(packet),
+                     values or _values_file(repo), head,
+                     "--stage2", confirmed])
+
+
+def _stage2_script_direct(repo: Path, confirmed: str, *,
+                          values: str | None = None, oid: str | None = None,
+                          manifest: str | None = None) -> str:
     """The signing command, as the operator runs it.
 
     Stage 2 is invoked on the ARTIFACT rather than through the launcher: the
@@ -1904,8 +1848,8 @@ def _stage2_script(repo: Path, confirmed: str, *, values: str | None = None,
              values or _values_file(repo),
              "--confirm-package-sha256", confirmed]
     if oid is not None:
-        parts += ["--review-manifest", str(repo.parent / "review-manifest.txt"),
-                  "--reviewed-candidate", oid]
+        assert manifest, "a transition stage 2 needs the manifest stage 1 composed"
+        parts += ["--review-manifest", manifest, "--reviewed-candidate", oid]
     return " ".join(shlex.quote(p) for p in parts)
 
 
@@ -1933,14 +1877,49 @@ def _runbook_ceremony_script(repo: Path, *, oid: str | None = None,
                      values or _values_file(repo), head])
 
 
+def _recorded(repo: Path) -> dict:
+    """The values a Maintainer records at first use.
+
+    Only the acquisition command still consumes these: it runs BEFORE the
+    operator has a values file, because it is how they obtain the document that
+    explains what a values file is. Everywhere else the values file replaced
+    placeholder-filling outright.
+    """
+    values = {
+        "<maintainer-recorded-env>": shutil.which("env"),
+        "<maintainer-recorded-git>": shutil.which("git"),
+        "<maintainer-recorded-shasum>": shutil.which("shasum"),
+        "<absolute-path-of-the-checkout-to-bless>": str(repo),
+    }
+    missing = [k for k, v in values.items() if not v]
+    assert not missing, f"cannot resolve recorded utilities: {missing}"
+    return values
+
+
 def _runbook_acquisition_command(repo: Path) -> str:
-    """The step-1 command that reads the runbook itself from the anchor.
+    """The command that reads the runbook itself out of the anchor.
 
     Under test because it claimed to be sterile and was not: it is the
-    instruction source, so a substituted one can simply omit the loader.
+    instruction source, so a substituted one can simply omit a step.
+
+    **This is the one block that still carries placeholders, and deliberately
+    so.** Placeholder-filling was retired everywhere else because the values
+    file replaced it -- but this command runs *before* the operator has
+    anything, including a values file. It is how they obtain the document that
+    tells them what a values file is. A recorded value it could read does not
+    exist yet.
     """
-    return _substitute(_runbook_block("REANCHOR_RUNBOOK.md"), repo,
-                       hashes=False)
+    text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(encoding="utf-8")
+    section = text.split("### Phase 0 pre-flight")[1].split("\n### ")[0]
+    blocks = [b for i, b in enumerate(section.split("```")) if i % 2]
+    matching = [b for b in blocks if "REANCHOR_RUNBOOK.md" in b]
+    assert len(matching) == 1, (
+        f"expected exactly one acquisition block, found {len(matching)}")
+    block = matching[0]
+    for placeholder, value in _recorded(repo).items():
+        if placeholder in block:
+            block = block.replace(placeholder, shlex.quote(value))
+    return block
 
 
 class TestAnchoredInvocationTargetsTheNamedCheckout:
@@ -2007,8 +1986,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
             "stage 1 did not print the digest the operator is told to confirm")
 
         # --- stage 2: key available, and it extracts its OWN bytes --------
-        script = _substitute(_stage2_block(), repo).replace(
-            "<the-64-hex-digest-you-verified-in-step-1>", shlex.quote(confirmed))
+        script = _stage2_script(repo, confirmed)
         r2 = subprocess.run(["bash", "-c", script], cwd=str(repo),
                             capture_output=True, text=True, check=False)
         assert r2.returncode == 0, f"{script}\n---\n{r2.stderr[-2500:]}"
@@ -2053,17 +2031,29 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         authority vouching for its replacement, and it fails closed only *after*
         the ceremony key has been loaded.
         """
-        block = _stage2_transition_block()
-        assert 'cat-file blob "$RESOLVED:$path"' in block, (
-            "the transition's stage 2 does not extract by the reviewed OID")
+        block = _artifact_region("cmd_stage2")
+        # The extraction itself moved into the checker, which stage 2 hands the
+        # reviewed OID. What the artifact still owns -- and what this asserts --
+        # is that it passes the candidate through and names no ref of its own.
+        # A stage 2 that reached for the anchor ref here would reintroduce the
+        # old-authority-vouches-for-its-replacement defect one layer down.
+        assert "--reviewed-candidate" in block, (
+            "stage 2 does not pass the reviewed candidate through")
         assert "refs/cairn/gate-anchor" not in block, (
             "the transition's stage 2 extracts from the anchor -- the old "
             "authority would vouch for its own replacement")
-        # Its checklist must be the CANDIDATE's, not the first-use set: hashes
-        # from the anchor would pass while the wrong bytes ran.
-        assert "<maintainer-recorded-reviewed-candidate-hashes>" in block
-        assert "<maintainer-recorded-first-use-hashes>" not in block
-        assert '"$SHASUM" -a 256 -c RECORDED.sha256' in block
+        # The checklist must be the CANDIDATE's, not the first-use set: hashes
+        # from the anchor would pass while the wrong bytes ran. That checklist
+        # is now the packet, verified by the launcher at the resolved OID --
+        # so the property is asserted where it lives.
+        launcher = _launcher_text()
+        assert 'cat-file blob "$RESOLVED:$REL"' in launcher, (
+            "the launcher verifies closure blobs somewhere other than the "
+            "resolved candidate")
+        assert 'cat-file blob "$ANCHOR_REF:' not in launcher.split(
+            "CLOSURE_CHANGED=''", 1)[1].split("printf", 1)[0].replace(
+                'cat-file blob "$ANCHOR_REF:$REL"', ""), (
+            "the launcher reads the anchor outside the mode measurement")
 
     def test_the_recorded_transition_ceremony_runs_end_to_end(self, tmp_path):
         """The transition's own two-stage ceremony, executed from the document.
@@ -2079,12 +2069,12 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         manifest = tmp_path / "review-manifest.txt"
         manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
 
-        loader = _substitute(_transition_block(), repo, hashes=False)
-        loader = loader.replace("<candidate-ref-or-oid-to-transition-to>",
-                                shlex.quote(resolved))
-        loader = loader.replace(
-            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
-            shlex.quote(str(manifest)))
+        # The launcher composes its OWN manifest and detects transition mode
+        # by measuring the closure at the anchor against the candidate. The
+        # fixture's hand-written manifest is deliberately NOT passed: nobody
+        # hands the ceremony an authority input any more, which is the whole
+        # point of the change under test.
+        loader = _runbook_ceremony_script(repo, oid=resolved)
 
         pkg = repo.parent / "authorization-package.json"
         if pkg.exists():
@@ -2098,16 +2088,8 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         confirmed = hashlib.sha256(pkg.read_bytes()).hexdigest()
         # The transition's OWN recorded block, verbatim -- not the steady-state
         # one with its last command edited, which is the defect this pins.
-        script = _substitute(_stage2_transition_block(), repo, hashes=False,
-                             candidate=resolved)
-        script = script.replace("<the-64-hex-digest-you-verified-in-step-1>",
-                                shlex.quote(confirmed))
-        script = script.replace(
-            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
-            shlex.quote(str(manifest)))
-        script = script.replace(
-            "<the-full-commit-oid-the-transition-loader-resolved-and-printed>",
-            shlex.quote(resolved))
+        script = _stage2_script(repo, confirmed, oid=resolved,
+                                manifest=_manifest_from(r1))
 
         r2 = subprocess.run(["bash", "-c", script], cwd=str(repo),
                             capture_output=True, text=True, check=False)
@@ -2148,12 +2130,12 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         manifest = tmp_path / "review.txt"
         manifest.write_text(_review_manifest(repo, resolved), encoding="utf-8")
 
-        loader = _substitute(_transition_block(), repo, hashes=False)
-        loader = loader.replace("<candidate-ref-or-oid-to-transition-to>",
-                                shlex.quote(resolved))
-        loader = loader.replace(
-            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
-            shlex.quote(str(manifest)))
+        # The launcher composes its OWN manifest and detects transition mode
+        # by measuring the closure at the anchor against the candidate. The
+        # fixture's hand-written manifest is deliberately NOT passed: nobody
+        # hands the ceremony an authority input any more, which is the whole
+        # point of the change under test.
+        loader = _runbook_ceremony_script(repo, oid=resolved)
         pkg = repo.parent / "authorization-package.json"
         if pkg.exists():
             pkg.unlink()
@@ -2164,15 +2146,8 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         assert pkg.exists()
 
         confirmed = hashlib.sha256(pkg.read_bytes()).hexdigest()
-        script = _substitute(_stage2_transition_block(), repo, hashes=False,
-                             candidate=resolved)
-        for placeholder, value in (
-                ("<the-64-hex-digest-you-verified-in-step-1>", confirmed),
-                ("<absolute-path-of-the-maintainer-recorded-review-manifest>",
-                 str(manifest)),
-                ("<the-full-commit-oid-the-transition-loader-resolved-and-printed>",
-                 resolved)):
-            script = script.replace(placeholder, shlex.quote(value))
+        script = _stage2_script(repo, confirmed, oid=resolved,
+                                manifest=_manifest_from(r1))
         r2 = subprocess.run(["bash", "-c", script], cwd=str(repo),
                             capture_output=True, text=True, check=False)
         assert r2.returncode == 0, f"{r2.stderr[-3000:]}"
@@ -2200,12 +2175,18 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         recorded block must carry its own extraction and its own checklist --
         the duplication is the control.
         """
-        block = _stage2_block()
-        assert "<maintainer-recorded-first-use-hashes>" in block, (
-            "stage 2 has no checklist of its own")
-        assert 'cat-file blob "refs/cairn/gate-anchor:$path"' in block, (
-            "stage 2 does not extract from the anchor itself")
-        assert '"$SHASUM" -a 256 -c RECORDED.sha256' in block, (
+        block = _artifact_region("cmd_stage2")
+        # Stage 2 no longer carries a literal checklist: it invokes the checker,
+        # which re-extracts and re-verifies its own bytes rather than reusing
+        # stage 1's temp directory. The duplication is still the control -- it
+        # just lives one layer down, where it can be tested directly.
+        assert '"$CHECKER"' in block, (
+            "stage 2 does not invoke a checker of its own")
+        assert not re.search(r"\$T(?![A-Za-z_])", block), (
+            "stage 2 reuses stage 1's extraction directory; candidate code ran "
+            "as the same user while that directory sat on disk")
+        launcher = _launcher_text()
+        assert "--stage2" in launcher and '"$L_SHASUM" -a 256' in launcher, (
             "stage 2 does not verify the bytes it is about to execute")
         # And it must not simply inherit stage 1's directory by name.
         assert "from-stage-1" not in block
@@ -2276,7 +2257,7 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
         """Properties of the recorded text that an execution test cannot see,
         because a substituted repository answers correctly right up until it
         doesn't. Read raw -- no fixture substitution."""
-        block = _runbook_block("_gate_preflight.py")
+        block = _launcher_text()
         # Comments are stripped first. An earlier version of this assertion
         # fired on the comment *explaining* why `git archive` is not used --
         # the same false-positive shape as the containment lint deleted in the
@@ -2297,8 +2278,16 @@ class TestAnchoredInvocationTargetsTheNamedCheckout:
 
         assert first("--no-replace-objects") < first("cat-file"), (
             "replacement must be disabled before the first object read")
-        assert first('"$SHASUM"') < first('"$PY"'), (
-            "the extracted bytes must be verified before Python executes them")
+        # The launcher starts no Python: it execs the ceremony artifact, which
+        # starts the checker. So the ordering property is stated against what
+        # this file actually does -- verify every blob, THEN hand control to
+        # the first candidate byte. Asserting it against a `$PY` that no longer
+        # exists would have raised StopIteration rather than failing, which is
+        # a test that stops working without ever saying so.
+        assert first('"$L_SHASUM" -a 256 "$T/$REL"') < first("exec /bin/sh"), (
+            "the extracted bytes must be verified before the artifact runs")
+        assert first('[ "$_rp_d1" = "$PACKET_SHA256" ]') < first("sterile_git"), (
+            "the packet must be bound to this launcher before any git read")
 
 
 # --------------------------------------------------------------------------
@@ -2602,339 +2591,68 @@ def _review_manifest(repo: Path, oid: str, *, members=None,
     return "\n".join(rows) + "\n"
 
 
-class TestTransitionLoaderSelectsTheSource:
+class TestNobodyHandsTheCeremonyAnAuthorityInput:
+    """The mechanism this class used to test is **gone on purpose**.
 
-    def _script(self, repo: Path, manifest_path: Path, candidate: str) -> str:
-        block = _transition_block()
-        block = block.replace("<candidate-ref-or-oid-to-transition-to>",
-                              shlex.quote(candidate))
-        block = block.replace(
-            "<absolute-path-of-the-maintainer-recorded-review-manifest>",
-            shlex.quote(str(manifest_path)))
-        return _substitute(block, repo, hashes=False)
+    It drove a loader that parsed a review manifest the operator had written by
+    hand, and it checked that a malformed one refused before any Python
+    started. That manifest no longer exists as an input: the launcher composes
+    it from the authorization packet and the candidate OID it resolved itself,
+    so there is nothing for an operator -- or an agent -- to author.
 
-    def _run(self, repo, manifest_text, candidate, tmp_path):
-        mf = tmp_path / "review-manifest.txt"
-        mf.write_text(manifest_text, encoding="utf-8")
-        script = self._script(repo, mf, candidate)
-        return subprocess.run(["bash", "-c", script], cwd=str(repo),
-                              capture_output=True, text=True, check=False)
+    Removing an input removes its failure modes, so the malformed-manifest
+    cases moved with it: the packet is the authority input now, and its
+    malformed cases live in `test_reanchor.py`
+    (`TestThePacketCarriesNoAuthorityItShouldNot`, and the marker-interpreter
+    nodes that prove no candidate byte runs on a bad one).
 
-    def test_the_recorded_transition_loader_parses_a_good_manifest(
-            self, tmp_path):
-        """The loader's own bytes, executed. It will refuse later for ceremony
-        reasons this fixture cannot satisfy; what this asserts is that it gets
-        *past source selection* on a well-formed manifest."""
-        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        r = self._run(repo, _review_manifest(repo, head), head, tmp_path)
-        assert "REFUSE:" not in r.stderr, (
-            f"a well-formed manifest was refused at selection:\n{r.stderr[-1500:]}")
+    What is worth pinning here is the removal itself. A change that
+    reintroduced an operator-supplied manifest would restore exactly the
+    hand-assembled authority input this design exists to eliminate, and it
+    would do so without failing any packet test.
+    """
 
-    @pytest.mark.parametrize("mutation,expect", [
-        ("schema", "unknown manifest schema"),
-        ("order", "sorted order"),
-        ("duplicate", "sorted order"),
-        ("digest_case", "lowercase hex"),
-        ("digest_len", "64 characters"),
-        ("control", "control character"),
-        ("no_candidate", "no candidate row"),
-        ("no_provenance", "no provenance row"),
-        ("long_provenance", "120 characters"),
-        ("absolute_path", "not repository-relative"),
-        ("wrong_oid", "review manifest names"),
-        ("bad_digest", "do not match the reviewed manifest"),
-    ])
-    def test_each_rejection_refuses_before_any_python_starts(
-            self, tmp_path, mutation, expect):
-        """The core requirement. Every one of these is a *selection* failure,
-        so the correct outcome is not "the checker refused" -- it is that **no
-        interpreter ran at all**."""
-        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        rows = _review_manifest(repo, head).splitlines()
+    def test_the_launcher_takes_no_manifest_from_the_operator(self):
+        text = _launcher_text()
+        for surface in ("--review-manifest", "--transition-from-review"):
+            invocations = [l for l in text.splitlines()
+                           if surface in l and not l.lstrip().startswith("#")]
+            for line in invocations:
+                assert "$MANIFEST" in line, (
+                    f"the launcher passes {surface} from something other than "
+                    f"the manifest it composed: {line.strip()!r}")
 
-        def member_rows():
-            return [i for i, r in enumerate(rows) if r.startswith("member ")]
+    def test_the_launcher_composes_the_manifest_from_reviewed_values_only(self):
+        """Every row written into the manifest comes from the packet or from
+        the resolution the launcher performed. Nothing is read from the
+        candidate -- which is the property that makes composing safe at all."""
+        text = _launcher_text()
+        # Bounded on the redirection that ENDS the composition, not on a
+        # nearby comment or a printf that also appears elsewhere. The block is
+        # `{ ... } > "$MANIFEST"`, so its terminator is part of the shell
+        # syntax and cannot drift the way a landmark comment can.
+        assert 'MANIFEST=$T/review-manifest.txt' in text
+        block = text.split('MANIFEST=$T/review-manifest.txt', 1)[1]
+        assert '} > "$MANIFEST"' in block, (
+            "the manifest composition is no longer a single redirected block; "
+            "this selector needs a new bound taken from the shell syntax")
+        block = block.split('} > "$MANIFEST"', 1)[0]
+        assert "$P_provenance" in block and "$RESOLVED" in block, (
+            "the composed manifest no longer draws from the packet and the "
+            "launcher's own resolution")
+        assert "$CHECKOUT" not in block and "cat-file" not in block, (
+            "the composed manifest reads from the candidate, which is exactly "
+            "what composing was supposed to stop")
 
-        if mutation == "schema":
-            rows[0] = "schema cairn-review-manifest/v2"
-        elif mutation == "order":
-            m = member_rows()
-            rows[m[0]], rows[m[-1]] = rows[m[-1]], rows[m[0]]
-        elif mutation == "duplicate":
-            rows.append(rows[member_rows()[0]])
-        elif mutation == "digest_case":
-            i = member_rows()[0]
-            parts = rows[i].split()
-            rows[i] = f"member {parts[1].upper()} {parts[2]}"
-        elif mutation == "digest_len":
-            i = member_rows()[0]
-            parts = rows[i].split()
-            rows[i] = f"member {parts[1][:63]} {parts[2]}"
-        elif mutation == "control":
-            rows[2] = "provenance review\x07bell"
-        elif mutation == "no_candidate":
-            rows = [r for r in rows if not r.startswith("candidate ")]
-        elif mutation == "no_provenance":
-            rows = [r for r in rows if not r.startswith("provenance ")]
-        elif mutation == "long_provenance":
-            rows[2] = "provenance " + ("x" * 121)
-        elif mutation == "absolute_path":
-            i = member_rows()[0]
-            parts = rows[i].split()
-            rows[i] = f"member {parts[1]} /etc/passwd"
-        elif mutation == "wrong_oid":
-            rows[1] = "candidate " + ("a" * 40)
-        elif mutation == "bad_digest":
-            i = member_rows()[0]
-            parts = rows[i].split()
-            rows[i] = f"member {'0' * 64} {parts[2]}"
-
-        text = "\n".join(rows) + "\n"
-        if mutation == "control":
-            text = text.replace("\\x07", "\x07")
-
-        r = self._run(repo, text, head, tmp_path)
-
-        assert r.returncode != 0, f"the mutation was accepted:\n{r.stdout[-800:]}"
-        assert expect in r.stderr, (
-            f"expected {expect!r} in the refusal, got:\n{r.stderr[-1200:]}")
-        assert "Traceback" not in r.stderr, (
-            "a Python interpreter started on a selection failure; selection "
-            "must refuse before any interpreter runs")
-
-    def test_the_loader_extracts_by_resolved_oid_not_by_a_moving_ref(self):
-        """A ref read twice is two answers wearing one name. Asserted on the
-        recorded text, since the property is which *expression* is used."""
-        block = _transition_block()
-        code = "\n".join(ln for ln in block.splitlines()
-                          if ln.strip() and not ln.lstrip().startswith("#"))
-        assert 'cat-file blob "$RESOLVED:$path"' in code, (
-            "extraction must use the once-resolved OID")
-        assert 'cat-file blob "$CANDIDATE' not in code, (
-            "extraction must never read through the candidate ref")
-        assert code.count("rev-parse --verify --end-of-options") == 1, (
-            "the candidate is resolved exactly once")
-
-    def test_both_parsers_reject_a_row_with_leading_whitespace(self, tmp_path):
-        """One artifact, two parsers, two answers.
-
-        `raw.split()` ignores leading whitespace so the Python side classified
-        an indented row by its first word, then took `provenance` by slicing at
-        a fixed offset -- while the loader's `${line#provenance }` does not
-        match an indented prefix and kept the whole line. Two readings of one
-        recorded artifact is the condition an out-of-band trust input cannot
-        have, whichever value is "right".
-
-        Both sides now refuse it, and both are checked here: the Python
-        revalidation directly, and the recorded loader by execution.
-        """
-        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        honest = _review_manifest(repo, head)
-
-        # The first fix relocated the divergence instead of
-        # removing it. The loader's check ran BEFORE its blank/comment case and
-        # Python's ran after, so three shapes that are not rows at all -- an
-        # indented comment, a whitespace-only line, a trailing line of spaces --
-        # were refused by one side and accepted by the other. All six shapes are
-        # pinned here, in both directions, so neither side can drift alone.
-        cases = {
-            "honest": (honest, True),
-            "indented provenance": (
-                honest.replace("provenance ", "   provenance ", 1), False),
-            "tab-indented member": (
-                honest.replace("\nmember ", "\n\tmember ", 1), False),
-            "indented comment": (honest + "   # a note\n", True),
-            "whitespace-only line": (honest + "   \n", True),
-            "trailing line of spaces": (honest + "  ", True),
-        }
-        for name, (text, should_pass) in cases.items():
-            if should_pass:
-                P.parse_review_manifest(text)          # must not raise
-            else:
-                with pytest.raises(P.ReviewManifestError,
-                                   match="leading whitespace"):
-                    P.parse_review_manifest(text)
-
-            r = self._run(repo, text, head, tmp_path)
-            loader_ok = "review manifest" not in r.stderr \
-                and "leading whitespace" not in r.stderr
-            assert loader_ok == should_pass, (
-                f"{name}: the loader and the Python revalidation disagree "
-                f"about whether this is an acceptable manifest "
-                f"(loader_ok={loader_ok}, python_ok={should_pass})\n"
-                f"{r.stderr[-500:]}")
-
-    def test_the_anchored_steady_state_loader_has_no_transition_mode(self):
-        """The anchored checker cannot contain a mode added to
-        its successor, so the steady-state block must not offer one -- if it
-        did, the old authority would be vouching for its replacement."""
-        steady = _runbook_block("_gate_preflight.py")
-        assert "--transition-from-review" not in steady
-        assert "REVIEW_MANIFEST" not in steady
-
-    @pytest.mark.parametrize("stage", ["stage1", "stage2"])
-    @pytest.mark.parametrize("half", ["candidate-only", "manifest-only"])
-    def test_transition_mode_needs_both_flags_or_refuses(self, tmp_path, stage,
-                                                        half):
-        """One flag alone is not a mode -- **on both stages**.
-
-        A half-specified transition must not fall back to steady state, which
-        would run the ceremony with the selection predicate silently skipped.
-
-        Both stages are covered because each revalidates the transition
-        independently, as defence in depth. Checking stage 1 alone would leave
-        stage 2 able to sign a *steady-state* checkpoint -- one whose message
-        records "no closure change" -- for a run the loader selected in
-        transition mode. The admitted authority set would simply be absent from
-        the durable record -- the record missing what it exists to record,
-        with extra steps.
-        """
-        repo, anchor, head = _anchored_repo(tmp_path)
-        checker = _REPO / "bootstrap/tests/_gate_preflight.py"
-        manifest = tmp_path / "review.txt"
-        manifest.write_text("unused -- the refusal precedes any read\n")
-        flags = (["--reviewed-candidate", head] if half == "candidate-only"
-                 else ["--transition-from-review", str(manifest)])
-        required = (["--signing-key", str(tmp_path / "k.pub"),
-                     "--package-out", str(tmp_path / "pkg.json")]
-                    if stage == "stage1"
-                    else ["--package", str(tmp_path / "pkg.json"),
-                          "--signing-key", str(tmp_path / "maint.pub"),
-                          "--confirm-package-sha256", "0" * 64])
-        r = subprocess.run(
-            [sys.executable, "-E", "-s", str(checker), stage,
-             "--repo", str(repo), *required, *flags],
-            capture_output=True, text=True, check=False)
-        assert r.returncode == 2
-        assert "one alone is not a mode" in r.stderr
-        # The refusal must precede the work, not follow it: neither the key
-        # probe nor the package read may have run.
-        assert "STAGE 1 CAN SIGN" not in r.stderr
-        assert not (tmp_path / "pkg.json").exists()
-
-    @pytest.mark.parametrize("shape", ["extra-member", "missing-member"])
-    def test_a_wrong_member_SET_starts_no_interpreter(self, tmp_path, shape):
-        """The loader must validate against the anchored set, with evidence.
-
-        The loader validated the manifest against *itself* — rows well-formed,
-        paths sorted and unique, digests matching the bytes it extracted for
-        those paths — and never compared the member set against a fixed list.
-        A manifest that dropped a member or added one therefore parsed cleanly,
-        extracted cleanly, and **started Python**; the first exact-set check was
-        `revalidate_transition()` inside the candidate bytes the loader had
-        already selected and run. Fail-closed for ref movement, and still wrong:
-        a check performed by the candidate cannot establish that the candidate
-        was safe to start.
-
-        **The interpreter is replaced by a marker wrapper**, because the absence
-        of a traceback is not evidence that no interpreter ran — that was
-        precisely how this passed before. The manifests below are internally
-        consistent: correctly sorted, uniquely pathed, and correctly hashed, so
-        nothing but the fixed-set comparison can reject them.
-        """
-        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
-        resolved = _signed_commit(repo, "reviewed authority change")
-
-        marker = tmp_path / "PYTHON_STARTED"
-        wrapper = tmp_path / "py-wrapper"
-        wrapper.write_text(
-            f"#!/bin/sh\ntouch {shlex.quote(str(marker))}\n"
-            f"exec {shlex.quote(sys.executable)} \"$@\"\n")
-        wrapper.chmod(0o755)
-
-        import hashlib
-        members = []
-        for rel in sorted(P.declared_authority_closure()):
-            blob = subprocess.run(
-                ["git", "-C", str(repo), "cat-file", "blob", f"{resolved}:{rel}"],
-                capture_output=True).stdout
-            members.append((hashlib.sha256(blob).hexdigest(), rel))
-        if shape == "extra-member":
-            extra = "bootstrap/tests/_unreviewed_extra.py"
-            _write(repo, extra, "SNEAKED = True\n")
-            resolved = _signed_commit(repo, "an unreviewed extra member")
-            # Re-hash against the new commit so only the SET is wrong.
-            members = []
-            for rel in sorted(set(P.declared_authority_closure()) | {extra}):
-                blob = subprocess.run(
-                    ["git", "-C", str(repo), "cat-file", "blob",
-                     f"{resolved}:{rel}"], capture_output=True).stdout
-                members.append((hashlib.sha256(blob).hexdigest(), rel))
-        else:
-            members = [m for m in members
-                       if m[1] != "bootstrap/REANCHOR_RUNBOOK.md"]
-
-        text = _review_manifest(repo, resolved, members=members)
-        script = self._script(repo, tmp_path / "mf.txt", resolved)
-        (tmp_path / "mf.txt").write_text(text, encoding="utf-8")
-        script = script.replace(shlex.quote(sys.executable),
-                                shlex.quote(str(wrapper)))
-        assert str(wrapper) in script, "the marker interpreter was not injected"
-
-        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
-                           capture_output=True, text=True, check=False)
-
-        assert r.returncode != 0, "a wrong member set was accepted"
-        assert not marker.exists(), (
-            f"{shape}: candidate Python STARTED before the fixed member set was "
-            f"checked -- the loader deferred the exact-set comparison to the "
-            f"bytes it had already run\n{r.stderr[-800:]}")
-        assert "not the authority closure" in r.stderr, r.stderr[-800:]
-
-    def test_the_marker_interpreter_probe_is_live(self, tmp_path):
-        """Guards the node above. If the wrapper were never invoked on an
-        HONEST manifest either, that test would pass while proving nothing."""
-        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        _write(repo, "bootstrap/tests/_oracle.py", "# a reviewed change\n")
-        resolved = _signed_commit(repo, "reviewed authority change")
-        marker = tmp_path / "PYTHON_STARTED"
-        wrapper = tmp_path / "py-wrapper"
-        wrapper.write_text(
-            f"#!/bin/sh\ntouch {shlex.quote(str(marker))}\n"
-            f"exec {shlex.quote(sys.executable)} \"$@\"\n")
-        wrapper.chmod(0o755)
-
-        (tmp_path / "mf.txt").write_text(_review_manifest(repo, resolved),
-                                         encoding="utf-8")
-        script = self._script(repo, tmp_path / "mf.txt", resolved)
-        script = script.replace(shlex.quote(sys.executable),
-                                shlex.quote(str(wrapper)))
-        with _n4_precondition(tmp_path / "maint"):
-            subprocess.run(["bash", "-c", script], cwd=str(repo),
-                           capture_output=True, text=True, check=False)
-
-        assert marker.exists(), (
-            "the marker interpreter never ran even on an honest manifest, so "
-            "the probe above cannot distinguish 'refused early' from 'never "
-            "wired up'")
-
-    def test_stage2_actually_receives_the_transition_flags_it_declares(self):
-        """A declared flag that no call site consumes is the recurring shape.
-
-        The `stage2` parser grew `--transition-from-review` and
-        `--reviewed-candidate` before `apply_now` was given them, so the
-        revalidation they exist to trigger was unreachable through the public
-        path -- built, tested in isolation, dead to the governing route. This
-        reads the dispatch source rather than the parser, because the parser
-        declaring them is precisely the state that looked correct.
-        """
-        tree = ast.parse(
-            (_REPO / "bootstrap/tests/_gate_preflight.py").read_text())
-        main = next(n for n in tree.body
-                    if isinstance(n, ast.FunctionDef) and n.name == "main")
-        calls = [n for n in ast.walk(main)
-                 if isinstance(n, ast.Call)
-                 and isinstance(n.func, ast.Name) and n.func.id == "apply_now"]
-        assert len(calls) == 1, (
-            f"`main` should reach the signing stage through exactly one "
-            f"`apply_now` call; found {len(calls)}")
-        passed = {kw.arg for kw in calls[0].keywords}
-        for flag in ("review_manifest", "reviewed_candidate"):
-            assert flag in passed, (
-                f"`stage2` declares --{flag.replace('_', '-')} but never passes "
-                f"it to apply_now; the revalidation it exists to trigger is "
-                f"unreachable through the public path")
+    def test_the_artifact_still_accepts_a_manifest_only_from_its_caller(self):
+        """Stage 2 legitimately takes the manifest -- the launcher composed it
+        and stage 2 revalidates against it. The distinction is who authored it,
+        not whether it is passed."""
+        text = _artifact_text()
+        assert "--review-manifest" in text, (
+            "the artifact must still accept the manifest the launcher composed")
+        assert "require_regular_file \"review manifest\"" in text, (
+            "the artifact must validate the manifest path it is handed")
 
 
 class TestTheCheckpointCarriesTheAdmittedSet:
@@ -4116,46 +3834,28 @@ class TestKeyChannelProbe:
 #: The two heredoc delimiters that open a **stage-1** loader in the runbook, and
 #: the two that open a **stage-2** one. The split is the control Chunk A
 #: introduced: stage 1 must not be handed a signing channel, stage 2 must.
-_STAGE1_DELIMS = ("LOADER", "TRANSITION")
-_STAGE2_DELIMS = ("STAGE2", "STAGE2T")
+_STAGE1_DELIMS = ("cmd_stage1",)
+_STAGE2_DELIMS = ("cmd_stage2",)
 
 
 def _stage1_blocks() -> dict[str, str]:
     """The two recorded stage-1 loader blocks, by heredoc delimiter."""
-    return {"LOADER": _runbook_block("_gate_preflight.py"),
-            "TRANSITION": _transition_block()}
+    return {"cmd_stage1": _artifact_region("cmd_stage1")}
 
 
 def _stage2_blocks() -> dict[str, str]:
     """The two recorded stage-2 blocks, by heredoc delimiter."""
-    return {"STAGE2": _stage2_block(), "STAGE2T": _stage2_transition_block()}
+    return {"cmd_stage2": _artifact_region("cmd_stage2")}
 
 
-def _env_header(block: str, delim: str) -> str:
-    """Everything up to and including the ``/bin/sh <<'DELIM'`` line.
-
-    This is the part of a recorded block that decides **what environment the
-    stage runs in**, which is the whole of what Chunk A changed. Lifting it out
-    of the runbook rather than retyping it is the same discipline every
-    other recorded-block helper follows: an environment written correct in
-    Python while the recorded one stayed wrong is the failure this repository
-    keeps finding.
-    """
-    opener = f"/bin/sh <<'{delim}'"
-    assert block.count(opener) == 1, (
-        f"expected exactly one {opener!r} in the recorded block")
-    head, _rest = block.split(opener, 1)
-    return head + opener + "\n"
-
-
-def _ssh_tooling() -> tuple[str, str, str]:
+def _ssh_tooling() -> tuple:
     """Absolute paths for the disposable-key machinery, or skip.
 
     Never the ceremony key and never the operator's agent: every node below
     generates its own ed25519 key in `tmp_path` and starts its own agent.
     """
     found = {n: shutil.which(n) for n in ("ssh-keygen", "ssh-agent", "ssh-add")}
-    missing = [n for n, p in found.items() if not p]
+    missing = [n for n, path in found.items() if not path]
     if missing:
         pytest.skip(f"no {' / '.join(missing)} on this host")
     return found["ssh-keygen"], found["ssh-agent"], found["ssh-add"]
@@ -4166,29 +3866,28 @@ def _scratch_agent(tmp_path: Path):
     """A private `ssh-agent` holding a disposable key whose private half is
     **deleted from disk**.
 
-    Deleting the private file is what makes the node measure the right thing.
-    With it present, `ssh-keygen -Y sign -f k.pub` signs from the file and the
-    agent is irrelevant, so a "cannot sign" result would prove nothing about the
-    socket. With it gone, the agent is the *only* route -- so signing succeeds
-    exactly when the socket is reachable, which is the property Chunk A moved.
-
-    Yields ``(socket_path, public_key_path)``.
+    Deleting the private file is what makes these nodes measure the right
+    thing. With it present, `ssh-keygen -Y sign -f k.pub` signs from the file
+    and the agent is irrelevant, so "cannot sign" would prove nothing about the
+    socket. With it gone the agent is the only route, so signing succeeds
+    exactly when the socket is reachable.
     """
     keygen, agent, add = _ssh_tooling()
     key = tmp_path / "disposable"
     subprocess.run([keygen, "-q", "-t", "ed25519", "-N", "", "-f", str(key),
-                    "-C", "cairn-stage1-boundary-probe"],
+                    "-C", "cairn-stage-boundary-probe"],
                    check=True, capture_output=True)
-    r = subprocess.run([agent, "-s"], capture_output=True, text=True, check=True)
-    sock = re.search(r"SSH_AUTH_SOCK=([^;]+);", r.stdout)
-    pid = re.search(r"SSH_AGENT_PID=(\d+);", r.stdout)
-    assert sock and pid, f"could not parse ssh-agent output: {r.stdout!r}"
+    started = subprocess.run([agent, "-s"], capture_output=True, text=True,
+                             check=True)
+    sock = re.search(r"SSH_AUTH_SOCK=([^;]+);", started.stdout)
+    pid = re.search(r"SSH_AGENT_PID=(\d+);", started.stdout)
+    assert sock and pid, f"could not parse ssh-agent output: {started.stdout!r}"
     sock, pid = sock.group(1), pid.group(1)
     try:
         subprocess.run([add, str(key)], check=True, capture_output=True,
                        env={**os.environ, "SSH_AUTH_SOCK": sock},
                        stdin=subprocess.DEVNULL)
-        key.unlink()                    # the agent is now the only route
+        key.unlink()
         yield sock, key.with_suffix(".pub")
     finally:
         subprocess.run([agent, "-k"], capture_output=True,
@@ -4196,272 +3895,143 @@ def _scratch_agent(tmp_path: Path):
                             "SSH_AGENT_PID": pid})
 
 
-def _signing_attempt_body(pub: Path, workdir: Path) -> str:
-    """A heredoc body that tries to sign and reports which way it went.
-
-    Deliberately **not** an `SSH_AUTH_SOCK` observation. Observing the variable
-    is the falsified proxy check: it is what the stage *was
-    handed*, not what the stage *can do*. This body runs the real signing
-    command, which is the only thing that answers the question.
-    """
-    keygen, _agent, _add = _ssh_tooling()
-    payload = workdir / "payload"
-    payload.write_bytes(b"cairn stage-1 boundary probe\n")
-    return (
-        f"SK={shlex.quote(keygen)}\n"
-        f"PUB={shlex.quote(str(pub))}\n"
-        f"PAYLOAD={shlex.quote(str(payload))}\n"
-        'if [ -n "${SSH_AUTH_SOCK-}" ]; then\n'
-        '    echo SOCKET_PRESENT\n'
-        'else\n'
-        '    echo SOCKET_ABSENT\n'
-        'fi\n'
-        'rm -f "$PAYLOAD.sig"\n'
-        'if "$SK" -Y sign -f "$PUB" -n git "$PAYLOAD" >/dev/null 2>&1; then\n'
-        '    echo SIGNED\n'
-        'else\n'
-        '    echo COULD_NOT_SIGN\n'
-        'fi\n')
+#: Stands in for the checker at the path the artifact resolves. It occupies the
+#: candidate-code position and does the one thing that position must not be able
+#: to do.
+_SIGNING_CHECKER_SRC = (
+    "import subprocess, os, pathlib\n"
+    "payload = pathlib.Path(r'@DIR@') / 'payload'\n"
+    "payload.write_bytes(b'probe')\n"
+    "r = subprocess.run(['@KEYGEN@', '-Y', 'sign', '-f', r'@PUB@', '-n', 'git',\n"
+    "                    str(payload)], capture_output=True, text=True)\n"
+    "verdict = 'SIGNED' if r.returncode == 0 else 'COULD_NOT_SIGN'\n"
+    "seen = 'SOCKET_PRESENT' if os.environ.get('SSH_AUTH_SOCK') else 'SOCKET_ABSENT'\n"
+    "pathlib.Path(r'@OUT@').write_text(verdict + ' ' + seen)\n"
+    "print(verdict, seen)\n"
+)
 
 
-def _run_recorded_header(header: str, delim: str, body: str, *, sock: str,
-                         repo: Path):
-    """Run a recorded environment header with a substituted heredoc body.
+class TestCandidateCodeCannotSignFromStageOne:
+    """Stage 1's contract is that it **cannot sign**, tested from the position
+    that matters: **inside the candidate code**.
 
-    The **invoking** shell carries a live `SSH_AUTH_SOCK`, which is the case
-    that matters: the question is not whether an absent variable stays absent,
-    it is whether a header handed a real agent forwards it.
-    """
-    script = header + body + delim + "\n"
-    return subprocess.run(
-        ["bash", "-c", _substitute(script, repo, hashes=False)],
-        capture_output=True, text=True, check=False, cwd=str(repo),
-        env={**os.environ, "SSH_AUTH_SOCK": sock})
+    The stage runs candidate bytes to build an authorization package. Handing
+    that code a live signing channel buys the stage nothing -- it cannot sign by
+    contract -- and hands the candidate exactly what the two-stage split exists
+    to withhold. So the channel is removed rather than measured, and the way to
+    show that is to have the candidate position try to use it.
 
+    An environment-level check (`SSH_AUTH_SOCK` absent from the child) lives in
+    `test_reanchor.py`. This one is stronger: it attempts a **real signature**
+    with a key that is genuinely reachable through a live agent, from the exact
+    process the ceremony starts, and requires it to fail.
 
-class TestStage1ReceivesNoAgentSocket:
-    """Stage 1's contract is that it **cannot sign**: it runs candidate code to
-    build an authorization package and exits. Forwarding an agent socket into it
-    hands that candidate code a live signing channel in exchange for nothing, so
-    Chunk A **removed the channel** instead of measuring it. Removing a channel
-    beats measuring one -- the key probe cleared the probe's own environment,
-    not the environment the candidate code beneath it ran in.
-
-    Every key here is generated in `tmp_path` and every agent is started and
-    killed by the test. **No ceremony key is ever touched, and the operator's
-    own agent is never used.**
+    Every key is generated in `tmp_path` and every agent is started and killed
+    by the test. **No ceremony key is touched, and the operator's agent is
+    never used.**
     """
 
-    @pytest.mark.parametrize("delim", _STAGE1_DELIMS)
-    def test_a_key_in_a_scratch_agent_cannot_sign_from_stage_1(
-            self, delim, tmp_path):
-        """The property, run rather than argued."""
-        repo = tmp_path
-        block = _stage1_blocks()[delim]
+    def _stage(self, tmp_path, pub, out):
+        keygen, _agent, _add = _ssh_tooling()
+        root = tmp_path / "extracted"
+        (root / "tests").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(_ARTIFACT_PATH, root / "reanchor.sh")
+        (root / "tests" / "_gate_preflight.py").write_text(
+            _SIGNING_CHECKER_SRC.replace("@KEYGEN@", keygen)
+            .replace("@PUB@", str(pub)).replace("@OUT@", str(out))
+            .replace("@DIR@", str(tmp_path)))
+        return root / "reanchor.sh"
+
+    def test_the_candidate_position_cannot_sign_through_a_live_agent(
+            self, tmp_path):
+        repo, _anchor, _head, _epoch = _ceremony_repo(tmp_path)
+        package = repo.parent / "authorization-package.json"
+        if package.exists():
+            package.unlink()          # stage 1 refuses to overwrite a handoff
+        out = tmp_path / "verdict"
         with _scratch_agent(tmp_path) as (sock, pub):
-            body = _signing_attempt_body(pub, tmp_path)
-            r = _run_recorded_header(_env_header(block, delim), delim, body,
-                                     sock=sock, repo=repo)
+            artifact = self._stage(tmp_path, pub, out)
+            r = subprocess.run(
+                ["/bin/sh", str(artifact), "stage1", _values_file(repo)],
+                capture_output=True, text=True, check=False,
+                env={**os.environ, "SSH_AUTH_SOCK": sock})
             assert r.returncode == 0, r.stderr[-2000:]
-            assert "SOCKET_ABSENT" in r.stdout, (
-                f"the recorded {delim} header forwarded an agent socket into "
-                f"stage 1:\n{r.stdout}")
-            assert "COULD_NOT_SIGN" in r.stdout, (
-                f"stage 1 signed through the scratch agent; the {delim} "
-                f"header's environment is not the boundary it claims:\n"
-                f"{r.stdout}")
+            verdict = out.read_text()
+            assert "SOCKET_ABSENT" in verdict, (
+                f"stage 1 handed candidate code an agent socket: {verdict}")
+            assert "COULD_NOT_SIGN" in verdict, (
+                f"CANDIDATE CODE SIGNED from stage 1: {verdict}")
 
-    @pytest.mark.parametrize("delim", _STAGE1_DELIMS)
-    def test_restoring_the_forward_makes_the_same_stage_able_to_sign(
-            self, delim, tmp_path):
-        """The other side, so the node above cannot pass vacuously.
-
-        If the signature failed for some reason unrelated to the socket -- a
-        missing agent, an unusable key, a typo in the body -- the node above
-        would pass while measuring nothing. Putting the forward back must make
-        the *same* header, the *same* key and the *same* command **succeed**.
-        This is the mutation check for acceptance criterion 5's two-sided form,
-        expressed as a test rather than as a claim that one exists.
-        """
-        repo = tmp_path
-        header = _env_header(_stage1_blocks()[delim], delim)
-        restored = header.replace(
-            f"    /bin/sh <<'{delim}'",
-            f'    SSH_AUTH_SOCK="${{SSH_AUTH_SOCK-}}" \\\n'
-            f"    /bin/sh <<'{delim}'")
-        assert restored != header, "the forward was not re-inserted"
+    def test_the_same_key_signs_when_the_socket_is_present(self, tmp_path):
+        """The other side, so the node above cannot pass vacuously. If the
+        signature failed for an unrelated reason -- a dead agent, an unusable
+        key -- that node would pass while measuring nothing."""
         with _scratch_agent(tmp_path) as (sock, pub):
-            body = _signing_attempt_body(pub, tmp_path)
-            r = _run_recorded_header(restored, delim, body, sock=sock,
-                                     repo=repo)
-            assert r.returncode == 0, r.stderr[-2000:]
-            assert "SOCKET_PRESENT" in r.stdout, r.stdout
-            assert "SIGNED" in r.stdout, (
-                "with the forward restored the stage still could not sign, so "
-                "the boundary node above is not measuring the forward:\n"
-                f"{r.stdout}\n{r.stderr[-1500:]}")
-
-    @pytest.mark.parametrize("delim", _STAGE2_DELIMS)
-    def test_stage_2_still_receives_the_socket(self, delim, tmp_path):
-        """The asymmetry is deliberate and must not be "tidied" symmetric.
-
-        Stage 2 is the stage that signs. `git commit-tree` invokes the signer
-        with no controlling terminal, so without a forwarded agent it falls back
-        to `ssh-askpass` and dies naming a path that does not exist on a stock
-        host. A later cleanup that removed *both* forwards would leave stage 1
-        correct and the ceremony unrunnable.
-        """
-        repo = tmp_path
-        header = _env_header(_stage2_blocks()[delim], delim)
-        with _scratch_agent(tmp_path) as (sock, pub):
-            body = _signing_attempt_body(pub, tmp_path)
-            r = _run_recorded_header(header, delim, body, sock=sock, repo=repo)
-            assert r.returncode == 0, r.stderr[-2000:]
-            assert "SOCKET_PRESENT" in r.stdout, (
-                f"the recorded {delim} header dropped the agent socket; stage "
-                f"2 cannot sign without it:\n{r.stdout}")
-            assert "SIGNED" in r.stdout, r.stdout
+            keygen, _agent, _add = _ssh_tooling()
+            payload = tmp_path / "direct-payload"
+            payload.write_bytes(b"probe")
+            r = subprocess.run(
+                [keygen, "-Y", "sign", "-f", str(pub), "-n", "git",
+                 str(payload)],
+                capture_output=True, text=True, check=False,
+                env={**os.environ, "SSH_AUTH_SOCK": sock})
+            assert r.returncode == 0, (
+                "the disposable key cannot sign even WITH the socket, so the "
+                f"boundary node proves nothing:\n{r.stderr[-800:]}")
 
 
-class TestTheRunbookSaysWhatItsLoadersDo:
-    """**Prose and loader cannot drift.**
+class TestTheTwoStagesWantOppositeAgentStates:
+    """The asymmetry is the boundary, not a copying slip -- so it is pinned in
+    both directions.
 
-    The behavioural nodes above execute the recorded headers, so they catch a
-    loader that stops matching its contract. They do not catch the other
-    direction -- a loader corrected while the paragraph above it still explains
-    the old behaviour -- and that direction is the one an operator reads.
+    A later cleanup that made the two stage functions symmetric would break the
+    ceremony in one direction (stage 2 cannot sign without the socket: the
+    signer gets no controlling terminal and dies on a missing `ssh-askpass`)
+    and the boundary in the other.
     """
 
     @staticmethod
-    def _executable(header: str) -> str:
-        """The header's shell lines, with its comments removed.
+    def _executable(region: str) -> str:
+        """The region's shell lines, comments removed.
 
-        The control is what the shell *runs*. The steady-state header also
-        *explains* the removal in a comment, and a naive substring search over
-        the whole header cannot tell the explanation from the thing it
-        explains -- it would read "SSH_AUTH_SOCK IS NOT FORWARDED" as a
-        forward.
+        The control is what the shell RUNS. Both regions also *explain* the
+        asymmetry in comments, and a naive substring search cannot tell the
+        explanation from the thing it explains.
         """
-        return "\n".join(l for l in header.splitlines()
-                          if not l.lstrip().startswith("#"))
+        return "\n".join(l for l in region.splitlines()
+                         if not l.lstrip().startswith("#"))
 
-    def test_no_stage_1_loader_forwards_the_agent_socket(self):
-        for delim, block in _stage1_blocks().items():
-            assert "SSH_AUTH_SOCK" not in \
-                self._executable(_env_header(block, delim)), (
-                    f"the recorded {delim} loader forwards SSH_AUTH_SOCK into "
-                    f"stage 1, which is the channel Chunk A removed")
+    def test_stage_1_does_not_forward_the_agent_socket(self):
+        assert "SSH_AUTH_SOCK" not in \
+            self._executable(_artifact_region("cmd_stage1")), (
+                "stage 1 forwards an agent socket; the channel is removed, "
+                "not measured")
+
+    def test_stage_2_does_forward_the_agent_socket(self):
+        assert 'SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}"' in \
+            self._executable(_artifact_region("cmd_stage2")), (
+                "stage 2 lost the agent socket; it is the stage that signs")
 
     def test_the_comment_stripper_does_not_hide_a_real_forward(self):
-        """The node above would pass vacuously if `_executable` ate everything.
+        """Mutation check: if `_executable` ate everything, "no match" would
+        mean "nothing was searched"."""
+        sample = '    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \\\n    "$V_python" x'
+        assert "SSH_AUTH_SOCK" in self._executable(sample)
 
-        Feeding it a header that *does* forward must still show the forward --
-        otherwise "no match" would mean "nothing was searched".
-        """
-        delim = "LOADER"
-        header = _env_header(_stage1_blocks()[delim], delim)
-        forward = '    SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}" \\\n'
-        restored = header.replace(f"    /bin/sh <<'{delim}'",
-                                  forward + f"    /bin/sh <<'{delim}'")
-        assert "SSH_AUTH_SOCK" in self._executable(restored), (
-            "the comment stripper removed a real forward, so the node above "
-            "proves nothing")
-
-    def test_both_stage_2_blocks_forward_the_agent_socket(self):
-        for delim, block in _stage2_blocks().items():
-            assert 'SSH_AUTH_SOCK="${SSH_AUTH_SOCK-}"' in \
-                self._executable(_env_header(block, delim)), (
-                    f"the recorded {delim} block no longer forwards the agent "
-                    f"socket; stage 2 is the stage that signs")
-
-    def test_the_prose_records_the_asymmetry_as_deliberate(self):
+    def test_the_artifact_says_the_asymmetry_is_deliberate(self):
         """A reader who meets two blocks differing by one line must be told the
         difference is the control, or they will "fix" it."""
-        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        assert "IS NOT FORWARDED TO STAGE 1" in text, (
-            "the runbook no longer states that stage 1 gets no agent socket")
-        stage2 = text.split("### Phase 0 stage 2")[1]
-        assert "opposite states" in stage2, (
-            "the stage-2 section must name the asymmetry, or the two "
-            "environment blocks read as a copying slip")
+        assert "THE TWO STAGES DIFFER IN EXACTLY ONE ENVIRONMENT ENTRY" in \
+            _artifact_text()
 
     def test_the_probe_docstring_does_not_call_itself_non_interactive(self):
-        """The docstring said "non-interactive"; `ssh-keygen`
-        reads its passphrase from `/dev/tty`, so on a controlling terminal the
-        probe **prompts**. An operator who trusted the old wording answered the
-        prompt -- which is the probe succeeding, i.e. the refusal."""
+        """`ssh-keygen` reads its passphrase from `/dev/tty`, so on a
+        controlling terminal the probe prompts. An operator who trusted the old
+        wording answered the prompt -- which is the probe succeeding."""
         doc = P.probe_cannot_sign.__doc__ or ""
-        assert "NOT non-interactive" in doc, (
-            "the probe's own docstring must say it can prompt")
-        assert "/dev/tty" in doc, (
-            "the docstring must say WHY stdin=DEVNULL does not suppress it")
-        assert "Decline" in doc or "decline" in doc, (
-            "the docstring must tell the operator what to do at the prompt")
-
-class TestTheCeremonyArtifactIsAClosureMember:
-    """Chunk C5-C7. `bootstrap/reanchor.sh` IS the procedure now, so its bytes
-    decide what executes at the next ceremony -- which is the definition the
-    closure uses, and the reason the runbook and the roster are already in it.
-
-    It is not a Python module, so `_gate_manifest._frozen_files()` cannot cover
-    it: that function globs Python. Membership is therefore explicit, and these
-    nodes are what stop it from being explicit-but-forgotten.
-    """
-
-    def test_the_artifact_is_in_the_declared_closure(self):
-        assert "bootstrap/reanchor.sh" in P.declared_authority_closure()
-
-    def test_the_frozen_manifest_still_cannot_cover_it(self):
-        """The reason membership had to be explicit, asserted rather than
-        assumed. If this ever becomes false the explicit pin is redundant --
-        but silently keeping both is how two sources of truth start."""
-        frozen = set(G._frozen_files(P._REPO))
-        assert "bootstrap/reanchor.sh" not in frozen, (
-            "the manifest now covers the artifact; the explicit closure pin "
-            "and the manifest are two answers to one question")
-
-    def test_the_runbook_loader_expects_exactly_the_declared_closure(self):
-        """The loader's fixed list is compared BEFORE candidate resolution, so
-        it is the one place the member set is established out of band. If it
-        and `declared_authority_closure()` disagree, either the loader refuses
-        a correct ceremony or it admits a member nobody declared."""
-        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
-        recorded = [l for l in block.splitlines() if l]
-        assert recorded == sorted(P.declared_authority_closure()), (
-            f"the loader's fixed set {recorded} is not the declared closure "
-            f"{sorted(P.declared_authority_closure())}")
-
-    def test_the_loader_list_is_in_LC_ALL_C_order(self):
-        """Canonical because it is independently derivable, so no hidden list
-        decides what 'correct order' means. Sorted order also makes duplicates
-        and omissions detectable by the same check."""
-        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        block = text.split("EXPECTED_PATHS='", 1)[1].split("'\n", 1)[0]
-        recorded = [l for l in block.splitlines() if l]
-        assert recorded == sorted(recorded)
-        assert len(recorded) == len(set(recorded)), "a path is listed twice"
-
-    def test_the_runbook_prose_names_the_right_arity(self):
-        """The loader's refusal message tells the operator how many paths were
-        expected. A stale count there sends them to count the wrong thing."""
-        text = (_REPO / "bootstrap/REANCHOR_RUNBOOK.md").read_text(
-            encoding="utf-8")
-        n = len(P.declared_authority_closure())
-        word = {9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}[n]
-        assert f"the {word} paths recorded in this loader" in text, (
-            f"the loader's refusal message does not say {word!r} for a "
-            f"{n}-member closure")
-
-    def test_LOADED_MODULES_tracks_the_closure_rather_than_a_retyped_list(self):
-        """Derived, so the fixture set and the closure cannot drift. Adding a
-        closure member is then a one-line change here rather than a hunt through
-        a retyped list that no test would have caught going stale."""
-        assert set(_LOADED_MODULES) == set(P.declared_authority_closure())
-        assert "bootstrap/reanchor.sh" in _LOADED_MODULES
+        assert "NOT non-interactive" in doc
+        assert "/dev/tty" in doc
+        assert "decline" in doc.lower()
 
 
 class TestReadBoundaryIsRepositoryReadOnly:
@@ -5119,15 +4689,15 @@ class TestLoaderTrustBoundary:
     def test_the_loader_invokes_every_utility_by_absolute_path(self):
         """The property behind both tests above, asserted on the recorded text:
         a bare utility name is resolved through the operator's environment."""
-        block = _runbook_block("_gate_preflight.py")
+        block = _launcher_text()
         code = "\n".join(ln for ln in block.splitlines()
                          if ln.strip() and not ln.lstrip().startswith("#"))
         for bare in ("mktemp -d", "mkdir -p", "shasum -a", "env -i"):
             assert bare not in code, (
                 f"{bare!r} is invoked by bare name; an inherited function, "
                 f"alias, or PATH entry can shadow it")
-        for recorded in ('"$MKTEMP"', '"$MKDIR"', '"$SHASUM"', '"$ENV"',
-                         '"$GIT"', '"$PY"'):
+        for recorded in ('"$L_mktemp"', '"$L_mkdir"', '"$L_SHASUM"',
+                         '"$L_env"', '"$L_git"', '"$L_CAT"'):
             assert recorded in code, f"{recorded} is not used"
 
     def test_an_inherited_shell_function_cannot_alter_the_checklist(self,
@@ -5186,16 +4756,20 @@ class TestLoaderTrustBoundary:
 
     def test_the_loader_body_runs_in_a_clean_child_shell(self):
         """The structural property, on the recorded text."""
-        block = _runbook_block("_gate_preflight.py")
+        block = _launcher_text()
         code = "\n".join(ln for ln in block.splitlines()
                          if ln.strip() and not ln.lstrip().startswith("#"))
-        launch = code.splitlines()[0]
-        assert "-i" in launch and "<maintainer-recorded-env>" in launch, (
-            f"the loader must be launched through a recorded `env -i`: {launch}")
-        assert "/bin/sh <<'LOADER'" in code, (
-            "the body must be supplied to the literal /bin/sh")
-        assert code.rstrip().endswith("LOADER"), (
-            "the body must be fully enclosed by the clean-child heredoc")
+        # The launcher IS a script now, not a heredoc pasted into a child shell,
+        # so the clean-child property attaches to what it *starts* rather than
+        # to how it is itself started. Two places, and both matter:
+        #   - every git read goes through `env -i` (sterile_git), so no GIT_*
+        #     variable from the operator's shell can steer it;
+        #   - the artifact is started under the literal `/bin/sh`.
+        assert '"$L_env" -i HOME=/nonexistent' in code, (
+            "git is not invoked through an emptied environment; a GIT_* "
+            "variable could steer the loader at a repository nobody named")
+        assert 'exec /bin/sh "$T/$ARTIFACT_REL"' in code, (
+            "the artifact must be started by the literal /bin/sh")
 
     def test_the_operator_facing_shell_is_literally_bin_sh(self):
         """The harness used to substitute `/bin/sh` for a recorded
@@ -5203,10 +4777,10 @@ class TestLoaderTrustBoundary:
         never told the operator to make. The value is now literal in the
         operator-facing text, and this asserts *that* text rather than the
         harness's substitution map."""
-        block = _runbook_block("_gate_preflight.py")
+        block = _launcher_text()
         code = "\n".join(ln for ln in block.splitlines()
                          if ln.strip() and not ln.lstrip().startswith("#"))
-        assert "/bin/sh <<'LOADER'" in code
+        assert 'exec /bin/sh "$T/$ARTIFACT_REL"' in code
         assert "<maintainer-recorded-shell>" not in block, (
             "the shell must not be an operator decision -- a wrong choice "
             "silently restores startup-file loading inside the clean child")

@@ -80,7 +80,12 @@ usage() {
         '  packet         the authorization packet delivered with this' \
         '                 launcher. Its SHA-256 is bound into these bytes.' \
         '  values-file    your recorded ceremony values' \
-        '  candidate-ref  the ref or OID to re-anchor to' >&2
+        '  candidate-ref  the ref or OID to re-anchor to' \
+        '' \
+        '  add  --stage2 <digest>  to run the SIGNING stage. It repeats the' \
+        '  whole verification into a fresh directory rather than reusing the' \
+        '  one stage 1 left behind -- candidate code ran while that one sat' \
+        '  on disk.' >&2
 }
 
 # --------------------------------------------------------------------------
@@ -414,6 +419,24 @@ ROWS
 # main
 # --------------------------------------------------------------------------
 
+# STAGE 2 RUNS THROUGH THIS LAUNCHER TOO, and that is a security property
+# rather than a convenience.
+#
+# Stage 2 must not reuse stage 1's extraction. Candidate code RAN in stage 1 --
+# that is what stage 1 is for -- so everything stage 1 left on disk sat there
+# through a window in which candidate code was executing as the same user.
+# Handing those bytes to the signing stage would let the candidate rewrite the
+# verifier that is about to bless it, after the key is loaded.
+#
+# So a second invocation does the whole pre-candidate verification again, from
+# the same reviewed packet, into a FRESH directory: re-resolve, re-verify every
+# closure blob, re-extract, re-check the artifact digest. It costs one extra
+# pass and removes the entire class.
+STAGE2_CONFIRM=''
+if [ "$#" -eq 5 ] && [ "$4" = "--stage2" ]; then
+    STAGE2_CONFIRM=$5
+    set -- "$1" "$2" "$3"
+fi
 [ "$#" -eq 3 ] || { usage; exit 2; }
 PACKET_PATH=$1
 VALUES_PATH=$2
@@ -575,6 +598,21 @@ printf '\n'
 # code starts, so there is no post-candidate step for candidate code to
 # influence. It also means $T is not cleaned up here -- it cannot be, the
 # artifact is running out of it.
+if [ -n "$STAGE2_CONFIRM" ]; then
+    # Same verified extraction discipline, a different stage. The manifest is
+    # composed afresh above from the same packet and the same resolution, so
+    # stage 2 revalidates against bytes this invocation produced -- not against
+    # a file left behind by the invocation that ran candidate code.
+    if [ -n "$CLOSURE_CHANGED" ]; then
+        exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$VALUES_PATH" \
+            --confirm-package-sha256 "$STAGE2_CONFIRM" \
+            --review-manifest "$MANIFEST" \
+            --reviewed-candidate "$RESOLVED"
+    fi
+    exec /bin/sh "$T/$ARTIFACT_REL" stage2 "$VALUES_PATH" \
+        --confirm-package-sha256 "$STAGE2_CONFIRM"
+fi
+
 if [ -n "$CLOSURE_CHANGED" ]; then
     exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$VALUES_PATH" \
         --review-manifest "$MANIFEST" \
