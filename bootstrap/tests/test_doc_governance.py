@@ -61,7 +61,7 @@ class TestTierRecognition:
     def test_uses_commonly_lives_in_framing_not_legislation(
         self, doc_text: str
     ) -> None:
-        """Per the maintainer's layer-prescriptiveness gradient (M1):
+        """Per the maintainer's layer-prescriptiveness gradient:
         tier-RECOGNITION holds; tier-LEGISLATION drops.  The phrasing
         must be 'commonly lives in', not 'must live in' or 'lives in'.
 
@@ -350,7 +350,7 @@ class TestStyleConventionsLocation:
 
     def test_names_multiple_style_homes(self, doc_text: str) -> None:
         """The section enumerates multiple typical homes for style
-        guides per the M2 chat-preference clarification."""
+        guides, per the recorded chat preference."""
         for home in (
             "`docs/developer/style.md`",
             "`docs/style.md`",

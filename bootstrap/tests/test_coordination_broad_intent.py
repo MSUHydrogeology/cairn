@@ -2,8 +2,8 @@
 
 Cairn v0.2 fold-back (cairn-v0.2-foldback-remaining-ledger, Component C):
 the broadened work-intent requirement -- a required ``claim`` before
-*every* nontrivial edit -- is the **Tier-2-enabled posture**. Per
-Internal finding I1 / External R1 it must land in the team-gated
+*every* nontrivial edit -- is the **Tier-2-enabled posture**, so
+it must land in the team-gated
 ``coordination-tiers`` surface, **not** the always-on baseline that
 every adopter (including solo / sequential teams) receives.
 
@@ -96,5 +96,5 @@ class TestBroadIntentBoundary:
         assert "additionally requires the" in text and "`list`" in text, (
             "coordination-surface list+claim clause missing"
         )
-        # Lock-semantics preserved, not deleted (R1).
+        # Lock-semantics preserved, not deleted.
         assert "courtesy signal, not a lock" in text

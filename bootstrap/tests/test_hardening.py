@@ -1,5 +1,5 @@
 """
-Tests for the Layer-4 symlink/containment guard (P2 Chunk 3, finding I1).
+Tests for the Layer-4 symlink/containment guard.
 
 The guard runs before EVERY write (fresh or --force), fail-closed:
 * a symlinked destination raises;
@@ -105,7 +105,7 @@ class TestGuardWiredIntoInstall:
 # Cross-helper integration: scaffold + onboarding-activate helper share the
 # same fail-closed posture (proposal
 # 2026-05-28-claude-cairn-security-hardening-post-v0.2-followup,
-# Chunk P1.3).  Both define their own containment exception classes
+# Both define their own containment exception classes
 # (``ScaffoldSecurityError`` + ``OnboardingSecurityError``); a single
 # adopter tree containing a planted symlink must be rejected at BOTH
 # layers, not just one.

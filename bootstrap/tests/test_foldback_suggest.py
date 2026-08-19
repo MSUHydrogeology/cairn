@@ -1,7 +1,7 @@
 """Tests for the foldback_suggest helper.
 
-Pins the four ``deferred-until`` cases the plan-review N3 disposition
-called for (future-date / past-date / empty / condition-string), plus
+Pins the four ``deferred-until`` cases the helper
+must handle (future-date / past-date / empty / condition-string), plus
 ledger-shape smoke tests (empty ledger; ledger with no `candidate`
 rows; ledger with mixed old- + new-vocab rows).
 
@@ -157,7 +157,7 @@ class TestCaptureGrace:
 
 
 # ---------------------------------------------------------------------------
-# Four deferred-until cases (per plan-review N3 + N4 acceptance)
+# Four deferred-until cases
 # ---------------------------------------------------------------------------
 
 

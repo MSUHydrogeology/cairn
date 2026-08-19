@@ -10,8 +10,8 @@ Contracts:
   across the engine and the `bootstrap.scaffold` facade.
 * **Boundary pin** — the shared root helpers (`_cairn_root` / `_find_cairn_root`)
   and the upgrade-time `_MANIFEST_SEARCH_DIRS` stay in the engine, not install.
-* **Guarded-write regression (SR6)** — the install-side Class-A writers still
-  route their destinations through a containment guard (re-checks the SR6 set
+* **Guarded-write regression** — the install-side Class-A writers still
+  route their destinations through a containment guard (re-checks the set
   now that they live in install.py).
 * **Behavioral smoke** — a dev-tree creation and a core install round-trip work.
 
@@ -25,7 +25,7 @@ from pathlib import Path
 _PKG = Path(__file__).resolve().parents[1] / "_scaffold"
 _GUARD_CALLS = {"_assert_safe_write", "_assert_fanout_contained"}
 
-#: SR6 Class-A install-side writers that must each call a containment guard.
+#: Class-A install-side writers that must each call a containment guard.
 _INSTALL_GUARDED_WRITERS = {
     "_install_one", "write_local_env", "install_onboarding",
     "write_install_lockfile", "_emit_skill_copy_fallback", "fan_out_skills",
