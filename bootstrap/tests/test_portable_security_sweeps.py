@@ -251,7 +251,7 @@ def installed(tmp_path: Path) -> Path:
     return tmp_path
 
 
-# --- A8: install / manifest / group / collision -------------------------------
+# --- install / manifest / group / collision --------------------------------
 
 def test_the_module_installs_exactly_three_files(installed: Path) -> None:
     """The three declared destinations land, and the module contributes no
@@ -332,7 +332,7 @@ def test_adopt_module_and_upgrade_carry_the_whole_group(tmp_path: Path) -> None:
     assert len(written) == 3
 
 
-# --- A8: the strict policy matrix --------------------------------------------
+# --- the strict policy matrix ----------------------------------------------
 
 def test_policy_accepts_the_shipped_v1_document() -> None:
     """The byte content of the shipped policy validates."""
@@ -459,7 +459,7 @@ def test_policy_refusal_precedes_every_side_effect(tmp_path: Path) -> None:
     assert summary["mode"] is None
 
 
-# --- A8: strict version parsing and mode classification -----------------------
+# --- strict version parsing and mode classification ------------------------
 
 @pytest.mark.parametrize(
     ("text", "accepted"),
@@ -519,7 +519,7 @@ def test_the_shipped_admitted_artifact_set_is_empty_until_a_record_exists() -> N
     assert runner._ADMITTED_ARTIFACTS == {}
 
 
-# --- B6: the executable trust boundary ---------------------------------------
+# --- the executable trust boundary -----------------------------------------
 
 def test_absent_gitleaks_is_incomplete_not_clean(
     tmp_path: Path, sweep_target: Path
@@ -681,7 +681,7 @@ def test_path_drift_between_validation_and_invocation_is_degraded(
 def test_probe_version_is_guarded_by_revalidation(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """CR2: the pre-fix runner called ``probe_version`` with no revalidation
+    """The pre-fix runner called ``probe_version`` with no revalidation
     at its own call site, so a binary swapped after initial resolution but
     before the identifying ``--version`` probe would execute unnoticed.  The
     config screen's own Git call is the only invocation that happens between
@@ -724,8 +724,8 @@ sys.exit(0)
 def test_the_commit_reachability_probes_git_call_is_guarded_by_revalidation(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """CR1 adds a third runner-owned Git invocation
-    (``probe_reachable_commit``); CR2 requires it to be revalidated
+    """A third runner-owned Git invocation
+    (``probe_reachable_commit``) must be revalidated
     immediately before invocation too.  Gitleaks's own identifying
     ``--version`` probe (which runs strictly before it) is used here as the
     mutation hook -- gitleaks swaps Git's bytes as a side effect of
@@ -866,7 +866,7 @@ def test_the_trust_roots_are_enumerated_not_generalized() -> None:
     assert "not provenance" in doctrine or "never for provenance" in doctrine
 
 
-# --- C8: the candidate-configuration boundary ---------------------------------
+# --- the candidate-configuration boundary ----------------------------------
 
 REAL_GIT = shutil.which("git")
 
@@ -1173,7 +1173,7 @@ def test_policy_fingerprints_reach_an_off_tree_ignore_file_only(
 
 
 def test_a_fingerprint_cannot_inject_a_second_ignore_line(tmp_path: Path) -> None:
-    """Belt and braces with the A8 parametrized case: a fingerprint carrying a
+    """Belt and braces with the parametrized case: a fingerprint carrying a
     newline is refused, so one reviewed suppression can never become two
     ignore-file lines."""
     runner = load_runner()
@@ -1195,7 +1195,7 @@ def test_the_gitleaks_timeout_is_strictly_inside_the_outer_deadline(
     assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}s"], (sent, out)
 
 
-# --- C8/M49: the deny-by-default repository-local configuration screen ---------
+# --- the deny-by-default repository-local configuration screen -------------
 
 def test_an_unlisted_hostile_local_config_key_refuses_before_execution(
     tmp_path: Path, sweep_target: Path
@@ -1216,7 +1216,7 @@ def test_an_unlisted_hostile_local_config_key_refuses_before_execution(
 def test_an_include_path_injection_refuses(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """Measured as probe P2: an unlisted key entering through ``include.path``
+    """An unlisted key entering through ``include.path``
     survives the counted-key pin.  The screen refuses it before execution."""
     git_repo(sweep_target)
     (sweep_target / "hostile.inc").write_text(
@@ -1237,7 +1237,7 @@ def test_an_include_path_injection_refuses(
 def test_an_includeif_injection_refuses(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """Measured as probe P3, the ``includeIf`` form."""
+    """The ``includeIf`` form."""
     git_repo(sweep_target)
     (sweep_target / "hostile2.inc").write_text(
         "[cairnprobe2]\n\tinjected = YES\n", encoding="utf-8"
@@ -1254,7 +1254,7 @@ def test_an_includeif_injection_refuses(
 
 
 def test_the_screen_expands_includes(tmp_path: Path, sweep_target: Path) -> None:
-    """Its own pin, not a comment: measured as probe P5, a listing **without**
+    """Its own pin, not a comment: a listing **without**
     ``--includes`` shows ``include.path=...`` and *neither* injected key, so the
     two injection nodes above would go green while the hazard was live.  The
     node observes the real argv through a logging shim that execs real git."""
@@ -1280,7 +1280,7 @@ def test_the_screen_expands_includes(tmp_path: Path, sweep_target: Path) -> None
 def test_the_screen_does_not_execute_candidate_configuration(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """Measured as probe P6: run under the sterilized child environment with
+    """Run under the sterilized child environment with
     output captured, a hostile ``core.pager`` does not execute -- the screen's
     own Git call does not hand control to candidate configuration."""
     git_repo(sweep_target)
@@ -1348,7 +1348,7 @@ def test_the_screen_accepts_an_ordinary_repository(
 def test_a_linked_worktrees_ordinary_local_config_is_accepted(
     tmp_path: Path,
 ) -> None:
-    """CR3: a linked worktree's ``.git`` is a *file* naming the main
+    """A linked worktree's ``.git`` is a *file* naming the main
     repository's per-worktree metadata directory, not the directory holding
     the local config the screen must bound.  Ordinary local config that
     legitimately originates from the main repository's ``.git/config`` must
@@ -1378,7 +1378,7 @@ def test_a_linked_worktrees_ordinary_local_config_is_accepted(
 def test_the_config_screens_second_git_call_is_guarded_by_revalidation(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """CR2: CR3 makes the screen invoke Git **twice** -- the common-dir
+    """The screen invokes Git **twice** -- the common-dir
     discovery, then its own config listing.  A Git swapped as a side effect
     of servicing the first call must not be the Git that services the
     second."""
@@ -1443,7 +1443,7 @@ def test_the_residual_is_printed_not_only_documented(
     assert "not a boundary" in report, report
 
 
-# --- D7: output integrity, the aggregate, the child contract -------------------
+# --- output integrity, the aggregate, the child contract -------------------
 
 BIDI = chr(0x202E)
 NUL = chr(0)
@@ -1720,7 +1720,7 @@ def test_not_applicable_is_distinct_from_incomplete(
 def test_a_detached_head_with_its_only_branch_deleted_still_scans_history(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """CR1: a reachable commit held only by a detached ``HEAD``, whose only
+    """A reachable commit held only by a detached ``HEAD``, whose only
     branch has been deleted, carries no ``refs/heads`` entry and no
     ``packed-refs`` line -- exactly the reproduction the reviewer used to
     show the ref-file heuristic misreading real history as NOT_APPLICABLE.
@@ -1876,7 +1876,7 @@ def test_the_child_document_is_bounded_strict_utf8_json(
     assert len(raw) < 64 * 1024, len(raw)
 
 
-# --- D7/M45: the digest gate ---------------------------------------------------
+# --- the digest gate -------------------------------------------------------
 
 def test_a_digest_mismatch_is_degraded_without_execution(
     tmp_path: Path, sweep_target: Path
@@ -1925,7 +1925,7 @@ def test_an_unadmitted_platform_is_reduced_not_degraded(
 def test_full_mode_is_unreachable_without_a_digest_match(
     tmp_path: Path, sweep_target: Path, case: str
 ) -> None:
-    """The node that carries [E1]'s claim: exit ``0`` is unreachable in every
+    """Exit ``0`` is unreachable in every
     case but a digest match.  It belongs beside
     ``test_reduced_mode_never_emits_clean`` in the invariant list."""
     admissions = {
@@ -1954,7 +1954,7 @@ def test_a_digest_match_is_the_only_route_to_full_mode(
     assert leg(summary, "current-tree")["result"] == 0, out
 
 
-# --- E7: the version-admission apparatus ---------------------------------------
+# --- the version-admission apparatus ---------------------------------------
 
 LEDGER = CAIRN_ROOT / "dev/measurement/gitleaks-version-support.md"
 
@@ -2251,7 +2251,7 @@ def test_verify_version_support_refuses_a_relative_candidate_path(
 def test_reduced_mode_is_reachable_without_any_source_change(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    """The PS9 failure the Decision named *shelf apparatus with extra steps*: an
+    """The failure the Decision named *shelf apparatus with extra steps*: an
     unlisted strict ``8.x.y`` must still execute the current-tree leg."""
     rc, summary, out, log = _run_with_tool(
         tmp_path, sweep_target, version="8.29.7", findings=[],
@@ -2266,7 +2266,7 @@ def test_reduced_mode_is_reachable_without_any_source_change(
 def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
     """M52: the screen adds runner-owned Git calls, and each must be declared
     before Chunk I's oracle runs or the oracle reads as an adapter defect.
-    CR3 added a second runner-owned call (``rev-parse --git-common-dir``,
+    A second runner-owned call was added (``rev-parse --git-common-dir``,
     ahead of the screen's own ``config`` listing) to discover the screen's
     boundary correctly for a linked worktree."""
     runner = load_runner()
@@ -2276,7 +2276,7 @@ def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
     assert "config" in runner._SCREEN_ARGV_TAIL
 
 
-# --- F6: Cairn's own adoption (Decision Condition 2) ---------------------------
+# --- Cairn's own adoption (Decision Condition 2) ---------------------------
 
 RUNNER_TWIN = CAIRN_ROOT / "scripts/run_portable_security_sweeps.py"
 POLICY_TWIN = CAIRN_ROOT / "scripts/portable_security_policy.json"

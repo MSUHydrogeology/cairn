@@ -6,8 +6,8 @@ new files belonging to a module the adopter has ALREADY adopted -- so a module
 that split a single tool into a facade + a sibling package upstream (the
 `lifecycle_metrics.py` -> `_lifecycle_metrics/` case) could not be consumed via
 `scaffold.py upgrade`. This pins the `new-module` add path and the Codex-review
-hardening (R1 canonical source-key namespace, R2 expected-absence through apply,
-R3 occupied-destination collision + duplicate-destination ownership, R5 `--to`
+hardening: the canonical source-key namespace, expected-absence through apply,
+occupied-destination collision + duplicate-destination ownership, `--to`
 registry contract, and the UTF-8-text-only constraint).
 
 Run from the cairn repo root:
@@ -43,7 +43,7 @@ _PKG_DSTS = [f"tools/_lifecycle_metrics/{n}.py" for n in _PKG_NAMES]
 
 def _src_for(dst: str) -> str:
     """The canonical lockfile source key for a `_lifecycle_metrics/` dst --
-    install records `f"modules/{spec.src}"` (the namespace R1 is about)."""
+    install records `f"modules/{spec.src}"` (the canonical namespace)."""
     return "modules/default-on/_lifecycle_metrics/" + dst.rsplit("/", 1)[1]
 
 
@@ -84,7 +84,7 @@ def _make_pre_split(target: Path, *, keep_on_disk: tuple[str, ...] = ()) -> None
 
 
 # ---------------------------------------------------------------------------
-# R1 -- canonical source-key namespace + positive add
+# canonical source-key namespace + positive add
 # ---------------------------------------------------------------------------
 
 def test_pre_split_compute_surfaces_package_as_new_module(tmp_path: Path):
@@ -104,7 +104,7 @@ def test_pre_split_compute_surfaces_package_as_new_module(tmp_path: Path):
     for dst, p in new_module.items():
         assert p.kind in s._ADVANCING_KINDS
         assert p.verbatim is True          # package .py files are verbatim code
-        assert p.src == _src_for(dst)      # canonical lockfile namespace (R1)
+        assert p.src == _src_for(dst)      # canonical lockfile namespace
 
 
 def test_pre_split_apply_records_package_in_lockfile(tmp_path: Path):
@@ -127,7 +127,7 @@ def test_pre_split_apply_records_package_in_lockfile(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# R1 -- new-upstream only: a deliberately-deleted tracked file stays deleted
+# new-upstream only: a deliberately-deleted tracked file stays deleted
 # ---------------------------------------------------------------------------
 
 def test_deleted_tracked_module_file_is_not_re_added(tmp_path: Path):
@@ -149,7 +149,7 @@ def test_deleted_tracked_module_file_is_not_re_added(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# R3 -- occupied-destination collision is a non-advancing review-only block
+# occupied-destination collision is a non-advancing review-only block
 # ---------------------------------------------------------------------------
 
 def test_occupied_destination_is_hard_blocked_not_ack_bypassable(tmp_path: Path):
@@ -189,7 +189,7 @@ def test_occupied_destination_is_hard_blocked_not_ack_bypassable(tmp_path: Path)
 
 
 # ---------------------------------------------------------------------------
-# R2 -- expected-absence protected through apply (data-loss guard); --force
+# expected-absence protected through apply (data-loss guard); --force
 #       does NOT override it
 # ---------------------------------------------------------------------------
 
@@ -253,7 +253,7 @@ def test_not_adopted_module_files_are_not_auto_added(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# R5 -- structural module additions are skipped under an explicit --to <ref>
+# structural module additions are skipped under an explicit --to <ref>
 # ---------------------------------------------------------------------------
 
 def test_module_additions_under_explicit_to_are_hard_blocked(tmp_path: Path):
@@ -282,7 +282,7 @@ def test_module_additions_under_explicit_to_are_hard_blocked(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# R3 -- duplicate destination ownership across mappings is refused, not deduped
+# duplicate destination ownership across mappings is refused, not deduped
 # ---------------------------------------------------------------------------
 
 def test_duplicate_destination_ownership_is_refused(tmp_path: Path, monkeypatch):
@@ -345,7 +345,7 @@ def test_non_text_module_addition_fails_crisply(tmp_path: Path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# F1 -- a malformed (traversing) destination is refused before any stage write
+# a malformed (traversing) destination is refused before any stage write
 # ---------------------------------------------------------------------------
 
 def test_malformed_module_destination_is_refused_at_stage(tmp_path: Path, monkeypatch):
@@ -375,7 +375,7 @@ def test_malformed_module_destination_is_refused_at_stage(tmp_path: Path, monkey
 
 
 def test_symlinked_dev_parent_does_not_escape_at_stage(tmp_path: Path):
-    # F1 round 2: the stage ROOT mutation (rmtree/mkdir) must be containment-
+    # The stage ROOT mutation (rmtree/mkdir) must be containment-
     # guarded BEFORE it runs -- a symlinked ``target/dev`` parent must not let
     # --stage delete/recreate an EXTERNAL directory.
     target = tmp_path.resolve()
@@ -400,7 +400,7 @@ def test_symlinked_dev_parent_does_not_escape_at_stage(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# F4 -- global destination-ownership preflight (across core / skills / modules,
+# global destination-ownership preflight (across core / skills / modules,
 #       independent of lock / source state)
 # ---------------------------------------------------------------------------
 
@@ -512,7 +512,7 @@ def test_adopt_collisions_records_fork_and_unblocks(tmp_path: Path):
 
 
 def test_adopt_collisions_verbatim_fork_survives_two_upstream_versions(tmp_path):
-    # R1: a verbatim fork must record base_hash=upstream, NOT only its own hash,
+    # A verbatim fork must record base_hash=upstream, NOT only its own hash,
     # or a later upstream change classifies `update` and overwrites the fork.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
@@ -582,7 +582,7 @@ def test_adopt_collisions_refuses_a_wrong_upstream_authorization(tmp_path: Path)
 
 
 def test_adopt_collisions_records_only_the_authorized_bytes(tmp_path: Path):
-    # F2: the destination is read once and that buffer is recorded, so the lock
+    # The destination is read once and that buffer is recorded, so the lock
     # hash equals the operator's authorized observed digest.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
@@ -595,7 +595,7 @@ def test_adopt_collisions_records_only_the_authorized_bytes(tmp_path: Path):
 
 
 def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path):
-    # F1 / remaining-P1: the operator cannot authorize a path that is not a live
+    # The operator cannot authorize a path that is not a live
     # adoptable collision -- eligibility is recomputed from _MODULE_MAPPINGS, so
     # an arbitrary planted file refuses (exact-set disagreement).
     target = tmp_path.resolve()
@@ -610,7 +610,7 @@ def test_adopt_collisions_refuses_authorizing_a_nonadoptable_file(tmp_path):
 
 
 def test_adopt_collisions_refuses_when_a_collision_appeared_after_authorization(tmp_path):
-    # F1: a collision appearing after the operator authorized makes the authorized
+    # A collision appearing after the operator authorized makes the authorized
     # set disagree with the live adoptable set -> refuse; NOTHING adopted.
     target = tmp_path.resolve()
     c1, c2 = _PKG_DSTS[1], _PKG_DSTS[2]
@@ -630,7 +630,7 @@ def test_adopt_collisions_refuses_when_a_collision_appeared_after_authorization(
     ["--stage", "--apply"],
 ])
 def test_upgrade_actions_are_mutually_exclusive(tmp_path: Path, combo):
-    # F4: every mixed-action invocation refuses before any mutation -- in
+    # Every mixed-action invocation refuses before any mutation -- in
     # particular `--plan --adopt-collisions` (a "read-only" combo) must not adopt.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
@@ -650,7 +650,7 @@ def test_adopt_collisions_requires_explicit_authorization(tmp_path: Path):
 
 
 def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypatch):
-    # F3: an interrupted multi-file commit leaves the prior authority coherent --
+    # An interrupted multi-file commit leaves the prior authority coherent --
     # the old lockfile is unchanged and no live cache was replaced.
     import os  # noqa: PLC0415
     import bootstrap._scaffold.upgrade as UP  # noqa: PLC0415
@@ -678,7 +678,7 @@ def test_commit_lock_and_caches_is_atomic_on_lockfile_failure(tmp_path, monkeypa
 
 
 def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
-    # R3/R5: a new-upstream spec whose dst is already tracked under ANOTHER source
+    # A new-upstream spec whose dst is already tracked under ANOTHER source
     # is a provenance conflict, never an adoptable fork.
     target = tmp_path.resolve()
     _install(target)
@@ -703,7 +703,7 @@ def test_lockconflict_destination_is_distinct_and_not_adoptable(tmp_path: Path):
 
 
 def test_adopt_collisions_refuses_symlinked_lockfile(tmp_path: Path):
-    # R4: the lockfile authority write is guarded; a symlinked lockfile is refused
+    # The lockfile authority write is guarded; a symlinked lockfile is refused
     # (containment), exit 2, with no mutation.
     target = tmp_path.resolve()
     collide = _PKG_DSTS[1]
@@ -770,7 +770,7 @@ def test_plan_points_to_stage_without_a_live_digest(tmp_path, capsys):
 
 
 def test_stage_authorization_binds_to_reviewed_bytes_not_a_live_change(tmp_path, capsys):
-    # round-2 P1 reproducer: the --stage authorization is minted from the exact
+    # The --stage authorization is minted from the exact
     # `.ours` review buffer, NOT a later live read. An actor who swaps the live
     # destination AFTER staging cannot get the changed bytes adopted with the
     # printed (reviewed-byte) triple.

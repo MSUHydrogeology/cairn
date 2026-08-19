@@ -3,19 +3,19 @@
 The 0A guards were proven against synthetic fixtures; these prove them against
 the real `bootstrap/scaffold.py` launcher and the `bootstrap/_scaffold/` engine:
 
-* **Canonical identity (P1#3):** `bootstrap.scaffold` IS `bootstrap._scaffold`
+* **Canonical identity:** `bootstrap.scaffold` IS `bootstrap._scaffold`
   (one `sys.modules` entry / object per file), and the engine file is the
   canonical one.
-* **Facade patch-through (RR5/R6):** patching `bootstrap.scaffold._cairn_is_git`
+* **Facade patch-through:** patching `bootstrap.scaffold._cairn_is_git`
   reaches the engine's own namespace (the `test_upgrade.py:509` pattern).
-* **Executable topology (RR1):** the launcher installs correctly when invoked as
+* **Executable topology:** the launcher installs correctly when invoked as
   a script from an unrelated cwd (`/tmp`), not just from the Cairn root.
-* **Fail-closed against import hijack (SR1):** a decoy `bootstrap/_scaffold/` on
+* **Fail-closed against import hijack:** a decoy `bootstrap/_scaffold/` on
   `PYTHONPATH` does NOT become the loaded engine — the launcher loads
   file-relative, so the canonical engine stays the real one.
-* **Scan completeness (RR3/S4):** the real engine package is now in the release
+* **Scan completeness:** the real engine package is now in the release
   Bandit scan set.
-* **Import-purity (0B.3/SR2):** importing the trust anchors writes no files and
+* **Import-purity:** importing the trust anchors writes no files and
   runs no CLI.
 
 Stdlib only.
@@ -70,7 +70,7 @@ def test_facade_exposes_full_public_surface():
 
 
 def test_facade_patch_through_reaches_engine(monkeypatch):
-    """RR5/R6: the facade IS the engine, so patching the facade mutates the
+    """The facade IS the engine, so patching the facade mutates the
     engine's own namespace (a single object identity).
 
     Scope note (post scaffold-split): this guarantees facade==engine identity, NOT
@@ -97,7 +97,7 @@ def test_release_scan_now_covers_launcher_and_engine():
     assert "bootstrap/_scaffold/__init__.py" in targets, "the engine must be scanned (recursive)"
 
 
-# --- executable topology from an unrelated cwd (RR1, subprocess) -------------
+# --- executable topology from an unrelated cwd (subprocess) -----------------
 
 def test_launcher_installs_from_an_unrelated_cwd(tmp_path):
     target = tmp_path / "adopter"
@@ -119,7 +119,7 @@ def test_launcher_installs_from_an_unrelated_cwd(tmp_path):
     assert (target / "dev" / ".cairn" / "cairn-lock.yml").is_file()
 
 
-# --- fail-closed against the S1 import hijack (SR1, subprocess) ---------------
+# --- fail-closed against the import hijack (subprocess) ---------------------
 
 def test_hostile_pythonpath_does_not_hijack_the_engine(tmp_path):
     """A decoy `bootstrap/_scaffold/` injected first on PYTHONPATH must NOT
@@ -150,10 +150,10 @@ def test_hostile_pythonpath_does_not_hijack_the_engine(tmp_path):
 
 # (Direct fail-closed-on-escape is covered by the hostile-PYTHONPATH substrate
 # test above and by the loader-prototype escape test in test_loader_identity.py,
-# which exercise the same SR1 _verify_within_root contract the launcher uses.)
+# which exercise the same _verify_within_root contract the launcher uses.)
 
 
-# --- import-purity of the trust anchors (0B.3 / SR2, subprocess) -------------
+# --- import-purity of the trust anchors (subprocess) ------------------------
 
 def test_importing_trust_anchors_writes_nothing(tmp_path):
     """Importing the anchors must define names only -- **no file writes, no CLI /
@@ -174,7 +174,7 @@ def test_importing_trust_anchors_writes_nothing(tmp_path):
 
 
 def test_trust_anchor_imports_are_owner_specific_not_runtime_isolated(tmp_path):
-    """Final Security Review P1 #2 disposition (maintainer: revise the claim).
+    """The revised claim, per Maintainer disposition.
 
     The trust anchors import their owned symbol from the *narrowest owning module*
     (``security_check`` -> ``_scaffold.config``; ``verify_integrity`` ->
@@ -212,15 +212,15 @@ def test_trust_anchor_imports_are_owner_specific_not_runtime_isolated(tmp_path):
     )
 
 
-# --- substrate Security Review regressions (F1, F2, F4) ----------------------
+# --- substrate Security Review regressions ----------------------------------
 #
-# F2/F4 exercise the launcher's submodule finder + failed-load cleanup, which the
+# Two of these exercise the launcher's submodule finder + failed-load cleanup, which the
 # real engine cannot trigger yet (it has no submodules until Stage 1). They run a
 # COPY of the production launcher over a synthetic engine tree, so the contract
 # is pinned BEFORE security.py is extracted.
 
 # The guard-installing prologue the REAL engine __init__ runs as its first action
-# (re-review R1). A fake engine must replicate it, else its submodule imports are
+# A fake engine must replicate it, else its submodule imports are
 # unmediated -- exactly the gap the architecture closes.
 _GUARD_PROLOGUE = (
     "from pathlib import Path\n"
@@ -243,7 +243,7 @@ def _fake_engine_tree(tmp_path):
 
 
 def test_F1_sitecustomize_canonical_preload_is_refused(tmp_path):
-    """F1: a hostile sitecustomize that preloads `bootstrap._scaffold` before the
+    """A hostile sitecustomize that preloads `bootstrap._scaffold` before the
     launcher runs must NOT satisfy the canonical name — the REAL launcher refuses
     the cache entry whose __file__ is not the expected engine."""
     decoy = tmp_path / "attacker"
@@ -259,7 +259,7 @@ def test_F1_sitecustomize_canonical_preload_is_refused(tmp_path):
 
 
 def test_F2_submodule_symlink_escape_is_refused(tmp_path):
-    """F2: a `_scaffold` submodule symlinked outside the Cairn root must be
+    """A `_scaffold` submodule symlinked outside the Cairn root must be
     refused BEFORE execution (the finder verifies the real source first)."""
     boot = _fake_engine_tree(tmp_path)
     outside = tmp_path / "outside"   # sibling of the fake Cairn root (boot.parent)
@@ -277,7 +277,7 @@ def test_F2_submodule_symlink_escape_is_refused(tmp_path):
 
 
 def test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean(tmp_path):
-    """F4: an engine init that imports a child then fails must leave NO residue —
+    """An engine init that imports a child then fails must leave NO residue —
     neither the parent nor the child — and a retry must start clean."""
     boot = _fake_engine_tree(tmp_path)
     (boot / "_scaffold" / "security.py").write_text("PWNED = 1\n", encoding="utf-8")
@@ -312,7 +312,7 @@ def test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean(tmp_path):
     assert "RESIDUE2 []" in out, f"retry left residue:\n{out}"
 
 
-# --- re-review R1: the import boundary mediates DIRECT engine child imports -----
+# --- the import boundary mediates DIRECT engine child imports --------------
 #
 # The launcher-installed finder did not mediate `import bootstrap._scaffold.<m>`
 # (no launcher in the call path) -- the route Stages 4/5 + the canonical-identity

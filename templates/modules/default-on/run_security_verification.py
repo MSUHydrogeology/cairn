@@ -94,7 +94,7 @@ _FORBIDDEN_COVERAGE_WORDS = (
 )
 
 # ---------------------------------------------------------------------------
-# The binding-mode / evidence-mode closed vocabularies (B1)
+# The binding-mode / evidence-mode closed vocabularies
 # ---------------------------------------------------------------------------
 _EVIDENCE_MODES: frozenset[str] = frozenset({"offline", "loopback"})
 #: Deliberately ONE member: a future "living runner" cannot appear by
@@ -105,8 +105,8 @@ _POLICY_BINDING_MODES: frozenset[str] = frozenset(
     {"none", "immutable_digest", "living_state"})
 
 #: The admitted child-process argv vector(s) (api-web-security-modules /
-#: Chunk G, G-1) -- a THIRD closed set alongside the two B1 apparatus
-#: bindings above, not a member of B1 itself. Deliberately ONE member: the
+#: a THIRD closed set alongside the two apparatus
+#: bindings above, not a member of them. Deliberately ONE member: the
 #: two api-web-security-modules facades' `local` subcommand takes the
 #: dispatcher's bounded `--child-document` flag, and that is the only
 #: admitted invocation shape. This is what makes a `deployed-passive` (or
@@ -119,14 +119,14 @@ _ARGV_MODES: frozenset[tuple[str, ...]] = frozenset({
 })
 
 #: The lockfile-record keys this dispatcher recognizes for a runner or policy
-#: destination it binds (B2, shared contract with ``api-web-security-modules``
+#: destination it binds (shared contract with ``api-web-security-modules``
 #: / ``security-verification-activation``). ``{src, dst, verbatim, hash}`` are
 #: the install-time required fields; ``living_state`` / ``base_cache`` /
 #: ``base_hash`` are the optional ones ``write_install_lockfile`` may add.
 #: Any OTHER key on a record this dispatcher reads is refused -- DEGRADED,
 #: naming the key -- never ignored. Recorded gap, not closed here:
 #: ``bootstrap/verify_integrity.py:63-111`` reads the same record shape with
-#: ``rec.get(...)`` and ignores an unrecognized key; that half of B2 is a
+#: ``rec.get(...)`` and ignores an unrecognized key; that half is a
 #: lasting truth neither plan in this pair closes (see this module's shipped
 #: doctrine).
 _ALLOWED_RECORD_KEYS: frozenset[str] = frozenset({
@@ -139,12 +139,12 @@ _ALLOWED_RECORD_KEYS: frozenset[str] = frozenset({
 #: (an engine-only constant this shipped, adopter-tree file cannot import; an
 #: adopter checkout never has a ``bootstrap/`` directory). Carries exactly the
 #: two policy destinations of the two ``policy_binding_mode: living_state``
-#: entries admitted below (api-web-security-modules Chunk G, rows G1/G2),
+#: entries admitted below,
 #: added in the SAME commit as those registry entries, per this constant's
 #: own standing rule: a future capability plan that earns living-state status
 #: adds its policy destination here in the SAME commit that adds its
 #: registry entry -- never before, never separately. The Maintainer ratified
-#: the living-state narrowing (B3) before either landed; row F2
+#: the living-state narrowing before either landed; the policy row
 #: (``701be3a``) added these same two destinations to the DIFFERENT,
 #: engine-side ``_LIVING_STATE_DSTS`` in ``bootstrap/_scaffold/lockfile.py``
 #: (what makes the install lockfile mark them ``living_state: true`` in the
@@ -227,7 +227,7 @@ def _safe_render(text: str) -> str:
 class RegistryEntry:
     """One admitted local security-verification leg.
 
-    Eleven fields, apparatus-level only (B1): no ``principal``, no ``scope``
+    Eleven fields, apparatus-level only: no ``principal``, no ``scope``
     -- those are child-policy semantics with no apparatus field, by decision.
     Every field is REQUIRED and has NO default (a defaulted binding mode is
     the *silently changed mode* failure a required field forecloses); the
@@ -235,7 +235,7 @@ class RegistryEntry:
     (``TypeError: __init__() missing ... argument: '<field>'``) and refuses
     an unrecognized keyword and NAMES it too (``unexpected keyword argument
     '<name>'``) -- both are the constructor's own closed-vocabulary behavior
-    (T5, T44a), not custom code layered on top. ``frozen=True`` additionally
+    rather than custom code layered on top. ``frozen=True`` additionally
     makes any post-construction assignment raise (T40) -- mode-immutability
     at the object level.
     """
@@ -297,18 +297,18 @@ class RegistryEntry:
 # for the exact evidence mode, a complete lockfile mapping group, schema and
 # precedence tests, a Security Review of the registry change, and -- for a
 # ``living_state`` policy binding -- execution evidence for the compensating
-# controls that replace the digest (additionally gated on B3: Maintainer
+# controls that replace the digest (additionally gated on Maintainer
 # ratification of the living-state narrowing). No entry met that bar until
 # now.
 #
-# Two entries admitted (api-web-security-modules Chunk G, rows G1/G2):
+# Two entries admitted:
 # ``api-access-security`` and ``web-hosting-security``, the two capabilities
 # this plan pair ships. Both clear every gate above: the accepted proposal,
 # this reviewed plan (with both declared review rounds landed), the complete
 # lockfile mapping group (Chunk F), this module's own schema and precedence
 # tests (below), the Security Review of this registry change, and -- because
 # both declare ``policy_binding_mode: living_state`` -- the Maintainer's
-# ratification of the living-state narrowing (B3) plus execution evidence for
+# ratification of the living-state narrowing plus execution evidence for
 # its compensating controls (``_LIVING_STATE_DSTS`` above carries both policy
 # destinations, added in this SAME commit). No other entry meets the bar; the
 # registry admits exactly these two.
@@ -399,7 +399,7 @@ def _load_lockfile(path: Path | None = None) -> dict[str, Any] | None:
 #: `installed & set(_REGISTRY)`. The fail-closed signal this dispatcher must
 #: preserve is: a module that is DECLARED here, IS installed, but has NO
 #: admitted `_REGISTRY` entry (an unsupported capability at this Cairn
-#: version) is still SELECTED and still reports INCOMPLETE (T3's contract).
+#: version) is still SELECTED and still reports INCOMPLETE.
 #: Filtering on registry membership instead would make that exact case
 #: silently invisible -- no leg, no INCOMPLETE, nothing -- which is the
 #: property this set exists to protect. Do not "simplify" this to a registry
@@ -608,10 +608,10 @@ def _run_child(
 ) -> tuple[int | None, bytes, bool, bool]:
     """Launch the admitted child. Returns ``(exit_code, stdout_bytes,
     timed_out, overflowed)``. The child's argv is EXACTLY the registry
-    vector (T6); its environment is EXACTLY the closed allowlist (T7); its
+    vector; its environment is EXACTLY the closed allowlist; its
     stdout/stderr are captured to a neutral temp directory, never a pipe an
-    unbounded child could fill before being read (T8); it is killed on
-    timeout (T9) or byte-cap overflow (T8)."""
+    unbounded child could fill before being read; it is killed on
+    timeout or byte-cap overflow."""
     argv = [sys.executable, "-I", str(runner_path), *entry.argv_mode]
     env = _build_child_env()
     with tempfile.TemporaryDirectory(prefix="cairn-secver-") as td:

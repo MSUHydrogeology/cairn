@@ -20,7 +20,7 @@ Layout
   **and** an independently-parameterised throwaway *trusted-templates* tree.
   The two are separate roots on purpose: nothing the target writes can reach
   the trusted side.
-* **The F1 golden oracle** (:data:`PRE_CHANGE_FINDINGS`) is a committed
+* **The golden oracle** (:data:`PRE_CHANGE_FINDINGS`) is a committed
   literal -- the finding set the **pre-change** detector produced over every
   matrix row, generated once by running the engine at the named commit in a
   throwaway ``git worktree`` (see :data:`PRE_CHANGE_ORACLE_COMMIT`) and pasted
@@ -348,7 +348,7 @@ def project(findings: list[dict[str, Any]], root: Path) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
-# F1 golden oracle -- COMMITTED LITERAL, generated at PRE_CHANGE_ORACLE_COMMIT
+# Golden oracle -- COMMITTED LITERAL, generated at PRE_CHANGE_ORACLE_COMMIT
 # in a throwaway `git worktree` under the canonical interpreter (3.13.13).
 # Do not regenerate from the working tree; do not compute at test time.
 # ---------------------------------------------------------------------------
@@ -494,7 +494,7 @@ def install_forked_target(
 
     ``tools/intent.py`` is in ``install_manifest(modules=None)`` -- the **full
     published catalog** -- even though this install selects no modules, which is
-    exactly the A1 property ``trusted_upstream`` pins: the trusted map is not
+    exactly the property ``trusted_upstream`` pins: the trusted map is not
     narrowed by anything the target says about itself.
     """
     from bootstrap.scaffold import (  # noqa: PLC0415
@@ -558,7 +558,7 @@ def upgrade_stderr(target: Path, capsys, *extra: str) -> tuple[int, str]:
 
 def test_node_b2_remediation_names_no_destructive_or_no_op_action(
         tmp_path) -> None:
-    """B2 -- Chunk B. ``format_forked_facade_warning``'s remediation string
+    """``format_forked_facade_warning``'s remediation string
     carries neither branch it shipped with pre-Chunk-B: **"remove the dormant
     engine package"** raises ``RuntimeError`` in ``tools/intent.py``'s
     ``_load_engine()`` and disables work-intent coordination outright;
@@ -647,7 +647,7 @@ def test_node1_identical_facade_emits_no_note_despite_hash_ne_base_hash(
 def test_node2_source_version_skew_annotates_and_never_adds_a_finding(
         tmp_path) -> None:
     """Node 2 -- FLIPS AT Chunk C. Skew is an **annotation**: the line fires,
-    the finding set does not grow (F1), and a byte-identical facade is still
+    the finding set does not grow, and a byte-identical facade is still
     suppressed.
 
     Perturbation: delete the skew-annotation branch.
@@ -687,7 +687,7 @@ def test_node3_unsafe_source_shapes_refuse_and_retain(tmp_path, shape) -> None:
     wrongly *suppressed* -- the node fails on suppression, not on a lost
     message.
 
-    Perturbation: delete C2's ``_assert_safe_write`` call (or replace the
+    Perturbation: delete the ``_assert_safe_write`` call (or replace the
     source-side ``_guarded_read`` with a bare read).
     """
     case = build_case(tmp_path / f"n3-{shape}", "n3", source_shape=shape)
@@ -716,7 +716,7 @@ def test_node4_no_trusted_row_or_no_source_file_stays_unconfirmed(
 
 @pytest.mark.parametrize("kw", [{"planted": True}, {"decoy": True}])
 def test_node5_target_supplied_lookalike_is_not_suppressed(tmp_path, kw) -> None:
-    """Node 5 -- FLIPS AT Chunk C. [IDN4]'s regression proper.
+    """Node 5 -- the regression proper.
 
     ``planted``: the target carries its own ``templates/`` directory holding a
     file byte-identical to its forked facade and re-points its lockfile ``src``
@@ -743,7 +743,7 @@ def test_node5_target_supplied_lookalike_is_not_suppressed(tmp_path, kw) -> None
 ])
 def test_node6_engine_directory_probe_decides_both_layouts(
         tmp_path, kw, expect) -> None:
-    """Node 6 -- green before and after (the candidate gate is unchanged, F1).
+    """Node 6 -- green before and after (the candidate gate is unchanged).
     Facade + populated engine dir -> a finding; facade + no engine dir, engine
     dir with no ``.py``, or a non-``.py`` ``dst`` -> none.
 
@@ -778,7 +778,7 @@ def test_node6_engine_directory_probe_decides_both_layouts(
 
 
 def test_node11_recorded_hash_never_decides_the_verdict(tmp_path, capsys) -> None:
-    """Node 11 -- FLIPS AT Chunk C/D (**F5, the operand**). A record whose
+    """Node 11 -- the operand case. A record whose
     ``hash`` equals the trusted template's hash while the on-disk bytes differ
     still produces a finding -- at **both** callers. This is the proposal
     Response's Reproduction B, re-run against real code.
@@ -870,7 +870,7 @@ def test_node13_unsafe_destination_shapes_refuse_and_retain(
     Perturbations -- **two, one per half**, both against the hazard rather than
     this node's own body, and both run:
 
-    * *retention/refusal*: replace C3's destination-side ``_guarded_read`` call
+    * *retention/refusal*: replace the destination-side ``_guarded_read`` call
       with a bare ``(target_root / dst_rel).read_bytes()``. The canary is read,
       the comparison comes out equal, the finding is suppressed, and ``one()``
       goes red on all four shapes.
@@ -930,10 +930,10 @@ def test_node13_unsafe_destination_shapes_refuse_and_retain(
 
 
 def test_node14_f1_finding_set_against_the_committed_oracle(tmp_path) -> None:
-    """Node 14 -- **the F1 guard**. Over every matrix row:
+    """Node 14 -- **the oracle guard**. Over every matrix row:
 
     * with a trusted upstream, the finding set is a **subset** of the committed
-      pre-change literal (F1: the new detector never reports more);
+      pre-change literal (the new detector never reports more);
     * with ``upstream=None`` it is **exactly** the pre-change literal (every
       degradation path retains).
 
@@ -958,7 +958,7 @@ def test_node14_f1_finding_set_against_the_committed_oracle(tmp_path) -> None:
 
 
 def test_branch_to_branch_consistency_is_not_the_f1_guard(tmp_path) -> None:
-    """A consistency aid, **explicitly not** the F1 guard: the trusted branch's
+    """A consistency aid, **explicitly not** the oracle guard: the trusted branch's
     findings are a subset of the ``upstream=None`` branch's, so the two branches
     cannot disagree about *which records are candidates*.
 
@@ -974,7 +974,7 @@ def test_branch_to_branch_consistency_is_not_the_f1_guard(tmp_path) -> None:
 
 def test_node15_r9_relabelled_src_with_clean_bytes_emits_no_note(
         tmp_path) -> None:
-    """Node 15 -- FLIPS AT Chunk C (**R9**). A relabelled ``src`` whose disk
+    """Node 15 -- a relabelled ``src`` whose disk
     bytes match the trusted upstream produces **no note at all**: the
     annotation's reach is exactly the complement of the change's success.
 
@@ -1037,7 +1037,7 @@ def test_node18_widened_layering_assertion_still_discriminates(
 
 
 def test_the_three_note_shapes_render_distinctly(tmp_path) -> None:
-    """C5 -- the note kind is a **field on the finding**, not a reader's guess,
+    """The note kind is a **field on the finding**, not a reader's guess,
     and ``format_forked_facade_warning`` renders all three shapes: the
     confirmed ``differs-from-upstream`` note (naming the upstream it compared
     against), the ``unconfirmed`` note (saying the difference is from the
@@ -1073,7 +1073,7 @@ def test_the_three_note_shapes_render_distinctly(tmp_path) -> None:
 # ===========================================================================
 
 def test_node9_f4_a_caller_cannot_omit_the_comparison_source(tmp_path) -> None:
-    """Node 9 -- FLIPS AT Chunk C (**F4**). A positional two-argument call is a
+    """Node 9 -- a positional two-argument call is a
     ``TypeError``: a caller that cannot say where its comparison bytes come
     from must not get a silent answer. ``upstream`` is keyword-only *and*
     has no default, so neither omitting it nor passing it positionally works.
@@ -1099,7 +1099,7 @@ def test_node10_the_two_callers_differ_on_the_opt_out_and_on_to_ref(
     """Node 10 -- FLIPS AT Chunk D. ``verify_integrity`` honours
     ``fork_acknowledged``; ``cmd_upgrade`` does **not** (upgrade is the active
     decision point, so the tree gets no suppression lever there); and
-    ``--to <ref>`` yields ``unconfirmed`` (**R3**) because the templates for
+    ``--to <ref>`` yields ``unconfirmed`` because the templates for
     that ref are not on disk.
 
     Perturbation: make ``cmd_upgrade`` honour ``fork_acknowledged``.
@@ -1131,16 +1131,16 @@ def test_node10_the_two_callers_differ_on_the_opt_out_and_on_to_ref(
 
 
 @pytest.mark.parametrize("overrides", [
-    {"hash": None},                                   # O6 -- hash removed
-    {"hash": "sha256:" + "b" * 64},                   # O6 -- hash rewritten
-    {"base_hash": "sha256:" + "c" * 64},              # O6 -- base_hash rewritten
-    {"src": "modules/default-on/lifecycle_metrics.py"},   # O7 -- src relabelled
-    {"src": "../../../../etc/hostname"},              # O7 -- src escaping
-    {"fork_acknowledged": True},                      # O8 -- the opt-out
+    {"hash": None},                                   # hash removed
+    {"hash": "sha256:" + "b" * 64},                   # hash rewritten
+    {"base_hash": "sha256:" + "c" * 64},              # base_hash rewritten
+    {"src": "modules/default-on/lifecycle_metrics.py"},   # src relabelled
+    {"src": "../../../../etc/hostname"},              # src escaping
+    {"fork_acknowledged": True},                      # the opt-out
 ])
 def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
         tmp_path, capsys, overrides) -> None:
-    """Node 16 -- FLIPS AT Chunk D (**F5, parametric**). On a record whose disk
+    """Node 16 -- the parametric operand case. On a record whose disk
     bytes differ from trusted upstream, mutating ``hash``, ``base_hash``,
     ``src`` or ``fork_acknowledged`` in turn leaves the finding standing at the
     ``cmd_upgrade`` caller.
@@ -1168,14 +1168,14 @@ def test_node16_f5_parametric_no_lockfile_field_can_suppress_at_upgrade(
 
 
 def test_node17_a1_trusted_upstream_takes_only_a_cairn_root(tmp_path) -> None:
-    """Node 17 -- FLIPS AT Chunk D (**A1, structurally**).
+    """Node 17 -- the trusted-map property, structurally.
     ``trusted_upstream`` takes exactly one parameter (``cairn_root``) and its
     ``src_for_dst`` is the destination -> source map of
     ``install_manifest(modules=None)`` -- the full published catalog, not a
     subset chosen by anything the target says.
 
     Perturbation: add a ``modules`` parameter, or narrow the map -> this node
-    fails. It is the closest thing to a *construction* for A1; the rule itself
+    fails. It is the closest thing to a *construction* for that rule; the rule itself
     remains a written rule enforced by this node and by review, and this plan
     does not claim otherwise.
     """
@@ -1201,8 +1201,8 @@ def test_node17_a1_trusted_upstream_takes_only_a_cairn_root(tmp_path) -> None:
 
 
 # ===========================================================================
-# Node 8 (F3) -- the advisory never changes an exit code.  Green before and
-# after the change; it is also R5's mechanical trigger: the moment someone
+# Node 8 -- the advisory never changes an exit code.  Green before and
+# after the change; it is also the mechanical trigger: the moment someone
 # makes the advisory blocking, this node fails and the target-controlled
 # fork_acknowledged opt-out must be re-decided in the same change.
 # Perturbation: append a string to `violations` in verify_integrity's advisory
