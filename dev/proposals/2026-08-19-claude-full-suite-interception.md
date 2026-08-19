@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change adds an **executable path**
 (a harness hook the tool runs before a command) and a new routing tool. It
 touches no surface `AGENTS.md` names high-risk, but "executable path" is a
@@ -672,3 +672,120 @@ Part 1 is not optional.
   with fail-closed refusal rules and code-controlled gate argv.
 * **Naming the hook in the shipped `templates/core/VENDOR.md`** — withdrawn (X6);
   it stays a vendor-neutral placeholder.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `c6ef10a8814fcb7f8cafd38cb5e1f10b9b743189`
+Target: Revision 1, limited to X1-X6 and their replacement contract
+Prior findings: X1-X6 in the Codex External review committed at `12293dc73f85357d9b67fb86da698247be65580c`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** X1, X4, X5, and X6 are substantively closed: the hook is
+now treated as full-permission code, leaf verification returns to the spawner,
+Boundary B is full, and the wrapper/evidence claims are honest. The newest
+surface -- the machine-readable mapping -- still lacks a plan-selection binding
+and cannot survive append-only revision as written. The role predicate also uses
+one field too many. These are local contract fixes, not a challenge to the
+three-part design.
+
+### Findings
+
+**[Y1 - BLOCKING, X2 continuation] The hook has no input that identifies “the
+active plan.”** A `PreToolUse` record supplies session, cwd, role, tool, and
+command fields; it does not supply a Cairn plan stem. This repository can have
+more than one active plan, as the current board demonstrates. Work-intent claims
+also do not bind a Claude session id to a plan in a way this hook can safely
+derive. The top-level behavior therefore cannot “print the plan's Boundary A
+block if one is declared,” and concentration data has the same unstated source
+problem.
+
+Bind the context explicitly or narrow the message. A sufficient contract is a
+validated `CAIRN_PLAN=<stem>` session value owned by the spawner, with absent,
+ambiguous, inactive, traversal-shaped, or mismatched values producing generic
+guidance rather than a guessed mapping. Alternatively, have the hook print only
+`tools/verify.py --plan <stem>` with a placeholder and let the owner supply the
+stem. If concentration figures remain in the message, name their exact file,
+schema, freshness rule, and absent/malformed disposition; the current
+gitignored `dev/measurement/suite-cost.md` is not named in Revision 1.
+
+**[Y2 - BLOCKING, X2 continuation] The proposed block conflicts with both
+append-only revision and the shipped template's audience.** “More than one block
+in an artifact refuses” means a reviewed plan can never append a corrected
+mapping: the old block remains by design, so the second complete current block
+permanently bricks the reader. The displayed syntax is YAML-like but no parser
+or fence identity is specified under Cairn's standard-library-only contract.
+
+Define append-only selection semantics, such as a uniquely identified complete
+block in each revision with the last valid revision superseding prior blocks;
+duplicate blocks **within that revision** may refuse. Use a structured stdlib
+format with an exact fence marker and closed schema rather than an ad hoc YAML
+subset. Then resolve the adopter mismatch: `templates/core/dev/plans/_template.md`
+cannot require entries under Cairn-specific `bootstrap/tests/`, and this proposal
+ships no adopter router or gate registry to consume the block. If the block stays
+in both templates, make its admitted test roots and fixed gate registry a
+project-configured contract and ship the consumer. A self-host-only v1 must say
+so explicitly and must not place an inert Cairn-specific block in the adopter
+template.
+
+The “still owed” rendering also needs a source. The reader cannot discover prose
+obligations omitted from its block. Add an explicit non-executed `manual` /
+`still_owed` field, or print the honest generic statement that obligations
+outside the block require reading the plan.
+
+**[Y3 - BLOCKING, X4 continuation] `agent_type` does not distinguish a
+subagent.** The official common-input schema says `agent_id` is present **only**
+inside a subagent call, while `agent_type` is also present for a top-level
+session launched with `--agent`. Revision 1 describes a subagent as
+“`agent_id` / `agent_type` present,” which can route a top-level owner away from
+its own verification. Use presence of a valid `agent_id` as the role predicate;
+record `agent_type` only as descriptive context. Test a plain top-level call, a
+top-level `--agent` call (`agent_type` only), and a real subagent shape
+(`agent_id` plus `agent_type`). Primary schema, checked 2026-08-19:
+https://code.claude.com/docs/en/hooks#common-input-fields
+
+**[Y4 - SUBSTANTIVE, X1/X3 continuation] The claimed bounds still have no
+values or exact settings artifact.** “Single-digit seconds,” “inside budget,”
+“enumerated canonical forms,” and “accepted interpreter provenance” leave the
+implementation to choose the security/performance contract after review.
+Include the exact `.claude/settings.json` hook object, timeout, executable and
+arguments; name the interpreter/shebang trust decision; enumerate the blocked
+canonical forms; and set a numeric no-match latency criterion with measurement
+conditions. The plan may tune implementation details, but the review needs to
+know which commands are stopped and how long every unrelated Bash call may be
+delayed.
+
+Also replace “refuse once” unless state is deliberately introduced. A fresh
+hook process has no specified memory; the simpler and safer behavior is to
+refuse every matching invocation that lacks the explicit override.
+
+### Closed findings
+
+X1 is closed by the rewritten S1/S5, joint settings/script review, and high-risk
+registration. X4 is closed in policy: subagents return verification to the
+spawner; Y3 corrects only the discriminator. X5 is closed by full Boundary B
+with the override. X6 is closed by withdrawing “recorded” and keeping the
+shipped vendor wrapper untouched. X3's fail-open small-grammar direction is
+correct; Y4 asks for the actual admitted forms and bounds.
+
+### Coverage
+
+**Covered:** Revision 1 in full; official Claude Code common hook fields,
+subagent propagation, matcher, timeout, exit, and permission behavior current on
+2026-08-19; the live lifecycle board; both plan templates; active plans' actual
+append-only amendment shapes; current `dev/measurement/` inputs; and the root
+and shipped vendor wrappers.
+
+**Not covered:** no hook, settings file, mapping parser, or router exists, so I
+did not run a live harness invocation, measure latency, mutate a mapping block,
+or execute the Cairn suite. The separately owed implementation Security Review
+remains undischarged by this proposal review.
+
+**Next round:** limited to Y1-Y4. Bind or remove automatic plan selection,
+make the structured block append-only-safe and audience-correct, use `agent_id`
+as the subagent predicate, and state the exact settings/grammar/time bounds.
