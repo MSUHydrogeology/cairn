@@ -54,7 +54,7 @@ the stated method and is recorded here rather than absorbed silently.
 | `tools/lifecycle_planner.py` + twin | `C0` | The Unicode C0 control-character block, in a rule about which code points are refused. |
 | `tools/lifecycle.py` + twin | `H2` | Markdown heading level, as above. |
 | `tools/lifecycle.py` + twin | `E1`, `S12`, `CF3` | **Examples of the pattern the code matches**, in `#: A bracketed finding id -- \`[E1]\`, \`[S12]\`, \`[CF3]\`, \`[M6-R]\``. The module parses finding ids, so naming their shapes is the docstring doing its job. |
-| `tools/lifecycle.py` + twin | `S1`, `S2`, `R2`, `R6`, `R7`, `R3` | **Inside a byte-pinned security fence.** Five lines sit within `_probe_interpreter` / `_resolve_interpreter` / `_warn_stale_once`, which `bootstrap/tests/test_lifecycle_brief.py` pins byte-and-AST-identical. `AGENTS.md` makes the local interpreter binding a Security-Review surface, and the pin's own message says a change "STOPS for a new Security Review". Re-pinning is that review's commit, not this pass's. Revised and then **reverted** when the fence caught it. |
+
 
 ---
 
@@ -124,3 +124,38 @@ for a coordinate.
 pre-existing failures. That is an improvement and it was incidental, not aimed
 at -- but it moves a baseline other records cite, so it is stated rather than
 left for someone to rediscover as an unexplained drift.
+
+---
+
+## Blocked — dead coordinates this pass could not remove
+
+**These are not keeps.** They are the same archived-series coordinates the pass
+removes everywhere else; they remain in the code only because the enclosing
+symbols are byte-pinned. Recording them as keeps would make deferred work look
+dispositioned, so they are listed separately and counted separately.
+
+| File | Line | Text | Coordinate |
+|------|-----:|------|------------|
+| `tools/lifecycle.py` + twin | 436 | `binary runs (S2).` | `S2` |
+| `tools/lifecycle.py` + twin | 477 | `Resolve-don't-bake (Decision 6 / R3): ...` | `R3`, `Decision 6` |
+| `tools/lifecycle.py` + twin | 481 | `**The trust-root contract, corrected on the record (S1).**` | `S1` |
+| `tools/lifecycle.py` + twin | 505 | `later used to run (R7) -- ...` | `R7` |
+| `tools/lifecycle.py` + twin | 535 | `# warning -- not "caught" by any fatal check (finding 1; corrected R2/R6).` | `R2`, `R6`, `finding 1` |
+
+**Ten occurrences across two files** (five lines per twin).
+
+**Why they are blocked.** All five sit inside `_probe_interpreter`,
+`_resolve_interpreter` or `_warn_stale_once`, which
+`bootstrap/tests/test_lifecycle_brief.py` pins byte-and-AST-identical to guard
+the local interpreter binding. `AGENTS.md` lists that binding as a high-risk
+surface, and the pin's own failure message says a change *"STOPS for a new
+Security Review."* On this surface the bytes are the contract, so a comment edit
+re-opens the review; re-pinning belongs to that review's commit, not to this pass.
+
+**What unblocks them.** A Security Review of the interpreter binding that
+re-derives the four digests in its own commit. Until then the coordinates stand.
+
+**This is deferred scope, not completed scope**, and the plan states *"No revival
+row is created ... nothing is deferred."* That claim no longer holds for these
+five lines, and the discrepancy is the Maintainer's to resolve rather than this
+ledger's to absorb.
