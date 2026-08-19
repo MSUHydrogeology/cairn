@@ -1092,6 +1092,34 @@ point rather than being copied into another backlog.
   for non-text module files.
 
 **[TRU / VER] Security apparatus**
+* **[TRU-4] The frozen set does not cover a repository-root `conftest.py`**
+  *(found 2026-08-19 while scoping suite-cost instrumentation; not yet
+  proposed)* — `_frozen_files` in `bootstrap/tests/_gate_manifest.py` discovers
+  the frozen surface from five globs: `bootstrap/*.py`,
+  `bootstrap/tests/**/*.py`, `bootstrap/tests/fixtures/**/*`, `scripts/*.py`,
+  and `templates/modules/**/*.py`. A `conftest.py` placed at the repository
+  root matches none of them, yet pytest loads it on every invocation this
+  project actually uses. Verified by probe on 2026-08-19: a root `conftest.py`
+  printing from `pytest_configure` fired under both `pytest
+  bootstrap/tests/test_python_floor.py` and `pytest bootstrap/tests`, with
+  `rootdir` resolving to the repository root; the probe was removed immediately
+  and never committed. This matters because `bootstrap/tests/conftest.py` **is**
+  frozen, and for precisely the reason that applies here — a conftest defines a
+  gate's pass/fail semantics, and that file carries the release-mode outcome
+  rule that can set `session.exitstatus`. A root conftest has the same power
+  over the same session with none of the coverage, so the frozen set currently
+  asserts an authority it does not hold. Adjacent surfaces share the shape and
+  each needs its own disposition rather than being assumed in or out: a root
+  `pytest.ini` / `pyproject.toml` / `tox.ini` / `setup.cfg` — **none exists
+  today**, so the suite runs with no ini file and an inferred `rootdir`, and
+  adding one would presently be an unreviewed act — and the `PYTEST_PLUGINS` /
+  `PYTEST_ADDOPTS` environment variables, which cannot be frozen but whose
+  absence a release run could assert. *Trigger:* the next change to the
+  `_frozen_files` globs, or sooner — this is a live gap, not a latent one.
+  Closing it edits `_gate_manifest.py`, itself frozen, so the fix costs a gate
+  re-anchor; scope it to be worth that. Related: the end-gate frozen-set
+  decision under **[BND] Scaffold / engine**, which asks the same authority-set
+  question about the engine packages.
 * **[VER-4 / TRU-3] Dependency-advisory evidence tightening** *(deferred
   2026-08-05 from `dependency-advisory-coverage`)* — v1 reports the complete
   validated partition for each run but stores no integrity-covered residual
