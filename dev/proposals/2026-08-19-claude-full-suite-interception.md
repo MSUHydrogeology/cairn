@@ -13,7 +13,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Assurance path**: **high-assurance** — the change edits
 `bootstrap/tests/conftest.py`, which is gate-frozen and already carries the
 release-gate outcome rule, and it can **refuse to run the suite**. *(Metadata
@@ -2127,3 +2127,59 @@ is outside the frozen set.** The `[TRU-4]` gap is neither created nor closed.
   file leaves 114 files and is correctly refused. Replaced by an invariant stated
   in final-breadth terms on both sides of the 40-file boundary, so no later
   implementation can read the table as licence to parse selectors.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: none
+
+Reviewed commit: `399e56f3614562ee7db4a3d0621c6e824f77688d`
+Target: Revision 5, limited to Z5-Z6 and their replacement contract
+Prior findings: Z5-Z6 in the Codex External review committed at
+`37b90e692ae00160313808f0e82aa4dc47fbdc36`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: SHIP.** Revision 5 closes both remaining findings. The proposal now
+gives an existing pytest failure precedence over its cost-control refusal and
+defines breadth solely from the final selected file set, without reviving
+command-shape parsing. The current contract is coherent and ready for the
+Maintainer's Decision.
+
+### Adjudication
+
+**Z5 is closed.** The refusal is conditioned on clean collection, with
+`session.testsfailed == 0` as the minimum bound and the executable plan required
+to account for any additional stop/fail state it consults. The evidence contract
+now compares guarded and control behavior for 41 valid files plus a syntax
+error: exit 2 and the collection diagnostic must survive, while the refusal
+message must be absent. I reproduced the decisive behavior on Python 3.13.13: a
+guard using this predicate observed `testsfailed == 1` and preserved exit 2; a
+fresh clean 41-file run observed zero failures and refused with exit 4.
+
+**Z6 is closed.** The evidence table no longer promises that the presence of a
+selector makes a run narrow. Both allow and refuse cases are stated in terms of
+the final number of distinct selected files, including `--ignore`, `-k`, `-m`,
+and `PYTEST_ADDOPTS` cases on the appropriate side of the 40-file boundary.
+That matches the proposed `session.items` mechanism and removes the
+implementation incentive to infer intent from command grammar.
+
+The explicit section inventory also confirms that Revision 5 carries the full
+Revision 4 contract forward. The accepted residuals remain accurately bounded:
+`--noconftest` bypasses the prompt, role-aware routing is documentary rather
+than enforced, humans are also refused, overrides are not durably recorded, and
+already-failed broad collections intentionally receive no cost prompt.
+
+### Coverage
+
+**Covered:** Revision 5 in full; Z5-Z6 against their prior contracts; the
+carried-forward section inventory; canonical Python 3.13.13 probes for a
+41-file clean collection and a 41-file-plus-syntax-error collection; and the
+previously measured broad `--ignore` case.
+
+**Not covered:** no implementation exists, so this review did not run the full
+suite, inspect implementation bytes, execute the release chain, or perform the
+re-anchor. The declared External plan review and independently triggered
+Security Review remain required.
