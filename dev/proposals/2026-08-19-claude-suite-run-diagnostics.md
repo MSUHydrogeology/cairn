@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write and a subprocess invocation to every test session**,
@@ -19,10 +19,11 @@ attacked *how long one run takes*; this measures it continuously);
 [boundary-b-bounding-clause](archive/2026-08-12-claude-boundary-b-bounding-clause.md)
 proposal (whose bounded mode this instruments); `dev/PLANNING.md` **[TRU-4]**,
 the frozen-set gap recorded at `cf8bed7`.
-**Plan review**: required(**Internal**) — contingent on the External proposal
-review recording `Plan readiness: READY`. A **Security Review** of the
-implementation is owed on its own trigger regardless of that field, because the
-change adds a write path and a subprocess to a gate-frozen file.
+**Plan review**: required(**External**) — the External proposal review recorded
+`Plan readiness: DISTINCT REVIEW REQUIRED` at `61e1647`, so the derived plan
+cannot take an inherited fresh-context Internal pass. A **Security Review** of
+the implementation is owed on its own trigger in addition, because the change
+adds a write path to a gate-frozen file.
 
 Proposed paths:
 * `bootstrap/tests/test_suite_ledger.py` -- the hook's own contract tests
@@ -470,3 +471,307 @@ complete current-contract revision. If that revision fixes the executable Git
 boundary and makes every rendered claim derivable from the row schema, it can
 earn `Plan readiness: READY`; the implementation still owes its named Security
 Review and re-anchor ceremony.
+
+## Response -- Claude -- 2026-08-19
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `61e1647`. Four blocking findings, and two of them identify
+defects I introduced rather than gaps I left. E1 and E6 in particular were worth
+the review on their own.
+
+**[E1] accept with modification.** The finding reproduces exactly. In an isolated
+repository I set `core.fsmonitor` to a sentinel script and ran plain `git status
+--porcelain`: the sentinel **fired twice** and git still returned exit 0. So the
+proposed every-session subprocess would execute repository-selected code, and my
+S1 answer — "the status output is only line-counted" — analysed the *output*
+while missing that the *invocation* is the boundary. The modification: rather
+than sterilising the call, **v1 removes the subprocess entirely.** HEAD is read
+directly from `.git/HEAD` and the refs files, which executes nothing; the dirty
+count is **deferred out of v1** with its own revival trigger and its own Security
+Review. This dissolves the boundary instead of guarding it, and it removes the
+`git`-from-`PATH` provenance question the finding also raised rather than
+answering it. I did verify the sterilisation recipe works, so the contract for
+reviving dirty-state is recorded below rather than left to be rediscovered:
+`-c core.fsmonitor=false` blocked the sentinel, with and without
+`GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM` neutralised.
+
+**[E2] accept.** The reader promised two things the row could not derive. Both
+are fixed by the schema below: an explicit `scope` field (`full` / `targeted` /
+`unknown`, fail-conservative) replaces counting rows, and **"per plan" is removed
+from the deliverable** — plan attribution stays manual unless something sets the
+optional label channel, whose absence is `unknown` and never guessed. Concurrency
+is rendered as *"overlapped another recorded top-level session"*, with the
+invisible populations named.
+
+**[E3] accept.** `PIPE_BUF` governs pipes and FIFOs, not regular files; I applied
+it to the wrong object. The revision drops that premise, takes an advisory
+`fcntl.flock` (stdlib, and this is already a POSIX-only claim), checks the
+returned byte count, and — the part that follows from the finding rather than the
+citation — **corrects the failure disposition**, since bytes already written
+cannot be un-written by catching an exception. The 4096-byte cap survives, now
+correctly labelled a bounded-record policy.
+
+**[E4] accept.** The leak is real: a marker left in `os.environ` for the process
+lifetime silently reclassifies a second `pytest.main()` in that interpreter as a
+child. The revision gives the marker a name, a value, ownership, preservation of
+a pre-existing marker, and `finally`-path restoration of an owned one — plus the
+two-sequential-sessions-in-one-interpreter regression, which a nested subprocess
+test would not have caught.
+
+**[E5] accept.** `pytest_runtest_logreport` fires per phase, so my counters would
+have counted a node up to three times — the schema claimed outcomes it could not
+compute. The revision de-duplicates by node id with a stated precedence, adds
+session exit status, collection errors, xpasses and interruption, and stops the
+wall clock before the collector's own work so the instrument stops measuring
+itself.
+
+**[E6] accept, both halves, and the second was my error.**
+
+*The `.gitignore` claim*: correct as stated by the reviewer. The live file
+ignores `dev/measurement/suite-cost.md` and `dev/measurement/snapshots/`; it does
+**not** ignore `dev/measurement/suite-runs.jsonl`. "Already carries the rule" was
+false for the ledger, and the rule is future work the plan must land.
+
+*The nested-pytest figure*: **retracted.** I claimed 73 files across ~78 sites.
+The measurement command was
+`grep -rln '\-m", *"pytest"\|-m pytest\|"pytest"' bootstrap/tests/*.py`, whose
+third alternative is a bare `"pytest"` — it matched every file that so much as
+mentions pytest, which is 115 of them. Re-measured with
+`grep -rln '"-m", *"pytest"' bootstrap/tests/`, the honest figure is **2 files
+and 3 executable argv sites** (`_gate_manifest.py` ×2, `test_security_check.py`
+×1); the other `-m pytest` hits are docstring usage lines that execute nothing.
+The reviewer's 52-files-with-any-subprocess-launcher figure reproduces exactly.
+I have over-counted by a factor of roughly 36 and the guard's stated
+justification was inflated accordingly.
+
+**The guard survives on a better argument, which is the one I should have made.**
+Its necessity was never about volume. A child session measures a *fixture* tree —
+a synthetic repository built under `tmp_path` — and would write a row describing
+that tree as though it were this one. The reader cannot tell such a row apart
+from a real one. **One** contaminating row is sufficient to corrupt the ledger,
+so the guard is required at N=1 and the count never mattered.
+
+## Revision 1
+
+The complete current contract, self-contained. This supersedes the opened
+proposal's design in full; earlier sections stand as immutable history.
+
+### Scope
+
+Make the engine suite record its own cost as a by-product of running, so the
+cost question stops being answered by re-running an eleven-minute suite, and so
+the frequency of full-suite runs becomes observable at all.
+
+**In scope**: two pytest hooks in `bootstrap/tests/conftest.py`; a gitignored
+JSONL ledger; a `.gitignore` rule for it; a reader in `tools/`; one new test
+file; a note in `dev/measurement/README.md`.
+
+**Excluded, deliberately**: any subprocess execution (see *Deferred*); any
+change to doctrine text, the canonical test command, shipped templates, or
+adopter-facing surfaces; any dependency; any enforcement — this measures, it
+never refuses.
+
+### The collector
+
+`pytest_runtest_logreport` accumulates per-node timing and outcome. Nodes are
+keyed by `report.nodeid` and reduced to **one outcome per node** with this
+precedence: an error or failure in any phase → `failed`; otherwise a skip in
+setup → `skipped`; otherwise `xfailed` / `xpassed` when `wasxfail` is present;
+otherwise `passed`. Durations sum across all three phases.
+
+`pytest_sessionfinish` gains one call, **last**, to `_write_ledger_row(session)`.
+
+### The row schema
+
+One JSON object per top-level session, one line:
+
+| field | source |
+|---|---|
+| `ts_start`, `ts_end` | UTC, ISO-8601 |
+| `wall_s` | session duration, clock stopped **before** collector work |
+| `collector_ms` | the collector's own cost, recorded separately |
+| `head` | 40-hex, read from `.git/HEAD` + refs / packed-refs; `null` if `.git` is not a directory |
+| `interpreter` | `sys.version_info` triple |
+| `argv` | normalized `config.args`, repo-relative |
+| `scope` | `full` \| `targeted` \| `unknown` |
+| `label` | `CAIRN_SUITE_LEDGER_LABEL` if set, else `null` — never inferred |
+| `collected` | node count |
+| `passed`/`failed`/`skipped`/`xfailed`/`xpassed` | de-duplicated per above |
+| `collection_errors` | count |
+| `exitstatus` | pytest's final session exit status |
+| `interrupted` | bool |
+| `by_file` | `{path: seconds}`, the 25 most expensive |
+
+**`scope` is fail-conservative.** `full` requires *all* of: `argv` normalizing to
+the suite root; no narrowing option (`-k`, `-m`, `--deselect`, `--lf`, `--ff`);
+the session not stopping early (`-x` / `--maxfail` reached, or interrupted); and
+no collection error. `--quality-gate-shuffle-seed` is explicitly compatible with
+`full`, since a shuffle reorders the set without narrowing it. A recognized
+strict subset is `targeted`. **Anything else — including any unrecognized option
+that could narrow selection — is `unknown`, never guessed.**
+
+### The four guards
+
+1. **Outcome-inert.** The helper is wrapped in `except Exception` and never
+   touches `session.exitstatus`. It runs last, after the release-mode rule that
+   file already carries has decided the exit code.
+2. **Reentrancy, with ownership.** Marker `CAIRN_SUITE_LEDGER_SESSION=1`. At
+   session start: if already present, this is a child — record `owned=False` and
+   write nothing. Otherwise set it and record `owned=True`. In a `finally` path
+   after session finish, **unset it only if owned**; a pre-existing marker is
+   preserved and never removed.
+3. **Containment.** Skip when the resolved ledger directory is under
+   `tempfile.gettempdir()`.
+4. **Release mode.** Skip entirely when `CAIRN_RELEASE_GATE_ACTIVE` is set.
+
+Plus `CAIRN_SUITE_LEDGER=0` to opt out, and a silent no-op when
+`dev/measurement/` is absent.
+
+### Concurrency and durability
+
+Append under an advisory `fcntl.flock(LOCK_EX)`; write one encoded line with a
+single `os.write`; **check the returned byte count**. `O_APPEND` makes
+positioning-at-EOF and the write one step with respect to other writers — that,
+not any byte threshold, is the ordering guarantee. The 4096-byte cap that sets
+`by_file` to 25 entries is a **bounded-record and storage policy**, not an
+atomicity boundary.
+
+POSIX only; **network filesystems are excluded** — `flock` semantics are not
+dependable there, and a ledger on NFS is outside this contract. A regular-file
+`write()` may return short, so a truncated final line is possible and the
+**reader skips it and reports it**, never failing the whole ledger and never
+silently dropping it.
+
+### Failure dispositions
+
+Every path closes toward **doing nothing**: unwritable directory, absent
+`dev/measurement/`, JSON encoding failure, lock contention timeout, missing or
+malformed `.git` — each yields no row and no other effect. There is deliberately
+no degrading path.
+
+**One correction to the opened proposal**: the earlier claim that a full disk
+yields "no row" was too strong. A short write can leave a **partial line** that
+no exception handler can retract. The disposition is therefore *no row **or** a
+truncated row the reader detects and reports* — which is why reader tolerance is
+part of the contract rather than a convenience.
+
+### Public paths and evidence
+
+The public paths are the two hooks, exercised through real pytest sessions in
+`bootstrap/tests/test_suite_ledger.py`, never by calling the helper directly.
+
+| invariant | falsifier |
+|---|---|
+| Exit status never changes | force the helper to raise; compare against a control run with `CAIRN_SUITE_LEDGER=0`. Deleting the `try` must go red. |
+| No child session writes | run a nested pytest; assert the row count is unchanged |
+| Two sequential sessions in one interpreter both write | two `pytest.main()` calls; assert **two** rows (the E4 regression) |
+| A pre-existing marker survives | set the marker externally; assert it is still set afterwards |
+| Release mode writes nothing | set `CAIRN_RELEASE_GATE_ACTIVE=1`; assert no row |
+| `scope` classification | canonical full, shuffle-full, single file, node id, `-k`, collection error, `-x`-truncated — each asserted |
+| Outcome counts survive odd sessions | setup failure, collection failure, xpass, interrupt |
+| A row is ≤ 4096 bytes | worst case from the 25 longest real paths |
+| Truncated line is reported, not fatal | append a deliberately partial line; assert the reader reports and continues |
+
+Standing gates for the touched surface: `test_gate_manifest.py`,
+`test_gate_preflight.py`, `test_security_check.py` (which already pins this
+conftest's release-mode token pair), `test_python_floor.py`.
+
+**Boundary B mode will be `full`** — the change modifies a gate-frozen file and
+lands under a re-anchor ceremony, a trust-ceremony surface on both counts.
+
+### The reader
+
+`tools/suite_cost.py` renders the ledger for a human, and the comprehensibility
+bar stated in the opened proposal stands unchanged: it opens with the
+instruction not to re-run the suite; every figure carries its conditions; no
+bare identifiers; it names its own limits.
+
+Two renderings are constrained by this revision. **Frequency** is reported by
+`scope`, so `full` runs per day is derivable and "per plan" is not offered.
+**Overlap** is reported as *"overlapped another recorded top-level session"*,
+computed from row intervals — never as "another suite was running", because
+release, nested, opted-out, crashed and uninstrumented sessions are invisible to
+the ledger and the phrasing must not imply otherwise.
+
+### Security preflight — revised
+
+**S1.** The collector decides whether to write and what to write. Inputs:
+`os.environ` (three markers), the pytest `session`/`config` objects,
+`tempfile.gettempdir()`, and **direct file reads of `.git/HEAD`, `.git/refs/**`
+and `.git/packed-refs`**. The repository under test supplies the ref bytes and
+the paths in `by_file`. **No input is executed and none steers control flow**;
+ref bytes are shape-validated as 40-hex or discarded to `null`, and paths are
+opaque strings subject only to length capping.
+
+**S2.** Each invariant above names its falsifier. The load-bearing one derives
+its expectation from a control run with the collector disabled, not from the
+collector.
+
+**S3.** Nothing fires it — it is a hook on every non-child, non-release session
+under `bootstrap/tests/`, which is the design: there is no selector to forget.
+The reader is run by a human or the goodnight routine. **Cairn has no CI and
+nothing here runs in one.**
+
+**S4.** Every path lands on *less* authority: failures yield no row, and all four
+guards are skip conditions, so an unrecognized state produces silence. The one
+asymmetry: guards 2 and 3 fail toward *not measuring*, never toward writing into
+a fixture tree.
+
+**S5.** The assumed attacker already runs arbitrary code in the session, since
+the suite executes this repository's own code. **v1 adds no execution
+capability** — the subprocess is gone, which is the substantive change from the
+opened version. It still adds a write to a path derived from the conftest's
+location, so an attacker who can relocate the test tree chooses where a JSON
+line lands; contained by guard 3 and by the row carrying no attacker-chosen
+content beyond file paths. Exit-status influence is closed **by construction**;
+write-path targeting is closed only **by enumeration**.
+
+### Known omissions and deferred work
+
+* **Dirty-tree state is not recorded in v1** — deferred with E1. Revival
+  requires the sterile-invocation contract (fixed `cwd` at the derived root;
+  `GIT_*` steering variables removed; global and system config disposition
+  stated; `core.fsmonitor=false` pinned after any candidate config; a timeout; a
+  regression installing an executable fsmonitor sentinel and proving it never
+  fires; and a stated provenance for the `git` executable) **and its own
+  Security Review**. Verified 2026-08-19 that `-c core.fsmonitor=false` blocks
+  the sentinel.
+* **Release-mode runs are unmeasured** (guard 4), so the ledger under-counts
+  total executions and can never characterise ceremony cost.
+* **Nested child sessions are unmeasured** (guard 2), so per-fixture cost is
+  invisible.
+* **Windows is unclaimed**; `O_APPEND` and `flock` guarantees here are POSIX.
+* **Network filesystems are excluded.**
+* **Plan attribution is manual** unless `CAIRN_SUITE_LEDGER_LABEL` is set.
+* **Hook overhead is unmeasured** until an implementation exists;
+  `collector_ms` exists so it is measured from the first run rather than
+  assumed.
+
+### Withdrawn / superseded commitments
+
+* **The `git status --porcelain` subprocess and the `dirty` field** — withdrawn
+  from v1 entirely, not sterilised, because the invocation is itself an
+  execution boundary a repository-local config controls (E1, reproduced).
+  Revival conditions and the verified sterilisation recipe are recorded under
+  *Known omissions*.
+* **"`PIPE_BUF` (4096 bytes)" as the atomicity justification** — withdrawn; it
+  governs pipes, not regular files (E3). Replaced by `flock` plus a byte-count
+  check; the 4096-byte cap is retained as a bounded-record policy under its
+  correct name.
+* **"a full disk … results in no row"** — withdrawn as too strong; a short write
+  can leave a partial line (E3). Replaced by the corrected disposition plus
+  mandatory reader tolerance.
+* **"full-suite runs per day and per plan"** — the "per plan" half is withdrawn
+  (E2); no proposed field binds a run to a plan. The "per day" half survives only
+  because the new `scope` field makes it derivable.
+* **"`.gitignore` already carries the rule as of `3edf482`/`9e19af7`"** —
+  withdrawn as false for the ledger path (E6); the rule is future work the plan
+  lands.
+* **"73 files spawn a nested `pytest`, across roughly 78 invocation sites"** —
+  withdrawn; the measurement command was defective and the honest figure is 2
+  files and 3 executable argv sites (E6). The reentrancy guard is retained on a
+  correctness argument that holds at N=1.
+* **`Plan review: required(Internal)`** — withdrawn; the reviewer recorded
+  `Plan readiness: DISTINCT REVIEW REQUIRED`, so the derived plan cannot take an
+  inherited fresh-context Internal pass.
