@@ -150,6 +150,38 @@ with the plan's filename stem.
   the only place in the tree still carrying dead coordinates, which is the
   never-finishes shape this plan exists to prevent.
 
+* **[REC] Five plan-review sections owe three of the four basis fields**
+  *(filed 2026-08-19)* — the Internal plan reviews in
+  `comprehension-outlives-the-artifact.md` (lines 573 / 950 / 1319 / 1591 /
+  1998) each carry `Reviewed commit` and none of `Target`, `Prior findings`,
+  `Assurance path`. The four-field basis became mandatory at `76bc678`
+  (2026-08-12), one day before those reviews, so the obligation was in force.
+  `test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`
+  reports 19 violations against the file and is red at HEAD.
+
+  **The implementer cannot fix this, which is the point.** Those three fields
+  are declarations by a reviewer about their own read. Filling them in is
+  inferring another agent's basis and signing it — the failure the attribution
+  rule exists to prevent — and the record is append-only besides. So this is a
+  Maintainer call among three dispositions: **amend** the sections, **append**
+  a correction naming the omission, or **accept** and let it clear when the
+  plan archives (the scan globs `dev/plans/*.md`, live-only, so archiving
+  removes it from the corpus without fixing it).
+
+  **It blocks a second party.** The `ceremony-as-code` implementer cannot file
+  a Boundary B record while the suite is red for reasons outside its change,
+  and its Boundary B refuses bounded mode. Accepting the third disposition
+  means that plan waits on this one's archive.
+
+  **A likely checker defect rides along, separately.** Four of the 19 are a
+  different kind — "declares `**Findings**: raised` but no disposition follows
+  it" — and all three of `ceremony-as-code.md`'s violations are that same kind.
+  Its three miss because its response headings are variants (`## Response to
+  the clearing review`) against a strict `## Response to plan review` prefix;
+  but this plan's five are the exact form, correctly interleaved, and four
+  still fire. Two plans, two different causes, one predicate — the positional
+  logic wants opening. Not owned here.
+
 * **[SEC] Two install-contract artifacts are stale after the tag pass** *(filed
   2026-08-19)* — `bootstrap/tests/fixtures/gate_manifest.json` has **35 frozen
   entries** whose bytes no longer match the tree, and
