@@ -1,32 +1,44 @@
+<!-- claim-check-allow: tools/verify.py -->
+<!-- `tools/verify.py` was a Proposed path through Revisions 1-2 and is
+     WITHDRAWN at Revision 3: the mechanism moved into the suite and no reader
+     is built, so the file will never exist. Its 25 remaining occurrences are
+     all inside append-only review, Response and withdrawal-ledger prose that
+     cannot be edited. The `Proposed paths:` registry that formerly exempted
+     them was retired at Revision 4 per Z4 -- a registry entry must authorize a
+     path that is still coming, and this one is not. This file-scoped directive
+     is the documented equivalent for a path frozen in history. -->
+
 # Intercept the full suite at the point of the run
 
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
-**Assurance path**: **high-assurance** — the change adds an **executable path**
-(a harness hook the tool runs before a command) and a new routing tool. It
-touches no surface `AGENTS.md` names high-risk, but "executable path" is a
-mandatory trigger on its own, and uncertainty resolves upward.
-**Touches**: a new `.claude/settings.json` (harness-specific, currently
-untracked territory); one new hook script; one new tool in `tools/`; one
-vendor-neutral sentence in `AGENTS.md` and its shipped twin; the vendor
-wrapper's `vendor-addendum` slot. **No gate-frozen file, no re-anchor, no
-doctrine rule change.**
+**Status**: awaiting-review
+**Assurance path**: **high-assurance** — the change edits
+`bootstrap/tests/conftest.py`, which is gate-frozen and already carries the
+release-gate outcome rule, and it can **refuse to run the suite**. *(Metadata
+brought into agreement with the operative contract at Revision 4, per Z4. Until
+then this clause still described the withdrawn harness-hook design; the value
+`high-assurance` is unchanged, but its reason is not.)*
+**Touches**: `bootstrap/tests/conftest.py` and `scripts/quality_gate.py` — **both
+gate-frozen, so this carries a re-anchor**; one vendor-neutral sentence in
+`AGENTS.md` and its shipped twin; one new test file. **No `.claude/` artifact, no
+new executable path, no doctrine rule change.**
 **Related**: `dev/PLANNING.md` > "Agent-facing discipline does not survive
 delegation" (routing decided 2026-08-19 at `a81f9fa7`); `dev/PLANNING.md`
 **[TRU-4]** rows on frozen-set coverage (`cf8bed7`, `2ca02e8d`);
 [`2026-08-19-claude-suite-run-diagnostics`](2026-08-19-claude-suite-run-diagnostics.md)
 (the measurement half — this is the enforcement half, and neither depends on the
 other).
-**Plan review**: required(**Internal**) — contingent on the External proposal
-review recording `Plan readiness: READY`. A **Security Review** is owed on its
-own trigger regardless, because the change introduces an executable path that
-runs before every matching command.
+**Plan review**: required(**External**) — every External review so far has
+recorded `Plan readiness: DISTINCT REVIEW REQUIRED`. A **Security Review** is owed
+on its own trigger regardless: the change edits the file that owns the release
+gate's outcome rule and can refuse the suite.
 
-Proposed paths:
-* `tools/verify.py` -- the scope-routing command
-* `.claude/hooks/full_suite_guard.py` -- the interception hook
+*(The `Proposed paths:` registry declared `tools/verify.py` and a hook script.
+Both are withdrawn — see Revision 3 — so the declaration is retired at Revision 4
+per Z4. Those tokens survive only inside append-only history and the withdrawal
+ledgers that retire them.)*
 
 ## Context
 
@@ -1284,6 +1296,22 @@ no grammar, no enumeration, no interpreter spellings, no shell operators, and th
 environment-variable route that structurally defeated the hook is handled
 correctly rather than misclassified.
 
+### Withdrawn / superseded commitments
+
+*(Structural correction appended at Revision 4, per Z4 and the lifecycle
+checker's own prescribed remedy. This heading is mandatory in every complete
+current-contract revision; it was omitted here because the ledger was written
+into `## Revision 3` below instead. The section's prose above is unchanged.)*
+
+* **The `.claude/` hook mechanism in its entirety** — the settings object, the
+  hook script, the command grammar, the blocked-form enumeration and the
+  `agent_id` role predicate. Withdrawn because it binds a single vendor, which
+  the Maintainer's question exposed as fatal to Cairn's vendor-neutrality claim.
+* **The `_gate_manifest.py` glob extension and the `[TRU-4]` scope folding** —
+  withdrawn; with no `.claude/` artifact left to anchor, the addition has no
+  subject.
+* **Role-aware behaviour** — withdrawn; a conftest has no `agent_id`.
+
 ## Revision 3
 
 The complete current contract, self-contained. Supersedes Revision 2 and the
@@ -1577,3 +1605,231 @@ plan/code Security Review remains owed.
 **Next round:** limited to Z1-Z4. Preserve the release environment, move the
 count to `pytest_collection_finish`, state the conftest-suppression residual,
 and make the header plus lifecycle row conform.
+
+## Response -- Claude -- 2026-08-19 (round 3)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `f083007`. **All four reproduce.**
+
+**[Z1] accept.** Verified the chain: `bootstrap/security_check.py::run_quality_gate`
+spawns the gate with an explicit `env=_release_child_env()` carrying the release
+token, and `scripts/quality_gate.py`'s order-independence subprocess passes **no
+`env=`**, so the grandchild *inherits* it. Revision 3 required that script to
+supply `CAIRN_FULL_SUITE=1` without saying how, and an implementation using a
+fresh mapping would **silently drop the release token** — after which a skip,
+xfail or xpass in that grandchild would stop invalidating release evidence. The
+finding is also right that "the quality gate still runs" cannot falsify this: it
+passes either way. Bound below as an additive copy, with a falsifier that
+exercises the real `security_check → quality_gate → pytest` path against a
+release-refused outcome.
+
+**[Z2] accept.** `trylast=True` is a priority *relative to other equal-priority
+implementations*, not a guarantee of running last, so registration order decides
+whether the guard sees the post-filter list. My own probe with a competing
+`trylast` modifier happened to land in an order where the two agreed, which is
+exactly the trap: **the mutation test in Revision 3 proved the current plugin
+set, not the stated property.** `pytest_collection_finish(session)` is documented
+as running after collection has been performed *and modified*, and I confirmed the
+replacement against this repository: **4,455 items across 115 files**, with
+`pytest.UsageError` exiting **4** before any test ran; under
+`-k test_python_floor`, **2 items across 1 file**. It also leaves the existing
+shuffle implementation's ordering untouched.
+
+**[Z3] accept, and the claim was overreaching.** Measured:
+`pytest bootstrap/tests --collect-only -q --noconftest` collects **4,455** tests
+and does not load `bootstrap/tests/conftest.py` — confirmed independently by the
+conftest's own `--quality-gate-shuffle-seed` option becoming unrecognized in the
+same invocation. So "regardless of spelling", "every pytest session", and *"it
+needed the suite, which every harness reaches"* are **false as written**. I accept
+the reviewer's scope judgement: this does not defeat the proposal under a
+cost-control threat model — the override already makes it a deliberation prompt
+rather than a security boundary — so the claim is narrowed, the bypass is recorded
+with a probe, and **no further layer is added to chase the residual.**
+
+**[Z4] accept; corrected in this commit rather than deferred.** The header still
+declared `.claude/settings.json`, a hook script, `tools/verify.py`, "no
+gate-frozen file, no re-anchor" — every one withdrawn at Revision 3. The stale
+`Proposed paths` registry was also why claim checking kept exempting the
+withdrawn router. And the lifecycle checker was right that
+`## Maintainer-directed contract revision -- 2026-08-19 (mechanism)` matches the
+complete-revision vocabulary while carrying no `### Withdrawn / superseded
+commitments`: I wrote that ledger into `## Revision 3` instead. All four are
+repaired above — header metadata brought into agreement and marked as corrected,
+the registry retired, the plan-review posture updated to `required(External)`, and
+the missing ledger appended to the section that owed it via the checker's own
+prescribed remedy. The board now reports **`valid`**.
+
+**Adopted from the scope judgement:** the mechanism is described below as a
+**broad-run guard**, which is what it is. The stem is unchanged. The reviewer's
+drift note is recorded too — the suite is **4,455** tests at the reviewed commit,
+down from the 4,468 cited earlier; the 115-file measurement and the 40-file
+threshold are unaffected.
+
+## Revision 4
+
+The complete current contract, self-contained. Supersedes Revision 3 in full.
+
+### Assurance path
+
+**high-assurance.** Edits `bootstrap/tests/conftest.py` and
+`scripts/quality_gate.py`, **both gate-frozen**, so this carries a re-anchor. It
+adds no executable path and no new file. The trigger is that it can **refuse to
+run the suite**, from the file that already owns the release-gate outcome rule.
+
+### Scope
+
+**In**: a broad-run guard in `bootstrap/tests/conftest.py`; an additive child
+environment in `scripts/quality_gate.py`; one vendor-neutral sentence under
+*Verification boundaries* in `AGENTS.md` and its twin; one new test file.
+
+**Withdrawn and not deferred**: everything under `.claude/`, the command grammar,
+the blocked-form enumeration, the `agent_id` predicate, `tools/verify.py`, the
+Boundary A block, the `_gate_manifest.py` glob extension, the `[TRU-4]` folding,
+and the root `CLAUDE.md` entry. **`templates/core/VENDOR.md` untouched.**
+
+### The guard
+
+In `bootstrap/tests/conftest.py`:
+
+```python
+def pytest_collection_finish(session): ...
+```
+
+**`pytest_collection_finish` is contract, and `trylast` is refused.** A
+`trylast=True` `pytest_collection_modifyitems` is only a priority *among
+equal-priority implementations*; registration order then decides whether the
+guard sees the post-filter list, so it cannot establish "the final item list".
+`pytest_collection_finish` runs after collection has been performed **and
+modified**, and it reads `session.items` — the list itself, not a hook argument.
+
+**The discriminator is distinct test files.** Measured: a full collection spans
+**115** files; the six-file scoped mapping this project actually used spans **6**
+and ran roughly 1,140 tests — so counts barely separate (1,140 against 4,455)
+while file span separates by nearly twenty times.
+
+**Threshold: more than 40 distinct test files.** 6.7× above the observed scoped
+mapping, 2.9× below a full collection. This is a **cost policy, not a statement
+about test completeness**.
+
+**Refusal is `pytest.UsageError`, which exits 4** — measured, against 0 when
+allowed, and it fires before any test runs.
+
+**Exemptions**: `CAIRN_FULL_SUITE=1`; **release mode**, via the module's existing
+strict-equality predicate, never a presence test; and **`--collect-only`**, since
+nothing executes — which also keeps `_gate_manifest.py`'s own collector working.
+
+### The child environment — additive, and this is the whole of Z1
+
+`scripts/quality_gate.py` spawns a full pytest run per seed for the
+order-independence sub-gate, which this guard would refuse. It must therefore
+supply the override — and **the construction is bound, not left to the
+implementation**:
+
+> Copy the **complete parent environment**, set exactly `CAIRN_FULL_SUITE=1` on
+> that copy, and pass the copy to the child.
+
+A fresh mapping carrying only the override would drop
+`CAIRN_RELEASE_GATE_ACTIVE`, which `bootstrap/security_check.py` passes in
+explicitly and the grandchild currently inherits — and a release run would then
+stop refusing skips as evidence while every test still passed. That is a silent
+weakening of the release gate introduced by a cost feature, and the additive copy
+is what prevents it.
+
+### The bypass, recorded rather than claimed away
+
+**A conftest does not reach every pytest session.** Measured:
+`pytest bootstrap/tests --collect-only -q --noconftest` collects **4,455** tests
+without loading `bootstrap/tests/conftest.py`, confirmed by the conftest's own
+option becoming unrecognized in that invocation. `--noconftest` and equivalent
+conftest suppression are therefore a **known bypass**.
+
+This is acceptable **only** because of what the guard is: a deliberation prompt
+under a cost-control threat model, already carrying a documented one-token
+override. It is **not** a security boundary and must never be described as one.
+Revision 3's "regardless of spelling", "every pytest session" and "it needed the
+suite, which every harness reaches" are withdrawn. A probe pins the bypass so
+prose cannot drift back to universal coverage, and **no further layer is added to
+chase the residual**.
+
+### The cost of the mechanism, unchanged from Revision 3
+
+**The role distinction is lost.** A conftest runs in-process with no `agent_id`,
+so the guard can *state* that verification returns to the spawner but cannot
+enforce it differentially, and a subagent setting the override is
+indistinguishable from an owner. Enforcement of the routing decision remains what
+it was: a rule the spawner follows. **And this is a refusal, not a speed bump** —
+it blocks, including a human, until one token is set.
+
+### Evidence
+
+| invariant | falsifier |
+|---|---|
+| A broad collection is refused regardless of spelling *(within the bypass boundary)* | bare run; `cd <repo> && …`; env-prefixed; absolute interpreter; `python3.13 -m pytest`; the canonical Boundary B argv — assert exit 4 in each |
+| A narrowed run is never refused | `-k`, `-m`, a single file, a node id, a six-file mapping, `--ignore`, **and `PYTEST_ADDOPTS='-k …'`** |
+| `collection_finish` sees the final list | register a **competing late modifier** and assert the guard's count equals `len(session.items)` after it — the Revision 3 `trylast` mutation is withdrawn because it proved only the current plugin set |
+| The override allows | `CAIRN_FULL_SUITE=1`; assert exit 0 and full execution |
+| Release mode is exempt | the module's existing predicate at its one recognized value; assert the suite runs; assert `…=0` does **not** exempt |
+| `--collect-only` is exempt | assert the gate manifest's own collector still builds |
+| **The release token survives the gate** | exercise the real `security_check → quality_gate → pytest` path with a **release-refused outcome** (a live skip); assert the guard does not refuse it **and** the release phase is still non-zero. Preserve the existing clean control. "The quality gate still runs" does not discharge this row |
+| The child environment is additive | assert the spawn passes a copy of the parent environment, not a fresh mapping |
+| The bypass is real and bounded | `--noconftest` collects without loading the conftest; assert the guard does not fire, so the residual stays visible |
+| The threshold discriminates | a 41-file selection is refused; a 40-file selection runs |
+
+**Boundary B mode: `full`** — two gate-frozen files under a re-anchor ceremony,
+and work under a security ceremony. Its command carries the override.
+
+### Security preflight
+
+**S1.** The guard reads `session.items`, two environment variables and pytest's
+config. Nothing is executed; no document- or command-supplied string is
+interpreted.
+
+**S2.** The load-bearing falsifier is the competing-late-modifier row: it is what
+distinguishes "the guard sees the final list" from "the guard saw *a* list".
+
+**S3.** Every pytest session over `bootstrap/tests` **that loads Cairn's
+conftest**, in any harness, for any agent and for a human. `--noconftest` is
+outside it, and that boundary is stated rather than assumed.
+
+**S4.** Toward **refusing** — the opposite of the withdrawn design. A guard bug
+blocks verification rather than permitting an unmeasured run. Defensible only
+because the failure is loud, immediate, carries its remedy in the message, and is
+one token away; a reviewer should weigh the reversal.
+
+**S5.** An attacker who can write `bootstrap/tests/conftest.py` already owns the
+suite; this adds no capability and no new surface. **Nothing here is outside the
+frozen set.** The `[TRU-4]` gap is neither created nor closed — it is not touched.
+
+### Known omissions
+
+* **`--noconftest` and equivalent suppression bypass the guard entirely.**
+* **The routing decision is stated, not enforced.**
+* **No durable record of an override** — the sibling proposal's ledger is what
+  would make it countable.
+* **In-process `pytest.main()`** inside a test collects a small fixture suite,
+  falls under the threshold, and is unaffected — deliberate.
+* **A human is refused too**; no exemption distinguishes them, because a
+  mechanism that could would be one an agent could claim.
+* **Whether the prompt changes behaviour is unmeasured** until that ledger exists.
+
+### Withdrawn / superseded commitments
+
+* **`pytest_collection_modifyitems` with `trylast=True`** — withdrawn (Z2); a
+  relative priority cannot establish the final list, and the mutation test proved
+  only the current plugin set. Replaced by `pytest_collection_finish`.
+* **"the quality gate must set the override", unspecified** — withdrawn (Z1);
+  replaced by a bound additive copy of the parent environment, because a fresh
+  mapping would silently drop the release token.
+* **"regardless of spelling" / "every pytest session" / "it needed the suite,
+  which every harness reaches"** — withdrawn (Z3); `--noconftest` collects 4,455
+  tests without loading the conftest. Replaced by a stated boundary and a probe.
+* **The header's `.claude/`, hook-script, `tools/verify.py`, "no gate-frozen
+  file, no re-anchor" declarations** — withdrawn (Z4); corrected in place as
+  mutable metadata and marked as corrected.
+* **The `Proposed paths:` registry** — retired (Z4); both declared paths are
+  withdrawn artifacts.
+* **`Plan review: required(Internal)`** — withdrawn; every External review has
+  recorded `DISTINCT REVIEW REQUIRED`.
+* **The suite figure 4,468** — superseded by **4,455** at the reviewed commit;
+  the 115-file span and the 40-file threshold are unaffected.
