@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change adds an **executable path**
 (a harness hook the tool runs before a command) and a new routing tool. It
 touches no surface `AGENTS.md` names high-risk, but "executable path" is a
@@ -250,3 +250,146 @@ and a reviewer who thinks the fence refuses here should say so.
   refuses rather than guesses.
 * **Nobody's run counts change** once the diagnostics ledger can measure them.
   That is the falsification, and it is only available if that proposal lands.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `92e71dca981ec91705278d1e5f07ba1a402929d8`
+Target: the complete opened proposal, Context through Signals the change is wrong
+Prior findings: none
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** Intercepting the observed command is a credible way to put
+the prompt at the point of cost, and project hooks do reach subagent tool calls.
+The proposal nevertheless understates the hook's authority, assumes a Boundary A
+schema that does not exist, and contradicts the Maintainer's same-day ruling that
+verification belongs to the spawner. Those are design-contract gaps. They can be
+fixed without returning to exhortative prose or abandoning invocation-time
+interception.
+
+### Steelman
+
+The proposal correctly separates the speed bump from test evidence, leaves the
+canonical Boundary B command intact, fails open on an unavailable advisory, and
+gives scoped runs an actionable route instead of merely saying “do less.” The
+live repository also reproduces the setup premise: no `.claude` path is tracked,
+there is no project settings file, and the only top-level entries are the skills
+symlink and scratch worktrees. The recorded 13-run / 11-delegated-run incident is
+present in `dev/PLANNING.md`.
+
+### Findings
+
+**[X1 - BLOCKING] A tracked command hook is a full-user-permission executable
+trust root, not an allow/deny-only mechanism.** The proposal's S5 and “honest
+tension” reason from the intended return value: the hook can only suppress or
+permit the command and cannot affect a suite result. The mechanism has much more
+power. Claude Code's primary documentation states that command hooks execute with
+the user's full permissions and can modify, delete, or read any user-accessible
+file. This hook runs *before* the suite, so candidate hook bytes can rewrite tests
+or configuration and then allow the command; they can therefore influence the
+result indirectly. Project hooks also run inside subagents, before permission-
+mode checks. In `-p` / SDK sessions, a repository is treated as trusted without
+an interactive workspace-trust dialog. Source, checked 2026-08-19:
+https://code.claude.com/docs/en/hooks#security-considerations
+
+Revise S1/S5 around the actual authority and register `.claude/settings.json`
+plus `.claude/hooks/**` as a high-risk executable trust root so every future
+change automatically takes Security Review. Bind the exact settings form:
+project-root absolute path, shell-free exec form (`args: []`), regular-file
+script, short explicit timeout, accepted interpreter provenance, and no
+subprocess/network behavior in the reviewed hook. The implementation Security
+Review must cover both settings and script bytes together. This does not make
+the idea unacceptable; it makes its real cost reviewable.
+
+**[X2 - BLOCKING] `tools/verify.py` has no machine-readable Boundary A contract
+to read.** The plan template requires a reviewed mapping in prose and per-chunk
+acceptance criteria; it defines no field or grammar. The two active plans already
+encode their mappings differently, and they include standing non-pytest gates as
+well as pytest files. “Read the declared Boundary A file list” therefore invents
+a source that is not present, while restricting entries to `bootstrap/tests/`
+cannot satisfy the standing-gate half of Boundary A.
+
+Define a closed, versioned plan schema before planning this reader. It needs an
+unambiguous current value under append-only revisions, pytest file/node entries,
+and named standing-gate identifiers mapped in code to fixed argv. Do not execute
+arbitrary shell text from Markdown. Reject duplicate blocks, unknown keys,
+unknown gate identifiers, traversal/symlink escapes, archived or non-active
+plans, and absent mappings. Update both plan templates if this is intended for
+adopters. If v1 intentionally runs only pytest entries, narrow the promise and
+print the omitted standing gates as still owed rather than saying it runs the
+Boundary A mapping exactly.
+
+**[X3 - BLOCKING] The interception language is undefined, so neither 100%
+coverage nor “never intercept narrowed” is testable.** A `PreToolUse` matcher
+selects the `Bash` tool; the command is then an unparsed string in
+`tool_input.command`. Consequently the Python process starts for every Bash call
+and must decide shell syntax itself. The proposal names quotes, `--`, paths,
+nodes, `-k`, and `-m`, but not the closed language that distinguishes a full run
+from `--deselect`, `--ignore`, `--ignore-glob`, `--lf`, `--ff`, option-value
+forms, environment prefixes, compound commands, or alternate interpreter/root
+spellings. Primary input/matcher contract:
+https://code.claude.com/docs/en/hooks-guide#hook-input
+
+Prefer a deliberately small grammar: recognize only enumerated canonical full-
+suite argv forms, pass open on every unknown token or shell operator, and treat
+the override only as an actual leading environment assignment. State the false-
+negative boundary and retract “100%” beyond the exact incident command forms.
+Test the full pass/block table through stdin JSON, including malformed JSON and
+missing fields. Because every Bash call launches the hook, add a no-match latency
+budget and set a short harness timeout; the documented command-hook default is
+ten minutes, which is not a harmless failure direction.
+
+**[X4 - BLOCKING] The proposed subagent behavior conflicts with the Maintainer's
+recorded routing decision.** `dev/PLANNING.md` currently says verification is
+**not delegated**: the spawner verifies once after the join, and the leaf never
+needs the mapping. This proposal instead turns each intercepted delegated full
+run into a guided delegated scoped run, preserving the multiplier in smaller
+form. It cites the routing commit but omits the decision at lines 399-404.
+
+Reconcile rather than silently supersede it. The clean contract is role-aware:
+a subagent full-suite attempt is told to return verification to the spawner;
+only the top-level owner is offered `tools/verify.py`. Hook input exposes
+`agent_id` / `agent_type` for this distinction. If the intended policy is instead
+to re-authorize leaf verification, identify that as a Maintainer shaping decision
+and explain why the same-day ruling is being replaced.
+
+**[X5 - BLOCKING] Boundary B cannot be bounded under the governing fence.** The
+proposal itself requires a Security Review for a new executable path. `AGENTS.md`
+states that bounded mode refuses for work under a security ceremony, independently
+of whether the path was previously on the named high-risk list. Boundary B must
+therefore be `full`. Its exact command should carry the deliberate override so
+the new hook does not stop the one broad run the lifecycle requires.
+
+**[X6 - SUBSTANTIVE] Two user-facing promises need exact dispositions.** First,
+the override is deliberate but not “recorded”: this proposal writes no durable
+record, and a vendor transcript is not Cairn's git-committed evidence channel.
+Remove that word unless another artifact records it. Second, distinguish the
+self-host wrapper from the shipped generic wrapper: Cairn's root `CLAUDE.md` may
+name this hook, while `templates/core/VENDOR.md` must remain a vendor-neutral
+placeholder unless the bootstrap gains a corresponding installation mechanism.
+The shared `AGENTS.md` sentence can remain generic.
+
+### Coverage
+
+**Covered:** the proposal in full; the live `.claude/` and tracked-file state;
+the 13/11 incident and Maintainer routing in `dev/PLANNING.md`; current plan and
+plan-template Boundary A forms; `AGENTS.md`'s Boundary B refusal; Cairn's root and
+shipped vendor wrappers; and the official Claude Code hook lifecycle, input,
+subagent, exit, timeout, permission, and workspace-trust documentation current on
+2026-08-19. The proposal's claim checker was clean before this review.
+
+**Not covered:** no implementation or settings file exists, and the Claude CLI
+was not callable from this review shell, so I did not run a live harness hook,
+measure process-start latency, or test interactive versus `-p` trust behavior.
+I did not run the Cairn suite for this proposal-only review. The separately owed
+implementation Security Review is not discharged.
+
+**Second-round recommendation:** recommended, limited to X1-X6 against one
+complete current-contract revision. Preserve all three intended parts, but make
+Part 1 an acknowledged and registered trust root, give Part 2 an actual schema,
+and align subagent handling with the Maintainer's verification-owner ruling.
