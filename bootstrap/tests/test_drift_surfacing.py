@@ -6,7 +6,7 @@ The #54 adoption->canonical drift surfacing (cairn-loop-fidelity-verification).
 into a one-line surfacing message for ``upgrade --plan``. Informational, never
 blocks.
 
-Pins: (F2) an adopter-behind fixture surfaces a "behind by N" message; (R1)
+Pins: an adopter-behind fixture surfaces a "behind by N" message; and
 the check degrades gracefully -- a missing / ``unknown`` ref, or a non-git
 source, yields an explicit "unavailable" line, never a crash.
 
@@ -51,7 +51,7 @@ def git_repo(tmp_path: Path):
 
 
 class TestBehindByN:
-    # ---- R1: graceful degradation -------------------------------------
+    # ---- graceful degradation -------------------------------------
     @pytest.mark.parametrize("lock,new", [
         ("unknown", "abc1234"),
         ("abc1234", "unknown"),
@@ -63,11 +63,11 @@ class TestBehindByN:
         assert "unavailable" in msg and "git metadata missing" in msg
 
     def test_non_git_source_does_not_crash(self, tmp_path):
-        """Real-looking shas but the cairn_root is not a git repo (R1)."""
+        """Real-looking shas but the cairn_root is not a git repo."""
         msg = scaffold._behind_by_n(tmp_path, "aaaaaaa", "bbbbbbb")
         assert "unavailable" in msg  # git error / not comparable, never raises
 
-    # ---- F2: the adopter-behind fixture surfaces the message ----------
+    # ---- the adopter-behind fixture surfaces the message ----------
     def test_behind_by_n_reports_count(self, git_repo):
         repo, shas = git_repo
         first, _, head = shas  # behind head by 2

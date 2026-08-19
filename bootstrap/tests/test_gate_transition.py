@@ -3,7 +3,7 @@
 
 Promotion binds to **one immutable candidate SHA** and to the exact reviewed
 candidate-object bytes, with the changed gate/sensitive set derived
-**independently** from git (code-review P1.3 + re-review Finding 3): an altered
+**independently** from git : an altered
 checker, a moving/wrong candidate ref, a wrong prior anchor, a reviewed-hash
 mismatch in the candidate object, an omitted-but-changed file, and an
 unmanifested gate file all REFUSE — without ever executing the candidate.
@@ -74,7 +74,7 @@ def test_valid_promotion_ok_and_pure(tmp_path):
 
 
 def test_candidate_sha_mismatch_refused(tmp_path):
-    """Re-review F3: the manifest is pinned to an immutable candidate SHA; a
+    """The manifest is pinned to an immutable candidate SHA; a
     candidate ref that resolves to a different SHA refuses (moving-ref defense)."""
     repo, prior, candidate, m = _setup(tmp_path)
     m.candidate_sha = "0" * 40
@@ -92,7 +92,7 @@ def test_decisive_regression_object_differs_from_review(tmp_path):
 
 
 def test_dirty_worktree_does_not_alter_validation(tmp_path):
-    """Re-review F3: hashing reads the IMMUTABLE candidate object, so dirtying the
+    """Hashing reads the IMMUTABLE candidate object, so dirtying the
     worktree after commit does not change what is validated (the composing command
     separately enforces worktree==candidate before the re-anchor write)."""
     repo, prior, candidate, m = _setup(tmp_path)
@@ -120,7 +120,7 @@ def test_prior_anchor_mismatch_rejected(tmp_path):
 
 def test_omitted_changed_file_holds(tmp_path):
     """A file that actually changed but is omitted from the manifest -> HOLD
-    (the checker derives the changed set independently, P1.3)."""
+    (the checker derives the changed set independently)."""
     repo, prior, candidate, m = _setup(tmp_path)
     del m.files["bootstrap/tests/test_oracle.py"]
     ok, holds = _call(repo, prior, m)
@@ -134,7 +134,7 @@ def test_unmanifested_extra_file_holds(tmp_path):
     assert not ok and any("not an actual changed" in h for h in holds)
 
 
-# --- atomic single-use nonce claim (re-review F3) --------------------------------
+# --- atomic single-use nonce claim --------------------------------
 
 def test_claim_nonce_atomic_single_use(tmp_path):
     ledger = tmp_path / "nonces"

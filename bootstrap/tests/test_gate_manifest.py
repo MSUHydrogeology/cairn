@@ -1,5 +1,5 @@
 """Contract for the gate-integrity manifest tool (six-proposal superplan pre-run
-gate-control prerequisite; Codex S2 / R2-2).
+gate-control prerequisite).
 
 Pins: produce() captures the frozen gate surface + cascade-mutable set + the
 collection identity; the frozen set excludes cascade-mutable files and the
@@ -238,7 +238,7 @@ def test_anchor_from_trusted_repo_refuses_target_owned_forge(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Plan `git-native-security-foundations`, Chunk A4: one guarded Git boundary.
+# One guarded Git boundary.
 # ---------------------------------------------------------------------------
 
 
@@ -292,12 +292,12 @@ def test_the_launcher_strips_every_git_environment_variable():
 
 
 # ---------------------------------------------------------------------------
-# Chunk D4: the v1/v2 differential corpus.
+# The v1/v2 differential corpus.
 #
 # R1-C's gate: "Manifest v2 does not ship unless a differential corpus proves
 # every v1 modification/deletion HOLD, addition disposition, cascade/phase
 # exception, and collection rule remains at least as strict."  A disagreement
-# stops the migration and retains v1 (fence M5).
+# stops the migration and retains v1.
 # ---------------------------------------------------------------------------
 
 
@@ -410,7 +410,7 @@ class TestV1V2Differential:
 
     def test_the_same_mode_change_HOLDs_when_git_cannot_be_asked(
             self, produced, tmp_path):
-        """Code review [IC3]. The silent-skip case, as a test.
+        """The silent-skip case, as a test.
 
         Same tree, same tampering, `.git` removed. `_object_format` returns
         None, and this used to reach *neither* branch: `live_blobs` stayed

@@ -10,11 +10,11 @@ with it.
 Covered:
 
 * **install-path** -- both scripts land verbatim in ``scripts/`` under the
-  module (1:many, the P1 pattern); the ``_MODULE_MAPPINGS`` entry is right.
-* **link_check behavioral fixtures** (Codex P4) -- relative file links,
+  module (1:many); the ``_MODULE_MAPPINGS`` entry is right.
+* **link_check behavioral fixtures** -- relative file links,
   same-file / cross-file anchors, missing file, missing anchor, and the
   external-link default (ignored unless opted in).
-* **sync_doc_snippets behavioral fixtures** (Codex P3) -- clean check,
+* **sync_doc_snippets behavioral fixtures** -- clean check,
   drifted check (exit 1), ``--sync`` rewrites only the doc (not the
   source), and the path-safety contract (``..`` / absolute rejected,
   missing region a crisp error).
@@ -203,7 +203,7 @@ class TestLinkCheck:
 
 
 # ---------------------------------------------------------------------------
-# Fold 4: link_check explicit-anchor {#custom-id} regression (R3)
+# Fold 4: link_check explicit-anchor {#custom-id} regression
 # ---------------------------------------------------------------------------
 
 class TestExplicitAnchor:
@@ -215,7 +215,7 @@ class TestExplicitAnchor:
     of the heading text without the attribute (``t`` again in this case, or
     a distinct slug for longer headings).
 
-    R3 (binding from the external reviewer): the regression test must cover
+    The regression test must cover
     leading/trailing whitespace in the attribute and the no-match / garbage
     cases.
     """

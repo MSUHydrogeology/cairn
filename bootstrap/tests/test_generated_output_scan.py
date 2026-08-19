@@ -1,5 +1,5 @@
 """
-Layer-3 generated-output scan (P2 Chunk 7).
+Layer-3 generated-output scan.
 
 Scanning *source* templates misses profile token substitution -- the
 artifact a downstream agent reads is the *generated* output.  This gate
@@ -8,7 +8,7 @@ generated AGENTS.md + dev/ tree:
 
 * **adversarial** -- a profile whose token value injects instruction
   text -> the generated tree is flagged (closing the profile-borne
-  injection path T2/L2);
+  injection path);
 * **minimal** and **representative team** -- pass clean.
 
 Run from the cairn repo root:
@@ -106,12 +106,12 @@ class TestGeneratedOutputScan:
     def test_adversarial_injection_reaches_generated_agents_md(
         self, tmp_path: Path
     ) -> None:
-        """Layer-3 demonstration (security-hardening R7): a hostile profile
+        """Layer-3 demonstration: a hostile profile
         token value lands **verbatim in the generated agent-loaded
         AGENTS.md** -- the file downstream agents obey -- and the
         content-integrity gate catches it *there*. A source-only scan never
         sees the substituted value; this is the profile-borne injection path
-        (T2 / SAFETY Rule 8) the generated-output layer exists to close."""
+        (SAFETY Rule 8) the generated-output layer exists to close."""
         assert _scaffold(tmp_path, _ADVERSARIAL) == 0
         agents = tmp_path / "AGENTS.md"
         assert agents.is_file(), "scaffold did not generate AGENTS.md"
