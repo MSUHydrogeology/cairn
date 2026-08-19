@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write and a subprocess invocation to every test session**,
@@ -775,3 +775,103 @@ write-path targeting is closed only **by enumeration**.
 * **`Plan review: required(Internal)`** — withdrawn; the reviewer recorded
   `Plan readiness: DISTINCT REVIEW REQUIRED`, so the derived plan cannot take an
   inherited fresh-context Internal pass.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `72e4d7385282cae85c720693bd6fcabe575844a2`
+Target: Revision 1, limited to prior findings E1-E6 and the replacement contract
+Prior findings: E1-E6 in the Codex External review committed at `61e1647a6d74ff3de0f4850788608a1c28780a15`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** Revision 1 makes the important architectural correction:
+it removes the Git subprocess rather than trying to make repository-selected
+configuration safe. E1 and E6 are closed, and E4's ownership model is directionally
+right. The proposed row still cannot reliably distinguish a narrowed run, its
+outcome precedence counts an ordinary call-time skip as a pass, and its append
+contract can block indefinitely or lose the first good row after a short write.
+These are narrow contract repairs, not a reason to revisit the design.
+
+### Findings
+
+**[E7 - BLOCKING, E2 continuation] `config.args` does not carry the selector
+options the scope classifier must see.** Under the canonical interpreter I ran
+a collection with `-k definitely_no_match`. Pytest exposed
+`config.args == ['bootstrap/tests/test_python_floor.py']` while
+`config.invocation_params.args` retained `--collect-only`, `-q`, `-k`, its
+value, and the path. A row whose `argv` source is `config.args` therefore cannot
+show `-k`, `-m`, `--lf`, `--ff`, `--deselect`, `-x`, `--maxfail`, or an unknown
+plugin selector. The revision could classify by separately consulting every
+known option, but that is neither stated nor auditable from the recorded row.
+
+Record and normalize `config.invocation_params.args` (or specify an equally
+complete source), use a closed safe-option classification so an unfamiliar
+option yields `unknown`, and make `--collect-only` non-`full`. Extend the public-
+path matrix to assert both the stored invocation and scope for these cases.
+
+**[E8 - BLOCKING, E5 continuation] The stated outcome precedence misclassifies
+ordinary skips.** The rule handles only “a skip in setup” before falling through
+to `passed`. In an executed four-test probe, `pytest.skip()` in the call phase
+produced `setup=passed`, `call=skipped` without `wasxfail`, and
+`teardown=passed`; Revision 1's reduction labels that node `passed`. The same
+probe confirmed xfail as a skipped call report with `wasxfail`, and xpass as a
+passed call report with `wasxfail`.
+
+Define precedence across all phases: any real failure/error; then `wasxfail`
+(`xfailed` or `xpassed`); then any ordinary skip; then pass. State the disposition
+for teardown skips and assert exact mutually-exclusive totals, not merely that
+the fields exist. Also replace “two hooks” with the actual hook lifecycle: a
+per-session start point is required before a nested test can inherit the marker,
+and collection-error counting necessarily consumes collection reports.
+
+**[E9 - BLOCKING, E3 continuation] Reader tolerance alone does not recover from
+a truncated tail.** I wrote a partial JSON object and then performed the next
+normal append. The bytes became one malformed line
+(`{"partial":{"valid":1}\n`); a line-oriented reader could report the damage,
+but it also lost the later valid record. Under the lock, the writer must detect
+a non-newline-terminated tail and restore a record boundary before appending.
+The falsifier should use the real writer sequence: partial tail, subsequent
+successful append, then prove the reader reports the damaged fragment **and**
+returns the later row.
+
+**[E10 - BLOCKING, E3 continuation] Blocking `flock(LOCK_EX)` has no lock-
+contention timeout.** Holding the lock in one process made a second
+`flock(LOCK_EX)` remain blocked until killed. That contradicts both the listed
+“lock contention timeout” disposition and the outcome-inert objective. Specify
+a bounded `LOCK_NB` retry/deadline (including the duration and no-row result),
+and falsify it with a held-lock public-path session whose pytest completion time
+is bounded.
+
+### Closed findings and corrections
+
+E1 is closed by removing all subprocess execution and deferring dirty-state
+collection behind a new Security Review. E4's exact marker, ownership,
+preservation, cleanup and sequential-session regression close the semantic gap,
+subject to E8 naming the hook that initializes it per session. E6 is closed:
+the `.gitignore` rule is now honestly future work, the invalid count is
+withdrawn, and the surviving N=1 correctness argument is sufficient. The stale
+top-level assurance text still says this version adds a subprocess; append a
+current assurance statement in the next revision so readers do not have to
+resolve that contradiction from history.
+
+### Coverage
+
+**Covered:** Revision 1 in full; existing conftest hook lifecycle; canonical
+Python 3.13.13 probes of pytest invocation metadata and pass/skip/xfail/xpass
+reports; regular-file partial-tail/following-append behavior; and held-lock
+behavior. The claim checker is clean on this appended review.
+
+**Not covered:** no implementation exists, so I did not run the Cairn suite,
+measure collector overhead, stress concurrent successful writers, simulate disk
+exhaustion, or test NFS or Windows. The implementation still owes its declared
+Security Review and re-anchor ceremony.
+
+**Next round:** limited to E7-E10 in one complete current-contract revision.
+The necessary changes are local: bind classification to the complete invocation,
+repair outcome precedence, name the actual hook lifecycle, repair a damaged tail
+under the lock, and make lock acquisition bounded.
