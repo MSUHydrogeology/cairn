@@ -1,15 +1,14 @@
-"""Tests for the first-session-survivability plan's F3 (gate onboarding
-seeds by the resolved roster).
+"""Tests for the onboarding seeds gated by the resolved roster.
 
 * A rendered `dev/PLANNING.md` onboarding-tasks seed never references a
   module-specific surface -- tool *or* doc -- the resolved roster did not
-  install (the broadened drift guard, plan-review R6).
+  install (the broadened drift guard).
 * The two `agent_team` overrides gate *differently* (`concurrent-single-type`
   keeps `coordination-tiers` content, drops only `dual-review`/tour content;
   `single` drops both) -- asserted as two distinct sets, not one flat list
-  (plan-review PR2), so the test cannot pass by over-stripping.
+  so the test cannot pass by over-stripping.
 * The live (non-dry-run) install writes a clean lockfile for both override
-  scenarios -- the regression plan-review PR1 found and this plan's Chunk B
+  scenarios -- the regression below and this plan's Chunk B
   fixes (`write_install_lockfile`'s onboarding-overlay precompute must use
   the same roster-gated rendering `install_onboarding` does, or the
   lockfile's expected-clean-install `would` diverges from the actual
@@ -86,7 +85,7 @@ def test_agent_team_concurrent_single_type_keeps_coordination_drops_dual_review(
     assert "agent-team-onboarding.md" not in slot
     # Must-keep: coordination-tiers staffs both concurrent-* values -- an
     # over-eager strip that also dropped these would be just as wrong as
-    # under-stripping (PR2's point).
+    # under-stripping.
     assert "tools/intent.py" in slot
     assert "doctrine/coordination.md" in slot
 
@@ -132,12 +131,12 @@ def test_solo_greenfield_is_a_no_op_it_carries_no_gated_seed(tmp_path: Path) -> 
     assert "id: try-session-start-skill" in slot
 
 
-# --- PR1 regression: the live install must write a clean lockfile --------
+# --- Regression: the live install must write a clean lockfile -----------
 
 def test_live_install_writes_a_clean_lockfile_under_agent_team_single(
     tmp_path: Path,
 ) -> None:
-    """The regression plan-review PR1 found: write_install_lockfile's
+    """write_install_lockfile's
     onboarding-overlay precompute must strip by the SAME axes
     install_onboarding used, or this diverges and the lockfile write
     refuses closed. A --dry-run smoke check cannot catch this (it exits

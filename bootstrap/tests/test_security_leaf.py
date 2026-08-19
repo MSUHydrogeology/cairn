@@ -2,10 +2,10 @@
 
 Two contracts:
 
-* **SR6 regression** — every guarded adopter-tree write function still routes its
+* **Guard-routing regression** — every guarded adopter-tree write function still routes its
   destination through a containment guard, so an extraction stage cannot silently
-  drop a guard (the SR6 inventory's Class-A set is pinned here).
-* **Single identity (SR5)** — `ScaffoldSecurityError` is defined exactly once
+  drop a guard (the Class-A inventory below is the pinned set).
+* **Single identity** — `ScaffoldSecurityError` is defined exactly once
   (in the leaf) and every consumer (engine, facade) resolves to that one class;
   the two guards likewise resolve to the leaf functions.
 
@@ -22,7 +22,7 @@ import pytest
 _PKG = Path(__file__).resolve().parents[1] / "_scaffold"
 _GUARD_CALLS = {"_assert_safe_write", "_assert_fanout_contained"}
 
-#: SR6 inventory, Class A: functions that perform GUARDED adopter-tree writes.
+#: Class A: functions that perform GUARDED adopter-tree writes.
 #: Each must call a containment guard on its destination. Pinned so a later
 #: extraction that relocates one without its guard fails this test.
 _GUARDED_WRITE_FUNCS = {
@@ -34,10 +34,10 @@ _GUARDED_WRITE_FUNCS = {
     "fan_out_skills",
     "_cmd_adopt_module",
     "_apply_upgrade",
-    # Added by the final Security Review (P1 #1): module-merge destinations are
+    # Module-merge destinations are
     # module-template-controlled, so this write must be guarded too.
     "merge_module_into_slot",
-    # Adopt-as-fork (External Security review R4): the collision-adoption write
+    # Adopt-as-fork: the collision-adoption write
     # path + the shared guarded/atomic lock-and-cache committer.
     "_cmd_adopt_collisions",
     "_commit_lock_and_caches",
@@ -109,7 +109,7 @@ def test_containment_guard_refuses_a_symlink_escape(tmp_path):
 
 
 def test_security_leaf_is_a_pure_stdlib_leaf():
-    """SR5: the leaf imports only the stdlib -- it must not import back into the
+    """The leaf imports only the stdlib -- it must not import back into the
     engine package (install/upgrade depend on it, never the reverse)."""
     from bootstrap._scaffold import security as S  # noqa: PLC0415
     tree = ast.parse(Path(S.__file__).read_text(encoding="utf-8"))

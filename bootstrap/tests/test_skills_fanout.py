@@ -1,14 +1,14 @@
 """Vendor fan-out tests for the lifecycle skills (Chunk 6 of the executing plan
 `2026-06-01-claude-cairn-vendor-neutral-skills`).
 
-Decision 4 (revised) + R1/R2 + S3:
+This module pins:
 
 * per-tier fan-out -- alias (nothing), symlink (verified relative symlink to the
   canonical ``.agents/skills/``, only for an in-use vendor dir), manual
   (documented fallback, no write);
 * copy-fallback where symlinks are unavailable -- gitignored generated copies +
   a divergence guard that **warns, never clobbers** an edited copy;
-* S3 containment -- a vendor row with an absolute / ``..`` / symlinked-parent
+* containment -- a vendor row with an absolute / ``..`` / symlinked-parent
   path fails closed before any write.
 
 Run from the cairn repo root:
@@ -100,7 +100,7 @@ def test_copy_fallback_when_symlinks_unavailable(repo):
 
 def test_copy_fallback_divergence_quarantines_and_regenerates(repo, capsys):
     # The generated copy is a vendor-read supply-chain artifact, not author-
-    # owned: a diverged copy must not stay the active read-path (Codex P1#1).
+    # owned: a diverged copy must not stay the active read-path.
     (repo / ".claude").mkdir()
     s.fan_out_skills(TEMPLATES_ROOT, repo, targets=[SYMLINK_ROW], allow_symlinks=False)
     edited = repo / ".claude" / "skills" / "session-start" / "SKILL.md"
@@ -130,7 +130,7 @@ def test_unsafe_fanout_path_fails_closed(repo, bad_path):
 
 
 def test_symlinked_parent_fails_closed(repo, tmp_path):
-    # A symlinked vendor parent dir must not be written through (S3).
+    # A symlinked vendor parent dir must not be written through.
     outside = tmp_path / "outside"
     outside.mkdir()
     os.symlink(outside, repo / ".evil", target_is_directory=True)

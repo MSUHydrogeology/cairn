@@ -4,14 +4,14 @@ Covers:
 * Directive parsing: `cairn:merge-target` + `cairn:merge-content-*`
   blocks extract correctly.
 * Parse-phase uniqueness validation: duplicate slot anchors in a
-  target template raise `DuplicateSlotError` (Antigravity P3).
+  target template raise `DuplicateSlotError`.
 * Empty-slot insert: merge into a clean slot reports `inserted`.
 * Already-current: re-merge against a populated slot reports
   `already-current`.
 * Customized marker: a slot carrying `<!-- cairn:customized -->`
-  is preserved + reported as `customized` (Antigravity P2).
+  is preserved + reported as `customized`.
 * Conflict-deferred (non-interactive): writes the `<target>.cairn-
-  merge-pending` side-file (Antigravity P1 author-modification:
+  merge-pending` side-file (author-modification:
   always defer, never silently keep, since keep loses the
   module's contributed prose).
 * Fidelity check: declared merges that didn't land surface as
@@ -102,7 +102,7 @@ class TestParseDirectives:
 
 
 # ---------------------------------------------------------------------------
-# Parse-phase uniqueness validation (Antigravity P3)
+# Parse-phase uniqueness validation
 # ---------------------------------------------------------------------------
 
 
@@ -166,7 +166,7 @@ class TestMergeAlreadyCurrent:
 
 
 # ---------------------------------------------------------------------------
-# Merge: customized marker (Antigravity P2)
+# Merge: customized marker
 # ---------------------------------------------------------------------------
 
 
@@ -192,7 +192,7 @@ class TestMergeCustomized:
 
 
 # ---------------------------------------------------------------------------
-# Merge: conflict-deferred (Antigravity P1)
+# Merge: conflict-deferred
 # ---------------------------------------------------------------------------
 
 

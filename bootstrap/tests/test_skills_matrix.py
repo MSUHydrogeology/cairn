@@ -1,12 +1,12 @@
-"""Compatibility-matrix drift gate + R4 auto-suppress / anti-semantic lint
+"""Compatibility-matrix drift gate + auto-suppress / anti-semantic lint
 (Chunk 7 of the executing plan `2026-06-01-claude-cairn-vendor-neutral-skills`).
 
 * the committed ``docs/skills-compatibility.md`` matches the generator (it is
-  generated, never hand-edited -- II3);
-* every target row carries the R4 ``auto_suppress`` dimension;
+  generated, never hand-edited);
+* every target row carries the ``auto_suppress`` dimension;
 * the anti-semantic-description lint: targets that rely on a dry description to
   suppress auto-trigger (``mitigated`` / ``cli-backstop-only``) are backed by a
-  SKILL.md whose description is genuinely anti-semantic (R4);
+  SKILL.md whose description is genuinely anti-semantic;
 * the matrix doc leaks no local path / token.
 
 Run from the cairn repo root:
@@ -55,11 +55,11 @@ def test_committed_matrix_matches_generator():
 def test_every_row_has_valid_level_and_auto_suppress():
     for row in load_vendor_targets(TEMPLATES_ROOT):
         assert row.get("level") in _VALID_LEVELS, row
-        assert row.get("auto_suppress") in _VALID_SUPPRESS, row  # R4 dimension
+        assert row.get("auto_suppress") in _VALID_SUPPRESS, row
 
 
 def test_anti_semantic_description_backs_non_native_suppression():
-    # R4: a target whose auto-trigger is only "mitigated" (or cli-backstop)
+    # A target whose auto-trigger is only "mitigated" (or cli-backstop)
     # relies on a dry, anti-semantic description so chatter/vector search does
     # not fire the lifecycle.  Every skill description must satisfy that.
     relies_on_description = any(

@@ -509,3 +509,37 @@ sibling then added the honest coda — its own headings passed because it copied
 a template that happened to be canonical, not because it had read the
 predicate. **"It passes" and "the author knows why" are different states, and
 only the second survives the next edit.**
+
+### Batch: security leaf, seed roster, skills matrix, fan-out, module merge
+
+| File | Before | After |
+|---|---:|---:|
+| `bootstrap/tests/test_security_leaf.py` | 7 | 0 |
+| `bootstrap/tests/test_onboarding_seed_roster.py` | 7 | 0 |
+| `bootstrap/tests/test_skills_matrix.py` | 6 | 0 |
+| `bootstrap/tests/test_skills_fanout.py` | 6 | 0 |
+| `bootstrap/tests/test_module_merge.py` | 6 | 0 |
+
+**The method changed here, after four failed guesses in one batch.** Until now
+each edit matched a full multi-line block including its leading whitespace,
+which meant every comment's indentation had to be guessed correctly or the
+substitution missed. It missed four times in this batch alone — always
+harmlessly, because a miss aborts before writing, but each cost a round trip to
+read the file and count spaces.
+
+The replacement is a line-scoped helper: locate the **unique line containing a
+needle**, then substitute within that line. Indentation never enters the match.
+It also **refuses on ambiguity** — `DuplicateSlotError` matched three lines in
+`test_module_merge.py` and the tool stopped rather than editing the first. That
+refusal is the property worth having: the old method's failure mode was a
+harmless miss, but a first-match-wins line editor's failure mode is a silent
+edit to the wrong line, which is exactly the class this pass is trying to
+remove from the tree.
+
+**Five files, thirty-two coordinates, nothing kept.** Two patterns recur and
+are worth naming for whoever finishes the tail: a docstring bullet that already
+carries a descriptive name (`* **SR6 regression** — every guarded adopter-tree
+write function ...` → `* **Guard-routing regression** — ...`), and a banner
+comment where the tag is the only thing between the section name and the reader
+(`# Merge: customized marker (Antigravity P2)`). Neither needs judgement; both
+need the file open.
