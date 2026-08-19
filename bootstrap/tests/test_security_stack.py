@@ -1,4 +1,4 @@
-"""Security-apparatus-enrichment -- Chunk B0: the selected-module required-token
+"""The selected-module required-token
 preflight.
 
 A module may declare inline tokens that have no safe default (the first is
@@ -9,8 +9,7 @@ lockfile / module-state mutation -- on all three install paths: a fresh install,
 ``--apply``).  The read-only ``upgrade --plan`` stays available so an adopter can
 diagnose the gap.
 
-Contracts pinned here (Codex External plan review P1 #1; the sharpening's
-Chunk B0 + the SR follow-ins):
+Contracts pinned here:
 
 * ``missing_required_tokens`` flags absent / empty / placeholder-valued required
   tokens and only for *selected* modules (pure, side-effect-free).
@@ -52,7 +51,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 #: A real module that declares a required token (python-security -> python_package);
-#: B0 lands this stub module so the gate is exercised end-to-end against a real
+#: A stub module, so the gate is exercised end-to-end against a real
 #: registration, not a synthetic monkeypatch.
 _REQ_MODULE = "python-security"
 _REQ_TOKEN = "python_package"
@@ -223,7 +222,7 @@ class TestUpgradePreflight:
 
 # ---------------------------------------------------------------------------
 # Chunk A -- security-review doctrine: generalized injection-review procedure
-# (S1/IR-B) + the v1 self-audit trust-model statement.  A doctrine-presence
+# plus the v1 self-audit trust-model statement.  A doctrine-presence
 # contract so the load-bearing wording cannot silently regress, and a
 # generalization guard so the modflow_tools-specific tool names do not leak up.
 # ---------------------------------------------------------------------------
@@ -255,7 +254,7 @@ class TestSecurityReviewDoctrine:
         assert "tripwire, not a proof" in text
 
     def test_no_modflow_tools_specific_tool_names_leaked(self):
-        # The generalization is the whole point (S1/IR-B): the FloPy / PEST++ /
+        # The generalization is the whole point: the FloPy / PEST++ /
         # GDAL / nwisweb specifics stay modflow_tools-local, never folded up.
         text = self._text()
         for leaked in ("FloPy", "PEST++", "pestpp", "nwisweb", "GDAL", "rasterio",
@@ -265,10 +264,10 @@ class TestSecurityReviewDoctrine:
 
 # ---------------------------------------------------------------------------
 # Chunk B -- content-security: the atomic stdlib-only injection apparatus.
-# The content_scan_runner contract: audited-roots manifest (P1 #2), per-file
+# The content_scan_runner contract: audited-roots manifest, per-file
 # symlink/special-file containment (Imp #3), resource budgets (Imp #4), the
 # 0/1/2/3 exit contract, multiset NEW/STALE, sentinel/version validation,
-# RV4 host-still-flagged, RV5 narrow homoglyph allowance, tripwire output.
+# host-still-flagged, the narrow homoglyph allowance, tripwire output.
 # ---------------------------------------------------------------------------
 
 _TEAM_GATED = TEMPLATES_ROOT / "modules" / "team-gated"
@@ -277,7 +276,7 @@ _SCAN_SRC = _TEAM_GATED / "content_scan.py"
 
 _HAS_GIT = shutil.which("git") is not None
 #: Bandit availability -- real-tool tests gate on this so Cairn's base suite
-#: never silently requires Bandit (re-review P2 #1).
+#: never silently requires Bandit.
 _HAS_BANDIT = (shutil.which("bandit") is not None
                or importlib.util.find_spec("bandit") is not None)
 #: pip-audit availability. Cairn does NOT install it (adopter dependency,
@@ -342,7 +341,7 @@ def _seed_apparatus(root: Path) -> None:
 
 class TestAuditRootsManifest:
     def test_valid_roots_parse(self, csr, tmp_path):
-        # P1 #5: load_audit_roots returns (rel, required) tuples; `!` => required.
+        # load_audit_roots returns (rel, required) tuples; `!` => required.
         m = tmp_path / "roots.txt"
         m.write_text("# content-scan-roots v1\n!dev\ndocs\n", encoding="utf-8")
         assert csr.load_audit_roots(m, tmp_path) == [("dev", True), ("docs", False)]
@@ -424,7 +423,7 @@ class TestHomoglyphAllowanceRV5:
         flags = list(cscan.scan_text("a µs reading and a pаypal token\n"))
         homoglyph = [f for f in flags if f.pattern_id == "homoglyph"]
         # Exactly one homoglyph flag (the Cyrillic-spoofed credential), and the
-        # µs scientific unit is NOT among the flagged tokens (RV5 cleared it).
+        # µs scientific unit is NOT among the flagged tokens (the unit allowance cleared it).
         assert len(homoglyph) == 1
         assert "ypal" in homoglyph[0].message  # the credential token (Latin tail)
         assert not any("µs" in f.message for f in homoglyph)
@@ -443,7 +442,7 @@ class TestRunnerExitContract:
         _git_repo(tmp_path); _seed_apparatus(tmp_path); _git_commit_all(tmp_path)
         code, files, *_ = self._run(csr, tmp_path)
         assert code == 0
-        # P1 #2: the manifest itself is in the audited set.
+        # The manifest itself is in the audited set.
         rels = {str(p.relative_to(tmp_path)) for p in files}
         assert "scripts/content_scan_roots.txt" in rels
 
@@ -511,7 +510,7 @@ class TestRunnerExitContract:
         assert any(fl.pattern_id == "suspicious-url" for _r, fl, _fp in all_flags)
 
     def test_missing_required_root_fails_even_with_a_healthy_root(self, csr, tmp_path):
-        # P1 #5: a manifest with a required root that is absent must FAIL even
+        # A manifest with a required root that is absent must FAIL even
         # when an optional/healthy root contributes files (a missing required
         # root silently shrinks coverage otherwise).
         _git_repo(tmp_path); _seed_apparatus(tmp_path)
@@ -532,7 +531,7 @@ class TestRunnerExitContract:
         assert code == 0
 
     def test_wall_clock_overrun_fails_closed(self, csr, tmp_path):
-        # P2 #6: an exceeded wall-clock deadline fails closed (exit 2) -- a
+        # An exceeded wall-clock deadline fails closed (exit 2) -- a
         # partial / overrun scan must never read clean.
         import time  # noqa: PLC0415
         _git_repo(tmp_path); _seed_apparatus(tmp_path); _git_commit_all(tmp_path)
@@ -683,9 +682,9 @@ class TestRunnerUrlRoleBoundary:
 
 # ---------------------------------------------------------------------------
 # Chunk C -- python-security: the orchestrator (run_security_audit.py).
-# SR-1 integrity preflight, P1 #4 authoritative installed-state, P2 #5
-# single-package validation, Crit #2/SR-3 trusted subprocess boundary, Imp #5
-# egress-off-by-default, the P1 #3 distinct-space exit table.
+# Integrity preflight, authoritative installed-state,
+# single-package validation, the trusted subprocess boundary,
+# egress-off-by-default, the distinct-space exit table.
 # ---------------------------------------------------------------------------
 
 _ORCH_SRC = _TEAM_GATED / "run_security_audit.py"
@@ -759,7 +758,7 @@ class TestOrchestrator:
             orch._safe_target_args([tmp_path / "--evil"])
 
     def test_injection_not_applicable_is_incomplete_not_clean(self, orch, tmp_path):
-        # P1 #3 / SR-4: content-security not installed -> injection NOT
+        # Content-security not installed -> injection NOT
         # APPLICABLE -> a DISTINCT incomplete tier, never a clean contribution.
         _git_repo(tmp_path)
         (tmp_path / "mypkg").mkdir()
@@ -785,7 +784,7 @@ class TestOrchestrator:
 
     def test_pip_audit_egress_off_is_incomplete_not_clean(self, orch, tmp_path,
                                                           monkeypatch):
-        # C-t2 (re-expression of the original egress-off contract). P1 #3 /
+        # Re-expression of the original egress-off contract. (
         # SR-5: egress off with the tool PRESENT -> the lookup did not run ->
         # UNAVAILABLE -> incomplete, never a clean contribution. The tool is
         # forced present so this pins the egress limb alone; the tool-absent
@@ -799,7 +798,7 @@ class TestOrchestrator:
 
     def test_pip_audit_tool_error_is_degraded_not_findings(self, orch, tmp_path,
                                                            monkeypatch):
-        # P2 #7: only pip-audit exit 1 is a vuln report; any other non-zero
+        # Only pip-audit exit 1 is a vuln report; any other non-zero
         # (usage / env / network error) is degraded, never reported as findings.
         # Force "tool present" so the classification (not the absent branch) runs.
         monkeypatch.setattr(orch.shutil, "which", lambda _n: "/usr/bin/pip-audit")
@@ -822,7 +821,7 @@ class TestOrchestrator:
     @pytest.mark.skipif(not _HAS_BANDIT,
                         reason="real bandit needed to prove the shadow did not run")
     def test_subprocess_runs_isolated_not_repo_shadow(self, orch, tmp_path):
-        # P1 #1: a repo-local bandit/ shadow must NOT execute. _run_tool runs
+        # A repo-local bandit/ shadow must NOT execute. _run_tool runs
         # `python -I` from a neutral cwd with a sanitized env, so the shadow is
         # invisible. Assert bandit over a clean pkg is CLEAN despite the shadow.
         root, lock = self._adopter(tmp_path)
@@ -838,7 +837,7 @@ class TestOrchestrator:
         assert status == "bandit:clean" and tier == orch._AGG_CLEAN
 
     def test_preflight_requires_complete_apparatus_for_installed_module(self, orch, tmp_path):
-        # P1 #2: a lockfile that records python-security + content-security but
+        # A lockfile that records python-security + content-security but
         # OMITS the content_scan_runner record, with a tampered unrecorded
         # runner on disk, must FAIL the preflight (not skip the missing record).
         root, lock = self._adopter(tmp_path)
@@ -861,7 +860,7 @@ class TestOrchestrator:
         # (20) -- the shipped exit table already assigns "a required tool was
         # absent" to 20, and the pass no longer returns at the first blocker,
         # so it now reaches that branch. Gate on presence so the base suite
-        # never silently requires either tool (P2 #8).
+        # never silently requires either tool.
         expected = 5 if (_HAS_BANDIT and _HAS_PIP_AUDIT) else 20
         assert r.returncode == expected, r.stdout + r.stderr
         # Tamper an apparatus file -> preflight DEGRADED (exit 20), no bandit
@@ -875,9 +874,9 @@ class TestOrchestrator:
 
 
 # ---------------------------------------------------------------------------
-# Chunk D -- scaffold wiring + the three-combination install matrix (D2/RV7).
+# scaffold wiring + the three-combination install matrix.
 # The wiring (registration, python_package token, required-token gate,
-# team-gated placement) landed in B0/B/C; this pins the matrix: each module
+# team-gated placement) landed earlier; this pins the matrix: each module
 # combination installs the right surface, python-security is never auto-on for
 # a non-Python adopter, src-layout works, and upgrade proceeds with a filled
 # token.
@@ -925,7 +924,7 @@ class TestModuleMatrix:
         assert pkg.name == "mypkg" and pkg.parent.name == "src"
 
     def test_upgrade_proceeds_with_filled_token(self, tmp_path):
-        # The B0 upgrade preflight blocks an unfilled required token; with a
+        # The upgrade preflight blocks an unfilled required token; with a
         # filled python_package, --plan proceeds.
         _git_repo(tmp_path)
         (tmp_path / "mypkg").mkdir()
@@ -1106,7 +1105,7 @@ def test_b_t1_known_steering_variables_do_not_reach_the_child(orchb, monkeypatch
 def test_b_t2_the_allowlist_is_closed_to_novel_names(orchb, monkeypatch):
     # B-t2. THE discriminating test. A denylist strips the names someone
     # thought of; this asserts a name the code has never heard of is dropped
-    # too. Re-implement B1 as a denylist of the KNOWN names and B-t1 stays
+    # too. Re-implement the check as a denylist of the KNOWN names and it stays
     # green while this goes red -- that pair is the whole argument for the
     # allowlist shape.
     monkeypatch.setenv("PIP_AUDIT_FUTURE_KNOB", "1")
@@ -1151,7 +1150,7 @@ def test_b_t4_environment_pass_through_is_never_silent(orchb, monkeypatch):
 
 
 def test_b_t5_no_local_env_trust_root_is_read(orchb, monkeypatch, tmp_path):
-    # B-t5. DAC5's withdrawal, ENFORCED rather than intended: the orchestrator
+    # The withdrawal, ENFORCED rather than intended: the orchestrator
     # creates no second reader of dev/.cairn/local-env.json, which AGENTS.md
     # calls an executable trust root. The DISCRIMINATING half intercepts the
     # open and asserts on the argument -- a source-text lint is evaded by any
@@ -1229,7 +1228,7 @@ def test_c_t5_interpreter_observation_is_reported(orchb, tmp_path, monkeypatch,
                                                   capsys):
     # C-t5. C1's third disposition. The interpreter is recorded as an
     # OBSERVATION of the environment audited -- never an assertion that it
-    # matches a project record (DAC5).
+    # matches a project record.
     _force_tool_absent(orchb, monkeypatch)
     orchb.run_pip_audit_pass(tmp_path, allow_egress=False)
     text = capsys.readouterr().out

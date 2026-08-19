@@ -36,7 +36,7 @@ somewhere other than the code under test:
 * the anti-collision corpus is hand-written here and never harvested by
   running the fold;
 * the expected content of the ``unknown`` violation message is transcribed
-  from the plan's A7 row, and is asserted against what the public ``scan``
+  from the recorded expectation, and is asserted against what the public ``scan``
   arm actually prints.
 """
 from __future__ import annotations
@@ -175,7 +175,7 @@ def test_behaviour_table_covers_the_original_exploit(tmp_path):
     assert ascii(spoof) != ascii(honest)
 
 
-# --- A14: the [I5] loader guards ---------------------------------------------
+# --- the loader guards -------------------------------------------------------
 
 
 def test_punctuation_only_roster_entry_is_not_a_wildcard(tmp_path):
@@ -217,7 +217,7 @@ def test_empty_folding_ai_registry_entry_is_not_a_wildcard(tmp_path):
     str(t).strip()}``, leaves this node **green**: a truthy ``.strip()``
     guarantees a non-empty ``.lower()``, so the superseded loader could not
     emit the empty token at all. The empty-token hazard does not pre-date
-    this change -- it is *introduced* by A4, which is what made folding the
+    this change -- it is *introduced* by it, which is what made folding the
     config entry symmetric with folding a byline word. A future state that
     stops folding does not re-open this hole; a future state that folds
     without filtering does."""
@@ -231,9 +231,9 @@ def test_empty_folding_ai_registry_entry_is_not_a_wildcard(tmp_path):
     assert im2.classify("Newvendor 2 (Reviewer)") == "ai"
 
 
-# --- A7: the `unknown` violation message -------------------------------------
+# --- the `unknown` violation message -----------------------------------------
 #
-# A7 made two **message-only** additions on the security-diagnostic path, and
+# Two **message-only** additions on the security-diagnostic path, and
 # they are the one user-facing surface this change introduces:
 #
 #   1. the roster grammar -- an entry must be the COMPLETE display name as it
@@ -243,7 +243,7 @@ def test_empty_folding_ai_registry_entry_is_not_a_wildcard(tmp_path):
 #
 # Both are asserted through the **public** ``scan`` arm rather than at helper
 # level: a diagnostic that never reaches the operator's terminal is not a
-# diagnostic.  The expected content is transcribed from the plan's A7 row,
+# diagnostic.  The expected content is transcribed from the recorded wording,
 # written before the implementation existed; the code under test supplies only
 # the string it actually prints.
 
@@ -286,7 +286,7 @@ def _scan_repo(tmp_path: Path, *, name: str, byline: str, humans) -> Path:
 
 def test_unknown_identity_message_carries_the_roster_grammar_and_ascii_escape(
         tmp_path, monkeypatch, capsys):
-    """A7 -- both message additions, through the public ``scan`` arm.
+    """Both message additions, through the public ``scan`` arm.
 
     The byline here is the sharpest case the change has: a ``## Decision``
     spelled ``Anthony Kend`` + CYRILLIC SMALL LETTER A + ``ll``, which renders
@@ -312,7 +312,7 @@ def test_unknown_identity_message_carries_the_roster_grammar_and_ascii_escape(
     would bury the signal in noise on the ordinary path."""
     spoof = "Anthony Kend" + chr(0x430) + "ll"
     honest = "Anthony Kendall"
-    # A7's premise, restated as an assertion: `repr()` leaves the confusable
+    # The premise, restated as an assertion: `repr()` leaves the confusable
     # raw (so the two reprs render alike), `ascii()` spells it out.
     assert spoof != honest
     assert chr(0x430) in repr(spoof)
@@ -346,7 +346,7 @@ def test_unknown_identity_message_carries_the_roster_grammar_and_ascii_escape(
     assert "COMPLETE display name" in out2
 
 
-# --- B1: the non-empty-fold invariant ----------------------------------------
+# --- the non-empty-fold invariant --------------------------------------------
 #
 # The Decision's invariant is "dropping a character must never widen
 # authority".  Its literal proposal wording -- "the fold preserves every
@@ -361,7 +361,7 @@ def test_unknown_identity_message_carries_the_roster_grammar_and_ascii_escape(
 #: Transcribed by hand from ``_fold_word``'s docstring -- "keep a character
 #: only if it is non-ASCII or in ``_FOLD_KEEP_ASCII``", where the allow-set
 #: is the ASCII lower-case letters and the ASCII digits.  Written out here
-#: rather than imported, so B2 compares the *stated* rule against the
+#: rather than imported, so the pin compares the *stated* rule against the
 #: *executed* one instead of comparing the code to itself.
 _ALLOW_SET_ASCII = frozenset("abcdefghijklmnopqrstuvwxyz0123456789")
 
@@ -424,9 +424,9 @@ def test_flagging_leg_empties_are_only_compatibility_marks():
         )
 
 
-# --- B2: the deletion-set pin ------------------------------------------------
+# --- the deletion-set pin -----------------------------------------------------
 #
-# [I2]: the superseded rule named two deleted classes and deleted three.  The
+# The superseded rule named two deleted classes and deleted three.  The
 # corrected rule is an explicit allow-set, and this pins it mechanically --
 # the check the proposal's "Why this tier" section asked a reviewer to
 # perform by hand, moved into the suite so it runs every time.  The allow-set
@@ -460,9 +460,9 @@ def test_fold_deletes_exactly_the_stated_ascii_set(form):
     assert ord("0") not in deleted and ord("9") not in deleted
 
 
-# --- B3 / B4 / B5: the corpus, the anti-collisions, the pinned merges --------
+# --- the corpus, the anti-collisions, the pinned merges ----------------------
 #
-# [I3]: the proposal's roster-symmetry test is near-vacuous -- its oracle is
+# The earlier roster-symmetry test was near-vacuous -- its oracle was
 # the function under test, so it passes for every total function.  Its
 # replacement is an **anti-collision** test over an adversarial corpus.
 #
@@ -487,8 +487,8 @@ _CORPUS = [
     "Lukasz Nowak",
     "Søren Dahl",
     "Soren Dahl",
-    # decomposing accents: these are the DELIBERATE merges (R2), pinned by
-    # B4 rather than asserted apart.
+    # decomposing accents: these are the DELIBERATE merges, pinned by the
+    # node below rather than asserted apart.
     "Ana Ngô",
     "Ana Ngo",
     "Ibrahim Şahin",
@@ -502,7 +502,7 @@ _CORPUS = [
 ]
 
 #: The pairs the accepted design deliberately merges -- canonical-
-#: decomposition equivalence plus full case folding (residual R2).  Every
+#: decomposition equivalence plus full case folding.  Every
 #: OTHER pair in the corpus must stay distinct.
 _PINNED_MERGES = {
     frozenset({"Ana Ngô", "Ana Ngo"}),
@@ -511,10 +511,10 @@ _PINNED_MERGES = {
 
 
 def test_no_corpus_name_is_mistaken_for_another(tmp_path):
-    """B3 -- the anti-collision test that replaces the vacuous symmetry one.
+    """The anti-collision test that replaces the vacuous symmetry one.
 
     No corpus name classifies ``human`` against a roster holding a
-    *different* corpus name, except for the pairs R2 deliberately merges.
+    *different* corpus name, except for the pairs deliberately merged.
 
     Fails in the future state where the fold becomes lossy in any direction
     that merges two real names: measured, a first-letter-truncating fold
@@ -534,9 +534,9 @@ def test_no_corpus_name_is_mistaken_for_another(tmp_path):
 
 
 def test_ratified_r2_merges_still_occur(tmp_path):
-    """B4 -- the R2 residual pin: the [I1a] and [I1b] classes still collide.
+    """The residual pin: the accent and case-fold classes still collide.
 
-    These are **pinned, not fixed**. R2 accepts that canonical-decomposition
+    These are **pinned, not fixed**. The rule accepts that canonical-decomposition
     equivalence plus full case folding widens the set of strings that
     classify ``human``; pinning the widening means a later narrowing of the
     granting fold is a deliberate, visible test change rather than a silent
@@ -556,7 +556,7 @@ def test_ratified_r2_merges_still_occur(tmp_path):
       case a **different person's name** classifies as the rostered one.
 
     Fails in the future state where the granting fold stops stripping
-    combining marks or stops case-folding -- which is R2's own named
+    combining marks or stops case-folding -- which is the rule\'s own named
     recovery path, and should be a visible edit to this test."""
     pairs = [
         # (label, rostered name, byline that must still collide with it)
@@ -580,11 +580,11 @@ def test_ratified_r2_merges_still_occur(tmp_path):
 
 
 def test_roster_symmetry_smoke_check(tmp_path):
-    """B5 -- kept and relabelled, and it carries **no** perturbation.
+    """Kept and relabelled, and it carries **no** perturbation.
 
     ``classify(x)`` with roster ``[x]`` holds for *every* total fold, because
     both sides go through the same function: this cannot detect over-folding,
-    and [I3] is the finding that says so. It is retained as what it actually
+    and that is why. It is retained as what it actually
     is -- a smoke check that (a) no corpus name trips the AI leg and (b) no
     corpus name folds to the empty key and gets dropped by the loader guard.
     Claiming a falsifying perturbation for it would be the vacuity this
@@ -592,18 +592,18 @@ def test_roster_symmetry_smoke_check(tmp_path):
 
     The one future state it does fail in: a fold that empties a whole script,
     which drops the roster entry and makes the name unrecognizable to
-    itself. That is the case B3 cannot see, because an emptied roster
+    itself. That is the case the anti-collision test cannot see, because an emptied roster
     produces no collisions at all."""
     for name in _CORPUS:
         im = _identity_model(tmp_path, humans=[name])
         assert im.classify(name) == "human", f"{name!r} not recognized as itself"
 
 
-# --- B6: the [I6] separator cost, with its exit ------------------------------
+# --- the separator cost, with its exit ---------------------------------------
 
 
 def test_non_ascii_space_separator_costs_a_false_positive(tmp_path):
-    """B6 -- a cost-recording test: it asserts the false positive **exists**,
+    """A cost-recording test: it asserts the false positive **exists**,
     and asserts the remedy alongside it.
 
     Word splitting is ASCII-whitespace-only, so a display name written with a
@@ -645,11 +645,11 @@ def test_non_ascii_space_separator_costs_a_false_positive(tmp_path):
     assert im_ascii.classify("Cl" + chr(0x3000) + "aude") == "ai"
 
 
-# --- B7: the R3 residual pin -------------------------------------------------
+# --- the homoglyph residual pin ----------------------------------------------
 
 
 def test_independence_comparator_closes_three_of_four_variants():
-    """B7 -- R3's measured state, pinned as a **known residual**.
+    """The measured state, pinned as a **known residual**.
 
     The independence comparator (`_identity_token`) decides whether a Review
     was authored by the artifact's own author. It now folds at ``NFKD``, so
@@ -661,7 +661,7 @@ def test_independence_comparator_closes_three_of_four_variants():
     Not fixed here, and deliberately so: every sound fix needs a
     reviewer-identity contract that does not exist, and the only human list
     that does exist confers Decision authority. Pinning the 3-of-4 state
-    means it cannot regress silently, and means closing R3 is a deliberate
+    means it cannot regress silently, and means closing it is a deliberate
     test change.
 
     Fails in the future state where the comparator gains a confusables
@@ -681,5 +681,5 @@ def test_independence_comparator_closes_three_of_four_variants():
         "precomposed accent": True,
         "mathematical bold": True,
         "circled letter": True,
-        "Cyrillic homoglyph": False,   # R3, open
+        "Cyrillic homoglyph": False,   # open residual
     }

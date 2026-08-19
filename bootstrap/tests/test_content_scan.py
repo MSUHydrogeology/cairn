@@ -1,5 +1,5 @@
 """
-Red-team + unit tests for the content-integrity scanner (P2 Chunk 5).
+Red-team + unit tests for the content-integrity scanner.
 
 Covers: every malicious vector is CAUGHT; benign security-prose that
 trips a pattern requires a `cairn-accept` marker to clear (proving the
@@ -79,7 +79,7 @@ def _ids(flags: list[Flag]) -> set[str]:
 
 
 class TestSourceCarriesNoRawInvisibles:
-    """Security-hardening R5: the scanner must carry its detection set as
+    """The scanner must carry its detection set as
     escape forms, never raw characters, so it does not smuggle the very
     code points it exists to catch."""
 
@@ -146,7 +146,7 @@ class TestHomoglyphExpandedScripts:
 def test_content_security_module_installs_scanner_verbatim(tmp_path: Path) -> None:
     """The content-security module ships content_scan.py verbatim to an
     adopter's scripts/ + its doctrine doc, single-sourced from the same file
-    Cairn's own check_cairn composes (security-hardening Chunk 11 / R9)."""
+    Cairn's own check_cairn composes."""
     from bootstrap.scaffold import _MODULE_MAPPINGS, main
     dsts = {s.dst: s for s in _MODULE_MAPPINGS["content-security"]}
     assert dsts["scripts/content_scan.py"].verbatim is True
@@ -198,7 +198,7 @@ class TestMustCatch:
             scan_text("text ‮ reversed payload\n"))
 
     def test_expanded_unicode_controls_caught(self) -> None:
-        # Code-review P3 coverage: word joiner (U+2060), LRM (U+200E),
+        # Coverage: word joiner (U+2060), LRM (U+200E),
         # RLM (U+200F) -- embedded as literal control chars (matching the
         # other unicode tests above); the U+XXXX labels name them.
         assert "unicode-zero-width" in _ids(scan_text("ok⁠here\n"))
@@ -252,7 +252,7 @@ class TestMustSuppress:
 
 
 # ---------------------------------------------------------------------------
-# Plan-review refinements (P3.2-P3.6)
+# Later refinements
 # ---------------------------------------------------------------------------
 
 class TestPlanReviewRefinements:
@@ -487,7 +487,7 @@ class TestSeparatorDetectionCollectionIntegrity:
 # ---------------------------------------------------------------------------
 
 class TestUnicodeIgnorable:
-    """B6 -- the two new ids fire on the channel that produced ZERO flags
+    """The two new ids fire on the channel that produced ZERO flags
     before, and ordinary prose still produces neither."""
 
     def test_tag_block_payload_flags_unicode_tag(self) -> None:
@@ -538,7 +538,7 @@ class TestUnicodeIgnorable:
 
 
 class TestUnicodeTagIdSplit:
-    """B7 -- the Maintainer-directed id split, and the test that pins it.
+    """The Maintainer-directed id split, and the test that pins it.
 
     A `cairn-accept: unicode-ignorable` written in good faith for a benign
     emoji variation selector must NOT silence a Tag-block shadow-alphabet
@@ -563,7 +563,7 @@ class TestUnicodeTagIdSplit:
 
 
 class TestUnicodeExistingIdsKeepTheirMeaning:
-    """B8 -- the skip rule. `unicode-zero-width` and `unicode-bidi` keep
+    """The skip rule. `unicode-zero-width` and `unicode-bidi` keep
     their EXACT prior meaning, so no existing `cairn-accept` marker and no
     existing residual fingerprint is invalidated by this change."""
 
@@ -585,7 +585,7 @@ class TestUnicodeExistingIdsKeepTheirMeaning:
 
 
 class TestUnicodeIgnorableMessage:
-    """B9 -- the same-line masking case. A benign variation selector EARLIER
+    """The same-line masking case. A benign variation selector EARLIER
     on a line must not hide what follows it: the message names the count and
     every distinct code point on the line, not only the first."""
 
@@ -712,14 +712,14 @@ def _hg(text: str) -> bool:
 
 
 class TestHomoglyphConfusabilityAware:
-    """D4 / D5 / D6 / D7 / D11 -- the four clauses, by code point."""
+    """The four clauses of the homoglyph rule, by code point."""
 
-    #: D4 -- ordinary scientific notation must stop flagging. Defect (b).
+    #: Ordinary scientific notation must stop flagging. Defect (b).
     SCIENTIFIC = [
         "\u0394G", "\u03bbmax", "\u03c3y", "\u03c1w", "K\u03b1",
         "\u03b5r", "\u03b2sheet", "\u03b8r", "\u03c6p", "\u03a9n",
     ]
-    #: D5 -- spoofs that must still flag, including the falsifying tokens
+    #: Spoofs that must still flag, including the falsifying tokens
     #: the Internal round used against an earlier form of this rule.
     SPOOFS = [
         "p\u0430ssword",   # Cyrillic er inside a Latin word (clause 2)
@@ -743,7 +743,7 @@ class TestHomoglyphConfusabilityAware:
         assert _hg(token + "\n"), token
 
     def test_whole_script_greek_flags(self) -> None:
-        # D6 -- clause 1's Greek arm. All three are MISSED at HEAD.
+        # Clause 1's Greek arm. All three are MISSED at HEAD.
         assert _hg("\u03c4\u03bf\u03ba\u03b5\u03b7\n")          # plain
         assert _hg("\u03c4\u03bf\u03f0\u03b5\u03b7\n")          # kappa symbol
         # The lunate sigma U+03F2 reads as Latin `c`; the admission rule
@@ -751,11 +751,11 @@ class TestHomoglyphConfusabilityAware:
         assert _hg("\u03b5\u03c7\u03b5\u03f2\u03c5\u03c4\u03b5\n")
 
     def test_whole_script_fullwidth_flags_above_the_floor(self) -> None:
-        # D7 -- the fullwidth arm, and its three-letter floor.
+        # The fullwidth arm, and its three-letter floor.
         assert _hg("\uff21\uff44\uff4d\uff49\uff4e\n")
         assert not _hg("\uff21\uff44\n")
 
-    #: The RV5 unit shapes, by code point.
+    #: The scientific-unit shapes, by code point.
     RV5_UNITS = ("\u00b5s", "\u00b5mol", "\u00b5L", "k\u03a9", "M\u03a9",
                  "k\u2126", "\u03bcmol")
 
@@ -766,7 +766,7 @@ class TestHomoglyphConfusabilityAware:
 
         Read the limit in the sibling test below before treating this as
         evidence about `_is_scientific_unit`. It is not: this asserts the
-        OUTCOME, and the outcome no longer depends on RV5.
+        OUTCOME, and the outcome no longer depends on the unit allowance.
         """
         assert not _hg(token + "\n"), token
 
@@ -777,16 +777,16 @@ class TestHomoglyphConfusabilityAware:
 
         The plan specifies a perturbation (P-D6) that deletes the
         `_is_scientific_unit` call and expects D11 to go red. **It does not
-        go red.** Under the four-clause rule RV5 has stopped discriminating,
+        go red.** Under the four-clause rule the unit allowance has stopped discriminating,
         and the reason is structural rather than a property of these seven
-        samples: RV5 admits exactly four non-Latin characters, and every one
+        samples: it admits exactly four non-Latin characters, and every one
         is either OUTSIDE the curated `_SCRIPT_RANGES` (U+00B5 MICRO SIGN and
         U+2126 OHM SIGN both yield script `None`, so the homoglyph rule never
         sees them) or IN `_NO_LATIN_TWIN` (U+03BC, U+03A9, so clause 3 finds
-        nothing confusable). No token RV5 clears can reach a flag.
+        nothing confusable). No token it clears can reach a flag.
 
         So this test, not the one above, is the falsifiable one: it pins the
-        redundancy as a measured fact. RV5 is deliberately KEPT -- it
+        redundancy as a measured fact. The allowance is deliberately KEPT -- it
         short-circuits ahead of the clause work and stays a defence if a
         later Decision makes U+03BC or U+03A9 confusable -- but a test
         claiming it "still carries weight" would be a test that cannot fail.
@@ -800,7 +800,7 @@ class TestHomoglyphConfusabilityAware:
 
 
 class TestHomoglyphDeclaredResiduals:
-    """D8 -- the CHARACTERIZATION test. These are limits the accepted
+    """The CHARACTERIZATION test. These are limits the accepted
     Decision **priced**, not defects awaiting a fix.
 
     If this test goes red the correct response is a **Decision**, never a
@@ -853,12 +853,12 @@ class TestNoLatinMultiScript:
 
 
 class TestNoLatinTwinTableShape:
-    """D10 / D9 -- the table's own shape and its agreement with what the
+    """The table\'s own shape and its agreement with what the
     module documentation publishes.
 
-    Read D9 for exactly what it is: a **drift** guard, NOT an independence
+    Read it for exactly what it is: a **drift** guard, NOT an independence
     check. The seed was selected BECAUSE it reproduces the published
-    residual count, so D9 cannot fail for the table as landed; it fails when
+    residual count, so it cannot fail for the table as landed; it fails when
     the table drifts away from the published figure. It is a consistency
     check between two descriptions of one human judgment -- never a check
     that the judgment is right. Nothing here attests the ASCII-twin calls.
@@ -892,7 +892,7 @@ class TestNoLatinTwinTableShape:
                 f"U+{ord(member):04X} is unreachable through the NFD fold")
 
     def test_the_table_reconciles_with_its_published_figures(self) -> None:
-        # D9. The 42-token scientific set is the proposal's own, typed here.
+        # The 42-token scientific set is the accepted one, typed here.
         scientific = [
             "\u0394G", "\u0394H", "\u0394S", "\u0394Cp", "\u0394Grxn",
             "K\u03b1", "K\u03b2", "\u03bbmax", "\u03bdmax", "\u03b5r",
@@ -1002,7 +1002,7 @@ class TestGreekDomainArity:
 # ===========================================================================
 
 def _ig(cp: int) -> str:
-    """An Appendix F table F1 fixture: the code point embedded mid-word on
+    """A fixture for the ignorable/tag detectors: the code point embedded mid-word on
     its own line, which is the shape the corpus specifies."""
     return "hello wo" + chr(cp) + "rld\n"
 
@@ -1016,7 +1016,7 @@ _IG13 = (
 
 #: (row id, fixture text, exact expected pattern-id set, provenance)
 _CORPUS: tuple[tuple[str, str, frozenset, str], ...] = (
-    # -- F1: Change 1, the ignorable / tag detectors -----------------------
+    # -- Change 1, the ignorable / tag detectors --------------------------
     ("IG-1", _ig(0xE0041), frozenset({"unicode-tag"}), "author-built"),
     ("IG-2", _ig(0x00AD), frozenset({"unicode-ignorable"}), "author-built"),
     ("IG-3", _ig(0xFE0F), frozenset({"unicode-ignorable"}), "author-built"),
@@ -1034,7 +1034,7 @@ _CORPUS: tuple[tuple[str, str, frozenset, str], ...] = (
      frozenset({"unicode-ignorable", "unicode-tag"}), "author-built"),
     ("IG-15", "An ordinary sentence of ASCII prose.\n",
      frozenset(), "author-built"),
-    # -- F2: clause 0, no-Latin multi-script ------------------------------
+    # -- clause 0, no-Latin multi-script ---------------------------------
     ("NL-1", "\u0455\u0435\u0455\u0455\u0456\u043e\u0578\n", frozenset({"homoglyph"}),
      "author-realized"),
     ("NL-2", "\u0580\u043e\u0578\u0456\u0578\n", frozenset({"homoglyph"}), "author-realized"),
@@ -1051,7 +1051,7 @@ _CORPUS: tuple[tuple[str, str, frozenset, str], ...] = (
     ("NL-11", "\u0561\u0455\u0455\n", frozenset({"homoglyph"}), "author-built"),
     ("NL-12", "\u13d2\u03bf\u043a\u0435\u0578\n", frozenset({"homoglyph"}),
      "author-built"),
-    # -- F3: clause 1 (whole-script), clauses 2 and 3 (mixed with Latin) --
+    # -- clause 1 (whole-script), clauses 2 and 3 (mixed with Latin) ------
     ("WS-1", "\u03c4\u03bf\u03ba\u03b5\u03b7\n", frozenset({"homoglyph"}), "author-built"),
     ("WS-2", "\u03c4\u03bf\u03f0\u03b5\u03b7\n", frozenset({"homoglyph"}), "author-built"),
     ("WS-3", "\u03b5\u03c7\u03b5\u03f2\u03c5\u03c4\u03b5\n", frozenset({"homoglyph"}),
@@ -1068,7 +1068,7 @@ _CORPUS: tuple[tuple[str, str, frozenset, str], ...] = (
     ("MX-7", "A\u13a0bc\n", frozenset({"homoglyph"}), "author-built"),
     ("MX-8", "A\u2c80bc\n", frozenset({"homoglyph"}), "author-built"),
     ("MX-9", "A\u0430bc\n", frozenset({"homoglyph"}), "author-built"),
-    # -- F4: the negatives that must stay negative ------------------------
+    # -- the negatives that must stay negative ---------------------------
     ("SC-1", "\u0394G\n", frozenset(), "author-built"),
     ("SC-2", "\u03bbmax\n", frozenset(), "author-built"),
     ("SC-3", "\u03c3y\n", frozenset(), "author-built"),
@@ -1083,7 +1083,7 @@ _CORPUS: tuple[tuple[str, str, frozenset, str], ...] = (
     ("RS-2", "\u0418\u0432\u0430\u043d\u043e\u0432\n", frozenset(), "author-built"),
     ("RS-3", "\u03b2ank\n", frozenset(), "author-built"),
     ("RS-4", "\u03b4o\n", frozenset(), "author-built"),
-    # -- F5: the known false-negative boundary ----------------------------
+    # -- the known false-negative boundary -------------------------------
     #    Every row here is flag-at-HEAD and cleared-by-the-rule. These are
     #    NOT defects awaiting a fix: they are the PRICED boundary the module
     #    documentation must publish.
@@ -1101,8 +1101,8 @@ _CORPUS: tuple[tuple[str, str, frozenset, str], ...] = (
     ("FN-12", "\u03c3ecret\n", frozenset(), "author-built"),
     ("FN-13", "\u03b8read\n", frozenset(), "author-built"),
     ("FN-14", "\u03c8ync\n", frozenset(), "author-built"),
-    # -- F6: the arity sweep's two named entry points ---------------------
-    #    MEASURED, not transcribed: the plan's F6 table records only "0
+    # -- the arity sweep's two named entry points ------------------------
+    #    MEASURED, not transcribed: the accepted table records only "0
     #    raises" for these and gives no flag/clear column, so the expected
     #    sets below were measured against the landed rule and the absence of
     #    a specified value is recorded here rather than papered over.
@@ -1205,7 +1205,7 @@ class TestExternalReviewerRowIsolation:
         assert _ids(flags) == {"unicode-tag"}, flags
 
     def test_rx2_survives_a_block_scoped_ignorable_acceptance(self) -> None:
-        # B7's property, now asserted on a REVIEWER-SUPPLIED row.
+        # The id-split property, now asserted on a REVIEWER-SUPPLIED row.
         text = (
             '<!-- cairn-accept: unicode-ignorable reason="reviewed emoji '
             'selectors" reviewer=alice date=2026-08-05 -->\n'
