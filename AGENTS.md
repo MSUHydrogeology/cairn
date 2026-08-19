@@ -409,6 +409,15 @@ confirming the procedure is there — a path that resolves is not a trigger
 that governs — and the check does not stop at the first named artifact: it
 recurses until it reaches a human or a machine.**
 
+**Confirm the instrument before trusting an absence.** A grep that returns
+nothing, a count that matches, a failure list that comes back clean — each is
+evidence only if the pattern *could* have matched, so before acting on a
+negative result, run the same measurement against a case known to be present.
+This is the silent-tool defect one level down, on the ad-hoc measurements
+nobody writes into a document: a count kept without its failure identities, a
+regex anchored to a prefix the target lines never carry, a liveness grep scoped
+to the doc tree but not the code. Each returns clean, confident, and wrong.
+
 ## Documentation discipline
 
 <!-- cairn:slot documentation-discipline -->
