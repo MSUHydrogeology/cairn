@@ -1239,3 +1239,217 @@ cannot be shared with another clone or another agent, and would be per-machine
 local configuration rather than a Cairn artifact — at which point it is a personal
 workflow tool and not proposal-worthy. That is a decision for the Decision, and it
 is recorded here as a live fork rather than assumed away.
+
+## Maintainer-directed contract revision -- 2026-08-19 (mechanism)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+The Maintainer asked the question that unmade the design:
+
+> Why would the hook be in .claude? What if I am using other agents?
+
+> Good, in-suite guard it is
+
+> Do not supersede the proposal. Revise, then review
+
+**The honest answer to the first question is that `.claude/` was never a reason,
+only a location** — it is where one vendor reads hooks. Cairn's stated identity is
+*"vendor-neutral and model-agnostic by construction: the coordination channel is
+git-committed files, so a project can mix or swap AI vendors without changing the
+method."* A harness hook is exactly not that. This project already runs mixed —
+the External reviews on this very proposal come from a different agent type — so a
+control that governs one harness gives **partial coverage that reads as
+complete**, which is the silent-tool failure this proposal has twice been revised
+for.
+
+And every hard problem of the last two rounds was downstream of that location: the
+unanchored trust root, the `.claude/` tracking fork, the 32-command grammar, the
+missing enumeration, and the `PYTEST_ADDOPTS` blindness. None of them were serving
+the goal.
+
+**The mechanism moves into the suite.** Measured on the canonical interpreter:
+
+| invocation | in-suite guard | the `.claude/` hook |
+|---|---|---|
+| bare full run | **refused** | refused |
+| `cd <repo> && pytest bootstrap/tests` | **refused** | passed open |
+| `PYTHONDONTWRITEBYTECODE=1 python -m pytest …` | **refused** | passed open |
+| the canonical Boundary B pair | **refused** | passed open |
+| `PYTEST_ADDOPTS='-k n1'` (genuinely narrowed) | allowed — 1 passed, 4 deselected | would have called it `full` |
+| explicit `-k n1` | allowed | allowed |
+| override set | allowed | allowed |
+
+It counts **what was actually collected**, not what the command said — so there is
+no grammar, no enumeration, no interpreter spellings, no shell operators, and the
+environment-variable route that structurally defeated the hook is handled
+correctly rather than misclassified.
+
+## Revision 3
+
+The complete current contract, self-contained. Supersedes Revision 2 and the
+2026-08-19 scope amendment in full.
+
+### Assurance path
+
+**high-assurance**, for a different reason than before. This adds **no executable
+trust root and no new file**: it edits `bootstrap/tests/conftest.py`, which is
+gate-frozen and already carries the release-gate outcome rule. The trigger is that
+the change can **refuse to run the suite**, and it lives in the one file that can
+already decide a session's exit status. A Security Review is owed on that.
+
+### Scope
+
+**In**: a guard in `bootstrap/tests/conftest.py`; a child-environment change in
+`scripts/quality_gate.py`; one vendor-neutral sentence under *Verification
+boundaries* in `AGENTS.md` and its twin; one new test file.
+
+**Withdrawn entirely, and not deferred**: `.claude/settings.json`, the hook
+script, the `${CLAUDE_PROJECT_DIR}` settings object, the blocked-form enumeration,
+the `agent_id` role predicate, the `_gate_manifest.py` glob extension, the
+`[TRU-4]` scope folding, `tools/verify.py`, the Boundary A block, and the entry in
+Cairn's root `CLAUDE.md`. **`templates/core/VENDOR.md` remains untouched.**
+
+### The guard
+
+In `bootstrap/tests/conftest.py`:
+
+```python
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config, items): ...
+```
+
+**`trylast=True` is contract, not style.** Measured: without it the guard runs
+*before* pytest's own keyword filtering and sees the unfiltered item list, so a
+legitimately narrowed run (`-k`) is refused — the false positive every prior
+revision forbade. With it, the guard sees the final list.
+
+**The discriminator is distinct test files, not test count.** Measured in this
+repository: a full collection spans **115** files; the six-file scoped mapping this
+project actually used spans **6** — and that mapping ran roughly **1,140** tests.
+So counts barely separate a scoped run from a full one (1,140 against 4,468) while
+file span separates them by nearly twenty times.
+
+**Threshold: more than 40 distinct test files.** That is 6.7× the observed scoped
+mapping and 2.9× below a full collection, so both margins are wide. A run touching
+more than forty files is a third of the suite and is treated as full, which is the
+intended reading rather than a concession.
+
+**Refusal is `pytest.UsageError`**, which exits **4** — measured, against 0 when
+allowed. It is loud, immediate, and names the override.
+
+**Exemptions, each with its reason:**
+
+* `CAIRN_FULL_SUITE=1` — the deliberate override.
+* **Release mode** — using the module's existing strict-equality predicate, never
+  a presence test. A release ceremony's behaviour must not change because this
+  landed.
+* **`--collect-only`** — nothing executes, so there is nothing to spend. This also
+  keeps `bootstrap/tests/_gate_manifest.py`'s own collector working, which invokes
+  pytest with `--collect-only` to build the manifest.
+
+### The interaction this creates, stated rather than discovered
+
+`scripts/quality_gate.py` spawns a **full pytest run per seed** for the
+order-independence sub-gate. Each of those children would be refused by this
+guard. The script must therefore set the override in the child environment, and
+that is part of this change — `scripts/*.py` is gate-frozen, so it joins the same
+re-anchor rather than adding another.
+
+This is a **feature of the design, not a workaround**: the second full suite that
+sub-gate spends has been invisible, and a guard that forces it to be declared in
+code is the first thing that makes it countable.
+
+### The cost of the swap, stated plainly
+
+**The role distinction is lost.** The hook could read `agent_id` and tell a
+subagent to return verification to the spawner. A conftest runs in-process and has
+no such signal. The guard's message can **state** the rule — *verification is not
+delegated; if you are a subagent, return it to the spawner* — but it cannot
+enforce it differentially, and a subagent that sets the override is
+indistinguishable from an owner who does. Enforcement of the routing decision
+therefore remains what it was before this proposal: a rule the spawner follows.
+That is a real reduction against Revision 2, and it is the price of vendor
+neutrality.
+
+**It is a refusal, not a speed bump.** Earlier revisions leaned on "blocks
+nothing". This blocks, including for a human, until one token is set.
+
+### Interaction with the sibling proposal
+
+`2026-08-19-claude-suite-run-diagnostics` also edits `bootstrap/tests/conftest.py`,
+adding five hooks. This adds a sixth. They do not conflict semantically — one
+measures, one refuses — but **whichever lands second inherits the other's
+conftest and must re-verify against it**, and both are absorbed by the single
+re-anchor already owed. Neither depends on the other.
+
+### Evidence
+
+| invariant | falsifier |
+|---|---|
+| A full collection is refused regardless of spelling | bare run; `cd <repo> && …`; env-prefixed; absolute interpreter; `python3.13 -m pytest`; the canonical Boundary B argv — assert exit 4 in every case |
+| A narrowed run is never refused | `-k`, `-m`, a single file, a node id, a six-file mapping, **and `PYTEST_ADDOPTS='-k …'`** — assert each runs |
+| `trylast` is load-bearing | remove `trylast=True`; assert a `-k` run becomes refused. This mutation must go red |
+| The override allows | `CAIRN_FULL_SUITE=1`; assert exit 0 and full execution |
+| Release mode is exempt | the module's existing predicate at its one recognized value; assert the suite runs and the release rule is unaffected; assert `…=0` does **not** exempt |
+| `--collect-only` is exempt | assert the gate manifest's own collector still builds |
+| The quality gate still runs | `--sub order-independence` with a seed; assert the child is not refused |
+| The threshold discriminates | a 41-file selection is refused; a 40-file selection runs |
+
+**Boundary B mode: `full`** — a gate-frozen file under a re-anchor ceremony, and
+work under a security ceremony. Its command carries the override.
+
+### Security preflight
+
+**S1 — Who supplied it?** The guard reads the final collected item list, the
+process environment (two variables), and pytest's own config. Nothing is executed;
+no string from any document or command line is interpreted.
+
+**S2 — Can it fail?** The `trylast` mutation above is the load-bearing falsifier,
+and it was found by probe rather than reasoning: without it the guard is wrong in
+the direction that matters.
+
+**S3 — What fires it, over what?** Every pytest session over
+`bootstrap/tests`, in any harness, for any agent, and for a human. That breadth is
+the point and is what the `.claude/` mechanism could not offer. **Cairn has no CI.**
+
+**S4 — Which way does it break?** Toward **refusing**, which is the opposite of
+every earlier revision. A guard bug blocks verification rather than permitting an
+unmeasured run. That is defensible only because the failure is loud, immediate,
+carries its own remedy in the message, and is one token away — but it is a genuine
+reversal of failure direction and a reviewer should weigh it as such.
+
+**S5 — Who still wins?** An attacker who can write `bootstrap/tests/conftest.py`
+already owns the suite; this adds no capability and no new surface. **Unlike every
+prior revision, nothing here is outside the frozen set**, so the gate notices any
+change to it. The `[TRU-4]` coverage gap is neither created nor closed by this
+proposal — it is simply no longer touched.
+
+### Known omissions
+
+* **The routing decision is not enforced**, only stated — see *the cost of the
+  swap*.
+* **No durable record of an override** — the pass-through is silent, and the
+  sibling proposal's ledger is what would make it countable.
+* **In-process `pytest.main()`** inside a test collects a small fixture suite and
+  falls under the threshold, so nested runs are unaffected — deliberate.
+* **Whether the prompt changes behaviour is unmeasured** until that ledger exists.
+* **A human is refused too.** No exemption distinguishes them, and none is
+  proposed, because a mechanism that can tell them apart would be one an agent
+  could claim.
+
+### Withdrawn / superseded commitments
+
+* **The entire `.claude/` mechanism** — the hook, the settings object, the script,
+  the enumeration, the grammar, the `agent_id` predicate, the tracking decision.
+  Withdrawn because it binds one vendor, and this project runs mixed.
+* **The `_gate_manifest.py` glob extension and the `[TRU-4]` scope folding** —
+  withdrawn; with no `.claude/` artifact to anchor, the addition has no subject.
+  `[TRU-4]` returns to its own row, unchanged and still open.
+* **The entry in Cairn's root `CLAUDE.md`** — withdrawn; there is no
+  vendor-specific mechanism left to name.
+* **`tools/verify.py` and the Boundary A block** — remain withdrawn from the
+  previous revision, for the reasons recorded there.
+* **"a speed bump, not a gate"** — withdrawn; this refuses.
+* **Role-aware behaviour** — withdrawn; a conftest has no `agent_id`.
+* **The claim that interception needs a harness** — withdrawn; it needed the
+  suite, which every harness reaches.
