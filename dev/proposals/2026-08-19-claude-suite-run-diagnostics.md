@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -1630,3 +1630,120 @@ total.
   module's existing predicate.
 * **"40-hex from `.git` files"** — withdrawn; fails in all eight linked
   worktrees. Replaced by a resolution procedure.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `c889d2fa32dad4c193efb05ae51b38aaad199127`
+Target: Revision 3, limited to E11-E14 and the newly substituted classifier, encoder, and HEAD procedure
+Prior findings: E11-E14 in the Codex External review committed at `faa2a8518cdc899e695b527e58b6259aa5bc95ed`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** Revision 3 closes the unrun-node account, per-hook failure
+isolation, numeric lock bound, containment comparison, and row-wide budgeting
+architecture. Its adversarial pre-review was high yield. Four replacement
+details still fail the proposal's own purpose or an executed probe: per-file
+cost became test count, `--ignore` still certifies a partial run as `full`, the
+Unicode sanitizer raises on ordinary text, and the linked-worktree resolver
+does not follow `commondir`. None requires another redesign.
+
+### Findings
+
+**[E15 - BLOCKING, accepted-scope regression] `by_file` no longer records cost.**
+Every prior contract stored per-file duration, and the reader's purpose includes
+cost concentration. Revision 3 silently changes `by_file` to integer **node
+count** and evicts the smallest count first. A file with one ten-minute test is
+then discarded before a file with many millisecond tests; the ledger can no
+longer answer which files make the suite expensive or supply the concentration
+figures the companion interception proposal prints. This removes accepted scope
+rather than compacting it.
+
+Restore per-file cost, preferably integer milliseconds to keep the JSON compact
+and avoid non-finite floats. Evict the smallest duration first, retain
+`by_file_total` / `by_file_kept`, and test that a low-node/high-cost file survives
+ahead of a high-node/low-cost file. A separate node-count breakdown may be added,
+but it cannot replace timing in a cost ledger.
+
+**[E16 - BLOCKING, E7 continuation] Resolved postconditions still miss
+pre-collection selectors.** I ran a directory containing six tests with
+`--ignore=<one two-test file>`. Pytest reported the directory as the sole
+`config.args` entry, `inipath=None`, no `PYTEST_ADDOPTS` or `PYTEST_PLUGINS`,
+`deselected=0`, four collected/executed nodes, no errors or truncation, and exit
+0. Every Revision 3 `full` clause holds although a third of the suite was
+excluded. `--ignore-glob` has the same class of effect.
+
+Combine, rather than choose between, the two evidence channels: admit `full`
+only for an exact closed family of raw canonical invocation forms **and** the
+resolved runtime postconditions Revision 3 defines. The family needs only the
+ordinary canonical command and the order-independence command's known harmless
+display/shuffle options; every other token, including `--ignore`, plugin options,
+and future options, yields `unknown`. This avoids the earlier broad allowlist's
+false confidence while retaining the runtime checks that catch environment and
+early-stop narrowing.
+
+**[E17 - BLOCKING, E13 continuation] The sanitize procedure does not produce
+ASCII for ordinary Unicode.** Executing
+`s.encode("utf-8", "backslashreplace").decode("ascii")` succeeds for ASCII and
+a lone surrogate, but raises `UnicodeDecodeError` for `é` and emoji because
+valid non-ASCII characters encode as ordinary UTF-8 bytes; `backslashreplace`
+is invoked only on encoding errors. The proposed non-BMP falsifier can still
+pass vacuously by receiving a skeleton row, just as the revision warns against
+elsewhere.
+
+Use a transformation that actually guarantees ASCII (for example ASCII encode
+with an explicit error policy), then remember that JSON re-escapes backslashes
+and quotes: only the final pinned JSON encoding establishes the byte budget.
+For ordinary Unicode inputs, assert the intended sanitized/capped field survives
+and `truncated` has the specified value, not merely that some valid line exists.
+Also make the skeleton fallback total: `allow_nan=False` can reject a non-finite
+numeric field that remains in the skeleton, so normalize or null non-finite
+timings before the fallback and fault-inject that path.
+
+**[E18 - BLOCKING] The linked-worktree HEAD procedure stops one directory too
+soon.** In the live harness worktree, `.git` points to
+`.git/worktrees/<name>`. That directory contains `HEAD` and a `commondir` file
+whose value is `../..`; the symbolic branch ref exists under the resulting
+common Git directory, not under the worktree gitdir, and `packed-refs` is also a
+common-directory file. Following only `.git`'s `gitdir:` line therefore still
+returns `head: null` for the routine symbolic-ref case the revision says it
+fixed.
+
+Read `HEAD` from the worktree gitdir, then resolve and validate its `commondir`
+when present and search loose refs / `packed-refs` in the correct common
+directory. The linked-worktree falsifier must assert the **expected SHA**, not
+merely that a row exists; `head: null` is already the malformed-state fallback
+and would make the current test pass without proving worktree support.
+
+### Closed findings
+
+E11 is closed by explicit `executed`, `not_run`, `errors`, and `aborted`
+accounting plus reconciliation against pytest's reporter rather than a tautology.
+E12 is closed by individual hook guards, a `BaseException` boundary confined to
+the inert session-finish block, and release-evidence fault injection. E13's
+line-level encoder/skeleton design is the correct bounding architecture; E17
+repairs its string and non-finite-input branches. E14's lock values are now exact
+(`250 ms` / `10 ms`); E16 replaces the discarded option allowlist with a much
+smaller exact canonical family plus resolved postconditions.
+
+### Coverage
+
+**Covered:** Revision 3 in full; canonical Python 3.13.13 `--ignore` probe
+showing a partial run with `deselected=0`; direct execution of the proposed
+Unicode sanitizer over ASCII, non-ASCII, non-BMP, and lone-surrogate inputs;
+inspection of the live linked-worktree `.git`, `HEAD`, `commondir`, loose-ref,
+and packed-ref locations; accepted per-file timing scope; and the E11-E14
+replacement falsifiers by inspection.
+
+**Not covered:** no implementation exists, so I did not run the Cairn suite,
+stress concurrent writers, force a real disk-full short write, or test NFS or
+Windows. The implementation still owes its declared Security Review and
+re-anchor ceremony.
+
+**Next round:** limited to E15-E18. Restore per-file time, pair exact canonical
+argv with resolved scope checks, make Unicode/skeleton encoding total, and
+follow `commondir` while asserting the worktree SHA.
