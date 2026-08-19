@@ -124,6 +124,34 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **[SEC] The interpreter-binding re-pin at `c29ead3` is unconfirmed** *(filed
+  2026-08-18 by the `comprehension-outlives-the-artifact` implementer)* — the
+  four digests in
+  `bootstrap/tests/test_lifecycle_brief.py::_INTERPRETER_SYMBOL_DIGESTS` were
+  re-derived by an **implementing agent under explicit Maintainer
+  authorization**, not by a Security Review. The pin guards the local
+  interpreter binding, which `AGENTS.md` lists as a high-risk surface.
+
+  The change was comment- and docstring-only and that is **shown, not
+  asserted**: each of `_probe_interpreter`, `_resolve_interpreter` and
+  `_warn_stale_once` digests identically on both sides of the edit once every
+  docstring is stripped before `ast.dump` (`08856288621efb6f`,
+  `92fdb64150ee4ef5`, `d5d3de3acd75a08b`) — reproducible against `c29ead3^`,
+  and the method is recorded in `dev/measurement/tag-pass-dispositions.md`.
+  None of the five gated properties (schema, validation order, fallback
+  disposition, warning visibility, subprocess use) changed.
+
+  **What is owed**: a reviewer with this surface in scope re-runs that
+  reproduction and confirms the re-pin, or says it should have waited for a
+  Security Review. Raised with the concurrent ceremony session, whose context
+  ended before it could answer — which is why this is filed here rather than
+  left in a message.
+
+  **Worth a view while someone is in there**: a byte pin that trips on a
+  docstring edit may be mis-scoped for what it protects. Not a proposal, an
+  observation — the fence worked, but it cost a Maintainer decision over five
+  comments.
+
 * **The controlled re-anchor path cannot run for the ordinary case** *(observed
   2026-08-13 during the second real gate re-anchor; homed at goodnight because
   it belongs to no plan)* — there are two ways to move the gate's trust root, and
