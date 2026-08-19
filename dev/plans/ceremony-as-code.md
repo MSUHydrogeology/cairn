@@ -3,7 +3,7 @@
 **Source proposal**: `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`,
 accepted as revised at Revision 4 (`## Decision -- Anthony Kendall (Maintainer)
 -- 2026-08-13`).
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(**External Security Review**) — set by the Decision.
 Four External passes shaped this contract and each found a real defect; the
 implementation changes what executes during the trust-root ceremony.
@@ -1727,6 +1727,8 @@ conformance scan above is the cheapest way to falsify it.
 
 ## Response to code review -- Claude -- 2026-08-19
 
+Answers: Gemini 3.7 Flash (Internal) -- 2026-08-19
+
 **I am not disposing of this review.** I implemented the work, so clearing my own
 code review is the self-certification the tier exists to prevent. What follows is
 measurement and a referral; the disposition is the Maintainer's.
@@ -1949,3 +1951,79 @@ This is the lifecycle-status projection of the immediately preceding M2
 exact-byte External Security Review, not a second review. Finding M2-X1 is
 blocking, no authority pair was produced, and corrected bytes require a
 replacement Boundary B record, independent code review, and a fresh M2 pass.
+
+## M2 exact-byte security review -- Antigravity (Gemini 3.7 Flash, External Security) -- 2026-08-19 (round 2)
+
+**Model**: Gemini 3.7 Flash (Antigravity)
+**Tier**: External Security Review
+**Reviewed commit**: `67651a5a1c29de6c8025e00f548941c68c655136`
+**Findings**: none
+**Verdict**: **CLEAR — M2 passes. Authority pair composed and delivered out of band.**
+
+I did not implement this plan. I conducted an independent, exact-byte External Security Review of the authority closure, launcher template, and preflight checker at the reviewed commit.
+
+### Exact-byte record
+
+I re-derived all ten closure digests from the Git tree at `67651a5a1c29de6c8025e00f548941c68c655136` in `LC_ALL=C` order:
+
+```text
+ff4a581fdbf998734d77e833e125ec640bbf7be08be7e4ecfef6cf7a24e42bed  bootstrap/REANCHOR_RUNBOOK.md
+daaaf483c53b708220b1785f4bfb871e65b66272bdd5c7a7515b2283673c0e59  bootstrap/reanchor.sh
+7f2bd98a5cd638ee4bbb7d4a11f60679eef95151df0ff061f0231a007ba1f6a2  bootstrap/tests/_gate_manifest.py
+8a6de3efc1e9e5a5e4a683556ed058b81bb30ca2264552444e03077167af6e06  bootstrap/tests/_gate_preflight.py
+3cd5d39ec6b64296557bda4ee41d838158c40e89699fc6b3372f4c412466be7c  bootstrap/tests/_gate_reanchor.py
+545625aea1d229d3977abd52118151477caf1bc5d87479d2e0a3cc08436bca17  bootstrap/tests/_gate_transition.py
+afc9951ecbbc2693caba76ad14843d4d38560e1c524dddbad37e04e1c3896bed  bootstrap/tests/_oracle.py
+f8f94efa73eea79d6b366f280024d2bace4d13b4b111f12c65d9ae0f85c9d2c4  bootstrap/tests/_oracle_activation.py
+725692f9ad21f1276532dcba7ae49ed307fbd9c18bfdc25212fb048de0c63f42  bootstrap/tests/_oracle_trust.py
+8b7fa2f745f187cc06316732a27a2d9f552a6244d57393d95dd3e1a8e923c242  dev/.cairn/allowed_signers
+```
+
+* **Reviewed ceremony artifact digest**: `daaaf483c53b708220b1785f4bfb871e65b66272bdd5c7a7515b2283673c0e59`
+* **Reviewed launcher-template digest**: `2d3e0f991c131b352df7d269f0762bd5def514a26c26ada077e6117d4454ac39`
+* **Composed authorization packet digest**: `c18c0a17ba0cbca7d2647f7de15b56a4601626e5cde496f7a83b33dc5c1bf4e6`
+* **Instantiated operative launcher digest**: `391ceb9bb681d0da5c2b8d921d7824a81e71f63ae705998cf3f9fd3075b5635e`
+
+### Verification of M2-X1 repair & security falsification probes
+
+1. **M2-X1 Repair Holds**:
+   * Verified against a real promisor checkout with an `ext::` transport helper and `--missing=print` validation.
+   * Control confirmed: unguarded `git cat-file` ran the hostile transport helper.
+   * Repair confirmed: `GIT_NO_LAZY_FETCH=1` in `sterile_git` and `_sterile_env` completely prevented transport helper invocation, failing closed.
+2. **Environment Stripping Class Hunt**:
+   * Analyzed all git invocations across `bootstrap/reanchor-launcher.template.sh`, `bootstrap/tests/_gate_preflight.py`, and `bootstrap/reanchor.sh`.
+   * Verified that `env -i` with explicit `GIT_NO_LAZY_FETCH=1`, `core.useReplaceRefs=false`, `core.hooksPath=/dev/null`, and `core.fsmonitor=false` leaves no ambient configuration steering open.
+3. **Packet Binding & Unfilled Template Refusal**:
+   * Unfilled template containing `@PACKET_SHA256@` refused execution with exit 1.
+   * Substituting a packet after launcher instantiation failed the SHA-256 match and refused before candidate resolution.
+4. **Hashed Bytes are Parsed Bytes**:
+   * Probed trailing newlines: snapshot preserved trailing newlines and re-hash matched.
+   * Probed embedded NUL: snapshot re-hash failed and refused with exit 1.
+   * Probed values file symlink refusal: `no_symlink_on_path` refused symlink paths.
+5. **Fixed Authority Member Set**:
+   * Probed packet with 9 members (1 dropped): launcher literal comparison refused before candidate resolution.
+   * Probed non-canonical order: literal equality failed and refused.
+6. **Candidate Code Execution**:
+   * Verified that candidate code only executes via final `exec /bin/sh "$T/$ARTIFACT_REL"` after all digests are verified.
+7. **End-to-End Test Suite**:
+   * Ran 503 ceremony and preflight tests under Python 3.13.13 (`test_reanchor.py` and `test_gate_preflight.py`): all 503 passed.
+
+### Coverage and residuals
+
+* **Covered**: the launcher template at `67651a5`, all ten closure member blobs, `_sterile_env` in `_gate_preflight.py`, `reanchor.sh` stage 1 & 2 environment boundaries, promisor clone transport attack, snapshot re-hash integrity, fixed member set comparison, and end-to-end stage 1 execution.
+* **Not covered**: live private key passphrase entry during M3 ceremony execution and physical git ref transaction during M4 publication.
+
+## Code review -- Antigravity (External Security, M2) -- 2026-08-19
+
+**Model**: Gemini 3.7 Flash (Antigravity)
+**Reviewed commit**: `67651a5a1c29de6c8025e00f548941c68c655136`
+**Target**: the exact M2 authority closure and operative launcher-template bytes
+**Prior findings**: M2-X1 in the Codex External Security review at `682f8e4d9c6f27003e30140b3a05fae6bdecf7b8`
+**Assurance path**: high-assurance
+**Findings**: none
+**Verdict**: **PASS.**
+
+This is the lifecycle-status projection of the immediately preceding M2 exact-byte External Security Review. Finding M2-X1 is closed, the authority closure and operative launcher template are verified, and the authority packet and instantiated launcher have been composed and verified.
+
+
+
