@@ -21,11 +21,7 @@ attacked *how long one run takes*; this measures it continuously);
 [boundary-b-bounding-clause](archive/2026-08-12-claude-boundary-b-bounding-clause.md)
 proposal (whose bounded mode this instruments); `dev/PLANNING.md` **[TRU-4]**,
 the frozen-set gap recorded at `cf8bed7`.
-**Plan review**: required(**External**) — the External proposal review recorded
-`Plan readiness: DISTINCT REVIEW REQUIRED` at `61e1647`, so the derived plan
-cannot take an inherited fresh-context Internal pass. A **Security Review** of
-the implementation is owed on its own trigger in addition, because the change
-adds a write path to a gate-frozen file.
+**Plan review**: required(**Internal**) — ratified at Decision (inherits proposal basis); implementation carries a Security Review trigger and re-anchor ceremony.
 
 Proposed paths:
 * `bootstrap/tests/test_suite_ledger.py` -- the hook's own contract tests
@@ -2513,7 +2509,7 @@ work rather than proposal blockers.
 - **Five Fail-Closed Guards**: Outcome-inert (wrapped in `except BaseException`), reentrancy with ownership tracking (`CAIRN_SUITE_LEDGER_SESSION=1`), containment against tempdirs, release-mode exemption (`CAIRN_RELEASE_GATE_ACTIVE=1`), and operator opt-out (`CAIRN_SUITE_LEDGER=0`).
 - **POSIX Concurrency & Durability**: `fcntl.flock` with 250ms deadline; 4096-byte line budget with deterministic eviction and total skeleton fallback; tail newline repair.
 - **Standalone Reader Tool**: `tools/suite_cost.py` renders cost profiles, concentration, frequency, and overlap without requiring test suite execution.
-- **Plan Review Requirement**: The derived plan takes `Plan review: required(External)` and implementation requires an independent Security Review and re-anchor ceremony.
+- **Plan Review Requirement**: Ratifies `Plan review: required(Internal)` for the derived plan (inheriting proposal basis); implementation carries a Security Review trigger and re-anchor ceremony.
 
 **Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
 
