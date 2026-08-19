@@ -13,7 +13,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change edits
 `bootstrap/tests/conftest.py`, which is gate-frozen and already carries the
 release-gate outcome rule, and it can **refuse to run the suite**. *(Metadata
@@ -1833,3 +1833,88 @@ frozen set.** The `[TRU-4]` gap is neither created nor closed — it is not touc
   recorded `DISTINCT REVIEW REQUIRED`.
 * **The suite figure 4,468** — superseded by **4,455** at the reviewed commit;
   the 115-file span and the 40-file threshold are unaffected.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `0872f96d38c0f2fbb32af28ce9b9ca8ba3c46085`
+Target: Revision 4, limited initially to Z1-Z4 and their replacement contract
+Prior findings: Z1-Z4 in the Codex External review committed at `f5076dba67ad84b2e58cf97357893a252a7d3e76`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** Z1-Z4 are closed. The additive child environment, final-
+collection hook, honest conftest boundary, and lifecycle repair all match the
+requested contract. Two small interactions in the replacement hook remain: it
+can mask a real collection error, and one evidence row promises selector-based
+behavior that the file-count policy intentionally does not provide.
+
+### Findings
+
+**[Z5 - BLOCKING] A broad collection error is replaced by the guard's usage
+error.** I built 41 valid test files plus one syntax-error file. The control
+reported the collection error and exited 2. A `pytest_collection_finish` guard
+implementing Revision 4's threshold saw 41 collected files and
+`session.testsfailed == 1`, raised `pytest.UsageError`, and changed the final
+exit to 4. The syntax error remained in output, but its pytest disposition was
+masked by the cost prompt. A cost-control feature must not replace stronger test
+evidence with its own refusal.
+
+The guard should refuse only when collection completed without an existing
+failure. Bind the exact predicate available at that hook (at minimum
+`session.testsfailed == 0`, plus any other pytest stop/fail state the
+implementation uses) before raising. Add a 41-file collection-error control:
+the guarded and unguarded runs must retain the same collection-error exit and
+diagnostic, and the broad-run refusal message must be absent. Keep the ordinary
+41-file clean control at exit 4.
+
+**[Z6 - BLOCKING, contract contradiction] “A narrowed run is never refused” is
+not the policy Revision 4 defines.** I collected the current suite with
+`--ignore=bootstrap/tests/test_notice_install.py`. The final set still spanned
+114 files and 4,443 items, so the proposed guard correctly refused it at the
+`>40` threshold. The Evidence row nevertheless lists `--ignore` under “A
+narrowed run is never refused.” Broad `-k` or `-m` selections can have the same
+shape. The guard deliberately measures final breadth, not whether a selector
+token appeared.
+
+State and test the actual invariant: a successfully collected run whose final
+selected set spans **at most 40 files** is not refused, regardless of whether
+that result came from a path, node, `-k`, `-m`, `--ignore`, or
+`PYTEST_ADDOPTS`; a set above 40 is broad and refuses regardless of selector.
+Retain representative option cases on both sides of the boundary so later code
+does not drift back toward command parsing.
+
+### Closed findings
+
+Z1 is closed by copying the complete parent environment, setting only
+`CAIRN_FULL_SUITE=1`, and exercising the real release chain with a refused
+outcome. Z2 is closed by `pytest_collection_finish(session)` and the competing-
+modifier falsifier. Z3 is closed by explicitly accepting and pinning
+`--noconftest` as a bypass under a non-adversarial cost-control threat model. Z4
+is closed: the header names the operative frozen files and re-anchor, the stale
+path registry is retired with a reasoned historical exemption, the missing
+ledger is present, and `board --explain` reports the row valid.
+
+The 40-file threshold, vendor-neutral in-suite placement, one-token override,
+and loss of role-aware routing remain accepted. Neither finding asks for another
+mechanism or any scope expansion.
+
+### Coverage
+
+**Covered:** Revision 4 in full; Z1-Z4 against their prior contracts; current
+release environment handoff; lifecycle and claim declarations; canonical Python
+3.13.13 `pytest_collection_finish` probes over a temporary 41-file suite with a
+real collection error (control exit 2, guarded exit 4); and the current Cairn
+suite with one ignored file (114 files / 4,443 items, guarded exit 4 before test
+execution).
+
+**Not covered:** no implementation exists, so I did not run the full suite,
+exercise the re-anchor, or run the future end-to-end release regression. The
+distinct plan/code Security Review remains owed.
+
+**Next round:** limited to Z5-Z6. Preserve pre-existing collection failure and
+make the evidence table express the file-count policy exactly.
