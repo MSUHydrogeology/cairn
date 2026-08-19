@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — the change adds an **executable path**
 (a harness hook the tool runs before a command) and a new routing tool. It
 touches no surface `AGENTS.md` names high-risk, but "executable path" is a
@@ -1453,3 +1453,127 @@ proposal — it is simply no longer touched.
 * **Role-aware behaviour** — withdrawn; a conftest has no `agent_id`.
 * **The claim that interception needs a harness** — withdrawn; it needed the
   suite, which every harness reaches.
+
+## Review -- Codex (External) -- 2026-08-19
+
+**Model**: OpenAI GPT-5 (Codex)
+**Tier**: External
+**Findings**: raised
+
+Reviewed commit: `f0830078223ece6a8469eae77e652279557917ae`
+Target: Revision 3 and its Maintainer-directed mechanism revision
+Prior findings: Y1-Y4 in the Codex External review committed at `eee4193b9894f1b5f625c725a1d24a418e68619a`
+Assurance path: high-assurance
+
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+**Verdict: REVISE.** Moving the control into pytest is the right response to
+the Maintainer's vendor-neutrality concern. It deletes the executable harness
+trust root, command grammar, and invented plan reader while still placing a loud
+prompt on ordinary broad runs. The current contract has three narrow behavioral
+gaps and one record defect. The mechanism does not need another redesign.
+
+### Findings
+
+**[Z1 - BLOCKING] Adding the quality-gate override can silently remove release
+mode from the pytest grandchild.** Today `bootstrap/security_check.py` supplies
+`CAIRN_RELEASE_GATE_ACTIVE=1` to `scripts/quality_gate.py`, whose
+order-independence subprocess inherits that environment. Revision 3 now requires
+an explicit child environment carrying `CAIRN_FULL_SUITE=1`, but does not require
+that environment to be an additive copy. An implementation using a fresh mapping
+would let the quality gate run while dropping the release token, so skipped,
+xfailed, or xpassed tests in that grandchild would stop invalidating release
+evidence. “The quality gate still runs” does not falsify this failure.
+
+Bind the construction: copy the complete parent environment, set exactly the
+override key on that copy, and pass the result to the child. Exercise the real
+`security_check.py -> quality_gate.py -> pytest` path with a release-refused
+outcome; assert the guard does not refuse it **and** the release phase remains
+non-zero for the refused outcome. Preserve the existing clean control.
+
+**[Z2 - BLOCKING] `trylast=True` does not establish the claimed final item
+list.** I registered two `pytest_collection_modifyitems` implementations, both
+`trylast=True`. With one registration order the proposed guard observed 12
+items and a later hook deselected all 12; reversing registration made it observe
+zero. Equal-priority plugin ordering therefore decides whether the guard reads
+the post-filter list. The mutation test in Revision 3 proves only the current
+plugin set, not the stated property.
+
+Use `pytest_collection_finish(session)`, whose pytest hook contract is “after
+collection has been performed and modified,” and count `session.items`. Executed
+against this repository, that hook observed 4,455 items across 115 files and a
+raised `pytest.UsageError` exited 4 before tests ran; with `-k
+test_current_value_passes` it observed one item in one file and the test passed.
+This also leaves the existing shuffle implementation's ordering untouched.
+Replace the `trylast` mutation test with a competing late modifier plus a final-
+list assertion.
+
+**[Z3 - BLOCKING, claim boundary] A conftest cannot cover every pytest session
+over the suite.** On the canonical interpreter,
+`pytest bootstrap/tests --collect-only -q --noconftest` collected all 4,455
+current tests across 115 files and did not load `bootstrap/tests/conftest.py`;
+passing its existing shuffle option then failed as unrecognized, independently
+confirming the bypass. Thus “regardless of spelling,” “every pytest session,”
+and “it needed the suite, which every harness reaches” are not properties this
+mechanism can deliver.
+
+This does **not** defeat the proposal under its non-adversarial cost-control
+threat model: ordinary canonical runs load the conftest, and the documented
+override already makes this a deliberation prompt rather than a security
+boundary. Narrow the claim to sessions that load Cairn's conftest, record
+`--noconftest` and equivalent conftest suppression as a known bypass, and add the
+bypass probe so future prose cannot silently return to universal coverage. Do
+not add another harness layer to chase this residual.
+
+**[Z4 - BLOCKING, record conformance] The active declarations still describe
+the withdrawn design, and the lifecycle row is invalid.** The header continues
+to declare `.claude/settings.json`, a hook script, `tools/verify.py`, no frozen
+file, and no re-anchor. Revision 3 withdraws every one of those statements and
+instead edits two gate-frozen files. The stale `Proposed paths` declaration is
+also why claim checking continues to exempt the withdrawn router. Separately,
+`board --explain` reports that `## Maintainer-directed contract revision --
+2026-08-19 (mechanism)` matches the complete-revision vocabulary but has no
+mandatory withdrawal ledger; a later Revision 3 does not cure a malformed
+earlier revision record.
+
+Bring the mutable header metadata into agreement with Revision 3, including the
+re-anchor and Security Review posture, and remove the withdrawn proposed-path
+declarations. Resolve the malformed heading through the lifecycle checker's
+supported structural correction (or a Maintainer-authorized record correction
+if append-only prevents it); appending another complete revision alone will not
+remove this existing violation. The row must be `valid` before the clearing
+round.
+
+### Closed findings and scope judgment
+
+Revision 3 retires Y1-Y4 rather than papering over them: there is no automatic
+plan selection, no Boundary A parser, no role predicate, and no harness settings
+or timing contract left. X1's executable-hook concern also disappears with the
+hook. The replacement does lose role-aware routing, as disclosed, but I accept
+that trade: a vendor-neutral guard plus the existing spawner rule is preferable
+to a stronger control that reaches only one agent type.
+
+The 40-file threshold is a defensible self-host cost policy, not a statement of
+test completeness. The 115-file measurement reproduced; the test count has
+drifted from 4,468 to 4,455 at the reviewed commit without changing the decision.
+Keep the live 40/41 boundary test and describe the mechanism as a **broad-run
+guard**, even if the proposal stem remains unchanged.
+
+### Coverage
+
+**Covered:** Revision 3 in full; prior Y1-Y4; current conftest and
+order-independence child path; the release-token inheritance contract in
+`bootstrap/security_check.py`; canonical Python 3.13.13 collection with and
+without `--noconftest`; competing `trylast` item modifiers in both registration
+orders; and an executed `pytest_collection_finish` replacement over full and
+`-k`-narrowed Cairn collections. Claim checking is clean apart from its explicit
+stale-declaration diagnostic.
+
+**Not covered:** no implementation exists, so I did not run the full suite,
+modify release fixtures, execute the re-anchor ceremony, or assess Windows and
+third-party pytest-plugin combinations beyond the ordering probe. The distinct
+plan/code Security Review remains owed.
+
+**Next round:** limited to Z1-Z4. Preserve the release environment, move the
+count to `pytest_collection_finish`, state the conftest-suppression residual,
+and make the header plus lifecycle row conform.
