@@ -28,7 +28,7 @@
     },
     {
       "dst": "AGENTS.md",
-      "hash": "sha256:e45db6579b8b06ae69dc439ce7d0f5450768ca693472e7ca676b418613ea29d7",
+      "hash": "sha256:ba940524c24aa93aea9babac63cac1a2c14e4201d086fdf6cf0d11b6a2a2508b",
       "src": "core/AGENTS.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -58,7 +58,7 @@
     },
     {
       "dst": "dev/NEXT_SESSION.md",
-      "hash": "sha256:f497695aa60f247521017693c37594d12c09937d4d95cd8cd62850aef26f0a40",
+      "hash": "sha256:e705160e5b617280dbfcad00b08453332b57f16ce06f8dd239375ce1672bb1cc",
       "living_state": true,
       "src": "core/dev/NEXT_SESSION.md",
       "unrecoverable_base": true,
@@ -66,7 +66,7 @@
     },
     {
       "dst": "dev/PLANNING.md",
-      "hash": "sha256:41236f252c61482616ceb8af69a9dd5721c69ddbc95735c618854521b58e7c34",
+      "hash": "sha256:056a68181d220ef9ba414a616b4dd550e6bb753344d77c7f37af5aa5387e8e28",
       "living_state": true,
       "src": "core/dev/PLANNING.md",
       "unrecoverable_base": true,
@@ -81,14 +81,14 @@
     },
     {
       "dst": "dev/agent_collaboration.md",
-      "hash": "sha256:ee4ed17131d5b3ef996a13fdddf816d3f9e0bcba90632661356f212a0a6cbb14",
+      "hash": "sha256:767b2fe624e35d0256eab8fa3b06dc00c2d97a7c5881ae56e09415bc330669ab",
       "src": "core/dev/agent_collaboration.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/collaboration_agreement.md",
-      "hash": "sha256:1eb54dc9bd672c7842739b9cdf9f229f8e7df674da9774e7fa4cedda8a494d45",
+      "hash": "sha256:1abc6b3f4121099f1864055683e3e78a560b1f042c01235fcc197d4b9831ca60",
       "living_state": true,
       "src": "core/dev/collaboration_agreement.md",
       "unrecoverable_base": true,
@@ -103,7 +103,7 @@
     },
     {
       "dst": "dev/modules/claim-check.md",
-      "hash": "sha256:3275ce399cc25b003983bd0e073807340379cf1eb5827eae75ff07e9e23d8041",
+      "hash": "sha256:03dac0e5fcbdd9ac2b98af321c6b805e310c18244d7b8304c2554085c43faa21",
       "src": "modules/default-on/claim-check.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -131,7 +131,7 @@
     },
     {
       "dst": "dev/modules/dual-review.md",
-      "hash": "sha256:c88e73b59eee403f06577de710eee2752f4e101ac5850534943c45ee2f4e4a4d",
+      "hash": "sha256:de1726674686b51d6d9772d6fb0b4a3ad4d39f3f5a85fb18499dcbd57c4f450a",
       "src": "modules/team-gated/dual-review.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -208,7 +208,7 @@
     },
     {
       "dst": "dev/modules/security-review.md",
-      "hash": "sha256:b838724c729a9e37aeef2f03b28e828bcff7cf775a995eb3537188c06cd2aaab",
+      "hash": "sha256:ff88958b69752b2d27d40236b45bf5b3dda50110203d9075b3922d2ab5523480",
       "src": "modules/team-gated/security-review.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -222,14 +222,14 @@
     },
     {
       "dst": "dev/plans/_template.md",
-      "hash": "sha256:563c547d4decded921690ce5028be89ff17a94ffd0ac45c4fe72463cfb2a3253",
+      "hash": "sha256:86275df0f50d0041ae85e349834df45e32170c532c04f1cc842b4bfdf9f00822",
       "src": "core/dev/plans/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
     },
     {
       "dst": "dev/proposals/_template.md",
-      "hash": "sha256:edf51691cf49537afc320b4546e94086529e7517963d876f72144562116891f1",
+      "hash": "sha256:201284710257482b9ac41880951619b72fc0e227e3a263ef0e889068f90477a9",
       "src": "core/dev/proposals/_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -285,7 +285,7 @@
     },
     {
       "dst": "docs/DOCUMENTATION_PLAN.md",
-      "hash": "sha256:9957a634a941573ab9bf24d4664b53ebc1dee379811535149935a1b65541e4de",
+      "hash": "sha256:ff476b15ef598e58841667400a5d5bdf7517137eb4200cf3f64f098b73439593",
       "src": "modules/default-on/documentation_plan_template.md",
       "unrecoverable_base": true,
       "verbatim": false
@@ -293,56 +293,56 @@
     {
       "base_hash": "sha256:96ffbb4bb647cf964397e0a12b365300b150448c876bdc784622757a6d406d4f",
       "dst": "scripts/_onboarding/__init__.py",
-      "hash": "sha256:d41cb4297e339dc70a34bdba7ce14acc803d467f172cf2cf5a7c517612a674b3",
+      "hash": "sha256:aa4198712ccca928950f7f564e02fc26b69eeabd5215570a003683b3f97fc60b",
       "src": "modules/default-on/_onboarding/__init__.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:c0c4678fdd6df56bc3c3d0568796ad2c115b8d8999cddb5625ec42c2eaf71d5d",
       "dst": "scripts/_onboarding/activation.py",
-      "hash": "sha256:b0265d86e5e25ae5c4bc22b81e35bc9ff213eaf27b33cd758fdb9be55a4b3682",
+      "hash": "sha256:d950953a94a2822b57ad4f5c815686ab534f89b3df874afa2254927eab20cb4f",
       "src": "modules/default-on/_onboarding/activation.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:cc5e399fbc7c1a5212a0af32481d5df559a43555356f7d901a4ccadcb768ca22",
       "dst": "scripts/_onboarding/cli.py",
-      "hash": "sha256:72f0b37b48222145517a51b664b99ae9309709e93b2a979b0929eba477917410",
+      "hash": "sha256:2980515ed3f9acf38c7a61ce1b0834a70acbd981fd5792555d19312e84d6c7a7",
       "src": "modules/default-on/_onboarding/cli.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:d0b184798376b1c0547fb31716ad307aca3ac826a0ca2833af908912ed4a413b",
       "dst": "scripts/_onboarding/prompts.py",
-      "hash": "sha256:8dbf75d2bdd84b1009a5017ee9ea62ca0c9429151fadd098e0b8b805374c961d",
+      "hash": "sha256:8a5256f4fb191d0272696fb1c98057652bdbbbba9ea58e045311a82d178f81c3",
       "src": "modules/default-on/_onboarding/prompts.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:719598ff530db4ef235c7ddb68bc4aa0ff27ae9f593b2b67d2823df489501513",
       "dst": "scripts/_onboarding/security.py",
-      "hash": "sha256:8025f91660c36a8b84a2b141d85104488a5dd19eb77629241abf3b55ee2ff3ce",
+      "hash": "sha256:1a2f3e2e0c35cf60b0fa333a599aede7a84aa1ca4085c3e916358813f06430cb",
       "src": "modules/default-on/_onboarding/security.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:2df82aebc4889f7ac56086676d1937e7be38fff2c4cd556a07314eee33c3d1e2",
       "dst": "scripts/_onboarding/shared.py",
-      "hash": "sha256:d4df106a25ae17f11390c7ba547722eb10a545ccf0ed4f63a1c10c476d0f9f3b",
+      "hash": "sha256:dab6894588c9fb290dd8284b21b2ff43605e56ecabcac75b26df3cb7fd81361e",
       "src": "modules/default-on/_onboarding/shared.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:86dd6fea6d91e4c13c92a0a349f914890b33eb89b9ba2f002821792af9902437",
       "dst": "scripts/_onboarding/slotparse.py",
-      "hash": "sha256:fe88aa3d90600cec0abbdebbb637ad75fee46c25e7ac653ca4601aa39d969276",
+      "hash": "sha256:dbaa39faec64f3308d701de67ee67d697cf9d8d2424c7422f8b4775c1b88195f",
       "src": "modules/default-on/_onboarding/slotparse.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:e7981225094ee2535ca15e1d30ff32c7934fa5bcb65405b6d5a031e6d1a79749",
       "dst": "scripts/_onboarding/triggers.py",
-      "hash": "sha256:6572c6b45cfbd67ea6a15a590355e6accf1ee6bf5f7e74f3334d782192900a2d",
+      "hash": "sha256:b82ecbef8170b7e8967125e737b84a1cf96b89e59daad01f70f2f0870dbd957a",
       "src": "modules/default-on/_onboarding/triggers.py",
       "verbatim": true
     },
@@ -363,14 +363,14 @@
     {
       "base_hash": "sha256:3b7d371fe231d8639d000756a37c967776432158c11f7c4fe65c7a721ca19800",
       "dst": "scripts/check_model_selection.py",
-      "hash": "sha256:482c9a23d602fa93d0c860a8975ab6c896fe7708cf7384342d02c4e47ef986b8",
+      "hash": "sha256:830febe0b1b6b8eccd262497274a8a8db721237f214208a9afd907bb428e585c",
       "src": "modules/team-gated/check_model_selection.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:87fe356efedd96cbe0335ac76bdcb65686d469aae018b23593fcc61fb07e2549",
       "dst": "scripts/claim_check.py",
-      "hash": "sha256:cc214c591c72ec4f5831f87c7d70e4c2677f2163288420011a2f9562685c6ab1",
+      "hash": "sha256:e99813b7bac38114497742b826dd13816f512004c599fb6dbd8ab8ced5dbead1",
       "src": "modules/default-on/claim_check.py",
       "verbatim": true
     },
@@ -391,7 +391,7 @@
     {
       "base_hash": "sha256:c3581b5bc89217604429722d2bc923afa7213fbba1b31b85e0dde1cb0a48f734",
       "dst": "scripts/link_check.py",
-      "hash": "sha256:615eb8ae2a49be2fe39f036963eff9828c5fd973eebf1f6c1b8bc91ead47cd97",
+      "hash": "sha256:38cc90587065f504553e58f8bfe9e447185cb31af634ed54712176433a1afe7c",
       "src": "modules/team-gated/link_check.py",
       "verbatim": true
     },
@@ -426,49 +426,49 @@
     {
       "base_hash": "sha256:e1957083286c8053ab9da0d1a83243ead67cae1b49641eafea9b9743ace2328d",
       "dst": "tools/_intent/cli.py",
-      "hash": "sha256:13d178df1b2837a15f883b5a82cdfe8a9bd100fdff59af5280ebd01f33dc443e",
+      "hash": "sha256:76f735d2179d0e49cacba5dc65f69f74376170bf6821c4ee615dcd1ea6c9a71a",
       "src": "modules/team-gated/_intent/cli.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:9699effe323035c827b8d608c7bc7bf3ca8e0a68173e32796c7ccdb062fde37b",
       "dst": "tools/_intent/conflict.py",
-      "hash": "sha256:a62ed7d0c2a4018752afd08aeae71e953e806487e0d804802e7d0a9b5837b819",
+      "hash": "sha256:0188b9d25940446eb751d79f787e4a7916eae9b488ad2374911b05cbbb2b518f",
       "src": "modules/team-gated/_intent/conflict.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:976c42abbff5f12970c9440628eec5cadf4c59e1a34da9174cf17b0b0a70d0f8",
       "dst": "tools/_intent/hooks.py",
-      "hash": "sha256:06f9705a135268c7edd8db9ebc7127aa7df068c46ff64474b0f82af48546fd10",
+      "hash": "sha256:ae8d79598aff4b7d0688953faab97ad5f98bd9a690f46dec15015f7242f1bf61",
       "src": "modules/team-gated/_intent/hooks.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:02866a1ff9e71467015694e7716ddffbb291ba250a3ad764f376f6c3027de088",
       "dst": "tools/_intent/identity.py",
-      "hash": "sha256:c69880a58162f6ba253d4a0c2a96e3646e5916f13916c06c1c42314228984c70",
+      "hash": "sha256:db8ab84cd8d26ecc4ab8904c0060893bf001adf6b0d229ecee72e9469107585f",
       "src": "modules/team-gated/_intent/identity.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:bd9f01484f66f875a1872c4b8912064e25026d090a70dd57f5e9475eae0d2382",
       "dst": "tools/_intent/record_io.py",
-      "hash": "sha256:01a80707257899959b3e3c6ada49430a5b68d64f5151e485bc583b09846bf60d",
+      "hash": "sha256:231cf8cc9904ca9dfcb1870dc841b5a01eeb7862f193eeeb0aa39f4951cf84f6",
       "src": "modules/team-gated/_intent/record_io.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:5ddc3bdf611229dc107df5949083ba95380ce316955b381c11e34d8493940c3a",
       "dst": "tools/_intent/shared.py",
-      "hash": "sha256:5e9265c8bfb55f63170acf1db480bc06098fa75f5cc760d47841d587002a1565",
+      "hash": "sha256:4aa9de11e1327516d4fbae9f854f47025a67c90732e4608109dff47cb33bd370",
       "src": "modules/team-gated/_intent/shared.py",
       "verbatim": true
     },
     {
       "base_hash": "sha256:fb1c4d2657ba100fefd8aeb8d2834240c1dee422ec3e0da80b559e6d246af6cd",
       "dst": "tools/_lifecycle_metrics/__init__.py",
-      "hash": "sha256:15bbc4accf9421b99971063b8f4d4b4544eb112cea831091feb6bd83b550d127",
+      "hash": "sha256:f56c88b6cb8de0fb15f409db67016d8c175d8b72858bce12182d2d0d538ba184",
       "src": "modules/default-on/_lifecycle_metrics/__init__.py",
       "verbatim": true
     },
@@ -489,7 +489,7 @@
     {
       "base_hash": "sha256:ce5f7558c91c07f7c991aeba17274a7e345369f8c96a92565c4d08082a7f8476",
       "dst": "tools/_lifecycle_metrics/extract.py",
-      "hash": "sha256:57b9e9fca55febeae56634806200d84ebf1795cd0e25f1dc6c6c5504f8400e09",
+      "hash": "sha256:b489c399b0407ff6fda29a6cc59c4790d372901ff01f48bf2d9b41c7c5ad543a",
       "src": "modules/default-on/_lifecycle_metrics/extract.py",
       "verbatim": true
     },
@@ -503,7 +503,7 @@
     {
       "base_hash": "sha256:d7c973e159acddfbae2825b3af6656519a884b7b5c7e5dc54838a4bd67bb1f04",
       "dst": "tools/_lifecycle_metrics/parse.py",
-      "hash": "sha256:30f5e04bb8a89b414288d7c3b9f50b456a53c22027d0822bf1f2550ec0dfe136",
+      "hash": "sha256:fcfb2631a8856626c56e0d4895bccff041fcb038c5ea833bdd1238351fe5f4fc",
       "src": "modules/default-on/_lifecycle_metrics/parse.py",
       "verbatim": true
     },
@@ -524,7 +524,7 @@
     {
       "base_hash": "sha256:a0489d7ab5b396156afdfd6d2b11887afd054b0fc4e9e606ba0473cf65355af3",
       "dst": "tools/_lifecycle_metrics/subsystems.py",
-      "hash": "sha256:70c641a9f949264cc127664ec8d58471cba4ace5a972415cd114631384ce85e7",
+      "hash": "sha256:dc7f42707afb158a708a01563a98622fa57926708887cc58f8fbd3127e9d69a4",
       "src": "modules/default-on/_lifecycle_metrics/subsystems.py",
       "verbatim": true
     },
@@ -545,7 +545,7 @@
     {
       "base_hash": "sha256:a5bcea95e4e55b2136bd2ba442cf7f92dba65f02357580da5d51a8311283b9ed",
       "dst": "tools/lifecycle.py",
-      "hash": "sha256:57708842e43bbfae4d52461784648cb12253b824b622c704bc2574ae00d8babd",
+      "hash": "sha256:8d926f6764fb17dcf45c1bcc52faab8509e37dddc869ea16c3e498abdba861ee",
       "src": "skills/_lib/lifecycle.py",
       "verbatim": true
     },
@@ -559,7 +559,7 @@
     {
       "base_hash": "sha256:2b30639e4bf7c97037d2ba851d2487003f62f31824a98894c9fe0ca5b8c17263",
       "dst": "tools/lifecycle_planner.py",
-      "hash": "sha256:4411aa43451579cdd2f2c4bd90d38ae568442c7eb44239d70d0e5a41fc0b5e80",
+      "hash": "sha256:75f30cd9516c0c81e1ad5c18be435d4ae9569330e896e2777215f272f4f820d7",
       "src": "skills/_lib/lifecycle_planner.py",
       "verbatim": true
     },
@@ -586,9 +586,9 @@
       "verbatim": false
     },
     {
-      "base_hash": "sha256:11654a08a99fda47e61bfa0b7807c4555bbd23d67e4967f0c2e30f200ec9baa9",
+      "base_hash": "sha256:3c2ebff3ad74bcc3dc6d485b153b642f01077859fd833dde8a2f0ce61397ad64",
       "dst": "scripts/run_portable_security_sweeps.py",
-      "hash": "sha256:11654a08a99fda47e61bfa0b7807c4555bbd23d67e4967f0c2e30f200ec9baa9",
+      "hash": "sha256:3c2ebff3ad74bcc3dc6d485b153b642f01077859fd833dde8a2f0ce61397ad64",
       "src": "modules/team-gated/run_portable_security_sweeps.py",
       "verbatim": true
     },
@@ -608,16 +608,16 @@
       "verbatim": false
     },
     {
-      "base_hash": "sha256:1bc6a1135ec5a47d9c82e26d5c539d224f3dae3378d0885d6ae0e6c0c6af04eb",
+      "base_hash": "sha256:a600354ff005f6dcb39a885cb265b2c29eba6dea6de3e1c5864a662ac1dd78f2",
       "dst": "scripts/content_scan.py",
-      "hash": "sha256:1bc6a1135ec5a47d9c82e26d5c539d224f3dae3378d0885d6ae0e6c0c6af04eb",
+      "hash": "sha256:a600354ff005f6dcb39a885cb265b2c29eba6dea6de3e1c5864a662ac1dd78f2",
       "src": "modules/team-gated/content_scan.py",
       "verbatim": true
     },
     {
-      "base_hash": "sha256:b1744477a729f468712576896b378b435550984556c4933c340402a5882a2318",
+      "base_hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
       "dst": "scripts/content_scan_runner.py",
-      "hash": "sha256:b1744477a729f468712576896b378b435550984556c4933c340402a5882a2318",
+      "hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
       "src": "modules/team-gated/content_scan_runner.py",
       "verbatim": true
     },

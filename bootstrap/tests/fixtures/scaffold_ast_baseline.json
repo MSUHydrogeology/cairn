@@ -456,7 +456,7 @@
     "type": "ClassDef"
   },
   "ClassDef:ModuleMergeError": {
-    "digest": "153b2410d3a0a94b",
+    "digest": "cf8d5cbeaf70166f",
     "span": [
       159,
       162
@@ -496,7 +496,7 @@
     "type": "ClassDef"
   },
   "ClassDef:SlotError": {
-    "digest": "6d031bd6bbe64e88",
+    "digest": "88e957626a152583",
     "span": [
       2860,
       2861
@@ -520,7 +520,7 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "1035f6596541a4fa",
+    "digest": "65a5f59ef844cfb9",
     "span": [
       1788,
       2036
@@ -536,7 +536,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_assert_fanout_contained": {
-    "digest": "ff9bda965392bd42",
+    "digest": "4f313130562d2b7d",
     "span": [
       1680,
       1704
@@ -552,7 +552,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_behind_by_n": {
-    "digest": "b7b934cd5fe772d8",
+    "digest": "fc1e3d670ff82522",
     "span": [
       2608,
       2638
@@ -576,7 +576,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cairn_root": {
-    "digest": "298c43728ebead5c",
+    "digest": "694f16b6a4030f9c",
     "span": [
       2480,
       2491
@@ -608,7 +608,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_citation_ok": {
-    "digest": "a7efe3aed600c27c",
+    "digest": "785cc22496d63ad2",
     "span": [
       3320,
       3334
@@ -624,7 +624,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_finalize_lockfile": {
-    "digest": "8b4e83339f401ec6",
+    "digest": "37b6f92a7bf52011",
     "span": [
       1592,
       1714
@@ -632,7 +632,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_init_lock": {
-    "digest": "dfffe7fb75b4c838",
+    "digest": "a6fbdd4d4104cf53",
     "span": [
       1115,
       1224
@@ -664,7 +664,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_emit_skill_copy_fallback": {
-    "digest": "dafd11130ce6f652",
+    "digest": "28134f3136c51838",
     "span": [
       1728,
       1776
@@ -704,7 +704,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_find_manifest_path": {
-    "digest": "51f1e69f79a01173",
+    "digest": "c25456564c18629f",
     "span": [
       3552,
       3567
@@ -712,7 +712,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_infer_init_lock_axes": {
-    "digest": "6c715c17b8d18504",
+    "digest": "44d6d11ed82c4f9a",
     "span": [
       3595,
       3612
@@ -720,7 +720,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_install_one": {
-    "digest": "2d862f813afa6764",
+    "digest": "9e02d4f558dffd23",
     "span": [
       1443,
       1509
@@ -736,7 +736,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_manifest_cairn_commit": {
-    "digest": "fe7199f89ac91256",
+    "digest": "36e458d355482c24",
     "span": [
       3578,
       3592
@@ -744,7 +744,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_minimal_yaml_parse": {
-    "digest": "005d00bdf5c596a1",
+    "digest": "cfec5ac5594ea9b5",
     "span": [
       203,
       457
@@ -752,7 +752,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_normalize_for_compare": {
-    "digest": "1318faa9eed2c934",
+    "digest": "b3659989140f6650",
     "span": [
       282,
       293
@@ -768,7 +768,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_refuse_secret_tokens": {
-    "digest": "72ef404c4bc7745c",
+    "digest": "ded2b70076960aaf",
     "span": [
       2641,
       2657
@@ -784,7 +784,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_resolve_lock_profile_fields": {
-    "digest": "220c5bdab5352bee",
+    "digest": "58e52550a8a39ab7",
     "span": [
       3627,
       3647
@@ -792,7 +792,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_resolve_vendor_wrapper": {
-    "digest": "eee3c8f38b52b59f",
+    "digest": "e47ea5c98327755f",
     "span": [
       3517,
       3549
@@ -808,7 +808,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_self_heal_profile_config": {
-    "digest": "023b796b5601a6e3",
+    "digest": "1f5f7bcbcf3140b7",
     "span": [
       4214,
       4258
@@ -832,7 +832,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_slot_is_customized": {
-    "digest": "49494a746bf83182",
+    "digest": "496d1edae0301948",
     "span": [
       273,
       279
@@ -864,7 +864,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_symlinks_available": {
-    "digest": "0221d4e067b7954b",
+    "digest": "eee811ebda2020c8",
     "span": [
       1663,
       1677
@@ -896,7 +896,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_transplant_slots": {
-    "digest": "e91d604ece4e4750",
+    "digest": "76eaa39f364acb67",
     "span": [
       2938,
       2961
@@ -912,7 +912,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_init_lock_profile_template": {
-    "digest": "e40c25694b625748",
+    "digest": "d00b9cf6359ead3d",
     "span": [
       3650,
       3688
@@ -928,7 +928,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "441ccdf85c979b6d",
+    "digest": "2def9e4453394dae",
     "span": [
       744,
       938
@@ -1008,7 +1008,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:expand_preset": {
-    "digest": "6b0fb24cf58e02c8",
+    "digest": "7118ca2c6f400034",
     "span": [
       1545,
       1628
@@ -1016,7 +1016,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:fan_out_skills": {
-    "digest": "3c55b56268340a69",
+    "digest": "bbaa49c71f188c2e",
     "span": [
       1779,
       1850
@@ -1120,7 +1120,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:install_onboarding": {
-    "digest": "382bfff5b2ace579",
+    "digest": "3ce57ecdc058cbcf",
     "span": [
       951,
       1173
@@ -1168,7 +1168,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:merge_file": {
-    "digest": "514f0e8206745729",
+    "digest": "3b32084ea3739ba6",
     "span": [
       2995,
       3057
@@ -1176,7 +1176,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:merge_module_into_slot": {
-    "digest": "431cc08ef171c24e",
+    "digest": "2aefbb474156ffeb",
     "span": [
       258,
       345
@@ -1192,7 +1192,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:parse_slots": {
-    "digest": "2c9f816f50c5d41d",
+    "digest": "d95f709775b955b1",
     "span": [
       2873,
       2923
@@ -1224,7 +1224,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:render_compatibility_matrix": {
-    "digest": "70c004535b201c67",
+    "digest": "5ee992ec88b0c7ee",
     "span": [
       1617,
       1660
@@ -1232,7 +1232,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:resolve_axes": {
-    "digest": "b06ab9b286a8266c",
+    "digest": "d353bf6b742f4706",
     "span": [
       1235,
       1250
@@ -1248,7 +1248,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:seed_gitignore": {
-    "digest": "b35664967de207f9",
+    "digest": "55a95c62ab693619",
     "span": [
       1039,
       1067
@@ -1280,7 +1280,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:validate_unique_slot_names": {
-    "digest": "ec7a170f072ec7a0",
+    "digest": "1625461e89a957d1",
     "span": [
       220,
       244
@@ -1288,7 +1288,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "72e335276655da6a",
+    "digest": "63e897b5d01e8deb",
     "span": [
       1478,
       1650
@@ -1296,7 +1296,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_local_env": {
-    "digest": "3a0f3f41ab0b5b9f",
+    "digest": "acc8fdd5edf96cb0",
     "span": [
       1569,
       1601
