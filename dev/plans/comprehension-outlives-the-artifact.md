@@ -2247,3 +2247,37 @@ because a coordinate into a closed record decays; here a *live* citation into a
 rewrote the file it pointed into. Line numbers are the most brittle coordinate
 of all — they go stale without anyone touching either the citing text or the
 cited claim.
+
+## Scope allowance -- Maintainer -- 2026-08-19
+
+The implementer filed a **scope delta: NOT preserved** at `6140920` — 142
+occurrences deferred (123 under the frozen AST baseline in
+`bootstrap/_scaffold/`, 19 in the re-anchor ceremony surface) — and a separate
+measured blind spot in this plan's own matching rule: two tag shapes
+(`S12`/`R10`/`D14`, and `P6a`/`P6c`/`F1b`) that none of the three declared
+classes can match, **246 occurrences** tree-wide before excluding live schemes.
+
+The Maintainer's instruction, verbatim:
+
+> Let's just get all of them done before reanchor
+
+**What this authorizes, and what it changes.**
+
+* **The deferral is withdrawn.** All 142 occurrences are completed under this
+  plan rather than handed to a successor. The AST attestation baseline and the
+  gate manifest are re-anchored *once*, afterwards, covering the whole set —
+  which is the sequencing the deferral was costing.
+* **The matching rule is widened**, from three classes to five, by explicit
+  allowance. Widening reviewed scope mid-implementation is a deviation exactly
+  as narrowing it is; this is the Maintainer granting it, not the implementer
+  reading it into the ruling.
+* **Boundary B moves.** `6140920` is not the final implementation commit. A run
+  started against it was stopped rather than filed.
+
+**What this does not authorize.** The liveness rule is unchanged: a coordinate
+that still resolves to something live stays. `M2-4` and `M2-5` in
+`bootstrap/tests/_gate_manifest.py` cite `M2`, a live row in the in-flight
+`ceremony-as-code` plan, and `N4` and `M3` remain live fences. "All of them"
+means every *dead* coordinate in the widened corpus, not every token matching a
+pattern — sweeping a live fence because a ruling said "all" would be the same
+mechanical error this plan exists to prevent.
