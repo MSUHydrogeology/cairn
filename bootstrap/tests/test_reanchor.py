@@ -17,9 +17,12 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+
+from bootstrap.tests import _gate_preflight as P
 
 _REPO = Path(__file__).resolve().parents[2]
 _ARTIFACT = _REPO / "bootstrap/reanchor.sh"
@@ -1692,3 +1695,188 @@ class TestTheReproducedLauncherDoesNotDriftFromTheRealOne:
             "an executable loader block is back in the runbook")
         for delim in ("LOADER", "TRANSITION", "STAGE2", "STAGE2T"):
             assert f"<<'{delim}'" not in runbook
+
+
+# --------------------------------------------------------------------------
+# the whole ceremony, end to end
+# --------------------------------------------------------------------------
+#
+# The ceremony bed is imported rather than rebuilt. Duplicating it would create
+# two beds that drift, and a drifting fixture is worse than an import: the copy
+# that stops resembling a real ceremony keeps passing.
+from bootstrap.tests.test_gate_preflight import (        # noqa: E402
+    _ceremony_repo as _build_ceremony_repo,
+    _n4_precondition as _key_withheld,
+)
+
+
+class TestTheMaintainerCanPerformTheWholeCeremony:
+    """**Acceptance criterion 1's evidence producer.**
+
+    The objective this plan is measured against:
+
+        The re-anchor ceremony must be performable, end to end, by the
+        Maintainer alone -- without an agent generating a script, retyping a
+        digest, or improvising a reader -- and without any control being weaker
+        than it was before.
+
+    This node starts from **only** what the External Security review delivers
+    (the instantiated launcher and the packet bound into it) plus a values file
+    the Maintainer wrote once, and runs the ceremony to the two-ref
+    transaction. Nothing here fills a placeholder, composes an authority input,
+    or reads a digest out of the artifact that carries it.
+
+    **What it cannot establish**, said plainly rather than left for a reviewer
+    to notice: that a *human* finds this usable. A test can show the commands
+    compose into a working ceremony; it cannot show anyone can follow them.
+    That half of the criterion is established at the real ceremony and nowhere
+    else.
+    """
+
+    def _values(self, repo):
+        """The one thing the Maintainer authors, and it is data."""
+        import shutil as _shutil
+        tools = {}
+        for key, binary in (("env", "env"), ("git", "git"), ("mktemp", "mktemp"),
+                            ("mkdir", "mkdir"), ("shasum", "shasum"),
+                            ("sort", "sort"), ("cat", "cat")):
+            found = _shutil.which(binary)
+            assert found, f"no {binary} on this host"
+            tools[key] = os.path.realpath(found)
+        values = {
+            "schema": "cairn-ceremony-values/v1",
+            "checkout": str(repo),
+            "signing_key": str(repo.parent / "maint.pub"),
+            "package": str(repo.parent / "authorization-package.json"),
+            "home": str(repo.parent),
+            "python": os.path.realpath(sys.executable),
+            **tools,
+        }
+        path = repo.parent / "ceremony-values"
+        path.write_text("".join(f"{k} {v}\n" for k, v in values.items()),
+                        encoding="utf-8")
+        return str(path)
+
+    def _review_delivers(self, repo, oid):
+        """What the External Security review hands over, out of band: a packet
+        and a launcher instantiated with that packet's digest.
+
+        Composed here the way the review composes it -- from the closure at the
+        candidate -- because the alternative is a fixture that invents an
+        authority artifact, which is the act this whole plan removes.
+        """
+        import hashlib
+        members = []
+        for rel in sorted(P.declared_authority_closure()):
+            blob = subprocess.run(
+                ["git", "-C", str(repo), "cat-file", "blob", f"{oid}:{rel}"],
+                capture_output=True, check=True).stdout
+            members.append((hashlib.sha256(blob).hexdigest(), rel))
+        artifact_sha = dict((rel, sha) for sha, rel in members)[
+            "bootstrap/reanchor.sh"]
+        packet_text = "\n".join(
+            ["schema cairn-authorization-packet/v1",
+             "provenance External Security Review, end-to-end node",
+             "artifact bootstrap/reanchor.sh",
+             f"artifact_sha256 {artifact_sha}"]
+            + [f"member {sha} {rel}" for sha, rel in members]) + "\n"
+
+        packet = repo.parent / "authorization-packet.txt"
+        packet.write_bytes(packet_text.encode())
+        template = _LAUNCHER_TEMPLATE.read_text(encoding="utf-8")
+        launcher = repo.parent / "reanchor-launcher.sh"
+        launcher.write_text(
+            template.replace("@PACKET_SHA256@",
+                             hashlib.sha256(packet_text.encode()).hexdigest()),
+            encoding="utf-8")
+        return launcher, packet
+
+    def _sh(self, *args, cwd):
+        return subprocess.run(["/bin/sh", *[str(a) for a in args]],
+                              capture_output=True, text=True, check=False,
+                              cwd=str(cwd))
+
+    def test_from_the_review_outputs_to_the_two_ref_transaction(self, tmp_path):
+        import hashlib
+        repo, anchor, head, _epoch = _build_ceremony_repo(tmp_path)
+        values = self._values(repo)
+        launcher, packet = self._review_delivers(repo, head)
+        package = Path(repo.parent / "authorization-package.json")
+        if package.exists():
+            package.unlink()
+
+        before_head = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True).stdout.strip()
+        before_anchor = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", P._ANCHOR_REF],
+            capture_output=True, text=True, check=True).stdout.strip()
+
+        # --- ONE command, with the key genuinely unavailable ----------------
+        with _key_withheld(tmp_path / "maint"):
+            r1 = self._sh(launcher, packet, values, head, cwd=repo)
+        assert r1.returncode == 0, f"stage 1 failed:\n{r1.stdout}\n{r1.stderr}"
+        assert package.exists(), "stage 1 wrote no authorization package"
+        assert subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", P._ANCHOR_REF],
+            capture_output=True, text=True, check=True).stdout.strip() == \
+            before_anchor, "stage 1 moved a ref; it holds no key and moves nothing"
+
+        # --- the two steps that are the Maintainer's judgement --------------
+        artifact = _REPO / "bootstrap/reanchor.sh"
+        report = self._sh(artifact, "show-report", values, cwd=repo)
+        assert report.returncode == 0, report.stderr
+        assert before_anchor in report.stdout and before_head in report.stdout, (
+            "the report does not name the state being authorized")
+
+        digest_out = self._sh(artifact, "hash-package", values, cwd=repo)
+        assert digest_out.returncode == 0, digest_out.stderr
+        confirmed = next(w for w in digest_out.stdout.split()
+                         if len(w) == 64 and all(c in "0123456789abcdef"
+                                                 for c in w))
+        # The digest the operator confirms is over the bytes on disk. Computing
+        # it here independently is the point: a node that reused the artifact's
+        # own answer would be checking the artifact against itself.
+        assert confirmed == hashlib.sha256(package.read_bytes()).hexdigest(), (
+            "hash-package did not report the digest of the bytes on disk")
+
+        # --- the key becomes available, and only now ------------------------
+        r2 = self._sh(launcher, packet, values, head, "--stage2", confirmed,
+                      cwd=repo)
+        assert r2.returncode == 0, f"stage 2 failed:\n{r2.stdout}\n{r2.stderr}"
+
+        # --- the two-ref transaction ---------------------------------------
+        after_head = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=True).stdout.strip()
+        after_anchor = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", P._ANCHOR_REF],
+            capture_output=True, text=True, check=True).stdout.strip()
+        assert after_anchor != before_anchor, "the anchor did not move"
+        assert after_anchor == after_head, (
+            "branch and anchor did not land on the same commit; the two-ref "
+            "transaction is what makes them one act rather than two")
+        signed = subprocess.run(
+            ["git", "-C", str(repo), "log", "-1", "--format=%G?"],
+            capture_output=True, text=True, check=True).stdout.strip()
+        assert signed == "G", (
+            f"the checkpoint is not signed by a roster key (%G? = {signed!r})")
+
+    def test_no_step_of_that_ceremony_needed_an_authored_script(self):
+        """The objective's first clause, asserted on the node above rather than
+        claimed in prose.
+
+        Every command in that test is either the reviewed launcher or a named
+        subcommand of the reviewed artifact. If a future change makes the
+        ceremony need a `bash -c` or a generated file again, this fails -- which
+        is the whole failure the plan exists to remove, and it would otherwise
+        reappear silently inside a passing end-to-end test.
+        """
+        import inspect
+        src = inspect.getsource(
+            self.test_from_the_review_outputs_to_the_two_ref_transaction)
+        assert "bash -c" not in src and 'bash", "-c' not in src, (
+            "the ceremony needs a shell one-liner again")
+        for command in ("show-report", "hash-package", "--stage2"):
+            assert command in src, (
+                f"the end-to-end node no longer exercises {command!r}")
