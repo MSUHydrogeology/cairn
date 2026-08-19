@@ -124,6 +124,32 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **[VER] The AST attestation baseline needs re-anchoring after the tag pass**
+  *(filed 2026-08-19; Maintainer authorized the re-anchor over a revert)* —
+  `bootstrap/tests/test_ast_attest.py` reports **13 CHANGED symbols**: 11 in
+  `bootstrap/_scaffold/upgrade.py`, 2 in `bootstrap/_scaffold/config.py`.
+
+  **Cause is prose, not logic.** Docstrings are AST nodes, so revising one
+  changes the attested hash even though nothing executable moved. The pass
+  edited 18 docstrings in `upgrade.py` and 5 in `config.py`; the ~987 comment
+  lines in those two files are invisible to the AST and are not implicated.
+
+  **Not self-serviceable.** `_ast_attest._UPDATE_ALLOWLIST` covers
+  `_CORE_MAPPINGS`, `_MODULE_MAPPINGS`, `_SKILLS_MAPPINGS` and
+  `install_onboarding` — none of the 13. `AGENTS.md` makes anything outside
+  that list a **Maintainer-run, dry-run-verified direct correction that an
+  implementing agent does not perform** (precedent `c3d5bd9`), so the
+  implementing agent has left it alone rather than repairing it.
+
+  **Procedure**: [`bootstrap/AST_BASELINE_RUNBOOK.md`](../bootstrap/AST_BASELINE_RUNBOOK.md).
+  Derive the expected CHANGED set against the committed baseline rather than
+  carrying the figure 13 forward from this row — including from this row.
+
+  **Decision recorded**: the Maintainer chose re-anchor over reverting the
+  docstrings. Reverting would have left 23 docstrings in the engine package as
+  the only place in the tree still carrying dead coordinates, which is the
+  never-finishes shape this plan exists to prevent.
+
 * **[SEC] Two install-contract artifacts are stale after the tag pass** *(filed
   2026-08-19)* — `bootstrap/tests/fixtures/gate_manifest.json` has **35 frozen
   entries** whose bytes no longer match the tree, and
