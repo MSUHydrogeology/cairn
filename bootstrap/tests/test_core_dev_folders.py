@@ -10,7 +10,7 @@ This module asserts:
    their READMEs, the two _template.md files, and the gitkeep placeholder.
 2. Upgrade no-clobber: a diverged upstream/README.md is NOT overwritten
    on upgrade — the 3-way merge takes the adopter's copy as ours.
-3. Living-state (F1): an adopter-edited README does NOT trip verify_integrity
+3. Living-state: an adopter-edited README does NOT trip verify_integrity
    (these files are 3-way-merge customization-expected, not tamper-checked).
 
 Run from the Cairn repo root:
@@ -128,7 +128,7 @@ class TestScaffoldCompleteness:
 
 
 # ---------------------------------------------------------------------------
-# 2. Upgrade no-clobber (R2)
+# 2. Upgrade no-clobber
 # ---------------------------------------------------------------------------
 
 class TestUpgradeNoClobber:
@@ -170,7 +170,7 @@ class TestUpgradeNoClobber:
 
 
 # ---------------------------------------------------------------------------
-# 3. Living-state / F1: adopter edits do not trip verify_integrity
+# 3. Living-state: adopter edits do not trip verify_integrity
 # ---------------------------------------------------------------------------
 
 class TestLivingStateF1:
@@ -188,7 +188,7 @@ class TestLivingStateF1:
     advance the recorded hash.  This is the same behaviour as AGENTS.md,
     dev/collaboration_agreement.md, etc.
 
-    What the F1 test actually asserts: a fresh install verifies clean
+    What this test actually asserts: a fresh install verifies clean
     (the out-of-box state is consistent), confirming the lockfile records
     these files correctly and they are part of the integrity surface.
     The LIVING_STATE test (test_upgrade.py::TestLivingStatePartition) already

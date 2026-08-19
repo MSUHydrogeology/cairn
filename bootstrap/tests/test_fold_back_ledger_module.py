@@ -9,7 +9,7 @@ Covers:
   (no `modules:` key) includes it.
 * omission path: a `modules:` list that omits it leaves the ledger
   uninstalled (the documented opt-out).
-* security (Plan-review P2#3): the installed ledger carries the literal
+* security: the installed ledger carries the literal
   [SECURITY WARNING] export-safety language -- test-verified, not
   human-read-only.
 * mechanism scaffolding: the ledger carries the status vocabulary +
@@ -43,7 +43,7 @@ MODULE_DOC_DST = "dev/modules/fold-back-ledger.md"
 LEDGER_DST = "dev/.cairn/cairn_foldback.md"
 
 # The literal export-safety phrase the ledger template must carry
-# verbatim (Plan-review P2#3).
+# verbatim.
 SECURITY_PHRASE = (
     "no secrets, credentials, internal hostnames/IPs, local paths, "
     "or proprietary domain detail"
@@ -100,7 +100,7 @@ class TestInstallPath:
 
 class TestLedgerContent:
     def test_security_warning_verbatim(self, tmp_path: Path) -> None:
-        """Plan-review P2#3: the installed ledger carries the literal
+        """The installed ledger carries the literal
         [SECURITY WARNING] export-safety language."""
         assert _scaffold(tmp_path, [MODULE]) == 0
         text = (tmp_path / LEDGER_DST).read_text(encoding="utf-8")
@@ -122,7 +122,7 @@ class TestLedgerContent:
 
 
 class TestDoctrineReferenceIsCairnSource:
-    """Code-review P2: the scaffold does not install Cairn's `doctrine/`
+    """The scaffold does not install Cairn's `doctrine/`
     into adopters, so any `doctrine/fold-back.md` reference in the
     *installed* fold-back files must be explicitly qualified as a Cairn
     source reference -- never a bare adopter-local path that dangles at

@@ -8,7 +8,7 @@ closed on such a reference unless it is transplanted or marked a deliberate
 citation.
 
 Pins: (1) a planted dangling ref in a templates/ surface flags; (2) BOTH a
-backticked token and a raw Markdown link target flag (N1 -- a relative
+backticked token and a raw Markdown link target flag (a relative
 ``[x](doctrine/..)`` link that link_check passes in-source but breaks on
 adoption); (3) the ``cairn-internal-ref-allow`` / ``cairn-internal-ref``
 markers exempt; (4) the scan-allowlist -- a non-``templates/`` file is not
@@ -49,7 +49,7 @@ class TestDanglingRefGate:
             "a backticked doctrine/ reference in a template must flag"
 
     def test_markdown_link_target_flags(self, tmp_path: Path) -> None:
-        """N1: a raw Markdown relative link target to doctrine/ flags --
+        """A raw Markdown relative link target to doctrine/ flags --
         link_check passes it in-source but it breaks on adoption."""
         md = _tmpl(tmp_path, "See [the sweep](../../doctrine/dual-review.md).\n")
         flags = _loop_flags(check_cairn.check_tree(tmp_path, [md]))
@@ -77,7 +77,7 @@ class TestDanglingRefGate:
         assert not _loop_flags(check_cairn.check_tree(tmp_path, [md]))
 
     def test_non_template_file_not_scanned(self, tmp_path: Path) -> None:
-        """Scan-allowlist (F3): only adopter-facing templates/ surfaces are
+        """Scan-allowlist: only adopter-facing templates/ surfaces are
         scanned; a doctrine/ file referencing its siblings is not."""
         md = tmp_path / "doctrine" / "x.md"
         md.parent.mkdir(parents=True)
@@ -99,7 +99,7 @@ class TestDanglingRefGate:
         assert "doctrine/lifecycle.md" in flags[0].message
 
     def test_bare_prefix_marker_normalizes(self, tmp_path: Path) -> None:
-        """R1: a bare directory token matching a known internal prefix
+        """A bare directory token matching a known internal prefix
         (``doctrine``, no trailing slash) is normalized to ``doctrine/`` and
         exempts, rather than being silently dropped."""
         body = (

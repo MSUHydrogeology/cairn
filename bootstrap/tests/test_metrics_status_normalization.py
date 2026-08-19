@@ -1,8 +1,8 @@
 """The metrics status normalizer must keep resolving PRE-MIGRATION history.
 
-Chunk H1 of ``review-efficient-lifecycle`` retired six lifecycle status tokens,
+The lifecycle retired six status tokens,
 moving them out of ``PLAN_STATES`` / ``PROPOSAL_STATES`` and into the historical
-tuples. R7 is explicit that this must not stop longitudinal metrics parsing the
+tuples. That must not stop longitudinal metrics parsing the
 commits that predate the migration, and this file is the guard on that clause.
 
 **Why it exists at all: the regression it prevents is silent.**
@@ -15,8 +15,8 @@ value the leading token *starts with*. When ``_plan_status_enum()`` returned
 Every *exact* token (``review``, ``executing``, ``open``) is unaffected, because
 the no-match fall-through returns the lead token unchanged -- which is the same
 string. Only the **prefix** case moves, and it moves quietly: it splits one
-longitudinal bucket into two while every existing test stays green. At the time
-H1 landed, **no test in the suite referenced ``_normalize_plan_status`` or
+longitudinal bucket into two while every existing test stays green. When the
+retirement landed, **no test referenced ``_normalize_plan_status`` or
 ``_plan_status_enum`` at all**, so the whole defect class was unobserved. That is
 the "silent tool defect" ``AGENTS.md`` > *Verifying claims* forbids: a tool that
 returns success without testing the claimed property.
@@ -95,7 +95,7 @@ class TestHistoricalTokensStayResolvable:
 
 
 class TestNormalizationIsStableAcrossTheMigration:
-    """The exact inputs whose resolution H1 could have changed."""
+    """The exact inputs whose resolution the retirement could have changed."""
 
     @pytest.mark.parametrize(
         "raw,expected",

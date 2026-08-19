@@ -242,7 +242,7 @@ def test_bounded_guard_detects_a_removed_fence() -> None:
     `test_review_reuse_guard_detects_unconditional_reuse` above. An earlier
     version of this test asserted only that a token was absent from text it
     had just removed it from, which passed even against an empty file: a
-    tautology wearing a mutant's docstring (Internal review 2026-08-12, F3).
+    tautology wearing a mutant's docstring.
     """
     intact = _read(SELF_AGENTS)
     assert _bounded_violations(intact) == []
@@ -266,8 +266,8 @@ def test_already_open_plans_keep_their_written_contract(path) -> None:
     prospectively. Without this rule an in-flight plan receives two answers
     about its own evidence obligation -- and two plans were executing when the
     clause landed. The rule was accepted in the Decision, shipped in the
-    implementing commit, and was still deletable without any test noticing
-    (Internal review 2026-08-12, F1, and the follow-up gap it exposed).
+    implementing commit, and was still deletable without any test
+    noticing it.
     """
     normalized = " ".join(_read(path).split())
     assert "already-open plan keeps the verification contract" in normalized, (
@@ -307,9 +307,9 @@ def test_full_run_required_routes_to_the_existing_first_trigger() -> None:
 
     # Counted from the DOCTRINE, not from `FRESH_RUN_TRIGGERS` -- that tuple
     # lives in this file, so asserting its length can never fail on a doctrine
-    # edit and the "six stay six" claim rested on nothing (Internal review
-    # 2026-08-12, F2). The list is the numbered items between the "six
-    # triggers" sentence and the paragraph that follows it.
+    # edit and the "six stay six" claim rested on nothing.
+    # The list is the numbered items between the "six triggers" sentence
+    # and the paragraph that follows it.
     body = re.search(
         r"required when any of these six triggers applies:(.*?)\n\nReview-only",
         _read(REVIEW_DOCTRINE), re.S)
