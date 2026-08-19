@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change adds an **executable path**
 (a harness hook the tool runs before a command) and a new routing tool. It
 touches no surface `AGENTS.md` names high-risk, but "executable path" is a
@@ -789,3 +789,306 @@ remains undischarged by this proposal review.
 **Next round:** limited to Y1-Y4. Bind or remove automatic plan selection,
 make the structured block append-only-safe and audience-correct, use `agent_id`
 as the subagent predicate, and state the exact settings/grammar/time bounds.
+
+## Response -- Claude -- 2026-08-19 (round 2)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `c6ef10a`. All four findings verified against primary sources.
+Then, as with the sibling proposal, I put the replacement draft through an
+adversarial pre-review before submitting it — four independent lenses with
+probes. **They converged, unanimously and with executed evidence, on a
+conclusion the draft did not reach: Part 2 is not a reviewable contract and
+should be cut rather than repaired.** I have cut it.
+
+**[Y1] accept, taking the second exit.** Verified: the common input is
+`session_id`, `prompt_id`, `transcript_path`, `cwd`, `permission_mode`, `effort`,
+`hook_event_name` plus the tool fields — **no plan, and none is derivable**. My
+draft answered this with a spawner-owned `CAIRN_PLAN`, and the pre-review showed
+that **names a channel nothing can write**: a command hook inherits the *harness
+process* environment, not the environment of the tool call it inspects, and this
+harness's own contract states shell state does not persist between `Bash` calls
+(measured: `export` in one call, unset in the next). The binding is dropped
+entirely. Also correct that the concentration figures had no valid source —
+`dev/measurement/suite-cost.md` is gitignored at `.gitignore:18` and absent from
+any fresh clone. Removed.
+
+**[Y2] accept by cutting Part 2, not by repairing it.** Every one of my Revision 1
+answers turned out to be false under probe:
+
+* **The format claim.** All four lenses independently fed my own example block to
+  `tools/lifecycle.py::_parse_fenced_records` — the parser I cited as *proving*
+  the format — and all four got a refusal at line 4. That grammar admits only flat
+  `key: value`; the `- item` list half, which carries every executable path, is
+  **novel and was presented as proven**.
+* **It cannot be self-host-only.** `tools/lifecycle.py` and
+  `templates/skills/_lib/lifecycle.py` are byte-identical under a verbatim sync
+  (md5 `e58486dc8eec224e487c739b400f8c89`), so extending that parser ships to every
+  adopter — contradicting the draft's own bound.
+* **Zero producers on day one.** v1 touched only the plan template, and both live
+  plans map Boundary A **per chunk** — one chunk's reviewed answer *is* the full
+  suite — which a flat schema has no dimension to hold. `tools/verify.py` would
+  refuse for every plan that exists, while the hook pointed at it.
+* **"Fails closed" is false twice, silently.** A four-backtick quotation of a
+  block — the ordinary way a reviewer cites one — swallows the following real
+  block, and the reader then runs the *superseded* mapping with no diagnostic.
+  And `PYTEST_ADDOPTS='-k "not two"'` turns a genuinely failing run into exit 0
+  with byte-identical argv, so fixed argv does not bound what pytest runs.
+
+A reader cited as Boundary A evidence that reports green while running less than
+it claims is precisely the silent-tool failure `AGENTS.md` singles out. Repairing
+it needs a new grammar, a new parser home, a chunk dimension, environment
+sanitisation, and a containment rule — five design decisions no reviewer has
+seen. **Cutting it costs no delivered function, because it delivers none.**
+
+**[Y3] accept.** Verified verbatim: `agent_id` is *"Present only when the hook
+fires inside a subagent call"*; `agent_type` is *"Present when the session uses
+`--agent` **or** the hook fires inside a subagent"*. My predicate would have
+routed a top-level `--agent` owner away from its own verification. The predicate
+is now a non-empty `agent_id`, and `agent_type` is descriptive only.
+
+**[Y4] accept — and the ask I dropped is the important one.** My Withdrawn ledger
+closed Y4 by listing four replacements and **silently omitted its fourth ask, the
+enumeration of blocked forms.** Two lenses greped it: the word "enumerat" appeared
+twice in my draft, one of them the falsifier row itself, and `pytest` never
+appeared as a command to intercept. So the contract's *first invariant* — "blocked
+forms are exactly the enumerated canonical ones" — was over a set that did not
+exist.
+
+That absence concealed a live contradiction. A 32-command prototype sweep refused
+**2 of 32**, and the two were the same command differing in whitespace. Everything
+this repository actually documents as a full-suite run passed open: the canonical
+Boundary B pair, the `PYTHONDONTWRITEBYTECODE=1`-prefixed forms recorded in a live
+plan and in the AST baseline runbook, `cd <repo> && pytest bootstrap/tests`,
+`python3.13 -m pytest ...`, and the pinned absolute interpreter. Three tokens I
+called "narrowing" — `--lf`, `--ff`, `-k ''`, `-m ''` — each ran the *whole* suite,
+making my evidence rows 3 and 4 mutually unsatisfiable. The enumeration is now
+written, and matching normalises rather than bails.
+
+**One thing the pre-review cleared, recorded so it is not re-raised:** the
+p95 < 50 ms latency criterion is genuinely meetable — three independent 200-run
+spawn-inclusive samples gave p95 **23.2 / 26.2 / 27.1 ms**. And the narrowing to
+self-host-only is legitimate: Y2 named that exit, and Revision 1 was never
+accepted, so no accepted-scope floor is engaged.
+
+## Revision 2
+
+The complete current contract, self-contained. Supersedes Revision 1 in full.
+
+### Assurance path
+
+**high-assurance.** Adds a **full-user-permission executable trust root** that
+runs before every `Bash` tool call, inside subagents as well as the main session,
+ahead of the permission system.
+
+### Scope — and what v1 does not attempt
+
+**In scope**: a tracked `.claude/settings.json`; one hook script; a vendor-neutral
+high-risk-surface entry in `AGENTS.md` and its twin; the concrete paths named in
+Cairn's root `CLAUDE.md`; one vendor-neutral sentence under *Verification
+boundaries*; one new test file.
+
+**Part 2 is withdrawn from v1.** The machine-readable Boundary A block and
+`tools/verify.py` are named as a successor's work, with the five design decisions
+they require stated above. **Nothing is placed in either plan template.**
+
+**Also excluded**: any change to the canonical Boundary B command text; any
+bootstrap installation mechanism; any gate-frozen file; any doctrine *rule*;
+`templates/core/VENDOR.md`.
+
+### Part 1 — the hook, as a registered trust root
+
+**Registration first, split by what each file is for.** `AGENTS.md` >
+*High-risk surfaces* gains the surface **without any vendor path** — naming
+`.claude/` there would put a vendor token into vendor-neutral doctrine, which is
+itself a named high-risk surface and is checked by
+`scripts/quality_gate.py --sub neutrality`:
+
+> **The harness command-hook configuration** — whatever file the project's agent
+> tool reads to register a command hook, and every script such a hook points at.
+> These execute with the user's full permissions, before the tool's permission
+> system, and inside subagents; the concrete paths are named in that tool's own
+> wrapper. Changes to either take a Security Review.
+
+Cairn's root `CLAUDE.md` names the paths.
+
+**The exact settings object**, reviewed as bytes together with the script:
+
+```json
+{"hooks": {"PreToolUse": [{"matcher": "Bash",
+  "hooks": [{"type": "command",
+             "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/full_suite_guard.py",
+             "args": [],
+             "timeout": 5}]}]}}
+```
+
+Each clause is contract. The path uses the documented **`${CLAUDE_PROJECT_DIR}`
+placeholder**, never an absolute one: a machine path in a tracked file is inert in
+every other clone, a failed hook spawn is non-blocking, and the only signal is a
+transcript notice — silent inertness is the wrong failure direction for a
+security-registered artifact. **Shell-free exec form** (`args: []`). **Timeout 5
+seconds** — the documented default is **600**, which would stall every `Bash` call
+for ten minutes. The script is a **regular file**, not a symlink, with the
+executable bit, and its `#!` line is `#!/usr/bin/env python3` — pinning no machine
+interpreter, and stdlib-only. **No subprocess and no network.**
+
+**The blocked set, literally and exhaustively.** A command is refused only if,
+after stripping leading environment assignments, its argv is exactly one of:
+
+```
+pytest bootstrap/tests
+python -m pytest bootstrap/tests
+python3 -m pytest bootstrap/tests
+python3.13 -m pytest bootstrap/tests
+<absolute-interpreter-path> -m pytest bootstrap/tests
+```
+
+each optionally with a trailing `/` on the target, a leading `./`, or the
+repository-absolute spelling of the target, and each optionally carrying any
+subset of the known non-narrowing options `--quality-gate-shuffle-seed=<int>`,
+`-q`, `-v`, `-x`, `--durations=<int>`, `--no-header`, `--no-summary`,
+`-p <plugin-spec>`, `--tb=<style>`. **Any other token refuses to match and the
+command passes open.** This list is the contract; adding to it is a change to a
+registered trust root.
+
+**Matching normalises rather than bails**: leading environment assignments are
+stripped before comparison, so `PYTHONDONTWRITEBYTECODE=1 python -m pytest
+bootstrap/tests` matches. `--lf`, `--ff`, `-k` and `-m` are **not** treated as
+narrowing — measured, each ran a whole throwaway suite — so they are simply not in
+the option set above and their presence passes open.
+
+**The match is conditioned on this working tree.** The repository root is the
+directory containing the hook script, resolved from the script's own path, never
+from the payload's `cwd`. If the payload's `cwd` does not resolve inside that
+tree, the hook passes open.
+
+**Role predicate — `agent_id`, and only `agent_id`.**
+
+* **subagent** (`agent_id` present and non-empty) — refuse, and say
+  **verification returns to the spawner**.
+* **top-level** — refuse, and name the override.
+
+**Refuse *every* matching invocation lacking the override.** "Refuse once" implied
+state a freshly-spawned process does not have.
+
+**The override is read from the command string's leading assignments, never from
+any process environment.** A command that otherwise matches but carries the token
+trailing, quoted, or `env`-mediated — `pytest bootstrap/tests CAIRN_FULL_SUITE=1`,
+`env CAIRN_FULL_SUITE=1 pytest bootstrap/tests` — is **still refused**, and the
+refusal names the leading-assignment form. This is the one place the grammar does
+not pass open on an unrecognised shape, and it is deliberate: the override must be
+unambiguous.
+
+### Part 2 — one vendor-neutral sentence
+
+`AGENTS.md` and its shipped twin gain, under *Verification boundaries*: a
+full-suite invocation is expected to be a deliberate act, and a project **may**
+enforce that at its harness. Permission, not obligation — the rate-limit gate is
+not engaged. **`templates/core/VENDOR.md` is untouched.**
+
+### Failure directions
+
+The hook **fails open** on every error: malformed settings, missing script,
+raising hook, malformed or absent stdin JSON, unknown token, shell operator,
+timeout, a `cwd` outside this tree. The cost of a missed prompt is one full suite;
+the cost of a false refusal is blocked work, and a mechanism that blocks work gets
+removed.
+
+### Evidence
+
+| invariant | falsifier |
+|---|---|
+| The blocked set is exactly the enumeration | table over every enumerated form, each with and without the option subset, trailing slash, `./`, and absolute target; assert each refused |
+| Nothing outside the enumeration is refused | `cd x && …`, `time …`, `bash -c "…"`, heredocs, `--`, `-k`, `-m`, `--lf`, `--ff`, a node id, a single file, an unknown option; assert each passes open |
+| Leading env assignments are stripped, not bailed on | `PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests` is refused |
+| The override is leading-assignment-only | trailing, quoted and `env`-mediated forms are **still refused**; only the leading form passes |
+| Role predicate | plain top-level (neither field); top-level `--agent` (`agent_type` only — **must not** be treated as a subagent); subagent (`agent_id` + `agent_type`) |
+| Malformed input never blocks | malformed JSON, missing fields, empty stdin |
+| Foreign tree | a payload `cwd` outside this tree passes open |
+| No-match latency | **spawn the hook as a subprocess exactly as the harness does** — exec by path, one no-match payload on stdin, read to exit — 200 times on an idle host; assert **p95 < 50 ms**; record min, median, p95, max with the interpreter and host. An in-process call does **not** discharge this row: spawn is about three-quarters of the cost. Max is recorded, not asserted (measured maxima 375 ms against p95 23.2 ms) |
+| The registration is live and well-formed | a test parses `.claude/settings.json` and asserts exactly one `PreToolUse` entry; `matcher == "Bash"`; `type == "command"`; `args == []`; `timeout == 5`; the `command` begins `${CLAUDE_PROJECT_DIR}/` and, expanded against the repository root, names an existing regular non-symlink file with the executable bit whose `#!` is `#!/usr/bin/env python3`. A typo, a moved script, a dropped key or a re-baked absolute path goes red |
+
+**Boundary B mode: `full`** — work under a security ceremony, on which the fence
+refuses bounded mode. Its command carries the override in leading position.
+
+### Security preflight
+
+**S1 — Who supplied it?** The **repository** supplies the hook script and the
+settings pointing at it; the **harness executes them with the user's full
+permissions**. That is the trust boundary. The command string is matched, never
+executed, never interpolated, never shelled.
+
+**S2 — Can it fail?** Every invariant names its falsifier; deleting the
+enumeration check must refuse a scoped command and go red.
+
+**S3 — What fires it, over what?** The harness, on **every** `Bash` tool call, in
+the main session and every subagent, before the permission system. That breadth is
+why the latency criterion and the 5-second timeout are contract. **Cairn has no
+CI.**
+
+**S4 — Which way does it break?** Toward *less* authority on every path but one:
+the override's leading-assignment rule, which refuses rather than passes on an
+ambiguous shape.
+
+**S5 — Who still wins?** An attacker who can write `.claude/settings.json` or the
+hook script in a clone **wins completely**: the hook runs with full user
+permissions before any suite, so it can modify tests, fixtures or configuration
+and then allow the command, making a compromised tree report success. **And
+`.claude/**` is outside every frozen glob** (`bootstrap/*.py`,
+`bootstrap/tests/**/*.py`, `bootstrap/tests/fixtures/**/*`, `scripts/*.py`,
+`templates/modules/**/*.py`), so unlike `bootstrap/tests/conftest.py` these bytes
+are **unanchored**: the gate manifest will not notice them changing. That is the
+same coverage gap recorded as `dev/PLANNING.md` **[TRU-4]** for a repo-root
+`conftest.py`, and this proposal *creates a second instance of it* rather than
+closing it. The registration is prose that binds a reader; the Evidence row above
+is the only mechanical check, and it verifies shape, not authenticity. Closed **by
+enumeration**, not by construction, and the honest disposition is that this
+proposal should not land before [TRU-4] has an answer that covers it.
+
+### Known omissions
+
+* **The blocked set is the literal enumeration and nothing else.** Any other
+  spelling passes open, deliberately. "100% coverage" stays retracted.
+* **`python scripts/quality_gate.py` is not intercepted** — it runs one to N full
+  suites by subprocess with no `pytest` token in the command string, so it is
+  invisible to a command matcher. This is a real hole in the remedy's coverage of
+  the very cost it targets.
+* **Worktrees are not covered.** Project settings scope to one project directory;
+  a checkout made by `git worktree add` carries no settings file and the hook never
+  fires there. This repository currently has eight such worktrees.
+* **No durable record of an override** — the pass-through is silent.
+* **Adopters get nothing** — v1 is self-host-only by design.
+* **Non-shell pytest invocations** (`pytest.main()` in-process) are not
+  intercepted.
+* **Whether the prompt changes behaviour is unmeasured** until the run-frequency
+  ledger exists.
+
+### Withdrawn / superseded commitments
+
+* **Part 2 in its entirety — the Boundary A block and `tools/verify.py`** —
+  withdrawn (pre-review, four independent lenses, all executed): the cited parser
+  refuses the draft's own example block; that parser is verbatim-synced to the
+  shipped copy so it cannot be extended self-host-only; there are zero producers
+  on day one; and its fail-closed claim is false in two silent directions.
+  Successor work, with its five design decisions named.
+* **The `CAIRN_PLAN` plan binding** — withdrawn; a command hook inherits the
+  harness process environment, not the tool call's, and shell state does not
+  survive a `Bash` call, so nothing can write it.
+* **Printing the concentration figures** — withdrawn; the source is gitignored and
+  absent from a fresh clone.
+* **"`agent_id` / `agent_type` present" as the subagent predicate** — withdrawn
+  (Y3); `agent_type` is present for a top-level `--agent` session.
+* **"refuse once"** — withdrawn (Y4); a fresh process has no memory.
+* **"single-digit seconds" / "inside budget" / "accepted interpreter
+  provenance"** — withdrawn (Y4); replaced by the exact settings object, a
+  5-second timeout, a **spawn-inclusive** p95 < 50 ms criterion, **the literal
+  enumeration of blocked forms**, and `#!/usr/bin/env python3`. Revision 1 closed
+  this entry while silently dropping Y4's fourth ask, the enumeration; corrected
+  here.
+* **An absolute path in the settings object** — withdrawn; inert in every other
+  clone. Replaced by `${CLAUDE_PROJECT_DIR}`.
+* **Naming `.claude/` in `AGENTS.md`** — withdrawn; it would put a vendor token in
+  vendor-neutral doctrine, which the neutrality sub-gate checks. Split: the
+  surface is described vendor-neutrally in `AGENTS.md`, the paths in `CLAUDE.md`.
+* **Treating `--lf` / `--ff` / `-k` / `-m` as narrowing** — withdrawn; measured,
+  each ran a whole suite.
