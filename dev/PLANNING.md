@@ -157,7 +157,8 @@ with the plan's filename stem.
   `Assurance path`. The four-field basis became mandatory at `76bc678`
   (2026-08-12), one day before those reviews, so the obligation was in force.
   `test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`
-  reports 19 violations against the file and is red at HEAD.
+  reported 19 violations; 15 remain after the heading fix below,
+  and the file is red at HEAD.
 
   **The implementer cannot fix this, which is the point.** Those three fields
   are declarations by a reviewer about their own read. Filling them in is
@@ -173,14 +174,22 @@ with the plan's filename stem.
   and its Boundary B refuses bounded mode. Accepting the third disposition
   means that plan waits on this one's archive.
 
-  **A likely checker defect rides along, separately.** Four of the 19 are a
-  different kind — "declares `**Findings**: raised` but no disposition follows
-  it" — and all three of `ceremony-as-code.md`'s violations are that same kind.
-  Its three miss because its response headings are variants (`## Response to
-  the clearing review`) against a strict `## Response to plan review` prefix;
-  but this plan's five are the exact form, correctly interleaved, and four
-  still fire. Two plans, two different causes, one predicate — the positional
-  logic wants opening. Not owned here.
+  **Four of the 19 were a second kind, and they were the author's defect, not
+  the checker's** — fixed here, taking the count to 15. The disposition
+  predicate compares a section's *kind* — the text before the first ` -- ` —
+  exactly. Four Response headings read `## Response to plan review (round 2)
+  -- Claude -- 2026-08-13`, putting the round marker inside the kind, so they
+  parsed as four distinct kinds and none matched. Moving it after the date
+  (`... -- 2026-08-13 (round 2)`) restores the canonical kind and disposes all
+  four. Headings only; no finding or wording touched.
+
+  Worth recording because **two agents independently concluded the checker was
+  broken and it was right both times** — `ceremony-as-code` had drifted to
+  informative heading variants (`## Response to the clearing review`), this
+  plan had drifted to a round marker in the kind slot. Both drifts read as
+  harmless formatting and both silently voided a conformance obligation. A
+  format contract is most likely to be broken exactly where following it feels
+  like pedantry.
 
 * **[SEC] Two install-contract artifacts are stale after the tag pass** *(filed
   2026-08-19)* — `bootstrap/tests/fixtures/gate_manifest.json` has **35 frozen

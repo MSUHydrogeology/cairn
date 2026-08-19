@@ -1202,7 +1202,7 @@ verified that `_gate_manifest.py produce` is refused outside a ceremony, only
 that the runbook assigns the commit to the Maintainer.
 
 
-## Response to plan review (round 2) -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 2)
 
 **Disposition**: all six findings accepted; **one sub-claim of R2-F4 declined on
 inspection**, with the measurement below. Every figure in the plan has been
@@ -1505,7 +1505,7 @@ it) carries a coordinate in a *production function name*, which the accepted
 scope — test containers — does not reach. The doctrine anchor in Chunk A covers
 it; a future instance will land there, and that is the right place for it.
 
-## Response to plan review (round 3) -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 3)
 
 **Disposition**: all four findings accepted, each verified independently at
 `eb2692e` before the fix. No declines this round. **All three disputed figures
@@ -1898,7 +1898,7 @@ satisfiable by editing sentences that already exist; no design change, no
 re-measurement of the corpus, and no scope reduction. I expect the next pass to
 clear.
 
-## Response to plan review (round 4) -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 4)
 
 **Disposition**: all four findings accepted, each verified independently at
 `eb2692e` from blobs before the fix. No declines. **R4-F3's core verdict — that
@@ -2179,7 +2179,7 @@ finding (R5-F1) with a verbatim satisfier, to land in the first Chunk C commit.
 The start precondition remains unmet — `review-efficient-lifecycle` is still
 `implementing` — and gates execution, not readiness.
 
-## Response to plan review (round 5) -- Claude -- 2026-08-13
+## Response to plan review -- Claude -- 2026-08-13 (round 5)
 
 **R5-F1 closed in the plan, not deferred to the first Chunk C commit.** The
 reviewer cleared the plan and offered to let this ride; it is a paragraph, the
