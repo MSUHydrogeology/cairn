@@ -879,7 +879,7 @@ def _read_artifact(path: Path) -> Artifact:
 #: `plan_inheritance_violations` are all already public and all take an
 #: `Artifact` -- so without a public way to *build* one, the only routes left to
 #: `tools/lifecycle.py` were to reach into a private name or to grow a second
-#: artifact parser.  Chunk P6a refused both for the assurance vocabulary and
+#: artifact parser.  Both were refused for the assurance vocabulary and
 #: deferred instead; there is no later chunk to defer to here, so the name is
 #: published.
 #:
@@ -1063,7 +1063,7 @@ def _has_code_review_marker(text: str) -> bool:
 #     (`templates/modules/default-on/_lifecycle_metrics/extract.py`);
 #   * `scripts/transition_lint.py` (repository-only);
 #   * `tools/lifecycle.py` + its installed twin
-#     (`templates/skills/_lib/lifecycle.py`) -- added by Chunk P6a at `8bf1154`,
+#     (`templates/skills/_lib/lifecycle.py`) -- added at `8bf1154`,
 #     which copied the loader contract rather than re-deriving it.  Its twin
 #     sits under `templates/skills/_lib/` beside this file's own twin, not under
 #     `templates/modules/default-on/` like the metrics consumer's; the two
@@ -1887,7 +1887,7 @@ _REVIEW_BASIS_FREE_FIELDS = ("Reviewed commit", "Target", "Prior findings")
 #: a *fourth* consumer now needs it: `tools/lifecycle.py`'s monitoring report must
 #: record a counted plan's resolved assurance path
 #: (`review-efficient-lifecycle` > `## Carried-forward obligations`),
-#: and P6a deliberately refused to close that early precisely because the only
+#: and closing that early was deliberately refused, precisely because the only
 #: two ways available were to reach into a private name or to re-declare the two
 #: tokens in the CLI -- the second vocabulary Chunk A exists to prevent.  Its own
 #: record says so: *"The assurance split additionally needs a **public** single
@@ -2209,10 +2209,10 @@ def _code_review_violations(art: Artifact) -> List[str]:
 
     **Not a public entry point and not a second predicate.**  It folds
     Code-review evaluation *into* `review_record_violations`, which already
-    declares itself the one predicate (S12); this is that function's
+    declares itself the one predicate; this is that function's
     Code-review half, factored out for reading only, and it has exactly one
     caller.  A sibling public predicate would recreate the
-    two-interpretations problem S12 exists to prevent.
+    two-interpretations problem the one-predicate rule exists to prevent.
     """
     stem = art.path.stem
     records = _code_review_records(art)
@@ -4002,7 +4002,7 @@ def review_record_violations(art: Artifact,
                              effective_state: Optional[str] = None
                              ) -> List[str]:
     """S1-S9 plus the Code-review record over one artifact.  **The one
-    predicate (S12).**
+    predicate.**
 
     Both gate call sites -- ``_conformance_violations`` and
     ``_gating_preconditions`` -- go through this function, so the two cannot
@@ -4166,7 +4166,7 @@ def review_record_violations(art: Artifact,
 #
 # The contract lists eight contradictions `scan`, `next` and the accepted closeout command
 # must refuse, and is explicit that they *"consume shared predicates"* -- so this
-# is ONE function taking the state as a parameter, on the same S12 pattern
+# is ONE function taking the state as a parameter, on the same one-predicate pattern
 # `review_record_violations` already uses.  `scan` passes the current status,
 # `next` the requested target, and `closeout --dry-run` will pass
 # `ready-to-archive`; three call sites, one interpretation.
@@ -4289,7 +4289,7 @@ def _independent_review(art: Artifact) -> bool:
 
     Factored out of `_gating_preconditions`, where it was a local comprehension,
     because the `awaiting-decision` predicate needs the same answer and a second
-    copy is how the two surfaces come to disagree (S12).  It reads bylines: a
+    copy is how the two surfaces come to disagree.  It reads bylines: a
     review that IS independent but signed with the author's name reads as
     dependent, and a review signed with someone else's name reads as independent.
     Authorship is carried by attributed, self-committed authorship, never by this.
@@ -4564,7 +4564,7 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
         elif s not in _PROPOSAL_STATES:
             v.append(f"unknown proposal status {s!r}")
         # The artifact-level declaration and the review basis, on the same
-        # predicates `_gating_preconditions` consumes (S12's one-predicate rule
+        # predicates `_gating_preconditions` consumes (the one-predicate rule
         # applied to the proposal side).  Unconditional on status: the accepted
         # parent has a proposal-worthy change declare its assurance path, and a
         # review record owes its basis whenever it exists -- neither obligation
@@ -4677,7 +4677,7 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
         # both moved INTO `status_evidence_violations`, which takes the state as a
         # parameter.  Nothing about either check changed; what changed is that
         # `next --to <new state>` and `closeout` now reach the same code
-        # instead of each growing its own opinion, which is the drift S12 exists
+        # instead of each growing its own opinion, which is the drift the rule exists
         # to prevent and which the contract requires by name: "`scan`, `next`, and accepted
         # closeout tooling consume shared predicates."
         v.extend(status_evidence_violations(art, s))
@@ -4836,7 +4836,7 @@ def _gating_preconditions(art: Artifact, target: str,
                           "clearing the floor stays the reviewer's."))
         elif target == "executing":
             if requires_review:
-                # S12 -- the SAME predicate `_conformance_violations` uses, so
+                # The SAME predicate `_conformance_violations` uses, so
                 # the two gate surfaces cannot drift.  Was
                 # `_has_kind(art, "Plan review")`, which cleared on presence.
                 problems = review_record_violations(art)
@@ -4907,7 +4907,7 @@ def _gating_preconditions(art: Artifact, target: str,
             # The SAME predicate `_conformance_violations` uses,
             # on the requested TARGET as the effective state.  This replaces the
             # separate `art.has_code_review_marker` gate that stood here: two
-            # surfaces asking one question in two strengths is the drift S12
+            # surfaces asking one question in two strengths is the drift the rule
             # exists to prevent, and the marker was the weaker of the two.
             # Called regardless of the `Plan review:` declaration -- review
             # executed the bypass a declaration-keyed call leaves open.

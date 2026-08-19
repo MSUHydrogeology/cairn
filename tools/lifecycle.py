@@ -1446,7 +1446,7 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 
 # --- monitoring evidence: the review-allocation window -----------------------
 #
-# Chunk P6a of `dev/plans/review-efficient-lifecycle.md`, as revised by that
+# Per `dev/plans/review-efficient-lifecycle.md`, as revised by that
 # plan's "Maintainer-directed contract revision -- 2026-08-11" (cell `P6-R`).
 #
 # **Direction first, because it is the one prohibition the revision states on
@@ -1483,10 +1483,10 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 # The quota and the window length are CONTRACT, so they are constants here.  A
 # data file that could restate them would be a record rewriting its own rule.
 #
-# **This file introduces neither record.**  The ledger ships with P6a carrying
-# zero events; the activation record is introduced later by P6d, the data-only
+# **This file introduces neither record.**  The ledger ships carrying
+# zero events; the activation record is introduced later, by the data-only
 # commit at the Maintainer fence, because `machinery_sha` is the Boundary-B
-# commit and that commit does not exist while P6a is being written.  Fabricating
+# commit, which does not exist while this file is being written.  Fabricating
 # a placeholder SHA here would put a false attestation in the tracked record.
 #
 # ---------------------------------------------------------------------------
@@ -1576,7 +1576,7 @@ _PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
 #: `ASSURANCE_NOT_INHERITED` the resolved third answer for a plan that declares no
 #: chain, and `resolve_plan_assurance_path` the resolver.  Reading all three
 #: through this loader is what keeps the CLI from re-declaring either token --
-#: the second vocabulary the single-source rule forbids, and the reason P6a
+#: the second vocabulary the single-source rule forbids, and the reason this
 #: deliberately left this open rather than closing it early.
 #:
 #: **Six more, and the reason is the same rule read from the other
@@ -1770,7 +1770,7 @@ _ACTIVATION_SCHEMA = "cairn-pilot-activation/1"
 #: that, and an unknown version refuses rather than being half-read."*  The bump
 #: adds one mandatory `plan-counted` key, `assurance_path`, so the derived report
 #: can split eligible from ineligible plans -- the accepted parent's requirement
-#: that P6a could not meet because no field carried the basis for it.  A `/1`
+#: that could not be met because no field carried the basis for it.  A `/1`
 #: block now refuses, which is safe *and measured*: the live ledger carries **zero
 #: events** (its `cairn-pilot-event` occurrences are all prose or inert
 #: in-fence examples), so nothing recorded is invalidated.
@@ -1784,7 +1784,7 @@ _PILOT_WINDOW_DAYS = 60
 
 #: Pause thresholds, from the accepted proposal: "A high-severity escaped
 #: finding attributable to inheritance pauses the pilot immediately; two
-#: lower-severity examples do the same."  P6b authors the human contract; these
+#: lower-severity examples do the same."  These
 #: are the numbers, here only so recorded findings that *meet* a pause condition
 #: cannot sit in the ledger with no pause surfaced.
 _PAUSE_HIGH_THRESHOLD = 1
@@ -2501,7 +2501,7 @@ def _eligibility_split(counted: List[dict], stems: List[str]) -> List[str]:
     """The eligible / ineligible split the accepted parent requires.
 
     The parent's report requirements include *"eligible and ineligible plans"*,
-    and P6a could not derive it: no `plan-counted` field carried a plan's
+    and it could not be derived: no `plan-counted` field carried a plan's
     assurance path, because a plan HAS none until P2-R's inheritance chain
     resolves one.  With `cairn-pilot-event/2` recording the resolved value, the
     split is a grouping over the counted events.
@@ -2514,7 +2514,7 @@ def _eligibility_split(counted: List[dict], stems: List[str]) -> List[str]:
     opposite ways on *whose* plans fill the six, and neither the revision nor
     The obligation resolves it -- it asks only that the report "split eligible from
     ineligible".  Re-deciding the quota would be an implementer choosing between
-    two accepted texts, so the counted-stem count stays exactly as P6a landed it,
+    two accepted texts, so the counted-stem count stays exactly as it landed,
     the split is reported beside it, and the tension is printed rather than
     silently resolved.
     """
@@ -2583,7 +2583,7 @@ def _derive_report(root: Path, *, today: Optional[_dt.date] = None
             f"activation: NONE -- no {'/'.join(_PILOT_ACTIVATION_REL)}")
         lines.append(
             "meaning: no monitoring evidence window has opened yet (it opens at "
-            "P6d, the data-only commit at fence M2)")
+            "the data-only commit at fence M2)")
         lines.append(
             "NOT meaning: the review policy is disabled.  Absent monitoring "
             "activation says nothing about the policy, which is already in "
