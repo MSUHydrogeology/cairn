@@ -1725,3 +1725,80 @@ conformance scan above is the cheapest way to falsify it.
   * Dedicated key passphrase entry, keychain isolation, and physical ref movement during actual ceremony execution (N7, N8).
 * **Second-round recommendation**: None. The implementation is verified, sound, and ready for M2 exact-byte review and subsequent Maintainer ceremony execution.
 
+## Response to code review -- Claude -- 2026-08-19
+
+**I am not disposing of this review.** I implemented the work, so clearing my own
+code review is the self-certification the tier exists to prevent. What follows is
+measurement and a referral; the disposition is the Maintainer's.
+
+**Two entries in the falsification ledger do not hold. Most of it does, and that
+distinction matters — this is not a rubber stamp.**
+
+### What checks out
+
+* **`498 passed`** — `test_reanchor.py` + `test_gate_preflight.py` collect
+  exactly 498. Verified.
+* **The lifecycle scan** — `all 4 artifact(s) structurally sound (no contract
+  violations)`. Verified, and it is *now* true: the in-flight proposal's single
+  violation cleared when its Revision 5 landed at `399e56f`, after my Boundary B
+  record was written. The reviewer measured a later tree than I did, and both
+  records are accurate for when they ran.
+* **Six of seven line citations land exactly on the construct they name** —
+  `parse_values`, `read_values`, `read_packet`, `declared_authority_closure`,
+  `print_steps`, and `TestTheMaintainerCanPerformTheWholeCeremony`. You do not
+  hit those by guessing; that is someone reading the code.
+
+### Ledger entry 4 asserts a verification that cannot have been performed
+
+> *"matches `EXPECTED_PATHS` across `reanchor-launcher.template.sh` and
+> `REANCHOR_RUNBOOK.md` (10 members total)"*, cited at
+> `bootstrap/REANCHOR_RUNBOOK.md:88-100`.
+
+**`EXPECTED_PATHS` appears zero times in `REANCHOR_RUNBOOK.md`.** Chunk F
+removed the runbook's copy of the member set deliberately, and
+`test_the_runbook_no_longer_carries_a_rival_copy_of_the_list`
+(`test_reanchor.py:1331`) **fails if it returns** — three statements of one set
+became two, because a rival copy drifts and the launcher's is the one that runs.
+The cited line range holds the ceremony walkthrough.
+
+So a three-way agreement was reported over a source that does not carry the
+data, by design, and that this plan tests against.
+
+### One citation is wrong by ~1,246 lines
+
+`test_cairn_roster_names_one_principal` is cited at
+`bootstrap/tests/test_verify_ref.py:114-121`. It is at **1360**. The claim about
+that test is *correct* — the roster does hold one principal after `1ae93af` —
+but the pointer does not reach it.
+
+### What I think this does and does not mean
+
+**It does not mean the implementation is unverified.** Every property the ledger
+claims is a property this plan carries its own tests for, and the accurate
+citations show genuine engagement with the code.
+
+**It does mean the ledger is not trustworthy as a whole**, and that is what
+Boundary C is for. `AGENTS.md` is direct about the shape: *"a tool that returns
+success without testing the claimed property is a worse defect than no tool,
+because it is silent."* A review entry describing work that could not have
+happened is that defect in prose. I verified two of five entries independently
+and found one sound and one not; the remaining three I have not falsified, and a
+50% hit rate on the ones I checked is not a basis for assuming them.
+
+**The status was moved to `ready-to-archive` in the review's own commit
+(`e762a14`).** If the review is in question, that flip is too.
+
+### The options, as I see them
+
+1. **Accept as-is** — the defects are ledger-quality, not finding-quality, and
+   no missed finding has been demonstrated.
+2. **Ask the reviewer to correct the two entries** — cheapest honest fix; the
+   review is theirs to amend and the verdict may well survive.
+3. **A second code-review round** — a different context re-runs Boundary C.
+   Expensive, and justified only if the ledger's reliability is the concern
+   rather than the two entries.
+
+I would not choose among these. I will say that option 2 costs least and
+preserves the attribution, and that whichever is chosen, **the two entries
+should not stand uncorrected in a security record** — the next reader has no way
+to know which parts of a ledger were measured.
