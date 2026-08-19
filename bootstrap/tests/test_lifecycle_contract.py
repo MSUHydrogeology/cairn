@@ -763,7 +763,7 @@ def test_archived_plan_with_neither_block_is_flagged(
 # The gate used to clear on the PRESENCE of a section whose heading merely
 # starts with "Plan review".  It now clears on the record's conformance to the
 # schema in `doctrine/plans.md` (the plan's S1-S9), through ONE predicate,
-# `review_record_violations`, consumed by BOTH call sites (S12).
+# `review_record_violations`, consumed by BOTH call sites.
 #
 # Each node below carries a single-property falsifier -- a mutation that
 # reddens THAT node and no other -- demonstrated (applied, run, reverted) and
@@ -1204,7 +1204,7 @@ def test_c7_external_satisfies_an_internal_floor_and_a_human_declares_it(
     assert _violations(tmp_path, human, plan_review="required(External)") == []
 
 
-# C.8 -- S12: one predicate, both call sites, no drift.
+# C.8 -- one predicate, both call sites, no drift.
 
 
 @pytest.mark.parametrize("body", [
@@ -1258,7 +1258,7 @@ def test_c8_scan_and_the_implementing_gate_agree_on_the_same_record(
 @pytest.mark.parametrize("date", ["2020-01-01", "0000-00-00", "2026-05-01"])
 def test_c9a_a_pass_outside_the_manifest_gets_no_exemption_whatever_its_date(
         tmp_path, date):
-    """The S11 finding, pinned closed.
+    """Pinned closed.
 
     Under the replaced design a pass dated before an epoch was exempt from
     all three field checks **and** satisfied the floor by presence -- so appending
@@ -2785,7 +2785,7 @@ class TestProposalReviewBasis:
         assert any("missing Assurance path" in m for m in v), v
 
     def test_both_gate_surfaces_report_it(self, tmp_path):
-        """S12 applied to the proposal side: `_conformance_violations` (what
+        """The one-predicate rule on the proposal side: `_conformance_violations` (what
         `scan` reports) and `_gating_preconditions` (what `next --to` reports)
         consume the SAME predicate.  Wiring only the first is the defect review
         executed on the Code-review half -- the loose surface is the one an
@@ -3757,7 +3757,7 @@ class TestWhereTheBasisCheckSitsAndWhatItRefusesToClaim:
         assert _p5_field_violations(inherited), inherited
 
     def test_both_gate_surfaces_report_the_same_p5_finding(self, tmp_path):
-        """S12 -- one predicate, both call sites.  `scan` (via
+        """One predicate, both call sites.  `scan` (via
         `_conformance_violations`) and `next --to archived` (via
         `_gating_preconditions`) must reach the same finding: wiring only the
         first is the exact defect review executed on the Code-review half."""
@@ -5251,7 +5251,7 @@ class TestInheritanceReallocatesTheReadItDoesNotRemoveIt:
 
 
 class TestOneInheritancePredicateServesBothGateSurfaces:
-    """S12 -- one predicate, two call sites, verbatim."""
+    """One predicate, two call sites, verbatim."""
 
     def test_scan_and_next_report_the_same_finding(self, tmp_path):
         identity = planner.IdentityModel(frozenset(), frozenset())
@@ -5356,7 +5356,7 @@ class TestThePlanSideAssurancePathTheMonitoringReportNeeds:
     """The plan-side assurance path the monitoring report needs."""
 
     def test_the_vocabulary_is_public_and_unchanged(self):
-        """P6a's record: closing the split *"needs a **public** single source for
+        """Closing the split *"needs a **public** single source for
         the assurance-path vocabulary -- `tools/lifecycle_planner.py` declares it
         privately today, and a second declaration in the CLI would fork a
         vocabulary."*  Published without changing a value."""
@@ -5986,7 +5986,7 @@ class TestAPredicateWiredToOneSurfaceLeavesTheOtherLoose:
         assert hits, (target, [d for _m, d in gates])
 
     def test_the_same_predicate_object_serves_both(self):
-        """One implementation, two call sites -- S12's rule.  A sibling copy is
+        """One implementation, two call sites.  A sibling copy is
         how the two surfaces end up disagreeing about the same record.
 
         **Three call sites since Chunk F, and the property is unchanged.**  The
@@ -6334,9 +6334,9 @@ class TestScopeDeltaParserContract:
 
 
 # ---------------------------------------------------------------------------
-# Chunk P6c -- the monitoring-evidence mutation matrix.
+# The monitoring-evidence mutation matrix.
 #
-# The plan's `P6c` row (`dev/plans/review-efficient-lifecycle.md`) names ten
+# The plan (`dev/plans/review-efficient-lifecycle.md`) names ten
 # mutations and names *this* file as their home:
 #
 #     absent record, wrong schema version, altered prior event, duplicate or
@@ -6347,9 +6347,9 @@ class TestScopeDeltaParserContract:
 #     mismatch, both refuse)
 #
 # **The row is discharged mostly by delegation, and the delegation was measured
-# rather than believed.**  Chunk P6a put its own suite in a *new* file,
-# `bootstrap/tests/test_pilot_evidence.py`, which neither the P6a row nor the
-# P6c row names -- so nine of the ten cells already had a behavioural equivalent
+# rather than believed.**  The engine's own suite is in a *separate* file,
+# `bootstrap/tests/test_pilot_evidence.py`, which neither plan row
+# names -- so nine of the ten cells already had a behavioural equivalent
 # somewhere the plan does not point at.  Re-expressing them here would not be
 # coverage; it would be two places to update and a false sense of breadth.  So
 # this section does three things instead:
@@ -6417,7 +6417,7 @@ class TestScopeDeltaParserContract:
 #: other one proves nothing about anything below.
 _LIFECYCLE_CLI_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "lifecycle.py"
 
-#: P6a's own suite -- the file the ten cells are mostly discharged in.  Read as
+#: The engine's own suite -- the file the ten cells are mostly discharged in.  Read as
 #: source, never imported: this section checks that the covering nodes EXIST,
 #: not what they do.
 _P6C_SIBLING_SUITE = CAIRN_ROOT / "bootstrap" / "tests" / "test_pilot_evidence.py"
@@ -6444,7 +6444,7 @@ def _load_lifecycle_cli() -> ModuleType:
 cli = _load_lifecycle_cli()
 
 
-#: The ten cells of the `P6c` row, transcribed from the plan.  Written here so
+#: The ten cells, transcribed from the plan.  Written here so
 #: `TestTheCoverageMapResolvesInsteadOfAssertingDelegation` can assert the map covers all ten rather than
 #: whatever subset an implementer happened to fill in.
 _P6C_CELLS = (
@@ -6801,12 +6801,12 @@ class TestAnInterruptedAppendRefusesAndWritesNothing:
 class TestTheDerivedEnablingCommitHasNoStoredCounterpart:
     """Cell 10's second clause -- **unconstructible**, and pinned as such.
 
-    The `P6c` row asks for "a derived-enabling-commit mismatch" to refuse.  It
+    The plan asks for "a derived-enabling-commit mismatch" to refuse.  It
     cannot be built, and the reason is a design property rather than an
     omission: the enabling commit and the activation date are DERIVED from git
     (the commit that first introduced the record's exact bytes, and that
     commit's author date) and are **never stored**, so there is no second value
-    for the derived one to disagree with.  P6a's engine comment states the same
+    for the derived one to disagree with.  The engine's own comment states the same
     thing from the other side -- storing either "would be self-referential ... a
     commit cannot contain its own id".
 

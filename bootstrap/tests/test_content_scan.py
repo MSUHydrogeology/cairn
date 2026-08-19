@@ -434,7 +434,7 @@ class TestSeparatorDetectionCollectionIntegrity:
     warning, so a collected-node COUNT cannot see any of them. This fires
     inside the file, at the moment the collision is written.
 
-    The third form is covered here beyond the letter of the plan's B11 cell,
+    The third form is covered here beyond the letter of the plan's cell,
     which enumerated classes and methods only. It is the same hazard and this
     file is exposed to it: it carries a top-level `def test_...` of its own
     (`test_content_security_module_installs_scanner_verbatim`), and the sibling
@@ -607,7 +607,7 @@ class TestUnicodeIgnorableMessage:
 
 
 class TestUnicodeAsciiGuard:
-    """B10 -- the performance guard's PRECONDITION, not its timing.
+    """The performance guard's PRECONDITION, not its timing.
 
     The guard skips every character below `_ASCII_GUARD`, which is only safe
     because every covered code point is at or above it. Two properties are
@@ -761,7 +761,7 @@ class TestHomoglyphConfusabilityAware:
 
     @pytest.mark.parametrize("token", RV5_UNITS)
     def test_rv5_unit_shapes_clear(self, token: str) -> None:
-        """D11, as an ADOPTER-FACING regression contract: the scientific unit
+        """An ADOPTER-FACING regression contract: the scientific unit
         shapes do not flag.
 
         Read the limit in the sibling test below before treating this as
@@ -775,8 +775,8 @@ class TestHomoglyphConfusabilityAware:
             self, token: str, monkeypatch: pytest.MonkeyPatch) -> None:
         """MEASURED, and it CONTRADICTS the plan's stated expectation.
 
-        The plan specifies a perturbation (P-D6) that deletes the
-        `_is_scientific_unit` call and expects D11 to go red. **It does not
+        The plan specifies a perturbation that deletes the
+        `_is_scientific_unit` call and expects this to go red. **It does not
         go red.** Under the four-clause rule the unit allowance has stopped discriminating,
         and the reason is structural rather than a property of these seven
         samples: it admits exactly four non-Latin characters, and every one
@@ -821,7 +821,7 @@ class TestHomoglyphDeclaredResiduals:
 
 
 class TestNoLatinMultiScript:
-    """D5b -- clause 0's own test: two or more distinct NON-Latin confusable
+    """Clause 0's own test: two or more distinct NON-Latin confusable
     scripts in one token always flags.
 
     Provenance per row, and it matters: NL-1..NL-6 are code points the author
@@ -916,12 +916,12 @@ class TestNoLatinTwinTableShape:
 
 
 class TestGreekDomainArity:
-    """D13 -- `scan_text` must not RAISE anywhere in its Greek domain.
+    """`scan_text` must not RAISE anywhere in its Greek domain.
 
     The pinned `normalize("NFD", ch)[0]` form is load-bearing: NFD of a Greek
     Extended letter is a MULTI-character string, so an `ord(normalize(...))`
-    form raises `TypeError` on 217 of the 218 Greek Extended letters. D10
-    pins the table's members; this pins the function against its whole
+    form raises `TypeError` on 217 of the 218 Greek Extended letters. The
+    table-driven test pins the table's members; this pins the function against its whole
     domain.
     """
 
@@ -961,7 +961,7 @@ class TestGreekDomainArity:
 
 
 # ===========================================================================
-# D14 -- the DEFAULT-ADOPTION CORPUS, the binding acceptance contract
+# The DEFAULT-ADOPTION CORPUS, the binding acceptance contract
 # (dev/plans/content-scan-detectors.md, Chunk D, "The default-adoption
 # corpus")
 #
@@ -977,7 +977,7 @@ class TestGreekDomainArity:
 # WHAT THIS CONTRACT IS, AND WHAT IT IS NOT -- stated because it is the
 # finding the corpus exists to answer. The post-implementation measurements
 # of the Change-1 rows are produced by the very detectors under test, so
-# **D14 alone cannot evidence that the detectors are correct. It is a
+# **The corpus alone cannot evidence that the detectors are correct. It is a
 # regression contract, not an oracle.** Three parts are independent of the
 # code under test and are what the contract rests on:
 #   * the **External reviewer** chose the RX-1..RX-3 code points, not the
@@ -1144,7 +1144,7 @@ _CORPUS_MANIFEST: tuple[str, ...] = (
 
 
 class TestDefaultAdoptionCorpus:
-    """D14 -- the corpus as a parametrized, table-driven contract.
+    """The corpus as a parametrized, table-driven contract.
 
     This class is what makes Gate D-ON condition D-ON-3 determinable: each
     named corpus row exists here as a parametrized case, and the suite passes
@@ -1152,7 +1152,7 @@ class TestDefaultAdoptionCorpus:
     """
 
     def test_corpus_matches_its_typed_manifest(self) -> None:
-        # P-D9's guard. Deleting a row from `_CORPUS` fails here.
+        # Deleting a row from `_CORPUS` fails here.
         assert [row[0] for row in _CORPUS] == list(_CORPUS_MANIFEST)
 
     def test_corpus_size_is_pinned_at_seventy_four(self) -> None:
@@ -1178,7 +1178,7 @@ class TestDefaultAdoptionCorpus:
 class TestExternalReviewerRowIsolation:
     """The isolation behaviour the External reviewer's three rows specify.
 
-    The exact-id-set assertion in D14 above says WHAT fires. These say what
+    The exact-id-set assertion above says WHAT fires. These say what
     must NOT fire, and that the right marker is the only one that silences
     each row -- the part a set-equality assertion cannot express.
     """
@@ -1229,7 +1229,7 @@ class TestExternalReviewerRowIsolation:
     def test_rx1_and_rx2_are_both_category_cf(self) -> None:
         # The oracle for their MEMBERSHIP in the range tables is the `Cf`
         # sweep, whose data source is `unicodedata` -- not these rows. Stated
-        # so nobody reads D14 as evidence of table coverage.
+        # so nobody reads the corpus as evidence of table coverage.
         assert unicodedata.category(chr(0x2061)) == "Cf"
         assert unicodedata.category(chr(0xE0061)) == "Cf"
 

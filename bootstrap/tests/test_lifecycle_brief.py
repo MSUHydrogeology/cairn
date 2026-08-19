@@ -34,7 +34,7 @@ Six groups:
    malformed records, control/invisible/delimiter injection, and the versioned
    ASCII-safe machine contract.
 6. :class:`TestLoaderMatrixForThisConsumer` -- the loader cases for this
-   consumer that Chunk P6a did **not** already cover, named individually against
+   consumer that the engine's own suite does **not** already cover, named individually against
    the ones it did.
 7. :class:`TestNoGrammarDrift` -- the heading/field rules this file's subject
    restates locally are compared against the planner's own over the live corpus.
@@ -908,10 +908,10 @@ class TestCloseout:
 
 
 # ---------------------------------------------------------------------------
-# 6. the loader matrix for this consumer -- what P6a did NOT already cover
+# 6. the loader matrix for this consumer -- what the sibling suite does NOT cover
 # ---------------------------------------------------------------------------
 #
-# Chunk P6a built `test_pilot_evidence.py::TestVocabularyLoader` for this same
+# `test_pilot_evidence.py::TestVocabularyLoader` covers this same
 # consumer.  Already covered THERE, and deliberately not duplicated here:
 #
 #   * the sibling-of-the-UNRESOLVED-path derivation
@@ -929,7 +929,7 @@ class TestCloseout:
 # out-of-root, partial-import cleanup, clean retry"*.  Leaf and parent symlink
 # and the clean retry are the entries above.  The three below are what was thin:
 # the ambient-`sys.path` decoy, out-of-root resolution, and partial-import
-# cleanup of a registered CHILD module (P6a's retry node covers the parent only).
+# cleanup of a registered CHILD module (the sibling's retry node covers the parent only).
 
 
 class TestLoaderMatrixForThisConsumer:
@@ -1010,7 +1010,7 @@ class TestLoaderMatrixForThisConsumer:
     def test_partial_child_cleanup_then_clean_retry(self, tmp_path) -> None:
         """A child registered mid-exec is purged with its parent, then retried.
 
-        P6a's retry node proves the PARENT key is purged; this proves the child
+        The sibling's retry node proves the PARENT key is purged; this proves the child
         namespace is too.  A surviving `<private>.shared` is a mixed-graph risk:
         the next successful load would sit above a child from a failed one.
         """

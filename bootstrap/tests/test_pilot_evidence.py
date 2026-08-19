@@ -1,6 +1,6 @@
-"""Tests for the monitoring-evidence engine in the lifecycle CLI (Chunk P6a).
+"""Tests for the monitoring-evidence engine in the lifecycle CLI.
 
-Plan: ``dev/plans/review-efficient-lifecycle.md`` > the ``P6a`` row, as revised
+Plan: ``dev/plans/review-efficient-lifecycle.md``, as revised
 by that plan's "Maintainer-directed contract revision -- 2026-08-11" (cell
 ``P6-R``: the machinery is **monitoring evidence**, and "No reader or writer may
 treat absent monitoring activation as disabling the review policy").
@@ -613,7 +613,7 @@ class TestActivationRecord:
 
     def test_the_machinery_binding_oracle_refuses_an_unattested_commit(
             self, repo) -> None:
-        """P6c's activation-binding oracle, in engine terms: `machinery_sha`
+        """The activation-binding oracle, in engine terms: `machinery_sha`
         must be the commit the named Boundary-B2 record actually attests."""
         _write(repo, "unrelated.txt", "u\n")
         unrelated = _commit(repo, "an ancestor the B2 record never names",
@@ -744,7 +744,7 @@ class TestEventLedger:
         "cairn-pilot-activation/1",  # the other record's schema
     ])
     def test_an_unknown_event_schema_refuses(self, lifecycle_ready, schema) -> None:
-        """**Including `/1`, and that inclusion is the point.**  P6a wrote that
+        """**Including `/1`, and that inclusion is the point.**  The engine wrote that
         closing it *"is a `cairn-pilot-event/2` schema bump; the version field
         exists for that, and an unknown version refuses rather than being
         half-read."*  A `/1` block carries no `assurance_path`, so reading it as
@@ -1186,10 +1186,10 @@ def test_the_two_lifecycle_copies_are_byte_identical() -> None:
 # Filed at `9d5cbea` in `dev/plans/review-efficient-lifecycle.md` >
 # `## Carried-forward obligations`: the five measures
 # `P6-R` names, but the accepted parent's fuller list also has the report record
-# *"eligible and ineligible plans"*, and P6a's derived report **cannot** split
+# *"eligible and ineligible plans"*, and the derived report **cannot** split
 # them -- no `plan-counted` event recorded the plan's assurance path, and a plan
 # HAS none to read until the inheritance chain resolves one.  That closes
-# it through the `cairn-pilot-event/2` bump P6a provisioned.
+# it through the provisioned `cairn-pilot-event/2` bump.
 # ---------------------------------------------------------------------------
 
 
@@ -1239,7 +1239,7 @@ class TestTheAssurancePathFieldIsClosedMandatoryAndDerived:
 
     def test_the_closed_set_comes_from_the_planner_not_from_this_file(
             self, lifecycle_ready) -> None:
-        """The whole reason P6a left this open: *"a second declaration in the CLI
+        """The whole reason this was left open: *"a second declaration in the CLI
         would fork a vocabulary the way the single-runtime-vocabulary rule forbids
         for statuses."*  So the CLI reads all three tokens through its contained
         loader, and its source carries no literal `'high-assurance'`."""
@@ -1373,7 +1373,7 @@ class TestTheAssurancePathFieldIsClosedMandatoryAndDerived:
 
 
 class TestTheEligibilitySplitTheAcceptedParentAskedFor:
-    """The report line the accepted parent asked for and P6a could not derive."""
+    """The report line the accepted parent asked for and the engine could not derive."""
 
     def _activate(self, repo: Path, date: str = "2026-02-01") -> None:
         _write(repo, ACTIVATION_REL, _activation_text(_machinery(repo)))
@@ -1431,7 +1431,7 @@ class TestTheEligibilitySplitTheAcceptedParentAskedFor:
         lets high-assurance proposals inherit, which makes their plans part of the
         population the policy affects.  Those two texts pull opposite ways on
         WHOSE plans fill the six, and the obligation asked only for the split -- so the
-        counted-stem quota stays exactly as P6a landed it and the tension is
+        counted-stem quota stays exactly as it landed and the tension is
         PRINTED rather than resolved by an implementer."""
         self._activate(repo)
         head = _head(repo)

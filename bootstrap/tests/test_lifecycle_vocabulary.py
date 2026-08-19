@@ -18,8 +18,8 @@ ambient-import problem the contract exists to close:
   ``lifecycle_planner.py`` from ``Path(__file__).resolve().parents[1]``,
   RE-DERIVED on every call rather than cached.
 * ``tools/lifecycle.py`` (+ its byte-identical template twin
-  ``templates/skills/_lib/lifecycle.py``) -- added by Chunk P6a, which made the
-  lifecycle CLI a vocabulary consumer: its six-plan counting rule keys on one
+  ``templates/skills/_lib/lifecycle.py``) -- added when the lifecycle CLI became a
+  vocabulary consumer: its six-plan counting rule keys on one
   plan state, so it reads ``PLAN_STATES`` through the same contained-loader
   contract (private module name ``_lifecycle_cli_lifecycle_planner``, path
   derived as the *sibling* ``lifecycle_planner.py`` from the **unresolved**
@@ -87,7 +87,7 @@ METRICS_PKG_SRC = REPO_ROOT / "tools" / "_lifecycle_metrics"
 METRICS_PKG_TEMPLATE_SRC = (
     REPO_ROOT / "templates" / "modules" / "default-on" / "_lifecycle_metrics"
 )
-#: The third consumer (Chunk P6a): the lifecycle CLI, in both copies.
+#: The third consumer: the lifecycle CLI, in both copies.
 LIFECYCLE_CLI_SRC = REPO_ROOT / "tools" / "lifecycle.py"
 LIFECYCLE_CLI_TEMPLATE_SRC = (
     REPO_ROOT / "templates" / "skills" / "_lib" / "lifecycle.py"
@@ -304,12 +304,12 @@ def _status_literal_assignments(source: str, vocab: frozenset) -> list[tuple[int
 
 
 #: The five real consumer sources the audit scans: transition_lint.py, the
-#: installed extract.py and its template twin, and -- since Chunk P6a made the
-#: lifecycle CLI a vocabulary consumer for the six-plan counting rule -- the
+#: installed extract.py and its template twin, and -- since the lifecycle CLI
+#: became a vocabulary consumer for the six-plan counting rule -- the
 #: installed lifecycle.py and its template twin.  Never the planner itself,
 #: which is the one file ALLOWED to declare the vocabulary.
 #:
-#: **Why lifecycle.py joined.**  P6a's counting rule keys on one plan state.  A
+#: **Why lifecycle.py joined.**  The counting rule keys on one plan state.  A
 #: status literal written locally there would be a vocabulary fork in a file
 #: this audit did not scan -- the precise failure Chunk A exists to prevent, in
 #: the one consumer whose absence from this tuple would have made the guarantee
