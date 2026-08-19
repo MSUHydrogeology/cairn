@@ -3,7 +3,7 @@
 **Source proposal**: `dev/proposals/archive/2026-08-13-claude-ceremony-as-code.md`,
 accepted as revised at Revision 4 (`## Decision -- Anthony Kendall (Maintainer)
 -- 2026-08-13`).
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(**External Security Review**) — set by the Decision.
 Four External passes shaped this contract and each found a real defect; the
 implementation changes what executes during the trust-root ceremony.
@@ -1581,3 +1581,86 @@ between-stages step names it where the precondition is described.
 a living document is stale the moment that document is edited, and nothing in
 the toolchain catches the in-bounds case. Cite by section title where the target
 may move.
+
+## Implementation verification -- Claude -- 2026-08-19
+
+**Boundary B mode**: **full**. Bounded mode is **refused** for this plan and was
+not considered: the change is to the trust-root ceremony itself, which sits
+inside the `boundary-b-bounding-clause` Hard Refusal Fence. The fence is a
+refusal rule, not a checklist to argue past.
+
+**Tested commit**: `f5076dba67ad84b2e58cf97357893a252a7d3e76`
+**Interpreter**: Python 3.13.13 (canonical; `dev/.cairn/local-env.json`)
+**Clean state**: run in an isolated worktree at that commit — clean before,
+clean and unchanged after, HEAD unmoved. Isolated deliberately: concurrent
+sessions hold uncommitted edits in the shared tree, and a Boundary B record
+taken over another session's work-in-progress describes a commit that does not
+exist.
+
+**Commands** — the canonical pair, run sequentially rather than in parallel so
+CPU contention could not skew a figure recorded here:
+
+```
+python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
+python scripts/quality_gate.py --sub neutrality --sub redundancy
+```
+
+**Outcomes**
+
+| | result | timing |
+|---|---|---|
+| suite | **3 failed, 4451 passed, 1 skipped** | 778.8s (11:51:36 → 12:04:36) |
+| neutrality | 86 FAIL | ~1s |
+| redundancy | **fail=0**, info=2 | (same run) |
+
+### Non-pass disposition
+
+**All three suite failures are `test_lifecycle_contract.py` scans of the LIVE
+deliberation corpus, and all three name one artifact: the in-flight proposal
+`2026-08-19-claude-full-suite-interception.md`, under active review while this
+ran.**
+
+* `test_the_live_corpus_is_sound_under_the_p1_contract` — 1 conformance
+  violation, on that proposal.
+* `test_the_live_corpus_owes_no_ledger_today` — its Maintainer-directed
+  contract revision owes a ledger heading.
+* `test_every_pre_ledger_proposal_is_covered_by_immutability_alone` — the same
+  artifact, mutable and pre-ledger.
+
+**Attribution, measured rather than asserted**: re-running the conformance scan
+per-file at the tested commit reports violations for that proposal and for
+**no other artifact** — this plan included. None of the three touches any
+surface this plan changed; all three are properties of a document mid-review.
+
+**They will not clear by any change to this plan**, and a reviewer should not
+expect them to. They clear when that proposal's review completes. The corpus is
+**live**, so this count can move in either direction after `f5076db` without any
+commit to this plan's code — which is why the tested SHA is pinned above and why
+a re-run at a later HEAD may legitimately differ.
+
+**86 neutrality FAILs are pre-existing and untouched.** Verified by running the
+same gate at `1ae93af`, before this plan's final commits: **86, identical**. No
+FAIL names `reanchor.sh`, the launcher template, `test_reanchor.py`, the runbook
+or any other file this plan authored. Redundancy is clean at fail=0.
+
+### Known omissions
+
+* **Criterion 1's human half.** The end-to-end node shows the commands compose
+  into a working ceremony. It cannot show that a person can follow them. That is
+  established at M3 and nowhere else, and no suite result should be read as
+  covering it.
+* **Criterion 8** — that the ceremony key is dedicated, encrypted at rest and
+  auto-load disabled — is a property of the ceremony, checked at N7. H1 landed
+  its roster half (`1ae93af`, one principal); the rest is not establishable
+  before M3.
+* **The three accepted residuals are unchanged and not reduced**: the same-user
+  window between the packet's two reads (detected, not prevented), the
+  key-holder-not-process limit, and the no-nonce replay posture.
+
+### What this record does not claim
+
+It does not claim the suite is green. It is not. It claims that every non-pass
+is attributed, that none is attributable to this plan, and that the attribution
+was measured at the tested commit rather than inferred from a failure name.
+Boundary C should verify that claim rather than accept it — the per-file
+conformance scan above is the cheapest way to falsify it.
