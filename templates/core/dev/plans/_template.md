@@ -537,4 +537,17 @@ disposition — `accept`, `guard`, `wontfix`, or (with the Maintainer's
 quoted authorization) `defer`. Only `defer` needs a durable home
 outside the plan; the other dispositions *are* the home.
 
+**That last sentence holds only when the disposition landed somewhere a
+reader will meet** — a commit, a comment, a test, a doc. Ordinary for a
+fixed defect; **not** true of an observation or a design gap, where
+`accept` leaves the item in a file that is about to stop being read. An
+item with no landing place outside the plan is a `defer` and needs a row.
+
+**An append re-opens the attestation.** The section is filled at archive
+time and append-only afterwards, so it accretes — and an attestation that
+was accurate when written can be false by the time the section grows
+under it. If you add anything here, re-read the disposition line and
+restate or amend it. `Dispositions: none` is a claim about the whole
+section, not about the moment it was typed.
+
 This section is append-only once written.

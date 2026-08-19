@@ -884,7 +884,24 @@ This section is append-only once a reviewer has added findings.
 after every deferred follow-up carries a **recorded disposition** —
 `accept`, `guard`, `wontfix`, or (with the Maintainer's quoted
 authorization) `defer`. A `defer` needs a durable home outside the
-plan; the other dispositions are the home. Acceptable `defer` homes:
+plan; the other dispositions are the home.
+
+**"The disposition is the home" holds only when the disposition
+landed somewhere a reader will meet** — a commit, a comment, a test,
+a doc. That is the ordinary case for a fixed defect. It is *not* the
+case for an observation, a lesson, or a design gap: recording one in
+the plan and marking it `accept` leaves it in a file that is about to
+stop being read, which is the opposite of migration. **An item with
+no landing place outside the plan is a `defer`, and needs a row.**
+
+**An append re-opens the attestation.** This section is filled at
+archive time and is append-only afterwards, so it accretes — and an
+attestation that was accurate when written can be false by the time
+the section around it grows. If you add anything here, re-read the
+disposition line and restate or amend it. `Dispositions: none` is a
+claim about the whole section, not about the moment it was typed.
+
+Acceptable `defer` homes:
 
 * `dev/PLANNING.md` — a tier item, a follow-up backlog, or a new
   dedicated subsection.
