@@ -88,7 +88,7 @@ _AGGREGATE_EXIT: dict[str, int] = {v: k for k, v in _AGGREGATE_LABELS.items()}
 _SCHEMA = "cairn.security_verification.dispatcher/v1"
 
 #: Words a NOT_APPLICABLE (or any no-coverage) rendering must never contain
-#: (T21): the absence of evidence must never read as a passing check.
+#: the absence of evidence must never read as a passing check.
 _FORBIDDEN_COVERAGE_WORDS = (
     "CLEAN", "secure", "passed security", "no vulnerabilities", "verified",
 )
@@ -181,16 +181,16 @@ _CHILD_OUTPUT_CAP_BYTES = 65536  # 64 KiB -- a JSON evidence report is small.
 _CHILD_POLL_S = 0.02
 
 #: Control characters kept verbatim when rendering a leg's ``detail`` text
-#: (T11): TAB, LF. Everything else in C0/DEL/C1 is rendered as ``\xNN``, so a
+#: TAB, LF. Everything else in C0/DEL/C1 is rendered as ``\xNN``, so a
 #: crafted child ``details`` string cannot forge a terminal control sequence
 #: (cursor moves, line erasure, OSC-8 hyperlinks) into the operator's
 #: terminal. This sanitizes control characters only; it never truncates,
 #: rewrites, or re-encodes the text, and it is the ONLY channel a child's
 #: text ever reaches the report through -- raw stdout/stderr bytes are never
-#: relayed, at any aggregate level (T12).
+#: relayed, at any aggregate level.
 _CONTROL_KEEP = frozenset((0x09, 0x0A))
 
-#: The child result JSON's exact, closed key set (T13's "unknown extra key"
+#: The child result JSON's exact, closed key set (the "unknown extra key"
 #: row + the missing-key row, checked as a single set-equality assertion).
 _REQUIRED_CHILD_KEYS = frozenset(
     {"schema", "capability", "contract", "evidence_mode", "result",
@@ -206,7 +206,7 @@ def _build_child_env() -> dict[str, str]:
 
 def _safe_render(text: str) -> str:
     """Neutralize C0 (except TAB/LF) / DEL / C1 control characters in text
-    that reaches the operator's terminal or the JSON report (T11)."""
+    that reaches the operator's terminal or the JSON report."""
     out: list[str] = []
     for ch in text:
         cp = ord(ch)
@@ -236,7 +236,7 @@ class RegistryEntry:
     an unrecognized keyword and NAMES it too (``unexpected keyword argument
     '<name>'``) -- both are the constructor's own closed-vocabulary behavior
     rather than custom code layered on top. ``frozen=True`` additionally
-    makes any post-construction assignment raise (T40) -- mode-immutability
+    makes any post-construction assignment raise -- mode-immutability
     at the object level.
     """
 
@@ -392,7 +392,7 @@ def _load_lockfile(path: Path | None = None) -> dict[str, Any] | None:
 #: no admitted registry entry, and made a stock install exit 5 INCOMPLETE
 #: with nothing wrong -- measured, not hypothetical, at
 #: ``bootstrap/_scaffold/config.py``'s prior ``_DEFAULT_ON_MODULES`` comment
-#: and ``test_security_verification.py``'s prior T33 characterization; and a
+#: and ``test_security_verification.py``'s prior characterization; and a
 #: capability named without the suffix would have been missed entirely.
 #:
 #: Deliberately kept SEPARATE from `_REGISTRY` -- never narrow this set to
@@ -458,8 +458,8 @@ def _record_keys_ok(rec: dict[str, Any]) -> str | None:
 def _is_regular_and_unsymlinked(path: Path, root: Path) -> bool:
     """True iff every path component from ``root`` down to and including
     ``path`` is a real (non-symlink) entry and ``path`` is a regular file.
-    Refuses BOTH a symlinked leaf and a symlinked parent directory (T18); the
-    third T18 row -- a same-user race between this check and the later
+    Refuses BOTH a symlinked leaf and a symlinked parent directory; the
+    third row -- a same-user race between this check and the later
     read/launch -- is a named, accepted residual (this module's doctrine),
     not something this check (or any check performed once, before use) can
     close."""
@@ -631,7 +631,7 @@ def _run_child(
 
 
 # ---------------------------------------------------------------------------
-# Child result validation (T10, T13, T14) -- strict UTF-8, strict JSON,
+# Child result validation -- strict UTF-8, strict JSON,
 # closed key set, exact identity match against the registry entry, and the
 # process-exit / declared-result agreement.
 # ---------------------------------------------------------------------------
@@ -685,7 +685,7 @@ def _evaluate_capability(module_id: str, repo_root: Path,
         runner_path = _bind_runner(entry, records, repo_root)
     except _Degraded as exc:
         return _degraded_leg(entry, exc.reason, child_launched=False)
-    runner_digest = _sha256_of(runner_path)  # parent-computed (T16)
+    runner_digest = _sha256_of(runner_path)  # parent-computed
 
     try:
         policy_report = _bind_policy(entry, records, repo_root)
@@ -770,7 +770,7 @@ def _evaluate_capability(module_id: str, repo_root: Path,
 
 
 # ---------------------------------------------------------------------------
-# Aggregation + report assembly (T15, T20, T32)
+# Aggregation + report assembly
 # ---------------------------------------------------------------------------
 
 def _build_report(legs: list[dict[str, Any]]) -> dict[str, Any]:

@@ -1,5 +1,5 @@
 """Tests for the local security-verification dispatcher (Chunk A of plan
-``security-verification-activation``): T1-T24, T36-T41, T44.
+``security-verification-activation``).
 
 The dispatcher (``templates/modules/default-on/run_security_verification.py``)
 ships verbatim to an adopter's ``scripts/`` directory and never imports
@@ -7,7 +7,7 @@ Cairn's own ``bootstrap/`` engine -- loaded here the same way
 ``test_content_scan.py`` loads ``content_scan.py``: by file path, independent
 of any installed package.
 
-Tests T6-T24, T36-T41, T44 inject a synthetic ``RegistryEntry`` by
+Most tests here inject a synthetic ``RegistryEntry`` by
 monkeypatching the module-level ``_REGISTRY`` and point it at a fixture child
 under ``tmp_path``. That injection is legitimate precisely because
 ``_REGISTRY`` is the source-owned surface under test: patching it is a
@@ -493,7 +493,7 @@ class TestDispatchBehavior:
     def test_process_exit_and_result_must_agree(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
             script: str, label: str) -> None:
-        """T14. The Decision's third named property."""
+        """The Decision's third named property."""
         module_id = "widget-security"
         runner_rel = "scripts/widget_security.py"
         runner_rec = _write_file(tmp_path, runner_rel, script.encode())
@@ -505,7 +505,7 @@ class TestDispatchBehavior:
         assert leg["aggregate"] == mod.DEGRADED, label
 
     def test_aggregate_precedence_over_every_ordered_pair(self) -> None:
-        """T15. All 16 ordered pairs, plus three- and four-leg
+        """All 16 ordered pairs, plus three- and four-leg
         combinations; result is always the max under 20 > 10 > 5 > 0."""
         levels = [mod.CLEAN, mod.INCOMPLETE, mod.FINDINGS, mod.DEGRADED]
 
@@ -533,8 +533,8 @@ class TestParentComputedBinding:
 
     def test_parent_computes_digests_and_ignores_child_supplied_ones(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """T16. The forged value is placed as an unrecognized TOP-LEVEL
-        child JSON key (the T13 "extra key" hazard) so it is rejected before
+        """The forged value is placed as an unrecognized TOP-LEVEL
+        child JSON key (the "extra key" hazard) so it is rejected before
         anything downstream could echo it -- the report still carries the
         PARENT's own runner digest, computed at bind time, independent of
         the child's result."""
@@ -561,7 +561,7 @@ class TestParentComputedBinding:
     def test_runner_or_policy_digest_mismatch_is_degraded(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
             which: str, mode: str) -> None:
-        """T17(a)/(b). Flip a byte after the record was written; the
+        """Flip a byte after the record was written; the
         launch never happens under any binding mode."""
         module_id = "widget-security"
         policy_mode = "immutable_digest" if which == "policy" else "none"
@@ -592,7 +592,7 @@ class TestParentComputedBinding:
 
     def test_policy_digest_mismatch_under_living_state_proceeds_and_marks_it(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """T17(c). Under living_state the leg PROCEEDS (the mode's whole
+        """Under living_state the leg PROCEEDS (the mode's whole
         point) and the report records the policy as digest_not_compared --
         the dropped property is visible, not silently absent."""
         module_id = "widget-security"
@@ -611,7 +611,7 @@ class TestParentComputedBinding:
         assert leg["policy"]["digest_not_compared"] is True
 
     def test_policy_binding_mode_none_makes_a_flip_unreachable(self) -> None:
-        """T17(d). Asserted as a CONSTRUCTION refusal: mode 'none' with a
+        """Asserted as a CONSTRUCTION refusal: mode 'none' with a
         non-None path cannot be built, so there is no runtime row to flip."""
         with pytest.raises(ValueError):
             _entry(policy_binding_mode="none",
@@ -621,7 +621,7 @@ class TestParentComputedBinding:
     def test_symlinked_runner_or_policy_is_refused(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
             kind: str) -> None:
-        """T18. Leaf symlink and symlinked parent directory. (The third
+        """Leaf symlink and symlinked parent directory. (The third
         row -- a same-user TOCTOU race between digest read and launch -- is
         a named, accepted residual; not asserted here.)"""
         module_id = "widget-security"
@@ -733,7 +733,7 @@ class TestNoCapabilityContract:
 
     def test_dispatcher_source_reads_no_deployed_credential_variable(
             self) -> None:
-        """T23. AST scan of the SHIPPED source: every os.environ / os.getenv
+        """AST scan of the SHIPPED source: every os.environ / os.getenv
         read resolves to the declared allowlist, and no deployed-credential
         variable name appears anywhere as a string literal."""
         source = DISPATCHER_SRC.read_text(encoding="utf-8")
@@ -766,7 +766,7 @@ class TestNoCapabilityContract:
 
     def test_a_socket_opening_child_is_excluded_by_admission_not_blocked_at_runtime(  # noqa: E501
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """T24. (a) Unadmitted -> INCOMPLETE, never launched. (b) Force-
+        """(a) Unadmitted -> INCOMPLETE, never launched. (b) Force-
         injected, the parent DOES run it and does NOT prevent the bind --
         documented honestly, no perturbation makes the parent block it."""
         module_id = "socket-opening-security"
@@ -863,7 +863,7 @@ class TestBindingModeClosure:
 
     def test_immutable_mode_refuses_a_living_state_record(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """T39. T38 + T39 together: cannot treat a living policy as an
+        """Cannot treat a living policy as an
         immutable one, in either direction."""
         module_id = "widget-security"
         entry, records = _setup_clean_leg(
@@ -886,7 +886,7 @@ class TestBindingModeClosure:
 
     def test_the_module_doctrine_states_not_applicable_is_not_evidence(
             self) -> None:
-        """T41. Read from the SHIPPED doctrine source, independent of any
+        """Read from the SHIPPED doctrine source, independent of any
         installed copy."""
         doctrine = (
             CAIRN_ROOT / "templates" / "modules" / "default-on"
@@ -916,7 +916,7 @@ class TestUnrecognizedKeyRefusal:
     ])
     def test_an_unrecognized_key_is_refused_and_named_entry_side(
             self, bad_key: str) -> None:
-        """T44(a). A source-owned exact constructor: the test ATTEMPTS the
+        """(a) A source-owned exact constructor: the test ATTEMPTS the
         extra keyword rather than inferring the refusal from frozenness."""
         base = dict(
             module_id="widget-security",
@@ -938,7 +938,7 @@ class TestUnrecognizedKeyRefusal:
 
     def test_an_unrecognized_key_is_refused_and_named_lockfile_record_side(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """T44(b). The record is one the TEST writes, never one the
+        """(b) The record is one the TEST writes, never one the
         dispatcher wrote -- the check is not verified by the artifact it
         judges. Recorded gap, not covered here:
         bootstrap/verify_integrity.py:63-111 ignores the same key shape on
@@ -963,7 +963,7 @@ class TestUnrecognizedKeyRefusal:
 
 
 # ===========================================================================
-# Chunk B -- universality.  T25-T33, T31b, T42, T43.
+# Chunk B -- universality.
 #
 # Everything below drives the REAL scaffold into a tmp_path target through
 # `bootstrap.scaffold.main`, never a stub of it.  The subject is what an
@@ -1038,7 +1038,7 @@ class TestUniversality:
     @pytest.mark.parametrize("preset", PRESETS)
     def test_every_preset_installs_the_module(
             self, preset: str, tmp_path: Path) -> None:
-        """T25.  `expand_preset` includes it and a REAL install writes both
+        """`expand_preset` includes it and a REAL install writes both
         destinations of its mapping group.
 
         Hazard perturbation: remove the `security-verification` entry from
@@ -1055,7 +1055,7 @@ class TestUniversality:
 
     def test_modules_empty_list_opts_out_entirely(
             self, tmp_path: Path) -> None:
-        """T26.  An explicit `modules:` list is exact and is never
+        """An explicit `modules:` list is exact and is never
         overridden by the default-on set -- the Decision's settled rule.
 
         Hazard perturbation: make the default-on set merge into an explicit
@@ -1068,7 +1068,7 @@ class TestUniversality:
 
     def test_literal_modules_list_without_it_does_not_install_it(
             self, tmp_path: Path) -> None:
-        """T27.  Same hazard as T26, with a non-empty explicit list."""
+        """The same hazard as above, with a non-empty explicit list."""
         rc, target = _scaffold(tmp_path, "modules:\n  - claim-check\n")
         assert rc == 0
         assert (target / "scripts" / "claim_check.py").is_file()
@@ -1077,7 +1077,7 @@ class TestUniversality:
 
     def test_modules_remove_opts_out_and_the_summary_announces_it(
             self, tmp_path: Path) -> None:
-        """T28.  **Characterization, not a guard.**  A green run here records
+        """**Characterization, not a guard.**  A green run here records
         that the pre-existing generic `modules_remove` mechanism covers the
         new module; the default-on listing did not make it true.  What it *is*
         load-bearing for is that there is anything to opt out OF -- remove it and the module
@@ -1100,7 +1100,7 @@ class TestUniversality:
 
     def test_upgrade_plan_lists_it_and_adopt_module_installs_it(
             self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        """T29.  A lockfile written before the module existed: `upgrade
+        """A lockfile written before the module existed: `upgrade
         --plan` names it under *new modules available (opt-in)*, and
         `--adopt-module` writes both files and records both in the lockfile.
 
@@ -1140,13 +1140,13 @@ class TestUniversality:
 
 
 class TestTheMergeRunsLiveFromAShippedModule:
-    """T30, T31, T31b: the merge mechanism's first live use from a real
+    """The merge mechanism's first live use from a real
     shipped module.  Leaf coverage already existed
     (`test_module_merge.py`); these promote it to end-to-end."""
 
     def test_installed_AGENTS_md_carries_the_exact_standing_command(
             self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        """T30.  The installed `AGENTS.md` carries the exact merge-content
+        """The installed `AGENTS.md` carries the exact merge-content
         block between the slot markers, the pass reports the outcome token
         `inserted`, and NO `.cairn-merge-pending` file exists anywhere in
         the target root.
@@ -1177,7 +1177,7 @@ class TestTheMergeRunsLiveFromAShippedModule:
 
     def test_the_merge_pass_reports_the_fill_and_the_fidelity_check_is_clean(
             self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        """T31.  The pass names `AGENTS.md > security-verification` and
+        """The pass names `AGENTS.md > security-verification` and
         `check_slot_fidelity` returns no warning; then an adopter edit
         WITHOUT the customized marker makes the check warn -- confirming it
         is live rather than always-silent.
@@ -1201,7 +1201,7 @@ class TestTheMergeRunsLiveFromAShippedModule:
 
     def test_a_prefilled_slot_defers_to_a_side_file_and_warns(
             self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        """T31b.  Install into a target whose slot body already carries
+        """Install into a target whose slot body already carries
         adopter prose: outcome `conflict-deferred`, the
         `.cairn-merge-pending` side file present and named for the slot, a
         `slot-content-stale-or-partial` fidelity warning, exit 0, and the
@@ -1251,7 +1251,7 @@ class TestComposition:
 
     def test_composition_no_capability_one_capability_many(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """T32.  Three synthetic rosters over injected registry entries:
+        """Three synthetic rosters over injected registry entries:
         none, one, two.  No duplicate leg, no leg silently delegated to
         another, and each leg's `evidence_mode` label survives aggregation
         unchanged.
@@ -1318,7 +1318,7 @@ class TestComposition:
 
     def test_the_dispatcher_runs_from_a_real_fresh_scaffold(
             self, tmp_path: Path) -> None:
-        """T33, **resolved** (api-web-security-modules Chunk G).  This node
+        """**Resolved.**  This node
         used to characterize a measured contradiction: a stock
         `solo-greenfield` install exited 5 (INCOMPLETE) instead of the
         plan's criterion of 0 (NOT APPLICABLE), because `content-security`
@@ -1369,8 +1369,8 @@ class TestComposition:
 
 
 class TestTheHighRiskDesignationChannels:
-    """T42, T43: the designation lands on three channels, two of them
-    tamper-evident.  T42 asserts those two; T43 pins channel 1's
+    """The designation lands on three channels, two of them
+    tamper-evident.  This node asserts those two; the next pins channel 1's
     silent-drop residual as a characterization."""
 
     def test_the_high_risk_designation_survives_on_two_tamper_evident_channels(
@@ -1412,7 +1412,7 @@ class TestTheHighRiskDesignationChannels:
 
     def test_a_customized_slot_silently_drops_the_designation(
             self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        """T43.  **Characterization, not a guard.  A green run here is a
+        """**Characterization, not a guard.  A green run here is a
         recorded OPEN residual, not a closed one.**
 
         An adopter who marks the installed slot `<!-- cairn:customized -->`
@@ -1466,14 +1466,14 @@ class TestTheHighRiskDesignationChannels:
 
 
 # ===========================================================================
-# Chunk C -- the non-silent install.  T34, T35.
+# Chunk C -- the non-silent install.
 # ===========================================================================
 
 class TestTheNonSilentInstall:
 
     def test_install_output_names_the_first_run_command_and_claims_no_evidence(
             self, tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
-        """T34.  A real scaffold's output names the first-run command
+        """A real scaffold's output names the first-run command
         verbatim, AND carries none of the coverage-claiming words.
 
         The forbidden-word half is asserted over the **whole** install
@@ -1498,16 +1498,16 @@ class TestTheNonSilentInstall:
             assert word not in out, (word, out)
 
         # The note must also not promise an outcome, even now that a stock
-        # install's real exit (0, NOT APPLICABLE -- see the rewritten T33
+        # install's real exit (0, NOT APPLICABLE -- see the rewritten
         # node) would make the specific phrase below true: an install-time
         # notice that names a result is a notice that can go stale the next
-        # time the default-on set changes, which is exactly how T33's own
+        # time the default-on set changes, which is exactly how that node's own
         # prior characterization came to exist.
         assert "NOT APPLICABLE" not in out
 
     def test_installation_executes_no_selected_scanner(
             self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """T35.  The proposal's *"never claims that installation itself
+        """The proposal's *"never claims that installation itself
         produced security evidence"* as a mechanical guard.
 
         **Measured correction to the plan's wording.**  The plan says to
@@ -1571,7 +1571,7 @@ class TestTheNonSilentInstall:
 # through the REAL dispatcher: a real scaffold install, the shipped,
 # un-monkeypatched ``_REGISTRY``, and
 # ``python scripts/run_security_verification.py local`` run as an actual
-# subprocess (T33's pattern, not a synthetic fixture child).
+# subprocess (a real one, not a synthetic fixture child).
 #
 # This is deliberate, not decoration. The activation-side unit tests above
 # inject a synthetic ``RegistryEntry`` pointed at a fixture child -- the
@@ -1598,7 +1598,7 @@ _WEB_POLICY_DST = "dev/.cairn/web-hosting-policy.json"
 def _g_scaffold(tmp_path: Path, modules: "list[str]", *,
                  target_name: str = "g-target") -> Path:
     """A real, minimal, EXPLICIT-module install -- never a preset, so the
-    selected roster is exactly ``modules`` (T26/T27's settled rule: an
+    selected roster is exactly ``modules`` (the settled rule: an
     explicit ``modules:`` list is exact, never merged with default-on)."""
     body = "modules:\n" + "".join(f"  - {m}\n" for m in modules)
     rc, target = _scaffold(tmp_path, body, target_name=target_name)
@@ -1724,7 +1724,7 @@ class TestEveryRegistryFieldIsExplicitAndATwelfthIsRefused:
             self, bad_key: str) -> None:
         """Tried against THESE two entries\' own eleven-field shape
         -- not inferred from the dataclass being frozen, and not a repeat
-        of T44(a)'s synthetic widget-security shape."""
+        of the synthetic widget-security shape."""
         fresh = _load_fresh(
             "cairn_security_verification_g2_twelfth_field_fresh")
         for module_id in (_API_MODULE, _WEB_MODULE):
@@ -1931,7 +1931,7 @@ class TestRealFacadesDrivenByTheRealDispatcher:
         real child, and -- now that the `details`-string contract holds for
         both facades -- both resolve to their TRUE INCOMPLETE result, with
         `_build_report` correctly keeping the two legs distinct rather than
-        collapsing them (T32's property, reconfirmed here over real legs
+        collapsing them (the aggregation property, reconfirmed here over real legs
         that are no longer forced to the same DEGRADED floor)."""
         target = _g_scaffold(
             tmp_path,
@@ -1990,7 +1990,7 @@ class TestRealFacadesDrivenByTheRealDispatcher:
             self, tmp_path: Path) -> None:
         """The "no capability selected" case, using this section\'s own
         explicit-module install rather than a preset (TestUniversality's
-        rewritten T33 covers the preset form)."""
+        rewritten node covers the preset form)."""
         target = _g_scaffold(
             tmp_path, ["security-verification"], target_name="g-none")
         proc = _run_dispatcher_local(target)

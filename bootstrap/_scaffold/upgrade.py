@@ -632,7 +632,7 @@ def _compute_upgrade(
 
 
 def _citation_ok(target: Path, lock: dict[str, Any]) -> bool | None:
-    """R10: if the target carries a fidelity manifest, does it cite the
+    """If the target carries a fidelity manifest, does it cite the
     current lockfile version/commit?  None if no manifest to check.  Uses the
     shared `_find_manifest_path` (dev/.cairn/ first, legacy dev/strategy/
     fallback) and emits the same migration advisory `init-lock` does."""
@@ -819,7 +819,7 @@ def _write_stage(
                 "src": fp.src, "verbatim": fp.verbatim,
                 "base_cache": fp.base_cache,
             }
-        # Snapshot the on-disk *ours* hash at stage time (R7a: detect an
+        # Snapshot the on-disk *ours* hash at stage time (to detect an
         # adopter edit made between --stage and --apply).
         if dst_abs.exists():
             ours_hashes[fp.dst] = "sha256:" + _sha256_hex(dst_abs.read_bytes())
@@ -1620,7 +1620,7 @@ def _cmd_finalize_lockfile(
     customized tree the adopter actually ships -- filled slots, the ``VENDOR.md
     -> CLAUDE.md`` wrapper rename, project-owned forks -- rather than the
     pristine clean-install state no real adopter keeps.  This is the step that
-    makes a *customized* install verifiable (R10): without it, every slot fill
+    makes a *customized* install verifiable: without it, every slot fill
     and wrapper rename reads as integrity tampering.
 
     ``only`` scopes the write-set: when given (the ``--finalize <path> ...``
@@ -1896,7 +1896,7 @@ def _apply_upgrade(
               "remove/merge the on-disk file (or re-run from the target tree "
               "without --to), then re-run `upgrade --stage`.", file=sys.stderr)
         return 1
-    # (e) the on-disk originals are unchanged *since --stage* (R7a),
+    # (e) the on-disk originals are unchanged *since --stage*,
     #     compared to the stage-time snapshot (NOT the clean-install hash --
     #     a customized file differs from that by design).
     ours_hashes = meta.get("ours_hashes", {})
