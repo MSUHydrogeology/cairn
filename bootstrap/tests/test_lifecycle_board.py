@@ -32,6 +32,8 @@ re-anchor.
 """
 from __future__ import annotations
 
+import ast
+import collections
 import hashlib
 import importlib.util
 import json
@@ -1851,23 +1853,36 @@ class TestBoardIsNotAuthority:
         property is that it *reads* the central declarations rather than
         redefining them."""
         text = _PLANNER_TEMPLATE.read_text(encoding="utf-8")
-        # Anchored on the board section's own header.  A comment is a brittle
-        # landmark -- it moves whenever the prose is edited -- but the board has
-        # no module or class boundary to slice on, so the marker is asserted
-        # first and the failure says which of the two drifted.
-        marker = "# the derived orientation board"
-        assert marker in text, (
-            f"the board section header {marker!r} is gone from the planner; "
-            "this slice needs a new landmark, not a restored comment")
-        block = text[text.index(marker):]
-        for name in ("PROPOSAL_STATES = (", "PLAN_STATES = (",
-                     "CODE_REVIEW_CLEARING_VERDICTS = (",
-                     "CODE_REVIEW_BLOCKING_VERDICTS = (",
-                     "_TIERS = (", "PROPOSAL_NEXT_OWNERS = {",
-                     "PLAN_NEXT_OWNERS = {"):
-            assert name not in block, (
-                f"the board section redeclares {name!r} instead of reading the "
-                "central vocabulary")
+        tree = ast.parse(text)
+
+        # Asserted on the parse tree, not on a slice of the file.  An earlier
+        # version cut the file at a section comment, which made a *comment* the
+        # thing the property depended on: editing the prose broke the test, and
+        # keeping the test green meant keeping the comment.  A vocabulary that
+        # is declared exactly once cannot be redeclared anywhere, so the
+        # single-declaration form needs no section boundary at all.
+        declared = collections.Counter()
+        for node in tree.body:
+            for target in getattr(node, "targets", []):
+                if isinstance(target, ast.Name):
+                    declared[target.id] += 1
+        for name in ("PROPOSAL_STATES", "PLAN_STATES",
+                     "CODE_REVIEW_CLEARING_VERDICTS",
+                     "CODE_REVIEW_BLOCKING_VERDICTS",
+                     "_TIERS", "PROPOSAL_NEXT_OWNERS", "PLAN_NEXT_OWNERS"):
+            assert declared[name] == 1, (
+                f"{name!r} is declared {declared[name]} times at module level; "
+                "the board must read the central vocabulary, not redeclare it")
+
+        # The consumption half still needs the board's own region.  Bounded by a
+        # real symbol -- the first board constant -- so it survives any comment
+        # or prose edit.
+        starts = [n.lineno for n in tree.body
+                  for t in getattr(n, "targets", [])
+                  if isinstance(t, ast.Name) and t.id == "_DISPLAY_UNSAFE_FLOOR"]
+        assert starts, ("the board region's anchor symbol _DISPLAY_UNSAFE_FLOOR "
+                        "is gone; this test needs a new anchor")
+        block = "\n".join(text.splitlines()[starts[0] - 1:])
         for reader in ("RECOGNIZED_STATES", "NEXT_OWNERS", "next_owner(",
                        "_parse_verdict(", "_conformance_violations("):
             assert reader in block, (

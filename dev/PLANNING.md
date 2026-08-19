@@ -124,6 +124,27 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **[SEC] Two install-contract artifacts are stale after the tag pass** *(filed
+  2026-08-19)* — `bootstrap/tests/fixtures/gate_manifest.json` has **35 frozen
+  entries** whose bytes no longer match the tree, and
+  `dev/.cairn/cairn-lock.yml` records a digest for
+  `scripts/run_portable_security_sweeps.py` that disagrees with disk
+  (`test_cairns_own_install_records_all_three_files_in_the_lockfile`, the one
+  test that catches either).
+
+  **Not a suite failure.** `test_gate_manifest.py` passes 21/0, because those
+  tests `produce()` a fresh manifest and verify against that rather than against
+  the committed fixture. Green suite, stale fixture — different things, and an
+  earlier version of this row conflated them.
+
+  **What needs deciding is narrow**: *who* regenerates the manifest and
+  re-records the lockfile, and under what review. Coverage itself is a
+  sequencing question — whatever the anchor is at ceremony time covers whatever
+  is committed then — so this does not need another plan's scope widened. It is
+  the same self-certification question as the interpreter re-pin above, on two
+  more artifacts, one of which (`run_portable_security_sweeps.py`) is a named
+  high-risk surface and the other of which is the install contract.
+
 * **[SEC] The interpreter-binding re-pin at `c29ead3` is unconfirmed** *(filed
   2026-08-18 by the `comprehension-outlives-the-artifact` implementer)* — the
   four digests in

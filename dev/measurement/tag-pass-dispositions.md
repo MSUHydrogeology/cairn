@@ -261,4 +261,26 @@ found`.
 
 **The rule this adds**, and it is the third refinement of the same test:
 *before deleting a comment, grep the test corpus for its literal text* — not just
-for the coordinate inside it.
+for the coordinate inside it. `"# Chunk F` would have found this in a second.
+The two live consumers this pass has hit failed differently and that is the
+point: `N4` had **many** consumers across documents and grep-for-citations found
+them; this one had **exactly one**, invisible to that grep because `str.index`
+builds no citation.
+
+**And the fix belonged on the test, not the comment.** The first attempt merely
+asserted the landmark before slicing on it — better error, same defect: a
+comment kept alive because a test is brittle, which is the category this pass
+exists to remove. The property is now asserted on the **parse tree** (each
+vocabulary is declared exactly once at module level, so it cannot be redeclared
+anywhere and no section boundary is needed), and the half that genuinely needs
+the board's region is bounded by a real symbol rather than by prose.
+
+### A baseline is a set, not a scalar
+
+The wrong-baseline defect above has a twin, reported by the `ceremony-as-code`
+agent from the other direction: it ran a baseline under the wrong interpreter,
+got 42 failures, and nearly attributed two of them to its own change. Mine had
+the right environment and no names; theirs had the right names and the wrong
+environment. **Same defect: a baseline is a set of failure identities, and a
+count is not a baseline.** The remedy is identical — record the identities, and
+record what produced them (commit, interpreter, and the exact node set).
