@@ -428,6 +428,55 @@ cmd_stage1() {
     parse_values "$_s1_values"
     require_checker
 
+    # THE SIGNING KEY MUST BE ONE THE ANCHORED ROSTER NAMES.
+    #
+    # Checked here, in the first second, because the alternative is what
+    # happened on 2026-08-19: the ceremony ran a full stage 1, wrote a package,
+    # loaded the key, signed, and only then refused with `status U` -- a
+    # correct refusal arriving one stage and one authorization package too
+    # late. The operator had no way to know until the most expensive step.
+    #
+    # This bites hardest during a KEY ROLLOVER, which is the one ceremony where
+    # the obvious key is the wrong one: the transition must be signed by the
+    # OLD anchored key, because the old roster is what verifies the commit that
+    # installs the new one. Pointing `signing_key` at the shiny new key is the
+    # natural mistake and this is where it gets caught.
+    #
+    # Compared as text -- `keytype keydata` from the .pub against the same two
+    # fields of each roster line -- so no fingerprinting tool joins the trust
+    # set for this check.
+    _s1_keyfields=$("$V_cat" "$V_signing_key") || refuse "cannot read signing_key"
+    _s1_keytype=${_s1_keyfields%% *}
+    _s1_rest=${_s1_keyfields#* }
+    _s1_keydata=${_s1_rest%% *}
+    _s1_anchored=$("$V_env" -i HOME=/nonexistent GIT_NO_LAZY_FETCH=1 \
+        "$V_git" --no-replace-objects -c core.useReplaceRefs=false \
+                 -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+                 -C "$V_checkout" cat-file blob \
+                 "refs/cairn/gate-anchor:dev/.cairn/allowed_signers" 2>/dev/null) \
+        || refuse "cannot read the anchored roster; is refs/cairn/gate-anchor" \
+                  "present? A fresh clone does not fetch it"
+    _s1_found=''
+    while IFS= read -r _s1_line || [ -n "$_s1_line" ]; do
+        [ -n "$_s1_line" ] || continue
+        case $_s1_line in '#'*) continue ;; esac
+        _s1_r=${_s1_line#* }
+        _s1_rtype=${_s1_r%% *}
+        _s1_rrest=${_s1_r#* }
+        _s1_rdata=${_s1_rrest%% *}
+        if [ "$_s1_rtype" = "$_s1_keytype" ] && [ "$_s1_rdata" = "$_s1_keydata" ]; then
+            _s1_found=yes
+        fi
+    done <<ROSTER
+$_s1_anchored
+ROSTER
+    [ -n "$_s1_found" ] || refuse \
+        "the signing key in your values file is NOT in the anchored roster," \
+        "so stage 2 would build a checkpoint that cannot verify and refuse" \
+        "AFTER the key is loaded. If this is a key ROLLOVER, point signing_key" \
+        "at the OLD key: the old roster must verify the transition that" \
+        "installs the new one. ($V_signing_key)"
+
     # The package is a handoff, not a scratch file. Refusing to overwrite is
     # what keeps stage 2 from confirming a digest over bytes some earlier run
     # left behind.
@@ -452,6 +501,9 @@ cmd_stage1() {
 
     printf '%s\n' "== stage 1: probing the key channel, then running the checks =="
     printf '%s\n' "   (this stage holds no key and must not be able to sign)"
+    printf '%s\n' "   IF YOU ARE ASKED FOR A PASSPHRASE HERE: **DECLINE IT**."
+    printf '%s\n' "   The prompt is this check working -- it is asking whether the"
+    printf '%s\n' "   key is reachable, and typing it answers YES, which fails."
     printf '\n'
 
     # NO SSH_AUTH_SOCK. See the block comment above -- this is the control,
@@ -479,17 +531,30 @@ cmd_stage1() {
         printf '%s\n' "       sh $0 hash-package $_s1_values"
         printf '%s\n' "  3. make the ceremony key available, and only now"
         printf '%s\n' "  4. sign and move both refs:"
-        if [ -n "$TRANSITION_MANIFEST" ]; then
-            printf '%s\n' "       sh $0 stage2 $_s1_values \\"
-            printf '%s\n' "         --confirm-package-sha256 <the digest from step 2> \\"
-            printf '%s\n' "         --review-manifest $TRANSITION_MANIFEST \\"
-            printf '%s\n' "         --reviewed-candidate $TRANSITION_CANDIDATE"
-            printf '\n%s\n' "  KEEP THAT MANIFEST PATH. It is in a temporary"
-            printf '%s\n'   "  directory, it was composed by this run, and stage 2"
-            printf '%s\n'   "  revalidates against it."
+        # PRINT THE LAUNCHER COMMAND, NOT THIS ARTIFACT'S.
+        #
+        # Stage 2 must re-extract into a FRESH directory. Candidate code ran in
+        # stage 1, as the same user, while this directory sat on disk -- so
+        # telling the operator to run `$0 stage2` from here hands the signing
+        # stage bytes the candidate had a window to rewrite. The launcher's
+        # --stage2 path exists precisely to avoid that, and an earlier version
+        # of this block printed the wrong one: the code had the property and
+        # the instructions walked the operator around it.
+        if [ -n "${CAIRN_LAUNCHER-}" ] && [ -n "${CAIRN_PACKET-}" ]; then
+            printf '%s\n' "       sh $CAIRN_LAUNCHER \\"
+            printf '%s\n' "         $CAIRN_PACKET \\"
+            printf '%s\n' "         $_s1_values \\"
+            printf '%s\n' "         ${CAIRN_CANDIDATE-<candidate-ref>} \\"
+            printf '%s\n' "         --stage2 <the digest from step 2>"
+            printf '\n%s\n' "  Same launcher, same packet, same values -- plus"
+            printf '%s\n'   "  --stage2. It verifies everything again into a new"
+            printf '%s\n'   "  directory rather than trusting this one, and"
+            printf '%s\n'   "  composes its own manifest, so you pass none."
         else
-            printf '%s\n' "       sh $0 stage2 $_s1_values \\"
-            printf '%s\n' "         --confirm-package-sha256 <the digest from step 2>"
+            printf '%s\n' "       re-run YOUR LAUNCHER with:  --stage2 <the digest from step 2>"
+            printf '\n%s\n' "  Run the launcher, not this artifact: stage 2 must"
+            printf '%s\n'   "  re-verify into a fresh directory rather than reuse"
+            printf '%s\n'   "  the one candidate code just ran in."
         fi
     fi
     return "$_s1_status"
@@ -534,6 +599,24 @@ cmd_stage2() {
 
     require_regular_file "package" "$V_package"
 
+    # SAY THE KEY IS MISSING, rather than letting the signer say it badly.
+    #
+    # Without the key in the agent, `git commit-tree` has no controlling
+    # terminal, falls back to ssh-askpass, and dies naming
+    # `/usr/X11R6/bin/ssh-askpass` -- a path that does not exist on a stock
+    # host and names nothing an operator can act on. Measured twice on
+    # 2026-08-19, once per ceremony attempt.
+    #
+    # A note rather than a refusal: an operator may legitimately be about to
+    # answer a terminal prompt, and this stage's job is to sign, not to police
+    # how the key is supplied.
+    if [ -z "${SSH_AUTH_SOCK-}" ]; then
+        printf '%s\n' "   NOTE: no agent socket. If signing fails naming ssh-askpass,"
+        printf '%s\n' "   that is a missing key, not a broken tool. Load it and re-run:"
+        printf '%s\n' "       ssh-add <your ceremony key>"
+        printf '\n'
+    fi
+
     print_effective_configuration "$_s2_values"
 
     set -- stage2 \
@@ -548,6 +631,10 @@ cmd_stage2() {
 
     printf '%s\n' "== stage 2: confirm, sign, and move both refs in ONE transaction =="
     printf '%s\n' "   (the key must be available NOW, and put away afterwards)"
+    printf '%s\n' "   IF YOU ARE ASKED FOR A PASSPHRASE HERE: **ENTER IT**."
+    printf '%s\n' "   This is the opposite of stage 1. Same prompt, other stage,"
+    printf '%s\n' "   other answer -- which is why loading the key first is easier:"
+    printf '%s\n' "       ssh-add <your ceremony key>"
     printf '\n'
 
     # SSH_AUTH_SOCK IS forwarded here, and only here. See the block comment

@@ -84,6 +84,23 @@ def bed(tmp_path):
                    capture_output=True)
     key.unlink()                       # only the public half is ever recorded
 
+    # An ANCHORED ROSTER naming this key, because stage 1 now refuses a signing
+    # key the anchor does not name. The fixture has to model that: a bed with no
+    # anchor would test a state no real ceremony can be in, and the refusal it
+    # produced would look like a fixture bug rather than the control working.
+    pub = key.with_suffix(".pub").read_text().split()
+    roster = checkout / "dev" / ".cairn" / "allowed_signers"
+    roster.parent.mkdir(parents=True, exist_ok=True)
+    roster.write_text(f"reanchor-test {pub[0]} {pub[1]}\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(checkout), "add", "-A"], check=True,
+                   capture_output=True)
+    subprocess.run(["git", "-C", str(checkout), "-c", "user.email=t@t",
+                    "-c", "user.name=t", "commit", "-qm", "roster"],
+                   check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(checkout), "update-ref",
+                    "refs/cairn/gate-anchor", "HEAD"], check=True,
+                   capture_output=True)
+
     tools = {}
     for name in EXECUTABLE_KEYS:
         real = shutil.which({"python": "python3"}.get(name, name))
@@ -1994,3 +2011,89 @@ class TestLazyFetchCannotRunAnUnlistedTransportHelper:
         environment had the identical gap, and in stage 2 that helper would run
         after the ceremony key is loaded."""
         assert P._sterile_env().get("GIT_NO_LAZY_FETCH") == "1"
+
+
+class TestStage1RefusesAKeyTheAnchorDoesNotName:
+    """The check that turns a rollover mistake from expensive into instant.
+
+    Measured on 2026-08-19: a ceremony ran a full stage 1, wrote a 1.6 MB
+    authorization package, loaded the key, signed a commit, and *then* refused
+    with `status U` -- a correct refusal arriving one stage and one package too
+    late, at the only step that costs the operator anything.
+
+    The cause is structural, not carelessness. **A key rollover is the one
+    ceremony where the obvious key is the wrong one**: the transition must be
+    signed by the OLD anchored key, because the old roster is what verifies the
+    commit that installs the new one. Pointing `signing_key` at the newly
+    created key is the natural reading of "we are rolling over to this key",
+    and nothing upstream contradicted it.
+    """
+
+    def _anchored_roster_of(self, bed):
+        return Path(bed["values"]["checkout"]) / "dev/.cairn/allowed_signers"
+
+    def test_a_key_absent_from_the_anchored_roster_refuses(self, bed, tmp_path):
+        """The rollover mistake, caught in the first second."""
+        other = tmp_path / "some_other_key"
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f",
+                        str(other), "-C", "not-in-roster"], check=True,
+                       capture_output=True)
+        r = _run("stage1", _write_values(
+            bed, override={"signing_key": str(other.with_suffix(".pub"))}))
+        _assert_refused(r, "NOT in the anchored roster")
+        assert "OLD key" in r.stderr, (
+            "the refusal must name the rollover case, which is the reason an "
+            "operator most often lands here")
+
+    def test_it_refuses_BEFORE_a_package_is_written(self, bed, tmp_path):
+        """The whole value of the check is where it sits. A refusal after the
+        package exists is the behaviour this replaces."""
+        other = tmp_path / "other2"
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f",
+                        str(other), "-C", "x"], check=True, capture_output=True)
+        package = Path(bed["values"]["package"])
+        if package.exists():
+            package.unlink()
+        _run("stage1", _write_values(
+            bed, override={"signing_key": str(other.with_suffix(".pub"))},
+            name="values-early"))
+        assert not package.exists(), (
+            "a package was written before the key was checked; the refusal "
+            "then costs what it is meant to save")
+
+    def test_the_roster_key_is_accepted(self, bed):
+        """The other direction, so the node above is not passing because every
+        key refuses."""
+        r = _run("validate", _write_values(bed))
+        assert r.returncode == 0, r.stderr
+
+    def test_the_check_reads_the_ANCHORED_roster_not_the_worktree_copy(
+            self, bed, tmp_path):
+        """The distinction that makes the check meaningful.
+
+        During a rollover the worktree roster holds the NEW key and the anchor
+        holds the OLD one -- that is what a rollover *is*. A check against the
+        worktree copy would accept exactly the key that cannot verify, which is
+        the failure it exists to prevent, with extra steps.
+        """
+        checkout = Path(bed["values"]["checkout"])
+        roster = checkout / "dev/.cairn/allowed_signers"
+        new_key = tmp_path / "rolled_to"
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f",
+                        str(new_key), "-C", "new"], check=True,
+                       capture_output=True)
+        pub = new_key.with_suffix(".pub").read_text().split()
+        # The worktree now names ONLY the new key; the anchor still names the old.
+        roster.write_text(f"rolled {pub[0]} {pub[1]}\n", encoding="utf-8")
+
+        r_new = _run("stage1", _write_values(
+            bed, override={"signing_key": str(new_key.with_suffix(".pub"))},
+            name="values-new"))
+        _assert_refused(r_new, "NOT in the anchored roster")
+
+        # And the OLD key -- absent from the worktree copy, present at the
+        # anchor -- must still be accepted.
+        r_old = _run("validate", _write_values(bed, name="values-old"))
+        assert r_old.returncode == 0, (
+            "the old key was rejected; the check is reading the worktree copy "
+            f"rather than the anchor:\n{r_old.stderr}")

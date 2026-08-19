@@ -630,6 +630,16 @@ if [ -n "$STAGE2_CONFIRM" ]; then
         --confirm-package-sha256 "$STAGE2_CONFIRM"
 fi
 
+# So stage 1 can print the command that runs THROUGH THIS LAUNCHER rather than
+# out of its own temp directory. Passed by environment because the artifact's
+# argument list is the reviewed contract and this is presentation, not input:
+# nothing decides anything on these values, and stage 1 degrades to generic
+# advice when they are absent.
+CAIRN_LAUNCHER=$0
+CAIRN_PACKET=$PACKET_PATH
+CAIRN_CANDIDATE=$CANDIDATE_REF
+export CAIRN_LAUNCHER CAIRN_PACKET CAIRN_CANDIDATE
+
 if [ -n "$CLOSURE_CHANGED" ]; then
     exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$VALUES_PATH" \
         --review-manifest "$MANIFEST" \
