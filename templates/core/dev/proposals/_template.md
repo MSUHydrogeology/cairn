@@ -533,7 +533,8 @@ Response disposes findings; it does not restate the design, so on its own it
 leaves the next reviewer to reassemble the contract out of the whole history —
 which is the repeated reading this rule exists to remove. So beside this
 Response append one **complete current-contract revision** —
-`## Revised proposal`, or `## Revision <n>` — and set `Status:` to `revised`.
+`## Revised proposal`, or `## Revision <n>` — and return `Status:` to
+`awaiting-review`, which is what hands the artifact back to a reviewer.
 Not a delta and not a diff: one self-contained statement of scope and
 exclusions, invariants, failure dispositions, public paths, evidence, omissions
 and deferred work, plus the mandatory ledger:
