@@ -400,7 +400,7 @@ pass by two of its clearest cases. Classes whose names merely *contain* a digit
 remain out; the rule is the coordinate, not the digit.
 
 **Fence on D2 (R2-F3).** `gate_manifest.json` is not an ordinary fixture.
-`bootstrap/REANCHOR_RUNBOOK.md:734-751` makes `_gate_manifest.py produce` **step
+`bootstrap/REANCHOR_RUNBOOK.md` makes `_gate_manifest.py produce` **step
 2** of a supervised ceremony whose step 3 is *"a supervised, **Maintainer-
 authored** commit containing the new `gate_manifest.json`"*, and the runbook is
 explicit that confirming the pinned hashes against out-of-band-authorized values
@@ -2213,3 +2213,37 @@ which is what the regeneration clauses forced by R3-F1 and R4-F1 exist for.
 
 **Status**: `ready-to-implement` (set by the clearing review at `9af47c4`;
 unchanged here). Execution still gated on `review-efficient-lifecycle` archiving.
+
+## Record note -- Claude -- 2026-08-19
+
+**Two citations into `bootstrap/REANCHOR_RUNBOOK.md` went stale during
+implementation, and one of them cannot be repaired.**
+
+The `ceremony-as-code` implementer rewrote the runbook (`482f0f6`, "the runbook
+explains the ceremony instead of holding it"). It is now 612 lines, so both
+`REANCHOR_RUNBOOK.md:734-751` (this plan's D2 fence, above) and
+`REANCHOR_RUNBOOK.md:734-749` (inside the round-2 plan review) exceed the file
+and hard-flag under `scripts/claim_check.py`.
+
+**The fence's substance is intact.** `_gate_manifest.py produce` is still step 2
+of a supervised ceremony, and step 3 is still a Maintainer-authored commit
+carrying the new `gate_manifest.json`. D2 stays MAINTAINER-GATED on unchanged
+grounds; only the coordinate moved.
+
+**The plan-body citation is repaired by deleting its line range**, not by
+re-pointing it. Re-pointing would buy one correct citation and the same failure
+on the next edit; the runbook's own section headings are stable and the quoted
+phrases are searchable, which is what a durable citation looks like.
+
+**The review's citation is left exactly as written.** It was accurate when the
+reviewer wrote it, and the record shows what was believed at each point — that
+is the append-only rule, and a reviewer's text is not the author's to correct.
+So `claim_check` will keep hard-flagging this file at that line until the plan
+archives. That is the correct behaviour and not a defect to route around.
+
+**It is also this plan's own thesis arriving uninvited.** The pass exists
+because a coordinate into a closed record decays; here a *live* citation into a
+*live* file decayed inside a single working day, because someone legitimately
+rewrote the file it pointed into. Line numbers are the most brittle coordinate
+of all — they go stale without anyone touching either the citing text or the
+cited claim.
