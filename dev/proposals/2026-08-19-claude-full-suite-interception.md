@@ -30,10 +30,7 @@ delegation" (routing decided 2026-08-19 at `a81f9fa7`); `dev/PLANNING.md`
 [`2026-08-19-claude-suite-run-diagnostics`](2026-08-19-claude-suite-run-diagnostics.md)
 (the measurement half — this is the enforcement half, and neither depends on the
 other).
-**Plan review**: required(**External**) — every External review so far has
-recorded `Plan readiness: DISTINCT REVIEW REQUIRED`. A **Security Review** is owed
-on its own trigger regardless: the change edits the file that owns the release
-gate's outcome rule and can refuse the suite.
+**Plan review**: required(**Internal**) — ratified at Decision (inherits proposal basis); implementation carries a Security Review trigger and re-anchor ceremony.
 
 *(The `Proposed paths:` registry declared `tools/verify.py` and a hook script.
 Both are withdrawn — see Revision 3 — so the declaration is retired at Revision 4
@@ -2196,7 +2193,7 @@ Security Review remain required.
 - **Explicit Exemptions**: `CAIRN_FULL_SUITE=1`, `--collect-only`, and release mode (`CAIRN_RELEASE_GATE_ACTIVE=1`).
 - **Additive Child Environment**: `scripts/quality_gate.py` (order-independence sub-gate) explicitly copies the complete parent environment and adds `CAIRN_FULL_SUITE=1` so release tokens are preserved.
 - **Verification Rule Clarification**: Boundary B's canonical pair now requires `CAIRN_FULL_SUITE=1`; verification records written before this guard cite the bare form and are accurate for the runs they describe.
-- **Plan Review Requirement**: The derived plan takes `Plan review: required(External)`.
+- **Plan Review Requirement**: Ratifies `Plan review: required(Internal)` for the derived plan (inheriting proposal basis); implementation carries a Security Review trigger and re-anchor ceremony.
 
 **Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
 
