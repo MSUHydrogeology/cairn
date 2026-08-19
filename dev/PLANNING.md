@@ -1074,9 +1074,10 @@ therefore *"when that proposal reaches implementation"*, not a date.
   Maintainer 2026-08-13: *"They don't inform anyone anything. I don't know what
   FUR5 is."*
 
-  **3,258 occurrences to 260, and the actionable set is empty.** Every remaining
+  **3,258 occurrences to 260** (`as_of 2026-08-19`, at `f129178`), **and the
+  actionable set is empty.** Every remaining
   occurrence is an adjudicated keep, each with its reason in the dispositions
-  ledger (`dev/measurement/tag-pass-dispositions.md`): Markdown heading levels
+  ledger (folded into the archived plan as *Appendix: the dispositions ledger*): Markdown heading levels
   (`H2`/`H3`), Unicode control classes (`C0`/`C1`), the redundancy gate's
   published detectors (`R1`/`R6`/`R7`), two self-defined in-file schemes
   (`test_transition_lint.py`'s `A1`–`E9`, `test_lifecycle_stage_patterns.py`'s
@@ -1092,7 +1093,11 @@ therefore *"when that proposal reaches implementation"*, not a date.
   on that allowance, and both sets are complete. One re-anchor now covers
   everything instead of two.
 
-  **What the re-anchor batch must carry**, all of it caused by this work and
+  **The re-anchor batch has landed** (`77d2b3b`, the Maintainer's supervised
+  ceremony). All three artifacts below were regenerated and the suite is green
+  on them, re-measured 2026-08-19: `test_ast_attest.py`, `test_gate_manifest.py`
+  and `test_portable_security_sweeps.py` pass. Recorded for the audit trail —
+  **what the batch carried**, all of it caused by this work and
   none of it self-serviceable: the AST attestation baseline (**37 CHANGED
   symbols** across **74 node lines**, up from 13, `as_of 2026-08-19` at `f129178`
   — `upgrade.py` 26 nodes, `install.py` 18, `slotmerge.py` 10, `merge.py` 8,

@@ -5,14 +5,14 @@
 
 **Source proposals** — three, accepted 2026-08-13, draining into one plan by
 Maintainer direction:
-* [`comprehension-outlives-the-room`](../proposals/archive/2026-08-13-claude-comprehension-outlives-the-room.md)
+* [`comprehension-outlives-the-room`](../../proposals/archive/2026-08-13-claude-comprehension-outlives-the-room.md)
   — the doctrine principle
-* [`finding-tags-are-not-reasons`](../proposals/archive/2026-08-13-claude-finding-tags-are-not-reasons.md)
+* [`finding-tags-are-not-reasons`](../../proposals/archive/2026-08-13-claude-finding-tags-are-not-reasons.md)
   — comments and docstrings
-* [`test-names-outlive-their-plans`](../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
+* [`test-names-outlive-their-plans`](../../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
   — test names
 
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal) — the highest tier among the constituents.
 The two operational proposals declare `not required`; the doctrine one requires
 Internal because it edits the invariant kernel, and a plan draining a doctrine
@@ -886,7 +886,141 @@ owed.
 
 ## Lasting-truth migration
 
-*Filled in at archive time.*
+**Loop-fidelity sign-off.** The three accepted proposals of 2026-08-13 —
+[`comprehension-outlives-the-room`](../../proposals/archive/2026-08-13-claude-comprehension-outlives-the-room.md)
+(the doctrine principle),
+[`finding-tags-are-not-reasons`](../../proposals/archive/2026-08-13-claude-finding-tags-are-not-reasons.md)
+(comments and docstrings) and
+[`test-names-outlive-their-plans`](../../proposals/archive/2026-08-13-claude-test-names-outlive-their-plans.md)
+(test names) — are each delivered, and each is checkable against a named
+implementing commit rather than against this sentence:
+
+* **The principle** — `29d3cf0` extends `doctrine/rationale.md` Anchor 16 with
+  its temporal half, fenced by Anchor 17, citing Naur (1985).
+* **The two conventions** — `013847b` places both under
+  `## Project-specific conventions` in `AGENTS.md` and its template twin,
+  outside the slot so an adopter receives them.
+* **Comments and docstrings** — the sweep from `29d3cf0` to `5ae92ee`, closing
+  at `6b398af` ("the actionable set is empty") and quantified in
+  [`tag-pass-dispositions.md`](../../measurement/tag-pass-dispositions.md).
+* **Test names** — `75687c8`, all 38 containers.
+
+**Fidelity note, recorded rather than smoothed.** The delivered scope is
+**wider** than the accepted proposals: the Maintainer widened the matching rule
+from three tag classes to five and withdrew a 142-occurrence deferral, both at
+`74b14de`, quoted verbatim there. The plan as accepted would have left 388
+occurrences standing. That is a scope *expansion* under explicit authorization,
+not a silent one, and it is named here because a fidelity sign-off that only
+looks for under-delivery misses half of what it is for.
+
+### Evidence ledger
+
+**Evidence shipped**
+
+* `doctrine/rationale.md` — Anchor 16's temporal half, fenced by Anchor 17
+  (`29d3cf0`).
+* `AGENTS.md` + `templates/core/AGENTS.md` — both conventions, placed outside
+  the slot so an adopter receives them (`013847b`).
+* **38 renamed test containers** (`75687c8`), including
+  `TestScopeReductionNeedsMaintainerAllowance` — the exact name
+  `doctrine/rationale.md` already used as its worked example, so the doctrine
+  and the tree now agree instead of the doctrine describing a name nobody had
+  written.
+* **A live guard on this plan's own output**, written by the sibling plan:
+  `bootstrap/tests/test_reanchor.py::TestTheCeremonyClosureCarriesNoUnexplainedTag`
+  fails if the ceremony's four files regress on unexplained tags, and its `LIVE`
+  frozenset names `N4`–`N8`, `R1`, `R6` — the same dispositions this pass
+  reached independently.
+* `AGENTS.md` > Verifying claims — *"confirm the instrument before trusting an
+  absence"* (`ab3d987`). **The pass's one genuine lasting-truth migration**: a
+  rule generalised out of six logged measurement failures into a live governing
+  document, where it applies to work with nothing to do with finding tags.
+* The dispositions themselves —
+  [`tag-pass-dispositions.md`](../../measurement/tag-pass-dispositions.md),
+  which **stays live in `dev/measurement/`**. It is an operational ledger of
+  process incidents, which is what that folder holds, and it is not a plan, so
+  it does not follow this file into the archive.
+
+  **Placement was measured, not assumed.** Relocating it — folded into this
+  file or moved elsewhere — costs **8 new `claim_check` hard flags** across the
+  eight places that cite it by path. Six are unrepairable by the author: four
+  sit in this plan's own append-only body, and **two sit inside the code
+  review's section**, which is the reviewer's text. An archive commit that
+  broke a reviewer's citations would be this plan's thesis inflicted by its own
+  closing act, on the one section nobody is permitted to fix.
+
+**Evidence deferred** — none. No planned check failed to land. Boundary B did
+not run, but that is a **waiver** recorded above with the Maintainer's decision
+quoted, not a deferral: it has no owner to chase and no date to come back on.
+
+**Evidence deliberately not created.** No test pins the tag corpus at a count.
+Such a guard would fail on the next legitimately-added live coordinate and would
+teach the next agent to delete a fence to make it green — the precise failure
+this plan spent its execution refusing. The keeps are held by recorded
+judgement, and by the sibling plan's guard above for the surface that most
+needed one.
+
+### Dispositions
+
+```
+Dispositions:
+* Install-contract artifacts (AST baseline, gate manifest, lockfile digest)
+    -> accept (landed at 77d2b3b, the Maintainer's supervised re-anchor, while
+       this archive was being written; D2 is executed, not outstanding)
+* 15 review-basis violations in this plan's five Internal reviews
+    -> accept (cleared by this archive; the conformance scan is live-corpus only)
+* 2 claim_check line-bounds flags on a reviewer's stale runbook citation
+    -> accept (cleared by this archive; the checker runs over live artifacts)
+* Dead M5 in an assertion-message f-string; plan-filename citations opening two
+  module docstrings
+    -> wontfix (a third surface nobody has scoped; widening the rule again
+       inside an archiving plan is the deviation this plan refused throughout)
+* ab3d987 (the AGENTS.md "confirm the instrument" paragraph) has had no
+  independent review
+    -> wontfix (Maintainer-directed change outside this plan's chunks; recorded
+       because the code review's coverage list names AGENTS.md)
+```
+
+* **`defer`** — the three install-contract artifacts the re-anchor ceremony
+  regenerates: the AST attestation baseline (**37 CHANGED symbols across 74
+  node lines**, `as_of 2026-08-19` at `f129178` — re-derive rather than trust
+  the figure), `bootstrap/tests/fixtures/gate_manifest.json` (frozen-file set
+  plus **335 pinned node ids** naming classes Chunk D renamed — this is **D2**,
+  MAINTAINER-GATED and unexecuted here), and the install lockfile's digest for
+  `run_portable_security_sweeps.py`. Durable home: `dev/PLANNING.md`.
+  Maintainer authorization, verbatim:
+
+  > Okay, those will happen with the other agent
+
+* **`accept`** — the **15 review-basis violations** in this plan's five
+  Internal plan-review sections, and the **two `claim_check` line-bounds
+  flags** at `:1097` and `:2471`. Both clear *by this archive*: the conformance
+  scan globs `dev/plans/*.md` and the claim checker runs over live artifacts,
+  so moving this file out of the live corpus is the fix, not a way around it.
+  The correction explaining why the fields cannot be authored after the fact is
+  recorded above under the Maintainer's ruling *"append the correction, accept
+  the red check"*.
+
+* **`wontfix`** — **two occurrences left in the tree by scope**, both named in
+  the ledger: a dead `M5` inside an assertion-message f-string
+  (`bootstrap/tests/test_gate_manifest.py:394`), and plan-filename citations
+  opening two module docstrings. Neither is one of the five tag classes.
+  Rationale: **assertion messages and plan-filename citations are a distinct
+  surface nobody has scoped**, and widening the rule a third time inside an
+  archiving plan would be the deviation this plan spent its whole execution
+  refusing. Eligible for `wontfix` — neither reaches an adopter, blocks a
+  release, nor needs a Decision. Whoever scopes that surface should start from
+  the ledger's closing section, which measures it.
+
+* **`wontfix`** — **`ab3d987` has had no independent review.** The
+  *"confirm the instrument before trusting an absence"* paragraph in
+  `AGENTS.md` > Verifying claims landed after the reviewed commit `88ed8da`,
+  outside the target range, on the Maintainer's direct instruction that it was
+  *"a very small doctrine change"*. Rationale: it is a Maintainer-directed
+  change outside this plan's chunks, so it is not this plan's to carry into a
+  second review round — but it is recorded here rather than left to be
+  discovered, because the code review's coverage list names `AGENTS.md` and a
+  later reader could reasonably infer it was read.
 
 ## Response to plan review -- Claude -- 2026-08-13
 
@@ -2557,3 +2691,39 @@ dead coordinate, neither repairable by the author. Recorded so the next person t
 not read two flags as two problems.
 
 **Status** -> `ready-to-archive` (unchanged; the review set it).
+
+
+
+## Archive-time re-measurement -- Claude -- 2026-08-19
+
+**Three of this plan's four known non-pass outcomes were resolved between the
+Response and this archive commit, and the disposition block was stale before it
+landed.** Re-measured at `77d2b3b`: `test_ast_attest.py`,
+`test_gate_manifest.py`, `test_portable_security_sweeps.py` and
+`test_verify_ref.py` — **284 passed, 0 failed.**
+
+* The **AST baseline**, the **gate manifest** (including **D2**, the 335 pinned
+  node ids) and the **install lockfile digest** were regenerated in the
+  Maintainer's supervised re-anchor at `77d2b3b`. They are `accept`, not
+  `defer`; the block above was corrected before commit rather than after.
+* **`test_cairn_roster_names_one_principal` passes.** The `ceremony-as-code`
+  plan ruled that the accepted contract specifies a ceremony key *"used for
+  nothing else"*, so the key **replaces** the Maintainer's general-purpose
+  entry rather than joining it. Resolved, never dispositioned — which is why
+  the implementation-verification section above records four failures and a
+  suite run today records none.
+
+**The remaining two `claim_check` flags stand.** `bootstrap/REANCHOR_RUNBOOK.md`
+is still 612 lines, so both `:734-749` citations remain out of bounds. They
+clear by this archive, as recorded.
+
+**Recorded because it is the third instance in this plan of the same thing.**
+A figure measured once and carried forward went stale — first the AST count
+(35 → 37, caught by the reviewer), then the corpus totals (now all dated
+`as_of`), now a disposition block that named work as deferred after it had
+landed. Each was caught only by measuring again at the moment of writing. The
+rule this plan contributed to `AGENTS.md` covers trusting a *negative*; this is
+its sibling and is not yet written down anywhere: **a figure is true at a
+commit, not in general.** `AGENTS.md`'s `as_of` discipline says so for
+published numbers; nothing says it for a disposition, which is a claim about
+state with no date attached at all.
