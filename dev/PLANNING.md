@@ -469,6 +469,63 @@ with the plan's filename stem.
   *Trigger:* the next plan that fans work out to subagents, or any change to how
   briefs are composed.
 
+* **Adversarially pre-reviewing a revision before submitting it** *(observed
+  2026-08-19 across two proposals; migrated from a session reflection before it
+  pruned)* — before answering an External review, both revisions were put through
+  four independent adversarial lenses instructed to find what the *next* round
+  would find, each able to run probes. **Yield: nine defects in one draft and six
+  in the other, four blocking each time.** Every one was later confirmed to be the
+  shape a real reviewer raises: tautological falsifiers, an unsound classifier, a
+  sanitizer that raised on ordinary text, a resolver that worked only by luck on
+  the fixture it was tested against.
+
+  **Why this is worth a row rather than a habit.** The cost is one workflow; the
+  saving is a review round, and a review round on a high-assurance proposal is the
+  scarcest resource in this method. It also changes *what* the author submits: a
+  contract that has already survived an adversarial read is a different artifact
+  from one that has only survived its author.
+
+  **The counter-observation, recorded with it, because it is load-bearing.** A
+  pre-review optimises for **the defect it names, not the artifact's purpose**. One
+  of its fixes answered a real defect (an undeclared value type) by changing a
+  cost field to a node count — destroying what the field was *for*, which the next
+  External round caught as an accepted-scope regression. A pasted pre-review fix
+  needs the same "does this still do the job" check as any edit the author writes.
+  *Trigger:* the next proposal facing a second or later review round; or a
+  decision about whether this belongs in `doctrine/dual-review.md` as a named
+  practice rather than a roadmap row.
+
+* **Complete-contract revisions lose sections silently, and the ledger cannot see
+  it** *(two instances, 2026-08-19, same artifact — recorded because two is the
+  recurrence trigger, not because one was surprising)* — Cairn requires each
+  Response to append **one complete current-contract revision** that supersedes
+  its predecessor in full, plus a mandatory `### Withdrawn / superseded
+  commitments` ledger. Both instances came from that shape:
+
+  **(a)** `by_file` changed from per-file *cost* to a node *count* between
+  revisions, unlisted. **(b)** Two entire sections — the reader contract and the
+  security preflight — were present in Revisions 1 and 2, absent from 3 and 4, and
+  **neither the author nor the External reviewer noticed for two rounds**.
+
+  **The mechanism is the ledger's own blind spot.** It is populated from the
+  author's memory of what they *consciously changed*; an omission is by definition
+  not in that set. So the one instrument designed to make a dropped commitment
+  visible is the instrument that cannot see the most common way one is dropped.
+
+  **Mitigation already applied in both live proposals**: each revision now carries
+  forward the prior revision's `###` section inventory and states that no section
+  is absent. That is cheap, mechanical, and would have caught both instances.
+  Whether it belongs in `dev/proposals/_template.md` — or is enforceable by the
+  lifecycle checker, which already parses these headings to detect the missing
+  ledger — is the open question.
+
+  **Route, deliberately.** `doctrine/rationale.md` > *"How the doctrine evolves
+  under evidence"* bypasses the rate limit only for a security or data-loss
+  surface, and this is neither. Two instances in one artifact on one day is thin
+  for the recurrence trigger. So this is an input to a **goodnight-time synthesis
+  stub**, not a standalone proposal.
+  *Trigger:* a third instance, or the next synthesis at a routine boundary.
+
 * **Portable-security-sweeps deferred set (LT-1, LT-2, LT-4, LT-6)** *(homed
   2026-08-10 as that plan's archive precondition; LT-3 and LT-5 live in
   `dev/measurement/gitleaks-version-support.md`, and LT-7 was resolved outright
