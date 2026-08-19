@@ -929,7 +929,7 @@ class TestShapeB:
     def test_an_open_commit_with_a_baked_in_review_flags_once_per_section(
         self, tl: ModuleType, repo: Path,
     ) -> None:
-        # C4.  Reproduces 17b7e5c.  The plan's named perturbation --
+        # C4.  Reproduces 17b7e5c.  The named perturbation --
         # delete the grammar-marker check -- is a *widening*, so it
         # cannot redden a node that asserts a finding IS produced; run at
         # implementation, it leaves C4 green (and reddens C5, which is
@@ -1041,7 +1041,7 @@ class TestShapeB:
         # C10.  Reproduces 000e480, the shape-(b) false positive the
         # Internal plan review found by running rather than reading.
         # Perturbation: delete C2's dated-heading conjunct.  Red -- the
-        # brief's [E1] then reads as a baked-in review.
+        # brief then reads as a baked-in review.
         base = _git(repo, "rev-parse", "HEAD")
         _write(repo, "dev/plans/p.md",
                "# p\n\n" + "meta\n" * 8 + "**Status**: open\n\n"
@@ -1053,11 +1053,11 @@ class TestShapeB:
 
 
 class TestShapeBWideningAndAdvisory:
-    """A7 -- ``review-efficient-lifecycle`` Chunk A.  ``_OPEN_STATUSES`` is
+    """A7 -- the open-status vocabulary.  ``_OPEN_STATUSES`` is
     gone; shape (b) now consumes the planner's ``SHAPE_B_STATUSES`` (3 -> 7
-    -> 16 -> 12 tokens: 3 at ``OPENING_STATES``, 7 once Chunk A1 widened it to
+    -> 16 -> 12 tokens: 3 at ``OPENING_STATES``, 7 once it widened to
     every current non-terminal state, 16 once Chunk E made the accepted
-    vocabulary legal, then narrowed back to 12 at Chunk H1, which retired
+    vocabulary legal, then narrowed back to 12 by the migration, which retired
     ``reviewed``/``revised``/``executing``/``review`` from the *current*
     vocabulary -- ``proposed`` and ``open`` re-enter through the historical-
     opening-statuses filter) and an unrecognized ``**Status**:`` is a new
@@ -1074,7 +1074,7 @@ class TestShapeBWideningAndAdvisory:
     def test_a_revised_proposal_open_is_not_shape_b_eligible(
         self, tl: ModuleType, repo: Path,
     ) -> None:
-        # Chunk H1 retired "revised" from the current proposal vocabulary
+        # The migration retired "revised" from the current proposal vocabulary
         # into HISTORICAL_PROPOSAL_STATES.  It is a historical token but NOT
         # one of OPENING_STATES' two historical members ("proposed", "open"),
         # so the SHAPE_B_STATUSES filter does not re-admit it: SHAPE_B
@@ -1096,7 +1096,7 @@ class TestShapeBWideningAndAdvisory:
     def test_an_executing_plan_open_is_not_shape_b_eligible(
         self, tl: ModuleType, repo: Path,
     ) -> None:
-        # "executing" is a plan non-terminal state Chunk H1 retired into
+        # "executing" is a plan non-terminal state the migration retired into
         # HISTORICAL_PLAN_STATES; like "revised" above it is a historical
         # *non-opening* token, so it stays outside the narrowed 12-token
         # SHAPE_B_STATUSES.  Perturbation: same as above.  Red.
@@ -1112,7 +1112,7 @@ class TestShapeBWideningAndAdvisory:
         self, tl: ModuleType, repo: Path,
     ) -> None:
         # "review" -- the plan status immediately before "archived" -- is the
-        # last of the four tokens Chunk H1 retired into the historical
+        # last of the four tokens the migration retired into the historical
         # *non-opening* group.  Perturbation: same.  Red.
         base = _git(repo, "rev-parse", "HEAD")
         _write(repo, "dev/plans/p.md",
@@ -1125,12 +1125,12 @@ class TestShapeBWideningAndAdvisory:
     def test_a_historical_opening_plan_status_stays_shape_b_eligible(
         self, tl: ModuleType, repo: Path,
     ) -> None:
-        # The other half of Chunk H1's contract, and what makes the 12-token
+        # The other half of the migration's contract, and what makes the 12-token
         # SHAPE_B_STATUSES set self-documenting: "open" is retired exactly
         # like "executing" and "review" above, but it is also one of
         # OPENING_STATES' two historical members (with "proposed"), so the
         # filter inside SHAPE_B_STATUSES' construction re-admits it -- the
-        # accepted R5 text is "every recognized current non-terminal status
+        # accepted text is "every recognized current non-terminal status
         # plus the historical opening statuses", not "plus the historical
         # statuses".  A plan ADDED at status "open" with a baked-in review
         # must still flag.  Perturbation: drop the OPENING_STATES filter term
@@ -1171,7 +1171,7 @@ class TestShapeBWideningAndAdvisory:
     ) -> None:
         # Contrast with the node above: absence of `**Status**:` within the
         # header bound is a DIFFERENT case from an unrecognized token, and the
-        # asymmetry is deliberate (A5's commit body) -- the trigger roots also
+        # asymmetry is deliberate -- the trigger roots also
         # carry non-artifact files, so firing on absence would make the tool
         # noisy about files it does not govern.  Perturbation: widen the
         # advisory branch to fire on `declared is None` too.  Red -- a finding

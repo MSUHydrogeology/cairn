@@ -4,17 +4,17 @@ Tests for the Cairn module-upgrade capability (3-way merge).
 Covers, per the executing plan (cairn-module-upgrade-3way-merge):
 
 * lockfile round-trip + base-cache round-trip (P-6); install fail-closed
-  on a diverged tree (P-1); R9 secret-token guard.
-* the slot parser fail-closed cases (R8).
+  on a diverged tree; the secret-token guard.
+* the slot parser fail-closed cases.
 * the token+slot-aware merge: clean fold, slot preservation under an
   upstream prose rewrite, true-conflict markers, slot-removed fail-closed
-  (R4).
+  (the merge engine).
 * verbatim-script hash policy (Part 4).
 * the upgrade subcommand: --plan writes nothing (P-2); --stage then
   --apply swaps + cleans; --apply rejects a stale stage and residual
-  conflict markers (R7/P-5); structural reconciliation; --to git-only
+  conflict markers; structural reconciliation; --to git-only
   (P-4); R10 stale-citation; --init-lock review-only for token files
-  (R6/I3).
+  (the --init-lock migration).
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -68,7 +68,7 @@ def _seed_profile(target: Path, **overrides: str) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Lockfile + base cache (Ch1; P-1/P-6/R9)
+# Lockfile + base cache
 # ---------------------------------------------------------------------------
 
 class TestLockfile:
@@ -87,7 +87,7 @@ class TestLockfile:
         lock = s.read_lockfile(tmp_path)
         for rec in lock["files"]:
             if rec["verbatim"]:
-                assert "base_cache" not in rec  # I4: scripts not cached
+                assert "base_cache" not in rec  # scripts are not cached
                 continue
             cache = tmp_path / rec["base_cache"]
             assert cache.exists(), rec["base_cache"]
@@ -111,7 +111,7 @@ class TestLockfile:
         for name in ("api_token", "secret_key", "db_password"):
             with pytest.raises(s.PresetError):
                 s._refuse_secret_tokens({name: "x"})
-        # camelCase / flatcase must also be caught (Antigravity A2)
+        # camelCase / flatcase must also be caught
         for name in ("apiKey", "secretToken", "dbPassword", "mysecret",
                      "accessKey", "passwdstr"):
             with pytest.raises(s.PresetError):
@@ -122,7 +122,7 @@ class TestLockfile:
 
 
 # ---------------------------------------------------------------------------
-# Profile-sized assembly (cairn-profile-sized-assembly P2): the lockfile's
+# Profile-sized assembly: the lockfile's
 # expected-clean-install `would` is stripped with the SAME embedded profile the
 # install stripped the on-disk file with, so a profile-stripped install writes a
 # clean lockfile (would == on-disk) and verifies clean -- while base_cache keeps
@@ -143,7 +143,7 @@ class TestProfileSizedAssembly:
 
     def _cairn_with_directive(self, tmp_path: Path) -> Path:
         """Copy the real templates tree into a tmp cairn-root and append a
-        cairn:if region to core/AGENTS.md (P4 has not yet gated the real
+        cairn:if region to core/AGENTS.md (gating has not yet reached the real
         template, so we inject one to exercise the strip end-to-end)."""
         croot = tmp_path / "cairn"
         shutil.copytree(TEMPLATES_ROOT, croot / "templates")
@@ -183,7 +183,7 @@ class TestProfileSizedAssembly:
         on_disk = (target / "AGENTS.md").read_bytes()
         assert rec["hash"] == "sha256:" + s._sha256_hex(on_disk)
         # base_cache keeps the RAW (with-directive) template -- strip is a
-        # reconstruction-time concern, not baked into the cache (P3 restrips it)
+        # reconstruction-time concern, not baked into the cache (it is restripped)
         cache = (target / rec["base_cache"]).read_text(encoding="utf-8")
         assert "cairn:if human_team" in cache
         # the tamper check attests the stripped install clean
@@ -224,7 +224,7 @@ class TestProfileSizedAssembly:
     def test_profile_change_solo_to_multi_reincludes_region(
         self, tmp_path: Path
     ) -> None:
-        """S1 / F3: an adopter who flips solo -> multi and upgrades gets the
+        """An adopter who flips solo -> multi and upgrades gets the
         gated region cleanly RE-INCLUDED (a clean ADD relative to the
         old-profile base), with a local customization preserved, the lockfile
         profile re-embedded to the new profile, and verify clean -- no clobber."""
@@ -262,7 +262,7 @@ class TestProfileSizedAssembly:
 
 
 # ---------------------------------------------------------------------------
-# Template gating safety (cairn-profile-sized-assembly P4 / F1): the real
+# Template gating safety: the real
 # templates/core/AGENTS.md gates ONLY the profile-optional `## Human
 # contributors` section -- never a bright-line (IR1-IR13). The most-restrictive
 # profile keeps every operative rule.
@@ -272,12 +272,12 @@ class TestTemplateGatingSafety:
     # Section headings carrying the IR1-IR13 bright-lines: NONE may sit inside a
     # cairn:if region, and ALL must survive the most-restrictive (solo) strip.
     _BRIGHTLINE_HEADINGS = [
-        "## The lifecycle",            # IR7
-        "## Review",                   # IR8
-        "## Git and commit workflow",  # IR1-IR6, IR9, IR10
-        "## Verifying claims",         # IR11
-        "## Session routines",         # IR12
-        "## Roles",                    # IR13
+        "## The lifecycle",
+        "## Review",
+        "## Git and commit workflow",
+        "## Verifying claims",
+        "## Session routines",
+        "## Roles",
     ]
 
     def _template(self) -> str:
@@ -287,7 +287,7 @@ class TestTemplateGatingSafety:
     def test_only_the_human_team_axis_is_gated(self) -> None:
         """Every cairn:if in the core template gates on `human_team` only -- the
         single approved profile-optional axis -- and the parse is balanced +
-        deterministic (F4) over the real template for both solo and multi."""
+        deterministic over the real template for both solo and multi."""
         import re
         from bootstrap._scaffold.config import strip_conditional_regions  # noqa: PLC0415,E501
         text = self._template()
@@ -296,7 +296,7 @@ class TestTemplateGatingSafety:
         assert set(gates) == {"human_team"}, gates
         for axes in ({"human_team": "solo"}, {"human_team": "small-multi"}):
             once = strip_conditional_regions(text, axes)
-            assert once == strip_conditional_regions(text, axes)  # F4
+            assert once == strip_conditional_regions(text, axes)  # idempotent
 
     def test_no_brightline_section_is_inside_a_gated_region(self) -> None:
         """The safety crux: no IR1-IR13 bright-line section heading sits within a
@@ -331,7 +331,7 @@ class TestTemplateGatingSafety:
 
 
 # ---------------------------------------------------------------------------
-# Slot parser fail-closed (R8)
+# Slot parser fail-closed
 # ---------------------------------------------------------------------------
 
 class TestSlotParser:
@@ -355,7 +355,7 @@ class TestSlotParser:
 
 
 # ---------------------------------------------------------------------------
-# Merge engine (R4)
+# Merge engine
 # ---------------------------------------------------------------------------
 
 class TestMerge:
@@ -391,7 +391,7 @@ class TestMerge:
         assert r.status == "slot-removed"
 
     def test_empty_slot_body_transplants_faithfully(self) -> None:
-        """A3: a single-empty-line slot body must not be dropped during
+        """A single-empty-line slot body must not be dropped during
         transplant (it would desync the three inputs and spuriously
         conflict)."""
         base = ("# {{project_name}}\n"
@@ -427,7 +427,7 @@ class TestVerbatim:
 
 
 # ---------------------------------------------------------------------------
-# upgrade subcommand: modes + safety contract (Ch5; P-2/R7/P-5/P-4/R10)
+# upgrade subcommand: modes + safety contract
 # ---------------------------------------------------------------------------
 
 class TestUpgradeModes:
@@ -464,7 +464,7 @@ class TestUpgradeModes:
         ag = tmp_path / "AGENTS.md"
         assert "keep me" in ag.read_text() and "# OLD" not in ag.read_text()
         assert not (tmp_path / "dev" / ".cairn-upgrade").exists()  # cleaned
-        # C1/A1: apply ADVANCED the machine authority -- the lockfile hash
+        # apply ADVANCED the machine authority -- the lockfile hash
         # now matches the applied file, and the base cache is the new
         # upstream raw template (not the old "# OLD" base).
         lock = s.read_lockfile(tmp_path)
@@ -680,7 +680,7 @@ class TestUpgradeModes:
     def test_finalize_makes_customized_install_verifiable(
         self, tmp_path: Path
     ) -> None:
-        """Codex final-review P1 #1: a *customized* install -- a filled slot /
+        """A *customized* install -- a filled slot /
         edited doc plus the ``VENDOR.md -> CLAUDE.md`` wrapper rename -- fails
         ``verify_integrity`` because the lockfile records the clean-install
         hashes (and the absent VENDOR.md).  ``upgrade --finalize`` advances each
@@ -715,7 +715,7 @@ class TestUpgradeModes:
     def test_finalize_preserves_verbatim_fork_detection(
         self, tmp_path: Path
     ) -> None:
-        """Codex final-review P1 #1 (companion): finalize advances a forked
+        """Companion: finalize advances a forked
         verbatim script's ``hash`` to the fork but preserves the as-shipped
         ``base_hash``, so ``classify_verbatim`` still sees a fork (a subsequent
         upgrade classifies it ``verbatim-locally-modified``, not a clean
@@ -743,7 +743,7 @@ class TestUpgradeModes:
     def test_renamed_wrapper_apply_advances_to_resolved_dst(
         self, tmp_path: Path
     ) -> None:
-        """Codex final-review P1 #2: a renamed-wrapper adopter
+        """A renamed-wrapper adopter
         (``VENDOR.md -> CLAUDE.md``) that stages and applies an upgrade must
         have its wrapper record advanced to the real on-disk dst (CLAUDE.md),
         not left dangling at VENDOR.md.  Without the apply-time heal,
@@ -815,7 +815,7 @@ class TestUpgradeModes:
         assert "new modules available" in out
 
     def test_slot_removed_is_not_staged(self, tmp_path: Path) -> None:
-        """C2/A4: a slot-removed (or any non-advancing) file is never staged,
+        """A slot-removed (or any non-advancing) file is never staged,
         so it can never be applied."""
         assert _install(tmp_path) == 0
         # ours fills a slot; the cached base has the slot; upstream (current
@@ -835,7 +835,7 @@ class TestUpgradeModes:
         assert not staged.exists()  # slot-removed not staged
 
     def test_apply_rejects_corrupt_stage(self, tmp_path: Path) -> None:
-        """C3: the on-disk staged set must equal the stage manifest."""
+        """The on-disk staged set must equal the stage manifest."""
         assert _install(tmp_path) == 0
         self._diverge_base(tmp_path)
         assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
@@ -850,7 +850,7 @@ class TestUpgradeModes:
 
 
 # ---------------------------------------------------------------------------
-# --init-lock migration (Ch6; R6/I3)
+# --init-lock migration
 # ---------------------------------------------------------------------------
 
 class TestInitLock:
@@ -882,7 +882,7 @@ class TestInitLock:
         s.main(["upgrade", "--target", str(tmp_path), "--plan",
                 "--cairn-root", str(CAIRN_ROOT)])
         out = capsys.readouterr().out
-        assert "review-only" in out  # I3: no pretended 3-way merge
+        assert "review-only" in out  # no pretended 3-way merge
 
     def test_init_lock_follows_vendor_rename(self, tmp_path: Path) -> None:
         """#45: a renamed vendor wrapper (VENDOR.md -> CLAUDE.md) is resolved
@@ -923,7 +923,7 @@ class TestInitLock:
 
 
 class TestInitLockFullProfile:
-    """init-lock-full-profile (Arm A) + B1: init-lock embeds the **full six-axis**
+    """init-lock-full-profile: init-lock embeds the **full six-axis**
     profile (fail-with-template when no config; validate axes against `_AXES`) and
     recovers `cairn_commit` from the `dev/.cairn/` manifest home (legacy
     `dev/strategy/` fallback)."""
@@ -934,7 +934,7 @@ class TestInitLockFullProfile:
         shutil.rmtree(tmp_path / "dev" / ".cairn")  # simulate a pre-lockfile tree
 
     def test_no_config_writes_template_and_fails(self, tmp_path: Path) -> None:
-        """(R2 step 1) No committed config -> prefill template + fail loud, no
+        """No committed config -> prefill template + fail loud, no
         lockfile."""
         self._prelock(tmp_path)
         rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
@@ -943,11 +943,11 @@ class TestInitLockFullProfile:
         assert s.read_lockfile(tmp_path) is None  # no lockfile written
         prof = (tmp_path / "dev" / ".cairn" / "profile.yml").read_text()
         assert "<small|medium|large>" in prof       # size placeholder surfaced
-        assert "age: greenfield" in prof            # S1: inferred (no legacy-agent.md)
-        assert "agent_team: single" in prof         # R3: inferred
+        assert "age: greenfield" in prof            # inferred (no legacy-agent.md)
+        assert "agent_team: single" in prof         # inferred
 
     def test_with_config_embeds_full_profile(self, tmp_path: Path) -> None:
-        """(R2 steps 2-3) A complete config -> all six axes + tokens embedded."""
+        """A complete config -> all six axes + tokens embedded."""
         self._prelock(tmp_path)
         _seed_profile(tmp_path, size="large", complexity="complex")
         assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
@@ -969,7 +969,7 @@ class TestInitLockFullProfile:
         assert "missing axis" in capsys.readouterr().err
 
     def test_invalid_axis_value_fails(self, tmp_path: Path, capsys) -> None:
-        """(S2) A value outside `_AXES` is rejected, not just a placeholder."""
+        """A value outside `_AXES` is rejected, not just a placeholder."""
         self._prelock(tmp_path)
         _seed_profile(tmp_path, size="enormous")    # not in _AXES["size"]
         rc = s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
@@ -986,7 +986,7 @@ class TestInitLockFullProfile:
         assert rc == 1 and "placeholder" in capsys.readouterr().err
 
     def test_cairn_commit_from_cairn_home(self, tmp_path: Path) -> None:
-        """(B1) cairn_commit recovered from a `dev/.cairn/` manifest."""
+        """cairn_commit recovered from a `dev/.cairn/` manifest."""
         self._prelock(tmp_path)
         _seed_profile(tmp_path)
         (tmp_path / "dev" / ".cairn" / "demo-fidelity-manifest.yml").write_text(
@@ -998,7 +998,7 @@ class TestInitLockFullProfile:
     def test_cairn_commit_legacy_strategy_fallback(
         self, tmp_path: Path, capsys
     ) -> None:
-        """(B1) Legacy `dev/strategy/` manifest still works, with a migration
+        """Legacy `dev/strategy/` manifest still works, with a migration
         advisory."""
         self._prelock(tmp_path)
         _seed_profile(tmp_path)
@@ -1031,7 +1031,7 @@ class TestReviewOnlyMerge:
 
     def _review_only_dst(self, target: Path) -> str:
         """A nested, non-verbatim (token-substituted) tracked file -> review-only
-        after --init-lock.  Nested ('/') to exercise the parent-mkdir path (S2)."""
+        after --init-lock.  Nested ('/') to exercise the parent-mkdir path."""
         lock = s.read_lockfile(target)
         nested = [r["dst"] for r in lock["files"]
                   if not r["verbatim"] and "/" in r["dst"]]
@@ -1057,7 +1057,7 @@ class TestReviewOnlyMerge:
         ro = tmp_path / "dev" / ".cairn-upgrade" / "review-only"
         assert (ro / (dst + ".theirs")).exists()   # new upstream
         assert (ro / (dst + ".ours")).exists()      # current on-disk copy
-        # B1: the pair lives OUTSIDE files/ so it cannot trip apply's exactness.
+        # The pair lives OUTSIDE files/ so it cannot trip apply's exactness.
         files_dir = tmp_path / "dev" / ".cairn-upgrade" / "files"
         staged = ({str(p.relative_to(files_dir)) for p in files_dir.rglob("*")
                    if p.is_file()} if files_dir.exists() else set())
@@ -1066,7 +1066,7 @@ class TestReviewOnlyMerge:
     def test_stage_review_only_file_missing_only_theirs(self, tmp_path: Path) -> None:
         """LHM's actual incident shape: a tracked file missing on disk (a
         default-on module slot that never installed).  Only ``.theirs`` is
-        written -- there is no on-disk ``.ours`` to pair (Antigravity S2 /
+        written -- there is no on-disk ``.ours`` to pair (
         second-read Finding 4)."""
         self._init_locked(tmp_path)
         dst = self._review_only_dst(tmp_path)
@@ -1099,7 +1099,7 @@ class TestReviewOnlyMerge:
 
     def test_apply_ack_review_only_overrides_and_cleans(self, tmp_path: Path) -> None:
         """--ack-review-only is the explicit override: --apply proceeds and
-        rmtree cleans the whole stage incl. review-only/ (B1)."""
+        rmtree cleans the whole stage incl. review-only/."""
         self._init_locked(tmp_path)
         ro_dst = self._review_only_dst(tmp_path)
         lock_before = s.read_lockfile(tmp_path)
@@ -1308,7 +1308,7 @@ class TestLivingStatePartition:
     def test_living_state_flag_rejected_outside_authoritative_set(
         self, tmp_path: Path
     ) -> None:
-        """Codex review P1: the living-state opt-out is a *verifier policy*, not
+        """The living-state opt-out is a *verifier policy*, not
         a self-asserted lockfile escape hatch.  A record whose ``dst`` is not in
         ``_LIVING_STATE_DSTS`` may not exclude itself from the tamper check by
         setting ``living_state: true`` -- otherwise a modified script could be
@@ -1341,7 +1341,7 @@ class TestLivingStatePartition:
 # `upgrade --apply` must not silently overwrite a tracked file the adopter has
 # uncommitted edits in (a concurrent session's in-flight work).  --apply
 # refuses on a dirty *tracked* intersection (--force overrides); --stage only
-# advises and completes (R1); benign untracked/gitignored dirt never trips it.
+# advises and completes; benign untracked/gitignored dirt never trips it.
 
 import shutil  # noqa: E402
 
@@ -1400,7 +1400,7 @@ class TestDirtyTreeGuard:
     def test_stage_advises_but_completes_on_dirty(
         self, tmp_path: Path, capsys
     ) -> None:
-        """(vi/R1) --stage writes only the gitignored review surface: it
+        """--stage writes only the gitignored review surface: it
         completes on a dirty tree but advises about the overlap."""
         self._init_committed(tmp_path)
         TestUpgradeModes()._diverge_base(tmp_path)  # AGENTS.md dirty
@@ -1460,8 +1460,8 @@ class TestDirtyTreeGuard:
 
 class TestManifestHomeAndSelfHeal:
     """Chunk 2: the R10 citation check finds the manifest in `dev/.cairn/` first
-    (legacy `dev/strategy/` fallback); R1 self-heals a missing `profile.yml`
-    from the lockfile (merging tokens + profile, B1), composing with the #56
+    (legacy `dev/strategy/` fallback); a missing `profile.yml` self-heals
+    from the lockfile (merging tokens + profile), composing with the #56
     dirty-tree guard."""
 
     def test_r10_finds_manifest_in_cairn_home(self, tmp_path: Path) -> None:
@@ -1500,7 +1500,7 @@ class TestManifestHomeAndSelfHeal:
         assert prof.exists()
         cfg = s.load_config(prof)                  # complete + re-loadable
         assert cfg["project_name"] == "Demo"
-        assert all(cfg.get(a) for a in s._AXES)    # all six axes (B1 + profile)
+        assert all(cfg.get(a) for a in s._AXES)    # all six axes
 
     def test_self_heal_noop_when_present(self, tmp_path: Path) -> None:
         assert _install(tmp_path) == 0
@@ -1637,7 +1637,7 @@ class TestFinalizeDirtyTreeGuard:
     def test_scoped_finalize_renamed_wrapper_by_recorded_name(
         self, tmp_path: Path
     ) -> None:
-        """External review P2: a renamed vendor wrapper can be scoped by its
+        """A renamed vendor wrapper can be scoped by its
         lockfile-recorded name (VENDOR.md) even though it resolves on disk to
         CLAUDE.md -- the recorded name must not fail closed once it resolves.
         (Scoped finalize bypasses the dirty-tree guard, so no git tree needed.)"""

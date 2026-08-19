@@ -53,6 +53,7 @@ the stated method and is recorded here rather than absorbed silently.
 | `tools/lifecycle_planner.py` + twin | `H2`, `H3` | Markdown heading levels, not coordinates. The parser's field scopes are literally defined as "the body above the pass's first H3". |
 | `tools/lifecycle_planner.py` + twin | `C0` | The Unicode C0 control-character block, in a rule about which code points are refused. |
 | `tools/lifecycle.py` + twin | `H2` | Markdown heading level, as above. |
+| `bootstrap/tests/test_transition_lint.py` | `A1`–`A20`, `B3`–`B15`, `C2`–`C11` | **A live internal labelling scheme, not citations.** The file defines ~29 of these itself (`# A9.`, `# C4.`, plus more in docstrings) and cross-references between them — *"Run with C10"*, *"C6/C7 is the second pair"*. A reader resolves them by scanning the same file, which is exactly what makes them live. Same test as `N4`: the referent is in reach. Only the references pointing *out* of the file (to the archived plan) were revised. |
 | `tools/lifecycle.py` + twin | `E1`, `S12`, `CF3` | **Examples of the pattern the code matches**, in `#: A bracketed finding id -- \`[E1]\`, \`[S12]\`, \`[CF3]\`, \`[M6-R]\``. The module parses finding ids, so naming their shapes is the docstring doing its job. |
 
 

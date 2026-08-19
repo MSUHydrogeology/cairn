@@ -72,7 +72,7 @@ from .install import (
 
 def _cairn_root() -> Path:
     """The Cairn repo root, resolved ONCE from this engine module's stable
-    on-disk location and **owned here** (scaffold-split 0B.2 / RR2).
+    on-disk location and **owned here**.
 
     The engine lives at ``bootstrap/_scaffold/__init__.py`` → ``parents[2]`` is
     ``<cairn root>``. Subsystems must read the root from **this** owner — they
@@ -102,7 +102,7 @@ _MANIFEST_SEARCH_DIRS = ("dev/.cairn", "dev/strategy")
 # The `upgrade` subcommand (Chunk 5/6): --plan / --stage / --apply / --init-lock
 # ---------------------------------------------------------------------------
 
-_STAGING_REL = "dev/.cairn-upgrade"          # ephemeral, gitignored (R3)
+_STAGING_REL = "dev/.cairn-upgrade"          # ephemeral, gitignored
 _STAGE_META = "stage-metadata.json"
 _CONFLICT_MARKER = "<<<<<<< ours"
 
@@ -154,10 +154,10 @@ def _always_on_group_complete(
     cairn_root: Path, templates_root: Path, to_ref: str | None,
 ) -> bool:
     """True iff EVERY always-on launcher+engine source resolves at *to_ref* -- the
-    R4 completeness-group precondition. When False, no always-on member may
+    Completeness-group precondition. When False, no always-on member may
     advance OR be adopted: ANY lockfile-authority mutation touching the group is
     fail-closed, so a facade never lands without its engine (External-Security
-    review P1#1 -- the precondition the upgrade post-pass AND ``--adopt-collisions``
+    -- the precondition the upgrade post-pass AND ``--adopt-collisions``
     both consult, not just the advancing path)."""
     return all(
         _theirs_bytes(cairn_root, templates_root, f"modules/{spec.src}", to_ref)
@@ -216,7 +216,7 @@ def _embedded_axes(profile: dict[str, Any] | None) -> dict[str, str]:
 def _resolve_current_profile(
     target: Path, lock: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, str]]:
-    """The adopter's CURRENT profile for upgrade-time materialization (S1).
+    """The adopter\'s CURRENT profile for upgrade-time materialization.
 
     Returns ``(profile_block, axes)``.  Reads the committed
     ``dev/.cairn/profile.yml`` -- the adopter may have changed their profile
@@ -228,7 +228,7 @@ def _resolve_current_profile(
     ``theirs`` materialize under the new profile, so the 3-way merge sees a
     newly-selected section as a clean ADD and a newly-dropped one as a clean
     DELETE -- never a spurious conflict, and slot-transplant still preserves
-    every filled adopter slot (F3)."""
+    every filled adopter slot."""
     lock_profile = lock.get("profile") or {}
     lock_axes = _embedded_axes(lock_profile)
     profile_path = target / _PROFILE_REL
@@ -261,19 +261,19 @@ def _resolve_current_profile(
 
 
 def _assert_mapping_ownership(lock_modules: set[str]) -> None:
-    """Global destination-ownership invariant (External Security review F4): a
+    """Global destination-ownership invariant: a
     destination claimed by more than one selected InstallSpec -- across the core,
     skills, and adopted-module mapping sets -- is a mapping bug. Refuse it (never
     silently let one spec shadow another), independent of lock / source state, so
     a duplicate hidden by source-absence or processing order cannot slip through.
     Current Cairn mappings have none; this preserves that as an enforced
     invariant.  Shares the ``duplicate_destinations`` preflight with the install
-    paths (External-Security review P1#2) -- one detector, three callers
+    paths -- one detector, three callers
     (install_onboarding / install_manifest / here), each choosing its failure."""
     entries = (
         [(f"core:{src}", dst) for src, dst in _CORE_MAPPINGS]
         + [(f"skills:{src}", dst) for src, dst, _v in _SKILLS_MAPPINGS]
-        # Always-on executable helpers share the destination namespace (R4).
+        # Always-on executable helpers share the destination namespace.
         + [(f"always-on:{spec.src}", spec.dst) for spec in _ALWAYS_ON_MAPPINGS]
         + [(f"module[{mod}]:{spec.src}", spec.dst)
            for mod in sorted(lock_modules)
@@ -295,7 +295,7 @@ def _compute_upgrade(
     """Classify every lockfile-tracked file for upgrade + the structural
     drift.  Pure read-only -- no writes."""
     tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
-    # Profile-sized assembly (cairn-profile-sized-assembly P3 / S1): materialize
+    # Profile-sized assembly: materialize
     # the merge ancestor `base` under the OLD embedded profile and `theirs` under
     # the adopter's CURRENT profile.  `ours` (on disk) is already old-profile-
     # sized and is left untouched.
@@ -355,7 +355,7 @@ def _compute_upgrade(
         cache_rel = rec.get("base_cache")
         base_path = (target / cache_rel) if cache_rel else None
         if base_path is None or not base_path.exists():
-            # No recoverable base (e.g. a --init-lock migrated tree, I3) ->
+            # No recoverable base (e.g. a --init-lock migrated tree) ->
             # review-only diff, never a pretended 3-way merge.  Carry
             # theirs_raw so --stage can write the upstream version alongside
             # the on-disk copy for a by-hand merge.
@@ -431,13 +431,13 @@ def _compute_upgrade(
         if theirs_b is None:
             continue
         seen_new.add(dst_rel)
-        # R5 (side-door parity): mirror the new-module occupied-destination split
+        # Side-door parity: mirror the new-module occupied-destination split
         # onto new-core. The prior new-core path NEVER checked whether the
         # destination already existed, so a genuinely-new core-like add over an
         # occupied UNLOCKED file would SILENTLY OVERWRITE it -- a latent data-loss
         # surface independent of onboarding, reachable the moment any always-on
         # helper is registered as tracked. Two distinct provenance states (as the
-        # new-module split, R3/R5): a dst already tracked under ANOTHER source is a
+        # new-module split): a dst already tracked under ANOTHER source is a
         # provenance conflict adoption never clears; an occupied-UNLOCKED regular
         # file is an adoptable fork (`upgrade --adopt-collisions`, the SAME
         # adoptable class the sibling resolves) -- or remove-and-re-stage to accept
@@ -476,7 +476,7 @@ def _compute_upgrade(
                 src=src_rel, verbatim=True))
         else:
             theirs_raw = theirs_b.decode("utf-8")
-            # Profile-size a newly-added core-like file too (P3); base cache
+            # Profile-size a newly-added core-like file too; base cache
             # (5th field) keeps the full/unsized raw template.
             applied = substitute_tokens(theirs_raw, tokens)
             if new_axes:
@@ -495,7 +495,7 @@ def _compute_upgrade(
     # ``_MODULE_MAPPINGS[M]`` (a hard-coded mapping set) -- the same safety the
     # core/skills restriction guarantees, extended to already-adopted modules.
     lock_modules = set(lock.get("modules", []))
-    # F4 (External Security review): a destination claimed by more than one of
+    # A destination claimed by more than one of
     # the selected core / skills / adopted-module InstallSpecs is a mapping bug
     # -- refuse it globally, before any per-file detection, independent of
     # lock/source state (so a duplicate hidden by source-absence or processing
@@ -517,7 +517,7 @@ def _compute_upgrade(
             if theirs_b is None:
                 continue
             seen_new.add(dst_rel)
-            # F3 (External Security review): under an explicit ``--to <ref>``,
+            # Under an explicit ``--to <ref>``,
             # structural additions are enumerated from the *running* engine's
             # registry, which need not match ``to_ref``. A pending addition is a
             # HARD BLOCK, never a silent skip -- otherwise an explicit-ref upgrade
@@ -542,12 +542,12 @@ def _compute_upgrade(
                     "module-internal addition is not UTF-8 text "
                     "(binary module files are out of scope)", None, None))
                 continue
-            # F2 (External Security review): a genuinely-new spec whose
+            # A genuinely-new spec whose
             # destination already exists OUTSIDE the lockfile is a HARD BLOCK in
             # its own kind that the generic ``--ack-review-only`` switch CANNOT
             # bypass. A plain review-only item would let apply advance the lock +
             # install the siblings while leaving this file importable but
-            # unattested. Two distinct provenance states (R3/R5 -- not the same):
+            # unattested. Two distinct provenance states, not the same:
             # a destination already tracked under ANOTHER lockfile source is an
             # ownership conflict adoption never clears (its own kind); an
             # occupied-UNLOCKED regular file is an adoptable fork
@@ -590,7 +590,7 @@ def _compute_upgrade(
                     f"{_BASE_CACHE_REL}/{dst_rel}",
                     src=canonical_src, verbatim=False))
 
-    # R4: always-on completeness-group enforcement (the upgrade-authority guard).
+    # Always-on completeness-group enforcement (the upgrade-authority guard).
     # The launcher + engine reach lockfile authority through THREE paths -- a
     # tracked launcher advancing via the clean/verbatim classification above, a
     # not-yet-tracked member adding via new-core, and an occupied-unlocked launcher
@@ -600,7 +600,7 @@ def _compute_upgrade(
     # may advance OR be adopted: convert EVERY pending group plan -- advancing AND
     # blocked-addition (incl. the adoptable `new-core-blocked`) -- to the hard
     # block, so a facade never lands without its engine. Converting the adoptable
-    # kinds too is the External-Security review P1#1 fix: a non-advancing
+    # kinds too: a non-advancing
     # `new-core-blocked` was left adoptable, so `--adopt-collisions` could record a
     # partial-group fork into the lockfile. Since `_cmd_adopt_collisions` discovers
     # its adoptable set by re-running `_compute_upgrade`, this conversion removes
@@ -711,13 +711,13 @@ def _print_upgrade_report(
 
 #: The two adoptable occupied-destination collision kinds an operator can keep as
 #: a tracked fork via ``upgrade --adopt-collisions`` (module-internal + core/
-#: always-on, R5). Both carry ``src`` (canonical) + ``theirs_raw`` (merge base)
+#: always-on). Both carry ``src`` (canonical) + ``theirs_raw`` (merge base)
 #: when adoptable; a lock-conflict block (``*-lockconflict``) never is.
 _ADOPTABLE_BLOCKED_KINDS = ("new-module-blocked", "new-core-blocked")
 
 #: Every hard-blocked addition kind: ``--apply`` fails closed UNCONDITIONALLY on
 #: any of these (no ``--ack-review-only`` / ``--force`` bypass).  The
-#: ``incomplete-group`` kind is the R4 completeness-group fail-closed (a facade
+#: ``incomplete-group`` kind is the completeness-group fail-closed (a facade
 #: must never advance over an absent engine member); it is hard-blocked but NOT
 #: adoptable (the fix is to restore the source, not keep a fork).
 _BLOCKED_ADDITION_KINDS = (
@@ -735,7 +735,7 @@ def _count_adoptable_collisions(plans: list[FilePlan]) -> int:
 def _print_adopt_command(triples: list[str]) -> None:
     """Print the ready-to-paste ``--adopt-collisions`` command for the operator
     authorization triples ``--stage`` minted from the exact ``.ours`` review
-    buffers (code-review round-2 P1) -- the channel an actor who changes the live
+    buffers -- the channel an actor who changes the live
     bytes after staging cannot rewrite. Only the ``--stage`` path has these;
     ``--plan`` (read-only) points the operator at ``--stage`` instead of handing
     out a live-read digest that need not match the bytes they review."""
@@ -762,7 +762,7 @@ def _write_stage(
     """Write the staged review surface into the ephemeral, gitignored
     staging dir; return ``(stage_path, adopt_hints)`` -- the second is the
     operator ``--adopt-collisions`` authorization triples for adoptable
-    collisions, minted from the exact ``.ours`` review buffers (round-2 P1).
+    collisions, minted from the exact ``.ours`` review buffers.
 
     Stages **only advancing kinds** (clean / conflict / verbatim-update) --
     a flagged/non-advancing file is reported but never staged, so it can
@@ -773,7 +773,7 @@ def _write_stage(
     import json
     import shutil
     stage = target / _STAGING_REL
-    # F1 round 2 (External Security review): guard the STAGE ROOT itself BEFORE
+    # Guard the STAGE ROOT itself BEFORE
     # the first rmtree / mkdir. If ``target/dev`` is a symlink to an external
     # directory, ``shutil.rmtree(stage)`` / ``stage.mkdir(...)`` would FOLLOW it
     # and delete/recreate that external dir -- a containment escape the per-plan
@@ -783,7 +783,7 @@ def _write_stage(
     if stage.exists():
         shutil.rmtree(stage)
     stage.mkdir(parents=True, exist_ok=True)
-    # F1 (External Security review): validate EVERY planned destination is a
+    # Validate EVERY planned destination is a
     # contained relative path BEFORE any stage / new-base / review-only write.
     # The stage write paths derive from ``fp.dst``; a malformed (absolute or
     # ``..``-traversing) hard-coded InstallSpec.dst would otherwise escape the
@@ -857,7 +857,7 @@ def _write_stage(
             ours_out.parent.mkdir(parents=True, exist_ok=True)
             ours_out.write_text(
                 dst_abs.read_text(encoding="utf-8"), encoding="utf-8")
-    # F2 / F3 (External Security review) + R5 (side-door parity): blocked
+    # Side-door parity: blocked
     # additions -- an occupied-destination collision or a lock-ownership conflict,
     # in EITHER the module-internal OR the core/always-on tier, or a structural
     # addition pending under an explicit ``--to`` -- are HARD blocks. They are
@@ -869,7 +869,7 @@ def _write_stage(
     blocked_dsts: list[str] = []
     # Operator authorization triples (dst@observed@upstream) for adoptable
     # collisions, minted from the EXACT bytes written as the `.ours` / `.theirs`
-    # review pair (code-review round-2 P1) -- NEVER a later live re-read, which
+    # review pair -- NEVER a later live re-read, which
     # could differ from what the operator is told to review.
     adopt_hints: list[str] = []
     for fp in plans:
@@ -931,7 +931,7 @@ def _write_stage(
         # Outstanding by-hand merges: --apply fail-closes on a non-empty list
         # unless --ack-review-only is passed (#44 completion gate).
         "review_only": sorted(review_only_dsts),
-        # F2/F3 + R5: occupied-collision / lock-conflict / pending-under-`--to`
+        # Occupied-collision / lock-conflict / pending-under-`--to`
         # blocked additions, in EITHER tier (module-internal + core/always-on) --
         # --apply fails closed UNCONDITIONALLY (no --ack-review-only / --force
         # bypass). Key name kept ``module_blocked`` for stage/apply compatibility.
@@ -940,7 +940,7 @@ def _write_stage(
         "new_entries": new_entries,
         # #48 verbatim files whose stale lock hash --apply should heal.
         "verbatim_rehash": sorted(verbatim_rehash),
-        # S1: the adopter's CURRENT resolved profile, so --apply re-embeds it in
+        # The adopter's CURRENT resolved profile, so --apply re-embeds it in
         # the advanced lockfile when the profile changed since install (keeps the
         # embedded profile consistent with the now-resized on-disk files).
         "new_profile": new_profile,
@@ -959,7 +959,7 @@ def _resolve_vendor_wrapper(
     Cairn installs the thin wrapper as ``VENDOR.md`` and the adopter renames it
     to their tool's file (``CLAUDE.md`` etc.), so on a renamed tree the install
     dst ``VENDOR.md`` is missing and the wrapper would drop to untracked.  Two-
-    tier resolution (plan-review S1), first hit wins:
+    tier resolution, first hit wins:
 
     * **Tier 1 (name):** a repo-root file named in ``_KNOWN_VENDOR_WRAPPERS``
       that is not already a mapped core/module dst -> resolved, with **no
@@ -990,7 +990,7 @@ def _find_manifest_path(target: Path) -> tuple[Path, bool] | None:
     """Locate the adopter's fidelity manifest, searching `dev/.cairn/` first
     (the canonical adoption-state home), then the legacy `dev/strategy/`. Returns
     ``(path, is_legacy)`` or ``None``. The single manifest-finder shared by the
-    `cairn_commit` recovery (B1) and the R10 citation check, so the two cannot
+    `cairn_commit` recovery and the citation check, so the two cannot
     diverge on which file is the manifest."""
     for idx, rel in enumerate(_MANIFEST_SEARCH_DIRS):
         d = target / rel
@@ -1014,7 +1014,7 @@ def _warn_legacy_manifest_home(manifest: Path) -> None:
 
 def _manifest_cairn_commit(target: Path) -> str:
     """Best-effort ``cairn_commit`` recovered from the fidelity manifest, or
-    ``"unknown"`` (B1: `dev/.cairn/` first, legacy `dev/strategy/` fallback with
+    ``"unknown"`` (`dev/.cairn/` first, legacy `dev/strategy/` fallback with
     a migration advisory)."""
     found = _find_manifest_path(target)
     if found is None:
@@ -1030,7 +1030,7 @@ def _manifest_cairn_commit(target: Path) -> str:
 
 
 def _infer_init_lock_axes(target: Path) -> dict[str, str]:
-    """Structurally-inferable axis prefill for `init-lock` (R3 + S1): the axes a
+    """Structurally-inferable axis prefill for `init-lock`: the axes a
     tree's installed modules / files determine. `size` / `complexity` are human
     judgments, left as placeholders."""
     def _mod(name: str) -> bool:
@@ -1050,7 +1050,7 @@ def _infer_init_lock_axes(target: Path) -> dict[str, str]:
 
 
 #: Axes `init-lock` cannot structurally infer -- the operator fills these between
-#: the two runs (R2). Each placeholder names its allowed values.
+#: the two runs. Each placeholder names its allowed values.
 _AXIS_PLACEHOLDERS: dict[str, str] = {
     "size": "<small|medium|large>",
     "complexity": "<simple|moderate|complex>",
@@ -1066,7 +1066,7 @@ def _resolve_lock_profile_fields(
 ) -> tuple[dict[str, Any], dict[str, str], list[str], dict[str, str]]:
     """From a parsed profile config, build the lockfile ``profile`` block + token
     map, and report *missing* / *invalid* axes (validated against ``_AXES`` --
-    S2). Mirrors the install path so a `init-lock`'d lockfile matches a
+    ). Mirrors the install path so a `init-lock`\'d lockfile matches a
     `--config` one. Raises ``PresetError`` on an unknown preset."""
     tokens = {k: str(v) for k, v in cfg.items()
               if isinstance(k, str) and k in KNOWN_TOKENS and v}
@@ -1088,7 +1088,7 @@ def _write_init_lock_profile_template(target: Path) -> int:
     """First `init-lock` run with no committed config: write a
     ``dev/.cairn/profile.yml`` prefilled with the structurally-inferable axes +
     placeholders for the rest, then **fail loud** (exit non-zero, no lockfile) so
-    the operator completes it and re-runs (R2 step 1)."""
+    the operator completes it and re-runs."""
     profile_path = target / _PROFILE_REL
     inferred = _infer_init_lock_axes(target)
     modules = sorted(m for m in _MODULE_MAPPINGS
@@ -1128,11 +1128,11 @@ def _write_init_lock_profile_template(target: Path) -> int:
 def _cmd_init_lock(
     target: Path, cairn_root: Path, templates_root: Path,
 ) -> int:
-    """`upgrade --init-lock` (R6/I3): synthesize a lockfile for a
+    """`upgrade --init-lock`: synthesize a lockfile for a
     pre-lockfile tree from on-disk content + the fidelity manifest.
 
     Token-substituted files have **no recoverable token values** (the
-    manifest records names, not values, I3) -> classified
+    manifest records names, not values) -> classified
     *unrecoverable-base* and handled review-only on later upgrades, never a
     pretended 3-way merge.  Verbatim scripts record their on-disk hash."""
     if read_lockfile(target) is not None:
@@ -1141,7 +1141,7 @@ def _cmd_init_lock(
         return 0
     # Arm A (init-lock-full-profile): resolve the full six-axis profile + tokens
     # so the synthesized lockfile is never a gating-only stub. With no committed
-    # config, fail-with-template (R2); with one, validate it (S2) before use.
+    # config, fail-with-template; with one, validate it before use.
     profile_path = target / _PROFILE_REL
     if not profile_path.is_file():
         return _write_init_lock_profile_template(target)
@@ -1173,7 +1173,7 @@ def _cmd_init_lock(
               ".\n  Fill every value (axes validated against their allowed "
               "values), then re-run `upgrade --init-lock`.", file=sys.stderr)
         return 1
-    # cairn_commit recovery (B1: dev/.cairn/ first, legacy dev/strategy/ fallback).
+    # cairn_commit recovery (dev/.cairn/ first, legacy dev/strategy/ fallback).
     commit = _manifest_cairn_commit(target)
     records: list[dict[str, Any]] = []
     classification: dict[str, list[str]] = {"verbatim": [], "unrecoverable-base": []}
@@ -1206,7 +1206,7 @@ def _cmd_init_lock(
         if verbatim:
             classification["verbatim"].append(dst_rel)
         else:
-            # No token values -> base not reconstructable (I3); no base_cache.
+            # No token values -> base not reconstructable; no base_cache.
             rec["unrecoverable_base"] = True
             classification["unrecoverable-base"].append(dst_rel)
         records.append(rec)
@@ -1249,7 +1249,7 @@ def _record_fork_entry(
     ``upstream_bytes`` (fork detection) for BOTH verbatim and mergeable specs --
     so ``classify_verbatim`` / the 3-way merge see the adopter's divergence as
     ``locally-modified``, never ``update`` (safe-to-overwrite). This is the
-    External Security review R1 fix: recording only the on-disk ``hash`` for a
+    Recording only the on-disk ``hash`` for a
     verbatim fork makes its own hash the comparison baseline, so a later upstream
     change classifies ``update`` and the fork is silently overwritten. A
     mergeable spec also caches the raw upstream template at ``base_cache`` (the
@@ -1257,7 +1257,7 @@ def _record_fork_entry(
     no cached file -- parity with ``write_install_lockfile``).
 
     Takes ``dst_bytes`` as an already-read buffer and does **not** touch the
-    destination itself (code-review F2): the caller reads the destination once,
+    destination itself: the caller reads the destination once,
     verifies that exact buffer against the authorized staged hash, and passes it
     here -- a re-read could otherwise bless bytes that changed after the check."""
     rec: dict[str, Any] = {
@@ -1277,7 +1277,7 @@ def _commit_lock_and_caches(
     cache_writes: list[tuple[Path, bytes]],
 ) -> None:
     """All-or-nothing commit of base-cache writes + the lockfile authority
-    (External Security review R4; code-review F3 hardening).
+    (hardened after review).
 
     The fork-adoption callers only ever record a **new** destination, so every
     base cache is a path the *current* lockfile does not reference. Enforce that
@@ -1386,7 +1386,7 @@ def _cmd_adopt_module(
 
     tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
 
-    # Required-token preflight (security-apparatus-enrichment B0): adopting a
+    # Required-token preflight: adopting a
     # module whose required token is unfilled in the lockfile would install a
     # placeholder-bearing file and record it.  Fail closed BEFORE any write or
     # lockfile mutation.
@@ -1426,11 +1426,11 @@ def _cmd_adopt_module(
                        else substitute_tokens(theirs_b.decode("utf-8"), tokens))
             dst_abs.write_text(content, encoding="utf-8")
         # Record via the shared fork primitive: base_hash = upstream for BOTH
-        # verbatim and mergeable (R1 -- a verbatim adopt previously recorded no
+        # verbatim and mergeable (a verbatim adopt previously recorded no
         # base_hash, so a later upstream change classified `update` and
         # overwrote the adopter's file). The destination is read ONCE and the
-        # buffer passed in (F2). The base-cache + lockfile writes are committed
-        # once, atomically, after the loop (R4).
+        # buffer passed in. The base-cache + lockfile writes are committed
+        # once, atomically, after the loop.
         rec, cache_write = _record_fork_entry(
             target, src_rel, dst_rel, bool(spec.verbatim), theirs_b,
             dst_abs.read_bytes())
@@ -1481,7 +1481,7 @@ def _cmd_adopt_collisions(
     ``locally-modified`` -- surfaced, never silently overwritten.
 
     **Authorization comes from the operator, not the mutable stage** (code-review
-    re-review R2). An actor able to change the candidate bytes can also rewrite
+    re-review). An actor able to change the candidate bytes can also rewrite
     the gitignored stage metadata's hashes alongside them, so adoption must NOT
     trust stored hashes. The operator reviews ``upgrade --plan`` / ``--stage``
     (which prints, per adoptable collision, the ``dst@observed@upstream`` triple
@@ -1491,11 +1491,11 @@ def _cmd_adopt_collisions(
     operator must authorize **exactly** the live adoptable set.
 
     Eligibility (which dst maps to which canonical src + verbatim) is recomputed
-    from the live ``_MODULE_MAPPINGS`` at adoption time (F1); the operator triples
-    bind the reviewed destination bytes (R2/F2 -- read once, compared to the
-    typed digest) and the reviewed upstream merge base (F5). Eligibility (R3): src
+    from the live ``_MODULE_MAPPINGS`` at adoption time; the operator triples
+    bind the reviewed destination bytes (read once, compared to the
+    typed digest) and the reviewed upstream merge base. Eligibility: src
     genuinely new, dst not already owned, a present regular contained file -- a
-    lock-conflict block is never adoptable. All-or-nothing (R4): the FULL set is
+    lock-conflict block is never adoptable. All-or-nothing: the FULL set is
     preflighted before any mutation; then base caches + the lockfile are written
     guarded + atomic (lockfile last). It never writes the adopter's destination."""
     # Parse the operator authorizations.
@@ -1513,7 +1513,7 @@ def _cmd_adopt_collisions(
                   file=sys.stderr)
             return 2
         authorized[dst_rel] = (obs_auth, up_auth)
-    # F1: recompute the adoptable-collision plan from the LIVE mapping -- the
+    # Recompute the adoptable-collision plan from the LIVE mapping -- the
     # authority for which dst -> canonical src -> verbatim is adoptable. The
     # operator cannot authorize a non-adoptable destination.
     plans, _structural = _compute_upgrade(
@@ -1521,7 +1521,7 @@ def _cmd_adopt_collisions(
     adoptable = {fp.dst: fp for fp in plans
                  if fp.kind in _ADOPTABLE_BLOCKED_KINDS and fp.src}
     always_on_dsts = {spec.dst for spec in _ALWAYS_ON_MAPPINGS}
-    # External-Security review P1#1 (defense in depth): adopting an always-on
+    # Defense in depth: adopting an always-on
     # collision into the lockfile IS an authority advancement, so it must fail
     # closed on a partial completeness group. The post-pass above already removes
     # always-on members from `adoptable` when the group is incomplete (so the
@@ -1548,14 +1548,14 @@ def _cmd_adopt_collisions(
         return 0
     lock_srcs = {rec.get("src") for rec in lock.get("files", [])}
     lock_dsts = {rec.get("dst") for rec in lock.get("files", [])}
-    # --- Preflight the FULL set BEFORE any mutation (R4). ---
+    # --- Preflight the FULL set BEFORE any mutation. ---
     planned: list[tuple[dict[str, Any], tuple[Path, bytes] | None]] = []
     for dst_rel in sorted(adoptable):
         fp = adoptable[dst_rel]
         src_rel = fp.src               # AUTHORITY: the live module mapping
         verbatim = bool(fp.verbatim)
         obs_auth, up_auth = authorized[dst_rel]
-        # Eligibility (R3): src genuinely new, dst not already owned by another.
+        # Eligibility: src genuinely new, dst not already owned by another.
         if src_rel in lock_srcs or dst_rel in lock_dsts:
             print(f"error: {dst_rel}: no longer an adoptable new collision "
                   "(now tracked); re-run `upgrade --plan`.", file=sys.stderr)
@@ -1567,7 +1567,7 @@ def _cmd_adopt_collisions(
                   "adopt (re-run `upgrade --plan`).", file=sys.stderr)
             return 1
         _assert_safe_write(dst_abs, target)   # containment of the dst path
-        # F2 + R2: read the destination ONCE; the bytes must match the OPERATOR's
+        # Read the destination ONCE; the bytes must match the OPERATOR's
         # authorized digest (not any mutable stored value) -- changed bytes, even
         # with a rewritten stage manifest, refuse.
         dst_bytes = dst_abs.read_bytes()
@@ -1576,7 +1576,7 @@ def _cmd_adopt_collisions(
                   "observed hash; refusing (re-review `upgrade --plan`).",
                   file=sys.stderr)
             return 1
-        # F5 + R2: the upstream merge base must match the OPERATOR's authorized
+        # The upstream merge base must match the OPERATOR's authorized
         # upstream digest, so a swapped upstream source refuses.
         if fp.theirs_raw is None:
             print(f"error: {dst_rel}: no upstream content to anchor the fork "
@@ -1591,7 +1591,7 @@ def _cmd_adopt_collisions(
         rec, cache_write = _record_fork_entry(
             target, src_rel, dst_rel, verbatim, upstream_bytes, dst_bytes)
         planned.append((rec, cache_write))
-    # --- Commit: guarded, atomic, lockfile last (R4). ---
+    # --- Commit: guarded, atomic, lockfile last. ---
     new_files = [dict(rec) for rec in lock.get("files", [])]
     cache_writes: list[tuple[Path, bytes]] = []
     adopted: list[str] = []
@@ -1802,7 +1802,7 @@ def _apply_upgrade(
     target: Path, lock: dict[str, Any], cairn_root: Path, templates_root: Path,
     *, ack_review_only: bool = False, force: bool = False,
 ) -> int:
-    """`--apply` (R7): consume the staged result under the safety contract,
+    """`--apply`: consume the staged result under the safety contract,
     swap the originals, **advance the lockfile + base cache** to the new
     version, and clean the stage.  Fail-closed at every gate.
 
@@ -1876,7 +1876,7 @@ def _apply_upgrade(
               "review-only/, merge by hand into the original, then re-run "
               "`--apply --ack-review-only` to acknowledge.", file=sys.stderr)
         return 1
-    # (d3) Blocked-addition HARD block (External Security review F2/F3 + R5): an
+    # (d3) Blocked-addition HARD block: an
     #      occupied-destination collision or a lock-ownership conflict -- in EITHER
     #      the module-internal OR the core/always-on tier -- or a structural
     #      addition pending under an explicit --to, fails closed UNCONDITIONALLY --
@@ -1908,7 +1908,7 @@ def _apply_upgrade(
                 print(f"error: {staged} changed on disk since --stage; "
                       "re-run `upgrade --stage`.", file=sys.stderr)
                 return 1
-    # (e2) Expected-absence guard (R2): a new add (new-core / new-module)
+    # (e2) Expected-absence guard: a new add (new-core / new-module)
     #      carried no ours_hashes snapshot because its destination was absent at
     #      --stage. If it APPEARED since -- another process/agent created it, or
     #      it is now a symlink -- applying would silently overwrite that content.
@@ -1975,7 +1975,7 @@ def _apply_upgrade(
         new_lock["source_repository"] = meta["new_source_repository"]
     if "new_source_licenses" in meta:
         new_lock["source_licenses"] = meta["new_source_licenses"]
-    # S1: if the adopter's profile changed since install, re-embed the current
+    # If the adopter's profile changed since install, re-embed the current
     # resolved profile so the advanced lockfile matches the now-resized on-disk
     # files (the staged content was already sized under this profile).
     new_profile = meta.get("new_profile")
@@ -2057,10 +2057,10 @@ def _yaml_sq(v: str) -> str:
 
 
 def _self_heal_profile_config(target: Path, lock: dict[str, Any]) -> bool:
-    """R1: if `dev/.cairn/profile.yml` is absent but the lockfile carries a
+    """If `dev/.cairn/profile.yml` is absent but the lockfile carries a
     non-empty profile, materialize the committed config from the lockfile --
     **merging the lockfile `tokens` (project_name, test_command, ...) with the
-    `profile` axes/preset (B1)** so the written config is complete and
+    `profile` axes/preset** so the written config is complete and
     re-loadable. Only-when-absent (never clobbers an existing config). Returns
     True iff it wrote one.
 
@@ -2158,7 +2158,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                         "digests, never the mutable stage metadata.")
     args = p.parse_args(argv)
 
-    # R5 (External Security review): the upgrade ACTIONS are mutually exclusive.
+    # The upgrade ACTIONS are mutually exclusive.
     # argparse parses them independently and the dispatch is first-match, so a
     # mixed invocation (e.g. `--adopt-collisions --apply`) would silently run
     # only one branch while reading as "adopt, then apply". Reject before any
@@ -2217,7 +2217,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
     #
     # The comparison bytes come from `cairn_root` -- the running upgrade's own
     # source tree, resolved above from --cairn-root or _cairn_root(), never
-    # from `target` and never from the target's lockfile.  R3: with `--to
+    # from `target` and never from the target's lockfile.  With `--to
     # <ref>` the upstream templates for that ref are not materialized on disk,
     # so there is no trusted root to read; pass None and every finding degrades
     # to `unconfirmed` (retained, never suppressed) rather than silently
@@ -2251,7 +2251,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
               "tree (omit --to).", file=sys.stderr)
         return 1
 
-    # Required-token preflight (security-apparatus-enrichment B0): the writing
+    # Required-token preflight: the writing
     # upgrade paths (--stage materializes the review surface, --apply swaps the
     # tree) re-render token-substituted files from the lockfile's token map. If
     # an installed module's required token is unfilled in the lockfile, re-render
@@ -2278,7 +2278,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
                   file=sys.stderr)
             return 2
 
-    # R1 self-heal (--apply only -- NOT --stage, which is a non-mutating preview
+    # Self-heal (--apply only -- NOT --stage, which is a non-mutating preview
     # that writes solely to the gitignored review surface; and never on the
     # read-only --plan): an already-init-lock'd adopter may carry a populated
     # lockfile profile but no committed dev/.cairn/profile.yml. Materialize it
@@ -2318,7 +2318,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         _print_upgrade_report(plans, structural, citation, mode="stage",
                               drift=drift)
         _print_adopt_command(adopt_hints)
-        # (R1) --stage writes only the gitignored review surface, so it
+        # --stage writes only the gitignored review surface, so it
         # *completes* even on a dirty tree -- but advise when the write-set
         # overlaps a tracked uncommitted path so the eventual --apply refusal
         # is no surprise.
