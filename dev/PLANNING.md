@@ -349,6 +349,46 @@ with the plan's filename stem.
   carries; a tool-level default; or an explicit acceptance that budgets are the
   spawning agent's job and the failure was ordinary. That routing question is the
   Maintainer's, and it wants its own proposal rather than a row here.
+
+  **Routing decided 2026-08-19 by the Maintainer — and it is none of the four
+  above.** A six-agent analysis under three adversarial verification lenses was
+  run over this question. It killed the delegation-clause option on three
+  independent grounds. First, the rule it would add is **already loaded**:
+  `AGENTS.md` auto-loads into a spawned session through the vendor wrapper's
+  import, measured directly — a subagent received the entire file with nothing
+  about verification in its brief. That falsifies this row's own premise that "a
+  subagent does not read `AGENTS.md`"; the load-bearing gap is that the *mapping*
+  lives in the spawner's head, not that the rule fails to arrive. Second,
+  `doctrine/roles.md` **already** binds orchestrated sub-agents about fan-out
+  specifically, and did not prevent this. Third, the clause is counterproductive
+  at the leaf: the subagent reads it too, and what it reads is that `full` is the
+  correct answer — ratifying every run it was written to prevent.
+
+  **The adopted rule is structural rather than exhortative: verification is not
+  delegated — the spawner verifies once, after the join.** It removes the
+  multiplier by construction instead of budgeting it, needs no tooling, and binds
+  only the spawner, who demonstrably does read the rule. The leaf never needs to
+  know it, which is exactly what makes it immune to the transmission failure this
+  row records. Applied as working practice from 2026-08-19.
+
+  **The durable doctrine edit is deliberately not proposed here, and the gate is
+  why.** `doctrine/rationale.md` > *"How the doctrine evolves under evidence"*
+  bypasses the rate limit only for a **security** or a **data-loss** surface.
+  This is a cost surface and qualifies for neither, so the honest route is the
+  gate's second trigger — **synthesis at a routine boundary**, where this becomes
+  one input to a single aggregated doctrine-proposal stub rather than a
+  standalone proposal on one incident. Recording it here is that aggregation
+  step, not a substitute for it.
+
+  **One further fact, which bears on any future version of this rule.** The
+  eleven runs are *not recoverable from the record*: the plan's
+  `Implementation verification` shows exactly the two Boundary B runs it budgeted
+  (622.22s and 689.49s), and its code reviewer states outright that they ran
+  **zero** full suites, citing the verification boundaries. The doctrine worked
+  wherever a record was kept and failed only where nothing observes. So measuring
+  whether this rule works depends on the run-frequency ledger proposed in
+  `2026-08-19-claude-suite-run-diagnostics`; without it, the next reading of this
+  row is another hand-count of one plan.
   *Trigger:* the next plan that fans work out to subagents, or any change to how
   briefs are composed.
 
