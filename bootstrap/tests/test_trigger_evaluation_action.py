@@ -1,4 +1,4 @@
-"""Tests for action-trigger evaluators (Chunk P1.9b).
+"""Tests for action-trigger evaluators.
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 
@@ -11,7 +11,7 @@ consults the activation log to confirm the
 
 Each trigger gets positive + negative fixture tests; the
 ``collab-agreement-signing`` trigger gets four fixtures per the
-plan's P1.9b spec.
+spec.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_trigger_evaluation_action.py
@@ -293,7 +293,7 @@ class TestFoldbackCandidateTrigger:
 
 
 # ---------------------------------------------------------------------------
-# collab-agreement-signing (4 fixtures per plan P1.9b spec)
+# collab-agreement-signing (4 fixtures)
 # ---------------------------------------------------------------------------
 
 

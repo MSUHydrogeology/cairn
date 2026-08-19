@@ -9,10 +9,10 @@ A real scaffold of a scratch adopter repo must:
 * record each canonical skill artifact in ``dev/.cairn/cairn-lock.yml`` -- the two
   ``SKILL.md`` files non-verbatim (with a ``base_cache`` + ``base_hash`` -> the
   3-way-merge upgrade path) and ``tools/lifecycle.py`` verbatim (hash-only, no
-  base cache) (Decision 4 / EP3);
+  base cache);
 * write ``dev/.cairn/base/...`` cache entries for the non-verbatim skills;
 * write the untracked ``dev/.cairn/local-env.json`` interpreter binding and seed
-  it (plus the handoff lock) into ``.gitignore`` (Decision 6 / R3);
+  it (plus the handoff lock) into ``.gitignore``;
 * leave an installed, runnable CLI: ``session-start`` runs read-only.
 
 Run from the cairn repo root:
@@ -98,7 +98,7 @@ def test_local_env_binding_written_and_gitignored(scaffolded: Path):
 
 
 def test_failed_fanout_leaves_local_env_gitignored_and_exits_nonzero(tmp_path):
-    # Codex P1#2: a containment failure during fan-out (a symlinked vendor
+    # A containment failure during fan-out (a symlinked vendor
     # parent) must not leave an UNIGNORED local-env.json carrying a local
     # absolute path -- the ignore entry is seeded before the file is written,
     # and main() returns a crisp non-zero, not a traceback.

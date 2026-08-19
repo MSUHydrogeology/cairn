@@ -586,3 +586,37 @@ dead tag, was removed. The resulting inconsistency is real and is the honest
 report: **assertion messages are a third surface nobody scoped**, they are read
 by exactly the audience this plan cares about — someone staring at a failure —
 and they should be a follow-up rather than a silent widening here.
+
+### Batch: triggers, skills install, the security net — and a keep in the parser
+
+| File | Before | After | Kept |
+|---|---:|---:|---|
+| `bootstrap/tests/test_trigger_evaluation_action.py` | 3 | 0 | — |
+| `bootstrap/tests/test_skills_install.py` | 3 | 0 | — |
+| `bootstrap/tests/test_security_net.py` | 3 | 0 | — |
+| `tools/lifecycle.py` + twin | 4 | 4 | **all** — see below |
+
+**`tools/lifecycle.py:2909` is the purest keep in the pass, and it took no
+research at all.** The comment reads:
+
+> `#: A bracketed finding id -- `[E1]`, `[S12]`, `[CF3]`, `[M6-R]`.`
+
+Four class-1 tags in one line, none of which cites anything. They are **examples
+in the specification of a regex whose job is to match finding ids**. The
+liveness test does not even need to be run: the tokens are not pointers into a
+record here, they are the shape the code parses. Stripping them would delete the
+comment's entire content and leave "a bracketed finding id" describing a pattern
+the reader could no longer picture.
+
+This is the boundary the pass has been circling from the other side all day.
+Everywhere else a coordinate was decoration on a name that already carried the
+meaning, so removing it cost nothing. Here the coordinate **is** the meaning.
+The distinguishing question is not "does this token resolve?" — none of these
+four resolve, and `[M6-R]` may never have existed — but **"is this token
+mentioned or used?"** A mention of a finding id is a citation and decays. An
+*example* of a finding id is a specimen, and specimens do not decay.
+
+The same file's other tokens (`H2` in a docstring about review-record headings)
+are heading levels, already adjudicated. So the twin pair needed no edit at
+all — recorded here because a completion check must be able to tell "audited,
+nothing to do" from "not yet audited."

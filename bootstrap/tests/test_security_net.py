@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 """The adversarial transport suite for the shared ``_security_net`` engine.
 
-This is the AW4 gate from ``dev/plans/api-web-security-modules.md``: the
+It is the
 evidence that the two capability runners sit on a client whose *connected peer*
 is validated, whose redirects are never followed, whose reads are capped, and
 whose TLS cannot be weakened.
@@ -1818,7 +1818,7 @@ def test_a_finding_never_carries_an_integer_or_an_observed_value(engine):
 
 
 # ---------------------------------------------------------------------------
-# A2 -- the strict policy schema
+# The strict policy schema
 # ---------------------------------------------------------------------------
 
 
@@ -2048,7 +2048,7 @@ def _api_refusal_rows(policy):
 def test_a2_every_declared_policy_refusal_fires_with_its_own_reason(
     engine, tmp_path
 ):
-    """A2's refusal list, row by row, each pinned to its **reason token**.
+    """The refusal list, row by row, each pinned to its **reason token**.
 
     Pinning the reason rather than only the code is what stops this from being
     a test that any refusal satisfies: a schema that refused everything with
