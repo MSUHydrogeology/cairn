@@ -140,11 +140,26 @@ All five are now revised and the four digests in
 re-derived. **Nothing is deferred, so the plan's "no revival row" claim holds
 again.**
 
+**Correction (2026-08-18, from the `ceremony-as-code` agent).** This entry first
+said all five lines sat inside `_probe_interpreter` / `_resolve_interpreter` /
+`_warn_stale_once`. **That was wrong**, and verified wrong by enclosing-function
+analysis at `c29ead3`:
+
+| Line | Enclosing function | Pinned? |
+|-----:|--------------------|---------|
+| 436 | `_has_symlink_component` | **no** |
+| 477, 481, 505, 535 | `_resolve_interpreter` | yes |
+
+`_probe_interpreter` and `_warn_stale_once` were never touched. Only **one**
+symbol's pair was re-derived (2 values, not 6) — which is correct and complete,
+but a reviewer comparing the old "three functions" wording against a two-value
+re-pin would reasonably conclude the pin was under-derived. The evidence below
+was always sound; the description of it was not.
+
 **How the change was shown safe, rather than asserted.** The pin's own AST
 digest includes docstrings, so it cannot distinguish a docstring edit from a
-logic change. Each of the three fenced functions was therefore digested a second
-way — with *every* docstring stripped before `ast.dump` — before and after the
-edit:
+logic change. Each pinned function was therefore digested a second way — with
+*every* docstring stripped before `ast.dump` — before and after the edit:
 
 ```
 _probe_interpreter       08856288621efb6f   unchanged
@@ -168,3 +183,25 @@ explicit Maintainer authorization, not by a Security Review.
 | `tools/lifecycle.py` + twin | `... corrected on the record (S1).` | `... corrected on the record.` |
 | `tools/lifecycle.py` + twin | `later used to run (R7)` | `later used to run` |
 | `tools/lifecycle.py` + twin | `... any fatal check (finding 1; corrected R2/R6).` | `... any fatal check.` |
+
+---
+
+## Finding: the fence pins the caller, not the callee
+
+Raised by the `ceremony-as-code` agent while confirming the re-pin above, and
+**pre-existing** — not introduced by this pass, and surfaced only because one
+edit happened to land one level outside the boundary.
+
+`_has_symlink_component` is **not** one of the four pinned symbols. It is called
+from `_probe_interpreter`, which is — but a pinned digest covers the call site,
+not the function called.
+
+`AGENTS.md` describes the local interpreter binding's reader as checking
+*"absoluteness, schema, symlink-freedom and the executable bit"*.
+**`_has_symlink_component` is the symlink-freedom check.** So a *behavioural*
+change to symlink detection would not redden this fence, even though symlink
+freedom is one of the four properties the trust root is documented as enforcing.
+
+This pass's edit there was comment-only and harmless. The gap is structural and
+belongs to whoever next reviews that surface; it is filed in `dev/PLANNING.md`
+beside the re-pin rather than left in two chat logs.

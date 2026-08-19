@@ -133,19 +133,39 @@ with the plan's filename stem.
   interpreter binding, which `AGENTS.md` lists as a high-risk surface.
 
   The change was comment- and docstring-only and that is **shown, not
-  asserted**: each of `_probe_interpreter`, `_resolve_interpreter` and
-  `_warn_stale_once` digests identically on both sides of the edit once every
-  docstring is stripped before `ast.dump` (`08856288621efb6f`,
+  asserted**: every pinned function digests identically on both sides of the
+  edit once every docstring is stripped before `ast.dump` (`08856288621efb6f`,
   `92fdb64150ee4ef5`, `d5d3de3acd75a08b`) — reproducible against `c29ead3^`,
-  and the method is recorded in `dev/measurement/tag-pass-dispositions.md`.
-  None of the five gated properties (schema, validation order, fallback
-  disposition, warning visibility, subprocess use) changed.
+  method in `dev/measurement/tag-pass-dispositions.md`. None of the five gated
+  properties (schema, validation order, fallback disposition, warning
+  visibility, subprocess use) changed. **Independently reproduced** by the
+  `ceremony-as-code` agent with its own stripper, on both twins, at three
+  commits.
 
-  **What is owed**: a reviewer with this surface in scope re-runs that
-  reproduction and confirms the re-pin, or says it should have waited for a
-  Security Review. Raised with the concurrent ceremony session, whose context
-  ended before it could answer — which is why this is filed here rather than
-  left in a message.
+  **The edits were in `_has_symlink_component` (1 line, unpinned) and
+  `_resolve_interpreter` (4 lines, pinned)** — an earlier version of this row
+  named the wrong functions; one pinned pair was re-derived, which is correct
+  and complete.
+
+  **A second, sharper item rides here (pre-existing).** `_has_symlink_component`
+  is *not* pinned, though its caller `_probe_interpreter` is — and a pinned
+  digest covers the call, not the callee. `AGENTS.md` documents this trust
+  root's reader as checking *"absoluteness, schema, symlink-freedom and the
+  executable bit"*, and `_has_symlink_component` **is** the symlink-freedom
+  check. So a behavioural change to symlink detection would not redden the
+  fence. Nothing introduced this; a comment edit landing one level outside the
+  boundary surfaced it. **This is the half with teeth.**
+
+  **What is owed, and what is now settled.** The *technical* question is
+  closed: the `ceremony-as-code` agent reproduced the result independently and
+  confirmed no behavioural change. The *procedural* question is open and is the
+  Maintainer's, for three reasons that agent named rather than waved past: it is
+  **the same agent type**, so its confirmation is a second reading and not an
+  independent tier; the pin's own text says to re-derive *"in that review's own
+  commit"* and `c29ead3` is an implementing commit; and the authorization
+  (*"we'll re-pin with the other agent"*) describes a second party at the
+  re-pin, which is not the same thing as a Security Review. Treat that
+  reproduction as **evidence for** a review, not as the review.
 
   **Worth a view while someone is in there**: a byte pin that trips on a
   docstring edit may be mis-scoped for what it protects. Not a proposal, an
