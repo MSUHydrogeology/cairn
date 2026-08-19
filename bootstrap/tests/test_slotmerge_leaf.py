@@ -2,11 +2,11 @@
 
 Contracts:
 
-* **Near-leaf (SR5 pattern)** — `slotmerge` imports only the stdlib plus the
+* **Near-leaf** — `slotmerge` imports only the stdlib plus the
   `security` containment leaf (for `_assert_safe_write`, the module-merge write
   guard); it must never import any higher engine module (install / upgrade / the
   3-way merge engine depend on it, never the reverse).
-* **Containment (final Security Review P1 #1)** — module-merge writes are routed
+* **Containment** — module-merge writes are routed
   through the containment guard, so a module-controlled merge-target path cannot
   escape the adopter root.
 * **Single identity** — every moved public symbol resolves to the one leaf object
@@ -51,7 +51,7 @@ _MOVED_SYMBOLS = (
 def test_slotmerge_imports_only_stdlib_and_the_security_leaf():
     # slotmerge is a near-leaf: stdlib + the security containment leaf only (for
     # _assert_safe_write, the module-merge write guard -- final Security Review
-    # P1 #1). A downward edge to the lowest leaf; no cycle.
+    # A downward edge to the lowest leaf; no cycle.
     from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415
 
     tree = ast.parse(Path(SM.__file__).read_text(encoding="utf-8"))
@@ -144,7 +144,7 @@ def test_module_into_slot_roundtrip_smoke(tmp_path):
 
 
 def test_module_merge_refuses_writes_outside_the_adopter_root(tmp_path):
-    """Final Security Review P1 #1: a module-controlled merge-target path must not
+    """A module-controlled merge-target path must not
     escape the adopter root. All four escape shapes are refused with the one
     ScaffoldSecurityError, and the outside file is never written."""
     from bootstrap._scaffold import slotmerge as SM  # noqa: PLC0415

@@ -92,7 +92,7 @@ def test_authorized_covered_change_ok():
 
 def test_scope_narrowing_holds():
     """The evaluated artifact narrows scope below the trusted expectation — exact
-    equality refuses it as a field mismatch (P1.4: no weakening of authority)."""
+    equality refuses it as a field mismatch (no weakening of authority)."""
     trusted = _act(["bootstrap/_scaffold/", "bootstrap/scaffold.py"])
     evaluated = _act(["bootstrap/_scaffold/"])            # narrowed: drops scaffold.py
     ok, holds = A.acceptance_check(["bootstrap/scaffold.py"], evaluated, trusted)
@@ -100,7 +100,7 @@ def test_scope_narrowing_holds():
 
 
 def test_trusted_ref_redirect_refused():
-    """P1.4 probe: an evaluated artifact that redirects trusted_ref + empties the
+    """An evaluated artifact that redirects trusted_ref + empties the
     required scenarios must REFUSE (it weakens authority)."""
     trusted = _act(["bootstrap/_scaffold/"], trusted_ref="TRUSTED", scenarios=("upgrade_apply",))
     evaluated = _act(["bootstrap/_scaffold/"], trusted_ref="ATTACKER", scenarios=())
@@ -155,7 +155,7 @@ def test_expired_exemption_does_not_clear():
     assert not ok
 
 
-# --- P1.1: the authoritative acceptance COMMAND (end-to-end) -------------------
+# --- The authoritative acceptance COMMAND (end-to-end) -------------------
 import subprocess
 
 
@@ -187,7 +187,7 @@ def _repo_with_change(tmp_path, change_path, activation_yaml=None):
 
 
 def test_acceptance_command_holds_uncovered_sensitive_edit(tmp_path):
-    """END-TO-END (P1.1): an uncovered sensitive edit makes the ACTUAL acceptance
+    """END-TO-END: an uncovered sensitive edit makes the ACTUAL acceptance
     command fail — there is no live activation artifact."""
     repo, prior = _repo_with_change(tmp_path, "bootstrap/_scaffold/foo.py")
     ok, holds, changed = A.run_acceptance(

@@ -119,7 +119,7 @@ def parse_activation(text: str) -> Activation:
             cur = None
     known = {"baseline_sha", "trusted_ref", "nonce", "scope", "required_scenarios"}
     unknown = (set(scalars) | set(lists)) - known
-    if unknown:                                       # P1.4: reject injected fields
+    if unknown:                                       # reject injected fields
         raise ActivationError(f"activation has unknown field(s): {sorted(unknown)}")
     try:
         return Activation(
@@ -176,7 +176,7 @@ def acceptance_check(
         holds.append("activation artifact absent/deleted while a refactor is authorized (HOLD)")
         return False, holds
     # EVERY authority-bearing field must match the trusted expectation exactly
-    # (P1.4): not just nonce + baseline_sha, but trusted_ref, scope, AND
+    # not just nonce + baseline_sha, but trusted_ref, scope, AND
     # required_scenarios — and ordered (a reordered/missing/extra scenario or a
     # redirected trusted_ref must refuse). Activation is a dataclass, so `!=`
     # compares all fields; there are no mutable result/report fields.
@@ -200,7 +200,7 @@ def acceptance_check(
 def _changed_sensitive(repo: Path, prior_anchor: str, candidate: str,
                        is_sensitive_fn=is_sensitive,
                        roster: tuple[str, ...] = SENSITIVE_ROSTER) -> list[str]:
-    """**Independently** derive the changed sensitive files (P1.1): the acceptance
+    """**Independently** derive the changed sensitive files: the acceptance
     command discovers the diff itself rather than trusting a caller-supplied set."""
     out = subprocess.run(
         ["git", "-C", str(repo), "diff", "--name-only", f"{prior_anchor}..{candidate}"],
@@ -222,7 +222,7 @@ def run_acceptance(
     roster: tuple[str, ...] = SENSITIVE_ROSTER,
     exemptions: list[Exemption] | None = None,
 ) -> tuple[bool, list[str], list[str]]:
-    """**The authoritative acceptance command** (code-review P1.1). It is the
+    """**The authoritative acceptance command**. It is the
     production caller of :func:`acceptance_check` — the gate an uncovered sensitive
     change must fail. It (1) **independently discovers** the changed sensitive set
     from ``prior_anchor..candidate``, (2) loads the **evaluated** activation

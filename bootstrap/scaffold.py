@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold launcher + facade — scaffold-split 0B (RR1 / SR1 / P1#3).
+"""Scaffold launcher + facade.
 
 The scaffold *engine* (install / upgrade / 3-way merge / lockfile / containment)
 lives in the private package ``bootstrap/_scaffold/``. This module is the **thin
@@ -8,8 +8,8 @@ bootstrap.scaffold import main`` / ``read_lockfile`` / ``_MODULE_MAPPINGS`` / �
 ``from bootstrap import scaffold as s; s.X``, and ``python bootstrap/scaffold.py
 …`` — keeps working unchanged.
 
-Security boundary (SR1)
------------------------
+Security boundary
+-----------------
 ``bootstrap/`` is a **namespace package** (no ``__init__.py``), so plain
 ``import bootstrap._scaffold`` would trust ``sys.path``. The launcher defends the
 launcher load path:
@@ -30,7 +30,7 @@ use — is owned by ``bootstrap/_scaffold/_guard.py``, which the engine ``__init
 installs as its first action (it necessarily runs before any child resolves,
 launcher path or direct). See that module.
 
-Identity + patch-through (P1#3 / RR5/R6): the launcher makes ``bootstrap.scaffold``
+Identity + patch-through: the launcher makes ``bootstrap.scaffold``
 **the same object** as ``bootstrap._scaffold`` (``sys.modules[__name__] = engine``)
 — one identity per file, the full public surface present by construction, and
 patch-through for free.
@@ -45,7 +45,7 @@ _CANONICAL = "bootstrap._scaffold"
 
 
 class ScaffoldLoaderError(RuntimeError):
-    """Fail-closed launcher rejection (SR1): the engine package is missing, a
+    """Fail-closed launcher rejection: the engine package is missing, a
     pre-existing canonical cache entry does not match the expected engine, or a
     path escapes the Cairn root."""
 
@@ -64,7 +64,7 @@ def _verify_within_root(path: Path, cairn_root: Path) -> Path:
 def _verify_cached_engine(cached, engine_init: Path, engine_dir: Path) -> None:
     """A pre-existing ``bootstrap._scaffold`` must match the expected engine
     (``__file__`` and search locations) — a hostile preload must not satisfy the
-    canonical name (F1)."""
+    canonical name."""
     cached_file = getattr(cached, "__file__", None)
     if cached_file is None or Path(cached_file).resolve() != engine_init.resolve():
         raise ScaffoldLoaderError(
@@ -81,7 +81,7 @@ def _verify_cached_engine(cached, engine_init: Path, engine_dir: Path) -> None:
 
 def _revalidate_cached_namespace(cached, engine_dir: Path, cairn_root: Path) -> None:
     """Re-run the engine guard over a cached engine so a child preloaded *after*
-    the parent (the polluted-cached-child route, re-review R1) is refused and the
+    the parent (the polluted-cached-child route) is refused and the
     finder is present."""
     guard = getattr(cached, "_install_engine_guard", None)
     if guard is None:
@@ -116,7 +116,7 @@ def _load_engine():
         raise ScaffoldLoaderError(f"could not build an import spec for {engine_init}")
     engine = importlib.util.module_from_spec(spec)
 
-    # F4: snapshot the canonical namespace so a failed init leaves no residue --
+    # Snapshot the canonical namespace so a failed init leaves no residue --
     # neither the parent nor any child imported before the failure.
     before = {k for k in sys.modules if k == _CANONICAL or k.startswith(_CANONICAL + ".")}
     sys.modules[_CANONICAL] = engine

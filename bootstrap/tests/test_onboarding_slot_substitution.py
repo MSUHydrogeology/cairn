@@ -1,5 +1,5 @@
 """
-Tests for the progressive-onboarding scaffold integration (Chunk P1.1).
+Tests for the progressive-onboarding scaffold integration.
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 
@@ -45,8 +45,8 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 ONBOARDING_TEMPLATES = TEMPLATES_ROOT / "onboarding"
 
-# The three preset onboarding files the L3 plan ships.  P1.1 ships
-# them as placeholders; P1.4-P1.6 fill the real content.  Either way
+# The three preset onboarding files the scaffold ships.  They start
+# as placeholders and are filled with real content later.  Either way
 # the seed/deferred distinction holds.
 PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
 
