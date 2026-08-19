@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""onboarding-activate engine -- activate / seed / CLI, the top layer (B2).
+"""onboarding-activate engine -- activate / seed / CLI, the top layer.
 
 The user-facing entry points: the top-level ``activate()`` flow, the held /
 completed derived-id helpers, the ``--seed`` existing-adopter opt-in path, the
@@ -73,7 +73,7 @@ def activate(
        ``dev/modules/onboarding/<preset>.md``.
     4. Parse its deferred tasks.
     5. Read the activation log; collect already-activated ids.
-    6. Evaluate triggers (P1.2 stub; P1.9 replaces).
+    6. Evaluate triggers.
     7. Compute the activation diff.
     8. If not dry-run: write the updated PLANNING + append log lines.
 
@@ -267,7 +267,7 @@ def seed_existing_adopter(
     interactive: bool = True,
     dry_run: bool = False,
 ) -> str:
-    """Existing-adopter opt-in path (Chunk P1.11).
+    """Existing-adopter opt-in path.
 
     Performs the `--seed` flow:
 

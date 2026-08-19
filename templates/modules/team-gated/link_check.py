@@ -26,7 +26,7 @@ are already skipped by ``scannable_lines``; this checker additionally
 strips balanced inline code spans from each scannable line *before*
 link extraction.  Only *balanced* spans are stripped: the closing
 backtick run must exactly match the opening run.  An unmatched backtick
-leaves the rest of the line intact and still checked (safety contract R2
+leaves the rest of the line intact and still checked (safety contract
 -- a greedy/naive strip could silently eat a real link).
 
 **File-level ``link-check-allow`` directive.**  An HTML-comment
@@ -85,13 +85,13 @@ _EXPLICIT_ANCHOR_RE = re.compile(r'\s*\{#([^}]+)\}\s*$')
 # any text (non-newline), closed by a backtick run of EXACTLY the same
 # length.  The backreference ``\1`` alone is not enough -- it can match a
 # *prefix* of a longer closing run (e.g. ``​``opener of 2 closed by a run
-# of 3), silently eating a real link (Codex cross-type review P2).  So the
+# of 3), silently eating a real link.  So the
 # run is anchored on both sides: ``(?<!`)`` before the opener makes ``(`+)``
 # capture the *whole* opening run (not a sub-run of a longer one), and
 # ``(?!`)`` after ``\1`` requires the closing run to be exactly that length
 # (not a prefix of a longer run).  An unmatched / mismatched run in EITHER
 # direction therefore leaves the rest of the line intact and still checked
-# (safety contract R2).  No re.DOTALL: we operate per-line.
+# (safety contract).  No re.DOTALL: we operate per-line.
 _BALANCED_CODE_SPAN_RE = re.compile(r'(?<!`)(`+)(?!`)(.*?)(?<!`)\1(?!`)')
 
 # File-level link-check-allow directive.  A standalone HTML-comment line
@@ -112,7 +112,7 @@ def strip_code_spans(line: str) -> str:
     Only *balanced* spans are removed: the closing backtick run must
     exactly match the opening run length.  An unmatched backtick (or a
     span whose closing run has a different length) leaves the rest of
-    the line intact and still checked -- this is the safety contract R2,
+    the line intact and still checked -- this is the safety contract,
     preventing a greedy/naive strip from silently eating a real link.
 
     Fenced code blocks are already skipped by ``scannable_lines``; this

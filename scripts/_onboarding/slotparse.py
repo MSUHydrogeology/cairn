@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""onboarding-activate engine -- slot + preset parsing (B2).
+"""onboarding-activate engine -- slot + preset parsing.
 
 The PLANNING.md ``onboarding-tasks`` slot grammar and the preset-source-file
 parsers: the slot-name constant, the slot open/close + preset / deferred-task /
@@ -24,7 +24,7 @@ SLOT_NAME = "onboarding-tasks"
 
 
 #: ``<!-- preset: <name> -->`` metadata comment inside the slot.
-#: Per Antigravity External proposal review P1 (security-hardening
+#: Security-hardening (
 #: post-v0.2 follow-up plan): the capture group is restricted to
 #: alphanumerics, hyphen, and underscore.  This blocks path-
 #: traversal sequences (``../etc/passwd``) at the regex level

@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""onboarding-activate engine -- active-surfacing prompt rendering (B2).
+"""onboarding-activate engine -- active-surfacing prompt rendering.
 
-The active-surfacing UX layer (plan P1.10a/b): the registry of surfacing rows,
+The active-surfacing UX layer: the registry of surfacing rows,
 the per-goodnight UX caps, the cached heading-matcher, and the prompt renderers
 / selector. A leaf of the ``_onboarding/`` dependency DAG: stdlib-only (``re``),
 no intra-package imports.

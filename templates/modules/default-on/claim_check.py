@@ -65,7 +65,7 @@ repository-state invariant (the same filename may not exist both
 actively and archived within one family); this is claim-check's own
 defense in depth when *consuming* a token that names one, per the
 accepted ``claim-check-exemption-hygiene`` proposal (Section 1 /
-Revision 1 R2).
+Revision 1).
 
 **Soft flags** -- advisory; printed but exit 0 unless
 ``--fail-on-soft``.  The checker has **no active soft-flag producer**:
@@ -147,12 +147,12 @@ without disabling the heuristic across the rest of the document:
   consciously accepted, suppressing the hard path / line-bounds flag
   on any backticked token whose path part matches one of the globs.
   The directive applies to the whole document.  Globs must be
-  *specific* (R1): fully literal, or have at least two literal path
+  *specific*: fully literal, or have at least two literal path
   segments before any wildcard, AND the final segment must carry a
   literal filename stem (no ``dir/sub/*`` or ``dir/sub/*.md`` -- those
   would silently exempt an entire subtree).  A too-broad glob is
   itself a hard flag and exempts nothing.  The directive exempts only
-  **unresolved-path** flags (R2): a glob match on a path that
+  **unresolved-path** flags: a glob match on a path that
   *does* exist in the tree is ignored, so an out-of-range
   line-bounds citation into a real file still hard-flags.  Each
   suppressed token is reported in the run output for audit.
@@ -287,11 +287,11 @@ _PLACEHOLDER_CHARS = ('<', '>', '*', '{', '}')
 #   * ``External-repo path:`` cites a path that resolves in a sibling
 #     repository (e.g., a path in another repo checked out alongside
 #     this one).  Added 2026-05-21 per the accepted cairn-doctrine-sync-
-#     may-19-21 plan's Chunk 0 (plan-design choice resolving the F4
+#     may-19-21 plan's Chunk 0 (plan-design choice resolving the
 #     residual claim_check problem).
 # Any keyword -- singular or plural, any case, optionally as a list
 # item -- exempts the line's path / line-bounds tokens from the hard
-# checks.  This is R8 of the work-
+# checks.  This is a requirement of the work-
 # intents proposal (``2026-05-19-codex-local-claim-system``) plus the
 # 2026-05-21 External-repo paths extension.
 _MARKER_LINE_RE = re.compile(
@@ -367,7 +367,7 @@ class Declaration:
 
     @property
     def label(self) -> str:
-        """How a report names this declaration (R2 exact reporting)."""
+        """How a report names this declaration (exact reporting)."""
         kind = _MARKER_KIND_LABEL.get(self.kind, self.kind)
         return f'`{kind}:` declaration of `{self.path}` (line {self.line})'
 
@@ -1042,7 +1042,7 @@ def parse_allow_directives(text: str) -> list[tuple[int, str]]:
 
 
 def allow_glob_error(glob: str) -> str | None:
-    """Reject a too-broad ``claim-check-allow`` glob (R1).
+    """Reject a too-broad ``claim-check-allow`` glob.
 
     Acceptable when the glob is **fully literal** (no wildcard) or has
     **>= 2 literal path segments before its first wildcard** -- so it

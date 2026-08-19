@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""onboarding-activate engine -- activation records, log I/O + computation (B2).
+"""onboarding-activate engine -- activation records, log I/O + computation.
 
 The activation state model and the activate() machinery's data layer: the
 ``ActivationRecord`` schema + JSONL activation-log read/write
@@ -226,7 +226,7 @@ def append_activation_log(
 class ActivationOutcome:
     """Result of one ``activate(...)`` run.
 
-    Extended in P1.10a with active-surfacing prompt outputs:
+    Extended with active-surfacing prompt outputs:
 
     * ``active_prompt_row`` -- the active-surfacing row name that
       fired this goodnight (or ``None`` if no row qualifies under

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""onboarding-activate engine -- shared defaults + identity/time helpers (B2).
+"""onboarding-activate engine -- shared defaults + identity/time helpers.
 
 Foundational constants (the adopter-tree-relative default paths) plus the
 agent-identity and UTC-timestamp helpers used when appending an activation-log

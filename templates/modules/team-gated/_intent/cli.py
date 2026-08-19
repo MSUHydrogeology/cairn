@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""Work-intent engine — CLI subsystem (intent-split phase A2).
+"""Work-intent engine — CLI subsystem.
 
 The argparse command surface: claim / release / list / whoami / install-hook /
 install-precommit / hooks-status / precommit-check / auto-release dispatch, plus
@@ -104,8 +104,8 @@ def _cmd_release(args) -> int:
     return 0
 
 
-#: The versioned machine contract for ``list --format json`` (Chunk F, B3
-#: addition + B8).  **The schema string is the compatibility fence**: a consumer
+#: The versioned machine contract for ``list --format json``.
+#: **The schema string is the compatibility fence**: a consumer
 #: reads this exact value or refuses, so widening the payload shape means bumping
 #: the version rather than hoping every reader copes.  The derived lifecycle
 #: board is the first consumer and refuses anything else outright.
@@ -126,7 +126,7 @@ def _cmd_list(args) -> int:
     ``active_intents`` / ``conflict_check`` result, so the JSON form cannot come
     to disagree with the human one about which claims are active -- and claim /
     release semantics, the conflict rules, the log schema, the hooks and module
-    activation are all untouched by it (B8: this addition is *"solely to add the
+    activation are all untouched by it (this addition is *"solely to add the
     versioned JSON `list` output"*).
 
     The JSON form is deterministic and ASCII-safe: records sort by id, keys sort,
@@ -212,7 +212,7 @@ def _cmd_prune(args) -> int:
     operating rule of the ``session-end`` path, so a hand-run prune during active
     sessions relies on the liveness refusal alone.  Prefer ``--dry-run`` there.
     """
-    # CR3: single-source the liveness horizon.  `record_io` cannot import
+    # Single-source the liveness horizon.  `record_io` cannot import
     # `conflict` (conflict imports record_io -- the layering runs one way), so
     # the CLI, which imports both, resolves the ADOPTER-CONFIGURED
     # `claim_ttl_hours` and passes it in.  Without this, an adopter running a
@@ -399,7 +399,7 @@ def _cmd_precommit_check(args) -> int:
 
     Emits classified warnings to stderr, then applies the configured enforce
     mode (#53): ``warn`` (exit 0), ``confirm`` (prompt; proceed on ack, else
-    degrade to ``block`` with no TTY -- R2), ``block`` (exit non-zero; **the
+    degrade to ``block`` with no TTY), ``block`` (exit non-zero; **the
     shipped default** -- foldback-drain Fold A) -- but a block only fires when a
     *different live session* holds a **fresh** (within-TTL) claim on a staged
     path **and** the committer has a per-session token. An unclaimed path still

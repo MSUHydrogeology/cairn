@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""Work-intent engine — conflict-check subsystem (intent-split phase A2).
+"""Work-intent engine — conflict-check subsystem.
 
 Pre-commit conflict detection: claim-TTL / stale-claim policy, the
 staged-path-vs-other-claim decision, incident-tracker recording, and the
@@ -75,8 +75,8 @@ INTENT_CONFIG_RELPATH_CANONICAL = "dev/.cairn/intent-config.json"
 #: Default claim TTL (hours) for the pre-commit block decision. A claim
 #: older than this is **stale**: it still WARNS, but a stale cross-claim
 #: never *blocks* a commit -- a crashed / abandoned session must not wedge a
-#: live committer (foldback-drain Fold A / R1; the 4h value is Antigravity
-#: R1's). Configurable via ``dev/intent-config.json`` ``"claim_ttl_hours"``.
+#: live committer. Configurable via ``dev/intent-config.json``
+#: ``"claim_ttl_hours"``.
 DEFAULT_CLAIM_TTL_HOURS = 4.0
 
 
@@ -86,8 +86,8 @@ DEFAULT_CLAIM_TTL_HOURS = 4.0
 #: ``dev/intent-config.json`` (``"incident_log_path"`` / ``"incident_event_class"``).
 #: The default tracker is the staged-index / coordination collision log (the
 #: D-IR3-cited surface). Recording is **best-effort & fail-safe**: it never
-#: blocks, slows, or fails a commit (R1), and only ever *appends a row* -- never
-#: a ``git reset`` or index mutation (N4).
+#: blocks, slows, or fails a commit, and only ever *appends a row* -- never
+#: a ``git reset`` or index mutation.
 INCIDENT_LOG_RELPATH_DEFAULT = "dev/measurement/collision_log.md"
 
 
@@ -240,10 +240,10 @@ def _read_solo_mode(repo_root: Path) -> bool:
 #: Enforce modes for the pre-commit coordination check (concurrent-session
 #: coordination Layer 2 / #53). ``warn`` = surface, exit 0 (never blocks);
 #: ``confirm`` = prompt, proceed on acknowledgement, degrade to ``block`` with
-#: no TTY (R2); ``block`` = refuse (non-zero exit) a commit touching a
+#: no TTY; ``block`` = refuse (non-zero exit) a commit touching a
 #: *different* active session's claimed path. **The shipped default (absent /
 #: malformed / unrecognized config) is ``block``** -- warn-on-unclaimed +
-#: block-on-cross-claim (foldback-drain Fold A / R2). An adopter opts back
+#: block-on-cross-claim. An adopter opts back
 #: into never-block with an explicit ``"enforce": "warn"``.
 ENFORCE_MODES = ("warn", "confirm", "block")
 
@@ -252,7 +252,7 @@ def _read_enforce_mode(repo_root: Path) -> str:
     """Read ``"enforce"`` from ``dev/intent-config.json`` -- ``warn`` /
     ``confirm`` / ``block``. **Absent / malformed / unrecognized → ``block``**
     -- the shipped default: warn-on-unclaimed + block-on-cross-claim
-    (foldback-drain Fold A / R2). An adopter opts back into never-block with an
+    An adopter opts back into never-block with an
     explicit ``"enforce": "warn"``. Parallel to :func:`_read_solo_mode`.
 
     Note: ``block`` is the *enforce-mode* default; it only refuses a commit
@@ -278,7 +278,7 @@ def _read_claim_ttl_hours(repo_root: Path) -> float:
     Returns the configured positive float, or :data:`DEFAULT_CLAIM_TTL_HOURS`
     (4.0) when absent / malformed / non-numeric / non-positive. **Fail-safe:**
     any read or parse error degrades to the default rather than raising -- this
-    feeds the pre-commit hook, which must never crash (R1)."""
+    feeds the pre-commit hook, which must never crash."""
     cfg = _resolve_intent_config(repo_root)
     if not cfg.exists():
         return DEFAULT_CLAIM_TTL_HOURS
@@ -308,7 +308,7 @@ def _claim_is_stale(
 ) -> bool:
     """True when *claim*'s timestamp is older than *ttl_hours*.
 
-    **N3 (BINDING -- a real pre-commit crash class).** Claims stamp an
+    **A real pre-commit crash class.** Claims stamp an
     **offset-aware** ISO timestamp (``datetime.now().astimezone()``,
     :func:`write_claim`). This parses ``ts`` offset-aware
     (``datetime.fromisoformat``) and compares against an offset-aware *now*, so
@@ -318,7 +318,7 @@ def _claim_is_stale(
     non-comparable ``ts`` returns ``True`` (treat as stale → excluded from the
     block decision, i.e. *do not block*) and NEVER raises -- a degraded
     timestamp must not wedge the commit (composes with the hook's never-wedge
-    invariant, R1). A naive ``ts`` (no offset -- only from a hand-edited or
+    invariant). A naive ``ts`` (no offset -- only from a hand-edited or
     foreign-writer log) is localized via ``astimezone()`` so the compare stays
     offset-aware-safe."""
     if now is None:
@@ -451,10 +451,10 @@ def _record_incident(
     repo_root: Path, *, impact: str, description: str,
 ) -> None:
     """Append one incident row to the configured tracker -- **best-effort,
-    fail-safe, non-blocking** (R1). Creates a minimal tracker if absent
+    fail-safe, non-blocking**. Creates a minimal tracker if absent
     ('closed': create, don't drop). On ANY error, writes a *visible* skip note
-    to stderr (F4) and returns -- it never raises and never affects the
-    commit's exit code. Only ever appends a row (N4)."""
+    to stderr and returns -- it never raises and never affects the
+    commit's exit code. Only ever appends a row."""
     try:
         log_path, event_class = _read_incident_config(repo_root)
         today = datetime.datetime.now().astimezone().date().isoformat()
@@ -664,7 +664,7 @@ def other_session_overlaps(
 ) -> Dict[str, List[Dict[str, object]]]:
     """The subset of *overlaps* held by a **different active session**.
 
-    **N1 (the cry-wolf / false-suppress fix):** own-claim suppression runs
+    **The cry-wolf / false-suppress fix:** own-claim suppression runs
     **only** when the committer has a resolvable per-session token
     (*token_resolved*) AND a known identity. Without a token, the identity is
     the bare agent name (shared by every concurrent same-type session), so
@@ -701,7 +701,7 @@ def classify_precommit_warnings(
     * **Other-session overlap** -- a staged path covered by a *different*
       active session's claim. ALWAYS surfaced -- never suppressed by
       ``exempt``. This is the coordination payoff. Own vs other is gated on
-      ``token_resolved`` (N1): no per-session token → every overlap is
+      ``token_resolved``: no per-session token → every overlap is
       other-session (own cannot be proven without a token).
     * **Unclaimed** -- identity known, staged path covered by no claim at
       all.  Suppressed when ``exempt``.
@@ -795,7 +795,7 @@ def _confirm_tty():
 
     ``confirm`` mode prompts here -- not via ``sys.stdin``, which a git hook
     redirects to ``/dev/null``. No controlling terminal (a headless / CI
-    agent) → ``None`` → ``confirm`` degrades to ``block`` (R2). Factored for
+    agent) → ``None`` → ``confirm`` degrades to ``block``. Factored for
     test injection."""
     try:
         return open("/dev/tty", "r+")  # noqa: SIM115
@@ -805,7 +805,7 @@ def _confirm_tty():
 
 def _confirm_proceed() -> bool:
     """Prompt the controlling terminal for explicit acknowledgement.
-    No TTY → ``False`` (caller degrades to ``block``, R2)."""
+    No TTY → ``False`` (caller degrades to ``block``)."""
     tty = _confirm_tty()
     if tty is None:
         return False
@@ -843,7 +843,7 @@ def _precommit_check_impl(args) -> int:
     # --name-only, so the rename info comes from this dedicated call.
     rename_map = _rename_map_via_git(top)
     identity = resolve_agent_identity()
-    # N1: own-claim suppression requires a real per-session token, not the
+    # Own-claim suppression requires a real per-session token, not the
     # static agent-name fallback (which collides across same-type sessions).
     token_resolved = resolve_session_token() is not None
     exempt = bool(
@@ -862,7 +862,7 @@ def _precommit_check_impl(args) -> int:
     mode = _read_enforce_mode(top)
     if mode == "warn" or exempt:
         return 0
-    # Stale-claim safety (R1 / N3): a claim past the TTL still WARNS (above)
+    # Stale-claim safety: a claim past the TTL still WARNS (above)
     # but cannot block -- a crashed / abandoned session must not wedge a live
     # committer. The TTL parse/compare is fail-safe (never crashes the hook).
     ttl_hours = _read_claim_ttl_hours(top)
@@ -871,11 +871,11 @@ def _precommit_check_impl(args) -> int:
     other = other_session_overlaps(overlaps, identity, token_resolved)
     if not other:
         return 0  # no different-session live claim -> nothing to enforce
-    # A no-token committer cannot establish "a *different* live session" (N1:
+    # A no-token committer cannot establish "a *different* live session" (
     # a static identity is shared across same-type sessions, so ownership of an
     # overlapping claim cannot be proven). We do NOT escalate an
     # unprovable-ownership overlap to a block -- the warning already surfaced
-    # above (R2 keys the block on a different *live session*; blocking a
+    # above (the block keys on a different *live session*; blocking a
     # possibly-own claim is the misfire the proposal's risk section names). But
     # we emit a one-line note so a no-token team sees enforcement was
     # *downgraded*, not that nothing was held -- the proposal's "warn-only with
@@ -894,8 +894,8 @@ def _precommit_check_impl(args) -> int:
         # over-count the rate-limit gate -- the named mis-tag failure).
         return 0
     # A provably-different live session's fresh claim overlaps a staged path
-    # (S4: the incident's Impact bakes in the enforce decision under P4's
-    # block-default). The recording is best-effort & fail-safe (R1) -- it never
+    # (the incident's Impact bakes in the enforce decision under the
+    # block-default). The recording is best-effort & fail-safe -- it never
     # changes the return value below.
     incident_desc = _describe_collision(other)
     if mode == "block":
@@ -907,7 +907,7 @@ def _precommit_check_impl(args) -> int:
         # Blocked -> the collision was *prevented* by the structural gate.
         _record_incident(top, impact="prevented", description=incident_desc)
         return 1
-    # confirm: proceed only on explicit acknowledgement; no TTY -> block (R2).
+    # confirm: proceed only on explicit acknowledgement; no TTY -> block.
     if _confirm_proceed():
         # Proceeded past a confirmed different-session claim -> *occurred*
         # (a knowing override; the signal the rate-limit gate counts).

@@ -98,7 +98,7 @@ PLAN_COLUMNS = [
 # The enum tokens a plan status normalizes to.
 #  The plan-status enum used to be declared here as a local tuple, and it
 #  omitted ``awaiting-plan-review``.  It is now the planner's ``PLAN_STATES``,
-#  read through the contained loader below (`lifecycle-status-vocabulary` R5, as
+#  read through the contained loader below (`lifecycle-status-vocabulary`, as
 #  replaced).  See ``_plan_status_enum()``.
 
 
@@ -302,7 +302,7 @@ def proposal_rows(root: Path) -> List[Dict[str, object]]:
 # The one runtime status vocabulary -- contained loader
 # ---------------------------------------------------------------------------
 #
-# `lifecycle-status-vocabulary` R5, as replaced by that proposal's "R5
+# `lifecycle-status-vocabulary`, as replaced by that proposal's "
 # replacement -- contained consumers and corpus boundary".  The contract is
 # restated here **per consumer** rather than inherited from the other consumer
 # by implication, so a reader can check the containment without opening
@@ -330,7 +330,7 @@ class VocabularyUnavailable(RuntimeError):
     """The single vocabulary source could not be loaded *safely*.
 
     Raised instead of falling back to a local status tuple.  The fallback is
-    the defect R5 removes: this module's own enum silently omitted
+    the defect that removes: this module's own enum silently omitted
     ``awaiting-plan-review`` for as long as it was a separate declaration.
     """
 
@@ -357,7 +357,7 @@ def _validated_planner_path() -> Path:
     # dead by construction: no real symlink could reach it, and the only way to
     # observe it firing was to monkeypatch ``Path.is_symlink``.  A guard
     # documented as live that cannot fire is worse than no guard, because it
-    # reads as protection.  Found by A6's loader matrix, not by review.
+    # reads as protection.  Found by the loader matrix, not by review.
     raw = Path(__file__).absolute()
     root = raw.parent.parent
     path = root / 'lifecycle_planner.py'
@@ -433,8 +433,8 @@ def _plan_status_enum() -> Tuple[str, ...]:
     """The plan states metrics may resolve -- current **and historical**.
 
     Metrics read the whole corpus, most of which is archived and predates the
-    H1 vocabulary migration, so this enum is deliberately wider than the set an
-    *active* artifact may declare.  R7 requires exactly this: retiring a token
+    vocabulary migration, so this enum is deliberately wider than the set an
+    *active* artifact may declare.  Retiring a token
     from the current vocabulary must not stop longitudinal history parsing.
 
     The historical group comes last because `_normalize_plan_status` resolves by

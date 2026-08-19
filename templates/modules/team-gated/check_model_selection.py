@@ -8,7 +8,7 @@ Fails non-zero (exit code 1) if the adopter-local tier-to-model mapping
 file (``dev/.cairn/model-selection-mapping.yml``) still contains the
 unfilled ``FILL ME`` sentinel from the scaffold-seeded stub.
 
-This is the machine gate for the model-selection module's R1 requirement:
+This is the machine gate for the model-selection module's core requirement:
 the mapping MUST be filled before the capability-floor question is
 considered addressed.
 
@@ -38,7 +38,7 @@ scaffold seeds ``dev/.cairn/model-selection-mapping.yml`` at install
 time **carrying a ``FILL ME`` placeholder**, so this gate **fails
 (non-zero) on a fresh, unfilled mapping** — forcing a fresh adopter to
 record their real tier-to-model assignments (forced, not silent: the
-silent-empty install is exactly the failure this module prevents, R1).
+silent-empty install is exactly the failure this module prevents).
 The scaffold install itself succeeds (the tree is not blocked); this is
 a *standalone* adopter fidelity check (run it directly or wire it into
 CI), so "not instantly red" means the install is not blocked — the gate
@@ -70,7 +70,7 @@ def _structural_validate(
     PyYAML is not installed -- structural validation is a *bonus*, not a hard
     dependency, so a dependency-bare adopter / CI degrades to the sentinel-only
     check rather than crashing with a raw ``ModuleNotFoundError`` (rollup #3b /
-    External R2).  Returns 3 when PyYAML is present and the file is not valid
+    External review).  Returns 3 when PyYAML is present and the file is not valid
     YAML, or does not parse as a non-empty top-level mapping -- the
     pass-the-gate-then-crash-the-loader gap the sentinel scan alone misses.
     """

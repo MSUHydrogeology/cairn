@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""Work-intent engine — identity / session subsystem (intent-split phase A2).
+"""Work-intent engine — identity / session subsystem.
 
 Per-session agent-identity resolution: env-var + static-config sources, the
 session-token digest, and the harness-session registry. stdlib-only; no

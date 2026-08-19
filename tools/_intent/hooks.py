@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""Work-intent engine — git-hook-install subsystem (intent-split phase A2).
+"""Work-intent engine — git-hook-install subsystem.
 
 Installs / uninstalls the post-commit auto-release hook and the opt-in
 pre-commit work-intent check, and reports hook status. The security-relevant

@@ -103,7 +103,7 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
      Cherokee, Coptic, fullwidth) -- unchanged behaviour;
   3. Greek mixed with Latin where a Greek character is ASCII-confusable.
 
-  A narrow, exact-token **scientific-unit allowance** (RV5) clears the
+  A narrow, exact-token **scientific-unit allowance** clears the
   micro / ohm unit shapes (``µs``, ``µmol``, ``kΩ``, ...) that are
   structurally mixed-script in scientific prose; a mixed-script
   *credential* token still flags.
@@ -116,7 +116,7 @@ What it flags (each a ``pattern_id`` usable in a suppression marker):
   32-code-point NFD-fold closure ``U+0394 U+03A9 U+03B2 U+03B8 U+03BB
   U+03BC U+03C3 U+03C6 U+03C8 U+03D1 U+03D5 U+03D6 U+038F
   U+1F68-U+1F6F U+1FA8-U+1FAF U+1FFA-U+1FFC``, **or** it is the
-  two-character Latin-plus-Greek shape, **or** RV5 already cleared it.  NFD
+  two-character Latin-plus-Greek shape, **or** the unit allowance already cleared it.  NFD
   folding **widens clearing** under this denylist: the 20 capital-omega
   variants after the first twelve entries are reached only through the
   fold.  **Whole-script Cyrillic does not flag** -- a residual the accepted
@@ -207,7 +207,7 @@ _URL_RE = re.compile(r"https?://([^/\s)\"'>]+)", re.I)
 # Members are literal control chars (with a naming comment each), written as
 # **escape forms** (\uXXXX) and never raw, so this scanner carries none of the
 # invisible code points it detects (trojansource-safe, bandit B613); the
-# per-char comment names each.  Coverage expanded per code-review P3 (word
+# per-char comment names each.  Coverage expanded to word
 # joiner U+2060; LRM U+200E / RLM U+200F).
 _ZERO_WIDTH = {
     "\u200b",  # zero-width space
@@ -349,7 +349,7 @@ _ATTR_RE = re.compile(r"(\w+)=(\"[^\"]*\"|'[^']*'|\S+)")
 
 
 # --------------------------------------------------------------------------
-# URL allowlist (configurable -- plan-review P3.6)
+# URL allowlist (configurable)
 
 def load_url_allowlist(path: Path | None = None) -> set[str]:
     """Load allowed URL domains, one per line (``#`` comments, blanks
@@ -537,7 +537,7 @@ def _scan_unicode(lines: list[str], leading_bom: bool):
                 ign_hits, "default-ignorable")
 
 
-# RV5 -- narrow scientific-unit homoglyph allowance. A Greek micro sign
+# Narrow scientific-unit homoglyph allowance. A Greek micro sign
 # (U+00B5 MICRO SIGN or U+03BC GREEK SMALL LETTER MU) prefixing a short Latin
 # SI unit (µs, µm, µg, µL, µmol, ...) and a Latin-prefixed ohm (Ω, kΩ, MΩ)
 # are structurally-unavoidable mixed-script tokens in scientific prose. The
@@ -557,7 +557,7 @@ _SCI_UNIT_RE = re.compile(
 
 
 def _is_scientific_unit(token: str) -> bool:
-    """RV5: True for the curated micro / ohm scientific-unit token shapes that
+    """True for the curated micro / ohm scientific-unit token shapes that
     are cleared from the homoglyph check. Exact-token, deliberately narrow."""
     return bool(_SCI_UNIT_RE.match(token))
 
@@ -631,7 +631,7 @@ _NO_LATIN_TWIN = frozenset({
     #    micro tokens are U+00B5 MICRO SIGN, not U+03BC.  Recorded as
     #    judgment, not as a figure-pinned entry, so nobody reads a
     #    reconciliation test as attesting it.  Its exposure is longer tokens
-    #    such as U+03BC + "pload"; RV5 already clears the short unit shapes.
+    #    such as U+03BC + "pload"; the unit allowance already clears the short shapes.
     "\u03bc",  # GREEK SMALL LETTER MU -- reads as micro, not Latin `u`
     # -- Admitted variants, each on its OWN justification (not inherited
     #    from the seeded base letter it resembles).  The same rule REFUSES
@@ -745,7 +745,7 @@ def _scan_homoglyph(lines: list[str]):
         for m in _TOKEN_RE.finditer(line):
             token = m.group(0)
             if _is_scientific_unit(token):
-                continue  # RV5: curated scientific-unit allowance
+                continue  # curated scientific-unit allowance
             if _token_is_confusable(token):
                 yield i, f"mixed-script token (possible homoglyph): {token!r}"
                 break

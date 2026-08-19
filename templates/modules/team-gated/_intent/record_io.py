@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""Work-intent engine — record-I/O subsystem (intent-split phase A2).
+"""Work-intent engine — record-I/O subsystem .
 
 The claim-ledger record schema (claim/release dataclasses), the best-effort
 atomic JSONL append, and the read-side helpers (active intents, conflict check,
@@ -399,7 +399,7 @@ def prune_released_pairs(
         return when.replace(tzinfo=datetime.timezone.utc) if when.tzinfo is None \
             else when
 
-    # [H2] guard: refuse only for a claim recent enough to be a LIVE session,
+    # Refuse only for a claim recent enough to be a LIVE session,
     # because a rewrite can lose a record such a session is appending.  An old
     # unreleased claim is a dead lock, not an appender -- it is reported below.
     live_ids = []
@@ -456,7 +456,7 @@ def prune_released_pairs(
     kept = [ln for idx, ln in enumerate(raw_lines) if idx not in drop_indices]
     payload = "".join(kept).encode("utf-8")
 
-    # Exclusive, symlink-proof temp creation (CR2).  The previous fixed
+    # Exclusive, symlink-proof temp creation.  The previous fixed
     # ``.prune-tmp`` name written via ``Path.write_text`` FOLLOWED a
     # pre-existing symlink: a hostile or stale link at that path was truncated
     # to zero bytes and ``os.replace`` then made the ledger itself the symlink.
@@ -477,7 +477,7 @@ def prune_released_pairs(
     finally:
         os.close(fd)
 
-    # Concurrency residual, narrowed rather than solved (CR1).  Ordinary
+    # Concurrency residual, narrowed rather than solved.  Ordinary
     # claim/release appends are lock-free by design -- see this module's
     # Atomicity note -- so a record appended between the snapshot above and the
     # replace below would not survive it.  Re-checking the size immediately

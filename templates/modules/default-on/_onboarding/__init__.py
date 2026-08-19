@@ -6,15 +6,15 @@
 
 The goodnight full-handoff owner runs this helper at the standing
 goodnight foldback-capture step (per `doctrine/session-routines.md`
-extension landed in Chunk P1.3): it scans the deployment for fired
+extension): it scans the deployment for fired
 triggers and activates the corresponding deferred onboarding tasks
 into `dev/PLANNING.md`'s `onboarding-tasks` slot, recording each
 activation as one line in `dev/.cairn/onboarding-activated.jsonl`.
 
 Plan: ``2026-05-28-claude-cairn-progressive-onboarding`` (Chunk
-P1.2 ships the core helper + state-file schema; P1.9a/b ship the
-trigger-evaluation engine; P1.10a/b ship active-surfacing emission +
-UX caps; P1.11 ships ``--seed`` for existing-adopter opt-in).
+the core helper + state-file schema, the trigger-evaluation engine,
+active-surfacing emission + UX caps, and ``--seed`` for existing-adopter
+opt-in).
 
 Reads:
 * ``dev/PLANNING.md``'s ``<!-- cairn:slot onboarding-tasks -->`` block
@@ -39,13 +39,13 @@ CLI::
 
     python scripts/onboarding_activate.py            # default: scan + activate
     python scripts/onboarding_activate.py --dry-run  # show plan, no writes
-    python scripts/onboarding_activate.py --seed     # P1.11 (errors in P1.2)
+    python scripts/onboarding_activate.py --seed     # existing-adopter opt-in
 
 Idempotency: re-running on unchanged deployment state is a no-op.
 The activation log is the authoritative record of "already
 activated"; tasks whose id appears in the log do not re-fire.
 
-Package layout (onboarding-split phase B2): this engine was a single file
+Package layout: this engine was a single file
 (``scripts/onboarding_activate.py``); it is now a private ``_onboarding/``
 package loaded by the thin launcher/facade ``onboarding_activate.py``. The
 subsystems form an acyclic, leaf-first DAG:

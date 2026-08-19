@@ -66,7 +66,7 @@ schema-structured):
   identity.
 * **Good** -- ``total_findings`` (finding-heading bullet counts).
 * **Best-effort** -- ``findings_p1/_p2/_p3`` severity (the
-  ``[P1]/[P2]/[P3]`` tag convention); ``external_tier_review`` (role-
+  bracketed-tag convention); ``external_tier_review`` (role-
   label parse, ``unknown`` bucket for label-less headers);
   ``paired_proposal`` slug-match fallback; the annotation /
   collision-log / disposition parsers (forgiving by design).

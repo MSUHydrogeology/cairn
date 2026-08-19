@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""Work-intent engine — shared-core leaf (intent-split phase A2).
+"""Work-intent engine — shared-core leaf.
 
 Repo-root anchoring plus the path helpers used across the record-I/O,
 identity, conflict-check, CLI, and git-hook-install subsystems. This is the

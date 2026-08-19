@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""onboarding-activate engine -- trigger evaluation (B2).
+"""onboarding-activate engine -- trigger evaluation.
 
-The maturity- and action-trigger evaluation engine (plan P1.9a/b): the deepen
+The maturity- and action-trigger evaluation engine: the deepen
 thresholds, the agent-vendor / human-maintainer authorship patterns, the
 proposal/plan counters + listers, the team-roster / cross-type-review / foldback
 probes, and the top-level ``evaluate_maturity_triggers`` /
@@ -28,9 +28,9 @@ from .security import _assert_safe_dir_for_glob, _assert_safe_read
 # trigger fires.
 #
 # The trigger matrix lives in two families:
-# * Maturity-ladder triggers (P1.9a, this section): level-0-to-1,
+# * Maturity-ladder triggers (this section): level-0-to-1,
 #   level-1-to-2, level-1-deepen, level-2-deepen.
-# * Action triggers (P1.9b, next section): first-proposal-opened,
+# * Action triggers (next section): first-proposal-opened,
 #   first-proposal-archived, first-plan-opened, first-plan-archived,
 #   first-changelog-entry, second-agent-type, first-cross-type-review,
 #   first-foldback-candidate, collab-agreement-signing.
@@ -73,7 +73,7 @@ def _count_archived_plans(target: Path) -> int:
 
 
 def evaluate_maturity_triggers(target: Path) -> set[str]:
-    """Maturity-ladder trigger evaluators (Chunk P1.9a).
+    """Maturity-ladder trigger evaluators.
 
     Each trigger observes filesystem state (Codex P2-3 explicit-state
     contract):
@@ -128,7 +128,7 @@ def evaluate_maturity_triggers(target: Path) -> set[str]:
 # Conservative: the patterns are case-insensitive substring matches,
 # common enough to detect real attributions while infrequent enough
 # in plain prose to keep false-positives bounded.  Per Claude
-# External-functioning code review P2 + Antigravity confirmation:
+# Confirmed against a real deployment:
 # the foldback active-surfacing proposal's I-8 disposition already
 # converged on a broader enumeration; this list reflects that
 # convergence + a documented update doctrine (the goodnight harvest
@@ -203,7 +203,7 @@ def _unreleased_changelog_has_content(target: Path) -> bool:
     if start_idx is None:
         return False
     # Walk until the next `## ` heading (next release).  Per
-    # Antigravity External code review P2: skip HTML comment lines
+    # Skip HTML comment lines
     # (`<!-- ... -->`) since template scaffolds often carry header
     # comments under `## Unreleased` that should NOT trigger.
     for line in lines[start_idx:]:
@@ -382,7 +382,7 @@ def evaluate_action_triggers(
     target: Path,
     log_records: list["ActivationRecord"] | None = None,
 ) -> set[str]:
-    """Action-trigger evaluators (Chunk P1.9b).
+    """Action-trigger evaluators.
 
     Per Codex External Review P2-3 disposition: triggers observe
     explicit state (filesystem + roster + ledger + file content
@@ -459,7 +459,7 @@ def evaluate_triggers(
     """Union of maturity-ladder + action trigger evaluators.
 
     The two-family split lets tests fixture each family independently
-    and keeps the plan's P1.9a / P1.9b sub-chunking visible at the
+    and keeps the maturity / action split visible at the
     code surface.  ``log_records`` is forwarded to the action-trigger
     family for the ``collab-agreement-signing`` precondition check.
     """

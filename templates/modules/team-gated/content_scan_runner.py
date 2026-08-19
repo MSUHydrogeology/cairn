@@ -37,7 +37,7 @@ Exit contract
 * ``3`` -- **STALE baseline authority**: a reviewed-residual entry has no live
   occurrence (it could preauthorize a replay). A distinct fail-closed class.
 
-Audited set (P1 #2 -- the audited-roots manifest)
+Audited set (the audited-roots manifest)
 -------------------------------------------------
 
 The roots come from an explicit, adopter-owned manifest
@@ -86,7 +86,7 @@ _RESIDUAL_BASELINE = _HERE / "content_scan_residuals.txt"
 _AUDIT_TEXT_EXTS = (".md", ".txt")
 _DISCUSSION_ROOTS = frozenset({"dev", "docs"})
 
-# Documented, NARROW exclusions (P1 #2): the vendored base-cache (scanned
+# Documented, NARROW exclusions: the vendored base-cache (scanned
 # upstream in Cairn) and frozen archives. The live, project-authored
 # instruction surface is never excluded.
 _AUDIT_TEXT_EXCLUDE_PREFIXES = ("dev/.cairn/base/",)
@@ -126,7 +126,7 @@ class AuditError(Exception):
 
 
 # --------------------------------------------------------------------------
-# Audited-roots manifest (P1 #2)
+# Audited-roots manifest
 # --------------------------------------------------------------------------
 
 _ROOTS_SENTINEL = "# content-scan-roots v1"
@@ -138,7 +138,7 @@ def load_audit_roots(manifest_path: Path = _ROOTS_MANIFEST,
     """Parse the audited-roots manifest -> ``(repo-relative root, required)``.
 
     Each non-comment line is one repo-relative path (a file or a directory). A
-    leading ``!`` marks the root **required** (P1 #5): a required root that is
+    leading ``!`` marks the root **required**: a required root that is
     absent or contributes no tracked text is a coverage gap that fails the scan
     (enforced in :func:`audited_text_files`); an unmarked root is optional
     (scanned when present, silently absent otherwise). Validated fail-closed:
@@ -312,7 +312,7 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
         if _passes_filters(rel)
     }
 
-    # P1 #5: every REQUIRED root must be present AND contribute >= 1 tracked
+    # Every REQUIRED root must be present AND contribute >= 1 tracked
     # text file. A missing or empty required root silently shrinks coverage --
     # fail closed, naming the gap. (A file-root contributes itself; a dir-root
     # contributes anything beneath it.)
@@ -330,7 +330,7 @@ def audited_text_files(repo_root: Path = _REPO_ROOT,
             "audited set is a failure, not a clean pass (the scanner did not "
             "actually scan the declared surface)")
     tracked = set(root_rels)
-    # The manifest is itself in the audited set (P1 #2): a hostile edit to the
+    # The manifest is itself in the audited set: a hostile edit to the
     # roots file must be scanned. Add it (when tracked under the repo) on top of
     # the roots' contribution.
     try:
@@ -491,7 +491,7 @@ def run_content_scan(files: list[Path], repo_root: Path = _REPO_ROOT,
     advisory findings / ``2`` scan failure or baseline unavailable / ``3``
     STALE baseline authority. ``deadline`` is an absolute ``time.monotonic``
     ceiling, checked **before and after each file** -- a COOPERATIVE budget
-    (P2 #6): it cannot interrupt a single pathological file mid-scan (that would
+    it cannot interrupt a single pathological file mid-scan (that would
     need a killable subprocess; out of v1 scope), but a one-file overrun is
     caught on the post-file check and fails closed (exit 2) rather than
     completing and reporting clean. Exceeding it is a resource-budget failure.
@@ -527,7 +527,7 @@ def run_content_scan(files: list[Path], repo_root: Path = _REPO_ROOT,
                     url_allowlist=allow):
                 fp = _flag_fingerprint(repo_root, rel, fl.line, fl.pattern_id)
                 all_flags.append((rel, fl, fp))
-            if _over_budget():                       # after the file (P2 #6)
+            if _over_budget():                       # after the file, never mid-file
                 return 2, [], [], []
     except Exception as exc:  # noqa: BLE001 -- ANY scan error is a failure
         print(f"content_scan: SCAN FAILED ({exc!r}) -- treating as a scanner "

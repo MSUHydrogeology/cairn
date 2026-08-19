@@ -683,7 +683,7 @@ def _discover_git_common_dir(
     git: Resolved, target: Path, env: dict[str, str]
 ) -> Path:
     """Hardened discovery of the repository's actual common/config directory
-    -- CR3.
+    -- an injected include cannot reach it.
 
     A **linked worktree's** ``.git`` is a *file* naming the main repository's
     per-worktree metadata directory, not the directory that holds the local
@@ -703,7 +703,7 @@ def _discover_git_common_dir(
     a weaker computation.
 
     Revalidates the resolved path and content immediately before this
-    invocation (CR2)."""
+    invocation."""
     revalidate(git, target)
     argv = [git.resolved, "-C", str(target), "rev-parse",
             "--path-format=absolute", "--git-common-dir"]
@@ -748,7 +748,7 @@ def screen_local_config(
     file that resolves outside the repository's **actual common/config
     directory** -- discovered by :func:`_discover_git_common_dir` so an
     ordinary repository and a linked worktree are both handled correctly
-    (CR3) -- which is how an ``include.path`` or ``includeIf`` injection
+    -- which is how an ``include.path`` or ``includeIf`` injection
     presents, and on a listing that fails, times out or exceeds a byte cap.
 
     Runs under the **same** sterilized child environment the legs get.
@@ -931,7 +931,7 @@ def _history_discovery(target: Path) -> dict[str, Any]:
     observability, never for classification.  A commit held only by a
     detached ``HEAD`` whose only branch has been deleted carries no
     ``refs/heads`` entry and no ``packed-refs`` line, so this heuristic alone
-    misreads a repository that plainly has history as having none (CR1).  The
+    misreads a repository that plainly has history as having none.  The
     authoritative answer to "does a commit exist at all" is
     :func:`probe_reachable_commit`, which asks Git's own object model instead
     of inferring from ref-file presence."""
@@ -951,7 +951,7 @@ def probe_reachable_commit(
     git: Resolved, target: Path, env: dict[str, str]
 ) -> bool:
     """Authoritative determination, from Git's own object model, of whether
-    the candidate has a reachable commit -- CR1.
+    the candidate has a reachable commit.
 
     ``git rev-parse --verify -q HEAD^{commit}`` answers correctly regardless
     of *how* a commit is reachable: exit ``0`` means a commit exists (a
@@ -962,7 +962,7 @@ def probe_reachable_commit(
 
     Revalidates the resolved path and content **immediately** before this
     invocation -- the runner's third direct use of the Git trust root,
-    alongside the identifying probe and the configuration screen (CR2)."""
+    alongside the identifying probe and the configuration screen."""
     revalidate(git, target)
     try:
         proc = subprocess.run(
@@ -1168,7 +1168,7 @@ def child_document(summary: dict[str, Any]) -> dict[str, Any]:
 #: Git subcommands **accounted for** in this module's measured invocation set.
 #: ``config`` and ``rev-parse`` are runner-owned (the pre-execution screen now
 #: makes both: ``rev-parse --git-common-dir`` discovers the screen's boundary
-#: (CR3) before its own ``config`` listing); ``log`` and ``ls-remote`` are
+#: before its own ``config`` listing); ``log`` and ``ls-remote`` are
 #: adapter-owned.  A candidate that reaches for anything else has changed the
 #: transitive execution surface and is refused, not admitted.
 ACCOUNTED_GIT_SUBCOMMANDS = frozenset({"config", "log", "ls-remote", "rev-parse"})
@@ -1396,7 +1396,7 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             if real_git:
                 shim_lexical = os.path.join(shim_dir, "git")
                 # ``resolved`` must be the REALPATH, exactly as
-                # resolve_executable() always constructs it -- CR2's
+                # resolve_executable() always constructs it -- the
                 # revalidate() now runs before every use of this tuple, and a
                 # resolved field that skipped realpath (e.g. a workdir under
                 # a symlinked /tmp) would read as drift against its own first
@@ -1722,7 +1722,7 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             facts["screened_local_config_keys"] = sorted({key for _o, key in pairs})
 
         # 4. The identifying probe, then the digest gate and mode selection.
-        #    CR2: revalidate immediately before THIS invocation too -- the
+        #    Revalidate immediately before THIS invocation too -- the
         #    preflight refusals above (workspace materialization, the
         #    ignore-file walk, the config screen) run between the adapter's
         #    initial resolution and this, the adapter's first execution, and
@@ -1768,7 +1768,7 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
             ))
         elif git is None:
             # Can't ask Git's object model without Git.  A filesystem
-            # heuristic's guess is not a substitute (CR1), so absence of the
+            # heuristic's guess is not a substitute, so absence of the
             # trust root -- not absence of refs -- is what forces INCOMPLETE
             # here.
             pending.append(LegOutcome(
@@ -1776,7 +1776,7 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
                 git_reason or "git is absent; the history question was not asked",
             ))
         else:
-            # CR1: the authoritative "does a commit exist" answer, from
+            # The authoritative "does a commit exist" answer, from
             # Git's own object model rather than ref-file presence -- run
             # under the same off-tree, sterilized environment the config
             # screen uses, regardless of the mode chosen above, because this

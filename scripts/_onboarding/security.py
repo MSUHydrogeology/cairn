@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 
-"""onboarding-activate engine -- containment / security leaf (onboarding-split B2).
+"""onboarding-activate engine -- containment / security leaf.
 
 The error taxonomy (``OnboardingError`` / ``OnboardingSecurityError``) plus the
 three write / read / glob containment guards. This is the leaf of the
@@ -43,8 +43,7 @@ class OnboardingSecurityError(OnboardingError):
 
 
 # ---------------------------------------------------------------------------
-# Containment guards (Antigravity proposal-review I-3 + P1; plan
-# Chunk P1.1).  Ported from ``bootstrap/scaffold.py:_assert_safe_write``
+# Containment guards.  Ported from ``bootstrap/scaffold.py:_assert_safe_write``
 # (the established Cairn pattern).  Three call-shapes:
 #
 # * ``_assert_safe_write(dst, target)`` -- write-path guard, run

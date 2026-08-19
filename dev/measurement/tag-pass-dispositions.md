@@ -205,3 +205,42 @@ freedom is one of the four properties the trust root is documented as enforcing.
 This pass's edit there was comment-only and harmless. The gap is structural and
 belongs to whoever next reviews that surface; it is filed in `dev/PLANNING.md`
 beside the re-pin rather than left in two chat logs.
+
+---
+
+## The frozen gate surface — why this pass leaves the gate red
+
+**82% of Chunk C's remaining work is on frozen gate surface**, and neither the
+plan nor its five review rounds anticipated it.
+
+`bootstrap/tests/_gate_manifest.py::_frozen_files()` globs `bootstrap/*.py`,
+`bootstrap/tests/**/*.py`, `templates/modules/**/*.py` **and** `scripts/*.py`.
+Any byte change to those files — a comment included — puts them out of sync with
+`bootstrap/tests/fixtures/gate_manifest.json` and reports `FROZEN-MODIFIED`.
+
+Measured at the C2c commit:
+
+| Surface | Files | Remaining candidates |
+|---|---:|---:|
+| frozen gate surface | 120 | **1543** |
+| free surface | 17 | 336 |
+
+**What this pass did not do.** It did **not** regenerate the gate manifest.
+Regeneration is step 2 of `bootstrap/REANCHOR_RUNBOOK.md`, whose step 3 is a
+supervised **Maintainer-authored** commit, and the runbook states that
+confirming the hashes out of band *"is what makes this a reviewed pin and not a
+self-generated one."* The plan already fences exactly this for Chunk D (D2,
+MAINTAINER-GATED); it simply did not foresee that Chunk C's comment edits land
+on the same surface.
+
+**Maintainer decision, 2026-08-19:**
+
+> *"I think we should land this one -- the other plan will re-anchor"*
+
+So C2c lands with the gate red, and the re-anchor is batched into the
+`ceremony-as-code` plan's own ceremony, which covers this surface anyway. One
+ceremony then clears C2c, the remaining 1543 frozen candidates, and Chunk D's
+renames together.
+
+**The red gate is accurate, not a defect**: the frozen surface genuinely did
+change. What would be a defect is a green gate over changed bytes.

@@ -98,7 +98,7 @@ _DISPOSITION_BUCKETS = (
 )
 
 #: Disposition-bullet shape: ``* **[<id>]** <disposition> -- <rationale>``.
-#: The ``[<id>]`` interior is permissive ([R1], [F2], etc.); the
+#: The ``[<id>]`` interior is permissive; the
 #: disposition text runs to ``--`` or end-of-line.  Capture group 1 is the
 #: disposition text.
 _DISPOSITION_BULLET_RE = re.compile(
