@@ -1139,6 +1139,43 @@ point rather than being copied into another backlog.
   for non-text module files.
 
 **[TRU / VER] Security apparatus**
+* **[TRU-4] The trust apparatus is protected by a glob, not by being named**
+  *(found 2026-08-19 by an adversarial review of a proposed fence narrowing;
+  not yet proposed)* — sixteen files that decide whether the gates pass are
+  gate-frozen under the blanket `bootstrap/tests/**/*.py` glob:
+  `bootstrap/tests/conftest.py`, `_gate_manifest.py`, `_gate_preflight.py`,
+  `_gate_reanchor.py`, `_ast_attest.py`, `_oracle.py`, `_oracle_activation.py`,
+  `_oracle_trust.py`, `_loader_proto.py` and their `test_*` counterparts. Of
+  these, **only `test_ast_attest.py` is named anywhere in `AGENTS.md` >
+  "High-risk surfaces"**, and only in the operational-pitfalls sense of
+  re-anchoring its baseline. `conftest.py` is the sharpest case: it carries the
+  release-mode outcome rule that refuses a skip as release evidence and can set
+  `session.exitstatus`, and it is named nowhere.
+
+  **Why this is a gap rather than a redundancy.** The verification fence refuses
+  bounded mode on a "contract surface", and the *broad* reading of that phrase —
+  frozen glob membership counts — is currently the only thing forcing a full
+  suite when someone edits the release-mode rule. That reading is contested:
+  two reviewers took opposite positions on it within one week
+  (`scope-reduction-trap.md:3005` declared bounded and was accepted;
+  `review-efficient-lifecycle.md:3719` states frozen paths are a contract
+  surface "on which bounded mode refuses on its own terms"). The narrow reading
+  is defensible — 129 of the 203 frozen files are simply every `.py` under
+  `bootstrap/tests/`, so the broad reading makes bounded mode dead text for
+  nearly any change. But adopting it would remove the *only* protection these
+  sixteen files have, because none of them is independently named.
+
+  So the fence is doing security work **by accident**, and the argument for
+  narrowing it is sound on its own terms. *Ordering matters and is the whole
+  point of this row:* enumerate the trust-apparatus files as named
+  trust-ceremony surfaces **first**, land that, and only then reconsider the
+  glob reading — never the reverse. A narrowing that lands first opens the fence
+  widest at exactly the files it exists to protect.
+
+  *Trigger:* any proposal to narrow or clarify the contract-surface fence, or
+  the next Security Review that reaches `bootstrap/tests/`. Related: the
+  repo-root `conftest.py` row above — both are cases of the frozen set's
+  coverage being assumed rather than stated.
 * **[TRU-4] The frozen set does not cover a repository-root `conftest.py`**
   *(found 2026-08-19 while scoping suite-cost instrumentation; not yet
   proposed)* — `_frozen_files` in `bootstrap/tests/_gate_manifest.py` discovers
