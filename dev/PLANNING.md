@@ -1144,6 +1144,27 @@ therefore *"when that proposal reaches implementation"*, not a date.
   renamed 38 containers); and the install lockfile's digest for
   `run_portable_security_sweeps.py`.
 
+* **Doctrine candidate: a figure is true at a commit, not in general** *(filed
+  2026-08-19 at the goodnight serialization point, migrated out of a reflection
+  before pruning)* — `AGENTS.md`'s numeric-precision rule dates a **published
+  snapshot**. It says nothing about a **disposition**, which is also a claim
+  about state and carries no date at all. Three instances in one plan: an AST
+  count written 35 and true at 37 by the time it was read (**caught by the code
+  reviewer, not the author**); corpus totals undated until challenged; and a
+  `Dispositions:` block naming three artifacts `defer` after the re-anchor had
+  already landed them, corrected only because the block was re-measured
+  immediately before commit.
+
+  **Not proposed as doctrine**, deliberately. `AGENTS.md` gained a related rule
+  the same day (`ab3d987`, *"confirm the instrument before trusting an
+  absence"*), and a second doctrine change generalised from the same agent's
+  same session is the churn the rate-limit gate exists to prevent
+  (`doctrine/rationale.md` > "How the doctrine evolves under evidence").
+  Recorded here so a **recurrence by someone else** clears the gate honestly
+  rather than being rediscovered. If it recurs, the cheap form is probably a
+  convention that a disposition carries the commit it was measured at, the way
+  a snapshot carries `as_of`.
+
 * **The shared *working tree* is an uncovered coordination hazard** *(no closure
   change)*. On 2026-08-12 a concurrent session's path-scoped commit swept
   another agent's **uncommitted** review section into it; the author noticed and
