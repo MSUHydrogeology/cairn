@@ -10,3 +10,9 @@ dev/reflections/*
 !dev/reflections/README.md
 dev/.cairn/.foldback-draft-*.md
 dev/intents.jsonl
+
+# Measurement OUTPUTS are regenerated, never authored: tracking them dirties the
+# tree on every run, which breaks the clean pre/post state a Boundary B record
+# requires. The generator is tracked; what it emits is not.
+dev/measurement/snapshots/
+dev/measurement/suite-cost.md
