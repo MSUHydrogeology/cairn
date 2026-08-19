@@ -204,7 +204,7 @@ def test_verification_toolchain_is_present():
     assert shutil.which("ssh-keygen"), "ssh-keygen is not on PATH; SSH signature verification cannot be tested"
 
 
-# ============================================================== Chunk A — A5/A6
+# ============================================ signed-ref verification, part A
 def test_honest_signed_tag_is_provenanced(lab: Lab):
     """Case (b): the honest tag must still pass.  A fix that refuses everything
     is not a fix."""
@@ -216,7 +216,7 @@ def test_honest_signed_tag_is_provenanced(lab: Lab):
 
 
 def test_substitution_attack_refused_naming_both_names(lab: Lab, mirror: Path):
-    """Case (a), and the [I1] BLOCKING finding: a ref re-pointed at an older,
+    """Case (a), a BLOCKING finding: a ref re-pointed at an older,
     genuinely signed tag object.  The signature is real; the signed name is not
     the name that was asked about.
 
@@ -238,7 +238,7 @@ def test_honest_tag_wrong_roster_is_refused(lab: Lab):
 
 
 def test_nested_unsigned_wrap_refuses_at_the_signature_half(lab: Lab, tmp_path: Path):
-    """A6.  An attacker needs no key to write an *unsigned* tag object named
+    """An attacker needs no key to write an *unsigned* tag object named
     ``v0.5.0`` whose target is the genuine signed tag object.  ``^{tag}`` does
     not peel through, so the NAME check passes and the SIGNATURE check refuses.
     Asserting *which* half refused is what keeps the two halves independently
@@ -311,7 +311,7 @@ def _hostile_candidate(lab: Lab, root: Path) -> tuple[Path, Path]:
 
 
 def test_candidate_gpg_ssh_program_never_executes(lab: Lab, tmp_path: Path):
-    """A7.  A hostile candidate names a forging verifier in its own config.  The
+    """A hostile candidate names a forging verifier in its own config.  The
     verification runs in a workspace this script created with the verifier pinned
     by invocation, so the forger must never execute — proved by a witness file
     that must not appear.
@@ -330,16 +330,17 @@ def test_candidate_gpg_ssh_program_never_executes(lab: Lab, tmp_path: Path):
         "the forger's output reached the report"
 
 
-# ------------------------------------------------------------------ Chunk A/A8
+# ------------------------------------------------ the two refusal reasons
 def test_resolver_names_the_non_tag_object_cause(lab: Lab):
-    """A8, first half.  A ref that exists and points straight at a commit.
+    """First half.  A ref that exists and points straight at a commit.
 
     Part B class table row: *tag ref resolving to a non-tag object (a commit, a
-    tree)*.  C5's per-row sweep inherits this node rather than adding a second.
+    tree)*.  The per-row class sweep below inherits this node rather than adding
+    a second.
 
     The reason string is the assertion, not the exit code: a node asserting only
     "refused" passes equally against a script that simply could not find the tag
-    (P3, oracle discrimination), and only the specific reason tells an adopter
+    (oracle discrimination), and only the specific reason tells an adopter
     whose fork tagged with ``git tag`` something they can act on.
     """
     r = lab.verify("--signers", lab.good_roster, lab.candidate, "lw")
@@ -350,7 +351,7 @@ def test_resolver_names_the_non_tag_object_cause(lab: Lab):
 
 
 def test_resolver_names_the_missing_ref_cause(lab: Lab):
-    """A8, second half.  A ref that does not exist at all — a DIFFERENT reason
+    """Second half.  A ref that does not exist at all — a DIFFERENT reason
     from the non-tag-object case above, so one message cannot satisfy both."""
     r = lab.verify("--signers", lab.good_roster, lab.candidate, "no-such-tag")
     assert r.returncode == REFUSED, f"{r.stdout}{r.stderr}"
@@ -359,7 +360,7 @@ def test_resolver_names_the_missing_ref_cause(lab: Lab):
 
 
 def test_relative_candidate_path_reaches_the_candidate(lab: Lab):
-    """A4's honest path, from a cwd that is not the candidate's parent.
+    """The honest path, from a cwd that is not the candidate's parent.
 
     The top-level repository probe runs ``git -C "$REPO"`` from the CALLER's cwd,
     but the fetch runs ``git -C "$WORKSPACE"``.  A relative candidate path is
@@ -376,7 +377,7 @@ def test_relative_candidate_path_reaches_the_candidate(lab: Lab):
 
 def test_verification_that_could_not_run_does_not_blame_the_roster(
         lab: Lab, tmp_path: Path):
-    """P5, claim <= evidence, at the signature step.
+    """Claim <= evidence, at the signature step.
 
     Any non-zero exit from ``git verify-tag`` used to be reported as *"the
     signature ... did not verify against the trusted roster"* — including
@@ -431,7 +432,7 @@ def test_no_git_describe_on_the_provenance_path():
 
 # ================================================================== Chunk B
 def test_provenance_mode_requires_a_roster(lab: Lab):
-    """B1.  No ``--signers`` and no ``CAIRN_ALLOWED_SIGNERS`` must refuse, not
+    """No ``--signers`` and no ``CAIRN_ALLOWED_SIGNERS`` must refuse, not
     fall back to anything."""
     r = lab.verify(lab.candidate, "v0.3.0")
     assert r.returncode == REFUSED, f"{r.stdout}{r.stderr}"
@@ -439,7 +440,7 @@ def test_provenance_mode_requires_a_roster(lab: Lab):
 
 
 def test_roster_may_arrive_by_environment(lab: Lab):
-    """B1's second accepted channel, so the refusal above is about ABSENCE."""
+    """The second accepted roster channel, so the refusal above is about ABSENCE."""
     r = lab.verify(lab.candidate, "v0.3.0",
                    env_extra={"CAIRN_ALLOWED_SIGNERS": str(lab.good_roster)})
     assert r.returncode == PROVENANCED, f"{r.stdout}{r.stderr}"
@@ -460,7 +461,8 @@ def test_empty_roster_refused(lab: Lab, tmp_path: Path):
 
 
 def test_keyless_roster_refused(lab: Lab, tmp_path: Path):
-    """B6's second half, and the ``$CAIRN_KEY``-unset copy-paste failure: the
+    """The second half of the roster-parsing pair, and the ``$CAIRN_KEY``-unset
+    copy-paste failure: the
     documented step 2 is ``printf '%s %s\\n' "$CAIRN_SIGNER" "$CAIRN_KEY"``, so an
     unset key writes a principal and nothing else.  That must land HERE, on a
     refusal that names the cause, not on an opaque signature failure."""
@@ -480,7 +482,7 @@ def test_roster_that_is_a_directory_refused(lab: Lab, tmp_path: Path):
 
 
 def test_roster_inside_the_candidate_refused(lab: Lab, tmp_path: Path):
-    """B2.  A roster that lives in the thing being verified cannot authenticate
+    """A roster that lives in the thing being verified cannot authenticate
     the thing being verified."""
     cand = tmp_path / "cand-with-roster"
     shutil.copytree(lab.candidate, cand)
@@ -492,7 +494,7 @@ def test_roster_inside_the_candidate_refused(lab: Lab, tmp_path: Path):
 
 
 def test_roster_symlinked_into_the_candidate_refused(lab: Lab, tmp_path: Path):
-    """B2's symlink half: containment resolves symlinks BEFORE deciding."""
+    """The symlink half: containment resolves symlinks BEFORE deciding."""
     cand = tmp_path / "cand-symlink"
     shutil.copytree(lab.candidate, cand)
     inside = cand / "release-signers"
@@ -505,7 +507,7 @@ def test_roster_symlinked_into_the_candidate_refused(lab: Lab, tmp_path: Path):
 
 
 def test_self_consistent_attacker_pair_refused(lab: Lab, tmp_path: Path):
-    """B5, the [IDN1] boundary test.  An attacker key, an attacker-committed
+    """The identity boundary test.  An attacker key, an attacker-committed
     roster naming the *genuine* principal string, and the attacker's own
     ``.git/config`` pointing git at it: internally consistent, and signed.  The
     unsigned-tag and unrostered-key tests do not reach this question at all —
@@ -526,7 +528,8 @@ def test_self_consistent_attacker_pair_refused(lab: Lab, tmp_path: Path):
 
 
 def test_comma_separated_principals_are_parsed_and_counted(lab: Lab, tmp_path: Path):
-    """B6's first half — the parsing defect the sibling surface found at
+    """The first half of the roster-parsing pair — the defect the sibling surface
+    found at
     ``0c6d9de``.  ``a@x,b@y <keytype> <key>`` is ONE line naming TWO principals;
     a counter that splits on whitespace alone reports one and the hygiene warning
     never fires."""
@@ -538,7 +541,7 @@ def test_comma_separated_principals_are_parsed_and_counted(lab: Lab, tmp_path: P
 
 
 def test_toolchain_absence_refuses_rather_than_degrades(lab: Lab, tmp_path: Path):
-    """B3.  With ``ssh-keygen`` removed from PATH the script must REFUSE, not
+    """With ``ssh-keygen`` removed from PATH the script must REFUSE, not
     fall through to an unverified accept."""
     stub_path = tmp_path / "empty-path"
     stub_path.mkdir()
@@ -553,7 +556,8 @@ def test_toolchain_absence_refuses_rather_than_degrades(lab: Lab, tmp_path: Path
 
 
 def test_missing_git_refuses_naming_git_not_the_repository(lab: Lab, tmp_path: Path):
-    """B3's other half, and the reason the check had to move.
+    """The other half of the missing-``ssh-keygen`` pair, and the reason the check
+    had to move.
 
     ``command -v git || refuse`` sat inside provenance mode, *after* the
     unconditional ``git -C "$REPO" rev-parse --git-dir`` probe at the top had
@@ -582,7 +586,7 @@ def test_missing_git_refuses_naming_git_not_the_repository(lab: Lab, tmp_path: P
 
 # ================================================================== Chunk C
 def test_bare_invocation_is_provenance_mode_and_refuses_head(lab: Lab):
-    """C1.  ``verify-ref.sh <repo>`` used to mean "HEAD, and call it approved".
+    """``verify-ref.sh <repo>`` used to mean "HEAD, and call it approved".
     It now means "provenance mode, and HEAD is not a signed release tag"."""
     r = lab.verify("--signers", lab.good_roster, lab.candidate)
     assert r.returncode == REFUSED, f"{r.stdout}{r.stderr}"
@@ -590,7 +594,7 @@ def test_bare_invocation_is_provenance_mode_and_refuses_head(lab: Lab):
 
 
 def test_unprovenanced_and_provenanced_differ_by_exit_code_alone(lab: Lab):
-    """C3.  A caller must be able to discriminate without matching message
+    """A caller must be able to discriminate without matching message
     text."""
     provenanced = lab.verify("--signers", lab.good_roster, lab.candidate, "v0.3.0")
     pinned = lab.verify("--unprovenanced", lab.candidate)
@@ -600,7 +604,7 @@ def test_unprovenanced_and_provenanced_differ_by_exit_code_alone(lab: Lab):
 
 
 def test_unprovenanced_output_says_no_signature_was_checked(lab: Lab):
-    """C2.  Claim <= evidence: the label must state what was NOT done."""
+    """Claim <= evidence: the label must state what was NOT done."""
     r = lab.verify("--unprovenanced", lab.candidate)
     assert r.returncode == NOT_PROVENANCED, f"{r.stdout}{r.stderr}"
     assert "NOT PROVENANCED" in r.stdout
@@ -614,7 +618,7 @@ def test_usage_error_exits_two(lab: Lab, tmp_path: Path):
 
 
 def test_maintainer_approved_appears_nowhere_under_container(lab: Lab):
-    """C6.  The phrase is deleted from the tool surface.  The walk is scoped to
+    """The phrase is deleted from the tool surface.  The walk is scoped to
     ``bootstrap/container/`` **deliberately**: the phrase legitimately survives in
     ``CHANGELOG.md`` and in the archived deliberation record, which the
     append-only rule forbids rewriting."""
@@ -631,7 +635,7 @@ def test_maintainer_approved_appears_nowhere_under_container(lab: Lab):
 
 
 def test_multi_tag_reports_only_the_tag_asked_about(lab: Lab, tmp_path: Path):
-    """C7.  Three tags on one commit; asking about X must never print Y.
+    """Three tags on one commit; asking about X must never print Y.
 
     Part B class table row: *several tags on one commit*.
     """
@@ -699,7 +703,7 @@ CLASS_TABLE_ROWS = {
 
 
 def test_every_class_table_row_has_exactly_one_owning_node():
-    """C5's coverage assertion: every row of the proposal's Part B class table
+    """The coverage assertion: every row of the class table
     has a test, each test names its row, and no row is claimed twice."""
     owners = list(CLASS_TABLE_ROWS.values())
     assert len(owners) == len(set(owners)), \
@@ -752,7 +756,7 @@ def test_row_head_refused_in_provenance_mode_pinned_under_unprovenanced(lab: Lab
 
 
 def test_row_mutable_branch_refused_naming_the_reason(lab: Lab):
-    """Part B class table row: *branch ref (any spelling)* — the Codex S5
+    """Class table row: *branch ref (any spelling)* — the
     regression pin, asserted on its REASON so it cannot be satisfied by the
     provenance-mode refusal."""
     for spelling in ("master", "heads/master", "refs/heads/master"):
@@ -833,8 +837,8 @@ MUTATIONS = {
         r'    "\$cand_canon"\|"\$cand_canon"/\*\)\n',
         '    "@@never-matches@@")\n',
     ),
-    # Verification moved back INSIDE the candidate — the exact shape A4 forbids,
-    # and the perturbation that makes A7's witness assertion falsifiable.
+    # Verification moved back INSIDE the candidate — the exact forbidden shape,
+    # and the perturbation that makes the witness assertion falsifiable.
     "workspace-pinned-verification": (
         r'VERIFY_OUT="\$\(wsgit -C "\$WS" \\\n(?:  -c [^\n]*\n)+  verify-tag "\$OBJ" 2>&1\)"\n',
         'VERIFY_OUT="$(git -C "$REPO" verify-tag "$TAGNAME" 2>&1)"\n',
@@ -930,16 +934,16 @@ def test_mutation_deleting_the_containment_check_admits_an_inside_roster(
 
 def test_mutation_verifying_inside_the_candidate_runs_the_forger(
         lab: Lab, tmp_path: Path):
-    """A7's non-vacuity, demonstrated rather than asserted.
+    """Non-vacuity, demonstrated rather than asserted.
 
     Replace the pinned workspace verification with ``git -C "$REPO" verify-tag
     "$TAGNAME"`` — verification run *inside the candidate*, which is the exact
-    defect A4/A7 exist to forbid — and the hostile candidate's own configured
+    defect these nodes exist to forbid — and the hostile candidate's own configured
     verifier EXECUTES: the witness appears, the forged ``Good "git" signature``
     is believed, and the mutant reports PROVENANCED under the genuine
     maintainer's principal over a tag signed by the attacker.
 
-    Without this node A7's ``assert not witness.exists()`` could not fail: the
+    Without this node the ``assert not witness.exists()`` above could not fail: the
     fixture it used to run against was an *unsigned* tag, and git spawns no
     verifier program when there is no signature, so the witness stayed absent
     however the verification was wired.
@@ -972,7 +976,7 @@ def test_mutation_collapsing_the_verify_classes_blames_the_roster(
         lab: Lab, tmp_path: Path):
     """Collapse the two verification-failure classes back into one claim and a
     failure where NOTHING was checked is reported as a roster failure — which is
-    what the P5 node above must be able to catch."""
+    what the claim-vs-evidence node above must be able to catch."""
     stub_dir = tmp_path / "broken-toolchain-mutant"
     stub_dir.mkdir()
     stub = stub_dir / "ssh-keygen"
@@ -1075,7 +1079,7 @@ ACCEPTANCE_PIN_MUTATIONS = {
 
 @pytest.mark.parametrize("pin", sorted(ACCEPTANCE_PIN_MUTATIONS))
 def test_acceptance_pin_passes_against_the_real_script(lab: Lab, pin: str, tmp_path: Path):
-    """D4, the control half: the pin as it stands in ``acceptance.sh`` passes
+    """The control half: the pin as it stands in ``acceptance.sh`` passes
     against the shipped script."""
     dr = _build_surface_repo(lab, tmp_path / "dr")
     r = _replay_pin(lab, pin, CONTAINER_DIR, tmp_path, lab.candidate, dr)
@@ -1085,7 +1089,7 @@ def test_acceptance_pin_passes_against_the_real_script(lab: Lab, pin: str, tmp_p
 @pytest.mark.parametrize("pin", sorted(ACCEPTANCE_PIN_MUTATIONS))
 def test_acceptance_pin_fails_against_a_stub_with_its_control_deleted(
         lab: Lab, pin: str, tmp_path: Path):
-    """D4, the discriminating half.  Three of ``acceptance.sh``'s assertions used
+    """The discriminating half.  Three of ``acceptance.sh``\'s assertions used
     to pass on ANY refusal, so once provenance mode became the default they went
     green against a script with both controls deleted.  Each pin must now FAIL
     when its named control is removed.
@@ -1110,7 +1114,7 @@ def test_acceptance_pin_fails_against_a_stub_with_its_control_deleted(
 
 
 def test_provenance_path_is_exercised_without_acceptance_sh(lab: Lab):
-    """D5, and the limit it mitigates.  ``acceptance.sh`` now runs permanently in
+    """The limit this mitigates.  ``acceptance.sh`` now runs permanently in
     ``--unprovenanced`` mode, so Cairn's container harness never smoke-checks the
     mode this scope added.  This node builds its own signed tag and roster and
     drives the provenance path end to end instead.
@@ -1151,7 +1155,7 @@ def _run_bootstrap_block(lab: Lab, block: str, tmp_path: Path, *,
 
 
 def test_documented_bootstrap_block_verifies_an_honest_tag(lab: Lab, tmp_path: Path):
-    """E8.  The block that RUNS is the block the document PUBLISHES: a private
+    """The block that RUNS is the block the document PUBLISHES: a private
     copy could not detect that the document still tells adopters something
     unsafe."""
     block = _extract_bootstrap_block(PROVENANCE_MD.read_text())
@@ -1216,7 +1220,7 @@ def test_documented_bootstrap_block_refuses_unset_inputs(lab: Lab, tmp_path: Pat
 
 def test_mutating_the_documented_block_breaks_its_own_test(lab: Lab, mirror: Path,
                                                            tmp_path: Path):
-    """E8's acceptance criterion, demonstrated rather than asserted: delete the
+    """The acceptance criterion, demonstrated rather than asserted: delete the
     name-binding step from a SCRATCH COPY of the document and the extracted block
     accepts the substitution attack.  That is what makes the two nodes above
     controls over the document's text, not decoration."""
@@ -1237,7 +1241,7 @@ def test_mutating_the_documented_block_breaks_its_own_test(lab: Lab, mirror: Pat
 
 
 def test_two_candidates_publishing_the_same_tag_name(lab: Lab, tmp_path: Path):
-    """E9.  Nothing persists between runs: the workspace is created and discarded
+    """Nothing persists between runs: the workspace is created and discarded
     per run, so a second run against a DIFFERENT candidate publishing the same
     tag name can never pass on the first run's cached object."""
     block = _extract_bootstrap_block(PROVENANCE_MD.read_text())
@@ -1316,7 +1320,7 @@ def test_retired_key_still_verifies_a_tag_dated_before_retirement(lab: Lab, rota
 
 
 def test_backdated_tag_from_a_retired_key_still_verifies(lab: Lab, rotation, tmp_path):
-    """E10's residual-pinning test (RA2).  The tagger timestamp is INSIDE the
+    """The residual-pinning test.  The tagger timestamp is INSIDE the
     signed payload, so whoever holds a compromised key can set it and back-date a
     tag past a ``valid-before`` boundary.  This node exists so nobody later reads
     a validity window as revocation: **it asserts the attack succeeds.**"""
@@ -1345,7 +1349,7 @@ def _count_principals(roster_text: str) -> int:
 
 
 def test_principal_counter_splits_on_commas():
-    """G2's own non-vacuity demonstration: the counter must see a second
+    """The non-vacuity demonstration: the counter must see a second
     principal however it is spelled, or the tripwire below cannot fire."""
     assert _count_principals("a@x ssh-ed25519 AAA\n") == 1
     assert _count_principals("a@x,b@y ssh-ed25519 AAA\n") == 2
@@ -1354,7 +1358,7 @@ def test_principal_counter_splits_on_commas():
 
 
 def test_cairn_roster_names_one_principal():
-    """G2.  The genuinely mechanical half of residual RA1, on **Cairn's** side:
+    """The genuinely mechanical half of the residual, on **Cairn\'s** side:
     Cairn's own internal gate roster names exactly one principal (`as_of
     2026-08-03`).  It fires in Cairn's suite, where Cairn will see it — unlike
     the adopter-facing warning in the script, which counts principals in a file
@@ -1368,7 +1372,7 @@ def test_cairn_roster_names_one_principal():
 
 
 # ===================================================== the SIGNED_NAME extraction
-# Added 2026-08-10 after the release-security-bar B4 burndown (row G-2) found
+# Added 2026-08-10 after the release-security-bar burndown found
 # that this control had ZERO enforcers: with both extraction bounds removed the
 # substitution attack SUCCEEDS and all 64 tests in this file stayed green. The
 # suite pinned the *comparison* (`SIGNED_NAME` vs `TAGNAME`, covered by the
@@ -1472,7 +1476,7 @@ def test_mutation_deleting_the_extraction_bounds_lets_the_message_forge_the_name
 
 
 # ---------------------------------------------------------------------------
-# Chunk E4: the fetch boundary validates incoming objects, and the candidate
+# The fetch boundary validates incoming objects, and the candidate
 # cannot configure that away.
 # ---------------------------------------------------------------------------
 
