@@ -1,5 +1,5 @@
 """Tests for ``scripts/onboarding_activate.py``: the
-progressive-onboarding activation helper (Chunk P1.2).
+progressive-onboarding activation helper.
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 
@@ -365,7 +365,7 @@ class TestScaffoldSeedsAlways:
     ) -> None:
         """The helper + log are always-installed -- Codex P2-5.
         Even an adopter using the explicit-modules path gets them, so
-        opt-in via --seed (Chunk P1.11) can succeed later."""
+        opt-in via --seed can succeed later."""
         assert _scaffold(tmp_path, None) == 0
         assert (tmp_path / "scripts" / "onboarding_activate.py").is_file()
         assert (
@@ -375,7 +375,7 @@ class TestScaffoldSeedsAlways:
     def test_seed_existing_adopter_flow(
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
-        """Existing-adopter --seed flow (Chunk P1.11):
+        """Existing-adopter --seed flow:
         adopter has manually pasted the slot block + manually copied
         the preset source file; --seed --preset solo-greenfield
         substitutes the slot."""
@@ -500,11 +500,11 @@ class TestScaffoldSeedsAlways_seeded_log:
 
 
 # ---------------------------------------------------------------------------
-# Containment guards (Chunk P1.3)
+# Containment guards
 # ---------------------------------------------------------------------------
 #
 # The Cairn proposal ``2026-05-28-claude-cairn-security-hardening-
-# post-v0.2-followup`` (Antigravity proposal-review I-3 + P1) calls
+# post-v0.2-followup`` calls
 # for symlink-traversal + path-escape refusals in the activation
 # helper, ported from ``bootstrap/scaffold.py`` 's
 # ``_assert_safe_write`` pattern.
@@ -616,7 +616,7 @@ class TestContainmentGuards:
 
 
 # ---------------------------------------------------------------------------
-# Preset-name validation (Chunk P1.3 -- complements the six guard cases)
+# Preset-name validation (complements the six guard cases)
 # ---------------------------------------------------------------------------
 
 

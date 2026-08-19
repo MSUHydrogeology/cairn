@@ -226,7 +226,7 @@ def test_executing_authority_code_pin_passes_for_real_modules(tmp_path):
 
 
 def test_pretransition_manifest_refuses_until_supervised_bootstrap(tmp_path):
-    """Round-6 F1 (production-shaped): the REAL pre-transition manifest shape does
+    """Production-shaped: the REAL pre-transition manifest shape does
     NOT pin the Stage-B authority modules (they read FROZEN-NEW). Against such a P
     the authority-code pin refuses — so the production command cannot pass until the
     supervised Phase-0 bootstrap (gate-manifest pre-pin) establishes the trust root.
@@ -252,7 +252,7 @@ def test_pretransition_manifest_refuses_until_supervised_bootstrap(tmp_path):
     assert ok2 and holds2 == []
 
 
-# --- round-5 F2: singular gate ref (fixed; no override) --------------------------
+# --- singular gate ref (fixed; no override) --------------------------
 
 def test_promote_orchestrator_not_injectable_and_no_ref_overrides():
     params = set(inspect.signature(R.promote).parameters)
@@ -269,7 +269,7 @@ def test_cli_rejects_authority_ref_overrides(tmp_path):
         R.main(["prepare", "--repo", str(tmp_path), "--designated-ref", "refs/x"])
 
 
-# --- round-5 F3: real gate verifier accepts N before reanchored ------------------
+# --- real gate verifier accepts N before reanchored ------------------
 
 def test_static_verify_failure_refuses_before_cas(tmp_path):
     b = _two_stage_repo(tmp_path)
@@ -280,7 +280,7 @@ def test_static_verify_failure_refuses_before_cas(tmp_path):
 
 
 def test_static_verify_runs_against_materialized_N_not_checkout(tmp_path, monkeypatch):
-    """Round-6 F2: the production path wires the REAL _gate_manifest.verify against
+    """The production path wires the REAL _gate_manifest.verify against
     N AS THE IMMUTABLE ANCHOR, checking frozen-file state from a MATERIALIZED N tree
     (repo=<N>), not the invoking checkout — even when the trusted worktree differs."""
     b = _two_stage_repo(tmp_path)

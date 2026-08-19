@@ -126,7 +126,7 @@ def _scrubbed_environ():
         os.environ.update(saved)
 
 
-# --------------------------------------------------- trust-root authenticity (R5)
+# --------------------------------------------------- trust-root authenticity
 
 def _authority_code_files():
     """The modules whose executing code makes the promotion decision, mapped to
@@ -164,7 +164,7 @@ def _verify_executing_authority_code(trusted_repo: Path, prior_sha: str) -> tupl
 
 def _static_verify_anchor(trusted_repo: Path, n_sha: str, prospective_bytes: str) -> bool:
     """Run the EXISTING trusted gate verifier statically against the immutable
-    anchor ``N`` (round-5 F3, corrected round-6 F2): **materialize ``N`` into a temp
+    anchor ``N``: **materialize ``N`` into a temp
     tree and check the frozen-file / mapping state against THAT tree** (``repo=<N>``)
     — not the invoking working tree — so verification follows ``N`` regardless of
     whatever happens to be checked out. The verifier code and the anchor object are
@@ -455,7 +455,7 @@ def promote_data_only(
                                refusals=[f"constructed anchor N changes more than the manifest: {changed}"],
                                checks=checks)
 
-    # (4b) Completion proof (round-5 F3): the EXISTING trusted gate verifier must
+    # (4b) Completion proof: the EXISTING trusted gate verifier must
     #      accept N as the immutable anchor — not merely byte-identity. Run it
     #      statically (data-only) BEFORE the CAS, so a malformed-but-byte-identical
     #      prospective manifest refuses without spending authority.
@@ -510,7 +510,7 @@ def promote(
 ) -> PromotionResult:
     """Run Stage A (evidence) then Stage B (data-only promotion). The production
     path is **not** dependency-injectable, and both authority refs are **fixed by
-    trusted code** (round-5 F1a/F2): the prior gate state ``P`` is the current head
+    trusted code**: the prior gate state ``P`` is the current head
     of the fixed designated ref, and the authority anchor ``A`` is resolved from the
     fixed authorization ref — neither is a caller-supplied SHA or ref. The
     designated-ref advance is gated by *confirm* (the Maintainer's supervised act)."""
@@ -539,7 +539,7 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--candidate-ref", default="HEAD", help="candidate C ref in the trusted repo")
         p.add_argument("--baseline-ref", default=None, help="the oracle's pre-refactor baseline ref")
         p.add_argument("--trusted-ref", default=None, help="the oracle's out-of-band trusted ref")
-        # The authority refs are FIXED by trusted code (round-5 F1a/F2): A is resolved
+        # The authority refs are FIXED by trusted code: A is resolved
         # from refs/cairn/gate-authorization and P from refs/cairn/gate-anchor — neither
         # is a CLI override, so the caller cannot redirect the authority or the one gate ref.
         if name == "promote":

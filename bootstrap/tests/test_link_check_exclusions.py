@@ -10,7 +10,7 @@ parity-with-claim_check exemptions added in the link-check-parity batch:
 * **`file://` link targets skipped** -- machine-specific reviewer links, not
   portably checkable (symmetric to the existing ``http(s)`` skip).
 
-Both exclusions are **root-anchored** (ER1): a ``modules/`` dir nested elsewhere
+Both exclusions are **root-anchored**: a ``modules/`` dir nested elsewhere
 (e.g. ``<package>/modules/``) is NOT over-excluded.
 
 **Parity exemptions (link-check-parity batch):**
@@ -21,7 +21,7 @@ Both exclusions are **root-anchored** (ER1): a ``modules/`` dir nested elsewhere
   an unlisted broken link in the SAME file is STILL flagged.
 * **(c) Genuinely-broken local link still flags** -- protection preserved.
 * **(d) Unmatched backtick safety** -- an UNMATCHED backtick line followed by a
-  real broken link STILL flags (balanced-strip safety contract R2).
+  real broken link STILL flags (the balanced-strip safety contract).
 * **(e) Fenced code blocks remain skipped; heading anchors unaffected.**
 
 Run from the cairn repo root:
@@ -66,7 +66,7 @@ _FILES = [
     _ROOT / "dev" / ".cairn" / "base" / "dev" / "modules" / "claim-check.md",
     _ROOT / "dev" / ".cairn" / "cairn_foldback.md",
     _ROOT / "dev" / "plans" / "archive" / "old.md",
-    _ROOT / "pkg" / "modules" / "user_authored.md",   # ER1: nested elsewhere
+    _ROOT / "pkg" / "modules" / "user_authored.md",   # nested elsewhere
     _ROOT / "docs" / "guide.md",
     _ROOT / "AGENTS.md",
 ]
@@ -86,7 +86,7 @@ def test_dev_modules_and_cairn_excluded_by_default():
 
 
 def test_root_anchored_does_not_over_exclude_nested_modules():
-    # ER1: a `modules/` dir that is NOT dev/modules must stay scanned.
+    # A `modules/` dir that is NOT dev/modules must stay scanned.
     assert _ROOT / "pkg" / "modules" / "user_authored.md" in _kept()
     assert _ROOT / "docs" / "guide.md" in _kept()
     assert _ROOT / "AGENTS.md" in _kept()
@@ -278,7 +278,7 @@ def test_unmatched_backtick_mismatched_run_does_not_suppress(tmp_path):
 
 
 def test_longer_closing_backtick_run_does_not_suppress(tmp_path):
-    """Codex cross-type review (P2): a closing run LONGER than the opening run is
+    """A closing run LONGER than the opening run is
     NOT a balanced span -- the backreference must not match a prefix of a longer
     closing run. ``2-open ... 3-close`` (and the reverse) must leave the real link
     checked. This is the false-negative the original ``(`+)(.*?)\\1`` permitted."""

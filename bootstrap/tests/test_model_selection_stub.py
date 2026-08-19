@@ -110,7 +110,7 @@ class TestInstallPath:
 
 class TestSeedVsGate:
     """A fresh scaffold seeds an unfilled FILL-ME stub that FAILS the gate
-    (R1: forced, not silent) — while the scaffold install itself succeeds."""
+    (forced, not silent) — while the scaffold install itself succeeds."""
 
     def test_fresh_scaffold_install_succeeds(self, tmp_path: Path) -> None:
         # "Not instantly red" = the install is not blocked.
@@ -124,7 +124,7 @@ class TestSeedVsGate:
         assert stub.is_file()
 
         checker = _load_checker()
-        # R1: a fresh, unfilled mapping carries FILL ME -> the gate FAILS,
+        # A fresh, unfilled mapping carries FILL ME -> the gate FAILS,
         # forcing the adopter to record their assignments (not silent-empty).
         rc = checker.check_mapping(stub, quiet=True)
         assert rc == 1, (
@@ -241,7 +241,7 @@ class TestFidelityCheck:
 
 
 # ---------------------------------------------------------------------------
-# Structural validity (rollup #3b / External R2): yaml.safe_load + graceful
+# Structural validity: yaml.safe_load + graceful
 # degradation when PyYAML is absent.
 # ---------------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ class TestStructuralValidity:
     ) -> None:
         """With PyYAML unavailable, structural validation is skipped (a clean
         note, not a ModuleNotFoundError traceback) and the sentinel-only result
-        stands -- the gate never crashes a dependency-bare CI (R2)."""
+        stands -- the gate never crashes a dependency-bare CI."""
         import builtins
 
         real_import = builtins.__import__
@@ -400,7 +400,7 @@ class TestInteractiveCapture:
 
     def test_full_noninteractive_scaffold_keeps_stub(self, tmp_path: Path) -> None:
         """The CLI wiring: a full scaffold install in a non-TTY test run leaves
-        the FILL ME stub (the gate then flags it -- R1 fallback)."""
+        the FILL ME stub (the gate then flags it)."""
         assert _scaffold(tmp_path) == 0
         mapping = tmp_path / "dev" / ".cairn" / "model-selection-mapping.yml"
         assert mapping.is_file() and "FILL ME" in mapping.read_text()
