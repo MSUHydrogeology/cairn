@@ -16,7 +16,7 @@ It asserts:
   transition as ready.
 * **The state machine** -- legal transitions match the contract's tables
   for both proposals and plans.
-* **The three-way AI-vs-human identity model (R5 + Codex cross-phase)** --
+* **The three-way AI-vs-human identity model** --
   a vendor-neutral parse classifying known-AI / known-human-Maintainer
   (positive allowlist) / unknown; an unknown Decision author fails closed.
 * **Structural conformance** -- the ``scan`` arm flags a corpus whose
@@ -86,8 +86,8 @@ def _write_proposal(repo: Path, name: str, *, status: str, author: str = "Claude
                     body: str = "", assurance: str | None = "standard") -> Path:
     """A proposal on disk.
 
-    P1 added `**Assurance path**:` to the default header for the same reason it
-    was added to `_pass_block`: after P1 a *conforming* proposal declares one, so
+    `**Assurance path**:` is in the default header for the same reason it
+    is in `_pass_block`: a *conforming* proposal declares one, so
     a fixture omitting it no longer means "a clean proposal".  `assurance=None`
     omits the line, which is how the new nodes exercise the refusal.
     """
@@ -193,7 +193,7 @@ def test_every_subcommand_is_read_only(tmp_path, monkeypatch, capsys, argv) -> N
 
 def test_awaiting_review_lists_review_outcomes_not_a_direct_decision(
         tmp_path, monkeypatch, capsys):
-    """H1 retired `proposed`; its live successor is `awaiting-review`, R1's
+    """`proposed` is retired; its live successor is `awaiting-review`, the
     initial waiting-on-review state.  The old single `reviewed` outcome forks
     into a blocking arm and a clearing arm, but a not-yet-reviewed proposal
     still cannot leap straight to a decision."""
@@ -209,7 +209,7 @@ def test_awaiting_review_lists_review_outcomes_not_a_direct_decision(
 
 def test_awaiting_decision_lists_revising_and_decision_targets(
         tmp_path, monkeypatch, capsys):
-    """H1 retired `reviewed`; the live state offering the same four-way fork
+    """`reviewed` is retired; the live state offering the same four-way fork
     (return for more work, or straight to any decision) is `awaiting-decision`,
     with `revising` standing in for the old `revised` return arm."""
     repo = _make_repo(tmp_path)
@@ -227,8 +227,8 @@ def test_plan_required_review_is_offered_no_fast_path(tmp_path, monkeypatch,
                                                       capsys):
     """A `required(...)` plan is offered its review floor and NOTHING past it.
 
-    Rewritten at H1, and the reason is worth keeping: this node used to build
-    its fixture at `status="open"`. Once H1 retired that token the plan had no
+    The reason this was rewritten is worth keeping: the fixture used to be
+    built at `status="open"`. Once that token retired, the plan had no
     legal transitions at all, so `next` printed only a conformance violation --
     and the old assertion (`"-> awaiting-plan-review" in out`) still PASSED,
     because the violation's own migration hint contains the literal text
@@ -257,7 +257,7 @@ def test_plan_required_review_is_offered_no_fast_path(tmp_path, monkeypatch,
 
 
 def test_plan_open_not_required_lists_implementing(tmp_path, monkeypatch, capsys):
-    """H1 retired `open`/`executing`; the not-required fast path is offered
+    """`open`/`executing` are retired; the not-required fast path is offered
     only from the not-yet-created state (`""`), never from
     `awaiting-plan-review`, and its live target is `implementing`."""
     repo = _make_repo(tmp_path)
@@ -285,7 +285,7 @@ def test_illegal_transition_is_refused(tmp_path, monkeypatch, capsys):
 def test_review_scaffold_carries_no_reviewer_attribution(tmp_path, monkeypatch, capsys):
     """A generated review scaffold never attributes a reviewer identity.
 
-    H1 re-homed the `## Review` template off the retired `-> reviewed` arm
+    The `## Review` template was re-homed off the retired `-> reviewed` arm
     onto the two live arms a landing review selects (`revising` on a blocking
     pass, `awaiting-decision` on a clearing one); this re-points to
     `awaiting-review -> revising`, one of the two.
@@ -307,7 +307,7 @@ def test_review_scaffold_carries_no_reviewer_attribution(tmp_path, monkeypatch, 
 def test_decision_scaffold_requires_verbatim_blockquote_and_disclaims(
         tmp_path, monkeypatch, capsys):
     """A -> accepted scaffold emits an EMPTY verbatim blockquote + a
-    cannot-certify-authenticity disclaimer (R1/R2)."""
+    cannot-certify-authenticity disclaimer."""
     repo = _make_repo(tmp_path)
     # status=awaiting-decision (so accepted is legal) -- the live successor of
     # the retired `revised`, which offered the same direct decision targets.
@@ -344,7 +344,7 @@ def test_accepted_gate_reports_missing_independent_review(
     assert "does NOT present it as ready" in out
 
 
-# --- the identity model (R5) -------------------------------------------------
+# --- the identity model ------------------------------------------------------
 
 
 def test_identity_model_classifies_ai_agents_and_human_residual():
@@ -410,7 +410,7 @@ def test_scan_flags_review_authored_by_proposal_author(tmp_path, monkeypatch, ca
     """The sole behavioural guard on `_PROPOSAL_POST_REVIEW_STATES` staying wide.
 
     **The `status="reviewed"` fixture is deliberate -- do not "modernize" it.**
-    Code review [C8] measured the two-step trap: (1) a hygiene pass moves this
+    The two-step trap, measured: (1) a hygiene pass moves this
     fixture to a live token like `awaiting-decision` -- still green, since that
     token is in the tuple too; (2) a later maintainer narrows the tuple, dropping
     its historical members -- also green, because step (1) removed the only
@@ -448,13 +448,13 @@ def test_scan_flags_decision_without_blockquote(tmp_path, monkeypatch, capsys):
 
 
 def test_scan_flags_plan_archived_without_code_review(tmp_path, monkeypatch, capsys):
-    """**This fixture is [R3-E1]'s executed bypass, and the node that pins it.**
+    """**This fixture is the executed bypass, and the node that pins it.**
 
     The plan declares `Plan review: not required(doc)`. Before Chunk C the
     Code-review obligation was carried by a separate `_has_kind` presence test,
     because `review_record_violations` sat behind `requires_review` and a `not
     required` plan never reached it -- so deleting that presence test (which
-    R5'' does) would have made exactly this fixture archive **clean**. The
+    the predicate does) would have made exactly this fixture archive **clean**. The
     message asserted below now comes from the one predicate, reached on the
     EFFECTIVE STATE alone.
     """
@@ -482,11 +482,11 @@ def test_decision_authored_by_ai_agent_is_flagged(tmp_path, monkeypatch, capsys)
     assert "AI agent" in out and "human Maintainer authority" in out
 
 
-# --- Sharpening regressions (External review P2/P3) --------------------------
+# --- Sharpening regressions --------------------------------------------------
 
 
 def test_decision_by_versioned_ai_name_is_flagged(tmp_path, monkeypatch, capsys):
-    """P2: a versioned/punctuated AI byline (Claude-3.5) must not launder into
+    """A versioned/punctuated AI byline (Claude-3.5) must not launder into
     the human residual and pass the Decision human-authority check."""
     repo = _make_repo(tmp_path)
     _write_proposal(repo, "p.md", status="accepted", author="Claude", body=(
@@ -508,7 +508,7 @@ def test_decision_by_versioned_ai_name_is_flagged(tmp_path, monkeypatch, capsys)
 
 
 def test_scan_flags_proposal_with_missing_status(tmp_path, monkeypatch, capsys):
-    """P2: a proposal whose Status line is absent must itself be a violation,
+    """A proposal whose Status line is absent must itself be a violation,
     not a silent pass that hides every downstream check."""
     repo = _make_repo(tmp_path)
     # No Status line at all, but a hostile Decision (AI author, no blockquote).
@@ -525,7 +525,7 @@ def test_scan_flags_proposal_with_missing_status(tmp_path, monkeypatch, capsys):
 
 
 def test_blockquote_inside_code_fence_does_not_count(tmp_path, monkeypatch, capsys):
-    """P3: a '>' inside a fenced code block is not an isolated authorization
+    """A \'>\' inside a fenced code block is not an isolated authorization
     blockquote -- a Decision whose only '>' is fenced must be flagged."""
     # Unit-level: the structural helper rejects a fenced quote, accepts a real one.
     assert not planner._has_isolated_blockquote("```\n\n> looks isolated\n```\n")
@@ -704,7 +704,7 @@ def test_decision_by_configured_human_maintainer_is_accepted(tmp_path, monkeypat
     assert "UNRECOGNIZED" not in out
 
 
-# --- archive-precondition disposition block (deferral-discipline C1) ----------
+# --- archive-precondition disposition block ----------------------------------
 #
 # The planner's archive-precondition recognizer must accept BOTH the new
 # `Dispositions:` spelling and the older `Follow-ups migrated to:` one.  The
@@ -787,11 +787,11 @@ def _pass_block(*, reviewer: str = "R", date: str = "2026-05-01",
                 assurance: str | None = "standard",
                 bold_basis: bool = True,
                 trailer: str = "") -> str:
-    """One review pass in the S1/S2 shape, with each part independently
+    """One review pass in the documented shape, with each part independently
     omittable so a node can vary exactly one property.
 
-    **P1 added the four basis fields to the DEFAULT output**, and that is a
-    deliberate change to a shared fixture rather than a convenience: after P1 a
+    **The four basis fields are in the DEFAULT output**, and that is a
+    deliberate choice for a shared fixture rather than a convenience: a
     conforming Plan-review pass *is* one that carries the basis, so a fixture
     whose default omitted it would no longer mean "a conforming pass" and the ~30
     nodes built on it would be asserting against a record the contract refuses.
@@ -821,7 +821,7 @@ def _pass_block(*, reviewer: str = "R", date: str = "2026-05-01",
 
 #: The four-field review basis, in the bolded house spelling.
 #:
-#: Added by P1 to the three hand-written pass bodies below.  Each of those nodes
+#: Added to the three hand-written pass bodies below.  Each of those nodes
 #: tests exactly ONE property -- a synthesized Section's body, an unparseable
 #: heading's boundary, the `_LEGACY_PASSES` count fence -- and the basis is
 #: orthogonal to all three, so the fields are SUPPLIED rather than the
@@ -840,10 +840,10 @@ def _plan_art(tmp_path: Path, body: str, *, status: str = "implementing",
               stem: str = _GATE_STEM, header_extra: str = ""):
     """Parse a plan fixture into an Artifact (the predicate's input).
 
-    *header_extra* (P5) is one or more extra header lines, placed where a plan's
+    *header_extra* is one or more extra header lines, placed where a plan\'s
     metadata block lives -- above the first `##`.  Empty by default, and the
     interpolation is `\\n{header_extra}\\n`, so every pre-P5 caller writes the
-    same bytes it always did.  P5 needs the *header* specifically: its trigger
+    same bytes it always did.  The *header* specifically is what matters: the trigger
     field is a header declaration, and a fixture that could only put the field in
     the body could not test that boundary.
     """
@@ -863,20 +863,20 @@ def _violations(tmp_path: Path, body: str, **kw) -> list:
     return planner.review_record_violations(_plan_art(tmp_path, body, **kw))
 
 
-# C.1 -- S8 floor: at least one S1 pass must satisfy S5.
+# C.1 -- the tier floor: at least one conforming pass must satisfy it.
 
 
 def test_c1_floor_requires_a_conforming_pass_that_meets_the_declared_tier(
         tmp_path):
-    """S8: the floor is not cleared by presence, and not by a lower tier.
+    """The floor is not cleared by presence, and not by a lower tier.
 
-    Two directions, both of which the presence gate cleared: no S1 pass at all
-    (only a bare container), and an S1 pass whose declared tier is BELOW the
+    Two directions, both of which the presence gate cleared: no conforming pass
+    at all (only a bare container), and one whose declared tier is BELOW the
     required floor.  The tier comparison is what separates the second from a
     clean record."""
     # (a) a conforming External pass on an External floor clears.
     assert _violations(tmp_path, _pass_block(tier="External")) == []
-    # (b) no S1 pass at all -> the floor violation, quoting the near miss.
+    # (b) no conforming pass at all -> the floor violation, quoting the near miss.
     only_container = _violations(tmp_path, "## Plan review\n\n(awaiting)\n")
     assert len(only_container) == 1
     assert "no conforming pass satisfies it" in only_container[0]
@@ -890,7 +890,7 @@ def test_c1_floor_requires_a_conforming_pass_that_meets_the_declared_tier(
                        plan_review="required(Internal)") == []
 
 
-# C.2 -- S1 heading match: H2, `--` separators, an ISO-shaped date.
+# C.2 -- heading match: H2, `--` separators, an ISO-shaped date.
 
 
 @pytest.mark.parametrize("near_miss", [
@@ -905,7 +905,7 @@ def test_c1_floor_requires_a_conforming_pass_that_meets_the_declared_tier(
 ])
 def test_c2_a_near_miss_heading_is_not_a_pass_and_fails_closed(
         tmp_path, near_miss):
-    """S1/S8: each of these cleared the presence gate; none is a pass now.
+    """Each of these cleared the presence gate; none is a pass now.
 
     And the refusal is the FLOOR sentence -- "no conforming pass has landed" --
     never "a pass with problems": a near miss must not be parsed as a pass and
@@ -919,12 +919,12 @@ def test_c2_a_near_miss_heading_is_not_a_pass_and_fails_closed(
     assert near_miss.splitlines()[0] in v[0]
 
 
-# CR1 -- the gate must match S1's exact RAW heading grammar, not merely a
+# The gate must match the exact RAW heading grammar, not merely a
 # heading `_HEADER_RE` (the older, more permissive generic parser) happened
 # to accept.  Two independent directions, both reproduced against
 # `review_record_violations` with a fresh Codex External code review at
-# `dd91ccb`..`fd296fb`: shapes `_HEADER_RE` tolerates but S1 does not (must
-# NOT be passes), and a shape S1 accepts but `_HEADER_RE` could not even
+# `dd91ccb`..`fd296fb`: shapes `_HEADER_RE` tolerates but the grammar does not
+# (must NOT be passes), and a shape the grammar accepts but `_HEADER_RE` could not even
 # produce a Section for (must BE a pass).
 
 
@@ -936,10 +936,10 @@ def test_c2_a_near_miss_heading_is_not_a_pass_and_fails_closed(
 ])
 def test_cr1_header_re_whitespace_tolerance_is_not_s1_conformance(
         tmp_path, near_miss):
-    """`_HEADER_RE`'s `\\s+` around `##` and `--` is looser than S1's single
-    spaces.  Before CR1, `_pass_headings` trusted any Section `_HEADER_RE`
-    produced and never checked the raw line against S1, so both of these
-    cleared the presence gate despite matching no S1 regex."""
+    """`_HEADER_RE`\'s `\\s+` around `##` and `--` is looser than the grammar\'s
+    single spaces.  `_pass_headings` used to trust any Section `_HEADER_RE`
+    produced and never check the raw line, so both of these
+    cleared the presence gate despite matching no grammar regex."""
     v = _violations(tmp_path, near_miss)
     assert len(v) == 1, v
     assert "no conforming pass satisfies it" in v[0]
@@ -949,7 +949,7 @@ def test_cr1_header_re_whitespace_tolerance_is_not_s1_conformance(
 
 def test_cr1_trailing_whitespace_after_the_date_is_not_a_pass(tmp_path):
     """Same defect, isolated: `_HEADER_RE`'s trailing `\\s*` before `$`
-    tolerated trailing spaces after the date; S1 has no such allowance.  The
+    tolerated trailing spaces after the date; the grammar has no such allowance.  The
     near-miss quote is right-stripped by `_near_miss_headings` (as it is for
     every other near miss), so the containment check compares the stripped
     form rather than the fixture's own trailing spaces."""
@@ -964,9 +964,9 @@ def test_cr1_trailing_whitespace_after_the_date_is_not_a_pass(tmp_path):
 
 def test_cr1_a_reviewer_field_with_literal_parens_is_still_a_conforming_pass(
         tmp_path):
-    """The INVERSE mismatch: S1's reviewer group (`[^\\n]+?`) accepts literal
+    """The INVERSE mismatch: the reviewer group (`[^\\n]+?`) accepts literal
     parentheses, but `_HEADER_RE`'s `(?P<role>[^)\\n]*)` machinery cannot
-    parse a line shaped like this at all -- so before CR1, `_parse_sections`
+    parse a line shaped like this at all -- so `_parse_sections`
     produced no Section for it, and a conforming pass silently failed to
     count. A synthesized Section must carry a correct body: the `**Tier**:`
     and `**Findings**:` lines below must still be read from it."""
@@ -976,7 +976,7 @@ def test_cr1_a_reviewer_field_with_literal_parens_is_still_a_conforming_pass(
     assert _violations(tmp_path, body) == []
 
 
-# C.3 -- S1 date: calendar-valid, not merely date-shaped.
+# C.3 -- the date: calendar-valid, not merely date-shaped.
 
 
 @pytest.mark.parametrize("bad", ["2026-99-99", "2026-02-30", "0000-00-00"])
@@ -994,11 +994,11 @@ def test_c3_a_real_leap_date_is_accepted(tmp_path):
     assert _violations(tmp_path, _pass_block(date="2028-02-29")) == []
 
 
-# C.4 -- S7: the disposition pairing is POSITIONAL.
+# C.4 -- the disposition pairing is POSITIONAL.
 
 
 def test_c4_findings_raised_requires_a_disposition_in_that_pass(tmp_path):
-    """S7, both house forms, and the positional bound.
+    """Both house forms, and the positional bound.
 
     The tree uses both `### Sharpening` (inside the pass body) and
     `## Response to plan review` (after the pass, before the next one), so the
@@ -1026,7 +1026,7 @@ def test_c4_findings_raised_requires_a_disposition_in_that_pass(tmp_path):
 
 
 def test_c4b_one_response_dispositions_the_whole_group(tmp_path):
-    """S7's group rule: one Response answers every pass above it.
+    """The group rule: one Response answers every pass above it.
 
     A plan declaring `required(A + B)` is reviewed by two obligations in
     sequence and answered once. Under the previous next-pass ceiling the first
@@ -1067,7 +1067,7 @@ def test_c4b_one_response_dispositions_the_whole_group(tmp_path):
     assert len(none) == 2
 
 
-# CR2 -- S7's second house form is EXACTLY `## Response to plan review`, not
+# The second house form is EXACTLY `## Response to plan review`, not
 # any kind that merely starts with "response".  Reproduced by a fresh Codex
 # External code review at `dd91ccb`..`fd296fb`: an unrelated `## Response`
 # or `## Response to proposal review` cleared a raised finding it never
@@ -1081,7 +1081,7 @@ def test_c4b_one_response_dispositions_the_whole_group(tmp_path):
 def test_cr2_an_unrelated_response_kind_does_not_satisfy_raised_findings(
         tmp_path, unrelated_kind):
     """A kind that only shares the `response` PREFIX with the documented
-    house form must not discharge S7 -- before CR2, `_has_disposition`'s
+    house form must not discharge it -- `_has_disposition`\'s
     `.startswith("response")` let it."""
     body = (
         _pass_block(findings="raised")
@@ -1093,8 +1093,8 @@ def test_cr2_an_unrelated_response_kind_does_not_satisfy_raised_findings(
 
 def test_cr2_the_documented_house_form_still_satisfies_raised_findings(
         tmp_path):
-    """The positive control for CR2's fix: the EXACT documented kind, spelled
-    with different case, still clears -- S3/S7's field reads stay
+    """The positive control: the EXACT documented kind, spelled
+    with different case, still clears -- the field reads stay
     case-insensitive; only the kind-prefix bug is repaired."""
     body = (
         _pass_block(findings="raised")
@@ -1102,7 +1102,7 @@ def test_cr2_the_documented_house_form_still_satisfies_raised_findings(
     assert _violations(tmp_path, body) == []
 
 
-# C.5 -- S3's three fail-closed directions, on both fields.
+# C.5 -- the three fail-closed directions, on both fields.
 
 
 @pytest.mark.parametrize("field,body,expected", [
@@ -1126,7 +1126,7 @@ def test_c5_each_s3_direction_is_a_violation_not_a_silent_pass(
     must not make, so agreeing duplicates are still refused.
 
     The `missing Tier` fixture carries a `(Maintainer)` role parenthetical and
-    a human byline, which pins S4 as well: the tier is read from the
+    a human byline, which pins the role rule as well: the tier is read from the
     `**Tier**:` line and from NOWHERE else -- not the byline, not the role."""
     if expected.startswith("duplicate"):
         line = f"**{field}**: " + ("External" if field == "Tier" else "none")
@@ -1135,7 +1135,7 @@ def test_c5_each_s3_direction_is_a_violation_not_a_silent_pass(
     assert any(expected in msg for msg in v), (expected, v)
 
 
-# C.6 -- S6 normalization of the required tier.
+# C.6 -- normalization of the required tier.
 
 
 def _generator():
@@ -1179,21 +1179,21 @@ def test_c6_every_live_required_form_resolves_to_exactly_one_tier():
     "required",                # no group at all
 ])
 def test_c6_a_form_that_does_not_name_a_tier_fails_closed(field):
-    """S6 fails closed: no default tier, and no accidental resolution."""
+    """Fails closed: no default tier, and no accidental resolution."""
     tier, violation = planner.normalize_required_tier(field)
     assert tier is None
     assert violation
 
 
-# C.7 -- S5 ordering: the order is an ORDER, not an equality.
+# C.7 -- the order is an ORDER, not an equality.
 
 
 def test_c7_external_satisfies_an_internal_floor_and_a_human_declares_it(
         tmp_path):
     """`declared >= required`, so External clears an Internal floor.
 
-    This also runs `[E1]`'s sharpest case: the published format had no role
-    field, so a rule keyed on one would have blocked a human review.  Under S4
+    This also runs the sharpest case: the published format had no role
+    field, so a rule keyed on one would have blocked a human review.  Under the rule
     a human declares `**Tier**: External` in the same line-shape an agent does,
     and the gate reads that line and nothing else."""
     assert planner.tier_satisfies("External", "internal") is True
@@ -1222,7 +1222,7 @@ def test_c8_scan_and_the_implementing_gate_agree_on_the_same_record(
     `_gating_preconditions(..., "implementing")` (what `next --to implementing`
     requires of a plan still `awaiting-plan-review`).  Status is the only
     difference between the two fixtures.  (`implementing` is the live
-    successor of the retired `executing`, which this node targeted before H1.)
+    successor of the retired `executing`, which this node used to target.)
 
     **This node asserts AGREEMENT, never a particular verdict.**  Deliberately:
     a node that also pinned what the verdict should be would redden whenever
@@ -1252,7 +1252,7 @@ def test_c8_scan_and_the_implementing_gate_agree_on_the_same_record(
         assert msg in desc
 
 
-# C.9a/b/c -- S9: the legacy population is ENUMERATED, not dated.
+# C.9a/b/c -- the legacy population is ENUMERATED, not dated.
 
 
 @pytest.mark.parametrize("date", ["2020-01-01", "0000-00-00", "2026-05-01"])
@@ -1261,7 +1261,7 @@ def test_c9a_a_pass_outside_the_manifest_gets_no_exemption_whatever_its_date(
     """The S11 finding, pinned closed.
 
     Under the replaced design a pass dated before an epoch was exempt from
-    S2/S3/S7 **and** satisfied the floor by presence -- so appending
+    all three field checks **and** satisfied the floor by presence -- so appending
     `## Plan review -- Any Name -- 2020-01-01` bought a permanent exemption by
     typing a smaller number, and `0000-00-00` sorts below every achievable
     epoch.  There is no date comparison left in the gate: admission is
@@ -1292,12 +1292,12 @@ def test_c9b_re_appending_an_admitted_heading_is_refused_at_count_plus_one(
         f"the manifest now admits {dig} {n} time(s) at {stem}")
     # The fence itself, at the boundary: occurrences 1..n are admitted and
     # n + 1 is not.  Asserted directly on `_is_legacy` so the count property
-    # has a check that no change to the S2/S3 messages can move.
+    # has a check that no change to those messages can move.
     for k in range(1, n + 2):
         assert planner._is_legacy(stem, dig, {dig: k}) is (k <= n), k
     # The basis lines are present and the Tier/Findings lines are not: that is
     # precisely the scoping this node now also witnesses.  `_LEGACY_PASSES`
-    # exempts this pass from S2/S3/S7; it does NOT exempt it from P1's basis,
+    # exempts this pass from the three field checks; it does NOT exempt the basis,
     # which has its own manifest and does not name this stem.
     legacy = (f"{heading}\n\n" + _BASIS_LINES
               + "\nan old-format record, no Tier/Findings lines.\n\n")
@@ -1305,16 +1305,16 @@ def test_c9b_re_appending_an_admitted_heading_is_refused_at_count_plus_one(
     # presence exactly as they did before the schema existed.
     assert _violations(tmp_path, legacy * n, stem=stem) == []
     # One more: occurrence n + 1 is not admitted and must conform.  Its
-    # refusal is CARRIED BY S3's missing-field violation -- there is no other
+    # refusal is CARRIED BY the missing-field violation -- there is no other
     # signal a non-admitted duplicate can produce, since the n admitted passes
-    # already satisfy the floor by presence.  So silencing S3 also silences
+    # already satisfy the floor by presence.  So silencing that also silences
     # this half; the boundary assertion above is the part that cannot be.
     over = _violations(tmp_path, legacy * (n + 1), stem=stem)
     assert any("missing Tier" in msg for msg in over), over
 
 
 def test_c9c_every_manifest_entry_is_re_derived_by_the_generator():
-    """S9(c)/(f): the manifest is generated, not hand-editable.
+    """The manifest is generated, not hand-editable.
 
     Subset direction ONLY, deliberately: a pass appended after the manifest was
     generated legitimately exists and legitimately is not in it, so an equality
@@ -1404,7 +1404,7 @@ _ARCHIVED_HEAD = (
     "# Plan: some-plan\n\n**Status**: archived\n**Author**: Someone\n\n"
 )
 
-#: A fully schema-conforming Code-review pass (Chunk C / R2', R2''), written in
+#: A fully schema-conforming Code-review pass, written in
 #: the accepted parent's UNBOLDED basis spelling.  `_code_review_pass()` below
 #: is the parameterized form; this constant is the clearing default, needed by
 #: the archive-precondition pair above it.
@@ -1424,11 +1424,11 @@ _CODE_REVIEW_PASS = (
 def test_an_archived_plan_with_only_the_placeholder_is_a_violation(tmp_path):
     """End to end through the reader, not just the helper.
 
-    **Assertion changed by Chunk C (`code-review-blindness` R5'').** The
+    **Assertion changed under accepted `code-review-blindness`.** The
     property this node names is unchanged and is what it still pins: the shipped
     placeholder does not satisfy the archive obligation. What changed is which
     predicate says so. The marker check that produced the old `reviewer marker`
-    wording was one of the two weak Code-review opinions R5'' deletes -- "presence
+    wording was one of the two weak Code-review opinions now deleted -- "presence
     becomes a consequence of the schema check rather than a second, weaker
     opinion" -- so the refusal now comes from the schema check, which is strictly
     stronger: `## Code review` is not a conforming pass at all.
@@ -1550,7 +1550,7 @@ class TestArchiveAttestationGrammar:
 
     def test_the_legacy_mid_line_block_is_accepted(self):
         # The `^`-anchored predicate rejected this real block; closing that
-        # false-fail is A3.  Shape taken from
+        # false-fail. Shape taken from
         # dev/plans/archive/adopter-entry-doc-refresh.md:173.
         text = (_LT + "Archived 2026-06-12. **Follow-ups migrated to:** "
                 "`dev/PLANNING.md` > Queued\n\n" + _REAL_SIGNOFF)
@@ -1614,7 +1614,7 @@ class TestArchiveGatesConsultTheirPredicates:
 
 
 class TestMessagesClaimOnlyTheRecordShape:
-    """B2/B3: no operator-facing gate may say a review *occurred*.
+    """No operator-facing gate may say a review *occurred*.
 
     The predicate reads text. It cannot distinguish a review from a
     convincingly-shaped section, and the archive gate used to say it could.
@@ -1639,7 +1639,7 @@ class TestMessagesClaimOnlyTheRecordShape:
 
 
 # ---------------------------------------------------------------------------
-# Chunk C -- the gate inventory.  `[I3]`: enumerate EVERY gate in both `--to`
+# The gate inventory: enumerate EVERY gate in both `--to`
 # lists with the predicate supplying it, so coverage is visible rather than
 # inferred from the handful anyone happened to investigate.
 # ---------------------------------------------------------------------------
@@ -1749,16 +1749,16 @@ def test_documentation_illustrates_the_form_with_inline_code():
     assert planner._has_disposition_attestation(text) is False
 
 
-# B1 -- one boundary set for every pass body, of either record kind.
+# One boundary set for every pass body, of either record kind.
 
 
 class TestPassBodyBoundaries:
-    """Chunk B, B1: a later pass heading terminates the pass above it **even
+    """A later pass heading terminates the pass above it **even
     when ``_HEADER_RE`` cannot parse that heading**.
 
-    Before B1 only *synthesized* sections were sliced against the unified
+    Only *synthesized* sections used to be sliced against the unified
     boundary set; a recognized pass kept whatever body ``_parse_sections`` gave
-    it, and ``_parse_sections`` knows nothing about raw S1 lines.  So an
+    it, and ``_parse_sections`` knows nothing about raw pass lines.  So an
     unparseable later heading was invisible to it, the earlier pass's body ran
     through that heading, and the later pass's attestation lines were counted as
     **the earlier pass's duplicates** -- a silent misattribution that blamed a
@@ -1809,7 +1809,7 @@ class TestPassBodyBoundaries:
     def test_reslicing_does_not_mutate_the_shared_section_bodies(
             self, tmp_path):
         """`art.sections` is shared with `_has_disposition`, `_reviewers` and the
-        Decision predicates.  B1 corrects the *pass view* only; narrowing a body
+        Decision predicates.  This corrects the *pass view* only; narrowing a body
         in place would silently change what those consumers see."""
         art = _plan_art(tmp_path, self.BODY)
         before = {s.line_no: s.body for s in art.sections}
@@ -1817,8 +1817,8 @@ class TestPassBodyBoundaries:
         assert {s.line_no: s.body for s in art.sections} == before
 
 
-# B3 -- Code-review disposition: exact `Answers:` binding, and the deliberate
-# asymmetry against B2's Plan-review group rule.
+# Code-review disposition: exact `Answers:` binding, and the deliberate
+# asymmetry against the Plan-review group rule.
 
 
 _CR_HEAD = "## Code review -- Ann -- 2026-08-01\n\nbody\n\n"
@@ -1829,7 +1829,7 @@ def _cr(tmp_path, body, **kw):
 
 
 class TestCodeReviewAnswersBinding:
-    """Accepted `code-review-blindness` R2'' as sharpened by its Revision 3.
+    """Accepted `code-review-blindness`, exact-grammar clause, as sharpened by its Revision 3.
 
     Six refusal directions, each with its **own** message, because they send a
     reader to different places: an `unmatched` binding reads as "that reviewer
@@ -1881,7 +1881,7 @@ class TestCodeReviewAnswersBinding:
         assert len(out) == 1 and "AFTER this Response" in out[0]
 
     def test_round_is_omitted_iff_the_target_omits_it(self, tmp_path):
-        """R2'': `(round N)` omitted iff the target omits it. A round-less value
+        """`(round N)` omitted iff the target omits it. A round-less value
         must not bind a numbered pass, or one Response silently answers a pass
         it does not name."""
         out = _cr(tmp_path, (
@@ -1904,7 +1904,7 @@ class TestCodeReviewAnswersBinding:
 
 
 class TestTheTwoRecordTypesDisagreeOnPurpose:
-    """B4's opposing falsifiers. A Plan review is answered as a **round** (one
+    """The opposing falsifiers. A Plan review is answered as a **round** (one
     Response dispositions the group); a Code review's findings are answered
     **individually** (each Response names its pass). Identical document shapes,
     opposite correct answers -- so weakening either rule toward the other
@@ -1925,14 +1925,14 @@ class TestTheTwoRecordTypesDisagreeOnPurpose:
         "## Response to plan review -- Bob -- 2026-08-06\n\nanswered\n")
 
     def test_code_review_binds_only_the_named_pass(self, tmp_path):
-        """Weakening B3 into B2's group rule reddens this node."""
+        """Weakening the exact binding into the group rule reddens this node."""
         art = _plan_art(tmp_path, self.TWO_PASSES_ONE_RESPONSE_CR)
         got = {r: planner.code_review_pass_is_dispositioned(art, ln)
                for ln, r, _d, _n in planner._code_review_pass_lines(art)}
         assert got == {"Ann": False, "Cid": True}
 
     def test_plan_review_dispositions_the_whole_group(self, tmp_path):
-        """Weakening B2 into B3's exact binding -- or back to the pre-286f07d
+        """Weakening the group rule into the exact binding -- or back to the pre-286f07d
         positional ceiling -- reddens this node."""
         art = _plan_art(tmp_path, self.TWO_PASSES_ONE_RESPONSE_PLAN)
         got = {sec.name: planner._has_disposition(art, sec)
@@ -1951,11 +1951,12 @@ class TestTheTwoRecordTypesDisagreeOnPurpose:
 # ---------------------------------------------------------------------------
 # Chunk C -- the Code-review record schema.
 #
-# Contract: accepted `code-review-blindness`, whose **R2 is superseded**.  The
-# operative clauses are R2' (the latest pass must CLEAR; there is no disposition
-# branch), R2'' (document-order recency, the `(round N)` rules, the `Answers:`
-# grammar), R3' (legacy keyed by digest + occurrence count against a named
-# baseline commit) and R5'' (one predicate on an explicit EFFECTIVE STATE,
+# Contract: accepted `code-review-blindness`, whose original archive clause is
+# superseded.  The operative clauses are: the latest pass must CLEAR (there is
+# no disposition branch); the exact grammar (document-order recency, the
+# `(round N)` rules, the `Answers:` binding); legacy keyed by digest +
+# occurrence count against a named baseline commit; and one predicate on an
+# explicit EFFECTIVE STATE,
 # reached by both callers regardless of the `Plan review:` declaration).
 #
 # Every node below carries a single-property falsifier -- a mutation applied to
@@ -2003,9 +2004,9 @@ def _code_review_pass(*, reviewer: str = "Reviewer A (External)",
 def _cr_violations(tmp_path: Path, body: str, *, state: str = "archived",
                    stem: str = _CR_STEM,
                    plan_review: str = "not required(Chunk C fixture)") -> list:
-    """The ONE predicate on an explicit effective state (R5'').
+    """The ONE predicate on an explicit effective state.
 
-    `plan_review` defaults to `not required(...)` on purpose: that is [R3-E1]'s
+    `plan_review` defaults to `not required(...)` on purpose: that is the
     executed bypass shape, so every node here also asserts the Code-review half
     is reached without the declaration's help.
     """
@@ -2015,7 +2016,7 @@ def _cr_violations(tmp_path: Path, body: str, *, state: str = "archived",
 
 
 class TestCodeReviewSchema:
-    """R2's mandatory fields, read from the scope R2 names."""
+    """The mandatory fields, read from the scope the contract names."""
 
     @pytest.mark.parametrize("field,kwargs", [
         ("Reviewed commit", {"commit": None}),
@@ -2057,7 +2058,7 @@ class TestCodeReviewSchema:
         assert any("empty 'Target:'" in m for m in v), v
 
     def test_fields_below_the_first_h3_do_not_count(self, tmp_path):
-        """R2: the mandatory fields sit BEFORE the pass's first H3."""
+        """The mandatory fields sit BEFORE the pass\'s first H3."""
         v = _cr_violations(tmp_path, _code_review_pass(
             commit=None, trailer="### Coverage\n\nReviewed commit: abc1234\n"))
         assert any("missing 'Reviewed commit:'" in m for m in v), v
@@ -2081,10 +2082,10 @@ class TestCodeReviewSchema:
 
 
 class TestCodeReviewBoundariesAreCanonical:
-    """R4 -- ONE boundary set, of **both** record kinds.
+    """ONE boundary set, of **both** record kinds.
 
-    B1 built the set from `_S1_PASS_RE` alone, because the Code-review grammar
-    did not exist yet; R4 asks for both kinds and C2 completes it. The witness
+    The set was built from `_S1_PASS_RE` alone, because the Code-review grammar
+    did not exist yet; both kinds are needed, and this completes it. The witness
     has to be a heading `_HEADER_RE` cannot parse -- a reviewer field carrying
     parentheses outside the `(<role>)` position is enough -- because every
     heading it *can* parse is already a boundary via `art.sections`, so a
@@ -2117,7 +2118,7 @@ class TestCodeReviewBoundariesAreCanonical:
 
 
 class TestCodeReviewVerdictClasses:
-    """R2' -- two closed classes, and only one of them clears archive."""
+    """Two closed classes, and only one of them clears archive."""
 
     @pytest.mark.parametrize("verdict", planner.CODE_REVIEW_CLEARING_VERDICTS)
     def test_every_clearing_verdict_clears(self, tmp_path, verdict):
@@ -2164,13 +2165,13 @@ class TestCodeReviewVerdictClasses:
         assert any("duplicate Verdict" in m for m in v), v
 
     def test_findings_raised_with_a_clearing_verdict_is_complete(self, tmp_path):
-        """[A1]: the common case. A schema must not criminalise it -- a reviewer
+        """The common case. A schema must not criminalise it -- a reviewer
         who raises findings and still ships has written a complete record."""
         assert _cr_violations(
             tmp_path, _code_review_pass(findings="raised")) == []
 
     def test_a_response_does_not_clear_a_blocking_verdict(self, tmp_path):
-        """**R2', and the reason R2 was superseded.** [R2-E1]: letting an
+        """**The reason the original clause was superseded.** Letting an
         author's own Response convert `REVISE` into archive eligibility would
         weaken the accepted parent's independent-correction-review boundary --
         which this amendment exists to SUPPLY, not to weaken. The binding below
@@ -2195,7 +2196,7 @@ class TestCodeReviewVerdictClasses:
 
 
 class TestCodeReviewRecency:
-    """R2'' -- document order is authoritative."""
+    """Document order is authoritative."""
 
     def test_a_clearing_pass_earlier_does_not_rescue_a_blocking_latest(
             self, tmp_path):
@@ -2236,7 +2237,7 @@ class TestCodeReviewRecency:
     def test_two_unnumbered_passes_on_one_date_are_allowed(self, tmp_path):
         """One archived plan has exactly this -- two reviewers on 2026-08-05 --
         and the ambiguity it creates is answered where it bites, in the
-        `Answers:` exactly-one-match rule ([R3-E2]), not by refusing the passes.
+        `Answers:` exactly-one-match rule, not by refusing the passes.
         """
         body = _code_review_pass(verdict="Accept") + _code_review_pass(
             reviewer="Reviewer B (External)")
@@ -2249,7 +2250,7 @@ class TestCodeReviewRecency:
 
 
 class TestCodeReviewBindingReachesTheGate:
-    """B3 built the `Answers:` predicate; C1 is what wires it in."""
+    """The `Answers:` predicate exists here; this is what wires it in."""
 
     @pytest.mark.parametrize("answers,expected", [
         (None, "missing 'Answers:'"),
@@ -2272,10 +2273,10 @@ class TestCodeReviewBindingReachesTheGate:
 
 
 class TestCodeReviewLegacyEnumeration:
-    """R3' -- forward-only, keyed non-replayably against a named baseline."""
+    """Forward-only, keyed non-replayably against a named baseline."""
 
     def test_the_manifest_is_re_derived_by_the_generator(self):
-        """The C4/C3 separation, checked in the only direction that is sound.
+        """The separation, checked in the only direction that is sound.
 
         Subset only, deliberately, for the reason the Plan-review manifest's own
         node states: a record appended after the baseline legitimately exists and
@@ -2298,7 +2299,7 @@ class TestCodeReviewLegacyEnumeration:
                     "-- a fabricated or stale manifest entry")
 
     def test_the_baseline_commit_is_the_one_the_manifest_records(self):
-        """R3' requires the baseline pinned to ONE named commit recorded in the
+        """The baseline is pinned to ONE named commit recorded in the
         manifest. Two homes for one fact drift silently, so the planner's
         docstring and the generator's constant are compared rather than trusted.
         """
@@ -2356,7 +2357,7 @@ class TestCodeReviewLegacyEnumeration:
                 planner._LEGACY_CODE_REVIEW_RECORDS) is (k <= n), k
 
     def test_a_legacy_pass_satisfies_presence_without_the_schema(self, tmp_path):
-        """Grandfathering is the whole of R3': a record the Maintainer accepted
+        """Grandfathering is the whole point: a record the Maintainer accepted
         before the schema existed is admitted as it stands."""
         stem = "review-record-integrity"
         heading, = [h for h in _real_headings(stem)
@@ -2366,7 +2367,7 @@ class TestCodeReviewLegacyEnumeration:
             stem=stem) == []
 
     def test_a_legacy_blocking_pass_needs_its_named_disposition(self, tmp_path):
-        """R3', final bullet: a blocking legacy pass is admitted only by NAMING
+        """A blocking legacy pass is admitted only by NAMING
         the heading that completes it -- and naming it without checking it would
         be the silent-check failure `AGENTS.md` > *Verifying claims* describes.
         """
@@ -2403,7 +2404,7 @@ class TestCodeReviewLegacyEnumeration:
 
 
 class TestCodeReviewIsReachedByBothPublicPaths:
-    """S12 / R5'' -- [R3-E1]'s required satisfier, pinned through both paths."""
+    """The required satisfier, pinned through both paths."""
 
     def _both(self, tmp_path, body):
         art = _plan_art(tmp_path, body, status="review", stem=_CR_STEM,
@@ -2433,7 +2434,7 @@ class TestCodeReviewIsReachedByBothPublicPaths:
         assert gate_met is True
 
     def test_the_two_weak_presence_opinions_are_gone(self):
-        """R5'': "presence becomes a consequence of the schema check rather than
+        """Presence becomes a consequence of the schema check rather than
         a second, weaker opinion". Read from the source, because the property is
         the ABSENCE of a call and no fixture can witness an absence."""
         body = _code_of(_PLANNER_PATH, "_conformance_violations")
@@ -2445,7 +2446,7 @@ class TestCodeReviewIsReachedByBothPublicPaths:
         # literals to single quotes -- so the expected spelling is the
         # normalized one, not the source's.
         #
-        # **Chunk E generalized the literal `'archived'` to `target`**, because R6
+        # **The literal `'archived'` is generalized to `target`**, because the contract
         # bullet 8 requires `ready-to-archive` and `archived` to be judged by the
         # *same* closeout predicate.  The property this node guards is unchanged
         # and now stated more strongly: the gate calls the ONE predicate with an
@@ -2455,7 +2456,7 @@ class TestCodeReviewIsReachedByBothPublicPaths:
         assert "elif target in ('ready-to-archive', 'archived')" in gating, gating
 
     def test_the_two_archive_effective_targets_get_identical_gates(self, tmp_path):
-        """R6 bullet 8, as behaviour rather than as source text.
+        """Contradiction 8, as behaviour rather than as source text.
 
         *"`archived` when the same closeout predicate would reject
         `ready-to-archive`"* is one rule required to be shared, so a plan cannot
@@ -2556,7 +2557,7 @@ def _real_headings(stem: str) -> list[str]:
 
 
 # ===========================================================================
-# P1 -- the four-field review basis across all three record kinds, the
+# The four-field review basis across all three record kinds, the
 # artifact-level `Assurance path:` declaration, and the immutability predicate
 # that grandfathers pre-contract records.
 #
@@ -2696,12 +2697,12 @@ class TestPlanReviewBasis:
             self, tmp_path):
         """**The scoping property, and the reason a second manifest exists.**
 
-        `_LEGACY_PASSES` exempts a pass from S2/S3/S7.  Every pass P1's basis
-        newly reaches already satisfies S2/S3/S7, so folding those records into
+        `_LEGACY_PASSES` exempts the three field checks.  Every pass the basis
+        newly reaches already satisfies them, so folding those records into
         `_LEGACY_PASSES` would have *weakened* the gate while looking like
         grandfathering.  This node reproduces that: a pass whose heading IS in
         `_LEGACY_PASSES`, in a live (mutable) plan, is still refused for a
-        missing basis field -- and the S2 exemption still holds for Tier.
+        missing basis field -- and the Tier exemption still holds.
         """
         stem = "review-gate-enforcement"
         heading = "## Plan review -- Codex (External) -- 2026-08-05"
@@ -2711,7 +2712,7 @@ class TestPlanReviewBasis:
         body = f"{heading}\n\nno Tier, no Findings, and no basis.\n\n"
         v = _violations(tmp_path, body, stem=stem)
         assert any("missing 'Target:'" in m for m in v), v
-        # ... and the S2/S3 exemption is untouched: no Tier violation is raised.
+        # ... and the field exemption is untouched: no Tier violation is raised.
         assert not any("missing Tier" in m for m in v), v
 
 
@@ -2771,7 +2772,7 @@ class TestProposalReviewBasis:
 
     def test_a_later_record_does_not_lend_its_basis_to_an_earlier_one(
             self, tmp_path):
-        """The boundary half: P1 adds the proposal review heading to
+        """The boundary half: the proposal review heading joins
         `_record_boundaries`, so an incomplete record's field scope stops at the
         next record instead of running through it and borrowing its fields.
         The second heading here carries `(Round 2)`, which `_HEADER_RE` cannot
@@ -2786,7 +2787,7 @@ class TestProposalReviewBasis:
     def test_both_gate_surfaces_report_it(self, tmp_path):
         """S12 applied to the proposal side: `_conformance_violations` (what
         `scan` reports) and `_gating_preconditions` (what `next --to` reports)
-        consume the SAME predicate.  Wiring only the first is the defect [R3-E1]
+        consume the SAME predicate.  Wiring only the first is the defect review
         executed on the Code-review half -- the loose surface is the one an
         author drives."""
         art = _prop_art(tmp_path, _prop_review(target=None))
@@ -2843,7 +2844,7 @@ class TestAssurancePathDeclaration:
         by a *reviewer's* record rather than by the author, and a proposal with
         no reviews yet could never be made to satisfy it at all.
 
-        Measured on a real artifact while implementing P1: a first grep for
+        Measured on a real artifact: a first grep for
         `Assurance path` in `2026-08-11-claude-metrics-events-not-prose.md`
         matched line 186, inside its first `## Review` record, and read as a
         header declaration until the bound was checked.
@@ -2854,7 +2855,7 @@ class TestAssurancePathDeclaration:
     def test_a_plan_carries_no_artifact_level_declaration(self, tmp_path):
         """It is the **proposal** that declares: the accepted parent says *"A
         proposal-worthy change declares"*, and the plan carries the inheritance
-        metadata instead (P2's cell).  Pinned as an absence so a later chunk that
+        metadata instead.  Pinned as an absence so a later chunk that
         moves the obligation onto plans does so deliberately."""
         art = _plan_art(tmp_path, _pass_block())
         assert planner.assurance_declaration_violations(art) == []
@@ -2874,8 +2875,8 @@ class TestAssurancePathDeclaration:
 class TestImmutabilityGrandfather:
     """The predicate that keeps the enumeration at nine entries instead of ~72.
 
-    Shape reused from Chunk D4's `scripts/claim_check.py` (accepted
-    `claim-check-exemption-hygiene` R3): archived by **location**, or terminal by
+    Shape reused from `scripts/claim_check.py` (accepted
+    `claim-check-exemption-hygiene`): archived by **location**, or terminal by
     a **strictly parsed** status -- and everything it does not recognize falls
     through *into* the requirement rather than inheriting the exemption.
     """
@@ -2924,7 +2925,7 @@ class TestImmutabilityGrandfather:
     ])
     def test_a_non_strict_status_does_not_gain_the_grandfather(
             self, tmp_path, header, why):
-        """D4's fail-closed rule: *"A missing, duplicate, or unrecognized
+        """The fail-closed rule: *"A missing, duplicate, or unrecognized
         lifecycle status does not silently gain grandfathering."*  The set can
         only ever be too small, never too permissive.
 
@@ -3102,9 +3103,9 @@ def _p1_live_artifact(stem: str):
 def test_the_live_corpus_is_sound_under_the_p1_contract():
     """The blast-radius assertion, as a standing node.
 
-    P1's whole risk is reddening a live artifact nobody may edit.  `scan`
+    The whole risk is reddening a live artifact nobody may edit.  `scan`
     (live-only) is the enforcement surface named in the plan's acceptance
-    criteria, and it must stay at all-artifacts-sound with P1 landed -- which is
+    criteria, and it must stay at all-artifacts-sound -- which is
     what the immutability predicate plus the two enumerations buy.
     """
     identity = planner._load_identity_model(CAIRN_ROOT)
@@ -3121,7 +3122,7 @@ def test_the_live_corpus_is_sound_under_the_p1_contract():
 
 
 class TestP1AuthoringTemplates:
-    """P1's template half, pinned per surface rather than assumed.
+    """The template half, pinned per surface rather than assumed.
 
     The plan's acceptance criteria require each documentation surface to be
     *confirmed* updated: "drift gates catch drift, not absence."  These four
@@ -3168,7 +3169,7 @@ class TestP1AuthoringTemplates:
     def test_the_shipped_proposal_template_carries_an_unfilled_trigger_slot(self):
         """The two `_template.md` copies are **not** byte-identical twins, by
         design: the shipped copy carries fill-slots and Cairn's copy is the
-        filled instance.  P1's new slot must follow that pattern rather than
+        filled instance.  The new slot must follow that pattern rather than
         shipping Cairn's own protected-surface roster to every adopter.
         """
         shipped = (CAIRN_ROOT / "templates/core/dev/proposals/_template.md"
@@ -3189,7 +3190,7 @@ class TestP1AuthoringTemplates:
         assert "bootstrap/_scaffold" in our_slot, our_slot
 
     def test_the_plan_template_placeholder_still_cannot_satisfy_the_gate(self):
-        """P1 adds text to `## Code review` in the plan template, and the archive
+        """Text is added to `## Code review` in the plan template, and the archive
         precondition is keyed on a *reviewer marker* inside that section.  Adding
         a `**Model**:` line at line start -- or a dated reviewer heading -- would
         make the shipped placeholder satisfy the gate, which is the exact defect
@@ -3203,7 +3204,7 @@ class TestP1AuthoringTemplates:
 
 
 # ---------------------------------------------------------------------------
-# Chunk P5 -- the `Contract non-expansion` attestation.
+# The `Contract non-expansion` attestation.
 #
 # Contract, from BOTH governing sources.  The accepted
 # `review-efficient-lifecycle` parent, "Standard-path plan-readiness
@@ -3215,11 +3216,11 @@ class TestP1AuthoringTemplates:
 # amendment (`code-review-blindness`) bounds it: this chunk *"validates its
 # presence and binding shape when the plan declares inheritance, and treats `NOT
 # VERIFIED` as blocking. It does not attempt to validate the semantic claim"*,
-# and its **R6** excludes "Semantic verification of `Contract non-expansion`".
+# and it excludes "Semantic verification of `Contract non-expansion`".
 #
 # WHY THESE FIXTURES ARE SYNTHETIC, AND WHY THAT IS THE POINT.  The rule fires
 # only when a plan declares `Inherited proposal basis:`, and that declaration is
-# **P2-R's** deliverable, which `## Sequence` puts AFTER P5.  So the trigger set
+# a later deliverable, which `## Sequence` puts after this.  So the trigger set
 # in this repository is empty (measured below, and asserted as a standing node),
 # and a rule whose trigger set is empty is indistinguishable from a rule that
 # works -- the silent-tool defect `AGENTS.md` > *Verifying claims* names: "a tool
@@ -3237,7 +3238,7 @@ class TestP1AuthoringTemplates:
 
 _P5_STEM = "p5-fixture"          # deliberately in NEITHER legacy manifest
 
-#: A plausible P2-R declaration value.  P5 never parses it -- the field's value
+#: A plausible declaration value.  This never parses it -- the field's value
 #: grammar is P2-R's -- so its only job here is to be present.
 _P5_INHERITED = "review=" + "c" * 40 + "; proposal=" + "d" * 40
 _P5_DECLARATION = f"**Inherited proposal basis**: {_P5_INHERITED}"
@@ -3279,7 +3280,7 @@ def _p5_violations(tmp_path: Path, *, trailer: str = "",
     """The one predicate over an inheritance-declaring plan at archive.
 
     `plan_review` defaults to `not required(...)` for the reason `_cr_violations`
-    documents: that is [R3-E1]'s executed bypass shape, so every node here also
+    documents: that is the executed bypass shape, so every node here also
     asserts the Code-review half is reached without the declaration's help.
     """
     art = _plan_art(tmp_path, _code_review_pass(trailer=trailer, **pass_kw),
@@ -3293,8 +3294,8 @@ def _p5_field_violations(v: list) -> list:
     else's refusal.
 
     `Answers:` is excluded explicitly: `code_review_binding_violations` also
-    says "binding", and a helper that counted its findings as P5's would let a
-    node pass on a defect P5 never detected.
+    says "binding", and a helper that counted its findings as this one\'s would let a
+    node pass on a defect it never detected.
     """
     return [m for m in v
             if "Answers:" not in m
@@ -3315,7 +3316,7 @@ class TestP5InheritanceTrigger:
         """The parent's clause is "for an inherited plan".  A complete,
         clearing, NON-inherited pass carrying no backstop at all is silent --
         which is also the blast-radius property: every plan in this tree is this
-        plan, so P5 reddens nothing that was green."""
+        plan, so it reddens nothing that was green."""
         assert _p5_violations(tmp_path, declaration=None) == []
 
     def test_declaring_inheritance_makes_the_backstop_owed(self, tmp_path):
@@ -3346,7 +3347,7 @@ class TestP5InheritanceTrigger:
         Requiring a parseable value before the backstop is owed would let a
         half-written declaration buy silence on the backstop, which is the wrong
         way to fail.  The value's own grammar (both sub-fields, parseable commit
-        ids) is P2-R's obligation and refuses there; P5 never reads it."""
+        ids) is the field owner\'s obligation and refuses there; this never reads it."""
         v = _p5_violations(
             tmp_path, declaration=f"**Inherited proposal basis**: {value}")
         assert _p5_field_violations(v), (value, v)
@@ -3381,7 +3382,7 @@ class TestP5InheritanceTrigger:
         """A RESIDUAL, pinned rather than hidden.  The accepted parent folded the
         fact into the plan-review field -- `Plan review: inherited(<review
         commit>; proposal=<accepted commit>)` -- and the 2026-08-11
-        Maintainer-directed revision replaced that with the two-field shape.  P5
+        Maintainer-directed revision replaced that with the two-field shape.  This
         keys on the field the revision names, so the retired spelling triggers
         nothing here.  Refusing the retired spelling AT the `Plan review:` field
         is the `Plan review` vocabulary's business (P2-R / Chunk E), not this
@@ -3415,7 +3416,7 @@ class TestP5InheritanceTrigger:
         as an accident.**  Zero plans -- live or archived -- declare inheritance
         today, because P2-R has not shipped the declaration.  When it does, this
         node reddens, and that is the signal to check that the plan it lands on
-        carries the backstop.  Until then it is the standing proof that P5's
+        carries the backstop.  Until then it is the standing proof that the
         blast radius is exactly zero, and the reason every other node here is
         synthetic."""
         declaring = []
@@ -3495,7 +3496,7 @@ class TestP5AttestationVocabulary:
             tmp_path, trailer=_p5_backstop(attestation_line=line)) == [], line
 
     def test_the_backstop_below_the_first_h3_does_not_count(self, tmp_path):
-        """R2's field scope, unchanged: a field parked under an H3 is not a
+        """The field scope, unchanged: a field parked under an H3 is not a
         field.  That is what makes the scope a contract rather than a search --
         and it means a reviewer cannot satisfy the backstop from inside a
         `### Coverage` subsection."""
@@ -3523,7 +3524,7 @@ class TestP5AttestationVocabulary:
 
 
 class TestP5BasisBindingShape:
-    """The three bindings' SHAPE -- never their truth (amendment R6)."""
+    """The three bindings' SHAPE -- never their truth."""
 
     def test_the_basis_line_is_required(self, tmp_path):
         v = _p5_violations(tmp_path, trailer=_p5_backstop(basis=None))
@@ -3700,7 +3701,7 @@ class TestP5Placement:
     """Where the check sits, and what it refuses to claim."""
 
     def test_the_backstop_is_checked_before_the_legacy_fence(self, tmp_path):
-        """P1's ordering rule, applied to this obligation.
+        """The ordering rule, applied to this obligation.
         `_LEGACY_CODE_REVIEW_RECORDS` grandfathers records written before the
         Code-review schema existed, and its `return` is an EARLY return -- so a
         check placed after it is swallowed for every admitted record.  A plan
@@ -3728,7 +3729,7 @@ class TestP5Placement:
         """S12 -- one predicate, both call sites.  `scan` (via
         `_conformance_violations`) and `next --to archived` (via
         `_gating_preconditions`) must reach the same finding: wiring only the
-        first is the exact defect [R3-E1] executed on the Code-review half."""
+        first is the exact defect review executed on the Code-review half."""
         identity = planner.IdentityModel(frozenset(), frozenset())
         body = _code_review_pass(trailer=_p5_backstop(value=None))
         archived = _plan_art(tmp_path, body, status="archived",
@@ -3742,7 +3743,7 @@ class TestP5Placement:
         # Containment, not equality: `_conformance_violations` on an `archived`
         # plan also reports the two archive preconditions (Dispositions, the
         # loop-fidelity sign-off), which are not review-record findings.  What
-        # this node owns is that P5's findings reach BOTH surfaces verbatim.
+        # this node owns is that the findings reach BOTH surfaces verbatim.
         reported = planner._conformance_violations(archived, identity)
         for msg in expected:
             assert msg in reported, (msg, reported)
@@ -3756,7 +3757,7 @@ class TestP5Placement:
 
     def test_a_verified_claim_is_accepted_without_any_semantic_check(
             self, tmp_path):
-        """**The exclusion, asserted as behavior.**  The amendment's R6 excludes
+        """**The exclusion, asserted as behavior.**  The amendment excludes
         "Semantic verification of `Contract non-expansion`", and the parent is
         explicit that this "remains a semantic human/agent review; the parser
         validates the record and bindings but does not pretend to prove prose
@@ -3764,7 +3765,7 @@ class TestP5Placement:
 
         So a `VERIFIED` naming two well-formed commit ids that exist in no
         repository, over a plan whose scope obviously expanded, is SILENT.  That
-        is not a gap in P5 -- it is P5's contract, and this node exists so a
+        is not a gap -- it is the contract, and this node exists so a
         later reader cannot mistake the silence for a check that ran.  The
         honest reach of the tool is: the record exists, its vocabulary is closed,
         and its bindings are shaped like bindings."""
@@ -3788,12 +3789,12 @@ class TestP5Placement:
         than arrive by edit.
 
         **The end marker moved when P2-R landed, and the property did not.**  It
-        was `def review_record_violations(`, which stopped being P5's boundary the
-        moment P2's block was inserted between the two; it is now P2's own block
-        header.  P2 *does* read one other artifact -- that is the inheritance
+        was `def review_record_violations(`, which stopped being the boundary the
+        moment the inheritance block was inserted between the two; it is now that
+        block header.  That block *does* read one other artifact -- the inheritance
         chain the accepted parent asks for -- and it carries its own fence
         (`test_the_p2_block_reaches_no_git`).  Re-pointing this marker rather than
-        deleting the node is what keeps P5's exclusion asserted instead of
+        deleting the node is what keeps the exclusion asserted instead of
         quietly absorbed into a looser one."""
         src = _PLANNER_PATH.read_text(encoding="utf-8")
         start = src.index("def _declares_inheritance(")
@@ -3806,21 +3807,21 @@ class TestP5Placement:
 
 
 # ===========================================================================
-# Chunk E -- the accepted status vocabulary, its transitions, R3's
-# multi-obligation plan review, R4's orthogonal `Blocked by`, and R6's eight
+# The accepted status vocabulary, its transitions, the
+# multi-obligation plan review, the orthogonal `Blocked by`, and the eight
 # status/evidence contradictions.
 #
 # Source contract: accepted proposal
 # `dev/proposals/archive/2026-08-10-codex-lifecycle-status-vocabulary.md`,
-# Revision 4 -- operative clauses R1 (as replaced by "R1 replacement"), R2, R3,
-# R4 and R6.  Plan cell: `dev/plans/review-efficient-lifecycle.md` > Chunk E.
+# Revision 4 is the operative one, with the proposal cycle as replaced by its
+# own "replacement" clause.
 #
 # **What Chunk E deliberately did NOT do, asserted here so it cannot drift into
 # happening by accident.**  The accepted text says *"Replace `open`,
 # `executing`, and `review`"*.  E made the new tokens legal and left the three
 # old ones legal, because all three are declared by live plans -- two of them
 # another session's -- and `scan` reporting every live artifact sound is one of
-# the plan's acceptance criteria.  Retirement was Chunk H1's named job, landed
+# the plan's acceptance criteria.  Retirement was its own named job, landed
 # 2026-08-13; `TestTheLegacyTokensWereRetiredAtH1` (the renamed, inverted form
 # of the class that tracked the pending-retirement window) is what makes that
 # split visible rather than a silent narrowing.
@@ -3829,7 +3830,7 @@ class TestP5Placement:
 _E_STEM = "e-fixture"          # deliberately in NEITHER legacy manifest
 
 #: A proposal `## Review` record in the post-P1 conforming shape, with the two
-#: closed fields E2 reads.  Each part independently omittable so a node can vary
+#: closed fields the predicate reads.  Each part independently omittable so a node can vary
 #: exactly one property.
 def _prop_review_pass(*, reviewer: str = "Reviewer A (External)",
                       date: str = "2026-05-02", tier: str | None = "External",
@@ -3875,7 +3876,7 @@ def _e_gates(art, target) -> list:
 
 
 class TestTheAcceptedVocabularyIsDeclared:
-    """R1'/R2' -- the tokens themselves, as data (Chunk A1's seam, used)."""
+    """The tokens themselves, as data."""
 
     def test_every_accepted_proposal_state_is_legal(self):
         for state in ("awaiting-review", "revising", "awaiting-decision",
@@ -3903,7 +3904,7 @@ class TestTheAcceptedVocabularyIsDeclared:
             assert new in planner.PLAN_NON_TERMINAL_STATES
 
     def test_shape_b_covers_every_current_non_terminal_state(self):
-        """The accepted "R5 replacement": shape (b) *"considers every recognized
+        """The accepted replacement: shape (b) *"considers every recognized
         current non-terminal status plus the historical opening statuses"*.  The
         set is derived, so this asserts the derivation rather than a literal."""
         for state in (planner.PROPOSAL_NON_TERMINAL_STATES
@@ -3919,9 +3920,9 @@ class TestTheAcceptedVocabularyIsDeclared:
 
 class TestTheLegacyTokensWereRetiredAtH1:
     """The sequencing decision, pinned as behaviour so it cannot drift silently
-    -- INVERTED at H1.  This class was `TestTheLegacyTokensAreStillLegalUntilH1`;
+    -- INVERTED by the migration.  This class asserted the legacy tokens were still legal;
     that name pinned the pending-retirement WINDOW (all six tokens additively
-    legal, because live artifacts still declared them).  H1 closed the window:
+    legal, because live artifacts still declared them).  The migration closed the window:
     every active artifact was migrated off the six tokens first, blob-checked,
     and only then did retirement land.  The class is the same behaviour
     inverted, not deleted, because the sequencing decision it protects still
@@ -3944,7 +3945,7 @@ class TestTheLegacyTokensWereRetiredAtH1:
     def test_the_historical_tuples_are_no_longer_empty_and_that_is_the_seam(
             self):
         """A token becomes historical when the migration removes it from an
-        active artifact, not when a newer name for it exists.  H1 is the
+        active artifact, not when a newer name for it exists.  The migration is the
         commit that made both true at once: the last live artifact moved off
         the six tokens, and only then did they populate these tuples."""
         assert planner.HISTORICAL_PROPOSAL_STATES == (
@@ -3980,17 +3981,17 @@ class TestTheLegacyTokensWereRetiredAtH1:
     def test_the_proposal_side_retirement_bites_the_same_way(self, tmp_path):
         """The same contract, proposal side -- which had NO witness at all.
 
-        Code review [C1]: the node above parametrizes the three PLAN tokens
+        The node above parametrizes the three PLAN tokens
         only, so `_conformance_violations`' proposal arm was unguarded in both
         directions. Two independent mutations of that arm left the entire scoped
         mapping green: drop the `_is_immutable` guard and an active proposal on a
         retired token reports `unknown proposal status`, losing the migration
         target retirement exists to hand the author; invert it and every archived
-        proposal that ever declared one is called malformed -- the exact R7 false
+        proposal that ever declared one is called malformed -- the exact false
         positive `HISTORICAL_PROPOSAL_STATES` was added to prevent.
 
-        This matters more than symmetry-for-its-own-sake: `[H1-D1]`'s own rule is
-        that a regression test lands WITH the fix, and D2's fix shipped without
+        This matters more than symmetry-for-its-own-sake: the standing rule is
+        that a regression test lands WITH the fix, and that fix shipped without
         one.
         """
         repo = _e_repo(tmp_path)
@@ -4018,7 +4019,7 @@ class TestTheLegacyTokensWereRetiredAtH1:
 
 
 class TestEveryLegalTransition:
-    """R1/R2's cycles, exhaustively, through the public `next` path."""
+    """Both cycles, exhaustively, through the public `next` path."""
 
     _PROPOSAL_CYCLE = [
         ("", ["awaiting-review"]),
@@ -4055,7 +4056,7 @@ class TestEveryLegalTransition:
             planner._read_artifact(path)) == expected
 
     def test_both_revision_loops_return_to_their_waiting_state(self, tmp_path):
-        """The two loops R2 names *"deliberately specific"*: a plan's design loop
+        """The two loops named *"deliberately specific"*: a plan\'s design loop
         and its implementation loop are distinct cycles, and neither exit leaks
         into the other."""
         repo = _e_repo(tmp_path)
@@ -4071,13 +4072,13 @@ class TestEveryLegalTransition:
 
     def test_the_fast_path_opens_at_implementing_only_when_review_is_not_required(
             self, tmp_path):
-        """R2's accepted fast path, and its fence.
+        """The accepted fast path, and its fence.
 
         *"the plan-open commit may record `implementing` directly; it must contain
         the implementation evidence that makes the skipped `ready-to-implement`
         state true."*  Offered from the not-yet-created state for a plan that owes
         no distinct review -- and NEVER offered to a plan that declares
-        `required(...)` and has not cleared it, which is R6's refusal case.
+        `required(...)` and has not cleared it, which is the refusal case.
         """
         repo = _e_repo(tmp_path)
         free = planner._read_artifact(_write_plan(
@@ -4125,7 +4126,7 @@ class TestEveryLegalTransition:
                     status, target)
 
     def test_a_status_only_flip_refuses_to_scaffold_an_empty_commit(self, tmp_path):
-        """R4 -- *"Do not create empty commits merely to advance a label."*  Every
+        """*"Do not create empty commits merely to advance a label."*  Every
         transition that appends no new section says whose commit carries it, so the
         tool never hands an operator a section to paste that the contract forbids
         them to commit alone."""
@@ -4141,7 +4142,7 @@ class TestEveryLegalTransition:
 
 
 class TestMultiObligationPlanReview:
-    """R3 -- `required(A + B)` is two obligations and two distinct passes.
+    """`required(A + B)` is two obligations and two distinct passes.
 
     The defect this closes was live and silent at Chunk E's parent:
     `normalize_required_tier('required(**External** + **External Security
@@ -4170,14 +4171,14 @@ class TestMultiObligationPlanReview:
                                ("External Security Review", "external"))
 
     def test_the_single_obligation_schema_is_unchanged(self):
-        """R3: *"The current one-obligation schema remains unchanged."*  So a
+        """*"The current one-obligation schema remains unchanged."*  So a
         one-clause plan needs no `**Obligation**:` line at all."""
         assert planner.normalize_required_obligations("required(Internal)") == (
             (("Internal", "internal"),), None)
         assert planner.normalize_required_tier(self._MULTI) == ("external", None)
 
     def test_one_pass_cannot_clear_two_clauses(self, tmp_path):
-        """The property R3 exists for, stated as the sharpest possible fixture: a
+        """The property this exists for, stated as the sharpest possible fixture: a
         single pass whose `**Obligation**:` names *both* clauses verbatim."""
         v = self._v(tmp_path, self._pass("External + External Security Review"))
         assert len(v) == 2, v
@@ -4216,7 +4217,7 @@ class TestMultiObligationPlanReview:
         assert "'External'" in v[0]
 
     def test_the_declared_tier_must_satisfy_the_named_obligation(self, tmp_path):
-        """R3: *"The existing `**Tier**:` value must satisfy the named
+        """*"The existing `**Tier**:` value must satisfy the named
         obligation"* -- so an `External Security Review` clause is not cleared by
         an Internal-tier pass that names it."""
         v = self._v(tmp_path, self._pass("External")
@@ -4226,7 +4227,7 @@ class TestMultiObligationPlanReview:
         assert "'External Security Review'" in v[0]
 
     def test_emphasis_and_whitespace_normalize_on_both_sides(self, tmp_path):
-        """R3: matched *"after the same emphasis and whitespace normalization used
+        """Matched *"after the same emphasis and whitespace normalization used
         by the tier parser"*.  One helper does both sides, so this is the node that
         would catch them drifting apart."""
         assert self._v(tmp_path, self._pass("**External**")
@@ -4273,7 +4274,7 @@ class TestMultiObligationPlanReview:
 
 
 class TestBlockedByIsNonAuthoritative:
-    """R4 -- *"The field never changes the legal state machine and never
+    """*"The field never changes the legal state machine and never
     substitutes for a status."*  Three negatives and two shape checks."""
 
     def _plan(self, tmp_path, blocked, *, status="implementing"):
@@ -4332,13 +4333,13 @@ class TestBlockedByIsNonAuthoritative:
 
 
 class TestR6ContradictionsThroughBothEntryPoints:
-    """R6's eight refusals, each through `scan`'s surface AND `next`'s.
+    """The eight refusals, each through `scan`\'s surface AND `next`\'s.
 
-    R6: *"`scan`, `next`, and accepted closeout tooling consume shared
+    *"`scan`, `next`, and accepted closeout tooling consume shared
     predicates."*  Every node below asserts the contradiction on
     `_conformance_violations` (the current status, what `scan` reports) and on
     `_gating_preconditions` (the requested target, what `next --to` reports), so
-    neither surface can be the loose one -- the defect [R3-E1] executed on the
+    neither surface can be the loose one -- the defect review executed on the
     Code-review half.
     """
 
@@ -4351,7 +4352,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
         assert len(gates) == 1, (gate_hint, _e_gates(art, state))
         return shared, scanned, gates[0]
 
-    # --- R6 bullet 1: proposal `revising` without a blocking review ----------
+    # --- contradiction 1: proposal `revising` without a blocking review -------
 
     def test_revising_without_any_review_refuses(self, tmp_path):
         art = _e_prop(tmp_path, status="revising")
@@ -4384,7 +4385,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
                       body=_prop_review_pass(findings=None))
         assert planner.status_evidence_violations(art, "revising")
 
-    # --- R6 bullet 2: proposal `awaiting-decision` ---------------------------
+    # --- contradiction 2: proposal `awaiting-decision` -----------------------
 
     def test_awaiting_decision_without_a_review_refuses(self, tmp_path):
         art = _e_prop(tmp_path, status="awaiting-decision")
@@ -4402,7 +4403,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
         assert scanned == shared and met is False
 
     def test_awaiting_decision_on_the_authors_own_review_refuses(self, tmp_path):
-        """R1's replacement requires a review that *cleared the current
+        """The replacement requires a review that *cleared the current
         contract*; a self-review is not an independent read, and the tool reads
         the byline (never the reviewer's identity)."""
         art = _e_prop(tmp_path, status="awaiting-decision", author="Claude",
@@ -4424,7 +4425,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
                       body=_prop_review_pass(**kw))
         assert planner.status_evidence_violations(art, "awaiting-decision")
 
-    # --- R6 bullet 3: plan `revising-plan` ----------------------------------
+    # --- contradiction 3: plan `revising-plan` -------------------------------
 
     def _plan_at(self, tmp_path, status, body="",
                  plan_review="required(External)"):
@@ -4461,7 +4462,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
         assert "revising-plan" not in planner.PLAN_REVIEW_CLEARED_STATES
         assert "awaiting-plan-review" not in planner.PLAN_REVIEW_CLEARED_STATES
 
-    # --- R6 bullet 4: `ready-to-implement` / `implementing` -----------------
+    # --- contradiction 4: `ready-to-implement` / `implementing` --------------
 
     @pytest.mark.parametrize("state", ["ready-to-implement", "implementing"])
     def test_neither_implementation_state_survives_an_uncleared_floor(
@@ -4477,7 +4478,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
     @pytest.mark.parametrize("state", ["ready-to-implement", "implementing"])
     def test_neither_implementation_state_survives_a_half_cleared_plus_floor(
             self, tmp_path, state):
-        """The multi-obligation rule reaching R6 bullet 4: one External pass does
+        """The multi-obligation rule reaching contradiction 4: one External pass does
         not admit implementation under a two-clause declaration."""
         body = _pass_block(tier="External").replace(
             "**Tier**:", "**Obligation**: External\n**Tier**:")
@@ -4497,7 +4498,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
         assert planner.status_evidence_violations(art, state) == []
         assert _e_conf(art) == []
 
-    # --- R6 bullet 5: `awaiting-code-review` --------------------------------
+    # --- contradiction 5: `awaiting-code-review` -----------------------------
 
     _EVIDENCE = ("## Implementation verification -- Claude -- 2026-05-03\n\n"
                  "the ledger.\n\n")
@@ -4531,7 +4532,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
 
     def test_a_stale_evidence_record_does_not_return_a_plan_from_revising_code(
             self, tmp_path):
-        """R2's word *"replacement"*, made checkable: the record that returns a
+        """The word *"replacement"*, made checkable: the record that returns a
         plan to `awaiting-code-review` must come AFTER the blocking pass, not be
         the one that pass already read."""
         stale = (_pass_block(tier="External") + self._EVIDENCE
@@ -4546,7 +4547,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
         assert planner.status_evidence_violations(
             art_fresh, "awaiting-code-review") == []
 
-    # --- R6 bullet 6: `revising-code` ---------------------------------------
+    # --- contradiction 6: `revising-code` ------------------------------------
 
     def test_revising_code_without_a_code_review_refuses(self, tmp_path):
         art = self._plan_at(tmp_path, "revising-code",
@@ -4579,7 +4580,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
             _pass_block(tier="External") + _code_review_pass(verdict=None))
         assert planner.status_evidence_violations(art, "revising-code")
 
-    # --- R6 bullets 7 + 8: the shared closeout predicate --------------------
+    # --- contradictions 7 + 8: the shared closeout predicate -----------------
 
     _CLOSEOUT = _LT + "Dispositions: none\n\n" + _REAL_SIGNOFF
 
@@ -4602,7 +4603,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
 
     def test_ready_to_archive_and_archived_share_one_closeout_predicate(
             self, tmp_path):
-        """R6 bullet 8 verbatim: *"`archived` when the same closeout predicate
+        """Contradiction 8 verbatim: *"`archived` when the same closeout predicate
         would reject `ready-to-archive`"*.  Asserted as message-for-message
         identity modulo the state name, so neither can be softened alone."""
         body = _pass_block(tier="External") + _code_review_pass()
@@ -4621,7 +4622,7 @@ class TestR6ContradictionsThroughBothEntryPoints:
 
 
 class TestAReviewThatLeavesAnObligationOpenMovesNothing:
-    """R4/R6: *"A pass that leaves another obligation outstanding appends its
+    """*"A pass that leaves another obligation outstanding appends its
     review record without manufacturing a status transition."*
 
     The no-op case, which is the one an author is most likely to get wrong: the
@@ -4663,7 +4664,7 @@ class TestAReviewThatLeavesAnObligationOpenMovesNothing:
 
 
 class TestTheR6PredicateIsShared:
-    """R6: *"consume shared predicates rather than implement three
+    """*"consume shared predicates rather than implement three
     interpretations of readiness."*  Asserted structurally, because the property
     is that no second interpretation EXISTS."""
 
@@ -4707,7 +4708,7 @@ class TestTheR6PredicateIsShared:
 #     > "Standard-path plan-readiness inheritance";
 #   * `dev/plans/review-efficient-lifecycle.md` > `## Maintainer-directed
 #     contract revision -- 2026-08-11` (cell **P2-R** + "Required test matrix"),
-#     which supersedes the original P2 cell where they conflict; and
+#     which supersedes the original where they conflict; and
 #   * that plan's `## Response to plan review -- Claude -- 2026-08-11`
 #     Amendments **A**-**D**.
 #
@@ -4731,7 +4732,7 @@ class TestTheR6PredicateIsShared:
 # repository byte carries it -- see `test_the_p2_block_reaches_no_git`), that the
 # Internal pass was performed in a fresh context, or that an UNDECLARED expansion
 # or reduction is detected.  The last is the honest limit Amendment B lives with:
-# the trigger is an author declaration, exactly as P2's own cell requires of every
+# the trigger is an author declaration, exactly as the contract requires of every
 # semantic trigger, and `doctrine/dual-review.md` > "The counterweight" already
 # says a formal check "would catch forgetting and not evading".
 # ===========================================================================
@@ -4813,7 +4814,7 @@ class TestP2TheChainClears:
     def test_external_ready_plus_exact_binding_clears_on_both_paths(
             self, tmp_path, assurance):
         """**Both fixtures, and the high-assurance one is the Maintainer's
-        decision made executable.**  The original P2 cell required a
+        decision made executable.**  The original contract required a
         high-assurance REFUSAL; the 2026-08-11 revision removed it in the
         Maintainer's quoted words -- *"Standard and high-assurance proposals may
         both receive `READY` when their External review settled the complete
@@ -4986,7 +4987,7 @@ class TestP2AmendmentDMalformedNeverMeansReady:
         """Amendment D's third shape, and the one that needed a *detector*: a
         near-miss field name is silent by construction, because a plan that fails
         to declare inheritance simply is not an inherited plan.  Detected the way
-        S8 detects a near-miss review heading -- recognize the neighbourhood, then
+        A near-miss review heading is detected the same way -- recognize the neighbourhood, then
         quote the line that did not count."""
         line = (f"**{label}**: review={_P2_REVIEW_SHA}; "
                 f"proposal={_P2_PROPOSAL_SHA}\n")
@@ -4999,7 +5000,7 @@ class TestP2AmendmentDMalformedNeverMeansReady:
                    plan_header="**Blocked by**: nothing\n") == []
 
     def test_the_retired_parent_spelling_refuses(self, tmp_path):
-        """P5 filed this gap at P2-R by name.  It is a live bypass, not a
+        """This gap is filed by name against the field owner.  It is a live bypass, not a
         tidiness item: the plan-review floor is evaluated only for a value
         beginning `required`, so the accepted parent's own wording bought a plan
         NO plan-review obligation at all."""
@@ -5106,7 +5107,7 @@ class TestP2ExpansionInvalidatesReadiness:
         The field matcher is full-line anchored, so a mention *inside* a sentence
         was never a candidate -- quoting one would have tested nothing.  The real
         hazard is a line-start restatement inside an appended section, which is
-        exactly how P5's identical bound became load-bearing: the plan that
+        exactly how the identical bound became load-bearing: the plan that
         specifies these fields quotes one at line start in an appended revision
         section, and a whole-text read would make that plan declare an expansion
         about itself.  So the fixture puts a conforming field line in the BODY."""
@@ -5136,7 +5137,7 @@ class TestP2AmendmentBScopeReduction:
         it."*  Recorded the way every other Maintainer authority in this file is:
         a visually-isolated verbatim blockquote, through the identical predicate a
         `## Decision` uses.  Structure only -- the committing operator remains the
-        guarantor that the words were said (R1)."""
+        guarantor that the words were said."""
         assert _p2(tmp_path,
                    plan_body=self._SHARPENING + f"**Scope delta**: {value}\n\n"
                              "> Drop chunk F; file the remainder.\n") == []
@@ -5254,7 +5255,7 @@ class TestP2LiveCorpusAndSourceFences:
     """The measured blast radius, and the fences that keep it that way."""
 
     def test_the_live_corpus_is_sound_under_the_p2_contract(self):
-        """Zero of the tree's artifacts declare inheritance, so P2 adds zero
+        """Zero of the tree\'s artifacts declare inheritance, so this adds zero
         findings.  Measured here rather than asserted in prose: when the first
         real inherited plan lands, this node is where its chain is checked."""
         offenders = {}
@@ -5273,7 +5274,7 @@ class TestP2LiveCorpusAndSourceFences:
         assert offenders == {}, offenders
 
     def test_the_p2_block_reaches_no_git(self):
-        """The fence the block's own docstring promises.  P2 legitimately reads
+        """The fence the block\'s own docstring promises.  It legitimately reads
         ONE other artifact -- the source proposal, through `_read_artifact` --
         because that chain is what the accepted parent asks for.  It reaches no
         git, no subprocess and no raw `read_text`, so the `review=` residual
@@ -5289,7 +5290,7 @@ class TestP2LiveCorpusAndSourceFences:
             "the chain must resolve through the planner's own reader")
 
     def test_one_binding_shape_rule_serves_both_fields(self):
-        """P5's `Basis:` line and P2's `Inherited proposal basis` are the same
+        """The `Basis:` line and `Inherited proposal basis` are the same
         grammar, so there is ONE implementation with the keys as a parameter --
         the shape `_is_legacy` already uses for its three manifests.  A sibling
         copy would put two implementations of one rule in the file."""
@@ -5298,7 +5299,7 @@ class TestP2LiveCorpusAndSourceFences:
         assert src.count("def _basis_value(") == 1
 
     def test_the_p5_default_messages_are_unchanged_by_that_refactor(self):
-        """The guard on the generalization: P5's three-binding messages must read
+        """The guard on the generalization: the three-binding messages must read
         exactly as they did before the keys became a parameter, or the refactor
         silently rewrote a landed contract's refusals."""
         v = planner._basis_binding_violations("nothing here", "L")
@@ -5309,7 +5310,7 @@ class TestP2LiveCorpusAndSourceFences:
 
 
 class TestP2CarriedForwardObligationCF1:
-    """[CF1] -- the plan-side assurance path the monitoring report needs."""
+    """The plan-side assurance path the monitoring report needs."""
 
     def test_the_vocabulary_is_public_and_unchanged(self):
         """P6a's record: closing the split *"needs a **public** single source for
@@ -5331,7 +5332,7 @@ class TestP2CarriedForwardObligationCF1:
             self, tmp_path):
         """A POSITIVE answer, not a default: the plan declares no chain, so there
         is no proposal declaration to inherit.  A plan carries no artifact-level
-        assurance path of its own -- P1 pinned that absence deliberately."""
+        assurance path of its own -- that absence is pinned deliberately."""
         art = _p2_tree(tmp_path, inherited="")
         assert planner.resolve_plan_assurance_path(art.path) == (
             planner.ASSURANCE_NOT_INHERITED, [])
@@ -5361,11 +5362,11 @@ class TestP2CarriedForwardObligationCF1:
 
 
 class TestP2AuthoringTemplates:
-    """P2's template half, pinned per surface in P1's idiom.
+    """The template half, pinned per surface in the same idiom.
 
     The plan's acceptance criteria require each documentation surface to be
     *confirmed* updated ("drift gates catch drift, not absence"), and the reason
-    is sharper for this chunk than for most: every refusal P2 adds is one an
+    is sharper here than for most: every refusal added is one an
     author can only avoid by knowing a grammar, and an author refused by a gate
     who finds no instruction in the template has been handed a puzzle instead of
     a rule.
@@ -5412,7 +5413,7 @@ class TestP2AuthoringTemplates:
         assert not missing, (path, missing)
 
     def test_the_doctrine_teaches_the_record_and_names_its_limits(self):
-        """`doctrine/dual-review.md` is P2's cell's own third surface.  The limits
+        """`doctrine/dual-review.md` is the contract\'s own third surface.  The limits
         are asserted alongside the mechanism on purpose: a doctrine section that
         taught the record without naming what a checker cannot reach would invite
         exactly the over-reading `AGENTS.md` > *Verifying claims* warns about."""
@@ -5429,7 +5430,7 @@ class TestP2AuthoringTemplates:
             assert needle in text, needle
 
     def test_the_plan_template_placeholder_still_cannot_satisfy_the_gate(self):
-        """P2 adds text near `## Plan review` in the plan template.  A stray
+        """Text is added near `## Plan review` in the plan template.  A stray
         `**Model**:` line or a dated reviewer heading would make the shipped
         placeholder satisfy the archive precondition -- the exact defect
         `archive-precondition-substance` closed."""
@@ -5453,7 +5454,7 @@ class TestP2AuthoringTemplates:
 
 
 # ---------------------------------------------------------------------------
-# Chunk P3 -- the complete current contract and its withdrawal ledger.
+# The complete current contract and its withdrawal ledger.
 #
 # Contract, verbatim from the accepted `review-efficient-lifecycle` parent,
 # "Bounded current contracts" (Revision 1 -- the operative revision; the archived
@@ -5653,7 +5654,7 @@ class TestP3TheRevisionIsMandatory:
 
     def test_the_refusal_quotes_the_response_it_answered(self, tmp_path):
         """The author is told WHICH record created the obligation, not that
-        'something is missing' -- S8's rule, reused."""
+        'something is missing' -- the near-miss rule, reused."""
         v = _p3(tmp_path, revision=None)
         assert _P3_RESPONSE in v[0], v
 
@@ -5763,7 +5764,7 @@ class TestP3WhatIsNotAHeading:
         assert f"no '{_P3_LEDGER}' heading" in v[0], v
 
     def test_prose_discussing_the_ledger_is_not_the_ledger(self, tmp_path):
-        """P2 proved the header bound is load-bearing rather than cosmetic: this
+        """The header bound is load-bearing rather than cosmetic: this
         plan and the archived contract both DISCUSS the heading in prose, and a
         whole-text search makes the artifact that specifies a field declare it
         about itself.  A heading match needs the hashes at the margin."""
@@ -5775,7 +5776,7 @@ class TestP3WhatIsNotAHeading:
 
 
 class TestP3NearMisses:
-    """S8's rule reused: quote the heading that did not count."""
+    """The near-miss rule reused: quote the heading that did not count."""
 
     @pytest.mark.parametrize("heading", [
         "## Withdrawn / superseded commitments",
@@ -5847,12 +5848,12 @@ class TestP3Grandfathering:
         assert len(v) == 1, (header, v)
 
     def test_p3_ships_no_legacy_manifest(self):
-        """The fence on the claim in the block's own comment.  P1 and C needed
-        enumerated grandfather manifests; P3 does not, because immutability covers
+        """The fence on the claim in the block\'s own comment.  The sibling
+        obligations needed enumerated grandfather manifests; this does not, because immutability covers
         the whole pre-ledger population (re-derived by the node below).  If a
         later change needs one, it has to add it deliberately rather than
         arrive by edit -- and a manifest that appears here without a re-derivation
-        is exactly the stale-data defect [CF4] recorded."""
+        is exactly the stale-data defect recorded elsewhere."""
         src = _PLANNER_PATH.read_text(encoding="utf-8")
         start = src.index("# === the complete current contract")
         end = src.index("def review_record_violations(")
@@ -5881,7 +5882,7 @@ def test_the_live_corpus_owes_no_ledger_today():
     every proposal that does not is immutable.  When a live proposal first lands a
     Response, this node reddens, and that is the signal to check that the
     revision it landed with carries its ledger.  Until then it is the standing
-    proof that P3's blast radius is exactly zero, and the reason every other node
+    proof that the blast radius is exactly zero, and the reason every other node
     above is synthetic."""
     flagged = {art.path.name: planner.current_contract_violations(art)
                for art in _p3_all_proposals()
@@ -5891,7 +5892,7 @@ def test_the_live_corpus_owes_no_ledger_today():
 
 def test_every_pre_ledger_proposal_is_covered_by_immutability_alone(
         monkeypatch):
-    """The claim P3 ships on, re-derived instead of trusted.
+    """The claim this ships on, re-derived instead of trusted.
 
     With grandfathering switched off, the obligation is measured over the whole
     corpus; every artifact it reaches must be immutable.  Written as a monkeypatch
@@ -5919,7 +5920,7 @@ def test_every_pre_ledger_proposal_is_covered_by_immutability_alone(
 
 
 class TestP3BothGateSurfacesAgree:
-    """[R3-E1]'s rule: a predicate wired to one surface leaves the other loose,
+    """The rule: a predicate wired to one surface leaves the other loose,
     and the loose surface is the one an author drives."""
 
     def test_scan_reports_the_refusal(self, tmp_path):
@@ -5991,7 +5992,7 @@ class TestP3TheRealContractIsTheORACLE:
 
 
 class TestP3AuthoringTemplates:
-    """P3's template half, pinned per surface in P1's and P2's idiom.
+    """The template half, pinned per surface in the same idiom as its siblings.
 
     The plan's acceptance criteria require each documentation surface to be
     *confirmed* updated ("drift gates catch drift, not absence"), and an author
@@ -6055,9 +6056,9 @@ class TestP3AuthoringTemplates:
         block previously said the revision was *optional* -- the pre-contract
         wording -- and this node is why that could not survive.
 
-        H1 re-homed this block: it is now `_response_template`, emitted on the
+        The migration re-homed this block: it is now `_response_template`, emitted on the
         `revising -> awaiting-review` return arm (the live successor of the
-        retired `reviewed -> revised` arm this node targeted before H1).
+        retired `reviewed -> revised` arm this node used to target).
         """
         art = _p3_prop(tmp_path, "", status="revising")
         _f, _t, blocks = planner._scaffold(art, "awaiting-review", "2026-08-11")
@@ -6074,7 +6075,7 @@ class TestClosedVocabularyValuesTolerateHouseStyle:
 
     Found by a live refusal, not by review: another session opened
     `2026-08-12-claude-ceremony-handshake-and-first-use.md` declaring
-    `**Assurance path**: **high-assurance** -- <reason>`, adopting P1's new field
+    `**Assurance path**: **high-assurance** -- <reason>`, adopting the new field
     correctly in spirit, and the gate refused it.  Two parsers in one file
     disagreed about one documented house style -- `_parse_verdict` strips
     emphasis ("the house form ... wraps the label AND the value in one bold
@@ -6129,7 +6130,7 @@ class TestClosedVocabularyValuesTolerateHouseStyle:
         assert value is None and "contradictory" in problem
 
 
-# Amendment B's parser contract.  Owned HERE because P2 created
+# Amendment B's parser contract.  Owned HERE because the inheritance block created
 # `_declaration_record`, `_declared_reduction` and `plan_inheritance_violations`;
 # the owner of a predicate owns its contract test.
 
@@ -6299,7 +6300,7 @@ class TestScopeDeltaParserContract:
 #     conflicting stem, symlink redirection of leaf or parent, interrupted
 #     write, stale writer / lost update, boundary-day arithmetic, pause set and
 #     cleared, and the exact activation-binding oracle (a record whose
-#     `machinery_sha` is not the B2 commit, and a derived-enabling-commit
+#     `machinery_sha` is not the enabling commit, and a derived-enabling-commit
 #     mismatch, both refuse)
 #
 # **The row is discharged mostly by delegation, and the delegation was measured
@@ -6319,7 +6320,7 @@ class TestScopeDeltaParserContract:
 #      claim was tested by mutating the property and watching the named node go
 #      red.  Three mutations SURVIVED -- nothing in the suite noticed -- and
 #      those three are the nodes written below.  This step is not optional
-#      diligence: three tests in this very plan (P2's [M16], P3's [M10], P4's
+#      diligence: three tests in this very plan (the
 #      two ASCII-safety nodes) passed their mutations because their fixture
 #      could not reach the property they claimed to test.
 #   3. **Pins the one mutation the design makes unconstructible**, as an
@@ -6360,7 +6361,7 @@ class TestScopeDeltaParserContract:
 # licenses reasoning about "the" implementation at all.
 #
 # **What is NOT here, and why.**  `dev/measurement/pilot-activation.md` does not
-# exist and is not created: it is P6d's, behind Maintainer fence **M2**,
+# exist and is not created: it belongs to a later chunk, behind a Maintainer fence,
 # data-only, and its `machinery_sha` is the Boundary-B2 commit, which does not
 # exist yet either.  Every activation record below is therefore synthetic, in a
 # scratch repository, exactly as the sibling's are.
@@ -6609,7 +6610,7 @@ def _p6c_git(root: Path, *args: str, date: str | None = None) -> str:
 
 def _p6c_repo(tmp_path: Path, *, activation_date: str = "2026-02-01",
               extra_key: str = "") -> Path:
-    """A repo with a machinery commit, a B2 record naming it, and activation.
+    """A repo with a machinery commit, a record naming it, and activation.
 
     Returns the repo root.  The enabling commit and the activation date are
     DERIVED by the subject from the third commit -- this helper never writes

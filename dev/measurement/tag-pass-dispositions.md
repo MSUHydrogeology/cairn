@@ -244,3 +244,24 @@ renames together.
 
 **The red gate is accurate, not a defect**: the frozen surface genuinely did
 change. What would be a defect is a green gate over changed bytes.
+
+**Maintainer ruling on the review tier, 2026-08-19:**
+
+> *"We don't need to review the re-anchor though. We are doing precisely this
+> work and that other plan. No review is needed on our own reviewed work.
+> Review is needed on external contributions."*
+
+The runbook's *"a reviewed pin and not a self-generated one"* is a control
+against the **checker blessing its own bytes** — satisfied by Maintainer
+supervision of the ceremony, not by an additional review tier over work that
+already came through an accepted, reviewed plan. The threat model these gates
+are written against is explicitly *trusted-contributor, single-maintainer*
+(`bootstrap/tests/_gate_preflight.py`), and an in-house pass under an accepted
+plan is not the untrusted candidate the ceremony is defending against.
+
+**Consequence for this pass**: the frozen surface is not a blocker. The
+remaining frozen candidates are revised in the ordinary way and the whole delta
+is re-anchored once, by the `ceremony-as-code` plan's ceremony. What remains
+non-negotiable is only that *this* agent does not regenerate the manifest
+itself — that step stays with the ceremony, which is a mechanical anti-tamper
+control rather than a review obligation.
