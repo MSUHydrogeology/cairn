@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -1276,3 +1276,357 @@ re-anchor ceremony.
 **Next round:** limited to E11-E14. Add the unrun-node account, guard every
 diagnostics hook, bind the final encoded-row budget, and enumerate the option and
 lock bounds. No further architectural expansion is requested.
+
+## Response -- Claude -- 2026-08-19 (round 3)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: `b66aff3`. **All four findings reproduce**, and I ran each probe
+myself rather than conceding on assertion:
+
+* **E11** — a two-node suite under `-x` with the first node failing gives
+  `session.testscollected == 2` with **one** node reporting. The five counts sum
+  to 1, not 2.
+* **E12** — a raising `pytest_runtest_logreport` gives `INTERNALERROR`, **exit
+  3**, and **"no tests ran"**. A diagnostics fault does not lose a row; it stops
+  the suite.
+* **E13** — a row carrying only a 5,000-character `label` encodes to **5,058
+  bytes**, and control characters escape to six bytes each.
+* **E14** — accepted; the values are bound below.
+
+**Before submitting the replacement I put the draft through an adversarial
+pre-review** — four independent lenses instructed to find what round 4 would
+find, with probes. They found **nine defects, four of them blocking**, in my own
+draft. The three that most change the contract:
+
+**The `full` predicate was unsound by five routes, not one.** I found the first
+myself: `PYTEST_ADDOPTS="-k alpha"` narrows a run while
+`invocation_params.args` stays **byte-identical** to a genuine full run. The
+pre-review generalised it — ini `addopts`, `-p` (an option my own allowlist
+*admitted*), a bare invocation with zero positionals, and collection-time skips
+all certify `full` on a partial run. And the allowlist was simultaneously too
+*narrow*: it excluded `--no-header` / `--no-summary`, which
+`scripts/quality_gate.py` uses for **every** order-independence seed run, so real
+full runs would have been recorded `unknown`. The allowlist is withdrawn
+entirely; classification now reads **resolved configuration**.
+
+**Three of my ten falsifiers could not fail.** `executed + not_run == collected`
+is `executed + (collected − executed) == collected` — true for every pair of
+integers. It returned true across **18 probed session shapes including ones whose
+counts were demonstrably wrong** (ledger `passed: 2` against pytest's `1 passed`).
+The release-evidence falsifier injects a fault into a path guard 4 has already
+disabled, so it passes on a deliberately broken implementation (measured over an
+8-cell matrix). And "the encoded line ≤ 4096" is trivially true on the branch
+that writes no line. That is the exact defect class `AGENTS.md` names — a check
+that reports success without testing its property — and I wrote three of them in
+direct response to a finding about rigour.
+
+**My ordering claim was simply false.** Order changed nothing in any of eight
+cells; only the guard did. And the "therefore" is disproved: with release-logic
+first and the ledger unguarded, `RELEASE MODE:` never printed at all, because
+that evidence is emitted in `pytest_sessionfinish` and the raise ended the
+session first.
+
+Two further executed findings worth naming: **guard 3 never fires on this
+platform** (`gettempdir()` returns `/var/folders/...` while resolved children are
+`/private/var/folders/...`, so the one-sided comparison is `False` for a
+directory plainly inside the temp tree) — and that matters because
+`security_check.py` builds the release checkout under `gettempdir()` and
+`dev/measurement/` is tracked. And **`head` derivation fails in every linked
+worktree**, of which this repository has **eight**.
+
+## Revision 3
+
+The complete current contract, self-contained. Supersedes Revision 2 in full.
+
+### Assurance path
+
+**high-assurance.** Edits gate-frozen `bootstrap/tests/conftest.py` (re-anchor
+required); adds a file write to every non-child, non-release session in the one
+file that can already decide a session's exit status. **Executes nothing.**
+
+### Scope of the change
+
+**In scope**: five hooks in `bootstrap/tests/conftest.py`; a gitignored JSONL
+ledger at `dev/measurement/suite-runs.jsonl`; its `.gitignore` rule; a reader in
+`tools/`; one new test file; a note in `dev/measurement/README.md`.
+
+**Excluded**: any subprocess; any doctrine, canonical-command, template or
+adopter surface; any dependency; any enforcement.
+
+### The hook lifecycle
+
+Five hooks, each **individually** wrapped: `pytest_configure` (claim marker),
+`pytest_runtest_logreport` (accumulate), `pytest_collectreport` (collection
+errors), `pytest_deselected` (deselection count), `pytest_sessionfinish` (reduce,
+write, release marker in `finally`).
+
+**Every one is individually guarded, and that guard is the whole protection.**
+Measured unguarded: `INTERNALERROR` and exit 3 from `pytest_configure`,
+`pytest_runtest_logreport` and `pytest_collectreport`; exit 0→1 from
+`pytest_sessionfinish`. Guarded, each restores exact parity with a fault-free
+control.
+
+**The Revision 2 ordering claim is withdrawn.** Measured over an 8-cell matrix
+(order × guard × release-mode), order changed nothing in any cell; and in the
+release-first/unguarded cell the release evidence was lost anyway — `RELEASE
+MODE:` never printed, `no tests ran in 0.00s` — because that evidence is emitted
+in `pytest_sessionfinish` and the raise ended the session before the skip
+occurred. **Ordering is still contract, as defence in depth, and for all three
+pre-existing hooks** — `pytest_runtest_logreport`, `pytest_collectreport` and
+`pytest_sessionfinish`. Revision 2 named two and omitted the third, which is the
+one that owns the release gate's only `session.exitstatus` write and the one this
+change fills with a bounded retry loop. In each, the pre-existing release logic
+runs to completion first and the ledger block is last.
+
+**In `pytest_sessionfinish` the ledger block is wrapped in `except
+BaseException`**, not `except Exception`: a `KeyboardInterrupt` arriving inside
+the retry loop would otherwise propagate past the guard, and measured it turns a
+control's exit 1 with one `RELEASE MODE` report into exit 130 with none.
+Swallowing is correct there because the block is by contract inert.
+
+### Node accounting
+
+`collected` is `session.testscollected`; `executed` is the number of nodes that
+emitted at least one runtest report; `not_run` is `collected − executed`.
+
+**`executed + not_run == collected` is withdrawn as an asserted identity.** It is
+`executed + (collected − executed) == collected`, true for every pair of
+integers; the Evidence row naming it tested nothing, and it returned true on 18
+of 18 probed shapes including ones whose counts were wrong. It is replaced by a
+bound that *can* fail — **`0 <= executed <= collected`, and a row violating it is
+not written** — and by a reconciliation assertion in the test file against
+`terminalreporter.stats`. The surviving identity (the seven outcome counts sum to
+`executed`) is a schema-integrity check, **not evidence that the counts are
+right**, and is labelled as such.
+
+The ledger's counts are per **node**; pytest's terminal counts are per **report**.
+The test file states the mapping and asserts the ledger against it.
+
+### Outcome precedence — seven buckets
+
+Per node, over its reports, in order:
+
+1. a `failed` outcome in **setup or teardown** → **`errors`** (pytest's own
+   `error` outcome, which Revision 2 had no bucket for and folded into `failed`);
+2. a `failed` outcome in **call** → **`failed`**;
+3. a report carrying `wasxfail` → **`xpassed`** if it passed, else **`xfailed`**;
+4. any `skipped` outcome in any phase → **`skipped`** (including teardown-only);
+5. a passing `setup` with **no `call` report** → **`aborted`** — the node began
+   and the session ended under it. Revision 2's terminal `else passed` counted
+   these as passes: measured, `pytest.exit()` and `KeyboardInterrupt` from the
+   second of three tests each produced ledger `passed: 2` against pytest's
+   `1 passed`;
+6. otherwise → **`passed`**.
+
+### The row schema
+
+`ts_start`, `ts_end`, `wall_s` (clock stopped before collector work),
+`collector_ms`, `head`, `interpreter`, `invocation`, `scope`, `label`,
+`collected`, `executed`, `not_run`, `deselected`, the seven outcome counts,
+`collection_errors`, `exitstatus`, `interrupted`, `truncated`, `by_file`,
+`by_file_total`, `by_file_kept`.
+
+**`head` is resolved by procedure, not by "40-hex from `.git` files"**: read
+`.git`; if it is a **file**, follow its `gitdir:` line — this is every linked
+worktree, and this repository has **eight** registered plus a harness that offers
+worktree entry, so worktree sessions are routine here; read `HEAD` from the
+resulting directory; if `HEAD` is `ref: <path>`, read that loose ref and fall
+back to `packed-refs`; a 40-hex result, otherwise `null`.
+
+**`by_file`** maps a repo-relative path (≤ 160 bytes) to an **integer node
+count**. The fixed 25-entry cap is dropped — it existed as the 4096-byte
+enforcement, that role now belongs to the line-level rule, and 25 discards 101 of
+this suite's 115 test files. It is **not** replaced by "no cap": measured, all
+115 real paths encode to **6,000 bytes**. The budget alone binds, by eviction,
+keeping **74** of 115 on a canonical full run. `by_file_total` and `by_file_kept`
+are recorded so a reader can never mistake a pruned breakdown for a complete one.
+
+### Scope — derived from resolved configuration, never from argv tokens
+
+`config.invocation_params.args` is **not** the option state. Measured:
+`PYTEST_ADDOPTS="-k alpha"` over a 3-test suite records args byte-identical to a
+genuine full run, `collected == executed == 1`, `not_run == 0` — and every clause
+of a token-based `full` rule holds while a third of the suite ran. `-p no:python`
+records `collected == 0, exitstatus == 5` and also classified `full`.
+
+**The safe-option allowlist is withdrawn.** It classified nothing it could be
+trusted to classify, and it excluded `--no-header` / `--no-summary`, which
+`scripts/quality_gate.py` passes on **every** order-independence seed run — so
+genuine full runs would have been recorded `unknown`.
+
+`full` requires **all** of: `config.args` non-empty and its resolved set equal to
+`{<suite root>}` (zero positionals is `unknown`, never `full`); `config.inipath is
+None`; `PYTEST_ADDOPTS` and `PYTEST_PLUGINS` unset; `collected > 0` and
+`executed > 0`; `deselected == 0`; `collection_errors == 0`; `not_run == 0`;
+`interrupted` false; `truncated` false. `--collect-only` is never `full`. A
+recognized strict-subset path is `targeted`. Everything else is `unknown`.
+
+The reader **re-derives** `scope` from stored fields — which is only meaningful
+because every input above is now *in* the row.
+
+### The encoded-row budget
+
+**The bound is 4096 bytes of the final encoded line**, excluding the terminating
+newline.
+
+**The encoder is pinned**: `json.dumps(row, ensure_ascii=True,
+separators=(",", ":"), allow_nan=False, sort_keys=True)`. This is contract, not
+style: measured, the same row moves **1,626 → 3,930 bytes** between
+`ensure_ascii=False` and `True`, and default separators add ~125 bytes on a
+25-entry row — either can move a row across the cliff, so two conforming
+implementations would disagree about whether the row exists at all.
+`allow_nan=False` stops a `NaN` `wall_s` from writing a line no non-Python reader
+can parse. The test file asserts the call site matches this signature.
+
+**Sanitize, then cap.** `label` and every `invocation` token are made ASCII-safe
+*before* capping (`s.encode("utf-8", "backslashreplace").decode("ascii")`), which
+also neutralises the lone surrogates POSIX argv and environ produce under
+`surrogateescape` — otherwise the encode raises `UnicodeEncodeError` and silently
+disables the ledger for that run. Caps then apply to the sanitized string, so a
+cap in bytes is a cap in *encoded* bytes: `label` 128 bytes; `invocation` ≤ 64
+tokens, ≤ 128 bytes each, ≤ 1,024 bytes total. Without this order the caps do not
+bound the line — measured, a row respecting every Revision 2 cap reached **7,386
+bytes**.
+
+Then, in order: encode; if ≤ 4096, write. Otherwise evict `by_file` entries —
+**smallest node count first, ties broken by longest path** ("cheapest-first" was
+undefined and on the byte reading exactly backwards) — re-encoding until it fits
+or `by_file` is empty. If it still exceeds, or the encode raised, **write the
+skeleton row**: `label` and `invocation` `null`, `by_file` empty, `truncated`
+true, `scope` `unknown`. Measured skeleton overhead is **451 bytes**, so it always
+fits.
+
+**Row-per-session invariant.** Every session reaching `pytest_sessionfinish` past
+the four guards, that acquires the lock within the deadline, appends **exactly
+one** line. The only paths appending nothing are the guards, `CAIRN_SUITE_LEDGER=0`,
+an absent directory, and lock-deadline expiry — which makes the ledger's session
+count a **lower bound**, and the reader says so whenever it reports totals.
+**A completed session never silently vanishes.**
+
+If `invocation` was capped, `truncated` is true and `scope` is forced `unknown`;
+`truncated` stays bound to the invocation cap alone, because the scope rule
+depends on it.
+
+### Durability
+
+`LOCK_NB` on a bounded retry: **250 ms monotonic deadline, 10 ms interval**. On
+expiry: no row, no waiting, no exception. Blocking `flock` is refused. **Repair
+the tail before appending**: with the lock held, if the file is non-empty and does
+not end in a newline, write one first — measured, without it a truncated fragment
+fuses with the next row and both are lost. One `os.write`; **check the returned
+byte count**. POSIX only; network filesystems excluded.
+
+### The five guards
+
+1. **Outcome-inert** — every hook individually guarded; **the ledger code paths
+   never read or write `session.exitstatus`**, and the pre-existing release-mode
+   write is untouched and runs first. (Revision 2's "never touches
+   `session.exitstatus`" was not a property of the merged function, which does.)
+2. **Reentrancy with ownership** — `CAIRN_SUITE_LEDGER_SESSION=1` claimed in
+   `pytest_configure`; a pre-existing marker means child; unset in `finally`
+   **only if owned**.
+3. **Containment** — skip when the **resolved** ledger directory is under the
+   **resolved** `tempfile.gettempdir()`. Both sides resolved is contract:
+   measured, `gettempdir()` returns `/var/folders/.../T` while every resolved
+   child is `/private/var/folders/.../T/...`, so the one-sided comparison
+   Revision 2 specified returns `False` for a directory plainly inside the temp
+   tree. This is load-bearing — `bootstrap/security_check.py` builds the release
+   checkout under `gettempdir()`, and `dev/measurement/` is tracked, so that
+   checkout contains the ledger directory.
+4. **Release mode** — skip using the module's **existing** predicate (strict
+   equality against the one recognized value), never a presence test. A presence
+   reading would put two semantics for one variable in one file and let
+   `CAIRN_RELEASE_GATE_ACTIVE=0` — which the suite explicitly certifies as *not*
+   release mode — silently suppress every row.
+5. **Opt-out** — `CAIRN_SUITE_LEDGER=0`; and a no-op when `dev/measurement/` is
+   absent.
+
+### Failure dispositions
+
+Every path closes toward **doing nothing**: unwritable directory, absent
+directory, lock-deadline expiry — each yields no row and no other effect. **Two
+states are explicitly not on that list.** An unreadable, malformed or
+unrecognized `.git` is not a durability fault: it yields `head: null` **and a
+row**. An over-budget or unencodable row yields the **skeleton row**, not
+silence. Revision 2 prescribed both outcomes for the `.git` state — `null` in the
+schema, "no row" in this section — and the schema wins.
+
+### Evidence
+
+| invariant | falsifier |
+|---|---|
+| Exit status and outcomes never change | fault-inject **each of the five hooks separately**; compare exit code and outcome totals against a collector-disabled control |
+| A diagnostics fault never suppresses release evidence | with `CAIRN_RELEASE_GATE_ACTIVE=1` and a real skip present, inject the fault **with the ledger's own guard removed** — otherwise guard 4 makes every order × guard cell identical and the falsifier passes on a broken implementation. Run twice: `Exception` from the accumulator, `BaseException` from the `sessionfinish` block. Assert the `RELEASE MODE` report still prints with its nodeids and the exit code is 1 |
+| Node accounting | `-x` early failure, `-x` final-node failure, `--maxfail=2`, `pytest.exit()`, `KeyboardInterrupt`, setup error, teardown error, module-level skip; assert `0 <= executed <= collected`, the seven-bucket sum, and **reconciliation against `terminalreporter.stats`** |
+| Scope | `PYTEST_ADDOPTS="-k <one test>"` over the canonical argv; ini `addopts`; `-p no:python`; zero positionals; module-level `pytest.skip(allow_module_level=True)`; `pytest.importorskip` on an absent module; **the order-independence sub-gate's exact argv**; assert each is not `full` except the genuine canonical run |
+| Encoded budget | oversized label, 64+ tokens, oversized tokens, ASCII control characters in both label and argv, lone surrogates, non-BMP codepoints, all 115 real paths; assert **exactly one line** is appended, that it is ≤ 4096 bytes, and that `json.loads` round-trips it |
+| Encoder pinning | assert the call site matches the exact signature |
+| Containment | a ledger directory under `gettempdir()` **via the unresolved `/var` spelling**; assert no row |
+| Truncation forces unknown | capped invocation ⇒ `truncated` true **and** `scope == "unknown"` |
+| Bounded lock | hold the lock externally; assert the session completes within 1 s of a control and writes no row |
+| Tail repair | partial tail then normal append; reader reports the fragment **and** returns the later row |
+| Reentrancy | nested pytest writes nothing; two sequential `pytest.main()` write two rows; a pre-existing marker survives |
+| `head` | main checkout, linked worktree (`.git` as file), packed-refs checkout, malformed `.git`; assert a row in every case |
+
+Standing gates: `test_gate_manifest.py`, `test_gate_preflight.py`,
+`test_security_check.py`, `test_python_floor.py`.
+**Boundary B mode: `full`** — gate-frozen file under a re-anchor ceremony.
+
+### Settled under probe — not open questions
+
+Recorded so a later round does not re-open them. The five-hook guard requirement
+is confirmed by fault injection. `pytest_collectreport` fires for collection
+errors and counts without Package/Module double-count. Module state does not leak
+across two sequential in-process `pytest.main()` calls. `_release_child_env`,
+`_gate_manifest._collect`, `test_security_check._child_pytest` and
+`quality_gate._run_order_independence` all pass the environment through as a
+superset, so **no suite-spawned child writes a row**. Codepoint-boundary
+truncation is well-defined for multi-byte, non-BMP and combining sequences. Path
+re-spellings (`./x`, `x/`, absolute, `..`) reach argv verbatim and resolve.
+Clustered shorts, `--` separators and separate-value options fall to `unknown` —
+the safe direction. Adding one test file does not break the gate manifest.
+Shuffling does not perturb `by_file`, since attribution is by nodeid. The 250 ms
+deadline is generous for a single `open`+`flock`+`write`+`close`.
+
+### Known omissions
+
+Dirty-tree state deferred (E1) behind its own Security Review; release-mode and
+nested sessions unmeasured by design; Windows unclaimed; network filesystems
+excluded; plan attribution manual unless `CAIRN_SUITE_LEDGER_LABEL` is set;
+in-process `pytest.main()` runs treated as children; collector overhead
+unmeasured until implementation. The session count is a **lower bound**, never a
+total.
+
+### Withdrawn / superseded commitments
+
+* **"the five counts sum to `collected`"** — withdrawn (E11), false under `-x`
+  and interruption.
+* **`executed + not_run == collected` as a falsifier** — withdrawn (pre-review);
+  a tautology that passed on 18 of 18 shapes including wrong ones. Replaced by
+  `0 <= executed <= collected` plus reconciliation against `terminalreporter`.
+* **Six outcome buckets with a terminal `else passed`** — withdrawn; no bucket
+  for pytest's `error`, and aborted nodes counted as passes. Replaced by seven
+  buckets including `errors` and `aborted`.
+* **Inertness wrapping only the writer** — withdrawn (E12).
+* **The ordering-as-protection claim** — withdrawn (pre-review); order changed
+  nothing across eight cells, and release evidence was lost anyway in the cell it
+  claimed to protect. Ordering retained as defence in depth, extended to all
+  three pre-existing hooks, with `except BaseException` in `sessionfinish`.
+* **`scope` from `invocation_params.args`** — withdrawn (pre-review); unsound by
+  five routes. Replaced by resolved-configuration classification.
+* **The closed safe-option allowlist** — withdrawn entirely; it certified partial
+  runs as `full` and would have recorded genuine full runs as `unknown`.
+* **Per-field caps as the 4096-byte enforcement** — withdrawn (pre-review);
+  measured 7,386 bytes while respecting every cap. Replaced by sanitize-then-cap,
+  a pinned encoder, and a skeleton row.
+* **Silence as the over-budget disposition** — withdrawn; replaced by the
+  skeleton row and the row-per-session invariant, because the old falsifier
+  passed vacuously on exactly the input that demonstrated the defect.
+* **The 25-entry `by_file` cap** — withdrawn; replaced by budget-driven eviction
+  with `by_file_total` / `by_file_kept`.
+* **One-sided containment comparison** — withdrawn; never fired on this platform.
+* **Guard 4 as a presence test** — withdrawn; strict equality, matching the
+  module's existing predicate.
+* **"40-hex from `.git` files"** — withdrawn; fails in all eight linked
+  worktrees. Replaced by a resolution procedure.
