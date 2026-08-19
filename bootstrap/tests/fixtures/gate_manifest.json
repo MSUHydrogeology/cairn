@@ -9,12 +9,12 @@
     "bootstrap/tests/fixtures/scaffold_ast_baseline.json": {
       "governed_by": "_ast_attest.py update-symbol \u2014 one allowlisted baseline key, --expect-old guarded",
       "mode": "100644",
-      "oid": "d1ba833a19e3cfc014f82c71f0006d801fe3881e",
+      "oid": "c1f80fa5847fdf79bc05c456e95b4d67abce58fa",
       "pre_run_sha256": "efce82eb5310709093550fc41ecb54642cfad247e48163224cd4d059fd3df20d"
     }
   },
   "collection": {
-    "node_count": 4455,
+    "node_count": 4460,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -1051,6 +1051,7 @@
       "bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_a_configured_verifier_cannot_forge_a_signature",
       "bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_a_reference_transaction_hook_cannot_move_a_third_ref",
       "bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_git_env_channels_are_dropped",
+      "bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_lazy_fetch_is_off_even_when_the_caller_asks_for_it",
       "bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_only_the_launcher_starts_git",
       "bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_replacement_objects_cannot_substitute_the_anchored_roster",
       "bootstrap/tests/test_gate_preflight.py::TestSterileGitLauncher::test_the_hook_probe_is_live",
@@ -3091,6 +3092,10 @@
       "bootstrap/tests/test_reanchor.py::TestHashedBytesAreParsedBytes::test_a_packet_rewritten_between_the_two_reads_refuses",
       "bootstrap/tests/test_reanchor.py::TestHashedBytesAreParsedBytes::test_a_trailing_newline_survives_the_snapshot",
       "bootstrap/tests/test_reanchor.py::TestHashedBytesAreParsedBytes::test_an_embedded_NUL_refuses_at_the_snapshot_comparison",
+      "bootstrap/tests/test_reanchor.py::TestLazyFetchCannotRunAnUnlistedTransportHelper::test_GIT_NO_LAZY_FETCH_stops_it",
+      "bootstrap/tests/test_reanchor.py::TestLazyFetchCannotRunAnUnlistedTransportHelper::test_an_emptied_environment_alone_lets_the_helper_run",
+      "bootstrap/tests/test_reanchor.py::TestLazyFetchCannotRunAnUnlistedTransportHelper::test_the_checker_binds_it_too",
+      "bootstrap/tests/test_reanchor.py::TestLazyFetchCannotRunAnUnlistedTransportHelper::test_the_launcher_binds_it",
       "bootstrap/tests/test_reanchor.py::TestShowReport::test_a_long_class_is_bounded_and_SAYS_it_was_bounded",
       "bootstrap/tests/test_reanchor.py::TestShowReport::test_a_package_with_no_report_refuses",
       "bootstrap/tests/test_reanchor.py::TestShowReport::test_show_report_refuses_when_the_package_is_absent",
@@ -5903,8 +5908,8 @@
     },
     "bootstrap/tests/_gate_preflight.py": {
       "mode": "100644",
-      "oid": "6f6667258f0cf64288dde95caed8403b602c7a48",
-      "sha256": "0cad65641dfdcdd6f64a114c6375fe16848ae9091f32ccd334465159e4dc3d4b"
+      "oid": "c7edf5de14d6e39c6364e45a4234639e6367b7bf",
+      "sha256": "8a6de3efc1e9e5a5e4a683556ed058b81bb30ca2264552444e03077167af6e06"
     },
     "bootstrap/tests/_gate_reanchor.py": {
       "mode": "100644",
@@ -6118,8 +6123,8 @@
     },
     "bootstrap/tests/test_gate_preflight.py": {
       "mode": "100644",
-      "oid": "bd4ac7c95f253793909c4b04f823e24b6663408a",
-      "sha256": "9cba5adf98f0b0cd9e5ade44523d61434515c5d33491815a4beb16dbfd99bca9"
+      "oid": "7b31ebb5f959d4c086c41b6a23096d8cd33969ce",
+      "sha256": "0386437ac397560d7876ade4a597e9db70536d5e7de4d9af0dfe311588284a65"
     },
     "bootstrap/tests/test_gate_reanchor.py": {
       "mode": "100644",
@@ -6358,8 +6363,8 @@
     },
     "bootstrap/tests/test_reanchor.py": {
       "mode": "100644",
-      "oid": "d36f4991cf71d8fa82fa701143e3adf1f2201e12",
-      "sha256": "b5646ebc1078dcb1c8b797ea732c3616b95078c420d4d4e640b56b7a4eb711d5"
+      "oid": "3cc5ef81bb9ce0ad0926ce7b07783491eedaa529",
+      "sha256": "dd1dd56b2c166930989708254caae18a297a18ab550cec70054ea477882344e6"
     },
     "bootstrap/tests/test_reference_scripts.py": {
       "mode": "100644",
