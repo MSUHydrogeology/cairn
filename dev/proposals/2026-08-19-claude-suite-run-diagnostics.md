@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-19
-**Status**: awaiting-decision
+**Status**: accepted
 **Assurance path**: **high-assurance** — the change edits `bootstrap/tests/conftest.py`,
 which is gate-frozen, so landing it requires a re-anchor (a trust ceremony). It
 also adds a **file write to every test session**, which is a trust boundary
@@ -2500,3 +2500,20 @@ executed Python 3.13.13 paired-run probe; and current lifecycle declarations.
 writer or reader, run the full suite, stress concurrent writes, exercise the
 re-anchor, or test Windows/NFS. Those remain plan, code-review, and ceremony
 work rather than proposal blockers.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-19
+
+**ACCEPTED as revised (Revision 5).** Authorization, quoted verbatim and visually isolated:
+
+> "I authorize you to script my acceptance of both proposals. For the full-suite-interception proposal, please append this statement "Boundary B's canonical pair now requires CAIRN_FULL_SUITE=1; verification records written before this guard cite the bare form and are accurate for the runs they describe.""
+
+**Summary of accepted terms (Revision 5)**:
+- **In-Suite Cost Telemetry**: Adds 5 pytest hooks in `bootstrap/tests/conftest.py` accumulating per-node execution time and appending JSONL rows to gitignored `dev/measurement/suite-runs.jsonl`.
+- **Zero Subprocesses & Direct Ref Reads**: Reads `.git/HEAD`, refs, and `commondir` directly; executes zero subprocesses during testing sessions.
+- **Five Fail-Closed Guards**: Outcome-inert (wrapped in `except BaseException`), reentrancy with ownership tracking (`CAIRN_SUITE_LEDGER_SESSION=1`), containment against tempdirs, release-mode exemption (`CAIRN_RELEASE_GATE_ACTIVE=1`), and operator opt-out (`CAIRN_SUITE_LEDGER=0`).
+- **POSIX Concurrency & Durability**: `fcntl.flock` with 250ms deadline; 4096-byte line budget with deterministic eviction and total skeleton fallback; tail newline repair.
+- **Standalone Reader Tool**: `tools/suite_cost.py` renders cost profiles, concentration, frequency, and overlap without requiring test suite execution.
+- **Plan Review Requirement**: The derived plan takes `Plan review: required(External)` and implementation requires an independent Security Review and re-anchor ceremony.
+
+**Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
+
