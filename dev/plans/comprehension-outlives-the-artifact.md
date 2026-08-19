@@ -2480,3 +2480,80 @@ Assurance path: standard
 
 **Status** -> `ready-to-archive`.
 
+
+## Response to code review -- Claude -- 2026-08-19
+
+**Verdict accepted: PASS, no findings, no second round required.** One
+correction is owed to the record, and the reviewer is the reason it exists.
+
+### The reviewer's figure is right and mine was stale
+
+The implementation-verification section above reports the AST attestation
+baseline as **35 CHANGED symbols**, `upgrade.py` at 22 nodes. The review reports
+**37**. The review is correct.
+
+Measured at `f129178`: **37 unique CHANGED symbols across 74 node lines** —
+`upgrade.py` 26, `install.py` 18, `slotmerge.py` 10, `merge.py` 8, `config.py`
+6, `lockfile.py` 4, `security.py` 2.
+
+**How it went stale.** The figure was measured at `4385ae4`, the engine-package
+sweep, and then carried forward through two further commits. `5ae92ee` removed
+four tags from `bootstrap/_scaffold/upgrade.py`, two of them inside docstrings —
+and docstrings are AST nodes. The count moved and the record did not.
+
+**This is the exact failure `bootstrap/AST_BASELINE_RUNBOOK.md` warns about** —
+*"derive the expected CHANGED set against the committed baseline rather than
+carrying a figure forward, including from that runbook"* — committed by the
+agent who cited that runbook twice while doing it. It is also the failure
+`AGENTS.md`'s numeric-precision rule exists to prevent: this is a **snapshot**
+and it was written undated, so nothing marked it as needing re-measurement.
+
+The corrected figure in `dev/PLANNING.md` now carries `as_of 2026-08-19` at
+`f129178` **and** the instruction to re-derive at ceremony time rather than
+trust the number. A dated snapshot that says "re-measure me" is the only honest
+shape for a figure that moves with every commit.
+
+The prior section is left as written. It records what was believed then, which
+is the append-only rule working as intended.
+
+### One boundary the review's coverage list does not reach
+
+The review names `AGENTS.md` under **Covered**, and for Chunk B that is right.
+But `ab3d987` — the *"confirm the instrument before trusting an absence"*
+paragraph added to `AGENTS.md` > Verifying claims — landed **after** the
+reviewed commit `88ed8da` and is outside the target range `29d3cf0..74a4bbd`.
+It is a Maintainer-directed change made outside this plan's chunks, so its
+absence from this review is correct; flagged only so a later reader does not
+infer from "Covered: `AGENTS.md`" that this review read it. It has had no
+independent review.
+
+### The fourth non-pass outcome is being resolved, not dispositioned
+
+Known non-pass #4 above (`test_cairn_roster_names_one_principal`) was recorded
+as owned by `ceremony-as-code`. That plan has since ruled: the accepted contract
+specifies a ceremony key *"used for nothing else"*, so a roster holding two keys
+is not a dedicated-key end state, and the ceremony key **replaces** the
+Maintainer's general-purpose entry rather than joining it. The node will pass
+once the roster is corrected. A reviewer running the suite after that lands will
+count three failures against the four recorded above; this is why.
+
+### A second `claim_check` flag, and why it also stays
+
+Filing this Response surfaced a **second** line-bounds hard flag, at `:2471` —
+inside the review's own ledger, which transcribes the same stale
+`REANCHOR_RUNBOOK.md` line range this plan carried. The reviewer copied a dead
+coordinate out of the artifact under review, which is a small and rather pointed
+demonstration of the thesis: a line citation decays, and it decays *into*
+whatever copies it next.
+
+Writing this paragraph produced a **third** flag, for the same reason, until the
+range was described rather than reproduced. Three occurrences of one dead
+citation, two of them created by people documenting the first.
+
+It stays for the same reason the first one does — a reviewer's text is not the
+author's to correct. `scripts/claim_check.py` therefore reports **two** hard
+flags on this file until it archives — at `:1097` and `:2471`, both the same
+dead coordinate, neither repairable by the author. Recorded so the next person to run the checker does
+not read two flags as two problems.
+
+**Status** -> `ready-to-archive` (unchanged; the review set it).

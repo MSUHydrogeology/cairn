@@ -1093,9 +1093,12 @@ therefore *"when that proposal reaches implementation"*, not a date.
   everything instead of two.
 
   **What the re-anchor batch must carry**, all of it caused by this work and
-  none of it self-serviceable: the AST attestation baseline (**35 CHANGED
-  symbols**, up from 13 — `upgrade.py` 22 nodes, `install.py` 18, `slotmerge.py`
-  10, `merge.py` 8, `config.py` 6, `lockfile.py` 4, `security.py` 2); the gate
+  none of it self-serviceable: the AST attestation baseline (**37 CHANGED
+  symbols** across **74 node lines**, up from 13, `as_of 2026-08-19` at `f129178`
+  — `upgrade.py` 26 nodes, `install.py` 18, `slotmerge.py` 10, `merge.py` 8,
+  `config.py` 6, `lockfile.py` 4, `security.py` 2; **derive the set against the
+  committed baseline at ceremony time rather than carrying this figure forward**,
+  per `bootstrap/AST_BASELINE_RUNBOOK.md`); the gate
   manifest, whose frozen-file set and 335 pinned node ids both moved (Chunk D
   renamed 38 containers); and the install lockfile's digest for
   `run_portable_security_sweeps.py`.
