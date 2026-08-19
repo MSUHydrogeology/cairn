@@ -1,5 +1,5 @@
 """
-check_cairn composes content_scan by file class (P2 Chunk 6).
+check_cairn composes content_scan by file class.
 
 Pins the load-bearing file-class routing: a *template -> instruction*
 file is scanned strictly (URL flagging on); doctrine / docs / case-study

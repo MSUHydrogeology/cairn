@@ -263,7 +263,7 @@ _SURFACES = {
     # Cairn's OWN installed copy of the module above, paired to it by
     # `dev/.cairn/cairn-lock.yml`. Chunk B edited the shipped source and not
     # this one, leaving the unsound `scope-cut -> accept` mapping live in the
-    # copy Cairn itself reads (code review C1). Listing it here is what makes
+    # copy Cairn itself reads. Listing it here is what makes
     # that drift a red test rather than a lucky catch.
     "dev/modules/dual-review.md": _TEAM_GATED_MODULE,
     "doctrine/dual-review.md": _DOCTRINE_CANONICAL,

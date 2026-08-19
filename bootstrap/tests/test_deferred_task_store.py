@@ -1,4 +1,4 @@
-"""Tests for derived held / completed task state (Chunk P1.2).
+"""Tests for derived held / completed task state.
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 

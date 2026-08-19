@@ -1,7 +1,7 @@
 """Upgrade round-trip for the lifecycle-routine skills (Chunk 4.5 of the
 executing plan `2026-06-01-claude-cairn-vendor-neutral-skills`).
 
-Decision 4 / EP3: the canonical skill artifacts participate in the shipped
+The canonical skill artifacts participate in the shipped
 upgrade machinery exactly like a ``core/`` file --
 
 * a substituted ``SKILL.md`` an adopter customized **rides the token-/slot-aware

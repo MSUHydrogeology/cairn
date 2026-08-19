@@ -4,7 +4,7 @@ Covers:
 * Install-path: both scripts land verbatim under the ``issue-capture`` module.
 * Dry-run smoke: no API calls made; output reports what would happen.
 * Missing-token error: the script exits non-zero with a clear "set <VAR>"
-  message when no credential is found (R2).
+  message when no credential is found.
 * ``load_manifest`` validation: shape errors surface clearly.
 * ``reconcile`` logic: create-new, exists-unchanged, drift-skip, drift-update.
 

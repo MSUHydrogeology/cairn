@@ -104,7 +104,7 @@ def parse_promotion(text: str) -> PromotionManifest:
 
 
 def derive_changed_gate_files(repo: Path, prior_anchor: str, candidate: str, is_sensitive) -> list[str]:
-    """**Independently** derive the changed gate/sensitive file set (P1.3) via
+    """**Independently** derive the changed gate/sensitive file set via
     ``git diff --name-only prior_anchor..candidate``, filtered by *is_sensitive* —
     so a permissive caller cannot omit an actually-changed sensitive file."""
     out = subprocess.run(

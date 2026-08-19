@@ -1,4 +1,4 @@
-"""Tests for the maturity-ladder trigger evaluators (Chunk P1.9a).
+"""Tests for the maturity-ladder trigger evaluators.
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 

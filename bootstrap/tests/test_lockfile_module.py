@@ -6,7 +6,7 @@ Contracts:
   and the `config` leaf (for `PresetError`); it must never import the engine
   package or any higher module (install / upgrade / cli), and there must be no
   cycle (config must not import lockfile).
-* **Trust-anchor narrow import (plan 0B.3 / SR2)** — `bootstrap/verify_integrity.py`
+* **Trust-anchor narrow import** — `bootstrap/verify_integrity.py`
   imports `read_lockfile` / `_LOCKFILE_REL` / `_LIVING_STATE_DSTS` from the
   *narrowest owner* (`bootstrap._scaffold.lockfile`), not the broad facade.
 * **Single identity** — every moved symbol resolves to the one `lockfile` object

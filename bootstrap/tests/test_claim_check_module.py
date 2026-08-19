@@ -895,7 +895,7 @@ class TestLiveness:
     def test_archive_redundant_glob_is_a_non_failing_migration_item(
         self, cc, tmp_path,
     ):
-        # The [C1] node: Section 1's resolver makes a glob redundant, and
+        # Section 1's resolver makes a glob redundant, and
         # Section 3's liveness must NOT then hard-fail it.  Both halves in
         # one node -- effective before the archived file exists, a reported
         # migration item after -- so the transition itself is the oracle.

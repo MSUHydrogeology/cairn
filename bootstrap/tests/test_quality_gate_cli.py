@@ -127,7 +127,7 @@ class TestReport:
 
 
 class TestReportFlattenNewlines:
-    """P2 code-review regression: machine-mode `--report` promises
+    """Regression: machine-mode `--report` promises
     one-finding-per-line TAB-separated output, but a multi-line finding
     message (e.g. order-independence echoes pytest stderr) used to
     break that contract by emitting raw newlines.  Now newlines are

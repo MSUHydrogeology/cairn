@@ -157,7 +157,7 @@ class TestForkableContent:
     ) -> None:
         """The forkable ships to adopters -- every path in its
         worked examples must be adopter-relative (no `cairn/`
-        prefix).  This is Antigravity finding P1's primary
+        prefix).  This is the check's primary
         guarantee."""
         assert _scaffold(tmp_path, [MODULE]) == 0
         text = (tmp_path / FORKABLE_DST).read_text(encoding="utf-8")

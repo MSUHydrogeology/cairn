@@ -242,7 +242,7 @@ class TestTemplatesDirectiveForbidden:
         assert fs == [], [f.message for f in fs]
 
     def test_vendor_token_in_template_without_directive_fails(self, qg, tmp_path):
-        """P1 code-review regression (2026-05-28): a vendor / project
+        """Regression: a vendor / project
         token inside `templates/` must fail even when no exemption
         directive is present.  Previously, the early-return after the
         directive-forbidden check silently let template token leaks

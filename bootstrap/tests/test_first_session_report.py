@@ -1,4 +1,4 @@
-"""Tests for the first-session-survivability plan's F1 (honest fan-out
+"""Tests for honest fan-out
 report + real invitation).
 
 * The install closing line names no command that is not installable (no
