@@ -64,6 +64,10 @@ dev/.cairn/allowed_signers
 
 ARTIFACT_REL='bootstrap/reanchor.sh'
 
+#: The trust root this ceremony moves. Named here rather than taken as an
+#: argument: which ref is the anchor is not the operator's to choose.
+ANCHOR_REF='refs/cairn/gate-anchor'
+
 die() {
     printf 'REFUSE: %s\n' "$*" >&2
     exit 1
@@ -512,11 +516,47 @@ MANIFEST=$T/review-manifest.txt
     done
 } > "$MANIFEST" || die "cannot write the review manifest"
 
+# --- WHICH CEREMONY IS THIS? -----------------------------------------------
+# The runbook this launcher replaces had TWO loaders, and a launcher that
+# implemented only one would be narrower than the procedure it replaces --
+# which the objective forbids in the same breath as it asks for one command.
+#
+# The distinction is not a flag and must not become one: transition mode exists
+# ONLY to carry a closure change an external review approved, and the checker
+# refuses it when there is nothing to carry. So the mode is MEASURED, not
+# chosen: every closure member is compared at the anchor and at the resolved
+# candidate, and a single difference makes this a transition.
+#
+# Measuring beats asking. An operator who picks the mode can pick wrong in the
+# unsafe direction -- declaring "steady state" over a real closure change is
+# exactly the substitution the reviewed-transition path exists to prevent.
+CLOSURE_CHANGED=''
+while IFS= read -r ROW || [ -n "$ROW" ]; do
+    [ -n "$ROW" ] || continue
+    REL=${ROW#* }
+    ANCHORED=$(sterile_git cat-file blob "$ANCHOR_REF:$REL" 2>/dev/null \
+               | "$L_SHASUM" -a 256) || ANCHORED=''
+    ANCHORED=${ANCHORED%% *}
+    if [ "$ANCHORED" != "${ROW%% *}" ]; then
+        CLOSURE_CHANGED=yes
+    fi
+done <<ROWS
+$P_rows
+ROWS
+
 printf '%s\n' "== launcher: candidate resolved and closure verified =="
 printf '  candidate    %s\n' "$RESOLVED"
 printf '  provenance   %s\n' "$P_provenance"
 printf '  artifact     %s\n' "$ARTIFACT_REL"
 printf '  manifest     %s\n' "$MANIFEST"
+if [ -n "$CLOSURE_CHANGED" ]; then
+    printf '  mode         TRANSITION -- the authority closure differs at the\n'
+    printf '               candidate, so this ceremony carries a reviewed\n'
+    printf '               closure change\n'
+else
+    printf '  mode         steady state -- the authority closure is identical\n'
+    printf '               at the anchor and the candidate\n'
+fi
 printf '\n'
 
 # --- ONLY NOW does candidate code start ------------------------------------
@@ -535,6 +575,9 @@ printf '\n'
 # code starts, so there is no post-candidate step for candidate code to
 # influence. It also means $T is not cleaned up here -- it cannot be, the
 # artifact is running out of it.
-exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$VALUES_PATH" \
-    --review-manifest "$MANIFEST" \
-    --reviewed-candidate "$RESOLVED"
+if [ -n "$CLOSURE_CHANGED" ]; then
+    exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$VALUES_PATH" \
+        --review-manifest "$MANIFEST" \
+        --reviewed-candidate "$RESOLVED"
+fi
+exec /bin/sh "$T/$ARTIFACT_REL" stage1 "$VALUES_PATH"

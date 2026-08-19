@@ -1798,19 +1798,139 @@ def _substitute(block: str, repo: Path, *, hashes: bool = True,
     return block
 
 
-def _runbook_ceremony_script(repo: Path) -> str:
-    """The Phase 0 pre-flight loader, lifted verbatim from the runbook.
+#: The ceremony is no longer typed out of the runbook, so the helpers that used
+#: to lift executable blocks from it now build the real thing: a values file, an
+#: authorization packet, and a launcher instantiated with that packet's digest.
+#:
+#: The discipline is unchanged and is the reason these helpers exist at all. A
+#: ceremony transcribed into Python could be written correct while the shipped
+#: procedure stayed broken -- the recorded steps ARE the ceremony. What changed
+#: is only where the shipped procedure lives: it used to be prose in a document
+#: and it is now two reviewed files, so these helpers read those files instead.
 
-    The recorded steps **are** the ceremony. A fix in code that the recorded
-    steps do not exercise is not a fix -- the shape three separate first-use
-    defects took -- so the script under test comes out of the
-    runbook rather than being transcribed into Python, where it could be written
-    correct while the recorded steps stayed broken.
 
-    Only the Maintainer-recorded values are substituted; every line of logic is
-    the runbook's own.
+def _values_file(repo: Path, *, name: str = "ceremony-values",
+                 override: dict | None = None) -> str:
+    """Write a values file for this repo, resolved the way the schema demands.
+
+    Executables are recorded as RESOLVED regular files, never convenience
+    symlinks: the schema refuses a symlink on any path component, because a
+    symlinked executable is a path whose target can change between the check and
+    the execution. On this host `git` reaches the tree through a Homebrew shim,
+    so resolving is not optional decoration.
     """
-    return _substitute(_runbook_block("_gate_preflight.py"), repo)
+    tools = {}
+    for key, binary in (("env", "env"), ("git", "git"), ("mktemp", "mktemp"),
+                        ("mkdir", "mkdir"), ("shasum", "shasum"),
+                        ("sort", "sort"), ("cat", "cat")):
+        found = shutil.which(binary)
+        assert found, f"no {binary} on this host"
+        tools[key] = os.path.realpath(found)
+    values = {
+        "schema": "cairn-ceremony-values/v1",
+        "checkout": str(repo),
+        "signing_key": str(repo.parent / "maint.pub"),
+        "package": str(repo.parent / "authorization-package.json"),
+        "home": str(repo.parent),
+        "python": os.path.realpath(sys.executable),
+        **tools,
+    }
+    values.update(override or {})
+    path = repo.parent / name
+    path.write_text("".join(f"{k} {v}\n" for k, v in values.items()),
+                    encoding="utf-8")
+    return str(path)
+
+
+def _packet_text(repo: Path, oid: str, *, rows=None) -> str:
+    """Compose the authorization packet the review delivers.
+
+    Rows are the closure digests AT THE RESOLVED OID, in LC_ALL=C path order --
+    the same order the launcher's fixed list is written in, so a reordering is
+    detectable by the same comparison that detects an omission.
+    """
+    import hashlib
+    members = []
+    for rel in sorted(P.declared_authority_closure()):
+        blob = subprocess.run(
+            ["git", "-C", str(repo), "cat-file", "blob", f"{oid}:{rel}"],
+            capture_output=True, check=True).stdout
+        members.append((hashlib.sha256(blob).hexdigest(), rel))
+    if rows is not None:
+        members = rows
+    artifact = dict((rel, sha) for sha, rel in members)["bootstrap/reanchor.sh"]
+    lines = ["schema cairn-authorization-packet/v1",
+             "provenance External Security Review, test fixture",
+             "artifact bootstrap/reanchor.sh",
+             f"artifact_sha256 {artifact}"]
+    lines += [f"member {sha} {rel}" for sha, rel in members]
+    return "\n".join(lines) + "\n"
+
+
+def _launcher_pair(repo: Path, oid: str, *, packet: str | None = None,
+                   digest: str | None = None) -> tuple:
+    """The two artifacts the review delivers as a PAIR, and the reason they are
+    a pair: the packet's digest is a literal in the launcher, so one comparison
+    covers both. Altering the launcher changes the digest the review recorded;
+    altering the packet fails the launcher's embedded comparison."""
+    import hashlib
+    text = packet if packet is not None else _packet_text(repo, oid)
+    packet_path = repo.parent / "authorization-packet.txt"
+    packet_path.write_text(text, encoding="utf-8")
+    template = (_REPO / "bootstrap/reanchor-launcher.template.sh").read_text(
+        encoding="utf-8")
+    assert template.count("@PACKET_SHA256@") == 1, (
+        "the launcher template must carry exactly one slot")
+    filled = template.replace(
+        "@PACKET_SHA256@",
+        digest or hashlib.sha256(text.encode()).hexdigest())
+    launcher = repo.parent / "reanchor-launcher.sh"
+    launcher.write_text(filled, encoding="utf-8")
+    return launcher, packet_path
+
+
+def _stage2_script(repo: Path, confirmed: str, *, values: str | None = None,
+                   oid: str | None = None) -> str:
+    """The signing command, as the operator runs it.
+
+    Stage 2 is invoked on the ARTIFACT rather than through the launcher: the
+    launcher's whole job is the pre-candidate verification that precedes stage
+    1, and by stage 2 that work is done and the package is what is being acted
+    on. The artifact re-extracts and re-verifies its own bytes rather than
+    reusing stage 1's.
+    """
+    artifact = _REPO / "bootstrap/reanchor.sh"
+    parts = ["/bin/sh", str(artifact), "stage2",
+             values or _values_file(repo),
+             "--confirm-package-sha256", confirmed]
+    if oid is not None:
+        parts += ["--review-manifest", str(repo.parent / "review-manifest.txt"),
+                  "--reviewed-candidate", oid]
+    return " ".join(shlex.quote(p) for p in parts)
+
+
+def _runbook_ceremony_script(repo: Path, *, oid: str | None = None,
+                             values: str | None = None) -> str:
+    """The pre-candidate ceremony, as ONE command the Maintainer runs.
+
+    The shipped steps **are** the ceremony, so this is built from the shipped
+    launcher rather than transcribed into Python. A transcription can be written
+    correct while the shipped procedure stays broken -- the shape three separate
+    first-use defects took, each of them a fix that the recorded steps did not
+    exercise.
+
+    What changed is only where the shipped procedure lives. It used to be a
+    fenced block in the runbook that the operator pasted and filled in by hand,
+    and it is now a reviewed launcher given a packet, a values file and a
+    candidate ref. So this helper instantiates that launcher instead of
+    extracting that block; the property under test is the same one, and every
+    node below still drives bytes that actually ship.
+    """
+    head = oid or _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
+    launcher, packet = _launcher_pair(repo, head)
+    return " ".join(shlex.quote(p) for p in
+                    ["/bin/sh", str(launcher), str(packet),
+                     values or _values_file(repo), head])
 
 
 def _runbook_acquisition_command(repo: Path) -> str:
@@ -4798,22 +4918,80 @@ class TestLoaderTrustBoundary:
             "the loader executed substituted checker bytes")
         _assert_stage1_completed(repo, r, before)
 
-    def test_a_tampered_recorded_hash_refuses_before_python_runs(self,
-                                                                 tmp_path):
+    def test_a_digest_that_disagrees_with_the_candidate_refuses(self,
+                                                                tmp_path):
         """The decisive control, isolated: whatever route the bytes took, they
-        must equal the reviewed set -- and the check must precede execution."""
+        must equal the reviewed set -- and the check must precede execution.
+
+        This is the packet-is-internally-consistent case. The launcher carries
+        the tampered packet's own digest, so the binding comparison passes and
+        the tamper survives to the per-member verification, which reads each
+        blob at the resolved candidate and finds the disagreement. That is the
+        control being isolated here.
+
+        The companion node below covers the other direction -- a packet swapped
+        after review -- and the two catch at DIFFERENT stages on purpose. A
+        single node asserting "it refuses" would pass while only one of the two
+        controls existed.
+        """
         repo, anchor, head, epoch = _ceremony_repo(tmp_path)
-        script = _runbook_ceremony_script(repo)
-        real = _recorded_hashes(repo)
-        first = real.splitlines()[0]
-        script = script.replace(first, "0" * 64 + first[64:])
+        oid = _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
         before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
 
+        good = _packet_text(repo, oid)
+        first = good.split("member ", 1)[1][:64]
+        tampered = good.replace(first, "0" * 64, 1)
+        launcher, packet = _launcher_pair(repo, oid, packet=tampered)
+
+        script = " ".join(shlex.quote(x) for x in
+                          ["/bin/sh", str(launcher), str(packet),
+                           _values_file(repo), oid])
         r = subprocess.run(["bash", "-c", script], cwd=str(repo),
                            capture_output=True, text=True, check=False)
 
         assert r.returncode != 0
-        assert "do not match the reviewed first-use set" in r.stderr
+        assert "does not match the reviewed" in r.stderr, r.stderr[-800:]
+        assert _run("git", "rev-parse", P._ANCHOR_REF,
+                    cwd=repo).stdout.strip() == before
+
+    def test_a_packet_swapped_after_review_refuses_at_the_binding(self,
+                                                                    tmp_path):
+        """The other direction, and the reason the binding exists.
+
+        Here the launcher carries the digest of the packet the REVIEW read,
+        while the packet on disk is a different one -- internally consistent,
+        correctly self-digested, and not what was reviewed. Nothing inside the
+        packet is wrong, so only the launcher's embedded digest can catch it.
+
+        This refuses at the binding, one stage EARLIER than the node above.
+        Asserting the stage rather than merely the refusal is what keeps the
+        pair honest: if the binding were removed, this case would fall through
+        to the per-member check and still "refuse", and a laxer assertion would
+        never notice the control had gone.
+        """
+        repo, anchor, head, epoch = _ceremony_repo(tmp_path)
+        oid = _run("git", "rev-parse", "HEAD", cwd=repo).stdout.strip()
+        before = _run("git", "rev-parse", P._ANCHOR_REF, cwd=repo).stdout.strip()
+
+        good = _packet_text(repo, oid)
+        first = good.split("member ", 1)[1][:64]
+        tampered = good.replace(first, "0" * 64, 1)
+        # The launcher is instantiated with the digest of the GOOD packet --
+        # which is what the review read -- while the packet on disk is the
+        # tampered one, re-digested and self-consistent.
+        import hashlib
+        launcher, packet = _launcher_pair(
+            repo, oid, packet=tampered,
+            digest=hashlib.sha256(good.encode()).hexdigest())
+
+        script = " ".join(shlex.quote(x) for x in
+                          ["/bin/sh", str(launcher), str(packet),
+                           _values_file(repo), oid])
+        r = subprocess.run(["bash", "-c", script], cwd=str(repo),
+                           capture_output=True, text=True, check=False)
+
+        assert r.returncode != 0
+        assert "bound into this launcher" in r.stderr, r.stderr[-800:]
         assert _run("git", "rev-parse", P._ANCHOR_REF,
                     cwd=repo).stdout.strip() == before
 
