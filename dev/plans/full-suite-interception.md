@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
@@ -16,6 +16,32 @@ tier's authority is the Maintainer's amendment, stated plainly rather than
 through the inheritance mechanism.
 **Last update**: 2026-08-20
 **Opened**: 2026-08-20
+
+## How this plan reached `ready-to-implement`
+
+**One Internal plan review landed, not two.** It raised four blocking findings
+and six others; all were folded into the operative cells and the plan returned
+to `awaiting-plan-review` for a clearing round. That round was not held. The
+Maintainer directed implementation instead, quoted verbatim and visually
+isolated:
+
+> "Yes, I don't mean this accusatorily"
+
+— given in answer to the question *"Want me to start implementing interception
+now, and leave the metrics plan where it stands?"*, in a exchange about the
+cost of the deliberation itself: three accepted proposals had consumed a
+half-day and produced no implementation.
+
+**Stated plainly because a later reader will weigh it.** The plan-review
+precondition normally holds a `required(...)` plan at `awaiting-plan-review`
+until a review clears it. Here the fold was accepted as sufficient and the
+clearing round traded away deliberately, on the judgement that the remaining
+questions are ones code review answers faster and more cheaply than another
+prose round. The code review floor is **unchanged and independent** — not the
+implementing agent — and this plan still owes its Security Review and its
+re-anchor ceremony. What was skipped is one confirmation pass over a plan whose
+findings were already answered, not any part of the assurance that attaches to
+the code.
 
 ## Source proposal
 
@@ -272,9 +298,27 @@ same class as the unlogged 2026-08-12 Boundary-B-bounding-clause landing;
 ```
 1. Chunk A -- the guard + the additive child environment          [commit pending]
 2. Chunk B -- the vendor-neutral sentence, AGENTS.md + its twin    [commit pending]
-3. Chunk C -- Security Review of the implementation                [Maintainer/reviewer-owned, not a commit]
-4. Chunk D -- the gate re-anchor ceremony                           [Maintainer-owned, not this plan's commit]
+3. Chunk S -- the sibling seam (rows A6/A7)                        [BLOCKED on suite-run-diagnostics]
+4. Chunk C -- Security Review of the implementation                [Maintainer/reviewer-owned, not a commit]
+5. Chunk D -- the gate re-anchor ceremony                           [Maintainer-owned, not this plan's commit]
 ```
+
+**Rows A6 and A7 move out of Chunk A into their own chunk, and the reason is a
+deadlock this plan did not create.** Both act on artifacts the sibling plan
+creates: A7 edits `tools/suite_cost.py`, and A6 pins the behaviour of the ledger
+written by the sibling's hooks. Neither exists — verified on disk, as_of
+2026-08-20. The sequencing note below says this plan lands second, behind
+`suite-run-diagnostics`; that plan is now itself blocked, on an amendment to its
+accepted proposal (its Evidence table requires falsifiers that cannot be
+constructed under its own guards). So waiting for the stated order would stall
+the guard indefinitely behind a contract repair it has no stake in.
+
+**What changes is sequencing, not scope.** A plan may re-order freely; the two
+rows are unchanged, still carry the Maintainer's allowance, and remain
+obligations of this plan. Chunk S runs when the sibling's reader and ledger
+exist, and does not gate Chunks A or B. **Chunk S is a precondition of this
+plan reaching `ready-to-archive`** — an unrun chunk is not a dropped one only
+while something still holds it open, and this sentence is that thing.
 
 **Chunks A and B are independent and may land as two commits or one; Chunk A's
 two halves are not.** The guard and the child-environment fix are coupled and
@@ -296,8 +340,6 @@ freeze-driven.)
 | A3 | `bootstrap/tests/test_broad_run_guard.py` *(new)* | The guard's own behavioural tests — see the row mapping below. |
 | A4 | `bootstrap/tests/test_security_check.py` | **Update, not add.** `test_the_release_token_survives_the_real_grandchild_launcher` (currently ~line 806) and its docstring, and the comment inside `test_the_release_token_reaches_both_direct_children` (currently ~line 459-460), assert today that "the middle link launches pytest with **no** `env=` of its own… the token reaches the grandchild by *inheritance*." A2 makes that false: after this chunk, `_run_order_independence` always passes an explicit `env=`. The docstring/comment must be corrected to state the new mechanism (an explicit additive copy, not bare inheritance) — the underlying assertions (rc matches `expect_refusal`; the release token reaches the real grandchild) still hold and stay as regression coverage, but the prose explaining *why* they hold must not keep asserting a fact this chunk deletes. |
 | A5 | `bootstrap/tests/test_quality_gate_order_independence.py` | Add a test asserting the spawn in `_run_order_independence` passes an explicit `env=` that is a **superset of the parent process's environment plus `CAIRN_FULL_SUITE=1`**, not a fresh mapping — the row-10 falsifier below, following the existing `_spy_run`-style capture pattern already used in `test_security_check.py` for the same shape of assertion. |
-| A6 | `bootstrap/tests/test_broad_run_guard.py` (regression guard; no change to the sibling's classifier) | **Pin, don't change, the sibling's existing classification of a refused session.** The sibling's accepted contract already requires `executed > 0` and `not_run == 0` for `scope == "full"`; a session this guard refuses has `executed == 0` by construction, so it already resolves `unknown`. This row guards that property against a later relaxation of the sibling's postconditions, rather than adding classifier code — see Scope > "A second expansion" for the corrected derivation and the Maintainer's disposition ("Sure, I like the regression guard idea"). Falsifier: directional on both halves — a refused session resolves `unknown`, and the same tree under `CAIRN_FULL_SUITE=1` resolves `full` (mapped as `test_a_refused_session_is_scoped_unknown` in the row mapping below). |
-| A7 | `tools/suite_cost.py` (the sibling's reader) | **Exclude refused sessions from any aggregate they would pull toward zero, and report the refusal count separately.** A refused session is identifiable from the pinned schema with no schema change: `exitstatus` is 4 and `by_file` is empty. The cost profile, concentration table and growth curve are derived from `by_file`, so their byte-identity with and without a refused row present may already hold structurally; what this row actually adds is (1) the refusal count itself — otherwise unrecoverable, since `scope == "unknown"` does not by itself distinguish a refusal from any other non-full run — and (2) exclusion of any session-level aggregate that is not purely `by_file`-derived. Reporting the refusal count matters because `dev/PLANNING.md` records that measuring whether the delegation rule works depends on exactly this ledger. |
 
 **Every row below constructs its own child pytest environment explicitly.**
 This plan's own mandated Boundary B invocation runs `CAIRN_FULL_SUITE=1
@@ -335,6 +377,25 @@ in `bootstrap/tests/test_broad_run_guard.py` unless noted):
 | 12 | a refused session is scoped `unknown` under the sibling's existing contract, and this plan guards that rather than assuming it | `test_a_refused_session_is_scoped_unknown` — run the real guard to refusal over a fixture tree, then read the ledger row it wrote: `scope` is `unknown`, not `full` (the sibling's own `executed > 0` postcondition, not a code change from this plan). Directional: the same tree under `CAIRN_FULL_SUITE=1` writes `full`, so the test fails if the sibling's postconditions stop distinguishing the two rather than passing on a constant — a regression guard on the sibling's contract, not a falsifier of this plan's own code. | A3 (regression guard, A6) |
 | 13 | a refused session's refusal is countable, and does not deflate any session-level aggregate | `test_refused_sessions_are_excluded_from_cost_and_counted_separately` — build a ledger fixture mixing real runs with refusals, render it, and assert (a) the refusal count is correctly reported and differs from a fixture with no refusals, and (b) any session-level aggregate not purely `by_file`-derived is byte-identical to the same fixture with the refused rows absent. The cost profile, concentration table and growth curve are `by_file`-derived and may already be byte-identical without (b)'s exclusion code, since a refused row's `by_file` is empty; (a) is the falsifiable core, and a reader that surfaces no refusal count, or miscounts it, fails the row regardless of (b). | A3 (asserting A7) |
 | 14 | a refusal-expecting child never inherits an ambient exemption token | `test_a_refusal_expecting_child_never_receives_an_exemption_token` — the meta-guard on the environment-construction discipline stated above: assert that a child built for a refusal-expecting row never carries `CAIRN_FULL_SUITE` or `CAIRN_RELEASE_GATE_ACTIVE`, so this plan's own Boundary B wrapper or a release ceremony's active token cannot leak into a spawned child by omission and make a refusal-expecting row pass without exercising anything. | A3 |
+
+### Chunk S — the sibling seam (blocked until `suite-run-diagnostics` lands)
+
+**Do not start this chunk while `tools/suite_cost.py` is absent.** Both rows act
+on artifacts the sibling plan creates. Check for the file and for the ledger
+hooks in `bootstrap/tests/conftest.py` before beginning; if either is missing,
+this chunk is not ready and Chunks A and B proceed without it.
+
+| # | File | Change |
+|---|------|--------|
+| A6 | `bootstrap/tests/test_broad_run_guard.py` (regression guard; no change to the sibling's classifier) | **Pin, don't change, the sibling's existing classification of a refused session.** The sibling's accepted contract already requires `executed > 0` and `not_run == 0` for `scope == "full"`; a session this guard refuses has `executed == 0` by construction, so it already resolves `unknown`. This row guards that property against a later relaxation of the sibling's postconditions, rather than adding classifier code — see Scope > "A second expansion" for the corrected derivation and the Maintainer's disposition ("Sure, I like the regression guard idea"). Falsifier: directional on both halves — a refused session resolves `unknown`, and the same tree under `CAIRN_FULL_SUITE=1` resolves `full` (mapped as `test_a_refused_session_is_scoped_unknown` in the row mapping below). |
+| A7 | `tools/suite_cost.py` (the sibling's reader) | **Exclude refused sessions from any aggregate they would pull toward zero, and report the refusal count separately.** A refused session is identifiable from the pinned schema with no schema change: `exitstatus` is 4 and `by_file` is empty. The cost profile, concentration table and growth curve are derived from `by_file`, so their byte-identity with and without a refused row present may already hold structurally; what this row actually adds is (1) the refusal count itself — otherwise unrecoverable, since `scope == "unknown"` does not by itself distinguish a refusal from any other non-full run — and (2) exclusion of any session-level aggregate that is not purely `by_file`-derived. Reporting the refusal count matters because `dev/PLANNING.md` records that measuring whether the delegation rule works depends on exactly this ledger. |
+
+**Acceptance for this chunk**: both falsifiers in the row mapping above pass —
+the refused-session scope guard is directional (a refused session resolves
+`unknown`, the same tree under the override resolves `full`, so a classifier
+that answers `unknown` unconditionally fails it), and the reader's exclusion is
+asserted by byte-identical output against the same fixture with refused rows
+removed, so a reader that down-weights rather than excludes fails it.
 
 ### Chunk B — the vendor-neutral sentence
 
