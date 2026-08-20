@@ -69,6 +69,7 @@ flowchart LR
     AD --> SUP["superseded"]
 ```
 
+<!-- retired-vocabulary-ok: this paragraph names the retired flat tokens deliberately, to say where they went and why -->
 **Each status names who holds it next.** That is the point of the
 vocabulary: a reader — or a board — can tell from the status alone
 whose move it is. The earlier flat tokens (`proposed`, `reviewed`,
