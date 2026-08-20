@@ -86,26 +86,47 @@ Chunk 6 states the concrete emission of this rule (what a pre-activation row
 looks like) precisely so the allowance is not quietly reinterpreted at
 implementation as "keep computing the old way until enough history exists."
 
-**A correction, and an open scope question this plan does not decide.** This
-section previously stated "no `--backfill` mode ships" — that is false:
+**A correction, and the Maintainer's disposition on it.** This section
+previously stated "no `--backfill` mode ships" — that is false:
 `--backfill-from YYYY-MM-DD` already ships (`tools/_lifecycle_metrics/cli.py`,
-calling `snapshot.backfill`), emitting one historical-dated snapshot per
-`Goodnight:`-tagged commit in a bounded window. After Chunks 3 and 6 land,
-that flag would compute historical rows with v2 code over a schema some of
-whose columns are now event-sourced and would read empty for the
-pre-activation portion — a derived series stamped with dates implying it was
-measured contemporaneously, which it was not. **This plan does not decide the
-disposition.** Three options, for the Maintainer: (a) make `--backfill-from`
-refuse once this plan's chunks land, rather than emit a silently-reinterpreted
-series; (b) keep it, but stamp its output with the v2 schema identity so a
-reader can tell it apart from a genuinely-measured-at-the-time snapshot; (c)
-remove the flag. Removing a shipped adopter-facing flag is plausibly in scope
-already, as a necessary consequence of the accepted "drop historical
-continuity" term — but that reading is not self-evident from the Decision's
-text, and extending scope on that reading is the Maintainer's call, not this
-plan's. Whichever option is chosen lands as its own chunk work, sequenced no
-earlier than Chunk 6 (the risk described here only exists once both Chunks 3
-and 6 have landed).
+calling `snapshot.backfill`), and it is documented in the module doc every
+adopter installs.
+
+**Reading it settled the question.** `backfill()` walks `Goodnight:`-tagged
+commits in a bounded window and calls `emit_snapshot` once per commit — but
+`emit_snapshot` measures **the tree as it currently is**. It never checks out
+the historical commit; it only *stamps* each row with that commit's date and
+SHA. So a backfilled snapshot dated three weeks ago holds today's corpus,
+measured today, wearing a past date. Worse, `corpus_commit` is documented as a
+reproducibility contract — "`git checkout <corpus_commit> && …`" — and for
+these rows it names a commit that would **not** reproduce the row. That is the
+hazard the Decision's own rationale used to justify dropping historical
+continuity: *"A frozen number known to be wrong is worse than no number,
+because the caveat stays in the file while the number travels."* This one
+travels with a date and a SHA attached, which makes it travel better.
+
+**Contract expansion**: adopter-facing CLI surface — `--backfill-from` and
+`snapshot.backfill` are removed, along with `backfill_max_days` and the
+now-callerless `_list_goodnight_commits`. Authorized by the Maintainer, quoted
+verbatim and visually isolated:
+
+> "Let's go (C)"
+
+The option that names, recorded because a bare letter will mean nothing later:
+**(c) remove the flag**, chosen over (a) making it refuse and (b) stamping its
+output with the v2 identity. The reason is not primarily that the Decision says
+no backfill mode ships — it is that the mode misattributes measurements to
+commits that did not produce them, which is a defect independent of this
+proposal, and removal is the only option that stops shipping it. The work is
+rows 1-10 through 1-16 in Chunk 1, which lands there because it shares four
+files with the column retirement.
+
+**A question this plan should answer and currently cannot.** After Chunk 6's
+fail-closed reconciliation lands, backfill over pre-activation dates might have
+refused on its own — those artifacts carry no event blocks, which is what makes
+a read `INCOMPLETE`. That was not traced, and it does not change the
+disposition: removal happens in Chunk 1, before Chunk 6 exists. It is recorded
+so a reviewer does not assume the two interact.
 
 **Out, because Round 5 explicitly removed it and no later round restored it —
 flagged as a discrepancy from this task's own briefing, see "A correction to
@@ -239,10 +260,43 @@ call at `extract.py` is removed, not just the four dict keys. `snapshot.py`'s
 | 1-8 | `bootstrap/tests/test_lifecycle_metrics_config.py` | New or extended case: `PROPOSAL_COLUMNS` has exactly 22 entries (30 minus the eight retired, `as_of 2026-08-20` — re-derive at implementation, do not carry this count forward) and none of the eight retired names appear; every remaining structural column from the pre-change list is still present, asserted by name so a future accidental drop of a *kept* column fails loudly. |
 | 1-9 | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` (byte-identical twins, confirmed by diff, as_of 2026-08-20) | Update the module docstring, which documents the same headline capability claim and per-column reliability tiers this chunk retires: drop "finding severities" from the capability list (~line 17) and "review-yield" from the subsystems list (~line 18); drop the `total_findings` (**Good**) and `findings_p1/_p2/_p3` (**Best-effort**) reliability-tier bullets (~lines 67-69) for the four columns this chunk deletes. |
 
+**Also in this chunk: remove `--backfill-from`.** It shares four of the files
+above, so it lands in the same commit rather than reopening them.
+
+| # | File | Change |
+|---|------|--------|
+| 1-10 | `tools/_lifecycle_metrics/cli.py` + twin | Remove the `--backfill-from` argument and its help, the `backfill` import, the dispatch branch, the date-parse error path, and `'backfill'` from the recognized `--snapshot-event` values. |
+| 1-11 | `tools/_lifecycle_metrics/snapshot.py` + twin | Remove `backfill()` and its `_list_goodnight_commits` import. |
+| 1-12 | `tools/_lifecycle_metrics/config.py` + twin | Remove `backfill_max_days` — the default, the constructor parameter, the attribute, and the `_safe_int` read. |
+| 1-13 | `tools/_lifecycle_metrics/gitmeta.py` + twin | Remove `_list_goodnight_commits`, which 1-11 leaves with no caller (verified: `snapshot.py` is its only consumer, an import plus one call). |
+| 1-14 | `tools/_lifecycle_metrics/__init__.py` + twin | Remove the package-docstring mention of the backfill mode. Same rows as 1-9; do both edits together. |
+| 1-15 | `templates/modules/default-on/lifecycle-metrics.md` and `dev/modules/lifecycle-metrics.md` | Remove the `--backfill-from` mention. Both copies — the second is Cairn's installed copy of the first and differs only by token substitution. |
+| 1-16 | `bootstrap/tests/test_lifecycle_metrics_config.py` | Remove the `cfg.backfill_max_days == 14` assertion. **This is the only test in the tree that exercises this mode** — see the false-positive note below. |
+
+**A grep for "backfill" returns five other files, and none of them is this
+mode.** `test_lockfile_provenance.py`, `test_upgrade_side_door_parity.py` and
+the two `gate_manifest.json` entries that name them are all about **lockfile
+provenance backfill** — a different mechanism that happens to share the word.
+Removing them would break unrelated tests. Read the surrounding code, not the
+match: this is the instrument-confirmation rule
+(`AGENTS.md` > *Verifying claims*) applied to a name collision rather than to
+an absence.
+
+**One thing this removal does not do.** Snapshots an adopter already emitted
+carry `snapshot_event=backfill` in their rows. Removing the producer does not
+invalidate those files, so the reader must keep tolerating the value on input
+even though nothing can write it again. Deleting the value from the *reader's*
+accepted set would turn an adopter's existing archive unreadable, which is a
+larger break than the one authorized here.
+
 **Acceptance for this chunk**: a fresh extractor run over a fixture proposal
 with review findings emits no `total_findings`/`findings_p*`/`review_yield_*`
 keys in either CSV or `--format md` output, while every retained column is
-present and unchanged in value from before this chunk.
+present and unchanged in value from before this chunk. Separately, `python
+tools/lifecycle_metrics.py --backfill-from 2026-01-01` exits non-zero with an
+unrecognized-argument error rather than running; `--help` does not mention it;
+and an existing snapshot file containing `snapshot_event=backfill` still reads
+without error.
 
 ### Chunk 2 — Doctrine: the principle, the honest description, the glossary sharpen
 
