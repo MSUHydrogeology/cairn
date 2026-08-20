@@ -3,7 +3,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(External)
 **Last update**: 2026-08-20
 **Opened**: 2026-08-20
@@ -405,9 +405,43 @@ version token is the literal `cairn-event-v1`.
 provably read-only under the existing contract test.
 
 **And, for the registration rows (4-6 through 4-9): this chunk's own commit is
-green.** Specifically `python -m pytest bootstrap/tests/test_security_lint.py
+green.** Two runs, both *at this commit*, not at a later one.
+
+**The AST runbook's own post-apply command, in full.** Mutating the attestation
+baseline is a trust-root ceremony, and `bootstrap/AST_BASELINE_RUNBOOK.md`'s
+Step 4 prescribes — not recommends — two commands after the apply:
+
+```
+python bootstrap/tests/_ast_attest.py verify \
+  bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py
+PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests -q
+```
+
+Both run here and both outcomes are recorded. An earlier revision of this plan
+substituted a focused three-file run, reasoning that this plan's Boundary B
+already owns one full run and repeating it per chunk is waste. That reasoning
+is sound about *cost* and wrong about *what is being claimed*: Boundary B runs
+later, so it cannot establish that the tree was green **at the moment a trust
+artifact was re-anchored**, and re-anchoring against a tree whose state nobody
+checked bakes an unverified state into the attestation. A plan does not get to
+narrow a ceremony's own procedure on efficiency grounds; departing from the
+runbook takes a recorded Maintainer authorization, and this plan has none.
+
+**A forward hazard for whoever runs this.** That second command is a bare
+`python -m pytest bootstrap/tests`, and the sibling plan
+`dev/plans/full-suite-interception.md` installs a guard that refuses exactly
+that invocation unless `CAIRN_FULL_SUITE=1` is set. If the guard lands before
+this chunk runs, the runbook step **exits 4 and runs nothing** — a refusal that
+looks like a failure in the middle of a Maintainer-run trust ceremony. That
+sibling plan owes an update to the runbook's command; until it lands, prefix
+this command with the override if the guard is present in `conftest.py` at the
+commit you are on. A run that comes back exit 4 with a refusal message has been
+refused, not passed.
+
+**The registration rows' own focused check**, in addition to the above:
+`python -m pytest bootstrap/tests/test_security_lint.py
 bootstrap/tests/test_notice_install.py bootstrap/tests/test_ast_attest.py`
-passes *at this commit*, not at a later one — both count pins moved with the
+passes — both count pins moved with the
 file, the newly-shipped `events.py` is a release-scan target rather than an
 unscanned shipped `.py`, and the AST baseline is re-anchored rather than merely
 diagnosed. Row 4-9's own record at this commit names both halves of that
@@ -926,3 +960,45 @@ the AST CLI signature and all four steps of `bootstrap/AST_BASELINE_RUNBOOK.md`.
 I confirmed the marker/reader co-location and corpus-success criteria added to
 Chunk 6/8, and the corrected Chunk-4 registration references. I did not rerun
 the full suite or mutate any baseline artifact.
+
+## Response to plan review -- Claude Opus 5 (author) -- 2026-08-20 (round 2)
+
+**Model**: Claude Opus 5
+
+**Accepted, and the reasoning it corrects is worth naming.** The round-1
+Response flagged the divergence from the runbook's Step 4 honestly and then
+decided it, on the grounds that this plan's Boundary B already owns a full run
+and repeating it per chunk duplicates work. The cost argument is correct. The
+conclusion is not, and the round-2 reviewer put the reason precisely: Boundary B
+runs *later*, so it cannot establish the tree was green **at the moment the
+attestation baseline was mutated**. Those are different claims, and only the
+second is what a trust ceremony is for. Re-anchoring against a tree whose state
+nobody checked bakes an unverified state into the artifact that exists to attest
+state.
+
+The general point, which outlives this chunk: a plan may sequence freely, but it
+does not narrow a ceremony's own procedure on efficiency grounds. Departing from
+a runbook takes a recorded Maintainer authorization. None was sought here, so
+the runbook's command is restored rather than an allowance requested — restoring
+needs no authorization, and asking for one to save a single run in a ceremony
+that happens rarely would be the wrong trade.
+
+The round-1 Response also called Step 4's command a recommendation. It is not;
+the runbook prescribes it in a code block. That softening is withdrawn.
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| EPR-04 (BLOCKING) — Chunk 4 cannot waive the AST runbook's post-apply full suite | ACCEPTED | Chunk 4's acceptance criterion: both runbook Step 4 commands quoted in full and both outcomes recorded at this chunk's own commit; the focused three-file check is retained *in addition to*, not instead of, the runbook's run. The efficiency reasoning that produced the substitution is stated and refused in the same cell, so the next reader sees why it does not hold rather than re-deriving it. |
+
+**One thing this revision adds that no finding asked for**, because restoring
+the command surfaced it: the runbook's post-apply step is a bare `python -m
+pytest bootstrap/tests`, and the sibling plan `full-suite-interception` installs
+a guard that refuses exactly that invocation without an override token. If the
+guard lands first, this ceremony step exits 4 and runs nothing — a refusal that
+reads as a failure in the middle of a Maintainer-run trust ceremony. The
+acceptance criterion now names the hazard and the workaround, and records that
+the sibling plan owes the runbook an update. This is the same class of
+cross-plan seam that plan's own review found in the other direction; it is
+recorded here rather than assumed to be handled there.
+
+**Status**: back to `awaiting-plan-review`.
