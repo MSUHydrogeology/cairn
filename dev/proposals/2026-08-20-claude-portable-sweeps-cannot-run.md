@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -1061,3 +1061,109 @@ list omitted.
 * **The Amendment's four-gate list.** Superseded by the five-gate list above.
   Reason: R6.
 * **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
+
+## Review -- Codex (External) -- 2026-08-20
+
+**Tier**: External Security Review
+**Findings**: raised
+
+**Model**: OpenAI GPT-5 (Codex)
+
+Reviewed commit: c0e9b40bfa67a9ac75744492c6c124c2bfb585c1
+Target: Revision 1 complete current contract
+Prior findings: R1-R10 from the Internal review
+Assurance path: high-assurance
+
+### Review sweep
+
+I opened the cited runner, its template source, the module documentation, the
+test nodes, the issue-close contract, and the portable executable trust-root
+rule in `AGENTS.md`. I exercised the real Homebrew Gitleaks 8.30.1 binary on
+darwin/arm64, used a fresh Git repository so Cairn's own local config could not
+mask the leg, and changed only the version-probe result to the normalized
+`8.30.1` that D1 proposes. I also challenged the D2 regular expressions with
+dotted and slash-bearing subsections, suffix injection, newline injection, and
+empty subsections.
+
+### Steelman
+
+Revision 1 fixes the important conceptual errors from the first round. D2 now
+widens the subsection grammar while keeping the authority-bearing final
+variable closed; the tested suffix and newline attacks refuse. S5 is unusually
+clear about the real residual: reduced mode executes an unadmitted scanner over
+candidate content without process containment. I accept that residual for this
+dated, trusted-contributor tripwire because reduced mode cannot report CLEAN,
+the executable is revalidated immediately before use, and the report says what
+is not contained. Turning the legs on is therefore acceptable in principle.
+
+### Security preflight
+
+* **S1:** The extractor consumes adapter-supplied stdout; repository-local
+  configuration and paths are candidate-supplied by reference. The digest, not
+  the self-reported version, remains the authority for full mode. This is
+  accurately bounded after Revision 1.
+* **S2:** The proposed extractor and D2 mutations can fail, but the execution
+  contract cannot: the fake adapter accepts an argv that the field adapter
+  rejects. Finding P1 is the missing mutation and independent instrument.
+* **S3:** `bootstrap/tests/test_portable_security_sweeps.py` exercises a Python
+  fake; the real-adapter smoke is the only named trigger over actual Gitleaks.
+  Its present acceptance predicate is too weak, per P2.
+* **S4:** Parse and screen errors fail to INCOMPLETE/DEGRADED and grant less
+  authority. The newly exposed usage-error path also degrades, but currently
+  hides the actual invalid argument behind “wrote no report.”
+* **S5:** The named surviving capability is true: hostile repository content
+  can reach a parser or rule-engine defect in an uncontained, unadmitted binary.
+  This class is open, not bounded by the config screen or child environment.
+
+### Findings
+
+* **[P1] BLOCKING -- the first real leg still cannot run with Gitleaks 8.30.1.**
+  After normalizing the live `gitleaks version 8.30.1` output to `8.30.1`, I ran
+  the actual reduced-mode path on a fresh repository. The adapter rejected
+  `--timeout=840s`: its own `gitleaks dir --help` declares `--timeout int` in
+  seconds. The runner then interpreted exit 1 as the findings exit, found no
+  report, and returned DEGRADED with the misleading reason “adapter wrote no
+  report.” The suite currently pins the invalid suffix at
+  `bootstrap/tests/test_portable_security_sweeps.py:1195`, while
+  `_leg_argv` emits it at
+  `templates/modules/team-gated/run_portable_security_sweeps.py:1628`.
+
+  **Satisfier:** widen D1 to emit the measured integer-seconds form, add a fake
+  that rejects the field-invalid form instead of accepting every argv, and
+  preserve the adapter's bounded stderr diagnostic when exit 1 has no valid
+  report. Exercise the corrected argv against real 8.30.1 before code review.
+
+* **[P2] BLOCKING -- issue gate 3 admits the failure reproduced in P1.** A
+  “non-`5` aggregate” includes DEGRADED `20`; my invalid-argv run produced
+  exactly that. “Completed reduced-mode run” is not a machine-checkable
+  substitute. Require `mode == "reduced"`, a current-tree leg whose status is
+  `INCOMPLETE` or `FINDINGS`, no DEGRADED leg, and evidence that the real
+  adapter invocation occurred. Gate 2 should say **the implementation's
+  External Security code review**, so this proposal review cannot accidentally
+  satisfy it. The gate is correctly attached to verified completion and the
+  outward issue close, not to merge; its predicate is the defect.
+
+* **[P3] MEDIUM -- Revision 1 is not a complete current contract.** It says
+  “S1-S4 stand as written above,” requiring the derived plan and its reviewer to
+  reconstruct operative security claims from superseded history. Restate S1-S4
+  in the next revision and incorporate P1-P2. This is also why I do not record
+  `Plan readiness: READY` on this pass.
+
+### Coverage
+
+**Covered** -- live version shape (`gitleaks version` and `--version`), real
+reduced-mode argv and failure disposition, D2 key-language positives and
+negatives, S1-S5, issue #4's Maintainer fence, withdrawal ledger R1-R10, twin
+direction, test mapping, and adopter-facing residual language.
+
+**Not covered / low confidence** -- I did not test Linux or Windows, a symlinked
+Git common directory, a malicious scanner binary, the admission ceremony, or a
+full-mode admitted digest. No implementation exists to code-review, and I did
+not treat this proposal review as that later obligation.
+
+### Second-round recommendation
+
+**Recommended, narrowly.** A second External Security pass should retest the
+real 8.30.1 argv, the strengthened smoke predicate, the exit-1/no-report
+diagnostic, and the self-contained S1-S5 restatement. No broader redesign is
+needed.
