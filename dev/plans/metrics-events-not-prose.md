@@ -3,7 +3,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(External)
 **Last update**: 2026-08-20
 **Opened**: 2026-08-20
@@ -732,3 +732,74 @@ reviewer identity (not the implementing agent), and the append-only rule.
 
 *Filled in at archive time.* See `doctrine/plans.md` > "Lasting-truth migration
 doctrine."
+
+## Plan review -- Codex (External plan reviewer) -- 2026-08-20
+
+Reviewed commit: 3f82d07a1d0b32b0d778fd5c557c7acc1713c85c
+Target: Entire operative plan (Scope through Verification; Chunks 1-9, sequence revision, acceptance criteria, and Author-accounting) against Round 7 §§1-5 and the Decision
+Prior findings: none
+Assurance path: high-assurance
+**Tier**: External
+**Findings**: raised
+
+### Verdict
+
+**REVISE.** The plan faithfully carries the accepted artifact-local design and
+the two registration count pins have the correct current arithmetic (52 -> 53
+on-disk template files; 56 -> 57 manifest source rows). Its count/scan and twin
+criteria are strong. But the AST-baseline step cannot run as written, and the
+activation marker opens a corpus-wide obligation before the reader and a bridge
+for intervening acts exist. Either defect can leave the stated chunk acceptance
+or final corpus evidence impossible to satisfy.
+
+### Findings
+
+#### EPR-01 — BLOCKING: the prescribed AST-attestation operation is not a valid command
+
+Row 4-11 directs `update-symbol _MODULE_MAPPINGS --expect-old <current digest>
+<path(s)>`. The actual CLI requires `--baseline`; the stated command exits 2
+before it can examine the one-symbol delta. The runbook also requires the
+dry-run, known-new manifest, subsequent non-dry-run application, and `verify`
+against the complete `bootstrap/_scaffold/*.py` set. Replace the shorthand with
+the complete, ordered runbook invocation and a criterion that records both the
+dry-run and apply/verify outcomes in Chunk 4's same commit. This is essential
+because row 4-11 is a required condition of that commit being green, not
+advisory evidence.
+
+#### EPR-02 — BLOCKING: the activation cutoff has no bridge across Chunks 4-6
+
+Rows 4-3/4-4 first introduce `cairn-event-v1`, which makes every later
+lifecycle act in its applicable tree subject to reconciliation. Chunks 4 and 5
+provide no reader, and neither they nor Chunk 6 require an event block for every
+intervening real corpus act. Template guidance does not update already-open
+artifacts or constrain concurrent authors. When Chunk 6's reader finally scans
+the corpus, a post-cutoff status/review/response without a block must be
+`INCOMPLETE`; Chunk 7's lifecycle-contract pass does not exercise that reader,
+and Chunk 8's requested corpus extractor run has no success criterion to prove
+the corpus is reconcilable.
+
+Choose and specify a deterministic bridge: for example, defer the marker until
+the reader/reconciliation commit, or require and audit blocks for every
+post-cutoff act while Chunks 4-6 land. In either case, add a Chunk-6/8
+acceptance criterion that the real corpus extractor exits successfully and
+accounts for every post-cutoff act, not merely that its emitted column set can
+be diffed.
+
+#### EPR-03 — NON-BLOCKING: three stale `8-2` references contradict the registration move
+
+Rows 4-9 and 4-11, and the twin invariant in Author-accounting, still say the
+manifest registration occurs as `8-2`/in Chunk 8. The registration is correctly
+located at row 4-8, and Chunk 4's own green-at-this-commit criterion is the
+right contract. Update those stale references so the reader does not infer an
+uncovered Chunks-4-7 window or wait for a nonexistent row.
+
+### Coverage
+
+Read `AGENTS.md`; the plan template's review basis and scope-delta doctrine;
+the complete plan; and the accepted source proposal's operative Round 7 and
+Decision. I inspected the live manifest mapping, count/scan and twin tests,
+AST-attestation CLI and runbook, planner conformance test, and lifecycle-metrics
+Git fallback. Targeted probes: the four registration/count/twin nodes passed
+(4 passed); the row-4-11 command as written refused with missing `--baseline`.
+I did not reread superseded proposal rounds or run the full suite, and no
+implementation exists to execute the proposed event reader.
