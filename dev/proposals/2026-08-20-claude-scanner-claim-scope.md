@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — D1 changes what a security control
 **instructs an operator to do to a reviewed security baseline**, and D2 adds a
 derived annotation to a security report. Neither is obviously a trust-boundary
@@ -401,3 +401,346 @@ identical-set test turns out to be unbuildable as specified, the honest move is
 to say so **before** promising it to the reporter in a public comment — a
 commitment made in a closing comment is harder to walk back than one made in a
 proposal.
+
+## Review -- Claude (Internal, fresh-context subagent) -- 2026-08-20
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: 841bfc6708974267362f6d0926c12ee9d9113944
+Target: the complete current contract -- the whole file, opened at `3499fc5` and extended by the `## Amendment -- Claude (author) -- 2026-08-20` landed at `e718eaf`
+Prior findings: none
+Assurance path: high-assurance
+
+**Tier**: Internal
+**Findings**: raised (4 blocking, 4 non-blocking)
+
+<!-- claim-check-allow: scripts/run_security_audit.py -->
+<!-- The directive covers [R5] only, which cites that path *because it does not
+     resolve*. It suppresses nothing of the author's: their two occurrences sit
+     inside backticked commands, which claim_check never matched in the first
+     place -- see the instrument note in [R5]. -->
+
+No `Plan readiness` field is recorded: only an **External** pass may supply it, and
+this is an Internal read with no different-agent-type read to spend.
+
+All source citations below are reads of the working tree at `841bfc6`; every file
+cited was confirmed clean against HEAD (`git status --short` empty) before being
+read, so the line numbers are the committed ones.
+
+### Steelman
+
+**The defect shape is real, correctly generalized, and the four cited claims all
+verify.** I opened every one:
+
+* `scripts/content_scan_runner.py:37-38` -- "a reviewed-residual entry has no live
+  occurrence (it could preauthorize a replay). A distinct fail-closed class."
+  Exact. The detection genuinely is right and the proposal is right to keep it.
+* `scripts/content_scan_runner.py:594-595` -- the `STALE baseline authority ... --
+  FAILS (prune the residual baseline).` message. Exact, and the imperative really
+  is unqualified.
+* `templates/modules/team-gated/run_security_audit.py:808-816` -- `pip_audit_argv`'s
+  docstring, ending "a narrowed claim over an ambient environment is exactly as
+  false as a wide one." Exact, and the proposal reads it correctly rather than
+  against itself.
+* `templates/modules/team-gated/python-security.md:35-52` -- the *Declared scope*
+  section, exactly those lines.
+* The twins are byte-identical: `sha256 073c8669...` for both
+  `scripts/content_scan_runner.py` and
+  `templates/modules/team-gated/content_scan_runner.py`.
+
+**The refusal of option 2 is procedurally and substantively correct, and I want to
+say so before the findings, because it is the judgement most likely to be second-
+guessed.** Option 2 was the reporter's suggestion, never accepted scope, so
+declining it is not a scope reduction (`dev/proposals/_template.md` > "Declining a
+reviewer's proposed expansion is not a reduction") -- and it is recorded in
+*Alternatives considered* with a reason rather than dropped. The reason is the
+right one: the distinction drawn is **standing**, not effort, and a leg makes a
+claim of the same standing as the ambient one. This is not the author using the
+reporter's caution to avoid work; the work in option 3 is the same closure walk.
+
+**The Amendment is the best part of the artifact.** Splitting issue #5's close
+across two proposals, refusing to let whichever lands first post the close, and
+requiring the closing comment to name *what was declined* -- these are the
+disciplines that keep a public "resolved" from outrunning what shipped. And §6
+asks the reviewer to test the one commitment that is about to become
+irreversible. That instruction is what produced [R1] below, which is the finding
+I would most want the author to have before that comment is posted.
+
+### Findings
+
+* **[R1] BLOCKING -- the D2 bright line has no referent, because the pip-audit leg
+  reports *counts*, not findings.** This is §6's question, and the answer is no:
+  the identical-set test is not buildable as specified.
+
+  The leg discards vulnerability identity at parse time.
+  `classify_pip_audit_output` (`run_security_audit.py:879`+) accumulates
+  `vulnerabilities += len(vulns)` (`:942`) and keeps nothing else; `Coverage`
+  (`:767-787`) carries `established / scanned / no_match / unknown / note / names /
+  vulnerabilities` and **no per-vulnerability field**; `_valid_pip_audit_vulnerability`
+  (`:872-876`) reads `id` and `fix_versions` only to validate shape and retains
+  neither. The printed report (`:1198-1215`) is counts plus distribution names, and
+  the pass returns a status string and a tier (`:1217-1230`). I grepped the module
+  for any per-vulnerability output (`vulns|"id"|aliases|fix_versions|advisory`) and
+  found only that shape check -- and the grep is confirmed live, because it *did*
+  match the retention site at `:938-942`.
+
+  Three consequences, each load-bearing:
+
+  1. **The header's "No change to ... what is reported" is false for D2.**
+     Annotating "each finding" requires first *creating* a per-finding report --
+     new retention in `Coverage`, new fields read out of the child JSON, new
+     output. That is materially more than "annotate the existing output" / "triage
+     axis added" (§*D2 (3)*).
+  2. **The invariant has no pre-change referent.** "The reported finding set is
+     byte-identical with the annotation present and absent" -- with the annotation
+     absent, the reported finding set is **empty**. A test comparing empty to empty
+     is exactly the hazard S2 names ("an assertion derived from the same list it
+     checks cannot fail"), and worse: both sides are vacuous, so the S2 filtering
+     mutation would not redden it either.
+  3. **"byte-identical" stays wrong even after (1) is fixed.** An annotation
+     printed into a report changes that report's bytes by construction. The
+     invariant can only ever be about a *projection*.
+
+  Satisfier -- and this must land **before** Amendment §4 publishes the commitment
+  to the reporter, per §6's own instruction. Restate the bright line as two
+  invariants that have referents:
+
+      (i)  Pre-existing referent, testable today: `coverage.vulnerabilities`,
+           `coverage.scanned`, `coverage.unknown`, `coverage.names` and the
+           `(status, tier)` the pass returns are identical with the reachability
+           axis present and absent. This exists now, and it reddens under S2's
+           filtering mutation.
+      (ii) New referent, once the per-finding list exists: the reported list's
+           `(distribution, vulnerability id)` projection equals the set derived
+           from the **raw child JSON**, not from the annotated list -- so a filter
+           anywhere between parse and print reddens it.
+
+  And correct the `Touches` line: D2 does change what is reported.
+
+* **[R2] BLOCKING -- the four-consumer measurement counts *mentions*, not *reads*,
+  and omits the one consumer that would make D1's case mechanically.** I opened all
+  four:
+
+  * `scripts/content_scan_runner.py:84` -- genuine reader of baseline entries. ✔
+  * `templates/modules/team-gated/run_security_audit.py:104` -- this is the
+    `_MODULE_APPARATUS` table (`:99-110`), an **integrity preflight** list. It never
+    reads entries; its only route to the file's content is `integrity_preflight`
+    hashing it (`:196-202`). And for the *scan* it is not an independent auditor at
+    all: it `importlib`-loads the runner (`:596-601`) and calls `runner.audit(...)`
+    then `runner._print_summary(...)` (`:625-627`). It is a **caller**, not a second
+    consumer with its own audited set.
+  * `bootstrap/_scaffold/config.py:1017-1018` -- an `InstallSpec`. That is the
+    *installer* writing the shipped template into an adopter tree; it never reads an
+    adopter's baseline.
+  * `bootstrap/tests/test_security_stack.py` -- writes tmp fixtures (`:337`, `:464`,
+    `:490`).
+
+  So exactly **one** component reads baseline entries. The evidence does not
+  falsify sole-consumership, and "**Falsified**, not merely rejected" overstates
+  what was measured. (The conclusion survives on the proposal's own fallback --
+  "the assertion ... ages the moment a fifth arrives" -- which is the argument
+  actually doing the work; it is closed by construction, and the enumeration is the
+  weaker kind the proposal itself disparages two lines later.)
+
+  The omitted consumer is the strong one: **the lockfile**.
+  `dev/.cairn/cairn-lock.yml:631-637` records
+  `"hash": "sha256:49ba1709fe519dd52205c1a64e36e14e723135bef3a358e1a7464d8c814146cd"`
+  for `scripts/content_scan_residuals.txt`, and `integrity_preflight` compares
+  on-disk bytes to that record and raises `AuditDegraded` on mismatch
+  (`run_security_audit.py:196-202`). A prune changes the bytes. So on an installed
+  tree the exit-3 imperative instructs the operator into a state that **degrades a
+  sibling security control** unless the lockfile record is reconciled in the same
+  act -- a mechanical, checkable consequence, unlike "another consumer may hold
+  that entry."
+
+  Satisfier: replace the count with the read-relationship taxonomy (reads entries /
+  hashes the file for integrity / installs it / writes test fixtures), soften
+  "falsified" to "rejected", and add the lockfile-plus-preflight consumer. The
+  scoped exit-3 sentence should name lockfile reconciliation as part of "confirm
+  across consumers before pruning."
+
+* **[R3] BLOCKING -- "No Security Review trigger" is refused by this project's own
+  trigger list.** `dev/proposals/_template.md:76-78`, the `triage-extra-triggers`
+  slot: "**Bootstrap safety / security stack** -- `bootstrap/SAFETY.md` (R-I),
+  `bootstrap/security_check.py`, or **the content scanner**; a change here is also a
+  Security Review trigger." D1 changes the content scanner. The header's reasoning
+  -- "no trust boundary is added, moved or widened" -- answers a different question:
+  this trigger is **surface-based, not boundary-based**, and it does not ask whether
+  a boundary moved. `AGENTS.md` reads the same way in both directions ("a named
+  high-risk surface takes its Security Review on its own trigger, whatever this
+  field says"; and for verification, "**Bounded mode refuses** ... any high-risk
+  surface named below").
+
+  Compounding it: by [R1](1), D2 widens the **parse surface** bound to
+  `_PIP_AUDIT_SCHEMA_ESTABLISHED` -- new fields read out of untrusted child output.
+  S1 accounts only for distribution metadata and does not reach this.
+
+  Satisfier: declare the Security Review, or state explicitly why a message-only
+  change to the content scanner falls outside the slot's trigger and let the
+  Maintainer rule on it -- but do not leave it as a silent "no". Extend S1 to the
+  per-finding child-JSON fields either way.
+
+* **[R4] BLOCKING (scope) -- D1 fixes the terminal message and leaves the *more
+  authoritative* copy of the same wrong imperative in place.**
+  `templates/modules/team-gated/content-security.md:122-123` -- the adopter-facing
+  module doc -- says: "A baseline entry with no live occurrence is **STALE** and
+  **fails** the scan (exit 3): **it must be deleted before the baseline is
+  current.**" That is *stronger* than the runner's message, and it is what an
+  operator consults when deciding what to do about exit 3. It is absent from
+  `Touches` and from *Documentation / doctrine surface*, which name only
+  `python-security.md` and "two docstrings" (themselves unnamed).
+
+  Cairn self-hosts copies at `dev/modules/content-security.md:112` and
+  `dev/.cairn/base/dev/modules/content-security.md:112`, so the fix has a
+  scaffold-state dimension the plan must handle.
+
+  Leaving this is the proposal's own defect shape at one remove: a control's
+  imperative corrected in one output and left overreaching in the document the
+  reader is more likely to have open. Satisfier: add `content-security.md` to
+  `Touches` and to the documentation surface, and name the self-hosted copies'
+  handling.
+
+* **[R5] Non-blocking -- `scripts/run_security_audit.py` does not exist on this
+  tree, so the smoke check that names it cannot run.** *Examples / smoke checks*
+  claims: "`python scripts/content_scan_runner.py` and `python
+  scripts/run_security_audit.py` **on this tree** -- both are the operator paths
+  that produced the reports." Verified: `git ls-files | grep run_security_audit`
+  returns only `templates/modules/team-gated/run_security_audit.py`; `scripts/`
+  holds no such file; and **`python-security` is not in Cairn's installed roster**
+  (`dev/.cairn/cairn-lock.yml:647-664` lists 16 modules -- `content-security` is
+  there, `python-security` is not). S3 repeats the same path as an "operator-run
+  entry point."
+
+  Two errors in one sentence: the path does not resolve here, and the reports were
+  produced on the *adopter's* tree, not this one. This is `AGENTS.md`'s "name the
+  trigger ... and open it" applied to the proposal itself.
+
+  Instrument note, because it matters for how much the author should trust the
+  gate: `python scripts/claim_check.py` on this file returns **OK, no flags** -- the
+  path sits inside a backticked *command* rather than a bare backticked path, so
+  the checker never had the chance to match it. Its silence here is not evidence.
+
+  Satisfier: state that the D2 smoke is exercised through `test_security_stack.py`'s
+  orchestrator fixture against the template file (which is how the leg is reachable
+  in this tree at all), or give an explicit "**N/A**: `python-security` is not
+  installed in Cairn's own tree."
+
+* **[R6] Non-blocking -- "the annotation decides nothing" is too clean, and it is
+  the sentence headed for a public comment.** S5 already concedes an attacker "can
+  make a finding annotate as *not reachable* and be triaged last." At the ratio D2
+  is built around (144 findings, 27 reachable), *triaged last* is operationally
+  *not triaged* -- and for a control whose named failure mode is being **skimmed**,
+  deciding attention is close to the thing at stake. The defensible form is
+  "decides nothing **the tool acts on** -- no verdict, no exit code, no finding
+  omitted." Satisfier: that wording, in the *bright line* paragraph, in S1, and in
+  Amendment §4's third bullet, so the closing comment does not claim more than the
+  design delivers.
+
+* **[R7] Non-blocking -- the D1 plumbing is a cross-module signature change on
+  exactly the mixed-tree surface D1 came from.** `audit()` returns
+  `(code, files, all_flags, new_flags, stale)` -- **no roots**
+  (`content_scan_runner.py:555-570`) -- and `_print_summary(code, files, all_flags,
+  new_flags, stale)` (`:573`) does not receive them. So "the roots manifest is
+  already loaded -- this is printing what the runner already knows" is true at
+  module scope but is not free. And `run_security_audit.py:627` calls
+  `runner._print_summary(...)` **positionally across the module boundary**, so a
+  signature change breaks a tree whose `run_security_audit.py` is at a different
+  version -- which is the mixed-tree condition that produced this report.
+
+  Also worth noting for accuracy: `_print_summary` **already** prints
+  `from {_ROOTS_MANIFEST.name}` (`:579`), so D1 item 2 is partly done -- the
+  manifest is named; the *roots it resolved to* are not, and that is the part that
+  makes the claim checkable.
+
+  Satisfier: derive the roots inside `_print_summary` from `_ROOTS_MANIFEST` (no
+  signature change), or record the positional cross-module call as a compatibility
+  constraint the plan must handle explicitly.
+
+* **[R8] Non-blocking -- the coverage-ceiling gap is real, with one calibration.**
+  I read `python-security.md:35-52` in full against the charge that the author
+  under-read it. They did not. Paragraph one states the set and lists non-coverage
+  (conda-managed native, OS, vendored); paragraph two is entirely about the
+  **excess outside** the tool's reach ("routinely carries substantially more
+  packages than the Python distributions the tool can enumerate"). Nothing draws
+  the opposite consequence.
+
+  Calibration: the *set* is disclosed -- there, and again at runtime
+  (`run_security_audit.py:1116-1119`, the `[pip-audit] DECLARED SCOPE` banner).
+  So the gap is precisely "the consequence is never drawn," not "the scope is
+  undisclosed." Worth stating that way, because it makes the fix a sentence about
+  consequence rather than a re-disclosure of scope the doc already makes twice.
+
+### Coverage
+
+**Covered** --
+
+1. **Claims** -- probed every load-bearing citation against the tree: the four
+   cited line ranges (all exact, quoted in the steelman); twin byte-identity
+   (`shasum` -> `073c8669...` both); the four-consumer claim ([R2], each opened);
+   the `scripts/run_security_audit.py` path (`git ls-files`, `ls scripts/`,
+   `cairn-lock.yml:647-664`) ([R5]); the "annotation on the existing output" premise
+   (`run_security_audit.py:767-787`, `:879-950`, `:1198-1230`) ([R1]).
+2. **Production path exercised by tests** -- `bootstrap/tests/test_security_stack.py`
+   reaches the leg only through `run_pip_audit_pass` with monkeypatched
+   `shutil.which` / `active_pip_audit_version` (`:785-822`); the mapping link
+   resolves. The gap is that there is no existing per-finding assertion to extend,
+   which is [R1].
+3. **Design completeness** -- the edge-case inventory is genuinely good (extras,
+   markers, `Pillow`/`pillow`, empty closure, the 71% case) and the "messy by
+   construction" fixture instruction is the right call. The missing precondition is
+   the one in [R1]: what "annotation absent" *is*.
+4. **Silent failure / fail-closed** -- the `unknown` disposition is declared open
+   and intentionally so, and I agree; exit-code invariance is checkable against the
+   existing contract tests (`TestRunnerExitContract`, `:433-546`). [R2]'s
+   `integrity_preflight` path (`:196-202`) fails closed correctly -- the hazard
+   there is the *instruction*, not the guard.
+5. **Cross-document consistency** -- swept the docs for the changing behaviour and
+   found [R4] (`content-security.md:122-123` plus two self-hosted copies) and [R5].
+6. **Drift** -- `Touches` is inaccurate in two places ([R1](1), [R4]); the
+   docstring/doc claims otherwise match shipped behaviour.
+7. **Lifecycle / process placement** -- the Amendment's MAINTAINER-GATED close, the
+   two-proposal split for #5, and the refusal to edit `dev/PLANNING.md` at
+   proposal-open are all correctly placed. `python tools/lifecycle_planner.py scan`
+   -> all 6 artifacts structurally sound. The doctrine rate-limit reasoning
+   (declining to make this an `AGENTS.md` rule) is sound.
+8. **Domain validity & scope** -- [R3] (assurance/Security-Review routing) and [R4]
+   (scope under-reach). The option-2 refusal is justified, per the steelman.
+9. **Name the satisfier** -- each of [R1]-[R8] carries one.
+
+**Not covered / low confidence** --
+
+* **Same-type reviewer.** No cross-type independence on this pass, and no
+  `Plan readiness` may be recorded from an Internal read.
+* **Nothing was executed.** I ran `claim_check`, `lifecycle_planner scan`, `shasum`,
+  `git ls-files` and greps -- but not `pytest bootstrap/tests/test_security_stack.py`
+  and neither operator command. Every behavioural finding rests on source reading.
+* **[R2]'s recoverability is not established.** I read `integrity_preflight` only.
+  Whether a supported lockfile re-record path makes a post-prune `AuditDegraded`
+  routinely recoverable -- and therefore how loudly the scoped exit-3 sentence needs
+  to say it -- I did not determine. Treat the *mechanism* as verified and the
+  *severity* as open.
+* **The adopter's field numbers** (299 / 93 / 212 / 144 / 27) are on an external
+  tree and are unverifiable from here. I did not treat them as claims; they are
+  reported measurement.
+* **Amendment §5's `dev/measurement/` home** -- I did not check what is already
+  recorded there or whether it is the right home.
+* **Lens 7, lightly.** I did not determine whether an exit-3 wording change owes a
+  `CHANGELOG.md` line at the next serialization point (the archived
+  `content-scan-detectors` plan carries an addendum about exactly that surface being
+  under-populated, which suggests it may).
+
+### Second-round recommendation
+
+**A second structurally-independent pass is recommended, and it should be
+External.** Not because this pass was thin, but because of what it found: [R1]
+means the artifact's central commitment has to be re-specified rather than merely
+corrected, and [R3] means the review tier itself is contested. A revision that
+rebuilds the bright line on real referents is a *new* contract, and the design
+question underneath it -- whether adding a per-finding report to a security leg is
+still "no change to what is reported" -- is precisely the kind of consequential
+design a same-type reader is worst placed to challenge twice. An External pass on
+the revision would also be the one able to record `Plan readiness`, which this pass
+cannot.
+
+**Disposition: blocking.** Four blocking findings ([R1]-[R4]); status moved to
+`revising`.
