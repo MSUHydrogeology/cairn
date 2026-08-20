@@ -345,3 +345,134 @@ Findings 1, 4, 5, 6, and 8 are **methodology-general** rather than
 Cairn-specific: they describe how any lifecycle-based method interacts with
 unbidden work. Finding 3 is Cairn-specific measurement. If this note promotes,
 1/4/5/6/8 are the fold-back candidates for `dev/.cairn/cairn_foldback.md`.
+
+---
+
+## Review -- Codex (External) -- 2026-08-20
+
+<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
+     this section. Strategy notes are inline-revised, not append-only. -->
+
+**Structural independence.** Cross-type read: Claude authored the note; Codex
+reviewed it. Reviewed strategy bytes: `9c0a435059aa4e7afe5d4b4878bb2bd8012627b6`.
+
+**Recommendation: REVISE before promotion.** The direction is worth preserving:
+stewardship is a second face of Restraint, docs are the right first surface, and
+the agent failure mode needs a ceiling rather than encouragement. The draft is
+not yet ready to feed doctrine or a proposal because its motivating case crosses
+an authority boundary it says is absent, and its proposed evidence source cannot
+observe the phenomenon it is meant to count.
+
+### Steelman
+
+The distinction between *work overcharged after entering a lifecycle* and *work
+never put on a path* is real and useful. Findings 4-7 are the strongest part of
+the note: cost gradients explain behaviour better than exhortation; risk belongs
+to the surface rather than the line count; agents invert the human literature's
+under-supply problem; and a separate commit protects Cairn's durable record.
+The docs-first direction follows cleanly from those premises.
+
+The repository facts mostly reproduce. `dev/PLANNING.md`'s live Queued section
+is exactly 693 lines over 22 top-level items (31.5 lines/item), and the migrated
+deferred register is 173 lines over six (28.8/item). Anchor 17 and gap (17) say
+what the note attributes to them. The triage quote, five named directional slot
+prompts, and `bootstrap/UPGRADE.md`'s preserve-the-slot-body contract are real.
+The claim checker reports no flags.
+
+### Findings
+
+**[S1] BLOCKING -- the motivating case partly is an authority gap, and a
+separate commit does not resolve it.** `doctrine/proposals.md` grants the
+just-commit path when deciding whether a standalone change needs a proposal.
+The felt case is narrower and different: an agent notices unrelated work while
+executing an accepted plan. Both Cairn's and the shipped
+`templates/core/AGENTS.md` say that **new scope is a plan deviation and requires
+Maintainer approval**. Splitting the incidental fix into its own commit closes
+the tangled-history problem; it does not grant authority to perform that work
+during the scoped execution.
+
+The draft sees the conflict in Open question 4, but Finding 1 has already ruled
+it out (*"the gap is not authority"*), the opening says this is not a request
+for more authority, and the header omits the shipped `AGENTS.md` from the
+surfaces this could feed. Those cannot all stand. Revise by separating two
+contexts:
+
+* outside an active accepted plan, trivial standalone work already has
+  permission and the question is attention/cost; and
+* during scoped implementation, stewardship needs an explicit rule saying
+  whether a fenced incidental fix is authorized side work or remains a stop-
+  and-ask deviation.
+
+Do not pre-decide the second answer, but name it as a real design decision and
+add `templates/core/AGENTS.md` (plus Cairn's self-hosted copy) to the possible
+promotion surface. A proposal-template slot cannot override an always-loaded
+operational rule by implication.
+
+**[S2] BLOCKING -- retrospective commits cannot measure work that was noticed
+but never recorded.** Recommendation step 1 proposes sampling LHM commits and
+counting both *"what should have been fixed and was not"* and over-supplied
+tidying. A commit contains only work that happened. It carries no denominator of
+nearby defects the agent noticed and declined, and it cannot distinguish
+"unnoticed" from "noticed and correctly left alone." The same selection problem
+weakens Finding 3: the board can characterize filed work, but the note's subject
+is work that never reached the board.
+
+I tested the suggested population rather than reasoning only from the prose.
+LHM's six latest non-lifecycle commits show changed files and shipped outcomes;
+none records incidental candidates considered and rejected. A reviewer can
+invent such candidates after the fact, but that measures the reviewer's taste,
+not the agent's stewardship behaviour.
+
+Make the first evidence pass **prospective and discovery-time**, over a bounded
+set of ordinary LHM task sessions. Record a candidate when it is noticed, before
+its disposition: where it was encountered, whether the assigned task already
+touched that surface, the proposed size/surface class, and `fix separately |
+defer | leave` with the reason. Then compare estimated and actual scope for the
+ones fixed. Confirm the instrument against at least one known-present candidate
+so a blank ledger cannot masquerade as absence. This can remain a temporary
+measurement artifact; it does not yet require a permanent trailer or doctrine.
+
+**[S3] MEDIUM -- slot preservation supplies persistence, not exemption
+authority, so Finding 8 overstates both the ratchet and the cheapness of its
+fix.** The dated count is off by one: exact standalone marker lines under
+`templates/core/` plus `templates/optional/` produce **25 occurrences and 24
+unique names**, not 26 and 24. The 12 phase-0 markers reproduce. The extra
+apparent occurrence comes from counting a marker example outside that installed
+set, not another customization surface.
+
+More importantly, a new widening slot would survive upgrades, but it would not
+say whether its exemptions outrank the mandatory triage list or the plan-scope
+rule. Without a precedence contract it creates two disagreeing instructions,
+and review should reject the contradiction. Existing slots also permit an
+adopter to reduce obligations *within the policy body that slot owns*, so
+"across successive upgrades ... only ratchet heavier" is stronger than the
+mechanism establishes.
+
+Keep the useful narrower finding: **the prompts and supported override
+authority are asymmetric**. Tightening is explicitly invited; a safe loosening
+is not. But remove *"adding one costs no doctrine at all."* A marker is cheap;
+granting it bounded authority, defining what can never be exempted, and stating
+precedence is the design work.
+
+**[S4] MEDIUM -- the recommendation says "write the plank last" and then writes
+it before the operational pilot.** Its sequence is evidence pass -> O2 guide-
+star plank -> O4 docs-first behaviour. That ordering also conflicts with
+Finding 4's conclusion that exhortation cannot move the gradient and Finding
+5's conclusion that the fence is the entire design. Prefer: prospective
+evidence -> settle authority, ceiling, stop rule and refusal surfaces -> bounded
+docs-first pilot -> only then fold the demonstrated lesson into the guide star.
+The plank can still reuse Anchor 17; it simply comes after the thing that gives
+it content.
+
+### Disposition and limits
+
+Preserve Findings 2, 4-7 and the O2-not-O3 judgment. Revise Finding 1 and the
+opening around the two authority contexts; replace the retrospective commit
+sample with a prospective observation window; narrow Finding 8 to prompt and
+override asymmetry; and make the recommendation's order literal.
+
+I did not verify the candidate Anchor 18 literature. The draft marks it
+unverified and does not rely on it for the current recommendation, so that is a
+promotion precondition rather than a finding in this round. I did not audit
+LHM for latent defects or judge which of its changes should have been omitted;
+doing either retrospectively would reproduce S2's measurement error.
