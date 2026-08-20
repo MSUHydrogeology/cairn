@@ -476,3 +476,31 @@ unverified and does not rely on it for the current recommendation, so that is a
 promotion precondition rather than a finding in this round. I did not audit
 LHM for latent defects or judge which of its changes should have been omitted;
 doing either retrospectively would reproduce S2's measurement error.
+
+---
+
+## Review -- Antigravity (External Strategy) -- 2026-08-20
+
+<!-- TEMPORARY REVIEW: the author folds accepted findings inline and deletes
+     this section. Strategy notes are inline-revised, not append-only. -->
+
+**Structural independence.** Cross-type read: Claude authored; Codex and Antigravity (Gemini 3.7 Flash) reviewed.
+
+**Recommendation: REVISE before promotion.** Concur with Codex's S1–S4 findings. In addition, the draft should incorporate three constraints derived from agent execution behavior and scientific codebases:
+
+### Core Perspectives & Additional Findings
+
+**[S5] Agent-attentional drift vs. pure diff over-supply.** Finding 5 correctly identifies agent over-supply as the inverse of human under-supply, but frames it only as a git/diff problem (large diffs, zero compute cost). In practice, an unconstrained stewardship license causes **cognitive context disruption**: an agent encountering an incidental flaw mid-task gets derailed into fixing it, burning tool turns and working-memory context needed for its primary objective. Stewardship must protect the **agent's focus during complex tasks**, not only the commit log.
+
+**[S6] The domain-opacity trap in scientific legacy trees.** The draft targets adopter trees (decades-old scientific codebases). In scientific code, what appears to an LLM as "sub-optimal style", "dead parameters", or "redundant casting" is frequently a load-bearing numerical stability workaround, memory layout optimization, or unit-handling convention. "Obviously harmless" is domain-opaque; stewardship rules in adopter code must enforce **semantic humility** and forbid speculative refactoring of numerical/kernel logic.
+
+**[S7] Doc stewardship must be mechanically verifiable.** Finding 7 identifies documentation as the ideal first surface. While broken links and literal typos are safe, **speculative semantic re-phrasing of docs is hazardous**: agents consume documentation as ground truth for architectural reasoning. A plausible but subtly incorrect doc rewrite actively misleads subsequent agent sessions. Doc stewardship must be strictly bounded to provable mechanical defects (broken links, literal typos, statically verified identifier renames).
+
+**[S8] Mechanizable fences and the "Third Way" (Session Scratchpad).** 
+* **The Fence**: To prevent models rationalizing past subjective guidelines ("obviously minor"), the fence requires objective rules:
+  1. *Proximity constraint*: Only files already in the primary task's working set.
+  2. *Refusal list*: No contracts, schemas, security/ceremony paths, public APIs, or numerical kernels.
+  3. *Size ceiling*: $\le 3$ lines per file.
+  4. *Timing (Bookend rule)*: Fixes occur strictly before starting or after completing the primary task, never mid-flight.
+* **The Ephemeral Scratchpad**: Finding 4 presents a false dichotomy between heavy roadmap filing and immediate fixing. An agent noticing an incidental defect can log a 1-line note in an ephemeral session scratchpad or handoff note (`dev/reflections/`) for rapid batch triage by the Maintainer, avoiding both roadmap overhead and context derailment.
+
