@@ -48,9 +48,26 @@ Proposed paths:
 **In** (Revision 5, "Scope"): the guard in `bootstrap/tests/conftest.py`; the
 additive child-environment fix in `scripts/quality_gate.py`; one
 vendor-neutral sentence under *Verification boundaries* in `AGENTS.md` and its
-shipped twin `templates/core/AGENTS.md`; one new test file. Nothing else —
-the proposal's own Scope section is authoritative and this plan drains all of
-it; there is no deferred remainder.
+shipped twin `templates/core/AGENTS.md`; one new test file.
+
+**This plan's Chunk A exceeds that list by two files, and the discrepancy is
+declared here rather than absorbed.** Rows A4 and A5 modify
+`bootstrap/tests/test_security_check.py` and
+`bootstrap/tests/test_quality_gate_order_independence.py`, neither of which
+Revision 5's Scope names. Both edits are consequentially necessary rather than
+new work: A2 makes an existing docstring in the first file factually false (it
+asserts the order-independence sub-gate launches pytest with *no* `env=` of its
+own), and A5 is the falsifier for A2's own accepted change. Leaving either
+alone would ship a test whose prose asserts a fact this change deletes.
+
+**The Maintainer's call, not the plan's.** Accepted scope is a floor in both
+directions, so touching two files the accepted artifact does not name is a
+deviation to authorize, not to justify. Two dispositions: (a) an explicit
+allowance covering A4 and A5 as in-scope repair; or (b) drop them from this
+plan and file the stale docstring and the missing falsifier as follow-ups,
+accepting that the tree carries a false docstring in the interim. **This plan
+does not decide it**, and a reviewer cannot create the authority by calling
+the remainder out of scope.
 
 **Out, and not revivable by this plan** (Revision 5, "Withdrawn and not
 deferred"): everything under `.claude/` (settings object, hook script,
@@ -65,9 +82,14 @@ history, not a backlog this plan may quietly re-open.
 `conftest.py`.** [`2026-08-19-claude-suite-run-diagnostics`](../proposals/archive/2026-08-19-claude-suite-run-diagnostics.md)
 (accepted the same day, planned separately) also edits
 `bootstrap/tests/conftest.py`, adding five telemetry hooks
-(`pytest_configure`, an extended `pytest_runtest_logreport`, an extended
-`pytest_collectreport`, an extended `pytest_sessionfinish`, and its own
-collector). **The sequencing decision is already made and is not this plan's
+(`pytest_configure`, `pytest_deselected`, an extended
+`pytest_runtest_logreport`, an extended `pytest_collectreport`, and an
+extended `pytest_sessionfinish`). *(An earlier draft named the fifth as "its
+own collector"; that describes `_gate_manifest.py`'s
+`pytest_collection_modifyitems`, a different pre-existing mechanism, cited
+separately below. The name-collision check further down was therefore run
+against a list with one wrong member — its conclusion happens to hold, but the
+check did not.)* **The sequencing decision is already made and is not this plan's
 to revisit: suite-run-diagnostics implements first; this plan implements
 second and inherits its landed `conftest.py`.** Revision 5's own "Interaction
 with the sibling proposal" analysis (carried from Revision 3) says the two do
@@ -78,7 +100,7 @@ Chunk A:
 * adds a **new** hook function (`pytest_collection_finish`) that does not
   collide by name with any of the five diagnostics hooks;
 * must re-read the landed `conftest.py` before writing the guard, rather than
-  writing against the four-hook file this plan's author read while drafting
+  writing against the **five**-hook file this plan's author read while drafting
   (`pytest_addoption`, `pytest_collection_modifyitems`,
   `pytest_runtest_logreport`, `pytest_collectreport`, `pytest_sessionfinish`
   — the pre-existing shuffle-hook and release-mode-outcome mechanisms,
@@ -87,7 +109,36 @@ Chunk A:
 * must confirm `session.items` and `session.testsfailed` still mean what
   Revision 5 assumes once the diagnostics hooks are in place (they read
   reports and durations; nothing in their accepted design touches collection
-  or the failure counter, but this plan re-verifies rather than asserts).
+  or the failure counter, but this plan re-verifies rather than asserts);
+* **must pin what the sibling's ledger records for a session this guard
+  refuses — the one cross-plan interaction neither plan saw, and it corrupts
+  the sibling's headline number.** A refusal does **not** skip
+  `pytest_sessionfinish`. Verified against the installed pytest (9.0.3,
+  `_pytest/main.py`): `initstate = 2` is assigned *before*
+  `doit(config, session)` runs collection, the `except UsageError` clause
+  re-raises after setting the exit status, and the `finally` block calls
+  `pytest_sessionfinish` whenever `initstate >= 2`. So a refused session still
+  reaches the ledger append that the diagnostics plan places last in that hook,
+  and writes a row with `collected` ≈ the full set, `executed` = 0, and
+  `scope` = `full` — because the canonical Boundary B argv this guard refuses
+  is exactly the argv the sibling's classifier resolves to `full`. The reader
+  reports `full`-run frequency and derives cost trend from those rows, so after
+  both plans land, every refused broad run silently deflates the very
+  measurement the ledger exists to produce, and a bare canonical invocation is
+  *guaranteed* to produce one rather than merely able to. Two consequences for
+  this plan, which is the second lander and therefore owns the seam: a Chunk A
+  falsifier asserting what the ledger records for a refused session (whether
+  the row is suppressed, or written and marked as refused, is a design choice
+  this plan must make and state); and `bootstrap/tests/test_suite_ledger.py`
+  added to the Boundary A mapping, since `conftest.py` is the ledger's surface
+  by then and Boundary A requires the standing gates for every touched surface.
+  Note that the sibling's own node-accounting falsifier enumerates the abort
+  shapes it reconciles — `-x`, `--maxfail=2`, `pytest.exit()`,
+  `KeyboardInterrupt`, setup error, teardown error, module-level skip — and a
+  collection-time `UsageError` from a conftest hook is **absent** from that
+  list, while this plan makes it the most common non-clean shape in the tree.
+  Its stated invariant `0 <= executed <= collected` is satisfied by
+  `(0, ~4,443)`, so it cannot catch this.
 
 This plan does **no** work inside the diagnostics proposal's own scope
 (the cost ledger, its schema, or its standalone reader tool). If the
@@ -164,24 +215,43 @@ in `bootstrap/tests/test_broad_run_guard.py` unless noted):
 | > 40 files, whatever the selector, is refused | `test_a_run_over_the_file_threshold_is_refused_regardless_of_selector` (parametrized: bare run, `cd <repo> && …`, env-prefixed, absolute interpreter, the canonical Boundary B argv, `--ignore` of one file at ~114 files / ~4,443 items) | A3 |
 | the boundary itself | `test_the_file_threshold_boundary_is_exact` (41 refuses, 40 runs) | A3 |
 | a pre-existing collection failure is never masked | `test_a_pre_existing_collection_failure_keeps_its_own_exit_code` (41 valid files + 1 syntax-error file: exit 2 and the collection diagnostic survive, refusal message absent; a clean 41-file control still exits 4) | A3 |
-| the guard sees the final item list | `test_the_guard_counts_the_post_filter_item_list` (register a competing late `pytest_collection_modifyitems`/`pytest_collection_finish`; assert the guard's count equals `len(session.items)` after it) | A3 |
+| the guard sees the final item list | `test_the_guard_refusal_follows_a_late_deselection` — **directional, and deliberately not the wording Revision 5's Evidence row carries.** That row says "assert the guard's count equals `len(session.items)`", which compares a **file** count to an **item** count (on a real collection, ~115 against ~4,443). Read literally it is a type mismatch; read charitably it is satisfied whenever a competing modifier removes nothing, which is the default for a modifier registered only to prove ordering — so it cannot distinguish "the guard read the post-filter list" from "the guard read a list". Instead: register a late `pytest_collection_modifyitems` that **removes** items so the distinct-file span crosses the threshold, and assert the refusal **flips** accordingly (and the converse: a late modifier that pushes the span above the threshold causes a refusal that would not otherwise fire). Revision 5's S2 names this one of two load-bearing falsifiers precisely because it must separate those two cases. | A3 |
 | the override allows | `test_the_override_token_allows_a_full_run` (`CAIRN_FULL_SUITE=1`: exit 0, full execution) | A3 |
 | release mode is exempt | `test_release_mode_is_exempt_from_the_guard` (the module's existing predicate at its one recognized value; the suite runs; `=0` does **not** exempt) | A3 |
 | `--collect-only` is exempt | `test_collect_only_is_exempt_from_the_guard` (`_gate_manifest.py`'s own collector still builds) | A3 |
 | the release token survives the gate | `test_a_release_refused_outcome_is_not_masked_by_the_guard` (real `security_check → quality_gate → pytest` path, a release-refused fixture: guard does not refuse it, release phase stays non-zero) | A4 (extends the existing `_quality_gate_tree` fixture family) |
 | the child environment is additive | `test_the_order_independence_child_env_is_an_additive_copy` (the spawn's `env=` is a copy of the parent plus `CAIRN_FULL_SUITE=1`, not a fresh mapping) | A5 |
-| the bypass is real and bounded | `test_noconftest_bypasses_the_guard_and_the_bypass_is_documented` (`--noconftest` collects without loading `conftest.py`; the guard does not fire) | A3 |
+| the bypass is real and bounded | `test_noconftest_bypasses_the_guard` (`--noconftest` collects without loading `conftest.py`; the guard does not fire) | A3 |
 
 ### Chunk B — the vendor-neutral sentence
 
 | # | File | Change |
 |---|------|--------|
-| B1 | `AGENTS.md`, *Verification boundaries* > **B — Integration**, immediately after "…`python scripts/quality_gate.py --sub neutrality --sub redundancy`." | Append, verbatim, the sentence the Decision names: *"Boundary B's canonical pair now requires `CAIRN_FULL_SUITE=1`; verification records written before this guard cite the bare form and are accurate for the runs they describe."* Names no AI vendor or model — clears `scripts/quality_gate.py --sub neutrality`. |
+| B1 | `AGENTS.md`, *Verification boundaries* > **B — Integration**, immediately after "…`python scripts/quality_gate.py --sub neutrality --sub redundancy`." | Append, verbatim, the sentence the Decision names: *"Boundary B's canonical pair now requires `CAIRN_FULL_SUITE=1`; verification records written before this guard cite the bare form and are accurate for the runs they describe."* Names no AI vendor or model. **No automated gate covers this file** — see the verification note below. |
 | B2 | `templates/core/AGENTS.md`, the same bullet's generic equivalent (currently ends "…run against a clean, unchanged commit under the project's configured interpreter/runtime.") | Append the *adapted* sentence, matching the twin's existing register (no concrete pytest invocation, no literal `CAIRN_FULL_SUITE` token unless the implementer judges the concrete token itself is project-agnostic enough to keep — see the note below). Candidate: *"A project's Boundary B command may require an explicit override token to run as a full suite; verification records written before such a guard lands cite the bare form and remain accurate for the runs they describe."* Acceptance criterion: same substance as B1, no AI vendor or model named, phrased in the twin's own generic voice — not a byte-identical copy of B1, since the twin's surrounding sentence already diverges from `AGENTS.md`'s in the same way (`diff` shows "the configured full suite" / "the project's configured interpreter/runtime" replacing Cairn's concrete text throughout that bullet). |
 
-Verification for Chunk B: `python scripts/quality_gate.py --sub neutrality`
-(vendor-neutrality gate) and `python scripts/check_cairn.py` (link/claim
-integrity) over both files.
+**Verification for Chunk B — and the asymmetry that an earlier draft of this
+plan got wrong.** `python scripts/quality_gate.py --sub neutrality` governs
+**B2 only**. It does not scan the repository-root `AGENTS.md`: its file set is
+built from `_NEUTRALITY_FILE_SUFFIXES`, whose eight keys are all *directories*
+(`doctrine`, `dimensions`, `on-ramp`, `docs`, `examples`, `bootstrap`,
+`scripts`, `templates`), and `_walk_neutrality_files` walks only those. Measured
+by importing that function against this tree: **181 files scanned, root
+`AGENTS.md` not among them, `templates/core/AGENTS.md` among them.** So the
+criterion "clears `--sub neutrality`" that stood in the B1 cell would have
+returned clean no matter what B1 landed, including a sentence naming a vendor.
+That is the silent-tool defect `AGENTS.md` > *Verifying claims* names outright:
+a tool that returns success without testing the claimed property is worse than
+no tool.
+
+* **B2** is genuinely gated. Under the `templates/` branch a denylist token is
+  an unconditional failure with no exemption path.
+* **B1 has no automated gate at all.** Its vendor-neutrality is a **reviewer
+  obligation**, discharged by a human or reviewing agent reading the sentence —
+  named here as such rather than left to look mechanized. The sentence the
+  Decision fixes verbatim contains no vendor token, so the live risk is a later
+  edit, not this one.
+* `python scripts/check_cairn.py` (link/claim integrity) does cover both files.
 
 ### Chunk C — Security Review of the implementation
 
@@ -229,10 +299,19 @@ depending on how the Maintainer times the ceremony.
 Phase 5 of `bootstrap/REANCHOR_RUNBOOK.md` are the Maintainer's own act,
 never scripted by the agent whose work is being anchored).
 
-Both files this plan touches are gate-frozen (`bootstrap/tests/**/*.py` and
-`scripts/*.py`, per `bootstrap/tests/_gate_manifest.py::_frozen_files`), so
-landing Chunk A produces two `FROZEN-MODIFIED` entries against the current
-anchor at `refs/cairn/gate-anchor`. That does **not** block ordinary
+**Four `FROZEN-MODIFIED` entries, not two — an earlier draft of this plan
+undercounted by half.** Chunk A touches five paths, and each was checked
+directly against `bootstrap/tests/_gate_manifest.py::_frozen_files` rather than
+inferred from the globs: `bootstrap/tests/conftest.py` (A1),
+`scripts/quality_gate.py` (A2), `bootstrap/tests/test_security_check.py` (A4)
+and `bootstrap/tests/test_quality_gate_order_independence.py` (A5) are all in
+the frozen set, so landing Chunk A produces **four** `FROZEN-MODIFIED` entries
+against the current anchor at `refs/cairn/gate-anchor`. The fifth path,
+`bootstrap/tests/test_broad_run_guard.py` (A3), is new and takes a different
+code path entirely: `FROZEN-NEW` as a note once tracked, or `FROZEN-UNTRACKED`
+as a **HOLD** in ceremony mode while still untracked. A Maintainer walking into
+Chunk D expecting two entries would meet four holds and one note. Derive the
+set at ceremony time regardless — including from this paragraph. That does **not** block ordinary
 `pytest bootstrap/tests` or `scripts/quality_gate.py` runs — verified by
 reading `bootstrap/tests/test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports`,
 which already tolerates a refusal exit (0, 1, or 2) from the live-tree gate
@@ -310,9 +389,19 @@ deliberate, not tested separately (Revision 5's own "Known omissions").
 Chunk A alone writes the guard and the child-environment fix; no other chunk
 touches executable bytes. The check fires on **every** `pytest` session over
 `bootstrap/tests` that loads Cairn's conftest, in any harness, for any agent
-or human — `--noconftest` is the one documented exception. Both answers are
-unchanged from the proposal's own S2/S3; chunking does not narrow or widen
-either.
+or human. `--noconftest` is the one **known** exception, and calling it
+"documented" would be false: grepping the tree outside `dev/proposals/` and
+`dev/plans/` returns **zero** occurrences of `noconftest` — no doctrine, no
+`AGENTS.md`, no `bootstrap/SAFETY.md`, no docstring. Revision 5 commits to a
+**probe** that pins the bypass so prose cannot drift back to claiming universal
+coverage; it commits to no document, and no chunk here lands one. The test name
+was trimmed to match (it previously promised `_and_the_bypass_is_documented`,
+a second property nothing in this plan delivers — and pinned two properties in
+one name, against the naming rule in `AGENTS.md` > *Project-specific
+conventions*). If the Maintainer wants the bypass documented rather than only
+probed, that is a scope addition to request, not something to infer from a test
+name. Both S2/S3 answers are otherwise unchanged from the proposal's;
+chunking does not narrow or widen either.
 
 **Known omissions**, carried forward rather than re-derived: the routing
 decision ("verification is not delegated; return it to the spawner") is
@@ -332,8 +421,12 @@ tests named in the Chunk A row mapping, plus
 `bootstrap/tests/test_security_check.py` (the two updated tests and their
 surrounding class), plus `bootstrap/tests/test_quality_gate_order_independence.py`
 (the new additive-copy test and the existing seed-contract tests it sits
-beside, to confirm nothing there regresses). During Chunk B: `python
-scripts/quality_gate.py --sub neutrality` and `python scripts/check_cairn.py`.
+beside, to confirm nothing there regresses), plus
+`bootstrap/tests/test_suite_ledger.py` — which exists by the time this plan
+starts, and pins the row-per-session and node-accounting invariants this
+guard's refusal path perturbs. During Chunk B: `python
+scripts/quality_gate.py --sub neutrality` (which covers B2 only — see Chunk B)
+and `python scripts/check_cairn.py`.
 
 **Boundary B — mode: `full`, not bounded, and this is not a close call.**
 Both changed files are gate-frozen (a contract-surface trigger on their own),
