@@ -167,10 +167,18 @@ def _copy_tree_clean(src: Path, dst: Path) -> None:
 def _snapshot(root: Path) -> dict:
     """A cheap mutation witness: relative path -> (size, mtime_ns) for every
     file under *root*.  Used to prove an operation created or touched nothing.
+
+    ``__pycache__`` is excluded.  CPython writes a ``.pyc`` on any import it has
+    not cached, so counting those makes the witness measure *"did anything at all
+    appear on disk"* rather than *"did the operation under test mutate the tree"*
+    -- and the answer then depends on whether the operator happens to run with
+    bytecode writing disabled.  Interpreter caching is not the property these
+    tests pin; a loader manufacturing a real file (see the ``tools/__init__.py``
+    case) is, and that is checked directly.
     """
     out = {}
     for p in root.rglob("*"):
-        if p.is_file():
+        if p.is_file() and "__pycache__" not in p.parts:
             st = p.stat()
             out[str(p.relative_to(root))] = (st.st_size, st.st_mtime_ns)
     return out
