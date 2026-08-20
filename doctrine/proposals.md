@@ -68,12 +68,14 @@ Each transition lands in its own commit so the discussion arc is
 transparent through `git log` and a reviewer can see exactly what
 changed at each round:
 
-* Commit on **opening** a proposal (status `proposed`).
-* Commit on **appending a Review** (status -> `reviewed`).
+* Commit on **opening** a proposal (status `awaiting-review`).
+* Commit on **appending a Review** — a *blocking* review moves status to
+  `revising`; a *clearing* one moves it to `awaiting-decision`.
 * Commit on **appending a Response and its complete current-contract
-  revision** (status -> `revised`) — the two land together, because a
-  Response without a revision is not a legal `revised` state. If multiple
-  review rounds happen, each Review / Response pair gets its own commit.
+  revision** (status -> back to `awaiting-review`) — the two land
+  together, because a Response without a revision does not answer the
+  review. If multiple review rounds happen, each Review / Response pair
+  gets its own commit.
 * Commit on **the Maintainer's Decision** (status -> `accepted` /
   `rejected` / `superseded`).
   * For `accepted` proposals, the Decision commit flips status
@@ -510,7 +512,7 @@ A Response disposes findings; it does not restate the design. On its own it
 leaves the next reviewer to reassemble the contract out of the whole history —
 the repeated reading this rule exists to remove. So beside every Response append
 one **complete current-contract revision** — `## Revised proposal`, or `##
-Revision <n>` — and update `Status:` to `revised`.
+Revision <n>` — and update `Status:` back to `awaiting-review`.
 
 Not a delta and not a diff: one self-contained statement of scope and
 exclusions, invariants, failure dispositions, public paths, evidence, omissions

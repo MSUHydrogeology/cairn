@@ -123,9 +123,10 @@ review** — a Review section appended *after* the author's
 Response and Revised proposal. It has three structural
 properties that distinguish it from a Round-1 review:
 
-1. **The proposal's status stays `revised`.** The Round-2
-   Review does not move status back to `reviewed`. The
-   author has already completed their part of the cycle.
+1. **The Round-2 Review does not move status to `revising`.**
+   It feeds `awaiting-decision`; it does not send the author
+   back for another revision. The author has already
+   completed their part of the cycle.
 2. **Append-only against the proposal, not the cycle.**
    The author does not write a Response section to a
    Round-2 review; the cycle has already closed on the
@@ -149,8 +150,9 @@ allows unlimited review rounds":
 
 * It does not permit the author to skip Responding to a
   Round-1 review by re-labeling it Round-2. Round-1
-  reviews remain author-Response-bound until the
-  proposal reaches status `revised`.
+  reviews remain author-Response-bound until the author's
+  Response and revision return the proposal to
+  `awaiting-review`.
 * It does not permit a Decision-support reviewer to demand
   another revision. If a Round-2 reviewer believes the
   revision is fundamentally wrong, the proper response is

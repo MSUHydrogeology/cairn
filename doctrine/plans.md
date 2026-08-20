@@ -16,20 +16,37 @@ file moves, Response grammars) lives in `doctrine/proposals.md`.
 ## The plan lifecycle
 
 ```
-open -> [awaiting-plan-review] -> executing -> review -> archived
+awaiting-plan-review <-> revising-plan
+         |
+         v
+ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
+                                              |
+                                              v
+                                      ready-to-archive -> archived
 ```
 
-* **open** — the plan-open commit creates the plan and archives
-  the source proposal.
+The plan-open commit creates the plan and archives the source
+proposal. Each status names who holds it next.
+
 * **awaiting-plan-review** — *(only for a review-required plan; see
-  the plan-review precondition below)* the plan is open but
+  the plan-review precondition below)* the plan exists but
   implementation has not started, waiting for its plan-review section
-  to land. A plan marked `Plan review: not required` skips this
-  status and goes straight to `executing`.
-* **executing** — implementation commits land.
-* **review** — a code-review pass examines the implementation.
-* **archived** — after review, lasting truth migrates to durable
-  homes and the plan moves to `dev/plans/archive/`.
+  to land.
+* **revising-plan** — the author folds plan-review findings into the
+  plan's operative cells, returning it to `awaiting-plan-review`.
+* **ready-to-implement** — the review gate is satisfied and work may
+  begin. A plan marked `Plan review: not required` may open directly
+  here, or at `implementing` when the opening commit already carries
+  the implementation evidence.
+* **implementing** — implementation commits land.
+* **awaiting-code-review** — a code-review pass examines the
+  implementation; the reviewer is never the implementing agent.
+* **revising-code** — the implementer answers code-review findings,
+  returning it to `awaiting-code-review`.
+* **ready-to-archive** — review has passed and the archive commit is
+  owed.
+* **archived** — lasting truth has migrated to durable homes and the
+  plan moves to `dev/plans/archive/`.
 
 A plan is an *execution* artifact: its status, progress markers,
 and commit hashes are updated in place. Review findings and the
@@ -62,7 +79,7 @@ they have no plan, so the plan preconditions do not apply.
 
 A plan may be explicitly **release-gated** — a phase that cannot fire
 until a release boundary has elapsed (e.g. a removal step that waits
-on a deprecation clock). Such a plan may remain `executing` in
+on a deprecation clock). Such a plan may remain `implementing` in
 `dev/plans/` **indefinitely**, parked between its pre-release and
 post-release phases. This is the plan's *designed* lifecycle state —
 not clutter, not a hygiene problem; do not "clear" it.
@@ -116,7 +133,7 @@ The gate is **explicit, not remembered**: the `**Plan review**` metadata
 line above is mandatory — `required(<tier>)` or `not required(<rationale>)`,
 with **no silent default**. The author states it; the Maintainer ratifies.
 When `required`, the plan opens in **`awaiting-plan-review`** and reaches
-`executing` only after a dated `## Plan review` section lands: the review
+`ready-to-implement` only after a dated `## Plan review` section lands: the review
 **and**, when it raised findings, a disposition (see *The record schema*
 below for the two accepted forms and their positional bound).
 Its plan-open and first-implementation commits stay
@@ -134,7 +151,8 @@ into a *structural* one: the gate is a status the plan **carries**, not
 an agent's memory (the recurring plan-review-skip failure mode). The
 plan header's `Plan review:` line makes the gate legible to a cold
 reader; a static plan-review lint is the mechanical backstop (a
-`required` plan past `open` must carry a dated review subsection). The
+`required` plan past `awaiting-plan-review` must carry a dated review
+subsection). The
 review *tier* follows the structural-independence framing in
 `doctrine/dual-review.md`. See `doctrine/lifecycle.md` for the full
 cross-type statement.
@@ -198,18 +216,21 @@ of edit:
 
 **Mutable in place** (status updates as work proceeds):
 
-* `Status` field (`open` / `executing` / `review` / `archived`) plus
+* `Status` field (`awaiting-plan-review` / `revising-plan` /
+  `ready-to-implement` / `implementing` / `awaiting-code-review` /
+  `revising-code` / `ready-to-archive` / `archived`) plus
   the "last update" date.
 * Checkboxes / progress indicators in the Sequence section.
 * Commit hashes filled in as commits land.
 * Verification notes (test counts, runtime, tooling output).
 * Link targets when referenced files move.
-* **Chunk-table cell text — pre-implementation only** (plan status
-  `open`; no commits in flight against the chunks being edited).
-  Inline edits driven by accepted plan-review findings land here,
-  with the Sharpening subsection naming which cells changed and why.
-  Once status flips to `executing`, chunk-table edits follow the
-  append-only rule below.
+* **Chunk-table cell text — pre-implementation only** (any status
+  before `implementing`: `awaiting-plan-review`, `revising-plan`, or
+  `ready-to-implement`; and no commits in flight against the chunks
+  being edited). Inline edits driven by accepted plan-review findings
+  land here, with the Sharpening subsection naming which cells changed
+  and why. Once status flips to `implementing`, chunk-table edits
+  follow the append-only rule below.
 
 **Append-only** (history of decisions):
 
@@ -227,8 +248,9 @@ of edit:
 **Distinct from discovery-driven inline revisions.** When the
 implementing agent (or the plan author) revises the plan mid-flight
 in response to *implementation discovery* — not in response to a
-review pass — inline chunk-table edits are also permitted while
-status is `open`, but no `## Plan review` section is required. The
+review pass — inline chunk-table edits are also permitted before
+status reaches `implementing`, but no `## Plan review` section is
+required. The
 audit trail lives in the revision commit's message + the git diff.
 Add a `## Plan review` section only when an actual review pass
 occurred.
@@ -798,8 +820,8 @@ Verification post-sharpening:
 finding; the Sharpening subsection NAMES which cells changed and why.
 This combines audit-trail integrity (append-only Sharpening doc) with
 execution-spec correctness (the implementer reads the corrected chunk,
-not the obsolete one). Permitted only while plan status is `open`;
-once status flips to `executing`, follow the append-only
+not the obsolete one). Permitted only before plan status reaches
+`implementing`; once it does, follow the append-only
 Sequence-revision rule (see Mutability rule above).
 
 ### Multi-round review
