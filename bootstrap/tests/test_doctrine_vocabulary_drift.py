@@ -68,27 +68,64 @@ def _exempt_lines(lines: list[str]) -> set[int]:
     return exempt
 
 
+def _fenced_diagram_lines(lines: list[str]) -> set[int]:
+    """Line numbers (1-based) inside a ```mermaid fence.
+
+    A diagram states the vocabulary as loudly as prose does and is the surface
+    that actually drifted, but its tokens are bare graph labels -- never
+    backticked -- so the prose rule below cannot see them at all.
+    """
+    inside = False
+    out: set[int] = set()
+    for n, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if inside:
+                inside = False
+            elif stripped[3:].strip().lower() == "mermaid":
+                inside = True
+            continue
+        if inside:
+            out.add(n)
+    return out
+
+
 def _offenders(text: str, tokens: tuple[str, ...]) -> list[tuple[int, str]]:
-    """Backticked retired tokens on non-exempt lines, as (line, token)."""
+    """Retired status tokens presented as current, as (line, token).
+
+    Two surfaces, two rules, because the token looks different on each.
+    """
     lines = text.splitlines()
     exempt = _exempt_lines(lines)
-    # Two rules keep this precise enough to be usable.
-    #
-    # Backticked only, because "open", "review" and "revised" are ordinary
-    # English and flagging prose would drown the signal. A token presented as
-    # `code` is being presented as a status name.
-    #
-    # And whole-span only. Substring matching flags `Plan review`, `plan-review`
-    # and `## Plan review` -- section names, not statuses -- which is how a check
-    # earns the reputation that gets it deleted. A span may hold a status *list*
-    # (`proposed / open / executing / review`), so split on the list separators
-    # and require each part to be exactly a token.
-    pattern = re.compile(r"`([^`]+)`")
+    diagram = _fenced_diagram_lines(lines)
+
+    # Prose: backticked whole spans only. "open", "review" and "revised" are
+    # ordinary English, so flagging bare prose would drown the signal; a token
+    # presented as `code` is being presented as a status name. Whole-span only
+    # because substring matching flags `Plan review` and `plan-review`, which are
+    # section names -- and that is how a check earns the reputation that gets it
+    # deleted. A span may hold a status *list* (`proposed / open / executing /
+    # review`), so split on the list separators and require each part to match.
+    span_re = re.compile(r"`([^`]+)`")
+
+    # Diagrams: whole-word, since graph labels carry no backticks. The lookarounds
+    # exclude word characters AND hyphens, so `review` does not match inside
+    # `awaiting-code-review` -- without that, every live state ending in a retired
+    # word would report as drift.
+    word_res = {
+        tok: re.compile(rf"(?<![\w-]){re.escape(tok)}(?![\w-])") for tok in tokens
+    }
+
     found: list[tuple[int, str]] = []
     for n, line in enumerate(lines, start=1):
         if n in exempt:
             continue
-        for span in pattern.findall(line):
+        if n in diagram:
+            for tok, rx in word_res.items():
+                if rx.search(line):
+                    found.append((n, tok))
+            continue
+        for span in span_re.findall(line):
             parts = [p.strip() for p in re.split(r"[/,]", span)]
             if not parts or not all(parts):
                 continue
@@ -113,12 +150,23 @@ class TestDoctrineTeachesTheLiveVocabulary:
 
     @pytest.mark.parametrize(
         "path",
-        sorted((CAIRN_ROOT / "doctrine").glob("*.md")),
+        sorted((CAIRN_ROOT / "doctrine").glob("*.md")) + [CAIRN_ROOT / "README.md"],
         ids=lambda p: p.name,
     )
     def test_no_doctrine_file_presents_a_retired_status_as_current(
         self, path: Path
     ) -> None:
+        """README.md is checked alongside doctrine because it carries a
+        *simplification* of the lifecycle diagram, and a simplification is a
+        second drawing rather than a second view of one source. It may leave
+        states out; it may never name one that no longer exists. That is exactly
+        how it failed before -- the front page kept the retired tokens after the
+        vocabulary moved, under a caption asserting fidelity to doctrine.
+
+        This binds the state *names* only. A simplification could still invent a
+        transition doctrine does not have, and nothing here would notice; that
+        needs a reader, and the caption is where the claim is made.
+        """
         offenders = _offenders(path.read_text(encoding="utf-8"), _retired_tokens())
         assert not offenders, (
             f"{path.relative_to(CAIRN_ROOT)} presents retired status token(s) as "
@@ -146,4 +194,23 @@ class TestDoctrineTeachesTheLiveVocabulary:
         assert [n for n, _ in found] == [4], (
             "the marker must exempt its own paragraph and nothing beyond the "
             f"next blank line; got {found}"
+        )
+
+    def test_the_check_sees_inside_a_diagram(self) -> None:
+        """The prose rule is blind to diagrams, which is the surface that
+        actually drifted: the README's Mermaid nodes carried the retired tokens
+        for ten days and no backtick appears anywhere in a Mermaid block. A
+        README-scoped check that only read prose would have passed the exact
+        failure it was added for -- green, and blind."""
+        tokens = _retired_tokens()
+        drifted = "```mermaid\nflowchart LR\n    P[proposed] --> R[reviewed]\n```\n"
+        assert _offenders(drifted, tokens), "the detector cannot see into a diagram"
+
+        live = (
+            "```mermaid\nflowchart LR\n"
+            "    A[awaiting-review] --> B[awaiting-code-review]\n```\n"
+        )
+        assert not _offenders(live, tokens), (
+            "a live state ending in a retired word (awaiting-code-review) must "
+            "not report as drift"
         )
