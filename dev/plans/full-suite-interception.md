@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
@@ -16,6 +16,27 @@ tier's authority is the Maintainer's amendment, stated plainly rather than
 through the inheritance mechanism.
 **Last update**: 2026-08-20
 **Opened**: 2026-08-20
+
+## Status: how it drifted, and the forward path
+
+**This plan sat at `ready-to-implement` while two chunks landed and a Security
+Review ran and closed.** Corrected here to `awaiting-code-review`. The drift is
+worth a sentence because the cause is structural, not a lapse of attention: a
+plan records progress in **two** places -- the per-chunk markers in the Sequence
+block, and the `**Status**:` field in the header. The chunk markers were updated
+in the commit that landed each chunk, which is the natural moment to do it. The
+header field has no such moment attached to it, and nothing checks that the two
+agree. It was caught by the Maintainer reading the board, which is the only
+instrument that surfaces the header value at all.
+
+**A first correction to `awaiting-code-review` was itself wrong, and the checker caught it.** That state asserts stable bytes *plus* the applicable Boundary B evidence, and the `## Implementation verification` record is that evidence. None existed. The state is `implementing` until the record lands -- which is the checker doing exactly its job: the header field had drifted once by being unattached to any moment, and the obvious repair was to set it to where the work felt like it had reached rather than to where the evidence supported.
+
+**Chunk S returns this plan to `implementing`.** It is blocked on the sibling
+plan's ledger and reader, which do not exist yet. When they land, this plan goes
+back to `implementing` for that chunk, then forward again -- the lifecycle is
+linear but a plan may traverse an edge more than once. Chunk S remains a
+precondition of `ready-to-archive`, so the return trip cannot be skipped by
+forgetting it.
 
 ## How this plan reached `ready-to-implement`
 
@@ -296,9 +317,9 @@ same class as the unlogged 2026-08-12 Boundary-B-bounding-clause landing;
 
 ```
 1. Chunk A -- the guard + the additive child environment          [landed a316d75]
-2. Chunk B -- the vendor-neutral sentence, AGENTS.md + its twin    [landed this commit]
+2. Chunk B -- the vendor-neutral sentence, AGENTS.md + its twin    [landed 8610a79]
 3. Chunk S -- the sibling seam (rows A6/A7)                        [BLOCKED on suite-run-diagnostics]
-4. Chunk C -- Security Review of the implementation                [Maintainer/reviewer-owned, not a commit]
+4. Chunk C -- Security Review of the implementation                [done 0fe4145; REVISE answered a7cd83d; closed 0917cd6]
 5. Chunk D -- the gate re-anchor ceremony                           [Maintainer-owned, not this plan's commit]
 ```
 
