@@ -165,14 +165,27 @@ def pytest_collection_finish(session):
     a pre-filter item list.
 
     **A wrapper, and that is the load-bearing part.** The ``yield`` lets every
-    other ``pytest_collection_finish`` implementation run to completion first,
-    and the guard is evaluated only on the path where all of them returned
-    normally.  A plain hook cannot do this: it competes for ordering, so a
-    competing implementation that aborts the session -- ``pytest.exit(...,
+    ordinary ``pytest_collection_finish`` implementation run to completion
+    first, and the guard is evaluated only on the path where all of them
+    returned normally.  A plain hook cannot do this: it competes for ordering,
+    so a competing implementation that aborts the session -- ``pytest.exit(...,
     returncode=7)``, say -- either runs after this one and never executes, or
     runs before it and is then overwritten.  Measured before this wrapper
     existed: a competing aborting hook at ``trylast`` never ran at all and its
     diagnostic vanished behind exit 4.
+
+    **A known limit, stated because the wrapper does not close it.** Pluggy
+    unwinds nested wrappers in the opposite order from entry, so an *outer*
+    wrapper does its post-``yield`` work after this one returns.  Measured: a
+    competing ``wrapper=True`` at default priority and at ``trylast`` both keep
+    their exit code and diagnostic, but a competing ``wrapper=True,
+    tryfirst=True`` loses to this guard's exit 4 and its diagnostic never
+    appears.  That last shape is an open finding (FSI-SR1), not a closed one,
+    and ``test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so``
+    pins it as it actually behaves.  An earlier version of this docstring
+    claimed the ``yield`` waits for *every* other implementation; it does not,
+    and a docstring asserting a property the code lacks is worse than the gap
+    it conceals.
 
     A cost prompt must never overwrite stronger evidence.  The run is over
     either way, so the prompt buys nothing -- and the exit code is the part a

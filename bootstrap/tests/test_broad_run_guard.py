@@ -39,7 +39,8 @@ THRESHOLD = 40
 
 
 def _tree(tmp_path: Path, n_files: int, *, tests_per_file: int = 1,
-          broken: bool = False, extra_conftest: str = "") -> Path:
+          broken: bool = False, extra_conftest: str = "",
+          competitor: str = "") -> Path:
     """A scratch repo of ``n_files`` trivial test files, carrying the real
     conftest.  ``broken=True`` adds one file that fails to parse.
     """
@@ -47,8 +48,17 @@ def _tree(tmp_path: Path, n_files: int, *, tests_per_file: int = 1,
     tests.mkdir(parents=True)
     shutil.copy(CONFTEST, tests / "conftest.py")
     if extra_conftest:
+        # Appended to the SAME module, so this may only add hooks the real
+        # conftest does not define.  Anything sharing a name with a real hook
+        # rebinds it and DELETES the guard -- see `competitor=` below, and
+        # `test_the_append_helper_cannot_be_used_to_forge_a_competitor`.
         with (tests / "conftest.py").open("a", encoding="utf-8") as fh:
             fh.write("\n\n" + extra_conftest)
+    if competitor:
+        # A genuine second plugin: its own module, loaded with -p, so both its
+        # hook and the guard's are registered and pluggy really orders them.
+        (tmp_path / "competitor_plugin.py").write_text(
+            "import pytest\n\n" + competitor, encoding="utf-8")
     for i in range(n_files):
         body = "".join(
             f"def test_n{i}_{j}():\n    assert True\n\n"
@@ -73,9 +83,11 @@ def _run(root: Path, *args: str, env_overrides: dict | None = None
     env.pop("CAIRN_FULL_SUITE", None)
     env.pop("CAIRN_RELEASE_GATE_ACTIVE", None)
     env.update(env_overrides or {})
+    env["PYTHONPATH"] = str(root) + os.pathsep + env.get("PYTHONPATH", "")
+    plugin = ["-p", "competitor_plugin"] if (root / "competitor_plugin.py").exists() else []
     return subprocess.run(
         [sys.executable, "-m", "pytest", "bootstrap/tests", "-q",
-         "-p", "no:cacheprovider", *args],
+         "-p", "no:cacheprovider", *plugin, *args],
         cwd=str(root), env=env, capture_output=True, text=True, check=False,
     )
 
@@ -293,26 +305,114 @@ def test_a_pending_session_stop_is_not_replaced_by_the_guard(tmp_path) -> None:
 
 def test_a_competing_collection_finish_abort_survives_the_guard(
         tmp_path) -> None:
-    """The guard is a hook *wrapper*, so every competing
-    ``pytest_collection_finish`` runs to completion before it decides.
+    """A competing plugin that aborts the session must keep its exit code and
+    its diagnostic; the guard must not pre-empt it.
 
-    A plain hook cannot achieve this -- it competes for ordering, so a
-    competing implementation that aborts the session either runs after the
-    guard and never executes, or runs before it and is overwritten. Measured
-    before the wrapper existed: a competing ``trylast`` hook calling
-    ``pytest.exit(..., returncode=7)`` never ran and its diagnostic vanished
-    behind exit 4.
-
-    Asserting the diagnostic survives, not only the exit code: losing the
-    message is the half a reader actually needs.
+    **The competitor is a separate plugin module, loaded with ``-p``, and that
+    is the whole point of this test.** An earlier version built the competitor
+    by appending a second ``def pytest_collection_finish`` to the *same*
+    conftest. Python rebinds the name, which DELETES the guard -- so that
+    version ran against a tree with no guard at all and passed against the
+    pre-fix code it was written to pin. A test that cannot fail is worse than
+    no test, because it reports safety it never measured.
     """
     aborter = (
         "@pytest.hookimpl(trylast=True)\n"
         "def pytest_collection_finish(session):\n"
         "    pytest.exit('COMPETING_ABORT_CANARY', returncode=7)\n"
     )
-    root = _tree(tmp_path, THRESHOLD + 5, extra_conftest=aborter)
+    root = _tree(tmp_path, THRESHOLD + 5, competitor=aborter)
     proc = _run(root)
     assert proc.returncode == 7, proc.stdout + proc.stderr
     assert "COMPETING_ABORT_CANARY" in proc.stdout + proc.stderr
     assert "Refusing a broad run" not in proc.stdout + proc.stderr
+    assert _refused(_run(_tree(tmp_path / "control", THRESHOLD + 5))), (
+        "the control without a competitor must still refuse")
+
+
+def test_the_append_helper_cannot_be_used_to_forge_a_competitor(
+        tmp_path) -> None:
+    """Pins the trap that made the test above inert, so it cannot return.
+
+    Appending a hook to the conftest that shares a name with one the conftest
+    already defines removes the original. Any future test that builds a
+    "competitor" that way is measuring a guardless tree.
+    """
+    shadow = ("def pytest_collection_finish(session):\n"
+              "    pass\n")
+    shadowed = _run(_tree(tmp_path / "shadow", THRESHOLD + 5,
+                          extra_conftest=shadow))
+    assert shadowed.returncode == 0, (
+        "expected the shadowing append to delete the guard; if this now "
+        "refuses, the trap is gone and this test should be reconsidered")
+    assert _refused(_run(_tree(tmp_path / "control", THRESHOLD + 5)))
+
+
+def test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so(
+        tmp_path) -> None:
+    """A known, measured limit, pinned rather than left to be rediscovered.
+
+    Pluggy unwinds nested wrappers in the opposite order from entry, so a
+    competing ``wrapper=True, tryfirst=True`` implementation is *outside* this
+    guard and does its post-``yield`` work after the guard has already raised.
+    Competing default and ``trylast`` wrappers are beaten by the guard's
+    placement and keep their exit code; a ``tryfirst`` wrapper does not.
+
+    This asserts the limit as it actually is. If someone closes the gap, this
+    test goes red -- which is the correct signal to update the documented limit
+    rather than a regression.
+    """
+    body = (
+        "@pytest.hookimpl(wrapper=True, tryfirst=True)\n"
+        "def pytest_collection_finish(session):\n"
+        "    result = yield\n"
+        "    pytest.exit('OUTER_WRAPPER_CANARY', returncode=7)\n"
+        "    return result\n"
+    )
+    proc = _run(_tree(tmp_path, THRESHOLD + 5, competitor=body))
+    assert proc.returncode == 4, (
+        "the documented limit is that an outer tryfirst wrapper LOSES to the "
+        "guard; this now returns "
+        f"{proc.returncode}:\n" + proc.stdout + proc.stderr)
+    assert "OUTER_WRAPPER_CANARY" not in proc.stdout + proc.stderr
+
+
+def test_a_release_refused_outcome_is_not_masked_by_the_guard(tmp_path) -> None:
+    """The two mechanisms in this conftest must not shadow each other.
+
+    The release-mode outcome rule makes a session non-zero when a test skipped
+    while the release token was set -- a skip is not acceptable release
+    evidence. The guard exempts release mode, so it never fires there and
+    cannot overwrite that refusal. This pins the intersection rather than
+    trusting it: the guard's exemption is what makes the release refusal
+    reachable at all, and someone narrowing that exemption later would silence
+    a release control while every other test here still passed.
+
+    Directional in both halves: the same tree without the release token is
+    refused by the guard (exit 4), and with it the release rule's own non-zero
+    outcome survives instead.
+
+    Housed here rather than in ``test_security_check.py`` where the plan's row
+    mapping put it. The property under test is the guard's interaction with the
+    release rule, and both live in this file's subject conftest; the security
+    file's fixture family builds a full quality-gate tree, which this needs
+    none of. A deviation from the mapping, declared rather than silent.
+    """
+    root = _tree(tmp_path, THRESHOLD + 5)
+    skipper = root / "bootstrap" / "tests" / "test_probe_skips.py"
+    skipper.write_text(
+        "import pytest\n\n"
+        "def test_it_skips():\n"
+        "    pytest.skip('release evidence must not include a skip')\n",
+        encoding="utf-8")
+    without = _run(root)
+    assert _refused(without), (
+        "without the release token this is an ordinary broad run and the "
+        "guard must refuse it")
+    with_release = _run(root, env_overrides={"CAIRN_RELEASE_GATE_ACTIVE": "1"})
+    assert with_release.returncode != 0, (
+        "a skip under release mode must make the session non-zero:\n"
+        + with_release.stdout + with_release.stderr)
+    assert "Refusing a broad run" not in (
+        with_release.stdout + with_release.stderr), (
+        "the guard fired in release mode and may have masked the release rule")
