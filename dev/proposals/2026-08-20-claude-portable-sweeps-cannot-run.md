@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -2458,3 +2458,21 @@ proposal satisfies alone. The chunk is **MAINTAINER-GATED**.
   commitment was **replaced, not delivered** — the D3 module-doc section, whose
   content already ships. Every other opened outcome survives. **These declared
   expansions invalidate any inherited plan-readiness basis.**
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-20
+
+**ACCEPTED as revised (Revision 4).** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, all three plans seem acceptable to me as revised. Please scribe my decision on all three as Accept as Revised."
+> "Sorry, proposals"
+
+**Summary of accepted terms (Revision 4)**:
+- **D1 (Version Extractor & Probe/Parser Parity)**: Named extraction step accepting `gitleaks version X.Y.Z` or bare `X.Y.Z`; flips `fake_tool` default in tests to emit realistic shape.
+- **D2 (Inert Allowlist & Single Refusal)**: Permits `remote.<name>.glab-resolved` and `branch.<name>.vscode-merge-base`; accumulates all non-inert keys into one refusal message.
+- **D3 (Admission Ceremony Documentation)**: Documents manual four-step admission procedure; clarifies admission is un-automated.
+- **D4 (Timeout Syntax Alignment)**: Formats `--timeout` as integer seconds across all three subcommands per flag tables.
+- **D5 (Exit Disambiguation & Stderr Redaction)**: Passes `--exit-code 42` for findings (exit 1 = usage error); removes adapter stdout/stderr from `LegOutcome.reason` across all exits and signals, replacing with runner-owned messages.
+- **Review Requirement & Gating**: Plan review is `required(Internal)` (plan readiness invalidated by scope expansion); implementation carries a **Security Review REQUIRED** trigger and requires External Security code review and real-adapter verification on a host with Gitleaks before closing Issue #4.
+
+**Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
+
