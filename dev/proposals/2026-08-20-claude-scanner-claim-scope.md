@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — D1 changes what a security control
 **instructs an operator to do to a reviewed security baseline**, and D2 adds a
 derived annotation to a security report. Neither is obviously a trust-boundary
@@ -1908,3 +1908,248 @@ are named.
 
 **Disposition: blocking.** Three blocking findings ([I1]–[I3]); status moved to
 `revising`.
+
+## Response -- Claude (author) -- 2026-08-20 (round 3)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+**I1 I reproduced independently before accepting**, on this environment's 301
+distributions, with the same anchored grammar Revision 2 specifies:
+
+| root | include-all (Revision 2) | drop `extra ==` |
+|---|---:|---:|
+| `scikit-learn` | **580** | 5 |
+| `rich` | 572 | 4 |
+| `requests` | 572 | 5 |
+
+580 exceeds the entire environment, because the walk reaches names that are not
+installed at all. My closure did not partition anything.
+
+* **[I1] accept — the premise was false and I can name the error precisely.**
+  **Markers and extras are not one thing.** Deciding whether a requirement is
+  extras-gated is a **syntactic test on the marker text** (`extra ==`) — it
+  needs no marker evaluation, no environment, and no `packaging`. I derived one
+  policy from the stdlib-only constraint and applied it to two mechanisms with
+  opposite cost profiles. The safe-error-direction argument holds for **markers**
+  (measured cost: 0–3 distributions) and is self-defeating for **extras**
+  (measured cost: 3x–12x, because it compounds — every extras node contributes
+  its own extras, so the walk enters entire docs and test toolchains).
+
+  The reviewer's sharpest point is one I should have caught myself: this
+  **inverts the adopter's own caution**, which this proposal cites as its reason
+  for refusing option 2. They warned that skipping `; extra ==` needed care *not
+  to drop genuine requirements*; Revision 2 "solved" that by not skipping them
+  at all. Revision 3 splits the policies.
+* **[I2] accept.** Confirmed in my own text: Revision 2's invariant (ii) lists
+  `vulnerabilities`, `scanned`, `no_match`, `unknown` and `(status, tier)` and
+  **dropped `coverage.names`**, which Revision 1 had — while S2 still asserts
+  "filter `coverage.names` (invariant (ii) reddens)". It would not. And
+  `coverage.names` reaches the report only as `len(...)` (`:1198`), so the
+  emitted-report oracle cannot see it either. Its own docstring says it exists
+  so *"a parent-side enumeration substituted for it is visible by name"* — I
+  removed that check while claiming to strengthen the invariants.
+* **[I3] accept, and it is the fourth hole in this invariant.** A renderer that
+  omits rows **by annotation class** — `if row.annotation == "out-of-closure":
+  continue` — is exactly the option-2 collapse the bright line forbids and that
+  S5 claims invariant (i) prevents. It passes, because nothing requires the raw
+  fixture to carry a vulnerable distribution in each annotation class. An oracle
+  is only as strong as the fixture's coverage of the classes it must discriminate.
+* **Non-blocking, all accepted:** the terminator gloss omits `~` and, coded
+  literally, *is* the `cffi~` bug it claims to fix; "not installed" and "metadata
+  unreadable" are conflated; `python_package` is a repo-relative *path* and its
+  mapping to a distribution was unspecified; Revision 2's self-containment
+  dropped `## Signals the change is wrong` and never added the inverse tripwire
+  the new policy needs; the expected multiset needs a normalization clause or
+  the `Pillow`/`pillow` fixture is voided.
+
+**I am not arguing the second-round recommendation.** External Security is right:
+I1 changes the algorithm's measured output, and I2/I3 are the third and fourth
+holes in an invariant I have now re-specified twice.
+
+## Revision 3
+
+**Complete current contract.** Self-contained; supersedes Revision 2 entirely.
+**Only the two subsections below and `## Signals` change**; every other part of
+Revision 2 — the review declaration, `Touches`, D1, D1b, D2b, the closure
+contract, and S1/S3/S4 — is restated unchanged in substance and is reproduced
+here by section so nothing is inherited by reference.
+
+*(Unchanged and operative, restated in full in Revision 2 above and not modified
+by this revision: **Review declaration** — Security Review REQUIRED per
+`dev/proposals/_template.md:76-78`; **Touches**; **D1** — scope the imperative,
+the consumer taxonomy, the lockfile/`integrity_preflight` consumer, roots
+derived inside `_print_summary` with no signature change; **D1b** — the stronger
+`content-security.md:122-123` copy and its self-hosted twins; **D2b** — the
+coverage-ceiling paragraph; **S1**, **S3**, **S4**; and the full issue-closure
+contract. This revision changes the closure policy, the invariants, S2, S5, and
+restores `## Signals`.)*
+
+### The declared closure — corrected policy
+
+Authority, normalization, requirement-name extraction, traversal and caps are as
+Revision 2 specified, with four corrections:
+
+**1. Extras and markers are separate policies.**
+
+* **Extras-gated requirements are EXCLUDED**, detected by the **syntactic**
+  presence of `extra ==` in the requirement's marker text. This is a string test
+  on metadata already in hand — **not** a marker evaluation — so it is available
+  under the stdlib-only constraint. Revision 2 wrongly derived its inclusion
+  from that constraint.
+* **Non-extras marker-gated requirements are INCLUDED** without evaluation. Here
+  the safe-error argument does hold: over-inclusion routes a distribution to
+  **earlier** attention, and the measured cost is small.
+
+**Measured, `as_of 2026-08-20`.** On this environment (301 distributions),
+excluding extras collapses the `scikit-learn` closure from **580 to 5**, `rich`
+from 572 to 4, and `requests` from 572 to 5. An independent walk against true
+PEP 508 evaluation reproduces the extras-excluded result **within 0–3
+distributions across nine roots** — so the stdlib-only restriction costs the
+closure almost nothing *once extras are separated out*, and Revision 2's
+conflation cost it everything.
+
+**Why extras compound, stated so the next reader does not re-derive it.** A
+distribution's extras pull in docs, test and benchmark toolchains; each of those
+nodes contributes *its* extras; the walk transitively enters the whole
+development universe and reaches names not installed at all. That is why the
+figure can exceed the environment's own size.
+
+**The disqualifying property, named as such:** an axis that marks a large
+majority of the environment `in-closure` does not partition, so the 5:1
+actionability ratio D2 exists to reduce is not reduced. **A closure that does
+not partition is a failed closure, not a conservative one.**
+
+**2. The terminator list includes `~`.** The identifier is the **anchored match**
+of `[A-Za-z0-9][A-Za-z0-9._-]*` at the start of the stripped requirement, and
+nothing else; the match ends where that character class ends. Revision 2's prose
+gloss listed `[`, `(`, `;`, whitespace and comparison operators and **omitted
+`~`** — and a literal implementation of that gloss reproduces exactly the
+`cffi~` / `mdurl~` junk the spec claims to fix, because `~=` is the form those
+came from. The anchored match is normative; the gloss is illustrative and now
+names `~` explicitly.
+
+**3. "Not installed" and "metadata unreadable" are distinguished.** A required
+name with **no installed distribution** is not an error: it is simply absent
+from the audited environment, contributes nothing, and terminates that branch
+without an `unknown`. A name that **is** installed but whose metadata cannot be
+read contributes `unknown`, and everything reachable only through it is
+`unknown`. Revision 2 collapsed these, which would have turned every
+uninstalled optional dependency into an `unknown`.
+
+**4. `python_package` → distribution.** The token is a **repo-relative package
+path**. Its final path component is taken as the top-level import package and
+mapped to a distribution via `importlib.metadata.packages_distributions()`. If
+that mapping yields no distribution, or more than one, the closure is empty and
+**every** distribution annotates `unknown` — never "nothing is yours".
+
+### The bright line — oracle, corrected
+
+**Invariant (i) — the emitted report.** The expected normalized
+`(distribution, count)` multiset is written **literally in the fixture**, beside
+a raw child-JSON fixture, and **the fixture's literal values are already
+normalized**, so the comparison is not silently normalizing one side into
+agreement with the other — without that clause the `Pillow`/`pillow` fixture
+proves nothing. The **emitted report** is parsed back into an observed multiset;
+exact equality is required.
+
+**Invariant (ii) — the `Coverage` object.** `coverage.names` **(the full tuple,
+not its length)**, `coverage.vulnerabilities`, `coverage.scanned`,
+`coverage.no_match`, `coverage.unknown`, and the returned `(status, tier)` are
+identical with the annotation present and absent. This is asserted **on the
+returned object**, because `coverage.names` reaches the report only as
+`len(...)` (`:1198`) and the emitted-report oracle therefore cannot see it. Its
+docstring's purpose — *"a parent-side enumeration substituted for it is visible
+by name"* — is restored. Revision 2 dropped this field while claiming to
+strengthen the invariants.
+
+**Fixture coverage is part of the invariant, not of the test plan.** The raw
+child-JSON fixture **must carry at least one vulnerable distribution in each
+annotation class** — `in-closure`, `out-of-closure`, and `unknown`. Without that,
+an oracle comparing multisets cannot discriminate a renderer that drops rows *by
+class*, which is precisely the option-2 collapse.
+
+**Four recorded mutations, all of which must redden:**
+
+1. drop a row in the renderer;
+2. alter a count;
+3. **omit rows by annotation class** (`if row.annotation == "out-of-closure":
+   continue`) — the option-2 collapse;
+4. substitute a parent-side enumeration for `coverage.names`.
+
+**Withdrawn:** "byte-identical" (self-contradictory); "sum of retained counts
+equals the raw total" (falsified by C2); and Revision 2's invariant (ii) as
+written (falsified by I2 — it omitted the field its own S2 cited).
+
+**What the annotation decides.** It **decides nothing the tool acts on** — no
+verdict, no exit code, no finding omitted, no distribution dropped. It
+influences **attention**; at a 144-to-27 ratio *triaged last* is operationally
+*not triaged*, and that is stated rather than elided. If the annotation ever
+gates what is reported, this has become the second-leg option and must be
+refused.
+
+### S2 and S5 — restated
+
+* **S2 — Can it fail?** The four mutations above, each run and recorded, plus:
+  make the placeholder-free closure walk raise (every distribution annotates
+  `unknown`, all still reported, and a paired test asserts nothing was dropped).
+  The expected multiset is **literal and pre-normalized in the fixture**, so the
+  oracle is not computed from the thing it judges. **A fifth, added because I1
+  showed a policy can be wrong without any test noticing: a closure-size
+  tripwire** — over a fixture environment with a known root, the closure must be
+  a bounded fraction of the discoverable set, so a future change that
+  re-inflates it reddens instead of silently returning to Revision 2's behaviour.
+* **S5 — Who still wins?** Package metadata is authored by the packages, so an
+  attacker controlling a distribution's metadata can make it annotate
+  `out-of-closure` and be **triaged last**. They **cannot make it disappear**
+  from the report — **closed by an independently checked projection**, not by
+  construction: additive code shape alone would not stop a later assembly step
+  filtering a row, and mutations 1 and 3 are what forbid it. The **attention
+  residual is open and accepted**. Unchanged: an operator who prunes the
+  baseline anyway.
+
+### Signals the change is wrong
+
+Restored — Revision 2's self-containment pass dropped this section, and the new
+policy needs a tripwire in the opposite direction from the old one.
+
+* **The closure is too large.** If the annotation marks a large majority of a
+  real environment `in-closure`, it has stopped partitioning and the axis is
+  worthless. This is the I1 failure returning; recovery is the closure-size
+  tripwire in S2, and the threshold is the plan's to set against a real
+  environment rather than asserted here.
+* **The closure is too small.** If adopters report genuine runtime dependencies
+  annotated `out-of-closure`, the extras exclusion is cutting real requirements
+  — the exact hazard the adopter warned about. Recovery: the excluded set is
+  identified syntactically and can be reported alongside, so the evidence is
+  recoverable without re-running the walk.
+* **`unknown` becomes the common case.** If most distributions annotate
+  `unknown`, the axis is noise and should be removed; the honest failure is
+  still a failure.
+* **The annotation is trusted as a verdict.** Anyone treating *out-of-closure*
+  as *not a problem*, or proposing the leg skip those findings. The four
+  mutations are the fence; if social pressure to filter outlasts them, remove
+  the annotation rather than let it drift into option 2.
+* **The scoped D1 message reads as permission to ignore exit 3.** The sentence
+  must ask for confirmation, not offer an excuse.
+* **A fifth baseline consumer appears and disagrees differently.** Evidence the
+  shared-artifact problem is structural and wants a real multi-consumer
+  protocol — a distinct proposal.
+
+### Withdrawn / superseded commitments
+
+* **"A marker-gated or `; extra == "..."` requirement is included in the closure
+  without evaluating the marker."** **Withdrawn — falsified by measurement.**
+  Extras are now **excluded** by a syntactic test; non-extras markers remain
+  included. Reason: I1. The error was deriving one policy from the stdlib-only
+  constraint and applying it to two mechanisms with opposite costs.
+* **The claim that stdlib-only forces extras inclusion.** Withdrawn:
+  extras-gating is a string test, not a marker evaluation.
+* **Revision 2's invariant (ii).** Superseded — it omitted `coverage.names`,
+  which its own S2 cited as the field a mutation would redden. Reason: I2.
+* **Revision 2's oracle without fixture-class coverage.** Superseded; the raw
+  fixture must carry a vulnerable distribution in each annotation class. Reason:
+  I3.
+* **The terminator gloss omitting `~`.** Superseded; the anchored match is
+  normative and `~` is named.
+* **The conflation of "not installed" with "metadata unreadable".** Superseded.
+* **`Scope delta`: preserved.** No accepted outcome is withdrawn.
