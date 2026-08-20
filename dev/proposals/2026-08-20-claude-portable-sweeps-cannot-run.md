@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -1826,3 +1826,298 @@ may cite rather than repeat.
 
 **No `Plan readiness` is recorded.** An Internal pass cannot supply it, and
 Revision 2's declared expansion invalidates any inherited basis in any case.
+
+## Response -- Claude (author) -- 2026-08-20 (round 3)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+I verified both blocking findings against the tree and the real adapter before
+accepting. `_leg_argv` does have **three** call sites — `:1421`, `:1755`,
+`:1820` — and `:1421` is inside `cmd_verify_version_support`. The guard at
+`:1434` fires only on `returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS)`,
+and `_EXIT_FINDINGS = 1` (`:829`), which is exactly what gitleaks returns for an
+invalid flag *value*. Measured here with `--exit-code 42`:
+
+```
+clean scan  -> 0        invalid --timeout -> 1        unknown flag -> 126
+```
+
+* **[B2] accept, and it sharpens D3 rather than merely adding to D4.** D4's
+  blast radius includes **step 2 of the four-step admission ceremony**. So full
+  mode is not unreachable merely because nobody has performed the ceremony —
+  **step 4 is unreachable for every real gitleaks**, and the ceremony refuses
+  with the wrong reason ("the adapter wrote no report") because the guard built
+  for precisely this case is bypassed by the exit-code collision. That is a
+  silent-tool defect in this project's own terms, and D3 as written names
+  neither. Nothing recorded is invalidated: the ledger holds no admitted triple.
+* **[B1] accept.** This is the sink question, and Revision 2 had no S that asks
+  it — S4 asks which way *authority* breaks, which is true of item 2 and beside
+  the point. D4 item 2's condition spans `read_report`'s whole `Degraded`
+  surface, including `:902-907`, *"carries an unredacted {field!r}"* — the
+  branch that fires **exactly when the adapter ignored `--redact`**. And since
+  that one flag governs logs *and* stdout, an adapter that ignored it in the
+  report is the adapter that ignored it in its stderr. Relaying that into
+  `LegOutcome.reason` carries it to `summarize()` and into the summary JSON, the
+  human report, and the `--security-verification` child document — the sink
+  `FORBIDDEN_RESULT_FIELDS` exists to close. **In reduced mode this is the
+  normal operating assumption, not an edge case**, because reduced mode exists
+  to run an unadmitted binary.
+* **The exit-code remedy is taken, as further scope.** Maintainer authorization:
+
+  > "Let's take the scope expansion exit-code remedy on portable-sweeps-cannot-run."
+
+  It **dissolves** both findings rather than patching each: with `_EXIT_FINDINGS`
+  moved off `1`, an invalid-argv exit lands in the **existing** `:999-1003`
+  branch, which already attaches the bounded, escaped `_diagnostic(stderr)`. So
+  **no new stderr relay is added anywhere**, and B1's sink has nothing to reach
+  it. The same move makes `:1434` fire correctly, restoring a security control
+  that is currently bypassed.
+* **[R1] accept.** A fake that pins one more specific string catches this
+  defect and not its class. It gains a **per-subcommand flag table** derived
+  from the adapter's own `--help`, and it lands **red first** against the
+  current argv, so the instrument is shown able to fail before it is trusted.
+* **[R2] accept.** The ordering D1 → D2 → D4 → D3 is right, and its stated
+  rationale was false: D4 **is** observable without D1 — via the ceremony path,
+  which is the call site that never needed a version probe. That false rationale
+  is what concealed B2. Corrected.
+* **[R3] accept.** The evidence plan gains a ceremony-path instrument.
+* **[R4] accept.** Gate 3's fourth conjunct was not machine-checkable, and
+  "fresh repository" must say **with at least one commit** or the history leg
+  has nothing to scan.
+* **[R5] accept.** The ledger claimed "every commitment from the opened proposal
+  survives," which is false on the record in the same file — D3's original
+  documentation commitment was withdrawn in Revision 1. Corrected.
+
+## Revision 3
+
+**Complete current contract.** Self-contained; supersedes Revision 2 entirely.
+
+*(Unchanged and operative, restated in Revision 2 above and not modified here:
+**Scope** and its exclusions; **D1** — the extraction function and the
+`fake_tool` default flip; **D2** — the structural inert-key fence, the
+accumulated capped refusal, and the two-direction containment accounting;
+**S1**, **S3**. This revision changes D3, D4, adds D5, and revises S2, S4, S5,
+the invariants, the evidence plan and the closure gates.)*
+
+### D3 — corrected: the ceremony is un-performable, not merely un-performed
+
+Revision 2 said the module doc already covers reduced mode (true —
+`portable-security-sweeps.md:96-99`) and that the runner's comment misleads
+(also true, on both counts: it points at
+`dev/measurement/gitleaks-version-support.md`, which the `team-gated` module
+does not install, and it says a record "enters" the admitted set when
+`--verify-version-support` only emits *evidence*).
+
+**What Revision 2 missed:** the ceremony **cannot be completed on any real
+gitleaks today**. Step 2 calls `_leg_argv` (`:1421`), hits the invalid
+`--timeout`, and the run refuses with `admit: false` and *"the adapter wrote no
+report"* — a true statement about a false cause. So the corrected comment must
+say what is actually true after D4 and D5 land, and the module doc must not
+imply an adopter can reach full mode by a route that has never worked.
+
+The ceremony remains **four steps** (`dev/measurement/gitleaks-version-support.md:26-38`)
+and remains **un-automated**: an automated writer that reads an evidence record
+and edits the admitted set is a path by which anything that can produce a record
+can admit a binary. The manual step is the control. **No artifact is admitted by
+this change**, and the sha256 in issue #4 arrived by the candidate channel.
+
+### D4 — the leg argv (corrected)
+
+**Measured on Homebrew gitleaks 8.30.1, darwin/arm64:** `--timeout=840s` →
+`FTL invalid argument "840s" ... strconv.ParseInt`, no report; `--timeout=840` →
+scans and writes. `gitleaks dir --help` declares `--timeout int ... in seconds`.
+`_leg_argv` emits the suffixed form (`:1628`) and
+`test_portable_security_sweeps.py:1195` **pins** it.
+
+1. **Emit the measured integer-seconds form**, and re-point the test.
+2. ~~Preserve the adapter's bounded stderr when exit 1 carries no valid
+   report.~~ **Withdrawn — see D5.** No new stderr relay is added.
+3. **The fake gains a per-subcommand flag table**, derived from the adapter's
+   own `--help`, rather than one more pinned string — so the *class* of argv
+   defect is caught, not this instance. It **lands red against the current
+   argv** before the argv is fixed, which is what shows the instrument can fail.
+
+**All three call sites are in scope**: the current-tree leg (`:1755`), the
+history leg (`:1820`), and **`cmd_verify_version_support` (`:1421`)** — the
+admission ceremony. Revision 2 named only the scan legs.
+
+**Established negative, and it is a real one:** every other `_leg_argv` element
+was swept against `gitleaks dir --help` and `gitleaks git --help` on real
+8.30.1, and both legs were run end-to-end with only the `s` dropped — both scan
+and write reports, including with a planted `ghp_` token where `Match` and
+`Secret` both returned `REDACTED`. **`--timeout` was the only field-invalid
+element.**
+
+### D5 — disambiguate the adapter's overloaded exit 1 (new in Revision 3)
+
+**The defect underneath B1 and B2 is that gitleaks overloads exit 1**, and the
+runner takes `_EXIT_FINDINGS = 1` (`:829`) at face value. Measured with
+`--exit-code 42`:
+
+| condition | exit |
+|---|---:|
+| clean scan | `0` |
+| **leaks found** | `42` |
+| invalid `--timeout` value | `1` |
+| unknown flag | `126` |
+
+So today a usage error is indistinguishable from a findings result, which is why
+the `:1434` ceremony guard — *"the candidate did not accept the runner-owned
+argv"* — never fires on the case it was written for.
+
+**The change:** pin `--exit-code` in the leg argv to a value distinct from the
+adapter's usage-error codes, and set `_EXIT_FINDINGS` to match it.
+
+**What this dissolves, rather than mitigates:**
+
+* An invalid-argv exit `1` now falls into the **existing** `:999-1003` branch,
+  which already attaches the bounded, escaped `_diagnostic(stderr)`. **No new
+  relay is written**, so B1's sink is never opened. The redaction-failure branch
+  at `:902-907` keeps raising `Degraded` with its own message and no adapter
+  stderr, exactly as today.
+* The `:1434` guard fires correctly, so the ceremony refuses with the true
+  reason and step 2 becomes performable once D4 lands.
+
+**This is a change to an executed argv and to an exit-code contract on a named
+trust root**, which is why it is declared here rather than left to the plan, and
+why the External Security Review is the right place for it. The value chosen
+must be outside every documented adapter exit code, and the plan records the
+`--help`-derived evidence for that choice rather than asserting it.
+
+### Invariants, failure dispositions, public paths
+
+* **(i)–(iv)** as Revision 2: `parse_version` strictness; no leg before the
+  screen returns; `_ADMITTED_ARTIFACTS` changes only by reviewed source edit
+  (enforced at `test_portable_security_sweeps.py:2135` and `:1977`, with the
+  narrow untestable residual that *a human editing source did so with review*);
+  the twin stays byte-identical (`:2300`).
+* **(v)** The emitted leg argv is accepted by the admitted adapter major — the
+  refusing fake, plus the real-adapter smoke.
+* **(vi)** *(new)* **No adapter stderr reaches `LegOutcome.reason` on any path
+  that `read_report` refused.** This is the invariant B1 showed was missing, and
+  D5 satisfies it by construction rather than by filtering: the only stderr the
+  runner relays is on exit codes it has no meaning for, which is a path
+  `read_report` never reached.
+* **(vii)** *(new)* A findings result and a usage error are distinguishable by
+  exit code.
+
+**Failure dispositions.** Extraction failure → INCOMPLETE (5). Screen violation
+→ refuse before execution. Containment violation → refuse immediately.
+Newline-bearing key → refuse. Adapter usage error → **DEGRADED (20) via the
+existing unknown-exit branch, carrying the bounded escaped diagnostic**.
+Redaction failure → DEGRADED with the runner's own message and **no adapter
+stderr**. All closed; none grants authority, and none opens a sink.
+
+### S2, S4, S5 — revised
+
+* **S2 — Can it fail?** Mutations, each run and recorded: unanchor the extractor;
+  restore `[^.]+` (dotted-subsection cases fail); restore the `s` suffix (**the
+  flag-table fake fails**); revert `_EXIT_FINDINGS` to `1` (**the ceremony-guard
+  test fails**). The flag-table fake is **landed red first**, because a fake that
+  has never failed is not an instrument.
+* **S4 — Which way does it break, and where does output go?** *(The second
+  clause is new: Revision 2 asked only the authority question, and B1 lived in
+  the gap.)* Every path lands on less authority. **On sinks:** the only adapter
+  stderr the runner relays is via the pre-existing unknown-exit branch, bounded
+  by `_STDERR_DIAGNOSTIC_BYTES` and escaped; **no new sink is created**, and the
+  redaction-failure path relays none. `FORBIDDEN_RESULT_FIELDS` is unchanged and
+  still governs.
+* **S5 — Who still wins?** Unchanged and restated: **a parser or rule-engine
+  defect in an unadmitted adapter binary, reached by hostile repository content,
+  executing uncontained in the operator's own user context.** The module's doc
+  states the enabling condition verbatim (`portable-security-sweeps.md:194-196`).
+  `child_env` bounds the environment; the config screen and include-origin
+  containment bound configuration; `refuse_candidate_ignore_files` bounds report
+  suppression and **does not bound this class**; the digest gate bounds reaching
+  full mode. **Nothing bounds adapter execution over candidate-controlled file
+  content.** The class is **open**. D5 narrows one thing only: it removes the
+  path by which a misbehaving adapter's stderr could have reached a sink.
+
+### Evidence, omissions, deferred work
+
+**Tests.** The probe→parse pin; the `fake_tool` default flip; **the
+per-subcommand flag-table fake, landed red first**; dotted, slashed, suffixed,
+empty and newline-bearing subsection cases; a capped multi-key refusal with an
+elision count; immediate containment refusal; **the ceremony-guard test** (an
+invalid argv must refuse with the argv reason, not with "wrote no report"); and
+**a redaction-failure case asserting no adapter stderr in the outcome**.
+
+**Smoke — two instruments, both requiring a real adapter:**
+
+1. `python scripts/run_portable_security_sweeps.py --target . --json` against a
+   **fresh repository carrying at least one commit** (without a commit the
+   history leg has nothing to scan).
+2. **The ceremony path** — `--verify-version-support <binary>
+   --confirm-executing-an-unadmitted-binary` — which must reach a real matrix
+   result rather than refusing on argv. Revision 2's evidence plan had no
+   instrument for this, which is why B2 survived it.
+
+**Known omissions.** The extractor pins observed shapes only. Not tested: Linux,
+Windows, a symlinked Git common directory, a malicious adapter binary, or a
+full-mode admitted digest. The ceremony is documented and, after D4/D5,
+*performable* — but **it is not performed by this change**. Whether the two
+named config variables complete the ordinary-tooling set is not established; the
+structural fence is what makes that non-blocking.
+
+**Deferred.** Nothing.
+
+### The issue-closure contract — restated in full
+
+Closing issue [#4](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/4)
+is an acceptance criterion of the derived plan's final chunk, which this
+proposal can satisfy alone. The chunk is **MAINTAINER-GATED**.
+
+1. Implementation landed and code-reviewed.
+2. **The implementation's External Security code review** completed — not this
+   proposal review.
+3. **The legs demonstrably run against a real adapter**, by this predicate:
+   `mode == "reduced"`, **and** a current-tree leg whose status is `INCOMPLETE`
+   or `FINDINGS`, **and** no leg with status `DEGRADED`, **and** the run was
+   performed against a **fresh repository carrying at least one commit**. *(The
+   earlier fourth conjunct, "recorded evidence that a real adapter invocation
+   occurred", is withdrawn as not machine-checkable; the recorded evidence is
+   the operator's attestation naming the adapter path and version, which is a
+   human step and is described as one.)* **Owner: the Maintainer or the
+   adopter** — a real gitleaks is a host fact. If nobody can satisfy it, the
+   issue does not close.
+4. A closing comment naming **what was declined**: the bare `version`
+   subcommand and why; that admission was deliberately **not** automated, so
+   reduced mode remains the shipped posture; and that the reporter's measured
+   digest was **not** admitted, with the route by which it could be. It carries
+   the D3 correction (`--verify-version-support` exists; its second half does
+   not), **D4**, and **D5** — and states plainly that the ceremony was
+   *un-performable*, which is a stronger answer to their gap 3 than the one they
+   asked for.
+5. Maintainer authorization for the outward-facing act.
+
+### Withdrawn / superseded commitments
+
+* **D4 item 2, "preserve the adapter's bounded stderr when exit 1 carries no
+  valid report."** **Withdrawn entirely.** Its condition spanned
+  `read_report`'s redaction-failure branch, which fires exactly when the adapter
+  ignored `--redact`, and relaying that stderr would have carried Secret/Match
+  into the summary JSON, the human report and the child document. Replaced by
+  D5, under which no new relay exists. Reason: B1.
+* **The claim that D4's blast radius is the scan legs.** Withdrawn — the
+  admission ceremony calls `_leg_argv` at `:1421`. Reason: B2.
+* **D3's account of why full mode is unreachable.** Superseded: not merely
+  un-performed, but **un-performable on any real gitleaks**, because step 2
+  refuses on the invalid argv with a misleading reason. Reason: B2.
+* **D4's ordering rationale ("D4 is only observable once D1 lets a run reach the
+  leg").** Withdrawn as false — the ceremony path reaches `_leg_argv` without a
+  version probe. The ordering is unchanged; the false rationale is what
+  concealed B2. Reason: R2.
+* **The refusing fake as "a mode that rejects the field-invalid form."**
+  Superseded by the per-subcommand flag table, landed red first. Reason: R1.
+* **Gate 3's fourth conjunct.** Superseded — not machine-checkable; replaced by
+  a named human attestation, and "fresh repository" now says *with at least one
+  commit*. Reason: R4.
+* **"No accepted outcome is removed; every commitment from the opened proposal
+  survives."** **Withdrawn as inaccurate** — Revision 1 withdrew the opened
+  proposal's D3 documentation commitment (a module-doc section), replacing it
+  with the comment correction. The accurate statement is below. Reason: R5.
+* **`Scope delta`: expanded**, twice and both Maintainer-authorized — **D4**
+  (round 2) and **D5** (round 3, quoted in the Response above). One opened
+  commitment was **replaced, not delivered**: the D3 module-doc section, because
+  the content already shipped. Every other opened outcome survives. **These
+  declared expansions invalidate any inherited plan-readiness basis.**
