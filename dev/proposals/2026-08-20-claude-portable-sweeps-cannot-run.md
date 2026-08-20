@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -2121,3 +2121,114 @@ proposal can satisfy alone. The chunk is **MAINTAINER-GATED**.
   commitment was **replaced, not delivered**: the D3 module-doc section, because
   the content already shipped. Every other opened outcome survives. **These
   declared expansions invalidate any inherited plan-readiness basis.**
+
+## Review -- Codex (External) -- 2026-08-20 (round 2)
+
+**Tier**: External Security Review
+**Findings**: raised
+
+**Model**: OpenAI GPT-5 (Codex)
+
+Reviewed commit: 84d47cac7b537de05b7462efb489728e2551ef35
+Target: Revision 3, limited to D3-D5 and revised S2/S4/S5
+Prior findings: P1-P3 and the Internal round-3 B1-B2/R1-R5
+Assurance path: high-assurance
+
+### Review sweep
+
+I opened all three `_leg_argv` call sites, every `_EXIT_FINDINGS` consumer,
+`classify_leg`, `read_report`, `_diagnostic`, the matrix fixture and guard, the
+flag-table test surface, and both v8.30.1 subcommands' live help. I read
+Gitleaks' official v8.30.1 `cmd/root.go` and sampled v8.0.0 as the supported
+major's lower boundary. I then ran clean, finding, invalid-value and unknown-flag
+cases through both real subcommands, ran a D4+D5-equivalent ceremony step 2,
+and injected contradictory/malicious exit/report/stderr combinations directly
+through `classify_leg`.
+
+### Steelman
+
+D3 and D4 are now accurate. With integer seconds and pinned exit `42`, the live
+8.30.1 matrix is `0` clean, `42` finding, `1` invalid timeout and `126` unknown
+flag for both `dir` and `git`. The exact ceremony invocation reached
+`end_to_end`, validated both reports, and produced an evidence record; step 2 is
+genuinely performable and still admits nothing by itself. The only Cairn
+readers affected by `_EXIT_FINDINGS` are `classify_leg` and the ceremony guard,
+so D5 has not missed a fourth internal consumer. The two Maintainer-authorized
+scope expansions are declared and correctly invalidate plan-readiness
+inheritance.
+
+### Security preflight adjudication
+
+* **S2:** The flag-table and ceremony-guard mutations can fail. The evidence
+  does not yet make a real candidate prove the new findings/error distinction;
+  E2 is the missing positive and negative instrument.
+* **S4:** Authority still breaks closed, but the sink claim is false. Exit `1`
+  now reaches an existing adapter-stderr relay before `read_report`; bounding
+  and escaping arbitrary bytes does not make secret material non-secret.
+* **S5:** Uncontained malicious-adapter execution remains the accepted open
+  class. Such an adapter could already choose `126`, so D5 does not create that
+  ultimate capability; it also does not “remove” the stderr-to-sink path as
+  Revision 3 claims.
+
+### Findings
+
+* **[E1] BLOCKING -- D5 moves B1's sink condition; it does not dissolve it.**
+  With proposed `_EXIT_FINDINGS = 42`, I called `classify_leg` with exit `1`, a
+  valid empty report, and stderr containing the unique canary
+  `SECRET_CANARY_7d91`. The resulting `LegOutcome.reason` contained the canary.
+  Control cases behaved correctly: exit `42` with no report and exit `42` with
+  an empty report relayed no stderr, while exit `0` with a valid finding stayed
+  FINDINGS.
+
+  The cause is structural: `classify_leg` handles unknown exit codes at
+  `run_portable_security_sweeps.py:999-1003` **before** calling `read_report`.
+  D5 makes ordinary adapter exit `1` newly reach that pre-existing relay.
+  `_diagnostic` bounds and escapes; it does not redact. Invariant (vi) is true
+  only because it excludes this path by wording: `read_report` never “refused”
+  because it was never called. S4's broader confidentiality claim and S5's
+  “removes the path” claim are therefore false.
+
+  **Satisfier:** do not place adapter stderr in any durable `LegOutcome.reason`
+  path. Use a runner-owned message containing the numeric exit only, or keep any
+  operator diagnostic on a channel that cannot enter summary JSON, the human
+  report, or the security-verification child document. Strengthen invariant
+  (vi) to cover every adapter exit, not only paths that reached `read_report`,
+  and mutate unknown-exit stderr with a secret canary.
+
+* **[E2] BLOCKING -- ceremony step 2 is performable but does not verify D5's
+  new contract.** The matrix fixture is clean, so both `end_to_end` rows prove
+  only exit `0`. It never proves that either subcommand honors pinned findings
+  exit `42`, or that an adapter error stays outside `{0, 42}`. My independent
+  live run established those facts for Homebrew 8.30.1, and official v8.30.1
+  source uses `1` for scan/fatal errors and `126` for unknown flags; I found no
+  `42` collision in the sampled v8.0.0 source either. That is evidence for this
+  candidate, not a major-wide invariant that future admission may inherit.
+
+  **Satisfier:** make the matrix exercise, for **both** subcommands, a clean
+  fixture (`0`), a planted redacted finding (`42` plus a validated report), and
+  one controlled invalid-argv case whose exit is neither `0` nor `42`. Record
+  those rows in the evidence artifact. Reduced unadmitted binaries remain
+  unable to report CLEAN; admission then binds the complete measured exit
+  contract to the candidate digest instead of assuming all of major 8 shares
+  it.
+
+### Coverage
+
+**Covered** -- D3 ceremony wording and live reachability; D4's three call sites;
+D5's live `dir`/`git` exit matrix and official-source disposition; all Cairn
+exit-code consumers; malicious exit/report combinations; invariant (vi);
+S2/S4/S5; issue #4's implementation-review and real-adapter gates; both scope
+expansion authorizations and inheritance invalidation.
+
+**Not covered / low confidence** -- Linux, Windows, non-8.30 major-8 binaries
+beyond the v8.0.0 source sample, symlinked Git metadata, a full admitted digest,
+and arbitrary process-containment exploits. I did not execute an implementation
+because none exists.
+
+### Second-round recommendation
+
+**Recommended, narrowly.** Retest only the no-adapter-stderr sink invariant and
+the expanded clean/finding/error ceremony matrix. D3, D4, the value `42` for
+8.30.1, the three-call-site scope, and the inheritance invalidation are clear.
+No `Plan readiness` is recorded while D5's confidentiality and admission
+evidence contracts remain open.
