@@ -127,9 +127,11 @@ tool by pattern-matching its mapped neighbours into `config.py`.
 
 ### Documentation / doctrine surface
 
-* `dev/measurement/README.md` — **a shipped adopter surface, contrary to this
-  plan's first reading of it. Chunk D2 is ON HOLD pending a Maintainer scope
-  decision** (see the Chunk D table). Measured, not assumed: `python
+* `dev/measurement/README.md` **and `templates/core/dev/measurement/README.md`**
+  — **a shipped adopter surface, contrary to this plan's first reading of it.
+  The Maintainer has allowed the template edit** (allowance recorded under
+  Chunk D); both copies are edited, in the same commit, byte-identical.
+  Measured, not assumed: `python
   bootstrap/scaffold.py --manifest` emits it as an install destination
   (`dev/measurement/README.md <- core/dev/measurement/README.md`,
   `substituted`), the mapping is declared in `bootstrap/_scaffold/config.py`,
@@ -137,15 +139,29 @@ tool by pattern-matching its mapped neighbours into `config.py`.
   dev/measurement/README.md` is byte-identical. Editing only Cairn's copy
   desynchronizes the twin and leaves the tree failing
   `bootstrap/verify_integrity.py` against the recorded lockfile hash until an
-  `upgrade --finalize`; editing both writes a Cairn-specific ledger name into
-  every adopter's tree. Revision 5 excludes "any doctrine, canonical-command,
-  template or adopter surface", so neither branch is authorized by the
-  accepted contract.
+  `upgrade --finalize`. Revision 5 excludes "any doctrine, canonical-command,
+  template or adopter surface", so the accepted contract did not authorize
+  this on its own — the Maintainer's allowance is what does, and the
+  generic-phrasing constraint under Chunk D is what keeps the widened surface
+  from carrying Cairn's specifics into adopter trees.
 * `CHANGELOG.md > Unreleased > Added` — one release-note line (Chunk D).
 * **No `AGENTS.md` or `doctrine/` change.** The claim of "no template-surface
   change" that stood here was false for `dev/measurement/README.md` and is
-  withdrawn; the exclusion Revision 5 states is what puts Chunk D2 on hold
-  rather than what permits it.
+  withdrawn.
+
+**Contract expansion**: adopter surface — `templates/core/dev/measurement/README.md`
+joins the touched set. Authorized by the Maintainer, quoted verbatim and
+visually isolated:
+
+> "Totally allow the template edit"
+
+Recorded here rather than paraphrased into the chunk row, because an allowance
+that widens accepted scope is the one thing a plan cannot grant itself. What
+the allowance was asked for, and therefore what it covers: editing the shipped
+`templates/core/dev/measurement/README.md` alongside Cairn's installed copy so
+the twin stays byte-identical. It does **not** extend to any other shipped
+template, to doctrine, or to the canonical-command surface, all of which
+Revision 5 still excludes.
 
 ## Sequence
 
@@ -212,7 +228,7 @@ falsifiers exercise both prior chunks' finished behaviour, including the
 | # | File | Change |
 |---|------|--------|
 | D1 | `.gitignore` | Add `dev/measurement/suite-runs.jsonl` so the live ledger stays untracked (same rule shape as the existing `dev/measurement/snapshots/` and `dev/measurement/suite-cost.md` entries). |
-| D2 | `dev/measurement/README.md` | **ON HOLD — do not execute without a Maintainer scope decision.** Intended change: a note under "What belongs here" naming the new ledger as an operational-ledger-that-feeds-measurement slot, cross-linking `tools/suite_cost.py` as its reader. The blocker is that this file is a **shipped install destination with a byte-identical template twin** (`bootstrap/scaffold.py --manifest` row for `dev/measurement/README.md`; mapping in `bootstrap/_scaffold/config.py`), so editing Cairn's copy alone desynchronizes the twin and fails `bootstrap/verify_integrity.py` against the recorded lockfile hash, while editing both writes a Cairn-specific ledger name into every adopter's tree — and Revision 5 excludes "any doctrine, canonical-command, template or adopter surface". Three dispositions are open and the choice is the Maintainer's: (a) drop D2 and document the ledger only in the CHANGELOG line at D3; (b) an explicit allowance to touch the template surface, with the note written generically enough to belong in an adopter's tree; (c) a Cairn-only documentation home that is not a manifest destination. **Chunk D's acceptance criterion below is written against D1 and D3 only**; adding D2 back adds a twin-parity and `verify_integrity` criterion with it. |
+| D2 | `dev/measurement/README.md` **and its shipped twin `templates/core/dev/measurement/README.md`** | **Maintainer-allowed template-surface edit — see the allowance below.** Add a note under "What belongs here" naming an operational-ledger-that-feeds-measurement slot, cross-linking its reader. **Both copies, same commit, byte-identical.** This file is a shipped install destination (`bootstrap/scaffold.py --manifest`; mapping in `bootstrap/_scaffold/config.py`), and the two copies are byte-identical today — so editing Cairn's alone would desynchronize the twin and fail `bootstrap/verify_integrity.py` against the recorded lockfile hash. **Write the note generically**, in the register the rest of that shipped README uses: it lands in every adopter's tree, so it describes the *slot* ("an operational ledger a measurement reader consumes"), not Cairn's own `suite-runs.jsonl` filename or `tools/suite_cost.py`. Cairn's specific ledger and reader are named in the CHANGELOG line at D3, which ships to nobody. |
 | D3 | `CHANGELOG.md > Unreleased > Added` | One line: in-suite cost telemetry (`bootstrap/tests/conftest.py` hooks + gitignored ledger) and its reader `tools/suite_cost.py`; cross-link the archived proposal by filename stem. |
 
 **Note on `dev/measurement/suite-cost.md`:** a file by that name already exists
@@ -289,14 +305,19 @@ the coincidence.
   `bootstrap/tests/test_gate_preflight.py`,
   `bootstrap/tests/test_security_check.py`,
   `bootstrap/tests/test_python_floor.py`.
-* **Doc updates that must land**: `CHANGELOG.md > Unreleased > Added` (Chunk
-  D3), and the `.gitignore` rule (Chunk D1). **Chunk D2 is deliberately
-  excluded from this criterion** while it is on hold — see the Chunk D table.
-  If the Maintainer authorizes it, this criterion gains two further
-  obligations that do not apply to D1 or D3: `diff
-  templates/core/dev/measurement/README.md dev/measurement/README.md` stays
-  empty, and `python bootstrap/verify_integrity.py` reports no hash mismatch
-  for that destination.
+* **Doc updates that must land**: the `.gitignore` rule (Chunk D1);
+  `dev/measurement/README.md` **and** `templates/core/dev/measurement/README.md`
+  (Chunk D2); `CHANGELOG.md > Unreleased > Added` (Chunk D3).
+* **Two criteria that apply to D2 and to nothing else**, because it is the only
+  row touching a shipped install destination: `diff
+  templates/core/dev/measurement/README.md dev/measurement/README.md` produces
+  no output, and `python bootstrap/verify_integrity.py` reports no hash
+  mismatch for that destination once the lockfile hash is advanced. A D2 that
+  edits one copy and not the other satisfies neither.
+* **The D2 note names no Cairn-specific artifact.** It ships to every adopter,
+  so a reviewer should read it as an adopter would: a reference to
+  `suite-runs.jsonl` or `tools/suite_cost.py` in that file is a defect even
+  though both are correct in Cairn's own tree.
 * **Examples / smoke checks required**: **N/A as a separate artifact** — the
   reader-outcomes rows inside `test_suite_ledger.py` (Chunk C) are the smoke
   check for `tools/suite_cost.py`; no standalone example doc renders it.
