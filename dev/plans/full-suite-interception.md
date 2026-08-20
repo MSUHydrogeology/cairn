@@ -1422,3 +1422,82 @@ the fix after being shown the alternative of a recorded risk acceptance:
 
 **Status**: `ready-to-implement` retained; the guard's own chunk is landed and
 this Response answers the review of it. The reviewer's clearing round is owed.
+
+## Security re-review -- Codex (External Security) -- 2026-08-20
+
+**Model**: OpenAI GPT-5 (Codex)
+**Reviewed commit**: `a7cd83db599957d1aba1c5a821dde227543427c2`
+**Target**: the Response and implementation changes for FSI-SR1 and FSI-SR2
+**Prior findings**: FSI-SR1 and FSI-SR2 in the Security Review committed at
+`0fe4145d`
+**Assurance path**: high-assurance
+**Tier**: Security
+**Findings**: 1 blocking; FSI-SR2 closed
+
+**Verdict: REVISE.** FSI-SR2 is fully closed, and the revised guard now
+preserves the two exact stop shapes from the first review. FSI-SR1 is narrowed
+but not closed: the hook wrapper waits for ordinary hook implementations, but
+not necessarily for another hook wrapper's post-`yield` work.
+
+### Finding
+
+**FSI-SR1 remains open -- A competing outer hook wrapper can still have its
+abort replaced by exit 4. [MEDIUM, BLOCKING]**
+
+`bootstrap/tests/conftest.py:158-183` uses an unprioritized
+`@pytest.hookimpl(wrapper=True)` and evaluates the guard after its own `yield`.
+That correctly waits for ordinary `pytest_collection_finish` implementations,
+including the `trylast=True` abort used in the new regression. It does not
+establish that *every wrapper* has completed. Pluggy unwinds nested wrappers in
+the opposite order from entry; a competing `wrapper=True, tryfirst=True`
+implementation is outside this one and performs its post-`yield` work only
+after this guard returns.
+
+I reproduced the distinction with 41-file scratch sessions using the reviewed
+conftest and a competing wrapper that calls
+`pytest.exit("WRAPPER_POST_YIELD_CANARY", returncode=7)` after its `yield`:
+
+* competing default wrapper: exit 7, diagnostic preserved;
+* competing `trylast=True` wrapper: exit 7, diagnostic preserved;
+* competing `tryfirst=True` wrapper: exit 4, refusal diagnostic only; the
+  competing exit and its diagnostic never occur.
+
+The last result still violates the accepted contract's requirement that
+collection finish cleanly before the cost guard may replace the outcome. It
+also falsifies the Response's statement that "every competing
+`pytest_collection_finish` runs to completion before the guard decides." The
+new test at `test_broad_run_guard.py:294-318` cannot detect this because its
+competitor is an ordinary hook, not a wrapper.
+
+Required disposition: place the decision after the *entire* collection
+operation, including all collection-finish wrapper teardown, has returned
+successfully, while still before test execution. A wrapper around the
+higher-level `pytest_collection` call is one plausible boundary. Add a
+directional regression with a `wrapper=True, tryfirst=True` competing
+collection-finish hook whose post-`yield` exit and diagnostic must survive,
+plus the clean broad-run control. Because Revision 5 names
+`pytest_collection_finish` as contract, moving the hook requires the
+corresponding append-only contract disposition rather than an undocumented
+substitution.
+
+### Closed finding
+
+**FSI-SR2 -- CLOSED.** All three live instructions now carry the override:
+`docs/release-process.md:78`, `bootstrap/AST_BASELINE_RUNBOOK.md:126-127`, and
+`AGENTS.md:490-492`. The AST ceremony command preserves both environment
+assignments, and the generic development instruction now agrees with Boundary
+B. The five descriptive trigger references remain accurately classified as
+descriptions rather than copy-paste procedure steps.
+
+### Coverage
+
+**Exercised**: commit `a7cd83d` in full; all 14 broad-guard tests under a parent
+carrying both exemption tokens; the additive-environment unit test; the real
+release-token grandchild path; 50 verification-boundary and comprehension-floor
+tests; independent 41-file probes with default, `tryfirst`, and `trylast`
+competing hook wrappers; and direct inspection of all three corrected operator
+instructions.
+
+**Not exercised**: the full suite, re-anchor, Chunk S, release packaging, or
+third-party plugins beyond the synthetic wrapper-order probes. The expected
+differential-oracle HOLD remains outside this finding.
