@@ -216,6 +216,106 @@ UPPERCASE name says "this is a landmark; start here."  A
 domain-governance map is UPPERCASE *because* it is a landmark,
 at whatever level its domain lives, not because it sits at root.
 
+## Assets -- where figures live, and what each one carries
+
+The naming convention above covers Markdown files.  This covers the
+image files documentation embeds: the explanatory diagrams and the
+project-identity mark under `docs/assets/`.  (Distinct from the
+runnable asset library under `templates/`, which "Scope of this map"
+places outside the map.)
+
+Almost nothing here is new practice.  Both assets in the tree today
+-- `cairn-banner.svg` and `dual-review-independence.svg` -- already
+satisfy every **file-level** rule below, so this section mostly
+writes down what they do, so the third one does it too.  The
+**legibility pass** at the end is the one genuinely new obligation:
+no commit has recorded one yet.
+
+**Home and name.**  Assets live in `docs/assets/`, are SVG, and are
+named lowercase-kebab after **what the figure shows**, not the page
+that embeds it: `dual-review-independence.svg`, never
+`readme-figure-2.svg`.  A figure outlives its placement, and a name
+tied to a page decays the moment the figure is reused or the page is
+reorganized.
+
+**License family -- declared per file.**  Cairn's by-file split has
+three families and they must not overlap:
+
+* **Explanatory diagrams** -- CC BY 4.0 (`LICENSE-CC-BY.md`).
+* **The project-identity brand mark alone** -- CC BY-ND 4.0
+  (`LICENSE-CC-BY-ND.md`), so the mark stays canonical.
+* **A generator or tooling script**, wherever it lives -- MIT
+  (`LICENSE-MIT.md`).
+
+The license files name the covered assets **by path**, so adding an
+asset means adding it there too.  Two records must agree: the
+license file and the asset's own header.  If they disagree, the
+asset is unlicensed in practice, because a reader cannot tell which
+is authoritative.
+
+**The header block.**  Every asset opens with an XML comment
+carrying four things, in this order:
+
+1. the filename and a one-line statement of what it is;
+2. what it depicts -- enough that someone can check the figure
+   against the doctrine it illustrates;
+3. **`Provenance:`** -- hand-authored or generated, which proposal or
+   plan produced it, and whether any external tool was involved;
+4. **`License:`** -- the family by name, and a pointer to the
+   license file or deed.
+
+**Inertness.**  A figure is a document, not a program.  No
+`<script>`, no `<image>`, no `xlink:href`, no `@import`, and no URL
+that *loads* anything -- a license-deed URL inside the comment is
+fine, because nothing fetches it.  Fonts are generic stacks
+(`ui-sans-serif, system-ui, ...`), never a named face the reader may
+not have.  Every asset carries a `viewBox` so it scales rather than
+clipping.  These keep an asset renderer-portable and keep it from
+becoming an injection surface.
+
+**The caption rule -- and the caption is the alt text.**  An
+**explanatory diagram**'s caption states **the conclusion the reader
+should draw**, not what the figure is, and it lives in the alt text
+of the Markdown embed, where it serves a screen reader at the same
+time.  Compare the two in the tree: the Dual-Review figure's alt
+text states the conclusion ("a first read that helps a change land,
+and an independent read ... that makes it prove it should"), which
+is the form to copy.  A caption that restates the prose beside it
+means the figure is decoration, and decoration is a maintenance
+liability with no offsetting value -- it can go stale, break in a
+theme, or contradict the text next to it.  If a caption cannot be
+written, the figure has not earned its place.
+
+The rule binds explanatory diagrams, **not the identity mark**,
+which depicts nothing and draws no conclusion; its alt text
+describes the image, as `cairn-banner.svg`'s does.
+
+**The legibility pass -- a human runs it, and nothing else will.**
+Cairn has no CI, so this check's only trigger is a person
+remembering, and it is written down here so the remembering has
+something to attach to.  Before committing an asset that is new or
+changed, render the page that embeds it and confirm, recording the
+result in the commit body:
+
+* it is **readable** in both light and dark theme;
+* it **scales** at phone width as well as desktop, without clipping
+  or overflowing;
+* its **caption** (the alt text) is present, and for an explanatory
+  diagram states a conclusion;
+* it does **not break the page layout** around it.
+
+An asset that fails any of these is fixed or dropped before the
+commit lands.  Skipping the pass for speed is the point at which a
+visual system starts costing more than it returns -- if it is going
+to be skipped, drop the figure instead.
+
+*Portability note.*  The legibility pass is the only part of this
+section that is project-independent; the folder, the license
+families, and the header form are Cairn's own.  Carrying it to the
+forkable `documentation_plan_template.md` is a separate change under
+the maintainer-review rule in "Updating this plan", not a
+consequence of this one.
+
 ## The `templates/core/AGENTS.md` ↔ `templates/core/dev/agent_collaboration.md` boundary
 
 `cairn/templates/core/AGENTS.md` and `cairn/templates/core/dev/

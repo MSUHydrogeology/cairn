@@ -30,12 +30,27 @@ codes).
 >   `docs/related-practices.md` and `docs/glossary.md` and registered both in
 >   `docs/DOCUMENTATION_PLAN.md`'s descriptive-layer inventory, which was the
 >   stage's own condition; `ab07789` gave both a plain-language pass.
-> * **Stage 3 — the visual-system gates: not started, and next.**
->   `docs/DOCUMENTATION_PLAN.md` carries neither the asset convention (gate 3)
->   nor a named legibility pass (gate 2) — verified by reading its section list.
->   Gate 1 was already closed at authoring time per F5.
-> * **Stages 4–5 — the diagrams and the F6 generator: not started**, correctly
->   gated behind stage 3, and stage 5 additionally behind registries that are
+> * **Stage 3 — the visual-system gates: done.** `docs/DOCUMENTATION_PLAN.md`
+>   gained an **"Assets"** section carrying both gates: the asset convention
+>   (home, naming, per-file license family, the four-part header block,
+>   inertness rules, the caption rule) and the named legibility pass, written
+>   as the human-triggered manual step it is, since Cairn has no CI. Gate 1 was
+>   already closed at authoring time per F5. Written into Cairn's self-hosted
+>   copy only, on the Maintainer's instruction; the forkable is untouched, and
+>   the section names the legibility pass as the one portable part should that
+>   be revisited.
+>
+>   Two things the writing turned up. The convention was **already being
+>   followed** — both existing assets satisfy every file-level rule, so the
+>   section mostly records practice rather than imposing it; the legibility
+>   pass is the single new obligation. And **captions live in the Markdown
+>   embed's alt text**, which the note had not specified: the Dual-Review
+>   figure's alt text already states a conclusion and is the form to copy,
+>   while the identity mark's describes the image, so the caption rule binds
+>   explanatory diagrams only.
+>
+> * **Stages 4–5 — the diagrams and the F6 generator: not started.** Stage 3
+>   no longer blocks them; stage 5 remains gated behind registries that are
 >   still active implementation surfaces.
 >
 > **A stale exemption was removed from the top of this file at the same pass.**
