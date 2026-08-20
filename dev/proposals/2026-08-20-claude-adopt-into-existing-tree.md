@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — mandatory. The change touches the
 **install contract** (`AGENTS.md` > High-risk surfaces): the lockfile and the
 `--adopt-module` path that writes it.
@@ -1116,3 +1116,119 @@ Unchanged in substance, with the sibling's tiebreak added:
 * **The Amendment's #5 closure text without a landing-order tiebreak.**
   Superseded. Reason: R6.
 * **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
+
+## Review -- Codex (External) -- 2026-08-20
+
+**Tier**: External Security Review
+**Findings**: raised
+
+**Model**: OpenAI GPT-5 (Codex)
+
+Reviewed commit: c0e9b40bfa67a9ac75744492c6c124c2bfb585c1
+Target: Revision 1 complete current contract
+Prior findings: R1-R8 from the Internal review
+Assurance path: high-assurance
+
+### Review sweep
+
+I opened `_cmd_adopt_module`, `_resolve_current_profile`,
+`_resolve_lock_profile_fields`, `_refuse_secret_tokens`, the current adoption
+tests, the profile-grammar tests, the install-contract trigger, and both issue
+closure paths. I then invoked the real profile resolver under the canonical
+interpreter with absent, incomplete, and unparseable profiles while recording
+stderr and the selected authority.
+
+### Steelman
+
+The revised strict predicate closes the reported `<my package>` defect at the
+contract level: it covers absent, blank, curly-brace, and angle-bracket values,
+and invariant (i) places the required-token refusal before writes. Lockfile
+wins on disagreement is also the right authority rule; the profile seeds a
+missing value once, then the lockfile remains the durable source. D2 now covers
+both quiet branches and compares against substituted installed bytes, which is
+the correct referent.
+
+### Security preflight
+
+* **S1:** The profile is supplied by reference by the target tree being
+  classified and mutated. It is committed and schema-validated, but that does
+  not make it independent; finding A3 corrects the threat statement.
+* **S2:** The placeholder and advisory mutations are concrete. The token-write
+  guard lacks an ordering mutation that proves it fires before destination
+  writes; finding A2 supplies one.
+* **S3:** `python -m pytest bootstrap/tests` selects the named homes. The public
+  adoption CLI mapping is sound, but the planned tests must include the guard's
+  refusal through that CLI, not only a direct helper call.
+* **S4:** Required-token failure is closed. Unparseable profile fallback is
+  open, loud, and lands on the lockfile. Absent and incomplete fallback are
+  open and silent today, contrary to Revision 1.
+* **S5:** A same-user attacker who can rewrite the target can also rewrite its
+  lockfile and engine; the proposal does not claim to authenticate that actor.
+  The meaningful residual is operator acceptance of a D2 advisory, accurately
+  named. The profile nevertheless remains candidate-controlled input to this
+  particular decision.
+
+### Findings
+
+* **[A1] BLOCKING -- the fallback disposition is not the one Revision 1
+  specifies.** Under Python 3.13.13 I measured `_resolve_current_profile` with
+  the same valid embedded lock profile in all cases. An absent profile fell
+  back silently; a readable but incomplete profile (`project_name: Demo`) also
+  fell back silently; only an unparseable nested mapping emitted the warning.
+  This follows the branches at `bootstrap/_scaffold/upgrade.py:228-247` and the
+  existing tests at `bootstrap/tests/test_profile_grammar.py:77-156`, which pin
+  warning behavior only for unreadable and ungrammatical input.
+
+  **Satisfier:** state the three dispositions exactly and choose deliberately.
+  Silence for absence is reasonable. Incomplete/invalid committed input should
+  either warn before falling back or be explicitly accepted as silent; then add
+  the corresponding test. Do not describe all three as “loud.”
+
+* **[A2] BLOCKING -- routing through `_refuse_secret_tokens` does not establish
+  a pre-write guard.** `_cmd_adopt_module` can create missing destination files
+  inside its spec loop before `_commit_lock_and_caches`. Revision 1 says the new
+  token write “routes through” the guard but never fixes its position. A guard
+  placed immediately before the final lockfile commit would refuse after those
+  destination writes, violating the proposal's own preflight invariant.
+
+  **Satisfier:** merge the candidate token map, apply the strict placeholder
+  predicate, and call `_refuse_secret_tokens` before entering the spec loop.
+  Add a real-CLI mutation test with a secret-like required token that asserts
+  no destination, cache, lockfile, or roster change. Because current
+  `KNOWN_TOKENS` makes this branch hard to reach, the test must independently
+  arrange such a known required token rather than derive a clean expectation
+  from the current token set.
+
+* **[A3] MEDIUM -- S1's independence claim is false.** The adopted target owns
+  `dev/.cairn/profile.yml`; `_cmd_adopt_module` uses it to decide whether the
+  target may proceed and what value enters its lockfile. That is input supplied
+  by reference by the thing being decided about, exactly the template's S1
+  category. Revise S1 to name that channel. The existing same-user threat-model
+  limitation can remain the disposition.
+
+* **[A4] MEDIUM -- the current contract still delegates security-relevant
+  closure terms to history.** The issue gates depend on the Amendment's
+  “honesty bar,” and “the External Security Review” can mean this proposal pass
+  even though the header says the implementation carries the review. Restate
+  the closing-comment requirements and require **the implementation's External
+  Security code review**. The gates are otherwise correctly attached to
+  verified completion and Maintainer-authorized issue closure, not merge.
+
+### Coverage
+
+**Covered** -- the strict placeholder language, lockfile/profile precedence,
+all resolver fallback branches, secret-token writer call sites, pre-write
+ordering, D2's two branches and byte referent, S1-S5, issue #5/#7 sequencing,
+R1-R8's withdrawal ledger, and the public CLI test homes.
+
+**Not covered / low confidence** -- I did not implement the proposed merge,
+exercise Windows filesystem semantics, simulate an interrupted atomic lockfile
+swap, or inspect the external GitHub issue bodies. D2's eventual advisory text
+cannot be falsified until implemented.
+
+### Second-round recommendation
+
+**Recommended, limited to A1-A4.** The next External Security pass should
+verify the exact fallback matrix, a pre-loop secret-token refusal through the
+real CLI, corrected S1 provenance, and explicit implementation-review issue
+gates. The angle-bracket predicate itself does not need another redesign.
