@@ -200,8 +200,13 @@ with the plan's filename stem.
   routing, and the fix touches lifecycle enforcement, which is governing
   doctrine and takes its own proposal.
 
-* **[VER] The AST attestation baseline needs re-anchoring after the tag pass**
-  *(filed 2026-08-19; Maintainer authorized the re-anchor over a revert)* —
+* **[VER] ~~The AST attestation baseline needs re-anchoring after the tag pass~~ — CLOSED 2026-08-20, the work landed**
+  *(filed 2026-08-19; Maintainer authorized the re-anchor over a revert; closed 2026-08-20 while preparing the differential-oracle re-anchor)* —
+  **This row is answered and is kept only so a reader who arrives via a citation is not misdirected.** The re-anchor landed at `77d2b3b` ("install contract: record the Maintainer's supervised re-anchor of three artifacts"). Verified at HEAD on 2026-08-20 by running the tool rather than reading this row: `_ast_attest.py verify` reports **AST attestation OK — 173 baselined symbol(s) accounted for, unchanged**, and `test_ast_attest.py` passes.
+
+  **Why it stayed open two commits past being true.** The row instructs a reader to *"derive the expected CHANGED set against the committed baseline rather than carrying the figure forward from this row — including from this row."* Following that instruction is what closed it. Nothing in the tree contradicts a stale roadmap entry, so the entry outlives its subject by exactly as long as it takes someone to re-run the measurement instead of reading the number.
+
+  The original diagnosis, retained for the record:
   `bootstrap/tests/test_ast_attest.py` reports **13 CHANGED symbols**: 11 in
   `bootstrap/_scaffold/upgrade.py`, 2 in `bootstrap/_scaffold/config.py`.
 
