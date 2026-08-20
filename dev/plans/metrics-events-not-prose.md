@@ -3,7 +3,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
 converted the tier after two External rounds landed. See "The review tier, and
 why it changed" below.
@@ -300,21 +300,32 @@ match: this is the instrument-confirmation rule
 (`AGENTS.md` > *Verifying claims*) applied to a name collision rather than to
 an absence.
 
-**One thing this removal does not do.** Snapshots an adopter already emitted
-carry `snapshot_event=backfill` in their rows. Removing the producer does not
-invalidate those files, so the reader must keep tolerating the value on input
-even though nothing can write it again. Deleting the value from the *reader's*
-accepted set would turn an adopter's existing archive unreadable, which is a
-larger break than the one authorized here.
+**A correction to this section's own earlier reasoning, caught in review.**
+This paragraph previously worried that removing `'backfill'` from `--event`'s
+recognized values would make an adopter's already-written
+`snapshot_event=backfill` rows "unreadable," and built an acceptance clause
+on that worry. Checked directly: no tool in this tree parses a persisted
+snapshot CSV back in at all — `grep -rn 'csv.DictReader|csv.reader'` over
+`tools/` and `scripts/` returns nothing, and `snapshot.py`'s only read of the
+snapshot directory is `_next_snapshot_index`, which reads filenames, not
+rows (the same grep form finds `csv.writer` at
+`tools/_lifecycle_metrics/report.py:35`, confirming the instrument could
+have matched before trusting its absence). There is no reader to render
+anything unreadable, so removing `'backfill'` from `--event`'s choices — part
+of this row's own edit — carries no read-side hazard; a pre-existing file
+with `snapshot_event=backfill` in it is inert data, exactly as any other
+persisted CSV is once written. The conservative instinct was right for the
+wrong reason: nothing in 1-10 deletes or rewrites a persisted file either
+way, so no adopter archive is at risk — but not because a reader "tolerates"
+the value, since none reads it.
 
 **Acceptance for this chunk**: a fresh extractor run over a fixture proposal
 with review findings emits no `total_findings`/`findings_p*`/`review_yield_*`
 keys in either CSV or `--format md` output, while every retained column is
 present and unchanged in value from before this chunk. Separately, `python
 tools/lifecycle_metrics.py --backfill-from 2026-01-01` exits non-zero with an
-unrecognized-argument error rather than running; `--help` does not mention it;
-and an existing snapshot file containing `snapshot_event=backfill` still reads
-without error.
+unrecognized-argument error rather than running, and `--help` does not
+mention it.
 
 ### Chunk 2 — Doctrine: the principle, the honest description, the glossary sharpen
 
@@ -408,8 +419,8 @@ version token is the literal `cairn-event-v1`.
 
 | # | File | Change |
 |---|------|--------|
-| 4-1 | `tools/_lifecycle_metrics/events.py` (new) | Grammar parser: recognizes the `cairn-event-v1` fence, validates the closed key table above, returns a typed block or a refusal reason. No history walking yet (that is Chunk 5) — this chunk is pure block-level validation. |
-| 4-2 | `templates/modules/default-on/_lifecycle_metrics/events.py` (new) | Gate-frozen twin of 4-1, same commit. |
+| 4-1 | `tools/_lifecycle_metrics/events.py` (new) | Grammar parser: recognizes the `cairn-event-v1` fence, validates the closed key table above, returns a typed block or a refusal reason. No history walking yet (that is Chunk 5) — this chunk is pure block-level validation. Carries the `SPDX-License-Identifier: MIT` header within its first four lines, matching every other file in this package. |
+| 4-2 | `templates/modules/default-on/_lifecycle_metrics/events.py` (new) | Gate-frozen twin of 4-1, same commit — SPDX header included. `bootstrap/tests/test_notice_install.py::test_every_template_py_source_carries_spdx_header` and `::test_every_self_hosted_twin_carries_spdx_header` require it of both new files; the focused check at row 4-9 already runs this test file, so a missing header fails loudly there. |
 | 4-3 | `tools/lifecycle_planner.py`, twin `templates/skills/_lib/lifecycle_planner.py` | `next --to <state>`'s preview/mutation-manifest output additionally shows the literal event block the transitioning edit is expected to carry — scaffold-only, informational, not written to disk, not gating. The command's read-only contract is unchanged; a regression test confirms it still writes nothing (see 4-5). Not gate-frozen (outside `templates/modules/**`), but still a same-commit twin pair. |
 | 4-4 | `bootstrap/tests/test_lifecycle_metrics_events.py` (new) | Grammar red/green fixtures: unknown key refuses; unknown `kind` refuses; unknown version token refuses; missing required key per kind refuses; a `reviewer`/`model` value over 120 chars refuses; the three worked examples above each parse cleanly. |
 | 4-5 | `bootstrap/tests/test_lifecycle_contract.py` | Re-run (not necessarily re-write) the existing read-only regression — `test_every_subcommand_is_read_only` or its equivalent, as_of 2026-08-20 line 172 — against the extended preview output, confirming the new block-preview text changes stdout only, no byte written, no git operation performed. |
@@ -444,15 +455,19 @@ checked bakes an unverified state into the attestation. A plan does not get to
 narrow a ceremony's own procedure on efficiency grounds; departing from the
 runbook takes a recorded Maintainer authorization, and this plan has none.
 
-**A forward hazard for whoever runs this.** That second command is a bare
-`python -m pytest bootstrap/tests`, and the sibling plan
-`dev/plans/full-suite-interception.md` installs a guard that refuses exactly
-that invocation unless `CAIRN_FULL_SUITE=1` is set. If the guard lands before
-this chunk runs, the runbook step **exits 4 and runs nothing** — a refusal that
-looks like a failure in the middle of a Maintainer-run trust ceremony. That
-sibling plan owes an update to the runbook's command; until it lands, prefix
-this command with the override if the guard is present in `conftest.py` at the
-commit you are on. A run that comes back exit 4 with a refusal message has been
+**A hazard for whoever runs this — already live, not merely forward.** That
+second command is a bare `python -m pytest bootstrap/tests`, and
+`bootstrap/tests/conftest.py`'s `pytest_collection_finish` (landed 2026-08-20
+per the sibling plan `full-suite-interception`'s Chunk A) refuses exactly
+that invocation — `pytest.UsageError`, exit 4 — unless `CAIRN_FULL_SUITE=1`
+is set. Prefix this command with the override:
+`CAIRN_FULL_SUITE=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests -q`.
+This is the standing answer, not a stopgap pending someone else's fix: reading
+that sibling plan directly, `bootstrap/AST_BASELINE_RUNBOOK.md:126` appears
+under a section headed "Live commands the guard breaks beyond AGENTS.md's own
+sentence — **flagged, not authorized**," and no chunk in that plan edits the
+runbook. The fix is recommended to the Maintainer there, not owed by that
+plan's own agent. A run that comes back exit 4 with a refusal message has been
 refused, not passed.
 
 **The registration rows' own focused check**, in addition to the above:
@@ -497,15 +512,99 @@ the archive `git mv` cannot discontinue a series.
 **Activation** is derived per marker path independently: the commit that first
 adds the literal `cairn-event-v1` marker to the applicable *installed*
 template in that tree (`dev/proposals/_template.md` for proposal-hosted
-events, `dev/plans/_template.md` for plan-hosted events). Missing, divergent
-(the pair disagrees), or multiply-introduced (removed and re-added) markers
-refuse.
+events, `dev/plans/_template.md` for plan-hosted events).
+
+**A marker path can be wrong, or it can simply not exist yet — those are
+different dispositions.** A **divergent** marker (the pair — Cairn's own
+installed copy and the shipped template — disagrees) or a **multiply-
+introduced** one (removed and re-added) is a tree where something is
+genuinely wrong: you cannot compute a defensible series when you do not know
+what period it covers, and producing one anyway is worse than producing
+none. **Both refuse.** A tree with **no marker at all** is different in
+kind, not degree — nothing is wrong with it, recording simply has not
+started there yet. Maintainer decision, quoted verbatim: "I think (c) is
+right" — treat an unmarked tree as **not yet activated** and return an empty
+series, the same emission this chunk already gives every pre-cutoff act on
+an activated tree (see "The dropped-historical-continuity allowance,
+made concrete" below), generalized to the case where no cutoff has been
+established at all. **Missing does not refuse.**
+
+**What (c) concedes, named rather than glossed.** A marker deleted by
+accident now reads exactly like a tree that never took the template
+update — "not started," not "something is wrong." Refusal is kept for the
+divergent and multiply-introduced cases precisely so a corrupted marker is
+not the *only* undetectable failure mode; a clean deletion is genuinely
+indistinguishable from never-installed, and this plan builds no mechanism to
+tell the two apart.
+
+**The marker's own introducing commit is pre-cutoff, not post-cutoff.**
+"From that commit on" (Chunk 6's framing) names the window reconciliation
+applies to; it does not mean the introducing commit's own diff is itself
+inside that window. The introducing commit is the *first* commit at which
+"the tree now has a marker" becomes true — an act co-committed in that same
+diff (a status flip, a review pass, a response) was authored before any
+reader existed to tell its author a block was expected, since the marker and
+the reader land together (Chunk 6). Treating that commit as pre-cutoff is
+not a special case bolted on; it is (c)'s own "recording has not started
+yet" logic applied at commit granularity instead of tree granularity. The
+concrete case this resolves:
+`bootstrap/tests/test_reference_scripts.py::TestVcsRobustness::test_main_branch_target_runs`
+scaffolds a tree — which, once Chunk 6 lands, installs a marker-carrying
+`dev/proposals/_template.md` — writes a sample proposal that already
+carries a `## Review` section, and commits everything (the marker's own
+introduction and the proposal's review-pass act) in **one** `git commit`.
+Under the exclusive reading taken here, that act is pre-cutoff and the
+test's `# must not raise` comment holds with no code or test change; under
+an inclusive reading it would refuse. 5-3's fixtures pin the exclusive
+reading directly, and Chunk 7 confirms this specific pre-existing test
+against it.
+
+**Git entirely absent is a different question from "unavailable Git for a
+post-activation artifact," and the fallback it produces is not one thing —
+it is field-kind-dependent, exactly as Chunk 6 (row 6-4) already splits
+pre-cutoff behavior for an activated tree.** Chunk 6's refusal for
+unavailable Git presupposes the tool already knows the artifact is past its
+cutoff — a fact only a history walk can establish. With no `.git` in the
+target at all, there is no history to walk, so that fact cannot be
+established either way; the refusal trigger's own precondition is unmet, and
+the act is treated as **pre-cutoff** — the same disposition a missing marker
+already gets under (c), for the same reason (nothing proves otherwise). This
+is not a weakening of Chunk 6's rule; it is the rule's own precondition
+failing to hold. What "pre-cutoff" *means* is not uniform across field
+kinds, and this row does not introduce a new rule here — it inherits the one
+row 6-4 already states: **transition**-kind fields (dates, `days_*`,
+`hours_*`, `stage_timestamp_reliability`, `revised`) keep their existing,
+unconditional quiet-degrade computation — Part 3 does not touch that
+historical portion regardless of *why* the act is pre-cutoff. **Review-pass
+and response**-kind fields (`review_rounds`, reviewer identity,
+`cross_agent_type_review`, `response_models`) emit **empty**, never the old
+heading-count/regex-scraped value — the Decision is explicit that the old
+prose-parsing path is retired, not merely superseded once a cutoff exists
+("not computed from the old prose-parsing path... both of those were the
+rejected option (b)"), so falling back to it for an unprovable-cutoff act
+would reintroduce exactly the inflatable metric Part 3 exists to remove.
+
+Three existing tests turn on this and are confirmed, not merely assumed, in
+Chunk 7 — and one of them genuinely changes:
+
+* This file's own `test_no_git_target_degrades` and
+  `bootstrap/tests/test_lifecycle_stage_patterns.py::test_t12_a_target_with_no_git_still_degrades_to_best_effort`
+  assert only **transition**-kind fields (`stage_timestamp_reliability`),
+  so both keep passing unmodified under the "unconditional quiet degrade"
+  half of the rule above.
+* `test_installed_lifecycle_metrics_runs_on_target` (this file) scaffolds a
+  marker-carrying template, never runs `git init`, and asserts
+  `row["review_rounds"] == 1` — a **review-pass**-kind field. Under the
+  "empty, never old-computed" half of the rule above, that assertion no
+  longer holds once Chunk 6 lands: `review_rounds` becomes empty for this
+  row, and the test's assertion is updated accordingly (7-3), not left as a
+  false confirmation.
 
 | # | File | Change |
 |---|------|--------|
 | 5-1 | `tools/_lifecycle_metrics/events.py` | History-diff walk (rename-aware, oldest-first), the parent-prefix mutation check, added-suffix attribution, matching-act requirement, multi-parent refusal, `(commit, index)` identity derivation, per-marker activation cutoff derivation. Reuses `gitmeta.py`'s existing git-subprocess pattern (`_git_log_for_path`, `--follow`) rather than a second implementation where that pattern already covers the need. |
 | 5-2 | `templates/modules/default-on/_lifecycle_metrics/events.py` | Twin of 5-1, same commit. |
-| 5-3 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Fixtures built against a real scratch git repository (reusing the `_git` helper pattern already present in `bootstrap/tests/test_lifecycle_contract.py`, as_of 2026-08-20 line ~70, rather than inventing a second one): a mutated (edited/reordered/deleted) existing block refuses; a merge commit introducing a block refuses; identity is stable before and after a `git mv` to `archive/`; missing, divergent, and multiply-introduced markers each refuse; a clean linear history with two distinct commits each adding one block resolves two distinct, stable identities. |
+| 5-3 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Fixtures built against a real scratch git repository (reusing the `_git` helper pattern already present in `bootstrap/tests/test_lifecycle_contract.py`, as_of 2026-08-20 line ~70, rather than inventing a second one): a mutated (edited/reordered/deleted) existing block refuses; a merge commit introducing a block refuses; identity is stable before and after a `git mv` to `archive/`; divergent and multiply-introduced markers each refuse, a **missing** marker does not (it resolves to no activation cutoff, and the reader treats every act as pre-cutoff — empty for review-pass/response fields, unchanged quiet-degrade for transition fields, per Chunk 6's row 6-4 — rather than raising); an act committed in the **same diff as the marker's own introduction** is pre-cutoff by the same rule (the boundary case `test_main_branch_target_runs` already exercises informally, reproduced here as a named fixture rather than left to that one test); a clean linear history with two distinct commits each adding one block resolves two distinct, stable identities. |
 
 **Acceptance for this chunk**: every fixture in 5-3 passes against a real git
 repository (not a mocked history), including the archive-rename identity
@@ -517,12 +616,14 @@ prior `(artifact path, block position)` identity scheme.
 Depends on Chunk 5. This chunk also carries the two rows that add the literal
 `cairn-event-v1` marker to the four template paths (6-1/6-2), moved here
 rather than landing alongside the grammar in Chunk 4. The marker's introducing
-commit is itself the activation cutoff — from that commit on, every lifecycle
-act in the applicable tree is subject to reconciliation — so landing it before
-a reader exists to do that reconciliation would open a window with an
-obligation and nothing to discharge it. Closing that window without deferring
-the marker would instead mean requiring and auditing an event block for every
-post-cutoff act while Chunks 4-6 land, which is not this plan's to impose: it
+commit establishes the activation cutoff; every lifecycle act committed
+**strictly after** it — not the introducing commit's own diff, which is
+pre-cutoff (Chunk 5's Activation section states why) — is subject to
+reconciliation. So landing the marker before a reader exists to do that
+reconciliation would open a window with an obligation and nothing to
+discharge it. Closing that window without deferring the marker would instead
+mean requiring and auditing an event block for every post-cutoff act while
+Chunks 4-6 land, which is not this plan's to impose: it
 would bind whoever commits a lifecycle artifact in this tree during that
 window, including in a concurrent session with no reason to know a plan's own
 chunk boundaries changed what an event-worthy edit requires, enforced only by
@@ -531,6 +632,32 @@ and the reader in the same commit is the option that depends on no one else's
 session. This chunk is where Part 3 actually replaces prose-parsing for the
 fields it claims, and where the `Scope delta: degraded` allowance gets its
 concrete, checkable shape.
+
+**That "depends on no one else's session" claim holds only for the Chunks
+4-6 window; it does not extend past this chunk's own commit, and this plan
+names what changes there rather than leaving it implicit.** From this
+chunk's commit onward, every `**Status**` flip, review section, and Response
+section committed anywhere in `dev/proposals/` or `dev/plans/` — by any
+session, not only this plan's — is a post-cutoff act the extractor now
+expects a block for. This plan controls its own commits and nothing else's,
+so the disposition is two-part:
+
+* **This plan's own acts.** From this chunk's own commit onward, the
+  implementing agent appends a `cairn-event-v1` block to every lifecycle act
+  it performs on this plan's own file — a further status flip, this file's
+  own eventual code review, and so on — in the same commit that performs the
+  act (row 6-8).
+* **Everyone else's acts.** Two sibling plans are active on the board as of
+  this writing (`full-suite-interception`, `suite-run-diagnostics`), each
+  expected to take further review passes and status flips of its own before
+  this plan's implementation finishes. This plan has no authority over those
+  sessions and invents none. Row 8-6's corpus-wide extractor run is recorded
+  as **evidence** of the corpus's real state — including naming any
+  unreconciled act by artifact/commit/kind — not as a pass/fail gate this
+  plan's own completion can be held to independent of its own conduct. What
+  gates this plan's own acceptance is narrower: every act *this plan's own
+  commits* perform, from this chunk onward, carries a matching block and
+  reconciles cleanly (see this chunk's own acceptance section and 8-6).
 
 **The taxonomy (Round 6, reproduced as the binding contract):**
 
@@ -553,31 +680,51 @@ silently to header-date-only reliability. Once an artifact's activation marker
 exists and the artifact carries a status past that cutoff, this chunk makes
 "no git available" a **refusal of that artifact's row**, not a quiet downgrade
 — because "reconciliation cannot be performed at all" is exactly what
-"unavailable Git" is. Chunk 7 audits every existing test that currently runs
-this tool without a git-initialized scratch tree, because this is where their
-assumptions break.
+"unavailable Git" is. Establishing "carries a status past that cutoff" is
+itself only possible through a successful history read, so a target with
+**no git at all** cannot satisfy this refusal's own precondition and falls
+back to the pre-activation behavior instead (Chunk 5's Activation section
+states this in full). The correct audit predicate for Chunk 7 is therefore
+broader than "no git": **every existing test that runs this tool's
+extractor over any tree** is in scope, because a git-present tree whose
+lifecycle acts carry no blocks refuses under this chunk's rule once that
+tree is activated — a materially larger set than the git-absent tests alone.
+Chunk 7 audits against that predicate.
 
-**The dropped-historical-continuity allowance, made concrete.** For an artifact
-whose relevant act (transition / review-pass / response) predates that
-artifact's own activation cutoff, the corresponding event-derived field is
-emitted **empty** — not computed from the old prose-parsing path, not backfilled,
-not marked "derived/unreliable" (both of those were the rejected option (b)).
-Empty is the correct value per the Decision, not a placeholder for a future
-backfill this plan does not build. Post-cutoff acts on the same artifact are
-reconciled and refuse-on-mismatch exactly as above; an artifact can therefore
-carry an empty `review_rounds` for its pre-cutoff review passes and a
-populated one for later passes on the same document, and the reader must not
-conflate the two into one silently-partial number.
+**The dropped-historical-continuity allowance, made concrete — and a
+field-kind split named here rather than left to conflict with row 6-4.**
+For an artifact whose relevant **review-pass or response** act predates that
+artifact's own activation cutoff, the corresponding event-derived field
+(`review_rounds`, reviewer identity/tier, `cross_agent_type_review`,
+`response_models`) is emitted **empty** — not computed from the old
+prose-parsing path, not backfilled, not marked "derived/unreliable" (both of
+those were the rejected option (b)). Empty is the correct value per the
+Decision, not a placeholder for a future backfill this plan does not build.
+**Transition-kind fields are the one exception, and it is not new here**:
+row 6-4 already states that `days_*`/`hours_*`/`stage_timestamp_reliability`/
+`revised` keep their existing header/git-timestamp-derived, quiet-downgrade
+computation pre-cutoff, unconditionally — Part 3 does not touch that
+historical portion at all, so a pre-cutoff transition never goes empty by
+this allowance; it simply keeps computing the way it always has. An earlier
+draft of this paragraph listed "transition" alongside review-pass and
+response as all going empty, which would have broken the transition-only
+fixtures Chunk 7 confirms unaffected (7-5, 7-6) — corrected here so this
+paragraph and row 6-4 say the same thing. Post-cutoff acts on the same
+artifact are reconciled and refuse-on-mismatch exactly as above; an artifact
+can therefore carry an empty `review_rounds` for its pre-cutoff review
+passes and a populated one for later passes on the same document, and the
+reader must not conflate the two into one silently-partial number.
 
 | # | File | Change |
 |---|------|--------|
 | 6-1 | `dev/proposals/_template.md`, `dev/plans/_template.md` | Add the literal `cairn-event-v1` marker — worked into the templates' own guidance for how an agent appends an event block at a transition, review pass, or response, so the marker is simultaneously the activation cutoff and the instruction a reader needs to act on it. |
 | 6-2 | `templates/core/dev/proposals/_template.md`, `templates/core/dev/plans/_template.md` | The shipped equivalent. Independently must carry the literal marker; not required to be byte-identical to 6-1 (see Scope's "Documentation / doctrine surface" note on why these four paths are not a twin pair in the byte-identical sense). |
 | 6-3 | `tools/_lifecycle_metrics/events.py` | Reconciliation: per-artifact, per-kind matching of acts to blocks; `INCOMPLETE` disposition (nonzero exit, explicit reason) on any unmatched act, unmatched block, or unresolvable history (including unavailable Git for a post-activation artifact). |
-| 6-4 | `tools/_lifecycle_metrics/extract.py` | Post-activation: `review_rounds`, reviewer identity/tier, `cross_agent_type_review`, `response_models` sourced from reconciled `review-pass`/`response` blocks, not from heading counts or `**Model**:` regex scraping. Pre-activation acts on the same artifact: the corresponding field is empty per the rule above. Transition dates / `days_*` / `hours_*` / `stage_timestamp_reliability` / `revised` sourced from reconciled `transition` blocks post-cutoff; unchanged (still header/git-timestamp-derived, still quiet-downgrade) pre-cutoff, since that is the existing degradation this chunk does not touch for the historical portion. |
+| 6-4 | `tools/_lifecycle_metrics/extract.py` | Post-activation: `review_rounds`, reviewer identity/tier, `cross_agent_type_review`, `response_models` sourced from reconciled `review-pass`/`response` blocks, not from heading counts or `**Model**:` regex scraping. **Reviewer-identity normalization, pinned**: the grammar's `reviewer` key stores the name as written in the section heading (Chunk 4's literal text), but `reviewer_agents`/`cross_agent_type_review` are existing v1 columns whose semantics depend on a normalized agent token, not a raw heading fragment — `extract.py` already owns that normalization (`_agent_of(h)`, applied today to the heading itself). This chunk applies the same normalization to the block's `reviewer` value before it lands in `reviewer_agents`, so the `a != author` comparison in `cross_agent_type_review` keeps comparing like values and the emitted column shape is unchanged for post-cutoff rows: the block becomes the source, the value shape does not. Pre-activation acts on the same artifact: the corresponding field is empty per the rule above. Transition dates / `days_*` / `hours_*` / `stage_timestamp_reliability` / `revised` sourced from reconciled `transition` blocks post-cutoff; unchanged (still header/git-timestamp-derived, still quiet-downgrade) pre-cutoff, since that is the existing degradation this chunk does not touch for the historical portion. |
 | 6-5 | Twins under `templates/modules/default-on/_lifecycle_metrics/` | Same commit as 6-3/6-4. |
 | 6-6 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Mandatory red fixtures (Round 6 / R4-E2): a status-only commit with no block → `INCOMPLETE`; a review-only commit with no block → `INCOMPLETE`. Mandatory taxonomy fixture (Round 6 / R4-E1): two review commits with no intervening status change produce **two** review-pass events and `review_rounds == 2`. Pre/post-activation split fixture: one artifact with a review pass before its activation cutoff and one after; the row shows an empty value attributable to the pre-cutoff pass and a populated, reconciled value for the post-cutoff one. |
 | 6-7 | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` | Update the "Robust across VCS settings" paragraph (~lines 74-82, as_of 2026-08-20): it currently documents unconditional quiet degradation to `Best-effort` reliability when git is unavailable ("a deliberately quiet failure mode"). This chunk makes that a refusal (`INCOMPLETE`) for a post-activation artifact instead of a quiet downgrade; the docstring must describe the new post-activation behavior, not continue documenting only the contract this chunk reverses. |
+| 6-8 | *(process instruction, not a file change)* | From this chunk's own commit onward, append a `cairn-event-v1` block to every lifecycle act the implementing agent performs on `dev/plans/metrics-events-not-prose.md` itself (a further status flip, this file's own eventual code review, etc.), in the same commit that performs the act — discharging, for the one artifact this plan controls, the residual named in this chunk's intro. |
 
 **Acceptance for this chunk**: the four template paths (6-1/6-2) each
 independently carry the literal string `cairn-event-v1` **worked into the
@@ -593,11 +740,15 @@ chunk's own commit is what first introduces the marker, it lands in the same
 commit as the reader and reconciliation logic that can act on it — no chunk
 boundary leaves the marker present with no reader behind it.
 
-**And, the property this chunk exists to make checkable**: run the real
-extractor against Cairn's own `dev/proposals/` and `dev/plans/` corpus at this
-commit; it exits successfully (never `INCOMPLETE`) and accounts for every act
-in that corpus recorded after this commit's own activation cutoff — not merely
-that the emitted column set can be diffed. Re-run and recorded again at Chunk
+**And, the property this chunk exists to make checkable — recorded as
+evidence of the corpus's real state, not as a gate on other sessions'
+conduct (see the disposition above)**: run the real extractor against
+Cairn's own `dev/proposals/` and `dev/plans/` corpus at this commit; record
+whether it exits successfully and, if not, which artifact/commit/kind fails
+to reconcile — not merely that the emitted column set can be diffed. The
+gating half of this chunk's own acceptance is narrower: every act *this
+plan's own commits* perform, from this commit onward, carries a matching
+block and reconciles cleanly (row 6-8). Re-run and recorded again at Chunk
 8's evidence step (8-6), since further real acts may land in the corpus
 between this commit and that one.
 
@@ -609,25 +760,38 @@ Depends on Chunks 1-6 all being present.
 |---|------|--------|
 | 7-1 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Confirms cross-commit contamination is structurally unrepresentable (the R3-E1 property, re-expressed for the artifact-local design per Round 5 §2): two artifacts transitioned concurrently, one commit path-scoped to the first artifact only, and the assertion that the second artifact's block does not and cannot appear in that commit — because there is no shared file for it to appear in. This is a confirmation test of a structural property, not a vulnerability regression test (there is no longer a vulnerable mechanism to regress); it passes even with `events.py` deleted, since the property is one of git and path-scoped commits, not of the reader's own logic. Writing it is still required (Round 5); it does not itself enforce the property. |
 | 7-2 | `bootstrap/tests/test_lifecycle_metrics_events.py` | `recorded_by` fixture: a block carrying a forged or duplicated `recorded_by` value changes no identity, no reconciliation outcome, and no refusal disposition — confirming it stays informational-only per Round 7's explicit bar on it participating in authority or idempotency. |
-| 7-3 | `bootstrap/tests/test_reference_scripts.py` | `test_installed_lifecycle_metrics_runs_on_target` (as_of 2026-08-20, the same test Chunk 1 already touched; distinct from `TestVcsRobustness.test_no_git_target_degrades`, addressed separately at 7-5): once Chunk 6 lands, this fixture's `tmp_path` has no `.git` at all. Reusing the git-init pattern already present in this same file (as_of 2026-08-20, around line 469) is one option; asserting the new `INCOMPLETE`-refusal path directly, once the fixture proposal is activation-eligible, is the other. This chunk decides which and updates the test so it keeps exercising what it is meant to exercise, rather than accidentally exercising the new refusal path by omission. |
-| 7-4 | `bootstrap/tests/test_lifecycle_contract.py` | Confirm the corpus-soundness suite (`test_the_live_corpus_is_sound_under_the_p1_contract` and neighbors) still passes against Cairn's own live `dev/proposals/` and `dev/plans/` corpus once the four template paths carry the activation marker — the live corpus itself carries no event blocks yet (this plan does not backfill), so this is a check that adding the marker to the templates does not itself perturb anything the corpus-soundness suite reads. This file is also touched by two other proposals opening today (both editing `bootstrap/tests/conftest.py`); this plan does not touch `conftest.py` and has no other point of contact with that concurrent work. |
-| 7-5 | `bootstrap/tests/test_reference_scripts.py` | `TestVcsRobustness.test_no_git_target_degrades` (as_of 2026-08-20, lines 445-457) is the test that actually encodes the git-absent quiet-degradation contract Chunk 6 reverses: its docstring ("degrades to Best-effort rather than raising") and its assertion (`stage_timestamp_reliability == "Best-effort"`) describe exactly the behavior that no longer holds for a post-activation artifact. Update it: for a fixture proposal past its activation cutoff with no `.git`, assert the new `INCOMPLETE` refusal instead of the `Best-effort` degrade; for a fixture proposal that predates activation (or an installation with no activation marker at all), the existing quiet-degrade behavior is unchanged, and the test should say so explicitly rather than leave the pre-activation case implicit. |
+| 7-3 | `bootstrap/tests/test_reference_scripts.py` | `test_installed_lifecycle_metrics_runs_on_target` (as_of 2026-08-20, the same test Chunk 1 already touched; distinct from `TestVcsRobustness.test_no_git_target_degrades`, addressed separately at 7-5): its `tmp_path` scaffolds `lifecycle-metrics` (so once Chunk 6 lands its installed `dev/proposals/_template.md` carries the marker) but **never runs `git init`** — no `.git` at all, so the extractor cannot prove this artifact is past any cutoff and the act is pre-cutoff by the rule in Chunk 5's Activation section. **This is the one pre-existing test in this audit that genuinely changes**: `review_rounds` is a review-pass-kind field, and pre-cutoff review-pass fields emit empty (never the retired heading-count value) — so `assert row["review_rounds"] == 1` no longer holds and is updated to assert the empty value once Chunk 6 lands. Not a refusal, not a silent hold-over: an explicit, confirmed value change, distinct from 7-5's and 7-6/7-7's true no-op confirmations below, because this is the only audited test asserting a review-pass-kind field's value on a tree whose post-cutoff status cannot be proven. |
+| 7-4 | `bootstrap/tests/test_lifecycle_contract.py` | Confirm the corpus-soundness suite (`test_the_live_corpus_is_sound_under_the_p1_contract` and neighbors) still passes against Cairn's own live `dev/proposals/` and `dev/plans/` corpus once the four template paths carry the activation marker — the live corpus itself carries no event blocks yet **except this plan's own `dev/plans/metrics-events-not-prose.md`, which by this point may carry blocks per row 6-8** — so this is a check that adding the marker, plus this plan's own compliant acts, does not perturb anything the corpus-soundness suite reads. This file is also touched by two other proposals opening today (both editing `bootstrap/tests/conftest.py`); this plan does not touch `conftest.py` and has no other point of contact with that concurrent work. |
+| 7-5 | `bootstrap/tests/test_reference_scripts.py` | `TestVcsRobustness.test_no_git_target_degrades` (as_of 2026-08-20, lines 445-457) scaffolds a marker-carrying template but never runs `git init` — the same git-absence shape as 7-3, and the same resolution: the refusal Chunk 6 adds presupposes proof of post-activation status that only a history read can supply, and no `.git` forecloses that proof. **Confirmed, not updated to assert `INCOMPLETE`**: `stage_timestamp_reliability == "Best-effort"` keeps holding, and the docstring is updated to state the more precise reason (git-absence forecloses the cutoff proof the new refusal needs) rather than the older, now-imprecise "degrades to Best-effort rather than raising." **A uniqueness claim this row must not repeat**: this is not the only test encoding the git-absent contract — `bootstrap/tests/test_lifecycle_stage_patterns.py::test_t12_a_target_with_no_git_still_degrades_to_best_effort` (7-6) duplicates it deliberately, by that test's own docstring. |
+| 7-6 | `bootstrap/tests/test_lifecycle_stage_patterns.py` | `test_t10_public_path_reports_exact_with_populated_hour_deltas` and `test_t12_a_target_with_no_git_still_degrades_to_best_effort` both hand-build their `tmp_path` (`_write_proposal` + `_init_repo`/no repo) with **no `dev/proposals/_template.md` at all** — no marker file exists on disk in either fixture, the plainest case of "missing marker." Per (c), both trees are simply not yet activated: `stage_timestamp_reliability` keeps its existing timestamp-derived computation in both (`Exact` for T10's real four-commit history, `Best-effort` for T12's no-git case). **Confirmed unaffected**; no code or test change. |
+| 7-7 | `bootstrap/tests/test_lifecycle_cli.py` | `test_emit_snapshot_creates_indexed_csv`, `test_emit_snapshot_same_day_coalesces_by_index`, `test_snapshot_flag_via_main` all drive the extractor through the `lm_repo` fixture, which creates only a bare `dev/proposals/` directory with one hand-written proposal — no installed template, no `.git`. No marker anywhere in the tree, so (c) applies; none of the three asserts a review-pass-kind field's specific value (they check row count, CSV header shape, and file paths), so the empty-vs-unchanged split above has no observable effect here either way. **Confirmed unaffected**; no code or test change. |
+| 7-8 | `bootstrap/tests/test_reference_scripts.py` | `TestVcsRobustness::test_main_branch_target_runs` (~line 458) is the concrete case the Activation section's exclusive-cutoff resolution exists to keep passing: `_scaffold` installs the marker-carrying template, a sample proposal carrying a `## Review` section is written, and `git init` + `add -A` + **one** commit lands both the marker's own introduction and the proposal's review-pass act together. Under the exclusive reading (5-3), that commit is pre-cutoff, so `rows = lm.proposal_rows(tmp_path)  # must not raise` continues to hold with no change. **Confirmed, and named as the regression this plan would otherwise silently depend on** — an inclusive reading would red this test, and nothing before this audit pinned that as a fixture against the real test rather than 5-3's synthetic one alone. |
 
-**Acceptance for this chunk**: 7-1, 7-2, 7-3, and 7-5 pass as new/updated
-fixtures; 7-4 is a confirming (not new) pass against the live corpus.
+**Acceptance for this chunk**: 7-1 and 7-2 pass as new fixtures. 7-4, 7-5,
+7-6, 7-7, and 7-8 are confirming (not new) passes against the live or
+existing-fixture code paths — each one audited under the corrected
+predicate ("every existing test that runs the extractor over any tree", not
+only the git-absent ones) and found unaffected by Chunks 4-6, for the
+reason its own row states, with a docstring/comment update where the row
+says so. 7-3 is the one exception in this audit: its `review_rounds`
+assertion is updated to expect the empty value, and passes against that
+updated assertion, not against the pre-Chunk-6 one.
 
 ### Chunk 8 — CHANGELOG and the before/after corpus evidence
 
 | # | File | Change |
 |---|------|--------|
-| 8-1 | `CHANGELOG.md` | Under `## Unreleased`, open a new `### Changed` subsection — the section currently has only `### Changed — Git-native security foundations` and `### Added` (as_of 2026-08-20; there is no generic `### Changed` to file this under) — and add one line naming the v1→v2 lifecycle-metrics schema break (eight columns retired) and the new event-emission convention for adopters who already parse the CSV/manifest. |
-| 8-6 | *(evidence, not a file change)* | Re-run the extractor against Cairn's own corpus before and after this plan's chunks, diffing the emitted column set — the "Owed at implementation" item the proposal names explicitly, so the diff is recorded rather than assumed. The after-run must also satisfy Chunk 6's own acceptance criterion: it exits successfully and accounts for every act recorded in the corpus after the activation cutoff, not merely that the column set differs. Recorded in this plan's `## Implementation verification` section, not carried into the plan as a number now. |
+| 8-1 | `CHANGELOG.md` | Under `## Unreleased`, add a line to the section's **existing, generic `### Changed` heading (`CHANGELOG.md:222`, as_of 2026-08-20)** — not a new subsection. `## Unreleased` (line 41) already carries four subsections before the next `## ` release heading (line 497): `### Changed — Git-native security foundations` (42), `### Added` (60), a bare **`### Changed`** (222), and `### Fixed` (317); the bare one at 222 is the right home. Add one line naming the v1→v2 lifecycle-metrics schema break (eight columns retired) and the new event-emission convention for adopters who already parse the CSV/manifest. |
+| 8-6 | *(evidence, not a file change)* | Re-run the extractor against Cairn's own corpus before and after this plan's chunks, diffing the emitted column set — the "Owed at implementation" item the proposal names explicitly, so the diff is recorded rather than assumed. The after-run also records Chunk 6's corpus-wide property — whether the run exits successfully and, if not, which artifact/commit/kind fails to reconcile — as **evidence of the corpus's real state, not a gate on this plan's own completion**: reconciling acts this plan does not control is outside its authority (Chunk 6's disposition, above). What *is* gating: every act this plan's own commits performed on its own artifacts from Chunk 6 onward reconciles cleanly. Recorded in this plan's `## Implementation verification` section, not carried into the plan as a number now. |
 
 **The registration travels with the file, and that is not a style choice.**
 The four rows that register `events.py` — the `InstallSpec`, both count pins,
 and the AST symbol update — were briefly placed here, in Chunk 8. They now sit
 in **Chunk 4 (rows 4-6 through 4-9)**, the commit that first puts
-`templates/modules/default-on/_lifecycle_metrics/events.py` on disk.
+`templates/modules/default-on/_lifecycle_metrics/events.py` on disk. **Rows
+8-2 through 8-5 are deliberately absent from this chunk's own numbering as a
+result** — not a gap a future sweep should try to close — which is why this
+chunk's table runs 8-1 straight to 8-6.
 
 The reason is in the tripwire's own docstring.
 `test_templates_py_count_is_pinned` describes itself as *"a growth tripwire,
@@ -758,7 +922,11 @@ project's own naming convention):
 | An edited, reordered, or deleted existing block refuses (mutation) | Chunk 5's history fixture |
 | A merge commit is never an introducing commit | Chunk 5's merge-commit fixture |
 | Identity survives the archive `git mv` | Chunk 5's archive-rename fixture |
-| Missing / divergent / multiply-introduced activation marker refuses | Chunk 5's marker fixtures |
+| Divergent / multiply-introduced activation marker refuses | Chunk 5's marker fixtures |
+| A **missing** activation marker does not refuse — it resolves to no cutoff, treating every act as pre-cutoff (field-kind-dependent, next two rows) | Chunk 5's marker fixtures; confirmed against real pre-existing fixtures with no template file at all in Chunk 7 (7-6, 7-7) |
+| Pre-cutoff (including "cannot prove post-cutoff") **transition**-kind fields keep their existing quiet-degrade computation, unconditionally | Row 6-4 (unchanged, pre-existing behavior); confirmed against `test_no_git_target_degrades`, `test_t10_public_path_reports_exact_with_populated_hour_deltas`, `test_t12_a_target_with_no_git_still_degrades_to_best_effort` (7-5, 7-6) |
+| Pre-cutoff (including "cannot prove post-cutoff") **review-pass/response**-kind fields emit empty, never the retired heading-count/regex value | Row 6-4; the one place this is a real, observable change against a pre-existing test: `test_installed_lifecycle_metrics_runs_on_target`'s `review_rounds` assertion (7-3) |
+| An act committed in the same diff as the marker's own introduction is pre-cutoff, by the same rule as a missing marker | Chunk 5's boundary fixture; confirmed against the real `test_main_branch_target_runs` in Chunk 7 (7-8) — that test asserts no review-pass-kind value, so it holds with no change even though the act's `review_rounds` is itself empty |
 | A status-only commit with no block is loud `INCOMPLETE` | Chunk 6's mandatory red fixture |
 | A review-only commit with no block is loud `INCOMPLETE` | Chunk 6's mandatory red fixture |
 | Two review commits, no intervening status change, yield two review-pass events | Chunk 6's mandatory taxonomy fixture |
@@ -766,7 +934,8 @@ project's own naming convention):
 | Cross-commit contamination is structurally unrepresentable | Chunk 7's confirmation fixture |
 | `recorded_by` never affects identity, reconciliation, or refusal | Chunk 7's fixture |
 | `next --to` stays read-only under the extended preview | Chunk 4's and Chunk 7's regressions against `test_lifecycle_contract.py` |
-| Unavailable Git on a post-activation artifact refuses the row, not a quiet downgrade | Chunk 6's reconciliation logic + Chunk 7's update to `TestVcsRobustness.test_no_git_target_degrades` (7-5) — the test whose assertion literally encodes the reversed behavior; `test_installed_lifecycle_metrics_runs_on_target` (7-3) is a different fixture, updated for a different reason |
+| Unavailable Git on a **provably** post-activation artifact refuses the row, not a quiet downgrade | Chunk 6's reconciliation logic; no pre-existing test currently reaches this state (every git-absent fixture Chunk 7 audited also lacks a way to prove post-activation status, so each falls back to the pre-cutoff, field-kind-dependent disposition instead — see the two rows above) |
+| Git entirely absent forecloses proving post-activation status, so the tree is treated as pre-cutoff rather than refused | Chunk 5's Activation section; confirmed against `test_no_git_target_degrades` (7-5, unaffected — transition field), `test_installed_lifecycle_metrics_runs_on_target` (7-3, the one real change — review-pass field), and `test_t12_a_target_with_no_git_still_degrades_to_best_effort` (7-6, unaffected — transition field), all `test_reference_scripts.py` except the last |
 
 **Known omission, named rather than discovered later.** No test in this plan
 exercises a shallow clone or a rewritten-history repository directly (Round
@@ -789,7 +958,11 @@ touches a **contract surface** — the emitted schema of a default-on module tha
 adopter-relied-upon — so **bounded mode refuses** and Boundary B runs the
 **full suite**, per AGENTS.md's own refusal rule. No chunk here narrows that.
 
-* `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`
+* `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`
+  — the override is required as of 2026-08-20: `bootstrap/tests/conftest.py`'s
+  broad-run guard refuses an unscoped full-suite invocation (`pytest.UsageError`,
+  exit 4) without it, and `AGENTS.md`'s own Boundary B text now carries the same
+  requirement.
 * `python scripts/quality_gate.py --sub neutrality --sub redundancy`
 * `python scripts/check_cairn.py`
 * `python scripts/claim_check.py dev/plans/metrics-events-not-prose.md` (this
@@ -1380,3 +1553,82 @@ the pilot-event ledger, both of which the plan places out of scope and which I
 confirmed no chunk touches.
 
 **Status**: `awaiting-plan-review` -> `revising-plan`.
+
+## Response to plan review -- Claude Sonnet 5 (author) -- 2026-08-20 (round 3)
+
+**Model**: Claude Sonnet 5
+
+**All three blocking findings and all five non-blocking findings accepted;
+all folded into the plan's own operative cells, not answered here.** The
+Maintainer decided the first blocking finding's core question directly
+(quoted below); the remaining sub-question inside it, and both other
+blocking findings, required an author disposition, made and reasoned in the
+cells themselves rather than only in this table.
+
+| Finding | Disposition | Where addressed |
+|---|---|---|
+| EPR-05(a) (BLOCKING) — the plan states two contradictory dispositions for a tree with no activation marker | ACCEPTED — decided by the Maintainer, quoted verbatim: **"I think (c) is right."** | Chunk 5's Activation section, new "A marker path can be wrong, or it can simply not exist yet" and "What (c) concedes" paragraphs (divergent/multiply-introduced still refuse; missing does not, and treats every act as pre-cutoff); row 5-3's fixture list; row 7-6/7-7 (confirmed against the real fixtures that carry no marker at all); Author-accounting invariants table (two new rows replacing the single wrong one) |
+| EPR-05(b) (BLOCKING) — is an act in the marker's own introducing commit pre- or post-cutoff? | ACCEPTED, resolved **exclusive** (the introducing commit itself is pre-cutoff) — this plan's own disposition, reasoned in the cell rather than asserted | Chunk 5's Activation section, "The marker's own introducing commit is pre-cutoff, not post-cutoff" paragraph; Chunk 6's intro (the "strictly after" correction); row 5-3 (new boundary fixture); row 7-8 (confirmed against the real `test_main_branch_target_runs`, the concrete case this resolution exists to keep passing) |
+| EPR-06 (BLOCKING) — Chunk 7's audit uses the wrong predicate and misses at least five tests | ACCEPTED | Chunk 6's fail-closed-measurement paragraph (predicate corrected to "every existing test that runs the extractor over any tree"); Chunk 7's table extended with rows 7-6 (T10/T12), 7-7 (the three `lm_repo` tests), 7-8 (`test_main_branch_target_runs`), and 7-3/7-5 rewritten from "decide which" to confirmed dispositions; Chunk 7's acceptance line. **One of the five turned out to be a real change, not a confirmation** — see the note below. |
+| EPR-07 (BLOCKING) — the obligation binds sessions this plan does not control, and row 8-6 depends on their compliance | ACCEPTED, disposition (i)+(ii) combined: this plan's own future acts carry blocks; the corpus-wide run is evidence, not a gate on other sessions | Chunk 6's intro, new "That 'depends on no one else's session' claim holds only for the Chunks 4-6 window" paragraph; new row 6-8 (process instruction: append blocks to this plan's own future acts); Chunk 6's acceptance corpus-check paragraph (evidence, not gate); row 8-6 (same scoping); row 7-4 (notes this plan's own file may itself carry blocks by that point) |
+| EPR-08 (NON-BLOCKING) — row 8-1's premise about `## Unreleased` is false | ACCEPTED — confirmed directly: `## Unreleased` at line 41, the bare `### Changed` at line 222, next `## ` at line 497 | Row 8-1, rewritten to file under the existing heading at `CHANGELOG.md:222` instead of opening a duplicate |
+| EPR-09 (NON-BLOCKING) — the sibling-guard seam is unflagged for this plan's own Boundary B, and the attribution to the sibling plan is wrong | ACCEPTED, both halves | `## Verification`'s Boundary B command list (now `CAIRN_FULL_SUITE=1`-prefixed, with the reason stated); Chunk 4's "A hazard for whoever runs this" paragraph (rewritten: the guard has already landed as of 2026-08-20, confirmed against `bootstrap/tests/conftest.py`; the runbook fix is "flagged, not authorized" for the sibling plan, confirmed by reading that plan directly, not owed by its agent) |
+| EPR-10 (NON-BLOCKING) — Chunk 1's `snapshot_event=backfill` acceptance clause cannot fail | ACCEPTED, clause dropped and the paragraph's reasoning corrected | Chunk 1, "A correction to this section's own earlier reasoning" paragraph (no reader parses persisted snapshot CSVs at all, confirmed by the same grep the reviewer ran); Chunk 1's acceptance line (clause removed) |
+| EPR-11 (NON-BLOCKING) — row 6-4 wires `reviewer_agents`/`cross_agent_type_review` to a block value of a different shape | ACCEPTED | Row 6-4, new "Reviewer-identity normalization, pinned" sentence: the block's `reviewer` value is normalized via the same `_agent_of`-equivalent logic `extract.py` already applies to the heading, before it lands in `reviewer_agents` |
+| EPR-12 (NON-BLOCKING) — two small ones (SPDX headers; Chunk 8's row-id jump) | ACCEPTED, both | Rows 4-1/4-2 (SPDX-header requirement named); Chunk 8's "registration travels with the file" paragraph (explicit note that rows 8-2 through 8-5 are deliberately absent) |
+
+**One correction this round's own analysis produced, beyond what any finding
+asked for — reported per this task's brief rather than left for a future
+round to rediscover.** Resolving EPR-06 required working out, field by
+field, what "pre-cutoff" actually emits, and that turned up two things:
+
+1. **`test_installed_lifecycle_metrics_runs_on_target` genuinely changes.**
+   Of the five tests EPR-06 named, four are confirmed unaffected (they touch
+   only transition-kind fields, which keep their existing quiet-degrade
+   computation unconditionally pre-cutoff, or touch no review-pass-kind
+   field's value at all). The fifth asserts `review_rounds == 1` on a tree
+   whose post-cutoff status cannot be proven (marker present via scaffold,
+   no `.git`). Review-pass-kind fields emit **empty**, not the retired
+   heading-count value, for any act that cannot be proven post-cutoff — the
+   Decision is explicit that the old prose-parsing path is retired outright,
+   not merely superseded once a cutoff exists. That assertion is updated
+   (row 7-3), not left as a false confirmation.
+2. **A pre-existing internal contradiction, not raised by any finding**:
+   the "dropped-historical-continuity allowance, made concrete" paragraph
+   (Chunk 6) said pre-cutoff `transition` acts also emit empty, while row
+   6-4 — two paragraphs later in the same chunk — said transition fields
+   keep their existing quiet-degrade computation, unconditionally, pre-cutoff.
+   Those cannot both be true; row 6-4's reading is the one four of the five
+   audited tests already depend on (`stage_timestamp_reliability` staying
+   `Exact`/`Best-effort`, never empty), so the allowance paragraph is
+   corrected to match row 6-4 rather than the reverse.
+
+**What I believe may still be wrong, flagged rather than deferred, per this
+task's own brief.** The exclusive reading of EPR-05(b) (the marker's own
+introducing commit is pre-cutoff) and the "git-absent forecloses proof, so
+treat as pre-cutoff" resolution for git-absence are both **this plan's own
+inferences**, not something the Maintainer's quoted decision or the source
+proposal's Round 7 text states directly. I am confident in the reasoning —
+both are the only readings that keep the concrete pre-existing tests this
+plan does not otherwise touch (`test_main_branch_target_runs`,
+`test_no_git_target_degrades`, T10, T12) passing without an unrelated scope
+expansion — but they are new design decisions this round makes, not findings
+this round merely closes, and a future round should treat them as such
+rather than as already-settled Round 7 contract.
+
+**Searches confirmed against a known-present case, per this task's
+instrument-confirmation rule.** (1) `_scaffold(tmp_path, ["lifecycle-metrics"])`
+installs `dev/proposals/_template.md` unconditionally — confirmed by reading
+`bootstrap/_scaffold/config.py`'s `_CORE_MAPPINGS` (line 555), which installs
+"like `AGENTS.md`" regardless of the module list, not by trusting the
+absence of a per-module gate. (2) The `lm_repo` fixture in
+`test_lifecycle_cli.py` installs no template — confirmed by reading the
+fixture body (lines 459-468) directly, not inferred from the reviewer's own
+claim. (3) `grep -rn 'csv.DictReader|csv.reader' tools/ scripts/` returns
+nothing (EPR-10) — confirmed the pattern could match by finding
+`csv.writer` at `tools/_lifecycle_metrics/report.py:35` with the same
+grep form before trusting the absence. (4) The CHANGELOG line citations
+(41, 60, 222, 317, 497) — read directly via `sed -n`, not carried forward
+from the review's own citation.
+
+**Status**: `revising-plan` -> `awaiting-plan-review`.
