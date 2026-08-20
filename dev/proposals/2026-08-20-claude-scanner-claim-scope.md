@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — D1 changes what a security control
 **instructs an operator to do to a reviewed security baseline**, and D2 adds a
 derived annotation to a security report. Neither is obviously a trust-boundary
@@ -1540,3 +1540,371 @@ Each close is **MAINTAINER-GATED** and gated on:
   Superseded by the full closure contract above, including "the implementation's
   External Security code review." Reason: C4.
 * **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
+
+## Review -- Claude (Internal, fresh-context subagent) -- 2026-08-20 (round 3, narrow: closure spec + oracle)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: 37d89a047f0dda664b2a94a7fe0f8185c0b899a5 (file last touched at
+`85f023f`; working tree clean for this path before reading)
+Target: **narrow.** Revision 2's `#### The declared closure — authority,
+algorithm, bounds` and `#### The bright line — an emitted-report oracle`, plus
+the parts of *Invariants*, S1–S5 and *Evidence* that those two subsections bind.
+**Not re-reviewed:** D1, D1b, D2b, the consumer taxonomy, the issue-closure
+contract, the withdrawal ledger — covered by the round-1 Internal pass (R1–R8)
+and the round-2 Codex External Security pass (C1–C4), all accepted and folded in.
+Prior findings: R1–R8 (Internal), C1–C4 (External Security)
+Assurance path: high-assurance
+
+**Tier**: Internal
+**Findings**: raised (3 blocking, 5 non-blocking)
+
+No `Plan readiness` field is recorded: only an **External** pass may supply it.
+
+**This pass executed things.** Every closure and grammar figure below is measured
+in this repository's conda interpreter (Python 3.12.9, 147 installed
+distributions, 2221 real `Distribution.requires` strings), not reasoned about.
+Where a figure is from that environment rather than the adopter's, it says so.
+
+### Steelman
+
+**The stdlib-only constraint is real, correctly applied, and the author found it
+where Codex's satisfier did not.** Verified: `run_security_audit.py` ships to the
+adopter's `scripts/` (`bootstrap/DEPENDENCY_BUDGET.md` > Exception 1), its import
+block is stdlib-only (`:64-79`, `importlib.metadata` already among them), and
+`packaging` appears nowhere in the dependency budget as a declared exception. It
+*is* importable in this environment, which is exactly the incidental availability
+the author flagged. Rooting the closure in `importlib.metadata` rather than
+`pyproject.toml` is the right call for the stated reason — the leg audits
+installed distributions, so the two sets have to be drawn from the same store.
+
+**The requirement-name grammar is correct, and I could not break it.** I ran the
+anchored identifier (`^[A-Za-z0-9][A-Za-z0-9._-]*`) over **all 2221 requirement
+strings** in this environment: **0 no-matches, 0 tokens with trailing
+punctuation.** It handles the parenthesized form (`ipywidgets (>=7.5.1,<9) ;
+extra == "jupyter"`), the marker-with-parens form, and every operator present. It
+also **reproduces the reporter's junk as a diff and fixes it**: the 19 strings
+where a naive character-class split disagrees with the grammar are exactly the
+`~=` ones, and they include the reporter's own two — `cffi~=1.17; ...` → naive
+`cffi~`, grammar `cffi`; `mdurl~=0.1` → naive `mdurl~`, grammar `mdurl`.
+[I5] is a note about the prose *gloss*, not the grammar.
+
+**The oracle is the right shape.** Moving from a view of `Coverage` to reading
+the emitted report back is the correct level, and it is where C2's counterexample
+pointed. My findings [I2] and [I3] are that this particular instance of that
+shape has two holes, not that the shape is wrong.
+
+### Findings
+
+* **[I1] BLOCKING — the extras half of the over-inclusion policy is *not* forced
+  by the stdlib constraint, and it is the half that costs 3x–12x.** The spec
+  treats markers and extras as one policy under one justification ("`packaging`
+  is unavailable, so PEP 508 markers are never evaluated"). Measured, they are
+  two policies with opposite cost profiles.
+
+  Deciding whether a requirement is extras-gated is a **syntactic** test on the
+  marker text (`extra ==`), not a marker evaluation. No `packaging`, no
+  environment. I built three closure walks over this environment's 147
+  distributions and compared each against a ground-truth walk using real
+  `packaging` marker evaluation:
+
+  | root | spec (all included) | drop `extra ==` only, stdlib | true PEP 508 eval |
+  |---|---:|---:|---:|
+  | `scikit-learn` | 60 | 5 | 5 |
+  | `rich` | 32 | 4 | 4 |
+  | `matplotlib` | 45 | 11 | 11 |
+  | `folium` | 34 | 11 | 11 |
+  | `optuna` | 70 | 14 | 11 |
+  | `lightning` | 102 | 19 | 18 |
+  | `transformers` | 95 | 19 | 18 |
+  | `pyannote-audio` | 116 | 79 | 78 |
+  | `whisperx` | 119 | 93 | 92 |
+
+  Two things fall out. **The purely syntactic extras drop reproduces the true
+  PEP 508 closure to within 0–3 distributions on every root** — so the stdlib
+  constraint costs the closure almost nothing once extras are separated out.
+  And **the extras inclusion costs everything**: 12x on `scikit-learn`, 8x on
+  `rich`, 5.3x on `transformers`.
+
+  The mechanism is compounding, not a constant factor. `scikit-learn` declares 4
+  runtime requirements and roughly 50 extras requirements spanning `docs`,
+  `tests`, `benchmark`, `examples`, `maintenance`; the walk enters the docs and
+  test toolchain, and each node there contributes its own extras. The
+  over-inclusive walk from `scikit-learn` visits **262 nodes** in a
+  147-distribution environment; from `whisperx`, **533**.
+
+  **What this costs the change's own purpose.** The safe-error-direction
+  argument — over-inclusion routes a distribution to earlier attention, and for a
+  triage axis more attention is the safe error — is sound *per distribution*, and
+  I am not disputing it. It is self-defeating *in aggregate*: an axis that marks
+  **41% of the environment `in-closure` from a `scikit-learn` root, 65% from
+  `transformers`, 81% from `whisperx`** has stopped partitioning. The adopter's
+  measured baseline is 93 in-closure of 299 (31%); an extras-inclusive closure on
+  that tree plausibly reaches a majority. At that point the 5:1 actionability
+  ratio D2 exists to fix is not reduced, and the reader learns to skim the new
+  column exactly as they learned to skim the leg — the failure mode this proposal
+  names three times.
+
+  There is a second, sharper consequence: the spec's own **node cap is
+  fail-closed to `unknown`**, and the over-inclusive walk visits 262–533 nodes for
+  a single root *here*. On the adopter's 299-distribution tree it would visit well
+  over a thousand. A cap chosen for an accurate closure is tripped by the
+  over-inclusive one, which converts the whole closure to `unknown` — the two
+  design choices are in tension, and neither cap value is given.
+
+  **This also inverts the adopter's own caution, which the proposal cites as its
+  reason for refusing option 2.** They warned it "needed care to skip `; extra ==`
+  requirements **without dropping genuine ones**." Revision 2 resolves that by not
+  skipping them at all, which is not the care they described; it is the other
+  failure of the pair.
+
+  **Satisfier.** Split the policy and justify each half on its own evidence.
+  Keep over-inclusion for **non-extra environment markers** — that is genuinely
+  forced by stdlib-only and costs 0–3 distributions. For **extras**, drop
+  `extra ==`-gated requirements on the syntactic test, and say which of the two
+  dispositions you take for the *root's own* extras: excluded (matches
+  `true-eval`, may miss deps of an adopter who installed `mylib[viz]`), or
+  included at depth 0 only (I measured this hybrid: within 4 of truth on
+  `whisperx`, but still 54-vs-18 on `lightning`, because a library root declares
+  large dev extras — which is the less likely shape for an adopter's own
+  project). Either is defensible; the current "include at every hop" is the one
+  the measurements rule out. Then set both caps to values the chosen walk
+  actually stays under, and say what they are.
+
+* **[I2] BLOCKING — `coverage.names` is pinned by *nothing* in Revision 2, and S2
+  asserts a mutation against it that no stated invariant catches. This is a
+  regression from Revision 1.**
+
+  Revision 1's invariant 1 pinned "`coverage.names`, `coverage.scanned`,
+  `coverage.no_match`, `coverage.unknown`, `coverage.vulnerabilities` (the total)
+  and the `(status, tier)`". Revision 2's invariant **(ii)** — and the identical
+  list in the oracle's step 3 — pins "`coverage.vulnerabilities`,
+  `coverage.scanned`, `coverage.no_match`, `coverage.unknown` and the returned
+  `(status, tier)`". **`coverage.names` was dropped from both.**
+
+  S2 was not updated with them: *"filter `coverage.names` (invariant (ii)
+  reddens)"*. As Revision 2 is written, it does not.
+
+  I checked whether invariant (i) covers it instead. It does not, and the reason
+  is mechanical: `coverage.names` is used in exactly one place in the module,
+  `len(coverage.names)` in the printed header (`run_security_audit.py:1198`). The
+  names themselves are never emitted, so an oracle that parses the emitted report
+  back cannot see them; and the emitted per-distribution rows come from D2's
+  **new** `(normalized_name, count)` retention, which is a different field
+  populated in the same loop. Filtering `coverage.names` while leaving the
+  retained pairs intact leaves (i) green, leaves every field in (ii) untouched,
+  and changes only the header integer that step 3 does not pin.
+
+  Why this field specifically matters: its own docstring
+  (`run_security_audit.py:780-784`) says it "is the denominator itself rather
+  than a count of it, **so a parent-side enumeration substituted for it is
+  visible by name and not only by arithmetic**." Revision 2 removes the only
+  check on the one field the module documents as existing to make substitution
+  visible — while adding a second, parent-side per-distribution list beside it.
+
+  **Satisfier.** Restore `coverage.names` to invariant (ii) and to the oracle's
+  step 3, and add the cross-check the new retention makes possible and now
+  needs: the retained `(name, count)` pairs' name set must equal
+  `coverage.names`' *scanned* subset, so the two parallel lists cannot diverge.
+
+* **[I3] BLOCKING — the oracle is green against the exact collapse it exists to
+  forbid.** C2's counterexample was a renderer that drops a row unconditionally.
+  Here is one the *new* oracle does not catch: a renderer that omits rows **by
+  annotation class** — `if row.annotation == "out-of-closure": continue`.
+
+  That is not an arbitrary mutation. It is precisely "the annotation gates what
+  is reported", precisely the option-2 collapse the bright line names in the
+  sentence immediately below it, and precisely the residual S5 says invariant (i)
+  forbids ("they **cannot make it disappear** ... it is invariant (i) that
+  forbids it").
+
+  Whether (i) catches it depends entirely on whether the **raw child-JSON
+  fixture** happens to contain a vulnerable distribution that annotates
+  `out-of-closure`. Nothing requires it. The fixture requirements in *Evidence*
+  are all **closure** fixtures — "an extras-marked requirement, a marker-gated
+  requirement, a `Pillow`/`pillow` pair, a cycle, an ungrammatical requirement
+  token, an unreadable-metadata distribution, and a distribution in nobody's
+  closure" — inputs to the walk. The raw JSON fixture is introduced separately
+  ("beside a raw child-JSON fixture") with no stated content requirement, and
+  nothing ties the two together. If every vulnerable distribution in the raw
+  fixture resolves `in-closure`, the class-conditional filter ships green and the
+  bright line reports that it held.
+
+  The two named mutations do not reach it either: "drop a row in the renderer"
+  at that granularity is satisfied by dropping *any* row — an implementer who
+  drops the first row proves only that the fixture discriminates against
+  positional dropping, not against annotation-conditional dropping.
+
+  **Satisfier.** Make the raw fixture's content a stated requirement, not an
+  accident: it must carry **at least one vulnerable distribution in each of the
+  three annotation classes** (`in-closure`, `out-of-closure`, `unknown`), and the
+  expected multiset must contain all three. Add a **third recorded mutation** —
+  omit rows by annotation class — which must redden. That is the mutation whose
+  greenness would mean option 3 had become option 2, so it is the one the
+  Amendment's closing comment is actually promising the reporter.
+
+* **[I5] Non-blocking — the terminator gloss, coded literally, reproduces
+  `cffi~`.** The regex is right and I could not break it ([Steelman]). The
+  sentence around it is not: *"terminating at the first `[`, `(`, `;`,
+  whitespace, or comparison operator."* `~=` is PEP 440's compatible-release
+  operator, not a comparison operator, and `~` is in none of the listed
+  terminators. Coded as an enumeration —
+  `re.split(r'[<>=!;\[\( ]', req)[0]` — that gloss yields `cffi~` and `mdurl~`:
+  it *is* the reporter's bug, and it is the only bug the paragraph exists to
+  prevent. All 19 grammar/naive disagreements in this environment are `~=`
+  strings.
+
+  **Satisfier.** State the grammar as positive-match-only — the identifier is
+  whatever the anchored pattern matches, and it terminates at the first character
+  outside its class — and either delete the terminator list or make it
+  illustrative rather than definitional.
+
+* **[I6] Non-blocking — "not installed" is not distinguished from "metadata
+  unreadable", and under the current policy it is the dominant case.** The spec
+  has one disposition for both: *"A distribution whose metadata cannot be read
+  contributes `unknown`, and every distribution reachable **only** through it is
+  `unknown`."* But a requirement name that simply isn't installed
+  (`PackageNotFoundError`) is the *expected* outcome for a marker-gated or
+  extras-gated edge, not a degradation — and it is the majority of the walk:
+  **202 of 262 visited nodes from `scikit-learn`, 414 of 533 from `whisperx`.**
+  An implementer reading the disposition literally propagates `unknown` through
+  most of the graph.
+
+  It is inert today only because an uninstalled distribution never appears in the
+  leg's report, so its `unknown` is never printed — but that reasoning is
+  nowhere in the spec, and "contributes `unknown`" does not say whether the
+  contribution is per-node or reaches the whole closure. **Satisfier:** name
+  `PackageNotFoundError` as its own disposition — *not installed, therefore not
+  classifiable and never reported, distinct from a degradation* — and reserve the
+  `unknown`-propagation rule for an installed distribution whose metadata is
+  unreadable. Largely dissolves if [I1] is taken.
+
+* **[I7] Non-blocking — the `python_package` token is a repo-relative *path*, and
+  the path-to-distribution mapping is unspecified.** The authority is "the
+  distribution that provides the top-level package named by the `python_package`
+  token", but the token is a directory path validated as one:
+  `validate_python_package` (`run_security_audit.py:209-242`) refuses `.`,
+  absolute paths and `..`, and **returns a resolved `Path`**. Its own tests use
+  `src/mypkg` (`test_security_stack.py:919-923`), so the top-level package name
+  is the *basename*, not the token.
+
+  Three unstated steps: take the basename; map import-package name → distribution
+  (`importlib.metadata.packages_distributions()`, available at Cairn's declared
+  `>=3.11` floor — verified present here); and handle a multi-valued result. That
+  mapping is not the identity — in this environment `yaml -> ['PyYAML']` — and it
+  can return duplicates or several distributions (`PIL -> ['pillow', 'pillow']`).
+  Under C1's own bar ("an implementer cannot produce the same annotation from
+  this contract") this is the same defect at smaller scale. **Satisfier:** name
+  the basename step, name `packages_distributions()`, and give the multi-valued
+  disposition — union the closures, or `unknown`.
+
+  Worth stating plainly alongside it: the root resolves only if the adopter's
+  project is **installed** in the audited environment. A scientific library run
+  from its source tree without `pip install -e .` has no distribution, so the
+  closure is empty and everything annotates `unknown`. The spec's disposition for
+  that is correct and honest; what is missing is that it is a *likely* case for
+  Cairn's stated audience, not an exotic one — which is [I8].
+
+* **[I8] Non-blocking — Revision 2's self-containment claim drops the axis's only
+  tripwire, and the tripwire the new policy actually needs is nowhere.** Revision
+  2 declares "this section plus the header is the whole operative contract."
+  `## Signals the change is wrong` is neither `## Proposal` nor `## Amendment`,
+  so it is not in the withdrawal ledger — but the self-containment sentence
+  excludes it, and with it: *"**`unknown` becomes the common case.** If the
+  closure walk fails often enough that most findings annotate `unknown`, the axis
+  is noise and should be removed ... Threshold worth measuring in the plan."*
+
+  That signal is more load-bearing after Revision 2, not less: the spec adds
+  root-not-found, cap-exceeded and unreadable-metadata paths that all land on
+  `unknown`, and [I7] notes the root-not-found case is plausible for this
+  audience.
+
+  And the over-inclusive policy needs its **inverse**, which appears nowhere: if
+  most reported distributions annotate `in-closure`, the axis is equally noise —
+  it just fails silently and confidently instead of honestly. By [I1] that is the
+  *more likely* degenerate outcome. **Satisfier:** carry both tripwires into
+  Revision 3 explicitly, with the threshold the plan must measure, so the axis
+  has a stated condition for its own removal in both directions.
+
+* **[I9] Non-blocking — the expected multiset's independence needs one more
+  clause to hold.** "Written literally in the fixture ... not computed by the
+  function under test" is the right instinct and is not yet sufficient, for two
+  reasons.
+
+  First, nothing in the spec forbids the customary golden-file workflow — run the
+  code, paste the output, call it expected — which is how a literal fixture
+  drifts into being generated by the thing it judges, and it leaves no trace in
+  the file.
+
+  Second, the spec calls for the expected **normalized** `(distribution, count)`
+  multiset. If the test applies the production normalizer to the expected side
+  before comparing, the normalizer is on both sides of the equality and is no
+  longer under test — which would silently void the `Pillow`/`pillow` fixture
+  that exists specifically to exercise it. **Satisfier:** two sentences — the
+  expected multiset is written in its **final normalized form** by hand and **no
+  production transform is applied to it**; and the fixture carries a comment
+  stating it was derived from the raw JSON by hand, so a later regeneration is
+  visible in review rather than invisible in a diff.
+
+### Coverage
+
+**Covered** — the six closure-spec questions and the two oracle questions this
+pass was scoped to.
+
+1. **Stdlib-only constraint, verified and correctly applied** — import block
+   (`run_security_audit.py:64-79`), `bootstrap/DEPENDENCY_BUDGET.md` Exception 1
+   (ships to the adopter's `scripts/`), no `packaging` exception in the budget.
+   Clears; see the steelman. The constraint's *scope* is where [I1] lands.
+2. **Marker/extras policy, measured rather than argued** — three closure walks
+   over 147 real distributions against a `packaging` ground truth, 9 roots.
+   [I1].
+3. **Grammar, executed** — 2221 real `Distribution.requires` strings; 0
+   no-matches, 0 malformed tokens; the `cffi~`/`mdurl~` regression reproduced and
+   confirmed fixed. Grammar clears; the gloss is [I5].
+4. **Failure paths** — root-not-found, unreadable metadata, caps, ungrammatical
+   token and cycles are all present and all land on `unknown`; none
+   under-includes silently. The gaps are a missing *not-installed* disposition
+   ([I6]), unset cap values in tension with the walk's measured node count
+   ([I1]), and the dropped tripwire ([I8]).
+5. **Authority** — `importlib.metadata` over `pyproject.toml` is right for the
+   stated reason. The token-to-distribution resolution is [I7].
+6. **Adversarial case against the new oracle** — constructed and confirmed
+   green: annotation-class-conditional row omission ([I3]); plus the
+   `coverage.names` regression ([I2]).
+7. **Expected-multiset independence** — [I9].
+
+**Not covered / low confidence** —
+
+* **Same-type reviewer, and a narrow scope.** No cross-type independence, and by
+  instruction I did not re-read D1, D1b, D2b, the consumer taxonomy or the
+  issue-closure contract. No `Plan readiness` may be recorded here.
+* **My measurements are on Cairn's own conda environment** (147 distributions,
+  Python 3.12.9), **not the adopter's** (299). The *ratios* are what I claim; the
+  absolute counts do not transfer, and I did not attempt to reconstruct their
+  93/299 closure or their 21 vulnerable packages. Whether an extras-inclusive
+  closure would have captured more than 2 of their 21 is inference from the
+  ratios, not measurement.
+* **I did not run the test suite** — no implementation exists to test. Every
+  claim about `run_security_audit.py`'s behaviour is source reading plus the
+  independent closure/grammar scripts I wrote against live metadata.
+* **The cap values.** I established that the over-inclusive walk visits 262–533
+  nodes here and that this is in tension with a fail-closed cap; I did not
+  propose numbers, which is the author's call and depends on [I1]'s resolution.
+* **Whether `Coverage` should carry the new `(name, count)` retention at all**,
+  versus a parallel structure — a design question [I2] touches but does not
+  settle.
+
+### Second-round recommendation
+
+**Yes, and it should be External Security.** [I1] changes the closure algorithm's
+output, not its wording, and it does so on measurement rather than argument — a
+revision that adopts it produces a materially different annotation and is a new
+contract. [I2] and [I3] are the third and fourth holes found in an invariant that
+has now been re-specified twice; that pattern is itself the argument for a
+different-agent-type read rather than a third same-type one. The next pass should
+re-run the closure comparison against the chosen policy, and execute the three
+mutations — including the annotation-class one — rather than confirm the fields
+are named.
+
+**Disposition: blocking.** Three blocking findings ([I1]–[I3]); status moved to
+`revising`.
