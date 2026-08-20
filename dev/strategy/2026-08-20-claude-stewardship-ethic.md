@@ -174,18 +174,57 @@ document answers is **who fixes one when it rots.** A docs-first stewardship
 licence is the narrowest defensible version of this idea, and probably where a
 pilot belongs.
 
-### 8. Cairn ships five extensibility slots, and every one adds obligation
+### 8. The slot system ratchets — tightening is upgrade-durable, loosening is not
 
-`templates/core/dev/proposals/_template.md` carries `triage-extra-triggers`,
-`assurance-path-triggers`, `documentation-tier-home`, `tests-tier-home`, and
-`examples-smoke-home`. `docs/solo-legacy-recipe.md` teaches an adopter to fill
-the first — with an *additional* proposal trigger.
+Cairn ships **26 slot markers across its core and optional templates** (24
+unique names) plus 12 phase-0 intake slots, `as_of` 2026-08-20. Most are
+directionally neutral: they are either *descriptive* (`project-overview`,
+`team-roster`, `next-start`, the phase-0 maps) or *routing* —
+`documentation-tier-home`, `tests-tier-home`, `examples-smoke-home`,
+`verification-commands` name where a project's docs, tests, and commands live
+without adding or removing an obligation.
 
-**There is no slot for routing work out of the heavy path.** An adopter can
-tighten their triage through a supported, documented seam, and can loosen it
-only by editing prose Cairn shipped them. That asymmetry is a small, concrete,
-checkable instance of gap (17) — and unlike the rest of this note, it could be
-fixed cheaply without any new doctrine at all.
+**But every slot whose prompt text scripts a direction points the same way:**
+
+* `triage-extra-triggers` — "Fill with your project's extra *'open a proposal
+  when…'* bullets."
+* `assurance-path-triggers` — "Adopter-specific high-assurance triggers *beyond
+  the mandatory list above*."
+* `tests-tier-home` — "*unknown or uncertain scope falls back to the full
+  suite*."
+* `verification-commands` — bounded mode "*refuses*"; "*Uncertainty resolves to
+  `full`*."
+* `project-conventions` — "the *high-risk surfaces*, and the operational
+  pitfalls."
+
+There is no `triage-exemptions`, no just-commit-widening seam, nowhere an
+adopter is invited to record *where their project's ceremony is
+disproportionate*. Four of these also carry "**An unfilled slot is a review
+finding**", so considering what to *add* is compulsory while considering what to
+drop is prompted nowhere.
+
+**The teeth are in the upgrade contract, and they are what make this structural
+rather than rhetorical.** `bootstrap/UPGRADE.md`: "**Slots are adopter-owned.**
+Content between `cairn:slot NAME` and `cairn:end NAME` is yours… the surrounding
+doctrine merges, your slot body is preserved verbatim."
+
+So an adopter's *tightening*, written into a slot, survives every upgrade
+untouched. Their *loosening* has nowhere to live but the shipped prose around
+the slots — precisely the text the merge reconciles from upstream. The one
+loosening device Cairn does ship, the escape hatch, sits in unslotted prose
+carrying a "*Sync note:* this gloss is a duplicate of `doctrine/proposals.md`'s
+escape-hatch paragraph": upstream-owned by construction, so an adopter cannot
+safely extend it in place.
+
+**Across successive upgrades, an adopter's apparatus can therefore only ratchet
+heavier.** That is gap (17) with a mechanism behind it rather than a
+disposition, and it quietly contradicts the adoption promise the guide star
+makes — *keep the apparatus only as heavy as your codebase and team earn* —
+because "as heavy as you earn" presupposes the ability to reduce, and reduction
+is the perishable half.
+
+This is the note's most checkable claim and its cheapest fix: a slot is a
+comment marker, and adding one costs no doctrine at all.
 
 ## Literature — a candidate Anchor 18
 
@@ -239,9 +278,9 @@ anchor index is explicitly append-only to allow exactly this. Cost: a design
 center is a large claim, and this one currently rests on unrecorded observation.
 
 **O4 — Ship it adopter-facing.** A stewardship section in
-`docs/solo-legacy-recipe.md`, and/or a sixth template slot letting an adopter
-*widen* the just-commit path the way `triage-extra-triggers` lets them narrow it
-(Finding 8). This is the only option that reaches the messy trees the felt gap
+`docs/solo-legacy-recipe.md`, and/or a **widening slot** letting an adopter
+record where ceremony is disproportionate, the way `triage-extra-triggers` lets
+them record where it is insufficient (Finding 8). This is the only option that reaches the messy trees the felt gap
 is actually about; O2 and O3 only set direction.
 
 **Sequencing.** O2/O3 and O4 are complements, not rivals — the guide star sets
@@ -295,8 +334,10 @@ cleanups, because the half people remember is the exhortation and not the fence.
    the other way. If the deviation rule stays silent, it wins by default and any
    new doctrine is inert. **This must be settled explicitly, in both files, or
    O2 and O4 will not change behaviour** (Finding 1).
-5. **Is a sixth template slot the right mechanism for Finding 8**, or does the
-   asymmetry want fixing in the shipped triage prose instead?
+5. **Is a widening slot the right mechanism for Finding 8**, or does the ratchet
+   want fixing in the shipped escape-hatch prose instead — which would make the
+   loosening upstream-owned, and therefore uniform across adopters rather than
+   per-project?
 
 ## Fold-up note
 
