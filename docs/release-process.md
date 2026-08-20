@@ -75,7 +75,7 @@ These are the mechanical gates; a sweep is judgement on top of them, not a
 substitute for them.
 
 ```bash
-python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
+CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
 python scripts/quality_gate.py --sub neutrality --sub redundancy
 python scripts/check_cairn.py
 ```

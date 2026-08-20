@@ -258,3 +258,61 @@ def test_the_exemption_tokens_do_not_leak_into_these_tests(tmp_path) -> None:
                 os.environ.pop(key, None)
             else:
                 os.environ[key] = value
+
+
+# --------------------------------------------------------------------------
+# Evidence precedence beyond a collection error
+
+
+def test_a_pending_session_stop_is_not_replaced_by_the_guard(tmp_path) -> None:
+    """``testsfailed`` alone is not proof that collection went cleanly.
+
+    pytest can carry a pending stop disposition with ``testsfailed`` still at
+    zero. Measured before the guard consulted it: a collection modifier setting
+    ``session.shouldstop`` produced exit 2 at forty files and had it replaced
+    by the guard's exit 4 at forty-one -- the guard destroying a failure class
+    that already existed.
+
+    Directional: the same tree without the pending stop must still refuse, so
+    a guard that simply stopped firing would fail this.
+    """
+    stopper = (
+        "def pytest_collection_modifyitems(config, items):\n"
+        "    import os as _os\n"
+        "    if _os.environ.get('PROBE_SHOULDSTOP') == '1' and items:\n"
+        "        items[0].session.shouldstop = 'STOP_STATE_CANARY'\n"
+    )
+    root = _tree(tmp_path, THRESHOLD + 5, extra_conftest=stopper)
+    stopped = _run(root, env_overrides={"PROBE_SHOULDSTOP": "1"})
+    assert stopped.returncode != 4, (
+        "a pending session stop was replaced by the guard's exit:\n"
+        + stopped.stdout + stopped.stderr)
+    assert "Refusing a broad run" not in stopped.stdout + stopped.stderr
+    assert _refused(_run(root)), "the control without the stop must still refuse"
+
+
+def test_a_competing_collection_finish_abort_survives_the_guard(
+        tmp_path) -> None:
+    """The guard is a hook *wrapper*, so every competing
+    ``pytest_collection_finish`` runs to completion before it decides.
+
+    A plain hook cannot achieve this -- it competes for ordering, so a
+    competing implementation that aborts the session either runs after the
+    guard and never executes, or runs before it and is overwritten. Measured
+    before the wrapper existed: a competing ``trylast`` hook calling
+    ``pytest.exit(..., returncode=7)`` never ran and its diagnostic vanished
+    behind exit 4.
+
+    Asserting the diagnostic survives, not only the exit code: losing the
+    message is the half a reader actually needs.
+    """
+    aborter = (
+        "@pytest.hookimpl(trylast=True)\n"
+        "def pytest_collection_finish(session):\n"
+        "    pytest.exit('COMPETING_ABORT_CANARY', returncode=7)\n"
+    )
+    root = _tree(tmp_path, THRESHOLD + 5, extra_conftest=aborter)
+    proc = _run(root)
+    assert proc.returncode == 7, proc.stdout + proc.stderr
+    assert "COMPETING_ABORT_CANARY" in proc.stdout + proc.stderr
+    assert "Refusing a broad run" not in proc.stdout + proc.stderr

@@ -1377,3 +1377,48 @@ grandchild test, Windows, or third-party pytest plugins beyond synthetic
 ordering probes. I did not review the three unrelated commits interleaved
 between the two implementation commits, except where their current-tree
 effects made the repository-wide neutrality command non-clean.
+
+## Response to security review -- Claude Opus 5 (Implementation) -- 2026-08-20
+
+**Model**: Claude Opus 5
+
+Both blocking findings accepted and fixed in code and documentation. The first
+was a real defect in the landed guard, reproduced by the reviewer with probes
+against the shipped bytes and re-reproduced here before and after the fix.
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| FSI-SR1 (BLOCKING) — a later collection stop can be replaced by the guard's exit 4 | ACCEPTED, fixed | `bootstrap/tests/conftest.py`: the hook is now a `@pytest.hookimpl(wrapper=True)`, so every competing `pytest_collection_finish` runs to completion before the guard decides, and the guard is reached only on the path where all of them returned normally. The refusal predicate now consults `session.shouldstop` and `session.shouldfail` alongside `testsfailed`. Two directional regressions in `test_broad_run_guard.py`. |
+| FSI-SR2 (BLOCKING) — three live instructions invoke a command guaranteed to refuse | ACCEPTED, fixed | `docs/release-process.md`, `bootstrap/AST_BASELINE_RUNBOOK.md` and `AGENTS.md` each carry the override token on the instruction the guard would refuse. |
+
+**On FSI-SR1, the part worth keeping.** The original hook consulted one field
+and shipped with a test that could not go red for this class. `testsfailed`
+answers "has anything failed *yet*", not "did collection finish cleanly" —
+pytest can carry a pending stop with that counter still at zero. Both shapes
+were measured against the landed code before the fix (a modifier setting
+`shouldstop`: exit 2 preserved at forty files, replaced by exit 4 at
+forty-one; a competing `trylast` hook calling `pytest.exit(returncode=7)`:
+never ran, its diagnostic gone) and again after (exit 2 preserved; exit 7 and
+`COMPETING_ABORT_CANARY` both preserved, guard silent). The wrapper is the
+structural fix: ordering cannot be won by competing for it, so the guard stops
+competing and goes last by construction.
+
+**On FSI-SR2, and the classification the reviewer's count implies.** Eight
+sites in the tree invoke the bare command. Three are **instructions** telling a
+reader to run it — those are the three fixed. Five are **descriptions** of what
+triggers the suite (`bootstrap/SAFETY.md` ×2, `bootstrap/DEPENDENCY_BUDGET.md`
+×2, and `AGENTS.md`'s canonical-pair sentence, which the Chunk B sentence
+directly qualifies two lines later). A description of what a person types is
+not made false by the person now needing a token; rewriting those would be
+noise. The three that direct action were the true finding.
+
+**Scope note.** Editing three documents outside the accepted Touches list is a
+widening. It is taken as necessary repair of instructions this plan's own
+change falsified — the same class as rows A4/A5, which carry an explicit
+allowance — and is recorded here rather than assumed. The Maintainer directed
+the fix after being shown the alternative of a recorded risk acceptance:
+
+> "yes, please!"
+
+**Status**: `ready-to-implement` retained; the guard's own chunk is landed and
+this Response answers the review of it. The reviewer's clearing round is owed.

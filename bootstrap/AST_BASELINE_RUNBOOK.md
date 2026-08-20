@@ -123,7 +123,8 @@ Apply by dropping `--dry-run`. Then:
 ```
 python bootstrap/tests/_ast_attest.py verify \
   bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py
-PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests -q
+PYTHONDONTWRITEBYTECODE=1 CAIRN_FULL_SUITE=1 \
+  python -m pytest bootstrap/tests -q
 ```
 
 `verify` must end `AST attestation OK — N baselined symbol(s) accounted for,

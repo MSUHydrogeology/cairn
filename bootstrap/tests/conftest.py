@@ -46,6 +46,8 @@ import os
 import random
 import sys
 
+import pytest
+
 #: The release-mode token and its **one** recognized value.  Duplicated as
 #: literals here rather than imported from ``bootstrap.security_check``: this
 #: module is loaded by pytest as a plugin before ``sys.path`` is guaranteed to
@@ -153,22 +155,50 @@ def _collected_file_span(session) -> int:
     return len(files)
 
 
+@pytest.hookimpl(wrapper=True)
 def pytest_collection_finish(session):
     """Refuse a broad run nobody asked for.
 
-    Runs after collection has been performed *and modified*, which is why it is
-    this hook and not ``pytest_collection_modifyitems(trylast=True)``:
-    ``trylast`` is a priority among equal-priority implementations, not a
+    Runs at collection-finish, not in ``pytest_collection_modifyitems``:
+    ``trylast`` there is a priority among equal-priority implementations, not a
     guarantee of last place, so a competing plugin can leave the guard reading
     a pre-filter item list.
 
-    The refusal is ``pytest.UsageError`` (exit 4) and fires before any test
-    runs.  It is conditioned on ``session.testsfailed == 0`` so that a session
-    that already has a collection error keeps its own, stronger exit code: a
-    cost prompt must never overwrite real failure evidence, and exit 2 is what
-    a machine reads to know collection broke.
+    **A wrapper, and that is the load-bearing part.** The ``yield`` lets every
+    other ``pytest_collection_finish`` implementation run to completion first,
+    and the guard is evaluated only on the path where all of them returned
+    normally.  A plain hook cannot do this: it competes for ordering, so a
+    competing implementation that aborts the session -- ``pytest.exit(...,
+    returncode=7)``, say -- either runs after this one and never executes, or
+    runs before it and is then overwritten.  Measured before this wrapper
+    existed: a competing aborting hook at ``trylast`` never ran at all and its
+    diagnostic vanished behind exit 4.
+
+    A cost prompt must never overwrite stronger evidence.  The run is over
+    either way, so the prompt buys nothing -- and the exit code is the part a
+    machine reads.
+    """
+    result = yield
+    _refuse_broad_run_if_warranted(session)
+    return result
+
+
+def _refuse_broad_run_if_warranted(session) -> None:
+    """The guard proper, reached only after every competing hook succeeded.
+
+    ``testsfailed`` alone is **not** sufficient evidence that collection went
+    cleanly, which is the defect this function exists to close.  pytest carries
+    a pending stop or fail disposition on the session that leaves
+    ``testsfailed`` at zero: measured, a collection modifier setting
+    ``session.shouldstop`` produced exit 2 at forty files and had it replaced
+    by the guard's exit 4 at forty-one.  All three are consulted, and any of
+    them means real evidence already exists and this guard stays silent.
     """
     if session.testsfailed:
+        return
+    if getattr(session, "shouldstop", False):
+        return
+    if getattr(session, "shouldfail", False):
         return
     if _full_suite_override():
         return
@@ -179,8 +209,6 @@ def pytest_collection_finish(session):
     span = _collected_file_span(session)
     if span <= BROAD_RUN_FILE_THRESHOLD:
         return
-    import pytest
-
     raise pytest.UsageError(
         f"Refusing a broad run: this invocation collected {len(session.items)} "
         f"test(s) across {span} files (limit {BROAD_RUN_FILE_THRESHOLD}).\n"

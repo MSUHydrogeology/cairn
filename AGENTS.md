@@ -487,8 +487,9 @@ library-only**: adopters take on **zero runtime dependencies**. Dev/test
 tooling is dev-only and never in the adopter path (`vermin` for the
 Python-floor check; `pytest` for the suite). See
 `bootstrap/DEPENDENCY_BUDGET.md` and `doctrine/runtime-contract.md`
-before adding any import. Run the suite with `python -m pytest
-bootstrap/tests`.
+before adding any import. Run the suite with `CAIRN_FULL_SUITE=1 python -m
+pytest bootstrap/tests` — the bare form is refused by the broad-run guard in
+`bootstrap/tests/conftest.py`; see *Verification boundaries* above.
 
 **A fresh clone has no gate anchor, and the gate will refuse.** `git
 clone` fetches `refs/heads/*` and `refs/tags/*`; the differential-oracle
