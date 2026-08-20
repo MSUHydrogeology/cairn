@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -1493,3 +1493,336 @@ Five gates, all required:
   every commitment from the opened proposal survives. **This declared expansion
   invalidates any inherited plan-readiness basis** — consistent with the
   External pass having withheld `READY`.
+
+## Review -- Claude (Internal, fresh-context subagent) -- 2026-08-20 (round 3, narrow: D4)
+
+**Tier**: Internal (fresh-context same-type read — the Internal floor)
+**Findings**: raised
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: 37d89a047f0dda664b2a94a7fe0f8185c0b899a5
+Target: **Revision 2, `### D4` only, and D4's consequences elsewhere in
+Revision 2.** This is a **narrow pass**, not a whole-contract read. D1, D2, D3
+and the surviving parts of S1–S5 were covered by the round-1 Internal read
+(R1–R10) and the round-2 Codex External Security read (P1–P3); I did not
+re-derive them. D4 is scope added *after* the External pass, so no reviewer has
+read it — that is the whole reason for this round.
+Prior findings: R1–R10 (Internal, round 1); P1–P3 (Codex External Security,
+round 2). All accepted and folded into Revision 2.
+Assurance path: high-assurance
+
+**No `Plan readiness` is recorded, and none may be**: an Internal pass cannot
+supply it, and Revision 2's own declared scope expansion invalidates any
+inherited basis.
+
+### Review sweep
+
+I read `### D4` and the four Revision 2 sections it reaches (`Invariants`,
+`Security preflight`, `Evidence`, `The issue-closure contract`, `Withdrawn /
+superseded commitments`). I opened `_leg_argv`
+(`templates/modules/team-gated/run_portable_security_sweeps.py:1602-1630`), its
+three call sites (`:1421`, `:1755`, `:1820`), `classify_leg` (`:988-1024`),
+`read_report` (`:845-915`), `_diagnostic` (`:918-922`), the output contract
+(`:804-831`), `child_env` (`:541-571`), `REQUIRED_LEG_OPTIONS` (`:1179-1183`),
+the matrix subcommand's end-to-end block (`:1419-1447`), `fake_tool`
+(`bootstrap/tests/test_portable_security_sweeps.py:120-186`) and the pinned
+assertion (`:1186-1195`). Every citation in D4 resolves and is accurate; the
+twin is byte-identical as of this commit (`cmp`, clean).
+
+I exercised the **real Homebrew gitleaks 8.30.1 on darwin/arm64** throughout,
+against purpose-built repositories in a scratch tree: a clean one, one carrying
+a live `ghp_` token, and a non-repository directory. Where I report a negative
+result below I first confirmed the same measurement returns a positive on a
+case known to be present — the argv sweep is anchored by the `--timeout` defect
+itself reproducing, and the "no secret material on stderr" result is anchored
+by a run that did find and report a real secret.
+
+### Steelman
+
+D4 is a good catch and the proposal handles it with the right instincts. It
+does not merely fix the flag: it names the reason the defect was invisible (a
+fake that accepts every argv, and an assertion whose *purpose* was the deadline
+arithmetic with the wire format riding along), and item 3 correctly identifies
+that the instrument, not the flag, is what matters for the next defect of this
+kind. The ordering constraint is real, invariant (v) is the right shape, the S2
+mutation ledger gains the one mutation Revision 1 had no instrument for, and
+the withdrawal of "D1 + D2 + D3 make the module runnable" is honest about what
+P1 cost the earlier contract. The scope expansion is declared, quoted, and
+paired with the correct consequence for plan-readiness inheritance.
+
+### Coverage — what I could not falsify
+
+**The argv fix is complete for 8.30.1, and I checked it exhaustively rather
+than trusting that `--timeout` was the only one.** I compared every element
+`_leg_argv` emits against `gitleaks dir --help` and `gitleaks git --help`, then
+ran both legs' exact argv end-to-end with only the `s` dropped:
+
+* current-tree (`dir`): scans, writes the report, exit `0` clean / `1` with a
+  planted `ghp_` token, `Match` and `Secret` both `REDACTED`.
+* history (`git`): scans 2 commits, writes the report, same dispositions.
+
+Specifics I challenged and found sound: `--follow-symlinks=false` is a pflag
+bool and accepts `=false`; `--redact=100` matches the declared
+`uint[=100]`; `--max-archive-depth=0` / `--max-decode-depth=0` are `int`;
+the subcommand split is right in both directions (`--follow-symlinks` is
+`dir`-only and `--log-opts` is `git`-only, and each is emitted only on its own
+leg — the real adapter rejects the swap); the target is a resolved absolute
+path in positional position, so it cannot be read as a flag. **`--timeout` was
+the only field-invalid element.** The author's stated worry — that they found
+one bad flag by accident of it being first — is discharged for this version and
+platform, which is the scope any single measurement can carry.
+
+**Gate 3's new predicate does exclude D4's failure, and I could not satisfy it
+while the module is broken.** Traced: invalid `--timeout` → exit `1`, no report
+→ `read_report` raises → current-tree `DEGRADED`, failing *two* conjuncts. With
+D1 unfixed, `choice.mode is None` and no leg runs at all, failing `mode ==
+"reduced"`. In the healthy reduced case the current-tree leg lands on
+`INCOMPLETE` (`:1017-1023`) when clean and `FINDINGS` when not, so both real
+outcomes are admitted and the predicate is satisfiable exactly when the leg
+genuinely ran. P2's repair holds. Two qualifications are in R4 below.
+
+### Findings
+
+Two blocking, five non-blocking.
+
+#### B1 (blocking) — item 2's condition spans the redaction-failure branch, which turns the diagnostic into a secret-bearing sink
+
+D4 item 2 scopes the new stderr preservation to *"exit 1 carries no valid
+report"*. Read against the code, that condition is the **whole** `Degraded`
+surface of `read_report` (`:845-915`), because `classify_leg` catches it in one
+place (`:1006-1007`). That surface includes:
+
+```
+adapter result {index} carries an unredacted {field!r}; the report is not
+trustworthy and no finding is relayed          (:902-907)
+```
+
+That branch fires precisely when the adapter **ignored `--redact=100`**. And
+gitleaks' own help scopes that flag to *"redact secrets from logs and stdout"*
+— one flag governs both surfaces, so an adapter that did not honour it in the
+report is the adapter that did not honour it in its logs either. Preserving its
+stderr into `LegOutcome.reason` carries it into `summarize()` (`:1087`) and
+from there into the summary JSON, the human report and the `--security-
+verification` child document — the sink the module's own comment calls *"the
+one failure mode in which this module would be strictly worse than not
+existing"* (`:809-812`), and the one `FORBIDDEN_RESULT_FIELDS` exists to close.
+
+This is not hypothetical for the case the module is built for: reduced mode
+exists to run an **unadmitted** binary, so "the adapter did not behave as
+measured" is its normal operating assumption, not an edge case.
+
+Revision 2's preflight does not catch this because **S4 asks the authority
+question and no S asks the sink question**. S4's *"No default, fallback or
+normalization added here grants authority"* is true of item 2 and beside the
+point: item 2 grants no authority, it opens an egress. S1 asks who supplied the
+bytes and answers for the version probe and the config screen, not for the
+adapter's stderr. The preflight needs a sentence that asks, of every newly
+relayed byte, *which sink does this reach*.
+
+Two additional notes on the same item, both smaller than the above but in it:
+
+* D4 cites the **constant** `_STDERR_DIAGNOSTIC_BYTES` (`:807`) as the existing
+  machinery. The existing machinery is the **function** `_diagnostic()`
+  (`:918-922`), which bounds *and* `_escape`s, and whose docstring states the
+  property that matters: *"No child stdout or stderr is ever relayed
+  verbatim."* Naming only the constant admits an implementation that slices 512
+  bytes and interpolates them raw. Name the function.
+* The plain usage-error case is clean on this point — I measured stderr for the
+  invalid `--timeout` and it carries the flag error plus a usage dump and no
+  candidate content beyond the runner-owned argv and the target path. It is the
+  *other* members of the condition set that are the problem.
+
+**How to resolve it.** Either narrow the condition so it reaches only "the
+adapter wrote no report at all" and explicitly excludes every branch that
+judged a report the adapter *did* write — or take B2's remedy, which dissolves
+this finding rather than fencing it.
+
+#### B2 (blocking) — D4's blast radius includes the admission ceremony, which is un-performable and misdiagnoses; Revision 2 names neither
+
+`_leg_argv` has **three** call sites, and D4 accounts for one. The third is
+`cmd_verify_version_support` (`:1421`) — the matrix subcommand that is **step 2
+of D3's own four-step admission ceremony**. Reproduced on this host against the
+unmodified tree:
+
+```
+$ python scripts/run_portable_security_sweeps.py \
+    --verify-version-support /opt/homebrew/Cellar/gitleaks/8.30.1/bin/gitleaks \
+    --confirm-executing-an-unadmitted-binary
+admit: false
+refusals: ["output-schema drift on the 'current-tree' leg:
+            the adapter wrote no report at '.../reports/current-tree.json'"]
+candidate_version: gitleaks version 8.30.1
+```
+
+Three consequences, none of them in Revision 2:
+
+1. **The guard written for exactly this is bypassed.** `:1434-1440` refuses
+   with *"the candidate did not accept the runner-owned argv for the {leg!r}
+   leg... a candidate that rejects a required option is not the tool this
+   contract was measured against"* — but it fires only on
+   `returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS)`, and gitleaks
+   signals an invalid flag **value** with exit `1`, which the runner has a
+   documented meaning for. So the ceremony refuses with the **wrong reason**,
+   sending the next investigator at the report schema instead of the argv. By
+   `AGENTS.md`'s own standard this is the silent-tool defect wearing a
+   confident face: the trigger exists, resolves, runs, and does not check the
+   property it names. `REQUIRED_LEG_OPTIONS` (`:1179-1183`) does not save it —
+   it is a **presence** check that never inspects form, and it omits
+   `--timeout` entirely.
+2. **Step 4 is therefore unreachable for every real gitleaks.** D3 says *"the
+   four-step ceremony is documented, not performed."* The stronger and true
+   statement is that it is **un-performable** until D4 lands: no candidate can
+   get past step 2, so nothing can ever enter `_ADMITTED_ARTIFACTS`, so full
+   mode and `0` are unreachable for a reason D3 does not give. D3's corrected
+   comment must not describe a ceremony that cannot currently run, and the
+   issue-closure comment (gate 4) owes the reporter this, since it is the real
+   answer underneath their gap-3 question. I confirmed the ledger
+   (`dev/measurement/gitleaks-version-support.md`) carries no admitted triple,
+   so nothing already recorded is invalidated — the exposure is forward-looking
+   only.
+3. **The evidence plan has no instrument for this path** — see R3.
+
+**The remedy I recommend, which also dissolves B1.** The root cause of both is
+that gitleaks overloads exit `1`. That is removable at the source. Measured on
+8.30.1, with `--exit-code 42` added to the leg argv:
+
+| condition | exit |
+|---|---|
+| leaks found (`dir` and `git`) | `42` |
+| invalid flag value (`--timeout=840s`) | `1` |
+| unwritable report path | `1` |
+| unloadable config | `1` |
+| unknown flag | `126` |
+
+Move `_EXIT_FINDINGS` off `1` and the invalid-argv case lands in the runner's
+**existing** branch at `:999-1003`, which already attaches `_diagnostic(stderr)`
+— bounded, escaped, and reached only on exit codes the runner has no meaning
+for. No new relay path, no new sink, `read_report`'s `Degraded` branches
+untouched, and `:1434` starts firing with its correct message. The diagnostic
+preservation item 2 wants becomes a consequence of existing code rather than a
+new one. Note that the unknown-flag class **already** gets its diagnostic
+preserved today at exit `126`; the runner loses it only for the invalid-value
+class, and only because of the overload.
+
+I record plainly that this is **a further argv element on top of already-added
+scope**, so it needs the Maintainer's allowance rather than a reviewer's say-so,
+and it must be declared against the admitted set (`--exit-code` is a gitleaks 8
+global flag; an adapter lacking it fails closed at `126` → `DEGRADED` with its
+own reason, which is the right direction). If the Maintainer declines it, B1
+still has to be resolved by narrowing item 2's condition, and B2 by naming the
+`:1421` call site and the ceremony consequence.
+
+#### R1 (non-blocking) — the refusing fake pins one more string; a flag table would pin the class
+
+You asked the right question in item 3 and then answered it one level too low.
+A fake that *"rejects the field-invalid form"* rejects **this** field-invalid
+form. Argv-defect classes the real adapter rejects that such a fake would still
+wave through, all measured on 8.30.1:
+
+| defect | real adapter |
+|---|---|
+| `gitleaks git --follow-symlinks=false` (flag on the wrong subcommand) | `unknown flag`, exit `126` |
+| `gitleaks dir --log-opts ...` (same, other direction) | `unknown flag`, exit `126` |
+| `--redact=abc` | `ParseUint` error, exit `1` |
+| `--follow-symlinks=maybe` | `ParseBool` error, exit `1` |
+| `--max-decode-depth=0s` | `ParseInt` error, exit `1` |
+
+The structural version: give `fake_tool` a **per-subcommand flag table** —
+name → kind (`bool` / `int` / `uint` / `string` / positional) — and have it exit
+non-zero with usage-shaped stderr for any flag absent from the table, any flag
+on the wrong subcommand, and any value that fails its declared kind. That
+catches all five rows above and every future member of the class, and it
+subsumes `REQUIRED_LEG_OPTIONS`, which only checks presence. Record the table's
+provenance — a dated `gitleaks dir --help` / `gitleaks git --help` capture — so
+a later reader knows what it was derived from and can refresh it; a table with
+no stated origin decays into the same unchecked pin it replaced.
+
+One sequencing note: land the fake **before** the `_leg_argv` fix, so the suite
+is observed **red** and the instrument is proven able to fail. Added after the
+fix, it can only ever be observed green, which is the same
+confirm-the-instrument problem `AGENTS.md` names.
+
+#### R2 (non-blocking) — the ordering is right; its stated rationale is false
+
+*"D4 is only observable once D1 lets a run reach the leg"* is not true, and B2
+is the counter-example: `--verify-version-support` reaches `_leg_argv` through
+`probe_version` alone, never touching `parse_version` or `select_mode`, and I
+observed D4 through it on an unmodified tree. Keep **D1 → D2 → D4 → D3** — D2
+earns its place because the config screen refuses before any leg, so a broken
+screen masks the leg on any real tree, which is what the smoke's "fresh
+repository" instruction is compensating for. But replace the rationale, and say
+instead that D4 is independently observable via the matrix subcommand. The false
+premise is worth correcting precisely because it is what concealed B2: believing
+D4 unreachable without D1 is what left the ceremony path unexamined.
+
+#### R3 (non-blocking) — add the ceremony path to the evidence plan
+
+Revision 2's only real-adapter instrument is
+`run_portable_security_sweeps.py --target . --json`. Given B2, add the matrix
+invocation as a second one, with its expected post-fix result stated: it must
+get **past** `end_to_end` rather than refusing on "output-schema drift". State
+also what a pass does *not* mean — the emitted record is step 2 of four, so
+`admit: false` on other grounds is the correct and expected outcome, and a
+record is not an admission. Without this, D4's ceremony half ships unverified,
+and the very sentence D3 is correcting (*"emitting one admits nothing"*) is the
+one most likely to be misread from a green matrix run.
+
+#### R4 (non-blocking) — two qualifications on gate 3
+
+The predicate holds (see Coverage). Two edges:
+
+* *"recorded evidence that a real adapter invocation occurred"* is **not**
+  machine-checkable the way the other three conjuncts are — it is a human
+  judgement over `adapter_facts`. Either name the fields that satisfy it
+  (`adapter_resolved`, `adapter_digest`, `adapter_version_output`), or describe
+  the predicate as three machine-checked conjuncts plus one attested fact. As
+  written, "machine-checkable predicate" overclaims by one quarter, and the
+  overclaimed quarter is the one that distinguishes a real adapter from
+  `fake_tool`.
+* A repository with **no commits** yields a `NOT_APPLICABLE` history leg
+  (`:1794-1803`), which satisfies "no leg with status `DEGRADED`" without the
+  history question ever being asked. Gate 3 names only the current-tree leg, so
+  this is not a hole in the gate — but the smoke's *"fresh repository"*
+  instruction should say **with at least one commit**, or the history leg goes
+  silently unexercised in the one run that is supposed to prove the legs work.
+
+#### R5 (non-blocking) — the withdrawal ledger is not self-contained, and one clause in it is inaccurate
+
+Revision 2 declares itself self-contained and restates S1–S5 in full for exactly
+that reason (P3: a complete current contract that points backward is not
+complete). The ledger then does the thing P3 objected to, by omission: it lists
+only what changed since Revision 1, so Revision 1's seven withdrawals against
+the opened Proposal are visible only by reading a superseded section.
+
+Concretely, the `Scope delta` bullet says *"every commitment from the opened
+proposal survives."* That is false on the record in this same file. Revision 1
+withdrew *"Add exactly two patterns... as separate patterns, not as new
+alternatives inside the existing groups"*, and withdrew *"The module doc gains a
+short section..."* **entirely**. The operative half of the declaration is
+correct and is the right test under `AGENTS.md` — no accepted **outcome** is
+removed, mechanisms were replaced by mechanisms delivering the same outcome —
+but "commitment" and "outcome" are not the same word, and the loose clause
+invites a Maintainer to skip the ledger it summarizes. Suggested replacement:
+
+> No accepted **outcome** is removed. Mechanism-level commitments withdrawn in
+> Revision 1 remain withdrawn and are enumerated there; nothing in Revision 2
+> withdraws an outcome.
+
+### Second-round recommendation
+
+**Blocking.** B1 and B2 both sit inside D4's own newly-added scope, and both
+are of the kind this proposal exists to fix — a control that looks like it
+covers a surface and does not. Neither is expensive to resolve, and the
+`--exit-code` remedy resolves both at once if the Maintainer allows the further
+expansion.
+
+What a Response should carry: a narrowed or restructured item 2 with the sink
+question answered explicitly in the preflight; the `:1421` call site and the
+ceremony consequence named in D4 and reflected in D3; a decision on
+`--exit-code` with the Maintainer's allowance quoted if taken; and the R1–R5
+corrections. The argv sweep in Coverage above is a positive result the author
+may cite rather than repeat.
+
+**No `Plan readiness` is recorded.** An Internal pass cannot supply it, and
+Revision 2's declared expansion invalidates any inherited basis in any case.
