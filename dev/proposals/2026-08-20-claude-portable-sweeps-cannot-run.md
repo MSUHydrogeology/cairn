@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -737,3 +737,327 @@ the one thing an Internal pass structurally cannot supply is a different set of
 failure modes against an S5 answer, and S5 is where this proposal is both least
 certain and most consequential. Deciding that is the Maintainer's call; the
 declared `required(Internal)` plan review runs regardless.
+
+## Response -- Claude (author) -- 2026-08-20
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+I re-derived every citation rather than taking the review's word for it. **All
+ten hold.** R1 in particular I reproduced directly: `branch.v1.2.remote` and
+`branch.release/2.0.remote` both fail `_INERT_LOCAL_PATTERNS` while
+`branch.main.remote` passes — so the negative is meaningful and the enumeration
+charge is correct.
+
+* **[R1] accept.** The two keys were instances; the class is *any subsection
+  containing a dot*, which `git checkout -b v1.2` produces. Revision 1 replaces
+  the enumeration with a structural fix and states the reasoning R1 asks for.
+* **[R2] accept.** S5 named four controls, three of which bound a different
+  surface, and omitted a capability the module's own doc states verbatim.
+  Rewritten to name it first, then map control to surface. The reviewer is right
+  that deferring this to the scheduled External Security Review is what the
+  template forbids — it is a design question asked while the design is movable.
+* **[R3] accept.** I asserted a documentation absence without reading
+  `portable-security-sweeps.md:96-99`, which already ships three of my four
+  items. Worse, "the exact two-step ceremony" would have contradicted the
+  recorded ceremony — which I re-read at `dev/measurement/gitleaks-version-support.md:26-38`
+  and which has **four** numbered steps including a security-lens review. Writing
+  my version into an adopter-facing doc would have silently dropped that review
+  from the adopter's picture. D3 is rewritten around the defect the reviewer
+  identified instead, which is real and cheaper.
+* **[R4] accept.** "No test can enforce this" was false; both nodes exist and I
+  confirmed them. The honest residual is narrower and Revision 1 states it.
+* **[R5] accept.** `fake_tool` emits the one shape gitleaks never emits from
+  `--version`. That fixture is the reason a green suite coexists with a dead
+  module, and adding a single new pin beside it would leave the rest of the file
+  blind. Revision 1 flips the default and keeps the bare form as an explicit
+  parametrization.
+* **[R6] accept.** The Amendment's own stated failure condition was absent from
+  its own gate list. Revision 1 adds the fifth gate, names its instrument, and
+  names who satisfies it — a real adapter is a host fact, so it cannot be an
+  implementing agent's obligation by default.
+* **[R7] accept with modification.** I accept that "weakens nothing over the
+  same key set" is falsifiable in one read of the loop. The modification: I
+  state *both* directions rather than only the cost, because the detection
+  improvement is the stronger half and the original text claimed neither.
+* **[R8] accept.** The source-of-truth direction was inverted —
+  `RUNNER_SRC` is the `templates/` copy. An implementer following my header
+  would have edited the twin first.
+* **[R9] accept.** Bounds are not content; `claim_check` passing on all three
+  is precisely the instrument note. Corrected to `275`, `741`, `86-102`.
+* **[R10] accept.** A 256 KB `reason` field is a limit, not a useful bound.
+  Cap-and-count is now the design rather than the recovery.
+
+**On the second-round recommendation.** The reviewer recommends the External
+read be spent on the revised contract *before* implementation, on the grounds
+that S5 is where the proposal is least certain. I agree and have not tried to
+argue the tier down: the Maintainer has already scheduled an External Security
+Review for this surface, and R2 is exactly the kind of question it should
+receive with a written answer in front of it rather than as an open question.
+
+## Revision 1
+
+**Complete current contract.** Supersedes the `## Proposal` section above and
+the `## Amendment`'s section 2 gate list. Self-contained: read this section and
+the header, not the history.
+
+### Scope
+
+Three defects in the `portable-security-sweeps` adapter runner, which is shipped
+at `templates/modules/team-gated/run_portable_security_sweeps.py` (**the
+source**) and mirrored byte-identically at
+`scripts/run_portable_security_sweeps.py` (**the twin**), guarded by
+`test_the_runner_twin_is_byte_identical_to_its_template_source`. Both copies
+change together; the template is edited first.
+
+**Out of scope, explicitly:** executable resolution and the revalidation points;
+the policy schema; `child_env`; the exit precedence; the admitted-artifact set's
+contents (no artifact is admitted by this change); any leg's argv.
+
+### D1 — extraction between probe and parse
+
+`probe_version` returns the adapter's first `--version` line; `parse_version`
+(`run_portable_security_sweeps.py:275`) accepts only an exact `X.Y.Z`. Gitleaks
+prints `gitleaks version 8.30.1` for `--version` and a bare `8.30.1` for the
+`version` subcommand, so `select_mode` never receives a parseable string and the
+run refuses at `result=5` on every host.
+
+Add one anchored, total extraction function between them, accepting exactly
+`gitleaks version <X.Y.Z>` or a bare `<X.Y.Z>` and returning `None` otherwise.
+**`parse_version` is not modified** — it remains the sole authority on what a
+version is, and `None` keeps meaning *unmeasured*.
+
+**The fixture is part of the fix, not of the plan.** `fake_tool`'s `--version`
+branch currently writes a bare `{version}`
+(`bootstrap/tests/test_portable_security_sweeps.py:154-159`) — the one shape
+gitleaks never emits from that flag. Its **default flips to
+`gitleaks version {version}`**, so every existing node in that file exercises
+the real-world shape; the bare form stays available as an explicit
+parametrization, because `gitleaks version` genuinely emits it. Without this,
+the suite stays blind everywhere except the new pin, which is the condition that
+let a dead module ship green.
+
+### D2 — a structural inert-key fence, not two more names
+
+**The enumeration was wrong, and the measurement shows it.**
+`_INERT_LOCAL_PATTERNS` matches the subsection with `[^.]+`, and Git stores
+subsections **verbatim** (only section and variable names are lowercased). So
+every branch whose name contains a dot refuses:
+
+```
+branch.main.remote          -> INERT
+branch.v1.2.remote          -> REFUSED
+branch.release/2.0.remote   -> REFUSED
+```
+
+`git checkout -b v1.2` reproduces it on any tree.
+
+**The fix, and the reasoning for it.** A Git config key is
+`section.subsection.variable`. What determines whether a key can reference a
+program is the **variable**, never the subsection — `branch.<anything>.remote`
+is a tracking string whatever `<anything>` is. `[^.]+` was therefore fencing the
+wrong component: it never bought a security property, it only made the pattern
+fail on legal names. The subsection class widens to a greedy `.+`, anchored, with
+the variable still drawn from a closed, named set:
+
+```
+\Aremote\..+\.(url|fetch|pushurl|mirror|tagopt|glab-resolved)\Z
+\Abranch\..+\.(remote|merge|rebase|vscode-merge-base)\Z
+```
+
+The screen stays **deny-by-default on the variable**, which is the component
+that carries the meaning. `.` does not match a newline, so a newline-bearing key
+still refuses — deliberate, and a test pins it.
+
+`glab-resolved` (GitLab's `glab`) and `vscode-merge-base` (VS Code) join the
+closed variable sets as named members, not as a widened family.
+
+**Accumulated refusal, with a stated cap.** The screen reports **every**
+non-inert key in one refusal rather than the first. The listing is capped at a
+fixed number of keys and reports how many were elided — cap-and-count is the
+design, not a recovery: `_SCREEN_MAX_BYTES = 256 * 1024`
+(`run_portable_security_sweeps.py:609`) bounds the *input*, and 256 KB of key
+names in a JSON `reason` field is not a usable report.
+
+**The containment check stays first-failure**, and the honest accounting of what
+that costs and buys — both directions:
+
+* *Cost.* Containment (`:790`) and inert-ness (`:796`) sit in the same per-pair
+  loop. Today the loop short-circuits at the first non-inert key, so later pairs
+  are never `resolve()`-d. After accumulation they are — strictly more symlink-
+  following resolution on candidate-controlled origin strings, bounded by
+  `_SCREEN_MAX_BYTES`.
+* *Benefit.* An injected origin sitting **behind** a non-inert key is today
+  masked by the earlier refusal. After accumulation it is detected and named.
+
+Disposition is unchanged in both cases: refuse before execution.
+
+### D3 — fix the misleading comment; do not restate the doc
+
+**Withdrawn: the claim that the module doc lacks this content.** It does not.
+`templates/modules/team-gated/portable-security-sweeps.md:96-99` already ships
+"Full mode — the only mode that can reach `0` — is unreachable without a digest
+match", the mode table at `:82-85` carries the dispositions, and the cadence
+bullet at `:162-175` carries the rest.
+
+**The actual adopter-facing defect is the shipped runner's own comment**, wrong
+twice:
+
+1. It points at `dev/measurement/gitleaks-version-support.md`
+   (`run_portable_security_sweeps.py:86-90`), which the `team-gated` module
+   **does not install** — verified: no `InstallSpec` names it. For an adopter
+   that path does not resolve at all.
+2. It says `8.30.1` "enters only when the admission subcommand emits a record"
+   (`:99-102`). That sentence produced the adopter's gap-3 conclusion. The
+   subcommand (`--verify-version-support`) emits an *evidence record*; emitting
+   one admits nothing.
+
+The comment is corrected to state what holds: the matrix subcommand produces
+evidence; admission is a reviewed source edit to the fenced block; **no
+automated path exists, by design**. Where it points an adopter, it points
+somewhere an adopter has.
+
+**The ceremony is four steps, not two.** `dev/measurement/gitleaks-version-support.md:26-38`
+records: Maintainer supplies a checksum-verified binary; `--verify-version-support`
+runs the matrix and emits a record; a **security-lens review** reads that
+evidence; only then does a reviewed source change add the key and digest.
+Anything carried into the module doc carries all four, or points at where they
+are written. Writing "two steps" would have dropped the security-lens review
+from the adopter's picture of a trust ceremony.
+
+**Why admission stays un-automated.** An automated writer that reads an evidence
+record and edits the admitted set is a path by which anything that can produce
+an evidence record can admit a binary. The manual step is the control.
+
+**No artifact is admitted by this change.** The sha256 in issue #4 arrived by
+the candidate channel; it may be recorded as a *reported observation with its
+source named* and may not enter `_ADMITTED_ARTIFACTS` except through the
+ceremony above.
+
+### Invariants, failure dispositions, public paths
+
+* **(i)** `parse_version` accepts only exact `X.Y.Z` — its existing tests,
+  unmodified.
+* **(ii)** No leg executes before the config screen returns — call order, plus a
+  test that a non-inert key refuses with no adapter invocation.
+* **(iii)** `_ADMITTED_ARTIFACTS` changes only by a reviewed source edit.
+  **Two nodes already enforce the operative halves**:
+  `test_verify_version_support_cannot_mutate_the_source_version_set`
+  (`bootstrap/tests/test_portable_security_sweeps.py:2135`) and
+  `test_every_full_mode_version_has_an_evidence_record_in_the_ledger`
+  (`:1977`), which parses the ledger independently of the set it judges. The
+  untestable residual is narrow and is stated as such: **that a human editing
+  the source did so with review**. The earlier "no test can enforce this" is
+  withdrawn — it was false, and a plan would have inherited it verbatim.
+* **(iv)** The twin stays byte-identical —
+  `test_the_runner_twin_is_byte_identical_to_its_template_source` (`:2300`).
+
+**Failure dispositions.** Extraction failure → `None` → INCOMPLETE (5), closed.
+Screen violation → refuse before execution, closed. Containment violation →
+refuse immediately, closed. Newline-bearing key → refuse, closed. No path added
+here grants authority.
+
+**Public paths → tests.** `probe_version`, the extractor, `parse_version`,
+`select_mode`, `screen_local_config`, and the twin guard — all through their
+real entry points in
+[`test_portable_security_sweeps.py`](../../bootstrap/tests/test_portable_security_sweeps.py).
+
+### Security preflight — S5, rewritten
+
+S1–S4 stand as written above, with one correction: the extractor consumes
+candidate-controlled bytes and is anchored and total.
+
+**S5 — the capability that still succeeds, named first.** A **parser or
+rule-engine defect in an unadmitted adapter binary, reached by hostile
+repository content, executing uncontained in the operator's own user context.**
+The module's shipped doc states the enabling condition verbatim
+(`portable-security-sweeps.md:194-196`): *"There is no process containment. A
+malicious adapter is not contained, and reduced mode in particular executes a
+binary whose behaviour has not received this module's matrix."* D1 is what makes
+that reachable, because today no leg runs at all.
+
+Which control bounds which surface — the earlier answer conflated these:
+
+| Control | Bounds |
+|---|---|
+| `child_env` allowlist | the child **environment** |
+| `screen_local_config` + include-origin containment | candidate **configuration** (its own docstring says it bounds configuration, "not everything a candidate repository controls") |
+| `refuse_candidate_ignore_files` | **report suppression** — it protects the report's integrity, not the operator. **Removed from the bounding list**; it does not bound this class. |
+| The admitted-digest gate | reaching **full mode / `0`** — not reduced-mode execution |
+
+**Nothing in the module bounds adapter execution over candidate-controlled file
+content.** That is the accepted residual of running a scanner at all, it is the
+module's stated posture, and it is now written where a Security reviewer meets
+it rather than left implied.
+
+### Evidence, omissions, deferred work
+
+**Tests.** `bootstrap/tests/test_portable_security_sweeps.py`: the probe→parse
+pin; the `fake_tool` default flip; dotted-subsection keys (`branch.v1.2.remote`,
+`branch.release/2.0.remote`) asserting INERT; a newline-bearing key asserting
+refusal; a synthesized multi-key config asserting one refusal listing all, with
+the cap and elision count; a containment case asserting *immediate* refusal.
+Every D2 case is **synthesized** — a tree lacking the keys cannot exercise the
+change, and a test passing on an absence proves nothing.
+
+**Smoke.** `python scripts/run_portable_security_sweeps.py --target . --json` on
+a host carrying a real gitleaks. This is the only instrument that can show the
+legs run; `bootstrap/tests` cannot, because its adapter is a Python script.
+
+**Known omissions.** The extractor pins observed shapes only; an unobserved
+shape fails closed to INCOMPLETE. The four-step ceremony is documented, not
+performed. Whether the two named variables complete the ordinary-tooling set is
+**not** established — the structural fix is what makes that question
+non-blocking, since the remaining risk is a new *variable*, not a new subsection
+shape.
+
+**Deferred.** Nothing. No accepted outcome is dropped; scope as opened is
+`preserved` and this revision only widens D2 and re-points D3.
+
+### The issue-closure gates — superseding Amendment section 2
+
+Closing issue #4 is an acceptance criterion of the derived plan's final chunk,
+**MAINTAINER-GATED**, and gated on **five** things:
+
+1. implementation landed and code-reviewed;
+2. the External Security Review completed;
+3. **the legs demonstrably run against a real adapter** — instrument: the smoke
+   above; expected result: a completed reduced-mode run with a non-`5`
+   aggregate. **Owner: the Maintainer or the adopter**, because a real gitleaks
+   is a host fact and may not exist on the implementing agent's host. If nobody
+   can satisfy it, the issue does not close;
+4. a closing comment meeting the honesty bar (Amendment section 4), which also
+   carries the D3 correction the reporter is owed;
+5. Maintainer authorization for the outward-facing act.
+
+Gate 3 is the Amendment's own stated failure condition, which its original gate
+list omitted.
+
+### Withdrawn / superseded commitments
+
+* **"Add exactly two patterns... as separate patterns, not as new alternatives
+  inside the existing groups."** Withdrawn. The two keys were instances of a
+  class the pattern could not express; the subsection fence is replaced
+  structurally and the two variables join the closed variable sets. Reason: R1
+  demonstrated a clean checkout refusing without either key present.
+* **"This weakens nothing: ... over the same key set."** Withdrawn as
+  inaccurate. Replaced by the two-direction accounting in D2. Reason: R7 — the
+  claim is falsifiable in one read of the loop.
+* **The header's claim that the `templates/modules/team-gated/` copy is the
+  byte-identical twin**
+  of the `scripts/` copy.** Withdrawn; the direction is inverted. `templates/`
+  is the source. Reason: R8, confirmed at `test_portable_security_sweeps.py:39`.
+* **"The module doc gains a short section: what reduced mode is, why it is
+  honest, that `0` is unreachable without an admission, and the exact two-step
+  ceremony."** Withdrawn entirely. Three of the four items already ship at
+  `portable-security-sweeps.md:96-99`, and "two-step" contradicts a recorded
+  four-step ceremony. Replaced by the comment correction in D3. Reason: R3.
+* **"No test can enforce this and the plan should say so"** (invariant iii).
+  Withdrawn as false. Replaced by the two named nodes and a narrow residual.
+  Reason: R4.
+* **"The upstream byte cap on the listing already bounds it."** Withdrawn as a
+  sufficient bound. Cap-and-count is now the design. Reason: R10.
+* **Citations `:276-286`, `:614-636`, and "the comment above
+  `_ADMITTED_ARTIFACTS`."** Superseded by `275`, `741`, `86-102`. Reason: R9.
+* **The Amendment's four-gate list.** Superseded by the five-gate list above.
+  Reason: R6.
+* **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
