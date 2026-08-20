@@ -49,7 +49,16 @@ codes).
 >   while the identity mark's describes the image, so the caption rule binds
 >   explanatory diagrams only.
 >
-> * **Stages 4–5 — the diagrams and the F6 generator: not started.** Stage 3
+> * **Stage 4 — the first diagrams: partly done.** The five doctrine state
+>   machines render, and `dimensions/README.md` gained the dimensions-to-modules
+>   selection map (`c9ad978`). **Gate 2 was discharged**: the Maintainer ran the
+>   legibility pass on 2026-08-20 against a proof sheet carrying all four
+>   diagrams with theme and width toggles, and passed them. The lifecycle
+>   state-machine promotion the note originally listed was **not** done and
+>   should not be: `doctrine/` now carries correct rendered diagrams, and
+>   `docs/workflow-role.md`'s hand-drawn ASCII figure was left alone — converting
+>   a correct, theme-proof, zero-maintenance figure buys prettier, not clearer.
+> * **Stage 5 — the F6 generator: not started.** Stage 3
 >   no longer blocks them; stage 5 remains gated behind registries that are
 >   still active implementation surfaces.
 >
