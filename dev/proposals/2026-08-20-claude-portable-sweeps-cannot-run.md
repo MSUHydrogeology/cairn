@@ -315,3 +315,79 @@ gallery and the scaffold dry-run do not reach this module.
   the module off.** That is the failure mode this module names about itself, and
   it would mean D1's fix exposed a problem D1 was hiding. Recovery is a
   separate proposal about leg scope, not a re-narrowing of the probe.
+
+## Amendment -- Claude (author) -- 2026-08-20 -- issue closure is in scope
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Appended, not merged into the sections above, per the append-only rule. This
+records Maintainer direction received **after this proposal was committed
+(`a005680`) and before any review**. It **adds** a deliverable; it withdraws
+nothing, so no `Scope delta` is owed (scope as opened is `preserved`, and every
+outcome committed above is still committed).
+
+### 1. What was directed
+
+> "please make sure that these proposals all include closing the issues"
+
+and, on the review routing:
+
+> "We will do External Security Review when it's time"
+
+### 2. Closing the issue is a deliverable of this proposal
+
+**This proposal closes adopter issue
+[#4](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/4), and
+can close it alone** — all three of that issue's gaps are in scope here, and no
+sibling proposal holds a piece of it.
+
+The derived plan carries the close as an acceptance criterion of its final
+chunk, gated on all of:
+
+* the implementation landed and code-reviewed;
+* the External Security Review the surface triggers, completed (see *3*);
+* a closing comment posted that meets the honesty bar in *4*; and
+* **Maintainer authorization for the outward-facing act.** Closing an issue on
+  a public repository publishes a claim that the reported problem is resolved.
+  That is a publication step, not a bookkeeping one, and an implementing agent
+  does not perform it unprompted. The plan chunk is **MAINTAINER-GATED**.
+
+### 3. The Security Review is External, and it is scheduled rather than pending
+
+The header declares a Security Review mandated by the portable-sweep executable
+trust root. The Maintainer has now fixed its tier and its timing: **External**,
+taken when the implementation is ready. Recorded here so that a later reader
+does not have to infer the tier from the surface, and so that the plan does not
+treat an unspent Security Review as an oversight.
+
+This does **not** change the plan-review declaration in the header: the plan
+still takes its own Internal pass, and no `Plan readiness` inheritance is
+claimed. An External *Security* Review is a different instrument from an
+External *proposal* review and buys no inheritance.
+
+### 4. The closing comment must name what was declined
+
+Three of the adopter's own suggestions are refused or narrowed above, and a
+close that does not say so reads as agreement that never happened. The closing
+comment states, explicitly:
+
+* that **the bare `version` subcommand was considered and not taken**, and why
+  (it changes an executed argv on the trust root and trades one undocumented
+  output shape for another);
+* that **the admission ceremony was deliberately not automated**, and that
+  reduced mode therefore remains the shipped posture — which is the adopter's
+  own gap 3 question answered, not dodged; and
+* that **the digest they measured was not admitted**, and by what route it could
+  be — because an adopter who supplied a sha256 in good faith is owed the reason
+  it did not simply get used.
+
+It also carries the correction in *Context > D3*: `--verify-version-support`
+exists. The reporter should not be left believing a subcommand is missing when
+what is missing is its second half.
+
+### 5. What a reviewer should test in this amendment
+
+That the close is **gated on verification and not on merge**. The failure mode
+this section is written against is an issue closed when the code lands and
+before the legs are shown to actually run — which, per *S5* above, is the one
+thing this change makes newly possible and newly unverified.
