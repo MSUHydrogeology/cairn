@@ -1232,3 +1232,148 @@ ledger, no replacement cells reproduced here.
 | False-premise sweep (Maintainer brief) | 4 locations named (lines 98, 159-162, 245, 608-609 at review time); 1 (608-609) is inside the reviewer's own append-only section and was left untouched per the append-only rule. **3 locations found and corrected** in operative cells: Scope > "A second expansion" (the "(c)" gloss), the sequencing bullet, and Chunk A table row A6. No further occurrences found outside the reviewer's section. | See cells listed under PR1 above -- same edit pass. |
 
 **Status**: `revising-plan` -> `awaiting-plan-review`.
+
+## Security review -- Codex (External Security) -- 2026-08-20
+
+**Model**: OpenAI GPT-5 (Codex)
+**Reviewed commit**: `8610a7928803b246d6d67f02515978624afa0da8`
+(implementation commits `a316d757236ba098302844f65e91419937baaa8c` and
+`8610a7928803b246d6d67f02515978624afa0da8`)
+**Target**: `full-suite-interception` Chunks A and B
+**Prior findings**: plan-review findings PR1-PR10 and the author's Response;
+PR4's named-but-unresolved operational-command residual is adjudicated below
+as FSI-SR2 rather than treated as closed by disclosure alone
+**Assurance path**: high-assurance; both executable files are gate-frozen and
+the accepted Decision explicitly triggers an implementation Security Review
+**Tier**: Security
+**Findings**: 2 blocking
+
+**Verdict: REVISE.** The release-mode exemption, additive child environment,
+strict token checks, test-environment scrubbing, file-span calculation, and
+vendor-neutral shipped wording are sound in the paths I exercised. Two
+security-posture obligations remain open: the guard can replace a stop raised
+later in pytest's collection lifecycle, and three live instructions now direct
+an operator into a guaranteed refusal, including one Maintainer ceremony step.
+
+### Findings
+
+**FSI-SR1 -- A later collection stop can be replaced by the guard's exit 4.
+[MEDIUM, BLOCKING]**
+
+`bootstrap/tests/conftest.py:156-184` treats `session.testsfailed == 0` as
+sufficient proof that collection completed cleanly. It is sufficient for the
+syntax-error case in the landed test, but not for pytest's complete collection
+lifecycle. Other `pytest_collection_finish` implementations can still run
+after this implementation, and `session.shouldstop` / `session.shouldfail` can
+already carry a pending non-usage disposition while `testsfailed` remains
+zero.
+
+I reproduced both forms with the reviewed conftest in scratch trees:
+
+* A collection modifier set `session.shouldstop = "STOP_STATE_CANARY"`. At 40
+  files pytest preserved the interruption as exit 2. At 41 files the guard
+  replaced it with exit 4.
+* A competing `pytest_collection_finish(trylast=True)` called
+  `pytest.exit(..., returncode=7)`. The reviewed hook ran first and exited 4;
+  the competing abort never ran and its diagnostic disappeared. The same
+  competing hook at `tryfirst=True` preserved exit 7.
+
+This does not turn a failed run into a pass, but it does destroy the failure
+class and can destroy the diagnostic. That violates Revision 5's bright line
+that a cost prompt must never overwrite stronger test evidence and Chunk A1's
+explicit requirement to account for additional stop/interrupt state. The
+existing syntax-error regression cannot go red for this ordering defect.
+
+Required disposition: arrange for the refusal decision only after competing
+collection-finish work has completed successfully, and check pytest's pending
+stop/fail state before raising. Add directional regressions for a pre-existing
+`shouldstop` / `shouldfail` disposition and for a later collection-finish
+abort. A hook wrapper that evaluates the guard only after a successful `yield`
+is one plausible implementation; the exact pytest-hook design remains with
+the implementer and reviewer.
+
+**FSI-SR2 -- Three live instructions now invoke a command guaranteed to refuse,
+including a Maintainer ceremony. [MEDIUM, BLOCKING]**
+
+The plan accurately disclosed this under PR4, but disclosure did not make the
+instructions true and no Maintainer risk acceptance is recorded. The landed
+guard changes the behavior of all three:
+
+* `docs/release-process.md:78` tells a human performing the release sweep to
+  run the bare shuffled full suite. Outside `bootstrap/security_check.py`, it
+  has neither exemption token and exits 4.
+* `bootstrap/AST_BASELINE_RUNBOOK.md:126` tells the Maintainer to run a bare
+  full suite in Step 4, "apply, verify, commit." This is a ceremony step, and
+  it now exits 4 after the baseline has been changed.
+* `AGENTS.md:490-491` still says to run the suite with the bare command, while
+  the same file's Boundary B section now says the canonical pair requires the
+  override.
+
+The refusal is loud and gives the correct remedy, so this is denial of service
+and bypass pressure rather than silent acceptance. It is nevertheless the
+same human hazard Cairn documents for ceremony refusals: a predictable refusal
+arrives mid-procedure, looks like tool breakage, and encourages routing around
+the control. Deferring correction until the first operator actually hits it is
+not a security disposition for a deterministic consequence.
+
+Required disposition: authorize the already-enumerated three-line scope
+expansion and prefix those commands with `CAIRN_FULL_SUITE=1`, or record an
+explicit Maintainer acceptance of this operational residual. Fixing the live
+instructions is the safer and simpler choice.
+
+### Sound results and residual boundary
+
+The release path did not regress in my comparison against the pre-Chunk-A
+conftest. Across 41-file scratch sessions, old and new bytes produced identical
+exit dispositions for all-pass (0), module-level skip (1), `importorskip` (1),
+xfail (1), and syntax error (2). The guard returns immediately in release mode,
+while the existing release `pytest_sessionfinish` rule remains active.
+
+`scripts/quality_gate.py:170-175` uses `os.environ.copy()`, changes only
+`CAIRN_FULL_SUITE`, and passes the result to the child. The targeted unit test
+and the real `security_check -> quality_gate -> pytest` grandchild test both
+passed, including preservation of `CAIRN_RELEASE_GATE_ACTIVE`. The override
+does propagate to subprocesses of that deliberately authorized full-suite
+child; that is inherent in the accepted environment-token design, not a new
+authentication claim.
+
+The test helper at `bootstrap/tests/test_broad_run_guard.py:64-80` genuinely
+removes both exemption tokens before constructing each child. I ran its tests
+with both tokens deliberately present in the parent environment; the refusal
+tests still exercised the guard and passed. Exact values other than `"1"` do
+not exempt.
+
+The bypass boundary remains accurately described. `--noconftest` bypasses the
+hook; `PYTEST_ADDOPTS=--collect-only` makes the collect-only exemption apply;
+and an in-process plugin can set `CAIRN_FULL_SUITE=1` before collection
+finishes. I reproduced the latter two. A loaded plugin already controls test
+collection and process state, so these results do not widen S5, but they mean
+the guard must continue to be described only as a cost prompt, never as a
+tamper-resistant security boundary.
+
+The new sentence in `templates/core/AGENTS.md` contains neither the
+Cairn-specific override token nor a model/vendor name. A controlled search
+matched `CAIRN_FULL_SUITE` in Cairn's own `AGENTS.md` and did not match it or
+the gate's vendor-name set in the shipped twin. The repository-wide neutrality
+sub-gate did not provide a clean result at the current concurrent HEAD: it
+reported 86 unrelated existing findings, none in the reviewed twin.
+
+### Coverage
+
+**Exercised**: exact implementation bytes from the two named commits (the
+reviewed paths are unchanged at the concurrent HEAD); the accepted Revision 5
+and Decision; PR1-PR10 and the Response; all 12 broad-guard tests under a
+parent carrying both exemption tokens; the additive-environment unit test; the
+real release-token grandchild test; 161 targeted doctrine/twin tests; scratch
+sessions for syntax error, module-import `pytest.exit`, KeyboardInterrupt,
+module skip, `importorskip`, xfail, `-x`, collect-only via `PYTEST_ADDOPTS`,
+plugin-supplied override, pending `shouldstop`, and competing
+collection-finish abort order; and old/new release-mode exit comparisons.
+
+**Not exercised**: the full bootstrap suite (explicitly excluded by the review
+brief); the differential-oracle gate or re-anchor (currently at expected HOLD);
+Chunk S, the diagnostics ledger, release packaging beyond the targeted real
+grandchild test, Windows, or third-party pytest plugins beyond synthetic
+ordering probes. I did not review the three unrelated commits interleaved
+between the two implementation commits, except where their current-tree
+effects made the repository-wide neutrality command non-clean.
