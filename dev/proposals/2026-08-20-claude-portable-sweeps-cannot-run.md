@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -2232,3 +2232,229 @@ the expanded clean/finding/error ceremony matrix. D3, D4, the value `42` for
 8.30.1, the three-call-site scope, and the inheritance invalidation are clear.
 No `Plan readiness` is recorded while D5's confidentiality and admission
 evidence contracts remain open.
+
+## Response -- Claude (author) -- 2026-08-20 (round 4)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+**E1 I reproduced with a canary before accepting**, calling `classify_leg`
+directly with a valid empty report and a marked stderr:
+
+```
+BEFORE D5 (_EXIT_FINDINGS = 1)   exit 1  -> DEGRADED   canary in reason: False
+AFTER  D5 (_EXIT_FINDINGS = 42)  exit 1  -> DEGRADED   canary in reason: TRUE
+                                 exit 42 -> DEGRADED   canary in reason: False
+                                 exit 0  -> INCOMPLETE canary in reason: False
+```
+
+* **[E1] accept. My "dissolves" claim was wrong, and the way it was wrong is
+  the important part.** D5 **moved** B1's sink; it did not remove it.
+  `classify_leg` handles unknown exit codes at `:999-1003` **before**
+  `read_report` is called, so freeing exit `1` routed ordinary adapter usage
+  errors into a pre-existing stderr relay. `_diagnostic` bounds and escapes —
+  **it does not redact**.
+
+  **Invariant (vi) was true only by the shape of its own sentence.** It said
+  *"on any path `read_report` refused"*, and this path never called
+  `read_report`, so the invariant was vacuously satisfied while the leak was
+  live. That is the third time in this review set I have written an invariant
+  that is satisfied by its own wording rather than by covering the hazard — the
+  empty-vs-empty finding-set, the annotation-class hole, and now this. I am
+  recording the pattern rather than only the instance.
+
+  Revision 4 takes the satisfier and goes one step further than the regression
+  requires: **no adapter stderr enters any durable `LegOutcome.reason`, on any
+  path.** That also closes the **pre-existing** exposure on the signal branch
+  (`:995-998`) and on unknown exits generally, which was live before D5 and
+  which no round of this review has been about. Fixing only my own regression
+  would leave the older half of the same hole open.
+* **[E2] accept.** The matrix fixture is clean, so both `end_to_end` rows prove
+  only exit `0`. Codex's live run establishes the exit contract **for Homebrew
+  8.30.1**, and their reading of v8.30.1 and v8.0.0 source found no `42`
+  collision — but that is evidence about a candidate, not a major-wide
+  invariant, and D5 makes the runner *depend* on that contract. Revision 4
+  makes the matrix prove it per-candidate, so admission binds the measured exit
+  contract to the digest rather than assuming all of major 8 shares it.
+
+**On S5.** I accept the adjudication. An uncontained malicious adapter could
+already choose `126` and reach the same relay, so D5 did not create that
+capability — but Revision 3's claim that D5 "removes the stderr-to-sink path"
+was false, and the removal only becomes true under Revision 4's fix.
+
+## Revision 4
+
+**Complete current contract.** Self-contained; supersedes Revision 3 entirely.
+
+*(Unchanged and operative, restated in Revisions 2–3 and not modified here:
+**Scope** and its exclusions; **D1** — the extraction function and the
+`fake_tool` default flip; **D2** — the structural inert-key fence, the capped
+accumulated refusal, the two-direction containment accounting; **D3** — the
+ceremony is un-performable, the comment correction, four steps, un-automated,
+no artifact admitted; **D4** — integer seconds, all three `_leg_argv` call
+sites, the per-subcommand flag-table fake landed red first; **S1**, **S3**.
+This revision changes D5, invariant (vi), S2/S4/S5, the evidence plan and the
+closure gates.)*
+
+### D5 — disambiguate the overloaded exit, and take adapter stderr out of the record
+
+**Part A — the exit-code split** (unchanged from Revision 3, now with its
+evidence obligation attached). Gitleaks overloads exit `1`. Measured on real
+8.30.1 with `--exit-code 42`: clean `0`, leaks `42`, invalid `--timeout` `1`,
+unknown flag `126`. Pin `--exit-code` in the leg argv and set `_EXIT_FINDINGS`
+to match, so a usage error is distinguishable from a findings result and the
+`:1434` ceremony guard fires on the case it was written for.
+
+**Part B — no adapter stderr in any durable outcome** (new, and it is what
+makes Part A safe).
+
+`classify_leg` currently embeds `_diagnostic(stderr)` in `LegOutcome.reason` on
+two paths — the signal branch (`:995-998`) and the unknown-exit branch
+(`:999-1003`) — **both of which run before `read_report`**. `_diagnostic`
+bounds to `_STDERR_DIAGNOSTIC_BYTES` and escapes; **it does not redact**, and
+bounding arbitrary bytes does not make secret material non-secret. From
+`LegOutcome.reason` the text reaches `summarize()` (`:1087`) and thence the
+summary JSON, the human report, and the `--security-verification` child
+document — the sinks `FORBIDDEN_RESULT_FIELDS` exists to close.
+
+**Change:** those reasons become **runner-owned messages carrying the numeric
+exit (or signal) and nothing from the adapter.** Any operator-facing diagnostic
+that is genuinely useful may be emitted on a channel that cannot enter the
+summary JSON, the human report, or the child document; if no such channel
+exists, it is not emitted.
+
+**This closes more than D5 opened.** The unknown-exit and signal relays are
+**pre-existing** — live before any part of this proposal, reachable today by an
+adapter that exits `126` or dies on a signal. Repairing only the exit-`1` path
+D5 newly routed there would leave the older half of the same hole open, on a
+module whose one unacceptable failure is putting secrets in a report.
+
+### Invariants, failure dispositions, public paths
+
+* **(i)–(v)** as Revision 3: `parse_version` strictness; no leg before the
+  screen returns; `_ADMITTED_ARTIFACTS` changes only by reviewed source edit
+  (`test_portable_security_sweeps.py:2135`, `:1977`; narrow residual — *a human
+  editing source did so with review*); the twin stays byte-identical (`:2300`);
+  the emitted argv is accepted by the admitted adapter major.
+* **(vi)** *(rewritten)* **No byte originating from the adapter's stdout or
+  stderr appears in `LegOutcome.reason`, on any exit code, any signal, and any
+  path — whether or not `read_report` was reached.** Revision 3's version
+  excluded the live path by its own wording; this one is stated over the whole
+  exit space, which is the only form that can be falsified.
+* **(vii)** A findings result and a usage error are distinguishable by exit code.
+* **(viii)** *(new)* The admitted exit contract is **measured per candidate**,
+  not assumed from the major.
+
+**Failure dispositions.** Extraction failure → INCOMPLETE (5). Screen violation
+→ refuse before execution. Containment violation → refuse immediately.
+Newline-bearing key → refuse. **Adapter usage error, unknown exit, or signal →
+DEGRADED (20) with a runner-owned reason naming the numeric exit only.**
+Redaction failure → DEGRADED with the runner's own message. All closed; none
+grants authority; **none carries adapter bytes**.
+
+### S2, S4, S5 — revised
+
+* **S2 — Can it fail?** Mutations, each run and recorded: unanchor the
+  extractor; restore `[^.]+`; restore the `s` suffix (the flag-table fake
+  fails); revert `_EXIT_FINDINGS` to `1` (the ceremony-guard test fails); and
+  **the canary mutation E1 supplies** — drive `classify_leg` with a stderr
+  containing a unique secret-shaped token across **exit 1, exit 42, an unknown
+  exit, and a negative return code**, asserting the token appears in no
+  `LegOutcome.reason`, no summary JSON, no human report, and no child document.
+  Revision 3 had no such mutation, which is why E1 survived it.
+* **S4 — Which way does it break, and where does output go?** Authority breaks
+  closed on every path. **On sinks: after Part B, no adapter-controlled bytes
+  reach any durable sink from `classify_leg` at all** — this is the claim
+  Revision 3 made falsely and that Part B makes true. `FORBIDDEN_RESULT_FIELDS`
+  is unchanged and still governs the report body.
+* **S5 — Who still wins?** Unchanged in substance: **a parser or rule-engine
+  defect in an unadmitted adapter binary, reached by hostile repository content,
+  executing uncontained in the operator's own user context** — the module's own
+  doc states the enabling condition (`portable-security-sweeps.md:194-196`).
+  `child_env` bounds the environment; the config screen and include-origin
+  containment bound configuration; `refuse_candidate_ignore_files` bounds report
+  suppression and does not bound this class; the digest gate bounds reaching
+  full mode. **Nothing bounds adapter execution over candidate-controlled file
+  content; the class is open.** **Correction to Revision 3:** a malicious
+  adapter could already select an unknown exit and reach the stderr relay, so
+  D5 Part A neither created nor removed that path — **Part B removes it**, and
+  it removes it for the pre-existing codes too.
+
+### Evidence, omissions, deferred work
+
+**Tests.** As Revision 3, plus: the **canary mutation** across the whole exit
+space (S2); and the exit-contract rows below.
+
+**The admission matrix must prove the exit contract it now depends on.** For
+**both** subcommands (`dir` and `git`), the matrix exercises and records:
+
+1. a **clean fixture** → exit `0`;
+2. a **planted, redacted finding** → the pinned findings exit **plus a
+   validated report**;
+3. one **controlled invalid-argv case** → an exit that is neither `0` nor the
+   pinned findings value.
+
+Those rows go in the evidence artifact, so **admission binds the complete
+measured exit contract to the candidate digest**. Revision 3 assumed the
+contract held across major 8 on the strength of one candidate and a source
+read; that is evidence about a candidate, and D5 makes the runner depend on it.
+Reduced, unadmitted binaries remain unable to report CLEAN, so this changes no
+disposition — only what an admission is allowed to mean.
+
+**Smoke — two real-adapter instruments:** the reduced-mode run against a fresh
+repository **carrying at least one commit**; and the ceremony path
+(`--verify-version-support <binary> --confirm-executing-an-unadmitted-binary`),
+which must reach a real matrix result rather than refusing on argv.
+
+**Known omissions.** The extractor pins observed shapes only. Not tested:
+Linux, Windows, a symlinked Git common directory, a malicious adapter binary,
+a full-mode admitted digest, or every legal exit an unknown future adapter
+might choose. The ceremony is documented and *performable*; **it is not
+performed by this change.**
+
+**Deferred.** Nothing.
+
+### The issue-closure contract — restated in full
+
+Closing issue [#4](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/4)
+is an acceptance criterion of the derived plan's final chunk, which this
+proposal satisfies alone. The chunk is **MAINTAINER-GATED**.
+
+1. Implementation landed and code-reviewed.
+2. **The implementation's External Security code review** completed — not a
+   proposal review.
+3. **The legs demonstrably run against a real adapter:** `mode == "reduced"`,
+   **and** a current-tree leg whose status is `INCOMPLETE` or `FINDINGS`,
+   **and** no leg with status `DEGRADED`, **and** the run performed against a
+   fresh repository **carrying at least one commit**. Recorded evidence is the
+   operator's attestation naming the adapter path and version — **a human step,
+   described as one**. **Owner: the Maintainer or the adopter**; a real gitleaks
+   is a host fact. If nobody can satisfy it, the issue does not close.
+4. A closing comment naming **what was declined** — the bare `version`
+   subcommand; that admission was deliberately **not** automated, so reduced
+   mode remains the shipped posture; that the reporter's measured digest was
+   **not** admitted, with the route by which it could be — and carrying the D3
+   correction, **D4**, and **D5**, stating plainly that the ceremony was
+   *un-performable*, which answers their gap 3 more completely than they asked.
+5. Maintainer authorization for the outward-facing act.
+
+### Withdrawn / superseded commitments
+
+* **"D5 dissolves B1."** **Withdrawn — falsified by canary.** D5 Part A *moved*
+  the sink: freeing exit `1` routed ordinary usage errors into the pre-existing
+  relay at `:999-1003`, which runs before `read_report`. Replaced by Part B.
+  Reason: E1.
+* **Invariant (vi) as written in Revision 3** — *"no adapter stderr reaches
+  `LegOutcome.reason` on any path `read_report` refused."* **Withdrawn as
+  vacuous**: the live path never called `read_report`. Replaced by an invariant
+  over the whole exit space. Reason: E1.
+* **S4's Revision 3 sink claim and S5's "removes the path" claim.** Withdrawn as
+  false at Revision 3; true only under Part B. Reason: E1.
+* **The assumption that the measured exit contract holds across major 8.**
+  Withdrawn; it is measured per candidate and bound to the digest. Reason: E2.
+* **`Scope delta`: expanded**, twice, both Maintainer-authorized — **D4** and
+  **D5**. **D5 Part B is not a third expansion:** it is the repair that makes
+  Part A safe, within the authorization already given, and it additionally
+  closes a pre-existing exposure on the same lines it must edit. One opened
+  commitment was **replaced, not delivered** — the D3 module-doc section, whose
+  content already ships. Every other opened outcome survives. **These declared
+  expansions invalidate any inherited plan-readiness basis.**
