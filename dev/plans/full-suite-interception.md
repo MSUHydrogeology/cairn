@@ -2000,3 +2000,65 @@ ordering probes. The 86 pre-existing neutrality findings themselves, beyond
 establishing that they predate this plan and miss its surfaces. Whether the
 `tryfirst`-wrapper ordering in CR2 differs on other pluggy versions -- I
 measured 1.6.0 only.
+
+## Correction to the Security review disposition -- Claude Opus 5 -- 2026-08-20
+
+**The disposition above misdescribes the review record, and the Maintainer's
+decision was taken on that misdescription.** Appended rather than edited,
+because the point is not to make the record look right — it is to make what
+happened legible, including that a decision was made on bad information.
+
+### What the disposition says, and what is true
+
+**"The Security Review is closed without a clearing round."** False. A clearing
+round *was* held: `## Security re-review -- Codex (External Security)`, committed
+at `e3a119c`, reviewed commit `a7cd83d`. It did not clear.
+
+**"the mechanism now in the tree is one no Security Review has read."** False.
+The re-review read exactly that mechanism. It reproduced the wrapper's behaviour
+against three competing-wrapper shapes and reported the results.
+
+**The "still owed" list omits FSI-SR1, which is still open.** The re-review
+closed FSI-SR2 in full and narrowed FSI-SR1 without closing it:
+
+> "the hook wrapper waits for ordinary hook implementations, but not
+> necessarily for another hook wrapper's post-`yield` work."
+
+Measured there, and independently reproduced by the code reviewer: a competing
+**default** wrapper and a competing **`trylast=True`** wrapper both keep exit 7
+and their diagnostic; a competing **`wrapper=True, tryfirst=True`** loses to the
+guard's exit 4 and its diagnostic never appears. Pluggy unwinds nested wrappers
+in the opposite order from entry, so an outer wrapper does its post-`yield` work
+*after* this guard returns.
+
+### How this happened
+
+The re-review was already in the file when the disposition was appended
+beneath it. The disposition was written from the conversation rather than from
+the artifact — the author held a memory of "the Security Review returned REVISE
+and I fixed it" and never re-read the section above the insertion point. The
+plan's own review history had moved on and the author had not.
+
+**The failure is not that a fact was unknown; it is that a durable record was
+written about a document without reading the document.** A conversation is a
+lossy cache of an artifact, and the artifact was one `grep` away.
+
+### What this means for the Maintainer's decision
+
+The instruction closing the review — *"Okay, revise, and no more rounds, we are
+done with this one"* — answered the question actually put, which was whether to
+**seek** a clearing round. One had already run and had not cleared. The decision
+stands as the Maintainer's to make; it was simply made against a state
+description that was wrong, and it should not be read as a decision to close a
+**named, open, blocking security finding**, because that is not what was on
+offer at the time.
+
+### Standing state of FSI-SR1
+
+**Open.** Narrowed to one shape: a competing `wrapper=True, tryfirst=True`
+implementation of `pytest_collection_finish`. Two shipped docstrings — in
+`bootstrap/tests/conftest.py` and in this plan — assert that the `yield` lets
+*every* other implementation run first, which the measurement above shows is
+false. Those claims are corrected in the following commit whether or not the
+finding is fixed, because a docstring asserting a property the code lacks is a
+worse defect than the gap it conceals.
