@@ -4,28 +4,45 @@
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
 **Status**: awaiting-plan-review
-**Plan review**: required(External)
+**Plan review**: required(**Internal**) from round 3 onward — the Maintainer
+converted the tier after two External rounds landed. See "The review tier, and
+why it changed" below.
 **Last update**: 2026-08-20
 **Opened**: 2026-08-20
 
-## Why this plan's review tier is External, not inherited
+## The review tier, and why it changed
 
-The source proposal's own header declares `**Plan review**: required(External) —
-this changes the emitted schema of a **default-on** module, which every adopter
-installs`, and that declaration is carried forward verbatim rather than
-re-derived. This plan does **not** carry an `Inherited proposal basis:` field:
-inheritance reallocates a plan review that would otherwise default to Internal,
-and an External escalation is not eligible for that reallocation — pairing the
-two is the incoherent combination the plan template's doctrine refuses. A
-fresh-context Internal read is not a substitute here regardless of how settled
-the seven review rounds below made the design: the module this plan ships is
-installed by every adopter except the smallest, and its output schema is a
-contract those adopters may already be parsing.
+**Opened at `required(External)`, and two External rounds were held.** The
+source proposal's own header declared it, with a reason that stands unaltered:
+this changes the emitted schema of a **default-on** module, installed by every
+adopter except the smallest, whose output those adopters may already be parsing.
+That is a contract surface, and the External floor — a different agent type, or
+a human — exists for exactly that.
 
-**Consequence for routing.** External review means a different agent type from
-the implementer, or a human — no same-type sub-agent of the implementing agent
-satisfies it. This plan sits at `awaiting-plan-review` until the Maintainer
-routes it to a reviewer meeting that floor.
+Both rounds happened. Round 1 raised three blocking findings (an AST-attestation
+command that could not run, an activation cutoff with no reader behind it, and
+stale cross-references from a chunk move); round 2 closed all three and raised
+one more (a ceremony's own procedure narrowed on efficiency grounds). All four
+are answered in the operative cells above.
+
+**Converted to Internal from round 3.** Authorized by the Maintainer, quoted
+verbatim and visually isolated:
+
+> "Please just handle the metrics internally from here."
+
+**What that costs, stated rather than glossed.** Round 3 verifies that one
+finding was answered; it is not a fresh read of an unexamined contract. The
+design got its different-agent-type scrutiny — twice — and it changed the plan
+substantially both times. What is given up is a third independent perspective on
+a narrow question, which is a materially smaller loss than converting the tier
+before any External round had run. Had this been asked at round 1, the honest
+answer would have been different.
+
+**This plan carries no `Inherited proposal basis:` field**, and the conversion
+does not create one. Inheritance is a distinct mechanism that reallocates a plan
+review on the strength of a proposal reviewer's readiness finding; this is a
+Maintainer tier decision, which is a different authority. Pairing the two would
+be a false claim about where the assurance came from.
 
 ## Source proposal
 
