@@ -2513,3 +2513,123 @@ work rather than proposal blockers.
 
 **Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
 
+
+## Amendment -- Claude (author) -- 2026-08-20 -- two accepted terms cannot be constructed
+
+**Status of this amendment: awaiting the Maintainer's decision.** It proposes a
+change to an accepted contract and does not itself land one. The Maintainer's
+direction to draft it, quoted verbatim and visually isolated:
+
+> "Fix the conflict at the source. It's fine to re-open a plan when we discover
+> an issue. Let's not get tied to the machinery. The goal is to write good code."
+
+Raised by the Internal plan review of the derived plan, then independently
+designed and adversarially attacked before being written up. Every measurement
+below was taken on the canonical interpreter (Python 3.13.13, pytest 9.0.3); no
+full suite was run.
+
+### The defect: two accepted terms have no admitted construction
+
+Five External review rounds established that this contract is internally
+consistent. None asked whether the evidence it requires can actually be
+produced. Two required falsifiers cannot be.
+
+**1. No test can observe a written row.** Guard 3 skips the write when the
+resolved ledger directory is under the resolved `tempfile.gettempdir()`.
+Measured: `tempfile.mkdtemp()` resolves under `gettempdir()`, so **every**
+fixture tree the suite can build is silenced. Guard 2 independently silences an
+in-process `pytest.main()` as a child. The only remaining place a test could
+observe a real row is the repository's live ledger -- which is the contamination
+the guards exist to prevent. Measured separately: there are **zero**
+`pytest.main(` call sites anywhere in the suite today, so the contract's
+declared public path is also a pattern this repository has never used.
+
+**2. `scope == "full"` cannot be falsified.** Producing a genuine `full` row
+requires running the whole suite from inside the whole suite. Every escape is
+closed by the classifier's own rules or by the Excluded scope. An implementation
+returning `unknown` unconditionally therefore passes every writable test.
+
+### The correction
+
+**(a) Guard 3 is deleted, and nothing replaces it.**
+
+The ledger path is derived from the collector's own file location -- this
+contract already says so ("a path derived from the conftest's location"). A
+fixture tree that carries a copy of the collector therefore resolves the ledger
+**inside that fixture tree** and cannot reach the repository's real ledger. The
+guard fences a field its subject cannot reach, and the fence is what excludes
+the tests.
+
+The cases guard 3 was cited for are each covered by another guard, measured
+rather than argued:
+
+* **Suite-spawned children** -- guard 2. Every in-tree spawn passes the
+  environment as a superset, so the ownership marker survives.
+* **The release detached checkout under `gettempdir()`** -- guard 4. Both
+  phases that reach pytest pass an environment carrying the release token.
+* **Today's fixture trees** -- guard 5. They create no `dev/measurement/`
+  directory, so the no-op-when-absent clause fires.
+
+**Stated precisely, because a reviewer will check the history.** Revision 3
+introduced guard 3 *as* the instrument for the release-checkout case and called
+it load-bearing, and that was accurate when written. The claim here is the
+weaker one: **measured today, guard 4 independently covers that case, so guard 3
+is redundant** -- not that it was never needed. Its coverage was also
+contingent, holding only because the release checkout happens to be built under
+a temporary directory.
+
+**(b) "The suite root" is defined, and the positional check is stated as
+resolution rather than string equality.**
+
+This contract uses the phrase "the suite root" four times and never defines it.
+It also requires two invocations to classify `full` whose positionals are spelled
+differently -- the canonical command passes a relative path, the
+order-independence command passes an absolute resolved one. No literal token
+family contains both, so the positional half was always resolution-based; the
+contract simply never said so.
+
+**The suite root is the directory containing the running collector.** `full`
+therefore means *this session covered its own suite root completely* -- a
+property any tree carrying the collector can exhibit. A small fixture project
+produces a genuine `full` row with no recursion, because the tree driving the
+session is not the tree under measurement.
+
+### What this amendment does NOT change
+
+The row schema; the encoder and its pinned arguments; the reader's committed
+outcomes; guards 1, 2, 4 and 5; the durability contract; the zero-subprocess
+term; the gitignored status of the ledger; the `Scope delta` position; and the
+Security Review and re-anchor ceremony the implementation still owes.
+
+### Security posture
+
+**Deleting a guard narrows no attack surface question that was open, and opens
+none that was closed.** Guard 3 never authenticated anything: it is a path
+comparison that decides whether to skip a write to a location the caller cannot
+influence. Removing it does not widen where the collector may write -- the path
+remains derived from the collector's own location, which is the property that
+makes the guard redundant in the first place. No new environment variable, no
+new configuration knob, and no new executable path is introduced; the
+"write-path targeting closed by enumeration" claim in the security preflight is
+unaffected, because the enumeration is unchanged.
+
+This amendment therefore does not on its own trigger a Security Review. The
+implementation's own Security Review, owed on the gate-frozen surface, is
+unchanged and still owed -- and is the right place to challenge the paragraph
+above rather than accept it.
+
+### The strongest surviving objection
+
+The argument for (a) rests on a measurement -- that guard 4 covers the release
+checkout today. If that measurement is wrong on some path not walked, deleting
+guard 3 removes a protection whose replacement does not in fact fire. The
+mitigation is that the release path is short and was read end to end, and that
+guard 3's own coverage was itself contingent on an implementation detail of the
+checkout. It is not that the measurement is beyond doubt.
+
+### Consequence beyond this proposal
+
+Guard 3 also blocks an accepted sibling. `dev/plans/full-suite-interception.md`
+carries a falsifier reading "run the real guard to refusal over a fixture tree,
+then read the ledger row it wrote." Under guard 3 no row is written and that
+falsifier is unconstructible. This amendment unblocks both plans.
