@@ -216,11 +216,11 @@ plan's opening commit.
 1. Retire the eight columns and their dependency graph        [commit pending]
 2. Doctrine: the principle, the honest description, the glossary sharpen [commit pending]
 3. Version the break: v2 schema identity                      [commit pending]
-4. Event-v1 grammar, the four activation markers, scaffold-only planner surfacing [commit pending]
+4. Event-v1 grammar, activation markers, planner surfacing, engine registration [commit pending]
 5. The history-diff reader: identity, mutation detection, activation cutoff [commit pending]
 6. Fail-closed reconciliation and wiring the retained fields  [commit pending]
 7. Cross-cutting fixtures and the pre-existing-test audit     [commit pending]
-8. CHANGELOG, manifest re-derivation, corpus before/after evidence [commit pending]
+8. CHANGELOG and the before/after corpus evidence                [commit pending]
 9. MAINTAINER-GATED — differential-oracle gate re-anchor ceremony [not performed by the implementing agent]
 ```
 
@@ -343,7 +343,7 @@ the v1 file carries no schema-version marker (or an explicit v1 one, if this
 chunk back-labels the old shape — the implementing chunk records which), the
 v2 file carries the new one, and no third, ambiguous state is representable.
 
-### Chunk 4 — Event-v1 grammar, the four activation markers, scaffold-only planner surfacing
+### Chunk 4 — Event-v1 grammar, activation markers, planner surfacing, engine registration
 
 Depends on nothing in Chunks 1-3. Independent of them; sequenced fourth because
 it is the first Part-3 chunk and Chunks 5-6 depend on it.
@@ -397,6 +397,10 @@ version token is the literal `cairn-event-v1`.
 | 4-5 | `tools/lifecycle_planner.py`, twin `templates/skills/_lib/lifecycle_planner.py` | `next --to <state>`'s preview/mutation-manifest output additionally shows the literal event block the transitioning edit is expected to carry — scaffold-only, informational, not written to disk, not gating. The command's read-only contract is unchanged; a regression test confirms it still writes nothing (see 4-7). Not gate-frozen (outside `templates/modules/**`), but still a same-commit twin pair. |
 | 4-6 | `bootstrap/tests/test_lifecycle_metrics_events.py` (new) | Grammar red/green fixtures: unknown key refuses; unknown `kind` refuses; unknown version token refuses; missing required key per kind refuses; a `reviewer`/`model` value over 120 chars refuses; the three worked examples above each parse cleanly. |
 | 4-7 | `bootstrap/tests/test_lifecycle_contract.py` | Re-run (not necessarily re-write) the existing read-only regression — `test_every_subcommand_is_read_only` or its equivalent, as_of 2026-08-20 line 172 — against the extended preview output, confirming the new block-preview text changes stdout only, no byte written, no git operation performed. |
+| 4-8 | `bootstrap/_scaffold/config.py` | Register the engine file Chunk 4 (4-1/4-2) creates: add `InstallSpec("default-on/_lifecycle_metrics/events.py", "tools/_lifecycle_metrics/events.py", verbatim=True)` to the `"lifecycle-metrics"` entry in `_MODULE_MAPPINGS`, alongside the nine existing `_lifecycle_metrics/` rows (confirmed at ~lines 739-766, as_of 2026-08-20); update the neighboring comment's "the nine package files install verbatim" to "the ten package files install verbatim". Without this row `scaffold.py` never installs `events.py` and an adopter's `extract.py` import of it resolves to nothing on disk. Maintainer direction: these two engine files are to be included, not treated as an open scope question. |
+| 4-9 | `bootstrap/tests/test_security_lint.py` | `test_templates_py_count_is_pinned` (line 376, as_of 2026-08-20) pins `len(on_disk) == 52` over `templates/**/*.py`. Update it to the post-registration count (52 + 1, as_of 2026-08-20 — re-derive at implementation from the live tree, do not carry a frozen number forward). Also confirm `test_every_templates_py_on_disk_is_release_scanned` in the same file passes once 8-2 lands: that check's oracle is the on-disk file set, independent of the manifest-derived count pin, and fails closed on any shipped `.py` present on disk but not release-scanned. |
+| 4-10 | `bootstrap/tests/test_notice_install.py` | `test_manifest_has_the_expected_py_source_count` (line 74, as_of 2026-08-20) pins `len(sources) == 56` over manifest `.py` sources. Update it to the post-registration count (56 + 1, as_of 2026-08-20 — re-derive at implementation, do not carry a frozen number forward). |
+| 4-11 | AST attestation baseline, via `bootstrap/tests/_ast_attest.py`'s `update-symbol` CLI path (per `bootstrap/AST_BASELINE_RUNBOOK.md`) | Row 4-8 changes `_MODULE_MAPPINGS`, a symbol the AST attestation baseline (`bootstrap/tests/test_ast_attest.py`) digests. `_MODULE_MAPPINGS` is one of the four symbols in `_ast_attest._UPDATE_ALLOWLIST`, so — unlike the unrelated, already-owed docstring-drift re-anchor named below under "Sequence revision" — this single-symbol repair is self-serviceable by the implementing agent: run `update-symbol _MODULE_MAPPINGS --expect-old <current digest> <path(s)>` (confirmed present: `bootstrap/tests/_ast_attest.py`'s `update_symbol`/`main(["update-symbol", ...])`, exercised by `bootstrap/tests/test_ast_attest.py`) against the live file after 8-2 lands, in the same commit. |
 
 **Acceptance for this chunk**: every fixture in 4-6 passes; `next --to` remains
 provably read-only under the existing contract test; the four template paths
@@ -407,6 +411,18 @@ present as a bare token or inside a fenced example, which would satisfy a
 literal string match while leaving an agent no usable instruction. Because the
 marker's introducing commit is itself the activation cutoff, a literal-only
 match would arm that cutoff tree-wide with nothing for a reader to act on.
+
+**And, for the registration rows (4-8 through 4-11): this chunk's own commit is
+green.** Specifically `python -m pytest bootstrap/tests/test_security_lint.py
+bootstrap/tests/test_notice_install.py` passes *at this commit*, not at a later
+one — both count pins moved with the file, and the newly-shipped `events.py`
+is a release-scan target rather than an unscanned shipped `.py`. The criterion
+is stated as "green at this commit" rather than "the pins were updated",
+because a pin updated to the wrong number, or updated in a later commit, both
+satisfy the second phrasing and neither satisfies the first. Derive the two
+expected numbers by running the tests, not by carrying forward the figures
+recorded in rows 4-9 and 4-10 — those are dated observations, and other work
+lands in this tree concurrently.
 
 ### Chunk 5 — The history-diff reader: identity, mutation detection, activation cutoff
 
@@ -520,31 +536,35 @@ Depends on Chunks 1-6 all being present.
 **Acceptance for this chunk**: 7-1, 7-2, 7-3, and 7-5 pass as new/updated
 fixtures; 7-4 is a confirming (not new) pass against the live corpus.
 
-### Chunk 8 — CHANGELOG, manifest re-derivation, corpus before/after evidence
+### Chunk 8 — CHANGELOG and the before/after corpus evidence
 
 | # | File | Change |
 |---|------|--------|
 | 8-1 | `CHANGELOG.md` | Under `## Unreleased`, open a new `### Changed` subsection — the section currently has only `### Changed — Git-native security foundations` and `### Added` (as_of 2026-08-20; there is no generic `### Changed` to file this under) — and add one line naming the v1→v2 lifecycle-metrics schema break (eight columns retired) and the new event-emission convention for adopters who already parse the CSV/manifest. |
-| 8-2 | `bootstrap/_scaffold/config.py` | Register the engine file Chunk 4 (4-1/4-2) creates: add `InstallSpec("default-on/_lifecycle_metrics/events.py", "tools/_lifecycle_metrics/events.py", verbatim=True)` to the `"lifecycle-metrics"` entry in `_MODULE_MAPPINGS`, alongside the nine existing `_lifecycle_metrics/` rows (confirmed at ~lines 739-766, as_of 2026-08-20); update the neighboring comment's "the nine package files install verbatim" to "the ten package files install verbatim". Without this row `scaffold.py` never installs `events.py` and an adopter's `extract.py` import of it resolves to nothing on disk. Maintainer direction: these two engine files are to be included, not treated as an open scope question. |
-| 8-3 | `bootstrap/tests/test_security_lint.py` | `test_templates_py_count_is_pinned` (line 376, as_of 2026-08-20) pins `len(on_disk) == 52` over `templates/**/*.py`. Update it to the post-registration count (52 + 1, as_of 2026-08-20 — re-derive at implementation from the live tree, do not carry a frozen number forward). Also confirm `test_every_templates_py_on_disk_is_release_scanned` in the same file passes once 8-2 lands: that check's oracle is the on-disk file set, independent of the manifest-derived count pin, and fails closed on any shipped `.py` present on disk but not release-scanned. |
-| 8-4 | `bootstrap/tests/test_notice_install.py` | `test_manifest_has_the_expected_py_source_count` (line 74, as_of 2026-08-20) pins `len(sources) == 56` over manifest `.py` sources. Update it to the post-registration count (56 + 1, as_of 2026-08-20 — re-derive at implementation, do not carry a frozen number forward). |
-| 8-5 | AST attestation baseline, via `bootstrap/tests/_ast_attest.py`'s `update-symbol` CLI path (per `bootstrap/AST_BASELINE_RUNBOOK.md`) | 8-2 changes `_MODULE_MAPPINGS`, a symbol the AST attestation baseline (`bootstrap/tests/test_ast_attest.py`) digests. `_MODULE_MAPPINGS` is one of the four symbols in `_ast_attest._UPDATE_ALLOWLIST`, so — unlike the unrelated, already-owed docstring-drift re-anchor named below under "Sequence revision" — this single-symbol repair is self-serviceable by the implementing agent: run `update-symbol _MODULE_MAPPINGS --expect-old <current digest> <path(s)>` (confirmed present: `bootstrap/tests/_ast_attest.py`'s `update_symbol`/`main(["update-symbol", ...])`, exercised by `bootstrap/tests/test_ast_attest.py`) against the live file after 8-2 lands, in the same commit. |
 | 8-6 | *(evidence, not a file change)* | Re-run the extractor against Cairn's own corpus before and after this plan's chunks, diffing the emitted column set — the "Owed at implementation" item the proposal names explicitly, so the diff is recorded rather than assumed. Recorded in this plan's `## Implementation verification` section, not carried into the plan as a number now. |
 
-**A known intermediate-commit gap, named rather than left implicit.**
-`templates/modules/default-on/_lifecycle_metrics/events.py` first lands on
-disk in Chunk 4 (4-2); its manifest registration (8-2) does not land until
-Chunk 8. Between those two commits,
-`bootstrap/tests/test_security_lint.py::test_every_templates_py_on_disk_is_release_scanned`
-— an on-disk oracle independent of manifest content — fails, because it flags
-any shipped `.py` present on disk that is not release-scanned. This is a
-deliberate consequence of placing the registration work in Chunk 8 (matching
-this chunk's own heading, and the Maintainer's explicit placement direction),
-not an oversight: Boundary A's per-touched-surface standing-gate run shows it
-red for the Chunks 4-7 window and it clears at Chunk 8. An implementer who
-wants every intermediate commit green may instead land 8-2 through 8-5 in the
-same commit as 4-2; this plan does not require that reordering, only names
-the trade-off.
+**The registration travels with the file, and that is not a style choice.**
+The four rows that register `events.py` — the `InstallSpec`, both count pins,
+and the AST symbol update — were briefly placed here, in Chunk 8. They now sit
+in **Chunk 4 (rows 4-8 through 4-11)**, the commit that first puts
+`templates/modules/default-on/_lifecycle_metrics/events.py` on disk.
+
+The reason is in the tripwire's own docstring.
+`test_templates_py_count_is_pinned` describes itself as *"a growth tripwire,
+and the antidote to a fail-open exclusion table: the shipped .py surface cannot
+grow without a human looking at it"*, and instructs that its pin and its
+sibling in `test_notice_install.py` be updated **"in the SAME commit."** Split
+across chunks, two tests — that one and
+`test_every_templates_py_on_disk_is_release_scanned`, an on-disk oracle
+independent of manifest content — would run red for the whole Chunks 5-7
+window. That does not merely inconvenience Boundary A's standing-gate run; it
+is how a tripwire becomes background noise, and it would hide any *new* failure
+arriving in that window behind the expected one. A control whose purpose is to
+stop the shipped surface growing unnoticed must not be the thing everyone
+learns to ignore.
+
+Chunk 8 keeps what genuinely belongs to it: the CHANGELOG entry and the
+before/after corpus evidence.
 
 ## Sequence revision — the re-anchor ceremony
 
@@ -569,12 +589,12 @@ self-serviceable** by an implementing agent.
 
 **Separately, and correcting an earlier, now-false claim in this plan: this
 plan does touch `bootstrap/_scaffold/`.** Chunk 8's registration of
-`events.py` in `_MODULE_MAPPINGS` (`bootstrap/_scaffold/config.py`, row 8-2)
+`events.py` in `_MODULE_MAPPINGS` (`bootstrap/_scaffold/config.py`, row 4-8)
 changes a symbol the AST attestation baseline digests. This is **not** a
 second Maintainer fence, though: `_MODULE_MAPPINGS` is one of the four
 symbols in `_ast_attest._UPDATE_ALLOWLIST`, so the repair for this specific,
 single-symbol change is self-serviceable by the implementing agent via the
-`update-symbol` CLI path (Chunk 8's own row 8-5 for it) — distinct from, and
+`update-symbol` CLI path (Chunk 4's own row 4-11 for it) — distinct from, and
 not to be confused with, the already-owed, non-self-serviceable
 docstring-drift re-anchor above, which remains a Maintainer-run direct
 correction this plan does not perform.
@@ -583,7 +603,7 @@ correction this plan does not perform.
 already-owed AST-baseline re-anchor into one Maintainer ceremony** is the
 shape that avoids running the Maintainer-only ceremony twice in quick
 succession — presented here as an option for the Maintainer to choose, not
-decided by this plan. (Row 8-5's self-service `update-symbol` step is
+decided by this plan. (Row 4-11's self-service `update-symbol` step is
 unrelated to this batching option: it needs no Maintainer ceremony at all.)
 
 ## Acceptance criteria
