@@ -1501,3 +1501,43 @@ instructions.
 **Not exercised**: the full suite, re-anchor, Chunk S, release packaging, or
 third-party plugins beyond the synthetic wrapper-order probes. The expected
 differential-oracle HOLD remains outside this finding.
+
+## Security review disposition -- Anthony Kendall (Maintainer) -- 2026-08-20
+
+**The Security Review is closed without a clearing round.** Authorization,
+quoted verbatim and visually isolated:
+
+> "Okay, revise, and no more rounds, we are done with this one."
+
+**What this means, stated plainly rather than left to inference.** The Security
+Review's verdict was **REVISE**, with two blocking findings. Those findings were
+accepted and fixed, and the fixes were measured before and after against the
+shipped bytes. But **the reviewer did not confirm the fixes** — this review is
+closed by the Maintainer accepting the author's Response, not by an independent
+read of the corrected code. A later reader should not take the closure as
+equivalent to a clean Security pass.
+
+**What was and was not independently reviewed.** The reviewer read commit
+`8610a7928803b246d6d67f02515978624afa0da8`. The fix at
+`a7cd83d` changed the guard's **mechanism**, not only its predicate: a plain
+hook competing for ordering became a `wrapper=True` hook that runs after every
+competing implementation. So the mechanism now in the tree is one no Security
+Review has read. The reviewer's positive findings — that the release-mode
+exemption, additive child environment, strict token checks, test-environment
+scrubbing, file-span calculation and shipped wording are sound — were made
+against bytes that survive unchanged, and those still stand.
+
+**Why the Maintainer's call is defensible here, and where it is not precedent.**
+Both findings came with reproduction steps, and both fixes were re-measured
+against those exact reproductions: a pending `shouldstop` keeps exit 2, and a
+competing aborting hook keeps exit 7 and its diagnostic, with the guard silent
+in both. The residual risk is that the wrapper introduces something the
+reproductions do not probe. That is a real but bounded risk on a cost guard
+whose failure mode is refusing a run rather than admitting one. **It would not
+be bounded on a surface where the failure mode is silent admission**, and this
+disposition should not be cited for one.
+
+**Still owed by this plan, and not covered by this disposition**: the ordinary
+code review (floor: not the implementing agent), the gate re-anchor ceremony
+(Chunk D, Maintainer-owned), and Chunk S, which remains a precondition of
+`ready-to-archive`.
