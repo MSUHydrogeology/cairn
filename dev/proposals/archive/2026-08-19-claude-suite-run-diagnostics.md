@@ -2516,9 +2516,9 @@ work rather than proposal blockers.
 
 ## Amendment -- Claude (author) -- 2026-08-20 -- two accepted terms cannot be constructed
 
-**Status of this amendment: awaiting the Maintainer's decision.** It proposes a
-change to an accepted contract and does not itself land one. The Maintainer's
-direction to draft it, quoted verbatim and visually isolated:
+**Status of this amendment: ACCEPTED — see the Decision at the end of this
+section.** The Maintainer's direction to draft it, quoted verbatim and visually
+isolated:
 
 > "Fix the conflict at the source. It's fine to re-open a plan when we discover
 > an issue. Let's not get tied to the machinery. The goal is to write good code."
@@ -2633,3 +2633,48 @@ Guard 3 also blocks an accepted sibling. `dev/plans/full-suite-interception.md`
 carries a falsifier reading "run the real guard to refusal over a fixture tree,
 then read the ledger row it wrote." Under guard 3 no row is written and that
 falsifier is unconstructible. This amendment unblocks both plans.
+
+
+### Decision on this amendment -- Anthony Kendall (Maintainer) -- 2026-08-20
+
+**ACCEPTED as drafted.** Authorizing instructions, quoted verbatim and visually
+isolated:
+
+> "Fix the conflict at the source. It's fine to re-open a plan when we discover
+> an issue. Let's not get tied to the machinery. The goal is to write good code."
+
+> "Yes, please draft the amendment"
+
+> "I thought we made a call already on that amendment"
+
+**What the scribe treated as authorizing, stated so it can be corrected.** The
+first instruction chose the route -- repair the contract rather than work around
+it in the derived plan -- and was given before the specific fix was designed.
+The second directed the draft. The third was given after reading it, in answer
+to a request for a decision the Maintainer considered already made. Taken
+together the scribe read these as accepting the amendment **as drafted**,
+including its two substantive terms: guard 3 deleted with nothing replacing it,
+and "the suite root" defined as the directory containing the running collector.
+No term was added, softened, or reinterpreted at scribing.
+
+**Accepted terms.**
+
+* Guard 3 (containment against `tempfile.gettempdir()`) is **deleted**, and
+  nothing replaces it. Guards 1, 2, 4 and 5 are unchanged.
+* **The suite root** is the directory containing the running collector, and the
+  positional half of the `scope` classifier's first clause is **resolution**,
+  not string equality.
+* Everything listed under "What this amendment does NOT change" is unchanged,
+  including the Security Review and re-anchor ceremony the implementation owes.
+
+**Two things this Decision does not resolve, recorded so they are not read as
+settled by it.** The amendment's own "strongest surviving objection" stands: the
+case for deleting guard 3 rests on a measurement that guard 4 covers the release
+checkout, and the implementation's owed Security Review is the right place to
+challenge that rather than inherit it. And the amendment's security-posture
+paragraph argues that this change owes no Security Review of its own; that
+argument is accepted here as reasoning, not ratified as a finding.
+
+**Scribed by** Claude (Opus 5) on the Maintainer's instruction. This is a
+Decision-only edit: the amendment's status flips and this section is appended,
+and nothing else in the tree changes.
