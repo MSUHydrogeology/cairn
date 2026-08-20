@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: **high-assurance** — mandatory. The change touches the
 **install contract** (`AGENTS.md` > High-risk surfaces): the lockfile and the
 `--adopt-module` path that writes it.
@@ -1525,3 +1525,19 @@ Each close is **MAINTAINER-GATED** and gated on:
   gates.** Superseded by the full closure contract above, including "the
   implementation's External Security code review." Reason: A4.
 * **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-20
+
+**ACCEPTED as revised (Revision 2).** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, all three plans seem acceptable to me as revised. Please scribe my decision on all three as Accept as Revised."
+> "Sorry, proposals"
+
+**Summary of accepted terms (Revision 2)**:
+- **D1 (Profile Seed & Strict Token Guard)**: `_cmd_adopt_module` resolves required tokens from `profile.yml` and `cairn-lock.yml` (lockfile wins). Applies strict placeholder detection (`{{...}}` and `<...>`) and `_refuse_secret_tokens` *before* the spec loop writes any files. Warns on incomplete/invalid profile.
+- **D2 (Advisory on Differing Bytes)**: Non-blocking byte comparison on existing destination files against substituted template bytes across both `else` and `continue` branches.
+- **D3 (Upgrade Doc Fix)**: Drops obsolete `--include-archives` recommendation in `bootstrap/UPGRADE.md:255`.
+- **Review Requirement & Gating**: Plan review is `required(Internal)`. Implementation carries a **Security Review REQUIRED** trigger and requires External Security code review prior to closing Issue #7 and Issue #5.
+
+**Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
+
