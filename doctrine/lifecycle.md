@@ -59,10 +59,14 @@ A proposal is the deliberation artifact for a substantive change —
 a new abstraction, a cross-cutting refactor, a contract change,
 anything worth a second opinion before it is baked in.
 
-```
-awaiting-review <-> revising --> awaiting-decision --> accepted
-                                                   --> rejected
-                                                   --> superseded
+```mermaid
+flowchart LR
+    AR["awaiting-review<br/>(a reviewer holds it)"] --> AD["awaiting-decision<br/>(the Maintainer holds it)"]
+    AR --> RV["revising<br/>(the author holds it)"]
+    RV --> AR
+    AD --> ACC["accepted"]
+    AD --> REJ["rejected"]
+    AD --> SUP["superseded"]
 ```
 
 **Each status names who holds it next.** That is the point of the
@@ -140,14 +144,17 @@ A plan is the execution artifact for a non-trivial accepted
 proposal. Where the proposal records *what and why*, the plan
 records *how the work was carried out, and that it was verified*.
 
-```
-awaiting-plan-review <-> revising-plan
-         |
-         v
-ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
-                                              |
-                                              v
-                                      ready-to-archive -> archived
+```mermaid
+flowchart TD
+    APR["awaiting-plan-review<br/>(a plan reviewer holds it)"] --> RVP["revising-plan<br/>(the author holds it)"]
+    RVP --> APR
+    APR --> RTI["ready-to-implement<br/>(the implementer holds it)"]
+    RTI --> IMP["implementing<br/>(the implementer holds it)"]
+    IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
+    ACR --> RVC["revising-code<br/>(the implementer holds it)"]
+    RVC --> ACR
+    ACR --> RTA["ready-to-archive"]
+    RTA --> ARC["archived"]
 ```
 
 The plan-open commit creates the plan and archives the source

@@ -60,13 +60,46 @@ what makes "the invariant core is small" an honest claim.
   coordination through a `dev/` tree; the baseline coordination
   tier; the session routines.
 * **Default-on modules** — installed unless a dimension removes
-  them: the lifecycle-metrics layer; the reflections channel; the
-  write-time claim-check discipline.
+  them: lifecycle-metrics, reflections, claim-check, fold-back-ledger,
+  incident-trackers, documentation-plan, and content-security. (The
+  authoritative per-module rationale is the gate table in
+  `bootstrap/BOOTSTRAP.md` > I-5.)
 * **Team-gated modules** — activated only when the team has the
   structure to run them: the full two-tier Dual-Review apparatus
   with structural-independence floors; the domain-agent roster;
   the legacy-agent role and readiness map; the multi-language test
   architecture; the asynchronous and real-time coordination tiers.
+
+### What your profile actually decides
+
+```mermaid
+flowchart LR
+  P(["your project"])
+  P --> ALW["ALWAYS<br/>invariant kernel<br/>+ 7 default-on modules"]
+  P --> AX["YOUR SIX AXES"]
+  P --> JG["YOUR JUDGMENT<br/>no axis decides these"]
+
+  AX --> AGE["age = legacy"] --> LA["legacy-agent"]
+  AX --> AT["agent-team =<br/>concurrent-multi-type"] --> DR["dual-review"]
+  AT --> CT["coordination-tiers"]
+  AX --> CX["complexity =<br/>moderate or complex"] --> MS["model-selection"]
+  CX --> TD["testing-discipline"]
+  AX --> HT["human-team =<br/>small-multi or large-multi"] --> CB["CONTRIBUTING.md"]
+  AX --> LG["language = multi"] --> DL["dual-language-tests"]
+  LG --> DD["doc-drift-prevention"]
+  AX --> SZ["size = medium or large"] --> DD
+  AX --> SZL["size = large<br/>+ distinct scientific domains"] --> DA["domain-agents"]
+
+  JG --> SR["security-review<br/>a non-trivial trust boundary"]
+  JG --> IC["issue-capture<br/>the team uses an issue tracker"]
+  JG --> EX["examples-gallery<br/>the project publishes one"]
+  JG --> PS["python-security<br/>the python_package token is filled"]
+```
+
+*A complete six-axis profile does not complete the module selection. Most of
+the roster is derived — but four modules are not reachable from any axis:
+three are judgments about the project, and one waits on a profile token. If you
+fill in the six axes and stop, those four are the ones you silently skipped.*
 
 A team-gated module is not "advanced" — it is simply unstaffable
 below a certain team shape. A solo, single-agent team cannot run a

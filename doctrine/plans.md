@@ -15,14 +15,17 @@ file moves, Response grammars) lives in `doctrine/proposals.md`.
 
 ## The plan lifecycle
 
-```
-awaiting-plan-review <-> revising-plan
-         |
-         v
-ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
-                                              |
-                                              v
-                                      ready-to-archive -> archived
+```mermaid
+flowchart TD
+    APR["awaiting-plan-review<br/>(a plan reviewer holds it)"] --> RVP["revising-plan<br/>(the author holds it)"]
+    RVP --> APR
+    APR --> RTI["ready-to-implement<br/>(the implementer holds it)"]
+    RTI --> IMP["implementing<br/>(the implementer holds it)"]
+    IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
+    ACR --> RVC["revising-code<br/>(the implementer holds it)"]
+    RVC --> ACR
+    ACR --> RTA["ready-to-archive"]
+    RTA --> ARC["archived"]
 ```
 
 The plan-open commit creates the plan and archives the source

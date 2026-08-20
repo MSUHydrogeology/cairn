@@ -92,10 +92,14 @@ the committing operator guarantees the quote.
 
 ## The proposal state machine
 
-```
-awaiting-review <-> revising --> awaiting-decision --> accepted
-                                                   --> rejected
-                                                   --> superseded
+```mermaid
+flowchart LR
+    AR["awaiting-review<br/>(a reviewer holds it)"] --> AD["awaiting-decision<br/>(the Maintainer holds it)"]
+    AR --> RV["revising<br/>(the author holds it)"]
+    RV --> AR
+    AD --> ACC["accepted"]
+    AD --> REJ["rejected"]
+    AD --> SUP["superseded"]
 ```
 
 | Transition | Authority | Machine-verifiable preconditions |
@@ -124,14 +128,17 @@ presence; the operator guarantees authenticity):
 
 ## The plan state machine
 
-```
-awaiting-plan-review <-> revising-plan
-         |
-         v
-ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
-                                              |
-                                              v
-                                      ready-to-archive -> archived
+```mermaid
+flowchart TD
+    APR["awaiting-plan-review<br/>(a plan reviewer holds it)"] --> RVP["revising-plan<br/>(the author holds it)"]
+    RVP --> APR
+    APR --> RTI["ready-to-implement<br/>(the implementer holds it)"]
+    RTI --> IMP["implementing<br/>(the implementer holds it)"]
+    IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
+    ACR --> RVC["revising-code<br/>(the implementer holds it)"]
+    RVC --> ACR
+    ACR --> RTA["ready-to-archive"]
+    RTA --> ARC["archived"]
 ```
 
 | Transition | Authority | Machine-verifiable preconditions |
