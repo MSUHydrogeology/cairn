@@ -1,8 +1,3 @@
-<!-- claim-check-allow: docs/related-practices.md, docs/glossary.md, docs/assets/lifecycle-states.svg, docs/assets/module-map.svg, docs/assets/where-cairn-sits.svg, scripts/gen_docs_figures.py -->
-<!-- ^ Surfaces this note PROPOSES creating; they deliberately do not resolve
-     yet. Marked rather than asserted, per AGENTS.md > Verifying claims. Every
-     measured figure below names the command that produced it. -->
-
 # Cairn documentation enhancement — the front door, the feature story, and the visual system
 
 **Author**: Claude (Strategy)
@@ -23,6 +18,49 @@ unstruck **B3** items of `2026-07-08-claude-broad-look-skeptical-review.md`
 codes).
 
 ---
+
+> **Execution state, `as_of` 2026-08-20** *(added at a later pass; the
+> Recommendation below is unchanged and still governs).* **Stages 1 and 2 have
+> shipped — do not re-do them.** Stages 3–5 have not started.
+>
+> * **Stage 1 — the front door: done.** `f6ee989` (lead with what Cairn does,
+>   unbacked claims dropped), `0629b44` (the review section rewritten in the
+>   reader's register), `ab07789` (customization added).
+> * **Stage 2 — the two skeptic answers: done.** `6df71b7` created
+>   `docs/related-practices.md` and `docs/glossary.md` and registered both in
+>   `docs/DOCUMENTATION_PLAN.md`'s descriptive-layer inventory, which was the
+>   stage's own condition; `ab07789` gave both a plain-language pass.
+> * **Stage 3 — the visual-system gates: not started, and next.**
+>   `docs/DOCUMENTATION_PLAN.md` carries neither the asset convention (gate 3)
+>   nor a named legibility pass (gate 2) — verified by reading its section list.
+>   Gate 1 was already closed at authoring time per F5.
+> * **Stages 4–5 — the diagrams and the F6 generator: not started**, correctly
+>   gated behind stage 3, and stage 5 additionally behind registries that are
+>   still active implementation surfaces.
+>
+> **A stale exemption was removed from the top of this file at the same pass.**
+> Its `claim-check-allow` block named six paths as deliberate
+> forward-references. Two had since shipped, and — checked properly — **none of
+> the six is cited anywhere in the body**, so the whole block suppressed
+> nothing and was deleted rather than trimmed. Confirmed by positive control:
+> a probe file citing `docs/definitely-not-here-xyz.md` flags, and a probe
+> citing the block's own paths flags too, so the checker was capable of
+> catching them and simply had nothing to catch. `claim_check` reports a file
+> carrying a dead exemption as clean, so nothing detects this class; if those
+> citations are ever written, the marker comes back with them.
+>
+> **One question stage 3 must answer first, which this note does not settle.**
+> The Recommendation fences stage 3 to Cairn's self-hosted
+> `docs/DOCUMENTATION_PLAN.md` and explicitly excludes the shipped forkable.
+> That file's own "Updating this plan" section says the opposite by default:
+> cross-propagation to the forkable is *bidirectional under maintainer review*,
+> and substantive doctrine changes here *should* propagate. An asset convention
+> is plausibly substantive. Whether the fence or the propagation clause governs
+> is the Maintainer's call, and it decides whether stage 3 is one file or two.
+>
+> `dev/PLANNING.md`'s **"0.4 launch-surface polish"** row (F8) remains the
+> roadmap home and is still correctly queued, since the graphics stages are
+> what remain.
 
 ## The question / felt gap
 
