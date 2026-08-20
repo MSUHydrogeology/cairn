@@ -1,7 +1,7 @@
 # Plan: the suite reports its own cost
 
 **Source proposal**: `dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(**Internal**) — ratified by Maintainer amendment at
 `e6e854d58f7083b5497cfa77a5d319285e7626b9`, overriding the plan-review
 template's default escalation path. See "Plan-review tier rationale" below
@@ -596,3 +596,432 @@ one implementing commit id plus the governing accepted/Revised section.
 Promising that it is owed does not satisfy it.
 
 This section is append-only once written.
+
+## Plan review -- Claude Opus 5 (Internal, fresh context) -- 2026-08-20
+
+Reviewed commit: 86adf62dbc63e0c43eeea7f83cbd4f53f1456306
+Target: the plan in full — Source proposal and tier rationale, Proposed paths, Scope
+(including both scope-adjacent decisions and the Maintainer allowance), Sequence and
+Chunks A–E, Acceptance criteria, Author-accounting, Verification (Boundaries A/B/C),
+Code review, and "Not settled by the proposal" — read against Revision 5 (`~2172-2444`),
+its final External review, and the Decision of the accepted source proposal
+`2026-08-19-claude-suite-run-diagnostics`
+Prior findings: none
+Assurance path: high-assurance
+**Tier**: Internal
+**Findings**: raised
+
+**Model**: Claude Opus 5 (`claude-opus-5`).
+
+**Note on the independence checker.** `python tools/lifecycle_planner.py scan` compares
+the byline's *first word* against the author's, and Cairn's Internal floor is "the same
+agent in a fresh session" — so an honest Internal byline collides by construction. This
+review will read as author-written to that checker. It is not: this is a fresh context
+that did not author the plan and will not implement it. The defect is filed in
+`dev/PLANNING.md` as a `[TOOL]` row. Declaring a byline that is not mine to silence a
+known checker defect would put a false attribution on the one record whose integrity
+*is* its attribution.
+
+**Verdict: REVISE.** → `revising-plan`.
+
+This is a careful plan. Its scope fidelity is good — I mapped all twenty rows of
+Revision 5's Evidence table and all eleven accepted reader outcomes into the plan's
+Acceptance criteria and Chunk B, and found none dropped; two proposal rows are merged
+into neighbouring bullets (sub-millisecond conversion into the `by_file` bullet, encoder
+pinning into the budget bullet) but neither is lost, and three rows are *strengthened*
+past the accepted falsifier. Its three "Not settled by the proposal" disclosures are
+honest, its citations check out (I opened `plan_inheritance_violations` at
+`tools/lifecycle_planner.py:3608-3614`, confirmed `bootstrap/tests/conftest.py` is in
+`_gate_manifest._frozen_files()`'s 203-entry set, confirmed
+`bootstrap/REANCHOR_RUNBOOK.md` contains zero references to pytest/the suite/a full run
+and that all four of its "Security review" occurrences govern ceremony machinery, and
+confirmed the byte-identity of the `dev/measurement/README.md` twin), and
+`python scripts/claim_check.py` on it is clean.
+
+It blocks on something narrower and harder: **Chunk C is not constructible as
+specified.** The accepted design's own guards close every route a test inside
+`bootstrap/tests/` has to observe a written ledger row, and the one falsifier that pins
+the classifier's positive case has no admitted route at all. That is not a polish
+finding — an implementer meets it in the first hour of Chunk C, and the path of least
+resistance from there writes test rows into the live ledger this plan exists to produce.
+Findings PR1 and PR2. PR3 and PR4 are independently blocking; PR5–PR7 are substantive;
+PR8–PR10 are minor.
+
+### Blocking findings
+
+**PR1 — Chunk C's write-observing falsifiers have no constructible mechanism, and the
+plan names none while asserting the opposite as settled.**
+
+Three of the accepted guards jointly close every route:
+
+* **Guard 2 (reentrancy with ownership).** The parent session claims
+  `CAIRN_SUITE_LEDGER_SESSION=1` in `pytest_configure`; a pre-existing marker means
+  child. So an in-process `pytest.main()` — the public path this plan's Author-accounting
+  explicitly declares — is a child of the running suite and writes **nothing**. Revision
+  5's Known omissions say so outright: "in-process `pytest.main()` treated as children."
+* **Guard 3 (containment).** The ledger directory is derived from the conftest's location
+  (Revision 5, S5), so a fixture tree under `tmp_path` puts it under the resolved
+  `tempfile.gettempdir()`. Measured on this host: `gettempdir()` resolves to
+  `/private/var/folders/.../T`, and a `mkdtemp` sample resolves beneath it. Guard 3
+  skips → no row. This is not incidental: it is exactly the property the containment
+  falsifier is written to prove.
+* **Guard 5 (opt-out).** No-op when `dev/measurement/` is absent — which it is in any
+  fresh fixture tree.
+
+The only directory that satisfies all three is the repository's own `dev/measurement/`.
+Under `bootstrap/tests/fixtures/` (which already exists) Cairn's conftest applies to the
+whole subtree, so the naive construction writes test rows into the live
+`dev/measurement/suite-runs.jsonl` — contaminating the artifact `tools/suite_cost.py`
+renders, in a plan whose headline output is a cost figure.
+
+The contract offers no escape. Its complete environment surface is three names —
+`CAIRN_SUITE_LEDGER`, `CAIRN_SUITE_LEDGER_SESSION`, `CAIRN_SUITE_LEDGER_LABEL` — and none
+redirects the write path. **Adding one is a contract expansion**, not an implementation
+detail: it re-opens S5's load-bearing claim that "write-path targeting [is closed] by
+enumeration", and would take a Maintainer allowance plus a Security-Review re-read, not
+a plan-authoring judgement call.
+
+Two aggravating facts the plan should carry:
+
+* The plan's Author-accounting states the hooks are "exercised through its actual public
+  path, in-process `pytest.main()` calls from `test_suite_ledger.py`". Under guard 2 that
+  path writes nothing. Every falsifier that asserts a row must therefore run under a
+  **doctored** environment (marker cleared, and containment or the derived path
+  suspended) — which is a defensible mechanism but is not "the actual public path", and
+  which changes what the collector-disabled *control* runs are controlling for.
+* There are currently **zero** `pytest.main(` call sites anywhere in `bootstrap/tests/`.
+  This is a new harness pattern with no precedent in the tree to copy, asserted as
+  settled.
+
+**Ask.** Name the mechanism, per falsifier class, in the plan — not at implementation
+time. For each class say which guard it suspends, how (monkeypatch target, env
+manipulation, non-temp scratch root), and why suspending that guard does not invalidate
+that falsifier. In particular the containment and reentrancy falsifiers must **not** run
+under a suspended guard 3 or a cleared marker, or they prove nothing. If the chosen
+mechanism is a contract-level path override, say so and take it to the Maintainer.
+
+**PR2 — the `scope == "full"` falsifier is unconstructible, and every escape closes on
+the classifier's own rules.**
+
+Acceptance bullet 4 requires "the canonical and order-independence invocations resolve
+`full`". Revision 5 makes `full` require **both** channels: channel 1, the raw invocation
+is a member of an exact closed argv family (the canonical command, or the
+order-independence command with its four known display/shuffle options — *any* other
+token yields `unknown`); and channel 2, the resolved postconditions, including
+`scope_basis.targets` resolving to the suite root, `deselected == 0`, `not_run == 0`,
+`collected > 0`, `executed > 0`, `interrupted` false.
+
+Targeting the suite root from a test that lives in the suite root re-collects
+`test_suite_ledger.py`, which runs the nested invocation again: **non-terminating
+recursion**. Every way out is closed by one channel or the other:
+
+* `--ignore` / `--ignore-glob` / `-k` / `-m` — not in the closed family → channel 1 →
+  `unknown` (the proposal names `--ignore` and `--ignore-glob` explicitly).
+* `--deselect` — `deselected != 0` → channel 2.
+* a module-level skip on the recursing module — on the proposal's own `unknown` list in
+  the same Evidence row.
+* a custom env marker making the module skip itself in the child — lands back on the
+  module-level-skip case.
+* a subprocess — excluded by Revision 5's Scope, and **this plan already reads that
+  exclusion as binding on tests**: it chose to import `tools/suite_cost.py` as a module
+  rather than shell out to it, "consistent with 'zero subprocesses'".
+* a copied suite root under `tmp_path` — argv is a temp path, not the canonical command
+  (channel 1), and guard 3 suppresses the row anyway (PR1).
+
+So the single falsifier that pins the classifier's **positive** case — the one that
+separates "resolves `full` correctly" from "never resolves `full`" — has no route this
+plan admits. Note the asymmetry this creates: an implementation that returns `unknown`
+unconditionally satisfies every one of the eight negative cases in the same bullet, plus
+the capped-basis bullet, plus the re-derivation bullet (a stored `unknown` and a
+re-derived `unknown` agree). Without a working positive case, the `scope` classifier is
+pinned only against over-claiming, never against under-claiming — and under-claiming is
+the failure that makes the whole ledger useless, because no run is ever counted as a
+full run.
+
+**Ask.** Either name a concrete construction for the positive case, or state plainly that
+it cannot be produced in-process and take the remedy to the Maintainer. Dropping the row
+is a **scope reduction** against an accepted Evidence row — `AGENTS.md` is explicit that
+a plan may not draw that fence for itself and that a reviewer cannot create the authority
+by calling it out of scope, so I am not offering it. Record it as `Scope delta: degraded`
+with a Maintainer allowance if that is where it lands.
+
+**PR3 — `bootstrap/verify_integrity.py` is named as a check for D2 and does not check
+the claimed property. The command as written cannot run at all.**
+
+The criterion under Acceptance is: "`python bootstrap/verify_integrity.py` reports no
+hash mismatch for that destination once the lockfile hash is advanced." Opened and run:
+
+* **(a) The command exits 2.** `--target` is `required=True`. Measured:
+  `python3 bootstrap/verify_integrity.py` → `error: the following arguments are
+  required: --target`, exit 2. As written it verifies nothing, ever.
+* **(b) It is blind to the property D2 is about.** It compares on-disk bytes to
+  `dev/.cairn/cairn-lock.yml`. The record is `dst: dev/measurement/README.md`,
+  `src: core/dev/measurement/README.md`, `hash: sha256:726ee2b8…` — the hash of the
+  **installed** copy. The checker never reads `templates/core/**`. So it cannot detect
+  twin desync in either direction, and editing **both** copies byte-identically fails it
+  exactly as editing one does. The plan's stated rationale — that editing Cairn's copy
+  *alone* "leaves the tree failing `bootstrap/verify_integrity.py`" — attributes to this
+  tool a discrimination it does not have.
+* **(c) "once the lockfile hash is advanced" names no owner and no chunk.** Nothing in
+  Chunks A–E advances it. The plan's own prose says the state persists "until an
+  `upgrade --finalize`" — a command no chunk runs, no acceptance criterion names, and no
+  fence assigns.
+* **(d) The baseline is already red.** `python3 bootstrap/verify_integrity.py --target .`
+  on the current tree reports 2 violations (`dev/plans/_template.md`,
+  `docs/DOCUMENTATION_PLAN.md`) and exits 1. An implementer handed "reports no hash
+  mismatch" meets a failure they cannot clear and that has nothing to do with D2.
+
+**And there is no substitute gate.** I looked for one. The suite's generic twin-parity
+gate is `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source`,
+and `_self_hosted_twins()` globs `*.py` under `scripts/`/`tools/` only — a gap already
+documented in this tree at `bootstrap/tests/test_portable_security_sweeps.py:2286-2291`
+("the suite's generic twin-parity helper globs `*.py` only -- a real, measured gap").
+Nothing anywhere enforces `.md` twin parity.
+
+**Ask.** Drop the `verify_integrity` clause or replace it with the invocation and the
+scope it actually has. D2's real protection is the `diff` command in the criterion above
+it plus reviewer attention — say that plainly. This repository's own rule is that a tool
+returning success without testing the claimed property is worse than no tool; here the
+tool cannot even return success. This is the third instance of the pattern in this plan,
+after the two it already documents and withdraws (trigger 5 / `REANCHOR_RUNBOOK.md`, and
+the Security Review's non-existent mechanical enforcer). The plan's instinct to name a
+mechanism is right; the habit that needs adding is opening the mechanism before naming it.
+
+**PR4 — the encoded-budget criterion is satisfied by an implementation that always emits
+the skeleton row.**
+
+The bullet asks that an oversized label, 64+ tokens, control characters, and every real
+test-file path "all still produce exactly one line, ≤ 4096 bytes, that round-trips
+through `json.loads`". The accepted design has a **total** skeleton fallback: `label`,
+`invocation` and `scope_basis` null, `by_file` empty, `truncated` true, `scope` unknown,
+measured at 451 bytes. An encoder that skeletonizes **unconditionally** satisfies every
+clause on every named case, on the first try, forever.
+
+This is the identical failure the plan catches one bullet earlier and fixes for the
+sanitizer — *"a sanitizer returning `""` for every non-ASCII input is total, and sets
+`truncated` correctly on every named case, so a criterion asserting only
+totality-plus-disposition admits an implementation the accepted contract rejects."* The
+reasoning is right and was not carried across to its neighbour.
+
+**Ask.** Add the survival half: for the cases that fit within budget, `truncated` is
+false and the intended `label`, `invocation` and `by_file` content is present in the
+decoded row; the skeleton appears only where the budget genuinely forces it. The
+`by_file` eviction bullet needs the same read — "eviction preserves cost" is directional
+and fine, but pair it with the assertion that eviction happens only when required.
+
+### Substantive findings
+
+**PR5 — "reconciles against `terminalreporter.stats`" is undefined, and it is the only
+directional half of a criterion this repository has already been burned by.**
+
+Acceptance bullet 3 is `0 <= executed <= collected` plus reconciliation, across seven
+abort shapes. The inequality is the weak half by construction, and the sibling plan
+demonstrates it concretely: `full-suite-interception` shows a refused session produces
+`(executed=0, collected≈4,443)`, satisfies the inequality, and "cannot catch this". So
+the criterion's entire discriminating power sits in the word "reconciles" — which neither
+Revision 5 nor this plan defines. An implementer may satisfy it with a tautology.
+
+**Ask.** State the relation concretely, e.g. `executed` equals the count of distinct
+nodeids with ≥1 runtest report derived from `stats`, and each of the seven outcome counts
+equals its corresponding `stats` bucket size, per shape. The plan's own criterion for
+naming falsifiers — "name any criterion a wrong implementation would satisfy" — applies
+here more than anywhere.
+
+**PR6 — the sequencing seam: whatever form PR2's `full` falsifier takes, the sibling
+breaks it, and neither plan owns the repair.**
+
+`dev/plans/full-suite-interception.md` row A1 refuses the canonical Boundary B argv
+(`pytest.UsageError`, exit 4), and row A6 makes the sibling's classifier resolve a refused
+session `unknown` rather than `full` — under a Maintainer allowance, correctly. That is
+precisely this plan's acceptance bullet 4 inverted: any `full` falsifier that exercises
+the canonical argv against the suite root becomes a refusal after the sibling lands and
+resolves `unknown`, failing this plan's own criterion.
+
+The sibling has no declared authority to repair it. Its Proposed paths record
+`bootstrap/tests/test_suite_ledger.py` as "the sibling plan's contract-test file, likewise
+created there and only *read* here"; its Boundary A mapping runs the file but does not
+claim the right to edit it. So a break lands in a gap between two plans, discovered at
+the sibling's Chunk A.
+
+This plan lands first and is the cheap place to close it. **Ask.** State in the
+sequencing section that the `full`-classification falsifiers must be constructed so the
+sibling's guard cannot perturb them — carrying `CAIRN_FULL_SUITE=1`, which is inert today
+and correct after the sibling lands, is the obvious candidate and costs nothing now — or
+hand the seam to the sibling explicitly so it can declare the file as touched. Do not
+leave it implicit; the sibling's own author found this class of cross-plan defect only by
+looking for it.
+
+**PR7 — the one omission the plan claims to close is bound by no acceptance criterion.**
+
+Revision 5's Known omissions bound collector overhead to "unmeasured **until
+implementation**". The plan says it closes it via "a collector-disabled control run
+against a collector-enabled run over the same selection, recording the delta", and argues
+"the measurement is a by-product of a run the plan already requires."
+
+It is not a by-product. The S2 control establishes **outcome** expectations — exit status,
+node counts, release evidence. An outcome comparison yields no timing delta. To produce
+one you need repetitions, a selection, a noise floor and a stated method, none of which
+the plan gives. And nothing binds it: there is no bullet in "Tests that must pass", no
+artifact named, no field named — while the paragraph tells the code reviewer that failure
+to produce it "is a blocking gap". That is an obligation with no defined deliverable,
+which is the same shape as the named-trigger defect in PR3 one level up.
+
+Note the schema already has the obvious home: `collector_ms` is a pinned field in
+Revision 5's row schema, and neither the proposal nor this plan has a falsifier for it —
+the plan's Chunk A3 summary does not name it either.
+
+**Ask.** Bind it: an acceptance-criteria bullet naming the method, the selection, the
+repetition count, and where the number is recorded (the `## Implementation verification`
+section is the natural place). Add a falsifier that `collector_ms` is populated and
+consistent with the observed delta. If it cannot be bound, it is still an open omission
+and should be carried as one rather than declared closed.
+
+### Minor findings
+
+**PR8 — Chunk B's "not shipped" property gets a one-shot manual check where the repo
+already has a standing test for exactly that property.**
+
+The criterion is "`bootstrap/scaffold.py --manifest` must show no `tools/suite_cost.py`
+row **after this chunk lands**" — a single observation at landing time. The analogy the
+plan draws is right but incompletely read: `scripts/quality_gate.py` and
+`scripts/check_cairn.py` are not protected by having been checked once. They sit in
+`_OWN_ONLY_SCRIPTS` in `bootstrap/tests/test_notice_install.py`, and
+`test_own_only_dev_scripts_are_not_shipped` re-asserts zero manifest rows for each on
+every run. Extending that roster (or adding a `tools/` arm to it) converts the plan's
+promise into a standing gate for about three lines.
+
+Related, from the same file: `test_own_only_dev_scripts_carry_spdx_header` requires an
+SPDX MIT header on Cairn's own non-shipped dev tooling, and `AGENTS.md` > High-risk
+surfaces makes "code is MIT wherever it lives" a licence-split obligation. Chunk B says
+nothing about the header. I confirmed no *existing* test breaks without it —
+`_self_hosted_twins()` only sees manifest-mapped destinations, so an unmapped
+`tools/suite_cost.py` is invisible to it — which is exactly why it should be added to the
+roster rather than left invisible.
+
+**PR9 — E2's AST-baseline figure is stale within its own cited source.**
+
+E2 cites `dev/PLANNING.md` > "Queued" as reporting "13 CHANGED symbols (11 in
+`upgrade.py`, 2 in `config.py`)". The Queued row does say that. But a later entry in the
+same file (under "Migrated Cairn roadmap") records **37 CHANGED symbols across 74 node
+lines, `as_of 2026-08-19` at `f129178`, explicitly "up from 13"**, with a seven-file
+breakdown — `upgrade.py` 26, `install.py` 18, `slotmerge.py` 10, `merge.py` 8,
+`config.py` 6, `lockfile.py` 4, `security.py` 2.
+
+E2's job is to show the Maintainer the size of the batch they are being asked to
+disposition. Presenting 13 understates it roughly threefold, and names two files where
+the later record names seven. `AGENTS.md` > Operational pitfalls says to derive the set
+against the committed baseline rather than carry a figure forward, "including from that
+runbook" — a roadmap row is the same hazard. The sibling plan handles the analogous
+situation well ("A Maintainer walking into Chunk D expecting two entries would meet four
+holds and one note").
+
+**Ask.** Cite both and say which is current, or drop the figure entirely and cite only
+the derivation procedure. Either is fine; presenting the stale one as the fact is not.
+
+**PR10 — the bounded-lock criterion tests only the ceiling.**
+
+"the lock is bounded (externally held lock: completion within 1s of a control, no row)"
+is satisfied by an implementation with **no retry loop at all** — a zero deadline
+completes instantly and writes no row. Nothing pins the other direction: that a lock
+released *within* the 250 ms deadline yields a row. The retry loop, which is the part of
+the durability contract that does work, is therefore unfalsified. Add the companion case.
+
+### Things I checked and found correct
+
+Recorded because a reviewer's silence is not evidence they looked.
+
+* **Scope fidelity.** All twenty Evidence rows and all eleven accepted reader outcomes
+  are present. Nothing accepted is dropped. Three falsifiers are strengthened past the
+  accepted text (`head` in the main and packed-refs checkouts moves from "assert a row"
+  to "resolves correctly"; the sanitizer gains its survival half; the 115-path count
+  becomes a run-time enumeration) — all improvements, none a contract change.
+* **The two Maintainer allowances.** The `Contract expansion: adopter surface` for
+  `templates/core/dev/measurement/README.md` is quoted verbatim and visually isolated, and
+  its coverage is stated rather than assumed. The `required(Internal)` declaration with
+  **no** `Inherited proposal basis:` line is the only correct form: I read
+  `plan_inheritance_violations` at `tools/lifecycle_planner.py:3608-3614` and the
+  `_PLAN_READINESS_DISTINCT` branch does hard-refuse the pairing, exactly as the plan
+  says.
+* **Boundary B = `full`.** The reasoning holds independently on both stated grounds.
+  `bootstrap/tests/conftest.py` is in `_gate_manifest._frozen_files()` (verified: 203
+  entries, `bootstrap/tests/conftest.py` among them), and Chunk E is a trust ceremony.
+  `AGENTS.md`'s fence refuses bounded mode on either alone.
+* **Trigger 5.** Correct, and correctly withdrawn: `bootstrap/REANCHOR_RUNBOOK.md`
+  contains **zero** case-insensitive matches for pytest / "full run" / "full suite" /
+  "test suite", and all four "Security review" occurrences govern the instantiated
+  launcher and the checker bytes, never the implementation entering the anchor.
+* **The `tools/` install-surface reading.** `--manifest` emits 23 `tools/` rows covering
+  every existing `.py` there; `dev/measurement/README.md <- core/dev/measurement/README.md
+  substituted` is a real install destination; `bootstrap/tests` has **0** manifest rows;
+  the twin is byte-identical today. The `scripts/quality_gate.py` /
+  `check_cairn.py` precedent is real (both are in `_OWN_ONLY_SCRIPTS` and pinned unshipped).
+* **`claim_check`.** Clean on this plan, exit 0, with the `Proposed paths:` /
+  `Untracked paths:` exemptions resolving as declared. The plan's warning that
+  `claim_check`'s archive fallback cannot fail on a stale sibling path is a good instance
+  of confirming the instrument before trusting an absence.
+* Structural claims about the current `conftest.py` (five hooks, `_release_mode`,
+  `_record_refused_report`), the `.gitignore` rule shape, `CHANGELOG.md > Unreleased >
+  Added` (present at line 60), `dev/measurement/README.md`'s "What belongs here" heading,
+  the pre-existing gitignored `dev/measurement/suite-cost.md`, and
+  `dev/modules/security-review.md`'s focused mode and trust-boundary checklist — all
+  verified present and as described.
+
+### Sharpening
+
+**Scope delta**: preserved.
+
+Nothing in this review narrows what the plan delivers. PR2 and PR7 push in the opposite
+direction: PR2 refuses to concede a `full`-classification falsifier that only the
+Maintainer may concede, and PR7 asks that a claimed closure be bound rather than dropped.
+PR1, PR3, PR4, PR5 and PR10 ask for mechanism and falsifiability the accepted contract
+already implies. PR6, PR8 and PR9 ask for accuracy in text that will be read by someone
+acting on it.
+
+### Coverage
+
+**Read in full**: the plan under review; `dev/plans/full-suite-interception.md`;
+Revision 5 of the source proposal (`~2172-2444`), its final Codex External review, and
+the Decision; `dev/plans/_template.md` lines 360-564 (the four-field basis, the
+inheritance two-field rule, the SCOPE DELTA block, the six code-review triggers, the
+lasting-truth rules); `AGENTS.md` (auto-loaded, re-read deliberately at the named
+sections); `bootstrap/verify_integrity.py`;
+`bootstrap/tests/test_notice_install.py`.
+
+**Opened as check targets**: `dev/.cairn/cairn-lock.yml` (the `dev/measurement/README.md`
+record); `bootstrap/tests/_gate_manifest.py::_frozen_files`;
+`tools/lifecycle_planner.py:3595-3616`; `bootstrap/REANCHOR_RUNBOOK.md` (greps for
+pytest / full run / "Security review" with context);
+`bootstrap/tests/test_portable_security_sweeps.py:2280-2310`;
+`dev/modules/security-review.md`; `dev/PLANNING.md` (the Queued `[VER]` AST row, the
+migrated-roadmap AST record, and the Archive-preconditions section); `CHANGELOG.md`
+(Unreleased subsections); `dev/measurement/README.md`; `.gitignore`;
+`bootstrap/tests/conftest.py`.
+
+**Ran** (read-only, no suite run): `python scripts/claim_check.py
+dev/plans/suite-run-diagnostics.md` (clean); `python tools/lifecycle_planner.py scan`;
+`python bootstrap/scaffold.py --manifest` (grepped for `tools/`, `scripts/`,
+`bootstrap/tests`, `measurement`); `python bootstrap/verify_integrity.py` bare (exit 2)
+and `--target .` (exit 1, 2 pre-existing violations); a `tempfile.gettempdir()` /
+`mkdtemp` containment probe; `diff templates/core/dev/measurement/README.md
+dev/measurement/README.md` (no output); a grep for `pytest.main(` across
+`bootstrap/tests/` (zero call sites).
+
+**Not read**: Revisions 1-4 of the source proposal and the earlier review rounds, except
+through Revision 5's carried section inventory and the per-Response withdrawal ledgers —
+so a commitment withdrawn and *not* recorded in a ledger would have escaped me;
+`doctrine/plans.md` and `doctrine/dual-review.md` in full (grepped for the archive
+precondition and the plan-readiness rules only); `bootstrap/reanchor.sh` and
+`bootstrap/AST_BASELINE_RUNBOOK.md` bytes; the other 200 entries of the frozen-file set;
+`scripts/quality_gate.py`'s neutrality/redundancy internals (I relied on the sibling
+plan's measured `_NEUTRALITY_FILE_SUFFIXES` finding rather than re-measuring, and it does
+not bear on any finding above).
+
+**Not done, by constraint**: no test-suite run — Cairn's rule is that verification is not
+delegated, and no implementation exists to run against. Every claim above is from static
+reading or a targeted read-only probe of *existing* code, and each probe's output is
+quoted or characterized where it carries a finding.
+
+**Out of scope by construction**: I did not re-litigate the accepted design — the five
+hooks, the guard set, the 4,096-byte budget, the `flock` durability contract, the
+`scope_basis` mechanism, or the Internal plan-review tier. PR2 questions whether an
+accepted falsifier is *constructible*, not whether it is correct.
