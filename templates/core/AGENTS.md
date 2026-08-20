@@ -308,7 +308,11 @@ roster is in `dev/agent_collaboration.md`.
     its effects cannot be bounded confidently, run the configured full suite.
   * **B — Integration (stable evidence).** After the final implementation commit
     and before code review, run against a clean, unchanged commit under the
-    project's configured interpreter/runtime. Run the **configured full suite
+    project's configured interpreter/runtime. A project's Boundary B command
+    may require an explicit override token to run as a full suite; verification
+    records written before such a guard lands cite the bare form and remain
+    accurate for the runs they describe.
+    Run the **configured full suite
     unless the plan's reviewed mapping bounds the change's effects
     confidently**, in which case run that mapping plus every standing gate for
     every touched surface — the same test and the same fail-closed direction as

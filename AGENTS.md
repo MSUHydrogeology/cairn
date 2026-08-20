@@ -325,6 +325,9 @@ roster is in `dev/agent_collaboration.md`.
     **canonical interpreter (Python 3.13.x)**. Cairn's ordinary pair is
     `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` followed
     by `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
+    Boundary B's canonical pair now requires `CAIRN_FULL_SUITE=1`; verification
+    records written before this guard cite the bare form and are accurate for
+    the runs they describe.
     Run the **full suite unless the plan's reviewed mapping bounds the change's
     effects confidently**, in which case run that mapping plus every standing
     gate for every touched surface — the same test and the same fail-closed

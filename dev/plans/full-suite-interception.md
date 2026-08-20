@@ -66,7 +66,6 @@ supersedes.
 ## Proposed paths
 
 Proposed paths:
-- `bootstrap/tests/test_broad_run_guard.py` — the guard's own behavioural test file; lands in Chunk A.
 - `tools/suite_cost.py` — the sibling plan's reader, which lands before this plan starts; row A7 edits it and does not create it.
 - `bootstrap/tests/test_suite_ledger.py` — the sibling plan's contract-test file, likewise created there and only *read* here (Boundary A mapping); it does not resolve until that plan's own chunk lands.
 
@@ -296,8 +295,8 @@ same class as the unlogged 2026-08-12 Boundary-B-bounding-clause landing;
 ## Sequence
 
 ```
-1. Chunk A -- the guard + the additive child environment          [commit pending]
-2. Chunk B -- the vendor-neutral sentence, AGENTS.md + its twin    [commit pending]
+1. Chunk A -- the guard + the additive child environment          [landed a316d75]
+2. Chunk B -- the vendor-neutral sentence, AGENTS.md + its twin    [landed this commit]
 3. Chunk S -- the sibling seam (rows A6/A7)                        [BLOCKED on suite-run-diagnostics]
 4. Chunk C -- Security Review of the implementation                [Maintainer/reviewer-owned, not a commit]
 5. Chunk D -- the gate re-anchor ceremony                           [Maintainer-owned, not this plan's commit]
