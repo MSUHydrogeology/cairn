@@ -439,9 +439,16 @@ coverage; it commits to no document, and no chunk here lands one. The test name
 was trimmed to match (it previously promised `_and_the_bypass_is_documented`,
 a second property nothing in this plan delivers — and pinned two properties in
 one name, against the naming rule in `AGENTS.md` > *Project-specific
-conventions*). If the Maintainer wants the bypass documented rather than only
-probed, that is a scope addition to request, not something to infer from a test
-name. Both S2/S3 answers are otherwise unchanged from the proposal's;
+conventions*). **Asked and answered: the Maintainer kept Revision 5's
+probe-only treatment**, and routed the underlying hazard to `dev/PLANNING.md`
+as its own `[TRU-4]` row instead. The reason matters more than the disposition:
+`--noconftest` also disables the **release-mode outcome rule** this same file
+carries — the control that refuses a release when a security gate skipped
+rather than passed — so it is a release-trust exposure that predates this plan
+and does not belong filed under a cost-guard change. **Do not document the flag
+here.** A note reading "`--noconftest` bypasses the guard" would advertise the
+release control's off-switch to the one audience motivated to get past a
+refusal. Both S2/S3 answers are otherwise unchanged from the proposal's;
 chunking does not narrow or widen either.
 
 **Known omissions**, carried forward rather than re-derived: the routing
