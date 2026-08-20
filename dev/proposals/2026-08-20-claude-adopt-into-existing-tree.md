@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — mandatory. The change touches the
 **install contract** (`AGENTS.md` > High-risk surfaces): the lockfile and the
 `--adopt-module` path that writes it.
@@ -1232,3 +1232,296 @@ cannot be falsified until implemented.
 verify the exact fallback matrix, a pre-loop secret-token refusal through the
 real CLI, corrected S1 provenance, and explicit implementation-review issue
 gates. The angle-bracket predicate itself does not need another redesign.
+
+## Response -- Claude (author) -- 2026-08-20 (round 2)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+* **[A1] accept.** I checked the branches rather than trusting the summary:
+  absent profile returns at `upgrade.py:235` **silently**; incomplete/invalid
+  returns at `:255` **silently**; only the parse exception warns (`:240-252`).
+  So "loud" covered one of three. Revision 2 states all three exactly and
+  chooses deliberately rather than describing them as one thing.
+* **[A2] accept, and this is the finding I would have shipped past.** "Routes
+  through `_refuse_secret_tokens`" specifies a call, not a **position**. The
+  spec loop creates missing destination files before `_commit_lock_and_caches`,
+  so a guard at the commit refuses *after* those writes — violating my own
+  invariant (i), which says the refusal precedes any write. Revision 2 fixes the
+  position: merge, apply the strict predicate, guard, **then** enter the loop. I
+  also accept the test caveat: because `KNOWN_TOKENS` makes the branch hard to
+  reach, the test must **arrange** a secret-like required token rather than
+  derive its expectation from the current token set — otherwise the assertion is
+  computed from the thing it checks.
+* **[A3] accept.** S1's claim that the profile "is not supplied by anything
+  being decided about" was false. The adopted target owns
+  `dev/.cairn/profile.yml`, and `_cmd_adopt_module` uses it to decide whether
+  that target may proceed and what value enters its lockfile. That is the
+  template's S1 category exactly — supplied *by reference* by the thing being
+  decided about. Restated. The same-user threat-model disposition is unchanged
+  and is now stated as a disposition rather than smuggled in as independence.
+* **[A4] accept.** Same defect as P3/C4 on the siblings: a complete contract
+  that says the Amendment "stands" is not complete. The closure contract is
+  restated in full, and gate 2 now names **the implementation's** External
+  Security code review.
+
+## Revision 2
+
+**Complete current contract.** Self-contained: this section plus the header is
+the whole operative contract. Supersedes Revision 1 entirely and inherits
+nothing from the `## Proposal` section or the `## Amendment`.
+
+### Review declaration
+
+**Security Review: REQUIRED** — `AGENTS.md:510-514`, the scaffold / merge
+engine: it *"parses untrusted module and profile files, does path handling and
+YAML loading, and writes into a target tree."* D1 adds profile parsing and YAML
+loading inside `bootstrap/_scaffold/`, where the parsed result gates a
+fail-closed refusal and then a lockfile write. The trigger is **surface-based**;
+whether a boundary moved is a different question and does not discharge it.
+
+Plan review: `required(Internal)`. **No `Plan readiness` inheritance is
+claimed** — the External pass withheld it.
+
+### D1 — profile as seed, lockfile as authority, guarded before any write
+
+`_cmd_adopt_module` resolves required tokens from the committed profile **and**
+the lockfile, **lockfile values winning**, and persists any newly-resolved value
+into the lockfile in the same atomic `_commit_lock_and_caches` it already
+performs. The profile is a **seed, never a parallel truth**: after adoption the
+lockfile is the single authority, as today.
+
+**The strict predicate, and where it lives.** A required token counts as
+unfilled when it is absent, blank, matches `_UNFILLED_TOKEN_VALUE`
+(`{{...}}`, `config.py:1284`), **or** is an angle-bracket placeholder `<...>` —
+the shape `_cmd_init_lock` guards at `upgrade.py:1146-1148`, because that is
+what the profile template it writes actually contains (`:1058-1061`). That
+angle-bracket guard is **not** in `_resolve_lock_profile_fields`, so "reuse the
+helper" would hand the plan the narrower predicate by construction. **The strict
+check lives in the adopt path itself.**
+
+**Order of operations — this is load-bearing, not a detail.**
+
+```
+1. resolve the candidate token map (profile ∪ lockfile, lockfile wins)
+2. apply the strict placeholder predicate           -> refuse
+3. _refuse_secret_tokens(candidate map)             -> refuse
+4. ONLY THEN enter the spec loop (which creates destination files)
+5. _commit_lock_and_caches
+```
+
+Steps 2 and 3 sit **before** step 4. A guard placed at step 5 would refuse after
+the loop had already written destination files, which violates invariant (i)
+below. Revision 1 said the write "routes through" the guard and never fixed its
+position; that was the gap.
+
+**Two helpers, two contributions:**
+
+* `_resolve_lock_profile_fields` (`:1064`) — extracts the profile's token map.
+* `_resolve_current_profile` (`:216`) — owns the **fallback disposition**, and
+  currently discards tokens at `:239`.
+
+**The three fallback dispositions, stated exactly and chosen deliberately** —
+Revision 1 described all three as loud, and only one is:
+
+| Case | Today | Chosen |
+|---|---|---|
+| `profile.yml` absent (`:235`) | silent fallback | **silent** — an absent optional file is not an anomaly |
+| readable but **incomplete / invalid** (`:255`) | silent fallback | **warn, then fall back** — the adopter committed input that could not be used, and silence hides that their edit had no effect |
+| unparseable (`:240-252`) | warns | **warn** (unchanged) |
+
+The middle row is a behaviour change and carries its own test.
+`bootstrap/tests/test_profile_grammar.py:77-156` today pins warning behaviour
+only for unreadable and ungrammatical input.
+
+The refusal stays fail-closed; only the error text changes, to name a command
+that can help.
+
+### D2 — advisory on both quiet branches, against what would install
+
+**Compare on-disk bytes to what this spec would install** — `theirs_b` for a
+`verbatim` spec, `substitute_tokens(theirs_b.decode("utf-8"), tokens)` for a
+mergeable one, matching the `if not dst_abs.exists()` branch immediately above
+(`:1425-1427`) line for line. `theirs_b` is the **raw** template (`:143-148`);
+comparing against it would fire on every mergeable spec carrying a token —
+`claim-check.md`, `lifecycle-metrics.md` and `architecture_review_template.md`
+all do. The no-additional-I/O justification survives: substitution is CPU.
+
+**The motivating example cannot settle this**, which is why it is settled here:
+`run_security_audit.py` is `verbatim=True`, so raw and installed are identical
+for it.
+
+**Two branches.** The loop has a second silent exit *before* the exists/else
+split — `if dst_rel in lock_dsts: continue` (`:1411-1412`). A destination
+skipped there is not compared, not recorded, produces no output, and makes
+`recorded N file(s)` (`:1447`) under-count. D2 covers **both**: the `else`
+branch reports kept-and-differing files; the `continue` branch reports
+skipped-and-untracked-here destinations, and the count is reconciled so the
+success line describes what happened.
+
+**What *Context* does not establish:** which branch the reporting adopter hit is
+unknown from issue #5. Covering both is what makes the fix independent of that.
+
+**Silence on a match**, and where a path is *also* a declared superseded surface
+(`dev/architecture_review.md` is both, `config.py:1144-1145` and `:1209`) the
+advisory and `_superseded_surface_note` must not both fire about it in one run.
+
+**Advisory only: neither blocks nor overwrites.**
+
+### D3 — drop the flag, and the corrected enumeration
+
+`bootstrap/UPGRADE.md:255` becomes `python tools/lifecycle_planner.py scan`.
+
+**The headline stands, re-measured:** that line is the only place the flag is
+*recommended*. **The "left alone" enumeration is withdrawn as non-exhaustive** —
+measured `as_of 2026-08-20`, occurrences also exist in
+`tools/lifecycle_planner.py` and, the one that matters,
+**`templates/skills/_lib/lifecycle_planner.py`**, the shipped planner twin
+adopters receive. The `UPGRADE.md` fix has no twin dimension, but the plan
+confirms that rather than assuming it.
+
+`--include-archives` (on `check_cairn` / `link_check`) is a **different flag on
+a different tool** and is out of scope.
+
+### Invariants, failure dispositions, public paths
+
+* **(i)** A required token resolving from nowhere refuses **before any write or
+  lockfile mutation** — the existing preflight, plus the step-ordering above,
+  plus a test asserting no destination, cache, lockfile or roster change on
+  refusal.
+* **(ii)** After a successful adopt every required token has a value in the
+  lockfile, **and that value is not a placeholder in either form**.
+* **(iii)** The lockfile schema is unchanged (`_LOCK_SCHEMA = 1`, `tokens` a
+  free map) — existing schema tests, unmodified.
+* **(iv)** No token write bypasses `_refuse_secret_tokens`, **and the guard runs
+  before the spec loop**.
+
+**Failure dispositions.** Unresolvable or placeholder token → refuse, closed.
+Secret-like token → refuse before any write, closed. Absent profile → silent
+fallback, open. Incomplete/invalid profile → **warn**, then fall back, open.
+Unparseable profile → warn, then fall back, open. Byte comparison unreadable →
+the advisory says so; it never suppresses the note and never fails the adopt
+(open, deliberately: an advisory that breaks an install is worse than the
+silence it replaces).
+
+**Edge cases.** No `profile.yml`; profile present, token absent; **profile
+present, token present, value an unfilled placeholder in either form**; token in
+both sources disagreeing (lockfile wins, pinned); destination missing;
+destination present and byte-identical after substitution; destination present
+and differing; destination skipped at `continue`; a path that is both a spec
+destination and a declared superseded surface; module already in the roster.
+
+**Public paths → tests.** `--adopt-module` through its real CLI entry point in
+[`test_upgrade_module.py`](../../bootstrap/tests/test_upgrade_module.py), with
+lockfile-shape assertions in
+[`test_module_merge_lockfile.py`](../../bootstrap/tests/test_module_merge_lockfile.py)
+and the fallback dispositions in
+[`test_profile_grammar.py`](../../bootstrap/tests/test_profile_grammar.py). The
+secret-token refusal is exercised **through the CLI**, not by a direct helper
+call.
+
+### Security preflight — S1 to S5, restated in full
+
+* **S1 — Who supplied it?** D1 adds `dev/.cairn/profile.yml` as an input to a
+  decision that gates a fail-closed refusal and a lockfile write. **That file is
+  owned by the target tree being classified and mutated**, so it is supplied *by
+  reference* by the thing being decided about — the template's S1 category.
+  Revision 1's claim that it "is not supplied by anything being decided about"
+  is **withdrawn as false**: committed and schema-validated is not the same as
+  independent. The disposition is the threat model in S5, not a denial of the
+  channel. D2 adds no decision input — it compares two byte buffers already
+  read. The lockfile is engine-written; templates are upstream.
+* **S2 — Can it fail?** Mutations, each run and recorded: delete the persist call
+  (the "token lands in the lockfile" test reddens); make the placeholder
+  predicate curly-brace-only (the `<my package>` regression reddens); **move
+  `_refuse_secret_tokens` back to just before `_commit_lock_and_caches`** (the
+  no-destination-written assertion reddens — this is the mutation Revision 1 had
+  no test for); make the byte comparison always-equal, and separately
+  always-unequal (a paired advisory-absent test on identical bytes — without
+  both, the pair cannot distinguish correct from always-fires). The secret-token
+  test **arranges** its own known required token rather than deriving a clean
+  expectation from the current `KNOWN_TOKENS`.
+* **S3 — What fires it, over what?** `python -m pytest bootstrap/tests` selects
+  all three homes; nothing else runs them — no CI, no hook, no gate.
+  `bootstrap/UPGRADE.md`'s prose is quoted in the plan and shown to agree with
+  the command it now recommends.
+* **S4 — Which way does it break?** Token refusal and secret refusal are closed
+  and now precede all writes. The profile fallbacks are open and land on the
+  **lockfile**, the more-trusted source; two of three are loud after this change
+  and the silent one is silent by an explicit choice. The D2 advisory grants no
+  authority: it prints.
+* **S5 — Who still wins?** The attacker assumed is one who can **write to the
+  adopter's tree**. They can supply a token value via `profile.yml` — but they
+  could already edit the lockfile, the templates and the engine, so this adds no
+  capability, and the proposal does not claim to authenticate that actor. **What
+  is newly closed:** the placeholder-persist path, and secret-token writes
+  reaching disk before refusal. **What remains open, and is the meaningful
+  residual:** an adopter who reads the D2 advisory and proceeds anyway keeps
+  running an unverified apparatus. That is operator acceptance, closed only by
+  the operator reading the line — which is why it must not fire on the common
+  case.
+
+### Evidence, omissions, deferred work
+
+**Tests** per the mapping above; every D2 case **synthesized**. The per-module
+collision measurement the plan owes must **distinguish the two branches** or it
+measures the wrong set.
+
+**Smoke.** `python bootstrap/scaffold.py --manifest` and `--dry-run`
+byte-unchanged (the published contract); an end-to-end adopt against a fixture
+tree carrying a differing destination; `python scripts/check_cairn.py` for the
+`UPGRADE.md` edit.
+
+**Known omissions.** Which branch the reporting adopter hit is unknown. Whether
+other modules collide on a spec destination is unmeasured and is the plan's to
+establish per-branch. `--set-token` remains the named fallback for a tree with
+no committed profile; the plan states what happens there.
+
+**Deferred.** Nothing.
+
+### The issue-closure contract — restated in full
+
+* **Issue [#7](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/7)**
+  closes with this proposal alone — D3 is the whole of it, including the
+  "recommended anywhere else?" measurement.
+* **Issue [#5](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/5)**
+  closes **only when this proposal and
+  [`2026-08-20-claude-scanner-claim-scope`](2026-08-20-claude-scanner-claim-scope.md)
+  have both landed** — gaps 1–2 are here, gap 3 is there. **Whichever lands
+  second carries the close; the first posts a progress comment.** If the sibling
+  is rejected or narrowed, #5 does **not** close: it gets a comment naming which
+  gaps were fixed and how gap 3 was dispositioned. The adopter offered this split
+  themselves (*"Happy to file separately if that suits triage better"*), so the
+  closing comment says which proposal took which gap.
+
+Each close is **MAINTAINER-GATED** and gated on:
+
+1. implementation landed and code-reviewed;
+2. **the implementation's External Security code review** completed — *not* this
+   proposal pass;
+3. a closing comment that names **what was declined**: that `--set-token` was
+   kept as a fallback rather than taken as primary, and why — the profile is
+   where the module's own doc already directs them and the engine already reads
+   it (agreement, but not for the reason they gave); that the D2 advisory is
+   **advisory only** and will not block or overwrite; and that the archive sweep
+   was **un-recommended, not removed**, on the checker's own docstring rather
+   than on their report alone;
+4. an answer to what issue #5 is owed: **whether the tree they hand-edited is
+   now on a supported path** after the fix, or whether it needs anything. An
+   adopter who took a documented-unsupported route on our advice-by-absence
+   should not have to guess;
+5. Maintainer authorization for the outward-facing act.
+
+### Withdrawn / superseded commitments
+
+* **Revision 1's description of the profile fallback as "loud."** Withdrawn —
+  measured, two of three branches are silent. Replaced by the three-row
+  disposition table, with the incomplete/invalid row changed to warn. Reason: A1.
+* **"The new lockfile-token write routes through `_refuse_secret_tokens`."**
+  Superseded — a call is not a position. Replaced by the explicit step ordering,
+  guard before the spec loop. Reason: A2.
+* **S1's "It is not supplied by anything being decided about."** Withdrawn as
+  false. The profile is candidate-controlled input by reference. Reason: A3.
+* **Revision 1's "the `## Amendment`'s section 2" reference and its inherited
+  gates.** Superseded by the full closure contract above, including "the
+  implementation's External Security code review." Reason: A4.
+* **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
