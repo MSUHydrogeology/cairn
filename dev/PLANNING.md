@@ -124,6 +124,41 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **[DOC] Candidate: a withdrawal ledger records the correction, not the
+  reasoning — so a later agent can re-derive the original error**
+  *(filed 2026-08-20, from the adopter-issue proposal set)* — `scanner-claim-scope`
+  declared "no Security Review trigger"; a blocking review refuted it (the
+  trigger is **surface-based**, and `dev/proposals/_template.md:76-78` names the
+  content scanner); the contract was corrected in Revision 2 and carried through
+  Revision 4. A later decision-support pass then independently re-derived the
+  **boundary** argument — *"strictly modifies report formatting"* — concluded no
+  trigger, and that conclusion propagated into the scribed Decision summary,
+  which now contradicts the contract it accepted.
+
+  **What travelled was the corrected value; what did not travel was the
+  reasoning that produced it.** The withdrawal ledger records *that* a claim was
+  withdrawn and why the author changed it — it does not reach a reader who never
+  opens it and re-derives the claim from scratch. The failure is cheap to miss
+  precisely because the artifact is *correct*: only the summary is wrong, and
+  the summary is what gets skimmed.
+
+  **A second candidate from the same set, filed together because they may be one
+  rule:** three invariants this session were **satisfied by their own wording
+  rather than by the hazard** — an identity over an empty set, a claim scoped to
+  "any path `read_report` refused" on a path that never called it, and an oracle
+  that projected away the field it guarded. Each was caught only when someone
+  ran the falsifying mutation. The general form — *state an invariant over the
+  whole space it claims to cover, and run its falsifying mutation before
+  trusting it* — may be the same rule as `AGENTS.md` > "Confirm the instrument
+  before trusting an absence", one level up.
+
+  **Neither is proposed as doctrine.** `AGENTS.md` gained a related rule on
+  2026-08-19 from the same agent, and a second and third generalised from that
+  agent's own recurrence on consecutive days is the churn the rate-limit gate
+  exists to prevent. Filed for a goodnight-time synthesis or a Maintainer call,
+  with the evidence attached so the gate can be cleared honestly if a third
+  party sees the pattern independently.
+
 * **[TOOL] The lifecycle checker flags every Internal review as
   author-written, because the identity comparator takes the first word**
   *(filed 2026-08-20, from three concurrent Internal proposal reviews)* —
@@ -145,8 +180,10 @@ with the plan's filename stem.
   has a different first word.
 
   **Two properties make it worse than a cosmetic false positive.** It clears
-  once the author's Response lands, so it is red exactly during the window a
-  reviewer is waiting on the artifact — the moment someone is most likely to be
+  once the author's Response lands *until a later review is appended beneath,
+  which re-fires it* (observed 2026-08-20 across two External rounds; the
+  original filing said only that it clears, which understated the window). So
+  it is red exactly during the window a reviewer is waiting on the artifact — the moment someone is most likely to be
   reading the scan. And the cheapest way to silence it is to write a byline that
   is not the reviewer's, which is a **false attribution on a record whose
   integrity is its attribution** (`AGENTS.md` > Review). All three reviewers
