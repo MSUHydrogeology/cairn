@@ -60,14 +60,21 @@ asserts the order-independence sub-gate launches pytest with *no* `env=` of its
 own), and A5 is the falsifier for A2's own accepted change. Leaving either
 alone would ship a test whose prose asserts a fact this change deletes.
 
-**The Maintainer's call, not the plan's.** Accepted scope is a floor in both
-directions, so touching two files the accepted artifact does not name is a
-deviation to authorize, not to justify. Two dispositions: (a) an explicit
-allowance covering A4 and A5 as in-scope repair; or (b) drop them from this
-plan and file the stale docstring and the missing falsifier as follow-ups,
-accepting that the tree carries a false docstring in the interim. **This plan
-does not decide it**, and a reviewer cannot create the authority by calling
-the remainder out of scope.
+**Authorized.** Accepted scope is a floor in both directions, so touching two
+files the accepted artifact does not name was a deviation to authorize rather
+than to justify, and the plan did not grant it to itself.
+
+**Contract expansion**: touched-file set — `bootstrap/tests/test_security_check.py`
+and `bootstrap/tests/test_quality_gate_order_independence.py` join the accepted
+Scope. Authorized by the Maintainer, quoted verbatim and visually isolated:
+
+> "Please do A4/A5 in this one, allow the scope widening"
+
+What the allowance covers: rows A4 and A5 as written — correcting the docstring
+and comment that A2 falsifies, and adding the additive-copy falsifier for A2's
+own change. It does not open those two files to unrelated edits, and it widens
+nothing else. Both files are gate-frozen, which is why the re-anchor accounting
+below counts four `FROZEN-MODIFIED` entries rather than two.
 
 **Out, and not revivable by this plan** (Revision 5, "Withdrawn and not
 deferred"): everything under `.claude/` (settings object, hook script,
