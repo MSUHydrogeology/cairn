@@ -57,6 +57,24 @@ import sys
 RELEASE_GATE_ENV = "CAIRN_RELEASE_GATE_ACTIVE"
 RELEASE_GATE_VALUE = "1"
 
+#: The broad-run override and its **one** recognized value.  Same
+#: equality-not-truthiness rule as the release token above, and for the same
+#: reason: a guard that switches off on any non-empty string switches off on a
+#: stale ``=0`` left in a shell, which is the one case where the operator
+#: believes it is on.
+FULL_SUITE_ENV = "CAIRN_FULL_SUITE"
+FULL_SUITE_VALUE = "1"
+
+#: A run spanning more than this many distinct test *files* is refused.
+#:
+#: Files, not test items, because file span is what separates a scoped run from
+#: a broad one.  Measured on this repository: a full collection spans ~115 files
+#: and ~4,400 items, while the six-file mapping used for scoped work spans 6
+#: files and over a thousand items.  File span discriminates by roughly 20x
+#: where item count barely discriminates at all -- a single parametrized module
+#: can carry more items than an entire scoped mapping.
+BROAD_RUN_FILE_THRESHOLD = 40
+
 #: ``{outcome: {nodeid, ...}}`` for the current session.  A set, so a node
 #: reporting the same refused outcome in more than one phase is one offender.
 _REFUSED: dict[str, set[str]] = {}
@@ -105,6 +123,73 @@ def pytest_collection_modifyitems(config, items):
         return
     rng = random.Random(seed)
     rng.shuffle(items)
+
+
+def _full_suite_override() -> bool:
+    """True when the operator has explicitly allowed a broad run.
+
+    Equality, not truthiness, matching ``_release_mode`` -- see
+    ``FULL_SUITE_ENV``.
+    """
+    return os.environ.get(FULL_SUITE_ENV) == FULL_SUITE_VALUE
+
+
+def _collected_file_span(session) -> int:
+    """How many distinct test files the collected items came from.
+
+    Reads ``item.path`` and falls back to ``item.fspath`` and then to the
+    nodeid's pre-``::`` prefix.  An item that yields none of the three is
+    counted as its own file rather than dropped: undercounting the span is the
+    direction that lets a broad run through, so an unrecognized item shape
+    fails toward refusal.
+    """
+    files = set()
+    for i, item in enumerate(session.items):
+        path = getattr(item, "path", None) or getattr(item, "fspath", None)
+        if path is None:
+            nodeid = getattr(item, "nodeid", "") or ""
+            path = nodeid.split("::", 1)[0] or f"<unresolved-{i}>"
+        files.add(str(path))
+    return len(files)
+
+
+def pytest_collection_finish(session):
+    """Refuse a broad run nobody asked for.
+
+    Runs after collection has been performed *and modified*, which is why it is
+    this hook and not ``pytest_collection_modifyitems(trylast=True)``:
+    ``trylast`` is a priority among equal-priority implementations, not a
+    guarantee of last place, so a competing plugin can leave the guard reading
+    a pre-filter item list.
+
+    The refusal is ``pytest.UsageError`` (exit 4) and fires before any test
+    runs.  It is conditioned on ``session.testsfailed == 0`` so that a session
+    that already has a collection error keeps its own, stronger exit code: a
+    cost prompt must never overwrite real failure evidence, and exit 2 is what
+    a machine reads to know collection broke.
+    """
+    if session.testsfailed:
+        return
+    if _full_suite_override():
+        return
+    if _release_mode():
+        return
+    if session.config.getoption("--collect-only", default=False):
+        return
+    span = _collected_file_span(session)
+    if span <= BROAD_RUN_FILE_THRESHOLD:
+        return
+    import pytest
+
+    raise pytest.UsageError(
+        f"Refusing a broad run: this invocation collected {len(session.items)} "
+        f"test(s) across {span} files (limit {BROAD_RUN_FILE_THRESHOLD}).\n"
+        f"Run the tests your change actually maps to, or set "
+        f"{FULL_SUITE_ENV}={FULL_SUITE_VALUE} to allow the full suite "
+        f"deliberately.\n"
+        f"If you are verifying someone else's work, the run belongs to "
+        f"whoever asked for it -- report back rather than running it here."
+    )
 
 
 def _record_refused_report(report) -> None:

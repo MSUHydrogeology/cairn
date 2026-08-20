@@ -161,3 +161,35 @@ class TestSubGateRunWrapper:
             for f in findings
         )
         assert seeds_in_messages == [0, 1, 2]
+
+    def test_the_child_env_is_an_additive_copy_not_a_fresh_mapping(
+            self, qg, tmp_path, monkeypatch):
+        """The order-independence spawn is a full-suite run by construction, so
+        it carries the broad-run override. It must build that environment as a
+        **copy** of its own.
+
+        A fresh mapping naming only the override would satisfy any check that
+        merely looks for the override -- and would silently drop
+        ``CAIRN_RELEASE_GATE_ACTIVE``, which ``bootstrap/security_check.py``
+        passes into this process explicitly. A release run would then stop
+        refusing a skip as evidence while every test still passed, which is a
+        failure nothing else in the suite would catch.
+
+        Directional: the child asserts on both variables, so an implementation
+        that carries the override but not the parent fails on the second.
+        """
+        self._write_passing_suite(tmp_path)
+        (tmp_path / "_fixture_tests" / "test_pass.py").write_text(
+            "import os\n"
+            "def test_the_override_reached_the_child():\n"
+            "    assert os.environ.get('CAIRN_FULL_SUITE') == '1'\n"
+            "def test_the_parent_environment_survived():\n"
+            "    assert os.environ.get('CAIRN_PROBE_PARENT') == 'kept'\n"
+        )
+        monkeypatch.setenv("CAIRN_PROBE_PARENT", "kept")
+        monkeypatch.delenv("CAIRN_FULL_SUITE", raising=False)
+        findings = qg._run_order_independence(
+            seeds=[0], repo_root=tmp_path, test_dir="_fixture_tests",
+        )
+        assert len(findings) == 1
+        assert findings[0].severity == "info", findings[0].message

@@ -58,6 +58,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import os
 import re
 import subprocess
 import sys
@@ -159,10 +160,19 @@ def _run_order_independence(
             f"--quality-gate-shuffle-seed={seed}",
             "-q", "--no-header", "--no-summary",
         ]
+        # This spawn is a full-suite run by construction, so it carries the
+        # broad-run override the conftest guard looks for.  Build it as a COPY
+        # of the parent environment, never a fresh mapping: security_check.py
+        # passes CAIRN_RELEASE_GATE_ACTIVE into this process explicitly, and
+        # the grandchild inherits it today only because no env= is set. A
+        # fresh mapping would drop it silently -- a release run would stop
+        # refusing a skip as evidence while every test still passed.
+        env = os.environ.copy()
+        env["CAIRN_FULL_SUITE"] = "1"
         # subprocess.run is the boundary; pytest's own exit code is
         # the contract here (no parsing of stdout for finding shape).
         proc = subprocess.run(
-            cmd, cwd=str(repo_root), capture_output=True, text=True,
+            cmd, cwd=str(repo_root), capture_output=True, text=True, env=env,
         )
         if proc.returncode == 0:
             findings.append(Finding(

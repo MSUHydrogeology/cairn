@@ -456,8 +456,8 @@ def test_the_release_token_reaches_both_direct_children(monkeypatch) -> None:
         assert env["PYTHONDONTWRITEBYTECODE"] == "1"
         assert env["PYTEST_ADDOPTS"] == "-p no:cacheprovider"
         # A superset of the operator's environment: the quality gate's
-        # order-independence sub-gate launches pytest as a grandchild with no
-        # env= of its own, so anything dropped here never reaches it.
+        # order-independence sub-gate launches pytest as a grandchild with an
+        # env= copied from this one, so anything dropped here never reaches it.
         assert set(os.environ) - {security_check.RELEASE_GATE_ENV} <= set(env)
 
 
@@ -810,10 +810,14 @@ def test_the_release_token_survives_the_real_grandchild_launcher(
     ``security_check.run_quality_gate()`` -> ``scripts/quality_gate.py`` ->
     ``pytest`` -> ``bootstrap/tests/conftest.py``
 
-    The middle link launches pytest with **no** ``env=`` of its own
-    (``quality_gate.py``, argv bound to ``cmd`` then ``subprocess.run(cmd,
-    ...)``), so the token reaches the grandchild by *inheritance* through a
-    process ``security_check`` handed an explicit environment. Nothing in
+    The middle link launches pytest with an ``env=`` built as an **additive
+    copy** of its own environment (``quality_gate.py``: ``env =
+    os.environ.copy()`` plus the broad-run override, then
+    ``subprocess.run(cmd, ..., env=env)``), so the token reaches the grandchild
+    by being *carried forward* through a process ``security_check`` handed an
+    explicit environment. The copy is what makes that true: a fresh mapping
+    would name only the override and drop the release token, and this test is
+    what would notice. Nothing in
     ``test_the_release_token_reaches_both_direct_children`` would notice that
     link being broken -- a correct dict handed to a child that strips it
     satisfies the direct check and fails the release gate silently.
