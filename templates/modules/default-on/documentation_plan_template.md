@@ -172,6 +172,42 @@ here."  A domain-governance map is UPPERCASE *because* it is a
 landmark, at whatever level its domain lives, not because it
 sits at root.
 
+## Figures -- the legibility check
+
+If this project's documentation embeds figures, one check has to
+exist somewhere, because nothing else catches it: **a figure that
+is unreadable in the reader's theme, or clipped at narrow width,
+looks perfectly fine in the source.**  Prose has spell-checkers and
+link checkers; a rendered figure has neither.
+
+Before committing a figure that is new or changed, render the page
+that embeds it and confirm, recording the result in the commit
+body:
+
+* it is **readable** in both light and dark theme;
+* it **scales** at narrow (phone) width as well as wide, without
+  clipping or overflowing its container;
+* its **caption** is present -- and for an explanatory figure,
+  states **the conclusion the reader should draw**, not what the
+  figure is.  The caption normally lives in the alt text of the
+  embed, where it serves a screen reader at the same time.  A
+  project-identity mark is the exception: it depicts nothing, so
+  its alt text describes the image.
+* it does **not break the page layout** around it.
+
+**Name what runs this.**  If the project has CI that renders
+documentation, say so here and put the check there.  If it does
+not, the only trigger is a person remembering, and this section is
+what the remembering attaches to -- write that down plainly rather
+than describing a check that nothing performs.
+
+A figure failing any of these is fixed or dropped before the commit
+lands.  If the check is going to be skipped for speed, drop the
+figure instead: a figure nobody verifies is decoration, and
+decoration is a maintenance liability with no offsetting value --
+it goes stale, breaks in a theme, or quietly contradicts the prose
+beside it.
+
 ## Where new content goes
 
 The decision procedure above, worked out for the common cases.
@@ -286,6 +322,12 @@ may want to add (or strip) sections that are domain-specific:
   file covers *content organization* only.  Choosing a static-
   build tool is a separate decision.  Markdown-as-served-from-
   GitHub is the default for new deployments.
+* **Figure files -- location, naming, and license** -- where
+  diagrams live, how they are named, and which license family each
+  carries are deployment-specific, and depend on the project's own
+  licensing.  If the project publishes figures, record the answers
+  here or in a section of your own.  The legibility check above is
+  the portable part; this is not.
 * **Teaching tier** -- pedagogical content (notebooks +
   exercises wrapped around runnable artifacts) is a
   *descriptive-layer satellite* the Diátaxis framework calls
