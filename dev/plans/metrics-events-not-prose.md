@@ -48,6 +48,14 @@ degrades — on any block it cannot reconcile to exactly one lifecycle act. This
 plan executes that decision; it does not re-litigate any of the seven rounds
 that produced it.
 
+**A note for the reviewer, up front.** The source proposal's own security
+preflight went stale mid-deliberation, and no round after Round 5 re-answered
+it against the architecture Round 7 actually specifies and the Decision
+actually accepts — independently confirmed against the live proposal text.
+This plan's own re-derivation, under "Author-accounting" below, is the first
+answer against the real architecture; read it rather than the proposal's own
+preflight sections.
+
 ## Proposed paths
 
 Proposed paths:
@@ -68,7 +76,7 @@ commits, not a second design pass.
 
 **Out, by the Decision's own allowance — stated here, not silently restored.**
 Historical continuity across the activation boundary is **dropped**: no
-`--backfill` mode ships, no frozen historical snapshot is taken, and no
+frozen historical snapshot is taken for this plan's own purposes, and no
 prose-derived value is substituted for a pre-activation artifact's event-shaped
 fields. `Scope delta: degraded`, already authorized —
 
@@ -77,6 +85,27 @@ fields. `Scope delta: degraded`, already authorized —
 Chunk 6 states the concrete emission of this rule (what a pre-activation row
 looks like) precisely so the allowance is not quietly reinterpreted at
 implementation as "keep computing the old way until enough history exists."
+
+**A correction, and an open scope question this plan does not decide.** This
+section previously stated "no `--backfill` mode ships" — that is false:
+`--backfill-from YYYY-MM-DD` already ships (`tools/_lifecycle_metrics/cli.py`,
+calling `snapshot.backfill`), emitting one historical-dated snapshot per
+`Goodnight:`-tagged commit in a bounded window. After Chunks 3 and 6 land,
+that flag would compute historical rows with v2 code over a schema some of
+whose columns are now event-sourced and would read empty for the
+pre-activation portion — a derived series stamped with dates implying it was
+measured contemporaneously, which it was not. **This plan does not decide the
+disposition.** Three options, for the Maintainer: (a) make `--backfill-from`
+refuse once this plan's chunks land, rather than emit a silently-reinterpreted
+series; (b) keep it, but stamp its output with the v2 schema identity so a
+reader can tell it apart from a genuinely-measured-at-the-time snapshot; (c)
+remove the flag. Removing a shipped adopter-facing flag is plausibly in scope
+already, as a necessary consequence of the accepted "drop historical
+continuity" term — but that reading is not self-evident from the Decision's
+text, and extending scope on that reading is the Maintainer's call, not this
+plan's. Whichever option is chosen lands as its own chunk work, sequenced no
+earlier than Chunk 6 (the risk described here only exists once both Chunks 3
+and 6 have landed).
 
 **Out, because Round 5 explicitly removed it and no later round restored it —
 flagged as a discrepancy from this task's own briefing, see "A correction to
@@ -113,19 +142,34 @@ plan's opening commit.
 
 ### Documentation / doctrine surface
 
-* `templates/modules/default-on/lifecycle-metrics.md` — module doctrine: removes
-  the "finding severities" capability claim (two locations), adds the selection
-  principle beside the Measurement Compact, reworks or bounds-marks the
-  late-blocker section, and describes the retained columns as interim
-  lifecycle proxies rather than inflation-immune (Chunk 2).
-* `dev/agent_collaboration.md` and `templates/core/dev/agent_collaboration.md`
-  — both carry the same "finding severities" phrase inside the
-  `<!-- cairn:slot lifecycle-metrics -->` block, which the scaffold's own
-  slot-merge machinery (`bootstrap/_scaffold/slotmerge.py`) derives from the
-  module doc's "Template content" quote block. **This is a generated slot, not
-  hand-authored prose** — the plan template's doc-tooling taxonomy applies:
-  update the module-doc source, then re-render the slot via the scaffold's own
-  merge path (Chunk 2 names the exact command it verifies).
+* `templates/modules/default-on/lifecycle-metrics.md` and its self-hosted
+  installed copy `dev/modules/lifecycle-metrics.md` (identical to the shipped
+  file except for `{{metrics_command}}` token substitution, confirmed by diff)
+  — module doctrine: removes the "finding severities" capability claim (two
+  locations in each file), adds the selection principle beside the Measurement
+  Compact, reworks or bounds-marks the late-blocker section, and describes the
+  retained columns as interim lifecycle proxies rather than inflation-immune
+  (Chunk 2).
+* `dev/agent_collaboration.md` carries the same "finding severities" phrase
+  once, inside the `<!-- cairn:slot lifecycle-metrics -->` block — but
+  **line-wrapped** across two lines ("finding" / "severities."), so a plain
+  single-line `grep -n "finding severities"` never matches it there even
+  though the phrase is present; Chunk 2's acceptance check must be
+  whitespace-tolerant and multiline-capable. **This slot is hand-edited
+  directly, not re-rendered through the scaffold's slot-merge path**:
+  `bootstrap/_scaffold/slotmerge.py::resolve_slot_merge` produces a
+  non-`None` merged text only for status `inserted`, which requires an
+  *empty* slot body; Cairn's slot is filled, so re-running the merge after
+  the module doc changes resolves to `conflict` and writes only a
+  `.cairn-merge-pending` side-file, leaving the target byte-for-byte
+  untouched (confirmed against the live source, as_of 2026-08-20).
+  `templates/core/dev/agent_collaboration.md` does **not** carry the phrase —
+  its slot ships deliberately **unfilled** ("An unfilled slot is a review
+  finding," an adopter-facing placeholder), and preserving a filled slot
+  verbatim on upgrade is the documented contract (`bootstrap/UPGRADE.md`:
+  "Slots are adopter-owned"). Filling that slot would add scope to the
+  install contract, a named high-risk surface; **this file is explicitly
+  excluded from Chunk 2**.
 * `docs/glossary.md` — sharpens the unconditional "never mine it for metrics"
   sentence under **Archive**, per R4-E3/Round 6's disposition, to distinguish a
   closed-schema block emitted *at* the transition from retrospective mining of
@@ -193,6 +237,7 @@ call at `extract.py` is removed, not just the four dict keys. `snapshot.py`'s
 | 1-6 | `tools/lifecycle_metrics.py`, `templates/modules/default-on/lifecycle_metrics.py` | No source edit expected (thin launcher re-exports whatever the engine defines) — confirm unchanged, same commit as the twin above regardless. |
 | 1-7 | `bootstrap/tests/test_reference_scripts.py` | `TestLifecycleMetricsSchema.test_installed_lifecycle_metrics_runs_on_target` (as_of 2026-08-20, lines 277-295): remove the `total_findings`/`findings_p1` assertions. Leave the `review_rounds` assertion as-is here — Part 3 has not landed yet at this point in the sequence, so `review_rounds` is still the pre-Part-3 heading count and the assertion still holds; Chunk 7 revisits this same test once Part 3 changes what computes that field. |
 | 1-8 | `bootstrap/tests/test_lifecycle_metrics_config.py` | New or extended case: `PROPOSAL_COLUMNS` has exactly 22 entries (30 minus the eight retired, `as_of 2026-08-20` — re-derive at implementation, do not carry this count forward) and none of the eight retired names appear; every remaining structural column from the pre-change list is still present, asserted by name so a future accidental drop of a *kept* column fails loudly. |
+| 1-9 | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` (byte-identical twins, confirmed by diff, as_of 2026-08-20) | Update the module docstring, which documents the same headline capability claim and per-column reliability tiers this chunk retires: drop "finding severities" from the capability list (~line 17) and "review-yield" from the subsystems list (~line 18); drop the `total_findings` (**Good**) and `findings_p1/_p2/_p3` (**Best-effort**) reliability-tier bullets (~lines 67-69) for the four columns this chunk deletes. |
 
 **Acceptance for this chunk**: a fresh extractor run over a fixture proposal
 with review findings emits no `total_findings`/`findings_p*`/`review_yield_*`
@@ -203,11 +248,20 @@ present and unchanged in value from before this chunk.
 
 | # | File | Change |
 |---|------|--------|
-| 2-1 | `templates/modules/default-on/lifecycle-metrics.md` | Remove "finding severities" from the opening capability paragraph and from "Reference implementation" (two locations, as_of 2026-08-20). Add the selection principle — *measure structural events as they occur; a metric that rewards writing more is a defect to remove, not a signal to tune* — as a framing statement beside the five-commitment Measurement Compact. Rework "Late-blocker reduction" so its bundle rests on structural signals, or mark it explicitly as a bounded study distinct from standing instrumentation (the proposal leaves this choice open; record which one this chunk takes and why). Describe the retained columns as interim lifecycle proxies, materially harder to inflate than a finding count but not immune (Round 1's withdrawn "cannot be inflated" claim stays withdrawn) — until Chunk 6 replaces them with genuine events, at which point this sentence is revisited so it does not overclaim in the other direction. |
-| 2-2 | `templates/core/dev/agent_collaboration.md`, `dev/agent_collaboration.md` | Re-render the `<!-- cairn:slot lifecycle-metrics -->` block from the updated module-doc source via the scaffold's own slot-merge path — do not hand-edit the two copies independently out of sync. Verified by: `bootstrap/_scaffold/slotmerge.py`'s `merge_module_into_slot`/`check_slot_fidelity` is the actual mechanism (confirmed present, as_of 2026-08-20); the implementing chunk names the exact invocation it ran (`bootstrap/scaffold.py upgrade` against Cairn's self-hosted tree, or the narrower slot-render entry point if one exists — check `bootstrap/UPGRADE.md` before assuming the CLI shape) so a reviewer can re-run it. |
+| 2-1 | `templates/modules/default-on/lifecycle-metrics.md`, `dev/modules/lifecycle-metrics.md` (identical edits, same commit — Cairn's own installed copy of the module doc, differing only by `{{metrics_command}}` token substitution) | Remove "finding severities" from the opening capability paragraph and from "Reference implementation" (two locations in each file, as_of 2026-08-20). Add the selection principle — *measure structural events as they occur; a metric that rewards writing more is a defect to remove, not a signal to tune* — as a framing statement beside the five-commitment Measurement Compact. Rework "Late-blocker reduction" so its bundle rests on structural signals, or mark it explicitly as a bounded study distinct from standing instrumentation (the proposal leaves this choice open; record which one this chunk takes and why). Describe the retained columns as interim lifecycle proxies, materially harder to inflate than a finding count but not immune (Round 1's withdrawn "cannot be inflated" claim stays withdrawn) — until Chunk 6 replaces them with genuine events, at which point this sentence is revisited so it does not overclaim in the other direction. |
+| 2-2 | `dev/agent_collaboration.md` | Hand-edit the `<!-- cairn:slot lifecycle-metrics -->` block's body directly to remove "finding severities" (present once, line-wrapped across two lines — a plain single-line grep will not find it; verify with a whitespace-tolerant, multiline-capable check, e.g. `python3 -c "import re,pathlib,sys; sys.exit(0 if not re.search(r'finding\s+severities', pathlib.Path('dev/agent_collaboration.md').read_text()) else 1)"`). **Not** via the scaffold's slot-merge path: `bootstrap/_scaffold/slotmerge.py::resolve_slot_merge` writes a target only when its slot is empty (status `inserted`); Cairn's slot is filled, so re-running the merge resolves to `conflict` and leaves the target untouched, writing a `.cairn-merge-pending` side-file instead (confirmed against the live source, as_of 2026-08-20). `templates/core/dev/agent_collaboration.md` is **excluded** from this row: its slot ships deliberately unfilled as an adopter-facing placeholder, and filling it is out of this plan's scope. |
 | 2-3 | `docs/glossary.md` | Sharpen the **Archive** entry's "never mine it for metrics" sentence (line 37, as_of 2026-08-20) to distinguish a closed-schema `cairn-event-v1` block emitted *at* the transition, in the same edit, from retrospective parsing of prose the artifact was never designed to carry. The existing sentence stays the default rule; this adds the narrow, named exception rather than replacing the rule wholesale. |
 
-**Acceptance for this chunk**: `grep -rn "finding severities" templates/modules/default-on/lifecycle-metrics.md dev/agent_collaboration.md templates/core/dev/agent_collaboration.md` returns nothing; `python scripts/check_cairn.py` passes (link/anchor/claim-path integrity across the touched docs); the glossary sentence names the exception without weakening the general rule for anything that is not a `cairn-event-v1` block.
+**Acceptance for this chunk**: a whitespace-tolerant, multiline-capable check —
+not a plain single-line `grep -n "finding severities"`, which false-passes
+against `dev/agent_collaboration.md` today because the phrase line-wraps
+there — e.g. `python3 -c "import re,sys; paths=['templates/modules/default-on/lifecycle-metrics.md','dev/modules/lifecycle-metrics.md','dev/agent_collaboration.md']; hits=[p for p in paths if re.search(r'finding\s+severities', open(p).read())]; sys.exit(1 if hits else 0)"`
+— finds no remaining occurrence in any of the three hand-edited files.
+`templates/core/dev/agent_collaboration.md` is out of scope for this chunk
+(its slot ships unfilled; see 2-2) and is not part of this criterion.
+`python scripts/check_cairn.py` passes (link/anchor/claim-path integrity
+across the touched docs); the glossary sentence names the exception without
+weakening the general rule for anything that is not a `cairn-event-v1` block.
 
 ### Chunk 3 — Version the break: v2 schema identity
 
@@ -223,9 +277,17 @@ by the time this chunk assigns the new identity).
 
 **Acceptance for this chunk**: an adopter's pre-retirement snapshot file, present
 in a fixture tree before this chunk's code runs, is byte-identical after it
-runs (the tool never rewrites persisted output); a fresh run against the same
-tree produces a new, v2-identified snapshot alongside it, never merged with or
-overwriting the v1 one.
+runs (the tool never rewrites persisted output — true independent of this
+chunk's own code, since `snapshot.py`'s `_next_snapshot_index`/`emit_snapshot`
+already only ever add a new, freshly-indexed file and never prune or
+overwrite; that pre-existing behavior is not what this chunk exists to add);
+a fresh run against the same tree produces a new, v2-identified snapshot
+alongside it, never merged with or overwriting the v1 one; and — the property
+this chunk actually exists to establish — **a consumer reading the two files
+side by side can tell them apart unambiguously from the version field alone**:
+the v1 file carries no schema-version marker (or an explicit v1 one, if this
+chunk back-labels the old shape — the implementing chunk records which), the
+v2 file carries the new one, and no third, ambiguous state is representable.
 
 ### Chunk 4 — Event-v1 grammar, the four activation markers, scaffold-only planner surfacing
 
@@ -284,7 +346,13 @@ version token is the literal `cairn-event-v1`.
 
 **Acceptance for this chunk**: every fixture in 4-6 passes; `next --to` remains
 provably read-only under the existing contract test; the four template paths
-each independently contain the literal string `cairn-event-v1`.
+each independently carry the literal string `cairn-event-v1` **worked into
+the templates' own instructional guidance** for how an agent appends an event
+block at a transition, review pass, or response (per 4-3/4-4) — not merely
+present as a bare token or inside a fenced example, which would satisfy a
+literal string match while leaving an agent no usable instruction. Because the
+marker's introducing commit is itself the activation cutoff, a literal-only
+match would arm that cutoff tree-wide with nothing for a reader to act on.
 
 ### Chunk 5 — The history-diff reader: identity, mutation detection, activation cutoff
 
@@ -375,11 +443,13 @@ conflate the two into one silently-partial number.
 | 6-2 | `tools/_lifecycle_metrics/extract.py` | Post-activation: `review_rounds`, reviewer identity/tier, `cross_agent_type_review`, `response_models` sourced from reconciled `review-pass`/`response` blocks, not from heading counts or `**Model**:` regex scraping. Pre-activation acts on the same artifact: the corresponding field is empty per the rule above. Transition dates / `days_*` / `hours_*` / `stage_timestamp_reliability` / `revised` sourced from reconciled `transition` blocks post-cutoff; unchanged (still header/git-timestamp-derived, still quiet-downgrade) pre-cutoff, since that is the existing degradation this chunk does not touch for the historical portion. |
 | 6-3 | Twins under `templates/modules/default-on/_lifecycle_metrics/` | Same commit as 6-1/6-2. |
 | 6-4 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Mandatory red fixtures (Round 6 / R4-E2): a status-only commit with no block → `INCOMPLETE`; a review-only commit with no block → `INCOMPLETE`. Mandatory taxonomy fixture (Round 6 / R4-E1): two review commits with no intervening status change produce **two** review-pass events and `review_rounds == 2`. Pre/post-activation split fixture: one artifact with a review pass before its activation cutoff and one after; the row shows an empty value attributable to the pre-cutoff pass and a populated, reconciled value for the post-cutoff one. |
+| 6-5 | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` | Update the "Robust across VCS settings" paragraph (~lines 74-82, as_of 2026-08-20): it currently documents unconditional quiet degradation to `Best-effort` reliability when git is unavailable ("a deliberately quiet failure mode"). This chunk makes that a refusal (`INCOMPLETE`) for a post-activation artifact instead of a quiet downgrade; the docstring must describe the new post-activation behavior, not continue documenting only the contract this chunk reverses. |
 
 **Acceptance for this chunk**: every fixture in 6-4 passes; a report run against
 a fixture tree containing a deliberately unreconciled act exits nonzero and
 names which artifact/commit/kind failed to reconcile, never a shorter clean
-series.
+series; the `__init__.py` docstring (6-5) no longer documents unconditional
+quiet git-absent degradation as the only behavior.
 
 ### Chunk 7 — Cross-cutting fixtures and the pre-existing-test audit
 
@@ -387,20 +457,40 @@ Depends on Chunks 1-6 all being present.
 
 | # | File | Change |
 |---|------|--------|
-| 7-1 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Confirms cross-commit contamination is structurally unrepresentable (the R3-E1 property, re-expressed for the artifact-local design per Round 5 §2): two artifacts transitioned concurrently, one commit path-scoped to the first artifact only, and the assertion that the second artifact's block does not and cannot appear in that commit — because there is no shared file for it to appear in. This is a confirmation test of a structural property, not a vulnerability regression test (there is no longer a vulnerable mechanism to regress). |
+| 7-1 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Confirms cross-commit contamination is structurally unrepresentable (the R3-E1 property, re-expressed for the artifact-local design per Round 5 §2): two artifacts transitioned concurrently, one commit path-scoped to the first artifact only, and the assertion that the second artifact's block does not and cannot appear in that commit — because there is no shared file for it to appear in. This is a confirmation test of a structural property, not a vulnerability regression test (there is no longer a vulnerable mechanism to regress); it passes even with `events.py` deleted, since the property is one of git and path-scoped commits, not of the reader's own logic. Writing it is still required (Round 5); it does not itself enforce the property. |
 | 7-2 | `bootstrap/tests/test_lifecycle_metrics_events.py` | `recorded_by` fixture: a block carrying a forged or duplicated `recorded_by` value changes no identity, no reconciliation outcome, and no refusal disposition — confirming it stays informational-only per Round 7's explicit bar on it participating in authority or idempotency. |
-| 7-3 | `bootstrap/tests/test_reference_scripts.py` | `test_installed_lifecycle_metrics_runs_on_target` (as_of 2026-08-20, the same test Chunk 1 already touched): once Chunk 6 lands, this fixture's `tmp_path` has no `.git` at all. Reusing the git-init pattern already present in this same file (as_of 2026-08-20, around line 469) is one option; asserting the new `INCOMPLETE`-refusal path directly, once the fixture proposal is activation-eligible, is the other. This chunk decides which and updates the test so it keeps exercising what it is meant to exercise, rather than accidentally exercising the new refusal path by omission. |
+| 7-3 | `bootstrap/tests/test_reference_scripts.py` | `test_installed_lifecycle_metrics_runs_on_target` (as_of 2026-08-20, the same test Chunk 1 already touched; distinct from `TestVcsRobustness.test_no_git_target_degrades`, addressed separately at 7-5): once Chunk 6 lands, this fixture's `tmp_path` has no `.git` at all. Reusing the git-init pattern already present in this same file (as_of 2026-08-20, around line 469) is one option; asserting the new `INCOMPLETE`-refusal path directly, once the fixture proposal is activation-eligible, is the other. This chunk decides which and updates the test so it keeps exercising what it is meant to exercise, rather than accidentally exercising the new refusal path by omission. |
 | 7-4 | `bootstrap/tests/test_lifecycle_contract.py` | Confirm the corpus-soundness suite (`test_the_live_corpus_is_sound_under_the_p1_contract` and neighbors) still passes against Cairn's own live `dev/proposals/` and `dev/plans/` corpus once the four template paths carry the activation marker — the live corpus itself carries no event blocks yet (this plan does not backfill), so this is a check that adding the marker to the templates does not itself perturb anything the corpus-soundness suite reads. This file is also touched by two other proposals opening today (both editing `bootstrap/tests/conftest.py`); this plan does not touch `conftest.py` and has no other point of contact with that concurrent work. |
+| 7-5 | `bootstrap/tests/test_reference_scripts.py` | `TestVcsRobustness.test_no_git_target_degrades` (as_of 2026-08-20, lines 445-457) is the test that actually encodes the git-absent quiet-degradation contract Chunk 6 reverses: its docstring ("degrades to Best-effort rather than raising") and its assertion (`stage_timestamp_reliability == "Best-effort"`) describe exactly the behavior that no longer holds for a post-activation artifact. Update it: for a fixture proposal past its activation cutoff with no `.git`, assert the new `INCOMPLETE` refusal instead of the `Best-effort` degrade; for a fixture proposal that predates activation (or an installation with no activation marker at all), the existing quiet-degrade behavior is unchanged, and the test should say so explicitly rather than leave the pre-activation case implicit. |
 
-**Acceptance for this chunk**: 7-1 through 7-3 pass as new/updated fixtures; 7-4
-is a confirming (not new) pass against the live corpus.
+**Acceptance for this chunk**: 7-1, 7-2, 7-3, and 7-5 pass as new/updated
+fixtures; 7-4 is a confirming (not new) pass against the live corpus.
 
 ### Chunk 8 — CHANGELOG, manifest re-derivation, corpus before/after evidence
 
 | # | File | Change |
 |---|------|--------|
-| 8-1 | `CHANGELOG.md > Unreleased > Changed` | One line naming the v1→v2 lifecycle-metrics schema break (eight columns retired) and the new event-emission convention for adopters who already parse the CSV/manifest. |
-| 8-2 | *(evidence, not a file change)* | Re-run the extractor against Cairn's own corpus before and after this plan's chunks, diffing the emitted column set — the "Owed at implementation" item the proposal names explicitly, so the diff is recorded rather than assumed. Recorded in this plan's `## Implementation verification` section, not carried into the plan as a number now. |
+| 8-1 | `CHANGELOG.md` | Under `## Unreleased`, open a new `### Changed` subsection — the section currently has only `### Changed — Git-native security foundations` and `### Added` (as_of 2026-08-20; there is no generic `### Changed` to file this under) — and add one line naming the v1→v2 lifecycle-metrics schema break (eight columns retired) and the new event-emission convention for adopters who already parse the CSV/manifest. |
+| 8-2 | `bootstrap/_scaffold/config.py` | Register the engine file Chunk 4 (4-1/4-2) creates: add `InstallSpec("default-on/_lifecycle_metrics/events.py", "tools/_lifecycle_metrics/events.py", verbatim=True)` to the `"lifecycle-metrics"` entry in `_MODULE_MAPPINGS`, alongside the nine existing `_lifecycle_metrics/` rows (confirmed at ~lines 739-766, as_of 2026-08-20); update the neighboring comment's "the nine package files install verbatim" to "the ten package files install verbatim". Without this row `scaffold.py` never installs `events.py` and an adopter's `extract.py` import of it resolves to nothing on disk. Maintainer direction: these two engine files are to be included, not treated as an open scope question. |
+| 8-3 | `bootstrap/tests/test_security_lint.py` | `test_templates_py_count_is_pinned` (line 376, as_of 2026-08-20) pins `len(on_disk) == 52` over `templates/**/*.py`. Update it to the post-registration count (52 + 1, as_of 2026-08-20 — re-derive at implementation from the live tree, do not carry a frozen number forward). Also confirm `test_every_templates_py_on_disk_is_release_scanned` in the same file passes once 8-2 lands: that check's oracle is the on-disk file set, independent of the manifest-derived count pin, and fails closed on any shipped `.py` present on disk but not release-scanned. |
+| 8-4 | `bootstrap/tests/test_notice_install.py` | `test_manifest_has_the_expected_py_source_count` (line 74, as_of 2026-08-20) pins `len(sources) == 56` over manifest `.py` sources. Update it to the post-registration count (56 + 1, as_of 2026-08-20 — re-derive at implementation, do not carry a frozen number forward). |
+| 8-5 | AST attestation baseline, via `bootstrap/tests/_ast_attest.py`'s `update-symbol` CLI path (per `bootstrap/AST_BASELINE_RUNBOOK.md`) | 8-2 changes `_MODULE_MAPPINGS`, a symbol the AST attestation baseline (`bootstrap/tests/test_ast_attest.py`) digests. `_MODULE_MAPPINGS` is one of the four symbols in `_ast_attest._UPDATE_ALLOWLIST`, so — unlike the unrelated, already-owed docstring-drift re-anchor named below under "Sequence revision" — this single-symbol repair is self-serviceable by the implementing agent: run `update-symbol _MODULE_MAPPINGS --expect-old <current digest> <path(s)>` (confirmed present: `bootstrap/tests/_ast_attest.py`'s `update_symbol`/`main(["update-symbol", ...])`, exercised by `bootstrap/tests/test_ast_attest.py`) against the live file after 8-2 lands, in the same commit. |
+| 8-6 | *(evidence, not a file change)* | Re-run the extractor against Cairn's own corpus before and after this plan's chunks, diffing the emitted column set — the "Owed at implementation" item the proposal names explicitly, so the diff is recorded rather than assumed. Recorded in this plan's `## Implementation verification` section, not carried into the plan as a number now. |
+
+**A known intermediate-commit gap, named rather than left implicit.**
+`templates/modules/default-on/_lifecycle_metrics/events.py` first lands on
+disk in Chunk 4 (4-2); its manifest registration (8-2) does not land until
+Chunk 8. Between those two commits,
+`bootstrap/tests/test_security_lint.py::test_every_templates_py_on_disk_is_release_scanned`
+— an on-disk oracle independent of manifest content — fails, because it flags
+any shipped `.py` present on disk that is not release-scanned. This is a
+deliberate consequence of placing the registration work in Chunk 8 (matching
+this chunk's own heading, and the Maintainer's explicit placement direction),
+not an oversight: Boundary A's per-touched-surface standing-gate run shows it
+red for the Chunks 4-7 window and it clears at Chunk 8. An implementer who
+wants every intermediate commit green may instead land 8-2 through 8-5 in the
+same commit as 4-2; this plan does not require that reordering, only names
+the trade-off.
 
 ## Sequence revision — the re-anchor ceremony
 
@@ -414,28 +504,46 @@ agent (the "implementer blesses its own verifier" self-authorization the
 runbook itself forbids). This plan does not perform the re-anchor; it names the
 need and stops there.
 
-**A second re-anchor is already owed, for an unrelated reason.**
-`dev/PLANNING.md`'s Queued section (as_of 2026-08-20) carries a `[VER]` row: the
-AST attestation baseline (`bootstrap/tests/test_ast_attest.py`, a *different*
-trust root from the differential-oracle gate anchor, governing the
-`bootstrap/_scaffold/` engine package specifically) needs re-anchoring after an
-unrelated docstring pass, via `bootstrap/AST_BASELINE_RUNBOOK.md`, and that
-repair is explicitly **not self-serviceable** by an implementing agent either.
-This plan's changes do not touch `bootstrap/_scaffold/` and do not themselves
-require the AST-baseline re-anchor. **Batching this plan's differential-oracle
-gate re-anchor with that already-owed AST-baseline re-anchor into one Maintainer
-ceremony is the shape that avoids running the Maintainer-only ceremony twice in
-quick succession — presented here as an option for the Maintainer to choose,
-not decided by this plan.**
+**A second re-anchor is already owed, for an unrelated reason — and this
+plan's own Chunk 8 owes a third, narrower one.** `dev/PLANNING.md`'s Queued
+section (as_of 2026-08-20) carries a `[VER]` row: the AST attestation baseline
+(`bootstrap/tests/test_ast_attest.py`, a *different* trust root from the
+differential-oracle gate anchor, governing the `bootstrap/_scaffold/` engine
+package specifically) needs re-anchoring after an unrelated docstring pass,
+via `bootstrap/AST_BASELINE_RUNBOOK.md`, and that repair is explicitly **not
+self-serviceable** by an implementing agent.
+
+**Separately, and correcting an earlier, now-false claim in this plan: this
+plan does touch `bootstrap/_scaffold/`.** Chunk 8's registration of
+`events.py` in `_MODULE_MAPPINGS` (`bootstrap/_scaffold/config.py`, row 8-2)
+changes a symbol the AST attestation baseline digests. This is **not** a
+second Maintainer fence, though: `_MODULE_MAPPINGS` is one of the four
+symbols in `_ast_attest._UPDATE_ALLOWLIST`, so the repair for this specific,
+single-symbol change is self-serviceable by the implementing agent via the
+`update-symbol` CLI path (Chunk 8's own row 8-5 for it) — distinct from, and
+not to be confused with, the already-owed, non-self-serviceable
+docstring-drift re-anchor above, which remains a Maintainer-run direct
+correction this plan does not perform.
+
+**Batching this plan's differential-oracle gate re-anchor with the
+already-owed AST-baseline re-anchor into one Maintainer ceremony** is the
+shape that avoids running the Maintainer-only ceremony twice in quick
+succession — presented here as an option for the Maintainer to choose, not
+decided by this plan. (Row 8-5's self-service `update-symbol` step is
+unrelated to this batching option: it needs no Maintainer ceremony at all.)
 
 ## Acceptance criteria
 
 * **Tests that must pass**: every fixture named in Chunks 1, 3, 4, 5, 6, and 7's
-  file tables, by node once implemented; `bootstrap/tests/test_lifecycle_contract.py`
+  file tables, by node once implemented; Chunk 8's updated pinned counts
+  (`test_templates_py_count_is_pinned`, `test_manifest_has_the_expected_py_source_count`)
+  and its AST-baseline `update-symbol` step; `bootstrap/tests/test_lifecycle_contract.py`
   unchanged in outcome (confirming pass, not a new fixture) except where 4-7 and
   7-4 name a specific extension.
-* **Doc updates that must land**: `templates/modules/default-on/lifecycle-metrics.md`,
-  `dev/agent_collaboration.md` + its shipped twin (re-rendered, not hand-edited),
+* **Doc updates that must land**: `templates/modules/default-on/lifecycle-metrics.md`
+  and its self-hosted copy `dev/modules/lifecycle-metrics.md`; `dev/agent_collaboration.md`
+  (hand-edited directly — **not** `templates/core/dev/agent_collaboration.md`,
+  whose slot ships deliberately unfilled and is out of scope for this plan);
   `docs/glossary.md`, the four activation-marker template paths, `CHANGELOG.md`.
 * **Examples / smoke checks required**: `python scripts/check_cairn.py` (doc
   link/anchor/claim-path integrity across every touched Markdown file);
@@ -490,7 +598,7 @@ project's own naming convention):
 | Invariant | Enforced by |
 |---|---|
 | The eight retired columns never appear in emitted output | Chunk 1's extension to `test_reference_scripts.py` + `test_lifecycle_metrics_config.py` |
-| `_lifecycle_metrics/` and `lifecycle_metrics.py` twins stay byte-identical | the existing, already-passing `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source` — manifest-derived, already covers these two pairs; no new test needed, only commit discipline |
+| `_lifecycle_metrics/` and `lifecycle_metrics.py` twins stay byte-identical, `events.py` included | the existing, already-passing `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source` — but its subject list (`_self_hosted_twins()`) is **presence-derived**: it only picks up a pair once a matching `install_manifest()` destination row exists. The `events.py` pair is invisible to this test from Chunk 4 (where the file is first created) through Chunk 7; it starts being checked only once Chunk 8's manifest registration (8-2) lands. No new test needed, but the ordering is load-bearing, not incidental — named here rather than assumed. |
 | v1 snapshot bytes are never rewritten by the v2 code path | Chunk 3's fixture |
 | Unknown key / kind / version / missing-required / out-of-bounds each refuse | Chunk 4's grammar fixtures |
 | An edited, reordered, or deleted existing block refuses (mutation) | Chunk 5's history fixture |
@@ -504,7 +612,7 @@ project's own naming convention):
 | Cross-commit contamination is structurally unrepresentable | Chunk 7's confirmation fixture |
 | `recorded_by` never affects identity, reconciliation, or refusal | Chunk 7's fixture |
 | `next --to` stays read-only under the extended preview | Chunk 4's and Chunk 7's regressions against `test_lifecycle_contract.py` |
-| Unavailable Git on a post-activation artifact refuses the row, not a quiet downgrade | Chunk 6's reconciliation logic + Chunk 7's audit of `test_installed_lifecycle_metrics_runs_on_target` |
+| Unavailable Git on a post-activation artifact refuses the row, not a quiet downgrade | Chunk 6's reconciliation logic + Chunk 7's update to `TestVcsRobustness.test_no_git_target_degrades` (7-5) — the test whose assertion literally encodes the reversed behavior; `test_installed_lifecycle_metrics_runs_on_target` (7-3) is a different fixture, updated for a different reason |
 
 **Known omission, named rather than discovered later.** No test in this plan
 exercises a shallow clone or a rewritten-history repository directly (Round
