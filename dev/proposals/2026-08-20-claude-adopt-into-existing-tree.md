@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — mandatory. The change touches the
 **install contract** (`AGENTS.md` > High-risk surfaces): the lockfile and the
 `--adopt-module` path that writes it.
@@ -832,3 +832,287 @@ minimum I would ask is that R1's disposition be explicit rather than folded into
 a revision: either the Security Review is declared, or the reason the
 scaffold-engine trigger does not fire is written down where the next reader
 finds it. "It was considered" is not recoverable from a revised header.
+
+## Response -- Claude (author) -- 2026-08-20
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+I re-derived every load-bearing citation. **All eight hold.** R2 is the one I
+would most have wanted caught before implementation and least expected: my D1,
+as specified, would have written a placeholder into the lockfile through the
+supported path — strictly worse than the hand-edit it was meant to replace.
+
+* **[R1] accept.** I argued the install-contract bullet and never read the
+  first one. `AGENTS.md:510-514` names the scaffold engine as parsing *"untrusted
+  module and **profile** files"* with *"YAML loading"* — which is precisely what
+  D1 adds to `_cmd_adopt_module`. The trigger is surface-based; "no trust
+  boundary moved" answers a different question. Revision 1 declares the Security
+  Review. I am not arguing the tier down.
+* **[R2] accept.** Confirmed at `config.py:1284`: `_UNFILLED_TOKEN_VALUE`
+  matches `{{...}}` only, and the angle-bracket guard lives in `_cmd_init_lock`'s
+  body, not in the helper I told the plan to reuse. So `python_package:
+  "<my package>"` would have passed the preflight and persisted as a *filled*
+  token. Revision 1 names the governing predicate and where it lives, and adds
+  the missing edge case.
+* **[R3] accept.** Two incompatible specifications in one document, with the
+  contradiction assigned to the plan — which cannot resolve it without being
+  accused of deviation either way. I adopt the reviewer's suggested wording
+  nearly verbatim; it is better than mine. The `architecture-review` case they
+  found is the sharpest: same dst is also that module's declared superseded
+  surface, so a raw comparison would double a spurious note.
+* **[R4] accept.** The `continue` at `upgrade.py:1411` is the same defect one
+  branch earlier and quieter — no comparison, no record, no output, and
+  `recorded N file(s)` under-counts. D2 extends to it. I also accept the
+  criticism that *Context* never establishes which branch the reporting adopter
+  hit; Revision 1 says so plainly rather than implying coverage.
+* **[R5] accept.** The headline survived re-measurement; the "left alone"
+  enumeration beside it was framed as exhaustive and was not. The omission that
+  matters is `templates/skills/_lib/lifecycle_planner.py` — a **shipped** twin,
+  so the fix has an adopter-facing dimension my enumeration hid.
+* **[R6] accept.** The sibling carries a tiebreak this one lacked. Added.
+* **[R7] accept.** `_resolve_lock_profile_fields` cannot supply the fallback
+  disposition I promised; that lives in `_resolve_current_profile`, the function
+  that discards tokens. Revision 1 names both and what each contributes.
+* **[R8] accept.** `_refuse_secret_tokens` has exactly one production caller
+  (`install.py:1667`); D1 would add a second token-writing path without it.
+  Revision 1 routes the write through it.
+
+**On the second-round recommendation.** The reviewer recommends External or
+Security, grounded in the negative space — they executed nothing, and R2 turns
+on a behaviour one fixture settles. Agreed, and R1 makes it mandatory rather
+than advisory: this now takes the External Security Review alongside its
+sibling.
+
+## Revision 1
+
+**Complete current contract.** Supersedes the `## Proposal` section, the
+header's review declaration, and the `## Amendment`'s section 2. Self-contained.
+
+### Review declaration — corrected
+
+**Security Review: REQUIRED.** Trigger: `AGENTS.md:510-514`, the scaffold /
+merge engine — D1 adds profile parsing and YAML loading inside
+`bootstrap/_scaffold/`, where the parsed result gates a fail-closed refusal and
+then a lockfile write. The header's "No Security Review trigger" is **withdrawn**.
+It engaged the install-contract bullet, which is about compatibility, and never
+reached the first bullet, which is about parsing untrusted files.
+
+Plan review remains `required(Internal)`; no `Plan readiness` inheritance is
+claimed.
+
+### D1 — profile as seed, lockfile as authority, with the strict predicate
+
+`_cmd_adopt_module` resolves required tokens from the committed profile **and**
+the lockfile, lockfile values winning, and persists any newly-resolved value
+into the lockfile in the same atomic `_commit_lock_and_caches` it already
+performs. The profile is a **seed, never a parallel truth**: after adoption the
+lockfile is the single authority, as it is today.
+
+**Which predicate governs, and where it lives.** The adopt path uses the
+**stricter** of the two existing tests. A required token counts as unfilled when
+it is absent, blank, matches `_UNFILLED_TOKEN_VALUE` (`{{...}}`,
+`config.py:1284`), **or** is an angle-bracket placeholder of the form
+`<...>` — the shape `_cmd_init_lock` guards at `upgrade.py:1146-1148` because
+that is what the profile template it writes actually contains
+(`upgrade.py:1058-1061`).
+
+That angle-bracket guard is **not** in `_resolve_lock_profile_fields`, so
+"reuse the helper" would have handed the plan the narrower predicate by
+construction. The strict check therefore lives **in the adopt path itself**, and
+the plan must not satisfy it by delegating to that helper alone.
+
+**Two helpers, two contributions** — the earlier text named only one and
+promised what it cannot deliver:
+
+* `_resolve_lock_profile_fields` (`upgrade.py:1064`) — extracts the profile's
+  token map. This is the part `_cmd_init_lock` already uses.
+* `_resolve_current_profile` (`upgrade.py:216`) — supplies the **fallback
+  disposition** (absent / unparseable / incomplete `profile.yml` falls back to
+  the lockfile's embedded profile, loudly). This is the function that currently
+  discards tokens at `upgrade.py:239`.
+
+**The write is guarded.** The new lockfile-token write routes through
+`_refuse_secret_tokens` (`lockfile.py:243`), which today has exactly one
+production caller (`install.py:1667`). A second un-guarded token-writing path
+is not created.
+
+The refusal stays fail-closed and unchanged in disposition; only the error text
+changes, to name a command that can help.
+
+### D2 — advisory on both quiet branches, compared against what would install
+
+**Compare on-disk bytes to what this spec would install** — `theirs_b` for a
+`verbatim` spec, and `substitute_tokens(theirs_b.decode("utf-8"), tokens)` for a
+mergeable one, matching the `if not dst_abs.exists()` branch immediately above
+(`upgrade.py:1425-1427`) line for line. `theirs_b` is the **raw** template
+(`upgrade.py:143-148`), so comparing against it would fire on every mergeable
+spec that carries a token — `claim-check.md`, `lifecycle-metrics.md` and
+`architecture_review_template.md` all do today. The earlier "both are already in
+hand" phrasing is withdrawn as under-specified; the "no additional I/O"
+justification survives, because substitution is CPU, not I/O.
+
+**The motivating example cannot settle this**, which is why it is settled here:
+`run_security_audit.py` is `verbatim=True`, so raw and installed are identical
+for it and reasoning from it proves nothing.
+
+**Two branches, not one.** The spec loop has a second silent exit before the
+exists/else split:
+
+```
+if dst_rel in lock_dsts:
+    continue  # already tracked under another roster entry; skip the file
+```
+
+(`upgrade.py:1411-1412`.) A destination skipped there is not compared, not
+recorded, produces no output, and makes `recorded N file(s)` (`:1447`)
+under-count. That is the same defect D2 names, one branch earlier and with less
+signal. **D2 covers both branches:** the `else` branch reports kept-and-differing
+files; the `continue` branch reports skipped-and-untracked-here destinations and
+the count is reconciled so the success line describes what happened.
+
+**What *Context* does not establish, stated plainly:** which of the two branches
+the reporting adopter hit is not known from issue #5. If their
+`run_security_audit.py` was untracked in the lockfile they hit `else`; if it was
+tracked under an earlier roster entry they hit `continue`. Covering both is what
+makes the fix independent of that unknown.
+
+**Silence on a match, and no doubled notes.** Nothing prints when the bytes
+match. Where a path is *also* a declared superseded surface — `dev/architecture_review.md`
+is both (`config.py:1144-1145`, `:1209`) — the advisory and
+`_superseded_surface_note` must not both fire about the same path in one run.
+
+**Advisory only: it neither blocks nor overwrites.**
+
+### D3 — drop the flag, and correct the enumeration
+
+`bootstrap/UPGRADE.md:255` becomes `python tools/lifecycle_planner.py scan`.
+
+**The headline claim stands and was re-measured:** that line is the only place
+the flag is *recommended*. **The enumeration beside it is withdrawn as
+non-exhaustive.** Measured `as_of 2026-08-20` with `git grep -n -- '--include-archive'`
+over tracked files, occurrences also exist in `tools/lifecycle_planner.py` and —
+the one that matters — **`templates/skills/_lib/lifecycle_planner.py`**, the
+byte-shipped planner twin adopters receive. Any change to the checker's own
+description of the flag has a twin dimension; the doc fix in `UPGRADE.md` does
+not, but the plan must confirm rather than assume that.
+
+`--include-archives` (on `check_cairn` / `link_check`) remains a **different
+flag on a different tool** and is out of scope. A careless fix edits the wrong
+document.
+
+### Invariants, failure dispositions, public paths
+
+* **(i)** A required token resolving from nowhere refuses **before any write or
+  lockfile mutation** — existing preflight, plus a test asserting no file and no
+  lockfile change on refusal.
+* **(ii)** After a successful adopt every required token has a value in the
+  lockfile, **and that value is not a placeholder in either form** — the
+  regression R2 identified.
+* **(iii)** The lockfile schema is unchanged (`_LOCK_SCHEMA = 1`, `tokens` a
+  free map) — existing schema tests, unmodified.
+* **(iv)** No token write bypasses `_refuse_secret_tokens`.
+
+**Failure dispositions.** Unresolvable or placeholder token → refuse, closed.
+Unparseable `profile.yml` → fall back to the lockfile's embedded profile with a
+warning, matching `_resolve_current_profile`'s existing disposition. Byte
+comparison unreadable → the advisory says so; it never suppresses the note and
+never fails the adopt (open, deliberately: an advisory that breaks an install is
+worse than the silence it replaces).
+
+**Edge cases.** No `profile.yml`; profile present, token absent; **profile
+present, token present, value an unfilled placeholder in either form** (the case
+the earlier inventory omitted); token in both sources disagreeing (lockfile
+wins, pinned); destination missing; destination present and byte-identical after
+substitution; destination present and differing; destination skipped at
+`continue`; a path that is both a spec destination and a declared superseded
+surface; module already in the roster.
+
+**Public paths → tests.** `--adopt-module` through its real CLI entry point in
+[`test_upgrade_module.py`](../../bootstrap/tests/test_upgrade_module.py), with
+lockfile-shape assertions in
+[`test_module_merge_lockfile.py`](../../bootstrap/tests/test_module_merge_lockfile.py).
+
+### Security preflight — revised for the declared Security Review
+
+* **S1.** D1 adds `dev/.cairn/profile.yml` — a committed, adopter-owned,
+  schema-validated file already read by the upgrade path — as an input to a
+  decision that gates a fail-closed refusal and a lockfile write. It is YAML
+  parsed inside `bootstrap/_scaffold/`, which is why the Security Review
+  triggers. It is not supplied by anything being decided about.
+* **S2.** Mutations that must redden, each run and recorded: delete the persist
+  call (the "token lands in the lockfile" test); make the placeholder predicate
+  curly-brace-only (the R2 regression test with `<my package>`); make the byte
+  comparison always-equal (the advisory-present test) **and** always-unequal (a
+  paired advisory-absent test on identical bytes — without both, the pair cannot
+  distinguish correct from always-fires).
+* **S3.** `python -m pytest bootstrap/tests` selects both files; nothing else
+  runs them — no CI, no hook. `bootstrap/UPGRADE.md`'s prose is quoted in the
+  plan and shown to agree with the command it recommends.
+* **S4.** Token refusal closed. Profile fallback open, unchanged, loud, and it
+  lands on the lockfile — the more-trusted source. The D2 advisory grants no
+  authority: it prints.
+* **S5.** Assumes an attacker who can write to the adopter's tree. They could
+  already edit the lockfile, templates and engine, so profile-seeding adds no
+  capability. **What is newly closed** relative to the opened proposal: the
+  placeholder-persist path R2 found. **What remains open:** an adopter who
+  ignores the D2 advisory keeps running an unverified apparatus — closed only by
+  the operator reading the line, which is why it must not fire on the common
+  case.
+
+### Evidence, omissions, deferred work
+
+**Tests** per the mapping above; every D2 case **synthesized**, and the
+per-module collision measurement the plan owes must **distinguish the two
+branches** or it measures the wrong set.
+
+**Smoke.** `python bootstrap/scaffold.py --manifest` and `--dry-run` byte-
+unchanged; an end-to-end adopt against a fixture tree carrying a differing
+destination; `python scripts/check_cairn.py` for the `UPGRADE.md` edit.
+
+**Known omissions.** Which branch the reporting adopter hit is unknown (above).
+Whether other modules collide on a spec destination is unmeasured and is the
+plan's to establish per-branch. `--set-token` remains the named fallback for a
+tree with no committed profile; the plan states what happens there.
+
+**Deferred.** Nothing. Scope as opened is `preserved`.
+
+### The issue-closure gates — superseding Amendment section 2
+
+Unchanged in substance, with the sibling's tiebreak added:
+
+* **#7** closes with this proposal alone.
+* **#5** closes only when this proposal **and**
+  `2026-08-20-claude-scanner-claim-scope` have both landed. **Whichever lands
+  second carries the close; the first posts a progress comment.** If the sibling
+  is rejected or narrowed, #5 does not close — it gets a comment naming which
+  gaps were fixed and how gap 3 was dispositioned.
+* Each close is **MAINTAINER-GATED**, and gated on implementation landed and
+  code-reviewed, the External Security Review completed, and a closing comment
+  meeting the honesty bar in Amendment section 4.
+
+### Withdrawn / superseded commitments
+
+* **"No Security Review trigger."** Withdrawn. Security Review is **required**
+  under `AGENTS.md:510-514`. Reason: R1 — the trigger is surface-based and D1
+  adds profile parsing plus YAML loading inside `bootstrap/_scaffold/`.
+* **"Reuse `_resolve_lock_profile_fields` ... rather than writing a second
+  reader."** Withdrawn as stated. That helper carries the *narrower* placeholder
+  predicate and cannot supply the fallback disposition promised. Replaced by the
+  strict-predicate-in-the-adopt-path specification and the two-helper split.
+  Reason: R2 and R7.
+* **"Both are already in hand — `theirs_b` and `dst_abs.read_bytes()` ... so
+  this costs no additional I/O."** Superseded. The comparison is against **what
+  the spec would install**, not the raw template. The no-additional-I/O claim
+  survives. Reason: R3.
+* **The `Signals` clause assigning the raw-vs-substituted question to the plan.**
+  Withdrawn; a plan cannot choose between two contract statements in its own
+  baseline. Settled here. Reason: R3.
+* **D2 scoped to the `else` branch only.** Superseded; D2 covers the `continue`
+  branch at `upgrade.py:1411` as well. Reason: R4.
+* **"The other occurrences are not advice and are left alone: [four named]."**
+  Withdrawn as non-exhaustive. The shipped planner twin
+  `templates/skills/_lib/lifecycle_planner.py` was omitted. The headline claim
+  is unchanged and re-measured. Reason: R5.
+* **The Amendment's #5 closure text without a landing-order tiebreak.**
+  Superseded. Reason: R6.
+* **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
