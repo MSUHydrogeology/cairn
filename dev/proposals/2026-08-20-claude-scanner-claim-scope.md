@@ -317,3 +317,87 @@ gallery and the scaffold dry-run do not reach either tool.
 * **A fifth baseline consumer appears and disagrees differently.** That is
   evidence the shared-artifact problem is structural and wants a real
   multi-consumer protocol — a distinct proposal, not a further reword.
+
+## Amendment -- Claude (author) -- 2026-08-20 -- issue closure is in scope
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Appended, not merged into the sections above, per the append-only rule. This
+records Maintainer direction received **after this proposal was committed
+(`3499fc5`) and before any review**. It **adds** a deliverable; it withdraws
+nothing, so no `Scope delta` is owed (scope as opened is `preserved`).
+
+### 1. What was directed
+
+> "please make sure that these proposals all include closing the issues"
+
+### 2. What this proposal can close, and what it cannot
+
+**It closes adopter issue
+[#6](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/6)
+alone** — D2 is the whole of it.
+
+**It holds the last piece of issue
+[#5](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/5), and
+cannot close it alone.** Gap 3 is D1 here; gaps 1 and 2 are in
+[`2026-08-20-claude-adopt-into-existing-tree`](2026-08-20-claude-adopt-into-existing-tree.md).
+Issue #5 closes **only when both proposals have landed**, and the closing
+comment names which proposal took which gap — the adopter offered the split
+(*"Happy to file separately if that suits triage better"*), so it is owed an
+answer rather than a silent regrouping.
+
+The failure this guards against: this proposal lands, D1 is genuinely fixed, and
+a close gets posted for #5 on the strength of the gap the closer happened to be
+holding. Whichever of the two lands second carries the close; whichever lands
+first posts a progress comment and leaves the issue open.
+
+### 3. The gate and the honesty bar
+
+Each close is an acceptance criterion of the derived plan's final chunk, gated
+on implementation landed and code-reviewed, a closing comment meeting *4*, and
+**Maintainer authorization** — a close publishes a public claim that the problem
+is resolved. The chunk is **MAINTAINER-GATED**.
+
+### 4. The closing comment must name what was declined — and here it matters most
+
+Issue #6 is the one report where the adopter offered three shapes and **this
+proposal refuses their middle one**. A close that lists what shipped without
+saying that is the least honest of the four.
+
+The comment states:
+
+* that **options 1 and 3 were taken and option 2 was refused**, and that the
+  refusal rests on **their own caution** about the closure walk — the junk from
+  environment-marker parsing, the `; extra ==` handling, the `Pillow`/`pillow`
+  normalization. They argued against their own suggestion; the comment should
+  credit that rather than present the refusal as ours;
+* that the distinction is *standing*, not effort: an annotation may be wrong
+  because it decides nothing, and a leg may not, because it makes a claim of
+  equal standing to the ambient one;
+* **the bright line**, in the comment and not only in the code: the reported
+  finding set is identical with the annotation present and absent, and a test
+  enforces it. That is the commitment that keeps option 3 from becoming option 2
+  later, and the reporter is the right party to hold us to it;
+* that **the ambient audit's width was not narrowed**, which is what they asked
+  for and is easy to lose in a summary that leads with "we added reachability";
+* and, for **#5 gap 3**, that the imperative was scoped rather than the detection
+  removed — exit 3 still fires. They pruned a security allowlist on our
+  instruction and were saved by a test they happened to have; the comment should
+  be plain that the instruction was wrong, not that it was imprecise.
+
+### 5. Something owed back to the reporter
+
+Issue #6's measurement — 299 discoverable, 93 in closure, 212 outside, 144
+findings, 27 reachable — is the only field data this project has on the
+env-versus-project gap in a conda workflow. The closing comment should say
+whether it was used as evidence, and *where it is now recorded*, so that a
+measurement an adopter built by hand does not evaporate into a closed issue. If
+the plan records it under `dev/measurement/`, name the file in the comment.
+
+### 6. What a reviewer should test in this amendment
+
+That *4*'s bright-line commitment is one this proposal can actually keep. If the
+identical-set test turns out to be unbuildable as specified, the honest move is
+to say so **before** promising it to the reporter in a public comment — a
+commitment made in a closing comment is harder to walk back than one made in a
+proposal.
