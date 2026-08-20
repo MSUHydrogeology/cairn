@@ -82,6 +82,53 @@ codes).
 > is plausibly substantive. Whether the fence or the propagation clause governs
 > is the Maintainer's call, and it decides whether stage 3 is one file or two.
 >
+> **F9's three sequencing constraints, re-verified 2026-08-20.** F9 bounded this
+> note's stages against work owned elsewhere; two of the three bounds have since
+> moved.
+>
+> * **The lifecycle state machine — discharged.** The vocabulary promoted. Doctrine
+>   was corrected to match it (`be6bce8`, `6c8ee9a`) and the diagrams are drawn
+>   against the settled set (`c9ad978`). A drift check now binds doctrine to the
+>   planner's own `HISTORICAL_*` constants (`f065255`), so F9's "drawing it twice"
+>   risk cannot recur silently.
+> * **The unbacked timing claim — applied to one surface only.** Stage 1 correctly
+>   dropped it from the README. `docs/quickstart.md` still opens *"Try Cairn in
+>   15-25 minutes with one AI agent"* and carries a per-step breakdown, and
+>   **nothing measures it** — no canary records elapsed time. The constraint was
+>   honoured exactly where this note pointed, and the number survived on the page a
+>   newcomer reaches first. Worth stating as a general lesson: a constraint written
+>   against one surface does not travel to the others that carry the same claim.
+> * **The level model — orphaned.** F9 deferred it to "the adopter-path proposal"
+>   on the finding that Level 1 has no executable greenfield path. `README.md:266`
+>   still reads *"Level 1 — hand-copy the kernel."* and **no active proposal or
+>   plan owns the rewrite** — `2026-08-20-claude-adopt-into-existing-tree` is
+>   scoped to `upgrade.py` module adoption, not the ladder. A deferral that
+>   outlives its owner is not a decision anyone made; it is an accident. Naming it
+>   here so it stops being one.
+>
+> **Documentation decay, observed 2026-08-20** — a natural experiment, not a
+> designed one. Seven defects surfaced in a single session. **Five were
+> documentation, and every one was found as a side effect of doing something
+> else. None was on any board:** a `claim-check-allow` block whose six paths were
+> all uncited; this note recording stages 1–2 as unstarted ten days after they
+> shipped; `dimensions/README.md` listing three default-on modules where the gate
+> table has seven; the lifecycle vocabulary stale across five doctrine files; and
+> a README caption asserting *"no named state dropped"* that had become false.
+>
+> What they share is that **no gate could have caught any of them.**
+> `claim_check` catches broken paths, `link_check` broken links, `check_cairn`
+> both. None catches a dead exemption, a count that fell behind its source, a
+> caption that turned false, or a state list the tool no longer accepts —
+> `claim_check` reported the file carrying a wholly inert exemption as *clean*,
+> confirmed with a positive control. The gates cover the failures that have a
+> resolvable target and miss the ones that need a second reading.
+>
+> This is also the population the parked `2026-08-20-claude-stewardship-ethic`
+> note wants for its evidence pass, and it **narrows that note's Finding 3**:
+> Cairn's *board* is deliberated work rather than litter, but Cairn's *doc tree*
+> decays silently — and it decays here, which means the documentation half of that
+> question needs no second repository to study.
+>
 > `dev/PLANNING.md`'s **"0.4 launch-surface polish"** row (F8) remains the
 > roadmap home and is still correctly queued, since the graphics stages are
 > what remain.
