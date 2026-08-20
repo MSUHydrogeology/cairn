@@ -340,3 +340,89 @@ report. `python scripts/check_cairn.py` for the `UPGRADE.md` edit.
   D3 removes a recommendation, not a capability; if the archive sweep turns out
   to be load-bearing for some upgrade, the recovery is a sentence saying what it
   is for — not restoring the flag to the default advice.
+
+## Amendment -- Claude (author) -- 2026-08-20 -- issue closure is in scope
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Appended, not merged into the sections above, per the append-only rule. This
+records Maintainer direction received **after this proposal was committed
+(`aa479dc`) and before any review**. It **adds** a deliverable; it withdraws
+nothing, so no `Scope delta` is owed (scope as opened is `preserved`).
+
+### 1. What was directed
+
+> "please make sure that these proposals all include closing the issues"
+
+### 2. What this proposal can close, and what it cannot
+
+**It closes adopter issue
+[#7](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/7)
+alone** — D3 is the whole of that issue, including the "check whether the flag
+is recommended anywhere else" question, which is measured in *Proposal > D3*.
+
+**It cannot close issue
+[#5](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/5) by
+itself, and neither can its sibling.** Issue #5 reports three gaps: gaps 1 and 2
+are D1 and D2 here; **gap 3 is in
+[`2026-08-20-claude-scanner-claim-scope`](2026-08-20-claude-scanner-claim-scope.md)**,
+because it is a scanner-scope defect that is wrong on a clean tree too and does
+not belong to the upgrade path.
+
+So issue #5 closes **only when both proposals have landed**. This is the
+coordination fact most likely to be lost: each proposal, read alone, looks like
+it finishes an issue it only two-thirds finishes, and the natural failure is a
+close posted from whichever lands first.
+
+Two consequences the derived plan carries:
+
+* **The plan's closing chunk for #5 is blocked on the sibling**, named by stem,
+  and states that dependency in the chunk itself rather than in a comment
+  somewhere. It is not enough for the author to know it.
+* **If the sibling is rejected or narrowed**, #5 does not close. It gets a
+  comment saying which gaps were fixed and that gap 3 was dispositioned
+  otherwise, with the reason. A partially-fixed issue closed as fixed is worse
+  for the reporter than one left open.
+
+The adopter offered this split themselves — *"Happy to file separately if that
+suits triage better"* — so the split is not a liberty taken with their report.
+The closing comment should say so, and should say which proposal took which gap,
+so their offer is answered rather than silently acted on.
+
+### 3. The gate and the honesty bar
+
+Each close is an acceptance criterion of the derived plan's final chunk, gated
+on: implementation landed and code-reviewed; a closing comment meeting *4*; and
+**Maintainer authorization** — closing an issue on a public repository publishes
+a claim that the problem is resolved, which is a publication step and not a
+bookkeeping one. That chunk is **MAINTAINER-GATED**.
+
+### 4. The closing comments must name what was declined
+
+* For **#5**: that `--set-token` was **considered and kept as a fallback rather
+  than taken** as the primary fix, and why — the profile is where the module's
+  own doc already told them to put the token, and the engine already reads it.
+  The adopter ranked profile-reading first, so this is agreement, but the reason
+  matters because it is *not* the reason they gave.
+* For **#5 gap 2**: that the advisory is **advisory only** — it will not block
+  and will not overwrite — which is what they asked for, and worth confirming
+  explicitly so they do not expect adoption to start refusing.
+* For **#7**: that the archive sweep was **not removed, only un-recommended**,
+  and that the reasoning came from the checker's own docstring rather than from
+  their report alone — they were right, and they were right in company.
+
+### 5. Something owed back to the reporter
+
+Issue #5 hand-edited `dev/.cairn/cairn-lock.yml` against its own header's
+instruction, additively, and reported that `verify_integrity` passes afterwards.
+The closing comment should say **whether that tree is now in a state the fixed
+`--adopt-module` will handle correctly**, or whether it needs anything. An
+adopter who took a documented-unsupported route on our advice-by-absence should
+not have to guess whether they are still on a supported path.
+
+### 6. What a reviewer should test in this amendment
+
+That *2* is right — specifically, that gap 3 really is out of scope here rather
+than moved out for convenience. If a reviewer concludes gap 3 belongs on the
+upgrade path after all, the closure mapping changes and this amendment is what
+has to move, not the sibling.
