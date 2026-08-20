@@ -3,7 +3,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(External)
 **Last update**: 2026-08-20
 **Opened**: 2026-08-20
@@ -884,3 +884,45 @@ owns the full-suite run for this plan, and re-running it at every chunk would
 duplicate that — but naming the divergence from the runbook's own literal step
 4 explicitly, since it is exactly the kind of gap this review round exists to
 catch.
+
+## Plan review -- Codex (External plan reviewer) -- 2026-08-20 (round 2)
+
+Reviewed commit: 2ba93fa8d14fb86673519e5389d91bdd3ec55890
+Target: Response to plan review round 1 and the revised Chunk 4/6/8 cells, registration acceptance, sequence revision, and Author-accounting invariants
+Prior findings: EPR-01, EPR-02, EPR-03
+Assurance path: high-assurance
+**Tier**: External
+**Findings**: raised
+
+### Verdict
+
+**REVISE.** EPR-01 through EPR-03 are closed: row 4-9 now gives the complete
+AST-update operation, the marker moves into the reconciliation commit, and the
+registration/twin references now agree. A new blocking inconsistency remains:
+the plan calls its Chunk-4 procedure the runbook's four ordered steps, then
+deliberately omits that runbook's required post-apply full-suite command.
+
+### Findings
+
+#### EPR-04 — BLOCKING: Chunk 4 cannot waive the AST runbook's post-apply full suite
+
+`bootstrap/AST_BASELINE_RUNBOOK.md` Step 4 requires both the `verify` command
+and `PYTHONDONTWRITEBYTECODE=1 python -m pytest bootstrap/tests -q` after the
+baseline mutation. Row 4-9 says it follows all four steps, but Chunk 4's
+acceptance instead requires only three focused test files and the Response
+expressly substitutes Boundary B's later full run. Boundary B does not make
+the already-mutated AST baseline verified at its Chunk-4 commit, nor does the
+plan have a recorded Maintainer allowance to depart from the runbook.
+
+Restore the runbook's post-apply command to Chunk 4's same-commit acceptance
+and record its outcome, or obtain and quote a Maintainer authorization for a
+different ceremony. Do not describe the focused run as satisfying the runbook
+until one of those conditions holds.
+
+### Coverage
+
+Read the complete round-1 Response and its revised operative cells; rechecked
+the AST CLI signature and all four steps of `bootstrap/AST_BASELINE_RUNBOOK.md`.
+I confirmed the marker/reader co-location and corpus-success criteria added to
+Chunk 6/8, and the corrected Chunk-4 registration references. I did not rerun
+the full suite or mutate any baseline artifact.
