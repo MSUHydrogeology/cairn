@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — D1 changes what a security control
 **instructs an operator to do to a reviewed security baseline**, and D2 adds a
 derived annotation to a security report. Neither is obviously a trust-boundary
@@ -744,3 +744,327 @@ cannot.
 
 **Disposition: blocking.** Four blocking findings ([R1]-[R4]); status moved to
 `revising`.
+
+## Response -- Claude (author) -- 2026-08-20
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+I re-derived every load-bearing citation. **All eight hold.** R1 is the finding
+the Amendment's section 6 asked for and did not expect to get: the bright line I
+was about to publish to the reporter has no referent, and the test I promised
+would have compared empty to empty — my own S2 hazard, in my own proposal.
+
+* **[R1] accept.** Confirmed: `vulnerabilities += len(vulns)`
+  (`run_security_audit.py:942`) is the only retention, `Coverage` (`:767-787`)
+  carries no per-vulnerability field, and the report prints counts plus
+  distribution names. There is no per-finding record to annotate. D2 is
+  re-specified below onto the unit that actually exists — and the header's "no
+  change to what is reported" is withdrawn, because it was false.
+* **[R2] accept.** My count measured *mentions*. Only `content_scan_runner.py`
+  reads baseline entries; `run_security_audit.py` `importlib`-loads the runner
+  and calls it, `config.py` is the installer, the tests write fixtures.
+  "Falsified" is withdrawn. The reviewer's omitted consumer is **stronger than
+  my four put together** — the lockfile records the file's sha256 and
+  `integrity_preflight` refuses to self-audit on mismatch, so a prune degrades a
+  sibling security control mechanically rather than hypothetically. Adopted.
+* **[R3] accept.** `dev/proposals/_template.md:76-78` names **the content
+  scanner** as a Security Review trigger. It is surface-based; my "no trust
+  boundary is added, moved or widened" answered a different question, exactly as
+  in the sibling proposal. Declared below. S1 is extended to the child-JSON
+  fields R1's re-specification touches.
+* **[R4] accept.** `content-security.md:122-123` carries the same imperative in
+  *stronger* form — *"it must be deleted before the baseline is current"* — and
+  it is the document an operator consults when deciding what to do about exit 3.
+  Fixing the terminal message and leaving that is my own defect shape at one
+  remove. Added to `Touches`, with the self-hosted copies named.
+* **[R5] accept.** `scripts/run_security_audit.py` does not exist here and
+  `python-security` is not in Cairn's installed roster. Two errors in one
+  sentence, and `claim_check` passed because the path sat inside a backticked
+  *command*. That is this project's own "confirm the instrument" rule failing on
+  the document that cites it.
+* **[R6] accept with modification.** I accept "decides nothing" is too clean at
+  a 144-to-27 ratio, where *triaged last* is operationally *not triaged*. The
+  modification: I take the reviewer's wording — "decides nothing **the tool acts
+  on**" — and additionally state the residual positively in S5 rather than only
+  softening the claim, because attention really is what is at stake for a
+  control whose named failure mode is being skimmed.
+* **[R7] accept.** `run_security_audit.py:627` calls `runner._print_summary(...)`
+  **positionally across the module boundary**, so a signature change breaks
+  precisely the mixed-tree condition that produced this report. Revision 1
+  derives the roots inside `_print_summary` instead. I also accept the
+  calibration: the manifest is already named at `:579`; the *resolved roots* are
+  not, and that is the half that makes the claim checkable.
+* **[R8] accept.** The calibration is fair and I have adopted its wording.
+
+**On the second-round recommendation.** Accepted without argument: R1 required
+re-specification rather than correction, and R3 contests the tier. This joins
+its siblings in the scheduled External Security Review.
+
+## Revision 1
+
+**Complete current contract.** Supersedes the `## Proposal` section, the
+header's `Touches` and review declaration, and the `## Amendment`'s section 4
+third bullet. Self-contained.
+
+### Review declaration and surfaces — corrected
+
+**Security Review: REQUIRED.** Trigger: `dev/proposals/_template.md:76-78` —
+*"Bootstrap safety / security stack — ... or the content scanner; a change here
+is also a Security Review trigger."* D1 changes the content scanner. The
+trigger is surface-based and does not ask whether a boundary moved.
+
+**`Touches`, corrected and completed:** `scripts/content_scan_runner.py` and its
+byte-identical twin `templates/modules/team-gated/content_scan_runner.py`;
+**`templates/modules/team-gated/content-security.md`** and its self-hosted
+copies at `dev/modules/content-security.md` and
+`dev/.cairn/base/dev/modules/content-security.md` (a scaffold-state dimension
+the plan handles explicitly); `templates/modules/team-gated/python-security.md`;
+`templates/modules/team-gated/run_security_audit.py`;
+`bootstrap/tests/test_security_stack.py`.
+
+**Withdrawn from the header:** "No change to ... what is reported." False for
+D2. What D2 does **not** change: the audited set, any verdict, any exit code,
+and the width of the ambient claim.
+
+### D1 — scope the imperative, and name the consumer that makes it mechanical
+
+The exit-3 class stays exactly as it is: a residual entry with no live
+occurrence can preauthorize a replay, and that detection is right.
+
+**What changes is the scope of the imperative.** The message says which roots
+were audited, that an entry with no occurrence *in that set* may still be live
+elsewhere, and that the operator confirms across consumers **and reconciles the
+lockfile record** before pruning.
+
+**The consumer taxonomy, replacing the count.** My "four consumers" measured
+mentions. By read relationship:
+
+| Component | Relationship |
+|---|---|
+| `scripts/content_scan_runner.py:84` | **reads baseline entries** — the only one |
+| `run_security_audit.py:104` (`_MODULE_APPARATUS`) | **hashes the file** for `integrity_preflight` (`:196-202`); for the scan it `importlib`-loads the runner and calls it — a caller, not a second auditor |
+| `bootstrap/_scaffold/config.py:1017-1018` | **installs** the shipped template |
+| `bootstrap/tests/test_security_stack.py` | **writes** tmp fixtures |
+
+So sole-consumership is **rejected, not falsified** — the word is withdrawn.
+The argument that carries it is the one already in *Alternatives considered*: an
+assertion about other tools ages the moment a fifth arrives, closed by
+enumeration, which is the weaker kind.
+
+**The consumer that makes D1 mechanical, and which I missed.**
+`dev/.cairn/cairn-lock.yml:631-637` records
+`sha256:49ba1709…` for `scripts/content_scan_residuals.txt`, and
+`integrity_preflight` (`run_security_audit.py:196-202`) raises `AuditDegraded`
+on mismatch. **A prune changes the bytes.** So on an installed tree the exit-3
+imperative instructs the operator into a state that degrades a sibling security
+control unless the lockfile record is reconciled in the same act. That is
+checkable, unlike "another consumer may hold that entry", and the scoped message
+names it.
+
+**Naming the audited set without a signature change.** `audit()` returns
+`(code, files, all_flags, new_flags, stale)` — no roots
+(`content_scan_runner.py:555-570`) — and `run_security_audit.py:627` calls
+`runner._print_summary(...)` **positionally across the module boundary**. A
+signature change would break a tree whose two halves are at different versions,
+which is the mixed-tree condition that produced this report. So
+`_print_summary` **derives the roots from `_ROOTS_MANIFEST` internally**; no
+signature changes. `_print_summary` already prints `from {_ROOTS_MANIFEST.name}`
+(`:579`), so the manifest is named today; what is added is the **resolved
+roots**, which is the half that makes the claim checkable.
+
+### D1b — the stronger copy of the same wrong imperative
+
+`templates/modules/team-gated/content-security.md:122-123` states it more
+strongly than the runner does: *"A baseline entry with no live occurrence is
+**STALE** and **fails** the scan (exit 3): it must be deleted before the
+baseline is current."* That is the document an operator opens when deciding what
+to do about exit 3. It receives the same scoping as the terminal message,
+together with the lockfile-reconciliation point. The self-hosted copies at
+`dev/modules/content-security.md:112` and the `dev/.cairn/base/` copy move with
+it under the plan's scaffold-state handling.
+
+### D2 — annotate distributions, on the unit that exists
+
+**Withdrawn: "mark each finding reachable / not reachable / unknown", and the
+byte-identical finding-set invariant.** There is no per-finding record. The leg
+retains `vulnerabilities += len(vulns)` and nothing else, so the promised test
+would have compared an empty set to an empty set — vacuous on both sides, and
+unreddenable even by the filtering mutation S2 names.
+
+**The unit that exists is the distribution**, and it is the unit the adopter's
+own measurement used: *"144 across 21 packages"* / *"27 across 2 packages"*.
+
+The change, concretely:
+
+* **Retain per-distribution vulnerability counts.** The parse loop already
+  computes `len(vulns)` per entry; it currently discards the association and
+  keeps only the sum. Retain `(name, count)` pairs. **No per-vulnerability
+  identity is retained** — no ids, no aliases, no fix versions — so the parse
+  surface bound to `_PIP_AUDIT_SCHEMA_ESTABLISHED` widens by nothing.
+* **Annotate each reported distribution** in-closure / out-of-closure /
+  `unknown` with respect to the adopter's declared closure.
+* **Report the partition**: N vulnerabilities across M distributions, of which X
+  across Y are in the declared closure.
+
+**The bright line, re-specified with real referents.** Two invariants:
+
+1. **Testable today, against a pre-change referent.** `coverage.names`,
+   `coverage.scanned`, `coverage.no_match`, `coverage.unknown`,
+   `coverage.vulnerabilities` (the total) and the `(status, tier)` the pass
+   returns are **identical with the reachability axis present and absent**.
+   These all exist now, and the invariant reddens under the S2 filtering
+   mutation.
+2. **Against the raw child output, not the annotated list.** The sum of the
+   retained per-distribution counts equals the total derived **from the raw
+   child JSON** — so a filter anywhere between parse and print reddens it.
+
+"Byte-identical" is withdrawn as self-contradictory: an annotation printed into
+a report changes that report's bytes by construction. The invariant can only be
+about a projection, and the two above name which.
+
+**If either invariant proves unbuildable, the honest move is to say so before
+Amendment section 4 publishes the commitment** — that is what section 6 asked
+for, and it is what produced this revision.
+
+**The bright line's meaning, reworded.** The annotation **decides nothing the
+tool acts on** — no verdict, no exit code, no finding omitted, no distribution
+dropped from the report. It does influence **attention**, and at a 144-to-27
+ratio *triaged last* is operationally *not triaged*; that is stated rather than
+elided, because attention is what is at stake for a control whose named failure
+mode is being skimmed. **If the annotation ever gates what is reported, option 3
+has become option 2 and must be refused.**
+
+**Failure disposition.** If the closure cannot be computed, annotate every
+distribution `unknown` and say so. Never drop the axis silently, never omit a
+distribution, never fail the leg on it.
+
+### D2b — document the ceiling
+
+A second paragraph in the existing *Declared scope* section of
+`python-security.md` (`:35-52`), which already does this job well in the other
+direction. **The calibration stands:** that section is not under-read — it
+states the audited set and lists non-coverage, and its second paragraph is
+entirely about the excess **outside** the tool's reach. Nothing there draws the
+reader's attention to the excess **inside** the report: that most of what the
+leg does report is not the adopter's. That paragraph is added beside the floor
+disclosure, not in a new section.
+
+### Invariants, failure dispositions, public paths
+
+* **(i) and (ii)** — the two bright-line invariants above.
+* **(iii)** Exit codes unchanged across every D1 and D2 path — existing
+  exit-contract tests, unmodified.
+* **(iv)** Neither tool ever writes the residual baseline; both are read-only to
+  it today and stay so.
+* **(v)** `_print_summary`'s signature is unchanged — pinned, because
+  `run_security_audit.py:627` calls it positionally across a module boundary.
+* **(vi)** The twins stay byte-identical.
+
+**Failure dispositions.** Closure computation fails → all `unknown`, reported,
+leg still succeeds (open, deliberately: an annotation that can fail a security
+leg is worse than no annotation). Roots manifest unreadable → existing exit-2
+path, unchanged. Stale entries → exit 3 as today, with a scoped sentence.
+
+**Edge cases.** Zero stale entries; every entry stale; a distribution in the
+closure but absent from the environment; a distribution in the environment in
+nobody's closure (the 71% case); an extras-only requirement; a marker-gated
+requirement; a case-normalization pair (`Pillow`/`pillow`); a closure of size
+zero; a distribution with zero vulnerabilities.
+
+**Public paths → tests.** `run_content_scan`, `_print_summary`, the exit-3 path,
+`classify_pip_audit_output` and the leg's report assembly, through their real
+entry points in
+[`test_security_stack.py`](../../bootstrap/tests/test_security_stack.py).
+
+### Security preflight — revised for the declared Security Review
+
+* **S1 — extended per R3.** D1 adds no decision input; it prints what the runner
+  already read, plus roots derived internally from `_ROOTS_MANIFEST`. D2 reads
+  **per-distribution names and vulnerability counts** out of the child's JSON —
+  candidate-adjacent in the sense that package metadata is *described* by the
+  packages, not verified — and the adopter's declared closure. No
+  per-vulnerability identity fields are read, so the parse surface bound to
+  `_PIP_AUDIT_SCHEMA_ESTABLISHED` does not widen. This input is acceptable
+  **only because the annotation decides nothing the tool acts on**; if that ever
+  changes, this answer changes and the design must be refused.
+* **S2.** Mutations that must redden, each run and recorded: make the annotation
+  filter `coverage.names` (invariant 1 must go red); insert a filter between
+  parse and print (invariant 2 must go red); force the closure walk to raise (a
+  test asserting every distribution present-and-`unknown` passes, and a paired
+  test asserting nothing was dropped also passes).
+* **S3.** `python -m pytest bootstrap/tests/test_security_stack.py`. **The
+  operator entry points are not runnable in Cairn's own tree**:
+  `scripts/run_security_audit.py` does not exist and `python-security` is not in
+  the installed roster (`cairn-lock.yml`). `python scripts/content_scan_runner.py`
+  *is* runnable here. No CI, no hook, no gate runs any of them — Cairn has no CI.
+* **S4.** D1's rewording lands on *less* operator authority — it asks for
+  confirmation and lockfile reconciliation where it previously instructed a
+  prune. D2's failure lands on `unknown`, which is less claim, not more.
+* **S5.** Assumes an attacker who can influence package metadata in the audited
+  environment. After this change they can make a distribution annotate
+  *out-of-closure* and be triaged last — **they cannot make it disappear**, which
+  is what the two invariants buy and why they are tested rather than asserted.
+  Stated positively: the residual is **misdirected attention, not lost
+  coverage**. Closed by construction for coverage (the annotation is additive);
+  open for attention. Unchanged: an operator who prunes the baseline anyway.
+
+### Evidence, omissions, deferred work
+
+**Tests.** `bootstrap/tests/test_security_stack.py` — both invariants, the
+`unknown` disposition, exit-code invariance, `_print_summary`'s unchanged
+signature, and D1's message scoping. Closure fixtures are **messy by
+construction**: an extras-marked requirement, a marker-gated requirement, a
+case-normalization pair, and a distribution in nobody's closure. A tidy fixture
+would pass without exercising anything the adopter hit.
+
+**Smoke, corrected.** `python scripts/content_scan_runner.py` runs here and
+covers D1. **D2 cannot be smoked from Cairn's own tree** — `python-security` is
+not installed — so it is exercised through `test_security_stack.py`'s
+orchestrator fixture against the template file, which is how the leg is
+reachable here at all. `python scripts/check_cairn.py` for the doc edits. The
+earlier claim that both were "operator paths that produced the reports" is
+withdrawn: the reports were produced on the **adopter's** tree.
+
+**Known omissions.** The annotation's accuracy is not claimed to be complete —
+only that it is honest about `unknown` and gates nothing. The consumer taxonomy
+is established for this tree at this commit, not in general.
+
+**Deferred.** Nothing. Scope as opened is `preserved`.
+
+### Amendment section 4, third bullet — superseded
+
+The closing comment publishes **the two invariants above**, not "the reported
+finding set is identical with the annotation present and absent", and it says
+the annotation **decides nothing the tool acts on** rather than "decides
+nothing". It also states plainly that the leg reports per-distribution counts
+rather than per-finding records, so the reporter is not left expecting an output
+shape that does not exist. Everything else in section 4 stands.
+
+### Withdrawn / superseded commitments
+
+* **"Mark each finding *reachable* / *not reachable* / *unknown*."** Withdrawn.
+  There is no per-finding record; annotation attaches to **distributions**.
+  Reason: R1.
+* **"The reported finding set is byte-identical with the annotation present and
+  absent."** Withdrawn — no pre-change referent, and vacuous on both sides.
+  Replaced by the two projection invariants. Reason: R1.
+* **"No change to ... what is reported"** (header). Withdrawn as false for D2.
+  Reason: R1.
+* **"Falsified, not merely rejected"** (sole-consumership). Withdrawn; the
+  measurement counted mentions. Replaced by the read-relationship taxonomy plus
+  the lockfile/`integrity_preflight` consumer. Reason: R2.
+* **"No Security Review trigger."** Withdrawn. Required under
+  `dev/proposals/_template.md:76-78`. Reason: R3.
+* **`Touches` omitting `content-security.md`.** Superseded; D1b added with the
+  self-hosted copies. Reason: R4.
+* **"`python scripts/content_scan_runner.py` and `python
+  scripts/run_security_audit.py` on this tree — both are the operator paths that
+  produced the reports."** Withdrawn: the second path does not exist here, and
+  the reports came from the adopter's tree. Reason: R5.
+* **"The annotation decides nothing."** Superseded by "decides nothing **the
+  tool acts on**", with the attention residual stated. Reason: R6.
+* **"The roots manifest is already loaded — this is printing what the runner
+  already knows."** Superseded: true at module scope, but `_print_summary` does
+  not receive them and its signature is pinned by a positional cross-module
+  call. Roots are derived internally instead. Reason: R7.
+* **No accepted outcome is withdrawn.** `Scope delta`: **preserved**.
