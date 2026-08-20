@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — D1 changes what a security control
 **instructs an operator to do to a reviewed security baseline**, and D2 adds a
 derived annotation to a security report. Neither is obviously a trust-boundary
@@ -2266,3 +2266,173 @@ recognizer and prove an annotation-relabel mutation reddens the emitted-report
 oracle. The split policy, closure authority, class-drop coverage, and narrow S5
 non-disappearance claim otherwise clear. No `Plan readiness` is recorded while
 the marker boundary and annotation-integrity oracle remain unsettled.
+
+## Response -- Claude (author) -- 2026-08-20 (round 4)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+I ran Q1's counterexamples against Revision 3's own predicate before accepting.
+It fails in **both** directions:
+
+| requirement | extras? | `"extra =="` in text | outcome |
+|---|---|---|---|
+| `pytest; extra == "dev"` | yes | yes | ok |
+| `pytest; extra=="dev"` | yes | **no** | wrongly included |
+| `pytest; extra  == "dev"` | yes | **no** | wrongly included |
+| `pytest; "dev" == extra` | yes | **no** | wrongly included |
+| `foo; platform_release == "extra == dev"` | **no** | **yes** | **wrongly EXCLUDED — drops a real dependency** |
+
+* **[Q1] accept.** The last row is the one that matters: a **genuine runtime
+  requirement dropped** because the bytes appear inside a quoted value. That is
+  the adopter's original warning — *"needed care to skip `; extra ==` without
+  dropping genuine ones"* — and I have now hit it **from both sides**: Revision
+  2 included everything, Revision 3 can drop a real one. Canonical producer
+  spacing held across all 2,314 marker strings in this environment, which is
+  exactly the kind of positive control that makes a wrong predicate look right;
+  **package metadata is package-controlled input, so producer convention is not
+  an authority boundary.**
+* **[Q2] accept, and it is the most embarrassing finding of the set.** **The
+  oracle projects away the field the feature exists to add.** Expected and
+  observed multisets carry `(distribution, count)` and not the annotation, so a
+  renderer that relabels every row to `in-closure` passes with every `Coverage`
+  field unchanged. Fixture class coverage cannot catch systematic relabeling
+  when the comparison discards the class.
+
+  This is the same failure as E1 on the sibling proposal, one week of
+  revisions apart in miniature: **an invariant that is satisfied by the shape of
+  its own projection rather than by covering the property it guards.** Q2 does
+  not re-open the class-drop finding — dropping a row still reddens — it names a
+  distinct integrity property: *the renderer can preserve every finding while
+  lying about the triage axis.*
+
+**On the recommendation.** Accepted, tightly limited to Q1–Q2. I have not
+touched the split policy, the closure authority, the root mapping, the failure
+direction, or S5's narrow claim, all of which this pass cleared.
+
+## Revision 4
+
+**Complete current contract.** Self-contained; supersedes Revision 3 entirely.
+
+*(Unchanged and operative, restated in Revisions 2–3 and not modified here:
+the **Security Review REQUIRED** declaration and `Touches`; **D1** — the scoped
+imperative, the consumer taxonomy, the lockfile/`integrity_preflight` consumer,
+roots derived inside `_print_summary` with no signature change; **D1b** — the
+stronger `content-security.md:122-123` copy and its self-hosted twins; **D2b** —
+the coverage-ceiling paragraph; the closure's **authority** (`importlib.metadata`
+rooted via `packages_distributions()`), **normalization** (PEP 503), **anchored
+requirement-name grammar** including `~`, **traversal with node and depth caps**,
+the **absent-vs-unreadable** distinction, and the **all-`unknown`** failure
+direction; **S1**, **S3**, **S4**; `## Signals the change is wrong`; and the full
+issue-closure contract. This revision changes only the extras predicate and the
+oracle.)*
+
+### The extras predicate — a marker tokenizer, not a substring test
+
+**Withdrawn:** *"detected by the syntactic presence of `extra ==` in the
+requirement's marker text."* A substring test over PEP 508 marker syntax is
+unsound in both directions, and its dangerous direction **drops genuine
+requirements**.
+
+**Replacement — still standard-library-only.** Scan the marker text as
+**tokens, respecting quoted strings and arbitrary whitespace**:
+
+* Recognize an **unquoted `extra` equality in either operand order** —
+  `extra == "x"`, `extra=="x"`, `extra  ==  "x"`, `"x" == extra` — and treat the
+  requirement as **extras-gated → excluded**.
+* An occurrence of the letters `extra` **inside a quoted string** is a value,
+  not the marker variable, and is **ignored**. This is the row that would
+  otherwise drop `foo; platform_release == "extra == dev"`.
+* **Any other unquoted `extra` expression — `extra != ...`, `extra in ...`, and
+  anything else — makes the WHOLE CLOSURE `unknown`.** Their truth under an
+  unset or empty extra differs from positive equality, so treating them as
+  equivalent is a guess. Refusing the closure is the fail-closed direction and
+  is consistent with every other failure path in this spec.
+
+**`packaging` remains unshipped.** The tokenizer is stdlib; `packaging` is used
+**only as the test oracle**, in the dev-only suite, never in
+`run_security_audit.py`. That distinction is the whole reason the substring
+shortcut existed, and it does not require the shortcut.
+
+**Tests are independent positives and negatives**, not a corpus scan: the five
+forms in the table above, plus `extra != "x"` and `extra in "x"` asserting the
+closure goes `unknown`. **The 2,314-marker environment corpus is a positive
+control only** — it agrees with the wrong predicate, so it cannot be the
+instrument that validates the right one.
+
+### The bright line — the oracle carries the annotation
+
+**Invariant (i) — the emitted report.** The expected multiset is written
+**literally and pre-normalized in the fixture**, beside a raw child-JSON
+fixture, and is now a multiset of **`(normalized_distribution, count,
+annotation)` triples**. The emitted report is parsed back into an observed
+triple multiset; exact equality is required.
+
+Revision 3's `(distribution, count)` pairs **projected away the annotation** —
+the one field D2 exists to add — so a renderer could preserve every finding and
+relabel every class and stay green.
+
+**Invariant (ii) — the `Coverage` object**, unchanged from Revision 3:
+`coverage.names` (the full tuple, not its length), `coverage.vulnerabilities`,
+`coverage.scanned`, `coverage.no_match`, `coverage.unknown`, and the returned
+`(status, tier)` are identical with the annotation present and absent, asserted
+on the returned object because `coverage.names` reaches the report only as
+`len(...)` (`:1198`).
+
+**Fixture class coverage remains part of the invariant:** the raw fixture
+carries at least one vulnerable distribution in each of `in-closure`,
+`out-of-closure` and `unknown`.
+
+**Five recorded mutations, all of which must redden:**
+
+1. drop a row in the renderer;
+2. alter a count;
+3. omit rows by annotation class — the option-2 collapse;
+4. substitute a parent-side enumeration for `coverage.names`;
+5. **relabel or swap annotation classes while preserving names and counts** —
+   the mutation Revision 3's projection could not observe.
+
+**What the annotation decides.** It **decides nothing the tool acts on** — no
+verdict, no exit code, no finding omitted, no distribution dropped. It
+influences **attention**; at a 144-to-27 ratio *triaged last* is operationally
+*not triaged*, stated rather than elided. If it ever gates what is reported,
+this has become the second-leg option and must be refused.
+
+### S2 and S5 — revised
+
+* **S2 — Can it fail?** The five mutations above, each run and recorded, plus:
+  force the closure walk to raise (every distribution annotates `unknown`, all
+  still reported, with a paired test asserting nothing was dropped); the
+  closure-size tripwire (a bounded fraction of the discoverable set, so a
+  re-inflation reddens); and the seven marker forms as independent positives and
+  negatives. The expected multiset is **literal and pre-normalized in the
+  fixture**, so the oracle is not computed from what it judges.
+* **S5 — Who still wins?** Package metadata is authored by the packages, so an
+  attacker controlling a distribution's metadata can make it annotate
+  `out-of-closure` and be **triaged last**. They **cannot make it disappear**
+  from the report, **and after mutation 5 they cannot silently relabel it
+  either** — both are closed by an independently checked projection, not by
+  construction. **Correction to Revision 3:** that claim was accurate only for
+  presence; the emitted *class* was outside the projection, so "closed" was
+  wider than what was checked. The **attention residual is open and accepted**:
+  a correctly-labelled `out-of-closure` finding is still triaged last, which is
+  the design's honest cost. Unchanged: an operator who prunes the baseline
+  anyway.
+
+### Withdrawn / superseded commitments
+
+* **"Extras-gated requirements are excluded, detected by the syntactic presence
+  of `extra ==` in the requirement's marker text."** **Withdrawn — falsified in
+  both directions**, including a genuine requirement dropped because the bytes
+  sat inside a quoted value. Replaced by a quote- and whitespace-aware marker
+  tokenizer, with any other unquoted `extra` expression making the closure
+  `unknown`. Reason: Q1.
+* **The implicit reliance on canonical producer spacing.** Withdrawn. Package
+  metadata is package-controlled input; the environment corpus is a positive
+  control, not a validator.
+* **Revision 3's oracle over `(distribution, count)` pairs.** Superseded by
+  `(normalized_distribution, count, annotation)` triples plus mutation 5. It
+  projected away the field the feature adds. Reason: Q2.
+* **S5's "closed by an independently checked projection" as stated in Revision
+  3.** Superseded — true for presence, not for the emitted class, which the
+  projection omitted. Reason: Q2.
+* **`Scope delta`: preserved.** No accepted outcome is withdrawn.
