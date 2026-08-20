@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
@@ -1562,3 +1562,71 @@ disposition should not be cited for one.
 code review (floor: not the implementing agent), the gate re-anchor ceremony
 (Chunk D, Maintainer-owned), and Chunk S, which remains a precondition of
 `ready-to-archive`.
+
+## Implementation verification -- Claude Opus 5 -- 2026-08-20
+
+**Boundary B mode**: `full`. Bounded was never available: the change edits two
+gate-frozen files and the accepted Decision carries a Security Review trigger,
+which is a trust-ceremony surface, and `AGENTS.md` refuses bounded there. The
+plan declared `full` at authoring and that declaration holds.
+
+**Tested commit**: `495c6a7f4ee7b507d200bb56ebdb9ce7e86e360b`
+**Reviewed range**: `a316d757236ba098302844f65e91419937baaa8c..495c6a7f4ee7b507d200bb56ebdb9ce7e86e360b`
+**Interpreter/runtime**: Python 3.13.13 (conda-forge, Clang 19.1.7), pytest 9.0.3
+**Pre-state**: clean — 0 tracked modifications
+**Post-state**: clean — 0 tracked modifications
+
+| command | outcome | wall |
+|---|---|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **1 failed, 4498 passed** | 631.20s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | `fail=0`, info only | 1.19s |
+
+**The canonical pair now carries `CAIRN_FULL_SUITE=1`**, which is this plan's
+own doing. Without it the run this record describes would have exited 4 in under
+a second, and there would be no record.
+
+### Non-pass disposition
+
+**The suite did not come back green, and this record does not claim it did.**
+One test failed: `test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`.
+
+It names exactly three artifacts, and none of them belongs to this plan:
+`2026-08-20-claude-adopt-into-existing-tree.md`,
+`2026-08-20-claude-portable-sweeps-cannot-run.md`, and
+`2026-08-20-claude-scanner-claim-scope.md` — three proposals opened by a
+concurrent session today.
+
+The failure is the **known checker defect** filed at `8cb4012` as a `[TOOL]` row
+in `dev/PLANNING.md`: the independence comparator derives an identity token from
+a review byline's *first word*, and Cairn's Internal floor is "the same agent in
+a fresh session", so an honest Internal byline collides with the author's by
+construction. It flags correct reviews. The same test passed at 644 tests
+earlier today, before those three proposals existed.
+
+**Why that is a disposition and not an excuse.** The claim being made is narrow
+and checkable: this plan's change did not cause the failure. Two independent
+supports — the failing assertion names only artifacts this plan never touched,
+and the defect was filed hours before this implementation landed, from a
+different session's work. A reader who doubts it can re-run the single test
+against `a316d75~1` and see the same failure without any of this plan's bytes.
+
+### Known omissions
+
+* **The differential-oracle gate is at HOLD** and a re-anchor is owed (Chunk D,
+  Maintainer-owned). Six frozen files are modified, four by this plan and two by
+  the concurrent session. That is the expected state between ceremonies, not a
+  finding — `test_gate_preflight` deliberately tolerates a refusal from the live
+  tree for this reason.
+* **The gate emits one false positive** on this plan's own new test:
+  `SKIP-XFAIL-NEW` against
+  `test_the_child_env_is_an_additive_copy_not_a_fresh_mapping`, which passes and
+  carries no marker. It is flagged alongside its own `COLLECTION-ADDED`, so the
+  "gained a marker" logic mishandles a node absent from the baseline.
+* **Chunk S is not implemented** and is not covered by this run. It is blocked on
+  the sibling plan's ledger and reader, and remains a precondition of
+  `ready-to-archive`.
+* **Windows and network filesystems are unexercised**; this is one host, one
+  interpreter.
+* The `quality_gate` info items (vendor tokens inside `vendor-ok` blocks, two R6
+  unreferenced defs under `templates/modules/default-on/_lifecycle_metrics/`) are
+  pre-existing and unrelated to this change.
