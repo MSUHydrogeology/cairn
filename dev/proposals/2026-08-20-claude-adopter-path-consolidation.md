@@ -20,7 +20,7 @@ tests under `bootstrap/tests/`.
 **Related**: `dev/strategy/2026-06-12-claude-adopter-friction-audit.md` — this is
 the "adopter-path consolidation proposal" that note named as its first
 downstream surface and that was never opened;
-`dev/strategy/2026-08-10-claude-documentation-enhancement.md` > F9 (which
+`dev/strategy/archive/2026-08-10-claude-documentation-enhancement.md` > F9 (which
 deferred the README lines here) and > F8 (the install-output friction, deferred
 here and re-deferred below); `docs/solo-legacy-recipe.md` (the working
 precedent).
