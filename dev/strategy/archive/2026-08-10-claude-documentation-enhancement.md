@@ -3,8 +3,10 @@
 **Author**: Claude (Strategy)
 **Model**: Opus 5
 **Date**: 2026-08-10
-**Status**: revised (External round 1 — Codex, different agent type — folded in
-and removed 2026-08-10; the arc is in `git log`, not this body)
+**Status**: archived 2026-08-20 (direction adopted; see *Dispositions at
+archive* below). Previously: revised (External round 1 — Codex, different agent
+type — folded in and removed 2026-08-10; the arc is in `git log`, not this
+body)
 **Type**: design-exploration
 **Supersedes**: `2026-06-04-claude-documentation-graphics.md` (archived on the
 same commit as this note). That note was authored from **modflow_tools'**
@@ -652,6 +654,40 @@ below split along that line.
    this), and when either changes someone checks the relationship still holds.
    Whether that check is a person or a script is for the implementing proposal
    to decide, not this note.
+
+## Dispositions at archive — 2026-08-20
+
+This note is archived because its direction was adopted, not because its every
+line was executed. Four things outlived it; each has a home, so none is dropped
+silently.
+
+* **Open question 5's remainder — closed.** It asked whether the check that the
+  README's simplification never contradicts doctrine should be a person or a
+  script. It is now a script: the vocabulary drift check covers `README.md`
+  alongside `doctrine/` (`5eaa15a`). Building it found the honest limit, which is
+  recorded in that test rather than here: the check binds state *names*, so a
+  simplification could still invent a transition doctrine lacks, and that still
+  needs a reader. Worth keeping from the build: the first version of the
+  extension passed `README.md` while unable to see inside a Mermaid block at all
+  — green, and blind to the exact failure it was added for.
+* **Stage 5, the F6 generator — not built, and not homeless.** Its own
+  prerequisites stand as its revival condition: two or more diagrams with a
+  *settled* registry behind them, plus the six safety properties this note
+  lists. The registries it would read are still live implementation surfaces.
+  `dev/PLANNING.md`'s **0.4 launch-surface polish** row is its durable home, as
+  F8 established; no new row was opened.
+* **Fold-up candidate 2, the visual-documentation discipline — shipped.**
+  Mermaid-first, no hardcoded fills, existence and legibility as two distinct
+  checks, and the caption stating the conclusion all landed in
+  `docs/DOCUMENTATION_PLAN.md`'s Assets section (`d21123e`), and the portable
+  half — the legibility check and the caption rule — reached adopters in the
+  `documentation-plan` module (`37d89a0`). Nothing remains.
+* **Fold-up candidate 1, "a feature list is a claim surface" — deferred with a
+  home.** Filed as a deferred follow-up in `dev/PLANNING.md` with its revival
+  condition, because it needs its own proposal and one incident does not clear
+  the doctrine-evolution rate-limit gate. It would have been stranded by this
+  archive otherwise, which is the failure this note's own F9 suffered when it
+  deferred to an artifact nobody had created.
 
 ## Fold-up note
 

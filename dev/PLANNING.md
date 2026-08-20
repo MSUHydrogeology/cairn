@@ -1226,6 +1226,18 @@ near the top of this file.
 
 ### Deferred follow-ups (durable home)
 
+* **A feature list is a claim surface** *(deferred 2026-08-20, from the
+  archived `2026-08-10-claude-documentation-enhancement` note's fold-up
+  candidates)* — enumerating capabilities on an entry page creates exactly the
+  hand-maintained-description-of-a-moving-thing class that drift gates exist
+  for, and the observation generalizes past Cairn's own README to any adopter's.
+  Candidate line for the `doc-drift-prevention` module's doctrine. **Revival
+  condition:** a second instance of an entry-page feature claim going stale, or
+  an adopter hitting it — one incident does not clear the doctrine-evolution
+  rate-limit gate, and this is currently one. Filed here rather than left in the
+  archived note, whose other fold-up candidate shipped and whose remaining
+  stages are covered by the *0.4 launch-surface polish* row above.
+
 The permanent, tracked home for Cairn work parked with revival conditions
 — each becomes its own proposal when picked up (re-expressed generalizably,
 no adopter specifics). Imported from the modflow_tools-side batch ledgers;
