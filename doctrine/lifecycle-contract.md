@@ -93,18 +93,18 @@ the committing operator guarantees the quote.
 ## The proposal state machine
 
 ```
-proposed --> reviewed --> revised --> accepted
-                                  --> rejected
-                                  --> superseded
+awaiting-review <-> revising --> awaiting-decision --> accepted
+                                                   --> rejected
+                                                   --> superseded
 ```
 
 | Transition | Authority | Machine-verifiable preconditions |
 |---|---|---|
-| → **proposed** | author | the file exists under `dev/proposals/`; carries the house front-matter (`Author`, `Date opened`, `Status: proposed`) and the opening sections (context, the change, alternatives, evidence/verification plan, signals-it-is-wrong); a mandatory `Plan review:` line is present. |
-| proposed → **reviewed** | a reviewer (AI or human), **not the author** | a `## Review -- <reviewer> ... ` section is appended; its author token is **not** the proposal's author (reviewer-authorship); prior sections are unmodified (append-only). |
-| reviewed → **revised** | author | a `## Response` **and one complete current-contract revision** (`## Revised proposal` or `## Revision <n>`, carrying its mandatory `### Withdrawn / superseded commitments` ledger) are appended; prior sections unmodified. The revision is **not optional** — a Response with none refuses. Review and revision may repeat (`revised → reviewed → revised`). |
-| → **accepted** | **Human Maintainer** | a `## Decision -- <Maintainer> ... ` section is appended that (a) is authored by the human Maintainer identity, (b) **quotes an authorization verbatim** in an isolated blockquote, (c) is **Decision-only** — the commit touches nothing but this section, and (d) does **not** archive the file (an accepted proposal stays in `dev/proposals/`). |
-| → **rejected** / **superseded** | **Human Maintainer** | as **accepted**, except the Decision commit **also** archives the file (moves it to `archive/`). |
+| → **awaiting-review** | author | the file exists under `dev/proposals/`; carries the house front-matter (`Author`, `Date opened`, `Status: awaiting-review`) and the opening sections (context, the change, alternatives, evidence/verification plan, signals-it-is-wrong); a mandatory `Plan review:` line is present. |
+| awaiting-review → **revising** (blocking review) or **awaiting-decision** (clearing review) | a reviewer (AI or human), **not the author** | a `## Review -- <reviewer> ... ` section is appended; its author token is **not** the proposal's author (reviewer-authorship); prior sections are unmodified (append-only). |
+| revising → **awaiting-review** | author | a `## Response` **and one complete current-contract revision** (`## Revised proposal` or `## Revision <n>`, carrying its mandatory `### Withdrawn / superseded commitments` ledger) are appended; prior sections unmodified. The revision is **not optional** — a Response with none refuses. Review and revision may repeat (`awaiting-review → revising → awaiting-review`). |
+| awaiting-decision → **accepted** | **Human Maintainer** | a `## Decision -- <Maintainer> ... ` section is appended that (a) is authored by the human Maintainer identity, (b) **quotes an authorization verbatim** in an isolated blockquote, (c) is **Decision-only** — the commit touches nothing but this section, and (d) does **not** archive the file (an accepted proposal stays in `dev/proposals/`). |
+| awaiting-decision → **rejected** / **superseded** | **Human Maintainer** | as **accepted**, except the Decision commit **also** archives the file (moves it to `archive/`). |
 
 **Per-type rules made explicit** (the checker validates structure +
 presence; the operator guarantees authenticity):
@@ -117,7 +117,7 @@ presence; the operator guarantees authenticity):
   carries **no reviewer attribution** — the reviewer fills their own
   identity; the tool never attributes a review to an agent that did not
   write it.
-* **Append-only.** Every transition after `proposed` is an *appended*
+* **Append-only.** Every transition after `awaiting-review` is an *appended*
   section; modifying a prior section is a violation (the one bounded
   exception — mechanical claim-marker maintenance — is defined in
   [`lifecycle.md`](lifecycle.md) and is not a lifecycle transition).
@@ -125,14 +125,20 @@ presence; the operator guarantees authenticity):
 ## The plan state machine
 
 ```
-open --> [awaiting-plan-review] --> executing --> review --> archived
+awaiting-plan-review <-> revising-plan
+         |
+         v
+ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
+                                              |
+                                              v
+                                      ready-to-archive -> archived
 ```
 
 | Transition | Authority | Machine-verifiable preconditions |
 |---|---|---|
-| → **open** | author | the plan-open commit creates the plan **and** archives the source proposal (the source proposal moves to `archive/` in this commit); the plan carries the mandatory `Plan review:` line. |
-| open → **awaiting-plan-review** | (state) | only when `Plan review: required(<tier>)`; the plan waits for its plan-review section. A `not required(<rationale>)` plan **skips** this state. |
-| → **executing** | author | for a review-required plan, a plan-review section **at or above the declared tier** has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
+| → **awaiting-plan-review** | author | the plan-open commit creates the plan **and** archives the source proposal (the source proposal moves to `archive/` in this commit); the plan carries the mandatory `Plan review:` line. A `not required(<rationale>)` plan opens instead at `ready-to-implement`, or at `implementing` when the opening commit carries the implementation evidence. |
+| awaiting-plan-review → **revising-plan** | author | plan-review findings are folded into the plan's operative cells; the plan returns to `awaiting-plan-review`. |
+| → **ready-to-implement** → **implementing** | author | for a review-required plan, a plan-review section **at or above the declared tier** has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
 
 **The plan-review tier is Internal by default.** The proposal is the
 deliberative boundary: a plan derived from a proposal whose **External** review
@@ -147,8 +153,8 @@ finding's value and tier, and `proposal=` equal to the readiness review's
 than reading as `READY`. Pairing an inherited basis with `not required(...)`
 refuses: inheritance reallocates the plan review, it never removes it. Full
 contract in [`dual-review.md`](dual-review.md) > "Plan-readiness inheritance".
-| executing → **review** | a reviewer | a code-review pass section is appended (append-only). |
-| review → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
+| implementing → **awaiting-code-review** → **revising-code** | a reviewer, then the implementer | a code-review pass section is appended (append-only); the reviewer is **never** the implementing agent. Findings return the plan to `revising-code` and thence to `awaiting-code-review`. |
+| awaiting-code-review → **ready-to-archive** → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 
 A plan is an execution artifact: `Status:`, progress markers, and commit
 hashes update **in place**. But review-finding and archive sections are

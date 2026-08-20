@@ -60,18 +60,30 @@ a new abstraction, a cross-cutting refactor, a contract change,
 anything worth a second opinion before it is baked in.
 
 ```
-proposed --> reviewed --> revised --> accepted
-                                  --> rejected
-                                  --> superseded
+awaiting-review <-> revising --> awaiting-decision --> accepted
+                                                   --> rejected
+                                                   --> superseded
 ```
 
-* **proposed** — the author opens the proposal: the context, the
-  change, the alternatives considered, an evidence / verification
-  plan, and the signals that would show the change is wrong.
-* **reviewed** — a reviewer appends a Review section (see
-  `dual-review.md`).
-* **revised** — the author appends a Response and, where needed, a
-  revised proposal. Review and revision may repeat.
+**Each status names who holds it next.** That is the point of the
+vocabulary: a reader — or a board — can tell from the status alone
+whose move it is. The earlier flat tokens (`proposed`, `reviewed`,
+`revised`) named a *phase* and left the owner to be inferred, which
+is why they were retired. They stay readable on archived artifacts
+and in longitudinal metrics, and are refused on an active one.
+
+* **awaiting-review** — held by a reviewer. The author has either
+  just opened the proposal — the context, the change, the
+  alternatives considered, an evidence / verification plan, and the
+  signals that would show the change is wrong — or has just answered
+  a review. Either way the next move is someone else's.
+* **revising** — held by the author. A *blocking* review moved it
+  here (see `dual-review.md`); the author owes a Response **and** one
+  complete current-contract revision, which together return it to
+  `awaiting-review`. Review and revision may repeat.
+* **awaiting-decision** — held by the Human Maintainer. A *clearing*
+  review moved it here; no further authorship is owed, only the
+  Decision.
 * **accepted / rejected / superseded** — the Human Maintainer
   appends the Decision. Acceptance is a *decision*, not an
   instruction to a particular contributor; implementation follows
@@ -129,22 +141,43 @@ proposal. Where the proposal records *what and why*, the plan
 records *how the work was carried out, and that it was verified*.
 
 ```
-open --> [awaiting-plan-review] --> executing --> review --> archived
+awaiting-plan-review <-> revising-plan
+         |
+         v
+ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
+                                              |
+                                              v
+                                      ready-to-archive -> archived
 ```
 
-* **open** — the plan-open commit creates the plan and archives
-  the source proposal: the deliberation is closed and carried into
-  an actionable execution artifact.
-* **awaiting-plan-review** — *(only for a review-required plan, see
-  the plan-review precondition below)* the plan is open but
-  implementation has not started: it waits for its plan-review section
-  to land. A plan marked `Plan review: not required` skips this status
-  and goes straight to `executing`.
-* **executing** — implementation commits land.
-* **review** — a code-review pass examines the implementation.
-* **archived** — after review, lasting truth migrates to durable
-  homes (topic docs, the changelog, the roadmap) and the plan is
-  archived.
+The plan-open commit creates the plan and archives the source
+proposal: the deliberation is closed and carried into an actionable
+execution artifact. As on the proposal side, each status names its
+holder.
+
+* **awaiting-plan-review** — held by a plan reviewer. The plan exists
+  but implementation has not started; it waits for its plan-review
+  section (see the plan-review precondition below).
+* **revising-plan** — held by the author, who folds plan-review
+  findings into the plan's operative cells and returns it to
+  `awaiting-plan-review`.
+* **ready-to-implement** — held by the implementer: the review gate is
+  satisfied and work may begin. A plan marked `Plan review: not
+  required` may **open** directly here, or at `implementing` when the
+  opening commit already carries the implementation evidence. That
+  fast path is offered only at opening, never out of
+  `awaiting-plan-review`, where a `required(...)` review is
+  outstanding by definition.
+* **implementing** — held by the implementer; implementation commits
+  land.
+* **awaiting-code-review** — held by a code reviewer, who is never the
+  implementing agent.
+* **revising-code** — held by the implementer, answering code-review
+  findings; it returns to `awaiting-code-review`.
+* **ready-to-archive** — held by whoever closes the loop: review has
+  passed and the archive commit is owed.
+* **archived** — lasting truth has migrated to durable homes (topic
+  docs, the changelog, the roadmap) and the plan is archived.
 
 Unlike a proposal, a plan is an execution artifact: status,
 progress markers, and commit hashes are updated in place as work
@@ -178,8 +211,8 @@ required(<rationale>)`** line. The author states it; the Maintainer
 ratifies; there is **no silent default** either way. When `required`, the
 plan opens in **`awaiting-plan-review`** and its plan-open and
 first-implementation commits stay **distinct** (so implementation cannot
-front-run the review); it advances to `executing` only once the review
-section lands. When `not required`, the rationale is on the record and the
+front-run the review); it reaches `ready-to-implement` only once the
+review section lands. When `not required`, the rationale is on the record and the
 plan may combine plan-open with first implementation (fast multi-stage).
 
 The review *tier* follows the review-tier / structural-independence framing in
@@ -374,7 +407,7 @@ it is revisited. The proposal that originally deferred it named
 the deferral as a recognition that the substance had not yet
 been deliberated, not as an authorization to implement it later
 without further review. Reviving the item re-enters the
-proposal lifecycle from `proposed`.
+proposal lifecycle from `awaiting-review`.
 
 This rule prevents the pattern where a deferred follow-up
 accumulates implementation detail in side conversations between

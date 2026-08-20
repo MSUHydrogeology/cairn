@@ -155,13 +155,12 @@ and names the four things that are genuinely different.
 
 ```mermaid
 flowchart LR
-    P[proposed] --> R[reviewed]
-    R --> Rev[revised]
-    Rev --> R
-    R --> D{Maintainer<br/>Decision}
-    Rev --> D
-    D -->|accept| PL[plan: open → awaiting-plan-review → executing → review → archived]
-    D -->|reject / supersede| A[archive]
+    AR[awaiting-review] --> RV[revising]
+    RV --> AR
+    AR --> AD[awaiting-decision]
+    AD --> D{Maintainer<br/>Decision}
+    D -->|accept| PL[plan: awaiting-plan-review → ready-to-implement<br/>→ implementing → awaiting-code-review<br/>→ ready-to-archive → archived]
+    D -->|reject / supersede| A[archived]
 ```
 
 A change is argued in a **proposal**, reviewed, revised if the review found
@@ -169,8 +168,10 @@ something, and then decided by you. Larger work gets a **plan** that carries it
 through implementation and a second review of the code itself. Every step is a
 commit, so the sequence is visible afterwards.
 
-*A faithful simplification of `doctrine/lifecycle.md` — no invented or
-contradicting transition, and no named state dropped.*
+*Every status names who holds it next, which is the point: you can tell whose
+move it is without opening the file. Faithful to `doctrine/lifecycle.md` — no
+invented or contradicting transition. Proposal states in full; the plan
+lifecycle is collapsed into one node, with its two revision loops folded in.*
 
 ![Two review tiers: a first read that helps a change land, and an independent read from a different model or a person that makes it prove it should.](docs/assets/dual-review-independence.svg)
 
