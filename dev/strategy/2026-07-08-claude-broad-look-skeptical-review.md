@@ -108,6 +108,67 @@ bootstrap/tests`) names no interpreter, so two honest agents on the same tree ge
 materially different results and both report them as fact. That is a
 reproducibility defect in the instruction, not in anyone's diligence.
 
+**2026-08-20 — Theme 5 is three-quarters closed, and the remaining quarter is
+now carried.** Re-verified against the tree:
+
+* **5.2 (the starter guide mislabels self-review as External) — closed.**
+  `templates/onboarding/solo-greenfield.md` now says the fresh-session tier is
+  **Internal** and that the External floor is filled by the human Maintainer's
+  read, which is what the doctrine says. The word-for-word defect three passes
+  confirmed is gone.
+* **5.3 (the triage checklist omits science) — closed.**
+  `docs/solo-legacy-recipe.md` teaches the adopter to fill
+  `triage-extra-triggers` with a scientific-assumption trigger.
+* **5.4 (the pressure valve isn't installed) — closed.** The escape hatch ships
+  in `templates/core/dev/proposals/_template.md`, not only in Cairn's doctrine.
+* **5.1 (no installation preset fits the postdoc) — still open, now owned** by
+  `dev/proposals/2026-08-20-claude-adopter-path-consolidation.md`.
+  Re-measurement sharpened it: the presets and the levels documentation do not
+  merely disagree with each other — `bootstrap/profiles/solo-greenfield.yml`
+  contradicts *itself* six lines apart, recommending hand-copy for Level 1 and
+  then pointing at the quickstart's scaffold command sequence.
+
+**2026-08-20 — Theme 2 confirmed, with a mechanism this note did not name.**
+Five documentation defects surfaced in a single session, every one found as a
+side effect of other work and none on any board: a `claim-check-allow` block
+whose six paths were all uncited, a strategy note recording its own stages as
+unstarted ten days after they shipped, a module list three-of-seven stale
+against its own gate table, a README caption that had become false, and the
+vocabulary drift below. **No existing gate detects this class** — `claim_check`
+catches broken paths, `link_check` broken links; neither catches a dead
+exemption, a count that fell behind its source, or a claim contradicted by the
+file it cites. `claim_check` reported the file carrying the wholly inert
+exemption as *clean*, confirmed by positive control. So Theme 2 is not a backlog
+to burn down; it is an undetected class that regenerates.
+
+**2026-08-20 — Theme 1 gains an instance, since fixed and now guarded.** Five
+doctrine files (`lifecycle.md`, `lifecycle-contract.md`, `proposals.md`,
+`plans.md`, `dual-review.md`) taught a lifecycle status vocabulary the tool
+refuses. The retirement landed in `AGENTS.md`, both template pairs, the planner
+and the metrics extractors, and missed `doctrine/` entirely; the plan that owned
+it archived, so nothing was coming. Ten days. Corrected (`be6bce8`, `6c8ee9a`)
+and now guarded by a check that reads the planner's own `HISTORICAL_*` constants
+rather than a hand-written list (`f065255`).
+
+**2026-08-20 — Theme 7 gains a structural instance worth more than the count.**
+This note's Theme 7 says the planning documents fall behind. The sharper failure
+is a deferral pointed at an artifact that never existed: the June friction audit
+named an "adopter-path consolidation proposal" as its first downstream surface;
+nobody opened it; `dev/PLANNING.md` never got a row; and the August
+documentation note then deferred its own README findings to that proposal **by
+name**. Four artifacts each did an adjacent piece and each correctly deferred
+the core. Nothing detected the dangling reference, because a deferral names a
+future artifact and no checker resolves those.
+
+**2026-08-20 — addendum to the 2026-07-22 interpreter correction.** That entry's
+root cause was that `python -m pytest bootstrap/tests` names no interpreter, so
+two honest agents get different results. There was a second defect in the same
+instruction: **it was red on a clean checkout under any interpreter.** The
+loader-containment mutation witness counted the `.pyc` CPython writes on import
+as repo mutation, so two tests failed unless the operator happened to run with
+bytecode writing disabled — an environment-dependent result nothing in the repo
+enforced. Fixed (`dc240dd`); the documented command now passes as written.
+
 ## The good news first
 
 A skeptical review is only useful if it is calibrated, so here is what
