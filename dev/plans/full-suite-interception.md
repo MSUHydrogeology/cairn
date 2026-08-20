@@ -40,8 +40,9 @@ supersedes.
 ## Proposed paths
 
 Proposed paths:
-- `bootstrap/tests/test_broad_run_guard.py` — the guard's own behavioural
-  test file; lands in Chunk A.
+- `bootstrap/tests/test_broad_run_guard.py` — the guard's own behavioural test file; lands in Chunk A.
+- `tools/suite_cost.py` — the sibling plan's reader, which lands before this plan starts; row A7 edits it and does not create it.
+- `bootstrap/tests/test_suite_ledger.py` — the sibling plan's contract-test file, likewise created there and only *read* here (Boundary A mapping); it does not resolve until that plan's own chunk lands.
 
 ## Scope
 
@@ -75,6 +76,34 @@ and comment that A2 falsifies, and adding the additive-copy falsifier for A2's
 own change. It does not open those two files to unrelated edits, and it widens
 nothing else. Both files are gate-frozen, which is why the re-anchor accounting
 below counts four `FROZEN-MODIFIED` entries rather than two.
+
+**A second expansion, for the cross-plan seam.** Rows A6 and A7 adjust the
+sibling's own collector and reader so a session *this* guard refuses cannot be
+mistaken for a full run that cost nothing. A6 edits `bootstrap/tests/conftest.py`
+— already in this plan's file set, but the code it touches belongs to the
+sibling's accepted contract, so this is a semantic widening rather than a
+file-set one. A7 adds `tools/suite_cost.py`, which no accepted artifact here
+names at all.
+
+**Contract expansion**: touched-file set and sibling contract — `tools/suite_cost.py`
+joins the touched set, and the sibling's `scope` classifier gains a case its own
+proposal did not contemplate. Authorized by the Maintainer, quoted verbatim and
+visually isolated:
+
+> "I'll take your recommendation on Decision 3. b + c"
+
+The recommendation that names — recorded here because a bare "b + c" will mean
+nothing to a later reader: **(b)** the reader excludes refused sessions from
+cost aggregation and reports the refusal count separately; **(c)** the `scope`
+classifier resolves `unknown` rather than `full` for such a session. Two
+independent defences, deliberately, because (b) alone leaves a row labelled
+`full` that is not, waiting for the next reader to misread it. Neither requires
+a schema change: `exitstatus` is already a pinned field and a refusal is exit 4.
+
+**Why this plan owns both edits rather than the sibling.** The sibling lands
+first, when no session can yet be refused this way — it could only write handling
+for a condition it cannot produce, and falsify it against a mock. This plan
+creates the condition and can test both edits against the real guard.
 
 **Out, and not revivable by this plan** (Revision 5, "Withdrawn and not
 deferred"): everything under `.claude/` (settings object, hook script,
@@ -132,11 +161,12 @@ Chunk A:
   reports `full`-run frequency and derives cost trend from those rows, so after
   both plans land, every refused broad run silently deflates the very
   measurement the ledger exists to produce, and a bare canonical invocation is
-  *guaranteed* to produce one rather than merely able to. Two consequences for
-  this plan, which is the second lander and therefore owns the seam: a Chunk A
-  falsifier asserting what the ledger records for a refused session (whether
-  the row is suppressed, or written and marked as refused, is a design choice
-  this plan must make and state); and `bootstrap/tests/test_suite_ledger.py`
+  *guaranteed* to produce one rather than merely able to. **Resolved by rows A6
+  and A7 under a Maintainer allowance** (recorded in Scope): the row is written,
+  not suppressed, so refusals stay countable — how often the guard fires is the
+  evidence this change exists to produce; the classifier scopes it `unknown`;
+  and the reader excludes it from every cost figure while reporting the refusal
+  count on its own. Also `bootstrap/tests/test_suite_ledger.py`
   added to the Boundary A mapping, since `conftest.py` is the ledger's surface
   by then and Boundary A requires the standing gates for every touched surface.
   Note that the sibling's own node-accounting falsifier enumerates the abort
@@ -212,6 +242,8 @@ freeze-driven.)
 | A3 | `bootstrap/tests/test_broad_run_guard.py` *(new)* | The guard's own behavioural tests — see the row mapping below. |
 | A4 | `bootstrap/tests/test_security_check.py` | **Update, not add.** `test_the_release_token_survives_the_real_grandchild_launcher` (currently ~line 806) and its docstring, and the comment inside `test_the_release_token_reaches_both_direct_children` (currently ~line 459-460), assert today that "the middle link launches pytest with **no** `env=` of its own… the token reaches the grandchild by *inheritance*." A2 makes that false: after this chunk, `_run_order_independence` always passes an explicit `env=`. The docstring/comment must be corrected to state the new mechanism (an explicit additive copy, not bare inheritance) — the underlying assertions (rc matches `expect_refusal`; the release token reaches the real grandchild) still hold and stay as regression coverage, but the prose explaining *why* they hold must not keep asserting a fact this chunk deletes. |
 | A5 | `bootstrap/tests/test_quality_gate_order_independence.py` | Add a test asserting the spawn in `_run_order_independence` passes an explicit `env=` that is a **superset of the parent process's environment plus `CAIRN_FULL_SUITE=1`**, not a fresh mapping — the row-10 falsifier below, following the existing `_spy_run`-style capture pattern already used in `test_security_check.py` for the same shape of assertion. |
+| A6 | `bootstrap/tests/conftest.py` (the sibling's collector, not the guard) | **Make the `scope` classifier fail-conservative about a refused session.** A session this guard refuses has collected the full set and executed nothing, and the sibling's classifier as written resolves it `full` — because its `full` conditions test for narrowing options, early stop (`-x` / `--maxfail` / interrupted) and collection errors, none of which a `UsageError` at collection-finish trips. Resolve `unknown` instead. This is the classifier's own stated principle applied to a session shape the sibling's proposal never contemplated: *"Anything else — including any unrecognized option that could narrow selection — is `unknown`, never guessed."* |
+| A7 | `tools/suite_cost.py` (the sibling's reader) | **Exclude refused sessions from cost aggregation, and report them as their own number.** A refused session is identifiable from the pinned schema with no schema change: `exitstatus` is 4 and no test executed. Such rows must not feed the cost profile, the concentration table, or the growth curve — each would be pulled toward zero by a run that never ran. Report the refusal count separately: how often the guard fires is the evidence this change exists to produce, and `dev/PLANNING.md` records that measuring whether the delegation rule works depends on exactly this ledger. |
 
 **Row mapping — Revision 5's Evidence table to prospective test names** (all
 in `bootstrap/tests/test_broad_run_guard.py` unless noted):
@@ -229,6 +261,8 @@ in `bootstrap/tests/test_broad_run_guard.py` unless noted):
 | the release token survives the gate | `test_a_release_refused_outcome_is_not_masked_by_the_guard` (real `security_check → quality_gate → pytest` path, a release-refused fixture: guard does not refuse it, release phase stays non-zero) | A4 (extends the existing `_quality_gate_tree` fixture family) |
 | the child environment is additive | `test_the_order_independence_child_env_is_an_additive_copy` (the spawn's `env=` is a copy of the parent plus `CAIRN_FULL_SUITE=1`, not a fresh mapping) | A5 |
 | the bypass is real and bounded | `test_noconftest_bypasses_the_guard` (`--noconftest` collects without loading `conftest.py`; the guard does not fire) | A3 |
+| a refused session is not a full run | `test_a_refused_session_is_scoped_unknown` — run the real guard to refusal over a fixture tree, then read the ledger row it wrote: `scope` is `unknown`, not `full`. Directional: the same tree under `CAIRN_FULL_SUITE=1` writes `full`, so the test fails if the classifier stops distinguishing them rather than passing on a constant. | A3 (asserting A6) |
+| a refused session does not deflate the cost figures | `test_refused_sessions_are_excluded_from_cost_and_counted_separately` — build a ledger fixture mixing real runs with refusals, render it, and assert the cost profile, concentration table and growth curve are **byte-identical** to the same fixture with the refused rows absent, while the refusal count differs. Byte-identity is the falsifiable half: a reader that merely down-weights refusals rather than excluding them fails it. | A3 (asserting A7) |
 
 ### Chunk B — the vendor-neutral sentence
 
