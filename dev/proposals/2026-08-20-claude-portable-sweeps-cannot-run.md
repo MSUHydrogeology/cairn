@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — mandatory, twice over. The change
 touches the portable-sweep executable trust root named in `AGENTS.md` (the
 admitted version set, and the pre-execution configuration screen), and fixing
@@ -391,3 +391,349 @@ That the close is **gated on verification and not on merge**. The failure mode
 this section is written against is an issue closed when the code lands and
 before the legs are shown to actually run — which, per *S5* above, is the one
 thing this change makes newly possible and newly unverified.
+
+## Review -- Claude (Internal, fresh-context subagent) -- 2026-08-20
+
+**Tier**: Internal
+**Findings**: raised
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+Reviewed commit: d54460766442ecc367a25283f272b83cfe3aed33
+Target: the complete current contract -- the whole file as of that commit, including the `## Amendment ... issue closure is in scope` section
+Prior findings: none
+Assurance path: high-assurance
+
+Source claims were checked against the working tree at
+`841bfc6708974267362f6d0926c12ee9d9113944` (the runner and its twin are
+unmodified since `a005680`). No `Plan readiness` field is recorded: this is an
+Internal pass and has no different-agent-type read to spend.
+
+**One conformance note, left standing rather than papered over.**
+`tools/lifecycle_planner.py scan` flags this section with *"appears authored by
+the proposal author ('Claude (Strategy)'); a review carries reviewer-authorship"*.
+That flag is the checker comparing identity tokens, and it fires on **every**
+Internal review this repository's own floor asks for -- `AGENTS.md` > *Review*
+defines the Internal floor as "the same agent in a fresh session," which is
+independence by *time*, not by identity. Renaming the byline to clear the flag
+would trade an accurate attribution for a green scan, and attribution is the
+record's integrity. So the byline stays accurate and the flag stays visible.
+Whether the checker should special-case a declared `**Tier**: Internal` pass is
+a separate question, and not this proposal's to answer.
+
+### Shared review sweep
+
+Lenses swept: claim verification (every cited line opened), scope-and-outcome
+(against the proposal as opened), failure-direction, trust-boundary /
+untrusted-input, test-instrument validity, doc-surface routing, workflow
+coherence, and the append-only / commit-discipline conventions. Where a claim
+was checkable by running something, I ran it rather than reading about it.
+
+### Steelman
+
+This is a strong proposal and three of its hardest calls are right.
+
+**D1's diagnosis is correct, and I reproduced it end to end.** On this host,
+`gitleaks --version` prints `gitleaks version 8.30.1` and `gitleaks version`
+prints `8.30.1` -- exactly the two shapes the proposal names. Running
+`python scripts/run_portable_security_sweeps.py --target <repo> --json` against
+a throwaway checkout produced, verbatim, the refusal the proposal quotes:
+`leg="adapter" status=INCOMPLETE result=5`, reason `adapter version 'gitleaks
+version 8.30.1' is not an exact X.Y.Z; the version is unmeasured, so no scan leg
+was run`. The "unconditional, on any host at any version" framing holds.
+
+**Refusing to loosen `parse_version` is the right call and is well argued.**
+`_VERSION_RE` (`scripts/run_portable_security_sweeps.py:272`) is deliberately
+`[0-9]` rather than `\d` and rejects leading zeros; that is a measured-versus-
+unmeasured boundary, and putting a separate, anchored extractor in front of it
+keeps the boundary where it belongs. Naming the regression test as *the*
+deliverable rather than the extractor is the correct emphasis.
+
+**Refusing to automate D3 is right, and the reasoning is exactly the one that
+matters** -- an automated writer makes "anything that can emit an evidence
+record" an admission channel. Refusing to admit the adopter's reported sha256 by
+the same argument, while still offering it a recorded home, is the disciplined
+answer rather than the convenient one.
+
+Two more that deserve credit: the D2 "separate patterns, not new alternatives
+inside the reviewed groups" argument is right for review-boundary reasons the
+next reader will actually benefit from; and *Signals the change is wrong* is
+genuinely falsifiable rather than decorative -- each signal names a recovery,
+and the fourth ("the legs, once running, are noisy enough that an adopter
+switches the module off") anticipates the real post-fix risk.
+
+I also verified the two proposed keys are safe (review question 4, below R1):
+`screen_local_config` inspects only the **key**, never the value
+(`scripts/run_portable_security_sweeps.py:780-800`), and neither
+`remote.<n>.glab-resolved` nor `branch.<n>.vscode-merge-base` is a key Git
+itself interprets -- Git carries them as opaque strings, so neither can
+influence execution. The existing allowlist already admits `remote.<n>.url`,
+whose value is wholly candidate-controlled, so this widening adds no new
+value-trust. **No finding against the two keys themselves.**
+
+### Findings
+
+* **[R1] BLOCKING -- the two named keys are not the class, and I refused a
+  clean checkout without either of them.** D2 says the screen "is failing its
+  own written design," which is right, and then fixes two measured instances.
+  But the same failure mode is live for a far more common case the proposal
+  never tested: **a branch name containing a dot.** `_INERT_LOCAL_PATTERNS`
+  (`scripts/run_portable_security_sweeps.py:624-628`) uses `[^.]+` for the
+  subsection, and Git preserves subsection text verbatim (only section and
+  variable names are lowercased). Measured on a fresh `git init` whose only
+  unusual property was `git config branch.release/2.0.remote origin`:
+
+      "leg": "preflight", "status": "DEGRADED", "result": 20,
+      "reason": "repository-local configuration key 'branch.release/2.0.remote'
+                 is not on the reviewed inert allowlist; refused before execution"
+
+  `git checkout -b v1.2 && git push -u` produces this on any tree. So the
+  proposal as written would ship a fix that still leaves the module refusing on
+  ordinary checkouts -- and the adopter would file the same issue again. This is
+  the concrete evidence that D2's method is enumeration where the defect is
+  structural. Instrument confirmed: the same pattern list matches
+  `branch.main.remote` and `remote.origin.url`, so the negative is meaningful.
+  Resolve it in the contract, not in planning -- either widen the subsection
+  class deliberately (with the reasoning about why a subsection is not a key
+  namespace) or state that dotted subsections are a known, accepted refusal and
+  say why. Do not resolve it by narrowing D2 further.
+
+* **[R2] BLOCKING -- S5's answer names controls that bound a different surface
+  than the one D1 widens.** The proposal is right that this is "a real
+  widening," and then lists containment, the sterilized child environment, the
+  `.gitleaksignore` refusal and the config screen as what bounds it. I read all
+  four. `child_env` (`scripts/run_portable_security_sweeps.py:541-576`) is a
+  genuine allowlist and bounds *environment*. `screen_local_config` and the
+  include-origin containment bound *configuration* -- and the source says so in
+  its own words: "the screen bounds *configuration* -- not everything a
+  candidate repository controls" (`scripts/run_portable_security_sweeps.py:758-760`).
+  `refuse_candidate_ignore_files` (`scripts/run_portable_security_sweeps.py:639-656`)
+  is an anti-**suppression** control -- it protects the integrity of the report,
+  not the operator -- so it does not bound this class at all and should not be
+  in the list.
+
+  What D1 newly enables is a leg running the adapter over **candidate-controlled
+  file content**. None of the four touches that, and the module's own shipped
+  doc already names the capability that still succeeds:
+
+  > There is **no process containment**. A malicious adapter is not contained,
+  > and reduced mode in particular executes a binary whose behaviour has not
+  > received this module's matrix.
+
+  (`templates/modules/team-gated/portable-security-sweeps.md:194-196`.) The
+  template asks S5 to *name one capability that still succeeds* first, and only
+  fall back to by-construction/by-enumeration if you cannot. One is nameable,
+  it is written verbatim in the artifact this change makes reachable, and the
+  answer omits it. Rewrite S5 to name it (a parser or rule-engine defect in an
+  unadmitted adapter binary, reached by hostile repository content, executing
+  in the operator's own user context, uncontained), and then say which of the
+  four controls bound which surface. This is a design-time question asked while
+  the design is movable; deferring it to the scheduled External Security Review
+  is the thing the template forbids.
+
+* **[R3] BLOCKING -- D3 asserts a documentation absence that does not hold, and
+  the proposed replacement would weaken what is already there.** D3 says the
+  module doc "gains a short section: what reduced mode is, why it is honest,
+  that `0` is unreachable without an admission, and the exact two-step
+  ceremony." Three of those four are already shipped, verbatim:
+
+  > **Full mode -- the only mode that can reach `0` -- is unreachable without a
+  > digest match.** Reduced mode never emits CLEAN and never describes itself as
+  > offline-verified.
+
+  (`templates/modules/team-gated/portable-security-sweeps.md:96-99`; the mode
+  table at :82-85 and the version-support cadence at :162-175 carry the rest.)
+
+  Worse, the ceremony is **not two steps**. The recorded ceremony has three
+  substantive steps -- matrix run, **security-lens review of the evidence**,
+  reviewed source change -- documented at
+  `dev/measurement/gitleaks-version-support.md:26-38` and echoed in the module
+  doc's cadence bullet ("**plus** a security-lens review of the recorded
+  evidence"). Writing "the exact two-step ceremony" into an adopter-facing doc
+  would contradict the existing record and silently drop the security-lens
+  review from the adopter's picture of it. That is a documentation regression on
+  a trust surface.
+
+  The actual adopter-facing defect is sharper and cheaper than the one D3
+  describes, and I would rather the contract named it: the **shipped runner's
+  own comment** is the misleading artifact, twice over. It points the reader at
+  `dev/measurement/gitleaks-version-support.md`
+  (`scripts/run_portable_security_sweeps.py:86-90`) -- a path that exists only
+  in Cairn's tree and is **not installed** by the `team-gated` module, so it
+  does not resolve for an adopter at all -- and then says `8.30.1` "enters only
+  when the admission subcommand emits a record"
+  (`scripts/run_portable_security_sweeps.py:99-102`), which is the sentence that
+  produced the adopter's gap-3 conclusion. Fix the comment; carry the *three*-step
+  ceremony (or a pointer to where an adopter can read it) into the module doc if
+  anything is added there; do not re-state what :96-99 already says.
+
+  The half of D3 I did verify as true: nothing writes the
+  `CAIRN-ADMISSIONS-BEGIN`/`-END` block. Repo-wide grep finds those markers only
+  as comments in the two runner copies -- instrument confirmed, the pattern
+  matched where it exists.
+
+* **[R4] BLOCKING (evidence accuracy) -- invariant (iii)'s "no test can enforce
+  this and the plan should say so" is false, and writing it into the plan would
+  licence dropping coverage that exists.** Two nodes already enforce the
+  operative halves. `test_verify_version_support_cannot_mutate_the_source_version_set`
+  (`bootstrap/tests/test_portable_security_sweeps.py:2135-2158`) asserts the
+  subcommand does not rewrite the runner's own source -- with a deliberate
+  second half against a revert-before-assert -- and then confirms the resulting
+  run is still `reduced`. `test_every_full_mode_version_has_an_evidence_record_in_the_ledger`
+  and its reverse (`bootstrap/tests/test_portable_security_sweeps.py:1977-2003`)
+  pin a bijection between `_ADMITTED_ARTIFACTS` and the ledger's active
+  sections, parsing the ledger independently so the oracle is not computed from
+  the thing it judges. The untestable residual is narrow -- "a human editing
+  source did so with review" -- and saying *that* is honest. Saying "no test can
+  enforce this" is not, and it is the kind of sentence a plan inherits verbatim.
+
+* **[R5] BLOCKING -- the D1 fix as scoped leaves the suite blind everywhere
+  except the new pin.** `fake_tool`'s `--version` branch writes a bare
+  `{version}\n` (`bootstrap/tests/test_portable_security_sweeps.py:154-159`,
+  default `version="8.30.1"` at :116) -- the shape gitleaks **never** emits from
+  `--version`. That fixture, not the extractor's absence, is the root reason a
+  suite full of passing tests coexists with a module that cannot run. Adding one
+  new fixture that emits the real shape pins the new path and leaves every other
+  node in the file still exercising a shape that does not exist in the field, so
+  a future regression in the probe path stays invisible exactly as it is today.
+  The contract should decide this, not the plan: either **flip `fake_tool`'s
+  default to `gitleaks version {version}`** so the whole suite runs the real
+  path (and keep the bare form as an explicit parametrization, since `gitleaks
+  version` really does emit it), or state why the default stays bare. This is
+  the proposal's own "confirm the instrument" discipline applied to the
+  instrument it is proposing to build.
+
+* **[R6] BLOCKING -- the Amendment's gate list does not contain the Amendment's
+  own stated failure condition.** Section 5 says the failure mode it is written
+  against is "an issue closed when the code lands and before the legs are shown
+  to actually run." Section 2's four gates are: implementation landed and
+  code-reviewed; External Security Review completed; a closing comment meeting
+  the honesty bar; Maintainer authorization. **"The legs are shown to actually
+  run" is not among them.** Code review verifies the Boundary-B record, and
+  Boundary B over `bootstrap/tests` cannot show it -- per R5 the adapter there
+  is a Python script, not gitleaks. So as written, every gate can be satisfied
+  with the legs still never having executed against a real adapter, which is
+  precisely what S5 flags as newly possible and newly unverified. Add the fifth
+  gate explicitly and name its instrument: the smoke check the proposal already
+  names (`python scripts/run_portable_security_sweeps.py --target . --json` on a
+  host with a real gitleaks), the expected result, and **who runs it** -- a real
+  adapter is a host fact, so if the implementing agent's host has none, say that
+  the gate is the Maintainer's or the adopter's to satisfy. A gate nobody is
+  named for is the "human remembering" trigger `AGENTS.md` > *Verifying claims*
+  tells you to describe as such.
+
+* **[R7] Non-blocking -- "This weakens nothing ... over the same key set" is
+  inaccurate, and the accurate version is a better argument.** The containment
+  check and the inert check sit in the **same** per-pair loop
+  (`scripts/run_portable_security_sweeps.py:780-800`): containment at :790,
+  inertness at :796. Today the loop short-circuits at the first non-inert key,
+  so every pair after it is never `Path(...).resolve()`-d and never
+  containment-checked. After accumulation, those pairs are -- meaning more
+  symlink-following filesystem resolution on candidate-controlled origin
+  strings than happens today. That is a small, real, bounded increase (bounded
+  by `_SCREEN_MAX_BYTES = 256 * 1024`, :609), and the disposition is unchanged.
+  It is also a strict improvement in one direction the proposal does not claim:
+  an injected origin sitting behind a non-inert key now gets *detected and
+  named* rather than masked by an earlier refusal. Say both, rather than
+  asserting sameness a reader can falsify in one read of the loop.
+
+* **[R8] Non-blocking -- the source-of-truth direction is inverted, and the
+  guard is worth citing.** The header calls `scripts/run_portable_security_sweeps.py`
+  the file and `templates/modules/team-gated/run_portable_security_sweeps.py`
+  "its byte-identical twin." The suite has it the other way round: `RUNNER_SRC`
+  is the `templates/` copy (`bootstrap/tests/test_portable_security_sweeps.py:39`)
+  and `RUNNER_TWIN` is the `scripts/` copy (:2281). An implementer following the
+  header will edit the twin first. Name `templates/` as source, and cite
+  `test_the_runner_twin_is_byte_identical_to_its_template_source`
+  (`bootstrap/tests/test_portable_security_sweeps.py:2300-2304`) as the guard --
+  it belongs in the test mapping, since this change edits both copies. I did
+  verify the two files are byte-identical today.
+
+* **[R9] Non-blocking -- three citations point at neighbours rather than at
+  what they name.** `parse_version` is cited as `:276-286`; the `def` is at
+  **275**. The `screen_local_config` sentence is cited as `:614-636`, but that
+  range is `_INERT_LOCAL_KEYS`, `_INERT_LOCAL_PATTERNS` and `_key_is_inert` --
+  `screen_local_config` itself begins at **741**. And "the comment above
+  `_ADMITTED_ARTIFACTS`" is at **86-102**, above `class Admission`; the line
+  immediately above `_ADMITTED_ARTIFACTS` (113) is the `CAIRN-ADMISSIONS-BEGIN`
+  marker. `claim_check` passes on all of them because they are in bounds, which
+  is the point: bounds are not content. Per the durable-artifact rule these
+  coordinates outlive the proposal, so give the implementer ones they can act on.
+
+* **[R10] Non-blocking -- the refusal-listing bound is weaker than claimed.**
+  *Signals the change is wrong* says "the upstream byte cap on the listing
+  already bounds it." True at `_SCREEN_MAX_BYTES = 256 * 1024`
+  (`scripts/run_portable_security_sweeps.py:609`) -- but 256 KB of key names
+  landing in a JSON `reason` field is not a useful bound, and the JSON summary
+  has no separate cap on that field. The cap-and-count recovery the section
+  offers as a fallback should be the design, stated up front, not the remedy
+  after an unreadable report.
+
+### Coverage
+
+* **Covered.**
+  * *Claim verification* -- every source citation opened:
+    `scripts/run_portable_security_sweeps.py` at 86-102, 113, 272-286, 494-537,
+    541-604, 609-656, 741-800, 1520-1552.
+  * *End-to-end reproduction* -- `gitleaks --version` -> `gitleaks version
+    8.30.1`, `gitleaks version` -> `8.30.1`; the runner refused with the
+    proposal's exact D1 reason string at `result=5`.
+  * *D2 falsification* -- a fresh `git init` carrying only
+    `branch.release/2.0.remote` refused the screen, with neither proposed key
+    present (R1). Instrument confirmed against `branch.main.remote` and
+    `remote.origin.url`, which match.
+  * *Twin identity* -- `diff` over the two runner copies: identical;
+    `bootstrap/tests/test_portable_security_sweeps.py:2300-2304` is the guard.
+  * *D3 absence* -- repo-wide grep for `CAIRN-ADMISSIONS`: markers only, no
+    writer; instrument confirmed by the markers matching where they exist.
+  * *Existing coverage* -- `bootstrap/tests/test_portable_security_sweeps.py`
+    at 113-188 (`fake_tool`), 1959-2003 (ledger bijection), 2036-2245
+    (`--verify-version-support` nodes).
+  * *Doc surface* -- `templates/modules/team-gated/portable-security-sweeps.md`
+    at 82-116, 162-175 and 192-199; `dev/measurement/gitleaks-version-support.md` at
+    1-60; confirmed the ledger is not in the `team-gated` install set.
+  * *Conformance* -- `python scripts/claim_check.py <this file>`: OK, no flags
+    (run against the pre-review contract); `python tools/lifecycle_planner.py
+    scan`: all artifacts structurally sound.
+  * *Scope* -- the Amendment adds a deliverable and withdraws nothing, so
+    `preserved` is correct and no `Scope delta` is owed. I make no
+    scope-reduction recommendation: every finding above asks for specification
+    or correction, none asks for removal.
+
+* **Not covered / low confidence.**
+  * **Same-type reviewer -- no cross-type independence on this pass.** Nothing
+    here substitutes for the External Security Review the surface triggers.
+  * **Adopter issue #4 not read.** I did not fetch it, so "all three of that
+    issue's gaps are in scope here, and no sibling proposal holds a piece of it"
+    (Amendment section 2) is unverified. Someone with the issue open should
+    check it, since the whole close-the-issue deliverable rests on it.
+  * **Ceiling of the D2 class not established.** R1 shows the two named keys are
+    incomplete; I did not enumerate what a complete inert-key class looks like,
+    and I do not believe enumeration is the right instrument for it.
+  * **The legs themselves never observed running.** Every run I made stopped at
+    a pre-execution refusal, so I have no evidence about behaviour, noise or
+    runtime once D1 is fixed -- which is exactly the gap R6 is about.
+  * **Extractor design not stress-tested.** The proposal describes the extractor
+    rather than specifying it, so I could not test it against shapes beyond the
+    two observed; the anchoring mutation named in S2 is the right pin and I
+    could not run it.
+  * **Environment note.** Reproductions ran on Python 3.12 (the ambient conda
+    interpreter), not the canonical 3.13.x. Immaterial for the two shell probes
+    and the runner reproduction, but not a Boundary-B-grade record.
+
+### Second-round recommendation
+
+**Recommended -- and the tier matters.** R1 and R2 are not editorial: R1 is a
+measured counterexample showing the proposed D2 fix does not restore the
+workflow it is written to restore, and R2 is a security answer that names the
+wrong controls for the class the change widens. Those go back to the author
+first, and the revision should be a complete current contract.
+
+For the round after that, my recommendation to the Maintainer is that the
+**External** read this proposal eventually takes be spent on the revised
+contract *before* implementation, rather than only as the scheduled
+implementation-time Security Review. The reason is in the negative space above:
+the one thing an Internal pass structurally cannot supply is a different set of
+failure modes against an S5 answer, and S5 is where this proposal is both least
+certain and most consequential. Deciding that is the Maintainer's call; the
+declared `required(Internal)` plan review runs regardless.
