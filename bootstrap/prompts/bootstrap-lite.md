@@ -11,7 +11,7 @@ you would rather have the agent assess the repo and recommend a
 profile than score the six axes yourself by hand.
 
 **When *not* to use it**: you have a tiny throwaway repository
-and want a 15-minute "what does Cairn feel like?" walkthrough.
+and want a short "what does Cairn feel like?" walkthrough.
 That is what `../../docs/quickstart.md` is for — the quickstart
 copies the `solo-greenfield` profile literally and skips the
 assessment loop entirely. Come here after the quickstart if you
@@ -154,7 +154,7 @@ in cairn/docs/quickstart.md.
 * `../profiles/` — the three named governance presets the agent
   recommends among (`solo-greenfield`, `collaborative-team`,
   `high-rigor-legacy`).
-* `../../docs/quickstart.md` — the 15–25 minute throwaway-repo
+* `../../docs/quickstart.md` — the short throwaway-repo
   walk-through; the on-ramp *before* bootstrap-lite.
 * `../../on-ramp/README.md` — the three adoption levels and the
   self-locate aid.

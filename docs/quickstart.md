@@ -1,16 +1,18 @@
-# Try Cairn in 15-25 minutes with one AI agent
+# Try Cairn in one short sitting, with one AI agent
 
 This page is a recipe, not a tour.  Follow it on a disposable repo
 to see one human + one AI agent move a single change through Cairn's
-lifecycle.  You will not learn the doctrine in 25 minutes -- that is
+lifecycle.  You will not learn the doctrine in one sitting -- that is
 what [`docs/getting-started.md`](getting-started.md) and
 [`doctrine/`](../doctrine/) are for.  What you *will* see: the
 apparatus in motion, in your own terminal, on your own machine.
 
-> **Why the range.**  The 15-minute floor assumes your AI agent is
-> already configured and you copy the profile YAML literally.  Adding
-> agent setup, reading the rendered installed files, or pausing to
-> understand the lifecycle pushes you toward the 25-minute ceiling.
+> **How long it takes is not stated here, on purpose.**  It depends on
+> whether your agent is already configured, whether you copy the profile
+> YAML literally or read what it installs, and whether you pause to
+> understand the lifecycle as you go.  Cairn measures nothing about this
+> today, and a number nobody measures is a claim the reader cannot check
+> -- so the recipe gives you the steps and lets you find your own pace.
 
 If you are evaluating Cairn for a real project, start here, then
 return to the [on-ramp](../on-ramp/README.md) once you trust the
@@ -27,7 +29,8 @@ shape.
   and write files in a working tree.  Cairn is vendor-neutral; the
   recipe uses prompts the agent reads, not API calls Cairn makes.
 <!-- vendor-ok-end -->
-* About 15 minutes.
+* One uninterrupted sitting -- the steps are short, but do not start
+  this one in the gaps between other things.
 
 ## What you will end up with
 
@@ -76,8 +79,6 @@ printf "# Changelog\n\n## Unreleased\n" > CHANGELOG.md
 git add README.md CHANGELOG.md && git commit -q -m "init"
 ```
 
-Time: ~2 minutes.
-
 ## Step 2 -- copy the `solo-greenfield` profile
 
 The quickstart uses the smallest viable profile: one human + one
@@ -108,8 +109,6 @@ Other shipped profiles
 [`high-rigor-legacy.yml`](../bootstrap/profiles/high-rigor-legacy.yml))
 follow the same shape with different presets; you can compare them
 to see how axis values drive the roster.
-
-Time: ~1 minute.
 
 ## Step 3 -- preview, then run the scaffold
 
@@ -196,8 +195,6 @@ git add AGENTS.md VENDOR.md .gitignore dev/ tools/ scripts/ .agents/ docs/ && \
     git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 
-Time: ~2 minutes.
-
 <!-- vendor-ok-begin: editor-name list -- illustrative options for adopters; not a vendor endorsement -->
 > **Tip -- open the disposable repo in your editor now.** The
 > next two steps ask your agent to read `AGENTS.md` and write a
@@ -241,7 +238,7 @@ Commit the proposal:
 git add dev/proposals/ && git commit -q -m "Open proposal: README tagline"
 ```
 
-Time: ~3 minutes (most of which is the agent reading).
+Most of this step is the agent reading.
 
 ## Step 5 -- review, decide, implement, archive
 
@@ -267,8 +264,6 @@ You should see the agent:
 * `git mv` the proposal into `dev/proposals/archive/`.
 * Add the CHANGELOG line.
 * Commit all three with a single explicit-path commit.
-
-Time: ~5 minutes.
 
 ## Step 6 -- look at what you have
 
