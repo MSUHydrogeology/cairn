@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — D1 changes what a security control
 **instructs an operator to do to a reviewed security baseline**, and D2 adds a
 derived annotation to a security report. Neither is obviously a trust-boundary
@@ -2153,3 +2153,116 @@ policy needs a tripwire in the opposite direction from the old one.
   normative and `~` is named.
 * **The conflation of "not installed" with "metadata unreadable".** Superseded.
 * **`Scope delta`: preserved.** No accepted outcome is withdrawn.
+
+## Review -- Codex (External) -- 2026-08-20 (round 2)
+
+**Tier**: External Security Review
+**Findings**: raised
+
+**Model**: OpenAI GPT-5 (Codex)
+
+Reviewed commit: 84d47cac7b537de05b7462efb489728e2551ef35
+Target: Revision 3, limited to the corrected declared-closure policy and bright-line oracle
+Prior findings: C1-C4 and the Internal round-3 I1-I9
+Assurance path: high-assurance
+
+### Review sweep
+
+I enumerated all 301 installed distributions under Python 3.13.13, inspected
+2,373 marker-bearing `Requires-Dist` strings, compared the proposed raw-string
+extras test with `packaging.requirements.Requirement` as a review-only PEP 508
+oracle, and reran the include-all, extras-excluded and evaluated closure walks
+for `scikit-learn`, `rich` and `requests`. I also modeled the emitted-report
+oracle with all three annotation classes present and applied class-drop and
+class-relabel mutations separately.
+
+### Steelman
+
+The central correction is empirically right. I reproduced closure sizes
+`580 -> 5`, `572 -> 4`, and `572 -> 5`; true marker evaluation matched the
+extras-excluded result for those roots. Separating extras from other markers
+restores a useful partition without pretending stdlib can evaluate PEP 508.
+The root mapping, absent-vs-unreadable distinction, anchored requirement-name
+grammar, literal pre-normalized oracle, restored `coverage.names`, and global
+all-unknown failure direction are coherent. A renderer that directly drops an
+annotation class now goes red: the fixture supplies a vulnerable unique row in
+each class and exact `(distribution, count)` equality observes its absence.
+
+### Security preflight adjudication
+
+* **S2:** Row-drop, count-change, class-drop and parent-enumeration mutations
+  can now fail. The oracle still cannot observe a wrong annotation value; Q2 is
+  an independent fifth mutation, not another form of the four already named.
+* **S5:** “Cannot make it disappear” is now accurate for the fixture-covered
+  report projection. “Closed by an independently checked projection” is not a
+  guarantee that the emitted class is correct, because the projection omits
+  that field. The attention residual remains open and honestly stated.
+
+### Findings
+
+* **[Q1] BLOCKING -- literal `extra ==` presence is not a sound syntactic
+  predicate over PEP 508 metadata.** The real environment is a useful positive
+  control: all 2,314 marker strings containing an `extra` token use that exact
+  canonical spacing, so the proposed test reproduces the reported closure
+  counts here. But valid metadata is wider than this corpus. The independent
+  parser accepts all of these:
+
+  * `extra=="dev"` and `extra  == "dev"` -- optional requirements the literal
+    test includes;
+  * `"dev" == extra` -- the same equality with operands reversed, also included;
+  * `platform_release == "extra == dev"` -- a non-extras marker the literal
+    test excludes because the bytes occur inside a quoted value.
+
+  `extra in ...` and `extra != ...` are valid too, but cannot safely be treated
+  as equivalent to positive extras equality: their truth with the unset/empty
+  extra differs. This is package-controlled input, so canonical producer
+  formatting is not an authority boundary.
+
+  **Satisfier:** scan marker tokens while respecting quoted strings and
+  arbitrary whitespace; recognize unquoted `extra` equality in either operand
+  order. If any other unquoted `extra` expression is encountered, make the
+  whole closure `unknown` rather than guessing whether it is extras-only. Add
+  the four valid forms above plus `extra !=` and `extra in` as independent
+  positive/negative tests. This remains standard-library-only; `packaging` is
+  needed only as the test oracle.
+
+* **[Q2] BLOCKING -- the emitted-report oracle still discards the field this
+  feature adds.** Its expected and observed multisets contain only
+  `(distribution, count)`. With literal rows for `in-closure`,
+  `out-of-closure`, and `unknown`, I changed every emitted annotation to
+  `in-closure`; the proposed projections remained exactly equal and every
+  `Coverage` field remained unchanged. Fixture class coverage cannot detect
+  systematic relabeling when the comparison projects the class away.
+
+  This does not re-open the direct class-drop finding: dropping the row changes
+  the multiset and now reds. It exposes a separate integrity property -- the
+  renderer can preserve every finding while lying about the triage axis.
+
+  **Satisfier:** make the independently written expected and parsed observed
+  values exact `(normalized_distribution, count, annotation)` multisets. Add a
+  fifth recorded mutation that relabels or swaps annotation classes while
+  preserving names and counts. Keep invariant (ii) over the returned `Coverage`
+  object unchanged.
+
+### Coverage
+
+**Covered** -- the 301-distribution metadata corpus with a positive instrument;
+valid noncanonical and quoted-marker counterexamples; the three reproduced
+closure ratios; root mapping and failure direction; all four existing oracle
+mutations; direct class-drop sufficiency; annotation relabeling; S2 and S5; and
+the preserved scope declaration.
+
+**Not covered / low confidence** -- the adopter's external environment and
+299/93/212 figures, every legal PEP 508 boolean expression, live pip-audit
+network output, cap thresholds, and an implementation that does not yet exist.
+`packaging` was used only as an independent review oracle and is not proposed as
+a shipped dependency.
+
+### Second-round recommendation
+
+**Recommended, tightly limited to Q1-Q2.** The next External Security pass
+should run the noncanonical/quoted marker corpus through the final stdlib
+recognizer and prove an annotation-relabel mutation reddens the emitted-report
+oracle. The split policy, closure authority, class-drop coverage, and narrow S5
+non-disappearance claim otherwise clear. No `Plan readiness` is recorded while
+the marker boundary and annotation-integrity oracle remain unsettled.
