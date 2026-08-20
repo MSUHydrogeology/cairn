@@ -1596,6 +1596,37 @@ point rather than being copied into another backlog.
   re-anchor; scope it to be worth that. Related: the end-gate frozen-set
   decision under **[BND] Scaffold / engine**, which asks the same authority-set
   question about the engine packages.
+* **[TRU-4] `--noconftest` silently disables the release-mode outcome rule**
+  *(found 2026-08-20 while planning the broad-run cost guard; Maintainer
+  directed it here rather than into that plan, which keeps the accepted
+  probe-only treatment)* — `pytest --noconftest` skips loading
+  `bootstrap/tests/conftest.py` entirely. That file does not only hold test
+  fixtures: it carries the **release-mode outcome rule**, which refuses a
+  release when a security gate *skipped* rather than passed. Its own docstring
+  states the reason — a suite that exits 0 after a skip is not acceptable
+  release evidence. So a single flag turns off a release trust control, and the
+  suite still exits 0. Verified 2026-08-20: `noconftest` appears **nowhere** in
+  the tree outside the deliberation record — not in `AGENTS.md`, not in
+  `bootstrap/SAFETY.md`, not in any docstring — so nothing warns a reader, and
+  nothing asserts its absence on a release run.
+
+  **Why this is filed rather than fixed in passing.** The exposure predates the
+  cost guard by as long as the outcome rule has existed; the guard only made it
+  visible, because a guard creates the first population of people motivated to
+  get *past* a refusal. That is also why the fix is not "document the flag": a
+  note reading "`--noconftest` bypasses the guard" would advertise the release
+  control's off-switch to exactly that audience. If anything is written, it
+  belongs with the release trust surface and must lead with what else the flag
+  disables — `CAIRN_FULL_SUITE=1` is the supported override and leaves every
+  other control intact.
+
+  **The candidate mechanism, not yet weighed.** A release run could assert its
+  own conftest was loaded — the same shape as the `PYTEST_PLUGINS` /
+  `PYTEST_ADDOPTS` absence assertion the row above already contemplates, and
+  probably the same disposition. Whether that is worth the gate re-anchor it
+  would cost is the open question. *Trigger:* the next release-gate change, or
+  any work on the row above — the two share a mechanism and should be weighed
+  together rather than closed separately.
 * **[VER-4 / TRU-3] Dependency-advisory evidence tightening** *(deferred
   2026-08-05 from `dependency-advisory-coverage`)* — v1 reports the complete
   validated partition for each run but stores no integrity-covered residual
