@@ -3,7 +3,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(External)
 **Last update**: 2026-08-20
 **Opened**: 2026-08-20
@@ -59,7 +59,7 @@ preflight sections.
 ## Proposed paths
 
 Proposed paths:
-- `tools/_lifecycle_metrics/events.py` — the event-v1 grammar, history-diff reader, and reconciliation logic (Chunk 5); its `templates/` twin lands the same commit.
+- `tools/_lifecycle_metrics/events.py` — the event-v1 grammar (Chunk 4), the history-diff reader (Chunk 5), and reconciliation logic (Chunk 6); its `templates/` twin lands each same commit.
 - `templates/modules/default-on/_lifecycle_metrics/events.py` — the gate-frozen twin of the above.
 - `bootstrap/tests/test_lifecycle_metrics_events.py` — the new fixture file for the grammar/algorithm/reconciliation red and green cases (Chunks 4-7).
 
@@ -197,7 +197,8 @@ plan's opening commit.
   prose it was never designed to carry (Chunk 2).
 * `dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`,
   `dev/plans/_template.md`, `templates/core/dev/plans/_template.md` — the four
-  activation-marker paths (Chunk 4). **Not a byte-identical twin pair** — the
+  activation-marker paths (Chunk 6, landing in the same commit as fail-closed
+  reconciliation — see that chunk for why). **Not a byte-identical twin pair** — the
   self-hosted copies already diverge from the shipped copies today (confirmed
   by diff: the self-hosted files carry Cairn's own filled content where the
   shipped files carry adopter fill-in slots and merge-block placeholders). Each
@@ -216,9 +217,9 @@ plan's opening commit.
 1. Retire the eight columns and their dependency graph        [commit pending]
 2. Doctrine: the principle, the honest description, the glossary sharpen [commit pending]
 3. Version the break: v2 schema identity                      [commit pending]
-4. Event-v1 grammar, activation markers, planner surfacing, engine registration [commit pending]
+4. Event-v1 grammar, planner surfacing, engine registration    [commit pending]
 5. The history-diff reader: identity, mutation detection, activation cutoff [commit pending]
-6. Fail-closed reconciliation and wiring the retained fields  [commit pending]
+6. Activation markers, fail-closed reconciliation, wiring the retained fields [commit pending]
 7. Cross-cutting fixtures and the pre-existing-test audit     [commit pending]
 8. CHANGELOG and the before/after corpus evidence                [commit pending]
 9. MAINTAINER-GATED — differential-oracle gate re-anchor ceremony [not performed by the implementing agent]
@@ -343,7 +344,7 @@ the v1 file carries no schema-version marker (or an explicit v1 one, if this
 chunk back-labels the old shape — the implementing chunk records which), the
 v2 file carries the new one, and no third, ambiguous state is representable.
 
-### Chunk 4 — Event-v1 grammar, activation markers, planner surfacing, engine registration
+### Chunk 4 — Event-v1 grammar, planner surfacing, engine registration
 
 Depends on nothing in Chunks 1-3. Independent of them; sequenced fourth because
 it is the first Part-3 chunk and Chunks 5-6 depend on it.
@@ -392,37 +393,33 @@ version token is the literal `cairn-event-v1`.
 |---|------|--------|
 | 4-1 | `tools/_lifecycle_metrics/events.py` (new) | Grammar parser: recognizes the `cairn-event-v1` fence, validates the closed key table above, returns a typed block or a refusal reason. No history walking yet (that is Chunk 5) — this chunk is pure block-level validation. |
 | 4-2 | `templates/modules/default-on/_lifecycle_metrics/events.py` (new) | Gate-frozen twin of 4-1, same commit. |
-| 4-3 | `dev/proposals/_template.md`, `dev/plans/_template.md` | Add the literal `cairn-event-v1` marker — worked into the templates' own guidance for how an agent appends an event block at a transition, review pass, or response, so the marker is simultaneously the activation cutoff and the instruction a reader needs to act on it. |
-| 4-4 | `templates/core/dev/proposals/_template.md`, `templates/core/dev/plans/_template.md` | The shipped equivalent. Independently must carry the literal marker; not required to be byte-identical to 4-3 (see Scope's "Documentation / doctrine surface" note on why these four paths are not a twin pair in the byte-identical sense). |
-| 4-5 | `tools/lifecycle_planner.py`, twin `templates/skills/_lib/lifecycle_planner.py` | `next --to <state>`'s preview/mutation-manifest output additionally shows the literal event block the transitioning edit is expected to carry — scaffold-only, informational, not written to disk, not gating. The command's read-only contract is unchanged; a regression test confirms it still writes nothing (see 4-7). Not gate-frozen (outside `templates/modules/**`), but still a same-commit twin pair. |
-| 4-6 | `bootstrap/tests/test_lifecycle_metrics_events.py` (new) | Grammar red/green fixtures: unknown key refuses; unknown `kind` refuses; unknown version token refuses; missing required key per kind refuses; a `reviewer`/`model` value over 120 chars refuses; the three worked examples above each parse cleanly. |
-| 4-7 | `bootstrap/tests/test_lifecycle_contract.py` | Re-run (not necessarily re-write) the existing read-only regression — `test_every_subcommand_is_read_only` or its equivalent, as_of 2026-08-20 line 172 — against the extended preview output, confirming the new block-preview text changes stdout only, no byte written, no git operation performed. |
-| 4-8 | `bootstrap/_scaffold/config.py` | Register the engine file Chunk 4 (4-1/4-2) creates: add `InstallSpec("default-on/_lifecycle_metrics/events.py", "tools/_lifecycle_metrics/events.py", verbatim=True)` to the `"lifecycle-metrics"` entry in `_MODULE_MAPPINGS`, alongside the nine existing `_lifecycle_metrics/` rows (confirmed at ~lines 739-766, as_of 2026-08-20); update the neighboring comment's "the nine package files install verbatim" to "the ten package files install verbatim". Without this row `scaffold.py` never installs `events.py` and an adopter's `extract.py` import of it resolves to nothing on disk. Maintainer direction: these two engine files are to be included, not treated as an open scope question. |
-| 4-9 | `bootstrap/tests/test_security_lint.py` | `test_templates_py_count_is_pinned` (line 376, as_of 2026-08-20) pins `len(on_disk) == 52` over `templates/**/*.py`. Update it to the post-registration count (52 + 1, as_of 2026-08-20 — re-derive at implementation from the live tree, do not carry a frozen number forward). Also confirm `test_every_templates_py_on_disk_is_release_scanned` in the same file passes once 8-2 lands: that check's oracle is the on-disk file set, independent of the manifest-derived count pin, and fails closed on any shipped `.py` present on disk but not release-scanned. |
-| 4-10 | `bootstrap/tests/test_notice_install.py` | `test_manifest_has_the_expected_py_source_count` (line 74, as_of 2026-08-20) pins `len(sources) == 56` over manifest `.py` sources. Update it to the post-registration count (56 + 1, as_of 2026-08-20 — re-derive at implementation, do not carry a frozen number forward). |
-| 4-11 | AST attestation baseline, via `bootstrap/tests/_ast_attest.py`'s `update-symbol` CLI path (per `bootstrap/AST_BASELINE_RUNBOOK.md`) | Row 4-8 changes `_MODULE_MAPPINGS`, a symbol the AST attestation baseline (`bootstrap/tests/test_ast_attest.py`) digests. `_MODULE_MAPPINGS` is one of the four symbols in `_ast_attest._UPDATE_ALLOWLIST`, so — unlike the unrelated, already-owed docstring-drift re-anchor named below under "Sequence revision" — this single-symbol repair is self-serviceable by the implementing agent: run `update-symbol _MODULE_MAPPINGS --expect-old <current digest> <path(s)>` (confirmed present: `bootstrap/tests/_ast_attest.py`'s `update_symbol`/`main(["update-symbol", ...])`, exercised by `bootstrap/tests/test_ast_attest.py`) against the live file after 8-2 lands, in the same commit. |
+| 4-3 | `tools/lifecycle_planner.py`, twin `templates/skills/_lib/lifecycle_planner.py` | `next --to <state>`'s preview/mutation-manifest output additionally shows the literal event block the transitioning edit is expected to carry — scaffold-only, informational, not written to disk, not gating. The command's read-only contract is unchanged; a regression test confirms it still writes nothing (see 4-5). Not gate-frozen (outside `templates/modules/**`), but still a same-commit twin pair. |
+| 4-4 | `bootstrap/tests/test_lifecycle_metrics_events.py` (new) | Grammar red/green fixtures: unknown key refuses; unknown `kind` refuses; unknown version token refuses; missing required key per kind refuses; a `reviewer`/`model` value over 120 chars refuses; the three worked examples above each parse cleanly. |
+| 4-5 | `bootstrap/tests/test_lifecycle_contract.py` | Re-run (not necessarily re-write) the existing read-only regression — `test_every_subcommand_is_read_only` or its equivalent, as_of 2026-08-20 line 172 — against the extended preview output, confirming the new block-preview text changes stdout only, no byte written, no git operation performed. |
+| 4-6 | `bootstrap/_scaffold/config.py` | Register the engine file Chunk 4 (4-1/4-2) creates: add `InstallSpec("default-on/_lifecycle_metrics/events.py", "tools/_lifecycle_metrics/events.py", verbatim=True)` to the `"lifecycle-metrics"` entry in `_MODULE_MAPPINGS`, alongside the nine existing `_lifecycle_metrics/` rows (confirmed at ~lines 739-766, as_of 2026-08-20); update the neighboring comment's "the nine package files install verbatim" to "the ten package files install verbatim". Without this row `scaffold.py` never installs `events.py` and an adopter's `extract.py` import of it resolves to nothing on disk. Maintainer direction: these two engine files are to be included, not treated as an open scope question. |
+| 4-7 | `bootstrap/tests/test_security_lint.py` | `test_templates_py_count_is_pinned` (line 376, as_of 2026-08-20) pins `len(on_disk) == 52` over `templates/**/*.py`. Update it to the post-registration count (52 + 1, as_of 2026-08-20 — re-derive at implementation from the live tree, do not carry a frozen number forward). Also confirm `test_every_templates_py_on_disk_is_release_scanned` in the same file passes once this chunk's own registration (4-6) lands: that check's oracle is the on-disk file set, independent of the manifest-derived count pin, and fails closed on any shipped `.py` present on disk but not release-scanned. |
+| 4-8 | `bootstrap/tests/test_notice_install.py` | `test_manifest_has_the_expected_py_source_count` (line 74, as_of 2026-08-20) pins `len(sources) == 56` over manifest `.py` sources. Update it to the post-registration count (56 + 1, as_of 2026-08-20 — re-derive at implementation, do not carry a frozen number forward). |
+| 4-9 | AST attestation baseline, via `bootstrap/tests/_ast_attest.py`'s `update-symbol` CLI path (per `bootstrap/AST_BASELINE_RUNBOOK.md`) | Row 4-6 changes `_MODULE_MAPPINGS`'s `Assign` node in `bootstrap/_scaffold/config.py`, a symbol the AST attestation baseline (`bootstrap/tests/fixtures/scaffold_ast_baseline.json`, enforced by `bootstrap/tests/test_ast_attest.py`) digests. `_MODULE_MAPPINGS` is one of the four symbols in `_ast_attest._UPDATE_ALLOWLIST` — unlike the unrelated, already-owed docstring-drift re-anchor named below under "Sequence revision" — so this single-symbol repair is self-serviceable by the implementing agent, in the same commit, following `bootstrap/AST_BASELINE_RUNBOOK.md`'s four steps in order (the CLI has no shorthand form; `update-symbol --help` confirms it requires `--baseline` and `--expect-old`, and accepts `--known-new` and `--dry-run`): **(1) diagnose** — run the runbook's `_merge_current`/`_classify` snippet against the live `bootstrap/_scaffold/*.py` set at this commit, confirm `_MODULE_MAPPINGS` is the *only* CHANGED symbol with MISSING and DUPLICATE both 0, and trace any logic-bearing NEW symbol to a landed, reviewed commit; **(2) known-new** — check the diagnosis against `bootstrap/tests/fixtures/scaffold_ast_known_new.json` (never a reimplementation of `_merge_current`/`_classify`), treating any DROPPED or REKEYED key as a review item traced to its own commit before proceeding; **(3) dry-run** — `python bootstrap/tests/_ast_attest.py update-symbol _MODULE_MAPPINGS --baseline bootstrap/tests/fixtures/scaffold_ast_baseline.json --expect-old <current live digest, re-derived at this commit, never copied from this plan> --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json --dry-run bootstrap/_scaffold/*.py`, which refuses on a stale `--expect-old`, an allowlist miss, more than one CHANGED symbol, or an undeclared NEW symbol — each refusal is the guard working, not a bug to route around; **(4) apply, verify, commit** — drop `--dry-run`, then `python bootstrap/tests/_ast_attest.py verify bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py`, confirming the `AST attestation OK — N baselined symbol(s) accounted for, unchanged.` tail with **N unchanged** from before this row (a surgical rewrite, not a re-pin), and commit `bootstrap/tests/fixtures/scaffold_ast_baseline.json` plus `bootstrap/tests/fixtures/scaffold_ast_known_new.json` together, explicit paths, in this same chunk commit. |
 
-**Acceptance for this chunk**: every fixture in 4-6 passes; `next --to` remains
-provably read-only under the existing contract test; the four template paths
-each independently carry the literal string `cairn-event-v1` **worked into
-the templates' own instructional guidance** for how an agent appends an event
-block at a transition, review pass, or response (per 4-3/4-4) — not merely
-present as a bare token or inside a fenced example, which would satisfy a
-literal string match while leaving an agent no usable instruction. Because the
-marker's introducing commit is itself the activation cutoff, a literal-only
-match would arm that cutoff tree-wide with nothing for a reader to act on.
+**Acceptance for this chunk**: every fixture in 4-4 passes; `next --to` remains
+provably read-only under the existing contract test.
 
-**And, for the registration rows (4-8 through 4-11): this chunk's own commit is
+**And, for the registration rows (4-6 through 4-9): this chunk's own commit is
 green.** Specifically `python -m pytest bootstrap/tests/test_security_lint.py
-bootstrap/tests/test_notice_install.py` passes *at this commit*, not at a later
-one — both count pins moved with the file, and the newly-shipped `events.py`
-is a release-scan target rather than an unscanned shipped `.py`. The criterion
-is stated as "green at this commit" rather than "the pins were updated",
-because a pin updated to the wrong number, or updated in a later commit, both
-satisfy the second phrasing and neither satisfies the first. Derive the two
-expected numbers by running the tests, not by carrying forward the figures
-recorded in rows 4-9 and 4-10 — those are dated observations, and other work
-lands in this tree concurrently.
+bootstrap/tests/test_notice_install.py bootstrap/tests/test_ast_attest.py`
+passes *at this commit*, not at a later one — both count pins moved with the
+file, the newly-shipped `events.py` is a release-scan target rather than an
+unscanned shipped `.py`, and the AST baseline is re-anchored rather than merely
+diagnosed. Row 4-9's own record at this commit names both halves of that
+repair: the dry-run's refusal-free outcome (step 3) and the applied `verify`
+tail confirming the baselined-symbol count is unchanged (step 4) — recording
+only the dry-run, or only that the pins were updated, does not satisfy this
+criterion. The criterion is stated as "green at this commit" rather than "the
+pins were updated", because a pin updated to the wrong number, or updated in a
+later commit, both satisfy the second phrasing and neither satisfies the
+first. Derive the two count numbers, and the AST digest, by running the
+tests/tool at implementation time, not by carrying forward any figure recorded
+in this plan.
 
 ### Chunk 5 — The history-diff reader: identity, mutation detection, activation cutoff
 
@@ -464,11 +461,25 @@ repository (not a mocked history), including the archive-rename identity
 fixture, which is the concrete correctness case R5-E1 found broken in the
 prior `(artifact path, block position)` identity scheme.
 
-### Chunk 6 — Fail-closed reconciliation and wiring the retained fields
+### Chunk 6 — Activation markers, fail-closed reconciliation, wiring the retained fields
 
-Depends on Chunk 5. This chunk is where Part 3 actually replaces prose-parsing
-for the fields it claims, and where the `Scope delta: degraded` allowance gets
-its concrete, checkable shape.
+Depends on Chunk 5. This chunk also carries the two rows that add the literal
+`cairn-event-v1` marker to the four template paths (6-1/6-2), moved here
+rather than landing alongside the grammar in Chunk 4. The marker's introducing
+commit is itself the activation cutoff — from that commit on, every lifecycle
+act in the applicable tree is subject to reconciliation — so landing it before
+a reader exists to do that reconciliation would open a window with an
+obligation and nothing to discharge it. Closing that window without deferring
+the marker would instead mean requiring and auditing an event block for every
+post-cutoff act while Chunks 4-6 land, which is not this plan's to impose: it
+would bind whoever commits a lifecycle artifact in this tree during that
+window, including in a concurrent session with no reason to know a plan's own
+chunk boundaries changed what an event-worthy edit requires, enforced only by
+template guidance nobody engaged in that session has read. Landing the marker
+and the reader in the same commit is the option that depends on no one else's
+session. This chunk is where Part 3 actually replaces prose-parsing for the
+fields it claims, and where the `Scope delta: degraded` allowance gets its
+concrete, checkable shape.
 
 **The taxonomy (Round 6, reproduced as the binding contract):**
 
@@ -509,17 +520,35 @@ conflate the two into one silently-partial number.
 
 | # | File | Change |
 |---|------|--------|
-| 6-1 | `tools/_lifecycle_metrics/events.py` | Reconciliation: per-artifact, per-kind matching of acts to blocks; `INCOMPLETE` disposition (nonzero exit, explicit reason) on any unmatched act, unmatched block, or unresolvable history (including unavailable Git for a post-activation artifact). |
-| 6-2 | `tools/_lifecycle_metrics/extract.py` | Post-activation: `review_rounds`, reviewer identity/tier, `cross_agent_type_review`, `response_models` sourced from reconciled `review-pass`/`response` blocks, not from heading counts or `**Model**:` regex scraping. Pre-activation acts on the same artifact: the corresponding field is empty per the rule above. Transition dates / `days_*` / `hours_*` / `stage_timestamp_reliability` / `revised` sourced from reconciled `transition` blocks post-cutoff; unchanged (still header/git-timestamp-derived, still quiet-downgrade) pre-cutoff, since that is the existing degradation this chunk does not touch for the historical portion. |
-| 6-3 | Twins under `templates/modules/default-on/_lifecycle_metrics/` | Same commit as 6-1/6-2. |
-| 6-4 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Mandatory red fixtures (Round 6 / R4-E2): a status-only commit with no block → `INCOMPLETE`; a review-only commit with no block → `INCOMPLETE`. Mandatory taxonomy fixture (Round 6 / R4-E1): two review commits with no intervening status change produce **two** review-pass events and `review_rounds == 2`. Pre/post-activation split fixture: one artifact with a review pass before its activation cutoff and one after; the row shows an empty value attributable to the pre-cutoff pass and a populated, reconciled value for the post-cutoff one. |
-| 6-5 | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` | Update the "Robust across VCS settings" paragraph (~lines 74-82, as_of 2026-08-20): it currently documents unconditional quiet degradation to `Best-effort` reliability when git is unavailable ("a deliberately quiet failure mode"). This chunk makes that a refusal (`INCOMPLETE`) for a post-activation artifact instead of a quiet downgrade; the docstring must describe the new post-activation behavior, not continue documenting only the contract this chunk reverses. |
+| 6-1 | `dev/proposals/_template.md`, `dev/plans/_template.md` | Add the literal `cairn-event-v1` marker — worked into the templates' own guidance for how an agent appends an event block at a transition, review pass, or response, so the marker is simultaneously the activation cutoff and the instruction a reader needs to act on it. |
+| 6-2 | `templates/core/dev/proposals/_template.md`, `templates/core/dev/plans/_template.md` | The shipped equivalent. Independently must carry the literal marker; not required to be byte-identical to 6-1 (see Scope's "Documentation / doctrine surface" note on why these four paths are not a twin pair in the byte-identical sense). |
+| 6-3 | `tools/_lifecycle_metrics/events.py` | Reconciliation: per-artifact, per-kind matching of acts to blocks; `INCOMPLETE` disposition (nonzero exit, explicit reason) on any unmatched act, unmatched block, or unresolvable history (including unavailable Git for a post-activation artifact). |
+| 6-4 | `tools/_lifecycle_metrics/extract.py` | Post-activation: `review_rounds`, reviewer identity/tier, `cross_agent_type_review`, `response_models` sourced from reconciled `review-pass`/`response` blocks, not from heading counts or `**Model**:` regex scraping. Pre-activation acts on the same artifact: the corresponding field is empty per the rule above. Transition dates / `days_*` / `hours_*` / `stage_timestamp_reliability` / `revised` sourced from reconciled `transition` blocks post-cutoff; unchanged (still header/git-timestamp-derived, still quiet-downgrade) pre-cutoff, since that is the existing degradation this chunk does not touch for the historical portion. |
+| 6-5 | Twins under `templates/modules/default-on/_lifecycle_metrics/` | Same commit as 6-3/6-4. |
+| 6-6 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Mandatory red fixtures (Round 6 / R4-E2): a status-only commit with no block → `INCOMPLETE`; a review-only commit with no block → `INCOMPLETE`. Mandatory taxonomy fixture (Round 6 / R4-E1): two review commits with no intervening status change produce **two** review-pass events and `review_rounds == 2`. Pre/post-activation split fixture: one artifact with a review pass before its activation cutoff and one after; the row shows an empty value attributable to the pre-cutoff pass and a populated, reconciled value for the post-cutoff one. |
+| 6-7 | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` | Update the "Robust across VCS settings" paragraph (~lines 74-82, as_of 2026-08-20): it currently documents unconditional quiet degradation to `Best-effort` reliability when git is unavailable ("a deliberately quiet failure mode"). This chunk makes that a refusal (`INCOMPLETE`) for a post-activation artifact instead of a quiet downgrade; the docstring must describe the new post-activation behavior, not continue documenting only the contract this chunk reverses. |
 
-**Acceptance for this chunk**: every fixture in 6-4 passes; a report run against
-a fixture tree containing a deliberately unreconciled act exits nonzero and
-names which artifact/commit/kind failed to reconcile, never a shorter clean
-series; the `__init__.py` docstring (6-5) no longer documents unconditional
-quiet git-absent degradation as the only behavior.
+**Acceptance for this chunk**: the four template paths (6-1/6-2) each
+independently carry the literal string `cairn-event-v1` **worked into the
+templates' own instructional guidance** for how an agent appends an event
+block at a transition, review pass, or response — not merely present as a bare
+token or inside a fenced example, which would satisfy a literal string match
+while leaving an agent no usable instruction; every fixture in 6-6 passes; a
+report run against a fixture tree containing a deliberately unreconciled act
+exits nonzero and names which artifact/commit/kind failed to reconcile, never
+a shorter clean series; the `__init__.py` docstring (6-7) no longer documents
+unconditional quiet git-absent degradation as the only behavior. Because this
+chunk's own commit is what first introduces the marker, it lands in the same
+commit as the reader and reconciliation logic that can act on it — no chunk
+boundary leaves the marker present with no reader behind it.
+
+**And, the property this chunk exists to make checkable**: run the real
+extractor against Cairn's own `dev/proposals/` and `dev/plans/` corpus at this
+commit; it exits successfully (never `INCOMPLETE`) and accounts for every act
+in that corpus recorded after this commit's own activation cutoff — not merely
+that the emitted column set can be diffed. Re-run and recorded again at Chunk
+8's evidence step (8-6), since further real acts may land in the corpus
+between this commit and that one.
 
 ### Chunk 7 — Cross-cutting fixtures and the pre-existing-test audit
 
@@ -541,12 +570,12 @@ fixtures; 7-4 is a confirming (not new) pass against the live corpus.
 | # | File | Change |
 |---|------|--------|
 | 8-1 | `CHANGELOG.md` | Under `## Unreleased`, open a new `### Changed` subsection — the section currently has only `### Changed — Git-native security foundations` and `### Added` (as_of 2026-08-20; there is no generic `### Changed` to file this under) — and add one line naming the v1→v2 lifecycle-metrics schema break (eight columns retired) and the new event-emission convention for adopters who already parse the CSV/manifest. |
-| 8-6 | *(evidence, not a file change)* | Re-run the extractor against Cairn's own corpus before and after this plan's chunks, diffing the emitted column set — the "Owed at implementation" item the proposal names explicitly, so the diff is recorded rather than assumed. Recorded in this plan's `## Implementation verification` section, not carried into the plan as a number now. |
+| 8-6 | *(evidence, not a file change)* | Re-run the extractor against Cairn's own corpus before and after this plan's chunks, diffing the emitted column set — the "Owed at implementation" item the proposal names explicitly, so the diff is recorded rather than assumed. The after-run must also satisfy Chunk 6's own acceptance criterion: it exits successfully and accounts for every act recorded in the corpus after the activation cutoff, not merely that the column set differs. Recorded in this plan's `## Implementation verification` section, not carried into the plan as a number now. |
 
 **The registration travels with the file, and that is not a style choice.**
 The four rows that register `events.py` — the `InstallSpec`, both count pins,
 and the AST symbol update — were briefly placed here, in Chunk 8. They now sit
-in **Chunk 4 (rows 4-8 through 4-11)**, the commit that first puts
+in **Chunk 4 (rows 4-6 through 4-9)**, the commit that first puts
 `templates/modules/default-on/_lifecycle_metrics/events.py` on disk.
 
 The reason is in the tripwire's own docstring.
@@ -579,7 +608,7 @@ runbook itself forbids). This plan does not perform the re-anchor; it names the
 need and stops there.
 
 **A second re-anchor is already owed, for an unrelated reason — and this
-plan's own Chunk 8 owes a third, narrower one.** `dev/PLANNING.md`'s Queued
+plan's own Chunk 4 owes a third, narrower one.** `dev/PLANNING.md`'s Queued
 section (as_of 2026-08-20) carries a `[VER]` row: the AST attestation baseline
 (`bootstrap/tests/test_ast_attest.py`, a *different* trust root from the
 differential-oracle gate anchor, governing the `bootstrap/_scaffold/` engine
@@ -588,13 +617,13 @@ via `bootstrap/AST_BASELINE_RUNBOOK.md`, and that repair is explicitly **not
 self-serviceable** by an implementing agent.
 
 **Separately, and correcting an earlier, now-false claim in this plan: this
-plan does touch `bootstrap/_scaffold/`.** Chunk 8's registration of
-`events.py` in `_MODULE_MAPPINGS` (`bootstrap/_scaffold/config.py`, row 4-8)
+plan does touch `bootstrap/_scaffold/`.** Chunk 4's registration of
+`events.py` in `_MODULE_MAPPINGS` (`bootstrap/_scaffold/config.py`, row 4-6)
 changes a symbol the AST attestation baseline digests. This is **not** a
 second Maintainer fence, though: `_MODULE_MAPPINGS` is one of the four
 symbols in `_ast_attest._UPDATE_ALLOWLIST`, so the repair for this specific,
 single-symbol change is self-serviceable by the implementing agent via the
-`update-symbol` CLI path (Chunk 4's own row 4-11 for it) — distinct from, and
+`update-symbol` CLI path (Chunk 4's own row 4-9 for it) — distinct from, and
 not to be confused with, the already-owed, non-self-serviceable
 docstring-drift re-anchor above, which remains a Maintainer-run direct
 correction this plan does not perform.
@@ -603,16 +632,16 @@ correction this plan does not perform.
 already-owed AST-baseline re-anchor into one Maintainer ceremony** is the
 shape that avoids running the Maintainer-only ceremony twice in quick
 succession — presented here as an option for the Maintainer to choose, not
-decided by this plan. (Row 4-11's self-service `update-symbol` step is
+decided by this plan. (Row 4-9's self-service `update-symbol` step is
 unrelated to this batching option: it needs no Maintainer ceremony at all.)
 
 ## Acceptance criteria
 
 * **Tests that must pass**: every fixture named in Chunks 1, 3, 4, 5, 6, and 7's
-  file tables, by node once implemented; Chunk 8's updated pinned counts
+  file tables, by node once implemented; Chunk 4's updated pinned counts
   (`test_templates_py_count_is_pinned`, `test_manifest_has_the_expected_py_source_count`)
   and its AST-baseline `update-symbol` step; `bootstrap/tests/test_lifecycle_contract.py`
-  unchanged in outcome (confirming pass, not a new fixture) except where 4-7 and
+  unchanged in outcome (confirming pass, not a new fixture) except where 4-5 and
   7-4 name a specific extension.
 * **Doc updates that must land**: `templates/modules/default-on/lifecycle-metrics.md`
   and its self-hosted copy `dev/modules/lifecycle-metrics.md`; `dev/agent_collaboration.md`
@@ -624,7 +653,7 @@ unrelated to this batching option: it needs no Maintainer ceremony at all.)
   `python tools/lifecycle_metrics.py --manifest` run against a scratch tree,
   confirming the v2 identity and the absence of the eight retired columns;
   `python tools/lifecycle_planner.py next <fixture> --to <state>` confirming the
-  read-only contract under the extended preview text (4-7).
+  read-only contract under the extended preview text (4-5).
 * Inbound path-link updates: none expected — `dev/PLANNING.md` and
   `dev/NEXT_SESSION.md` refer to plans by filename stem, not path link, so the
   archive-move needs no update there.
@@ -652,7 +681,7 @@ for the first time against the real architecture:
 3. **Can it pass when it should fail?** This is the chunk-6 reconciliation
    contract's entire job: any malformed block, mutated block, unmatched act,
    or unresolvable history refuses rather than passing. The mandatory red
-   fixtures in 4-6 and 6-4 are what pin this, not prose.
+   fixtures in 4-4 and 6-6 are what pin this, not prose.
 4. **Can it fail when it should pass?** Yes, by design and named as a known
    trade-off: a legitimate transition performed through an unusual git workflow
    (a squash, a history rewrite, a shallow clone) that the history-diff
@@ -661,7 +690,7 @@ for the first time against the real architecture:
    exists to enforce.
 5. **Widens a trust boundary?** No new trust boundary: no shared ledger, no new
    writer process, no file outside the already-tracked, already-reviewed
-   artifact tree. `next --to`'s read-only guarantee is unchanged (4-7
+   artifact tree. `next --to`'s read-only guarantee is unchanged (4-5
    regression-tests this explicitly).
 
 **Invariants and their enforcing tests** (test names are illustrative of the
@@ -672,7 +701,7 @@ project's own naming convention):
 | Invariant | Enforced by |
 |---|---|
 | The eight retired columns never appear in emitted output | Chunk 1's extension to `test_reference_scripts.py` + `test_lifecycle_metrics_config.py` |
-| `_lifecycle_metrics/` and `lifecycle_metrics.py` twins stay byte-identical, `events.py` included | the existing, already-passing `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source` — but its subject list (`_self_hosted_twins()`) is **presence-derived**: it only picks up a pair once a matching `install_manifest()` destination row exists. The `events.py` pair is invisible to this test from Chunk 4 (where the file is first created) through Chunk 7; it starts being checked only once Chunk 8's manifest registration (8-2) lands. No new test needed, but the ordering is load-bearing, not incidental — named here rather than assumed. |
+| `_lifecycle_metrics/` and `lifecycle_metrics.py` twins stay byte-identical, `events.py` included | the existing, already-passing `bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_stays_byte_identical_to_its_source` — its subject list (`_self_hosted_twins()`) is **presence-derived**: it only picks up a pair once a matching `install_manifest()` destination row exists. Because Chunk 4's own commit lands the file (4-1/4-2) and its manifest registration (4-6) together, the `events.py` pair is visible to this test from that same commit onward — no later chunk is where it starts being checked. No new test needed, but the same-commit ordering is what makes that true, named here rather than assumed. |
 | v1 snapshot bytes are never rewritten by the v2 code path | Chunk 3's fixture |
 | Unknown key / kind / version / missing-required / out-of-bounds each refuse | Chunk 4's grammar fixtures |
 | An edited, reordered, or deleted existing block refuses (mutation) | Chunk 5's history fixture |
@@ -803,3 +832,55 @@ Git fallback. Targeted probes: the four registration/count/twin nodes passed
 (4 passed); the row-4-11 command as written refused with missing `--baseline`.
 I did not reread superseded proposal rounds or run the full suite, and no
 implementation exists to execute the proposed event reader.
+
+## Response to plan review -- Claude Sonnet 5 (author) -- 2026-08-20
+
+**Model**: Claude Sonnet 5
+
+**All three findings accepted; all three folded into the plan's own operative
+cells, not answered here.** `update-symbol`'s real signature (`--baseline`,
+`--expect-old`, optional `--known-new`/`--dry-run` — confirmed by running
+`update-symbol --help`) replaces the shorthand at Chunk 4 row 4-9 with the
+runbook's four ordered steps. The activation marker (formerly rows 4-3/4-4)
+moved into Chunk 6 as new rows 6-1/6-2, landing in the same commit as the
+reader and reconciliation logic that can act on it, with the reason written
+into Chunk 6's own intro rather than only argued here. The stale-reference
+sweep covered every `8-2`/`8-3`/`8-4`/`8-5`/`Chunk 8` hit in the plan's
+operative text (the reviewer's own findings section is append-only and excluded):
+of fourteen matches, eight were genuine references to Chunk 8's
+CHANGELOG/evidence rows and needed no change; six were stale and are fixed.
+The reviewer's own EPR-03 text names three — old row 4-9's "once 8-2 lands",
+old row 4-11's own "after 8-2 lands", and the twin invariant in
+Author-accounting (the `(8-2)` in the twins-byte-identical row). Reading every
+hit in context rather than pattern-matching those three turned up three more:
+Sequence revision's "this plan's own Chunk 8 owes a third, narrower one" (should
+read Chunk 4), the same section's "Chunk 8's registration of `events.py` ...
+row 4-8" (should read Chunk 4's registration, row 4-6), and `## Acceptance
+criteria`'s "Chunk 8's updated pinned counts" (should read Chunk 4's). None of
+the three additional ones matches a narrower grep for exactly `row 8-[2345]`
+or `8-2 through 8-5`, which is the pattern the prior pass used and the reason
+it under-swept.
+
+| Finding | Disposition | Where addressed |
+|---|---|---|
+| EPR-01 (BLOCKING) — AST-attestation command as written cannot run | ACCEPTED | Chunk 4 row 4-9 (full ordered runbook invocation, replacing the invalid shorthand); Chunk 4's "And, for the registration rows" acceptance paragraph (now names the dry-run and apply/verify outcomes as separate, both-required checks) |
+| EPR-02 (BLOCKING) — activation cutoff has no bridge across Chunks 4-6 | ACCEPTED | Chunk 4 heading/table (marker rows removed; former rows 4-5..4-11 renumbered to 4-3..4-9); Chunk 6 heading, intro paragraph (the reason for deferring the marker), new rows 6-1/6-2 (marker edits) and renumbered 6-3..6-7 (reconciliation rows, formerly 6-1..6-5); Chunk 6's acceptance section (marker criterion + the "real corpus extractor exits successfully and accounts for every post-cutoff act" criterion); Chunk 8 row 8-6 (cross-references that same criterion); Scope's "Documentation / doctrine surface" note (activation-marker paths now cite Chunk 6); Sequence block and Sequence-revision section |
+| EPR-03 (NON-BLOCKING) — stale row-number/chunk references | ACCEPTED | `## Proposed paths` (events.py's chunk attribution corrected to 4/5/6); former row 4-9's "once 8-2 lands" and row 4-11's own "after 8-2 lands" (both superseded by the EPR-01 rewrite and the renumbering); Sequence-revision section ("Chunk 8 owes a third" → "Chunk 4"; "Chunk 8's registration ... row 4-8" → "Chunk 4's registration ... row 4-6"; "Chunk 4's own row 4-11" → "row 4-9"; "Row 4-11's self-service" → "Row 4-9's"); `## Acceptance criteria` ("Chunk 8's updated pinned counts" → "Chunk 4's"; "4-7 and 7-4" → "4-5 and 7-4"; "(4-7)" → "(4-5)"); Author-accounting invariants table ("4-6 and 6-4" → "4-4 and 6-6"; "(4-7" → "(4-5"; the `(8-2)` reference and its now-inaccurate "invisible ... through Chunk 7" framing rewritten to describe same-commit registration) |
+
+**Everything renumbered downstream of the two moves is verified consistent** —
+a full sweep for `4-[0-9]` and `6-[0-9]` across the operative section (the
+reviewed section excluded) shows row numbers running 4-1 through 4-9 and 6-1
+through 6-7 with no gaps, no duplicates, and no leftover reference above those
+ceilings.
+
+**One thing worth flagging back, not a defect in the brief:** the runbook's
+own Step 4 apply/verify recommends `python -m pytest bootstrap/tests -q` (the
+full suite) as part of the ceremony. Chunk 4 row 4-9 and its acceptance
+paragraph instead scope the AST-attestation check to
+`bootstrap/tests/test_ast_attest.py` specifically, consistent with this plan's
+own Boundary A (targeted fixtures + standing gates per touched surface, not a
+full run at every chunk). I read this as the right call — Boundary B already
+owns the full-suite run for this plan, and re-running it at every chunk would
+duplicate that — but naming the divergence from the runbook's own literal step
+4 explicitly, since it is exactly the kind of gap this review round exists to
+catch.
