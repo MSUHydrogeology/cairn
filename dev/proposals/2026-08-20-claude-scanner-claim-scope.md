@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: **high-assurance** — D1 changes what a security control
 **instructs an operator to do to a reviewed security baseline**, and D2 adds a
 derived annotation to a security report. Neither is obviously a trust-boundary
@@ -2436,3 +2436,19 @@ this has become the second-leg option and must be refused.
   3.** Superseded — true for presence, not for the emitted class, which the
   projection omitted. Reason: Q2.
 * **`Scope delta`: preserved.** No accepted outcome is withdrawn.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-20
+
+**ACCEPTED as revised (Revision 4).** Authorization, quoted verbatim and visually isolated:
+
+> "Okay, all three plans seem acceptable to me as revised. Please scribe my decision on all three as Accept as Revised."
+> "Sorry, proposals"
+
+**Summary of accepted terms (Revision 4)**:
+- **D1/D1b (Scoped Stale Baseline Imperative)**: Scopes the stale-baseline message on exit 3 to name the audited roots set; clarifies unreferenced entries may be live in other consumers; frames exit 3 as a disagreement signal rather than an authoritative verdict to prune; syncs copy to `content-security.md:122-123`.
+- **D2/D2b (Reachability Annotation & Coverage Ceiling)**: Annotates `pip-audit` findings with reachability (`in-closure`, `out-of-closure`, `unknown`) based on standard-library `importlib.metadata` dependency walk without altering scanner exit codes or finding sets; adds coverage-ceiling disclosure to `python-security.md`.
+- **Marker Tokenizer & Test Oracle**: Implements a stdlib quote- and whitespace-aware tokenizer for `extra == "..."` markers (failing closed to `unknown` on other expressions); asserts exact multiset equality over `(normalized_distribution, count, annotation)` triples in test fixtures.
+- **Review Requirement & Gating**: Plan review is `required(Internal)` (no Security Review trigger); issue closing is MAINTAINER-GATED upon code review, public declination comments for Issues #5 and #6, and recording the conda measurement.
+
+**Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
+
