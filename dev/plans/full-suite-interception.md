@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
@@ -72,38 +72,80 @@ Scope. Authorized by the Maintainer, quoted verbatim and visually isolated:
 > "Please do A4/A5 in this one, allow the scope widening"
 
 What the allowance covers: rows A4 and A5 as written — correcting the docstring
-and comment that A2 falsifies, and adding the additive-copy falsifier for A2's
-own change. It does not open those two files to unrelated edits, and it widens
-nothing else. Both files are gate-frozen, which is why the re-anchor accounting
-below counts four `FROZEN-MODIFIED` entries rather than two.
+and comment that A2 falsifies, adding the additive-copy falsifier for A2's own
+change, and the third edit the row mapping places in the same file as A4
+(`test_a_release_refused_outcome_is_not_masked_by_the_guard`, extending the
+existing `_quality_gate_tree` fixture family — assigned to this file before
+the allowance commit `e0ab524`, so "do A4/A5" plausibly covered it, and it is
+named here explicitly rather than left for the row mapping alone to carry).
+It does not open those two files to unrelated edits beyond these three, and it
+widens nothing else. Both files are gate-frozen, which is why the re-anchor
+accounting below counts four `FROZEN-MODIFIED` entries rather than two.
 
-**A second expansion, for the cross-plan seam.** Rows A6 and A7 adjust the
-sibling's own collector and reader so a session *this* guard refuses cannot be
-mistaken for a full run that cost nothing. A6 edits `bootstrap/tests/conftest.py`
-— already in this plan's file set, but the code it touches belongs to the
-sibling's accepted contract, so this is a semantic widening rather than a
-file-set one. A7 adds `tools/suite_cost.py`, which no accepted artifact here
-names at all.
+**A second expansion, for the cross-plan seam.** Row A7 adjusts the sibling's
+reader so a session *this* guard refuses cannot be mistaken for a full run
+that cost nothing; row A6 pins, rather than changes, what the sibling's
+collector already does with such a session. A7 adds `tools/suite_cost.py`,
+which no accepted artifact here names at all.
 
-**Contract expansion**: touched-file set and sibling contract — `tools/suite_cost.py`
-joins the touched set, and the sibling's `scope` classifier gains a case its own
-proposal did not contemplate. Authorized by the Maintainer, quoted verbatim and
-visually isolated:
+**Contract expansion**: touched-file set — `tools/suite_cost.py` joins the
+touched set. Authorized by the Maintainer, quoted verbatim and visually
+isolated:
 
 > "I'll take your recommendation on Decision 3. b + c"
 
 The recommendation that names — recorded here because a bare "b + c" will mean
 nothing to a later reader: **(b)** the reader excludes refused sessions from
-cost aggregation and reports the refusal count separately; **(c)** the `scope`
-classifier resolves `unknown` rather than `full` for such a session. Two
-independent defences, deliberately, because (b) alone leaves a row labelled
-`full` that is not, waiting for the next reader to misread it. Neither requires
-a schema change: `exitstatus` is already a pinned field and a refusal is exit 4.
+cost aggregation and reports the refusal count separately; **(c)**, as
+originally proposed, would have made the `scope` classifier resolve `unknown`
+rather than `full` for such a session.
 
-**Why this plan owns both edits rather than the sibling.** The sibling lands
-first, when no session can yet be refused this way — it could only write handling
+**(c)'s premise did not hold, and this supersedes it.** Internal plan review
+(2026-08-20) showed that the sibling's accepted contract
+(`2026-08-19-claude-suite-run-diagnostics`, Revision 5 > "Scope — both
+channels, combined", postcondition 2) already requires `collected > 0` **and**
+`executed > 0` **and** `not_run == 0` for `scope == "full"`. A session this
+guard refuses has `executed == 0` by construction — nothing ran before the
+refusal fires at collection-finish — so it already resolves `unknown` under
+the sibling's own accepted contract, with no classifier change needed. (c) as
+authorized would have added a special case for a condition the general rule
+already covers, and its falsifier could not have failed either way. Put back
+to the Maintainer, whose disposition is quoted verbatim:
+
+> "Sure, I like the regression guard idea"
+
+**A6 is therefore a regression guard, not a classifier change.** It pins the
+sibling's existing behaviour — which this plan depends on and which nothing on
+this side previously pinned — rather than editing it: if a later change to the
+sibling relaxes `executed > 0` or `not_run == 0`, a guard-refused session would
+start being counted as a full run, and this test is what catches that. Its
+falsifier is directional and able to fail on both halves: a guard-refused
+session resolves `unknown`, **and** the same tree under `CAIRN_FULL_SUITE=1`
+resolves `full` — a test asserting only the first half would pass against a
+classifier that returns `unknown` unconditionally, which is not the property
+this guards.
+
+**(b) still stands, on a narrower falsifiable core.** Excluding refused
+sessions from cost aggregation and reporting the refusal count separately is
+still worth doing: a refused session carries a real `wall_s` and an empty
+`by_file`, so any figure summed at the session level rather than derived
+purely from `by_file` is pulled toward zero by a run that never ran, and the
+refusal count is genuinely new information the reader does not otherwise
+surface — `scope == "unknown"` alone does not distinguish a refusal from any
+other non-full run (a `-k` run, say) unless the reader keys on
+`exitstatus == 4`. The cost profile, concentration table and growth curve are
+derived from `by_file`, which is empty for a refused row, so their
+byte-identity with and without a refused row present may already hold
+structurally, without any exclusion code; the part of A7 that is actually new
+and testable is the refusal count itself, plus exclusion of any session-level
+aggregate that is not purely `by_file`-derived. Chunk A's row A7 and the
+corresponding row-mapping falsifier are scoped to that. Neither requires a
+schema change: `exitstatus` is already a pinned field and a refusal is exit 4.
+
+**Why this plan owns A7 rather than the sibling.** The sibling lands first,
+when no session can yet be refused this way — it could only write handling
 for a condition it cannot produce, and falsify it against a mock. This plan
-creates the condition and can test both edits against the real guard.
+creates the condition and can test the edit against the real guard.
 
 **Out, and not revivable by this plan** (Revision 5, "Withdrawn and not
 deferred"): everything under `.claude/` (settings object, hook script,
@@ -147,35 +189,47 @@ Chunk A:
   reports and durations; nothing in their accepted design touches collection
   or the failure counter, but this plan re-verifies rather than asserts);
 * **must pin what the sibling's ledger records for a session this guard
-  refuses — the one cross-plan interaction neither plan saw, and it corrupts
-  the sibling's headline number.** A refusal does **not** skip
-  `pytest_sessionfinish`. Verified against the installed pytest (9.0.3,
-  `_pytest/main.py`): `initstate = 2` is assigned *before*
-  `doit(config, session)` runs collection, the `except UsageError` clause
-  re-raises after setting the exit status, and the `finally` block calls
-  `pytest_sessionfinish` whenever `initstate >= 2`. So a refused session still
-  reaches the ledger append that the diagnostics plan places last in that hook,
-  and writes a row with `collected` ≈ the full set, `executed` = 0, and
-  `scope` = `full` — because the canonical Boundary B argv this guard refuses
-  is exactly the argv the sibling's classifier resolves to `full`. The reader
-  reports `full`-run frequency and derives cost trend from those rows, so after
-  both plans land, every refused broad run silently deflates the very
-  measurement the ledger exists to produce, and a bare canonical invocation is
-  *guaranteed* to produce one rather than merely able to. **Resolved by rows A6
-  and A7 under a Maintainer allowance** (recorded in Scope): the row is written,
-  not suppressed, so refusals stay countable — how often the guard fires is the
-  evidence this change exists to produce; the classifier scopes it `unknown`;
-  and the reader excludes it from every cost figure while reporting the refusal
-  count on its own. Also `bootstrap/tests/test_suite_ledger.py`
-  added to the Boundary A mapping, since `conftest.py` is the ledger's surface
-  by then and Boundary A requires the standing gates for every touched surface.
-  Note that the sibling's own node-accounting falsifier enumerates the abort
-  shapes it reconciles — `-x`, `--maxfail=2`, `pytest.exit()`,
-  `KeyboardInterrupt`, setup error, teardown error, module-level skip — and a
-  collection-time `UsageError` from a conftest hook is **absent** from that
-  list, while this plan makes it the most common non-clean shape in the tree.
-  Its stated invariant `0 <= executed <= collected` is satisfied by
-  `(0, ~4,443)`, so it cannot catch this.
+  refuses.** A refusal does **not** skip `pytest_sessionfinish`. Verified
+  against the installed pytest (9.0.3, `_pytest/main.py`): `initstate = 2` is
+  assigned *before* `doit(config, session)` runs collection, the `except
+  UsageError` clause re-raises after setting the exit status, and the
+  `finally` block calls `pytest_sessionfinish` whenever `initstate >= 2`. So a
+  refused session still reaches the ledger append that the diagnostics plan
+  places last in that hook, and writes a row with `collected` ≈ the full set
+  and `executed` = 0. **The sibling's own accepted postconditions already
+  resolve this row `unknown`, not `full`** — `full` requires both
+  `collected > 0` **and** `executed > 0` (and `not_run == 0`), and a refused
+  session's `executed == 0` by construction fails that before any narrowing
+  test is even reached (verified against
+  `2026-08-19-claude-suite-run-diagnostics`, Revision 5 > "Scope — both
+  channels, combined", postcondition 2; an earlier draft of this bullet read
+  the sibling's `full` conditions as covering only narrowing options, early
+  stop and collection errors, and missed this postcondition — that draft was
+  wrong, not the sibling's contract). The real cross-plan hazard is narrower
+  than "mislabelled as full" and is still real: (1) the reader's cost
+  concentration and trend are derived from `by_file`, which is **not** scoped
+  to `full`, so a refused row — real `wall_s`, empty `by_file` — still lands
+  in the trend as a zero-cost session; and (2) `scope = unknown` alone does
+  not distinguish a guard refusal from any other `unknown` run (a `-k` run,
+  say), so the refusal count — the number this guard exists to produce — is
+  otherwise unrecoverable without keying on `exitstatus == 4`. **Resolved by
+  rows A6 and A7 under a Maintainer allowance** (recorded in Scope, corrected
+  there too): A6 pins the sibling's existing `unknown` resolution as a
+  regression guard rather than changing the classifier; A7 gives the reader
+  the `exitstatus == 4` key so a refused row is excluded from the figures it
+  would otherwise pull toward zero and the refusal count is surfaced on its
+  own. Also `bootstrap/tests/test_suite_ledger.py` added to the Boundary A
+  mapping, since `conftest.py` is the ledger's surface by then and Boundary A
+  requires the standing gates for every touched surface. Note that the
+  sibling's own node-accounting falsifier enumerates the abort shapes it
+  reconciles — `-x`, `--maxfail=2`, `pytest.exit()`, `KeyboardInterrupt`,
+  setup error, teardown error, module-level skip — and a collection-time
+  `UsageError` from a conftest hook is **absent** from that list, while this
+  plan makes it the most common non-clean shape in the tree. Its stated
+  invariant `0 <= executed <= collected` is satisfied by `(0, ~4,443)`, so
+  that falsifier does not exercise this shape — but the classifier's own
+  `executed > 0` postcondition handles it correctly regardless, as A6's
+  regression guard pins.
 
 This plan does **no** work inside the diagnostics proposal's own scope
 (the cost ledger, its schema, or its standalone reader tool). If the
@@ -242,34 +296,52 @@ freeze-driven.)
 | A3 | `bootstrap/tests/test_broad_run_guard.py` *(new)* | The guard's own behavioural tests — see the row mapping below. |
 | A4 | `bootstrap/tests/test_security_check.py` | **Update, not add.** `test_the_release_token_survives_the_real_grandchild_launcher` (currently ~line 806) and its docstring, and the comment inside `test_the_release_token_reaches_both_direct_children` (currently ~line 459-460), assert today that "the middle link launches pytest with **no** `env=` of its own… the token reaches the grandchild by *inheritance*." A2 makes that false: after this chunk, `_run_order_independence` always passes an explicit `env=`. The docstring/comment must be corrected to state the new mechanism (an explicit additive copy, not bare inheritance) — the underlying assertions (rc matches `expect_refusal`; the release token reaches the real grandchild) still hold and stay as regression coverage, but the prose explaining *why* they hold must not keep asserting a fact this chunk deletes. |
 | A5 | `bootstrap/tests/test_quality_gate_order_independence.py` | Add a test asserting the spawn in `_run_order_independence` passes an explicit `env=` that is a **superset of the parent process's environment plus `CAIRN_FULL_SUITE=1`**, not a fresh mapping — the row-10 falsifier below, following the existing `_spy_run`-style capture pattern already used in `test_security_check.py` for the same shape of assertion. |
-| A6 | `bootstrap/tests/conftest.py` (the sibling's collector, not the guard) | **Make the `scope` classifier fail-conservative about a refused session.** A session this guard refuses has collected the full set and executed nothing, and the sibling's classifier as written resolves it `full` — because its `full` conditions test for narrowing options, early stop (`-x` / `--maxfail` / interrupted) and collection errors, none of which a `UsageError` at collection-finish trips. Resolve `unknown` instead. This is the classifier's own stated principle applied to a session shape the sibling's proposal never contemplated: *"Anything else — including any unrecognized option that could narrow selection — is `unknown`, never guessed."* |
-| A7 | `tools/suite_cost.py` (the sibling's reader) | **Exclude refused sessions from cost aggregation, and report them as their own number.** A refused session is identifiable from the pinned schema with no schema change: `exitstatus` is 4 and no test executed. Such rows must not feed the cost profile, the concentration table, or the growth curve — each would be pulled toward zero by a run that never ran. Report the refusal count separately: how often the guard fires is the evidence this change exists to produce, and `dev/PLANNING.md` records that measuring whether the delegation rule works depends on exactly this ledger. |
+| A6 | `bootstrap/tests/test_broad_run_guard.py` (regression guard; no change to the sibling's classifier) | **Pin, don't change, the sibling's existing classification of a refused session.** The sibling's accepted contract already requires `executed > 0` and `not_run == 0` for `scope == "full"`; a session this guard refuses has `executed == 0` by construction, so it already resolves `unknown`. This row guards that property against a later relaxation of the sibling's postconditions, rather than adding classifier code — see Scope > "A second expansion" for the corrected derivation and the Maintainer's disposition ("Sure, I like the regression guard idea"). Falsifier: directional on both halves — a refused session resolves `unknown`, and the same tree under `CAIRN_FULL_SUITE=1` resolves `full` (mapped as `test_a_refused_session_is_scoped_unknown` in the row mapping below). |
+| A7 | `tools/suite_cost.py` (the sibling's reader) | **Exclude refused sessions from any aggregate they would pull toward zero, and report the refusal count separately.** A refused session is identifiable from the pinned schema with no schema change: `exitstatus` is 4 and `by_file` is empty. The cost profile, concentration table and growth curve are derived from `by_file`, so their byte-identity with and without a refused row present may already hold structurally; what this row actually adds is (1) the refusal count itself — otherwise unrecoverable, since `scope == "unknown"` does not by itself distinguish a refusal from any other non-full run — and (2) exclusion of any session-level aggregate that is not purely `by_file`-derived. Reporting the refusal count matters because `dev/PLANNING.md` records that measuring whether the delegation rule works depends on exactly this ledger. |
+
+**Every row below constructs its own child pytest environment explicitly.**
+This plan's own mandated Boundary B invocation runs `CAIRN_FULL_SUITE=1
+python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`, and a release
+ceremony runs with `CAIRN_RELEASE_GATE_ACTIVE` set. A child spawned by naive
+inheritance of `os.environ` would carry one of those tokens regardless of
+which row is exercising it, so every refusal-expecting row would fail in
+exactly the run this plan makes mandatory, and every allow-expecting row would
+pass without exercising anything. `test_broad_run_guard.py` therefore builds
+each child's environment the way `test_security_check.py`'s `_child_pytest`
+already does (`env = dict(os.environ)`, then pop the tokens the row is not
+deliberately testing — the same idiom at `test_security_check.py:669-678`,
+the file row A4 extends), not by passing the parent's environment unmodified:
+both `CAIRN_FULL_SUITE` and `CAIRN_RELEASE_GATE_ACTIVE` are popped by
+default, and set only on the row(s) actually about them (rows 9 and 10
+below deliberately set one each). Row 14 is the guard against this
+construction drifting back to bare inheritance.
 
 **Row mapping — Revision 5's Evidence table to prospective test names** (all
 in `bootstrap/tests/test_broad_run_guard.py` unless noted):
 
-| Revision 5 invariant | prospective test | file |
-|---|---|---|
-| ≤ 40 files, however collected, is never refused | `test_a_run_at_or_under_the_file_threshold_is_never_refused` (parametrized: single file, node id, `-k`, `-m`, `--ignore` down to ≤ 40, `PYTEST_ADDOPTS='-k …'`, the six-file mapping) | A3 |
-| > 40 files, whatever the selector, is refused | `test_a_run_over_the_file_threshold_is_refused_regardless_of_selector` (parametrized: bare run, `cd <repo> && …`, env-prefixed, absolute interpreter, the canonical Boundary B argv, `--ignore` of one file at ~114 files / ~4,443 items) | A3 |
-| the boundary itself | `test_the_file_threshold_boundary_is_exact` (41 refuses, 40 runs) | A3 |
-| a pre-existing collection failure is never masked | `test_a_pre_existing_collection_failure_keeps_its_own_exit_code` (41 valid files + 1 syntax-error file: exit 2 and the collection diagnostic survive, refusal message absent; a clean 41-file control still exits 4) | A3 |
-| the guard sees the final item list | `test_the_guard_refusal_follows_a_late_deselection` — **directional, and deliberately not the wording Revision 5's Evidence row carries.** That row says "assert the guard's count equals `len(session.items)`", which compares a **file** count to an **item** count (on a real collection, ~115 against ~4,443). Read literally it is a type mismatch; read charitably it is satisfied whenever a competing modifier removes nothing, which is the default for a modifier registered only to prove ordering — so it cannot distinguish "the guard read the post-filter list" from "the guard read a list". Instead: register a late `pytest_collection_modifyitems` that **removes** items so the distinct-file span crosses the threshold, and assert the refusal **flips** accordingly (and the converse: a late modifier that pushes the span above the threshold causes a refusal that would not otherwise fire). Revision 5's S2 names this one of two load-bearing falsifiers precisely because it must separate those two cases. | A3 |
-| the override allows | `test_the_override_token_allows_a_full_run` (`CAIRN_FULL_SUITE=1`: exit 0, full execution) | A3 |
-| release mode is exempt | `test_release_mode_is_exempt_from_the_guard` (the module's existing predicate at its one recognized value; the suite runs; `=0` does **not** exempt) | A3 |
-| `--collect-only` is exempt | `test_collect_only_is_exempt_from_the_guard` (`_gate_manifest.py`'s own collector still builds) | A3 |
-| the release token survives the gate | `test_a_release_refused_outcome_is_not_masked_by_the_guard` (real `security_check → quality_gate → pytest` path, a release-refused fixture: guard does not refuse it, release phase stays non-zero) | A4 (extends the existing `_quality_gate_tree` fixture family) |
-| the child environment is additive | `test_the_order_independence_child_env_is_an_additive_copy` (the spawn's `env=` is a copy of the parent plus `CAIRN_FULL_SUITE=1`, not a fresh mapping) | A5 |
-| the bypass is real and bounded | `test_noconftest_bypasses_the_guard` (`--noconftest` collects without loading `conftest.py`; the guard does not fire) | A3 |
-| a refused session is not a full run | `test_a_refused_session_is_scoped_unknown` — run the real guard to refusal over a fixture tree, then read the ledger row it wrote: `scope` is `unknown`, not `full`. Directional: the same tree under `CAIRN_FULL_SUITE=1` writes `full`, so the test fails if the classifier stops distinguishing them rather than passing on a constant. | A3 (asserting A6) |
-| a refused session does not deflate the cost figures | `test_refused_sessions_are_excluded_from_cost_and_counted_separately` — build a ledger fixture mixing real runs with refusals, render it, and assert the cost profile, concentration table and growth curve are **byte-identical** to the same fixture with the refused rows absent, while the refusal count differs. Byte-identity is the falsifiable half: a reader that merely down-weights refusals rather than excluding them fails it. | A3 (asserting A7) |
+| # | Revision 5 invariant | prospective test | file |
+|---|---|---|---|
+| 1 | ≤ 40 files, however collected, is never refused | `test_a_run_at_or_under_the_file_threshold_is_never_refused` (parametrized: single file, node id, `-k`, `-m`, `--ignore` down to ≤ 40, `PYTEST_ADDOPTS='-k …'`, the six-file mapping) | A3 |
+| 2 | > 40 files, whatever the selector, is refused | `test_a_run_over_the_file_threshold_is_refused_regardless_of_selector` (parametrized: bare run, `cd <repo> && …`, env-prefixed, absolute interpreter, the canonical Boundary B argv, `--ignore` of one file at ~114 files / ~4,443 items) | A3 |
+| 3 | the boundary itself | `test_the_file_threshold_boundary_is_exact` (41 refuses, 40 runs) | A3 |
+| 4 | a pre-existing collection failure is never masked | `test_a_pre_existing_collection_failure_keeps_its_own_exit_code` (41 valid files + 1 syntax-error file: exit 2 and the collection diagnostic survive, refusal message absent; a clean 41-file control still exits 4) | A3 |
+| 5 | the guard sees the final item list | `test_the_guard_refusal_follows_a_late_deselection` — **directional, and deliberately not the wording Revision 5's Evidence row carries.** That row says "assert the guard's count equals `len(session.items)`", which compares a **file** count to an **item** count (on a real collection, ~115 against ~4,443). Read literally it is a type mismatch; read charitably it is satisfied whenever a competing modifier removes nothing, which is the default for a modifier registered only to prove ordering — so it cannot distinguish "the guard read the post-filter list" from "the guard read a list". Instead: register a late `pytest_collection_modifyitems` that **removes** items so the distinct-file span crosses the threshold, and assert the refusal **flips** accordingly (and the converse: a late modifier that pushes the span above the threshold causes a refusal that would not otherwise fire). Revision 5's S2 names this one of two load-bearing falsifiers precisely because it must separate those two cases. | A3 |
+| 6 | the override allows | `test_the_override_token_allows_a_full_run` (`CAIRN_FULL_SUITE=1`: exit 0, full execution; paired control: the same over-threshold run without the token is refused) | A3 |
+| 7 | release mode is exempt | `test_release_mode_is_exempt_from_the_guard` (the module's existing predicate at its one recognized value; the suite runs; `=0` does **not** exempt) | A3 |
+| 8 | `--collect-only` is exempt | `test_collect_only_is_exempt_from_the_guard` (`_gate_manifest.py`'s own collector still builds) | A3 |
+| 9 | the release token survives the gate | `test_a_release_refused_outcome_is_not_masked_by_the_guard` (real `security_check → quality_gate → pytest` path, a release-refused fixture: guard does not refuse it, release phase stays non-zero; the one row that deliberately sets `CAIRN_RELEASE_GATE_ACTIVE`) | A4 (extends the existing `_quality_gate_tree` fixture family) |
+| 10 | the child environment is additive | `test_the_order_independence_child_env_is_an_additive_copy` (the spawn's `env=` is a copy of the parent plus `CAIRN_FULL_SUITE=1`, not a fresh mapping; the one row that deliberately sets `CAIRN_FULL_SUITE`) | A5 |
+| 11 | the bypass is real and bounded | `test_noconftest_bypasses_the_guard` (`--noconftest` collects without loading `conftest.py`; the guard does not fire; paired control: the same run **with** the conftest loaded and no token is refused) | A3 |
+| 12 | a refused session is scoped `unknown` under the sibling's existing contract, and this plan guards that rather than assuming it | `test_a_refused_session_is_scoped_unknown` — run the real guard to refusal over a fixture tree, then read the ledger row it wrote: `scope` is `unknown`, not `full` (the sibling's own `executed > 0` postcondition, not a code change from this plan). Directional: the same tree under `CAIRN_FULL_SUITE=1` writes `full`, so the test fails if the sibling's postconditions stop distinguishing the two rather than passing on a constant — a regression guard on the sibling's contract, not a falsifier of this plan's own code. | A3 (regression guard, A6) |
+| 13 | a refused session's refusal is countable, and does not deflate any session-level aggregate | `test_refused_sessions_are_excluded_from_cost_and_counted_separately` — build a ledger fixture mixing real runs with refusals, render it, and assert (a) the refusal count is correctly reported and differs from a fixture with no refusals, and (b) any session-level aggregate not purely `by_file`-derived is byte-identical to the same fixture with the refused rows absent. The cost profile, concentration table and growth curve are `by_file`-derived and may already be byte-identical without (b)'s exclusion code, since a refused row's `by_file` is empty; (a) is the falsifiable core, and a reader that surfaces no refusal count, or miscounts it, fails the row regardless of (b). | A3 (asserting A7) |
+| 14 | a refusal-expecting child never inherits an ambient exemption token | `test_a_refusal_expecting_child_never_receives_an_exemption_token` — the meta-guard on the environment-construction discipline stated above: assert that a child built for a refusal-expecting row never carries `CAIRN_FULL_SUITE` or `CAIRN_RELEASE_GATE_ACTIVE`, so this plan's own Boundary B wrapper or a release ceremony's active token cannot leak into a spawned child by omission and make a refusal-expecting row pass without exercising anything. | A3 |
 
 ### Chunk B — the vendor-neutral sentence
 
 | # | File | Change |
 |---|------|--------|
-| B1 | `AGENTS.md`, *Verification boundaries* > **B — Integration**, immediately after "…`python scripts/quality_gate.py --sub neutrality --sub redundancy`." | Append, verbatim, the sentence the Decision names: *"Boundary B's canonical pair now requires `CAIRN_FULL_SUITE=1`; verification records written before this guard cite the bare form and are accurate for the runs they describe."* Names no AI vendor or model. **No automated gate covers this file** — see the verification note below. |
-| B2 | `templates/core/AGENTS.md`, the same bullet's generic equivalent (currently ends "…run against a clean, unchanged commit under the project's configured interpreter/runtime.") | Append the *adapted* sentence, matching the twin's existing register (no concrete pytest invocation, no literal `CAIRN_FULL_SUITE` token unless the implementer judges the concrete token itself is project-agnostic enough to keep — see the note below). Candidate: *"A project's Boundary B command may require an explicit override token to run as a full suite; verification records written before such a guard lands cite the bare form and remain accurate for the runs they describe."* Acceptance criterion: same substance as B1, no AI vendor or model named, phrased in the twin's own generic voice — not a byte-identical copy of B1, since the twin's surrounding sentence already diverges from `AGENTS.md`'s in the same way (`diff` shows "the configured full suite" / "the project's configured interpreter/runtime" replacing Cairn's concrete text throughout that bullet). |
+| B1 | `AGENTS.md`, *Verification boundaries* > **B — Integration**, immediately after "…`python scripts/quality_gate.py --sub neutrality --sub redundancy`." | Append, verbatim, the sentence the Decision names: *"Boundary B's canonical pair now requires `CAIRN_FULL_SUITE=1`; verification records written before this guard cite the bare form and are accurate for the runs they describe."* Names no AI vendor or model. **No *neutrality* gate covers this file** — the standing operational-boundaries and comprehension-floor tests do; see the verification note below. |
+| B2 | `templates/core/AGENTS.md`, the same bullet's generic equivalent (the equivalent sentence currently ends "…run against a clean, unchanged commit under the project's configured interpreter/runtime.", though the bullet itself continues afterward with the bounded-mode contract — insert after that sentence specifically, not at the bullet's end) | Append the *adapted* sentence, matching the twin's existing register. **Decided, not left to implementer judgment: no literal `CAIRN_FULL_SUITE` token** — the candidate below already avoids it, and nothing in the twin's own neutrality/generality checking currently blocks a Cairn-specific token from shipping if one were used (see the hazard noted below), so the safety margin is in not writing it, not in a gate catching it. Candidate: *"A project's Boundary B command may require an explicit override token to run as a full suite; verification records written before such a guard lands cite the bare form and remain accurate for the runs they describe."* Acceptance criterion: same substance as B1, no AI vendor or model named, no literal `CAIRN_FULL_SUITE` token, phrased in the twin's own generic voice — not a byte-identical copy of B1, since the twin's surrounding sentence already diverges from `AGENTS.md`'s in the same way (`diff` shows "the configured full suite" / "the project's configured interpreter/runtime" replacing Cairn's concrete text throughout that bullet). |
 
 **Verification for Chunk B — and the asymmetry that an earlier draft of this
 plan got wrong.** `python scripts/quality_gate.py --sub neutrality` governs
@@ -279,20 +351,101 @@ built from `_NEUTRALITY_FILE_SUFFIXES`, whose eight keys are all *directories*
 `scripts`, `templates`), and `_walk_neutrality_files` walks only those. Measured
 by importing that function against this tree: **181 files scanned, root
 `AGENTS.md` not among them, `templates/core/AGENTS.md` among them.** So the
-criterion "clears `--sub neutrality`" that stood in the B1 cell would have
-returned clean no matter what B1 landed, including a sentence naming a vendor.
-That is the silent-tool defect `AGENTS.md` > *Verifying claims* names outright:
-a tool that returns success without testing the claimed property is worse than
-no tool.
+criterion "clears `--sub neutrality`" that stood in an earlier draft of the B1
+cell would have returned clean no matter what B1 landed, including a sentence
+naming a vendor. That is the silent-tool defect `AGENTS.md` > *Verifying
+claims* names outright: a tool that returns success without testing the
+claimed property is worse than no tool.
 
 * **B2** is genuinely gated. Under the `templates/` branch a denylist token is
   an unconditional failure with no exemption path.
-* **B1 has no automated gate at all.** Its vendor-neutrality is a **reviewer
-  obligation**, discharged by a human or reviewing agent reading the sentence —
-  named here as such rather than left to look mechanized. The sentence the
-  Decision fixes verbatim contains no vendor token, so the live risk is a later
-  edit, not this one.
+* **B1 has no *neutrality* gate — it is not ungoverned.** No automated check
+  scans root `AGENTS.md` for vendor tokens, so B1's vendor-neutrality stays a
+  **reviewer obligation**, discharged by a human or reviewing agent reading
+  the sentence — named here as such rather than left to look mechanized. The
+  sentence the Decision fixes verbatim contains no vendor token, so the live
+  risk is a later edit, not this one. But the bytes B1 changes are not
+  otherwise unchecked: `bootstrap/tests/test_verification_boundaries.py`
+  (`SELF_AGENTS = ROOT / "AGENTS.md"`) asserts over the exact *Verification
+  boundaries* text Chunk B edits — `test_both_operational_surfaces_fail_to_full`,
+  `test_installed_operational_rule_is_project_general`, and the
+  `_BOUNDED_OBLIGATIONS` block — and `bootstrap/tests/test_comprehension_floor.py`
+  parametrizes the comprehension-floor checks over both `AGENTS.md` and
+  `templates/core/AGENTS.md`. Both are standing gates for this surface and are
+  folded into Chunk B's Boundary A mapping below.
+  `bootstrap/tests/test_scope_reduction_trap.py` also maps the twin
+  (`templates/core/AGENTS.md`) as a governing surface.
 * `python scripts/check_cairn.py` (link/claim integrity) does cover both files.
+
+**One live hazard the B2 decision above closes rather than opens.**
+`test_installed_operational_rule_is_project_general` denies the adopter file
+the tokens `bootstrap/tests`, `scripts/quality_gate.py`, `Python 3.13` and
+`Cairn's ordinary pair`. `CAIRN_FULL_SUITE` is **not** in that list, so
+nothing would have caught a Cairn-specific token shipping to adopters through
+B2 — which is exactly why B2's cell above decides the question rather than
+leaving it to judgment: the candidate sentence avoids the token, and the
+acceptance criterion states the constraint explicitly instead of relying on a
+gate that does not check it.
+
+### Live commands the guard breaks beyond AGENTS.md's own sentence — flagged, not authorized
+
+Chunk B corrects exactly one Boundary B sentence, in two files. The guard
+refuses a bare `pytest bootstrap/tests`, and that bare form is named, as a
+literal command, in several more places this plan does not touch. Grepped,
+read in context, and classified rather than lumped together:
+
+**Live instructions — a person or Maintainer following them literally hits an
+unexpected refusal mid-procedure:**
+* `docs/release-process.md:78` — the "## Checks to run" command block for a
+  release sweep.
+* `bootstrap/AST_BASELINE_RUNBOOK.md:126` — Step 4 "apply, verify, commit" of
+  the AST-baseline re-anchor procedure, a Maintainer-run ceremony step (this
+  plan's own Chunk D routes the Maintainer to the neighbouring re-anchor
+  runbook in the same sitting).
+* `AGENTS.md:487`, *Development environment & dependency budget* — "Run the
+  suite with `python -m pytest bootstrap/tests`." The same file Chunk B1
+  edits, but a separate, unrelated section 160 lines from B1's corrected
+  sentence, so B1's placement does not fix it.
+
+**Trigger prose — names what a person types to run a check, not a copy-paste
+procedure step; a reader who actually types the command meets the guard's own
+refusal message, and (for the `AGENTS.md` case discussed next) the corrected
+Boundary B sentence in the same file, rather than silently getting a wrong
+result:**
+* `bootstrap/SAFETY.md:537` and `:543`.
+* `bootstrap/DEPENDENCY_BUDGET.md:117` and `:168`.
+* `bootstrap/tests/fixtures/skills/README.md:21` reads the same way (a fixture
+  harness's own description of its test trigger); found by the same grep, not
+  part of the seven sites above but classed with this group on inspection.
+
+Both classes describe a command this guard now refuses; only the first is
+proposed for correction, because "documentation polish" undersells what the
+runbook and release-process entries are — procedures a Maintainer executes
+under a ceremony, and discovering the refusal mid-ceremony is exactly the "a
+refusal arrives during setup, looks like a configuration annoyance, and
+invites routing around it" hazard `AGENTS.md` names about the gate anchor.
+The second class is left as prose: it documents a trigger, not a recipe, and
+the guard's refusal plus (once B1 lands) the corrected sentence elsewhere in
+`AGENTS.md` are enough for a reader who actually runs the command to
+self-correct.
+
+**`AGENTS.md:326` is not a fourth live-instruction site.** It is the
+canonical-pair sentence itself — "Cairn's ordinary pair is `python -m pytest
+bootstrap/tests --quality-gate-shuffle-seed=0` followed by…" — the exact
+sentence B1 appends its corrective sentence immediately after, in the same
+bullet. A reader reaching line 326 reaches B1's clarification in the same
+breath; no separate action is needed there.
+
+**Not yet authorized.** Correcting the three live-instruction sites is a
+touched-file-set expansion beyond Revision 5's Scope — the same kind the
+A4/A5 and (originally) A6/A7 expansions above needed the Maintainer to allow,
+and this one has not been asked for or granted. **Known omission, with a
+revival condition** (folded into Author-accounting's Known-omissions
+paragraph below): if the Maintainer authorizes the expansion before or during
+Chunk B, add three rows — one per file — prefixing the cited command with
+`CAIRN_FULL_SUITE=1 `; if not, these three sites ship stale, and the omission
+is revived the first time a person or Maintainer follows one of them
+literally and is refused.
 
 ### Chunk C — Security Review of the implementation
 
@@ -341,27 +494,32 @@ Phase 5 of `bootstrap/REANCHOR_RUNBOOK.md` are the Maintainer's own act,
 never scripted by the agent whose work is being anchored).
 
 **Four `FROZEN-MODIFIED` entries, not two — an earlier draft of this plan
-undercounted by half.** Chunk A touches five paths, and each was checked
-directly against `bootstrap/tests/_gate_manifest.py::_frozen_files` rather than
-inferred from the globs: `bootstrap/tests/conftest.py` (A1),
-`scripts/quality_gate.py` (A2), `bootstrap/tests/test_security_check.py` (A4)
-and `bootstrap/tests/test_quality_gate_order_independence.py` (A5) are all in
-the frozen set, so landing Chunk A produces **four** `FROZEN-MODIFIED` entries
-against the current anchor at `refs/cairn/gate-anchor`. The fifth path,
-`bootstrap/tests/test_broad_run_guard.py` (A3), is new and takes a different
-code path entirely: `FROZEN-NEW` as a note once tracked, or `FROZEN-UNTRACKED`
-as a **HOLD** in ceremony mode while still untracked. A Maintainer walking into
-Chunk D expecting two entries would meet four holds and one note. Derive the
-set at ceremony time regardless — including from this paragraph. That does **not** block ordinary
-`pytest bootstrap/tests` or `scripts/quality_gate.py` runs — verified by
-reading `bootstrap/tests/test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports`,
+undercounted by half.** Chunk A touches **six** paths — five once A6 stopped
+adding a distinct file of its own (see Scope) and became a row inside A3's
+file, plus the sixth from A7 — and each was checked directly against
+`bootstrap/tests/_gate_manifest.py::_frozen_files` rather than inferred from
+the globs: `bootstrap/tests/conftest.py` (A1), `scripts/quality_gate.py` (A2),
+`bootstrap/tests/test_security_check.py` (A4) and
+`bootstrap/tests/test_quality_gate_order_independence.py` (A5) are all in the
+frozen set, so landing Chunk A produces **four** `FROZEN-MODIFIED` entries
+against the current anchor at `refs/cairn/gate-anchor`.
+`bootstrap/tests/test_broad_run_guard.py` (A3, and A6's regression-guard row
+alongside it) is new and takes a different code path entirely: `FROZEN-NEW` as
+a note once tracked, or `FROZEN-UNTRACKED` as a **HOLD** in ceremony mode while
+still untracked. `tools/suite_cost.py` (A7) carries no freeze obligation at
+all — no glob in `_gate_manifest.py` covers `tools/`. A Maintainer walking
+into Chunk D expecting two entries would meet four holds and one note. Derive
+the set at ceremony time regardless — including from this paragraph. That does
+**not** block ordinary `pytest bootstrap/tests` or `scripts/quality_gate.py`
+runs — verified by reading
+`bootstrap/tests/test_gate_preflight.py::TestPublicCli::test_check_runs_against_the_live_repo_and_reports`,
 which already tolerates a refusal exit (0, 1, or 2) from the live-tree gate
 check rather than requiring a clean pass, because the live tree is expected
 to refuse until the next supervised anchor. It **does** mean the
-differential-oracle gate reports `FROZEN-MODIFIED` for both files until
-re-anchored, and the Decision's Security Review trigger plus this contract
-surface both put Boundary B verification for this plan at **full**, never
-bounded (see Verification below).
+differential-oracle gate reports `FROZEN-MODIFIED` for all **four** files
+until re-anchored, and the Decision's Security Review trigger plus this
+contract surface both put Boundary B verification for this plan at **full**,
+never bounded (see Verification below).
 
 **A re-anchor is already independently owed, and batching is presented, not
 decided here.** `dev/PLANNING.md` > "Queued" carries the AST attestation
@@ -371,7 +529,7 @@ already authorized re-anchor over revert), and the same "Queued" section's
 `[TRU-4]` entries name the interpreter-binding re-pin and two stale
 install-contract artifacts as further debts already flagged to "join the
 re-anchor ceremony already owed rather than creating a new obligation." This
-plan's two `FROZEN-MODIFIED` entries are one more item for that same batched
+plan's four `FROZEN-MODIFIED` entries are one more item for that same batched
 sitting — **whether to actually batch them into one `bootstrap/reanchor.sh`
 run is the Maintainer's call**, made when the ceremony is scheduled, not an
 outcome this plan assumes.
@@ -402,10 +560,14 @@ runs, rather than carrying a figure forward from this plan.
 
 ### Author-accounting — invariants, failure modes, edge cases
 
-**Invariants** — the eleven rows in the Chunk A table above, each bound to a
-named prospective test and a named file. No invariant in Revision 5's
-Evidence table is left unmapped; if a plan reviewer finds one, that is a
-blocking gap, not a nice-to-have.
+**Invariants** — the 14 rows in the row-mapping table above, each bound to a
+named prospective test and a named file: Revision 5's own 11 evidence-table
+invariants, all still mapped, plus three this plan's own Maintainer-authorized
+expansions add — the refused-session regression guard (A6), the
+cost-figure/refusal-count falsifier (A7), and the guard against the tests'
+own child environments inheriting an exemption token they should not carry.
+No invariant in Revision 5's Evidence table is left unmapped; if a plan
+reviewer finds one, that is a blocking gap, not a nice-to-have.
 
 **Failure modes** — unchanged from Revision 5's own S1-S5, restated because
 this is a plan, not a fresh derivation: the guard fails **toward refusing**
@@ -431,9 +593,11 @@ Chunk A alone writes the guard and the child-environment fix; no other chunk
 touches executable bytes. The check fires on **every** `pytest` session over
 `bootstrap/tests` that loads Cairn's conftest, in any harness, for any agent
 or human. `--noconftest` is the one **known** exception, and calling it
-"documented" would be false: grepping the tree outside `dev/proposals/` and
-`dev/plans/` returns **zero** occurrences of `noconftest` — no doctrine, no
-`AGENTS.md`, no `bootstrap/SAFETY.md`, no docstring. Revision 5 commits to a
+"documented" would be false: grepping the tree outside `dev/proposals/`,
+`dev/plans/`, and `dev/PLANNING.md`'s own `[TRU-4]` row (`d67f2fd`, this
+plan's own Maintainer consultation, which necessarily names the flag) returns,
+as_of 2026-08-20, **zero** further occurrences of `noconftest` — no doctrine,
+no `AGENTS.md`, no `bootstrap/SAFETY.md`, no docstring. Revision 5 commits to a
 **probe** that pins the bypass so prose cannot drift back to claiming universal
 coverage; it commits to no document, and no chunk here lands one. The test name
 was trimmed to match (it previously promised `_and_the_bypass_is_documented`,
@@ -460,11 +624,21 @@ an override countable, and this plan does not add one; a broad run that has
 already failed receives no cost prompt at all, which is the correct
 precedence but does mean some broad runs go uncounted; a human is refused
 too, by design, since a mechanism that could tell them apart is one an agent
-could claim to be.
+could claim to be. **New this revision:** three live, non-`dev/` documents
+name a bare `python -m pytest bootstrap/tests` as a literal instruction and
+are not touched by Chunk B — `docs/release-process.md:78`,
+`bootstrap/AST_BASELINE_RUNBOOK.md:126`, and `AGENTS.md:487` (see Chunk B's
+own "Live commands…" subsection for the full enumeration, the disposition
+reasoning, and the four sites classed as trigger prose rather than
+instruction and left alone). Correcting the three is a touched-file-set
+expansion this plan has not asked the Maintainer to authorize. Revival
+condition: authorize and add three one-line rows to Chunk B, or leave as-is
+until a person or Maintainer following one of the three literally is refused
+and the omission is revived from that report.
 
 ## Verification
 
-**Boundary A — reviewed mapping.** During Chunk A implementation: the eleven
+**Boundary A — reviewed mapping.** During Chunk A implementation: the 14
 tests named in the Chunk A row mapping, plus
 `bootstrap/tests/test_security_check.py` (the two updated tests and their
 surrounding class), plus `bootstrap/tests/test_quality_gate_order_independence.py`
@@ -473,16 +647,20 @@ beside, to confirm nothing there regresses), plus
 `bootstrap/tests/test_suite_ledger.py` — which exists by the time this plan
 starts, and pins the row-per-session and node-accounting invariants this
 guard's refusal path perturbs. During Chunk B: `python
-scripts/quality_gate.py --sub neutrality` (which covers B2 only — see Chunk B)
-and `python scripts/check_cairn.py`.
+scripts/quality_gate.py --sub neutrality` (which covers B2 only — see Chunk B),
+`python scripts/check_cairn.py`, and the standing gates for the surface
+Chunk B touches — `bootstrap/tests/test_verification_boundaries.py`,
+`bootstrap/tests/test_comprehension_floor.py`, and
+`bootstrap/tests/test_scope_reduction_trap.py` (the twin only).
 
 **Boundary B — mode: `full`, not bounded, and this is not a close call.**
-Both changed files are gate-frozen (a contract-surface trigger on their own),
-this plan's Decision carries an explicit Security Review trigger (a
-trust-ceremony surface), and the change can alter a session's exit status
-from the one file that already owns the release-gate outcome rule — three
-independent reasons the verification-boundaries fence in `AGENTS.md` refuses
-bounded mode, any one of which would be sufficient alone.
+Four of the changed files are gate-frozen (a contract-surface trigger on
+their own — see Chunk D's re-anchor accounting), this plan's Decision carries
+an explicit Security Review trigger (a trust-ceremony surface), and the
+change can alter a session's exit status from the one file that already owns
+the release-gate outcome rule — three independent reasons the
+verification-boundaries fence in `AGENTS.md` refuses bounded mode, any one of
+which would be sufficient alone.
 
 **The self-referential bootstrapping detail, stated rather than left
 implicit.** Once Chunk A is on the branch being verified, an *unmarked*
@@ -973,3 +1151,24 @@ delivers. PR1 identifies a premise defect inside a Maintainer-authorized
 expansion and routes the disposition back to the Maintainer rather than
 resolving it by removal; PR3 and PR4 both *add* obligations. No accepted
 outcome from Revision 5 is dropped, deferred, or reclassified by this pass.
+
+## Response to plan review -- Claude (Implementation) -- 2026-08-20
+
+Findings folded straight into the operative cells named below; no amendment
+ledger, no replacement cells reproduced here.
+
+| Finding | Disposition | Cell(s) |
+|---|---|---|
+| PR1 (blocking) -- row A6's premise is false; the sibling's accepted contract already resolves a refused session `unknown` (`executed > 0` / `not_run == 0` postconditions), so A6 as a classifier change is a no-op and its stated falsifier cannot fail. A7 survives on a narrower premise. | Corrected. A6 converted from a classifier-code change to a regression guard that pins the sibling's existing `unknown` resolution, per the Maintainer's disposition ("Sure, I like the regression guard idea"), with a falsifier directional on both halves (refused -> `unknown`; `CAIRN_FULL_SUITE=1` -> `full`). A7 kept, reason corrected to (1) `by_file`-derived trend contamination by a zero-cost refused row and (2) the refusal count's unrecoverability without `exitstatus == 4`; its byte-identity falsifier narrowed to the part that can actually fail. The false premise (sibling resolves refused sessions `full`) swept and corrected everywhere it appeared in operative cells. | Scope > "A second expansion" (fully rewritten); the sequencing bullet "must pin what the sibling's ledger records"; Chunk A table rows A6, A7; row-mapping rows 12, 13; Boundary B mode paragraph ("Both changed files" -> "Four of the changed files", a related stale-count fix found in the same pass). |
+| PR2 (blocking) -- under this plan's own mandated `CAIRN_FULL_SUITE=1` Boundary B invocation, refusal-expecting guard tests inherit the token and fail, allow-expecting tests inherit it and pass vacuously; same hazard for `CAIRN_RELEASE_GATE_ACTIVE` in a release ceremony. | Corrected. Added a preface paragraph before the row-mapping table requiring every child pytest environment to be built explicitly (`test_security_check.py`'s `_child_pytest` idiom: `env = dict(os.environ)`, pop both exemption tokens by default, set either only on the row(s) actually about it), and added row 14, a meta-guard asserting a refusal-expecting child never carries either token. | New preface paragraph immediately before "Row mapping"; row-mapping row 14 (new). |
+| PR3 (blocking) -- "B1 has no automated gate at all" is false; `test_verification_boundaries.py` and `test_comprehension_floor.py` govern the exact text Chunk B edits, and Boundary A's Chunk B mapping omitted them. Also: no gate blocks a Cairn-specific `CAIRN_FULL_SUITE` token from shipping in B2. | Corrected. B1's cell and the verification-note bullets reframed to "no *neutrality* gate", with the standing gates named (`test_verification_boundaries.py`, `test_comprehension_floor.py`, `test_scope_reduction_trap.py` for the twin) and folded into both Chunk B's own narrative and the Verification section's Boundary A mapping. The `CAIRN_FULL_SUITE`-token question decided in the plan rather than left to implementer judgment: B2's acceptance criterion now states no literal token, matching the candidate sentence, with the denylist gap named as the reason it had to be decided rather than gated. | Chunk B table (B1, B2 cells); "Verification for Chunk B" bullets; new "One live hazard..." paragraph; Verification > Boundary A (Chunk B gates added). |
+| PR4 (blocking) -- three live operational commands (not the guard's own mapping) become refused, unaccounted for; grepping wider finds four more trigger-prose sites. | Enumerated and dispositioned, not silently landed. Seven sites classified live-instruction (3: `docs/release-process.md:78`, `bootstrap/AST_BASELINE_RUNBOOK.md:126`, `AGENTS.md:487`) vs. trigger-prose (4: `bootstrap/SAFETY.md:537`/`:543`, `bootstrap/DEPENDENCY_BUDGET.md:117`/`:168`; one further site of the same shape found and noted, `bootstrap/tests/fixtures/skills/README.md:21`). `AGENTS.md:326` resolved as not a separate site -- it is the sentence B1 appends after, in the same bullet. Correcting the 3 live-instruction sites is a touched-file-set expansion **not yet authorized**; recorded as a known omission with a revival condition rather than landed unilaterally or left silent. | New "Live commands the guard breaks beyond AGENTS.md's own sentence" subsection (end of Chunk B); folded into Author-accounting's "Known omissions" paragraph. |
+| PR5 (non-blocking) -- Chunk D's own corrected-count paragraph contradicts itself twice, and "five paths" is stale by one (A7). | Fixed. "five paths" -> "six paths" with the accounting spelled out (A6 stopped adding a distinct file; A7 adds the sixth, unfrozen); "both files" -> "all four"; "two `FROZEN-MODIFIED`" -> "four" in the batching paragraph. | Chunk D, the "Four `FROZEN-MODIFIED` entries, not two" paragraph and the following "A re-anchor is already independently owed" paragraph. |
+| PR6 (non-blocking) -- the "eleven" row-mapping count is stale by two (now three, after PR2's addition); it carries 13 (now 14). | Fixed at both citations, now "14", with the count broken down (11 from Revision 5's Evidence table + 3 this plan's own expansions add: A6, A7, the environment-construction meta-guard). | Author-accounting > "Invariants"; Verification > "Boundary A". |
+| PR7 (non-blocking) -- the A4/A5 allowance gloss omits the third edit the row mapping actually places in `test_security_check.py`. | Named explicitly in the gloss, with the history check (`e0ab524`) carried over from the finding. | Scope > "Contract expansion" (A4/A5 paragraph). |
+| PR8 (non-blocking) -- the `noconftest`-absence grep figure is stale by one (`dev/PLANNING.md`'s own `[TRU-4]` row). | Re-scoped to exclude that row explicitly and dated `as_of 2026-08-20`, per the numeric-claims discipline. | Author-accounting > "Which chunk runs the mutation...". |
+| PR9 (non-blocking) -- B2's insertion-point cell is ambiguous between "end of sentence" and "end of bullet". | Reworded: "the equivalent sentence currently ends..." with an explicit note that the bullet continues past it. | Chunk B table, B2 cell. |
+| PR10 (non-blocking) -- two rows (override token, `--noconftest`) are one-directional and go quiet under PR2's environment hazard. | Both given a paired control, matching the pattern the `--collect-only` and release-mode rows already use. | Row-mapping rows 6, 11. |
+| False-premise sweep (Maintainer brief) | 4 locations named (lines 98, 159-162, 245, 608-609 at review time); 1 (608-609) is inside the reviewer's own append-only section and was left untouched per the append-only rule. **3 locations found and corrected** in operative cells: Scope > "A second expansion" (the "(c)" gloss), the sequencing bullet, and Chunk A table row A6. No further occurrences found outside the reviewer's section. | See cells listed under PR1 above -- same edit pass. |
+
+**Status**: `revising-plan` -> `awaiting-plan-review`.
