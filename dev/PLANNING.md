@@ -124,6 +124,45 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **[TOOL] The lifecycle checker flags every Internal review as
+  author-written, because the identity comparator takes the first word**
+  *(filed 2026-08-20, from three concurrent Internal proposal reviews)* —
+  `lifecycle_planner`'s independence check derives an identity token from the
+  byline's first word. Cairn's Internal review floor is **"the same agent in a
+  fresh session"** (`AGENTS.md` > Review), so an honest Internal byline is
+  `Claude (Internal, fresh-context subagent)` against an author of
+  `Claude (Strategy)` — same first word, and the checker reports:
+
+  > `'## Review' at line N appears authored by the proposal author
+  > ('Claude (Strategy)'); a review carries reviewer-authorship (independent
+  > reviewer).`
+
+  **The checker flags correct reviews by construction.** It fired identically
+  on all three of `2026-08-20-claude-portable-sweeps-cannot-run`,
+  `2026-08-20-claude-adopt-into-existing-tree` and
+  `2026-08-20-claude-scanner-claim-scope` — reviews that met the Internal floor
+  exactly. It cannot fire on an External review, because a different agent type
+  has a different first word.
+
+  **Two properties make it worse than a cosmetic false positive.** It clears
+  once the author's Response lands, so it is red exactly during the window a
+  reviewer is waiting on the artifact — the moment someone is most likely to be
+  reading the scan. And the cheapest way to silence it is to write a byline that
+  is not the reviewer's, which is a **false attribution on a record whose
+  integrity is its attribution** (`AGENTS.md` > Review). All three reviewers
+  independently declined to do that and documented the flag instead; that was
+  right, and a gate that rewards the wrong answer should not stay.
+
+  **What is owed is a distinguishing comparator**, not a naming convention: the
+  Internal floor is a statement about *context*, not about identity, so
+  first-word identity cannot express it. Options worth weighing — compare the
+  full parenthetical role rather than the first token; treat an explicit
+  `(Internal, …)` marker as a declared-independence assertion the checker
+  accepts; or drop the author-identity heuristic for Internal passes and rely on
+  the tier declaration. **Not yet proposed** — it is a checker defect, filed for
+  routing, and the fix touches lifecycle enforcement, which is governing
+  doctrine and takes its own proposal.
+
 * **[VER] The AST attestation baseline needs re-anchoring after the tag pass**
   *(filed 2026-08-19; Maintainer authorized the re-anchor over a revert)* —
   `bootstrap/tests/test_ast_attest.py` reports **13 CHANGED symbols**: 11 in
