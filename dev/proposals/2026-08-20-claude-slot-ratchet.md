@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Opus 5
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: superseded
 **Assurance path**: standard — see "Assurance-path reasoning" below; this is a
 template-body change flowing through the designed, tested slot-merge path and
 touches none of the four install-contract artifacts and no high-risk surface
@@ -314,3 +314,59 @@ temporary target, confirming the new slot arrives with its placeholder and that
   adopters.** Then A2 is right and this is the wrong shape. Recovery: supersede
   in favour of a doctrine proposal, which carries the rate-limit gate this one
   deliberately avoids.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-20
+
+**Superseded.**
+
+**Maintainer authorization, quoted verbatim:**
+
+> Okay, supersede then archive, please.
+
+**Scribe**: Claude (Strategy). Commit permission was **explicitly given** in
+that same instruction, which directs both the disposition and the archive move
+— neither of which exists except as a commit. No separate confirmation was
+sought or needed. Per the scribing guard-rail this is a Decision-only commit;
+the archive move lands separately.
+
+**Scribing context** — the scribe's framing, not the Maintainer's words. This
+answers an offer made in the preceding exchange: supersede and re-open the
+surviving question once the operating rule is settled, or append an author
+revision re-scoping the proposal in place. The Maintainer chose the former.
+
+**Basis in the record.** Two External strategy reviews (Codex; Antigravity),
+folded into `dev/strategy/2026-08-20-claude-stewardship-ethic.md` at `be7d24e`,
+invalidated three load-bearing claims of this proposal:
+
+* **The count in *Context* is wrong.** The installed set carries **25 markers
+  over 24 unique names**, not 26. The extra came from a marker sitting inside a
+  fenced code block in `templates/README.md`, which documents the slot syntax
+  and is installed nowhere.
+* **"An adopter's apparatus can only ratchet heavier" is retracted** as
+  overstated. `coordination-additions` records a *reduction* in its own slot
+  body ("a sequential team runs only the baseline above"), so slot persistence
+  favours whichever direction the adopter writes. What survives is narrower:
+  the **prompting** and the **supported override authority** are asymmetric.
+* **The `standard` / trivial / no-doctrine declarations rest on a false
+  premise** — "adding one costs no doctrine at all." A marker is cheap;
+  granting it bounded authority, defining what it may never exempt, and stating
+  **precedence** against the mandatory triage list and the plan-scope rule is
+  the design work, and it is not trivial.
+
+**The severability claim failed.** This proposal was severed from the strategy
+note on the premise that it stood alone. It does not: its placeholder fences
+against the general triage list and the high-risk surfaces but is silent on the
+**plan-deviation rule**, which the revised note's Finding 1 identifies as the
+central undecided question. A widening slot cannot state precedence against a
+rule nobody has decided yet.
+
+**Where the surviving content lives.** The revised strategy note carries it as
+**O5** (the slot work of its Finding 9, explicitly dependent on O4) and **Open
+question 4** (the precedence contract). Re-opening is expected once the
+operating rule is settled — deferred, not abandoned.
+
+**Deferred-follow-up dispositions.** This proposal declared "no deferred
+follow-ups" under *Triage and implementation shape*. Its single forward-looking
+remark — A2, that widening the shipped escape-hatch prose "remains a separate
+question worth asking on its own evidence" — takes disposition `accept`: it is
+now homed in the revised strategy note as its own A2 and Open question 4.
