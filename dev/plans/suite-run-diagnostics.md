@@ -78,9 +78,10 @@ decide a session's exit status.
 
 ### Sequencing — this plan lands FIRST, before `full-suite-interception`
 
-`dev/proposals/2026-08-19-claude-full-suite-interception.md` (accepted
-the same day, planned in parallel by a different agent — still at its
-pre-archive path as of this writing, since that plan has not yet opened) also
+`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md` (accepted
+the same day; its plan `dev/plans/full-suite-interception.md` opened at
+`517d66b`, under a minute after this plan's own opening commit, and the
+proposal archived with it) also
 edits
 `bootstrap/tests/conftest.py` — a `PreToolUse`-style refusal hook over an
 unnarrowed full-suite invocation. The two proposals' own "Related" fields state
@@ -126,13 +127,25 @@ tool by pattern-matching its mapped neighbours into `config.py`.
 
 ### Documentation / doctrine surface
 
-* `dev/measurement/README.md` — descriptive/dev-tree convention note (Chunk D),
-  documenting the new operational-ledger slot per the README's own "reserve
-  the slot, not the name" convention. Not a governing-layer document.
+* `dev/measurement/README.md` — **a shipped adopter surface, contrary to this
+  plan's first reading of it. Chunk D2 is ON HOLD pending a Maintainer scope
+  decision** (see the Chunk D table). Measured, not assumed: `python
+  bootstrap/scaffold.py --manifest` emits it as an install destination
+  (`dev/measurement/README.md <- core/dev/measurement/README.md`,
+  `substituted`), the mapping is declared in `bootstrap/_scaffold/config.py`,
+  and `diff templates/core/dev/measurement/README.md
+  dev/measurement/README.md` is byte-identical. Editing only Cairn's copy
+  desynchronizes the twin and leaves the tree failing
+  `bootstrap/verify_integrity.py` against the recorded lockfile hash until an
+  `upgrade --finalize`; editing both writes a Cairn-specific ledger name into
+  every adopter's tree. Revision 5 excludes "any doctrine, canonical-command,
+  template or adopter surface", so neither branch is authorized by the
+  accepted contract.
 * `CHANGELOG.md > Unreleased > Added` — one release-note line (Chunk D).
-* **No `AGENTS.md`, `doctrine/`, or template-surface change** — matches
-  Revision 5's explicit exclusion of "any doctrine, canonical-command,
-  template or adopter surface."
+* **No `AGENTS.md` or `doctrine/` change.** The claim of "no template-surface
+  change" that stood here was false for `dev/measurement/README.md` and is
+  withdrawn; the exclusion Revision 5 states is what puts Chunk D2 on hold
+  rather than what permits it.
 
 ## Sequence
 
@@ -199,7 +212,7 @@ falsifiers exercise both prior chunks' finished behaviour, including the
 | # | File | Change |
 |---|------|--------|
 | D1 | `.gitignore` | Add `dev/measurement/suite-runs.jsonl` so the live ledger stays untracked (same rule shape as the existing `dev/measurement/snapshots/` and `dev/measurement/suite-cost.md` entries). |
-| D2 | `dev/measurement/README.md` | Add a note under "What belongs here" naming the new ledger as an operational-ledger-that-feeds-measurement slot (per the file's own "reserve the slot, not the name" convention), cross-linking `tools/suite_cost.py` as its reader. |
+| D2 | `dev/measurement/README.md` | **ON HOLD — do not execute without a Maintainer scope decision.** Intended change: a note under "What belongs here" naming the new ledger as an operational-ledger-that-feeds-measurement slot, cross-linking `tools/suite_cost.py` as its reader. The blocker is that this file is a **shipped install destination with a byte-identical template twin** (`bootstrap/scaffold.py --manifest` row for `dev/measurement/README.md`; mapping in `bootstrap/_scaffold/config.py`), so editing Cairn's copy alone desynchronizes the twin and fails `bootstrap/verify_integrity.py` against the recorded lockfile hash, while editing both writes a Cairn-specific ledger name into every adopter's tree — and Revision 5 excludes "any doctrine, canonical-command, template or adopter surface". Three dispositions are open and the choice is the Maintainer's: (a) drop D2 and document the ledger only in the CHANGELOG line at D3; (b) an explicit allowance to touch the template surface, with the note written generically enough to belong in an adopter's tree; (c) a Cairn-only documentation home that is not a manifest destination. **Chunk D's acceptance criterion below is written against D1 and D3 only**; adding D2 back adds a twin-parity and `verify_integrity` criterion with it. |
 | D3 | `CHANGELOG.md > Unreleased > Added` | One line: in-suite cost telemetry (`bootstrap/tests/conftest.py` hooks + gitignored ledger) and its reader `tools/suite_cost.py`; cross-link the archived proposal by filename stem. |
 
 **Note on `dev/measurement/suite-cost.md`:** a file by that name already exists
@@ -236,15 +249,26 @@ the coincidence.
   - `by_file` eviction preserves cost (a low-node/high-duration file survives
     ahead of a high-node/low-duration one), and summed-then-converted
     sub-millisecond durations are not lost to rounding;
-  - the sanitizer is total across ASCII, non-ASCII, emoji, and a lone
-    surrogate, with the correct `truncated` disposition in each case;
+  - the sanitizer is total across ASCII, non-ASCII, emoji, a lone surrogate,
+    **and a mixed string**, and in each case **the intended sanitized and
+    capped field survives** with the specified `truncated` value — **not
+    merely that some valid line exists**. The survival half is the half that
+    can fail: a sanitizer returning `""` for every non-ASCII input is total,
+    and sets `truncated` correctly on every named case, so a criterion
+    asserting only totality-plus-disposition admits an implementation the
+    accepted contract rejects;
   - the skeleton row is total (forced non-finite timing still yields a
     written row);
   - the encoded budget holds — an oversized label, 64+ tokens, control
-    characters, and (quoting the accepted contract's own evidence row) "all
-    115 real paths" all still produce exactly one line, ≤ 4096 bytes, that
-    round-trips through `json.loads`; the encoder call site matches the
-    pinned signature exactly;
+    characters, and **every real test-file path in `bootstrap/tests/`,
+    enumerated at run time** all still produce exactly one line, ≤ 4096
+    bytes, that round-trips through `json.loads`; the encoder call site
+    matches the pinned signature exactly. **Registered as a live invariant,
+    not a fixed count**: the accepted contract's evidence row quotes "all 115
+    real paths", and this plan's own Chunk C adds `test_suite_ledger.py`,
+    making that figure 116 the moment the falsifier is authored. A hardcoded
+    count would be stale before it was first run, so the test enumerates the
+    directory instead of asserting a number;
   - `head` resolves correctly in a linked worktree on a branch, in the main
     checkout, in a packed-refs checkout, and against a malformed `.git`
     (`null`, with a row still written);
@@ -265,8 +289,14 @@ the coincidence.
   `bootstrap/tests/test_gate_preflight.py`,
   `bootstrap/tests/test_security_check.py`,
   `bootstrap/tests/test_python_floor.py`.
-* **Doc updates that must land**: `dev/measurement/README.md` (Chunk D2,
-  hand-authored); `CHANGELOG.md > Unreleased > Added` (Chunk D3).
+* **Doc updates that must land**: `CHANGELOG.md > Unreleased > Added` (Chunk
+  D3), and the `.gitignore` rule (Chunk D1). **Chunk D2 is deliberately
+  excluded from this criterion** while it is on hold — see the Chunk D table.
+  If the Maintainer authorizes it, this criterion gains two further
+  obligations that do not apply to D1 or D3: `diff
+  templates/core/dev/measurement/README.md dev/measurement/README.md` stays
+  empty, and `python bootstrap/verify_integrity.py` reports no hash mismatch
+  for that destination.
 * **Examples / smoke checks required**: **N/A as a separate artifact** — the
   reader-outcomes rows inside `test_suite_ledger.py` (Chunk C) are the smoke
   check for `tools/suite_cost.py`; no standalone example doc renders it.
@@ -307,6 +337,29 @@ fail-toward-silence direction, and the no-new-execution-capability posture are
 properties of the design, not of how it is sequenced into commits) and are not
 re-derived here.
 
+**Known omissions.** Carried forward from Revision 5's own `### Known
+omissions`, and still omitted after this plan: dirty-tree state is deferred
+behind its own Security Review and reported as `unknown` rather than as
+measured; release-mode and nested sessions are unmeasured by design; **Windows
+is unclaimed**; **network filesystems are excluded** — which is the stated
+boundary on the `flock` durability contract this plan carries, not an
+incidental gap; plan attribution is manual unless `CAIRN_SUITE_LEDGER_LABEL`
+is set; in-process `pytest.main()` calls are treated as children; and the
+session count is a **lower bound**.
+
+**One omission this plan closes rather than carries.** Revision 5 lists
+"collector overhead unmeasured **until implementation**" — an omission
+explicitly bounded to end here. It is self-undermining to leave open: the
+collector writes `wall_s` into a ledger the reader renders as the suite's
+cost, so its own contribution to that figure must be quantified or the
+headline number is unattributable. Chunk C's falsifier set therefore includes
+a collector-disabled control run against a collector-enabled run over the same
+selection, recording the delta; that control already exists in this plan's S2
+answer above as the source of the load-bearing expectations, so the
+measurement is a by-product of a run the plan already requires rather than new
+work. If it cannot be produced, that is a blocking gap for the code reviewer,
+not a silent carry-forward.
+
 ## Verification
 
 **Boundary A (iteration, scoped).** Reviewed mapping, once Chunk C exists:
@@ -336,8 +389,25 @@ interpreter — Python 3.13.x):
 * `python scripts/quality_gate.py --sub neutrality --sub redundancy`
 * `python scripts/check_cairn.py`
 * `python scripts/claim_check.py dev/plans/suite-run-diagnostics.md` (once per
-  authored/revised plan text — already run before this commit; see the
-  report accompanying this plan's opening)
+  authored/revised plan text)
+
+**The bare pytest form above is correct only until the sibling plan lands.**
+`dev/plans/full-suite-interception.md` appends to `AGENTS.md` the sentence the
+Maintainer's authorization quoted in this proposal's own Decision — "Boundary
+B's canonical pair now requires `CAIRN_FULL_SUITE=1`" — and installs the guard
+that enforces it. This plan sequences first, so at its own Boundary B the bare
+form still runs. **Boundary C sits after code review**, with nothing fencing it
+against the sibling landing in between: whoever runs it checks whether that
+guard is in `bootstrap/tests/conftest.py` at the commit under review and
+prefixes `CAIRN_FULL_SUITE=1` if it is. A run that comes back exit 4 with a
+refusal message has been refused, not passed.
+
+**Do not trust `claim_check` to catch a stale sibling path.** Its lifecycle
+archive-fallback silently resolves a dead active path through the archived
+sibling, so a citation of a proposal at its pre-archive path returns clean.
+That is how the stale sequencing sentence corrected above survived the check
+this plan ran before its own opening commit. The instrument cannot fail on
+this class, so its clean result is not evidence about it.
 
 Record the dated `## Implementation verification -- <agent> -- YYYY-MM-DD`
 section per the template's mandatory fields (`Boundary B mode`, `Tested
@@ -348,10 +418,19 @@ commit (the end of Chunk D).
 **Boundary C (falsification, independent)** is the code reviewer's job: verify
 the Boundary B record against the reviewed range, then run independent
 targeted falsification against the Evidence-table rows above — not a repeat
-of the broad command. Given the trust-ceremony surface, a fresh full run is
-required per the plan template's trigger 5 (a trust ceremony that explicitly
-requires independent full execution) regardless of whether any of the other
-five triggers also fire.
+of the broad command.
+
+**Trigger 5 does not fire here, and an earlier draft of this section wrongly
+claimed it did.** The template's trigger 5 requires that the ceremony
+"explicitly requires independent full execution"; `bootstrap/REANCHOR_RUNBOOK.md`
+contains no reference to the suite, to a full run, or to pytest at all, so the
+condition is unmet. Saying otherwise would tell the code reviewer a fresh full
+run is mandatory regardless of their own judgement, on the strength of text
+that does not exist. The reviewer decides under triggers 1-4 and 6 on what they
+actually find — and **trigger 4 fires on its own terms** if review sharpening
+changes any implementation, test, executable-template or fixture bytes in the
+reviewed range, which for a chunked change of this size should be treated as
+the expected case rather than the exception.
 
 ## Code review
 
@@ -375,9 +454,21 @@ Then the reviewer identity line, the verdict, and the findings declaration.
 is "untouched by" plan-review routing and is an explicit escalation, not a
 substitute for the ordinary code-review floor; nothing in this plan collapses
 the two into one pass. Both must land — code review before this plan reaches
-`ready-to-archive` (the archive precondition), the Security Review as a
-prerequisite the re-anchor ceremony's own runbook already imposes (see Chunk
-E).
+`ready-to-archive` (the archive precondition), and the Security Review on the
+Decision's own term — "implementation carries a Security Review trigger and
+re-anchor ceremony".
+
+**The Security Review has no mechanical enforcer, and this plan says so
+rather than implying one.** An earlier draft of this section grounded it in
+"a prerequisite the re-anchor ceremony's own runbook already imposes". That
+was false, and checked: every occurrence of "Security review" in
+`bootstrap/REANCHOR_RUNBOOK.md` governs the *ceremony machinery* — the
+instantiated launcher and the checker bytes — and none of them governs the
+implementation entering the anchor. The archive precondition in
+`doctrine/plans.md` requires a **code** review only. So the Security Review is
+enforced by this plan's Chunk E1 gate and by nothing else; if E1 is skipped,
+no tool, test, or precondition anywhere will notice. Treat E1 as
+load-bearing, not as a restatement of a control that already exists.
 
 ## Chunk E — Security Review + re-anchor ceremony (Maintainer-owned)
 
