@@ -3,7 +3,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
 converted the tier after two External rounds landed. See "The review tier, and
 why it changed" below.
@@ -1019,3 +1019,364 @@ cross-plan seam that plan's own review found in the other direction; it is
 recorded here rather than assumed to be handled there.
 
 **Status**: back to `awaiting-plan-review`.
+
+## Plan review -- Claude Opus 5 (Internal plan reviewer) -- 2026-08-20 (round 3)
+
+Reviewed commit: b9a032428515b4d11a9093b867e476bd9780b1dc
+Target: the whole operative plan (Scope through Verification; Chunks 1-9, the sequence revision, Acceptance criteria, Author-accounting), plus the round-1/round-2 findings and Responses, against the source proposal's Round 7 and Decision
+Prior findings: EPR-01, EPR-02, EPR-03, EPR-04
+Assurance path: high-assurance
+**Tier**: Internal
+**Findings**: raised
+
+### Verdict
+
+**REVISE.** All four prior findings are genuinely closed — I re-ran the
+instruments rather than taking the Responses' word for it (see Coverage). The
+plan's factual claims about the live tree are in unusually good shape: I checked
+sixteen of them and every one held. Three blocking defects remain, all in the
+same region — the activation boundary and what it does to code and tests this
+plan does not name. Each one, left as written, leaves a chunk's acceptance
+either unsatisfiable or self-contradictory.
+
+### Prior findings — closure, verified
+
+* **EPR-01 (AST command cannot run) — CLOSED.** `update-symbol --help` confirms
+  the real signature: `--baseline` and `--expect-old` required, `--known-new`
+  and `--dry-run` optional, `symbol` then `modules...` positional. Row 4-9's
+  invocation matches, and its four ordered steps match
+  `bootstrap/AST_BASELINE_RUNBOOK.md`'s steps 1-4. `_UPDATE_ALLOWLIST` does
+  contain `_MODULE_MAPPINGS: "Assign"`, so the self-service claim holds.
+* **EPR-02 (no bridge across Chunks 4-6) — CLOSED as scoped.** Chunk 4's table
+  carries no marker rows; 6-1/6-2 land the marker in the same commit as 6-3/6-4.
+  The window the finding named is gone. The window on the *far* side of the
+  cutoff is not — that is EPR-07 below, a new finding rather than a reopening.
+* **EPR-03 (stale `8-2` references) — CLOSED.** A sweep of the operative text
+  (everything above the first appended review section) for `8-[2-5]`,
+  `4-1[0-9]`, `6-[89]` and `Chunk 8` returns no stale row reference; the row-id
+  set runs 1-1..1-16, 2-1..2-3, 3-1..3-4, 4-1..4-9, 5-1..5-3, 6-1..6-7,
+  7-1..7-5 with no gaps or duplicates. Worth recording for the next sweeper:
+  every `8-[2-5]` hit in this file is the substring of `as_of 2026-08-20`, so
+  that pattern is nearly all false positive and a future pass should anchor on
+  `\|\s*8-\d` or `row 8-\d` instead.
+* **EPR-04 (runbook's post-apply full suite) — CLOSED.** Both Step 4 commands
+  are quoted in Chunk 4's acceptance and both outcomes are required at that
+  commit. I diffed the quoted block against the runbook's own: identical,
+  including `PYTHONDONTWRITEBYTECODE=1`. The round-1 softening ("recommends") is
+  withdrawn in the round-2 Response.
+
+### Findings
+
+#### EPR-05 — BLOCKING: the activation rule has two unresolved edges, and each decides what a required fixture asserts
+
+**(a) A tree with no marker at all: the plan says both things.** Chunk 5
+reproduces Round 7 §4 — "Missing, divergent (the pair disagrees), or
+multiply-introduced (removed and re-added) markers refuse" — and row 5-3 makes
+"missing ... markers each refuse" a **mandatory fixture**. Row 7-5 then says the
+opposite for the same state: "for a fixture proposal that predates activation
+(**or an installation with no activation marker at all**), the existing
+quiet-degrade behavior is unchanged, and the test should say so explicitly."
+A fixture asserting refusal and a test asserting quiet degradation cannot both
+describe an unmarked tree.
+
+This is not a wording tidy-up, because the reading decides an adopter-facing
+outcome the plan never declares. `lifecycle-metrics` is **default-on**. Every
+adopter tree that installed it before this change has a
+`dev/proposals/_template.md` with no `cairn-event-v1` token. Under Chunk 5's
+reading, `python tools/lifecycle_metrics.py` refuses in every one of those trees
+from the moment they take the engine update, until they separately take the
+template update — a break materially larger than the eight retired columns, and
+one the `**Contract expansion**` declaration (currently "adopter-facing CLI
+surface", scoped to `--backfill-from`) does not cover. Under 7-5's reading, an
+unmarked tree is simply pre-activation everywhere and behaves as today, which is
+the benign outcome and is what "before its cutoff, an empty series is
+**correct**" reads like in Round 7 §4. I lean to the second, but the plan must
+state which, because Chunk 5 currently commits to the first.
+
+**(b) Is an act in the marker's own commit pre- or post-cutoff?** Chunk 6 says
+"from that commit on" (inclusive); nothing else in the plan resolves it, and
+neither Chunk 5's fixture list nor Chunk 6's pre/post split fixture ("one
+artifact with a review pass before its activation cutoff and one after")
+contains the at-the-cutoff case. This is reachable today, not hypothetical:
+`bootstrap/tests/test_reference_scripts.py::TestVcsRobustness::test_main_branch_target_runs`
+(~line 460) scaffolds `lifecycle-metrics`, writes a proposal, then `git init` +
+`git add -A` + **one** commit — so the marker-bearing installed template and the
+proposal's opening act arrive in the same commit. Inclusive means that act is
+post-cutoff with no block, so `proposal_rows` refuses where the test says "must
+not raise"; exclusive means it is pre-cutoff and empty. Decide it, name it in
+Chunk 5's algorithm block, and add the boundary case to 5-3's fixtures.
+
+#### EPR-06 — BLOCKING: Chunk 7's audit uses the wrong predicate, and misses at least five tests
+
+Chunk 6 states the audit's scope as "Chunk 7 audits every existing test that
+currently runs this tool **without a git-initialized scratch tree**, because
+this is where their assumptions break." That predicate is too narrow by the
+plan's own contract. A *git-present* tree whose lifecycle acts carry no event
+blocks also refuses under 6-3 — that is the whole point of fail-closed
+reconciliation. The correct predicate is "every existing test that runs the
+extractor over any tree."
+
+Under the correct predicate, Chunk 7's table (7-3, 7-5, both in
+`test_reference_scripts.py`) is incomplete. Enumerated by grepping
+`proposal_rows|plan_rows|emit_snapshot` across `bootstrap/tests/`:
+
+* `bootstrap/tests/test_lifecycle_stage_patterns.py::test_t10_public_path_reports_exact_with_populated_hour_deltas`
+  (line 647) — builds a synthetic **four-commit** history whose subjects drive
+  open → reviewed → revised → decision, then asserts
+  `stage_timestamp_reliability == "Exact"` and populated `hours_*`. Four real
+  transitions, zero event blocks.
+* `bootstrap/tests/test_lifecycle_stage_patterns.py::test_t12_a_target_with_no_git_still_degrades_to_best_effort`
+  (line 730) — asserts `stage_timestamp_reliability == "Best-effort"` and three
+  empty `hours_*` columns with no `.git`. **This falsifies a uniqueness claim
+  the plan makes in row 7-5**: `TestVcsRobustness.test_no_git_target_degrades`
+  is *not* "the test that actually encodes the git-absent quiet-degradation
+  contract Chunk 6 reverses" — T12 encodes it too, by name and by assertion, in
+  a file this plan never touches. T12's own docstring says it "deliberately
+  duplicates the guarantee `bootstrap/tests/test_reference_scripts.py` already
+  holds", so the duplication is documented in the tree and was findable.
+* `bootstrap/tests/test_reference_scripts.py::TestVcsRobustness::test_main_branch_target_runs`
+  (~line 460) — the single-commit scaffolded tree from EPR-05(b);
+  `rows = lm.proposal_rows(tmp_path)  # must not raise`.
+* `bootstrap/tests/test_lifecycle_cli.py` — `test_emit_snapshot_creates_indexed_csv`,
+  `test_emit_snapshot_same_day_coalesces_by_index`, `test_snapshot_flag_via_main`
+  (lines 471-522) all drive the extractor through the `lm_repo` fixture (a
+  tmp root, no `.git`, no installed template).
+
+Boundary B's full suite would eventually catch these, but Chunk 7 is *named* as
+the audit and its acceptance criterion is "7-1, 7-2, 7-3, and 7-5 pass" — a
+criterion that cannot see a test the enumeration omitted. Fix the predicate and
+extend the table; the disposition of each test then follows from EPR-05.
+
+#### EPR-07 — BLOCKING: from Chunk 6 onward the obligation binds sessions this plan does not control, and row 8-6's criterion depends on their compliance
+
+Chunk 6's intro rejects the alternative bridge because it "would bind whoever
+commits a lifecycle artifact in this tree during that window, including in a
+concurrent session with no reason to know a plan's own chunk boundaries changed
+what an event-worthy edit requires", and concludes: "Landing the marker and the
+reader in the same commit is the option that **depends on no one else's
+session**." That conclusion is true for the Chunks 4-6 window and false
+afterwards. From Chunk 6's commit on, every `**Status**` flip, review section
+and Response section committed anywhere in `dev/proposals/` or `dev/plans/` —
+by any session — is a post-cutoff act that must carry a block or the extractor
+refuses globally (Chunk 6's own acceptance: the report "exits nonzero and names
+which artifact/commit/kind failed to reconcile").
+
+Row 8-6 then makes that an acceptance criterion for *this* plan: the after-run
+"must also satisfy Chunk 6's own acceptance criterion: it exits successfully and
+accounts for every act recorded in the corpus after the activation cutoff." The
+board at this commit shows two sibling plans active — `full-suite-interception`
+(`awaiting-plan-review`) and `suite-run-diagnostics` (`revising-plan`) — each of
+which will take further review passes and status flips during an eight-chunk
+implementation. One block-less act in either, and row 8-6 cannot be satisfied by
+this plan's agent through no act of theirs.
+
+The plan is also silent on the artifacts it *does* control. Between Chunk 6 and
+archive, this plan's own file takes a code-review pass and several status flips,
+all post-cutoff. Nothing instructs the implementing agent to append blocks to
+them.
+
+Name the disposition. Any of these discharges it; the choice is the author's,
+and none of them narrows accepted scope: (i) instruct the implementing agent to
+append the literal blocks to every lifecycle act it performs on its own
+artifacts from Chunk 6 onward, and state a residual for concurrent sessions;
+(ii) scope row 8-6's criterion to acts this plan's own commits produced, with
+the corpus-wide run recorded as evidence rather than as a gate; (iii) obtain a
+Maintainer announcement of the obligation at the Chunk 6 commit. What is not
+available is leaving the criterion as a gate on other people's sessions while
+the plan's own reasoning says binding them is not this plan's to do.
+
+#### EPR-08 — NON-BLOCKING: row 8-1's premise about `## Unreleased` is false, and its instruction would create a duplicate heading
+
+Row 8-1 says to "open a new `### Changed` subsection — the section currently has
+only `### Changed — Git-native security foundations` and `### Added` (as_of
+2026-08-20; **there is no generic `### Changed` to file this under**)". At the
+reviewed commit, `## Unreleased` (CHANGELOG.md:41) carries four subsections:
+`### Changed — Git-native security foundations` (42), `### Added` (60),
+**`### Changed` (222)**, and `### Fixed` (317); the next `## ` is at line 497.
+I checked this against `git show b9a0324:CHANGELOG.md`, so it was already false
+when written, not overtaken by a concurrent commit. Following the row as written
+adds a third `### Changed` inside one release section, exactly duplicating the
+existing one. File the line under CHANGELOG.md:222 instead.
+
+#### EPR-09 — NON-BLOCKING: the sibling-guard seam is flagged for Chunk 4 but not for this plan's own Boundary B, and the sibling does not in fact owe the runbook fix
+
+Two halves.
+
+**The Verification section still names the bare command.** `## Verification`
+lists `python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` as
+Boundary B's first command with no override and no note — the same invocation
+`full-suite-interception`'s Chunk A1 refuses (`pytest.UsageError`, exit 4, on a
+cleanly-collected session spanning more than 40 distinct test files unless
+`CAIRN_FULL_SUITE=1`). The plan flags this seam carefully for Chunk 4's runbook
+step and then leaves its own integration evidence exposed to it. Mitigating:
+that sibling's Chunk B1 appends a corrective sentence to `AGENTS.md`'s
+Verification-boundaries text, so an implementer re-reading `AGENTS.md` at
+Boundary B time is told; and exit 4 is loud. Hence non-blocking. Still worth the
+one sentence, since the plan's own text warns that "a run that comes back exit 4
+with a refusal message has been refused, not passed."
+
+**The attribution is wrong.** The round-2 Response says the sibling "owes the
+runbook an update". Reading that plan: `bootstrap/AST_BASELINE_RUNBOOK.md:126`
+appears under a section headed "Live commands the guard breaks beyond AGENTS.md's
+own sentence — **flagged, not authorized**", and no chunk row in that plan edits
+the runbook. So the fix is recommended to the Maintainer, not owed by that plan.
+Write the workaround as the standing answer rather than as a stopgap until
+someone else lands something.
+
+#### EPR-10 — NON-BLOCKING: Chunk 1's `snapshot_event=backfill` acceptance clause cannot fail
+
+Chunk 1's acceptance ends "and an existing snapshot file containing
+`snapshot_event=backfill` still reads without error", and the paragraph above it
+reasons that "the reader must keep tolerating the value on input". There is no
+such reader. Persisted snapshots are write-only: `grep -rn 'csv.DictReader|csv.reader'`
+over `tools/` and `scripts/` returns nothing, and `snapshot.py`'s only read of
+the snapshot directory is `_next_snapshot_index`, which reads filenames, not
+rows. I confirmed the instrument could match before trusting the absence — the
+same grep form finds `csv.writer` at `tools/_lifecycle_metrics/report.py:35`.
+The `<release>-rollup.csv` entry in `output_manifest()` is documentation of an
+out-of-core artifact; nothing produces or consumes it.
+
+Keep the conservative instinct — do not delete `backfill` from any accepted-value
+set — but either drop the clause or replace it with something that can fail (for
+instance: the string `backfill` still appears in whatever accepted-value
+constant survives 1-10, asserted by name).
+
+#### EPR-11 — NON-BLOCKING: row 6-4 wires `reviewer_agents` / `cross_agent_type_review` to a block value of a different shape
+
+The grammar defines `reviewer` as "reviewer name **as written in the section
+heading**". Today `extract.py` does not use the heading as written: it derives
+`reviewer_agents` via `_agent_of(h)` and computes
+`cross_agent_type_review = any(a and author and a != author for a in reviewer_agents)`
+(lines 169-178) — an identity comparison against the header `author` token. Row
+6-4 moves both to the block without saying which value lands in the column. If
+the raw heading fragment is stored, `reviewer_agents`' emitted values change
+shape for every post-cutoff pass, and the `!= author` comparison silently stops
+being able to return `False`. Pin it in 6-4: either `reviewer` carries the
+normalized agent token, or the reader applies `_agent_of`-equivalent
+normalization on read. Note this is a v2-schema value change beyond the eight
+retired columns if left as the raw fragment.
+
+#### EPR-12 — NON-BLOCKING: two small ones
+
+* **New shipped `.py` files need the SPDX header.**
+  `test_notice_install.py::test_every_template_py_source_carries_spdx_header`
+  and `::test_every_self_hosted_twin_carries_spdx_header` require
+  `SPDX-License-Identifier: MIT` within the first four lines of every
+  manifest-sourced `templates/**/*.py` and its self-hosted twin. Rows 4-1/4-2
+  create two such files and never say so. Chunk 4's focused check runs
+  `test_notice_install.py`, so the failure is loud rather than silent — but it
+  belongs in the row, next to the other registration obligations.
+* **Chunk 8's row ids jump 8-1 → 8-6.** A leftover from the registration move.
+  Harmless, but the round-1 Response claimed a full continuity sweep of `4-[0-9]`
+  and `6-[0-9]`; the sweep never covered `8-[0-9]`.
+
+### What I tested that held
+
+Reported because a defect-only review tells the author nothing about which
+claims were exercised. Every one of these I ran against the live tree:
+
+* `PROPOSAL_COLUMNS` has exactly **30** entries and all eight retirement targets
+  are present, so 1-8's "22 after" arithmetic is right (and it correctly says to
+  re-derive).
+* `test_templates_py_count_is_pinned` pins **52** (line ~376);
+  `test_manifest_has_the_expected_py_source_count` pins **56** (line 74). One
+  source installed to one destination moves them to 53 and 57 — and the first
+  pin's own message confirms the two "must not be made to agree", which 4-7/4-8
+  respects.
+* `scan_targets()` derives from `_MODULE_MAPPINGS`, so 4-6's registration alone
+  makes `events.py` a release-scan target — 4-7's claim that
+  `test_every_templates_py_on_disk_is_release_scanned` passes "once this chunk's
+  own registration lands" is correct, and the two tests really do have
+  independent oracles (one manifest-derived, one on-disk).
+* `_gate_manifest._frozen_files()` discovers by glob over
+  `templates/modules/**/*.py`, so `events.py` becomes gate-frozen automatically
+  — no manifest row is missing, and the Chunk 9 fence is the right and only
+  handling. `templates/skills/**` is genuinely outside that glob, as 4-3 says.
+* `_MODULE_MAPPINGS` carries exactly **nine** `_lifecycle_metrics/` rows (lines
+  749-766) and the neighbouring comment does say "the nine package files install
+  verbatim" (line 746). 4-6's citation and its comment edit are both accurate.
+* `_self_hosted_twins()` is presence-derived from `install_manifest()`, so the
+  Author-accounting invariant is right that the `events.py` pair becomes visible
+  to the byte-identity test from Chunk 4's own commit.
+* `resolve_slot_merge` returns a non-`None` merged text only for `inserted`,
+  which requires `_slot_is_empty(body)`. Cairn's filled slot resolves
+  `customized`/`conflict`, both writing nothing. 2-2's hand-edit justification
+  holds exactly as stated.
+* **The wrapped-phrase hazard, tested with the plan's own instrument.**
+  `re.search(r'finding\s+severities', ...)` finds the occurrence in
+  `dev/agent_collaboration.md` that a single-line grep misses — the text really
+  is `finding\nseverities.` inside the slot block. It also finds **2** in each
+  of the two module docs (matching "two locations in each file") and **0** in
+  `templates/core/dev/agent_collaboration.md` (matching the exclusion). The
+  acceptance criterion at Chunk 2 is a real instrument, and I confirmed it
+  against a known-present case before trusting it.
+* The two `_lifecycle_metrics/__init__.py` copies are byte-identical (1-9's
+  claim), and every docstring line citation lands: "finding severities" at 17,
+  "review-yield" at 18, the `total_findings`/`findings_p*` reliability bullets
+  at 67-69, "Robust across VCS settings" with "a deliberately quiet failure
+  mode" at 74-82.
+* `dev/modules/lifecycle-metrics.md` vs the shipped copy differs **only** by
+  `{{metrics_command}}` substitution (4 hunks, all token) — the "differ only by
+  token substitution" claim is exact.
+* `test_every_subcommand_is_read_only` is at line 172; the `_git` helper is at
+  ~line 68; `test_installed_lifecycle_metrics_runs_on_target` at 277-295 with
+  the `total_findings == 2` / `findings_p1 == 1` assertions;
+  `TestVcsRobustness.test_no_git_target_degrades` at 445-457 with the
+  `Best-effort` assertion; the git-init pattern at ~469. All five citations hold.
+* The backfill inventory is right: `cfg.backfill_max_days == 14` at
+  `test_lifecycle_metrics_config.py:61` is the only test exercising the mode,
+  and every other `backfill` hit in `bootstrap/tests/` is lockfile-provenance —
+  the name-collision warning is accurate.
+* **The template-parsing hazard I went looking for is already closed.**
+  `_iter_corpus_files` excludes `_template.md` by name
+  (`extract.py:114`), so the marker and the worked example blocks 6-1 adds to
+  `dev/proposals/_template.md` are never parsed as real events by the extractor.
+  Nothing in the plan claims this, and it is the kind of thing that would have
+  bitten at Chunk 6.
+* `python scripts/claim_check.py dev/plans/metrics-events-not-prose.md` — OK, no
+  flags; the three forward-referenced paths resolve through the `Proposed paths:`
+  declaration.
+* `python tools/lifecycle_planner.py board --compact` shows the row `valid`,
+  `awaiting-plan-review`, owner `plan-reviewer`.
+* Chunk 3's acceptance already avoids the cannot-fail trap on its own: it says
+  outright that byte-preservation is pre-existing behavior and names the
+  distinguishability property as the thing the chunk exists to establish. That
+  is the right shape and I have no finding on it.
+
+### Sharpening
+
+None. Nothing in this pass narrows what the plan will deliver.
+**Scope delta**: preserved.
+
+### Coverage
+
+Read: `AGENTS.md` in full; `dev/plans/_template.md`'s review-basis and
+scope-delta doctrine (~lines 400-470); the complete plan including both prior
+External reviews and both Responses; the source proposal's Round 7 (§§1-5) and
+`## Decision`; `bootstrap/AST_BASELINE_RUNBOOK.md` in full; the operative
+sections of both sibling plans (`full-suite-interception`'s Chunk A/B tables and
+its "Live commands the guard breaks" section; `suite-run-diagnostics`'s scope
+and conftest rows).
+
+Inspected in the live tree: `tools/_lifecycle_metrics/{extract,snapshot,cli,config,gitmeta}.py`;
+`bootstrap/_scaffold/config.py`'s `_MODULE_MAPPINGS` and `slotmerge.py`;
+`bootstrap/security_check.py`'s `scan_targets`/`ALLOWLIST`;
+`bootstrap/tests/{_ast_attest,_gate_manifest}.py`;
+`bootstrap/tests/test_{security_lint,notice_install,reference_scripts,lifecycle_contract,lifecycle_stage_patterns,lifecycle_cli}.py`;
+`CHANGELOG.md`; `docs/glossary.md`; `dev/agent_collaboration.md`; both
+`lifecycle-metrics.md` copies.
+
+Ran: `_ast_attest.py update-symbol --help`; `scripts/claim_check.py` on this
+plan; `tools/lifecycle_planner.py board --compact`; targeted `python3 -c`
+regex/AST-free probes for the wrapped-phrase case, the column count, the twin
+diffs, and the plan's own row-id continuity; `git show b9a0324:CHANGELOG.md`.
+
+Did **not** run: the full suite (no implementation exists, and the brief reserves
+verification for the spawner), `scripts/quality_gate.py`, `scripts/check_cairn.py`,
+any pytest node, or any baseline mutation. Did not re-read the source proposal's
+superseded Rounds 1-6 except where a Round 7 or plan claim cited them (Round 5's
+corrected inventory, Round 6's taxonomy). Did not review `tools/lifecycle.py` or
+the pilot-event ledger, both of which the plan places out of scope and which I
+confirmed no chunk touches.
+
+**Status**: `awaiting-plan-review` -> `revising-plan`.
