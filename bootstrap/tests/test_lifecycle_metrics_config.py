@@ -206,3 +206,61 @@ def test_emit_snapshot_stays_contained_under_hostile_config(tmp_path: Path) -> N
     assert path.exists()
     # The write is contained: it resolves under the repo root.
     assert root.resolve() in path.resolve().parents
+
+
+def test_v1_snapshot_bytes_survive_a_v2_run_and_the_two_are_distinguishable(
+    tmp_path: Path,
+) -> None:
+    """Chunk 3's own acceptance property: a pre-existing (fixture-persisted)
+    v1 snapshot's bytes are unchanged after a v2 code path runs; a freshly
+    emitted snapshot carries the v2 identity; and a consumer reading the
+    two files side by side can tell them apart from the schema_version
+    field alone -- the v1 file carries no such column at all (its own
+    absence IS the v1 marker; this tool never rewrites a persisted file
+    to retroactively add one), the v2 file carries 'v2', and there is no
+    third, ambiguous state."""
+    root = tmp_path.resolve()
+    (root / "dev" / "proposals").mkdir(parents=True)
+    (root / "dev" / "proposals" / "2026-05-01-alice-thing.md").write_text(
+        "# t\n\n**Author**: A (Strategy)\n"
+        "**Date opened**: 2026-05-01\n**Status**: accepted\n",
+        encoding="utf-8",
+    )
+    snapshots_dir = root / "dev" / "measurement" / "snapshots"
+    snapshots_dir.mkdir(parents=True)
+    v1_path = snapshots_dir / "2026-01-01-1.csv"
+    v1_bytes = (
+        b"kind,stem,author,date_opened,status,decision_date,"
+        b"days_to_decision,review_rounds,corpus_commit,snapshot_event,"
+        b"snapshot_timestamp_utc,corpus_collision_count_14d\r\n"
+        b"proposal,2026-01-01-old-thing,Old,2026-01-01,accepted,,,,"
+        b"abc1234,manual,2026-01-01T00:00:00Z,\r\n"
+    )
+    v1_path.write_bytes(v1_bytes)
+
+    v2_path, _ = _lm.emit_snapshot(
+        root=root, timestamp_utc=datetime.datetime(2026, 6, 1),
+    )
+
+    # The pre-existing v1 file is untouched -- byte-identical, not merely
+    # equivalent.
+    assert v1_path.read_bytes() == v1_bytes
+    assert b"schema_version" not in v1_bytes
+
+    v2_text = v2_path.read_text(encoding="utf-8")
+    assert "schema_version" in v2_text.splitlines()[0]
+    header = v2_text.splitlines()[0].split(",")
+    data_row = v2_text.splitlines()[1].split(",")
+    version_col = header.index("schema_version")
+    assert data_row[version_col] == _lm.SNAPSHOT_SCHEMA_VERSION == "v2"
+
+    # The manifest names the version identity too, so a reader need not
+    # open either file to tell v1 apart from v2.
+    manifest_md = _lm.format_manifest_md()
+    assert "Schema version" in manifest_md
+    assert "v2" in manifest_md
+    snapshot_entry = next(
+        e for e in _lm.output_manifest()
+        if e["file"] == "dev/measurement/snapshots/<date>-N.csv"
+    )
+    assert snapshot_entry["schema_version"] == "v2"

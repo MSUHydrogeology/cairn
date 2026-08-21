@@ -15,6 +15,34 @@ from .gitmeta import _get_head_commit
 from .report import format_csv
 
 
+#: The snapshot schema identity, bumped when a column is retired or its
+#: meaning changes -- never when one is merely added (an additive change
+#: is still v2; only a removal or a semantics change earns a new
+#: identity).  v2 is the eight-column retirement in
+#: `metrics-events-not-prose` Part 1 (`total_findings`, `findings_p1/p2/p3`,
+#: the four `review_yield_*` columns) -- confirmed against the live
+#: PROPOSAL_COLUMNS definition, not carried forward as a fixed count.
+#: A snapshot written before this identity existed carries no
+#: `schema_version` column at all; **the column's own absence is the v1
+#: marker** -- this tool never rewrites a persisted file to add one
+#: retroactively, so there is no third, ambiguous state.
+SNAPSHOT_SCHEMA_VERSION = 'v2'
+
+#: The exact eight column names v1->v2 retired, documented once here so
+#: the manifest's own notes field can cite it without drifting from the
+#: retirement Chunk 1 actually performed.
+_V1_TO_V2_RETIRED_COLUMNS = (
+    'total_findings',
+    'findings_p1',
+    'findings_p2',
+    'findings_p3',
+    'review_yield_accept_count',
+    'review_yield_accept_with_modification_count',
+    'review_yield_reject_count',
+    'review_yield_defer_count',
+)
+
+
 # ------------------------------------------- output manifest subsystem
 
 
@@ -37,12 +65,20 @@ def output_manifest() -> List[Dict[str, object]]:
             'file': 'dev/measurement/snapshots/<date>-N.csv',
             'format': 'CSV',
             'stability_tier': 'contract',
+            'schema_version': SNAPSHOT_SCHEMA_VERSION,
             'columns': _v2a_snapshot_csv_columns(),
             'notes': (
                 'One row per proposal or plan stem; same-day '
                 'events coalesce by N suffix.  Audit-trail '
                 'retention: snapshots stay indefinitely (no '
-                'goodnight pruning).'
+                'goodnight pruning).  Schema '
+                + SNAPSHOT_SCHEMA_VERSION + ': v1->v2 retired eight '
+                'prose-scraped columns -- '
+                + ', '.join(_V1_TO_V2_RETIRED_COLUMNS) + '.  A '
+                'pre-existing v1 snapshot file is byte-preserved '
+                '(never rewritten) and carries no schema_version '
+                'column at all; only a row this v2 code path wrote '
+                'carries the schema_version column.'
             ),
         },
         {
@@ -128,10 +164,13 @@ METRIC_CONTRACT_MAP: Dict[str, str] = {
 
 def format_manifest_md() -> str:
     """Render the output manifest as a GitHub-flavored markdown table.
-    Used by the ``--manifest`` CLI flag."""
+    Used by the ``--manifest`` CLI flag.  Surfaces each entry's
+    ``schema_version`` (blank for an entry that carries none -- only the
+    snapshot CSV is versioned today) so a reader can tell a v1 file from
+    a v2 one from the manifest alone, without opening either."""
     lines = [
-        '| File | Format | Stability tier | Columns | Notes |',
-        '|------|--------|----------------|---------|-------|',
+        '| File | Format | Stability tier | Schema version | Columns | Notes |',
+        '|------|--------|----------------|----------------|---------|-------|',
     ]
     for entry in output_manifest():
         cols = entry['columns']
@@ -139,12 +178,13 @@ def format_manifest_md() -> str:
             col_text = ', '.join(str(c) for c in cols)
         else:
             col_text = ''
+        version = str(entry.get('schema_version', '') or '')
         notes = str(entry.get('notes', '')).replace('\n', ' ')
         col_text = col_text.replace('|', r'\|')
         notes = notes.replace('|', r'\|')
         lines.append(
             f"| `{entry['file']}` | {entry['format']} | "
-            f"{entry['stability_tier']} | {col_text} | {notes} |"
+            f"{entry['stability_tier']} | {version} | {col_text} | {notes} |"
         )
     return '\n'.join(lines) + '\n'
 
@@ -153,10 +193,15 @@ def format_manifest_md() -> str:
 
 
 #: The unified snapshot meta-columns appended after the proposal / plan
-#: columns.  ``corpus_collision_count_14d`` carries the corpus-wide
-#: rolling-window collision count (same value across every row of a
-#: snapshot -- a property of the snapshot, not the row).
+#: columns.  ``schema_version`` is every v2-code-path row's own identity
+#: marker (:data:`SNAPSHOT_SCHEMA_VERSION`) -- a pre-existing v1 file
+#: predates this column and so never carries it at all, which is the v1
+#: marker (its absence), never a rewritten byte.
+#: ``corpus_collision_count_14d`` carries the corpus-wide rolling-window
+#: collision count (same value across every row of a snapshot -- a
+#: property of the snapshot, not the row).
 _SNAPSHOT_META_COLUMNS = (
+    'schema_version',
     'corpus_commit',
     'snapshot_event',
     'snapshot_timestamp_utc',
@@ -223,6 +268,7 @@ def _build_snapshot_rows(
             annotations=annotations,
         )
         r['kind'] = 'proposal'
+        r['schema_version'] = SNAPSHOT_SCHEMA_VERSION
         r['corpus_commit'] = corpus_commit
         r['snapshot_event'] = event
         r['snapshot_timestamp_utc'] = timestamp_utc
@@ -234,6 +280,7 @@ def _build_snapshot_rows(
     for p in iter_plan_files(root):
         r = extract_plan_row(p, proposal_stems)
         r['kind'] = 'plan'
+        r['schema_version'] = SNAPSHOT_SCHEMA_VERSION
         r['corpus_commit'] = corpus_commit
         r['snapshot_event'] = event
         r['snapshot_timestamp_utc'] = timestamp_utc
