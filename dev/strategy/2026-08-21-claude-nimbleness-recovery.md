@@ -293,6 +293,27 @@ process exactly as for missing rigor; time is a budget the artifact
 spends.* Until cost appears in the loss function, compliance-maximizing
 agents will re-armor, and in six months this note gets written again.
 
+## How to hold the numbers
+
+The caps and targets above are **anchors, not scores**. They exist to
+break an equilibrium — agents currently have no cost function for
+length or time, so "be concise" gets interpreted maximally, while a
+number makes brevity concrete and defensible in review. But a cap that
+gets mechanized becomes the next zombie: a linter refusing line 151, a
+dashboard scoring sessions, agents gaming "≤2 sessions" by skipping
+verification. Three handling rules:
+
+* **Caps live in review vocabulary, never in tools** (per 1.5 — a
+  reviewer *names* an oversized artifact; nothing refuses it).
+* **The judgment items are the mechanism; the numbers only trigger
+  them.** Two rounds isn't the point of 1.2 — the point is that
+  disagreement then goes to a human. Metrics in 3.3 are staff gauges
+  you glance at, not control structures.
+* **The numbers sunset.** Once the median artifact settles near sane
+  size and 3.5's cost-awareness is in the doctrine, the caps come out
+  under the same rule-removal pathway as everything else (2.4). They
+  are scaffolding for a culture reset, not permanent architecture.
+
 ## What would falsify this note
 
 * If shortened artifacts measurably let defects through that the long
