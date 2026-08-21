@@ -235,6 +235,27 @@ and a new empty `Unreleased` is started above.
 
 ### Changed
 
+- **`lifecycle-metrics`'s emitted schema breaks v1 → v2, and event blocks
+  replace prose-parsing for the retained fields.** Eight columns derived by
+  parsing review prose — `total_findings`, `findings_p1/p2/p3`, and the four
+  `review_yield_*` disposition-token counts — are retired outright: a metric
+  derived by parsing review prose rewards writing more of it. A new
+  `schema_version` snapshot column (and a `--manifest` "Schema version"
+  column) distinguishes a v2 snapshot from a byte-preserved, never-rewritten
+  v1 one. `review_rounds`, reviewer identity/tier, `cross_agent_type_review`,
+  `response_models` (proposal schema) and `plan_review_rounds`/
+  `code_review_rounds` (plan schema) are now sourced from small,
+  closed-schema `cairn-event-v1` HTML-comment blocks the same edit appends
+  alongside the lifecycle act it records — read back by a rename-aware
+  git-history reader that refuses (a nonzero, `INCOMPLETE` exit naming the
+  artifact/commit/kind) rather than silently degrading, on a post-activation
+  act with no matching block. A pre-activation artifact, or one with no
+  provable activation cutoff (no `.git` checkout, most commonly), reports
+  those columns as the literal empty string, never a heading-count or
+  regex-scraped value. `--backfill-from` is removed: it stamped a
+  backfilled snapshot with a past commit's SHA while measuring today's
+  tree, misattributing every row it produced.
+
 - **The proposal is now the deliberative boundary, and the plan does not pay
   for a second cross-type read of it.** When an **External** proposal review
   has read a *complete current contract* and recorded `Plan readiness: READY`,
