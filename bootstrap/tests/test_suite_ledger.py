@@ -571,6 +571,21 @@ def test_a_narrowed_run_never_claims_it_covered_everything(tmp_path):
     assert row["scope"] != "full"
 
 
+def test_a_recognized_subset_of_the_suite_reads_as_partial_not_as_unknown(
+        tmp_path):
+    """The third answer, and the one nothing else in this file pins. A run of
+    one file inside the suite root is neither complete nor unclassifiable, and
+    collapsing it into `unknown` would throw away the distinction between "this
+    run covered part of the suite" and "this row cannot be interpreted" --
+    which is the distinction a cost reader needs to know whether a per-file
+    figure is comparable with any other."""
+    root = _tree(tmp_path)
+    proc = _run(root, ("bootstrap/tests/test_a.py",))
+    row = _one_row(root, proc)
+    assert row["scope"] == "targeted", row
+    assert row["scope_basis"]["targets"] == ["bootstrap/tests/test_a.py"]
+
+
 _UNKNOWN_CASES = {
     "ignore": (("bootstrap/tests", "--ignore=bootstrap/tests/test_b.py"), {}, None, None),
     "ignore-glob": (("bootstrap/tests", "--ignore-glob=*test_b*"), {}, None, None),
