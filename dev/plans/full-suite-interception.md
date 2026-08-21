@@ -2546,3 +2546,311 @@ a concurrent session created that file (untracked, as_of 2026-08-21). It is
 not this review's, it is not resolvable without editing an append-only
 section, and it belongs to the sibling plan's landing -- which is also what
 unblocks Chunk S.
+
+## Security review -- Claude Opus 5 (Security Review, Internal) -- 2026-08-21 (hook ownership)
+
+Reviewed commit: `7e2fa00d3844526fa3bca241842fa017fd7c2973`
+Target: the hook-ownership guard and its interaction with the release-mode outcome rule
+Prior findings: FSI-SR1 (open by Maintainer disposition, out of scope here), CR12
+Assurance path: high-assurance
+**Tier**: Internal
+**Findings**: raised -- 2 blocking (FSI-SR3, FSI-SR4), 3 non-blocking (FSI-SR5,
+FSI-SR6, FSI-SR7)
+
+**Model**: Claude Opus 5
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (3.13.13,
+pytest 9.0.3, pluggy 1.6.0). Every probe ran against a byte-identical copy of
+`bootstrap/tests/conftest.py` extracted with `git show 7e2fa00:...`, or inside a
+scratch clone checked out at `7e2fa00`. The live working tree was never used --
+it is under concurrent edit.
+
+**Verdict: REVISE.** The guard does what it was built to do: seven of the eight
+hooks it owns are now protected, a plain same-named append is refused by name at
+exit 4, and the release-mode outcome rule is unimpaired. But the guard can be
+disarmed by one line, and the line is the convention the file itself teaches on
+every hook it defines (FSI-SR3). Separately, the docstring's justification for
+accepting its stated limit rests on a claim about pytest that is false, and the
+gap it forecloses is closeable in three lines (FSI-SR4). The limit's *conclusion*
+-- that the `pytest_addoption` case is noisy rather than silent -- is honest and I
+verified it; its *premise* is not.
+
+### The measured baseline -- what the guard actually closes
+
+Every row below is one probe against the `7e2fa00` conftest with a benign
+`def <hook>(*args, **kwargs): return None` appended, one hook at a time,
+invoked as `python -m pytest -q -p no:cacheprovider .` on a one-test tree.
+
+| Appended hook | Result |
+| --- | --- |
+| `pytest_collection_modifyitems` | exit 4, refused, hook named |
+| `pytest_collection_finish` | exit 4, refused, hook named |
+| `pytest_runtest_logreport` | exit 4, refused, hook named |
+| `pytest_collectreport` | exit 4, refused, hook named |
+| `pytest_configure` | exit 4, refused, hook named |
+| `pytest_deselected` | exit 4, refused, hook named |
+| `pytest_sessionfinish` | exit 4, refused, hook named |
+| `pytest_addoption` | exit 3, `INTERNALERROR ValueError: no option named '--quality-gate-shuffle-seed'` |
+
+The refusal text is accurate in every case and names exactly the shadowed hook.
+The eighth row is the stated limit, and it is discussed under FSI-SR4.
+
+**The release-mode outcome rule is unimpaired.** Directly confirmed at
+`7e2fa00`: a release-mode session (`CAIRN_RELEASE_GATE_ACTIVE=1`) containing one
+`skipif`-skipped test exits **1** and prints the full `RELEASE MODE (...)` report
+naming the skipped nodeid. The pre-fix hazard -- exit 0, clean report -- does not
+reproduce against the shipped file.
+
+**The guard's own refusal cannot be mistaken for a pass.** `security_check.run_suite`
+treats every non-zero child exit as fail-closed and says so at the call site, so
+the guard's exit 4 refuses the release rather than reading as absent evidence.
+That is the correct direction and it is already load-bearing.
+
+---
+
+### FSI-SR3 -- The guard is disarmed by one line, and that line is the file's own convention. [BLOCKING]
+
+`_own` **re-registers unconditionally**: `_OWNED_HOOKS[fn.__name__] = fn`. So a
+shadowing definition that carries `@_own` overwrites the record of the function
+it just deleted, and the identity test then compares the shadow against itself
+and passes.
+
+Reproduced at `7e2fa00`, appending exactly this to the conftest:
+
+```python
+@_own
+def pytest_sessionfinish(session, exitstatus):
+    """Follows the local convention -- and evades the guard."""
+    return None
+```
+
+Measured, on a tree with one passing test and one `skipif`-skipped test:
+
+* `CAIRN_RELEASE_GATE_ACTIVE=1 pytest -q` -> **exit 0**, no `RELEASE MODE`
+  report, "2 passed, 1 skipped".
+* the same invocation with `--quality-gate-shuffle-seed=0` -- the canonical
+  Boundary B pair's shape, and what `quality_gate.py --sub order-independence`
+  spawns -- is **also exit 0**.
+
+That is the complete pre-fix hazard, restored: a release-mode suite that skipped
+a security gate reports itself clean, and nothing anywhere in the ceremony sees
+it. The order-independence sub-gate does not catch this shape, because the
+shuffle flag is still registered.
+
+**Why this is not a contrived case.** The threat model here is not an adversary;
+it is a future agent appending a hook to a shared file, which is the whole reason
+CR12 was raised. That agent reads a file in which `@_own` sits above **all eight**
+hook definitions with no exception, and in which the decorator's docstring says
+it exists so "shadowing it becomes detectable". Copying the surrounding idiom is
+the behaviour the codebase asks for everywhere else. Here it is precisely the
+wrong move, and it fails silently -- the same silent-by-construction shape the
+guard was built to end, displaced one level up into the guard's own mechanism.
+
+**The fix is small and does not need the ordering trick.** Make `_own` refuse a
+second registration of a name it already holds. The collision is visible at the
+moment of the second decoration, so it does not suffer the module-scope
+top-to-bottom problem the docstring correctly describes for the identity check --
+`_own` sees the duplicate as it happens, and raising there fails the conftest
+import loudly. That closes the convention-following path without weakening
+anything the identity test currently catches.
+
+---
+
+### FSI-SR4 -- The stated limit's conclusion is honest; its premise is false, and it forecloses a fix that works. [BLOCKING]
+
+The docstring says:
+
+> It is the earliest hook available and no earlier one exists to guard it from.
+
+**This is false.** `pytest_addhooks(pluginmanager)` is called *before*
+`pytest_addoption` for a conftest plugin. Measured at `7e2fa00` with an
+order-logging conftest under the canonical interpreter, the first two hook calls
+a conftest module receives are, in order:
+
+```
+HOOKORDER 1 pytest_addhooks
+HOOKORDER 2 pytest_addoption
+```
+
+I built the relocation and measured it. Moving `_refuse_if_a_hook_was_shadowed()`
+into a `pytest_addhooks` implementation catches the exact combination that is
+silent today:
+
+* three hooks appended at once (`pytest_addoption`, `pytest_collection_modifyitems`,
+  `pytest_sessionfinish`): today **exit 0, silent**; with the check in
+  `pytest_addhooks`, **exit 4** naming all three.
+* the same tree with the conftest loaded late (a subdirectory conftest, invoked
+  from the parent): **refused** in both placements -- `pytest_addoption` and
+  `pytest_addhooks` are both historic hooks and replay for a late-registered
+  plugin, so the guard survives that path too.
+
+`pytest_addhooks` would become the new unguardable hook, but it is a hook whose
+only purpose is registering new hookspecs. Nothing in this repository implements
+it and nothing plausibly will, where `pytest_addoption` is one of the two or
+three hooks a plan is most likely to append.
+
+**On the conclusion, which I verified and which does hold.** The claim that
+losing `pytest_addoption` is noisy rather than silent is **true in the paths that
+carry release weight**, and it is true through two independent mechanisms, only
+one of which the docstring names:
+
+* `pytest_collection_modifyitems` calls `config.getoption("--quality-gate-shuffle-seed")`
+  with no default. With the flag unregistered that raises, and an ordinary
+  `pytest <targets>` run dies at `INTERNALERROR`, exit 3.
+* any invocation that *passes* `--quality-gate-shuffle-seed=<n>` -- the canonical
+  Boundary B pair, and every spawn from `quality_gate.py --sub order-independence`
+  -- gets `error: unrecognized arguments`, exit 4. This is the mechanism the
+  docstring names, and it is real. Confirmed against `scripts/quality_gate.py`,
+  where a non-zero child exit becomes a `fail` Finding.
+
+And the release ceremony as a whole stays fail-closed even though its own suite
+phase is blind here: `security_check.run_suite` spawns `pytest bootstrap/tests -q`
+**without** the shuffle flag, so with `pytest_collection_modifyitems` shadowed
+alongside `pytest_addoption` that phase exits 0 -- but `_run_bound_phases`
+attempts every phase regardless, and phase 4 runs the full quality gate, whose
+order-independence sub-gate refuses. So a release cannot be cut through this
+door.
+
+**Where it is genuinely silent, stated so the next reader has the boundary.**
+Shadowing `pytest_addoption` **together with** `pytest_collection_modifyitems`
+is completely silent for any run that does not pass the shuffle flag -- which is
+every Boundary A scoped iteration run, and `security_check`'s own phase 3. Add
+`pytest_sessionfinish` to the same append and the release-mode outcome rule is
+dead in those runs too. The docstring's "noisy" therefore rests on a *second
+owned hook* being intact and on a flag supplied by a caller in another file. That
+is a real defence, but it is not independent of the thing being guarded, and the
+docstring presents it as though it were.
+
+**What this finding asks for.** Either relocate the check to `pytest_addhooks` --
+which removes the limit rather than documenting it -- or keep the placement and
+correct the sentence, replacing "no earlier one exists" with what is actually
+true and stating the two-hook silent combination. Under this plan's own CR2
+precedent, a docstring asserting a property the platform does not have is the
+same class of defect as one asserting a property the code lacks, and it is
+load-bearing here: it is the entire argument for accepting a residual on a
+security control.
+
+---
+
+### FSI-SR5 -- Enrolment in the registry is manual, unenforced, and untested. [non-blocking]
+
+`_OWNED_HOOKS` is populated only by hooks that remember to carry `@_own`. At
+`7e2fa00` the registry is complete -- eight `@_own` decorations against eight
+module-level `pytest_*` definitions, which I counted -- but nothing holds it that
+way. Reproduced: a new hook appended without `@_own`, then shadowed by a second
+same-named `def`, runs to **exit 0** with no diagnostic.
+
+There is no test anywhere in the tree asserting that every module-level `pytest_*`
+callable in this conftest appears in `_OWNED_HOOKS` (the only test touching the
+mechanism, `test_shadowing_an_owned_hook_is_refused_by_name`, exercises one
+representative hook). So the guard's coverage can degrade in exactly the manner
+that made the original hazard invisible: nothing is missing, the guard is
+present, and it does something reasonable over a shrinking set.
+
+A completeness test is a few lines against the module's own `globals()` and needs
+no subprocess.
+
+---
+
+### FSI-SR6 -- The refusal message's first remediation does not work. [non-blocking]
+
+The message ends: *"Add your hook under a different name, or extend the existing
+one."* The second clause is correct. The first is not: pytest hooks are dispatched
+**by name**, so a differently-named function is not a hook -- and if it keeps the
+`pytest_` prefix, pluggy rejects the plugin outright. Reproduced at `7e2fa00` by
+appending `def pytest_sessionfinish_extra(session, exitstatus)`:
+
+```
+INTERNALERROR> pluggy._manager.PluginValidationError: unknown hook
+'pytest_sessionfinish_extra' in plugin <module 'conftest' ...>
+```
+
+exit 3. This message is the only guidance a blocked agent receives at the moment
+they are blocked, and half of it routes them into a wall. It fails loudly, which
+is why this is not blocking -- but the wrong half should go.
+
+---
+
+### FSI-SR7 -- A wrapping decorator is refused with a diagnostic that misdescribes it. [non-blocking, direction is correct]
+
+A legitimate module-level wrap of an owned hook --
+
+```python
+pytest_sessionfinish = _trace(pytest_sessionfinish)   # functools.wraps
+```
+
+-- is refused at exit 4 with the message "A same-named `def` appended to this
+file rebinds the name and deletes the original", which is not what happened: the
+wrapper still calls the original. Refusing is the right direction (pluggy binds
+the wrapper, and whether it forwards correctly is not something the guard can
+know), and the pattern is rare here. Recorded so it is not rediscovered as a
+mystery, and because a diagnostic that misdescribes the state it found is the
+thing this guard exists to prevent elsewhere.
+
+---
+
+### Coverage
+
+**Exercised** -- all against `7e2fa00` unless noted, canonical interpreter
+3.13.13 / pytest 9.0.3 / pluggy 1.6.0:
+
+* **Shadowing every owned hook, one at a time** (8 probes, conftest extracted
+  from `7e2fa00`): 7 refuse at exit 4 naming the hook; the eighth is the stated
+  limit and behaves as tabulated above.
+* **The release-mode outcome rule, directly**: release mode plus a real
+  `skipif` skip exits **1** and emits the complete `RELEASE MODE` report with the
+  offending nodeid. Verified unimpaired.
+* **Three evasions**: `@_own` on the shadow (FSI-SR3, succeeds, silent); an
+  explicit `_OWNED_HOOKS.pop(...)` after the shadow (succeeds -- deliberate, and
+  I do not think it is worth guarding); shadowing `pytest_addoption` alone and in
+  two- and three-hook combinations (FSI-SR4).
+* **The stated limit's argument, both halves**: the `getoption` INTERNALERROR
+  path and the `unrecognized arguments` path, each measured; `scripts/quality_gate.py`
+  `_run_order_independence` read to confirm a non-zero child becomes a `fail`
+  Finding; `bootstrap/security_check.py` `run_suite` / `_release_child_env` /
+  `_run_bound_phases` read to confirm phase 3 omits the flag, phase 4 runs the
+  full gate, and every phase is attempted.
+* **Placement**: hook-call order for a conftest plugin measured directly
+  (`pytest_addhooks` precedes `pytest_addoption`); a relocated check built in
+  scratch and measured against the currently-silent three-hook combination, in
+  both the initial-conftest and late-loaded-conftest cases. Nothing in this
+  module reaches a security-relevant path before `pytest_addoption`: the next
+  owned hook in call order is `pytest_configure`.
+* **False negatives that are not**: a second plugin (sibling-directory conftest)
+  defining `pytest_sessionfinish` and `pytest_collection_modifyitems` does **not**
+  refuse, both implementations run, and the release rule still exits 1 -- the
+  legitimate case is correctly admitted. `@pytest.hookimpl` is identity-
+  transparent, so `@_own` above or below it makes no difference (both measured).
+  Rebinding the module attribute at **runtime**, after registration, does not
+  change what pluggy calls -- pluggy captured the function object at registration
+  -- and the release rule still fires; the guard therefore inspects exactly the
+  bindings pluggy took, at the only moment they are final.
+* **Flag interactions**: `--collect-only` still refuses a shadowed tree;
+  `-p no:<conftest path>` is refused by pytest itself ("conftest.py files are not
+  plugins"); `--noconftest` removes the whole file and with it every mechanism in
+  it -- outside the shadowing threat model, and not reachable in the release
+  child, whose argv is hardcoded and whose `PYTEST_ADDOPTS` is overwritten.
+* **False positives against real suites**, in a scratch clone at `7e2fa00`:
+  `test_broad_run_guard.py` + `test_suite_ledger.py` -> **85 passed**, matching
+  the implementing commit's figure. `test_security_check.py` +
+  `test_quality_gate_order_independence.py` -> **121 passed** with
+  `PYTHONDONTWRITEBYTECODE=1` exported.
+* **One non-pass, and its disposition**: without `PYTHONDONTWRITEBYTECODE` in the
+  ambient environment, `test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override`
+  fails on leftover `__pycache__` leaves. It fails **identically at `fc93c1a`**,
+  the parent commit, so it is not caused by this change; it is the environment
+  dependency this plan already records at two places above. Confirmed in both
+  directions rather than assumed.
+
+**Not exercised**: the broad-run guard's cost behaviour, the suite-cost ledger,
+and every other mechanism in this conftest -- out of mandate. The full suite,
+deliberately: a Boundary B run was in flight on this machine and a second broad
+run would have corrupted its timing. `bootstrap/tests/_gate_manifest.py produce`
+and every fixture regeneration -- Maintainer-owned. FSI-SR1, which is open by
+Maintainer disposition and which I did not reassess. Windows. Concurrency between
+the guard and a parallel-execution plugin (none is installed). Whether the
+conftest's byte-level content is covered by the frozen-file manifest.
+
+**Probe provenance**: every conftest under test was `git show
+7e2fa00:bootstrap/tests/conftest.py` written to scratch, or a `--shared`
+scratch clone at `7e2fa00`. The single control run against the parent commit
+used `fc93c1a`. No probe read or wrote the live working tree.
