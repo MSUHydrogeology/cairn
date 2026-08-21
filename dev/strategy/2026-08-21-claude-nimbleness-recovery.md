@@ -114,6 +114,15 @@ the ratchets means it all grows back.
    Yesterday's *bug fixes* became security-reviewed proposals. The
    trivial path atrophied from disuse.
 
+**Convergent work, same day:** the accepted proposal
+`2026-08-20-claude-review-loop-termination` (Revision 7) attacks the
+same disease from inside the lifecycle — its C0 risk posture ("would
+shipping this cause damage that is hard to undo?") and C1 editor
+authority are this note's 3.5 and 1.2, independently derived. Its
+mechanics (C1–C8) should be implemented; its new refusal points should
+be born as warnings per 1.5; and this note's Tier 2 is the pass that
+then asks how much of the container the softened machine still needs.
+
 ## What must be kept
 
 The irreducible core — the part that actually answers the founding
