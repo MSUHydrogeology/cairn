@@ -16,3 +16,4 @@ dev/intents.jsonl
 # requires. The generator is tracked; what it emits is not.
 dev/measurement/snapshots/
 dev/measurement/suite-cost.md
+dev/measurement/suite-runs.jsonl

@@ -14,6 +14,16 @@ them.
 * **Operational ledgers that feed the metrics** — the collision log, the
   handoff-hazard log, the signature log: records of process incidents kept so
   the team can measure and correlate them over time.
+* **Machine-appended operational ledgers, and the readers that render them** —
+  the same slot, for records a *tool* appends rather than a person: one line
+  per event, accumulated as work happens, with a companion reader that renders
+  the accumulation for a human without re-running whatever produced it. Reserve
+  the slot for both halves, and note that they are not kept the same way: the
+  ledger is a regenerated **output**, so it belongs in the project's ignore
+  rules like any other generated file, while its reader is source and lives
+  with the project's other tooling. The reason to keep one at all is that a
+  figure which must be re-measured every time it is wanted *will* be
+  re-measured every time it is wanted, and lost again in between.
 
 ## What does NOT belong here — the membership rule
 

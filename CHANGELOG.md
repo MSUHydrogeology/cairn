@@ -59,6 +59,20 @@ and a new empty `Unreleased` is started above.
 
 ### Added
 
+- **The suite reports its own cost, so it stops being re-measured by hand.**
+  `bootstrap/tests/conftest.py` gains five pytest hooks that append one JSONL
+  row per top-level session to a gitignored ledger — wall clock, per-file
+  timing, node accounting, the commit and interpreter it ran under, and a
+  coverage classification that only claims a complete run under both an exact
+  closed-argv check and the resolved postconditions. `tools/suite_cost.py`
+  renders that ledger for a person **without running anything**, opening by
+  saying so, stating its own blind spots before any figure, and re-deriving
+  each row's coverage claim rather than trusting it. Every path fails toward
+  silence: the collector is wrapped so it can never change a session's exit
+  status, never records a release run or a nested one, and degrades an
+  over-budget row to a skeleton rather than dropping it. From proposal
+  `2026-08-19-claude-suite-run-diagnostics`.
+
 - **The scope-reduction trap, and a test that judges narrowing on outcome
   rather than on size.** Review has a systematic bias toward making changes
   smaller: recommending a reduction costs the reviewer nothing, reads as
