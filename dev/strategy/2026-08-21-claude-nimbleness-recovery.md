@@ -153,10 +153,24 @@ doesn't fit, the thinking isn't done. (Exceeding the budget is a smell
 to name in review, not a hard refusal — we are not building another
 gate.)
 
-**1.2 Cap review at two rounds.** After round two, the artifact goes to
-the Maintainer with open items as ≤10 bullets, and the Maintainer
-decides. Six-round review chains end. A finding worth more than two
-rounds is worth a decision, not more prose.
+**1.2 Cap review at two rounds — and then the author makes the call.**
+After round two, the author decides each open finding — accept,
+decline, or defer — records a one- or two-sentence defense, and
+proceeds. The reviewer's disagreement is recorded as dissent, not
+relitigated. Six-round chains end.
+
+**What does not happen is escalation-by-question.** (Maintainer
+direction, 2026-08-21.) The failure mode to guard against is agents
+handing the Maintainer arcane disputes they have no ability to settle
+— that converts "decide" into "approve", exactly as the comprehension
+floor warns. An item reaches the Maintainer only when it is genuinely
+theirs — scope, priorities, risk appetite, user-facing behavior — and
+it arrives in plain language **with a recommendation and a stated
+default** ("we'll do X unless you object"), never as an open question.
+If it cannot be posed that way, it is not ready for the Maintainer; it
+is the author's to decide and defend. The record protects everyone:
+the call and the dissent both live in the artifact, so a wrong call is
+visible and cheap to reverse — which is exactly why making it is safe.
 
 **1.3 Give findings a cost vocabulary: `blocking` / `note` / `nit`.**
 Only `blocking` requires a written response. A `note` may be taken
