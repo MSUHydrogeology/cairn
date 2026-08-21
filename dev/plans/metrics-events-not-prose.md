@@ -3,7 +3,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
 converted the tier after two External rounds landed. See "The review tier, and
 why it changed" below.
@@ -87,9 +87,17 @@ columns and their full dependency graph (not just the CSV keys); the v2 schema
 identity that makes the break machine-readable; the doctrine statement and the
 honest re-description of the retained columns; the event-v1 grammar; the
 rename-aware history-diff reader; fail-closed reconciliation on read; and
-wiring every retained event-derived field to exactly one event kind. Nothing
-here narrows any of Round 7's commitments — this is decomposition into
-commits, not a second design pass.
+wiring every retained event-derived field to exactly one event kind. **"Every
+retained event-derived field" spans both schemas the extractor emits, not only
+`PROPOSAL_COLUMNS`.** `PLAN_COLUMNS`' `plan_review_rounds`/`code_review_rounds`
+are retained (Part 1 retires none of the six `PLAN_COLUMNS` names) and are
+computed today by the same heading-count regex class Part 3 exists to retire —
+Round 6's taxonomy names `## Plan review` and `## Code review` sections
+explicitly among the acts a `review-pass` block supplies. Chunk 6 wires them
+alongside the proposal-row fields, rather than leaving them prose-derived while
+`PROPOSAL_COLUMNS`' `review_rounds` is fixed beside them. Nothing here narrows
+any of Round 7's commitments — this is decomposition into commits, not a
+second design pass.
 
 **Out, by the Decision's own allowance — stated here, not silently restored.**
 Historical continuity across the activation boundary is **dropped**: no
@@ -137,6 +145,33 @@ commits that did not produce them, which is a defect independent of this
 proposal, and removal is the only option that stops shipping it. The work is
 rows 1-10 through 1-16 in Chunk 1, which lands there because it shares four
 files with the column retirement.
+
+**The declaration above named one failure-disposition determination and
+missed three more this plan also makes, beyond the accepted contract's own
+text.** `dev/plans/_template.md`'s review-basis doctrine lists "failure
+disposition" as a dimension a plan declares under `Contract expansion`; the
+three below were flagged as undeclared in review and are recorded here rather
+than left implicit in the paragraphs that reason them out (Chunk 5's
+Activation section; Chunk 5's act-list paragraph):
+
+* **A missing activation marker does not refuse.** Round 7 §4's own text reads
+  "Missing, divergent, or multiply-introduced markers refuse" — this plan
+  departs from the literal "Missing" clause, authorized by the Maintainer's
+  "I think (c) is right" (Chunk 5's Activation section names what (a) and (b)
+  were).
+* **The marker's own introducing commit is pre-cutoff**, not post-cutoff —
+  this plan's own inference (Chunk 5's Activation section), not a Round 7
+  sentence.
+* **Git entirely absent is treated as pre-cutoff, field-kind-dependent**,
+  rather than as "reconciliation cannot be performed" — also this plan's own
+  inference (Chunk 5's Activation section), reasoned from the refusal
+  trigger's own precondition rather than stated in Round 7's text.
+
+None of the three narrows accepted scope — each is a reading of an
+underspecified edge the accepted text leaves open, not a retreat from it — but
+the declaration exists so a future reader sees what this plan settled beyond
+the literal accepted contract without re-deriving it from the reasoning
+paragraphs.
 
 **A question this plan should answer and currently cannot.** After Chunk 6's
 fail-closed reconciliation lands, backfill over pre-activation dates might have
@@ -419,7 +454,7 @@ version token is the literal `cairn-event-v1`.
 
 | # | File | Change |
 |---|------|--------|
-| 4-1 | `tools/_lifecycle_metrics/events.py` (new) | Grammar parser: recognizes the `cairn-event-v1` fence, validates the closed key table above, returns a typed block or a refusal reason. No history walking yet (that is Chunk 5) — this chunk is pure block-level validation. Carries the `SPDX-License-Identifier: MIT` header within its first four lines, matching every other file in this package. |
+| 4-1 | `tools/_lifecycle_metrics/events.py` (new) | Grammar parser: recognizes the `cairn-event-v1` fence, validates the closed key table above, returns a typed block or a refusal reason. No history walking yet (that is Chunk 5) — this chunk is pure block-level validation. The `from_state`/`to_state` check takes the valid-state collection as an explicit parameter (`valid_states: Sequence[str]`) rather than loading it itself: `events.py` carries **no import of `extract.py`**, because Chunk 6 wires `extract.py` to import `events.py` for reconciliation (row 6-3/6-4), and a loader call the other direction would be circular. The caller supplies the vocabulary — row 4-10 names where `extract.py` gets it from for the real corpus walk; this chunk's own fixtures (4-4) pass a small literal test vocabulary directly, which is ordinary unit-test practice and not the local-status-tuple fork row 4-12 exists to catch (no production code here declares a status literal). Carries the `SPDX-License-Identifier: MIT` header within its first four lines, matching every other file in this package. |
 | 4-2 | `templates/modules/default-on/_lifecycle_metrics/events.py` (new) | Gate-frozen twin of 4-1, same commit — SPDX header included. `bootstrap/tests/test_notice_install.py::test_every_template_py_source_carries_spdx_header` and `::test_every_self_hosted_twin_carries_spdx_header` require it of both new files; the focused check at row 4-9 already runs this test file, so a missing header fails loudly there. |
 | 4-3 | `tools/lifecycle_planner.py`, twin `templates/skills/_lib/lifecycle_planner.py` | `next --to <state>`'s preview/mutation-manifest output additionally shows the literal event block the transitioning edit is expected to carry — scaffold-only, informational, not written to disk, not gating. The command's read-only contract is unchanged; a regression test confirms it still writes nothing (see 4-5). Not gate-frozen (outside `templates/modules/**`), but still a same-commit twin pair. |
 | 4-4 | `bootstrap/tests/test_lifecycle_metrics_events.py` (new) | Grammar red/green fixtures: unknown key refuses; unknown `kind` refuses; unknown version token refuses; missing required key per kind refuses; a `reviewer`/`model` value over 120 chars refuses; the three worked examples above each parse cleanly. |
@@ -429,8 +464,27 @@ version token is the literal `cairn-event-v1`.
 | 4-8 | `bootstrap/tests/test_notice_install.py` | `test_manifest_has_the_expected_py_source_count` (line 74, as_of 2026-08-20) pins `len(sources) == 56` over manifest `.py` sources. Update it to the post-registration count (56 + 1, as_of 2026-08-20 — re-derive at implementation, do not carry a frozen number forward). |
 | 4-9 | AST attestation baseline, via `bootstrap/tests/_ast_attest.py`'s `update-symbol` CLI path (per `bootstrap/AST_BASELINE_RUNBOOK.md`) | Row 4-6 changes `_MODULE_MAPPINGS`'s `Assign` node in `bootstrap/_scaffold/config.py`, a symbol the AST attestation baseline (`bootstrap/tests/fixtures/scaffold_ast_baseline.json`, enforced by `bootstrap/tests/test_ast_attest.py`) digests. `_MODULE_MAPPINGS` is one of the four symbols in `_ast_attest._UPDATE_ALLOWLIST` — unlike the unrelated, already-owed docstring-drift re-anchor named below under "Sequence revision" — so this single-symbol repair is self-serviceable by the implementing agent, in the same commit, following `bootstrap/AST_BASELINE_RUNBOOK.md`'s four steps in order (the CLI has no shorthand form; `update-symbol --help` confirms it requires `--baseline` and `--expect-old`, and accepts `--known-new` and `--dry-run`): **(1) diagnose** — run the runbook's `_merge_current`/`_classify` snippet against the live `bootstrap/_scaffold/*.py` set at this commit, confirm `_MODULE_MAPPINGS` is the *only* CHANGED symbol with MISSING and DUPLICATE both 0, and trace any logic-bearing NEW symbol to a landed, reviewed commit; **(2) known-new** — check the diagnosis against `bootstrap/tests/fixtures/scaffold_ast_known_new.json` (never a reimplementation of `_merge_current`/`_classify`), treating any DROPPED or REKEYED key as a review item traced to its own commit before proceeding; **(3) dry-run** — `python bootstrap/tests/_ast_attest.py update-symbol _MODULE_MAPPINGS --baseline bootstrap/tests/fixtures/scaffold_ast_baseline.json --expect-old <current live digest, re-derived at this commit, never copied from this plan> --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json --dry-run bootstrap/_scaffold/*.py`, which refuses on a stale `--expect-old`, an allowlist miss, more than one CHANGED symbol, or an undeclared NEW symbol — each refusal is the guard working, not a bug to route around; **(4) apply, verify, commit** — drop `--dry-run`, then `python bootstrap/tests/_ast_attest.py verify bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py`, confirming the `AST attestation OK — N baselined symbol(s) accounted for, unchanged.` tail with **N unchanged** from before this row (a surgical rewrite, not a re-pin), and commit `bootstrap/tests/fixtures/scaffold_ast_baseline.json` plus `bootstrap/tests/fixtures/scaffold_ast_known_new.json` together, explicit paths, in this same chunk commit. |
 
-**Acceptance for this chunk**: every fixture in 4-4 passes; `next --to` remains
-provably read-only under the existing contract test.
+**The grammar's `from_state`/`to_state` bound needs a named vocabulary
+source, and the anti-fork audit needs to know this file exists.** Round 7's
+closed key table bounds those two keys to "a declared lifecycle status for
+that artifact type" — `events.py` is therefore a new consumer of Cairn's one
+runtime status vocabulary, and three more rows exist because of it, rather
+than leaving an implementer to invent a fourth copy of the loader pattern or a
+locally-declared status tuple (`AGENTS.md` > *Verifying claims* names a silent
+gap in a guard as worse than no guard).
+
+| # | File | Change |
+|---|------|--------|
+| 4-10 | `tools/_lifecycle_metrics/extract.py` + twin | Extend `_REQUIRED_EXPORTS` from `('PLAN_STATES', 'HISTORICAL_PLAN_STATES')` to also require `'PROPOSAL_STATES'` (the planner's **current** proposal-status enum, `tools/lifecycle_planner.py:1113`) — the historical variant is not added, because a freshly-authored event block only ever names a currently-declared status, never a retired token. `extract.py`'s existing `_vocabulary()`/`_validated_planner_path()` mechanism is otherwise unchanged: this row widens what it requires, not how it loads. This is the vocabulary `events.py`'s grammar checks against (row 4-1); `extract.py` calls `_vocabulary()` once per corpus walk and passes the relevant enum — `PROPOSAL_STATES` for a proposal-hosted `transition` block, `PLAN_STATES` for a plan-hosted one — into `events.py`'s parser as the `valid_states` argument. |
+| 4-11 | `bootstrap/tests/test_lifecycle_vocabulary.py` | This file's `METRICS_SPEC` (a `ConsumerSpec` instance, ~line 580) drives `extract.py`'s half of `TestLoaderContainmentMatrix` and names one export it requires (`"PLAN_STATES"`, used to build a decoy planner satisfying every consumer under test, ~line 593's `_DECOY_PLANNER_SRC`). Add `PROPOSAL_STATES = ('DECOY',)` to `_DECOY_PLANNER_SRC` so the decoy still structurally satisfies both consumers once `extract.py` requires a second export; add a fixture mirroring the existing "missing a required export is purged, not cached" case (~line 794) for the newly-required export specifically, so both halves of `_REQUIRED_EXPORTS` are independently exercised, not only the one the existing matrix already covers. This is the file EPR-14 asked for, corrected from the round-4 review's own citation: `bootstrap/tests/test_pilot_evidence.py::TestVocabularyLoader` tests `templates/skills/_lib/lifecycle.py`'s own independent copy of the loader pattern (`MODULE_PATH` there, line 51) — a different consumer this plan does not touch, confirmed by reading that file's import target directly rather than trusting the citation. |
+| 4-12 | `bootstrap/tests/test_lifecycle_vocabulary.py` | `_AUDITED_CONSUMER_SOURCES` (~line 327, currently a 5-tuple: `transition_lint.py`, both `extract.py` copies, both `lifecycle.py` copies) grows to a 7-tuple with both `events.py` copies added. Update the count/uniqueness assertions that currently pin `5` (`len(_AUDITED_CONSUMER_SOURCES) == 5`, `len(set(...)) == 5`) to `7`, and add the same pairwise-distinctness assertions the existing pairs already carry (mirroring `_AUDITED_CONSUMER_SOURCES[3] != _AUDITED_CONSUMER_SOURCES[4]`) for the two new entries. `events.py` declares no local status literal under this chunk's design (row 4-1), so this addition is presently vacuous against `test_no_consumer_local_status_literal_survives` — it is still required, because the audit's whole purpose is to catch a *future* local literal in a file it already scans, not only a present one, and a consumer left out of the tuple is invisible to it regardless of whether today's version of that file happens to be clean. |
+| 4-13 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Extend 4-4's fixture list: a `from_state`/`to_state` value outside the supplied `valid_states` refuses, using a small literal test vocabulary (not the real loader) — this chunk's own fixtures stay pure-function and need no planner on disk. Chunk 6 (row 6-3/6-4) adds the integration-level fixture that exercises the real vocabulary end to end. |
+
+**Acceptance for this chunk**: every fixture in 4-4 and 4-13 passes;
+`bootstrap/tests/test_lifecycle_vocabulary.py` passes in full, including the
+extended `_AUDITED_CONSUMER_SOURCES` tuple (4-12) and the second-export
+fixture (4-11); `next --to` remains provably read-only under the existing
+contract test.
 
 **And, for the registration rows (4-6 through 4-9): this chunk's own commit is
 green.** Two runs, both *at this commit*, not at a later one.
@@ -522,12 +576,31 @@ genuinely wrong: you cannot compute a defensible series when you do not know
 what period it covers, and producing one anyway is worse than producing
 none. **Both refuse.** A tree with **no marker at all** is different in
 kind, not degree — nothing is wrong with it, recording simply has not
-started there yet. Maintainer decision, quoted verbatim: "I think (c) is
-right" — treat an unmarked tree as **not yet activated** and return an empty
-series, the same emission this chunk already gives every pre-cutoff act on
-an activated tree (see "The dropped-historical-continuity allowance,
-made concrete" below), generalized to the case where no cutoff has been
-established at all. **Missing does not refuse.**
+started there yet.
+
+**The option that names, recorded because a bare letter will mean nothing
+later** — the same discipline the `--backfill-from` removal above already
+applies to its own lettered choice: **(a) refuse**, matching Round 7 §4's
+literal "Missing ... markers refuse" text without exception; **(b) quiet-
+degrade to the old prose-parsed value** for an unmarked tree, the same
+backfill/derived-unreliable shape the Decision's `Scope delta: degraded`
+allowance already rejects for the historical-continuity question (the
+"rejected option (b)" the Chunk 6 empty-value paragraph below refers back
+to); **(c) treat an unmarked tree as not yet activated** and return an empty
+series. Maintainer decision, quoted verbatim: "I think (c) is right" — the
+chosen disposition is (c): an unmarked tree returns an empty series, the same
+emission this chunk already gives every pre-cutoff act on an activated tree
+(see "The dropped-historical-continuity allowance, made concrete" below),
+generalized to the case where no cutoff has been established at all.
+**Missing does not refuse.**
+
+This is a **departure from Round 7 §4's own literal text**, not a reading
+compatible with it — the accepted contract says "Missing ... markers refuse"
+in as many words, and (c) is the opposite for the specific case of a marker
+that never existed. The departure is authorized (the Maintainer's quote
+above), and it is declared as a departure — not silently folded in as if the
+accepted text already said this — in Scope's `Contract expansion`
+declaration.
 
 **What (c) concedes, named rather than glossed.** A marker deleted by
 accident now reads exactly like a tree that never took the template
@@ -558,6 +631,72 @@ test's `# must not raise` comment holds with no code or test change; under
 an inclusive reading it would refuse. 5-3's fixtures pin the exclusive
 reading directly, and Chunk 7 confirms this specific pre-existing test
 against it.
+
+**What the exclusive reading concedes, for the case this section had not yet
+named.** The deletion paragraph above names what (c) concedes for a marker
+that is later removed; the exclusive cutoff has its own concession, distinct
+from that one. A lifecycle act co-committed with the marker's own
+introduction is **permanently unmeasured and undetectable** — there is no
+later signal that distinguishes "this commit performed a lifecycle act
+before any reader existed" from "this commit performed a lifecycle act and
+the block was simply never written." In Cairn's own tree that window is
+**empty**: the marker's introducing commit is Chunk 6's own implementation
+commit, which lands the reader and the reconciliation logic, not a status
+flip, review pass, or Response of its own — confirmed by inspecting what
+Chunk 6's commit actually contains. **It is not empty for an adopter tree**:
+an adopter who takes the template update in the same commit as a status flip,
+a review pass, or a Response silently drops that one act from the series,
+with no error and no residual marker distinguishing it from ordinary
+pre-cutoff history. Named here because the plan is elsewhere careful to state
+what an authorized departure costs, and this is the one place that habit had
+been applied to the deletion case but not to this one.
+
+**A root commit's parent sequence is empty, not ambiguous.** Step 2 requires
+"the parent sequence" and step 5 refuses on ambiguous multi-parent
+attribution; neither sentence says what a commit with **zero** parents (a
+repository's first commit) resolves to. It is not the step-5 refusal case —
+that refusal is about *multiple* parents making attribution ambiguous, and a
+root commit has no ambiguity to resolve. A root commit's parent sequence is
+the empty sequence, which is trivially a prefix of its own block sequence, so
+step 2's prefix check holds and every block introduced by a root commit is
+attributed to it exactly as an ordinary linear commit would be. This matters
+concretely: a fresh adopter tree's first commit, and 5-3's own "clean linear
+history" fixture, both begin at a root commit, and an implementer reading
+"refuse on ambiguous parent attribution" in isolation could reasonably (and
+wrongly) extend the refusal to zero parents too.
+
+**The act list the reconciler checks is read from the same committed history
+it reads blocks from, not from the live working-copy file — named explicitly
+because the two disagree in the ordinary case of an uncommitted edit.**
+Today's extractor parses the file on disk directly for every field
+(`text = path.read_text(...)`, `extract_proposal_row`); Chunk 5's algorithm
+walks committed history for blocks. Left unresolved, those are two different
+sources of truth: a review section written into the file but not yet
+committed exists on the working-copy side and cannot exist on the
+history-walk side, which under a naive reading of Chunk 6's refusal rule
+would make every such edit a post-cutoff act with no matching block —
+`INCOMPLETE` on every dirty working tree carrying an uncommitted lifecycle
+act, including this plan's own evidence runs (row 6-8 appends a block "in
+the same commit that performs the act", which means a window where the act
+is written and uncommitted exists on every such turn). **Resolved:** for
+**every** post-cutoff reconciliation — `transition` acts exactly as
+`review-pass`/`response` ones, since row 6-4 sources post-cutoff `transition`
+fields from reconciled blocks too, not only the review-pass/response
+half — the act list is derived from HEAD, the same commit the block-history
+walk reads from, not from the working-copy text. An uncommitted lifecycle
+act is invisible to *both* sides symmetrically until it is committed, exactly
+as an uncommitted block would be. Running the tool against a dirty working
+tree neither refuses nor counts the uncommitted act; it reports the corpus as
+it stood at the last commit, and a subsequent run after committing the act
+(with its matching block) reconciles and counts it normally. This is a
+genuine behavior change from today's tool for the **post-cutoff** portion
+only — pre-cutoff fields already read the working copy directly and are
+unaffected, per row 6-4's unconditional quiet-degrade rule for
+transition-kind fields and the empty-emission rule for review-pass/
+response-kind fields. 5-3 adds the fixture: a post-cutoff artifact with an
+uncommitted review-pass edit in the working tree neither refuses nor
+reflects that edit; committing it (with its block) in a following commit
+does.
 
 **Git entirely absent is a different question from "unavailable Git for a
 post-activation artifact," and the fallback it produces is not one thing —
@@ -602,9 +741,9 @@ Chunk 7 — and one of them genuinely changes:
 
 | # | File | Change |
 |---|------|--------|
-| 5-1 | `tools/_lifecycle_metrics/events.py` | History-diff walk (rename-aware, oldest-first), the parent-prefix mutation check, added-suffix attribution, matching-act requirement, multi-parent refusal, `(commit, index)` identity derivation, per-marker activation cutoff derivation. Reuses `gitmeta.py`'s existing git-subprocess pattern (`_git_log_for_path`, `--follow`) rather than a second implementation where that pattern already covers the need. |
+| 5-1 | `tools/_lifecycle_metrics/events.py` | History-diff walk (rename-aware, oldest-first), the parent-prefix mutation check, added-suffix attribution, matching-act requirement, multi-parent refusal, `(commit, index)` identity derivation, per-marker activation cutoff derivation. The walker's own public entry point takes and threads through the same `valid_states` parameter row 4-1's block parser accepts (it calls that parser once per commit's block sequence) — the parameter is not reintroduced at this layer, only forwarded. Reuses `gitmeta.py`'s existing git-subprocess pattern (`_git_log_for_path`, `--follow`) rather than a second implementation where that pattern already covers the need. |
 | 5-2 | `templates/modules/default-on/_lifecycle_metrics/events.py` | Twin of 5-1, same commit. |
-| 5-3 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Fixtures built against a real scratch git repository (reusing the `_git` helper pattern already present in `bootstrap/tests/test_lifecycle_contract.py`, as_of 2026-08-20 line ~70, rather than inventing a second one): a mutated (edited/reordered/deleted) existing block refuses; a merge commit introducing a block refuses; identity is stable before and after a `git mv` to `archive/`; divergent and multiply-introduced markers each refuse, a **missing** marker does not (it resolves to no activation cutoff, and the reader treats every act as pre-cutoff — empty for review-pass/response fields, unchanged quiet-degrade for transition fields, per Chunk 6's row 6-4 — rather than raising); an act committed in the **same diff as the marker's own introduction** is pre-cutoff by the same rule (the boundary case `test_main_branch_target_runs` already exercises informally, reproduced here as a named fixture rather than left to that one test); a clean linear history with two distinct commits each adding one block resolves two distinct, stable identities. |
+| 5-3 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Fixtures built against a real scratch git repository (reusing the `_git` helper pattern already present in `bootstrap/tests/test_lifecycle_contract.py`, as_of 2026-08-20 line ~70, rather than inventing a second one): a mutated (edited/reordered/deleted) existing block refuses; a merge commit introducing a block refuses; identity is stable before and after a `git mv` to `archive/`; divergent and multiply-introduced markers each refuse, a **missing** marker does not (it resolves to no activation cutoff, and the reader treats every act as pre-cutoff — empty for review-pass/response fields, unchanged quiet-degrade for transition fields, per Chunk 6's row 6-4 — rather than raising); an act committed in the **same diff as the marker's own introduction** is pre-cutoff by the same rule (the boundary case `test_main_branch_target_runs` already exercises informally, reproduced here as a named fixture rather than left to that one test); a clean linear history with two distinct commits each adding one block resolves two distinct, stable identities; **a root (zero-parent) commit** introducing a block is attributed normally, not refused as ambiguous; **an uncommitted working-copy edit** on a post-cutoff artifact (a review-pass act written to disk but not yet committed) is invisible to reconciliation — neither refused nor counted — until a following commit lands it alongside its block. |
 
 **Acceptance for this chunk**: every fixture in 5-3 passes against a real git
 repository (not a mocked history), including the archive-rename identity
@@ -667,6 +806,24 @@ so the disposition is two-part:
 | `review-pass` | each `## Review` / `## Plan review` / `## Code review` section | `review_rounds`, declared tier, `cross_agent_type_review`, reviewer identity |
 | `response` | each `## Response` section | `response_models` |
 
+**The taxonomy's middle row names two plan-specific heading types by
+name, and this chunk wires the plan-row fields they feed, not only the
+proposal-row ones.** `## Plan review` and `## Code review` sections exist on
+plan artifacts, never proposal artifacts, so their presence in the taxonomy
+above is Round 6's own signal that the retained-field wiring spans both
+schemas `extract.py` emits. `PLAN_COLUMNS`' `plan_review_rounds` and
+`code_review_rounds` (`extract.py:92-93`) are retained fields — Part 1 does
+not retire them — computed today by `extract_plan_row`'s own heading-count
+loop (`_CODE_REVIEW_HEADING_RE`/`_PLAN_REVIEW_HEADING_RE` against every line
+carrying a date), the same prose-scraping class `review_rounds` was in before
+this chunk. Left unwired, the two halves of this chunk's own acceptance would
+contradict each other on a plan artifact: reconciliation (row 6-3) already
+covers `dev/plans/` and refuses a post-cutoff `## Plan review`/`## Code
+review` section with no matching block, while `extract_plan_row` would keep
+reporting a heading count for that same artifact — refusing and still
+quietly keeping the prose scraper at once. Rows 6-9 through 6-12 below close
+this.
+
 **Fail-closed measurement on read.** The extractor is the canonical reader. It
 exits nonzero `INCOMPLETE` when a post-activation event-bearing act has no
 matching block, when a block has no matching act in its introducing commit, or
@@ -696,10 +853,33 @@ field-kind split named here rather than left to conflict with row 6-4.**
 For an artifact whose relevant **review-pass or response** act predates that
 artifact's own activation cutoff, the corresponding event-derived field
 (`review_rounds`, reviewer identity/tier, `cross_agent_type_review`,
-`response_models`) is emitted **empty** — not computed from the old
+`response_models`, and — per the taxonomy note above — `plan_review_rounds`/
+`code_review_rounds`) is emitted **empty** — not computed from the old
 prose-parsing path, not backfilled, not marked "derived/unreliable" (both of
 those were the rejected option (b)). Empty is the correct value per the
 Decision, not a placeholder for a future backfill this plan does not build.
+
+**"Empty" is the literal string `''`, not `0` or any other falsy stand-in —
+named explicitly because a numeric column has two plausible empty
+representations and only one is correct.** `review_rounds`,
+`plan_review_rounds`, and `code_review_rounds` are `int` today; if this
+allowance emitted `0` for an unprovable-cutoff act, that `0` would be
+indistinguishable from a genuinely-zero review count, which is exactly the
+shape of defect the Decision's own rationale names — "`code_review_rounds`
+read 0 on 28 of 38 artifacts from a regex/template mismatch... a frozen
+number known to be wrong is worse than no number, because the caveat stays
+in the file while the number travels." Emitting `0` here would reproduce
+that same travelling-wrong-number shape under a new mechanism. `''` already
+has precedent in this exact package for "the field could not be reliably
+computed" on a normally-numeric column — `_hour_delta` (`gitmeta.py:127`)
+returns `''`, not `0`, when either endpoint is unavailable, and the CSV/`md`
+emission paths already carry a mixed-type column through unchanged. `cross_agent_type_review`
+(a `bool` today) and `reviewer_agents`/`response_models` (already
+`str`, pipe-joined) follow the same rule: `''` for `reviewer_agents`/
+`response_models`, and `''` (not `False`) for `cross_agent_type_review`, for
+the same reason — `False` reads as "checked and no cross-type review
+occurred," which this state does not know.
+
 **Transition-kind fields are the one exception, and it is not new here**:
 row 6-4 already states that `days_*`/`hours_*`/`stage_timestamp_reliability`/
 `revised` keep their existing header/git-timestamp-derived, quiet-downgrade
@@ -724,18 +904,28 @@ reader must not conflate the two into one silently-partial number.
 | 6-5 | Twins under `templates/modules/default-on/_lifecycle_metrics/` | Same commit as 6-3/6-4. |
 | 6-6 | `bootstrap/tests/test_lifecycle_metrics_events.py` | Mandatory red fixtures (Round 6 / R4-E2): a status-only commit with no block → `INCOMPLETE`; a review-only commit with no block → `INCOMPLETE`. Mandatory taxonomy fixture (Round 6 / R4-E1): two review commits with no intervening status change produce **two** review-pass events and `review_rounds == 2`. Pre/post-activation split fixture: one artifact with a review pass before its activation cutoff and one after; the row shows an empty value attributable to the pre-cutoff pass and a populated, reconciled value for the post-cutoff one. |
 | 6-7 | `tools/_lifecycle_metrics/__init__.py`, `templates/modules/default-on/_lifecycle_metrics/__init__.py` | Update the "Robust across VCS settings" paragraph (~lines 74-82, as_of 2026-08-20): it currently documents unconditional quiet degradation to `Best-effort` reliability when git is unavailable ("a deliberately quiet failure mode"). This chunk makes that a refusal (`INCOMPLETE`) for a post-activation artifact instead of a quiet downgrade; the docstring must describe the new post-activation behavior, not continue documenting only the contract this chunk reverses. |
-| 6-8 | *(process instruction, not a file change)* | From this chunk's own commit onward, append a `cairn-event-v1` block to every lifecycle act the implementing agent performs on `dev/plans/metrics-events-not-prose.md` itself (a further status flip, this file's own eventual code review, etc.), in the same commit that performs the act — discharging, for the one artifact this plan controls, the residual named in this chunk's intro. |
+| 6-8 | *(process instruction, not a file change)* | From this chunk's own commit onward, whoever performs a lifecycle act on `dev/plans/metrics-events-not-prose.md` appends the matching `cairn-event-v1` block in the same commit that performs the act — discharging, for the one artifact this plan controls, the residual named in this chunk's intro. **Not uniformly "the implementing agent"**: a further status flip on this plan is the implementing agent's own act, but this file's own eventual code review is performed and self-committed by its named reviewer (`AGENTS.md` > Review: "No agent writes or commits a review attributed to another agent" — code review's floor is explicitly not the implementing agent), so the block for that act is that reviewer's to append, not the implementing agent's. This row instructs the act's performer, whoever that is, rather than naming one agent for an act it cannot perform. |
+| 6-9 | `tools/_lifecycle_metrics/extract.py` | `extract_plan_row` gains `repo_root: Optional[Path] = None` and `include_git_timestamps: bool = True` parameters, mirroring `extract_proposal_row`'s shape (today it is a pure text function with neither). Post-cutoff: `plan_review_rounds`/`code_review_rounds` are sourced from reconciled `review-pass` blocks on the plan file, not from `_CODE_REVIEW_HEADING_RE`/`_PLAN_REVIEW_HEADING_RE` line-counting. **Classification, not the block's own `tier` field**: a plan's `review-pass` acts come from two distinct heading types sharing one event kind, and the reconciler already inspects the matched section's heading line to confirm the act exists (Round 7 §2 step 4, "requires the matching lifecycle act in the same diff... a `review-pass` block needs the added review section") — this chunk has that reconciled record retain the matched heading line (or an equivalent section-kind tag) so `extract_plan_row` can classify it with the same `_CODE_REVIEW_HEADING_RE`/`_PLAN_REVIEW_HEADING_RE` patterns it already imports, incrementing `code_review_rounds` or `plan_review_rounds` accordingly. This repurposes those two regexes from direct heading-counters into section-kind classifiers of an already-reconciled act; Chunk 1 does not remove them and this row is why. The block's own `tier` key (Internal/External/Security/Code) is left for a future consumer that wants the review's declared independence tier — not used here, because the heading type, not the self-reported tier, is the classifier the reconciler already computed to find the act at all. Pre-cutoff acts on the same plan artifact: `plan_review_rounds`/`code_review_rounds` are `''` (empty), per the pinned representation above — not the old heading-count value. |
+| 6-10 | `templates/modules/default-on/_lifecycle_metrics/extract.py` | Twin of 6-9, same commit. |
+| 6-11 | `tools/_lifecycle_metrics/extract.py` | `plan_rows()` passes `repo_root=root` through to `extract_plan_row` (mirroring `proposal_rows()`'s existing `repo_root=root` pass-through to `extract_proposal_row`), so the real corpus walk reconciles plan-row acts rather than only unit tests that pass `repo_root` explicitly. Twin: same commit. |
+| 6-12 | `bootstrap/tests/test_lifecycle_metrics_events.py` or `bootstrap/tests/test_lifecycle_metrics_config.py` | New fixtures, mirroring 6-6's proposal-row shape for the plan schema: a plan artifact with one `## Plan review` post-cutoff section and no block → `INCOMPLETE`; one `## Code review` post-cutoff section and no block → `INCOMPLETE`; two `## Plan review` sections and one `## Code review` section, no intervening status change, reconciled → `plan_review_rounds == 2`, `code_review_rounds == 1`; a plan artifact with a `## Plan review` pass before its activation cutoff and one after → the pre-cutoff contribution reads `''`, the post-cutoff value is populated and reconciled, matching 6-6's pre/post-activation split fixture for the proposal schema. |
 
 **Acceptance for this chunk**: the four template paths (6-1/6-2) each
 independently carry the literal string `cairn-event-v1` **worked into the
 templates' own instructional guidance** for how an agent appends an event
 block at a transition, review pass, or response — not merely present as a bare
 token or inside a fenced example, which would satisfy a literal string match
-while leaving an agent no usable instruction; every fixture in 6-6 passes; a
-report run against a fixture tree containing a deliberately unreconciled act
-exits nonzero and names which artifact/commit/kind failed to reconcile, never
-a shorter clean series; the `__init__.py` docstring (6-7) no longer documents
-unconditional quiet git-absent degradation as the only behavior. Because this
+while leaving an agent no usable instruction; every fixture in 6-6 and 6-12
+passes; a report run against a fixture tree containing a deliberately
+unreconciled act exits nonzero and names which artifact/commit/kind failed to
+reconcile, never a shorter clean series — including a deliberately
+unreconciled `## Plan review`/`## Code review` act on a plan artifact, not
+only a proposal's `## Review` act; `extract_plan_row`'s `plan_review_rounds`/
+`code_review_rounds` are reconciled-block-derived post-cutoff and `''`
+pre-cutoff, never the `_CODE_REVIEW_HEADING_RE`/`_PLAN_REVIEW_HEADING_RE`
+line count, for every plan row `plan_rows()` emits; the `__init__.py`
+docstring (6-7) no longer documents unconditional quiet git-absent
+degradation as the only behavior. Because this
 chunk's own commit is what first introduces the marker, it lands in the same
 commit as the reader and reconciliation logic that can act on it — no chunk
 boundary leaves the marker present with no reader behind it.
@@ -766,16 +956,25 @@ Depends on Chunks 1-6 all being present.
 | 7-6 | `bootstrap/tests/test_lifecycle_stage_patterns.py` | `test_t10_public_path_reports_exact_with_populated_hour_deltas` and `test_t12_a_target_with_no_git_still_degrades_to_best_effort` both hand-build their `tmp_path` (`_write_proposal` + `_init_repo`/no repo) with **no `dev/proposals/_template.md` at all** — no marker file exists on disk in either fixture, the plainest case of "missing marker." Per (c), both trees are simply not yet activated: `stage_timestamp_reliability` keeps its existing timestamp-derived computation in both (`Exact` for T10's real four-commit history, `Best-effort` for T12's no-git case). **Confirmed unaffected**; no code or test change. |
 | 7-7 | `bootstrap/tests/test_lifecycle_cli.py` | `test_emit_snapshot_creates_indexed_csv`, `test_emit_snapshot_same_day_coalesces_by_index`, `test_snapshot_flag_via_main` all drive the extractor through the `lm_repo` fixture, which creates only a bare `dev/proposals/` directory with one hand-written proposal — no installed template, no `.git`. No marker anywhere in the tree, so (c) applies; none of the three asserts a review-pass-kind field's specific value (they check row count, CSV header shape, and file paths), so the empty-vs-unchanged split above has no observable effect here either way. **Confirmed unaffected**; no code or test change. |
 | 7-8 | `bootstrap/tests/test_reference_scripts.py` | `TestVcsRobustness::test_main_branch_target_runs` (~line 458) is the concrete case the Activation section's exclusive-cutoff resolution exists to keep passing: `_scaffold` installs the marker-carrying template, a sample proposal carrying a `## Review` section is written, and `git init` + `add -A` + **one** commit lands both the marker's own introduction and the proposal's review-pass act together. Under the exclusive reading (5-3), that commit is pre-cutoff, so `rows = lm.proposal_rows(tmp_path)  # must not raise` continues to hold with no change. **Confirmed, and named as the regression this plan would otherwise silently depend on** — an inclusive reading would red this test, and nothing before this audit pinned that as a fixture against the real test rather than 5-3's synthetic one alone. |
+| 7-9 | `bootstrap/tests/test_lifecycle_metrics_config.py` | `test_emit_snapshot_stays_contained_under_hostile_config` (line 112, as_of 2026-08-20) builds a tree with a real proposal under `dev/proposals/` and calls `emit_snapshot` on it (line 123) — a call path the enumeration below reaches and Chunk 7's own table had not previously named. Disposition confirmed by reading the fixture directly: no installed template (so no marker, so (c) applies), the proposal carries no `## Review` section, and the test asserts only the snapshot path and containment, never a review-pass-kind field's value. **Confirmed unaffected**, same shape as 7-7; no code or test change. |
+
+**The enumeration this row's own audit runs on, recorded so a later pass
+re-runs it rather than re-deriving it**:
+`grep -rn 'extract_proposal_row\|extract_plan_row\|proposal_rows\|plan_rows\|emit_snapshot' bootstrap/tests/*.py`.
+Confirmed against a known-present case before trusting a clean run against
+it: this form returns the eight tests this chunk's table names (7-3, 7-5,
+7-6 ×2, 7-7 ×3, 7-8, 7-9), so an enumeration that returned fewer would be a
+real signal, not a null result to wave past.
 
 **Acceptance for this chunk**: 7-1 and 7-2 pass as new fixtures. 7-4, 7-5,
-7-6, 7-7, and 7-8 are confirming (not new) passes against the live or
+7-6, 7-7, 7-8, and 7-9 are confirming (not new) passes against the live or
 existing-fixture code paths — each one audited under the corrected
 predicate ("every existing test that runs the extractor over any tree", not
 only the git-absent ones) and found unaffected by Chunks 4-6, for the
 reason its own row states, with a docstring/comment update where the row
 says so. 7-3 is the one exception in this audit: its `review_rounds`
-assertion is updated to expect the empty value, and passes against that
-updated assertion, not against the pre-Chunk-6 one.
+assertion is updated to expect `''`, and passes against that updated
+assertion, not against the pre-Chunk-6 one.
 
 ### Chunk 8 — CHANGELOG and the before/after corpus evidence
 
@@ -855,7 +1054,10 @@ unrelated to this batching option: it needs no Maintainer ceremony at all.)
 * **Tests that must pass**: every fixture named in Chunks 1, 3, 4, 5, 6, and 7's
   file tables, by node once implemented; Chunk 4's updated pinned counts
   (`test_templates_py_count_is_pinned`, `test_manifest_has_the_expected_py_source_count`)
-  and its AST-baseline `update-symbol` step; `bootstrap/tests/test_lifecycle_contract.py`
+  and its AST-baseline `update-symbol` step; Chunk 4's extended vocabulary
+  matrix (`bootstrap/tests/test_lifecycle_vocabulary.py`, rows 4-10 through
+  4-13); Chunk 6's plan-row wiring fixtures (rows 6-9 through 6-12);
+  `bootstrap/tests/test_lifecycle_contract.py`
   unchanged in outcome (confirming pass, not a new fixture) except where 4-5 and
   7-4 name a specific extension.
 * **Doc updates that must land**: `templates/modules/default-on/lifecycle-metrics.md`
@@ -868,7 +1070,10 @@ unrelated to this batching option: it needs no Maintainer ceremony at all.)
   `python tools/lifecycle_metrics.py --manifest` run against a scratch tree,
   confirming the v2 identity and the absence of the eight retired columns;
   `python tools/lifecycle_planner.py next <fixture> --to <state>` confirming the
-  read-only contract under the extended preview text (4-5).
+  read-only contract under the extended preview text (4-5); a plan-row smoke
+  check confirming `plan_review_rounds`/`code_review_rounds` are
+  reconciled-block-derived post-cutoff and `''` pre-cutoff, not the retired
+  heading-count regex (rows 6-9 through 6-12).
 * Inbound path-link updates: none expected — `dev/PLANNING.md` and
   `dev/NEXT_SESSION.md` refer to plans by filename stem, not path link, so the
   archive-move needs no update there.
@@ -936,6 +1141,11 @@ project's own naming convention):
 | `next --to` stays read-only under the extended preview | Chunk 4's and Chunk 7's regressions against `test_lifecycle_contract.py` |
 | Unavailable Git on a **provably** post-activation artifact refuses the row, not a quiet downgrade | Chunk 6's reconciliation logic; no pre-existing test currently reaches this state (every git-absent fixture Chunk 7 audited also lacks a way to prove post-activation status, so each falls back to the pre-cutoff, field-kind-dependent disposition instead — see the two rows above) |
 | Git entirely absent forecloses proving post-activation status, so the tree is treated as pre-cutoff rather than refused | Chunk 5's Activation section; confirmed against `test_no_git_target_degrades` (7-5, unaffected — transition field), `test_installed_lifecycle_metrics_runs_on_target` (7-3, the one real change — review-pass field), and `test_t12_a_target_with_no_git_still_degrades_to_best_effort` (7-6, unaffected — transition field), all `test_reference_scripts.py` except the last |
+| `plan_review_rounds`/`code_review_rounds` (`PLAN_COLUMNS`) are wired to reconciled `review-pass` blocks, classified by matched heading (`## Plan review` vs. `## Code review`), not left computing the retired heading-count regex | Rows 6-9 through 6-12; the taxonomy note in Chunk 6's intro naming both `PLAN_COLUMNS` fields as in scope |
+| `events.py`'s `from_state`/`to_state` bound is checked against the real runtime vocabulary (`PROPOSAL_STATES`/`PLAN_STATES`), sourced through `extract.py`'s existing contained loader and passed in as a parameter — never a second, locally-declared copy | Rows 4-10 through 4-13; `bootstrap/tests/test_lifecycle_vocabulary.py`'s extended `_AUDITED_CONSUMER_SOURCES` and `METRICS_SPEC` matrix |
+| The reconciler's act list and its block list are read from the same committed history (HEAD), so an uncommitted lifecycle act is invisible to both sides and is neither refused nor counted until committed | Chunk 5's act-list paragraph and its new 5-3 fixture |
+| A root (zero-parent) commit is attributed normally — its empty parent sequence trivially satisfies the prefix check, and step 5's multi-parent refusal does not extend to it | Chunk 5's root-commit paragraph and its new 5-3 fixture |
+| A pre-cutoff or unprovable-cutoff review-pass/response field emits the literal `''`, never `0`/`False`/any other falsy stand-in that could be mistaken for a computed value | Chunk 6's "Empty is the literal string" paragraph; rows 6-9/6-12, 7-3 |
 
 **Known omission, named rather than discovered later.** No test in this plan
 exercises a shallow clone or a rewritten-history repository directly (Round
@@ -2112,3 +2322,76 @@ plan claim cited them. Did not review `tools/lifecycle.py` or the pilot-event
 ledger; I confirmed by search that no chunk touches either.
 
 **Status**: `awaiting-plan-review` -> `revising-plan`.
+
+## Response to plan review -- Claude Sonnet 5 (author) -- 2026-08-20 (round 4)
+
+**Model**: Claude Sonnet 5
+
+**All six findings accepted; all folded into the plan's own operative cells,
+not answered here.** The three blocking findings share one root cause named
+in the review's own verdict: every prior round read Part 3 through the
+**proposal**-row schema and never opened the **plan**-row schema, the
+vocabulary-loader source, or the reconciler's own act-list source. Re-deriving
+the field inventory from `tools/_lifecycle_metrics/extract.py` directly
+(`PLAN_COLUMNS`, `_REQUIRED_EXPORTS`, `extract_plan_row`'s current signature)
+rather than from what the plan previously claimed is what each disposition
+below is built on.
+
+| Finding | Disposition | Where addressed |
+|---|---|---|
+| EPR-13 (BLOCKING) — `plan_review_rounds`/`code_review_rounds` are retained event-derived fields no chunk wires | ACCEPTED, disposition: **wire**, not residual | Scope's "In, per the Decision" paragraph (both schemas named); Chunk 6's intro, new taxonomy-extension paragraph; Chunk 6's "dropped-historical-continuity allowance" paragraph (both fields added to the empty-emission list); new rows 6-9 through 6-12 (`extract_plan_row` gains `repo_root`/`include_git_timestamps`, sources both fields from reconciled `review-pass` blocks classified by matched heading via the existing `_CODE_REVIEW_HEADING_RE`/`_PLAN_REVIEW_HEADING_RE`, `plan_rows()` passes `repo_root` through, new fixtures); Chunk 6's acceptance paragraph; Author-accounting invariants table (new row) |
+| EPR-14 (BLOCKING) — the grammar's `from_state`/`to_state` bound has no named vocabulary source, and the anti-fork audit does not scan `events.py` | ACCEPTED | Row 4-1 (the check takes `valid_states` as an explicit parameter — no import of `extract.py`, avoiding the circular dependency Chunk 6 would otherwise create); new rows 4-10 through 4-13 (`_REQUIRED_EXPORTS` extended to require `PROPOSAL_STATES` alongside `PLAN_STATES`; `test_lifecycle_vocabulary.py`'s `METRICS_SPEC`/`_DECOY_PLANNER_SRC` and `_AUDITED_CONSUMER_SOURCES` both extended); row 5-1 (the history walker threads the same parameter through, not a second declaration of it); Author-accounting invariants table (new row) |
+| EPR-15 (BLOCKING) — the reconciler's act list has no named source, and working copy and history disagree in the ordinary case | ACCEPTED, resolved: the act list is read from the same committed history (HEAD) the block list is read from, not the live working-copy text | Chunk 5, new "The act list the reconciler checks" paragraph (the resolution, its reasoning, and the named behavior change from today's working-copy-reading tool); row 5-3 (new fixture); Author-accounting invariants table (new row) |
+| EPR-16 (NON-BLOCKING) — Chunk 7's audit is one test short under its own corrected predicate | ACCEPTED | New row 7-9 (`test_emit_snapshot_stays_contained_under_hostile_config`, confirmed unaffected); the enumeration command recorded in Chunk 7's own text so a later pass re-runs rather than re-derives it; Chunk 7's acceptance line |
+| EPR-17 (NON-BLOCKING) — the missing-marker resolution departs from the Decision's stated term undeclared, and `Contract expansion` is stale | ACCEPTED, both halves | Chunk 5's Activation section, new "The option that names" paragraph (states what (a) and (b) were, alongside the chosen (c), mirroring the `--backfill-from` section's own standard) and the "departure from Round 7 §4's own literal text" paragraph immediately after it; Scope's `Contract expansion` section, new paragraph naming all three failure-disposition determinations this plan makes beyond the accepted text |
+| EPR-18 (NON-BLOCKING) — four small ones | ACCEPTED, all four addressed; the fifth item was housekeeping only, per the finding's own text, and needed no disposition | (1) Chunk 5, new "What the exclusive reading concedes" paragraph (the adopter-tree cost, distinct from the deletion-case concession already stated); (2) Chunk 6, new "'Empty' is the literal string `''`" paragraph, plus the reasoning tying it to the Decision's own `code_review_rounds`-read-0 rationale; (3) Chunk 5, new "A root commit's parent sequence is empty" paragraph; (4) row 6-8, rewritten to instruct the act's performer rather than naming "the implementing agent" for an act (code review) it cannot perform under `AGENTS.md` > Review |
+
+**One correction this round's own drafting produced, beyond what any finding
+asked for.** EPR-14's own finding text cites `bootstrap/tests/test_pilot_evidence.py::TestVocabularyLoader`
+as where extending `extract.py`'s `_REQUIRED_EXPORTS` reaches a pinned test
+file. Checked directly rather than carried forward: that file's `MODULE_PATH`
+(line 51) is `templates/skills/_lib/lifecycle.py` — `tools/lifecycle.py`'s own
+independent copy of the loader pattern, a consumer this plan does not touch
+and explicitly places out of scope elsewhere ("Out, because Round 5
+explicitly removed it"). The test surface the extension actually reaches is
+`bootstrap/tests/test_lifecycle_vocabulary.py`'s `METRICS_SPEC`/
+`TestLoaderContainmentMatrix`, confirmed by reading that file's `ConsumerSpec`
+structure directly (row 4-11 names the concrete edits it needs). Row 4-11
+carries the correction rather than silently repeating the review's own
+citation.
+
+**What I believe may still be under-specified, flagged rather than deferred,
+per this task's own brief.** The classification of a plan artifact's
+`review-pass` events into `plan_review_rounds` vs. `code_review_rounds` (row
+6-9) reuses the matched section heading (`_CODE_REVIEW_HEADING_RE`/
+`_PLAN_REVIEW_HEADING_RE`) rather than the event block's own `tier` key
+(bounded to `Internal`/`External`/`Security`/`Code` by Round 7's grammar,
+reproduced in Chunk 4). I read the heading as the more robust classifier — it
+is what the reconciler already inspects to confirm the act exists at all, so
+it does not depend on the block-writer correctly setting `tier: Code` — but
+Round 7's text does not say which of the two the taxonomy intends, and the
+`tier` bound's own fourth value (`Code`) is otherwise unused by any field this
+plan wires. This is a design choice this round makes, not a specification
+Round 7 states directly, and a future round should treat it as such.
+
+**Searches confirmed against a known-present case, per this task's
+instrument-confirmation rule.** (1) `grep -n "^PLAN_STATES\|^PROPOSAL_STATES\|^HISTORICAL_PLAN_STATES\|^HISTORICAL_PROPOSAL_STATES" tools/lifecycle_planner.py`
+— confirmed `PROPOSAL_STATES` exists in the planner (line 1113) but is absent
+from `extract.py`'s `_REQUIRED_EXPORTS` (line 340), which is EPR-14's own
+claim and the reason row 4-10 is needed rather than assumed unnecessary. (2)
+`grep -rn "plan_review_rounds\|code_review_rounds" bootstrap/tests/*.py`
+returns nothing — no pre-existing test asserts either field's value, so
+EPR-13's wiring (unlike `review_rounds`'s row 7-3) needs no pre-existing-test
+audit row of its own; confirmed by the same search finding `_hour_delta`'s
+`''`-on-missing precedent at `gitmeta.py:127` when checking for one, which
+the search could have failed to find had the file not been read directly. (3)
+`grep -n "_review_tier" tools/_lifecycle_metrics/parse.py` and reading the
+function — confirmed it is heading-generic (works on any `## `-prefixed
+header, not proposal-specific) but is not the mechanism row 6-9's
+classification uses, ruling out a plausible-looking shortcut before writing
+the row. (4) `grep -rn "_REQUIRED_EXPORTS\|LoaderSpec(" bootstrap/tests/*.py tools/_lifecycle_metrics/*.py`
+— located `test_lifecycle_vocabulary.py`'s `ConsumerSpec`/`METRICS_SPEC`
+structure directly, which is what produced the EPR-14 citation correction
+above.
+
+**Status**: `revising-plan` -> `awaiting-plan-review`.
