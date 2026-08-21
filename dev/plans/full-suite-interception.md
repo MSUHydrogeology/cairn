@@ -2062,3 +2062,45 @@ implementation of `pytest_collection_finish`. Two shipped docstrings — in
 false. Those claims are corrected in the following commit whether or not the
 finding is fixed, because a docstring asserting a property the code lacks is a
 worse defect than the gap it conceals.
+
+## Response to code review -- Claude Opus 5 (Implementation) -- 2026-08-20
+
+**Model**: Claude Opus 5
+
+All three blocking findings accepted and fixed at `91bd32f`. The first was the
+most serious defect this plan produced, and it was in a test rather than in the
+guard.
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| CR1 (BLOCKING) — the regression pinning the wrapper fix is inert | ACCEPTED, fixed | `test_broad_run_guard.py`: the competitor is now a **separate plugin module** loaded with `-p`, so pluggy orders two genuinely registered hooks. Confirmed directional — the rebuilt test **fails** against the pre-fix conftest at `a316d75` and passes against the fix. A second test, `test_the_append_helper_cannot_be_used_to_forge_a_competitor`, pins the trap itself. |
+| CR2 (BLOCKING) — two docstrings assert a property the code lacks; FSI-SR1 has no disposition | ACCEPTED, fixed | The conftest docstring now states what the wrapper does and does **not** beat, names FSI-SR1 as open, and `test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so` pins the limit as it behaves. FSI-SR1's standing state is recorded in the correction section above. |
+| CR3 (BLOCKING) — an accepted, explicitly allowed test never landed | ACCEPTED, fixed | `test_a_release_refused_outcome_is_not_masked_by_the_guard`, directional in both halves. Housed in `test_broad_run_guard.py` rather than `test_security_check.py` where the row mapping put it — declared in its own docstring, not silent. |
+
+**CR1 is worth more than its fix.** The test appended a second
+`def pytest_collection_finish` to the same conftest module. Python rebinds the
+name, so the append **deleted the guard**: the test ran against a guardless tree
+and passed against the very code the Security Review had found defective.
+Measured — unmodified conftest at 45 files exits 4; with a harmless same-named
+hook appended, exit 0.
+
+The general shape, which is why the trap is now pinned by its own test: **a test
+whose setup silently removes the mechanism under test reports safety it never
+measured.** It is worse than no test, because no test is visibly absent while
+this one is visibly green. The sibling plan is about to add five more hooks to
+that conftest, so the trap had a second chance to fire.
+
+**Non-blocking findings CR4–CR7 are not addressed here** and are carried as
+known state rather than silently dropped: the Boundary B record's `fail=0`
+transcription (the gate reports `fail=86`, identical at `a316d75~1`, so the
+change is clean and the record's figure is wrong); the `PYTHONDONTWRITEBYTECODE`
+dependency in the recorded command; a fourth live full-suite instruction inside
+`_gate_manifest.py`'s frozen command list, which no line-based grep could match;
+and two rows landing unparametrized whose behaviour the reviewer verified
+correct across seven selector forms. Each is real. None changes shipped
+behaviour, and this plan is not the place to widen further.
+
+**Recommendation to the Maintainer**, per the editor model now proposed in
+`2026-08-20-claude-review-loop-termination`: the three blocking findings are
+closed, FSI-SR1 is open with a measured residual and a test pinning it, and
+CR4–CR7 stand as recorded known state. The disposition is the Maintainer's.
