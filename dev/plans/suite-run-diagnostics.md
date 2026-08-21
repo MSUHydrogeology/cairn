@@ -1438,6 +1438,9 @@ Assurance path: high-assurance
 **Model**: Claude Sonnet 5 (`claude-sonnet-5`). Independent context: did not
 implement this plan, has no memory of authoring it.
 
+**Findings**: raised -- 1 (CR1: the per-day median wall-clock figure), fixed
+in this pass, mutation-verified, 0 left open; 0 blocking.
+
 **A note on this pass's mode**, per the Maintainer's explicit instruction for
 this round: one pass, review and fix rather than raise-and-wait. Where a
 finding's fix was clear and safe I made it directly and recorded it below,
