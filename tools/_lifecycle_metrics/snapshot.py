@@ -278,7 +278,10 @@ def _build_snapshot_rows(
     proposal_stems = [p.stem for p in iter_proposal_files(root)]
     plan_rows_list: List[Dict[str, object]] = []
     for p in iter_plan_files(root):
-        r = extract_plan_row(p, proposal_stems)
+        r = extract_plan_row(
+            p, proposal_stems,
+            repo_root=root, include_git_timestamps=include_git_timestamps,
+        )
         r['kind'] = 'plan'
         r['schema_version'] = SNAPSHOT_SCHEMA_VERSION
         r['corpus_commit'] = corpus_commit

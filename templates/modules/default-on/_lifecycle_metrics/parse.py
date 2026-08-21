@@ -59,20 +59,6 @@ def _agent_of(header: str) -> str:
     return body
 
 
-def _review_tier(header: str) -> str:
-    """Best-effort External / Internal tier from a ``## Review`` header's
-    role label.
-
-    Matching is case-insensitive substring stems.  Headers with no role
-    word fall to ``unknown``."""
-    h = header.lower().replace('-', ' ')
-    if 'external' in h or 'antagonistic' in h:
-        return 'external'
-    if 'internal' in h or 'friendly advers' in h or 'review agent' in h:
-        return 'internal'
-    return 'unknown'
-
-
 def _parse_date(value: str) -> Optional[datetime.date]:
     """First ISO ``YYYY-MM-DD`` token in ``value`` as a ``date``, or
     ``None``.  The literal ``YYYY-MM-DD`` template placeholder does not

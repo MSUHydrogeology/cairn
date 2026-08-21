@@ -170,6 +170,46 @@ def _line_of(text: str, offset: int) -> int:
     return text.count("\n", 0, offset) + 1
 
 
+_MARKDOWN_CODE_FENCE_RE = re.compile(r'^(`{3,}|~{3,})')
+
+
+def _blank_fenced_code_blocks(text: str) -> str:
+    """Blank the CONTENTS of every triple-backtick/tilde fenced markdown
+    code block, preserving line count and every non-blanked line
+    verbatim (so byte offsets within a KEPT line, and line numbers
+    throughout, stay accurate against the original text).
+
+    Doctrine and plan prose routinely reproduces the grammar's own
+    worked examples verbatim inside a fenced code block -- this very
+    plan's Chunk 4 does exactly that, quoting Round 7's three examples --
+    and a raw-text scan cannot otherwise tell that apart from a real,
+    committed event block.  Discovered empirically running the real
+    extractor against this repository's own corpus during Chunk 6's
+    implementation (`AGENTS.md` > "Verifying claims"): the plan's own
+    illustrative examples crashed a real corpus walk with a spurious
+    'reviewed' is not a declared lifecycle status refusal before this
+    fix existed."""
+    lines = text.split("\n")
+    out: List[str] = []
+    fence_marker: Optional[str] = None
+    for line in lines:
+        stripped = line.strip()
+        if fence_marker is None:
+            m = _MARKDOWN_CODE_FENCE_RE.match(stripped)
+            if m:
+                fence_marker = m.group(1)[0] * len(m.group(1))
+                out.append(line)
+                continue
+            out.append(line)
+        else:
+            if stripped.startswith(fence_marker):
+                fence_marker = None
+                out.append(line)
+            else:
+                out.append("")
+    return "\n".join(out)
+
+
 def parse_event_blocks(
     text: str, *, valid_states: Sequence[str],
 ) -> List[EventBlock]:
@@ -185,10 +225,17 @@ def parse_event_blocks(
     kind, unknown version token, missing required key, or a value
     outside its bounds -- raises :class:`EventGrammarError` naming the
     line and the reason; the whole call refuses rather than silently
-    skipping the one bad block and returning the rest."""
+    skipping the one bad block and returning the rest.
+
+    A fence found inside a triple-backtick/tilde MARKDOWN code block is
+    never real -- see :func:`_blank_fenced_code_blocks` -- and is
+    excluded from every check above, including the refusal checks: an
+    illustrative example with a deliberately-wrong field is legitimate
+    documentation, not a defect to refuse on."""
+    scan_text = _blank_fenced_code_blocks(text)
     blocks: List[EventBlock] = []
-    for m in _FENCE_RE.finditer(text):
-        line_no = _line_of(text, m.start())
+    for m in _FENCE_RE.finditer(scan_text):
+        line_no = _line_of(scan_text, m.start())
         version = m.group("version")
         if version != _VERSION_SUFFIX:
             raise EventGrammarError(
@@ -599,9 +646,20 @@ def walk_history(
         added = child_blocks[len(prev_blocks):]
         is_merge = len(commit.parents) > 1
 
+        # File CREATION (no prior committed content at all) is treated
+        # specially below: an artifact declaring its first-ever status is
+        # not a transition act requiring a block -- the grammar's own
+        # from_state bound requires "a declared lifecycle status", and
+        # there is no prior state to declare a transition FROM.  A
+        # creation commit MAY still carry a transition block (some
+        # authors document the opening state explicitly); it is simply
+        # never REQUIRED to, in either direction.
+        is_creation = prev_content is None
         parent_text = prev_content or ""
-        status_changed = _status_of(parent_text) != _status_of(child_content) \
-            and _status_of(child_content) != ""
+        status_changed = (
+            _status_of(child_content) != ""
+            and _status_of(child_content) != _status_of(parent_text)
+        )
         new_review_lines = _new_matching_lines(
             parent_text, child_content, lambda l: _section_kind_of(l) is not None)
         new_response_lines = _new_matching_lines(
@@ -617,7 +675,7 @@ def walk_history(
                 f"one commit -- a single diff carries at most one "
                 f"**Status** change"
             )
-        if added_transition and not status_changed:
+        if added_transition and not (status_changed or is_creation):
             raise ReconciliationError(
                 f"{commit.sha}: a transition block was added with no "
                 f"matching **Status** change in this diff"
@@ -651,7 +709,7 @@ def walk_history(
                 section_kind=section_kind, block=block,
             ))
 
-        if status_changed and not added_transition:
+        if status_changed and not added_transition and not is_creation:
             unmatched.append(UnmatchedAct(
                 kind=KIND_TRANSITION, commit=commit.sha, section_kind=None,
                 detail="a **Status** change has no matching transition block",
@@ -691,6 +749,19 @@ def _marker_status_by_commit(
     return out
 
 
+#: Memoized per ``(repo_root, template_relpath, companion_relpath)`` --
+#: a corpus walk calls this once per ARTIFACT, but the answer depends
+#: only on the TEMPLATE's own history, which is identical for every
+#: artifact of one kind (every proposal shares one
+#: ``dev/proposals/_template.md`` cutoff).  Recomputing it per file
+#: turned a real corpus walk from a handful of git invocations into one
+#: per artifact -- measured empirically running the real extractor
+#: against this repository's own corpus during Chunk 6's implementation.
+#: A refusal (:class:`ReconciliationError`) is NOT cached: a transient
+#: refusal should be re-derived, not remembered as permanent.
+_activation_cache: Dict[Tuple[str, str, Optional[str]], Optional[str]] = {}
+
+
 def activation_commit(
     repo_root: Path, template_relpath: str,
     *, companion_relpath: Optional[str] = None,
@@ -717,6 +788,10 @@ def activation_commit(
       this is this module's own design choice for a mechanism Round 7's
       text names but does not specify (recorded in the implementing
       commit body, per this task's instrument-confirmation rule)."""
+    cache_key = (str(repo_root), template_relpath, companion_relpath)
+    if cache_key in _activation_cache:
+        return _activation_cache[cache_key]
+
     history = _marker_status_by_commit(repo_root, template_relpath, VERSION_TOKEN)
 
     # Count absent->present edges across the oldest-first sequence (the
@@ -757,4 +832,120 @@ def activation_commit(
                     f"on whether the '{VERSION_TOKEN}' marker is present"
                 )
 
+    _activation_cache[cache_key] = result
     return result
+
+
+# --------------------------------------------------------- fail-closed reconciliation
+#
+# Chunk 6: ties `activation_commit()` and `walk_history()` together into the
+# cutoff-aware disposition `extract.py` wires into the retained-field
+# columns.  "Empty" for a pre-cutoff or unprovable-cutoff review-pass/
+# response field is the literal string `''`, never `0`/`False`/any other
+# falsy stand-in that could be mistaken for a computed value -- named here
+# because the caller (`extract.py`) is where that representation is chosen,
+# but the boundary this module returns (which events are POST-cutoff) is
+# what makes that choice possible in the first place.
+
+
+def _is_strictly_after(repo_root: Path, cutoff_sha: str, candidate_sha: str) -> bool:
+    """Whether ``candidate_sha`` is strictly after ``cutoff_sha`` in
+    history -- true ancestry, EXCLUSIVE of equality: the marker's own
+    introducing commit is itself pre-cutoff (Chunk 5's Activation
+    section, "the marker's own introducing commit is pre-cutoff, not
+    post-cutoff"), not the boundary at which post-cutoff behavior
+    starts."""
+    if candidate_sha == cutoff_sha:
+        return False
+    result = _run_git(
+        repo_root, ["merge-base", "--is-ancestor", cutoff_sha, candidate_sha])
+    return result.returncode == 0
+
+
+@dataclass(frozen=True)
+class Reconciliation:
+    """The final, cutoff-aware disposition for one artifact's events --
+    what `extract.py` reads to source the retained event-derived fields."""
+
+    activation: Optional[str]              # the cutoff commit, or None (never activated)
+    events: List[ReconciledEvent] = field(default_factory=list)
+    post_cutoff_events: List[ReconciledEvent] = field(default_factory=list)
+    #: Acts (of any kind) that are NOT provably post-cutoff -- either a
+    #: real pre-cutoff act (before the marker's own introduction), or the
+    #: marker's own introducing commit itself (exclusive reading), or
+    #: every act at all when the tree was never activated.  `extract.py`
+    #: reads this to decide the "empty, not a silently-partial count"
+    #: disposition per retained field: an artifact carrying BOTH a
+    #: pre-cutoff and a post-cutoff act of the same kind reports that
+    #: field empty rather than a count that omits the pre-cutoff one --
+    #: this module's own resolution of a genuine ambiguity in the
+    #: accepted text for the mixed-history case (recorded in the
+    #: implementing commit body).
+    pre_cutoff_acts: List[UnmatchedAct] = field(default_factory=list)
+    incomplete_reasons: List[str] = field(default_factory=list)
+
+    @property
+    def incomplete(self) -> bool:
+        return bool(self.incomplete_reasons)
+
+
+def reconcile(
+    repo_root: Path, relpath: str, *, valid_states: Sequence[str],
+    template_relpath: str, companion_relpath: Optional[str] = None,
+) -> Reconciliation:
+    """The fail-closed, cutoff-aware reconciliation entry point.
+
+    Combines :func:`activation_commit` (read from ``template_relpath``'s
+    own history -- the artifact-KIND-wide cutoff) with :func:`walk_history`
+    (this SPECIFIC artifact's own event blocks), classifying every event
+    and every unmatched act as pre- or post-cutoff.  A post-cutoff
+    unmatched act is what makes ``.incomplete`` true; a pre-cutoff one is
+    not an error at all -- it is simply what "before its cutoff, an empty
+    series is correct" (Round 7 SS4) looks like.
+
+    Raises :class:`GitUnavailable` when there is no git checkout at all
+    (the caller -- ``extract.py`` -- is the one that knows this means
+    "cannot prove past cutoff, fall back to pre-cutoff behavior", not
+    "refuse"; that disposition lives there, not here, because it differs
+    by field kind).  Raises :class:`ReconciliationError` (or
+    :class:`EventGrammarError`) on any structural defect a mutated block,
+    an orphaned block, a merge-smuggled block, or a malformed grammar --
+    all unconditional, independent of the activation cutoff.
+
+    **Never activated is a fast path, not merely a special case.** When
+    ``activation_commit`` returns ``None``, every act on this artifact is
+    pre-cutoff by definition (disposition (c)) regardless of what a full
+    history walk would show, so this returns immediately WITHOUT calling
+    :func:`walk_history` at all -- skipping a `git log`/`git show` walk
+    (and the separate merge-commit scan) per artifact that a corpus-wide
+    call would otherwise pay for every single file, for a result the
+    cutoff alone already determines.  Measured empirically: running the
+    real extractor against this repository's own corpus, before this
+    fast path existed, did not complete inside a 120-second budget."""
+    cutoff = activation_commit(
+        repo_root, template_relpath, companion_relpath=companion_relpath)
+    if cutoff is None:
+        return Reconciliation(activation=None)
+    walked = walk_history(repo_root, relpath, valid_states=valid_states)
+
+    post_cutoff_events = [
+        ev for ev in walked.events
+        if cutoff is not None and _is_strictly_after(repo_root, cutoff, ev.commit)
+    ]
+    incomplete_reasons = [
+        f"{relpath} @ {act.commit}: {act.kind} act has no matching event "
+        f"block -- {act.detail}"
+        for act in walked.unmatched_acts
+        if cutoff is not None and _is_strictly_after(repo_root, cutoff, act.commit)
+    ]
+    pre_cutoff_acts = [
+        act for act in walked.unmatched_acts
+        if not (cutoff is not None and _is_strictly_after(repo_root, cutoff, act.commit))
+    ]
+
+    return Reconciliation(
+        activation=cutoff, events=walked.events,
+        post_cutoff_events=post_cutoff_events,
+        pre_cutoff_acts=pre_cutoff_acts,
+        incomplete_reasons=incomplete_reasons,
+    )

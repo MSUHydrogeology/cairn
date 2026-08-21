@@ -65,7 +65,9 @@ schema-structured):
   slug-match fallback; the annotation / collision-log parsers
   (forgiving by design).
 
-Robust across VCS settings: when git is absent, the path is not a
+Robust across VCS settings, for the header/git-timestamp-derived
+columns this paragraph has always covered (``days_*``/``hours_*``/
+``stage_timestamp_reliability``): when git is absent, the path is not a
 checkout, the default branch is named ``main`` rather than ``master``,
 or **no commit subject in a file's history matches the stage
 vocabulary**, the optional commit-timestamp augmentation degrades
@@ -74,6 +76,22 @@ rather than raising.  That last cause is the common one in a project
 whose commit subjects do not carry the lifecycle-stage wording the
 reader looks for, and it is indistinguishable in the output from having
 no git at all.
+
+That quiet-degrade contract does **not** extend to ``review_rounds``,
+reviewer identity, ``external_tier_review``, or ``response_models``.
+Once an artifact's activation marker exists (the installed
+``_template.md`` carries the literal ``cairn-event-v1`` token) and the
+artifact carries an act strictly after that marker's own introducing
+commit, those columns are sourced from reconciled event blocks and
+**refuse** the whole run (a nonzero, ``INCOMPLETE`` exit naming the
+artifact/commit/kind) rather than downgrading quietly, when a
+post-activation act has no matching block. An artifact with no
+provable post-activation status -- no activation marker at all,
+git itself unavailable, or every act on it pre-dating the marker's own
+introduction -- reports those same columns as the literal empty string
+``''``, never a heading-count or regex-scraped value: the old
+prose-parsing path is retired outright, not merely superseded once a
+cutoff exists.
 
 What the ``hours_*`` columns measure is the interval between the
 **commits that recorded** each transition -- not how long the

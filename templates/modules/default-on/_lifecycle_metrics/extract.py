@@ -8,18 +8,14 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .config import load_config, proposals_dir, plans_dir, MetricsConfig
+from .config import load_config, proposals_dir, plans_dir, MetricsConfig, _REPO_ROOT
 from .parse import (
     _header_field,
     _strip_role,
     _agent_of,
-    _review_tier,
     _parse_date,
     _split_h2_sections,
     _stage_section_dates,
-    _DATE_RE,
-    _CODE_REVIEW_HEADING_RE,
-    _PLAN_REVIEW_HEADING_RE,
 )
 import importlib.util as _importlib_util
 import sys as _sys
@@ -30,6 +26,7 @@ from .subsystems import (
     _annotation_count_for_stem,
     _extract_response_models,
 )
+from . import events
 
 
 # Per-proposal schema.  The v1 core lifecycle columns plus the folded-up
@@ -116,6 +113,85 @@ def iter_plan_files(root: Path) -> List[Path]:
 # ----------------------------------------------------------- proposal rows
 
 
+def _vocabulary_states(attr_name: str) -> Optional[Tuple[str, ...]]:
+    """``getattr(_vocabulary(), attr_name)``, or ``None`` when the
+    vocabulary cannot be loaded at all (the template-source-location
+    refusal, or any other ``VocabularyUnavailable`` cause) -- treated
+    identically to unavailable git by every caller below: reconciliation
+    cannot be attempted, so every act falls back to the pre-cutoff
+    disposition rather than raising."""
+    try:
+        return tuple(getattr(_vocabulary(), attr_name))
+    except VocabularyUnavailable:
+        return None
+
+
+def _reconcile_artifact(
+    path: Path, repo_root: Optional[Path], template_path: Path,
+    valid_states: Optional[Sequence[str]],
+) -> 'Optional[events.Reconciliation]':
+    """Best-effort reconciliation for one artifact.  Returns ``None`` --
+    which every caller treats as "cannot prove past cutoff, fall back to
+    pre-cutoff behavior" (Chunk 5's Activation section: unavailable git
+    gets the same disposition a tree with no marker at all already
+    gets) -- when there is no ``repo_root``, the vocabulary could not be
+    resolved, ``path`` does not live under ``repo_root`` at all, or git
+    itself is unavailable.  A genuine structural defect (a mutated
+    block, an orphaned block, a merge-smuggled block, a malformed
+    grammar) is NOT swallowed here -- it propagates, because those are
+    unconditional refusals independent of the cutoff."""
+    if repo_root is None or valid_states is None:
+        return None
+    try:
+        root_res = repo_root.resolve()
+        relpath = str(path.resolve().relative_to(root_res))
+        template_relpath = str(template_path.resolve().relative_to(root_res))
+    except ValueError:
+        return None
+    try:
+        return events.reconcile(
+            repo_root, relpath, valid_states=valid_states,
+            template_relpath=template_relpath,
+        )
+    except events.GitUnavailable:
+        return None
+
+
+def _reconciled_kind(
+    reconciliation: 'Optional[events.Reconciliation]', kind: str,
+) -> 'Tuple[bool, List[events.ReconciledEvent]]':
+    """``(is_empty, matched_post_cutoff_events)`` for one event kind.
+
+    Empty whenever reconciliation could not be attempted at all, OR a
+    pre-cutoff (or unprovable-cutoff) act of this kind exists anywhere in
+    the artifact's history -- reporting a count that silently omits the
+    pre-cutoff act would be exactly the "travelling wrong number" shape
+    the Decision retired the prose-parsing path to stop
+    (``code_review_rounds`` reading 0 on 28/38 artifacts is the named
+    precedent).  Not empty -- 0, or the real count -- only when
+    reconciliation succeeded and there is genuinely nothing of this kind
+    anywhere in the artifact's history.  This mixed-history disposition
+    is this module's own resolution of a genuine ambiguity in the
+    accepted text (Chunk 6's own paragraph describes an artifact
+    carrying "an empty value... and a populated... value" without
+    saying how one row reconciles the two for a single scalar column);
+    recorded here and in the implementing commit body rather than
+    silently picked.
+
+    A never-activated artifact (``reconciliation.activation is None``)
+    is checked directly, ahead of ``pre_cutoff_acts`` -- ``reconcile()``
+    takes a fast path for that case and does not populate
+    ``pre_cutoff_acts`` at all (every act is pre-cutoff by definition
+    there, so walking history to enumerate them one by one buys nothing
+    a corpus-wide call would want to pay for)."""
+    if reconciliation is None or reconciliation.activation is None:
+        return True, []
+    if any(act.kind == kind for act in reconciliation.pre_cutoff_acts):
+        return True, []
+    matched = [e for e in reconciliation.post_cutoff_events if e.kind == kind]
+    return False, matched
+
+
 def extract_proposal_row(
     path: Path,
     *,
@@ -150,29 +226,61 @@ def extract_proposal_row(
     if date_opened is not None and decision_date is not None:
         days_to_decision = (decision_date - date_opened).days
 
-    review_sections = [
-        (h, b) for h, b in sections if re.match(r'## Review\b', h)
-    ]
-    reviewer_agents = [_agent_of(h) for h, _ in review_sections]
-    tiers = [_review_tier(h) for h, _ in review_sections]
+    # Part 3 (metrics-events-not-prose): review-pass / response fields are
+    # sourced from reconciled cairn-event-v1 blocks post-activation-cutoff,
+    # not from prose/heading parsing -- the retirement Round 7 makes.
+    # Reconciliation is attempted only when a repo root is available and
+    # git-timestamp augmentation is requested (the same gate the existing
+    # git-derived fields below already use); when it cannot be attempted
+    # at all, every act is treated as pre-cutoff (Chunk 5's Activation
+    # section), which for a review-pass/response-kind field means empty,
+    # never the retired heading-count value.
+    reconciliation: 'Optional[events.Reconciliation]' = None
+    if include_git_timestamps:
+        root_for_events = repo_root if repo_root is not None else _REPO_ROOT
+        proposal_states = _vocabulary_states('PROPOSAL_STATES')
+        reconciliation = _reconcile_artifact(
+            path, root_for_events, proposals_dir(root_for_events) / '_template.md',
+            proposal_states,
+        )
 
-    # Generic, vendor-neutral signal: a review round whose reviewer
-    # identity differs from the author exists.  (A sharper human/AI
-    # split would need a per-team roster, which a shipped tool cannot
-    # assume -- so no ``human_review`` column here.)
-    cross_agent_type_review = any(
-        a and author and a != author for a in reviewer_agents
-    )
-
-    if not tiers:
+    review_empty, review_events = _reconciled_kind(reconciliation, events.KIND_REVIEW_PASS)
+    if review_empty:
+        reviewer_agents: List[str] = []
         external_tier_review: object = ''
-    elif 'external' in tiers:
-        external_tier_review = True
-    elif 'internal' in tiers:
-        external_tier_review = False
+        cross_agent_type_review: object = ''
     else:
-        external_tier_review = 'unknown'
+        # Reviewer-identity normalization, pinned: the grammar's `reviewer`
+        # key stores the name as written in the section heading, but
+        # `reviewer_agents`/`cross_agent_type_review` are existing v1
+        # columns whose semantics depend on the SAME normalized agent
+        # token `_agent_of(h)` already applies to the heading itself.
+        # Applying it here too keeps the `a != author` comparison
+        # comparing like values and the emitted column shape unchanged
+        # for post-cutoff rows: the block becomes the source, the value
+        # shape does not.
+        reviewer_agents = [_agent_of(e.block.reviewer) for e in review_events]
+        block_tiers = [e.block.tier.lower() for e in review_events]
+        if 'external' in block_tiers:
+            external_tier_review = True
+        elif 'internal' in block_tiers:
+            external_tier_review = False
+        else:
+            external_tier_review = 'unknown'
+        # Generic, vendor-neutral signal: a review round whose reviewer
+        # identity differs from the author exists.  (A sharper human/AI
+        # split would need a per-team roster, which a shipped tool cannot
+        # assume -- so no ``human_review`` column here.)
+        cross_agent_type_review = any(
+            a and author and a != author for a in reviewer_agents
+        )
 
+    # `revised` stays prose-derived, pre- AND post-cutoff -- named as a
+    # deliberate scope decision, not an oversight: a `transition` block
+    # carries only from_state/to_state, with no field indicating "this
+    # transition included an editorial revision", so there is no
+    # grammar-supported way to source it from a block without inventing
+    # a field Round 7 does not specify.
     revised = any(h.startswith('## Revised') for h, _ in sections)
 
     reviewed_date = stage_dates['reviewed']
@@ -214,8 +322,17 @@ def extract_proposal_row(
         proposal_annotation_count = _annotation_count_for_stem(
             path.stem, annotations)
 
-    # Per-Response ``**Model**:`` captures (pipe-joined downstream).
-    response_models = _extract_response_models(sections)
+    # Per-Response ``**Model**:`` captures, sourced from reconciled
+    # `response` blocks post-cutoff (pipe-joined, positionally aligned
+    # with ``reviewer_agents`` only in the legacy, pre-cutoff sense --
+    # post-cutoff the two lists are independently sized by their own
+    # kind's post-cutoff event count).
+    response_empty, response_events = _reconciled_kind(reconciliation, events.KIND_RESPONSE)
+    response_models: List[str] = (
+        [] if response_empty else [e.block.model for e in response_events]
+    )
+
+    review_rounds: object = '' if review_empty else len(review_events)
 
     return {
         'stem': path.stem,
@@ -224,7 +341,7 @@ def extract_proposal_row(
         'status': status_token,
         'decision_date': decision_date.isoformat() if decision_date else '',
         'days_to_decision': days_to_decision,
-        'review_rounds': len(review_sections),
+        'review_rounds': review_rounds,
         'reviewer_agents': '|'.join(reviewer_agents),
         'cross_agent_type_review': cross_agent_type_review,
         'external_tier_review': external_tier_review,
@@ -473,27 +590,59 @@ def _normalize_slug(slug: str) -> str:
 
 def extract_plan_row(
     path: Path, proposal_stems: Sequence[str] = (),
+    *, repo_root: Optional[Path] = None, include_git_timestamps: bool = True,
 ) -> Dict[str, object]:
     """Parse one plan file into a metrics row.
 
     ``proposal_stems`` feeds the slug-match fallback for
     ``paired_proposal``; pass the proposal corpus stems for the real
-    walk, or a small set in unit tests."""
+    walk, or a small set in unit tests.  ``repo_root``/
+    ``include_git_timestamps`` mirror :func:`extract_proposal_row`'s
+    shape (Chunk 6 widens this function to source
+    ``plan_review_rounds``/``code_review_rounds`` from reconciled event
+    blocks, which needs the same git access those two parameters
+    already gate for the proposal schema)."""
     text = path.read_text(encoding='utf-8')
     lines = text.splitlines()
     sections = _split_h2_sections(lines)
 
     status = _plan_status(text, sections)
 
-    plan_review_rounds = 0
-    code_review_rounds = 0
-    for line in lines:
-        if not _DATE_RE.search(line):
-            continue
-        if _CODE_REVIEW_HEADING_RE.match(line):
-            code_review_rounds += 1
-        elif _PLAN_REVIEW_HEADING_RE.match(line):
-            plan_review_rounds += 1
+    # Part 3: plan_review_rounds/code_review_rounds are retained
+    # event-derived fields Round 6's taxonomy names explicitly ("## Plan
+    # review" / "## Code review" both map to review-pass) -- sourced
+    # from reconciled blocks post-cutoff, classified by
+    # `ReconciledEvent.section_kind` (which `events._section_kind_of`
+    # derives from the matched HEADING line via
+    # `_CODE_REVIEW_HEADING_RE`/`_PLAN_REVIEW_HEADING_RE`), not the
+    # block's own self-reported `tier` field: the reconciler already
+    # inspected the matched heading line to confirm the act exists at
+    # all (Round 7 SS2 step 4), so this repurposes those two regexes
+    # from direct heading-counters into a section-kind classifier of an
+    # already-reconciled act, rather than depending on a block author
+    # correctly setting `tier: Code`.  Empty (not the retired
+    # heading-count) pre-cutoff, exactly like the proposal schema.
+    reconciliation: 'Optional[events.Reconciliation]' = None
+    if include_git_timestamps:
+        root_for_events = repo_root if repo_root is not None else _REPO_ROOT
+        plan_states = _vocabulary_states('PLAN_STATES')
+        reconciliation = _reconcile_artifact(
+            path, root_for_events, plans_dir(root_for_events) / '_template.md',
+            plan_states,
+        )
+    review_empty, review_events = _reconciled_kind(reconciliation, events.KIND_REVIEW_PASS)
+    if review_empty:
+        plan_review_rounds: object = ''
+        code_review_rounds: object = ''
+    else:
+        plan_review_rounds = sum(
+            1 for e in review_events
+            if e.section_kind == events.SECTION_KIND_PLAN_REVIEW
+        )
+        code_review_rounds = sum(
+            1 for e in review_events
+            if e.section_kind == events.SECTION_KIND_CODE_REVIEW
+        )
 
     paired_proposal = ''
     reliability = 'none'
@@ -526,7 +675,8 @@ def plan_rows(root: Path) -> List[Dict[str, object]]:
     """Every plan row under *root*, sorted by ``stem``."""
     proposal_stems = [p.stem for p in iter_proposal_files(root)]
     rows = [
-        extract_plan_row(p, proposal_stems) for p in iter_plan_files(root)
+        extract_plan_row(p, proposal_stems, repo_root=root)
+        for p in iter_plan_files(root)
     ]
     rows.sort(key=lambda r: str(r['stem']))
     return rows

@@ -68,6 +68,52 @@ over and a correction is appended, not folded.
 the plan and its code review check the implementation and the evidence
 it produced against the locked proposal (Stage 1).
 
+## Event blocks — recording the act structurally, alongside the prose
+
+The lifecycle-metrics extractor reads `plan_review_rounds`,
+`code_review_rounds`, and reviewer identity from small, closed-schema
+`cairn-event-v1` blocks — not by parsing prose — so **whoever commits a
+status flip, a `## Plan review` section, or a `## Code review` section
+appends the matching block in the SAME commit**, immediately after the
+section (or, for a bare status flip that adds no section of its own,
+anywhere in the diff). Three shapes, one per act:
+
+A status flip:
+
+```markdown
+<!-- cairn-event-v1
+kind: transition
+from_state: implementing
+to_state: awaiting-code-review
+-->
+```
+
+A `## Plan review` or `## Code review` section:
+
+```markdown
+<!-- cairn-event-v1
+kind: review-pass
+tier: Internal
+reviewer: <your name, exactly as written in the section heading above>
+-->
+```
+
+A `## Response` section:
+
+```markdown
+<!-- cairn-event-v1
+kind: response
+model: <your model identity, exactly as written in the Response's **Model** field>
+-->
+```
+
+`from_state`/`to_state` must be a currently-declared status; `tier` is one
+of `Internal`/`External`/`Security`/`Code`. An artifact whose history
+carries an act with no matching block — once this template's own
+installed copy carries this marker — makes the extractor refuse rather
+than silently under-count; append the block in the same commit as the
+act it records, every time.
+
 ## Plan triage rule
 
 See `doctrine/plans.md` > "Plan triage rule" for the full rule.

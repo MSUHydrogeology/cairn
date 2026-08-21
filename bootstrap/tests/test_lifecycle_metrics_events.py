@@ -21,6 +21,18 @@ import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 _LM_PATH = CAIRN_ROOT / "templates" / "modules" / "default-on" / "lifecycle_metrics.py"
+#: The REAL installed location -- has a genuine `tools/lifecycle_planner.py`
+#: sibling, unlike `_LM_PATH` above (the template source location, which
+#: `_validated_planner_path()` deliberately refuses beside -- see that
+#: function's own docstring). The row-level `extract_proposal_row`/
+#: `extract_plan_row` fixtures below need REAL vocabulary resolution (a
+#: plan's own `**Status**:` normalization already depended on it before
+#: this plan's own Chunk 6 added a second, independent dependency for the
+#: event grammar's `valid_states` bound), so they load through here
+#: instead of `_lm`.  The scratch git repos those fixtures build are
+#: unrelated to and never confused with this real, installed location:
+#: vocabulary is a static, well-known status-token set, not project data.
+_LM_INSTALLED_PATH = CAIRN_ROOT / "tools" / "lifecycle_metrics.py"
 
 
 def _load_lm() -> ModuleType:
@@ -32,7 +44,32 @@ def _load_lm() -> ModuleType:
     return module
 
 
+def _load_lm_installed() -> ModuleType:
+    # The launcher's own engine loader caches the ENGINE PACKAGE under the
+    # fixed canonical name "tools._lifecycle_metrics" regardless of which
+    # PHYSICAL location it was loaded from -- so if some other test module
+    # in the same pytest session already loaded the template-source engine
+    # under that same key (test_lifecycle_metrics_config.py's `_load_lm()`
+    # does exactly that), the launcher's own cache check would silently
+    # hand back that wrong-location engine instead of loading a fresh one
+    # from `tools/`. Purge the canonical key (and any registered children)
+    # first so this load is genuinely independent.
+    canonical = "tools._lifecycle_metrics"
+    prefix = canonical + "."
+    for name in [n for n in list(sys.modules)
+                 if n == canonical or n.startswith(prefix)]:
+        sys.modules.pop(name, None)
+    spec = importlib.util.spec_from_file_location(
+        "cairn_lm_events_installed", _LM_INSTALLED_PATH)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["cairn_lm_events_installed"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 _lm = _load_lm()
+_lm_installed = _load_lm_installed()
 events = _lm.events
 
 _PROPOSAL_STATES = (
@@ -495,3 +532,253 @@ def test_uncommitted_edit_is_invisible_to_both_sides(tmp_path: Path) -> None:
     assert len(after.events) == 1
     assert len(after.unmatched_acts) == 1
     assert after.unmatched_acts[0].kind == "review-pass"
+
+
+# ---------------------------------------------------------------------------
+# Chunk 6 -- fail-closed reconciliation (`events.reconcile`), the mandatory
+# red fixtures (Round 6 / R4-E1 / R4-E2) plus the pre/post-activation split.
+# ---------------------------------------------------------------------------
+
+
+def _make_activated_repo(tmp_path: Path) -> Path:
+    """A repo whose `dev/proposals/_template.md` carries the marker,
+    committed on its OWN, so every later commit touching a proposal is
+    strictly after the cutoff (never co-committed with the marker's own
+    introduction, which would make it pre-cutoff by the exclusive
+    reading -- see `test_act_in_markers_own_introducing_commit_shares_that_commit`
+    above)."""
+    repo = _make_git_repo(tmp_path)
+    template = repo / "dev" / "proposals" / "_template.md"
+    template.parent.mkdir(parents=True)
+    template.write_text(f"guidance mentioning {events.VERSION_TOKEN}\n", encoding="utf-8")
+    _commit_all(repo, "activate")
+    return repo
+
+
+def test_status_only_commit_with_no_block_is_incomplete(tmp_path: Path) -> None:
+    """A file's own CREATION commit is exempt (there is no prior state to
+    declare a transition FROM -- see the `is_creation` exemption in
+    `walk_history`); the mandatory red fixture is a SUBSEQUENT status
+    flip with no block, which is the ordinary shape Round 6 / R4-E2
+    names."""
+    repo = _make_activated_repo(tmp_path)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
+    _commit_all(repo, "open, no block needed (creation)")
+    p.write_text(_artifact_text("revising"), encoding="utf-8")
+    _commit_all(repo, "status flip, no block")
+    result = events.reconcile(
+        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
+        template_relpath="dev/proposals/_template.md",
+    )
+    assert result.incomplete
+    assert any("transition" in r for r in result.incomplete_reasons)
+
+
+def test_review_only_commit_with_no_block_is_incomplete(tmp_path: Path) -> None:
+    repo = _make_activated_repo(tmp_path)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.write_text(
+        _artifact_text("awaiting-review")
+        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
+        encoding="utf-8",
+    )
+    _commit_all(repo, "review, no block")
+    result = events.reconcile(
+        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
+        template_relpath="dev/proposals/_template.md",
+    )
+    assert result.incomplete
+    assert any("review-pass" in r for r in result.incomplete_reasons)
+
+
+def test_two_review_commits_no_status_change_yield_two_review_pass_events(
+    tmp_path: Path,
+) -> None:
+    """Round 6 / R4-E1's mandatory taxonomy fixture: two review commits
+    with no intervening status change produce TWO review-pass events."""
+    repo = _make_activated_repo(tmp_path)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.write_text(_artifact_text("revising"), encoding="utf-8")
+    _commit_all(repo, "open")
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
+        + _fence("review-pass", tier="External", reviewer="Bob"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "review 1")
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Review -- Alice (Internal Reviewer) -- 2026-01-03\n\nmore findings\n"
+        + _fence("review-pass", tier="Internal", reviewer="Alice"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "review 2")
+    result = events.reconcile(
+        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
+        template_relpath="dev/proposals/_template.md",
+    )
+    assert not result.incomplete
+    review_events = [e for e in result.post_cutoff_events if e.kind == "review-pass"]
+    assert len(review_events) == 2
+    assert {e.block.reviewer for e in review_events} == {"Bob", "Alice"}
+
+
+def test_pre_and_post_activation_review_pass_split(tmp_path: Path) -> None:
+    """Chunk 6's pre/post-activation split fixture: a review pass before
+    the artifact's activation cutoff (no block -- correct, not an
+    error) and one after (with a block -- reconciled, not INCOMPLETE)."""
+    repo = _make_git_repo(tmp_path)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.parent.mkdir(parents=True)
+    p.write_text(
+        _artifact_text("revising")
+        + "\n## Review -- Bob (External Reviewer) -- 2026-01-01\n\nfindings\n",
+        encoding="utf-8",
+    )
+    _commit_all(repo, "pre-cutoff review, no block, no marker yet")
+
+    template = repo / "dev" / "proposals" / "_template.md"
+    template.parent.mkdir(parents=True, exist_ok=True)
+    template.write_text(f"guidance mentioning {events.VERSION_TOKEN}\n", encoding="utf-8")
+    _commit_all(repo, "activate")
+
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Review -- Alice (Internal Reviewer) -- 2026-01-03\n\nmore\n"
+        + _fence("review-pass", tier="Internal", reviewer="Alice"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "post-cutoff review, with block")
+
+    result = events.reconcile(
+        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
+        template_relpath="dev/proposals/_template.md",
+    )
+    assert not result.incomplete, (
+        "the pre-cutoff review has no block, which is correct -- not an error"
+    )
+    assert len(result.post_cutoff_events) == 1
+    assert result.post_cutoff_events[0].block.reviewer == "Alice"
+
+
+# ---------------------------------------------------------------------------
+# Row-level wiring: extract_proposal_row / extract_plan_row actually source
+# their retained fields from the reconciliation layer above, end to end.
+# ---------------------------------------------------------------------------
+
+
+def test_extract_proposal_row_sources_review_fields_from_reconciled_blocks(
+    tmp_path: Path,
+) -> None:
+    repo = _make_activated_repo(tmp_path)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.write_text(
+        "# t\n\n**Author**: Claude (Strategy)\n"
+        "**Date opened**: 2026-01-01\n**Status**: revising\n",
+        encoding="utf-8",
+    )
+    _commit_all(repo, "open")
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
+        + _fence("review-pass", tier="External", reviewer="Bob"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "review 1")
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Response -- Claude -- 2026-01-03\n\n* accept\n"
+        + _fence("response", model="Claude Opus 5"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "response")
+
+    row = _lm_installed.extract_proposal_row(p, repo_root=repo)
+    assert row["review_rounds"] == 1
+    assert row["reviewer_agents"] == "Bob"
+    assert row["external_tier_review"] is True
+    assert row["cross_agent_type_review"] is True
+    assert row["response_models"] == "Claude Opus 5"
+
+
+def test_extract_proposal_row_emits_empty_for_pre_cutoff_review(
+    tmp_path: Path,
+) -> None:
+    """The one real, confirmed change EPR-06/row 7-3 names: a review-pass
+    act that cannot be proven post-cutoff emits the literal `''`, never
+    the retired heading-count value."""
+    repo = _make_git_repo(tmp_path)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.parent.mkdir(parents=True)
+    p.write_text(
+        "# t\n\n**Author**: Claude (Strategy)\n"
+        "**Date opened**: 2026-01-01\n**Status**: revising\n"
+        "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
+        encoding="utf-8",
+    )
+    _commit_all(repo, "open + review, no marker anywhere")
+
+    row = _lm_installed.extract_proposal_row(p, repo_root=repo)
+    assert row["review_rounds"] == ""
+    assert row["reviewer_agents"] == ""
+    assert row["external_tier_review"] == ""
+    assert row["cross_agent_type_review"] == ""
+    assert row["response_models"] == ""
+
+
+def test_extract_plan_row_sources_plan_and_code_review_rounds_separately(
+    tmp_path: Path,
+) -> None:
+    """Rows 6-9..6-12: `plan_review_rounds`/`code_review_rounds` are
+    reconciled-block-derived post-cutoff, classified by the matched
+    HEADING (Plan review vs. Code review), not the block's own `tier`."""
+    repo = _make_git_repo(tmp_path)
+    template = repo / "dev" / "plans" / "_template.md"
+    template.parent.mkdir(parents=True)
+    template.write_text(f"guidance mentioning {events.VERSION_TOKEN}\n", encoding="utf-8")
+    _commit_all(repo, "activate")
+
+    p = repo / "dev" / "plans" / "myplan.md"
+    p.write_text(
+        "# myplan\n\n**Status**: revising-plan\n\n## Scope\n\nx\n",
+        encoding="utf-8",
+    )
+    _commit_all(repo, "open plan")
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Plan review -- Bob -- 2026-01-02\n\nfindings\n"
+        + _fence("review-pass", tier="Internal", reviewer="Bob"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "plan review")
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Code review -- Alice -- 2026-01-04\n\nfindings\n"
+        + _fence("review-pass", tier="Internal", reviewer="Alice"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "code review")
+
+    row = _lm_installed.extract_plan_row(p, repo_root=repo)
+    assert row["plan_review_rounds"] == 1
+    assert row["code_review_rounds"] == 1
+
+
+def test_extract_plan_row_emits_empty_for_never_activated_tree(
+    tmp_path: Path,
+) -> None:
+    repo = _make_git_repo(tmp_path)
+    p = repo / "dev" / "plans" / "myplan.md"
+    p.parent.mkdir(parents=True)
+    p.write_text(
+        "# myplan\n\n**Status**: revising-plan\n\n"
+        "## Plan review -- Bob -- 2026-01-02\n\nfindings\n",
+        encoding="utf-8",
+    )
+    _commit_all(repo, "open + plan review, no marker at all")
+
+    row = _lm_installed.extract_plan_row(p, repo_root=repo)
+    assert row["plan_review_rounds"] == ""
+    assert row["code_review_rounds"] == ""

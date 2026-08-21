@@ -1,4 +1,5 @@
-<!-- Forward-reference paths this plan creates; they materialize in Chunks 5 and 7. -->
+<!-- The forward-reference paths this plan opened with have all materialized
+     (see "## Proposed paths" below); nothing left exempted by that marker. -->
 
 # Plan: measure structural events, not prose
 
@@ -77,10 +78,13 @@ preflight sections.
 
 ## Proposed paths
 
-Proposed paths:
-- `tools/_lifecycle_metrics/events.py` — the event-v1 grammar (Chunk 4), the history-diff reader (Chunk 5), and reconciliation logic (Chunk 6); its `templates/` twin lands each same commit.
-- `templates/modules/default-on/_lifecycle_metrics/events.py` — the gate-frozen twin of the above.
-- `bootstrap/tests/test_lifecycle_metrics_events.py` — the new fixture file for the grammar/algorithm/reconciliation red and green cases (Chunks 4-7).
+*(Section emptied post-implementation: all three previously-forward-referenced
+paths now resolve on disk --
+[`tools/_lifecycle_metrics/events.py`](../../tools/_lifecycle_metrics/events.py),
+[`templates/modules/default-on/_lifecycle_metrics/events.py`](../../templates/modules/default-on/_lifecycle_metrics/events.py),
+[`bootstrap/tests/test_lifecycle_metrics_events.py`](../../bootstrap/tests/test_lifecycle_metrics_events.py)
+-- per this section's own doctrine, "once a path resolves on disk, drop its
+line.")*
 
 ## Scope
 
