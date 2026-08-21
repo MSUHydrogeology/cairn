@@ -3,7 +3,10 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date**: 2026-08-21
-**Status**: draft
+**Status**: revised (Maintainer feedback folded in inline, 2026-08-21:
+advisory-not-binding, author-decides, expertise routing, the ~90%
+acceptance figure; literature grounding pass added same day at the
+Maintainer's direction)
 **Type**: product-strategy
 **Audience**: the Maintainer first; the agents who work here second
 **Surfaces this would feed**: `AGENTS.md`, the proposal/plan templates,
@@ -113,6 +116,138 @@ the ratchets means it all grows back.
    of exhaustive caution capture nearly everything above a typo.
    Yesterday's *bug fixes* became security-reviewed proposals. The
    trivial path atrophied from disuse.
+
+## The same conclusions, top-down
+
+The sections above argue from Cairn's own measurements — bottom-up. This
+section derives the same conclusions from established theory, because a
+recommendation supported only by local numbers is fragile: change the
+numbers and it evaporates. These nine principles predict what the
+measurements found, which is the stronger position — the measurements
+become confirmation, not the whole case.
+
+**P1 — Process weight is a dial set by consequence, not a virtue.**
+Boehm & Turner, *Balancing Agility and Discipline* (Addison-Wesley,
+2003) — the canonical treatment: both under- and over-process are risks,
+tailored per project by what failure actually costs, and small teams are
+damaged more by excess discipline than large ones. The
+high-reliability-organizations literature (Weick & Sutcliffe, *Managing
+the Unexpected*, 2001; contrast Perrow, *Normal Accidents*, 1984) says
+heavy control is warranted by tight coupling and irreversible failure —
+neither of which describes a template repository. *Licenses: the three
+lanes, C0's hard-to-undo test, the deliberate lane for named surfaces.*
+
+**P2 — Decision rights belong where the specific knowledge is.**
+Hayek, "The Use of Knowledge in Society" (*American Economic Review*
+35(4), 1945): knowledge is dispersed and local, so the design question
+is who decides, given who knows. Jensen & Meckling, "Specific and
+General Knowledge, and Organizational Structure" (1992): colocate
+decision rights with specific knowledge, because moving the decision
+means either moving the knowledge (expensive) or deciding without it
+(worse). *Licenses: expertise routing — science to the Maintainer in
+domain terms, implementation detail to the author, structure as
+recommendation-with-default.*
+
+**P3 — Small batches converge; large batches diverge.** Reinertsen,
+*The Principles of Product Development Flow* (2009): batch size drives
+cycle time, feedback delay, and risk, and large batches breed larger
+ones downstream. The code-review literature agrees empirically: across
+open source, Google, and Microsoft, review practice *converged
+independently* on small changes, one-to-two reviewers, and fast
+iteration (Rigby & Bird, "Convergent Contemporary Software Peer Review
+Practices," ESEC/FSE 2013; Sadowski et al., "Modern Code Review: A Case
+Study at Google," ICSE-SEIP 2018), and defect-detection effectiveness
+falls off sharply as review size grows (Cohen, *Best Kept Secrets of
+Peer Code Review*, SmartBear 2006). The industry already ran Cairn's
+arc once: Fagan's formal inspections (*IBM Systems Journal* 15(3),
+1976) gave way to lightweight continuous review after Votta ("Does
+Every Inspection Need a Meeting?", FSE 1993) showed the ceremony added
+little beyond the reading. *Licenses: size anchors, the change note,
+the two-round cap.*
+
+**P4 — Where cases are few and judgment is rich, standards beat rules;
+and a rule that is routinely circumvented is worse than none.** Kaplow,
+"Rules versus Standards: An Economic Analysis" (*Duke Law Journal*,
+1992): rules pay off when applied frequently to homogeneous cases;
+standards win when cases are heterogeneous and judgment is available at
+application time — a two-person research team is the far standards end.
+Resilience engineering (Hollnagel, *Safety-I and Safety-II*, 2014) adds
+the work-as-imagined / work-as-done gap: procedures that must be
+bypassed to get work done *train* bypassing — the Maintainer's "they
+will ALWAYS be circumvented" independently restates this. The
+automation literature closes the loop: over-restrictive or
+false-alarm-prone automation produces disuse and mistrust (Parasuraman
+& Riley, "Humans and Automation: Use, Misuse, Disuse, Abuse," *Human
+Factors* 39(2), 1997; Lee & See, "Trust in Automation: Designing for
+Appropriate Reliance," *Human Factors* 46(1), 2004). Ostrom's
+commons-governance design principles (*Governing the Commons*, 1990)
+point the same way: minimal rules congruent with local conditions, and
+*graduated* sanctions — a warning before a refusal. *Licenses:
+advisory-not-binding, warnings-first tooling, rule removal.*
+
+**P5 — Satisficing terminates; optimizing doesn't.** Simon, "Rational
+Choice and the Structure of the Environment" (*Psychological Review*
+63, 1956) and *The Sciences of the Artificial*: search has costs the
+optimum ignores, so a good decision procedure stops at good-enough.
+Merton, "Bureaucratic Structure and Personality" (*Social Forces* 18,
+1940) names what happens otherwise: goal displacement — instrumental
+rules become terminal values, and adherence becomes the point. A
+process-zombie is a Mertonian ritualist. *Licenses: termination rules,
+author-decides after round two, C0 as a satisficing test, the
+construction moratorium.*
+
+**P6 — The record serves the reader's comprehension, not completeness.**
+Parnas & Clements, "A Rational Design Process: How and Why to Fake It"
+(*IEEE TSE* SE-12(2), 1986): the fully documented rational process is
+unattainable and not even desirable to live — produce the document the
+next reader needs, not the transcript of the search. Bacchelli & Bird,
+"Expectations, Outcomes, and Challenges of Modern Code Review" (ICSE
+2013): review's dominant product *and* dominant obstacle is
+understanding — so size, which impedes understanding, degrades the very
+thing review produces. This is Cairn's own comprehension floor, with
+independent support. *Licenses: write-once-restate-never, the ≤150-line
+change note, commit subjects as subjects.*
+
+**P7 — For scientists, good-enough is the adoption frontier.** The
+research-software community ran this exact correction on itself: "Best
+Practices for Scientific Computing" (Wilson et al., *PLoS Biology*,
+2014) asked more than working scientists would adopt, and its own
+authors republished the realistic subset as "Good Enough Practices in
+Scientific Computing" (Wilson et al., *PLoS Computational Biology*,
+2017). Segal's case studies ("When Software Engineers Met Research
+Scientists," *Empirical Software Engineering* 10(4), 2005) document
+what happens when heavyweight SE process is imposed on scientists: it
+is rejected or performed ceremonially. Cairn is recapitulating the
+2014→2017 arc and should complete it deliberately. *Licenses: the light
+default profile, dogfooding the median, handbook-as-product.*
+
+**P8 — A measure that becomes a target stops measuring.** Goodhart's
+law, and Campbell, "Assessing the Impact of Planned Social Change"
+(*Evaluation and Program Planning*, 1979): the more a metric is used
+for decision-making, the more it corrupts the process it measures.
+*Licenses: caps as review vocabulary never tool-enforced, staff gauges,
+the sunset clause.*
+
+**P9 — One falsifying test outranks accumulated argument.** Platt,
+"Strong Inference" (*Science* 146, 1964) — the paper most working
+scientists already know: fields advance fastest when each step is a
+test that could refute, not another confirmation. Every high-value
+review catch in Cairn's record was a Platt move — a canary, a fresh
+repo, a falsifying mutation — and none was a prose volume. *Licenses:
+measurement-rigor as the review centerpiece, one-falsification-per-
+review.*
+
+The mapping, compactly: Tier 1 rests on P3/P5 (caps and termination),
+P2 (author decides), P1/P3 (just-commit), P4 (advisory); Tier 2 on P1
+(keep/park/kill), P3/P6 (change note and templates), P4/P5 (rule
+removal); Tier 3 on P7 (median dogfooding, handbook), P9
+(measurement-rigor), P8 (metrics held loosely), P4/P8 (anti-maximalism
+in doctrine). No recommendation stands on the local measurements alone,
+and — worth checking in the other direction — no principle above
+demands a recommendation this note fails to make. The closest gap is
+P4's graduated-sanctions idea, which suggests warnings should
+*escalate* on repetition rather than stay flat; that is deliberately
+left out as machinery the current scale does not earn.
 
 **Convergent work, same day:** `2026-08-20-claude-review-loop-termination`
 (accepted at Revision 7, then superseded the same day on the
