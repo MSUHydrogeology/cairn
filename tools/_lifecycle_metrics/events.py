@@ -934,11 +934,55 @@ def reconcile(
     call would otherwise pay for every single file, for a result the
     cutoff alone already determines.  Measured empirically: running the
     real extractor against this repository's own corpus, before this
-    fast path existed, did not complete inside a 120-second budget."""
+    fast path existed, did not complete inside a 120-second budget.
+
+    **An artifact untouched since the cutoff is a second fast path, for
+    the same reason.** Once activation is real (a marker IS committed),
+    the corpus-wide cost moves from "one activation check" to "one full
+    history walk per artifact" -- measured empirically, over Cairn's own
+    corpus, as the difference between an 8-second run and one that did
+    not finish in two minutes. If ``relpath``'s own most recent commit is
+    not strictly after ``cutoff``, NOTHING in its history can be
+    post-cutoff either, so the full walk (and its merge-commit scan) is
+    skipped; only ``HEAD``'s own current content is read once, to tell a
+    genuinely event-free artifact (0) apart from one whose acts are all
+    pre-cutoff (empty) -- the same distinction Chunk 6's `_reconciled_kind`
+    otherwise draws from a full walk's `pre_cutoff_acts`, cheapened here to
+    "does the CURRENT text carry a review/response heading at all",
+    trading detail (which specific commit, which specific act) for a
+    single `git show` instead of a walk -- correct because a per-kind
+    breakdown is never needed when EVERY act is already known to be
+    pre-cutoff."""
     cutoff = activation_commit(
         repo_root, template_relpath, companion_relpath=companion_relpath)
     if cutoff is None:
         return Reconciliation(activation=None)
+
+    latest = _run_git(
+        repo_root, ["log", "-1", "--format=%H", "--", relpath])
+    latest_sha = (
+        latest.stdout.decode("utf-8", errors="replace").strip()
+        if latest.returncode == 0 else ""
+    )
+    if not latest_sha or not _is_strictly_after(repo_root, cutoff, latest_sha):
+        head_text = _show(repo_root, "HEAD", relpath) or ""
+        pre_cutoff_acts: List[UnmatchedAct] = []
+        if any(_section_kind_of(l) is not None for l in head_text.splitlines()):
+            pre_cutoff_acts.append(UnmatchedAct(
+                kind=KIND_REVIEW_PASS, commit=latest_sha or "(untracked)",
+                section_kind=None,
+                detail="fast path: artifact untouched since cutoff, "
+                       "current text carries a review-type heading",
+            ))
+        if any(_RESPONSE_HEADING_RE.match(l) for l in head_text.splitlines()):
+            pre_cutoff_acts.append(UnmatchedAct(
+                kind=KIND_RESPONSE, commit=latest_sha or "(untracked)",
+                section_kind=None,
+                detail="fast path: artifact untouched since cutoff, "
+                       "current text carries a Response heading",
+            ))
+        return Reconciliation(activation=cutoff, pre_cutoff_acts=pre_cutoff_acts)
+
     walked = walk_history(repo_root, relpath, valid_states=valid_states)
 
     post_cutoff_events = [

@@ -149,12 +149,23 @@ def _reconcile_artifact(
     except ValueError:
         return None
     try:
-        return events.reconcile(
+        reconciliation = events.reconcile(
             repo_root, relpath, valid_states=valid_states,
             template_relpath=template_relpath,
         )
     except events.GitUnavailable:
         return None
+    # Fail-closed measurement on read (row 6-3's own acceptance): a
+    # post-activation event-bearing act with no matching block makes the
+    # WHOLE run refuse, naming the artifact/commit/kind -- never a
+    # shorter, silently-clean series.  Raised here (not swallowed into
+    # an empty field) so it propagates through extract_proposal_row/
+    # extract_plan_row to the CLI's own exit code.
+    if reconciliation.incomplete:
+        raise events.ReconciliationError(
+            f"{path}: INCOMPLETE -- " + "; ".join(reconciliation.incomplete_reasons)
+        )
+    return reconciliation
 
 
 def _reconciled_kind(

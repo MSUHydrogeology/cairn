@@ -893,3 +893,29 @@ def test_recorded_by_never_affects_identity_reconciliation_or_refusal(
     # either, confirmed by re-deriving p's identity unchanged.
     again = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
     assert (again.events[0].commit, again.events[0].index) == identity_with_forged
+
+
+def test_cli_exits_nonzero_and_names_the_unreconciled_artifact(
+    tmp_path: Path, capsys: pytest.CaptureFixture,
+) -> None:
+    """Row 6-3's own acceptance, end to end through the CLI: a report run
+    against a fixture tree containing a deliberately unreconciled act
+    exits nonzero and names which artifact/commit/kind failed to
+    reconcile -- never a shorter, silently-clean series."""
+    repo = _make_activated_repo(tmp_path)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
+    _commit_all(repo, "open")
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
+        encoding="utf-8",
+    )
+    _commit_all(repo, "review, deliberately no block -- post-cutoff")
+
+    rc = _lm_installed.main(["proposals", "--root", str(repo)])
+    captured = capsys.readouterr()
+    assert rc == _lm_installed.cli.EXIT_INCOMPLETE
+    assert "INCOMPLETE" in captured.err
+    assert "p.md" in captured.err
+    assert "review-pass" in captured.err

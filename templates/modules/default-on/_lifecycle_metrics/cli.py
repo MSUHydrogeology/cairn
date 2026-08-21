@@ -12,6 +12,14 @@ from .config import _REPO_ROOT
 from .extract import PROPOSAL_COLUMNS, PLAN_COLUMNS, proposal_rows, plan_rows
 from .report import format_csv, format_md
 from .snapshot import emit_snapshot, format_manifest_md
+from . import events
+
+#: The extractor's own INCOMPLETE exit code (row 6-3's own acceptance:
+#: "exits nonzero... names which artifact/commit/kind failed to
+#: reconcile") -- distinct from 2 (a --root/argument error), so a caller
+#: scripting against this tool can tell "your invocation was wrong" apart
+#: from "the corpus itself does not reconcile".
+EXIT_INCOMPLETE = 3
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -96,9 +104,13 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Snapshot path.
     if args.snapshot:
-        path, row_count = emit_snapshot(
-            root=args.root, event=args.event, dry_run=args.dry_run,
-        )
+        try:
+            path, row_count = emit_snapshot(
+                root=args.root, event=args.event, dry_run=args.dry_run,
+            )
+        except (events.ReconciliationError, events.EventGrammarError) as exc:
+            print(f'lifecycle_metrics: INCOMPLETE -- {exc}', file=sys.stderr)
+            return EXIT_INCOMPLETE
         if args.dry_run:
             print(
                 f'lifecycle_metrics: would write {row_count} rows to '
@@ -114,12 +126,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     # Default report path.
-    if args.kind == 'proposals':
-        rows = proposal_rows(args.root)
-        columns = PROPOSAL_COLUMNS
-    else:
-        rows = plan_rows(args.root)
-        columns = PLAN_COLUMNS
+    try:
+        if args.kind == 'proposals':
+            rows = proposal_rows(args.root)
+            columns = PROPOSAL_COLUMNS
+        else:
+            rows = plan_rows(args.root)
+            columns = PLAN_COLUMNS
+    except (events.ReconciliationError, events.EventGrammarError) as exc:
+        print(f'lifecycle_metrics: INCOMPLETE -- {exc}', file=sys.stderr)
+        return EXIT_INCOMPLETE
 
     text = (
         format_csv(rows, columns)
