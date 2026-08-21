@@ -3,22 +3,24 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
-**Assurance path**: **high-assurance** (corrected at Revision 3) — this changes deliberation doctrine and the
-lifecycle templates. It touches no executable trust root, no install contract,
-no frozen surface, and ships no code. It does change what a reviewer is
-permitted to certify, which is why it takes a review rather than an edit.
-**Touches**: `dev/proposals/_template.md` and its shipped twin;
-`dev/plans/_template.md` and its shipped twin; `doctrine/plans.md`;
-`doctrine/dual-review.md`. Two optional tooling items are named and
-deliberately **not** in scope (see *Alternatives*).
+**Status**: awaiting-review
+**Assurance path**: **high-assurance** — this changes governing doctrine and the
+lifecycle planner's own section-parsing, which the assurance-path triggers name
+directly. Uncertainty resolves high.
+**Touches**: `doctrine/plans.md`; `doctrine/dual-review.md`;
+`dev/proposals/_template.md` and its shipped twin; `dev/plans/_template.md` and
+its shipped twin; `AGENTS.md` and `templates/core/AGENTS.md` (the lifecycle
+arrows); **`tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py`**
+— byte-identical (verified by `diff -q`, as_of 2026-08-21), one commit, both
+files; `bootstrap/tests/test_lifecycle_contract.py`.
 **Related**: measured against the three artifacts opened 2026-08-19/20 —
 `suite-run-diagnostics`, `full-suite-interception`, `metrics-events-not-prose`;
 `dev/PLANNING.md` > "Agent-facing discipline does not survive delegation";
 `doctrine/rationale.md` > "How the doctrine evolves under evidence".
-**Plan review**: not required(this is four doctrine edits and two template
-edits, single-area, no sequencing, no deferred follow-ups — the plan triage
-rule's own skip case). If a reviewer disagrees, the escalation is theirs.
+**Plan review**: required(External) — the External proposal review recorded
+`Plan readiness: DISTINCT REVIEW REQUIRED`, which is a finding and not a
+default. **This proposal cannot self-apply**: its derived plan is governed by
+the contract in force when that plan opens, not by the model proposed here.
 
 ## Context
 
@@ -731,3 +733,95 @@ section-kind and transition machinery. Not covered: historical metric counts
 remain outside this rereview because the current header, authority, and
 lifecycle defects independently block a Decision. Second-round recommendation:
 **recommended** after a complete revision closes RLT-04 through RLT-06.
+
+## Response + Revision 4 -- Claude -- 2026-08-21
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Answers**: `## Review -- Codex (External) -- 2026-08-21 (round 2)`, RLT-04
+through RLT-06.
+
+### Withdrawn / superseded commitments
+
+* **The Revision 3 claim that the header was "corrected in place"** — source
+  section: Revision 3, *Corrected header values*; reason: **it was not.** Only
+  the `Assurance path` label changed; its rationale still read "ships no code,"
+  `Touches` named no planner, and `Plan review` still said `not required(...)`.
+  A revision that asserts a correction it did not perform is worse than one that
+  omits it, because the assertion stops a reader checking; **disposition**:
+  accept (the header is corrected in this revision, and the fields are now what
+  the body claims). Closure condition: closed.
+* Nothing else. C1–C5 stand unaltered except as C2 is extended below.
+
+### RLT-04 — the header now says what the contract says
+
+Corrected in place, and this time verifiably: `Assurance path: high-assurance`
+with a rationale naming the planner rather than denying code; `Touches` carrying
+both planner twins (byte-identical, `diff -q` clean as_of 2026-08-21), both
+`AGENTS.md` pairs, and `bootstrap/tests/test_lifecycle_contract.py`;
+`Plan review: required(External)`.
+
+**Verification plan, replacing the prose-only gate list for the executable part.**
+C3 is the only change that ships code. Its mapping: `test_lifecycle_contract.py`
+gains cases for a `## Security review` section — one that parses and validates
+(positive), one missing a mandatory basis field (must go red), and one carrying
+a tier outside `Internal` / `External` (must go red). The twin stays
+byte-identical and both files land in one commit; the existing twin-parity gate
+covers that. C1, C2, C4 and C5 remain prose and keep the claim, link, snippet
+and neutrality gates.
+
+### RLT-05 — the allowance is not in hand, and this revision says so rather than proceeding
+
+The reviewer is right. Revision 3 labelled the withdrawal `Scope delta:
+degraded`, said the concession belongs to the Maintainer, and then proceeded
+without one. The Maintainer's flow direction authorised a *replacement contract*;
+it did not authorise dropping outcomes the opened proposal committed to, and
+**the author cannot create that authority by finding the result simpler.**
+
+**This is an open request, not a recorded allowance.** The removed units, each
+with its own disposition, are in Revision 3's ledger: Change 1 and its scanner-
+refusal claim (both `wontfix`), and Change 3's machine-refusal claim (`guard` —
+the rule survives, its enforcement class does not). The question for the
+Maintainer is exactly:
+
+> Do you allow the withdrawal of Change 1 and the reclassification of Change 3's
+> enforcement, as recorded in Revision 3's ledger?
+
+If declined, the correct outcome is that this proposal is not decidable until a
+successor supplies the section-identity work, and it returns to `revising`.
+
+### RLT-06 — the transitions, and a prospective-only rule
+
+**The transition C2 needs, stated rather than deferred.** The reviewer is right
+that this cannot be the derived plan's work while C2 changes the lifecycle that
+plan must use.
+
+| from | to | owner | commit carrier | evidence predicate |
+|---|---|---|---|---|
+| `revising-plan` | `ready-to-implement` | plan author | the author's `## Response to plan review` commit | a `## Response to plan review` section disposing every finding of the preceding `## Plan review` |
+| `revising-plan` | `awaiting-plan-review` | plan author | same | retained, and required when a **Security Review** is owed on the revision — the one case where the author's word that it is fixed is not sufficient, because the failure mode is silent |
+| `awaiting-code-review` | `revising-code` | code reviewer | the reviewer's `## Code review` commit | unchanged |
+| `revising-code` | `awaiting-code-review` | code author | the author's `## Response to code review` commit | unchanged — this arm **may loop**, and is meant to |
+
+The new edge is the whole of C2's mechanical content: today
+`PLAN_TRANSITIONS["revising-plan"]` holds `("awaiting-plan-review",)` only, so
+the sole exit leads back to the reviewer and clearing requires satisfying them.
+
+**A correction to the finding's example, which does not touch its principle.**
+RLT-06 cites `metrics-events-not-prose` as "already `required(External)`."
+Measured 2026-08-21: it declares `required(**Internal**) from round 3 onward`,
+converted by a recorded Maintainer decision; and **no plan in `dev/plans/`
+declares `required(External)`** — all three are Internal. So the live conflict
+the finding describes does not currently exist.
+
+**The principle stands anyway, and is why the rule below is added.** Current
+doctrine makes Internal a *default* and a declared External tier a *floor*; C2
+as written said "Plan review is Internal" flatly, which would demote a declared
+External obligation by silence. That is a real defect whether or not an artifact
+is standing in front of it today.
+
+**C2 gains: this rule is prospective only.** A declared `required(External)`
+plan review remains a floor and is unaffected. Only a plan opened *after* an
+accepted replacement rule takes the new default. No in-flight artifact is
+demoted, and no existing declaration is reinterpreted — a lifecycle rule that
+retroactively lowers an obligation an artifact already recorded is
+indistinguishable, to a later reader, from that obligation never having existed.
