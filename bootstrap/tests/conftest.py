@@ -156,10 +156,13 @@ def _refuse_if_a_hook_was_shadowed() -> None:
             "Refusing to run: this conftest's hook(s) "
             + ", ".join(shadowed)
             + " have been replaced by a later definition in the same "
-            "module. A same-named `def` appended to this file rebinds the "
-            "name and deletes the original -- including the release-mode "
-            "outcome rule and the broad-run guard. Extend the existing hook "
-            "-- an unrecognised `pytest_*` name is refused by pytest itself."
+            "module. A same-named `def` -- or any other rebinding, including "
+            "a `functools.wraps` wrapper -- appended to this file changes "
+            "what pluggy will call, and this check cannot tell a wrap from a "
+            "deletion: either way the binding recorded at import time, which "
+            "may be the release-mode outcome rule or the broad-run guard, is "
+            "no longer what runs. Extend the existing hook -- an "
+            "unrecognised `pytest_*` name is refused by pytest itself."
         )
 
 
@@ -284,7 +287,7 @@ def pytest_collection_finish(session):
     their exit code and diagnostic, but a competing ``wrapper=True,
     tryfirst=True`` loses to this guard's exit 4 and its diagnostic never
     appears.  That last shape is an open finding (FSI-SR1), not a closed one,
-    and ``test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so``
+    and ``test_the_guard_loses_to_an_outer_tryfirst_wrapper``
     pins it as it actually behaves.  An earlier version of this docstring
     claimed the ``yield`` waits for *every* other implementation; it does not,
     and a docstring asserting a property the code lacks is worse than the gap
@@ -300,7 +303,11 @@ def pytest_collection_finish(session):
 
 
 def _refuse_broad_run_if_warranted(session) -> None:
-    """The guard proper, reached only after every competing hook succeeded.
+    """The guard proper, called from ``pytest_collection_finish``'s wrapper
+    after its own ``yield`` returns -- not after every competing hook has
+    succeeded.  An outer ``wrapper=True, tryfirst=True`` implementation is
+    still suspended at its own ``yield`` when this runs and has not succeeded
+    yet (FSI-SR1, open); every other competing shape has.
 
     ``testsfailed`` alone is **not** sufficient evidence that collection went
     cleanly, which is the defect this function exists to close.  pytest carries

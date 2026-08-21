@@ -353,8 +353,7 @@ def test_shadowing_an_owned_hook_is_refused_by_name(tmp_path) -> None:
     assert _run(_tree(tmp_path / "control", 3)).returncode == 0
 
 
-def test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so(
-        tmp_path) -> None:
+def test_the_guard_loses_to_an_outer_tryfirst_wrapper(tmp_path) -> None:
     """A known, measured limit, pinned rather than left to be rediscovered.
 
     Pluggy unwinds nested wrappers in the opposite order from entry, so a
@@ -465,3 +464,31 @@ def test_the_check_runs_before_the_option_hook_it_used_to_live_in(
     assert proc.returncode == 4, proc.stdout + proc.stderr
     combined = proc.stdout + proc.stderr
     assert "pytest_addoption" in combined and "pytest_sessionfinish" in combined
+
+
+def test_the_ownership_registry_is_complete(tmp_path) -> None:
+    """Every module-level ``pytest_*`` callable in the conftest must carry
+    ``@_own``, or a shadow of it evades the identity check entirely -- the
+    check only compares names already in ``_OWNED_HOOKS``, so an unregistered
+    hook can be replaced with no diagnostic at all.
+
+    Needs no subprocess: imports the conftest directly (the same pattern as
+    ``test_the_threshold_constant_is_shared_with_the_conftest``) and compares
+    its own ``globals()`` against its own registry.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("_ownership_probe", CONFTEST)
+    assert spec is not None and spec.loader is not None
+    probe = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(probe)
+
+    hook_names = {
+        name for name, value in vars(probe).items()
+        if name.startswith("pytest_") and callable(value)
+    }
+    assert hook_names, "found no pytest_* callables -- the probe measured nothing"
+    unowned = sorted(hook_names - probe._OWNED_HOOKS.keys())
+    assert not unowned, (
+        f"{unowned} define a pytest_* hook without @_own -- a later shadow of "
+        "that name would replace it with no diagnostic")

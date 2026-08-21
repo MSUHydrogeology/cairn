@@ -2878,3 +2878,117 @@ the current tree and would have re-recorded the hashes of every modified frozen
 file, including a concurrent session's. That is the supervised re-anchor
 arriving through a routine-looking step, and it is Maintainer-owned. The source
 and the fixture therefore disagree on `gate_commands` until the ceremony runs.
+
+
+## Response to security review -- Claude Sonnet 5 (Implementation) -- 2026-08-21 (round 2)
+
+**Model**: Claude Sonnet 5
+
+Three of five findings closed in code at `954c1a8`, per the Maintainer's
+authorization closing this Security Review without a further round:
+
+> "That's what I meant, done with the Security review"
+
+**Scope delta**: none. Every disposition below is a closure already landed at
+`954c1a8`, a test added inside this plan's existing `bootstrap/tests` Touches,
+or a message-text correction in the same file. No new file, no widened
+surface.
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| FSI-SR3 (BLOCKING) -- `@_own` re-registers unconditionally, so a shadow carrying `@_own` overwrites the record of the function it deleted and disarms the guard silently | ACCEPTED, fixed at `954c1a8` | `bootstrap/tests/conftest.py`: `_own` now refuses a second registration of a name it already holds, raising at the moment of the second decoration -- import order is definition order, so no ordering trick is needed. Pinned by `test_a_shadow_carrying_the_ownership_decorator_is_still_refused`. |
+| FSI-SR4 (BLOCKING) -- the docstring's premise ("no earlier hook exists") is false; `pytest_addhooks` precedes `pytest_addoption` | ACCEPTED, fixed at `954c1a8` | The shadow check moved from `pytest_addoption` into `pytest_addhooks`, which closes the residual rather than re-describing it -- an append shadowing both hooks is now refused instead of silent. Pinned by `test_the_check_runs_before_the_option_hook_it_used_to_live_in`. |
+| FSI-SR6 (non-blocking) -- refusal message's first remediation ("add your hook under a different name") does not work | ACCEPTED, fixed at `954c1a8` | The identity-check message now tells the reader only to extend the existing hook. |
+| FSI-SR5 (non-blocking) -- registry enrolment is manual, unenforced, and untested | ACCEPTED, fixed this round | `test_the_ownership_registry_is_complete` added to `test_broad_run_guard.py`: imports the conftest directly and asserts every module-level `pytest_*` callable is a key in `_OWNED_HOOKS`. Directional evidence below. |
+| FSI-SR7 (non-blocking, direction correct) -- refusal message says a wrap "deletes the original," which a `functools.wraps` wrap does not do | ACCEPTED, softened this round | The identity-check message in `_refuse_if_a_hook_was_shadowed` no longer claims deletion; it states what is actually known (the binding recorded at import time is no longer what runs) and is true of both a delete and a wrap. |
+
+**Directional evidence for FSI-SR5.** Verified by hand before writing the
+test, against scratch copies of `conftest.py` (never the tracked file): the
+control (unmodified) and a mutant with `@_own` removed from
+`pytest_deselected`, both loaded via `importlib` and checked with the same
+`globals()`-vs-`_OWNED_HOOKS` comparison the new test performs.
+
+| conftest | `unowned` result |
+|---|---|
+| unmodified (control) | `[]` -- test passes |
+| `@_own` removed from `pytest_deselected` | `['pytest_deselected']` -- test fails |
+
+The test goes red exactly when the registry is incomplete, not on a constant.
+
+**On FSI-SR7's call.** Softening the message rather than accepting it as-is:
+the finding's own framing is that a diagnostic misdescribing what it found "is
+the exact thing this guard exists to prevent elsewhere" -- leaving a
+known-false clause in a security-relevant refusal message, when correcting it
+costs one clause and touches no test assertion (`have been replaced by a
+later definition in the same module` -- the phrase `test_shadowing_an_owned_hook_is_refused_by_name`
+asserts on -- is unchanged), was the worse of the two options on offer.
+
+
+## Response to code review -- Claude Sonnet 5 (Implementation) -- 2026-08-21 (round 2)
+
+**Model**: Claude Sonnet 5
+
+**Scope delta**: none. CR9 and CR13 target the append-only `### A correction to
+the prior record, raised as CR4` and `## Implementation verification --
+Claude Opus 5 -- 2026-08-20 (replacement)` sections and cannot be edited
+there; the corrections are stated in this Response instead. CR8 is already
+dispositioned by the Maintainer allowance recorded above and is not reopened
+here. Every other disposition is a test or docstring/message fix inside this
+plan's existing `bootstrap/tests` Touches.
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| CR9 (BLOCKING) -- the correction's stated evidence ("zero ... fall under `templates/`") is itself false | ACCEPTED; correction recorded here, append-only section cannot be edited | See *Re-measuring CR9* below. |
+| CR10 (non-blocking) -- `_refuse_broad_run_if_warranted`'s docstring still claims the guard runs "only after every competing hook succeeded" | ACCEPTED, fixed | `bootstrap/tests/conftest.py`: opening sentence now states the guard runs after this hook's own `yield` returns, not after every competing hook has succeeded, and names the one shape (an outer `wrapper=True, tryfirst=True`) that has not succeeded yet at that point. |
+| CR11 (non-blocking) -- test name pins two properties, checks one, and cites a deliberation coordinate that will stop resolving at archive | ACCEPTED, fixed | `test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so` renamed to `test_the_guard_loses_to_an_outer_tryfirst_wrapper` in `test_broad_run_guard.py`; the cross-reference in `conftest.py`'s `pytest_collection_finish` docstring updated to match. The docstring body was already free of deliberation coordinates and is unchanged. |
+| CR12 (non-blocking) -- the meta-test documented the trap without closing it, and its docstring overclaimed | ACCEPTED, fixed at `7e2fa00` + `954c1a8` | The overclaiming test (`test_the_append_helper_cannot_be_used_to_forge_a_competitor`) was replaced by `test_shadowing_an_owned_hook_is_refused_by_name`, whose docstring makes no such claim; `test_a_shadow_carrying_the_ownership_decorator_is_still_refused` now pins the exact shape (a shadow carrying `@_own`) that made the original claim false. `_own`'s double-registration refusal (FSI-SR3's fix) closes the trap in fact, not just in documentation. |
+| CR13 (non-blocking) -- the replacement record's command column omits `PYTHONDONTWRITEBYTECODE=1`, which the recorded outcome requires | ACCEPTED; correction recorded here, append-only section cannot be edited | See *Re-verifying CR13* below. |
+
+**Re-measuring CR9.** The `### A correction to the prior record, raised as
+CR4` section states: *"Verified directly: **zero** of them fall under
+`templates/`."* That sentence is false, and append-only forbids editing it in
+place. Measured independently, at `906b315` (this session's tested HEAD),
+`python scripts/quality_gate.py --sub neutrality`, bucketing the 86 FAIL
+lines by top-level path. Whitespace-tolerant by construction rather than by a
+single-line grep: this tool's FAIL lines do not wrap, confirmed by
+reconciling the count -- `grep -c '^  FAIL'` on the raw output returns 86,
+identical to the summary line's `fail=86`, so no line was silently dropped by
+the matching method.
+
+| tree | FAILs (my count) | FAILs (reviewer's count) |
+|---|---|---|
+| `templates/` | 58 | 58 |
+| `docs/` | 14 | 14 |
+| `doctrine/` | 9 | 9 |
+| `bootstrap/` | 5 | 5 |
+| `templates/core/AGENTS.md` | 0 | 0 |
+
+My count matches the reviewer's exactly (58+14+9+5 = 86). **The true
+statement, which the record should have made:** zero of the 86 fall in
+`templates/core/AGENTS.md`, the only file this change touched that the
+gate's scanned surface reaches; the 58 under `templates/` are not zero, and
+they are the positive control proving the scanner reaches that tree at all
+rather than silently skipping it. The conclusion the prior record drew --
+none of the 86 is this change's -- is correct and independently reconfirmed
+here; only its stated evidence was fabricated by the same class of error CR4
+itself was written to name.
+
+**Re-verifying CR13.** Reproduced in both directions at `906b315`, isolating
+the one named test after clearing `bootstrap/**/__pycache__`:
+
+| environment | outcome |
+|---|---|
+| `PYTHONDONTWRITEBYTECODE` unset | **fails** -- `bootstrap.security_check._RepoStateError: detached checkout does not contain exactly the committed paths (extra=['bootstrap/tests/__pycache__/conftest.cpython-313-pytest-9.0.3.pyc', 'bootstrap/tests/__pycache__/test_skipped.cpython-313-pytest-9.0.3.pyc'])` |
+| `PYTHONDONTWRITEBYTECODE=1` | passes |
+
+The recorded command
+(`CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0`,
+no `PYTHONDONTWRITEBYTECODE`) does not reproduce the recorded outcome (`1
+failed, 4501 passed`) on a clean host; without the token it produces a second,
+unrelated failure. The token belongs in the command column.
+
+**Recommendation to the Maintainer.** CR9's blocking status is discharged by
+the correction above rather than by an edit to the false sentence, since the
+section is append-only. CR10, CR11, CR12, and CR13 are closed. CR8 stands as
+already dispositioned by the Maintainer allowance. No finding from this round
+remains open.
