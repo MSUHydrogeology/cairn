@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **standard** — this changes deliberation doctrine and the
 lifecycle templates. It touches no executable trust root, no install contract,
 no frozen surface, and ships no code. It does change what a reviewer is
@@ -409,3 +409,89 @@ which is only discoverable by running it.
 precisely so the single-pass stage is not the one asked to catch an unbuildable
 contract. The loop that would have caught it is the one that no longer runs
 there.
+
+## Review -- Codex (External) -- 2026-08-21
+
+**Model**: GPT-5.6 (Codex)
+
+Reviewed commit: 997bf2212b78111cc38c49eb1388cf579d3d9671
+Target: the complete current contract: opened proposal plus Revision 1, Revision 2, and its code-review-loop addendum
+Prior findings: none
+Assurance path: standard
+**Tier**: External
+**Findings**: raised (3 blocking)
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+The proposal correctly distinguishes the value of finding defects from the cost
+of repeatedly carrying the same deliberation. Its strongest observation is the
+asymmetry in the addendum: executable code can be probed to a clean result,
+whereas another prose pass can simply discover a different adjacency. Keeping
+code-review iteration while seeking a single, constructive plan-review pass is
+therefore a more disciplined response than capping review or discarding it.
+
+### Findings
+
+#### RLT-01 — BLOCKING: the proposed fail-closed rules require new executable enforcement, but the proposal excludes it
+
+Change 1 says an omitted section *refuses at* `lifecycle_planner.py scan`; Change
+3 bars both `awaiting-decision` and plan `ready-to-implement` without a
+Constructibility record. The current planner and its shipped twin contain no
+`Section manifest` or `Constructibility` parser/validator, and the current
+state gates therefore cannot enforce either claim. The proposal nonetheless
+declares only doctrine/template touches, "ships no code," no pytest mapping,
+and no plan required.
+
+Revise the operative scope to include the planner and its byte-identical twin,
+the lifecycle-contract tests, and the needed template/doctrine changes. Give
+those new checks a test mapping and re-triage this as a non-trivial plan: it now
+changes executable state gates across proposal and plan lifecycles, not one
+prose area.
+
+#### RLT-02 — BLOCKING: the single-pass model does not specify a valid lifecycle transition or its Security exception
+
+Revision 2 says a blocking plan review goes `Plan -> Review -> Revise ->
+Execute`, but does not state which status transition the author's revision
+makes, what record proves it, or how the planner distinguishes that ordinary
+return from the retained Security second round. Today `revising-plan` returns
+only to `awaiting-plan-review`; `ready-to-implement` requires a clearing review,
+and the reviewer's commit carries both transitions. Code review is likewise
+described as looping with dispositions "if any," without saying when a reviewer
+clears, when the Maintainer disposes open findings, or which state owns each
+move.
+
+State the complete proposal/plan/code transition tables, including status owner,
+commit carrier, evidence predicate, and the Security-review return arm. The
+new planner rules and their negative fixtures must be derived from that table;
+otherwise "one review" is an aspiration that conflicts with the shipped state
+machine.
+
+#### RLT-03 — BLOCKING: the section-manifest contract has no stable identity or comparison rule
+
+`carried from R<k>` does not identify a section within a revision, prove
+byte-exactness, or tell a scanner which earlier headings remain commitments
+rather than superseded history. A manifest can name whatever its author wants;
+without a closed section identity and resolution rule, the claimed refusal for
+a silently omitted section cannot distinguish omission from an unlisted or
+renamed section. This is the central safety argument for reducing restatement,
+so it cannot be deferred to implementation taste.
+
+Specify the manifest grammar: a stable section identifier, the exact source
+revision/commit and section it carries, the byte-exact comparison (or digest),
+withdrawal linkage, and the complete-set algorithm. Include positive and
+negative fixtures for a missing, renamed, edited-carried, duplicate, and
+withdrawn section. That provides the constructible route Change 3 itself asks
+for.
+
+### Coverage
+
+Covered: the proposal's entire current contract and all revisions; current
+planner transition and gate code (`PLAN_TRANSITIONS`, `_gating_preconditions`,
+and `_STATUS_MOVES_WITH`); the proposal/plan templates; and the lifecycle-plan
+status doctrine. `rg` found neither `Section manifest` nor `Constructibility`
+in the planner or its shipped twin; the only repository hit was an unrelated
+test comment. Not covered: the proposal's historical line/finding counts were
+not re-derived, because the executable-contract omissions already block a
+Decision. Second-round recommendation: **recommended** after a complete current
+contract supplies the missing enforcement and transition specification.
