@@ -164,11 +164,20 @@ direction, 2026-08-21.) The failure mode to guard against is agents
 handing the Maintainer arcane disputes they have no ability to settle
 — that converts "decide" into "approve", exactly as the comprehension
 floor warns. An item reaches the Maintainer only when it is genuinely
-theirs — scope, priorities, risk appetite, user-facing behavior — and
-it arrives in plain language **with a recommendation and a stated
-default** ("we'll do X unless you object"), never as an open question.
-If it cannot be posed that way, it is not ready for the Maintainer; it
-is the author's to decide and defend. The record protects everyone:
+theirs, and **"theirs" is routed by expertise**: they rule
+independently where their expertise lives — here, the science: a
+hydrologic assumption, a discretization tradeoff, a units question
+goes to them in domain terms, every time, and needs no default. They
+steer **structure and direction** in broad strokes: scope, priorities,
+risk appetite, what the product should be — these arrive in plain
+language **with a recommendation and a stated default** ("we'll do X
+unless you object"). **Implementation detail is not their
+jurisdiction** — bringing an arcane software dispute to the Maintainer
+is not deference, it is misrouting, and it is the author's to decide
+and defend. This split is not particular to this project: every Cairn
+adopter is a scientist in exactly this position, so *route decisions
+to where the expertise lives* belongs in the shipped doctrine, not
+just in this house. The record protects everyone:
 the call and the dissent both live in the artifact, so a wrong call is
 visible and cheap to reverse — which is exactly why making it is safe.
 
