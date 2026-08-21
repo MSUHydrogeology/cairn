@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: accepted
+**Status**: superseded
 **Assurance path**: **high-assurance** — this changes governing doctrine and the
 lifecycle planner's own section-parsing, which the assurance-path triggers name
 directly. Uncertainty resolves high.
@@ -2034,3 +2034,26 @@ Revisions 1 and 2 are headed 2026-08-20; both were committed 2026-08-21
 (07:27 and 07:32, commits `2e23c14` / `f4116f4`). The headers carry the
 wrong day; the commit timestamps are authoritative. The filename stem and
 `Date opened: 2026-08-20` are correct — the proposal opened 2026-08-20 18:14.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-21 -- SUPERSEDED
+
+Earlier today this proposal was accepted at Revision 7. The Maintainer now
+supersedes it. Authorization, quoted verbatim and visually isolated:
+
+> "Okay, I'd like for you to take that proposal, mark it "SUPERSEDED" and
+> scribe my decision on it. Then, write a new one that honors the objective of
+> that proposal with the context you have gained here. Don't bind yourself to
+> the scope of that proposal. Bind yourself to its objective: make the
+> proposal->review->plan->review->code->review->archive process faster and more
+> convergent. Keeping in mind the balance this whole project is trying to
+> achieve."
+
+**What supersession means here.** No plan was opened and nothing was
+implemented, so C0-C8 never entered force. They pass to the successor as
+inputs, not as standing contract: the successor binds to this proposal's
+*objective* (a faster, more convergent lifecycle, in balance), not its scope.
+The successor opens as `2026-08-21-claude-convergent-lifecycle` (stem) in the
+commit following this one.
+
+**Scribed by** Claude (Fable 5) on the explicit Maintainer instruction quoted
+above. The scribe wrote no part of the authorization.

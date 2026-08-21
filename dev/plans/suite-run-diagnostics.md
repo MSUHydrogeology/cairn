@@ -1399,7 +1399,7 @@ this plan's.
 `c6a94dd070e4b76685f75736b5e6b6d132f7c4dc` when it finished: the Maintainer
 committed a proposal review mid-run. The working tree was clean at both ends,
 and `c6a94dd` touches exactly one file --
-`dev/proposals/2026-08-20-claude-review-loop-termination.md` -- so none of this
+`dev/proposals/archive/2026-08-20-claude-review-loop-termination.md` -- so none of this
 plan's implementation surface moved.
 
 That is not by itself sufficient, because
