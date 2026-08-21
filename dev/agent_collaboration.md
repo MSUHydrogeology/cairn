@@ -382,8 +382,8 @@ resume cold:
 <!-- cairn:slot lifecycle-metrics -->
 **Lifecycle metrics.** The extractor `python tools/lifecycle_metrics.py`
 walks the `dev/proposals/` + `dev/plans/` corpus and emits per-proposal
-metrics — review rounds, revision counts, time-to-decision, finding
-severities. Run it to read the team's own discipline; the output is
+metrics — review rounds, revision counts, time-to-decision. Run it to
+read the team's own discipline; the output is
 derived and uncommitted (`--snapshot` persists a dated CSV under
 `dev/measurement/snapshots/` when a citable record is wanted). A
 measured baseline is the gating artifact for any claim Cairn makes

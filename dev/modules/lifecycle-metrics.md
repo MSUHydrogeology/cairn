@@ -11,9 +11,9 @@ extractor** the scaffold installs to `tools/lifecycle_metrics.py`
 The lifecycle-metrics layer makes the team's discipline
 **measurable** rather than asserted. A small read-only extractor
 walks `dev/proposals/` and `dev/plans/` and emits per-proposal
-metrics — review rounds, revision counts, time-to-decision,
-finding severities — so a claim like "External review catches what
-the author cannot" becomes a quantity, not a belief.
+metrics — review rounds, revision counts, time-to-decision — so a
+claim like "External review catches what the author cannot" becomes
+a quantity, not a belief.
 
 ## Template content
 
@@ -39,6 +39,15 @@ project makes about its own method — run the extractor before
 asserting one.
 
 ## The Measurement Compact
+
+**The selection principle, framing what belongs in this table at
+all.** Measure structural events as they occur — a status
+transition, a review pass, a Response — not prose content parsed
+after the fact. A metric derived by parsing review prose rewards
+writing more of it: the cheapest way to look thorough is to split
+one finding into three, or pad a Response with extra disposition
+bullets. A metric that rewards its own inflation is a defect to
+remove, not a signal to tune around.
 
 Measuring a team's own collaboration is double-edged: the surface
 that diagnoses where the apparatus drifts can become a ranking or
@@ -113,8 +122,18 @@ scanner phrases as if they were the gate's definition.
 
 ### Late-blocker reduction — measuring the review sweep
 
-When an adoption runs a structured **review sweep** and a
-**recommend-and-decide** second pass (`doctrine/dual-review.md`), the
+**A bounded study, not standing instrumentation.** The bundle below
+names a `P1`/`P2`-severity split the shipped extractor deliberately does
+not compute — bracketed-tag severity counts are exactly the
+prose-parsed, inflatable shape the selection principle above exists to
+keep out of the standing per-proposal table (a reviewer wanting a
+higher "actionable findings" count can always write a more granular
+bracket). A team that wants this bundle runs it as a **deliberate,
+time-boxed study** — a one-off script or manual tally over a sample of
+review passes, scoped and reported like the "size the irreducible
+share" experiment below it — not as a column an adopter can graph from
+every snapshot. When an adoption runs a structured **review sweep** and
+a **recommend-and-decide** second pass (`doctrine/dual-review.md`), the
 question worth measuring is not first-round *volume* — a reviewer can
 inflate that with low-value findings — but whether the sweep moves
 findings *earlier*. The bundle:
@@ -159,7 +178,7 @@ verbatim) and fills `python tools/lifecycle_metrics.py` to point at it. It is a
 read-only, **standard-library-only** walker over
 `dev/proposals/{,archive/}` and `dev/plans/{,archive/}` that emits a
 per-proposal / per-plan CSV (or markdown) with review rounds, revision
-counts, time-to-decision, and finding severities. Run it via:
+counts, and time-to-decision. Run it via:
 
 > `python tools/lifecycle_metrics.py` &nbsp; (`proposals` by default; `plans` for the
 > plan corpus; `--root` targets another tree; `--format md` for a
@@ -170,6 +189,14 @@ parses the proposal / plan lifecycle headers the Cairn scaffold installs,
 so it runs cleanly against a freshly bootstrapped repo; project-specific
 extensions to those headers may need small parser tweaks at the top of
 the script.
+
+**What the retained event-derived columns are, honestly.**
+`review_rounds`, reviewer identity, and the per-Response model captures
+are **interim lifecycle proxies** — materially harder to inflate than a
+finding count (a review round is a section an agent commits, not a
+count an agent chooses), but not immune: a heading-count is still prose
+structure, not a verified structural act. This is not the "cannot be
+inflated" claim an earlier draft of this module made and withdrew.
 
 **Scope of the shipped script.** The shipped extractor is the **v1
 core** spine (the measurable lifecycle table) **plus the full
