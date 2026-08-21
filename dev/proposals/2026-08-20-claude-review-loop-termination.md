@@ -1963,3 +1963,67 @@ silently, as C1 requires of an editor overriding a reviewer.
 
 **Scribed by** Claude (claude-opus-5), this proposal's author, on explicit
 Maintainer instruction.
+
+## Revision 7's withdrawal ledgers -- Claude -- 2026-08-21
+
+Supplies the two `### Withdrawn / superseded commitments` headings Revision 7
+omitted, named as open item 1 of the Decision and routed to me: *"Them"*. Every
+revision from 1 through 6 carries one in each half (lines 240, 337, 552, 745,
+857, 1100); Revision 7 carries none, which I confirmed by reading rather than by
+scanner -- the scan reports this artifact clean **only** because `accepted` is
+terminal and `_is_immutable` short-circuits the check. The defect is unfixed by
+that silence, not resolved by it, exactly as the scribe recorded.
+
+Supplied as an appended section rather than written into Revision 7, because
+Revision 7 is a prior section and the append-only rule binds. Each ledger names
+the half it belongs to.
+
+### Withdrawn / superseded commitments -- for `## Response + Revision 7`
+
+**Withdrawn: nothing.** No commitment of any earlier revision is dropped by
+Revision 7. It adds C0, C7 and C8 and extends C1; the direction is entirely
+additive, which is why this ledger is short and why its absence was easy to
+miss.
+
+**Superseded:**
+
+* **Revision 6's complete current contract, in full.** Stated in Revision 7's
+  Scope delta but not entered in a ledger, which is the omission itself.
+
+### Withdrawn / superseded commitments -- for `## THE COMPLETE CURRENT CONTRACT (Revision 7)`
+
+**Withdrawn: nothing.**
+
+**Superseded, item by item, all four by C7 or C8:**
+
+* **C6's verdict predicate.** Revision 6: *"`REVISE` iff a `behaviour` finding is
+  open or evidence is absent/invalid"*. Revision 7: *"iff an **unbound**
+  `behaviour` finding is open"*. C7 introduces the bound case, so the
+  unqualified predicate no longer holds.
+* **C6's `behaviour` class disposition.** Revision 6: *"Blocks and loops."*
+  Revision 7: *"Blocks, and loops unless bound under C7."*
+* **Revision 6's Exclusions line on lifecycle states.** Revision 6 excluded any
+  change to *"the proposal lifecycle's states"* without qualification. C7 adds a
+  conditional **transition edge** (`revising-code -> ready-to-archive`) while
+  adding no state, so Revision 7's Exclusions carries that parenthetical. A
+  reader of Revision 6 would otherwise conclude the transition table was
+  untouched.
+* **Revision 6's treatment of `Plan readiness`.** Revision 6 excluded only the
+  *inheritance machinery* from change, which left the field's vocabulary and its
+  binding authority reading as untouched. C8 changes both: `ORDINARY` is added,
+  omission is defined as `ORDINARY`, and the token becomes advisory with the
+  editor assigning the tier. The inheritance machinery itself is still unchanged,
+  so the Exclusion survives in its narrow form and is superseded in its broad
+  reading.
+
+**One thing deliberately not entered here.** C7's `Closes on:` exclusion for
+Security-review findings is not a supersession -- no earlier revision said
+anything about Security findings in the code loop, because no earlier revision
+had a fast edge for them to be excluded from. It is new, not changed.
+
+**Why the omission happened, since the same shape has now cost this file
+twice.** Revisions 1-6 each carried the ledger because each *withdrew* something
+and the heading had visible work to do. Revision 7 withdrew nothing, so the
+heading had no obvious content -- and a required section with nothing to say is
+exactly the one that gets dropped. "Withdrawn: nothing" is a record; its absence
+is not.
