@@ -114,14 +114,15 @@ the ratchets means it all grows back.
    Yesterday's *bug fixes* became security-reviewed proposals. The
    trivial path atrophied from disuse.
 
-**Convergent work, same day:** the accepted proposal
-`2026-08-20-claude-review-loop-termination` (Revision 7) attacks the
-same disease from inside the lifecycle — its C0 risk posture ("would
-shipping this cause damage that is hard to undo?") and C1 editor
-authority are this note's 3.5 and 1.2, independently derived. Its
-mechanics (C1–C8) should be implemented; its new refusal points should
-be born as warnings per 1.5; and this note's Tier 2 is the pass that
-then asks how much of the container the softened machine still needs.
+**Convergent work, same day:** `2026-08-20-claude-review-loop-termination`
+(accepted at Revision 7, then superseded the same day on the
+Maintainer's direction) attacked the same disease from inside the
+lifecycle — its C0 risk posture ("would shipping this cause damage
+that is hard to undo?") and C1 editor authority are this note's 3.5
+and 1.2, independently derived. Its successor,
+`2026-08-21-claude-convergent-lifecycle`, carries C0, C1, and C7
+forward and replaces the container itself — it is this note's Tier 1
+and much of Tier 2, cast as one 131-line proposal.
 
 ## What must be kept
 
