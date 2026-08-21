@@ -94,14 +94,17 @@ from __future__ import annotations
 
 import importlib as _importlib
 
-# Leaf-first load order (acyclic): config/parse/report have no sibling deps;
-# subsystems -> parse,config; extract -> config,parse,gitmeta,subsystems;
-# snapshot -> config,extract,subsystems,gitmeta,report; cli -> the rest.
+# Leaf-first load order (acyclic): config/parse/report/events have no
+# sibling deps (events.py carries no import of extract.py by design --
+# see events.py's own module docstring for why the dependency runs the
+# other way); subsystems -> parse,config; extract -> config,parse,
+# gitmeta,subsystems,events; snapshot -> config,extract,subsystems,
+# gitmeta,report; cli -> the rest.
 # Loaded via ``import_module`` (not ``from . import ...``) so resolution needs
 # only THIS package in ``sys.modules`` -- no top-level ``tools`` parent, keeping
 # the launcher's fail-closed containment surface minimal.
 _SUBMODULES = (
-    "config", "parse", "gitmeta", "report",
+    "config", "parse", "gitmeta", "report", "events",
     "subsystems", "extract", "snapshot", "cli",
 )
 

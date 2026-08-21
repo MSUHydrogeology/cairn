@@ -324,12 +324,24 @@ def _status_literal_assignments(source: str, vocab: frozenset) -> list[tuple[int
 #: quietly incomplete.  Its contained loader's own matrix lives in
 #: ``bootstrap/tests/test_pilot_evidence.py`` (``TestVocabularyLoader``), which
 #: is also where the counting rule's fail-closed behavior is pinned.
+#: `events.py` joined once it existed (`metrics-events-not-prose` Chunk 4):
+#: it is a new consumer of the runtime status vocabulary (the closed
+#: grammar's `from_state`/`to_state` bound), so a local status literal
+#: written there would be exactly the vocabulary fork this audit exists to
+#: catch, in a file it did not yet scan.  It declares no local status
+#: literal today (row 4-1's own design: the `valid_states` bound is a
+#: parameter, not a loaded value), which makes THIS addition presently
+#: vacuous against the literal-detection test below -- it is still
+#: required, because the audit's purpose is to catch a *future* local
+#: literal in a file it already scans, not only a present one.
 _AUDITED_CONSUMER_SOURCES = (
     TL_SRC,
     METRICS_PKG_SRC / "extract.py",
     METRICS_PKG_TEMPLATE_SRC / "extract.py",
     LIFECYCLE_CLI_SRC,
     LIFECYCLE_CLI_TEMPLATE_SRC,
+    METRICS_PKG_SRC / "events.py",
+    METRICS_PKG_TEMPLATE_SRC / "events.py",
 )
 
 
@@ -348,14 +360,16 @@ class TestSourceAudit:
             "source rule (R5 replacement) is violated:\n" + "\n".join(violations)
         )
 
-    def test_the_audit_actually_scans_all_five_named_sources(self) -> None:
+    def test_the_audit_actually_scans_all_seven_named_sources(self) -> None:
         # A guard on the guard: if a future edit narrows
         # _AUDITED_CONSUMER_SOURCES, the audit above would go quietly green
         # over fewer files without ever failing.  Pin the exact set by name.
         names = {p.name for p in _AUDITED_CONSUMER_SOURCES}
-        assert names == {"transition_lint.py", "extract.py", "lifecycle.py"}
-        assert len(_AUDITED_CONSUMER_SOURCES) == 5
-        assert len(set(_AUDITED_CONSUMER_SOURCES)) == 5, (
+        assert names == {
+            "transition_lint.py", "extract.py", "lifecycle.py", "events.py",
+        }
+        assert len(_AUDITED_CONSUMER_SOURCES) == 7
+        assert len(set(_AUDITED_CONSUMER_SOURCES)) == 7, (
             "each installed file and its template twin must be two distinct "
             "paths, not the same file scanned twice"
         )
@@ -365,6 +379,10 @@ class TestSourceAudit:
         )
         assert _AUDITED_CONSUMER_SOURCES[3] != _AUDITED_CONSUMER_SOURCES[4], (
             "the installed lifecycle.py and its template twin must be two "
+            "distinct paths, not the same file scanned twice"
+        )
+        assert _AUDITED_CONSUMER_SOURCES[5] != _AUDITED_CONSUMER_SOURCES[6], (
+            "the installed events.py and its template twin must be two "
             "distinct paths, not the same file scanned twice"
         )
         for path in _AUDITED_CONSUMER_SOURCES:
@@ -589,11 +607,17 @@ def consumer(request) -> ConsumerSpec:
 
 #: A decoy planner satisfying every export EITHER consumer requires, but with
 #: a value neither consumer's real vocabulary would ever produce -- used to
-#: prove the decoy was never the module actually returned.
+#: prove the decoy was never the module actually returned.  ``PROPOSAL_STATES``
+#: joined once ``extract.py``'s ``_REQUIRED_EXPORTS`` grew a second export
+#: (``metrics-events-not-prose`` Chunk 4, `events.py`'s `from_state`/
+#: `to_state` grammar bound) -- omitting it here would make the decoy
+#: structurally satisfy only the OLD required-exports contract, not the live
+#: one.
 _DECOY_PLANNER_SRC = (
     "RECOGNIZED_STATES = ('DECOY',)\n"
     "SHAPE_B_STATUSES = ('DECOY',)\n"
     "PLAN_STATES = ('DECOY',)\n"
+    "PROPOSAL_STATES = ('DECOY',)\n"
 )
 
 
@@ -786,13 +810,23 @@ class TestLoaderContainmentMatrix:
 
 def _fake_planner_module(
     module: ModuleType, *, sentinel: bool, file: str, omit_export: bool = False,
+    omit: str | None = None,
 ) -> ModuleType:
+    """``omit_export=True`` omits ``_REQUIRED_EXPORTS[0]`` (the original,
+    single-omission case every consumer shares); ``omit=<name>`` omits a
+    SPECIFIC named export instead, for a consumer whose required-exports
+    tuple has grown past one entry and needs each half independently
+    exercised (see ``test_missing_proposal_states_export_is_purged_not_cached``
+    below)."""
     fake = types.ModuleType(module._PLANNER_MODULE_NAME)
     fake.__file__ = file
     if sentinel:
         setattr(fake, module._PLANNER_SENTINEL, True)
+    target_omit = omit if omit is not None else (
+        module._REQUIRED_EXPORTS[0] if omit_export else None
+    )
     for name in module._REQUIRED_EXPORTS:
-        if omit_export and name == module._REQUIRED_EXPORTS[0]:
+        if name == target_omit:
             continue
         setattr(fake, name, ("POISON",))
     return fake
@@ -995,3 +1029,35 @@ class TestMetricsLocationCases:
             "diverged -- the template-location refusal above would no longer "
             "be evidence about the shipped consumer's behaviour"
         )
+
+    def test_missing_proposal_states_export_is_purged_not_cached(
+        self, tmp_path: Path,
+    ) -> None:
+        """`metrics-events-not-prose` Chunk 4 widened `extract.py`'s
+        `_REQUIRED_EXPORTS` from a 1-tuple to a 2-tuple
+        (`PLAN_STATES`, `PROPOSAL_STATES`) -- the shared
+        `TestLoaderContainmentMatrix` case 6 poison already exercises
+        omitting `_REQUIRED_EXPORTS[0]` (`PLAN_STATES`) across both
+        consumers, but that leaves the SECOND, newly-required export
+        unexercised: a poisoned cache entry present for every export
+        except `PROPOSAL_STATES` must still be purged and reloaded, not
+        mistaken for complete because the sentinel and `PLAN_STATES`
+        both happened to be present."""
+        root = METRICS_SPEC.make_root(tmp_path, with_planner=True)
+        module = METRICS_SPEC.load(root)
+        real_path = METRICS_SPEC.planner_path(root).resolve()
+
+        module._purge_planner_module()
+        module._planner_cache = None
+        sys.modules[module._PLANNER_MODULE_NAME] = _fake_planner_module(
+            module, sentinel=True, file=str(real_path), omit="PROPOSAL_STATES",
+        )
+        vocab = module._vocabulary()
+        assert all(hasattr(vocab, n) for n in module._REQUIRED_EXPORTS), (
+            "the reloaded vocabulary is missing a required export"
+        )
+        assert vocab.PROPOSAL_STATES != ("POISON",), (
+            "the poisoned cache entry was trusted instead of purged and "
+            "reloaded"
+        )
+        assert sys.modules[module._PLANNER_MODULE_NAME] is vocab

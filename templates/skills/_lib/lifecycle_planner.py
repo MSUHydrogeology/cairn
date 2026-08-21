@@ -5067,6 +5067,62 @@ def _response_template(date: str) -> str:
     )
 
 
+#: `metrics-events-not-prose` Part 3's grammar (`cairn-event-v1`): every
+#: legal transition's commit carries a `transition` block; a commit whose
+#: scaffold ALSO adds a Review / Plan review / Code review section carries
+#: an additional `review-pass` block, and one that adds a Response section
+#: carries an additional `response` block -- in the SAME commit that
+#: performs the act.  Read from the scaffold's own first block line rather
+#: than re-deriving the (kind, target) branching a second time, so this
+#: stays in sync with `_scaffold` by construction.
+def _expected_event_kind(scaffold_block: str) -> Optional[str]:
+    """Which additional event kind (beyond the universal `transition`)
+    this scaffold's own primary block adds, if any."""
+    first_line = scaffold_block.splitlines()[0] if scaffold_block else ""
+    if (first_line.startswith("## Review")
+            or first_line.startswith("## Plan review")
+            or first_line.startswith("## Code review")):
+        return "review-pass"
+    if first_line.startswith("## Response"):
+        return "response"
+    return None
+
+
+def _event_block_preview(
+        status_from: str, target: str, scaffold_block: str) -> List[str]:
+    """The literal `cairn-event-v1` block(s) this transition's commit is
+    expected to carry (Round 7's grammar).  **Informational only** -- this
+    tool never writes one to disk, and this preview never gates the
+    transition; the operator's own edit is what makes it real."""
+    lines = [
+        "<!-- cairn-event-v1",
+        "kind: transition",
+        f"from_state: {status_from or '(none)'}",
+        f"to_state: {target}",
+        "-->",
+    ]
+    extra_kind = _expected_event_kind(scaffold_block)
+    if extra_kind == "review-pass":
+        lines += [
+            "",
+            "<!-- cairn-event-v1",
+            "kind: review-pass",
+            "tier: <Internal|External|Security|Code>",
+            "reviewer: <reviewer name as written in the section heading>",
+            "-->",
+        ]
+    elif extra_kind == "response":
+        lines += [
+            "",
+            "<!-- cairn-event-v1",
+            "kind: response",
+            "model: <model identity as written in the Response's **Model** "
+            "field>",
+            "-->",
+        ]
+    return lines
+
+
 def _scaffold(art: Artifact, target: str, date: str) -> Tuple[str, str, List[str]]:
     """Return (status_from, status_to_or_note, [scaffold_block, manifest...]).
 
@@ -5333,6 +5389,9 @@ def cmd_next(args: argparse.Namespace) -> int:
     _emit_section("mutation manifest (what would change -- you apply it)")
     for line in blocks[1:]:
         _emit(f"- {line}")
+    _emit_section("expected event block (informational -- not written by this tool)")
+    for line in _event_block_preview(status_from, target, blocks[0]):
+        _emit(line)
     _emit("")
     _emit("read-only: this tool emitted text only. It wrote nothing and "
           "committed nothing. You own the edit and the commit.")

@@ -72,8 +72,8 @@ def _has_header(path: Path) -> bool:
 
 def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
-    assert len(sources) == 56, (
-        f"expected 56 templates/**/*.py manifest sources, found "
+    assert len(sources) == 57, (
+        f"expected 57 templates/**/*.py manifest sources, found "
         f"{len(sources)} -- if this moved intentionally, update this test. "
         f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
         f"templates/modules/team-gated/run_portable_security_sweeps.py; "
@@ -84,9 +84,12 @@ def test_manifest_has_the_expected_py_source_count():
         f"destination trees (_api_access_security/ and _web_hosting_security/). "
         f"NOTE: this returns a LIST, so a source installed to two destinations "
         f"counts TWICE -- 6 distinct new files produce 10 new entries here. "
+        f"Moved 56 -> 57 by metrics-events-not-prose Chunk 4, which registers "
+        f"templates/modules/default-on/_lifecycle_metrics/events.py to ONE "
+        f"destination (tools/_lifecycle_metrics/events.py). "
         f"Its sibling pin in bootstrap/tests/test_security_lint.py "
         f"(test_templates_py_count_is_pinned) counts DISTINCT files on disk and "
-        f"therefore no longer agrees with this one: 52 there, 56 here. The two "
+        f"therefore no longer agrees with this one: 53 there, 57 here. The two "
         f"still move in the same commit; they no longer move to the same number"
     )
 
@@ -178,17 +181,20 @@ def test_notice_is_a_core_mapping():
 
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
-    assert len(rows) == 114, (
-        f"expected 114 manifest rows (94 + NOTICE.md + portable-security-"
+    assert len(rows) == 115, (
+        f"expected 115 manifest rows (94 + NOTICE.md + portable-security-"
         f"sweeps' three + security-verification's two + api-web-security-"
-        f"modules' fourteen), found {len(rows)} "
+        f"modules' fourteen + metrics-events-not-prose's one), found "
+        f"{len(rows)} "
         f"-- if this moved intentionally, update this test. Moved 95 -> 98 "
         f"by portable-security-sweeps Chunk A: the module registers its "
         f"doctrine, its runner and its policy as one group, and the install "
         f"contract grew by exactly three additive rows. Moved 98 -> 100 by "
         f"security-verification-activation Chunk A: the module registers "
         f"its doctrine + its verbatim dispatcher as one group, two "
-        f"additive rows."
+        f"additive rows. Moved 114 -> 115 by metrics-events-not-prose "
+        f"Chunk 4, which registers one new InstallSpec row "
+        f"(events.py -> tools/_lifecycle_metrics/events.py)."
     )
 
 

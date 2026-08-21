@@ -298,7 +298,17 @@ class VocabularyUnavailable(RuntimeError):
 
 _PLANNER_MODULE_NAME = "_lifecycle_metrics_lifecycle_planner"
 _PLANNER_SENTINEL = "__cairn_vocabulary_loaded__"
-_REQUIRED_EXPORTS = ('PLAN_STATES', 'HISTORICAL_PLAN_STATES')
+#: ``PROPOSAL_STATES`` joined once ``events.py`` existed
+#: (``metrics-events-not-prose`` Chunk 4): its closed grammar bounds a
+#: `transition` block's `from_state`/`to_state` to "a declared lifecycle
+#: status for that artifact type", and a proposal-hosted block needs the
+#: planner's CURRENT proposal-status enum to check against.  The
+#: historical variant (``HISTORICAL_PROPOSAL_STATES``) is deliberately
+#: NOT added -- a freshly-authored event block only ever names a
+#: currently-declared status, never a retired token, unlike the existing
+#: plan-status prose-normalization path below, which reads archived
+#: history and needs both groups.
+_REQUIRED_EXPORTS = ('PLAN_STATES', 'HISTORICAL_PLAN_STATES', 'PROPOSAL_STATES')
 _planner_cache = None
 
 

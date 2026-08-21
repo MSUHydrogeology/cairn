@@ -743,7 +743,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "tools/lifecycle_metrics.py", verbatim=True),
         # lifecycle-metrics fold-up (phase C, 2026-06): lifecycle_metrics.py is
         # now a thin launcher/facade over an owned `_lifecycle_metrics/` engine
-        # package; the nine package files install verbatim beside the facade so
+        # package; the ten package files install verbatim beside the facade so
         # `python tools/lifecycle_metrics.py` resolves its sibling engine at
         # runtime (parity with the _intent/ + _onboarding/ splits).  Byte-for-byte code.
         InstallSpec("default-on/_lifecycle_metrics/__init__.py",
@@ -756,6 +756,12 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "tools/_lifecycle_metrics/gitmeta.py", verbatim=True),
         InstallSpec("default-on/_lifecycle_metrics/report.py",
                     "tools/_lifecycle_metrics/report.py", verbatim=True),
+        # events.py (metrics-events-not-prose Part 3): the cairn-event-v1
+        # grammar + history-diff reader + reconciliation engine.  Installed
+        # here, before subsystems/extract, so extract.py's own import of it
+        # (Chunk 6) resolves against an already-registered sibling.
+        InstallSpec("default-on/_lifecycle_metrics/events.py",
+                    "tools/_lifecycle_metrics/events.py", verbatim=True),
         InstallSpec("default-on/_lifecycle_metrics/subsystems.py",
                     "tools/_lifecycle_metrics/subsystems.py", verbatim=True),
         InstallSpec("default-on/_lifecycle_metrics/extract.py",
