@@ -2854,3 +2854,29 @@ conftest's byte-level content is covered by the frozen-file manifest.
 7e2fa00:bootstrap/tests/conftest.py` written to scratch, or a `--shared`
 scratch clone at `7e2fa00`. The single control run against the parent commit
 used `fc93c1a`. No probe read or wrote the live working tree.
+
+## Maintainer allowance -- the sixth frozen file (CR8) -- 2026-08-21
+
+CR8 found that `15906df` touched `bootstrap/tests/_gate_manifest.py` — a sixth
+gate-frozen file, outside Revision 5's Scope and outside both prior allowances —
+and that the Response one commit earlier had said this plan "is not the place to
+widen further." It widened anyway. Allowed, quoted verbatim and visually
+isolated:
+
+> "Yes, allow."
+
+**What it covers**: the change to `GATE_COMMANDS`'s `bootstrap-suite` entry so
+the recorded canonical command carries the broad-run override token. Nothing
+else in that file, and no further widening.
+
+**Contract expansion**: touched-file set — `bootstrap/tests/_gate_manifest.py`
+joins the accepted Scope, bringing the re-anchor accounting to **five**
+`FROZEN-MODIFIED` entries from this plan.
+
+**Not covered, and still owed to Chunk D**: the frozen fixture
+`bootstrap/tests/fixtures/gate_manifest.json` is **not** regenerated. Attempting
+it was reverted — `_gate_manifest.py produce` rebuilds the whole manifest from
+the current tree and would have re-recorded the hashes of every modified frozen
+file, including a concurrent session's. That is the supervised re-anchor
+arriving through a routine-looking step, and it is Maintainer-owned. The source
+and the fixture therefore disagree on `gate_commands` until the ceremony runs.
