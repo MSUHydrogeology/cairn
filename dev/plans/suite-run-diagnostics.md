@@ -1,7 +1,7 @@
 # Plan: the suite reports its own cost
 
 **Source proposal**: `dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md`
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(**Internal**) — ratified by Maintainer amendment at
 `e6e854d58f7083b5497cfa77a5d319285e7626b9`, overriding the plan-review
 template's default escalation path. See "Plan-review tier rationale" below
@@ -11,18 +11,47 @@ for why, and for the field this plan deliberately omits.
 
 ## Source proposal
 
-Accepted as revised (Revision 5) at `a3226c7`, amended at `e6e854d`. The suite's
-cost has been re-measured by hand at least four times and lost every time
-because the number, not the place to look it up, is what survived. The proposal
-makes `bootstrap/tests/conftest.py` write one JSONL row per top-level pytest
-session to a gitignored ledger, `dev/measurement/suite-runs.jsonl`, and adds a
-standalone reader, `tools/suite_cost.py`, that renders it for a human without
-re-running anything. Five hooks, five fail-closed guards, a fixed row schema
-with a `scope` classifier that only asserts `full` under both an exact-argv
-check and a resolved-postcondition check, a 4,096-byte encoded-row budget with
+Accepted as revised (Revision 5) at `a3226c7`, amended twice: at `e6e854d`
+(plan-review tier, see below) and, since this plan's own Internal review, at
+`8a25455` (two accepted terms repaired — see "The amendment" below). The
+suite's cost has been re-measured by hand at least four times and lost every
+time because the number, not the place to look it up, is what survived. The
+proposal makes `bootstrap/tests/conftest.py` write one JSONL row per top-level
+pytest session to a gitignored ledger, `dev/measurement/suite-runs.jsonl`, and
+adds a standalone reader, `tools/suite_cost.py`, that renders it for a human
+without re-running anything. Five hooks, **four** fail-closed guards (numbered
+1, 2, 4, 5 — see "The amendment"), a fixed row schema with a `scope`
+classifier that only asserts `full` under both an exact-argv check and a
+resolved-postcondition check, a 4,096-byte encoded-row budget with
 deterministic eviction and a total skeleton fallback, and POSIX `flock` +
-tail-repair durability. Zero subprocesses; zero dependencies; nothing executed.
-This plan executes that decision; it does not re-litigate it.
+tail-repair durability. Zero subprocesses in the collector itself; zero
+dependencies; nothing executed. This plan executes that decision; it does not
+re-litigate it.
+
+### The amendment — guard 3 deleted, the suite root defined
+
+This plan's own Internal review (below) found two accepted falsifiers
+unconstructible: no test could observe a written row (guards 2 and 3 jointly
+silenced every fixture tree a test could build), and `scope == "full"`'s
+positive case required recursing into the running suite. The Maintainer
+accepted an amendment repairing the contract at its source
+(`dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md` >
+"Amendment", commits `6d4edcd`/`8a25455`) rather than working around the
+defect in this plan:
+
+* **Guard 3 (containment against the resolved `tempfile.gettempdir()`) is
+  deleted, and nothing replaces it.** Guards 1, 2, 4 and 5 are unchanged. The
+  ledger path is derived from the collector's own file location, so a fixture
+  tree carrying a *copy* of the collector resolves its ledger inside that
+  fixture tree and can never reach the repository's real ledger — the guard
+  fenced a field its subject could not reach.
+* **The suite root is defined**: the directory containing the running
+  collector. `full` means "this session covered its own suite root
+  completely," a property a small fixture tree can exhibit without any
+  recursion into the real `bootstrap/tests/`.
+
+Both terms are folded into Chunk C below, at the falsifiers they unblock —
+see "How Chunk C observes a written row."
 
 ### Plan-review tier rationale
 
@@ -93,6 +122,19 @@ bounded to Revision 5's contract only — no hook, refusal behaviour, or
 `AGENTS.md`/vendor-wrapper sentence belonging to `full-suite-interception` is
 implemented here, planned here, or anticipated here beyond this note.
 
+**The sibling's file-count refusal cannot perturb this plan's own Chunk C
+falsifiers.** `full-suite-interception`'s guard refuses a session spanning
+more than 40 distinct test files. Every `scope`-classification and
+write-observing falsifier in this plan (see Chunk C, "How Chunk C observes a
+written row") runs against a throwaway fixture tree carrying one copied
+`conftest.py` plus two or three fixture test files — never the real
+`bootstrap/tests/`, which the amendment's suite-root definition makes
+unnecessary in the first place. That file count sits nowhere near the
+sibling's threshold, so this is true by construction and needs no
+`CAIRN_FULL_SUITE=1` carve-out regardless of landing order. The only place
+the sibling's guard actually matters to this plan is the real, whole-suite
+Boundary B run, already addressed under Verification below.
+
 ### A scope-adjacent decision this plan had to make: where the reader's test lives
 
 Revision 5 commits to **exactly one** new test file, but its own Evidence table
@@ -136,10 +178,18 @@ tool by pattern-matching its mapped neighbours into `config.py`.
   (`dev/measurement/README.md <- core/dev/measurement/README.md`,
   `substituted`), the mapping is declared in `bootstrap/_scaffold/config.py`,
   and `diff templates/core/dev/measurement/README.md
-  dev/measurement/README.md` is byte-identical. Editing only Cairn's copy
-  desynchronizes the twin and leaves the tree failing
-  `bootstrap/verify_integrity.py` against the recorded lockfile hash until an
-  `upgrade --finalize`. Revision 5 excludes "any doctrine, canonical-command,
+  dev/measurement/README.md` is byte-identical. **`bootstrap/verify_integrity.py`
+  cannot see the twin at all** — it compares the installed copy's on-disk
+  bytes against `dev/.cairn/cairn-lock.yml`'s recorded hash and never reads
+  `templates/**`, so it fails identically whether Cairn's copy alone is
+  edited or both are, and stays failing until the lockfile record is
+  advanced regardless. What actually keeps the twin honest is the `diff`
+  above plus reviewer attention. Chunk D closes the lockfile-mismatch state
+  it opens, rather than leaving it as an unassigned gap: after D2 lands, run
+  `python bootstrap/scaffold.py upgrade --target . --finalize
+  dev/measurement/README.md` (the surgical, single-record form) so
+  `verify_integrity` attests the edited content instead of drifting
+  indefinitely. Revision 5 excludes "any doctrine, canonical-command,
   template or adopter surface", so the accepted contract did not authorize
   this on its own — the Maintainer's allowance is what does, and the
   generic-phrasing constraint under Chunk D is what keeps the widened surface
@@ -169,7 +219,7 @@ Revision 5 still excludes.
 1. Chunk A -- the ledger writer (bootstrap/tests/conftest.py)      [commit pending]
 2. Chunk B -- the reader (tools/suite_cost.py)                     [commit pending]
 3. Chunk C -- the contract tests (test_suite_ledger.py)            [commit pending]
-4. Chunk D -- gitignore, README note, CHANGELOG                    [commit pending]
+4. Chunk D -- gitignore, README note, CHANGELOG, lockfile finalize [commit pending]
 5. Code review (independent, not the implementing agent)           [pending]
 6. Chunk E -- Security Review + re-anchor ceremony (Maintainer-owned) [pending]
 ```
@@ -191,15 +241,16 @@ adds two hooks that do not yet exist.
 |---|------|--------|
 | A1 | `bootstrap/tests/conftest.py` | Add `pytest_configure`: claim `CAIRN_SUITE_LEDGER_SESSION=1` if unset (guard 2, reentrancy-with-ownership); a pre-existing marker means this session is a child and every later ledger hook becomes a no-op for it. |
 | A2 | `bootstrap/tests/conftest.py` | Add `pytest_deselected`, and extend `pytest_runtest_logreport` / `pytest_collectreport` to also accumulate per-node phase durations, outcome counts (the seven-outcome precedence: setup/teardown failure → `errors`; call failure → `failed`; `wasxfail` → `xpassed`/`xfailed`; any `skipped` → `skipped`; passing setup with no call report → `aborted`; else `passed`), and `by_file` timing, **alongside**, never replacing, the existing `_record_refused_report` release-evidence accumulation — release logic first, ledger accumulation last, in the same hook bodies. |
-| A3 | `bootstrap/tests/conftest.py` | Extend `pytest_sessionfinish`: after the existing release-mode block (unchanged), add the ledger block **last**, wrapped in `except BaseException` (not `Exception` — a `KeyboardInterrupt` mid-retry must not turn exit 1 with a release report into exit 130 with none). Implements: guards 3–5 (containment against the resolved `tempfile.gettempdir()`, the release-mode exemption, and the `CAIRN_SUITE_LEDGER=0` / absent-directory opt-outs); `head` resolution by direct `.git`/`HEAD`/`commondir`/refs reads; the `scope`/`scope_basis` classifier (both channels — exact-argv-family membership *and* resolved postconditions); the pinned encoder (`json.dumps(row, ensure_ascii=True, separators=(",", ":"), allow_nan=False, sort_keys=True)`) with ASCII-sanitize-then-cap, `by_file` smallest-duration-first eviction, and the total skeleton-row fallback; the `flock`-with-250ms-deadline / tail-repair durability; the row-per-session invariant. |
+| A3 | `bootstrap/tests/conftest.py` | Extend `pytest_sessionfinish`: after the existing release-mode block (unchanged), add the ledger block **last**, wrapped in `except BaseException` (not `Exception` — a `KeyboardInterrupt` mid-retry must not turn exit 1 with a release report into exit 130 with none). Implements: guard 2's other half (release an *owned* marker in a `finally` path — a marker this session did not claim in A1's `pytest_configure` is left untouched); guards 4–5 (the release-mode exemption and the `CAIRN_SUITE_LEDGER=0` / absent-directory opt-outs — guard 3, containment against `tempfile.gettempdir()`, is deleted by the amendment and implements nothing here); `head` resolution by direct `.git`/`HEAD`/`commondir`/refs reads; the `scope`/`scope_basis` classifier (both channels — exact-argv-family membership *and* resolved postconditions, with the positional half of channel 1 resolution-based per the amendment, matched against the suite root as the directory containing this running collector); the pinned encoder (`json.dumps(row, ensure_ascii=True, separators=(",", ":"), allow_nan=False, sort_keys=True)`) with ASCII-sanitize-then-cap, `by_file` smallest-duration-first eviction, and the total skeleton-row fallback; the `flock`-with-250ms-deadline / tail-repair durability; the row-per-session invariant. |
 
-**Guard-atomicity note.** The five guards are not independently useful —
-an unguarded intermediate hook is exactly the "diagnostics hook that can fail a
-suite" hazard the proposal's Assurance path names. If this chunk lands across
-more than one commit, no intermediate commit may leave a hook wired without
-its own outcome-inert wrapping and without guards 2–5 already in place; the
-guard set lands as one atomic unit even if the schema/encoding logic around it
-is refined in a follow-up commit within this same chunk.
+**Guard-atomicity note.** The four guards (1, 2, 4, 5 — 3 is deleted by the
+amendment) are not independently useful — an unguarded intermediate hook is
+exactly the "diagnostics hook that can fail a suite" hazard the proposal's
+Assurance path names. If this chunk lands across more than one commit, no
+intermediate commit may leave a hook wired without its own outcome-inert
+wrapping and without guards 1, 2, 4 and 5 already in place; the guard set
+lands as one atomic unit even if the schema/encoding logic around it is
+refined in a follow-up commit within this same chunk.
 
 ### Chunk B — the reader
 
@@ -210,7 +261,15 @@ is refined in a follow-up commit within this same chunk.
 **Acceptance criterion for this chunk (binding):** `tools/suite_cost.py` is
 **not** added to `bootstrap/_scaffold/config.py`'s file-mapping table, and
 `bootstrap/scaffold.py --manifest` must show no `tools/suite_cost.py` row
-after this chunk lands — see "A scope-adjacent decision" above.
+after this chunk lands — see "A scope-adjacent decision" above. This is a
+**standing gate, not a one-shot check**: `tools/suite_cost.py` is added to
+`_OWN_ONLY_SCRIPTS` in `bootstrap/tests/test_notice_install.py`, so
+`test_own_only_dev_scripts_are_not_shipped` re-asserts the zero-manifest-rows
+property on every run rather than the plan's own promise standing unchecked
+after landing. The same roster entry pulls in
+`test_own_only_dev_scripts_carry_spdx_header`, so `tools/suite_cost.py` carries
+an SPDX MIT header from this chunk's first commit (`AGENTS.md` > High-risk
+surfaces: "code is MIT wherever it lives").
 
 ### Chunk C — the contract tests
 
@@ -218,18 +277,85 @@ after this chunk lands — see "A scope-adjacent decision" above.
 |---|------|--------|
 | C1 | `bootstrap/tests/test_suite_ledger.py` | New. The full falsifier matrix from Revision 5's "Evidence" table (see Acceptance criteria below for the binding list), covering both Chunk A's writer and Chunk B's reader — this is the "one new test file" the proposal commits to; the reader-outcomes rows import `tools/suite_cost.py` as a module. |
 
+### How Chunk C observes a written row
+
+Every falsifier below that needs to see a *written* row runs against a
+throwaway tree under `tmp_path` carrying its own copy of
+`bootstrap/tests/conftest.py` and its own `dev/measurement/` directory —
+adapting the `_fixture_tree` / `_child_pytest` idiom this repository already
+uses to drive `conftest.py` hook behaviour through a real pytest session
+(`bootstrap/tests/test_security_check.py:696-712`), never the repository's own
+tree. This is not optional scaffolding: since the amendment deletes guard 3,
+the ledger path a copied collector derives from its own file location now
+*is* reachable — inside the fixture tree, by construction, since a copy's
+`__file__` differs from the real one — and creating the fixture's own
+`dev/measurement/` directory keeps guard 5's absent-directory opt-out from
+firing. A falsifier that instead reused the already-imported `conftest`
+module or pointed at the real tree would write into
+`dev/measurement/suite-runs.jsonl`, the live ledger `tools/suite_cost.py`
+renders — the contamination guard 3 used to prevent and no longer does.
+
+Each falsifier controls exactly one thing against that shared construction:
+whether `CAIRN_SUITE_LEDGER_SESSION` is present in the child's starting
+environment, mirroring the "environment passed through as a superset" path
+real suite-spawned children already take under guard 2.
+
+* **A genuine top-level session writes a row, and `scope == "full"` has a
+  positive case.** A `python -m pytest` **subprocess** rooted at the fixture
+  tree, with the marker popped from the child's environment (the
+  `test_security_check.py::_child_pytest` idiom, scrubbing
+  `CAIRN_SUITE_LEDGER_SESSION` the way it already scrubs
+  `security_check.RELEASE_GATE_ENV`) — a real top-level invocation, distinct
+  from the in-process `pytest.main()` path named below, which the running
+  suite's own marker forecloses whenever it executes nested inside this file.
+  Pointed at the fixture's own test directory with a canonical-command-shaped
+  argv (a single relative positional under the child's `cwd`, or the
+  order-independence family's harmless display/shuffle options), the child's
+  own two or three fixture test files are collected in full: `deselected ==
+  0`, `collected > 0`, `executed > 0`, not interrupted. Channel 1 (closed
+  argv family) and channel 2 (postconditions, including `scope_basis.targets`
+  resolving to the fixture's own directory — the suite root as the amendment
+  defines it, the directory containing *this* running collector) both hold,
+  with no recursion possible: the fixture's own files are not a copy of
+  `test_suite_ledger.py`, so there is nothing to re-enter. Read the fixture's
+  ledger back and assert one row, `scope == "full"`. The order-independence
+  argv variant (absolute resolved positional plus
+  `--quality-gate-shuffle-seed=<int> -q --no-header --no-summary`) is the
+  same construction against the same fixture, asserted separately so the
+  positional-resolution half of channel 1 is exercised on both spellings.
+* **A suite-spawned child writes nothing.** The same subprocess construction,
+  but the marker is *not* popped — the child inherits it from the running
+  outer session's own environment, exactly as a real suite-spawned child
+  does. Assert the fixture's ledger gains no row.
+* **Two sequential top-level sessions each write a row.** Two subprocess
+  invocations in sequence, each with the marker popped, against the same
+  fixture ledger. Proves the owned-marker release in Chunk A3's `finally`
+  path actually restores the unmarked starting state between top-level
+  sessions, rather than merely proves a fresh subprocess starts unmarked
+  (which the single-session case above already would).
+* **A pre-existing marker survives across a child.** The one falsifier that
+  is deliberately in-process, because a pre-existing marker in the *same*
+  process is precisely the precondition guard 2 exists to detect: the test
+  sets `CAIRN_SUITE_LEDGER_SESSION` itself (standing in for an owning parent
+  session), calls `pytest.main()` in-process against the fixture tree, and
+  asserts both that the fixture ledger gains no row and that the marker's
+  value is unchanged afterward — the child's guard-2 no-op path must not
+  release a marker it does not own. This is the one place in Chunk C an
+  in-process call is the right tool, not a doctored substitute for one.
+
 C1 cannot be authored until both A and B exist; it is sequenced last among the
 three not because tests come last in general but because this file's own
 falsifiers exercise both prior chunks' finished behaviour, including the
 `scope` re-derivation-and-disagreement check that spans both.
 
-### Chunk D — gitignore, README note, CHANGELOG
+### Chunk D — gitignore, README note, CHANGELOG, lockfile finalize
 
 | # | File | Change |
 |---|------|--------|
 | D1 | `.gitignore` | Add `dev/measurement/suite-runs.jsonl` so the live ledger stays untracked (same rule shape as the existing `dev/measurement/snapshots/` and `dev/measurement/suite-cost.md` entries). |
-| D2 | `dev/measurement/README.md` **and its shipped twin `templates/core/dev/measurement/README.md`** | **Maintainer-allowed template-surface edit — see the allowance below.** Add a note under "What belongs here" naming an operational-ledger-that-feeds-measurement slot, cross-linking its reader. **Both copies, same commit, byte-identical.** This file is a shipped install destination (`bootstrap/scaffold.py --manifest`; mapping in `bootstrap/_scaffold/config.py`), and the two copies are byte-identical today — so editing Cairn's alone would desynchronize the twin and fail `bootstrap/verify_integrity.py` against the recorded lockfile hash. **Write the note generically**, in the register the rest of that shipped README uses: it lands in every adopter's tree, so it describes the *slot* ("an operational ledger a measurement reader consumes"), not Cairn's own `suite-runs.jsonl` filename or `tools/suite_cost.py`. Cairn's specific ledger and reader are named in the CHANGELOG line at D3, which ships to nobody. |
+| D2 | `dev/measurement/README.md` **and its shipped twin `templates/core/dev/measurement/README.md`** | **Maintainer-allowed template-surface edit — see the allowance below.** Add a note under "What belongs here" naming an operational-ledger-that-feeds-measurement slot, cross-linking its reader. **Both copies, same commit, byte-identical.** This file is a shipped install destination (`bootstrap/scaffold.py --manifest`; mapping in `bootstrap/_scaffold/config.py`), and the two copies are byte-identical today. `bootstrap/verify_integrity.py` cannot see the twin (it never reads `templates/**`) so it is not what keeps the two in sync — the `diff` check below and reviewer attention are. **Write the note generically**, in the register the rest of that shipped README uses: it lands in every adopter's tree, so it describes the *slot* ("an operational ledger a measurement reader consumes"), not Cairn's own `suite-runs.jsonl` filename or `tools/suite_cost.py`. Cairn's specific ledger and reader are named in the CHANGELOG line at D3, which ships to nobody. |
 | D3 | `CHANGELOG.md > Unreleased > Added` | One line: in-suite cost telemetry (`bootstrap/tests/conftest.py` hooks + gitignored ledger) and its reader `tools/suite_cost.py`; cross-link the archived proposal by filename stem. |
+| D4 | `dev/.cairn/cairn-lock.yml` | Run `python bootstrap/scaffold.py upgrade --target . --finalize dev/measurement/README.md` (the surgical, single-record form) after D2 lands, so the lockfile record advances to the edited content instead of drifting: `verify_integrity` is blind to the *twin*, but it does check this tree's own installed copy against the lockfile hash, and D2 changes that copy's bytes. |
 
 **Note on `dev/measurement/suite-cost.md`:** a file by that name already exists
 (gitignored, a hand-run dated snapshot from 2026-08-19 predating this plan —
@@ -250,21 +376,34 @@ the coincidence.
     ledger's own guards removed; both an `Exception` from the accumulator and
     a `BaseException` from the `sessionfinish` block; the `RELEASE MODE`
     report still prints with its nodeids and exit is still 1);
-  - node accounting holds `0 <= executed <= collected` and reconciles against
-    `terminalreporter.stats` under `-x`, `--maxfail=2`, `pytest.exit()`,
-    `KeyboardInterrupt`, setup error, teardown error, and module-level skip;
-  - `scope` classification: the canonical and order-independence invocations
-    resolve `full`; `--ignore`, `--ignore-glob`, `PYTEST_ADDOPTS`, ini
-    `addopts`, `-p no:python`, zero positionals, module-level skip, and
-    `importorskip` each resolve `unknown`;
+  - node accounting holds `0 <= executed <= collected`, and — for each of the
+    seven abort shapes (`-x`, `--maxfail=2`, `pytest.exit()`,
+    `KeyboardInterrupt`, setup error, teardown error, module-level skip) —
+    "reconciles" means concretely: `executed` equals the count of distinct
+    nodeids carrying at least one runtest report in
+    `terminalreporter.stats`, and each of the seven outcome counts equals the
+    size of its corresponding `stats` bucket. The bare inequality is not
+    the criterion — a refused-at-collection session with `executed=0`
+    satisfies it trivially without exercising the accounting at all;
+  - `scope` classification, exercised against the fixture-tree construction
+    in "How Chunk C observes a written row" (never against the real
+    `bootstrap/tests/`, which the amendment's suite-root definition makes
+    unnecessary and which would recurse into this file): the canonical and
+    order-independence invocations resolve `full`; `--ignore`,
+    `--ignore-glob`, `PYTEST_ADDOPTS`, ini `addopts`, `-p no:python`, zero
+    positionals, module-level skip, and `importorskip` each resolve
+    `unknown`;
   - `scope` is re-derivable: the same invocation with and without
     `PYTEST_ADDOPTS` set produces rows differing in `scope_basis`, the
     reader's re-derived `scope` matches the stored value, and a deliberately
     wrong stored `scope` is reported by the reader as a disagreement;
   - a capped `scope_basis` forces `scope == "unknown"`;
   - `by_file` eviction preserves cost (a low-node/high-duration file survives
-    ahead of a high-node/low-duration one), and summed-then-converted
-    sub-millisecond durations are not lost to rounding;
+    ahead of a high-node/low-duration one) **only when the encoded budget
+    actually forces eviction** — a companion case over a small `by_file` map
+    that fits within budget asserts no entry is evicted and every duration
+    round-trips unchanged — and summed-then-converted sub-millisecond
+    durations are not lost to rounding;
   - the sanitizer is total across ASCII, non-ASCII, emoji, a lone surrogate,
     **and a mixed string**, and in each case **the intended sanitized and
     capped field survives** with the specified `truncated` value — **not
@@ -279,41 +418,72 @@ the coincidence.
     characters, and **every real test-file path in `bootstrap/tests/`,
     enumerated at run time** all still produce exactly one line, ≤ 4096
     bytes, that round-trips through `json.loads`; the encoder call site
-    matches the pinned signature exactly. **Registered as a live invariant,
-    not a fixed count**: the accepted contract's evidence row quotes "all 115
-    real paths", and this plan's own Chunk C adds `test_suite_ledger.py`,
-    making that figure 116 the moment the falsifier is authored. A hardcoded
-    count would be stale before it was first run, so the test enumerates the
-    directory instead of asserting a number;
+    matches the pinned signature exactly. **The survival half, asserted
+    separately and not merely implied**: for a row that fits within budget
+    unforced, `truncated` is `false` and the decoded row carries the
+    intended `label`, `invocation` and `by_file` content, not the skeleton —
+    an encoder that skeletonizes unconditionally satisfies every
+    totality-plus-disposition clause above without ever carrying real data,
+    so the criterion is incomplete without this half. The skeleton row
+    itself is asserted only where the budget genuinely forces it (below).
+    **Registered as a live invariant, not a fixed count**: the accepted
+    contract's evidence row quotes "all 115 real paths", and this plan's own
+    Chunk C adds `test_suite_ledger.py`, making that figure 116 the moment
+    the falsifier is authored. A hardcoded count would be stale before it
+    was first run, so the test enumerates the directory instead of
+    asserting a number;
   - `head` resolves correctly in a linked worktree on a branch, in the main
     checkout, in a packed-refs checkout, and against a malformed `.git`
     (`null`, with a row still written);
-  - containment: a ledger directory under `gettempdir()` via the unresolved
-    `/var` spelling produces no row;
-  - the lock is bounded (externally held lock: completion within 1s of a
-    control, no row) and the tail is repaired (partial tail then normal
-    append: the reader reports the fragment *and* returns the later row);
-  - reentrancy: nested pytest writes nothing, two sequential
-    `pytest.main()` calls write two rows, and a pre-existing marker survives
-    across a child;
+  - the lock is bounded in both directions: an externally held lock
+    completes within 1s of a control and writes no row (the ceiling — an
+    implementation with no retry loop at all satisfies this alone), **and**
+    a lock released *within* the 250ms deadline is retried successfully and
+    writes a row (the floor, and the half that actually exercises the retry
+    loop the durability contract depends on); the tail is repaired (partial
+    tail then normal append: the reader reports the fragment *and* returns
+    the later row);
+  - reentrancy, against the fixture-tree construction in "How Chunk C
+    observes a written row": a suite-spawned child (marker inherited) writes
+    nothing; two sequential top-level sessions (marker popped from each)
+    each write a row, proving the owned-marker release actually restores
+    the unmarked state between them; and a pre-existing marker, set by the
+    test itself around an in-process `pytest.main()` call, both blocks the
+    write and survives unchanged after the child call returns;
+  - collector overhead (`collector_ms`) is bound, not left as the open-ended
+    promise a bare "measure it" would be: run the fixture-tree selection
+    used above five times collector-enabled and five times
+    collector-disabled, same interpreter, back to back; every enabled row's
+    `collector_ms` is non-null and within the same order of magnitude as the
+    median wall-clock delta between the two sets; the delta itself is
+    recorded in this plan's `## Implementation verification` section, not
+    only asserted in the test;
   - reader outcomes: the rendered output opens with the do-not-re-run
     instruction, reports `full` runs per day and not per plan, phrases
     overlap as "another recorded top-level session," surfaces a malformed
     line, states the lower bound, and reports dirty state as `unknown`.
 * **Standing gates for the touched surface** (per Revision 5's own "Standing
-  gates" line): `bootstrap/tests/test_gate_manifest.py`,
+  gates" line, extended by this plan for the surfaces its own chunks touch):
+  `bootstrap/tests/test_gate_manifest.py`,
   `bootstrap/tests/test_gate_preflight.py`,
   `bootstrap/tests/test_security_check.py`,
-  `bootstrap/tests/test_python_floor.py`.
+  `bootstrap/tests/test_python_floor.py`,
+  `bootstrap/tests/test_notice_install.py` (Chunk B's not-shipped and SPDX
+  properties are asserted there, per `_OWN_ONLY_SCRIPTS`).
 * **Doc updates that must land**: the `.gitignore` rule (Chunk D1);
   `dev/measurement/README.md` **and** `templates/core/dev/measurement/README.md`
-  (Chunk D2); `CHANGELOG.md > Unreleased > Added` (Chunk D3).
-* **Two criteria that apply to D2 and to nothing else**, because it is the only
-  row touching a shipped install destination: `diff
+  (Chunk D2); `CHANGELOG.md > Unreleased > Added` (Chunk D3); the lockfile
+  finalize for that one destination (Chunk D4).
+* **Two criteria that apply to D2/D4 and to nothing else**, because D2 is the
+  only row touching a shipped install destination: `diff
   templates/core/dev/measurement/README.md dev/measurement/README.md` produces
-  no output, and `python bootstrap/verify_integrity.py` reports no hash
-  mismatch for that destination once the lockfile hash is advanced. A D2 that
-  edits one copy and not the other satisfies neither.
+  no output (this is what actually pins twin agreement — `verify_integrity`
+  cannot, since it never reads `templates/**`), and, after D4's finalize step,
+  `python bootstrap/verify_integrity.py --target .` reports no hash mismatch
+  for the `dev/measurement/README.md` destination specifically. A D2 that
+  edits one copy and not the other satisfies neither; a D4 that is skipped
+  leaves that one destination mismatched indefinitely, which D4 exists to
+  close.
 * **The D2 note names no Cairn-specific artifact.** It ships to every adopter,
   so a reviewer should read it as an adopter would: a reference to
   `suite-runs.jsonl` or `tools/suite_cost.py` in that file is a defect even
@@ -333,9 +503,13 @@ present" claim. **Public entry points this plan touches:**
 
 * The pytest hook surface (`pytest_configure`, `pytest_runtest_logreport`,
   `pytest_collectreport`, `pytest_deselected`, `pytest_sessionfinish`) —
-  exercised through its actual public path, in-process `pytest.main()` calls
-  from `test_suite_ledger.py`, not by importing and calling hook functions
-  directly.
+  exercised through its actual public path, a real pytest session, never by
+  importing and calling hook functions directly. Concretely, per "How Chunk C
+  observes a written row": a `python -m pytest` **subprocess** rooted at a
+  fixture tree carrying its own copy of `conftest.py`, for every falsifier
+  that needs a genuine top-level or suite-spawned-child session; an
+  in-process `pytest.main()` call only for the one falsifier where a
+  pre-existing marker in the *same* process is the precondition under test.
 * `tools/suite_cost.py`'s rendering entry point — exercised by the
   reader-outcomes falsifier importing it as a module against fixture ledger
   files.
@@ -373,18 +547,19 @@ session count is a **lower bound**.
 explicitly bounded to end here. It is self-undermining to leave open: the
 collector writes `wall_s` into a ledger the reader renders as the suite's
 cost, so its own contribution to that figure must be quantified or the
-headline number is unattributable. Chunk C's falsifier set therefore includes
-a collector-disabled control run against a collector-enabled run over the same
-selection, recording the delta; that control already exists in this plan's S2
-answer above as the source of the load-bearing expectations, so the
-measurement is a by-product of a run the plan already requires rather than new
-work. If it cannot be produced, that is a blocking gap for the code reviewer,
-not a silent carry-forward.
+headline number is unattributable. This is bound by its own acceptance
+criterion (Acceptance criteria, the `collector_ms` bullet), not left as a
+by-product of the S2 control: five repetitions of the fixture-tree selection
+collector-enabled and five disabled, back to back, under the same
+interpreter; `collector_ms` populated on every enabled row and consistent
+with the measured median delta; the delta itself recorded in the
+`## Implementation verification` section. If it cannot be produced, that is a
+blocking gap for the code reviewer, not a silent carry-forward.
 
 ## Verification
 
 **Boundary A (iteration, scoped).** Reviewed mapping, once Chunk C exists:
-`bootstrap/tests/test_suite_ledger.py` plus the four standing gates named
+`bootstrap/tests/test_suite_ledger.py` plus the five standing gates named
 above. **Chunks A and B land before that mapping exists** — there is no
 reviewed test for the writer or the reader until Chunk C lands, so an
 implementer iterating on A or B alone has, at minimum, the standing gates and
@@ -511,12 +686,18 @@ code in the suite; the review's job is confirming the write adds no new
 capability and that write-path targeting is closed by enumeration, not merely
 asserted.
 
-**E2 — MAINTAINER-GATED: the batching decision.** `dev/PLANNING.md` > "Queued"
-already carries an owed re-anchor for an unrelated reason: the AST attestation
-baseline row (filed 2026-08-19) reports 13 CHANGED symbols against the
-committed baseline (11 in `bootstrap/_scaffold/upgrade.py`, 2 in
-`bootstrap/_scaffold/config.py`), not self-serviceable per
-`_ast_attest._UPDATE_ALLOWLIST`, procedure at `bootstrap/AST_BASELINE_RUNBOOK.md`.
+**E2 — MAINTAINER-GATED: the batching decision.** `dev/PLANNING.md` already
+carries an owed re-anchor for an unrelated reason: the AST attestation
+baseline, not self-serviceable per `_ast_attest._UPDATE_ALLOWLIST`, procedure
+at `bootstrap/AST_BASELINE_RUNBOOK.md`. The "Queued" row's own figure (13
+CHANGED symbols, filed 2026-08-19) is superseded within the same file by the
+"Migrated Cairn roadmap" entry — **37 CHANGED symbols across 74 node lines,
+`as_of 2026-08-19` at `f129178`**, a seven-file breakdown headed by
+`upgrade.py` (26) and `install.py` (18) — so 37 is the count to carry into a
+Maintainer conversation about batch size, not 13; `AGENTS.md` > Operational
+pitfalls already warns against carrying either figure forward uncritically,
+so the ceremony operator re-derives the authoritative set against the
+committed baseline at ceremony time regardless of what is written here.
 Landing this plan's Chunk A adds a second, independent trigger for the same
 kind of ceremony (a `FROZEN-MODIFIED` entry on `bootstrap/tests/conftest.py`,
 this time via the differential-oracle gate rather than the AST baseline). **One
@@ -1025,3 +1206,50 @@ quoted or characterized where it carries a finding.
 hooks, the guard set, the 4,096-byte budget, the `flock` durability contract, the
 `scope_basis` mechanism, or the Internal plan-review tier. PR2 questions whether an
 accepted falsifier is *constructible*, not whether it is correct.
+
+## Response to plan review -- Claude Sonnet 5 (author) -- 2026-08-20
+
+**Model**: Claude Sonnet 5 (`claude-sonnet-5`).
+
+Reviewed commit answered: `86adf62dbc63e0c43eeea7f83cbd4f53f1456306`. Between that
+review and this Response, the Maintainer accepted an amendment to the source
+proposal (`dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md` >
+"Amendment", commits `6d4edcd`/`8a25455`) that deletes guard 3 (containment
+against `tempfile.gettempdir()`) and defines the suite root as the directory
+containing the running collector. PR1 and PR2 were consequences of the
+contract defect that amendment repairs; this Response does not mark them
+closed on that basis alone — it rewrites the cells the review pointed at to
+name the construction the amendment makes possible, per "How Chunk C observes
+a written row" under Chunk C. PR3–PR10 are independent of the amendment and
+are answered in the cells the review's own Asks named.
+
+| Finding | Disposition | Where in the plan |
+|---|---|---|
+| PR1 (blocking) — no constructible route to observe a written row | Dissolved by the amendment (guard 3 deleted); mechanism named concretely — a fixture tree carrying a copy of the collector, driven by a real `python -m pytest` subprocess (the repository's own `_fixture_tree`/`_child_pytest` idiom), varying only whether the reentrancy marker is present in the child's starting environment | "The amendment" (Source proposal section); "How Chunk C observes a written row" (Chunk C); Chunk A3's Implements line; Author-accounting's public-entry-points bullet |
+| PR2 (blocking) — `scope == "full"`'s positive case has no admitted construction | Dissolved by the amendment (suite root redefined as the directory containing the running collector); positive case named — the same fixture-tree subprocess, canonical-command-shaped argv, no recursion because the fixture's own files are not a copy of the contract test file | "How Chunk C observes a written row" (Chunk C, first bullet); Acceptance criteria, `scope` classification bullet |
+| PR3 (blocking) — `verify_integrity.py` cannot check the D2 property and the bare command doesn't run | Fixed — the false causal claim is removed from both the doc-surface prose and the D2 row; the `diff` check plus reviewer attention is named as the real protection; a new Chunk D4 runs the scoped `upgrade --finalize` so the lockfile-mismatch state D2 opens does not sit unassigned | Documentation/doctrine surface prose; D2 row; new D4 row; "Two criteria that apply to D2/D4" |
+| PR4 (blocking) — the encoded-budget criterion is satisfied by an implementation that always skeletonizes | Fixed — survival half added: for a row that fits unforced, `truncated` is false and the decoded row carries real `label`/`invocation`/`by_file` content, not the skeleton; the `by_file` eviction bullet gets the matching companion (no eviction when the budget doesn't force it) | Acceptance criteria, encoded-budget bullet and `by_file` eviction bullet |
+| PR5 (substantive) — "reconciles against `terminalreporter.stats`" is undefined | Fixed — defined per abort shape: `executed` equals the count of distinct nodeids with ≥1 runtest report in `stats`, and each outcome count equals its `stats` bucket size | Acceptance criteria, node-accounting bullet |
+| PR6 (substantive) — the sibling's guard could flip a `full` falsifier to a refusal, and neither plan owns the repair | Addressed — moot by construction, not by a `CAIRN_FULL_SUITE=1` carve-out: every write-observing and `scope`-classification falsifier now targets a fixture tree of two or three files, far under the sibling's 40-file refusal threshold, regardless of landing order | New paragraph under "Sequencing" |
+| PR7 (substantive) — the collector-overhead closure has no bound deliverable | Fixed — a new acceptance-criteria bullet names the method (5 repetitions enabled/disabled), the selection (the fixture tree), and the recording location (`## Implementation verification`); the prose paragraph no longer calls it a free by-product of the S2 control | Acceptance criteria, `collector_ms` bullet; "One omission this plan closes" paragraph |
+| PR8 (minor) — Chunk B's not-shipped property gets a one-shot check where a standing gate already exists | Fixed — `tools/suite_cost.py` is added to `_OWN_ONLY_SCRIPTS` in `test_notice_install.py`, converting the promise into a re-asserted gate and picking up the SPDX-header requirement for free | Chunk B's acceptance criterion; Standing gates list; Boundary A reviewed mapping |
+| PR9 (minor) — E2 cites a stale AST-baseline figure | Fixed — cites the current 37-symbol/74-node-line figure (`as_of 2026-08-19` at `f129178`) as superseding the stale 13-symbol row, per file, and notes the ceremony re-derives the set regardless | Chunk E2 |
+| PR10 (minor) — the bounded-lock criterion tests only the ceiling | Fixed — companion floor case added: a lock released within the 250ms deadline is retried successfully and writes a row | Acceptance criteria, lock bullet |
+
+**On "Things I checked and found correct"**: nothing in that list is touched by
+this revision; none of it depended on guard 3 or the pre-amendment suite-root
+reading.
+
+**Scope delta**: preserved. This revision adds detail (the fixture-tree
+construction, the `collector_ms` and lock-floor falsifiers, the D4 chunk) and
+corrects two false claims (`verify_integrity`'s reach, the E2 figure); it drops
+nothing an accepted contract committed to. The `containment` acceptance bullet
+is removed because its guard no longer exists, not because its coverage is
+foregone — nothing it protected against survives the amendment for it to
+still be testing.
+
+This revision closes the review PR1–PR10 raised: each finding is answered in
+an operative cell, not narrated here. Whether the plan proceeds to
+implementation without a further review pass, or takes one more, is the
+Maintainer's call — recorded so that decision is made with the corrected
+plan in hand, not asserted here in either direction.
