@@ -595,9 +595,25 @@ def _ledger_accumulate_report(report) -> None:
 
 
 def _ledger_accumulate_collect(report) -> None:
+    """Count collect reports that did not complete cleanly.
+
+    A collection-time **skip** counts here alongside a collection *failure*,
+    and the field name understates that on purpose -- the schema is fixed.  A
+    module-level ``pytest.skip`` or a failed ``importorskip`` means a file's
+    tests were never collected at all, so they appear in no count anywhere else
+    in the row: ``collected`` never saw them, so ``not_run`` cannot see them
+    either.  This is the only field a reader can re-derive "the collection was
+    incomplete" from, and without it a session that silently skipped half the
+    suite would classify as having covered it completely.
+
+    A *runtime* skip is a different thing and is deliberately not here: the test
+    was collected and reported, the suite did cover it, and treating an ordinary
+    optional-dependency skip as incomplete coverage would mean no real session
+    ever classified as complete.
+    """
     if not _LEDGER.get("enabled"):
         return
-    if getattr(report, "failed", False):
+    if getattr(report, "failed", False) or getattr(report, "skipped", False):
         _LEDGER["collection_errors"] = _LEDGER.get("collection_errors", 0) + 1
 
 
