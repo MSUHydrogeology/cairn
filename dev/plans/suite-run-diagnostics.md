@@ -1,12 +1,12 @@
 # Plan: the suite reports its own cost
 
 **Source proposal**: `dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md`
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(**Internal**) — ratified by Maintainer amendment at
 `e6e854d58f7083b5497cfa77a5d319285e7626b9`, overriding the plan-review
 template's default escalation path. See "Plan-review tier rationale" below
 for why, and for the field this plan deliberately omits.
-**Last update**: 2026-08-20
+**Last update**: 2026-08-21
 **Opened**: 2026-08-20
 
 ## Source proposal
@@ -78,12 +78,12 @@ support.
 
 ## Proposed paths
 
-Proposed paths:
-- `tools/suite_cost.py` — the ledger reader; lands in Chunk B.
-- `bootstrap/tests/test_suite_ledger.py` — the contract test file (writer and reader falsifiers — see Scope); lands in Chunk C.
-
-Untracked paths:
-- `dev/measurement/suite-runs.jsonl` — the gitignored live ledger the `pytest_sessionfinish` hook appends to; never committed, wired by Chunk D's `.gitignore` rule.
+All three paths this plan declared as forward references have materialized —
+`tools/suite_cost.py` (Chunk B), `bootstrap/tests/test_suite_ledger.py`
+(Chunk C), and the gitignored live ledger `dev/measurement/suite-runs.jsonl`
+(Chunk D's `.gitignore` rule). The declarations are retired rather than left
+standing: a declaration whose path exists exempts nothing, and `claim_check`
+hard-flags each one. See the disposition section for the retirement.
 
 ## Scope
 
@@ -1253,3 +1253,43 @@ an operative cell, not narrated here. Whether the plan proceeds to
 implementation without a further review pass, or takes one more, is the
 Maintainer's call — recorded so that decision is made with the corrected
 plan in hand, not asserted here in either direction.
+
+## Plan-review disposition -- Anthony Kendall (Maintainer) -- 2026-08-21
+
+**Status**: awaiting-plan-review -> ready-to-implement
+
+The Internal plan review (2026-08-20) raised PR1-PR10; the author's Response
+answered all ten in the operative cells. The Maintainer directed implementation
+without a clearing round:
+
+> "With suite-run-diagnostics, I think you're good to go. There's no clearing
+> round for plans. Please spawn execution on that."
+
+Quoted verbatim rather than paraphrased -- the authorization is what makes this
+transition legitimate, and paraphrase admits condition-softening. It disposes of
+the review *round*, not of the findings; those were already answered.
+
+### A second allowance, recorded at the same time
+
+During implementation, Chunk A was refined so a **collection-time** skip (a
+module-level `pytest.skip`, a failed `importorskip`) counts toward
+`collection_errors` alongside a failed collect report. Measured before the
+change: both shapes classified `full`, contradicting the accepted contract's own
+evidence table, which lists each as `unknown`. The Maintainer allowed it:
+
+> "I'm fine with that change to collection_errors."
+
+**Scope delta**: preserved. This is the reading that makes the accepted terms
+self-consistent rather than a new term -- the postcondition already consulted
+`collection_errors`, and the evidence table already called these two shapes
+`unknown`. A *runtime* skip stays out: the test was collected and reported, and
+treating an optional-dependency skip as incomplete coverage would mean no real
+session ever classified as complete.
+
+### Why this transition is being recorded after the fact
+
+Implementation landed at `2d9500e`..`fc93c1a` on the authorization quoted above,
+but the `**Status**` field was never moved off `awaiting-plan-review` at the
+time. That is an operational lapse, not a shortcut taken deliberately, and it is
+recorded as such rather than backdated. The field is brought current here and in
+the commit that follows.
