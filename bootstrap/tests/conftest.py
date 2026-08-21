@@ -88,6 +88,61 @@ FULL_SUITE_VALUE = "1"
 #: can carry more items than an entire scoped mapping.
 BROAD_RUN_FILE_THRESHOLD = 40
 
+#: Every hook this module implements, captured at definition time.
+#:
+#: **Appending a same-named ``def`` to this file rebinds the module attribute
+#: and silently REMOVES the original.** That is ordinary Python, and it is a
+#: live hazard here because this conftest is a shared surface several plans add
+#: hooks to. Measured 2026-08-21 against the shipped file: appending a benign
+#: ``pytest_sessionfinish`` took the **release-mode outcome rule** with it, so a
+#: release run that skipped a security gate went from refusing (exit 1) to
+#: reporting itself clean (exit 0). The same append deleted the broad-run guard,
+#: and an equivalent one in a test file made that test pass against code a
+#: Security Review had already found defective.
+#:
+#: Every deletion of that kind is silent by construction: nothing is missing, a
+#: function of the right name is present, and it does something reasonable.
+_OWNED_HOOKS: dict[str, object] = {}
+
+
+def _own(fn):
+    """Record a hook implementation so that shadowing it becomes detectable."""
+    _OWNED_HOOKS[fn.__name__] = fn
+    return fn
+
+
+def _refuse_if_a_hook_was_shadowed() -> None:
+    """Refuse the session if any hook this module owns has been replaced.
+
+    Checked from inside a hook rather than at module scope on purpose: module
+    scope executes top-to-bottom, so a check placed in the file body runs
+    *before* an append further down and sees the state it is meant to catch as
+    still correct. A hook body runs after the import has completed, which is the
+    only moment the final bindings are visible.
+
+    **One limit, stated rather than implied**: this runs from
+    ``pytest_addoption``, so shadowing *that* hook evades the check. It is the
+    earliest hook available and no earlier one exists to guard it from. Losing
+    ``pytest_addoption`` removes the shuffle flag, which the order-independence
+    sub-gate fails on loudly -- so that one case is noisy where the others were
+    silent, which is why this is a limit and not a hole.
+    """
+    shadowed = sorted(
+        name for name, fn in _OWNED_HOOKS.items()
+        if globals().get(name) is not fn
+    )
+    if shadowed:
+        raise pytest.UsageError(
+            "Refusing to run: this conftest's hook(s) "
+            + ", ".join(shadowed)
+            + " have been replaced by a later definition in the same "
+            "module. A same-named `def` appended to this file rebinds the "
+            "name and deletes the original -- including the release-mode "
+            "outcome rule and the broad-run guard. Add your hook under a "
+            "different name, or extend the existing one."
+        )
+
+
 #: ``{outcome: {nodeid, ...}}`` for the current session.  A set, so a node
 #: reporting the same refused outcome in more than one phase is one offender.
 _REFUSED: dict[str, set[str]] = {}
@@ -104,12 +159,15 @@ def _release_mode() -> bool:
     return os.environ.get(RELEASE_GATE_ENV) == RELEASE_GATE_VALUE
 
 
+@_own
 def pytest_addoption(parser):
-    """Register the ``--quality-gate-shuffle-seed`` flag.
+    """Register the ``--quality-gate-shuffle-seed`` flag, and verify this
+    module's own hooks have not been shadowed.
 
     Default ``None`` means "do not shuffle" (the normal pytest
     invocation path).  Any int activates the shuffle.
     """
+    _refuse_if_a_hook_was_shadowed()
     parser.addoption(
         "--quality-gate-shuffle-seed",
         action="store",
@@ -124,6 +182,7 @@ def pytest_addoption(parser):
     )
 
 
+@_own
 def pytest_collection_modifyitems(config, items):
     """Shuffle ``items`` in-place when the seed flag is set.
 
@@ -166,6 +225,7 @@ def _collected_file_span(session) -> int:
     return len(files)
 
 
+@_own
 @pytest.hookimpl(wrapper=True)
 def pytest_collection_finish(session):
     """Refuse a broad run nobody asked for.
@@ -257,6 +317,7 @@ def _record_refused_report(report) -> None:
     _REFUSED.setdefault(outcome, set()).add(report.nodeid)
 
 
+@_own
 def pytest_runtest_logreport(report):
     """Record release-refused test outcomes as they actually happen.
 
@@ -276,6 +337,7 @@ def pytest_runtest_logreport(report):
     _ledger_step(_ledger_accumulate_report, report)
 
 
+@_own
 def pytest_collectreport(report):
     """Record collection-time skips, which never reach runtest_logreport.
 
@@ -287,6 +349,7 @@ def pytest_collectreport(report):
     _ledger_step(_ledger_accumulate_collect, report)
 
 
+@_own
 def pytest_configure(config):
     """Claim the ledger's ownership marker for this session, if it is free.
 
@@ -297,6 +360,7 @@ def pytest_configure(config):
     _ledger_step(_ledger_begin_session, config)
 
 
+@_own
 def pytest_deselected(items):
     """Count deselected items for the ledger's node accounting.
 
@@ -307,6 +371,7 @@ def pytest_deselected(items):
     _ledger_step(_ledger_accumulate_deselected, items)
 
 
+@_own
 def pytest_sessionfinish(session, exitstatus):
     """Run the release-mode outcome rule, then append the ledger row.
 

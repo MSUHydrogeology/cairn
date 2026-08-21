@@ -181,7 +181,7 @@ def test_the_guard_refusal_follows_a_late_deselection(tmp_path) -> None:
         f"            if int(i.nodeid.split('_')[2].split('.')[0]) < {keep}]\n"
         "    items[:] = keep\n"
     )
-    root = _tree(tmp_path, THRESHOLD + 20, extra_conftest=late_hook)
+    root = _tree(tmp_path, THRESHOLD + 20, competitor=late_hook)
     proc = _run(root)
     assert proc.returncode == 0, (
         "a late deselection dropped the span under the limit, so the guard "
@@ -294,7 +294,7 @@ def test_a_pending_session_stop_is_not_replaced_by_the_guard(tmp_path) -> None:
         "    if _os.environ.get('PROBE_SHOULDSTOP') == '1' and items:\n"
         "        items[0].session.shouldstop = 'STOP_STATE_CANARY'\n"
     )
-    root = _tree(tmp_path, THRESHOLD + 5, extra_conftest=stopper)
+    root = _tree(tmp_path, THRESHOLD + 5, competitor=stopper)
     stopped = _run(root, env_overrides={"PROBE_SHOULDSTOP": "1"})
     assert stopped.returncode != 4, (
         "a pending session stop was replaced by the guard's exit:\n"
@@ -330,22 +330,27 @@ def test_a_competing_collection_finish_abort_survives_the_guard(
         "the control without a competitor must still refuse")
 
 
-def test_the_append_helper_cannot_be_used_to_forge_a_competitor(
-        tmp_path) -> None:
-    """Pins the trap that made the test above inert, so it cannot return.
+def test_shadowing_an_owned_hook_is_refused_by_name(tmp_path) -> None:
+    """A same-named ``def`` appended to the conftest used to delete the original
+    silently. It is now refused, loudly, naming the hook.
 
-    Appending a hook to the conftest that shares a name with one the conftest
-    already defines removes the original. Any future test that builds a
-    "competitor" that way is measuring a guardless tree.
+    Measured before the ownership guard existed: appending a benign
+    ``pytest_sessionfinish`` removed the **release-mode outcome rule**, so a
+    release run that skipped a security gate went from exit 1 to exit 0 and
+    reported itself clean. The same append removed the broad-run guard. Nothing
+    was missing afterwards -- a function of the right name was present and did
+    something reasonable, which is what made it silent.
+
+    Directional: the same tree without the shadowing append runs normally.
     """
-    shadow = ("def pytest_collection_finish(session):\n"
+    shadow = ("def pytest_collection_modifyitems(config, items):\n"
               "    pass\n")
-    shadowed = _run(_tree(tmp_path / "shadow", THRESHOLD + 5,
-                          extra_conftest=shadow))
-    assert shadowed.returncode == 0, (
-        "expected the shadowing append to delete the guard; if this now "
-        "refuses, the trap is gone and this test should be reconsidered")
-    assert _refused(_run(_tree(tmp_path / "control", THRESHOLD + 5)))
+    shadowed = _run(_tree(tmp_path / "shadow", 3, extra_conftest=shadow))
+    assert shadowed.returncode == 4, shadowed.stdout + shadowed.stderr
+    combined = shadowed.stdout + shadowed.stderr
+    assert "have been replaced by a later definition" in combined
+    assert "pytest_collection_modifyitems" in combined
+    assert _run(_tree(tmp_path / "control", 3)).returncode == 0
 
 
 def test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so(
