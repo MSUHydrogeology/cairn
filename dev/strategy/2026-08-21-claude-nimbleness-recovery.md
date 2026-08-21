@@ -173,12 +173,26 @@ target: **fixed and shipped within two sessions.** (The three accepted
 proposals from yesterday should be implemented directly from their
 Decision summaries — short plans of a page each, not 1,800 lines.)
 
-**1.5 Declare a construction moratorium.** No new doctrine files, no
+**1.5 Every tool becomes advisory: warn, never bind.** (Maintainer
+direction, 2026-08-21.) A check that fires is information; a check that
+*blocks* is a decision delegated to a script. The tools should keep
+firing — the intent-tracker note, the lifecycle checks, the claim
+flags are all useful signal — but demoted from refusal to loud
+warning. The ~170 "refuse/refusal" occurrences in the table above are
+the work list: the broad-run guard's `CAIRN_FULL_SUITE=1` gate,
+transition-lint hard stops, lifecycle-planner and ledger refusals all
+become warnings a human can read and overrule in the moment. Binding
+survives only where the property is genuine safety rather than process
+conformance: the scaffold engine's symlink/containment check (it
+writes into someone's tree), and trust-root verification during an
+actual release ceremony. Everything else advises.
+
+**1.6 Declare a construction moratorium.** No new doctrine files, no
 new gates, no new lifecycle vocabulary, no new ledgers or trackers,
 until the Tier-2 removal pass is complete. The rate-limit gate slows
 additions; this halts them while we flush.
 
-**1.6 Commit subjects go back to normal.** "Fix dotted-branch refusal
+**1.7 Commit subjects go back to normal.** "Fix dotted-branch refusal
 in inert-key fence" — not a narrated arc. The record's story lives in
 the artifacts, once, not in every subject line.
 
