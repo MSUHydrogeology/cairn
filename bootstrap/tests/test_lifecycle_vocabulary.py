@@ -1034,15 +1034,15 @@ class TestMetricsLocationCases:
         self, tmp_path: Path,
     ) -> None:
         """`metrics-events-not-prose` Chunk 4 widened `extract.py`'s
-        `_REQUIRED_EXPORTS` from a 1-tuple to a 2-tuple
-        (`PLAN_STATES`, `PROPOSAL_STATES`) -- the shared
-        `TestLoaderContainmentMatrix` case 6 poison already exercises
-        omitting `_REQUIRED_EXPORTS[0]` (`PLAN_STATES`) across both
-        consumers, but that leaves the SECOND, newly-required export
+        `_REQUIRED_EXPORTS` from a 2-tuple to a 3-tuple
+        (`PLAN_STATES`, `HISTORICAL_PLAN_STATES`, `PROPOSAL_STATES`) --
+        the shared `TestLoaderContainmentMatrix` case 6 poison already
+        exercises omitting `_REQUIRED_EXPORTS[0]` (`PLAN_STATES`) across
+        both consumers, but that leaves the newly-required THIRD export
         unexercised: a poisoned cache entry present for every export
         except `PROPOSAL_STATES` must still be purged and reloaded, not
-        mistaken for complete because the sentinel and `PLAN_STATES`
-        both happened to be present."""
+        mistaken for complete because the sentinel and the two
+        already-required exports both happened to be present."""
         root = METRICS_SPEC.make_root(tmp_path, with_planner=True)
         module = METRICS_SPEC.load(root)
         real_path = METRICS_SPEC.planner_path(root).resolve()

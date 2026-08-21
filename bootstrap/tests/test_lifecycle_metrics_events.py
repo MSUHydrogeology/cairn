@@ -418,6 +418,41 @@ def test_no_companion_in_tree_skips_the_divergence_check(tmp_path: Path) -> None
     assert result == _head_sha(repo)
 
 
+def test_divergence_check_reads_the_companion_at_head_not_the_working_copy(
+    tmp_path: Path,
+) -> None:
+    """Code-review regression (metrics-events-not-prose code review,
+    2026-08-21): `activation_commit`'s docstring says the companion is
+    compared "as of HEAD", and every other content read in this module
+    goes through committed history (`git show`) so an uncommitted edit is
+    invisible everywhere alike (EPR-15's resolution) -- but the divergence
+    check as first implemented called `Path.read_text()` on the companion,
+    reading the live working copy instead. Here HEAD agrees (both carry
+    the marker) and only an uncommitted local edit to the companion
+    disagrees; the correct, HEAD-based reading must not refuse."""
+    repo = _make_git_repo(tmp_path)
+    primary = repo / "dev" / "proposals" / "_template.md"
+    primary.parent.mkdir(parents=True)
+    primary.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
+    companion = repo / "templates" / "core" / "dev" / "proposals" / "_template.md"
+    companion.parent.mkdir(parents=True)
+    companion.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
+    _commit_all(repo, "agree at HEAD")
+
+    # Uncommitted local edit to the companion only -- never committed.
+    companion.write_text("no marker (uncommitted)\n", encoding="utf-8")
+
+    result = events.activation_commit(
+        repo, "dev/proposals/_template.md",
+        companion_relpath="templates/core/dev/proposals/_template.md",
+    )
+    assert result == _head_sha(repo), (
+        "the divergence check must compare committed HEAD content, not "
+        "the live working copy -- an uncommitted edit to the companion "
+        "must be as invisible here as it is to walk_history()"
+    )
+
+
 def test_act_in_markers_own_introducing_commit_shares_that_commit(
     tmp_path: Path,
 ) -> None:

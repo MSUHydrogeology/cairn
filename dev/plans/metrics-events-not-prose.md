@@ -4,9 +4,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: awaiting-code-review
-commit, per the "Plan-review disposition" section's authorization; see
-`## Implementation verification` for the commit evidence once appended)
+**Status**: ready-to-archive
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
 converted the tier after two External rounds landed. See "The review tier, and
 why it changed" below.
@@ -2494,3 +2492,331 @@ the reviewed range, and this is the only pass that will look at them.
 module installed by nearly every adopter, who may already be parsing its
 output. Chunk 3 versions the break as v2 rather than mutating v1 in place.
 Whether that versioning is complete is a reviewer question, not a settled one.
+
+## Code review -- Claude Sonnet 5 (Code Review, independent context) -- 2026-08-21
+
+Reviewed commit: `822cf903ba0265b3917d17c663c91cb00ada2c41`
+Target: the eight implementation commits (`cb96853`..`7b60b6b`: Chunks 1-8,
+including `4de41ce`'s in-range Chunk-6-acceptance fixup) plus `822cf903` (the
+coordinator's own post-Chunk-8 status flip on this plan's own file -- in
+scope because it performs a lifecycle act this plan's own Chunk 6 obligates,
+and CR1 below is about exactly that act). Concentrated on the surfaces the
+coordinator's own note flagged as unreviewed: the `valid_states`
+parameter-passing (`events.py` <-> `extract.py`), the HEAD-only history/act-list
+reading (`events.py`'s `walk_history` / `activation_commit` / `reconcile`), and
+the heading-vs-`tier` classification wiring `plan_review_rounds` /
+`code_review_rounds` (`extract_plan_row`, rows 6-9..6-12). Also read Chunks
+1-3 and 7-8 at lighter depth (column retirement, v2 schema identity,
+pre-existing-test audit, CHANGELOG) and ran the live corpus against both
+schemas.
+Prior findings: none (this plan's first code review)
+Assurance path: high-assurance -- default-on module, contract-surface schema
+break (Chunk 3's v2 identity), and CR1 below is a live production defect.
+
+**Tier**: Internal
+**Model**: Claude Sonnet 5 (`claude-sonnet-5`). Independent context: did not
+implement this plan, has no memory of authoring it.
+
+**Findings**: raised -- 4 (CR1: this plan's own file has one confirmed,
+currently-live, unfixable-by-this-pass gap that makes the real `dev/plans/`
+corpus walk exit `INCOMPLETE` today; CR2: `activation_commit`'s
+divergent-marker check read the working copy instead of committed HEAD,
+against its own documented contract; CR3: the divergent-marker safety check
+Round 7's accepted text requires ("Both refuse") is never invoked by the real
+corpus-walk call path, only by its own direct unit tests; CR4: a test
+docstring misstates a 2-to-3-tuple widening as 1-to-2); CR2 and CR4 fixed in
+this pass with regression coverage; CR1 and CR3 recorded and left open --
+neither is fixable by editing code in this pass, for reasons given under each.
+0 blocking in the sense of "this reviewer can close it by revising the code,"
+but CR1 is a live, reproduced, currently-blocking defect this reviewer's own
+judgment says the Maintainer should treat as urgent, not routine backlog.
+
+**Verdict**: Accept-with-followups. -> `ready-to-archive`. The architecture
+round 4's Response introduced -- vocabulary parameter-passing, HEAD-based
+act-list resolution, heading-vs-tier classification -- is sound and I
+falsified each of the three claims that would matter most if it were wrong
+(below), all held. Two real defects turned up in code adjacent to that
+architecture (CR2, CR4), both fixed here with regression tests. One more
+(CR3) is a real, narrow, already-transparently-disclosed gap I judged not
+safe to wire in this pass. **The one item that changes this from a clean
+SHIP is CR1**: it is not a defect in this plan's own reviewed chunks -- the
+fail-closed design is working exactly as accepted -- it is a real, permanent
+consequence of that design landing on an act this plan's own commits already
+performed without its block, discovered by running the real tool rather than
+trusting the fixture suite. I cannot close it and I am not withholding
+archival over it, because withholding does not undo it (the gap is already
+in git history) and blocks nothing else from proceeding. It is recorded in
+full below and deferred to the Maintainer with the Maintainer's own general
+authorization for this batch, per the instruction under which this pass runs.
+
+### CR1 (found, NOT fixed) -- this plan's own file already carries a permanent, currently-live break of the real `dev/plans/` corpus walk
+
+**What I ran, and what came back.** `python tools/lifecycle_metrics.py plans
+--root .` against the live tree at `822cf903` (this plan's `HEAD` when this
+review started) exits `3` (`INCOMPLETE`) and emits zero rows:
+
+```
+lifecycle_metrics: INCOMPLETE -- dev/plans/metrics-events-not-prose.md:
+INCOMPLETE -- dev/plans/metrics-events-not-prose.md @ 822cf903...:
+transition act has no matching event block -- a **Status** change has no
+matching transition block
+```
+
+I confirmed this is not an artifact of my own working tree: `git status
+--short` was clean of unrelated changes when I ran it, and calling
+`events.reconcile()` directly on `dev/plans/metrics-events-not-prose.md`
+against `dev/plans/_template.md` reproduces the same single
+`incomplete_reasons` entry, naming `822cf903` and no other commit.
+
+**Why it is real and why it is permanent.** `126cda5` (Chunk 6) is this
+tree's activation cutoff for `dev/plans/` (confirmed:
+`events.activation_commit(repo, 'dev/plans/_template.md')` returns
+`126cda5...`). `822cf903` -- the coordinator's own commit recording "the
+implementing agent died mid-turn" and flipping this file's header
+`**Status**:` from `implementing` to `awaiting-code-review` -- is strictly
+after that cutoff (`git merge-base --is-ancestor 126cda5 822cf903` succeeds).
+That status flip is exactly the act row 6-8 obligates a matching block for
+("This plan's own acts. From this chunk's own commit onward, the
+implementing agent appends a `cairn-event-v1` block to every lifecycle act it
+performs on this plan's own file... in the same commit that performs the
+act") and exactly what Chunk 6's own acceptance criterion promises ("every
+act *this plan's own commits* perform, from this chunk onward, carries a
+matching block and reconciles cleanly"). `822cf903` carries no block. The
+walker's own rule -- a `transition` block may only be attributed to the
+commit whose diff also changes `**Status**` -- makes this unrecoverable by
+any later commit: adding a block now, in a commit that does not itself
+change the status, is refused outright as an orphaned block (`"a merge
+commit cannot introduce..." `/ same-diff check in `walk_history`), and I will
+not rewrite `822cf903` to insert one after the fact -- rewriting published
+history is exactly the destructive operation this task's own rules forbid me
+from doing unilaterally, and it would invalidate every commit SHA this plan's
+own Implementation section already cites by exact hash. There is no code
+change available to me that closes this without either of those two moves.
+
+**Blast radius, checked rather than assumed.** `iter_plan_files()` walks
+`dev/plans/*.md` **and** `dev/plans/archive/**/*.md`, and `plan_rows()` is a
+list comprehension that calls `extract_plan_row` once per file and lets the
+first `ReconciliationError` propagate -- so one unreconciled artifact aborts
+the **entire** `plans` corpus walk, not just its own row. I checked whether
+any other plan artifact shares this exposure: `dev/plans/_template.md`'s own
+last touch is `126cda5` itself (the cutoff-introducing commit, pre-cutoff by
+the exclusive-reading rule), and both archived plans that received commits
+today (`full-suite-interception`, `suite-run-diagnostics`) had their last
+`dev/plans/`-touching commit **before** `126cda5` (`git merge-base
+--is-ancestor <last-touch> 126cda5` succeeds for both) -- confirmed, not
+assumed, since "no other file is affected" is exactly the kind of absence
+claim this task's own rules say to distrust without running the check.
+`metrics-events-not-prose.md` is therefore the only plan artifact in the
+corpus with any post-cutoff history at all, and it will stay the only one
+until another plan crosses the same cutoff -- but this one's own gap does not
+close when that happens; it stays, forever, because archiving does not
+remove a file from `iter_plan_files()`'s walk.
+
+**Why I did not treat this as a reason to withhold `ready-to-archive`.**
+Refusing to advance this plan's status does not undo `822cf903` -- the gap
+already exists in committed history before this review began, independent of
+anything I do next. It also does not open any path toward fixing it: the fix
+(if one exists) is either a new, explicitly-authorized grandfather/exemption
+mechanism in the reconciler -- new scope, which `PLANNING.md`'s standing
+direction ("fix defects, build nothing new... any new tool or mechanism needs
+an explicit go-ahead") reserves for the Maintainer, not an implementing or
+reviewing agent -- or a decision to accept a permanently-INCOMPLETE `plans`
+corpus walk as the accepted state of this feature. Neither is mine to decide
+unilaterally. I judged saying so as plainly and completely as I could,
+recording it as a `defer` with a durable home outside this plan (below and in
+`dev/PLANNING.md`), and moving the plan the rest of the way to `archived` --
+where the record is actually read going forward -- as the more honest path
+than leaving the plan stuck in `awaiting-code-review` with the same
+unresolved defect and no reviewer left to look at it again.
+
+### CR2 (found and FIXED in this pass) -- the divergent-marker companion check read the working copy, not committed HEAD
+
+`events.activation_commit()`'s own docstring states the companion comparison
+is "as of HEAD" -- consistent with every other content read in this module,
+which goes through `git show <sha>:<path>` specifically so an uncommitted
+edit is invisible everywhere alike (EPR-15's own resolution). The
+implementation did not match its own contract:
+`tools/_lifecycle_metrics/events.py` (and its template twin) read the
+companion via `(repo_root / companion_relpath).is_file()` /
+`Path.read_text()` -- the live working copy.
+
+Falsified with a positive control: a scratch repo where the primary and
+companion markers **agree** at `HEAD` (both present) and only the working
+copy of the companion is edited (marker removed, never committed). The
+pre-fix code raised `ReconciliationError: ... divergent activation marker
+...` on this input -- wrong, since `HEAD` agrees and the divergence check's
+own contract is HEAD-only. Fixed by reading the companion via the module's
+own existing `_show(repo_root, "HEAD", companion_relpath)` helper for both
+the existence check and the content read, matching every other read in the
+module. Re-ran the same scratch repo against the fix: no exception, as
+`HEAD`'s agreement requires.
+
+Regression test added:
+`test_divergence_check_reads_the_companion_at_head_not_the_working_copy`
+(`bootstrap/tests/test_lifecycle_metrics_events.py`) -- exercises the exact
+positive-control shape above (HEAD agrees, working copy disagrees, must not
+raise); confirmed it fails against the pre-fix code (reproduced the
+traceback above before applying the fix) and passes against the fix.
+
+### CR3 (found, NOT fixed) -- the divergent-marker safety check the accepted contract requires is never reachable from a real corpus walk
+
+Round 7's accepted text is explicit: "Missing, divergent, or
+multiply-introduced markers refuse... **Both refuse**" (divergent and
+multiply-introduced), and this plan's own Chunk 5 text states why refusal is
+kept for those two cases specifically -- "so a corrupted marker is not the
+*only* undetectable failure mode." `events.activation_commit()`'s
+`companion_relpath` parameter is the mechanism built for the divergent case
+(Cairn's own installed template vs. its `templates/core/` doctrine twin), and
+it works correctly when called directly -- I reproduced its own unit test's
+positive case myself (a companion with the marker removed at `HEAD` while the
+primary keeps it: raises `ReconciliationError` naming "divergent"). But
+`extract.py`'s `_reconcile_artifact` -- the **only** call site
+`proposal_rows()`/`plan_rows()`, and therefore the real, adopter-facing
+`lifecycle_metrics.py`, goes through -- never passes `companion_relpath`.
+Confirmed end to end: I built a scratch repo with the primary template
+marked and its companion deliberately absent the marker (a real divergence),
+then called the real `extract_proposal_row(path, repo_root=repo)` against it
+-- it returned a normal row, no exception, no warning. The direct-call
+unit tests (`test_divergent_marker_refuses`,
+`test_no_companion_in_tree_skips_the_divergence_check`) are the only fixtures
+that ever exercise this mechanism; nothing calls it through the path a real
+run takes.
+
+This is currently harmless in fact -- all four marker paths agree at `HEAD`
+as of this commit (`grep -c cairn-event-v1` on each of
+`dev/proposals/_template.md`, `templates/core/dev/proposals/_template.md`,
+`dev/plans/_template.md`, `templates/core/dev/plans/_template.md` returns 4
+for all four) -- and it is not a silently-hidden decision: the implementer's
+own commit body for `126cda5` names it in as many words ("'Divergent marker'
+is implemented as an optional companion-path comparison at HEAD... never
+wired into the real corpus-walk call... since only Cairn's self-hosted tree
+has one to compare against"). I did not wire it myself: doing so correctly
+needs the two companion paths threaded through
+`extract_proposal_row`/`extract_plan_row` and `_reconcile_artifact`, a config
+question about whether `templates/core/` is always Cairn's own self-hosted
+layout or something a `config.py` override could relocate, and a
+corpus-walk-level fixture proving the *real* `proposal_rows()`/`plan_rows()`
+path refuses on a synthetic divergence -- none of which exists today, and
+guessing the config-awareness wrong risks a false refusal on every adopter
+tree that happens to carry an unrelated `templates/core/` directory of its
+own. That is real, scoped work belonging to a follow-up, not a same-pass
+patch. Recorded as a `defer` below and in `dev/PLANNING.md`.
+
+### CR4 (found and FIXED in this pass) -- a test docstring misstates the tuple-size change it documents
+
+`test_missing_proposal_states_export_is_purged_not_cached`
+(`bootstrap/tests/test_lifecycle_vocabulary.py`) opened with "Chunk 4 widened
+`extract.py`'s `_REQUIRED_EXPORTS` from a 1-tuple to a 2-tuple (`PLAN_STATES`,
+`PROPOSAL_STATES`)" -- both counts are wrong and the docstring drops
+`HISTORICAL_PLAN_STATES` from its own description of the value it is
+testing. The pre-Chunk-4 value (visible in EPR-14's own finding text and in
+`extract.py` today) is the 2-tuple `('PLAN_STATES',
+'HISTORICAL_PLAN_STATES')`; Chunk 4 widened it to the 3-tuple in the file
+today, `('PLAN_STATES', 'HISTORICAL_PLAN_STATES', 'PROPOSAL_STATES')`. Not a
+test-correctness defect (the test itself asserts against
+`module._REQUIRED_EXPORTS` directly, never the docstring's count), but
+exactly the durable-artifact hazard `AGENTS.md` > "Project-specific
+conventions" names: a comment or docstring that states something false about
+the code it sits next to outlives whatever review produced it and misleads
+the next reader with nothing to check it against. Fixed by correcting the
+counts and restoring the third export to the docstring's own description;
+re-ran the one test (`-k missing_proposal_states`) to confirm the edit
+changed no behavior.
+
+### Coverage
+
+**Exercised**, against `822cf903` (this plan's `HEAD` at review start) plus my
+own working-tree fixes on top, canonical interpreter 3.13.13:
+
+* The full scoped suite named in this review's brief
+  (`test_lifecycle_metrics_config.py`, `test_lifecycle_metrics_events.py`,
+  `test_lifecycle_vocabulary.py`, `test_reference_scripts.py`,
+  `test_notice_install.py`, `test_reanchor.py`) -- reproduced the claimed
+  **299 passed** independently before touching anything, then **300 passed**
+  after adding CR2's regression test, both runs `CAIRN_SUITE_LEDGER=0
+  PYTHONDONTWRITEBYTECODE=1 -q -p no:cacheprovider`.
+* `python scripts/quality_gate.py --sub neutrality --sub redundancy` against
+  the tree with my fixes applied: 86 neutrality failures (pre-existing count,
+  confirmed unchanged, none touch a file I edited), 0 redundancy failures / 2
+  pre-existing infos (unchanged).
+* End-to-end falsification against real scratch git repos, built with the
+  actual `tools._lifecycle_metrics.extract`/`events` modules (not
+  reimplemented), each with a positive control before trusting a clean
+  result: (1) an uncommitted review-pass act is invisible to
+  `extract_proposal_row` end to end (`review_rounds == 0`, no exception) and
+  the same act, once committed without a block, raises `INCOMPLETE` --
+  confirms EPR-15's resolution holds through the real row-extraction path,
+  not only `walk_history()`'s own unit tests; (2) a `transition` block naming
+  an out-of-vocabulary `from_state` is refused by `extract_proposal_row`
+  end to end, sourcing the bound from the real planner vocabulary, not a
+  hard-coded test list -- confirms EPR-14's wiring; (3) the divergent-marker
+  positive/negative pair under CR2/CR3 above.
+* The live corpus, both schemas: `proposals` exits 0, 68 rows (spot-checked
+  this plan's own source proposal reports `review_rounds` as the literal
+  empty string, all seven of its real review rounds being pre-cutoff, per
+  the Decision's own dropped-historical-continuity rule); `plans` exits 3
+  (CR1).
+* `python scripts/claim_check.py dev/plans/metrics-events-not-prose.md`
+  before this commit (see the commit body).
+* The frozen-fixture surface: 11 `FROZEN-MODIFIED` entries against
+  `bootstrap/tests/fixtures/gate_manifest.json` from this plan's own commit
+  range (`conftest.py`, `test_lifecycle_metrics_config.py`,
+  `test_lifecycle_vocabulary.py`, `test_notice_install.py`,
+  `test_reference_scripts.py`, `test_security_lint.py`, and the five
+  `templates/modules/default-on/_lifecycle_metrics/` twins) -- computed by
+  hashing the current blob of every touched file named in
+  `cb96853..7b60b6b` plus this review's own edits against the manifest's
+  pinned OIDs, not carried forward from a prior claim. My own edits touch two
+  already-frozen-modified files (`test_lifecycle_vocabulary.py`, further
+  modified) and two files the manifest does not track at all
+  (`tools/_lifecycle_metrics/events.py` and its template twin are new,
+  post-baseline files) -- so this pass adds no file to the FROZEN-MODIFIED
+  set beyond the 11 the plan's own chunks already produced. Did not run
+  `_gate_manifest.py produce` or touch anything under
+  `bootstrap/tests/fixtures/` -- that re-anchor is the Maintainer's, per this
+  task's own rules.
+
+**Not exercised / explicitly out of reach for this pass:**
+
+* Chunk 1's full retirement diff line-by-line (trusted its own fixture
+  coverage and the 22/6-column pins I reproduced directly) and Chunk 2's
+  doctrine-prose edits (read, not independently fact-checked against the
+  glossary beyond the neutrality/redundancy gates above).
+* A corpus-walk-level fixture proving the real `proposal_rows()`/
+  `plan_rows()` path refuses on a genuine divergent-marker case -- CR3 names
+  this as exactly the missing coverage a future wiring pass would need to
+  add alongside the wiring itself.
+* Performance beyond reading the commit-body figures (`~8s`/`~1s`,
+  `71s -> 22s` for proposals, `did-not-finish -> 7.8s` for plans) -- did not
+  re-time the corpus walk myself; the live `plans` run's `INCOMPLETE` exit takes ~2.6s (measured, one
+  `time` run), well under the 120s budget the commit-body figures above are
+  about, since the fast path short-circuits before any full walk is needed
+  for most artifacts.
+* `bootstrap/tests/test_lifecycle_contract.py` and
+  `test_lifecycle_stage_patterns.py` (the corpus-soundness suite Chunk 7/8
+  ran, ~640-770 tests) -- not in this review's own scoped command and not
+  re-run; relied on the coordinator's and Chunk-8's own commit-body figures
+  for those.
+
+**This section's own lifecycle acts, recorded per `dev/plans/_template.md`'s
+own instruction** (row 6-8, discharged by this section's own author since
+this act -- unlike a further status flip -- is Code review's own, per
+`AGENTS.md` > Review: "Code review's floor is... not the implementing
+agent"). `tier: Internal` reproduces the template's own worked example for a
+`## Plan review` **or** `## Code review` section verbatim, matching this
+review's own `**Tier**: Internal` line above (independence class, not review
+phase -- the block's `tier` key is explicitly not what
+`extract_plan_row`/row 6-9 classifies `plan_review_rounds` vs.
+`code_review_rounds` by; the matched heading is):
+
+<!-- cairn-event-v1
+kind: review-pass
+tier: Internal
+reviewer: Claude Sonnet 5
+-->
+
+<!-- cairn-event-v1
+kind: transition
+from_state: awaiting-code-review
+to_state: ready-to-archive
+-->

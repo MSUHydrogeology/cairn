@@ -833,10 +833,19 @@ def activation_commit(
         )
 
     if companion_relpath is not None:
-        companion_path = repo_root / companion_relpath
-        if companion_path.is_file():
-            companion_present_at_head = VERSION_TOKEN in companion_path.read_text(
-                encoding="utf-8", errors="replace")
+        # Read via `git show HEAD:<path>`, never `Path.read_text()` -- this
+        # function's own contract is "present vs. absent, as of HEAD"
+        # (docstring above), and every other content read in this module
+        # goes through committed history so an uncommitted working-copy
+        # edit is invisible everywhere alike (EPR-15's resolution).  A
+        # working-copy read here would silently reintroduce exactly the
+        # asymmetry that resolution exists to close: found by code review,
+        # confirmed with a fixture where HEAD agrees but the working copy
+        # does not, and the working-copy read raised on the disagreement it
+        # should not have seen.
+        companion_head_text = _show(repo_root, "HEAD", companion_relpath)
+        if companion_head_text is not None:
+            companion_present_at_head = VERSION_TOKEN in companion_head_text
             primary_present_at_head = result is not None
             if companion_present_at_head != primary_present_at_head:
                 raise ReconciliationError(
