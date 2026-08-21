@@ -17,10 +17,12 @@ files; `bootstrap/tests/test_lifecycle_contract.py`.
 `suite-run-diagnostics`, `full-suite-interception`, `metrics-events-not-prose`;
 `dev/PLANNING.md` > "Agent-facing discipline does not survive delegation";
 `doctrine/rationale.md` > "How the doctrine evolves under evidence".
-**Plan review**: required(External) — the External proposal review recorded
-`Plan readiness: DISTINCT REVIEW REQUIRED`, which is a finding and not a
-default. **This proposal cannot self-apply**: its derived plan is governed by
-the contract in force when that plan opens, not by the model proposed here.
+**Plan review**: required(Internal) — set by the editor at the Decision, which
+is where the tier is assigned. Reviewers recorded `Plan readiness: DISTINCT
+REVIEW REQUIRED`; that token recommends and does not bind. See the tier
+assignment appended below the Decision. **This proposal cannot self-apply**:
+its derived plan is governed by the contract in force when that plan opens, not
+by the model proposed here.
 
 ## Context
 
@@ -1940,3 +1942,24 @@ that parses.
 **Constructibility**: route confirmed. Both mechanisms are named with file and
 line; the notation alternative is exhibited and its lead clause measured; the
 controls that make the negative result meaningful are in the table above.
+
+## Editor's tier assignment -- Anthony Kendall (Maintainer) -- 2026-08-21
+
+**The derived plan takes `required(Internal)`.** Instruction, quoted verbatim
+and visually isolated:
+
+> "Fix the plan review, please. That should have been fixed immediately"
+
+This resolves open item 3 of the Decision above, which recorded the tier as
+still open. It is not a change to the accepted contract: under C8 as accepted,
+`Plan readiness` recommends and the editor assigns the tier at the Decision, and
+this is that assignment. The header field is updated to match.
+
+The reviewer tokens on this proposal were `DISTINCT REVIEW REQUIRED` in every
+round. Under the contract in force *before* this Decision that token bound, and
+it is why the header carried `required(External)` through four rounds -- the
+proposal's own RLT-16 finding. Recording the departure rather than making it
+silently, as C1 requires of an editor overriding a reviewer.
+
+**Scribed by** Claude (claude-opus-5), this proposal's author, on explicit
+Maintainer instruction.
