@@ -1,7 +1,7 @@
 # Plan: the suite reports its own cost
 
 **Source proposal**: `dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md`
-**Status**: ready-to-implement
+**Status**: awaiting-code-review
 **Plan review**: required(**Internal**) — ratified by Maintainer amendment at
 `e6e854d58f7083b5497cfa77a5d319285e7626b9`, overriding the plan-review
 template's default escalation path. See "Plan-review tier rationale" below
@@ -1293,3 +1293,130 @@ but the `**Status**` field was never moved off `awaiting-plan-review` at the
 time. That is an operational lapse, not a shortcut taken deliberately, and it is
 recorded as such rather than backdated. The field is brought current here and in
 the commit that follows.
+
+## Implementation verification -- Claude Opus 5 -- 2026-08-21
+
+**Status**: ready-to-implement -> implementing -> awaiting-code-review
+
+Both edges are recorded here. The plan occupied `implementing` across the seven
+commits below, which are already in history; the field lagged behind them, as
+the preceding section records. Writing `implementing` into the file now and
+overwriting it in the same breath would assert a state the file never held, so
+the passage is recorded with its commit evidence instead.
+
+**Boundary B mode**: `full`. Not a choice -- `bootstrap/tests/conftest.py` is a
+gate-frozen **contract surface** and sits under Chunk E's **trust-ceremony**
+(Security Review + re-anchor). `AGENTS.md` refuses bounded mode on either
+condition alone; this plan trips both.
+
+**Tested commit**: `906b315a5a2ee6d0eed770d333abe2b2aa25f314`
+**Reviewed range** (non-contiguous -- sibling and proposal commits interleave):
+
+| Commit | Chunk |
+| --- | --- |
+| `2d9500ec8ee73a284b54a726e5c6762640cba720` | A -- the suite records its own cost |
+| `9dde505f84a387d3477eb6425837839c6b7091cc` | B -- the ledger reader |
+| `60a76ceac6c4e976a87ff20e0dd110a75454cfa9` | A refinement -- collection-time skip |
+| `99d62bb224a04e67773ab9c2a3221ce067cc375f` | C -- the contract tests |
+| `945cce68d20ce32c527bcb51c51ab72ef19f51f1` | C refinement -- measure the collector, not the warm-up |
+| `e242818980626032acc2bbe21c502fc585cd1855` | D -- gitignore, README slot, changelog, lockfile |
+| `fc93c1ac2c1c7b805a8aa2dc2f10afa015873048` | C refinement -- pin the third classification |
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` --
+Python 3.13.13 (conda-forge, Clang 19.1.7), pytest 9.0.3, pluggy 1.6.0.
+`PYTHONDONTWRITEBYTECODE=1` exported: without it,
+`test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override`
+fails on leftover `__pycache__`, which is a host-environment dependency and not
+this plan's.
+
+**Pre-run state**: clean -- 0 tracked modifications.
+**Post-run state**: clean -- 0 tracked modifications.
+
+### HEAD moved during the run, and what that does and does not invalidate
+
+`HEAD` was `906b315` when the suite started and
+`c6a94dd070e4b76685f75736b5e6b6d132f7c4dc` when it finished: the Maintainer
+committed a proposal review mid-run. The working tree was clean at both ends,
+and `c6a94dd` touches exactly one file --
+`dev/proposals/2026-08-20-claude-review-loop-termination.md` -- so none of this
+plan's implementation surface moved.
+
+That is not by itself sufficient, because
+`test_the_live_corpus_is_sound_under_the_p1_contract` **scans the live `dev/`
+corpus** and is therefore sensitive to any proposal commit, including that one.
+Falsified rather than assumed: the test was re-run at the post-run `HEAD`, with
+`c6a94dd` present, and produced the identical failure over the identical three
+artifacts by name. The scribed round-4 review in `c6a94dd` does **not** trip the
+author-attribution check, so it adds no corpus violation. The run stands.
+
+### Command table
+
+| Command | Exit | Outcomes | Elapsed |
+| --- | --- | --- | --- |
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -q` | 1 | **4571 passed, 1 failed**, 3 warnings | 699.60 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality `fail=86 info=21`; redundancy `fail=0 info=2` | -- |
+| `python scripts/check_cairn.py` | 1 | 6 issues / 180 files at the tested commit; **3** after this plan's disposition commit retired its three stale path declarations | -- |
+| `python scripts/claim_check.py dev/plans/suite-run-diagnostics.md` | 0 | OK, no flags (3 hard flags before the disposition commit) | -- |
+
+The suite figure is `CAIRN_FULL_SUITE=1`-prefixed because the sibling plan's
+broad-run guard landed first; the bare form this plan's Verification section
+predicted would still work is now refused at exit 4. The prediction was correct
+when written and is superseded by landing order, which that section anticipated.
+
+### Non-pass disposition
+
+**One failure, and it is not this plan's.**
+`test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`
+reports three live proposals whose `## Review` sections appear authored by the
+proposal author: `2026-08-20-claude-adopt-into-existing-tree`,
+`-portable-sweeps-cannot-run`, `-scanner-claim-scope`. Identified **by name**,
+not by count -- a matching count is not evidence that the identities match.
+None is this plan's, and none is touched by any commit in the reviewed range.
+
+`quality_gate` exits 1 on 86 pre-existing neutrality findings, unchanged by this
+plan; `check_cairn`'s 3 remaining issues are two broken link targets in
+`scanner-claim-scope` and one stale plan link in
+`dev/measurement/tag-pass-dispositions.md`. Neither is this plan's.
+
+### Plan-specific acceptance -- the collector-overhead figure
+
+The `collector_ms` acceptance bullet requires the delta be **recorded here**,
+not merely asserted in the test. Measured 2026-08-21 on the canonical
+interpreter, five runs collector-enabled and five disabled, alternating, both
+trees warmed first:
+
+| Quantity | Value |
+| --- | --- |
+| `collector_ms` reported, per row | 0.372, 0.380, 0.381, 0.398, 0.431 ms |
+| `collector_ms` median | **0.381 ms** |
+| wall-clock median, enabled | 400.7 ms |
+| wall-clock median, disabled | 395.8 ms |
+| observed median delta | **4.9 ms** |
+| collector's share of that delta | ~8% |
+
+Rows written: 5, one per session, as the row-per-session invariant requires.
+The collector reports a cost roughly an order of magnitude below the delta it
+sits inside -- the remainder is subprocess start-up jitter, which is why the
+test asserts two ceilings rather than a ratio between them. Against this run's
+own 699.60 s the collector is ~0.005% of the figure it reports, so the headline
+number is not meaningfully the ledger measuring itself.
+
+### Known omissions
+
+* **Chunk E** -- the Security Review and the re-anchor ceremony -- is
+  Maintainer-owned and untouched. No `_gate_manifest.py produce`, no fixture
+  regeneration.
+* **The full suite was not re-run after the disposition commit** (`7d307e1`) or
+  after this one. Both are plan-document-only; neither changes an
+  implementation, test, executable-template or fixture byte, so no Boundary C
+  trigger fires on them. Stated rather than left for the reviewer to infer.
+* **Windows and network filesystems** are unexercised; the `flock` durability
+  path is POSIX-only by construction.
+* **Concurrent-session ledger interaction.** A second pytest session ran in this
+  tree during part of the suite (a sibling agent's scoped Boundary A). It was
+  invoked with `CAIRN_SUITE_LEDGER=0` for the remainder once identified, but not
+  for its first invocations. No ledger test failed, and the row-per-session
+  count above is from an isolated fixture tree -- but the live
+  `dev/measurement/suite-runs.jsonl` may carry rows from both, and it is
+  gitignored and non-authoritative. Recorded because an unrecorded contaminant
+  is worse than a bounded one.
