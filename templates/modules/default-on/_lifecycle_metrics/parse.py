@@ -8,11 +8,6 @@ import re
 from typing import Dict, List, Optional, Sequence, Tuple
 
 _DATE_RE = re.compile(r'\d{4}-\d{2}-\d{2}')
-# A finding-heading bullet inside a Review section: ``* **[...`` --
-# robust to the bracket interior (the corpus uses many bracket shapes).
-_FINDING_BULLET_RE = re.compile(r'^\s*\*\s+\*\*\[')
-# The bracket interior of a finding heading, for the severity scan.
-_BRACKET_INTERIOR_RE = re.compile(r'\*\*\[([^\]]*)\]')
 # A ``## ``/``### ... code review`` / ``... plan review`` review-round
 # heading.  BOTH levels count: ``dev/plans/_template.md`` prescribes dated
 # **H2** passes (``## Plan review -- <reviewer> -- YYYY-MM-DD``, with "There is

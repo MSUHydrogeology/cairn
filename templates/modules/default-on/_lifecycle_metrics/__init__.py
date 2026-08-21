@@ -14,20 +14,18 @@ It walks ``dev/proposals/`` and ``dev/plans/`` (live and archived),
 parses the in-file lifecycle headers + section grammar that the Cairn
 scaffold installs, and emits a tidy CSV (or markdown) table of
 per-proposal / per-plan lifecycle metrics -- review rounds, revision
-counts, time-to-decision, finding severities, plus the measurement
-subsystems (annotations, collision-rate, review-yield / model-tier,
-output manifest) and a longitudinal snapshot layer.  It turns a team's
-discipline self-claims ("External review catches structural problems",
-"revision counts spike when scope is too large") from unfalsifiable
-assertions into quantified, checkable rows.
+counts, time-to-decision, plus the measurement subsystems (annotations,
+collision-rate, model-tier, output manifest) and a longitudinal snapshot
+layer.  It turns a team's discipline self-claims ("External review
+catches structural problems", "revision counts spike when scope is too
+large") from unfalsifiable assertions into quantified, checkable rows.
 
 **No repo-mutation surface over the corpus.**  The tool parses files,
 mutates nothing in the corpus, and touches no git state except an
 optional read-only ``git log`` for sub-day commit timestamps.  The
-``--out`` flag writes only the derived report file; ``--snapshot`` /
-``--backfill-from`` persist derived CSV snapshots under the
-measurement directory (the only write surface, and an additive,
-regenerable one).
+``--out`` flag writes only the derived report file; ``--snapshot``
+persists derived CSV snapshots under the measurement directory (the
+only write surface, and an additive, regenerable one).
 
 **Project-agnostic by construction.**  Every project-specific value --
 the model-tier vocabulary, the annotation / collision-log locations,
@@ -44,9 +42,8 @@ Snapshot layer: ``--snapshot`` persists an indexed CSV
 ``dev/measurement/snapshots/``) carrying the unified proposal+plan
 schema plus ``corpus_commit`` / ``snapshot_event`` /
 ``snapshot_timestamp_utc`` / ``corpus_collision_count_14d`` meta-columns.
-``--backfill-from`` emits one snapshot per ``Goodnight:``-tagged commit
-in a bounded window.  The snapshot is always CSV regardless of
-``--format``; the normal stdout / ``--out`` emission is unaffected.
+The snapshot is always CSV regardless of ``--format``; the normal
+stdout / ``--out`` emission is unaffected.
 
 Usage::
 
@@ -57,19 +54,16 @@ Usage::
     python tools/lifecycle_metrics.py proposals --root /path/to/repo
     python tools/lifecycle_metrics.py --snapshot --event goodnight
     python tools/lifecycle_metrics.py --manifest
-    python tools/lifecycle_metrics.py --backfill-from 2026-05-20
 
 Reliability tiers (the source corpus is prose-structured, not
 schema-structured):
 
 * **Exact** -- header fields, section-header counts, reviewer agent
   identity.
-* **Good** -- ``total_findings`` (finding-heading bullet counts).
-* **Best-effort** -- ``findings_p1/_p2/_p3`` severity (the
-  bracketed-tag convention); ``external_tier_review`` (role-
-  label parse, ``unknown`` bucket for label-less headers);
-  ``paired_proposal`` slug-match fallback; the annotation /
-  collision-log / disposition parsers (forgiving by design).
+* **Best-effort** -- ``external_tier_review`` (role-label parse,
+  ``unknown`` bucket for label-less headers); ``paired_proposal``
+  slug-match fallback; the annotation / collision-log parsers
+  (forgiving by design).
 
 Robust across VCS settings: when git is absent, the path is not a
 checkout, the default branch is named ``main`` rather than ``master``,

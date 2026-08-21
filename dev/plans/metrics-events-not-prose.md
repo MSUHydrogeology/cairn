@@ -3,7 +3,9 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: ready-to-implement
+**Status**: implementing (ready-to-implement -> implementing at Chunk 1's
+commit, per the "Plan-review disposition" section's authorization; see
+`## Implementation verification` for the commit evidence once appended)
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
 converted the tier after two External rounds landed. See "The review tier, and
 why it changed" below.

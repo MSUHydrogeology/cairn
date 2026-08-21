@@ -178,8 +178,8 @@ longitudinal *snapshot layer* (indexed, dated CSV snapshots of the
 unified proposal+plan schema under
 `dev/measurement/snapshots/<YYYY-MM-DD>-<N>.csv`, carrying
 `corpus_commit` / `snapshot_event` / `snapshot_timestamp_utc`
-provenance, with same-day runs coalescing by index and a bounded
-`--backfill-from`); a rolling-window collision-log correlation;
+provenance, with same-day runs coalescing by index); a rolling-window
+collision-log correlation;
 per-doctrine annotation counts; and per-role × per-tier model
 aggregation. Every project-specific value — the model-tier vocabulary,
 the annotation / collision-log locations, the snapshot directory, the

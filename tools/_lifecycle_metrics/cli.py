@@ -10,9 +10,8 @@ from typing import List, Optional
 
 from .config import _REPO_ROOT
 from .extract import PROPOSAL_COLUMNS, PLAN_COLUMNS, proposal_rows, plan_rows
-from .parse import _parse_date
 from .report import format_csv, format_md
-from .snapshot import emit_snapshot, backfill, format_manifest_md
+from .snapshot import emit_snapshot, format_manifest_md
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -54,20 +53,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         '--event',
         choices=[
             'plan-archive', 'goodnight', 'doctrine-intervention',
-            'manual', 'backfill',
+            'manual',
         ],
         default='manual',
-        help=(
-            'Snapshot trigger label (used only with --snapshot). '
-            'Default: manual.  ``backfill`` is set automatically by '
-            '--backfill-from.'
-        ),
+        help='Snapshot trigger label (used only with --snapshot). Default: manual.',
     )
     parser.add_argument(
         '--dry-run', action='store_true',
         help=(
-            'With --snapshot / --backfill-from, compute the would-be '
-            'snapshot path + row count without writing.'
+            'With --snapshot, compute the would-be snapshot path + row '
+            'count without writing.'
         ),
     )
     parser.add_argument(
@@ -75,14 +70,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         help=(
             'Emit the output manifest (markdown table naming every output '
             'file, its format, columns, and stability tier). Read-only.'
-        ),
-    )
-    parser.add_argument(
-        '--backfill-from', type=str, default=None, metavar='YYYY-MM-DD',
-        help=(
-            'Bounded backfill smoke: emit one snapshot per '
-            '``Goodnight:``-tagged commit since the given date, capped at '
-            'backfill_max_days (default 14). Combine with --dry-run.'
         ),
     )
     args = parser.parse_args(argv)
@@ -93,24 +80,6 @@ def main(argv: Optional[List[str]] = None) -> int:
             file=sys.stderr,
         )
         return 2
-
-    # Backfill path: handle before --snapshot so the two do not race.
-    if args.backfill_from is not None:
-        since = _parse_date(args.backfill_from)
-        if since is None:
-            print(
-                f'lifecycle_metrics: --backfill-from value '
-                f'{args.backfill_from!r} is not a valid YYYY-MM-DD date',
-                file=sys.stderr,
-            )
-            return 2
-        results = backfill(root=args.root, since=since, dry_run=args.dry_run)
-        print(
-            f'lifecycle_metrics: backfill emitted {len(results)} snapshots '
-            f'(since {args.backfill_from}, dry_run={args.dry_run})',
-            file=sys.stderr,
-        )
-        return 0
 
     # Manifest path: pure read-only surface, no corpus traversal.
     if args.manifest:

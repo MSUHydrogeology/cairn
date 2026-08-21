@@ -291,8 +291,6 @@ class TestGeneralizationGate:
         )
         row = next(r for r in rows if r["stem"] == "2026-05-01-alice-thing")
         assert row["review_rounds"] == 1
-        assert row["total_findings"] == 2
-        assert row["findings_p1"] == 1
 
 
 # ---------------------------------------------------------------------------

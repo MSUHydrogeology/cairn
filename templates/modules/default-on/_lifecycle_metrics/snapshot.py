@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple
 from .config import MetricsConfig, load_config
 from .extract import PROPOSAL_COLUMNS, PLAN_COLUMNS, iter_proposal_files, iter_plan_files, extract_proposal_row, extract_plan_row
 from .subsystems import _load_all_annotations, _load_collision_log, _collision_count_in_window
-from .gitmeta import _get_head_commit, _list_goodnight_commits
+from .gitmeta import _get_head_commit
 from .report import format_csv
 
 
@@ -110,10 +110,6 @@ METRIC_CONTRACT_MAP: Dict[str, str] = {
     'plan_count_by_status': '',
     # Per-proposal scalar columns
     'proposal_annotation_count': 'proposal_annotation_count',
-    # Disposition / yield
-    'proposal_review_yield_accept_count': 'review_yield_accept_count',
-    'proposal_review_yield_reject_count': 'review_yield_reject_count',
-    'proposal_review_yield_defer_count': 'review_yield_defer_count',
     # Role / tier / matrix (aggregator helpers; surfaced via the per-
     # proposal columns the helpers consume).
     'proposal_author_role_tier_tuple': 'author',
@@ -315,49 +311,3 @@ def emit_snapshot(
         snapshot_path.write_text(text, encoding='utf-8')
 
     return snapshot_path, len(rows)
-
-
-def backfill(
-    *,
-    root: Path,
-    config: Optional[MetricsConfig] = None,
-    since: datetime.date,
-    max_days: Optional[int] = None,
-    out_dir: Optional[Path] = None,
-    dry_run: bool = False,
-    today: Optional[datetime.date] = None,
-) -> List[Tuple[Path, int]]:
-    """Bounded-backfill smoke.  Emits one snapshot per ``Goodnight:``-tagged
-    commit in the window ``[max(since, today - max_days), today]``.
-
-    The window is capped at ``max_days`` (default
-    ``config.backfill_max_days`` -> 14) regardless of ``since``; the cap is
-    doctrine (smoke, not exhaustive backfill).  Each snapshot's
-    ``snapshot_event='backfill'`` and ``corpus_commit=<commit-sha>``;
-    ``snapshot_timestamp_utc`` matches the commit's committer-date.
-    Returns a list of ``(snapshot_path, row_count)`` tuples."""
-    cfg = config if config is not None else load_config(root)
-    cap = max_days if max_days is not None else cfg.backfill_max_days
-    today_d = today if today is not None else datetime.date.today()
-    window_start = max(since, today_d - datetime.timedelta(days=cap))
-    since_iso = window_start.isoformat()
-    commits = _list_goodnight_commits(since_iso, repo_root=root)
-    results: List[Tuple[Path, int]] = []
-    for sha, committer_iso in commits:
-        try:
-            ts = datetime.datetime.fromisoformat(committer_iso)
-        except ValueError:
-            continue
-        if ts.tzinfo is not None:
-            ts = ts.astimezone(datetime.timezone.utc).replace(tzinfo=None)
-        path, n = emit_snapshot(
-            root=root,
-            config=cfg,
-            event='backfill',
-            out_dir=out_dir,
-            timestamp_utc=ts,
-            corpus_commit=sha,
-            dry_run=dry_run,
-        )
-        results.append((path, n))
-    return results

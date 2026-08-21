@@ -54,7 +54,6 @@ _DEFAULT_CONFIG: Dict[str, object] = {
     'collision_window_days': 14,
     'collision_counted_kind': 'true-staged-index',
     'snapshots_dir': 'dev/measurement/snapshots',
-    'backfill_max_days': 14,
     'model_tiers': _DEFAULT_MODEL_TIERS,
 }
 
@@ -113,7 +112,6 @@ class MetricsConfig:
         collision_window_days: int,
         collision_counted_kind: str,
         snapshots_dir: Path,
-        backfill_max_days: int,
         model_tiers: List[Tuple[str, str]],
     ) -> None:
         self.root = root
@@ -122,7 +120,6 @@ class MetricsConfig:
         self.collision_window_days = collision_window_days
         self.collision_counted_kind = collision_counted_kind
         self.snapshots_dir = snapshots_dir
-        self.backfill_max_days = backfill_max_days
         self.model_tiers = model_tiers
 
 
@@ -175,7 +172,5 @@ def load_config(root: Path) -> MetricsConfig:
         collision_counted_kind=str(data['collision_counted_kind']),
         snapshots_dir=_safe_rel(
             root, data['snapshots_dir'], str(_DEFAULT_CONFIG['snapshots_dir'])),
-        backfill_max_days=_safe_int(
-            data['backfill_max_days'], int(_DEFAULT_CONFIG['backfill_max_days'])),
         model_tiers=tiers,
     )

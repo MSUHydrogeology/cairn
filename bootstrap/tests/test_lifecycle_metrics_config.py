@@ -23,6 +23,8 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
+import pytest
+
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 _LM_PATH = CAIRN_ROOT / "templates" / "modules" / "default-on" / "lifecycle_metrics.py"
 
@@ -58,7 +60,6 @@ def test_default_config_paths_are_repo_relative(tmp_path: Path) -> None:
     assert cfg.snapshots_dir == root / "dev" / "measurement" / "snapshots"
     assert cfg.annotations_dir == root / "dev" / "metrics_annotations"
     assert cfg.collision_window_days == 14
-    assert cfg.backfill_max_days == 14
 
 
 def test_traversal_snapshots_dir_falls_back_to_default(tmp_path: Path) -> None:
@@ -107,6 +108,86 @@ def test_malformed_json_uses_all_defaults(tmp_path: Path) -> None:
     cfg = _lm.load_config(root)  # must not raise
     assert cfg.snapshots_dir == root / "dev" / "measurement" / "snapshots"
     assert cfg.collision_window_days == 14
+
+
+#: The eight columns Part 1 of `metrics-events-not-prose` retires: a
+#: `total_findings`/`findings_p*` bullet-count group and a
+#: `review_yield_*` disposition-token group. Both were derived by
+#: parsing review prose, which rewards writing more of it -- the
+#: cheapest way to look thorough is to split one finding into three.
+_RETIRED_PROPOSAL_COLUMNS = frozenset({
+    "total_findings",
+    "findings_p1",
+    "findings_p2",
+    "findings_p3",
+    "review_yield_accept_count",
+    "review_yield_accept_with_modification_count",
+    "review_yield_reject_count",
+    "review_yield_defer_count",
+})
+
+#: Every structural column Part 1 keeps, named explicitly so a future
+#: accidental drop of a *kept* column fails loudly rather than only
+#: showing up as a smaller-than-expected count.
+_RETAINED_PROPOSAL_COLUMNS = (
+    "stem",
+    "author",
+    "date_opened",
+    "status",
+    "decision_date",
+    "days_to_decision",
+    "review_rounds",
+    "reviewer_agents",
+    "cross_agent_type_review",
+    "external_tier_review",
+    "revised",
+    "reviewed_date",
+    "revised_date",
+    "days_open_to_reviewed",
+    "days_reviewed_to_revised",
+    "days_revised_to_decision",
+    "hours_open_to_reviewed",
+    "hours_reviewed_to_revised",
+    "hours_revised_to_decision",
+    "stage_timestamp_reliability",
+    "proposal_annotation_count",
+    "response_models",
+)
+
+
+def test_proposal_columns_retires_exactly_the_eight_prose_scraped_names() -> None:
+    """`PROPOSAL_COLUMNS` carries none of the eight retired columns and
+    every retained structural column, by name -- not just a count."""
+    columns = set(_lm.PROPOSAL_COLUMNS)
+    present_retired = columns & _RETIRED_PROPOSAL_COLUMNS
+    assert not present_retired, (
+        f"retired columns still present in PROPOSAL_COLUMNS: {present_retired}"
+    )
+    missing_retained = set(_RETAINED_PROPOSAL_COLUMNS) - columns
+    assert not missing_retained, (
+        f"retained columns dropped from PROPOSAL_COLUMNS: {missing_retained}"
+    )
+    assert len(_lm.PROPOSAL_COLUMNS) == len(_RETAINED_PROPOSAL_COLUMNS) == 22
+
+
+def test_backfill_from_is_not_a_recognized_argument() -> None:
+    """`--backfill-from` and its `backfill` snapshot-event value are
+    removed outright (the mode misattributed measurements to commits
+    that did not produce them -- a defect independent of the v1->v2
+    schema break, and removal is the only option that stops shipping
+    it); `--help` no longer names either."""
+    with pytest.raises(SystemExit) as exc:
+        _lm.main(["--backfill-from", "2026-01-01"])
+    assert exc.value.code != 0
+
+    import io
+    import contextlib
+
+    buf = io.StringIO()
+    with contextlib.suppress(SystemExit), contextlib.redirect_stdout(buf):
+        _lm.main(["--help"])
+    assert "--backfill-from" not in buf.getvalue()
+    assert "backfill" not in buf.getvalue()
 
 
 def test_emit_snapshot_stays_contained_under_hostile_config(tmp_path: Path) -> None:

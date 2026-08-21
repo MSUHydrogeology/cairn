@@ -18,8 +18,6 @@ from .parse import (
     _split_h2_sections,
     _stage_section_dates,
     _DATE_RE,
-    _FINDING_BULLET_RE,
-    _BRACKET_INTERIOR_RE,
     _CODE_REVIEW_HEADING_RE,
     _PLAN_REVIEW_HEADING_RE,
 )
@@ -30,7 +28,6 @@ from .gitmeta import _resolve_stage_commits, _hour_delta, _day_delta, _stage_rel
 from .subsystems import (
     _load_all_annotations,
     _annotation_count_for_stem,
-    _review_yield_counts,
     _extract_response_models,
 )
 
@@ -53,10 +50,6 @@ PROPOSAL_COLUMNS = [
     'cross_agent_type_review',
     'external_tier_review',
     'revised',
-    'total_findings',
-    'findings_p1',
-    'findings_p2',
-    'findings_p3',
     # Per-stage timestamps + deltas.  Header dates give day-level
     # precision; git commit timestamps add sub-day hour-level precision
     # when available (degrading to empty + Best-effort without git).
@@ -72,12 +65,6 @@ PROPOSAL_COLUMNS = [
     # Annotation reader: number of ``<annotations_dir>/*.yml`` files
     # naming this proposal stem under ``affected_artifacts``.
     'proposal_annotation_count',
-    # Per-proposal review-yield: disposition-token counts across every
-    # ``## Response`` section.  The 4-token proposal-Response grammar.
-    'review_yield_accept_count',
-    'review_yield_accept_with_modification_count',
-    'review_yield_reject_count',
-    'review_yield_defer_count',
     # Per-Response ``**Model**:`` field captures, pipe-joined and
     # positionally aligned with ``reviewer_agents`` (empty token when a
     # Response carries no Model line).  The model-tier aggregators read
@@ -188,19 +175,6 @@ def extract_proposal_row(
 
     revised = any(h.startswith('## Revised') for h, _ in sections)
 
-    total_findings = 0
-    findings = {'P1': 0, 'P2': 0, 'P3': 0}
-    for _, body in review_sections:
-        for line in body:
-            if not _FINDING_BULLET_RE.match(line):
-                continue
-            total_findings += 1
-            m = _BRACKET_INTERIOR_RE.search(line)
-            interior = m.group(1) if m else ''
-            for tag in ('P1', 'P2', 'P3'):
-                if re.search(r'\b' + tag + r'\b', interior):
-                    findings[tag] += 1
-
     reviewed_date = stage_dates['reviewed']
     revised_date = stage_dates['revised']
     days_open_to_reviewed = _day_delta(date_opened, reviewed_date)
@@ -240,9 +214,6 @@ def extract_proposal_row(
         proposal_annotation_count = _annotation_count_for_stem(
             path.stem, annotations)
 
-    # Per-proposal review-yield counts across all ``## Response`` sections.
-    yield_counts = _review_yield_counts(sections)
-
     # Per-Response ``**Model**:`` captures (pipe-joined downstream).
     response_models = _extract_response_models(sections)
 
@@ -258,10 +229,6 @@ def extract_proposal_row(
         'cross_agent_type_review': cross_agent_type_review,
         'external_tier_review': external_tier_review,
         'revised': revised,
-        'total_findings': total_findings,
-        'findings_p1': findings['P1'],
-        'findings_p2': findings['P2'],
-        'findings_p3': findings['P3'],
         'reviewed_date': reviewed_date.isoformat() if reviewed_date else '',
         'revised_date': revised_date.isoformat() if revised_date else '',
         'days_open_to_reviewed': days_open_to_reviewed,
@@ -272,12 +239,6 @@ def extract_proposal_row(
         'hours_revised_to_decision': hours_revised_to_decision,
         'stage_timestamp_reliability': stage_timestamp_reliability,
         'proposal_annotation_count': proposal_annotation_count,
-        'review_yield_accept_count': yield_counts['accept'],
-        'review_yield_accept_with_modification_count': (
-            yield_counts['accept_with_modification']
-        ),
-        'review_yield_reject_count': yield_counts['reject'],
-        'review_yield_defer_count': yield_counts['defer'],
         'response_models': '|'.join(response_models),
     }
 
