@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
@@ -14,7 +14,7 @@ that pairs that readiness record with an inheritance declaration — confirmed
 by running the checker against both forms before writing this header. The
 tier's authority is the Maintainer's amendment, stated plainly rather than
 through the inheritance mechanism.
-**Last update**: 2026-08-20
+**Last update**: 2026-08-21
 **Opened**: 2026-08-20
 
 ## Status: how it drifted, and the forward path
@@ -2169,3 +2169,380 @@ Unchanged from the prior record: the gate is at HOLD pending the owed re-anchor;
 the gate emits one `SKIP-XFAIL-NEW` false positive against a passing test of this
 plan's; Chunk S is unimplemented and uncovered; one host, one interpreter. The
 non-blocking findings CR5–CR7 stand as recorded known state.
+
+## Code review -- Claude Opus 5 (Code Review, independent context) -- 2026-08-21 (round 2)
+
+**Model**: Claude Opus 5
+
+Reviewed commit: `15906dffa7d12cbb0b73ee481e610dd00dc1f00d`
+Target: `a316d757236ba098302844f65e91419937baaa8c..15906df`, this plan's surfaces
+only -- `bootstrap/tests/conftest.py`, `scripts/quality_gate.py`,
+`bootstrap/tests/test_broad_run_guard.py`,
+`bootstrap/tests/test_security_check.py`,
+`bootstrap/tests/test_quality_gate_order_independence.py`,
+`bootstrap/tests/_gate_manifest.py`, `AGENTS.md`, `templates/core/AGENTS.md`,
+`bootstrap/AST_BASELINE_RUNBOOK.md`, `docs/release-process.md`, and the
+replacement `## Implementation verification` record.
+Prior findings: **CR1, CR2, CR3 closed** -- each mutation-tested against the
+code it was written to pin, not read. **CR6 closed** by `15906df`; the way it
+was closed is CR8 below. **CR4 partly closed**: the `fail=0` figure is
+corrected to the true `fail=86`, but the evidence the correction offers for
+"not this change's" is itself false -- CR9. **CR5 and CR7 stand as recorded
+known state**; CR5 is re-raised as CR13 because the replacement record repeats
+it. FSI-SR1 remains open by the Maintainer's disposition and is **not**
+re-raised here -- I checked only whether the documentation and the pin are
+honest, and they are.
+Assurance path: high-assurance
+**Tier**: Internal
+**Findings**: raised -- 2 blocking (CR8, CR9), 4 non-blocking (CR10-CR13)
+
+**Verdict: REVISE.**
+
+**The code is right, and this round found nothing wrong with it.** All three
+round-1 blocking findings are genuinely closed: I reverted the guard to its
+pre-fix shape and watched the rebuilt regression go red on exactly the defect
+the Security Review named; I reproduced the FSI-SR1 matrix from scratch and
+then tried two shapes nobody had tried, and could not widen the residual past
+the one the docstring admits; and the CR3 test that never landed is now there
+and fails under mutation of *both* mechanisms it claims to pin. Details in
+*What I exercised and found sound*.
+
+**What blocks is not the code.** One commit in the reviewed range
+(`15906df`) is a sixth touched file, gate-frozen, outside the accepted Scope
+and outside both Maintainer allowances this plan records -- and it lands
+*after* the Boundary B record's declared range, so the record does not
+describe the tree I was asked to review. That is not mine to wave through:
+scope authority is the Maintainer's, and a reviewer who absorbs an unasked
+expansion has created authority they do not hold. Separately, the correction
+section written to fix a false figure states a false measurement of its own.
+
+Neither costs an 11-minute run to fix, and I do not think one is technically
+required -- I bounded `15906df` to zero delta myself, and say how below, so
+that a bounded amendment is available to the Maintainer if that is the call
+they want to make. What is not available is leaving it undeclared.
+
+Every measurement below ran under the canonical interpreter
+(`/Users/kendal30/conda_envs/lhm/bin/python3.13` -- Python 3.13.13, pytest
+9.0.3, pluggy 1.6.0; the ambient `python` on this host is 3.12.9 with pluggy
+1.5.0 and was not used). Every probe ran against a tree pinned to a named
+commit -- `git archive` or a `--no-hardlinks` clone in scratch, never the live
+working tree, because `bootstrap/tests/conftest.py` is being edited by a
+concurrent session and a working-tree probe could not tell me which bytes it
+measured. The commit each probe used is named with it. I did **not** re-run
+the full suite.
+
+### Blocking findings
+
+**CR8 -- `15906df` is an undeclared scope expansion, and it lands outside the
+verification record's own range. [BLOCKING]**
+
+Two halves, either sufficient.
+
+*The expansion.* `bootstrap/tests/_gate_manifest.py` is not in Revision 5's
+Scope, and neither Maintainer allowance this plan quotes reaches it: *"Please
+do A4/A5 in this one, allow the scope widening"* covers
+`test_security_check.py` and `test_quality_gate_order_independence.py`, and
+*"yes, please!"* covers the three live-instruction documents. This is a sixth
+file and a fourth site of the FSI-SR2 class. Round 1's CR6 explicitly routed
+it elsewhere -- *"I am not asking for a patch in this plan: the manifest and
+its fixture are gate-frozen and the correction naturally belongs with Chunk
+D's re-anchor"* -- and the `## Response to code review`, one commit earlier,
+said *"this plan is not the place to widen further."* Then it widened. No
+`Scope delta`, no quoted allowance, no plan-file change at all: `15906df`
+touches one file.
+
+The file is gate-frozen -- measured, not inferred: it is one of 203 entries in
+`frozen_files` in the committed manifest fixture (loaded `_gate_manifest` at
+`15906df` and checked membership directly). So this plan now owns **five**
+`FROZEN-MODIFIED` entries where Chunk D's accounting says four, and the
+record's *Known omissions* line -- *"Six frozen files are modified, four by
+this plan and two by the concurrent session"* -- is stale. Hashing the live
+tree against the fixture's frozen set gives **eight** modified as_of
+2026-08-21: five this plan's, three from other work. Chunk D says to derive
+the set at ceremony time regardless, so the ceremony is fenced; the accounting
+sentence is what is now wrong.
+
+*The range.* The replacement record declares `Reviewed range:
+a316d757..953c7f4194220059207d5b6d9a5c619f29d815b7`. The head of the range I
+was given is `15906df`. A commit changing test-suite bytes sits between them,
+and `AGENTS.md` > *Verification boundaries* > C names both "stale evidence"
+and "changed implementation/test/... bytes" as requiring a fresh full run.
+This plan's Boundary B mode is `full`, and the plan says that is "not a close
+call" for three reasons, one of which -- a gate-frozen contract surface --
+applies to `15906df` as much as to Chunk A.
+
+This is also the third time this artifact has had its recorded state disagree
+with its actual state: the header drifted at `495c6a7`, the first repair of it
+was itself wrong, and now the evidence range stops one commit short of the
+tree. The first two were caught by the board and by the checker. Nothing
+mechanical catches this one, which is why it is worth a blocking finding
+rather than a note.
+
+**I bounded the change myself, so the expensive discharge is not the only
+one.** `GATE_COMMANDS` is data: nothing executes it. I checked that by
+searching the whole tree at `15906df` for both the symbol and the JSON key
+(15 hits, including the definition and the frozen fixture -- so the instrument
+matches), then reading every `subprocess` site in `_gate_preflight.py`; both
+consumers embed the list in a dict. Then I measured rather than argued: the
+six test files that make up the entire consumer surface --
+`test_gate_manifest.py`, `test_gate_preflight.py`, `test_gate_reanchor.py`,
+`test_gate_transition.py`, `test_reanchor.py`, `test_manifest.py` -- give
+**562 passed at `15906df` and 562 passed at `15906df~1`** in a clean clone,
+and collection is 4502 nodes at both. `test_gate_manifest.py` alone is 21/21
+at both, which also confirms the commit body's claim that the source/fixture
+`gate_commands` divergence is caught by nothing until the re-anchor
+regenerates it.
+
+Available dispositions, in the order I would take them: revert the hunk and
+let it ride with Chunk D as CR6 asked; or declare the `Scope delta`, quote the
+Maintainer's allowance, correct the frozen-file accounting, and append a short
+amendment extending the evidence to `15906df` -- citing either a fresh full
+run or, if the Maintainer prefers, the bounding measured above. I am recording
+the measurement, not granting the allowance.
+
+**CR9 -- The correction written to fix a false figure states a false
+measurement. [BLOCKING]**
+
+`## A correction to the prior record, raised as CR4` says:
+
+> **The 86 failures are not this change's.** Verified directly: **zero** of
+> them fall under `templates/`, which is the only tree this change touched
+> with the gate's scanned surface
+
+Measured at `15906df` in a clean clone --
+`python scripts/quality_gate.py --sub neutrality`, 86 FAIL lines bucketed by
+path prefix:
+
+| tree | FAILs |
+|---|---|
+| `templates/` | **58** |
+| `docs/` | 14 |
+| `doctrine/` | 9 |
+| `bootstrap/` | 5 |
+| `templates/core/AGENTS.md` | **0** |
+
+So 58 of the 86 fall under `templates/`, not zero. The true statement is the
+one round 1 established: zero fall in `templates/core/AGENTS.md`, the only
+file this change touched that the gate scans. The 58 are also the positive
+control that makes the zero mean something -- the scanner demonstrably reaches
+that tree.
+
+The **conclusion is correct** and I verified it independently: `neutrality
+fail=86 info=21` / `redundancy fail=0 info=2`, byte-identical at `15906df` and
+at `a316d75~1`. So none of the 86 is this change's. But the record's stated
+evidence for that does not hold, in a section whose own subject is *"a
+measurement read through a window that could not show a failure"* -- and whose
+own standard is that a durable claim asserting a property measurement
+contradicts is worse than the gap it conceals. One sentence. It rides free on
+the amendment CR8 already requires.
+
+### Non-blocking findings
+
+**CR10 -- The corrected docstring left its neighbour uncorrected.
+[NON-BLOCKING]**
+
+`conftest.py`'s hook docstring is now honest -- "every *ordinary* ...
+implementation", plus a named limit. Four lines below,
+`_refuse_broad_run_if_warranted` still opens: *"The guard proper, reached only
+after every competing hook succeeded."* Under the one shape the file documents
+as winning -- a competing `wrapper=True, tryfirst=True` -- an outer wrapper is
+suspended at its `yield` and has not succeeded when this function runs. It is
+the residue of exactly the claim CR2 blocked on, in the same file. A reader
+who lands on the private helper reads the uncorrected sentence.
+
+**CR11 -- A test name promises a property nothing checks, and cites a
+coordinate that will archive. [NON-BLOCKING]**
+
+`test_the_guard_loses_to_an_outer_tryfirst_wrapper_and_the_plan_says_so` reads
+its subject tree and asserts two things: `returncode == 4`, and the canary
+absent. It never opens the plan, the docstring, or any document. The name's
+second clause is unbacked, and "the plan" is a deliberation coordinate that
+stops resolving at archive time -- `AGENTS.md` > *Project-specific
+conventions*, "Name a test for the property it pins, not for what produced
+it". This plan diagnosed and fixed the identical defect once already, in its
+own Author-accounting: `_and_the_bypass_is_documented` was trimmed because it
+"promised ... a second property nothing in this plan delivers -- and pinned
+two properties in one name". Same shape, restored. The same paragraph applies
+to the docstring's `FSI-SR1` citation, though weakly: the substance is stated
+alongside it, so the reader is not stranded when the id decays.
+
+**CR12 -- The meta-test documents the trap; it does not close it, and the
+docstring says it does. [NON-BLOCKING]**
+
+`test_the_append_helper_cannot_be_used_to_forge_a_competitor` says it "pins
+the trap that made the test above inert, **so it cannot return**." It cannot
+deliver that. The test asserts the trap *exists*; it goes red only if the trap
+disappears. Nothing stops the next author from appending a hook name the
+conftest already defines, which is the failure mode CR1 described.
+
+Measured at `15906df`, release mode active, one skipping test, using the same
+append idiom the helper offers:
+
+| conftest | rc | release refusal printed |
+|---|---|---|
+| unmodified (control) | 1 | yes |
+| + benign `pytest_sessionfinish` | **0** | **no** |
+| + benign `pytest_runtest_logreport` | **0** | **no** |
+
+So the live consequence of the trap is not confined to the cost guard: the
+same two lines silently delete the **release-mode outcome rule**, the control
+that refuses a release when a security gate skipped rather than passed. The
+sibling `suite-run-diagnostics` plan is adding hooks to this same file.
+
+If CR2's standard is applied literally this is the same defect and would
+block. I am not blocking on it, because the artifact is a test helper rather
+than the guard, and because the honest sentence is one edit away. But the
+better fix is the helper, not the sentence: `_tree` can parse the appended
+source and refuse a name the conftest already defines, which would make the
+docstring's claim true instead of retracting it.
+
+**CR13 -- CR5 survived into the replacement record. [NON-BLOCKING]**
+
+The replacement record's command column still reads
+`CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
+--quality-gate-shuffle-seed=0` -> *"1 failed, 4501 passed"*. Measured at
+`15906df` in a clean clone:
+`test_security_check.py::test_detached_checkout_excludes_an_ignored_pytest_override`
+**fails** with `PYTHONDONTWRITEBYTECODE` unset and **passes** with it set --
+both directions run, so this is a diagnosis and not a guess. As written, the
+recorded command yields two failures on a clean host, not the one the record
+accounts for.
+
+Carrying CR5 as "known state" is a legitimate disposition for a non-blocking
+finding. Writing a *new* record that repeats the same unreproducible
+command/outcome pair is a different thing: this record is the artifact CR5 was
+about. One token in the command column closes it.
+
+### What I exercised and found sound
+
+**CR1's fix is real, and I proved it the way the finding asked.** The
+competitor is now its own module (`competitor_plugin.py`, loaded with `-p`,
+directory on `PYTHONPATH`), so pluggy orders two genuinely registered
+implementations. Directionality, mutation-tested: I took the tree at
+`15906df`, replaced `conftest.py` with the pre-wrapper version from
+`a316d75`, and ran the file.
+
+| conftest | `test_a_competing_collection_finish_abort_survives_the_guard` |
+|---|---|
+| `15906df` (wrapper) | passes -- rc 7, canary present |
+| `a316d75` (plain hook) | **fails** -- rc 4, refusal printed, canary absent |
+
+That is the exact defect the Security Review found, and the round-1 version of
+this test passed against it. `test_a_pending_session_stop_is_not_replaced_by_the_guard`
+also goes red against `a316d75`, so the other Security fix is pinned too.
+17/17 pass at `15906df`.
+
+**The documented FSI-SR1 limit is honest, and I could not widen it.** Full
+matrix, built from scratch against the shipped conftest at `15906df`, 45
+files, each competitor `pytest.exit('CANARY', returncode=7)`:
+
+| competing `pytest_collection_finish` | rc | canary |
+|---|---|---|
+| ordinary, default / `tryfirst` / `trylast` | 7 | yes |
+| `wrapper=True`, default | 7 | yes |
+| `wrapper=True, trylast=True` | 7 | yes |
+| **`wrapper=True, tryfirst=True`** | **4** | **no** |
+| `hookwrapper=True`, default | 7 | yes |
+| `hookwrapper=True, tryfirst=True` | 7 | yes |
+| no competitor (control) | 4 | -- |
+
+The first six rows reproduce the re-review and round 1. The last two are mine:
+the deprecated old-style wrapper, which nobody had tried, and which does
+**not** widen the residual in either priority. The gap really is one shape,
+and the docstring names that shape.
+
+**The false docstrings are gone, and I checked with an instrument that could
+see them.** A single-line `grep` cannot match a phrase that wraps, which is
+how this artifact got two wrong answers already, so I flattened whitespace and
+matched over the whole file. `test_broad_run_guard.py`: clean.
+`conftest.py`: one hit, the corrected "every *ordinary* ... implementation"
+(and CR10's neighbour). The plan file still carries the old phrasing inside
+its review and correction sections, which is what append-only requires.
+
+**CR3's test landed and is directional in both halves.** Two mutations of
+`conftest.py` at `15906df`:
+
+| mutation | result |
+|---|---|
+| drop `if _release_mode(): return` from the guard | `test_a_release_refused_outcome_is_not_masked_by_the_guard` **fails** at the "guard fired in release mode" assertion; `test_release_mode_is_exempt_from_the_guard` also fails |
+| neuter `session.exitstatus = 1` in the release rule | the same test **fails** at the "a skip under release mode must make the session non-zero" assertion |
+
+So it pins the intersection CR3 said was unpinned, and neither half passes on
+a constant. Housing it in `test_broad_run_guard.py` rather than
+`test_security_check.py` is a mapping deviation, declared in the test's own
+docstring rather than silently.
+
+**The additive child environment (A2/A5).** `env = os.environ.copy()` then
+`env["CAIRN_FULL_SUITE"] = "1"`, passed as `env=`. Mutated
+`os.environ.copy()` to `{}`:
+`test_the_child_env_is_an_additive_copy_not_a_fresh_mapping` **fails**. The
+A4 docstring corrections in `test_security_check.py` now describe the shipped
+mechanism accurately -- I read them against the code rather than against the
+plan.
+
+**Chunk B.** `AGENTS.md` carries the Decision's sentence verbatim, in the
+B -- Integration bullet directly after the canonical pair.
+`templates/core/AGENTS.md` carries the plan's own candidate verbatim: no
+vendor or model name, no literal `CAIRN_FULL_SUITE`, in the twin's generic
+register. The three live-instruction sites are corrected under the
+Maintainer's quoted *"yes, please!"*. The standing gates for these surfaces --
+`test_verification_boundaries.py`, `test_comprehension_floor.py`,
+`test_scope_reduction_trap.py`, plus `test_security_check.py` and
+`test_quality_gate_order_independence.py` -- are **282 passed** at `15906df`.
+
+**The verification record's substantive claims check out.**
+
+* Interpreter matches: Python 3.13.13, pytest 9.0.3.
+* Gate figures: `neutrality fail=86 info=21`, `redundancy fail=0 info=2`,
+  identical at `a316d75~1`. The corrected figure is right (its supporting
+  sentence is CR9).
+* The "+3 tests" claim: collection is **4499** at `b7cb2b7` and **4502** at
+  `953c7f4`, matching 4498+1 and 4501+1 exactly.
+* The single non-pass reproduces at `15906df` and names **exactly** the three
+  proposals the record names -- `2026-08-20-claude-adopt-into-existing-tree`,
+  `-portable-sweeps-cannot-run`, `-scanner-claim-scope` -- none of them this
+  plan's. The record's own counterfactual holds: the same test fails
+  identically at `a316d75~1`, before any of this plan's bytes. The disposition
+  is sound.
+* Boundary B mode `full` is correct and I did not second-guess it.
+* The honest post-state note ("one tracked modification ... a different plan
+  document") is the right instinct and I want it recorded as such: a predicate
+  quietly reinterpreted when inconvenient stops being evidence.
+
+### Coverage
+
+**Exercised**: the guard's hook placement, threshold and boundary, both
+exemption tokens at their exact and near-miss values, `--collect-only`, the
+`--noconftest` bypass, collection-error and pending-stop precedence, the
+late-deselection direction, the environment-scrubbing meta-guard; the full
+competing-hook matrix including two shapes not previously tried; three
+mutations of `conftest.py` and one of `scripts/quality_gate.py`; the append
+trap against the release-mode control; the complete `GATE_COMMANDS` consumer
+surface at `15906df` and `15906df~1`; the neutrality/redundancy gates at
+`15906df` and `a316d75~1`; collection counts at `b7cb2b7`, `953c7f4`,
+`15906df`; the recorded non-pass and its counterfactual; the
+`PYTHONDONTWRITEBYTECODE` dependency in both directions; the frozen-file
+membership of all six touched files and the live frozen-modified set.
+
+**Not exercised**: the full suite -- deliberately, and see CR8 for the one
+place I think a run may be owed and why I do not think it has to be a broad
+one. Chunk S, which is unimplemented and blocked on the sibling plan. Chunk
+D's re-anchor ceremony, which is the Maintainer's and which I did not touch --
+no `_gate_manifest.py produce`, no fixture regeneration. Windows and network
+filesystems. The sibling ledger interaction (rows 12-13 of the row mapping),
+which has no code to exercise yet. FSI-SR1 itself as a security question: the
+Maintainer closed it, and I assessed only whether the documentation and the
+pin describe it honestly.
+
+**Note on archiving**: a PASS on this review would not have reached
+`ready-to-archive` either. Chunk S is a declared precondition and remains
+blocked. What is at stake here is only the code-review obligation.
+
+**One transient flag, named so the next reader does not chase it.**
+`python scripts/claim_check.py` is clean against this plan as committed at
+`15906df`, and reports one hard flag against the live working tree: the
+`## Proposed paths` declaration of `tools/suite_cost.py` is now stale, because
+a concurrent session created that file (untracked, as_of 2026-08-21). It is
+not this review's, it is not resolvable without editing an append-only
+section, and it belongs to the sibling plan's landing -- which is also what
+unblocks Chunk S.
