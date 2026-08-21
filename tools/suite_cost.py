@@ -250,6 +250,7 @@ def render(rows: list[dict], malformed: list[tuple[int, str, str]],
 
     _render_limits(add)
     _render_sessions(add, rows)
+    _render_refusals(add, rows)
     _render_full_runs_per_day(add, rows)
     _render_session_table(add, rows)
     _render_concentration(add, rows, top)
@@ -295,6 +296,48 @@ def _render_sessions(add, rows: list[dict]) -> None:
         "**lower bound**, never a count. Each exclusion in the list above "
         "removes sessions silently, so the real number of times this suite ran "
         "is at least this and may be considerably more.")
+    add("")
+
+
+def _is_refused(row: dict) -> bool:
+    """A session the broad-run guard refused before any test ran.
+
+    Keyed on ``exitstatus == 4`` -- pytest's own exit code for a ``UsageError``,
+    which is what the guard raises -- and not on ``scope == "unknown"``, which
+    cannot tell a refusal apart from any other non-full run such as a ``-k``
+    selection.  Both fields are already pinned, so this adds no schema term.
+
+    The ``isinstance`` test is load-bearing and not defensive habit: JSON has one
+    number type, so a corrupted or hand-written ``4.0`` parses to a float, and
+    ``4.0 == 4`` is true. A bare equality check would count it. ``bool`` needs no
+    separate exclusion -- ``True`` is ``1``, which is not ``4``.
+    """
+    status = row.get("exitstatus")
+    return isinstance(status, int) and status == 4
+
+
+def _render_refusals(add, rows: list[dict]) -> None:
+    add("## Sessions the broad-run guard refused")
+    add("")
+    add("A refused session ran no tests but still contributes real wall-clock "
+        "and an empty ``by_file``, so it is named here rather than left to be "
+        "inferred from a zero row further down.")
+    add("")
+    add("Keyed on ``exitstatus == 4``, the exit code the guard's own "
+        "``UsageError`` sets. A ``scope`` of ``unknown`` alone cannot tell a "
+        "refusal apart from any other non-full run, such as a ``-k`` selection.")
+    add("")
+    refused = [row for row in rows if _is_refused(row)]
+    add("**" + str(len(refused)) + "** of " + str(len(rows))
+        + " recorded session(s).")
+    add("")
+    if not refused:
+        return
+    per_day: dict[str, int] = {}
+    for row in refused:
+        per_day[_day(row)] = per_day.get(_day(row), 0) + 1
+    for day in sorted(per_day):
+        add("* **" + day + "** -- " + str(per_day[day]) + " refusal(s).")
     add("")
 
 

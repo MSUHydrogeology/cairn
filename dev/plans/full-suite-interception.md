@@ -3798,3 +3798,56 @@ concrete, demonstrated, and should be fixed -- recommended at the next
 supervised touch of this already-`FROZEN-MODIFIED` file -- but "should be
 fixed soon" and "must not ship" are different claims, and this review makes
 only the first.
+
+## Chunk S row A7 -- landed -- Claude Opus 5 -- 2026-08-21
+
+**Supersedes the `defer` disposition on CR15.** Round 3 recorded A7 as
+`defer` because `tools/suite_cost.py` was fenced to a concurrent agent for the
+whole round. The fence is gone and the Maintainer directed the work:
+
+> "Please fix A7 when you can, yes"
+
+So the deferral is closed by delivery, not carried into the archive. Accepted
+scope is a floor; this restores it rather than conceding it.
+
+**What landed.** `_is_refused` and `_render_refusals` in `tools/suite_cost.py`,
+called from `render()` immediately after `_render_sessions`. The report gains
+one section, *"Sessions the broad-run guard refused"*, with a total and a
+per-day breakdown. Keyed on `exitstatus == 4` -- the exit code the guard's own
+`UsageError` sets -- and deliberately **not** on `scope == "unknown"`, which
+cannot tell a refusal apart from any other non-full run such as a `-k`
+selection.
+
+**CR15's open question, decided.** Row A7's acceptance text excludes a refused
+session from "any session-level aggregate not purely `by_file`-derived". Read
+literally that would also hide it from the session count and the per-session
+table. **It is not hidden.** That section already calls its own number "a lower
+bound, never a count", and the table is titled "every recorded session" --
+removing a real recorded session from either would trade an honest record for a
+narrower reading than the row needs. The hazard A7 actually names is a
+zero-cost row polluting a *summed* cost figure, and CR15 measured that the
+concentration, trend, full-runs-per-day and disagreement sections already
+exclude it structurally, with no exclusion code. Re-confirmed here: adding a
+refused row changes exactly one section and leaves every other byte-identical.
+
+**Four falsifiers, each mutation-verified red:**
+
+| test | mutation that must break it | result |
+|---|---|---|
+| refusal counted, per day | `_render_refusals` call removed | 3 tests red |
+| a `-k` selection is not a refusal | keyed on `scope == "unknown"` instead | red |
+| a float exit status is not a refusal | `isinstance(status, int)` dropped | red |
+| refused session stays in the table | -- (pins the decision above) | -- |
+
+**One defect found in my own work, recorded because it is the same shape this
+plan has now corrected three times.** The first version of the third test used
+`exitstatus=True`, reasoning that `True == 1` in Python. It was **inert**: no
+bool equals 4, so it passed whether or not the code checked, and the
+`isinstance(status, bool)` branch CR15 recommended was dead code. Mutation
+testing caught it -- dropping the branch changed nothing. The branch is
+removed and the test now uses `4.0`, which JSON produces for a corrupted
+number and which `4.0 == 4` would silently count. That mutation does go red.
+
+**Verification**: `bootstrap/tests/test_suite_ledger.py` -- 74 passed
+(70 before). Boundary A only, per the Maintainer's standing direction not to
+re-run broad suites.

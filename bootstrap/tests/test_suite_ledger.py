@@ -1214,3 +1214,78 @@ def test_a_days_median_wall_clock_is_the_true_median_not_the_upper_middle_value(
     ])
     assert "**2026-08-19** -- median 150.0s over 2 run(s)" in text
     assert "median 200.0s over 2 run(s)" not in text
+
+
+def test_a_refused_session_is_counted_as_a_refusal_and_keyed_on_the_exit_code(
+        tmp_path):
+    """The broad-run guard refuses a session with a ``UsageError``, which exits
+    4 and runs nothing. Such a session contributes real wall-clock and an empty
+    ``by_file``, so a reader judging suite cost needs to see how many there
+    were -- otherwise a run that was refused looks like a run that was cheap.
+
+    Keyed on ``exitstatus == 4`` rather than on ``scope == "unknown"``: a ``-k``
+    selection is also ``unknown`` and is not a refusal, so the scope field alone
+    would over-count. Both days are asserted, because a per-day breakdown that
+    silently collapsed to one bucket would still satisfy a bare total."""
+    module = collector()
+    text = _rendered(tmp_path, [
+        _reader_row(module, "19", "10:00:00", "10:02:00"),
+        _reader_row(module, "19", "11:00:00", "11:00:05", wall_s=5.0,
+                    exitstatus=4, scope="unknown", collected=0, executed=0),
+        _reader_row(module, "20", "09:00:00", "09:00:06", wall_s=6.0,
+                    exitstatus=4, scope="unknown", collected=0, executed=0),
+    ])
+    assert "## Sessions the broad-run guard refused" in text
+    assert "**2** of 3 recorded session(s)." in text
+    assert "* **2026-08-19** -- 1 refusal(s)." in text
+    assert "* **2026-08-20** -- 1 refusal(s)." in text
+
+
+def test_a_selection_run_is_not_miscounted_as_a_guard_refusal(tmp_path):
+    """The negative half, without which the count above passes on an
+    implementation that calls every non-full session a refusal. A ``-k`` run is
+    ``scope == "unknown"`` and exits 0; it was not refused."""
+    module = collector()
+    text = _rendered(tmp_path, [
+        _reader_row(module, "19", "10:00:00", "10:02:00",
+                    scope="unknown", exitstatus=0, collected=40, executed=3),
+    ])
+    assert "**0** of 1 recorded session(s)." in text
+    assert "refusal(s)." not in text
+
+
+def test_a_float_exit_status_is_not_read_as_a_refusal(tmp_path):
+    """JSON has one number type, so a corrupted or hand-written ``4.0`` arrives
+    as a float -- and ``4.0 == 4`` is true, so a bare equality check counts it as
+    a refusal. Pins the ``isinstance(status, int)`` test, which reads as
+    defensive habit and is not.
+
+    An earlier version of this test used ``True`` instead, on the reasoning that
+    ``True == 1``. That test was inert: no bool equals 4, so it passed whether or
+    not the code checked. The float is the case that can actually fail."""
+    module = collector()
+    text = _rendered(tmp_path, [
+        _reader_row(module, "19", "10:00:00", "10:02:00", exitstatus=4.0),
+    ])
+    assert "**0** of 1 recorded session(s)." in text
+
+
+def test_a_refused_session_stays_visible_in_the_session_count_and_table(
+        tmp_path):
+    """Deliberate, and the opposite reading was available. Row A7's acceptance
+    text excludes a refused session from "any session-level aggregate not
+    purely `by_file`-derived", which read literally would hide it from the
+    session count and the per-session table too. It is not hidden: that section
+    calls its own number "a lower bound, never a count", and the table is
+    titled "every recorded session" -- removing a real recorded session from
+    either would trade an honest record for a narrower reading than the row
+    needs. The hazard A7 names is a zero-cost row polluting a *summed* cost
+    figure, and the concentration and trend sections already exclude it
+    structurally."""
+    module = collector()
+    text = _rendered(tmp_path, [
+        _reader_row(module, "19", "10:00:00", "10:02:00"),
+        _reader_row(module, "19", "11:00:00", "11:00:05", wall_s=5.0,
+                    exitstatus=4, scope="unknown", collected=0, executed=0),
+    ])
+    assert "0 of 0 collected" in text
