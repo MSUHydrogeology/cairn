@@ -1884,3 +1884,59 @@ editor ending a loop to name them rather than leave them implied:
 
 **Scribed by** Claude (claude-opus-5), this proposal's author, on explicit
 Maintainer instruction. The scribe wrote no part of the authorization above.
+
+## Constructibility addendum -- Claude -- 2026-08-21 (C6's notation, measured)
+
+Appended after Revision 7, from a measurement made while a code reviewer tried
+to write a conforming `**Findings**:` line on a live plan. It changes no term of
+the contract; it supplies a route C4 requires and Revision 7 asserted without
+checking.
+
+**C6's own notation is refused by the parser that exists today, and not where an
+implementer would look for it.** Measured 2026-08-21 against
+`tools/lifecycle_planner.py`, both controls run first so a negative result means
+something:
+
+| `**Findings**:` value | lead clause parsed | accepted |
+|---|---|---|
+| `4 behaviour, 3 prose, 6 record, 0 observation` (C6's notation) | `'4 behaviour'` | **no** |
+| `raised -- 2 blocking (CR8, CR9), 4 non-blocking` (current spelling) | `'raised'` | yes |
+| `none` | `'none'` | yes |
+
+Two mechanisms, not one:
+
+1. `_FINDINGS = ("none", "raised")` at `lifecycle_planner.py:562` -- a closed
+   two-token vocabulary. Obvious, and C6's predicate item 1 already implies
+   widening it.
+2. `_VALUE_CLAUSE_RE` at `lifecycle_planner.py:1968` --
+   `^[^.,;(/—]*?(?=\s+--\s|\s*[.,;(/—]|$)` -- takes the field's **lead clause**,
+   stopping at the first `.`, `,`, `;`, `(`, `/`, em-dash or ` -- `. A
+   comma-separated class list therefore never reaches the vocabulary check at
+   all: it arrives as `'4 behaviour'`.
+
+**Why this is worth recording rather than leaving to implementation.** An
+implementer reading C6 will widen `_FINDINGS`, watch the format still refuse,
+and have no reason to suspect a regex two hundred lines away that is doing
+exactly what it was written to do. That is the *silent-tool* shape this
+repository keeps rediscovering, one level down: the obvious mechanism is real,
+fixes nothing on its own, and the second one is invisible from the contract.
+
+**Consequence for C6, stated as a constraint and not a redesign.** C6's
+predicate must change *both*, or C6 must adopt a notation whose lead clause is a
+single token -- e.g. `**Findings**: classified -- 4 behaviour, 3 prose, 6
+record, 0 observation`, which parses its lead as `'classified'` and reaches the
+vocabulary check intact. The second option costs one word and no regex change,
+and I record it as the cheaper route without choosing for the implementer.
+
+**A live consequence, already visible.** The code review on
+`suite-run-diagnostics` (2026-08-21) wrote its `**Findings**:` line in the
+current `raised -- ...` spelling *after* tracing this parser, rather than in
+C6's vocabulary. So the first reviewer to meet C6's notation in practice
+correctly declined to use it. The backward-compatibility boundary in C6's
+predicate item 1 is therefore doing more work than it appears to: until the
+predicate lands, the old spelling is not merely tolerated, it is the only one
+that parses.
+
+**Constructibility**: route confirmed. Both mechanisms are named with file and
+line; the notation alternative is exhibited and its lead clause measured; the
+controls that make the negative result meaningful are in the table above.
