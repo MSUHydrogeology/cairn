@@ -87,8 +87,6 @@ supersedes.
 ## Proposed paths
 
 Proposed paths:
-- `tools/suite_cost.py` — the sibling plan's reader, which lands before this plan starts; row A7 edits it and does not create it.
-- `bootstrap/tests/test_suite_ledger.py` — the sibling plan's contract-test file, likewise created there and only *read* here (Boundary A mapping); it does not resolve until that plan's own chunk lands.
 
 ## Scope
 
