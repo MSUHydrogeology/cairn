@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: revising-code
+**Status**: awaiting-code-review
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
@@ -2104,3 +2104,68 @@ behaviour, and this plan is not the place to widen further.
 `2026-08-20-claude-review-loop-termination`: the three blocking findings are
 closed, FSI-SR1 is open with a measured residual and a test pinning it, and
 CR4–CR7 stand as recorded known state. The disposition is the Maintainer's.
+
+## Implementation verification -- Claude Opus 5 -- 2026-08-20 (replacement)
+
+**Replaces the record above**, which the blocking code review had already read.
+Returning from `revising-code` takes stable evidence over the *corrected* range,
+not the range the review found defective. The lifecycle checker refused a flip
+without it, correctly.
+
+**Boundary B mode**: `full`. Unchanged and still not a close call — two
+gate-frozen files plus a Security Review trigger is a trust-ceremony surface.
+
+**Tested commit**: `953c7f4194220059207d5b6d9a5c619f29d815b7`
+**Reviewed range**: `a316d757236ba098302844f65e91419937baaa8c..953c7f4194220059207d5b6d9a5c619f29d815b7`
+**Interpreter/runtime**: Python 3.13.13 (conda-forge), pytest 9.0.3
+**Pre-state**: clean — 0 tracked modifications
+
+| command | outcome | wall |
+|---|---|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **1 failed, 4501 passed** | 665.29s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | `neutrality fail=86 info=21`; `redundancy fail=0 info=2` | — |
+
+Three more tests than the prior run, which is the three regressions this
+correction added.
+
+### A correction to the prior record, raised as CR4
+
+**The prior record reported `fail=0` for the quality gate. That was wrong.** The
+neutrality sub-gate reports **`fail=86`**, and has throughout. The error was a
+truncated read: the prior run's output was tailed, the tail showed only `info`
+lines, and `fail=0` was written from the visible portion rather than from the
+summary line.
+
+**The 86 failures are not this change's.** Verified directly: **zero** of them
+fall under `templates/`, which is the only tree this change touched with the
+gate's scanned surface, and the code reviewer independently confirmed the count
+is identical at `a316d75~1`. The conclusion the prior record drew was right; the
+figure it cited to support it was fabricated by a truncated view. That is the
+same class of error as CR1 and as three line-wrapped greps earlier the same day:
+**a measurement read through a window that could not show a failure.**
+
+### Non-pass disposition
+
+One test failed, unchanged from the prior record and for the same reason:
+`test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`,
+naming three proposals opened by a concurrent session, none touched by this plan.
+It is the known `[TOOL]` checker defect filed at `8cb4012` — the independence
+comparator takes a byline's first word, so an honest Internal byline collides
+with the author's by construction. The record's own counterfactual still holds:
+the same single test against `a316d75~1` fails identically.
+
+### Post-state, stated rather than rounded
+
+**Post-state: one tracked modification** — `dev/plans/suite-run-diagnostics.md`.
+Not clean, and not claimed to be. It is a *different* plan document, being
+revised by a concurrent agent while this run executed; no file in the reviewed
+range and no test artifact. Recording it because "clean post-state" is an
+evidence predicate, and a predicate that is quietly reinterpreted when it is
+inconvenient stops being evidence.
+
+### Known omissions
+
+Unchanged from the prior record: the gate is at HOLD pending the owed re-anchor;
+the gate emits one `SKIP-XFAIL-NEW` false positive against a passing test of this
+plan's; Chunk S is unimplemented and uncovered; one host, one interpreter. The
+non-blocking findings CR5–CR7 stand as recorded known state.
