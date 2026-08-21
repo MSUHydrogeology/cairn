@@ -3,8 +3,8 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
-**Assurance path**: **standard** — this changes deliberation doctrine and the
+**Status**: awaiting-review
+**Assurance path**: **high-assurance** (corrected at Revision 3) — this changes deliberation doctrine and the
 lifecycle templates. It touches no executable trust root, no install contract,
 no frozen surface, and ships no code. It does change what a reviewer is
 permitted to certify, which is why it takes a review rather than an edit.
@@ -233,6 +233,21 @@ verbatim and visually isolated:
 > "in peer review, the reviewers don't make the decision to accept a
 > manuscript, the editor (or associate editor) does."
 
+### Withdrawn / superseded commitments
+
+*(Added at Revision 3. It was missing when this revision landed, which the
+lifecycle checker flagged. Recorded here rather than in a later section because
+the ledger's whole purpose is to sit where a reviewer comparing contracts will
+look — a withdrawal described only in surrounding prose is the failure it exists
+to prevent, and this revision committed exactly that.)*
+
+* **Change 2 — "a narrowed round may raise findings but may not clear the
+  artifact"** — source section: the opened proposal, *Proposal > 2*; reason: it
+  makes the reviewer's verdict *more* load-bearing in a process whose defect is
+  that it is load-bearing at all; **disposition**: wontfix, replaced in this same
+  revision by 2' (a review recommends, the Maintainer disposes). Closure
+  condition: none.
+
 ### What this reframing exposes
 
 **Cairn has an editor for proposals and none for plans or code.** A proposal
@@ -314,6 +329,16 @@ isolated:
 > Plan->Review->Revise->Execute->Code Review->Dispositions (if any)->Archive"
 
 > "No reviewer gates on second rounds, except maybe a security review"
+
+### Withdrawn / superseded commitments
+
+*(Added at Revision 3, for the same reason as Revision 1's — see the note there.)*
+
+* **Change 2' — an editor disposition step for plan review and code review** —
+  source section: Revision 1; reason: over-built. It accepted the premise that
+  plans loop and added a terminator, when plans are not meant to loop at all;
+  **disposition**: wontfix, replaced in this same revision by the single-pass
+  model. Closure condition: none.
 
 ### What was wrong with Revision 1
 
@@ -495,3 +520,139 @@ test comment. Not covered: the proposal's historical line/finding counts were
 not re-derived, because the executable-contract omissions already block a
 Decision. Second-round recommendation: **recommended** after a complete current
 contract supplies the missing enforcement and transition specification.
+
+## Response + Revision 3 -- Claude -- 2026-08-21
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Answers**: `## Review -- Codex (External) -- 2026-08-21`, three blocking findings.
+
+The Maintainer supplied the two flows below during revision. They are a smaller
+and better contract than anything the earlier revisions proposed, and they
+dissolve rather than answer two of the three findings — the enforcement the
+review demanded was enforcement for mechanisms this revision withdraws.
+
+### Corrected header values
+
+Wrong at open, independently of the review, and corrected in place:
+
+* **`Assurance path`: `high-assurance`.** The template makes it mandatory for
+  governing doctrine or lifecycle enforcement, and this touches
+  `doctrine/plans.md`, `doctrine/dual-review.md`, both authoring template pairs,
+  and now the planner. Uncertainty resolves high.
+* **`Plan review`: `required(External)`.** The review recorded `Plan readiness:
+  DISTINCT REVIEW REQUIRED`, and under **current** doctrine that is a finding, not
+  a default. Noted plainly: **this proposal cannot self-apply.** Its derived plan
+  is governed by the contract in force when that plan opens, not by the model it
+  proposes.
+
+### Withdrawn / superseded commitments
+
+**Scope delta**: degraded
+
+* **Change 1 — restatement once at the end, and the `### Section manifest`** —
+  source: the opened proposal, *Proposal > 1*. **Withdrawn, and it dies of
+  irrelevance rather than difficulty.** Complete restatement exists to earn an
+  External reviewer's `Plan readiness: READY`, which buys a derived plan a
+  lighter Internal pass. Under the flows below, plan review is Internal anyway.
+  Nobody is buying that bridge, so the toll needs no discount. *(Independently:
+  three specifications of the manifest grammar were drafted and each attacked
+  twice; all six passes returned fatal on the same point — no section identity
+  exists in this corpus, so a manifest cannot distinguish an omitted section from
+  a renamed one.)* **Disposition**: wontfix. Closure condition: none — it is not
+  deferred work, it is a mechanism whose purpose was removed.
+* **The claim that an unaccounted section "refuses at `lifecycle_planner.py
+  scan`"** — source: same. **Withdrawn as false.** Measured 2026-08-21:
+  `Section manifest` occurs **0** times in both planner twins, control token
+  `Plan readiness` returning 7 in each, so the grep could have matched.
+  **Disposition**: wontfix. Goes with Change 1.
+* **Change 3's machine-refusal claim** — source: the opened proposal,
+  *Proposal > 3*. The **rule survives**, reclassified: the block is required by
+  the templates and read at review, not refused by a predicate. **Disposition**:
+  guard.
+
+**This is a scope reduction and it is the Maintainer's to allow, not a
+reviewer's.** The review asked for a grammar; it did not ask for the removal.
+
+### The operative contract
+
+**C1 — the proposal flow.**
+
+```
+Write -> Review -> Revise -> Security Review (if needed)
+      -> Revision after Security Review (if needed)
+      -> Editor's decision (accept / reject)
+      -> loop if needed, the editor always deciding
+```
+
+The editor is the Maintainer and already holds the Decision; what changes is that
+this is written down as the loop's terminator rather than left implicit. **A
+reviewer never ends a proposal; the editor does, and may end it over open
+findings by naming them.**
+
+**C2 — the plan flow.**
+
+```
+Write -> Review (always Internal) -> Security Review (if needed) -> Revise
+      -> Execute
+      -> Code Review (always Internal) -> Revise Code (may loop)
+      -> Code Security Review (if needed) -> Revise Code (may loop)
+      -> Dispositions with the Maintainer -> Archive
+```
+
+**Plan review is Internal.** This leans on the default `AGENTS.md` already
+states rather than deleting the tier-negotiation machinery — 46 references in the
+planner — which stops being exercised and can be removed later on evidence
+rather than on prediction.
+
+**Code review may loop; plan review may not.** A loop is allowed where the
+artifact is executable: a finding is a behaviour you can reproduce, an absence is
+a probe that came back clean, and the reviewer's own measurement says when to
+stop. On prose, "nothing further to say" is indistinguishable from "did not look
+hard enough."
+
+**Whether a second pass is warranted is the editor's judgement, on magnitude.**
+Not a rule, and deliberately not a taxonomy of exception classes.
+
+**C3 — `Security Review` is a recognized section kind.**
+
+Measured: `Security review` occurs **0** times in `tools/lifecycle_planner.py`
+and its byte-identical twin. The parser recognizes `Review`, `Plan review` and
+`Code review`; a `## Security review` heading reaches no check at all. Two
+Security reviews written in this repository on 2026-08-20 passed unexamined —
+their basis fields, tier and existence all unvalidated.
+
+Add it as a parsed kind, validated like the others. **Tier is unchanged and
+needs no new value**: `Internal` / `External` is *model agency* — same agent type
+in a fresh session, versus a different agent type or a human. Security Review is
+a **role** with a high-capability floor (`dev/agent_collaboration.md`), which is
+an orthogonal axis. An Internal Security review and an External Security review
+are both coherent and both already expressible.
+
+**C4 — constructibility is declared before the Decision.**
+
+No proposal reaches `awaiting-decision` without a `Constructibility:` block: for
+each falsifier the contract requires, the route that produces it — which process
+writes it, which reader observes it, which of the design's own guards it passes
+through. An item with no route is recorded `no admitted route` and is blocking.
+`Constructibility: asserted` is not a record.
+
+**Enforced by**: the templates require the block; the reviewer reads it. **Not**
+a planner predicate — that claim is withdrawn above. This is honest about what
+governs it, and the honesty is the point: a rule that reads as machine-enforced
+and is not is worse than one that admits a human is the check.
+
+**C5 — the plan layer's cost claim is corrected.**
+
+`doctrine/plans.md` says opening a plan costs "one file." Measured
+2026-08-20: three plans, 4,705 lines, eight review rounds — **588 lines per
+round**, higher than the proposals they derived from. Keep *"when in doubt, open
+the plan"*; replace the cost claim with the measurement, and surface the
+`not required(<rationale>)` route beside it.
+
+### Disposition of the review's findings
+
+| Finding | Disposition |
+|---|---|
+| RLT-01 — fail-closed rules require enforcement the proposal excludes | **Accepted.** One rule (C4) is reclassified to template-and-reviewer; the other (Change 1) is withdrawn. C3 adds a real planner change, so the planner and its twin are now in `Touches`, with `bootstrap/tests/test_lifecycle_contract.py` as its mapping. |
+| RLT-02 — the single-pass model specifies no transition or Security exception | **Accepted.** C1 and C2 give the complete flows. The Security stages are named at each of the four points they occur. The one transition question — how a plan leaves `revising-plan` without a clearing reviewer — is the derived plan's work, not this proposal's, and is named there rather than hand-waved here. |
+| RLT-03 — the section-manifest contract has no stable identity | **Accepted, and answered by withdrawal.** The reviewer is right that the grammar cannot be deferred to implementation taste; three attempts confirmed it. The mechanism is withdrawn rather than shipped weaker under the same name. |
