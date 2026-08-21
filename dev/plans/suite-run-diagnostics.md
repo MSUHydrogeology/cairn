@@ -778,6 +778,67 @@ Promising that it is owed does not satisfy it.
 
 This section is append-only once written.
 
+---
+
+*Filled in 2026-08-21 by Claude Opus 5, at the close of implementation.*
+
+Dispositions:
+
+* **Where the reader-outcomes falsifier lives** -> **accept**. Chunk C folded the
+  reader's test into the writer's contract file (`test_suite_ledger.py`,
+  importing `tools/suite_cost.py` as a module). The plan flagged that the
+  proposal record does not settle which reading is correct and invited a
+  reviewer to object; across the Internal plan review's PR1-PR10 and the
+  independent code review, none did. Accepted as the settled reading.
+* **Whether `tools/suite_cost.py` is adopter-facing** -> **guard**. It is not, and
+  the mechanism is the absence of a `config.py` entry, decided by analogy to
+  `scripts/quality_gate.py`. That analogy is now *test-guarded* rather than
+  merely reasoned: the file is enrolled in `_OWN_ONLY_SCRIPTS` in
+  `test_notice_install.py`, which the code review confirmed against a
+  known-present violation before trusting its clean result. A future
+  `config.py` entry breaks that test rather than silently shipping the reader
+  to adopters.
+* **Whether Chunk E's Security Review and the ordinary code review are one pass
+  or two** -> **accept**: two. The plan read `AGENTS.md` as making the Security
+  Review *additional to*, not a substitute for, the code-review floor. That
+  reading was exercised: the independent code review landed at `90a56e7` and
+  cleared the code-review obligation on its own, leaving E1 still owed. Two
+  passes, as the plan judged.
+* **Whether E2's batching happens, and its timing** -> **defer** (MAINTAINER-GATED).
+  It is now a live question rather than a hypothetical: 18 gate-frozen files
+  are modified across this plan and its two concurrent siblings, and
+  `_gate_manifest.py produce` rebuilds the manifest from the whole current
+  tree. So the ceremony is necessarily *one* batched run after all three plans
+  settle, not three. Deferred to the Maintainer, who holds the fence.
+* **Chunk E1, the Security Review itself** -> **defer**, and it is owed. No
+  Security Review of this implementation has been performed. The plan states
+  that E1 is enforced by its own gate "and by nothing else" -- no tool, test or
+  archive precondition will notice its absence, and the planner's archive check
+  confirms that: it requires a conforming *code* review only. Recorded here so
+  the gap is visible at the archive boundary rather than discovered after it.
+* **Windows and network filesystems** -> **wontfix**. The `flock` durability path is
+  POSIX by construction and the plan declared this. Not a defect; a stated
+  boundary.
+* **The runtime-skip boundary** -> **accept**. A collection-time skip counts toward
+  `collection_errors` and forces `unknown`; a *runtime* skip does not. Deliberate
+  and Maintainer-allowed: treating an optional-dependency skip as incomplete
+  coverage would mean no real session ever classified as `full`. Falsified in
+  both directions by the code review.
+
+**Loop-fidelity sign-off.** The implementation at `2d9500ec8ee73a284b54a726e5c6762640cba720`
+(Chunk A -- the collector and its five hooks) and through
+`fc93c1ac2c1c7b805a8aa2dc2f10afa015873048` (Chunk C's third-classification pin)
+delivers the contract accepted in the source proposal's **Revision 5**
+(`a3226c7`) as amended at `8a25455` -- the amendment that deleted guard 3 and
+defined the suite root. Checked against that governing section rather than
+against this plan's own restatement of it: the five hooks, the four surviving
+fail-closed guards, the fixed row schema, the two-channel `scope` classifier,
+the 4,096-byte encoded-row budget with deterministic eviction, and the
+`flock`-plus-tail-repair durability are all present and exercised. The one
+accepted term this implementation does **not** carry is guard 3, which the
+Maintainer's accepted amendment deleted; its absence is the contract, not a
+shortfall against it.
+
 ## Plan review -- Claude Opus 5 (Internal, fresh context) -- 2026-08-20
 
 Reviewed commit: 86adf62dbc63e0c43eeea7f83cbd4f53f1456306
