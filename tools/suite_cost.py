@@ -215,6 +215,36 @@ def _day(row: dict) -> str:
     return start.date().isoformat() if start is not None else "unknown-date"
 
 
+def _cell(value, limit: int = 120) -> str:
+    """One ledger field, made safe to place inside a Markdown table cell.
+
+    The ledger is gitignored, unsigned, and writable by any local process, so
+    every string reaching this report is untrusted input.  Rendered output is
+    read by people and by agents judging the suite's cost, which makes an
+    unescaped newline more than cosmetic: it ends the table row and lets the
+    rest of the field land as free-standing prose, including a line that looks
+    like a heading or an instruction.
+
+    Three transformations, each chosen to be a no-op on every legitimate value:
+    newlines and tabs collapse to a space, ``|`` and a backtick are escaped so
+    neither can close a cell or a code span, and the result is truncated.  A
+    real ``interpreter`` or ``label`` contains none of these characters, so the
+    report is byte-identical for well-formed rows -- which is what makes this
+    safe to apply to fields other tests already assert on.
+
+    Truncation is not decoration: a single ledger line may carry a field far
+    larger than any terminal or diff will show, and a cell that scrolls a reader
+    past the rest of the table conceals as effectively as an injected heading.
+    """
+    text = value if isinstance(value, str) else str(value)
+    for bad, good in (("\r", " "), ("\n", " "), ("\t", " "),
+                      ("|", "\\|"), ("`", "'")):
+        text = text.replace(bad, good)
+    if len(text) > limit:
+        text = text[:limit] + " [truncated]"
+    return text
+
+
 def _commit(row: dict) -> str:
     head = row.get("head")
     if isinstance(head, str) and len(head) >= 7:
@@ -384,16 +414,17 @@ def _render_session_table(add, rows: list[dict]) -> None:
         wall = _wall(row)
         wall_text = f"{wall:.1f}s" if wall is not None else "unrecorded"
         label = row.get("label")
-        label_text = f"`{label}`" if isinstance(label, str) and label \
+        label_text = f"`{_cell(label)}`" if isinstance(label, str) and label \
             else "no label given"
         concurrent = ("overlapped another recorded top-level session"
                       if index in overlaps
                       else "no overlap with another recorded session")
         executed = row.get("executed")
         collected = row.get("collected")
-        add(f"| {_day(row)} | {_commit(row)} | "
-            f"{row.get('interpreter') or 'unrecorded'} | "
-            f"{_covered(row)} | {wall_text} | {executed} of {collected} "
+        add(f"| {_cell(_day(row))} | {_cell(_commit(row))} | "
+            f"{_cell(row.get('interpreter') or 'unrecorded')} | "
+            f"{_cell(_covered(row))} | {wall_text} | "
+            f"{_cell(executed)} of {_cell(collected)} "
             f"collected | {concurrent} | {label_text} |")
     add("")
 

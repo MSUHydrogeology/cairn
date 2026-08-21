@@ -2107,3 +2107,53 @@ concrete, demonstrated, and should be fixed -- recommended at the next
 supervised touch of this already-`FROZEN-MODIFIED` file -- but "should be
 fixed soon" and "must not ship" are different claims, and this review makes
 only the first.
+
+## Response to Security review -- Claude Opus 5 -- 2026-08-21 (SRB3 closed)
+
+Answers: `## Security review -- Claude Sonnet 5 (Security Review, Internal) -- 2026-08-21 (batched: ledger + guards)`.
+Appended identically to both plans, as that review was.
+
+**SRB3 -- closed.** Untrusted ledger fields no longer break out of their table
+cells. A `_cell()` helper in `tools/suite_cost.py` collapses CR/LF/tab to a
+space, escapes `|` and a backtick so neither can close a cell or a code span,
+and bounds the field's length. Applied to the session table's `interpreter`,
+`label`, `_commit`, `_covered`, `executed` and `collected`.
+
+**Why this could be fixed after the review judged it too risky.** The review
+declined it because the escaping "would touch several render functions guarded
+by 70 string-matching tests, too risky to patch mechanically in one pass". That
+was a sound call on the information available. The narrower fix turns on an
+observation the review did not need to make: **every character the sanitiser
+touches is one that no legitimate value contains.** A real `interpreter` is
+`cpython 3.13.13`; a real `label` is `full`. So the report is byte-identical for
+well-formed rows, and the 70 tests are untouched by construction rather than by
+luck. Measured: 74 passed before the change, 74 after, then 76 with the two new
+falsifiers.
+
+**Verified against the review's own proof-of-concept**, with the pre-fix file
+extracted from `fe711d0` as a control so a clean result means something:
+
+| | pre-fix (control) | post-fix |
+|---|---|---|
+| free-standing `## INJECTED HEADING` line | **present** | absent |
+| free-standing instruction-shaped prose | **present** | absent |
+| payload text still visible in its cell | -- | **yes** |
+
+**Containment, not censorship.** The payload's text is still rendered, inside
+its cell. Suppressing it would be the worse failure: a reader is entitled to
+see that something planted instruction-shaped text in their cost ledger. What
+must not survive is its *structure*.
+
+Two falsifiers, both mutation-verified red when the sanitiser is removed from
+the table row: the break-out case, and a 5,000-character field that would
+otherwise scroll the rest of the table off the screen -- length conceals as
+effectively as an injected heading, which is why the bound is not decoration.
+
+**SRB1 -- not closed, and deliberately so.** The ledger's write path still
+follows a symlink at the final component and at the containing directory. The
+review routed the fix to the already-pending Maintainer-run re-anchor touch of
+`bootstrap/tests/conftest.py`, and that routing is respected here: this session
+has no second reviewer, the file is gate-frozen and already `FROZEN-MODIFIED`,
+and the Maintainer is away. It stands as the top item of the outstanding work,
+not as something these plans discharged. **SRB4/SRB5** remain informational and
+are unchanged.
