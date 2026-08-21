@@ -2027,3 +2027,10 @@ and the heading had visible work to do. Revision 7 withdrew nothing, so the
 heading had no obvious content -- and a required section with nothing to say is
 exactly the one that gets dropped. "Withdrawn: nothing" is a record; its absence
 is not.
+
+## Date correction -- Claude -- 2026-08-21
+
+Revisions 1 and 2 are headed 2026-08-20; both were committed 2026-08-21
+(07:27 and 07:32, commits `2e23c14` / `f4116f4`). The headers carry the
+wrong day; the commit timestamps are authoritative. The filename stem and
+`Date opened: 2026-08-20` are correct — the proposal opened 2026-08-20 18:14.
