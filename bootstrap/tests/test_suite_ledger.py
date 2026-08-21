@@ -676,6 +676,30 @@ def test_a_claim_the_rows_own_fields_contradict_is_reported(tmp_path):
     assert "support `unknown`" in report
 
 
+def test_a_deeply_nested_line_is_reported_not_a_crash(tmp_path):
+    """The ledger is gitignored and unsigned -- any local process can write a
+    line here, not only the collector -- so a line is untrusted input.
+    ``json.loads`` raises ``RecursionError`` on deeply nested JSON, which is a
+    ``RuntimeError``, not a ``ValueError``: a reader that only caught the
+    latter would crash on this one shape instead of reporting it alongside
+    every other malformed line, exactly the failure mode the module's own
+    docstring says a malformed line must not cause. Mutation-checked: reverting
+    the ``except`` clause to ``ValueError`` alone reproduces an uncaught
+    ``RecursionError`` from this same construction."""
+    depth = 200_000
+    nested = "[" * depth + "]" * depth
+    ledger = tmp_path / "deepnest.jsonl"
+    ledger.write_text(nested + "\n", encoding="utf-8")
+    module = reader()
+    rows, malformed = module.read_ledger(ledger)
+    assert rows == []
+    assert len(malformed) == 1
+    assert "nested too deeply" in malformed[0][1]
+    # Must not raise -- this is the crash the finding names.
+    report = module.render(rows, malformed, ledger)
+    assert "Unreadable lines: 1" in report
+
+
 # --- Sanitizing, capping, encoding, the budget --------------------------------
 
 

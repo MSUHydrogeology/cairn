@@ -61,6 +61,16 @@ def read_ledger(path: Path) -> tuple[list[dict], list[tuple[int, str, str]]]:
     skipped**: a line that cannot be parsed is usually a session that was killed
     mid-write, and quietly dropping it turns a visible durability problem into
     an invisible under-count.
+
+    The ledger is gitignored and unsigned -- any local process can write a line
+    here, not only the collector -- so a line is untrusted input, not merely a
+    possibly-truncated one.  ``json.loads`` raises ``RecursionError`` (a
+    ``RuntimeError``, not a ``ValueError``) on a deeply nested array or object,
+    which a bare ``except ValueError`` does not catch: one adversarial line
+    would otherwise crash this whole tool with an uncaught traceback instead of
+    being reported alongside every other malformed line, defeating the
+    report-never-skip contract this docstring states for every *other* shape of
+    bad input.
     """
     rows: list[dict] = []
     malformed: list[tuple[int, str, str]] = []
@@ -75,6 +85,11 @@ def read_ledger(path: Path) -> tuple[list[dict], list[tuple[int, str, str]]]:
                 value = json.loads(text)
             except ValueError as exc:
                 malformed.append((number, f"not valid JSON ({exc})", text[:120]))
+                continue
+            except RecursionError:
+                malformed.append(
+                    (number, "not valid JSON (nested too deeply to parse)",
+                     text[:120]))
                 continue
             if not isinstance(value, dict):
                 malformed.append(
