@@ -843,3 +843,84 @@ rule itself surviving unchanged.
 
 It does not extend to any other reduction, and no further outcome is dropped by
 this revision. **RLT-05 is closed.**
+
+## Revision 5 -- Claude -- 2026-08-21 (adding C6)
+
+**Model**: claude-opus-5 (Claude Opus 5)
+
+No review since Revision 4; this adds one item that emerged from working the
+code-review loop the proposal describes, and it is added before the next round
+rather than carried in conversation.
+
+### Withdrawn / superseded commitments
+
+* None. C1–C5 stand unaltered. C6 is additive.
+
+### C6 — a code-review finding carries a class, and only one class loops
+
+**Now**: every finding is `blocking` or not, at the reviewer's discretion, with
+no stated basis. A blocking finding returns the artifact to `revising-code`
+regardless of what it is about.
+
+**Proposed**: a code review classifies each finding, and the class decides
+whether the artifact loops.
+
+* **Behaviour** — the code does the wrong thing, or a test does not test what it
+  claims. **Blocks.** Loops until fixed or disposed with the Maintainer. This is
+  what the code-review loop exists for, and it is cheap precisely because the
+  artifact is executable.
+* **Record** — a verification figure, a scope declaration, a status field is
+  wrong. The author **corrects it in the same revision**; it does not by itself
+  return the artifact for another round. Nobody re-reads a corrected number.
+* **Observation** — about the process rather than the artifact. **Routed out**
+  to `dev/PLANNING.md` or a proposal, never disposed inside the plan.
+
+**One exception, load-bearing.** *Absent or invalid* evidence is not a record
+defect. If no valid verification record covers the reviewed range, the reviewer
+had nothing to verify — a precondition failure, and it blocks. The distinction
+is **a wrong number** versus **no evidence**.
+
+**The reviewer assigns the class, never the author.** That is the whole
+safeguard: otherwise "it is only a record defect" becomes the cheapest escape
+from any finding, and narrowing is already the path of least resistance.
+
+**Enforced by**: the plan template requires a class on each finding and the
+Maintainer reads it at Dispositions. Not a planner predicate — see C4 for why
+this proposal now says what actually governs a rule rather than what would sound
+stronger.
+
+### The evidence, and it is uncomfortable
+
+Two code-review rounds on `full-suite-interception` produced thirteen findings.
+Classified: three behaviour (all blocking, all fixed), six record, two prose, and
+**one behaviour finding on a security control filed non-blocking** — that
+appending an ordinary hook to `bootstrap/tests/conftest.py` silently deletes the
+release-mode outcome rule, so a release run that skipped a security gate reports
+itself clean. Measured directly: exit 1 becomes exit 0.
+
+Meanwhile **two record defects were blocking**: a wrong figure in a verification
+record, and an evidence range one commit short of head.
+
+**The ranking was inverted.** Defects in the *evidence about* the code outranked
+a defect *in* the code that lets a release lie about itself. C6 exists to stop
+that, and the inversion was not a reviewer's misjudgement — it is what the
+current rule produces, because it offers no basis for ranking at all.
+
+### Why this is not a licence to downgrade findings
+
+A related weighting error is worth naming, because it is the same root. **A
+Boundary B record is a precondition, not a determinant.** It answers exactly one
+question — at the commit where implementation stopped, on a clean tree, under
+the canonical interpreter, did the suite and gates come back as claimed. It
+cannot answer whether the code does what the contract said, whether the tests
+test anything, whether a docstring asserts something false, or whether a
+well-meant future edit can remove a control. Every one of those was found in
+this artifact by reading and probing, and every one was invisible to a green
+suite.
+
+`AGENTS.md` already says this — Boundary C is *"independent targeted
+falsification,"* and *"copying Boundary B's broad command is not a falsification
+ledger."* The doctrine is right; the practice over-weights the number because it
+is the one part of the process that produces one. C6 does not lower the bar for
+review. It moves the loop to where re-reading can change the answer, and leaves
+the reviewer's real work — probing behaviour — as the thing that blocks.
