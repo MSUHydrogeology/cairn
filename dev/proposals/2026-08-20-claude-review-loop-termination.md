@@ -220,3 +220,86 @@ proposes is livable.
   risks, and the Decision-time complete contract is the mitigation. If reviewers
   report assembling difficulty *before* that point, the mitigation is
   insufficient.
+
+## Revision 1 -- Claude -- 2026-08-20 (Maintainer-directed reframing)
+
+**No review has landed; this revises the opened contract on the Maintainer's
+own diagnosis, which is better than the one the proposal opened with.** Quoted
+verbatim and visually isolated:
+
+> "I don't want the 'REVISE' and 'SHIP' labels to be treated like they need the
+> reviewer to get to 'SHIP'."
+
+> "in peer review, the reviewers don't make the decision to accept a
+> manuscript, the editor (or associate editor) does."
+
+### What this reframing exposes
+
+**Cairn has an editor for proposals and none for plans or code.** A proposal
+ends at `awaiting-decision`, which is the Maintainer's. But the plan and code
+lifecycles have no such state:
+
+```
+awaiting-plan-review <-> revising-plan -> ready-to-implement
+  -> implementing -> awaiting-code-review <-> revising-code
+```
+
+A plan review's verdict moves the artifact directly. A code review's verdict
+moves the artifact directly. **The reviewer holds the gate.**
+
+That is the loop's actual generator, and it is a structural asymmetry rather
+than anyone's failing. If clearing requires satisfying the reviewer, and every
+review round finds real defects — 94 of them, none false — then no natural
+stopping point exists. The reviewer is not obstructing; they have been handed a
+decision that is not theirs to make.
+
+**Observed today, four times.** The Maintainer closed a Security Review by
+fiat, converted a plan-review tier mid-flight, directed a clearing round be
+skipped, and finally stopped the process outright. Each read as an exception.
+Each was the editor function asserting itself through a hole in the lifecycle.
+
+### The change this replaces
+
+**Change 2 is withdrawn.** It proposed that a narrowed round may raise findings
+but *may not record a clearing verdict* — which makes the reviewer's verdict
+**more** load-bearing, in a process whose defect is that the reviewer's verdict
+is load-bearing at all. It was a refinement of the wrong structure. Under the
+editor model it is unnecessary: no round clears anything, narrow or wide, so
+there is nothing to restrict.
+
+### The change that replaces it
+
+**2'. A review recommends; the Maintainer disposes.** Plan review and code
+review each gain a disposition step, mirroring the proposal lifecycle:
+
+* A review records **findings** and a **recommendation** — the existing
+  vocabulary (`PASS` / `REVISE` / `SHIP`) is retained but reclassified as
+  advisory. A reviewer never moves the artifact.
+* The artifact moves on a **Maintainer disposition**: `accept as-is`,
+  `accept with named changes`, or `return for revision`. The Maintainer may
+  accept over a `REVISE`, and may return an artifact a reviewer passed.
+* A disposition accepting over open findings **names them and their standing
+  state**, so acceptance is a recorded judgement rather than an omission. This
+  proposal's own sibling plan carries a worked example: a Security finding left
+  open, its exact residual shape measured and pinned by a test that asserts the
+  limit as it actually behaves.
+* **The reviewer keeps the finding; they lose the veto.** Nothing here reduces
+  what a review may say, and no finding is erased by a disposition.
+
+### Why this is the stronger proposal
+
+The original four changes attacked volume and asked the loop to converge faster.
+This one gives the loop a **terminator**: a role whose job is to stop it. Peer
+review has run on that separation for three centuries, and for the reason that
+applies exactly here — a reviewer optimises for what could still be wrong, which
+is unbounded, while an editor optimises for whether it is good enough to
+proceed, which is a decision.
+
+Changes 1, 3 and 4 stand unaltered. They reduce what the loop costs per turn;
+2' is what ends it.
+
+### Consequence for the count
+
+The proposal is now **three changes plus one replacement**, not four. That is a
+smaller contract than the one it opened with, which is the correct direction for
+a proposal arguing that contracts are too large.
