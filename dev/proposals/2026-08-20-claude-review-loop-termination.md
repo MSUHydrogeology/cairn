@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — this changes governing doctrine and the
 lifecycle planner's own section-parsing, which the assurance-path triggers name
 directly. Uncertainty resolves high.
@@ -1446,3 +1446,378 @@ this pass's actual judgement, and recording either token would misstate it.
 
 **Recommendation**: one revision closes all five blocking findings. I intend to
 accept on that revision without a further review round.
+
+## Response + Revision 7 -- Claude -- 2026-08-21
+
+Answering the Maintainer's round-4 review (RLT-11 through RLT-16). All five
+blocking findings are closed. The review's own recommendation was that "one
+revision closes all five", and this is it.
+
+**This revision is larger than closing five findings, because the Maintainer
+widened the remit while it was being written.** Verbatim, across four messages:
+
+> "Too much review, too much planning. Some things just can't be decided in
+> advance. We are getting FAR to risk averse here."
+
+> "This isn't nuclear launch software here, shipping a bug is okay. Far better
+> to ship a few bugs then never get to develop the software at all. We've gotten
+> Cairn stuck in process hell here because of the mechanical rules we've built.
+> They MUST be softened"
+
+> "Otherwise literally no one (including myself) will use them. They are too
+> onerous and will ALWAYS be circumvented, because in real life we have to
+> proceed with uncertainty and imperfection."
+
+That last sentence is the strongest argument in this file and it is not mine.
+A rule that is always circumvented is **worse than no rule**: it trains its
+users to route around refusals, so the refusal that matters arrives with its
+authority already spent. Cairn's own doctrine says this in one place already --
+`AGENTS.md` on the gate anchor, where the hazard named is "building the habit of
+routing around a refusal" -- but says it about a missing git ref and never about
+the review apparatus. Revision 7 generalizes it, as **C0**.
+
+### Findings ledger
+
+| finding | disposition | where |
+|---|---|---|
+| RLT-11 (blocking) -- C6 classifies findings, not fixes, so the code-review loop still has no termination condition | **Closed by new C7.** A reviewer raising a `behaviour` finding may bind its closure evidence *in the finding*; the author's Response carrying that evidence moves `revising-code -> ready-to-archive` with no fresh read. Unbound findings loop as today -- fail-closed. Binding is fixed when the finding is raised, so neither side can invent it afterwards. Security-review findings are excluded and always loop. | New C7; `PLAN_TRANSITIONS` gains one conditional edge |
+| RLT-12 (blocking) -- `Plan readiness` is a ratchet with one position | **Closed by new C8.** Third token `ORDINARY` added. Independently re-measured: 19 `DISTINCT REVIEW REQUIRED` and **one** `READY` -- but that `READY` is at `dev/proposals/_template.md:488`, the vocabulary *definition* (`READY \| DISTINCT REVIEW REQUIRED`), not a recorded value. The corpus count is 19-0, and the template line is the stronger evidence: the ratchet is visible in the vocabulary itself. | New C8 |
+| RLT-13 (blocking) -- C1 stops a reviewer ending a proposal and leaves one assigning a downstream tier | **Closed by extending C1 into C8.** Confirmed at `AGENTS.md:134-138`: External plan review is taken "because a proposal reviewer recorded `DISTINCT REVIEW REQUIRED`". The token becomes **advisory**; the editor sets the derived plan's tier at the Decision. | C1 (extended); C8 |
+| RLT-14 (blocking) -- the Context names three cost mechanisms and misses the largest | **Closed.** Independently re-measured: `PROPOSAL_TRANSITIONS` has exactly one functional reader per twin (`lifecycle_planner.py:1372`, a `get()` returning a list for display) plus one test reference; it refuses nothing. A Decision was available at every point. Added as the fourth mechanism, in the terms the finding demanded. | Context, fourth mechanism |
+| RLT-15 (blocking) -- the contract asserts a registration that does not exist | **Closed by making the claim true**, not by editing the appended section. The successor item is now registered in `dev/PLANNING.md` > "Deferred follow-ups (durable home)". Instrument confirmed before trusting the absence: `grep -c 'section' dev/PLANNING.md` returns 35, so the file greps freely; the item itself returned zero. | `dev/PLANNING.md`; Deferred work |
+| RLT-16 (non-blocking) -- the header carries the defect RLT-12 describes | **Acknowledged, not fixed.** The reviewer reserved it: *"Not the author's to fix: I will set `required(Internal)` at the Decision."* Left untouched. | -- |
+
+### On the part of RLT-14 that is about me
+
+The finding says what prevented a Decision was "agents telling the Maintainer it
+was unavailable -- including this proposal's own author, on 2026-08-21, in the
+session that produced this review." That is accurate and I am not going to
+soften it. I described a state machine as gating something it does not gate,
+without reading its readers, and the cost was rounds. It is the same defect this
+file has now recorded four times in other forms: asserting a property without
+running the measurement that would falsify it. C0 exists partly because I am not
+confident the habit is gone.
+
+**Scope delta**: widened, under the Maintainer's explicit direction quoted above.
+Revision 7 adds C0 (risk posture), C7 (closure binding) and C8 (`Plan readiness`
+vocabulary + tier authority) to the accepted-in-progress contract. Nothing is
+dropped. The complete current contract below supersedes Revision 6's in full;
+read it and ignore the earlier one.
+
+---
+
+## THE COMPLETE CURRENT CONTRACT (Revision 7)
+
+*Supersedes the Revision 6 contract above in full. Self-contained.*
+
+### Scope
+
+Give Cairn's review loops a termination condition and a calibration, by
+(a) naming who ends each loop, (b) allowing a loop only where the artifact is
+executable, (c) making a code-review finding's *class* decide whether it loops,
+(d) letting a reviewer bind a finding's closure so the fix does not need a fresh
+read, and (e) stating the risk posture reviewers calibrate against.
+
+### Exclusions
+
+No change to: the proposal or plan lifecycle states (C7 adds one conditional
+edge and no state); the Internal/External tier vocabulary; the append-only rule;
+the complete-contract rule; the plan-readiness *inheritance* machinery, which
+stops being exercised rather than being deleted; any release, gate or trust
+ceremony; the Security Review trigger on any high-risk surface named in
+`AGENTS.md`.
+
+### C0 -- the risk posture reviewers calibrate against
+
+**Cairn is a method for scientific and research software, not for
+safety-critical systems.** The doctrine has never said so, and every reviewer
+has therefore been free to calibrate at the strictest reading available. Stated
+plainly:
+
+* **An unshipped improvement has a real cost that is invisible.** A shipped bug
+  has a real cost that is visible and usually fixable. Optimizing only against
+  the visible one is not caution, it is a measurement error.
+* **Narrowing is the reviewer's path of least resistance.** It costs the
+  reviewer nothing, reads as prudence, and can never be shown wrong, because the
+  wider version is never built. `AGENTS.md` already says this about *scope*
+  reduction; it is equally true of review depth.
+* **A rule too onerous to follow will be circumvented, and a circumvented rule
+  is worse than no rule** -- it trains its users to route around refusals, so the
+  refusal that matters arrives with its authority already spent.
+
+**The reviewer's question is therefore "would shipping this cause damage that is
+hard to undo?"** -- not "is this correct in every respect?". Findings that fail
+that test are still recorded; they do not block.
+
+**What C0 does not touch, and this list is exhaustive.** Full weight is retained
+for the high-risk surfaces `AGENTS.md` names -- the scaffold/merge engine, the
+install contract, the by-file license split, the local interpreter binding, the
+portable-sweep executable trust root, the vendor-neutrality gate -- and for any
+release or security ceremony. C0 lowers the calibration on ordinary work. It
+lowers nothing where the damage is hard to undo, which is the whole of its own
+test applied to itself.
+
+### C1 -- the proposal flow, and who may end things
+
+```
+Write -> Review -> Revise -> Security Review (if needed)
+      -> Revision after Security Review (if needed)
+      -> Editor's decision (accept / reject) -> loop if needed, editor deciding
+```
+
+The editor is the Maintainer. **A reviewer never ends a proposal; the editor
+does**, and may end one over open findings by naming them and their standing
+state.
+
+**Extended for RLT-13: a reviewer does not assign a downstream review tier
+either.** A reviewer recommends; the editor assigns, at the Decision. The same
+principle pointed forward in time instead of backward -- otherwise a reviewer
+imposes an obligation on work not yet written, by an author not yet assigned.
+The mechanism is C8.
+
+### C2 -- the plan flow
+
+```
+Write -> Review (Internal) -> Security Review (if needed) -> Revise
+      -> Execute
+      -> Code Review (Internal) -> Revise Code (may loop, bounded by C7)
+      -> Code Security Review (if needed) -> Revise Code (may loop)
+      -> Dispositions with the Maintainer -> Archive
+```
+
+**Plan review is single-pass**: the author's revision closes it.
+
+| from | to | owner | commit carrier | evidence predicate |
+|---|---|---|---|---|
+| `revising-plan` | `ready-to-implement` | plan author | the author's `## Response to plan review` commit | that section, disposing every finding of the preceding `## Plan review` |
+| `revising-plan` | `awaiting-plan-review` | plan author | same | retained, and **required** when a Security Review is owed on the revision |
+
+**Whether a second pass is warranted is the editor's judgement, on magnitude.**
+Not a rule and not a taxonomy of exceptions.
+
+**Prospective only.** A declared `required(External)` plan review remains a
+floor. Only a plan opened after this rule is accepted takes the new default.
+
+### C3 -- `Security review` is a recognized section kind
+
+Measured 2026-08-21: `Security review` occurs **0** times in
+`tools/lifecycle_planner.py` and its byte-identical twin. Two Security reviews
+written on 2026-08-20 passed with basis fields, tier and existence all
+unvalidated. Add it as a parsed kind, validated like `Review` / `Plan review` /
+`Code review`.
+
+**Tier is unchanged.** `Internal` / `External` is *model agency*; Security Review
+is a *role* with a high-capability floor. Orthogonal axes.
+
+### C4 -- constructibility is declared before the Decision
+
+No proposal reaches `awaiting-decision` without a `Constructibility:` block: for
+each falsifier the contract requires, the route that produces it. An item with no
+route is `no admitted route`, and blocks. `Constructibility: asserted` is not a
+record. **Enforced by**: the templates require it; the reviewer reads it. **Not**
+a planner predicate.
+
+### C5 -- the plan layer's cost claim is corrected
+
+`doctrine/plans.md` says a plan costs "one file." Measured 2026-08-20: three
+plans, 4,705 lines, eight review rounds -- **588 lines per round**, higher than
+the proposals they derive from. Keep *"when in doubt, open the plan"*; replace
+the cost claim with the measurement and surface the `not required(<rationale>)`
+route beside it.
+
+### C6 -- a code-review finding carries a class, and only one class loops
+
+**Four classes**, closed vocabulary:
+
+* **`behaviour`** -- the code does the wrong thing, or a test does not test what
+  it claims. **Blocks, and loops unless bound under C7.**
+* **`prose`** -- durable text inside a shipped artifact asserts something false
+  or unusable. Corrected in the artifact; does not loop.
+* **`record`** -- a verification figure, scope declaration or status field is
+  wrong. Corrected in the record; does not loop.
+* **`observation`** -- about the process, not the artifact. **Routed out** to
+  `dev/PLANNING.md` or a proposal; never disposed inside the plan.
+
+**Exception**: *absent or invalid* evidence is not a `record` defect -- the
+reviewer had nothing to verify. Precondition failure; it blocks, and it cannot
+be closure-bound under C7.
+
+**The reviewer assigns the class, never the author.**
+
+**Notation.** Class in the finding heading after the id; counts by class on the
+basis line:
+
+```
+#### CR12 [behaviour] -- appending a hook silently deletes the release rule
+**Findings**: 4 behaviour, 3 prose, 6 record, 0 observation
+```
+
+**Verdict is derived**: `REVISE` iff an *unbound* `behaviour` finding is open or
+evidence is absent/invalid; `PASS` otherwise.
+
+**The record-only closeout path**, stated end to end. A `PASS` carrying `prose`
+or `record` findings moves `awaiting-code-review -> ready-to-archive` on the
+reviewer's commit. The author's corrections land as a `## Response to code
+review` **before** `ready-to-archive -> archived`, and that Response is a
+closeout precondition of archive.
+
+### C7 -- a reviewer may bind a finding's closure, and that ends the loop
+
+**The problem C6 left open.** C6 decides whether a *review* passes. It never
+decides whether a *fix* needs another review -- which is the question that
+produces the round count. A corrected typo and a redesigned guard returned
+through the same edge, because `PLAN_TRANSITIONS` gives `revising-code` exactly
+one exit. Measured 2026-08-21: `full-suite-interception` has taken **nine**
+review rounds.
+
+**The rule.** A reviewer raising a `behaviour` finding **may** name, in the
+finding itself, the evidence that closes it:
+
+```
+#### CR14 [behaviour] -- the guard is disarmed by its own decorator
+Closes on: `_own` refuses a second registration of a held name, and a test
+that appends `@_own def pytest_sessionfinish` exits 4 naming that hook.
+```
+
+The author's `## Response to code review` carrying exactly that evidence moves
+`revising-code -> ready-to-archive` **with no fresh read**.
+
+**Four constraints, each load-bearing:**
+
+1. **Fail-closed.** A `behaviour` finding with no `Closes on:` loops exactly as
+   today. Silence never buys the fast edge.
+2. **Bound when raised, not after.** The evidence is fixed before the fix
+   exists, so the author cannot claim it retroactively and the reviewer cannot
+   invent it having seen the fix.
+3. **The reviewer decides, because the reviewer knows.** Whether verifying a fix
+   needs judgement or a glance is exactly what the person who found it is best
+   placed to say. This is C1's principle -- authority sits with whoever holds the
+   relevant knowledge -- applied to the code loop.
+4. **Security findings are excluded.** A finding raised in a `## Security
+   review` section may not carry `Closes on:`; it always loops. The Maintainer's
+   standing instruction: *"No reviewer gates on second rounds, except maybe a
+   security review."*
+
+**Transition.** `revising-code` gains `ready-to-archive` as a *conditional*
+target: legal only when every open `behaviour` finding in the most recent
+`## Code review` carries `Closes on:` **and** the Response evidences each. No new
+state.
+
+**Known limit, stated rather than discovered.** The predicate needs to range
+over "every finding of the preceding review", and an append-only artifact has no
+stable section identity to range over -- the same gap that made this proposal's
+withdrawn Change 1 unbuildable. C7 is therefore specified to compare against
+**the most recent `## Code review` section by document order**, which is
+well-defined without section identity and is what a human reader does anyway. If
+that proves insufficient, it is the second instance that revives the deferred
+item now registered in `dev/PLANNING.md`.
+
+### C8 -- `Plan readiness` gains a third token, and stops binding
+
+**The defect.** Measured 2026-08-21 across the live corpus: **19 recorded
+`Plan readiness` values, 19 `DISTINCT REVIEW REQUIRED`, zero `READY`.** The
+single `READY` in the tree is at `dev/proposals/_template.md:488` and is the
+vocabulary definition, not a record. A reviewer who has read a complete contract
+and judges the ordinary Internal plan review correct **has no token to write**:
+silence buys Internal by default and speech buys External. Nineteen reviewers
+met that binary and escalated. C2's Internal default would be overridden every
+time the field is recorded.
+
+**Three tokens:**
+
+| token | who may write it | meaning |
+|---|---|---|
+| `READY` | an **External** reviewer who has read a complete current contract | the derived plan may *inherit*: Internal review plus a commit-bound `Inherited proposal basis` |
+| `ORDINARY` | any reviewer | read, and the plan's ordinary Internal review is the right read. No escalation, no inheritance declaration. **This is the missing common case.** |
+| `DISTINCT REVIEW REQUIRED` | any reviewer | *recommends* External, and must name what makes this plan need a different agent type |
+
+Omission is read as `ORDINARY` -- unchanged in effect from today, but now with a
+name, so a reviewer who considered the question and one who did not are no
+longer indistinguishable.
+
+**And the token is advisory.** Per C1 as extended: the **editor** sets the
+derived plan's tier at the Decision, informed by the reviewer's token and
+required to name it when departing from a `DISTINCT REVIEW REQUIRED`.
+`AGENTS.md:134-138` currently makes the token binding; that sentence changes.
+
+### Invariants and their enforcing tests
+
+| invariant | enforced by |
+|---|---|
+| a `## Security review` section is parsed and validated like any other | new cases in `test_lifecycle_contract.py` (valid; missing basis field; out-of-vocabulary tier) |
+| C6's class grammar holds | six directed tests: unknown class, missing class, duplicate id, malformed count, heading/count mismatch, `behaviour` under `PASS` |
+| an *unbound* `behaviour` finding blocks archive | the `PASS`-with-`behaviour` test above |
+| a **bound** `behaviour` finding reaches `ready-to-archive` only with its evidence in the Response | two directed tests: bound + evidenced (green); bound + Response missing the evidence (**red**) |
+| a `Closes on:` inside a `## Security review` section refuses | one directed test |
+| `Plan readiness` accepts exactly three tokens | one directed test per token plus an out-of-vocabulary refusal |
+| the planner twins stay byte-identical | the existing twin-parity gate |
+
+### Failure dispositions
+
+Every new predicate **refuses**; none warns. An unparseable `**Findings**:`
+line, an unclassified finding, a count mismatch, an out-of-vocabulary
+`Plan readiness`, or a `Closes on:` in a Security section is a refusal, not a
+default.
+
+### Public paths
+
+`tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py`
+(byte-identical, one commit); `dev/proposals/_template.md`,
+`dev/plans/_template.md` and both shipped twins; `doctrine/plans.md`;
+`doctrine/proposals.md`; `doctrine/dual-review.md`; `doctrine/rationale.md`
+(C0); `AGENTS.md` and `templates/core/AGENTS.md`.
+
+### Evidence
+
+**The corrected classification**, re-derived over CR1-CR13, summing to thirteen:
+
+| class | findings | n |
+|---|---|---|
+| `behaviour` | CR1, CR3, CR6, CR12 | 4 |
+| `prose` | CR2, CR10, CR11 | 3 |
+| `record` | CR4, CR5, CR7, CR8, CR9, CR13 | 6 |
+| `observation` | -- | 0 |
+| | | **13** |
+
+Under the current rule, **CR8 and CR9 blocked and are both `record`**, while
+**CR12 -- `behaviour`, on a security control -- was filed non-blocking.** The
+ranking was inverted.
+
+**C7's counterfactual, on this repository's own history.** Of the four
+`behaviour` findings, CR1 and CR12 name their closing evidence inside the
+finding text already -- CR1 asks for the competitor to be its own module, CR12
+asks for `_tree` to refuse a name the conftest defines. Both were written as
+bindable closures by reviewers who had no such mechanism, and both produced one
+further full review round. C7 does not invent a behaviour reviewers lack; it
+gives one they already have somewhere to go.
+
+**The fourth cost mechanism (RLT-14).** `PROPOSAL_TRANSITIONS` has exactly one
+functional reader per twin -- `lifecycle_planner.py:1372`, a `get()` returning a
+list for display -- and refuses nothing. The only predicate binding a raised
+finding is on the resting state `awaiting-decision`; `accepted` has no such
+branch. **A Decision was available at every point in this proposal's four
+rounds.** What prevented one was agents telling the Maintainer it was
+unavailable, this proposal's author included. **C1 corrects a practice, not a
+tool gate** -- and that is the largest of the four mechanisms, because a habit
+needs no enforcement to hold.
+
+### Known omissions
+
+Windows is unclaimed. No implementation of C6's or C7's predicates exists, so
+their runtime behaviour is unmeasured; C4 is the intended mitigation. The
+`raised` backward-compatibility boundary is a date, so a section written before
+it and edited after keeps the old form. C7 compares against the most recent
+`## Code review` by document order rather than by section identity, which is a
+stated limit and not a solved problem. **C0 is calibration, not a predicate**:
+nothing enforces it, and a reviewer determined to be maximally strict can still
+be, which is the honest description of what a stated posture buys. This proposal
+cannot self-apply: its derived plan is governed by the contract in force when
+that plan opens.
+
+### Deferred work
+
+One successor proposal, **now registered** in `dev/PLANNING.md` >
+"Deferred follow-ups (durable home)" (2026-08-21): a stable section identity for
+an append-only artifact and a complete-set rule over it -- the work that made
+Change 1 unbuildable and that C7 works around. Grouped because they are one
+problem. Registered rather than asserted, per RLT-15.

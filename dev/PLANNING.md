@@ -1231,6 +1231,20 @@ near the top of this file.
 
 ### Deferred follow-ups (durable home)
 
+* **A stable section identity for an append-only artifact, and a complete-set
+  rule over it** *(registered 2026-08-21, from
+  `2026-08-20-claude-review-loop-termination` > "Deferred work")* — an
+  append-only proposal or plan has no durable handle on its own sections, so a
+  rule that wants to say *"every finding of the preceding review is disposed"*
+  cannot name the set it must be complete over. This is the gap that made that
+  proposal's Change 1 unbuildable and forced its withdrawal. The two halves are
+  one problem and are filed together: identity without a complete-set rule
+  names sections nothing has to cover, and a complete-set rule without identity
+  cannot say what it ranges over. **Revival condition:** a second rule needing
+  set-completeness over an append-only artifact — the closure-binding predicate
+  in that proposal's C7 is a candidate, and if it lands needing this, that is
+  the second instance.
+
 * **A feature list is a claim surface** *(deferred 2026-08-20, from the
   archived `2026-08-10-claude-documentation-enhancement` note's fold-up
   candidates)* — enumerating capabilities on an entry page creates exactly the
