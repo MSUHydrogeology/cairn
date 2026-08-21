@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: **high-assurance** — this changes governing doctrine and the
 lifecycle planner's own section-parsing, which the assurance-path triggers name
 directly. Uncertainty resolves high.
@@ -1821,3 +1821,66 @@ One successor proposal, **now registered** in `dev/PLANNING.md` >
 an append-only artifact and a complete-set rule over it -- the work that made
 Change 1 unbuildable and that C7 works around. Grouped because they are one
 problem. Registered rather than asserted, per RLT-15.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-21
+
+**ACCEPTED as written and revised (Revision 7).** Authorization, quoted verbatim
+and visually isolated:
+
+> "I accept the proposal as written and revised. Please scribe my acceptance"
+
+**Summary of accepted terms (Revision 7)**:
+
+- **C0 -- risk posture.** Cairn is a method for scientific and research
+  software, not safety-critical systems. The reviewer's question is "would
+  shipping this cause damage that is hard to undo?", not "is this correct in
+  every respect?". Findings failing that test are recorded and do not block.
+  Full weight is retained for the high-risk surfaces `AGENTS.md` names and for
+  any release or security ceremony.
+- **C1 -- who may end things.** A reviewer never ends a proposal; the editor
+  does, and may end one over open findings by naming them and their standing
+  state. Extended: a reviewer does not assign a downstream review tier either --
+  a reviewer recommends, the editor assigns at the Decision.
+- **C2 -- the plan flow.** Plan review is single-pass; the author's revision
+  closes it, via a new author-carried `revising-plan -> ready-to-implement`
+  edge. Prospective only; a declared `required(External)` remains a floor.
+- **C3** -- `Security review` becomes a parsed, validated section kind.
+- **C4** -- constructibility is declared before a proposal reaches the Decision.
+- **C5** -- the plan layer's "one file" cost claim is replaced with the
+  measurement.
+- **C6** -- a code-review finding carries one of four classes; only `behaviour`
+  blocks and loops; verdict is derived.
+- **C7 -- the code loop gains a termination condition.** A reviewer raising a
+  `behaviour` finding may bind its closure evidence in the finding itself
+  (`Closes on:`); the author's Response carrying that evidence moves
+  `revising-code -> ready-to-archive` with no fresh read. Fail-closed: an
+  unbound finding loops as today. Bound when raised, so neither side invents it
+  afterwards. Security-review findings are excluded and always loop.
+- **C8** -- `Plan readiness` gains `ORDINARY` as a third token, omission reads
+  as `ORDINARY`, and the token becomes advisory rather than binding.
+
+**Open items and their standing state**, named here because C1 requires an
+editor ending a loop to name them rather than leave them implied:
+
+1. **Two conformance violations stand.** Revision 7 carries no
+   `### Withdrawn / superseded commitments` heading in either its Response or
+   its complete-contract section, and `lifecycle_planner.py scan` refuses the
+   artifact on both. Routed to the Revision 7 author, not to this Decision, on
+   the Maintainer's instruction: *"Them"*. The Decision does not wait on it.
+2. **A known-wrong figure is retained deliberately.** C7 states
+   `full-suite-interception` has taken nine review rounds; six review passes are
+   present. The Maintainer's instruction, verbatim:
+
+   > "I do not want numbers fixed, you have to trust quotes because they come
+   > from a friendly development team, and if there's an issue with how various
+   > annotations in the proposal fire a trigger--fix tme."
+
+   Recorded so the next reader does not treat the figure as verified.
+3. **The header's `Plan review: required(External)` is untouched.** The
+   Maintainer's round-4 review reserved converting it: *"Not the author's to
+   fix: I will set `required(Internal)` at the Decision."* Acceptance was given
+   "as written and revised", so this scribe did not alter the header. Under C8
+   as accepted, the tier is the editor's to set and remains open.
+
+**Scribed by** Claude (claude-opus-5), this proposal's author, on explicit
+Maintainer instruction. The scribe wrote no part of the authorization above.
