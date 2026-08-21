@@ -825,3 +825,21 @@ accepted replacement rule takes the new default. No in-flight artifact is
 demoted, and no existing declaration is reinterpreted — a lifecycle rule that
 retroactively lowers an obligation an artifact already recorded is
 indistinguishable, to a later reader, from that obligation never having existed.
+
+### Maintainer allowance for the scope reduction -- 2026-08-21
+
+RLT-05 asked for this and Revision 4 recorded it as an open request rather than
+proceeding without it. Granted, quoted verbatim and visually isolated:
+
+> "I allow the withdrawal of Change 1 and the reclassification of Change 3s
+> enforcement, as recorded in the ledger."
+
+**What it covers**, taken from the ledger it names: the withdrawal of **Change 1**
+(complete restatement once at the end, and the `### Section manifest`) together
+with its claim that an unaccounted section refuses at `lifecycle_planner.py
+scan`, both `wontfix`; and the reclassification of **Change 3**'s enforcement
+from a planner predicate to a template requirement read at review, `guard` — the
+rule itself surviving unchanged.
+
+It does not extend to any other reduction, and no further outcome is dropped by
+this revision. **RLT-05 is closed.**
