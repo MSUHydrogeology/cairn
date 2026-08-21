@@ -180,3 +180,318 @@ def test_bad_tier_refuses() -> None:
     text = _fence("review-pass", tier="Bogus", reviewer="Bob")
     with pytest.raises(events.EventGrammarError, match="tier"):
         events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
+
+
+# ---------------------------------------------------------------------------
+# Chunk 5 -- history-diff reader fixtures, against a REAL scratch git repo
+# (never a mocked history), reusing the `_git` helper pattern already
+# present in `bootstrap/tests/test_lifecycle_contract.py` rather than
+# inventing a second one.
+# ---------------------------------------------------------------------------
+
+
+def _git(args: List[str], cwd: Path) -> None:
+    subprocess.run(["git", *args], cwd=str(cwd), check=True,
+                    capture_output=True, text=True)
+
+
+def _make_git_repo(tmp_path: Path) -> Path:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(["init", "-q"], repo)
+    _git(["config", "user.email", "t@example.com"], repo)
+    _git(["config", "user.name", "Test"], repo)
+    return repo
+
+
+def _commit_all(repo: Path, msg: str = "fixture") -> None:
+    _git(["add", "-A"], repo)
+    _git(["commit", "-q", "-m", msg], repo)
+
+
+def _head_sha(repo: Path) -> str:
+    r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(repo),
+                        capture_output=True, text=True, check=True)
+    return r.stdout.strip()
+
+
+def _current_branch(repo: Path) -> str:
+    r = subprocess.run(["git", "symbolic-ref", "--short", "HEAD"], cwd=str(repo),
+                        capture_output=True, text=True, check=True)
+    return r.stdout.strip()
+
+
+def _artifact_text(status: str, body: str = "") -> str:
+    return f"# p\n\n**Status**: {status}\n\n{body}"
+
+
+def test_mutated_existing_block_refuses(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+    p = repo / "p.md"
+    p.write_text(
+        _artifact_text(
+            "revising",
+            _fence("transition", from_state="awaiting-review", to_state="revising"),
+        ),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "c1: transition")
+    # Edit the existing block's own text in a later commit -- the value
+    # changes, nothing is added.
+    p.write_text(
+        _artifact_text(
+            "revising",
+            _fence("transition", from_state="awaiting-review", to_state="awaiting-decision"),
+        ),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "c2: mutate the block")
+    with pytest.raises(events.ReconciliationError, match="mutated"):
+        events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+
+
+def test_reordered_or_deleted_block_refuses(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+    p = repo / "p.md"
+    p.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _commit_all(repo, "c1")
+    # Delete the existing block entirely.
+    p.write_text(_artifact_text("revising"), encoding="utf-8")
+    _commit_all(repo, "c2: delete the block")
+    with pytest.raises(events.ReconciliationError, match="mutated"):
+        events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+
+
+def test_merge_commit_introducing_a_block_refuses(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+    p = repo / "p.md"
+    p.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
+    _commit_all(repo, "base")
+    base_branch = _current_branch(repo)
+
+    _git(["checkout", "-b", "feature"], repo)
+    (repo / "other.md").write_text("unrelated\n", encoding="utf-8")
+    _commit_all(repo, "feature change")
+
+    _git(["checkout", base_branch], repo)
+    (repo / "another.md").write_text("also unrelated\n", encoding="utf-8")
+    _commit_all(repo, "main change")
+
+    _git(["merge", "--no-ff", "--no-commit", "feature"], repo)
+    # Manual merge resolution that smuggles a new block into the merge
+    # commit -- neither parent's own diff carries it.
+    p.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _git(["add", "-A"], repo)
+    _git(["commit", "-q", "-m", "merge with a smuggled block"], repo)
+
+    with pytest.raises(events.ReconciliationError, match="merge commit"):
+        events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+
+
+def test_identity_survives_the_archive_rename(tmp_path: Path) -> None:
+    """The concrete correctness case R5-E1 found broken in the prior
+    `(artifact path, block position)` identity scheme: the identity here
+    is `(introducing commit, added-block index)`, and neither term names
+    a path, so a `git mv` to `archive/` cannot discontinue the series."""
+    repo = _make_git_repo(tmp_path)
+    (repo / "dev" / "proposals").mkdir(parents=True)
+    p = repo / "dev" / "proposals" / "p.md"
+    p.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _commit_all(repo, "open+transition")
+
+    before = events.walk_history(repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES)
+    assert len(before.events) == 1
+    identity_before = (before.events[0].commit, before.events[0].index)
+
+    (repo / "dev" / "proposals" / "archive").mkdir(parents=True)
+    _git(["mv", "dev/proposals/p.md", "dev/proposals/archive/p.md"], repo)
+    _git(["commit", "-q", "-m", "archive move"], repo)
+
+    after = events.walk_history(
+        repo, "dev/proposals/archive/p.md", valid_states=_PROPOSAL_STATES)
+    assert len(after.events) == 1
+    identity_after = (after.events[0].commit, after.events[0].index)
+    assert identity_after == identity_before
+
+
+def test_missing_marker_returns_none_not_refuse(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+    t = repo / "dev" / "proposals" / "_template.md"
+    t.parent.mkdir(parents=True)
+    t.write_text("no marker here\n", encoding="utf-8")
+    _commit_all(repo, "no marker")
+    assert events.activation_commit(repo, "dev/proposals/_template.md") is None
+
+
+def test_multiply_introduced_marker_refuses(tmp_path: Path) -> None:
+    repo = _make_git_repo(tmp_path)
+    t = repo / "dev" / "proposals" / "_template.md"
+    t.parent.mkdir(parents=True)
+    t.write_text("no marker\n", encoding="utf-8")
+    _commit_all(repo, "no marker")
+    t.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
+    _commit_all(repo, "add marker")
+    t.write_text("no marker\n", encoding="utf-8")
+    _commit_all(repo, "remove marker")
+    t.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
+    _commit_all(repo, "re-add marker")
+    with pytest.raises(events.ReconciliationError, match="removed and re-added"):
+        events.activation_commit(repo, "dev/proposals/_template.md")
+
+
+def test_divergent_marker_refuses(tmp_path: Path) -> None:
+    """This module's own design choice for a mechanism Round 7's text
+    names ("the pair -- Cairn's own installed copy and the shipped
+    template -- disagrees") but does not specify: `companion_relpath`
+    is compared at HEAD only, and the check is vacuously skipped when no
+    companion exists in the tree at all (the ordinary adopter case)."""
+    repo = _make_git_repo(tmp_path)
+    primary = repo / "dev" / "proposals" / "_template.md"
+    primary.parent.mkdir(parents=True)
+    primary.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
+    companion = repo / "templates" / "core" / "dev" / "proposals" / "_template.md"
+    companion.parent.mkdir(parents=True)
+    companion.write_text("no marker\n", encoding="utf-8")
+    _commit_all(repo, "divergent")
+    with pytest.raises(events.ReconciliationError, match="divergent"):
+        events.activation_commit(
+            repo, "dev/proposals/_template.md",
+            companion_relpath="templates/core/dev/proposals/_template.md",
+        )
+
+
+def test_no_companion_in_tree_skips_the_divergence_check(tmp_path: Path) -> None:
+    """The ordinary adopter shape: no `templates/core/` tree at all, so
+    the divergence check is vacuous rather than a spurious refusal."""
+    repo = _make_git_repo(tmp_path)
+    primary = repo / "dev" / "proposals" / "_template.md"
+    primary.parent.mkdir(parents=True)
+    primary.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
+    _commit_all(repo, "no companion")
+    result = events.activation_commit(
+        repo, "dev/proposals/_template.md",
+        companion_relpath="templates/core/dev/proposals/_template.md",
+    )
+    assert result == _head_sha(repo)
+
+
+def test_act_in_markers_own_introducing_commit_shares_that_commit(
+    tmp_path: Path,
+) -> None:
+    """The boundary case `test_main_branch_target_runs` (the real
+    reference-scripts test, Chunk 7) exercises informally: the marker's
+    own introducing commit and a co-committed lifecycle act resolve to
+    the SAME commit SHA from both `activation_commit` and
+    `walk_history`. Whether that shared commit counts as pre- or
+    post-cutoff is Chunk 6's own comparison logic (the exclusive
+    reading); this fixture pins the raw material that comparison
+    needs."""
+    repo = _make_git_repo(tmp_path)
+    template = repo / "dev" / "proposals" / "_template.md"
+    template.parent.mkdir(parents=True)
+    p = repo / "dev" / "proposals" / "p.md"
+    template.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
+    p.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _commit_all(repo, "marker + act together")
+
+    cutoff = events.activation_commit(repo, "dev/proposals/_template.md")
+    result = events.walk_history(
+        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES)
+    assert len(result.events) == 1
+    assert result.events[0].commit == cutoff
+
+
+def test_two_commits_each_adding_one_block_get_distinct_stable_identities(
+    tmp_path: Path,
+) -> None:
+    repo = _make_git_repo(tmp_path)
+    p = repo / "p.md"
+    p.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _commit_all(repo, "c1: transition")
+    result1 = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert len(result1.events) == 1
+
+    review_section = (
+        "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
+    )
+    p.write_text(
+        p.read_text(encoding="utf-8") + review_section
+        + _fence("review-pass", tier="External", reviewer="Bob"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "c2: review pass")
+    result2 = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert len(result2.events) == 2
+    ids = [(e.commit, e.index) for e in result2.events]
+    assert len(set(ids)) == 2, "two distinct commits must yield two distinct identities"
+    assert result2.events[0].commit == result1.events[0].commit, (
+        "the first identity is stable across the later commit"
+    )
+    assert result2.events[1].kind == "review-pass"
+    assert result2.events[1].section_kind == "review"
+
+
+def test_root_commit_introducing_a_block_is_attributed_not_refused(
+    tmp_path: Path,
+) -> None:
+    """Step 5 refuses on AMBIGUOUS multi-parent attribution; a root
+    commit has ZERO parents, which is not ambiguity -- its empty parent
+    sequence is trivially a prefix of its own block sequence."""
+    repo = _make_git_repo(tmp_path)
+    p = repo / "p.md"
+    p.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _commit_all(repo, "root commit with a block")
+    head = _head_sha(repo)
+
+    r = subprocess.run(["git", "rev-list", "--parents", "-n", "1", head],
+                        cwd=str(repo), capture_output=True, text=True, check=True)
+    assert len(r.stdout.strip().split()) == 1, "fixture assumption: HEAD must be a root commit"
+
+    result = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert len(result.events) == 1
+    assert result.events[0].commit == head
+
+
+def test_uncommitted_edit_is_invisible_to_both_sides(tmp_path: Path) -> None:
+    """The act list the reconciler checks is read from the same
+    committed history it reads blocks from, not from the live
+    working-copy file (EPR-15's resolution) -- an uncommitted lifecycle
+    act is invisible to BOTH sides symmetrically, neither refused nor
+    counted, until it is committed."""
+    repo = _make_git_repo(tmp_path)
+    p = repo / "p.md"
+    p.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _commit_all(repo, "c1")
+    before = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert len(before.events) == 1 and before.unmatched_acts == []
+
+    # An uncommitted review-pass act, written to disk but never committed.
+    p.write_text(
+        p.read_text(encoding="utf-8")
+        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
+        encoding="utf-8",
+    )
+    during = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert len(during.events) == 1 and during.unmatched_acts == [], (
+        "an uncommitted act must be neither refused nor counted"
+    )
+
+    _commit_all(repo, "c2: commit the review act without its block")
+    after = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert len(after.events) == 1
+    assert len(after.unmatched_acts) == 1
+    assert after.unmatched_acts[0].kind == "review-pass"

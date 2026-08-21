@@ -45,8 +45,13 @@ contained vocabulary loader) supplies it.
 from __future__ import annotations
 
 import re
+import subprocess
+from collections import Counter
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
+
+from .parse import _header_field, _CODE_REVIEW_HEADING_RE, _PLAN_REVIEW_HEADING_RE
 
 
 # --------------------------------------------------------------- grammar
@@ -260,3 +265,496 @@ def parse_event_blocks(
 
         blocks.append(EventBlock(kind=kind, fields=dict(parsed), raw=raw))
     return blocks
+
+
+# ------------------------------------------------------- the history-diff reader
+#
+# The algorithm, reproduced from Round 7 §2-§4 as the binding contract this
+# section pins:
+#
+#   1. Walk the artifact's rename-aware history, oldest first.
+#   2. At each commit, parse the block sequence at that commit and at its
+#      parent; the parent sequence must be an exact prefix of the child's --
+#      any reordering, edit, or deletion of an existing block is a mutation
+#      and refuses.
+#   3. Attribute only the added suffix to that commit.
+#   4. Require the matching lifecycle act in the same diff (a `transition`
+#      block needs the `**Status**` change; a `review-pass` block needs the
+#      added review section; a `response` block needs the added Response
+#      section).
+#   5. Refuse on ambiguous multi-parent attribution -- a merge commit is
+#      never an introducing commit.
+#
+# Identity is `(introducing full commit SHA, added-block index)`, both
+# derived here and never stored.
+#
+# **The act list is read from the same committed history the block list is
+# read from, not from the live working-copy file.**  This reader never calls
+# `Path.read_text()` on the artifact -- every content read is `git show
+# <sha>:<path>` -- so an uncommitted working-copy edit is structurally
+# invisible to it, symmetrically on both the block side and the act side
+# (EPR-15's resolution).
+
+
+class ReconciliationError(ValueError):
+    """History cannot be reconciled at all: a mutated existing block, a
+    merge commit introducing a block, an event block with no matching
+    lifecycle act in its own introducing commit, or an unresolvable
+    grammar violation.  Fail-closed -- a defensible series is not produced
+    when one cannot be computed."""
+
+
+class GitUnavailable(RuntimeError):
+    """Git itself could not be consulted (no ``git`` on PATH, not a git
+    checkout, or the command otherwise failed) -- distinct from
+    :class:`ReconciliationError`, which means git IS available but the
+    history it reports cannot be reconciled.  The caller (Chunk 6's
+    wiring in ``extract.py``) is the one that knows whether this
+    matters: unavailable git forecloses proving an artifact is past its
+    activation cutoff, so it is treated as pre-cutoff rather than
+    refused (Chunk 5's Activation section)."""
+
+
+#: Section-kind tags for a `review-pass` act/event -- which heading
+#: pattern matched, retained alongside the reconciled record (rather than
+#: the block's own self-reported `tier` field) so `extract_plan_row` can
+#: classify `plan_review_rounds` vs. `code_review_rounds` by the same
+#: `_CODE_REVIEW_HEADING_RE`/`_PLAN_REVIEW_HEADING_RE` patterns it already
+#: imports -- the reconciler already inspected the matched heading line to
+#: confirm the act exists at all, so this repurposes that inspection
+#: rather than depending on a block author correctly setting `tier: Code`.
+SECTION_KIND_REVIEW = "review"
+SECTION_KIND_PLAN_REVIEW = "plan-review"
+SECTION_KIND_CODE_REVIEW = "code-review"
+
+_RESPONSE_HEADING_RE = re.compile(r'^## Response\b')
+_REVIEW_HEADING_RE = re.compile(r'^## Review\b')
+
+
+def _section_kind_of(line: str) -> Optional[str]:
+    """Which review-pass section-kind a heading LINE matches, or ``None``.
+    Checked in a fixed order so a heading that happens to match more than
+    one pattern (should not occur given the patterns' own anchors, but
+    checked defensively) resolves deterministically."""
+    if _PLAN_REVIEW_HEADING_RE.match(line):
+        return SECTION_KIND_PLAN_REVIEW
+    if _CODE_REVIEW_HEADING_RE.match(line):
+        return SECTION_KIND_CODE_REVIEW
+    if _REVIEW_HEADING_RE.match(line):
+        return SECTION_KIND_REVIEW
+    return None
+
+
+def _new_matching_lines(
+    parent_text: str, child_text: str, predicate,
+) -> List[str]:
+    """Lines in ``child_text`` matching ``predicate`` that were NOT already
+    present (by exact string, multiset-counted) in ``parent_text`` --
+    the added suffix's structural evidence, in order of appearance.
+    Multiset (not set) so a second occurrence of an already-present exact
+    line still counts as new; two commits can each add a heading whose
+    text happens to collide only in a synthetic fixture, and the count
+    must not silently drop the second one."""
+    parent_counts: Counter = Counter(
+        line for line in parent_text.splitlines() if predicate(line))
+    seen: Counter = Counter()
+    new_lines: List[str] = []
+    for line in child_text.splitlines():
+        if not predicate(line):
+            continue
+        seen[line] += 1
+        if seen[line] > parent_counts.get(line, 0):
+            new_lines.append(line)
+    return new_lines
+
+
+def _status_of(text: str) -> str:
+    """The raw ``**Status**:`` header field value, or ``''`` when absent
+    (including when ``text`` is the empty string standing in for "the
+    file did not exist yet")."""
+    return _header_field(text, "Status") if text else ""
+
+
+# --------------------------------------------------------------- git plumbing
+
+
+def _run_git(repo_root: Path, args: Sequence[str], *, timeout: int = 30):
+    try:
+        return subprocess.run(
+            ["git", *args], cwd=str(repo_root), capture_output=True,
+            timeout=timeout, check=False,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as exc:
+        raise GitUnavailable(f"git could not be run: {exc}") from None
+
+
+def _git_available(repo_root: Path) -> bool:
+    """Whether ``repo_root`` is a usable git checkout at all -- checked
+    once, cheaply, rather than inferring "unavailable" from every
+    downstream call returning empty (which would be indistinguishable
+    from "genuinely no history")."""
+    try:
+        result = _run_git(repo_root, ["rev-parse", "--git-dir"], timeout=10)
+    except GitUnavailable:
+        return False
+    return result.returncode == 0
+
+
+def _show(repo_root: Path, commit: str, relpath: str) -> Optional[str]:
+    """``git show <commit>:<relpath>``, or ``None`` when the path did not
+    exist at that commit (never raises for that ordinary case)."""
+    result = _run_git(repo_root, ["show", f"{commit}:{relpath}"])
+    if result.returncode != 0:
+        return None
+    return result.stdout.decode("utf-8", errors="replace")
+
+
+@dataclass(frozen=True)
+class _FollowedCommit:
+    sha: str          # full commit SHA
+    parents: Tuple[str, ...]
+    path: str         # the artifact's path AS IT APPEARED at this commit
+
+
+def _followed_history(repo_root: Path, relpath: str) -> List[_FollowedCommit]:
+    """The artifact's rename-aware history, OLDEST FIRST: one
+    :class:`_FollowedCommit` per commit that touched ``relpath`` (or an
+    earlier name it was renamed from), each carrying the full parent SHA
+    list (so a merge commit's multi-parent shape is visible) and the
+    path the artifact held AT that commit (so content reads survive a
+    rename without a second, hand-rolled rename detector)."""
+    parents_out = _run_git(
+        repo_root,
+        ["log", "--follow", "--format=%H%x00%P", "--", relpath],
+    )
+    if parents_out.returncode != 0:
+        return []
+    parents_by_sha: Dict[str, Tuple[str, ...]] = {}
+    order: List[str] = []
+    for line in parents_out.stdout.decode("utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\x00")
+        sha = parts[0]
+        parent_field = parts[1] if len(parts) > 1 else ""
+        parents_by_sha[sha] = tuple(parent_field.split()) if parent_field else ()
+        order.append(sha)
+
+    paths_out = _run_git(
+        repo_root,
+        ["log", "--follow", "--format=%x01%H", "--name-only", "--", relpath],
+    )
+    path_by_sha: Dict[str, str] = {}
+    if paths_out.returncode == 0:
+        current_sha: Optional[str] = None
+        for line in paths_out.stdout.decode("utf-8", errors="replace").splitlines():
+            if line.startswith("\x01"):
+                current_sha = line[1:]
+            elif line.strip() and current_sha is not None and current_sha not in path_by_sha:
+                path_by_sha[current_sha] = line
+
+    commits = [
+        _FollowedCommit(
+            sha=sha, parents=parents_by_sha[sha],
+            path=path_by_sha.get(sha, relpath),
+        )
+        for sha in order
+    ]
+    commits.reverse()  # `git log` is newest-first; the algorithm walks oldest-first.
+    return commits
+
+
+def _check_no_merge_smuggled_a_block(
+    repo_root: Path, relpath: str, *, valid_states: Sequence[str],
+) -> None:
+    """Step 5's own safety net, run separately from the main walk.
+
+    ``git log --follow`` -- the main walk's own history source -- never
+    surfaces a merge commit touching a path at all (git's default history
+    simplification hides it, and this holds even with ``--full-history``
+    added: the two do not compose the way their names suggest, verified
+    empirically while building this reader). So the main walk can never
+    observe a merge commit on its own, and the "ambiguous multi-parent
+    attribution" refusal needs its own pass: ``--full-history`` alone
+    (no ``--follow``) over the artifact's CURRENT path finds every real
+    merge commit, and for each one, a merge whose own block count
+    exceeds every parent's own block count at the same path has blocks
+    neither parent accounts for -- necessarily introduced by the merge
+    resolution itself. Rename-unaware by construction (a merge commit
+    that predates an archive rename is out of this check's reach); named
+    here rather than silently assumed complete."""
+    result = _run_git(
+        repo_root,
+        ["log", "--full-history", "--min-parents=2",
+         "--format=%H%x00%P", "--", relpath],
+    )
+    if result.returncode != 0:
+        return
+    for line in result.stdout.decode("utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        parts = line.split("\x00")
+        sha = parts[0]
+        parent_shas = parts[1].split() if len(parts) > 1 and parts[1] else []
+        merge_content = _show(repo_root, sha, relpath)
+        if merge_content is None:
+            continue
+        merge_block_count = len(
+            parse_event_blocks(merge_content, valid_states=valid_states))
+        if merge_block_count == 0:
+            continue
+        parent_max = 0
+        for parent_sha in parent_shas:
+            parent_content = _show(repo_root, parent_sha, relpath)
+            if parent_content is None:
+                continue
+            parent_max = max(
+                parent_max,
+                len(parse_event_blocks(parent_content, valid_states=valid_states)),
+            )
+        if merge_block_count > parent_max:
+            raise ReconciliationError(
+                f"{sha}: a merge commit cannot introduce a new event "
+                f"block -- ambiguous multi-parent attribution"
+            )
+
+
+# ------------------------------------------------------------- reconciled data
+
+
+@dataclass(frozen=True)
+class ReconciledEvent:
+    """One event, attributed to its introducing commit -- identity is the
+    ``(commit, index)`` pair, both fields here."""
+
+    kind: str
+    commit: str
+    index: int
+    section_kind: Optional[str]
+    block: EventBlock
+
+
+@dataclass(frozen=True)
+class UnmatchedAct:
+    """A structural act with no corresponding event block, at a given
+    commit -- what Chunk 6's post-cutoff reconciliation turns into
+    `INCOMPLETE`, and what a pre-cutoff act simply is (no block expected
+    yet)."""
+
+    kind: str
+    commit: str
+    section_kind: Optional[str]
+    detail: str
+
+
+@dataclass(frozen=True)
+class HistoryWalkResult:
+    events: List[ReconciledEvent] = field(default_factory=list)
+    unmatched_acts: List[UnmatchedAct] = field(default_factory=list)
+
+
+def walk_history(
+    repo_root: Path, relpath: str, *, valid_states: Sequence[str],
+) -> HistoryWalkResult:
+    """Walk ``relpath``'s rename-aware history oldest-first, attributing
+    every event block to its introducing commit and reporting every
+    structural act with no matching block (as :class:`UnmatchedAct`,
+    for the caller to judge against the activation cutoff).
+
+    Raises :class:`GitUnavailable` when git itself cannot be consulted,
+    and :class:`ReconciliationError` (or :class:`EventGrammarError`) on
+    any of: a mutated existing block, a merge commit introducing a
+    block, or an event block with no matching act in its own
+    introducing commit."""
+    if not _git_available(repo_root):
+        raise GitUnavailable(f"{repo_root} is not a usable git checkout")
+
+    _check_no_merge_smuggled_a_block(repo_root, relpath, valid_states=valid_states)
+
+    commits = _followed_history(repo_root, relpath)
+    events: List[ReconciledEvent] = []
+    unmatched: List[UnmatchedAct] = []
+
+    prev_content: Optional[str] = None
+    prev_blocks: List[EventBlock] = []
+
+    for commit in commits:
+        child_content = _show(repo_root, commit.sha, commit.path)
+        if child_content is None:
+            # The path this commit is indexed under does not resolve at
+            # this commit -- can happen at the tail of a --follow chain
+            # when rename detection's own path attribution is imprecise.
+            # Skip rather than fail closed on a plumbing artifact; the
+            # block-sequence invariant is unaffected either way, since
+            # nothing is attributed here.
+            continue
+        child_blocks = parse_event_blocks(child_content, valid_states=valid_states)
+
+        if child_blocks[:len(prev_blocks)] != prev_blocks:
+            raise ReconciliationError(
+                f"{commit.sha}: an existing event block was mutated "
+                f"(edited, reordered, or deleted) -- the prior block "
+                f"sequence is no longer an exact prefix of this commit's"
+            )
+        added = child_blocks[len(prev_blocks):]
+        is_merge = len(commit.parents) > 1
+
+        parent_text = prev_content or ""
+        status_changed = _status_of(parent_text) != _status_of(child_content) \
+            and _status_of(child_content) != ""
+        new_review_lines = _new_matching_lines(
+            parent_text, child_content, lambda l: _section_kind_of(l) is not None)
+        new_response_lines = _new_matching_lines(
+            parent_text, child_content, lambda l: bool(_RESPONSE_HEADING_RE.match(l)))
+
+        added_transition = [b for b in added if b.kind == KIND_TRANSITION]
+        added_review = [b for b in added if b.kind == KIND_REVIEW_PASS]
+        added_response = [b for b in added if b.kind == KIND_RESPONSE]
+
+        if len(added_transition) > 1:
+            raise ReconciliationError(
+                f"{commit.sha}: more than one transition block added in "
+                f"one commit -- a single diff carries at most one "
+                f"**Status** change"
+            )
+        if added_transition and not status_changed:
+            raise ReconciliationError(
+                f"{commit.sha}: a transition block was added with no "
+                f"matching **Status** change in this diff"
+            )
+        if len(added_review) > len(new_review_lines):
+            raise ReconciliationError(
+                f"{commit.sha}: {len(added_review)} review-pass block(s) "
+                f"added but only {len(new_review_lines)} new review-type "
+                f"section(s) found in this diff"
+            )
+        if len(added_response) > len(new_response_lines):
+            raise ReconciliationError(
+                f"{commit.sha}: {len(added_response)} response block(s) "
+                f"added but only {len(new_response_lines)} new Response "
+                f"section(s) found in this diff"
+            )
+        if added and is_merge:
+            raise ReconciliationError(
+                f"{commit.sha}: a merge commit cannot introduce a new "
+                f"event block -- ambiguous multi-parent attribution"
+            )
+
+        for i, block in enumerate(added):
+            section_kind = None
+            if block.kind == KIND_REVIEW_PASS:
+                paired_idx = added_review.index(block)
+                if paired_idx < len(new_review_lines):
+                    section_kind = _section_kind_of(new_review_lines[paired_idx])
+            events.append(ReconciledEvent(
+                kind=block.kind, commit=commit.sha, index=i,
+                section_kind=section_kind, block=block,
+            ))
+
+        if status_changed and not added_transition:
+            unmatched.append(UnmatchedAct(
+                kind=KIND_TRANSITION, commit=commit.sha, section_kind=None,
+                detail="a **Status** change has no matching transition block",
+            ))
+        for extra_line in new_review_lines[len(added_review):]:
+            unmatched.append(UnmatchedAct(
+                kind=KIND_REVIEW_PASS, commit=commit.sha,
+                section_kind=_section_kind_of(extra_line),
+                detail=f"section {extra_line!r} has no matching review-pass block",
+            ))
+        for extra_line in new_response_lines[len(added_response):]:
+            unmatched.append(UnmatchedAct(
+                kind=KIND_RESPONSE, commit=commit.sha, section_kind=None,
+                detail=f"section {extra_line!r} has no matching response block",
+            ))
+
+        prev_content = child_content
+        prev_blocks = child_blocks
+
+    return HistoryWalkResult(events=events, unmatched_acts=unmatched)
+
+
+# ------------------------------------------------------------- activation
+
+
+def _marker_status_by_commit(
+    repo_root: Path, relpath: str, marker: str = VERSION_TOKEN,
+) -> List[Tuple[str, bool]]:
+    """``[(sha, marker_present), ...]`` oldest-first for every commit
+    touching ``relpath`` -- the raw signal both the introducing-commit
+    derivation and the multiply-introduced check are built from."""
+    commits = _followed_history(repo_root, relpath)
+    out: List[Tuple[str, bool]] = []
+    for commit in commits:
+        content = _show(repo_root, commit.sha, commit.path)
+        out.append((commit.sha, content is not None and marker in content))
+    return out
+
+
+def activation_commit(
+    repo_root: Path, template_relpath: str,
+    *, companion_relpath: Optional[str] = None,
+) -> Optional[str]:
+    """The full SHA of the commit that FIRST adds the literal
+    ``cairn-event-v1`` marker to ``template_relpath``'s history, or
+    ``None`` when the marker has never been introduced -- **not** a
+    refusal (Chunk 5's Activation section, disposition (c), authorized
+    by the Maintainer: "I think (c) is right"): a tree with no marker at
+    all is simply not yet activated, every act on it pre-cutoff.
+
+    Refuses (:class:`ReconciliationError`) on:
+
+    * **multiply-introduced** -- the marker's presence toggles
+      absent -> present more than once across the commit sequence
+      (added, removed, re-added);
+    * **divergent** -- when ``companion_relpath`` is given and exists in
+      this tree, and its own marker-introduction state (present vs.
+      absent, as of HEAD) disagrees with ``template_relpath``'s.  This is
+      the mechanism for Cairn's own self-hosted case, where
+      ``templates/core/...`` mirrors the installed template; an ordinary
+      adopter tree carries no such companion at all, so the check is
+      vacuously skipped when ``companion_relpath`` does not resolve --
+      this is this module's own design choice for a mechanism Round 7's
+      text names but does not specify (recorded in the implementing
+      commit body, per this task's instrument-confirmation rule)."""
+    history = _marker_status_by_commit(repo_root, template_relpath, VERSION_TOKEN)
+
+    # Count absent->present edges across the oldest-first sequence (the
+    # "removed and re-added" signal), capturing the FIRST such edge's
+    # commit as the candidate introducing commit.
+    edges = 0
+    first_present_sha: Optional[str] = None
+    was_present = False
+    for sha, present in history:
+        if present and not was_present:
+            edges += 1
+            if first_present_sha is None:
+                first_present_sha = sha
+        was_present = present
+
+    if edges == 0:
+        result: Optional[str] = None
+    elif edges == 1:
+        result = first_present_sha
+    else:
+        raise ReconciliationError(
+            f"{template_relpath}: the '{VERSION_TOKEN}' marker was "
+            f"removed and re-added ({edges} introductions) -- "
+            f"multiply-introduced markers refuse rather than guessing "
+            f"which period they cover"
+        )
+
+    if companion_relpath is not None:
+        companion_path = repo_root / companion_relpath
+        if companion_path.is_file():
+            companion_present_at_head = VERSION_TOKEN in companion_path.read_text(
+                encoding="utf-8", errors="replace")
+            primary_present_at_head = result is not None
+            if companion_present_at_head != primary_present_at_head:
+                raise ReconciliationError(
+                    f"{template_relpath}: divergent activation marker -- "
+                    f"{template_relpath} and {companion_relpath} disagree "
+                    f"on whether the '{VERSION_TOKEN}' marker is present"
+                )
+
+    return result
