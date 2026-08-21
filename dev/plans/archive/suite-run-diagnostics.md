@@ -1,7 +1,7 @@
 # Plan: the suite reports its own cost
 
 **Source proposal**: `dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**Internal**) — ratified by Maintainer amendment at
 `e6e854d58f7083b5497cfa77a5d319285e7626b9`, overriding the plan-review
 template's default escalation path. See "Plan-review tier rationale" below
