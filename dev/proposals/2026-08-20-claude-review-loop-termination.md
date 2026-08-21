@@ -924,3 +924,57 @@ ledger."* The doctrine is right; the practice over-weights the number because it
 is the one part of the process that produces one. C6 does not lower the bar for
 review. It moves the loop to where re-reading can change the answer, and leaves
 the reviewer's real work — probing behaviour — as the thing that blocks.
+
+### C6, continued — how a finding is actually coded
+
+C6 above names three classes and then leaves a reviewer to guess how to write
+one down. That is the defect RLT-03 raised about the section manifest, repeated:
+a rule with no grammar cannot be applied the same way twice. The notation:
+
+**1. The class goes in the finding's own heading**, in square brackets,
+immediately after the id. The vocabulary is closed — `behaviour`, `record`,
+`observation` — and anything else refuses, for the same reason the tier
+vocabulary is closed.
+
+```
+#### CR12 [behaviour] — appending a hook silently deletes the release rule
+#### CR9  [record] — the correction states a false measurement
+#### CR13 [observation] — a fix landing after Boundary B re-opens implementation
+```
+
+**2. The `**Findings**:` basis line carries the counts by class**, so the shape
+of a review is legible before reading it:
+
+```
+**Findings**: 1 behaviour, 4 record, 2 observation
+```
+
+`**Findings**: none` stays as it is. The old free-text `raised (3 blocking)` is
+replaced: "blocking" was the reviewer's conclusion presented as if it were an
+observation, and under C6 it is derived rather than declared.
+
+**3. The verdict is derived from the classes, not chosen alongside them.**
+
+* **REVISE** if and only if at least one `behaviour` finding is open, **or** no
+  valid verification record covers the reviewed range.
+* **PASS** otherwise — with any `record` findings listed for correction in the
+  author's Response, and any `observation` findings carrying the artifact they
+  were routed to.
+
+A reviewer who believes a `record` finding should block is saying it is really a
+`behaviour` finding or an evidence failure, and should classify it that way and
+say why. **That argument is worth having in the open**; today it happens
+silently, inside the choice of the word "blocking."
+
+**4. What this changes about a PASS.** A PASS no longer means "nothing further
+to say." It means "nothing here changes what the code does." That is a claim a
+reviewer can actually make, and — unlike the current standard — one they can
+reach without an unbounded search, which is the property the whole proposal is
+after.
+
+**Enforced by**: the plan template supplies the finding heading and basis-line
+grammar; `lifecycle_planner.py`'s existing review-section parser already reads
+`**Findings**:` and can check the closed class vocabulary in the same pass it
+checks `**Tier**:`. That is a genuine predicate, unlike C4's — named here
+because the distinction between what a machine refuses and what a human reads
+is one this proposal has already got wrong once.
