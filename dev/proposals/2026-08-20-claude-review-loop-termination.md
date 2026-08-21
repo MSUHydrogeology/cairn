@@ -303,3 +303,76 @@ Changes 1, 3 and 4 stand unaltered. They reduce what the loop costs per turn;
 The proposal is now **three changes plus one replacement**, not four. That is a
 smaller contract than the one it opened with, which is the correct direction for
 a proposal arguing that contracts are too large.
+
+## Revision 2 -- Claude -- 2026-08-20 (Maintainer-corrected: plans do not loop)
+
+**Still no review landed.** The Maintainer corrected the model again, and the
+correction is simpler than both prior versions. Quoted verbatim and visually
+isolated:
+
+> "For plans, there is no editor. It's just
+> Plan->Review->Revise->Execute->Code Review->Dispositions (if any)->Archive"
+
+> "No reviewer gates on second rounds, except maybe a security review"
+
+### What was wrong with Revision 1
+
+Revision 1 proposed giving plan review and code review an **editor disposition
+step**, mirroring the proposal lifecycle. That was over-built. It accepted the
+premise that plans loop and tried to add a terminator to the loop.
+
+**Plans are not supposed to loop at all.** A plan gets one review. The author's
+revision closes it. Execution follows. There is no clearing round to seek and no
+editor needed, because there is nothing to adjudicate between rounds — there are
+no rounds.
+
+### The operative model
+
+```
+Plan -> Review -> Revise -> Execute -> Code Review -> Dispositions (if any) -> Archive
+```
+
+**One review. One revision. Then work.**
+
+* **A reviewer does not gate a second round.** The verdict vocabulary
+  (`PASS` / `REVISE`) records what the reviewer found; it does not hold the
+  artifact. A `REVISE` is answered by revising, and the answer closes it.
+* **The single exception is a Security Review**, which may take a second round
+  on a trust surface. That is the one place where "the author says it is fixed"
+  is not sufficient, because the failure mode is silent.
+* **`Dispositions (if any)`** is where the editor function lives, and it lives
+  there **once** — at code review, for findings that will not be fixed. Not
+  between plan-review rounds, because there are none.
+
+### Why this is the right shape and Revision 1 was not
+
+The plan is a *translation* of an already-accepted contract into sequenced work.
+The deliberative weight sat on the proposal, which has an editor and a Decision.
+A plan review's job is to catch translation errors before code is written — a
+single pass, and the pass is either useful or it is not.
+
+Rounds two through four exist only because a reviewer who has not been satisfied
+can hold the artifact. Remove the hold and they do not arise. Today's evidence is
+exact: `metrics-events-not-prose` took **four** plan-review rounds and the fourth
+found three blocking findings in a region the first three never visited — which
+is not convergence, and no number of further rounds would have made it so.
+
+**A consequence worth stating plainly: with no second round, the author's
+revision is the last prose check before code exists.** That raises the stakes on
+the revision rather than lowering them, and it is the correct place for the
+stakes to sit — the next check after it is code review, which reads executable
+bytes rather than a description of them.
+
+### Standing contract after this revision
+
+**Change 1** (restatement once, at the end) — unchanged.
+**Change 2'** (editor disposition for plans and code) — **withdrawn**. Replaced
+by the single-pass model above.
+**Change 3** (constructibility declared before the Maintainer's Decision) —
+unchanged, and now load-bearing: it is the check that a single-pass plan review
+most needs, because there is no second pass to catch a contract that cannot be
+built.
+**Change 4** (correct the false price on the plan layer) — unchanged.
+
+Three changes and one model correction. The contract has shrunk at every
+revision, which for this proposal is the argument.
