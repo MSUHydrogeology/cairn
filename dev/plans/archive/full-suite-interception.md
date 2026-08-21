@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
