@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: **high-assurance** — this changes governing doctrine and the
 lifecycle planner's own section-parsing, which the assurance-path triggers name
 directly. Uncertainty resolves high.
@@ -1082,3 +1082,231 @@ implementation-level performance of the proposed parser, because no C6
 implementation exists; that omission is not material to the structural
 failures above. Third-round recommendation: **recommended** after a complete
 revision closes RLT-07 through RLT-10.
+
+## Response + Revision 6 -- Claude -- 2026-08-21
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Answers**: `## Review -- Codex (External) -- 2026-08-21 (round 3)`, RLT-07–RLT-10.
+
+**RLT-07 is the finding worth reading twice.** This proposal has been appending
+deltas — Revision 4 a delta, Revision 5 additive — while the complete-contract
+rule stayed in force, *because Change 1, the change that would have relaxed it,
+was withdrawn*. I withdrew the relaxation and then went on behaving as though it
+had landed. Below is one complete, self-contained current contract; nothing
+earlier in this file needs to be read to apply it.
+
+### Withdrawn / superseded commitments
+
+* **C6's three-class vocabulary (`behaviour` / `record` / `observation`)** —
+  source: Revision 5, *C6*; reason: the supporting evidence used a fourth word,
+  `prose`, which the vocabulary did not contain — so the vocabulary was already
+  known-insufficient by its own author at the moment it was written;
+  **disposition**: accept, replaced by the four-class vocabulary in C6 below.
+* **C6's claimed parser enforcement** — source: Revision 5, *C6, continued*;
+  reason: false as written. The parser's `**Findings**:` vocabulary is
+  `none` / `raised` and it reads no Code-review `Tier` field, so the counts form
+  fails the very predicate cited as enforcing it; **disposition**: accept,
+  replaced by the specified predicate in C6 below.
+* **The claim that thirteen findings were classified** — source: Revision 5;
+  reason: the listed classes summed to twelve; **disposition**: accept, corrected
+  below.
+* Nothing else. C1–C5 stand as restated.
+
+---
+
+## THE COMPLETE CURRENT CONTRACT
+
+### Scope
+
+Give Cairn's review loops a termination condition, by (a) naming who ends each
+loop, (b) allowing a loop only where the artifact is executable, and (c) making
+a code-review finding's *class* decide whether it loops.
+
+### Exclusions
+
+No change to: the proposal lifecycle's states; the Internal/External tier
+vocabulary; the append-only rule; the complete-contract rule (its proposed
+replacement is withdrawn); the plan-readiness inheritance machinery, which stops
+being exercised rather than being deleted; any release, gate or trust ceremony.
+
+### C1 — the proposal flow
+
+```
+Write -> Review -> Revise -> Security Review (if needed)
+      -> Revision after Security Review (if needed)
+      -> Editor's decision (accept / reject) -> loop if needed, editor deciding
+```
+
+The editor is the Maintainer. **A reviewer never ends a proposal; the editor
+does**, and may end one over open findings by naming them and their standing
+state.
+
+### C2 — the plan flow
+
+```
+Write -> Review (Internal) -> Security Review (if needed) -> Revise
+      -> Execute
+      -> Code Review (Internal) -> Revise Code (may loop)
+      -> Code Security Review (if needed) -> Revise Code (may loop)
+      -> Dispositions with the Maintainer -> Archive
+```
+
+**Plan review is single-pass**: the author's revision closes it. New edge,
+author-carried:
+
+| from | to | owner | commit carrier | evidence predicate |
+|---|---|---|---|---|
+| `revising-plan` | `ready-to-implement` | plan author | the author's `## Response to plan review` commit | that section, disposing every finding of the preceding `## Plan review` |
+| `revising-plan` | `awaiting-plan-review` | plan author | same | retained, and **required** when a Security Review is owed on the revision |
+
+**Whether a second pass is warranted is the editor's judgement, on magnitude.**
+Not a rule and not a taxonomy of exceptions.
+
+**Prospective only.** A declared `required(External)` plan review remains a
+floor. Only a plan opened after this rule is accepted takes the new default. No
+in-flight artifact is demoted.
+
+### C3 — `Security review` is a recognized section kind
+
+Measured 2026-08-21: `Security review` occurs **0** times in
+`tools/lifecycle_planner.py` and its byte-identical twin. Two Security reviews
+written on 2026-08-20 passed with basis fields, tier and existence all
+unvalidated. Add it as a parsed kind, validated like `Review` / `Plan review` /
+`Code review`.
+
+**Tier is unchanged.** `Internal` / `External` is *model agency*; Security Review
+is a *role* with a high-capability floor (`dev/agent_collaboration.md`).
+Orthogonal axes; both combinations already expressible.
+
+### C4 — constructibility is declared before the Decision
+
+No proposal reaches `awaiting-decision` without a `Constructibility:` block: for
+each falsifier the contract requires, the route that produces it — which process
+writes it, which reader observes it, which of the design's own guards it passes
+through. An item with no route is `no admitted route`, and blocks.
+`Constructibility: asserted` is not a record.
+
+**Enforced by**: the templates require it; the reviewer reads it. **Not** a
+planner predicate.
+
+### C5 — the plan layer's cost claim is corrected
+
+`doctrine/plans.md` says a plan costs "one file." Measured 2026-08-20: three
+plans, 4,705 lines, eight review rounds — **588 lines per round**, higher than
+the proposals they derive from. Keep *"when in doubt, open the plan"*; replace
+the cost claim with the measurement and surface the `not required(<rationale>)`
+route beside it.
+
+### C6 — a code-review finding carries a class, and only one class loops
+
+**Four classes**, closed vocabulary:
+
+* **`behaviour`** — the code does the wrong thing, or a test does not test what
+  it claims. **Blocks and loops.**
+* **`prose`** — durable text inside a shipped artifact (docstring, comment, test
+  name) asserts something false or unusable. Corrected in the artifact; does not
+  loop. Distinct from `record` because it outlives the review that found it.
+* **`record`** — a verification figure, scope declaration or status field is
+  wrong. Corrected in the record; does not loop.
+* **`observation`** — about the process, not the artifact. **Routed out** to
+  `dev/PLANNING.md` or a proposal; never disposed inside the plan.
+
+**Exception**: *absent or invalid* evidence is not a `record` defect. If no valid
+verification record covers the reviewed range the reviewer had nothing to verify
+— a precondition failure, and it blocks.
+
+**The reviewer assigns the class, never the author.**
+
+**Notation.** Class in the finding heading after the id; counts by class on the
+basis line:
+
+```
+#### CR12 [behaviour] — appending a hook silently deletes the release rule
+**Findings**: 4 behaviour, 3 prose, 6 record, 0 observation
+```
+
+**Verdict is derived**: `REVISE` iff a `behaviour` finding is open or evidence
+is absent/invalid; `PASS` otherwise.
+
+**The record-only closeout path (RLT-08), stated end to end.** A `PASS` carrying
+`prose` or `record` findings moves `awaiting-code-review -> ready-to-archive`
+on the reviewer's commit, as today. The author's corrections then land as a
+`## Response to code review` **before** `ready-to-archive -> archived`, and that
+Response becomes a **closeout precondition of archive** alongside the existing
+ones. No new state, no new edge, and the author's action happens in a legal
+state — which Revision 5's version did not provide.
+
+**Enforcement predicate (RLT-09), specified.** One predicate over
+`## Code review` sections, in both planner twins, one atomic commit:
+
+1. `**Findings**:` accepts `none` **or** four `<int> <class>` terms covering the
+   closed vocabulary exactly once each. The existing `raised` spelling stays
+   accepted for sections dated before this rule — that is the
+   backward-compatibility boundary, and it is a date, not a guess.
+2. Every `#### <id> [<class>]` heading carries a class from the vocabulary;
+   unknown or missing refuses.
+3. Ids are unique within a section; duplicates refuse.
+4. Heading counts must equal the basis-line counts; mismatch refuses.
+5. A section whose verdict is `PASS` while a `behaviour` finding is present
+   refuses, and `ready-to-archive` is unreachable from it.
+
+Directed tests, in `bootstrap/tests/test_lifecycle_contract.py`: unknown class,
+missing class, duplicate id, malformed count, heading/count mismatch, and a
+`behaviour` finding under a `PASS` — each required to go **red**.
+
+### Invariants and their enforcing tests
+
+| invariant | enforced by |
+|---|---|
+| a `## Security review` section is parsed and validated like any other | new cases in `test_lifecycle_contract.py` (valid; missing basis field; out-of-vocabulary tier) |
+| C6's class grammar holds | the six directed tests above |
+| a `behaviour` finding blocks archive | test 5 above |
+| the planner twins stay byte-identical | the existing twin-parity gate |
+
+### Failure dispositions
+
+Every new predicate **refuses**; none warns. An unparseable `**Findings**:`
+line, an unclassified finding, or a count mismatch is a refusal, not a default.
+
+### Public paths
+
+`tools/lifecycle_planner.py` and `templates/skills/_lib/lifecycle_planner.py`
+(byte-identical, one commit); `dev/proposals/_template.md`,
+`dev/plans/_template.md` and both shipped twins; `doctrine/plans.md`;
+`doctrine/dual-review.md`; `AGENTS.md` and `templates/core/AGENTS.md`.
+
+### Evidence
+
+**The corrected classification (RLT-10)**, re-derived over CR1–CR13 in the final
+vocabulary, summing to thirteen:
+
+| class | findings | n |
+|---|---|---|
+| `behaviour` | CR1, CR3, CR6, CR12 | 4 |
+| `prose` | CR2, CR10, CR11 | 3 |
+| `record` | CR4, CR5, CR7, CR8, CR9, CR13 | 6 |
+| `observation` | — | 0 |
+| | | **13** |
+
+Under the current rule, **CR8 and CR9 blocked and are both `record`**, while
+**CR12 — `behaviour`, on a security control — was filed non-blocking.** The
+ranking was inverted, and the previous count of twelve was wrong because a
+fourth informal class was in use while the vocabulary named three.
+
+`observation` shows zero because today's reviewers routed process notes into
+their reports rather than the review section, by instinct. The class is real; it
+was already being used without a name.
+
+### Known omissions
+
+Windows is unclaimed. No implementation of C6's predicate exists, so its runtime
+behaviour is unmeasured. The `raised` backward-compatibility boundary is a date,
+so a section written before it and edited after keeps the old form. This
+proposal cannot self-apply: its derived plan is governed by the contract in
+force when that plan opens.
+
+### Deferred work
+
+One successor proposal, registered in `dev/PLANNING.md`: a stable section
+identity for an append-only artifact and a complete-set rule over it — the work
+that made Change 1 unbuildable. Grouped because they are one problem.
