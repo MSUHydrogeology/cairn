@@ -172,6 +172,15 @@ is the author's to decide and defend. The record protects everyone:
 the call and the dissent both live in the artifact, so a wrong call is
 visible and cheap to reverse — which is exactly why making it is safe.
 
+There is direct evidence for this design: the Maintainer estimates they
+have accepted agent recommendations **~90% of the time or more**. A
+gate that approves nine times in ten is not where the judgment lives —
+it is latency. The Maintainer's value is concentrated in the tenth
+case, and the way to surface that case is a two-sentence
+recommendation with a default they can veto on sight, not a bullet
+list of open disputes. Design the flow to make the 90% frictionless
+and the 10% conspicuous.
+
 **1.3 Give findings a cost vocabulary: `blocking` / `note` / `nit`.**
 Only `blocking` requires a written response. A `note` may be taken
 silently; a `nit` may be ignored without ceremony. A round that
