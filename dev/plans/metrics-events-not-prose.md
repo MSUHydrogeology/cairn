@@ -3,11 +3,11 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
 converted the tier after two External rounds landed. See "The review tier, and
 why it changed" below.
-**Last update**: 2026-08-20
+**Last update**: 2026-08-21
 **Opened**: 2026-08-20
 
 ## The review tier, and why it changed
@@ -2395,3 +2395,44 @@ structure directly, which is what produced the EPR-14 citation correction
 above.
 
 **Status**: `revising-plan` -> `awaiting-plan-review`.
+
+## Plan-review disposition -- Anthony Kendall (Maintainer) -- 2026-08-21
+
+Four plan-review rounds ran (two External, two Internal after the Maintainer's
+round-3 tier conversion). All twelve findings across rounds 1-2 (EPR-01
+through EPR-04) and all eighteen findings across rounds 3-4 (EPR-05 through
+EPR-18) are closed in the operative cells, verified by each subsequent round
+re-running the instruments rather than trusting the prior round's Response.
+Round 4's own Response is the plan's current operative state: both
+architecture questions it flagged as its own inference (the marker's
+introducing commit is pre-cutoff; git-absence is field-kind-dependent) were
+independently re-derived and confirmed correct by round 4's review before
+that round raised its own three new findings (EPR-13/14/15), which the
+round-4 Response then closed.
+
+The Maintainer ended the review phase and directed implementation. Quoted
+verbatim and visually isolated:
+
+> "just push these things out. Too much review, too much planning. Some
+> things just can't be decided in advance. We are getting FAR to risk
+> averse here. Record proper transitions, and move ahead."
+
+> "Fan out, do all of the code, don't do a bunch of Boundary Bs. Get sharp
+> singular code revisions wherever possible, edit, record findings, and
+> archive."
+
+**Disposition: proceed to implementation without a fifth plan-review round.**
+The plan's own record shows four rounds of genuine convergence -- each round
+closed real findings and found progressively fewer, smaller defects, and
+round 4 independently re-confirmed rather than merely inherited the two prior
+rounds' open design questions. The two architecture points the round-4
+Response itself flagged as "may still be under-specified" (the `tier`-vs-
+heading classifier for `plan_review_rounds`/`code_review_rounds`, row 6-9) are
+implementation-detail choices within an already-settled contract, not open
+proposal-level questions; this authorization directs the implementing agent to
+pick the reading most consistent with the accepted proposal where genuinely
+underspecified, record the choice and its rejected alternative in the
+implementation record, and proceed -- per the Maintainer's instruction above,
+not by silent default.
+
+**Status**: `awaiting-plan-review` -> `ready-to-implement`.
