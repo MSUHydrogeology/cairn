@@ -128,7 +128,13 @@ MAPPING_SYMBOLS_PHASES: dict[str, list[str]] = {
 # Canonical gate commands, recorded as data (run under `python` == lhm/3.13).
 GATE_COMMANDS: list[dict] = [
     {"id": "bootstrap-suite",
-     "cmd": ["python", "-m", "pytest", "bootstrap/tests/", "-q"],
+     # The override token is part of the command, not a caveat beside it: this
+     # list is copied out of the manifest and run by a person, and the broad-run
+     # guard in `conftest.py` refuses the bare form with exit 4 before any test
+     # executes.  A recorded command that cannot run is a worse defect than a
+     # missing one, because it looks usable.
+     "cmd": ["env", "CAIRN_FULL_SUITE=1",
+             "python", "-m", "pytest", "bootstrap/tests/", "-q"],
      "expect": "all green; 0 skipped / 0 xfailed (the dev Bandit gate, AST attest, "
                "differential oracle, and loader-identity tests all run inside this suite)"},
     {"id": "ast-attest-verify",
