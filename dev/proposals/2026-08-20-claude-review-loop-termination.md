@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — this changes governing doctrine and the
 lifecycle planner's own section-parsing, which the assurance-path triggers name
 directly. Uncertainty resolves high.
@@ -978,3 +978,107 @@ grammar; `lifecycle_planner.py`'s existing review-section parser already reads
 checks `**Tier**:`. That is a genuine predicate, unlike C4's — named here
 because the distinction between what a machine refuses and what a human reads
 is one this proposal has already got wrong once.
+
+## Review -- Codex (External) -- 2026-08-21 (round 3)
+
+**Model**: GPT-5.6 (Codex)
+
+Reviewed commit: 8bb08b97f32704d5b54a88c5857754e6200c7cc8
+Target: the current header, Response + Revision 4's RLT-04–RLT-06 closure, and Revision 5 / C6
+Prior findings: RLT-04, RLT-05, RLT-06
+Assurance path: high-assurance
+**Tier**: External
+**Findings**: raised (4 blocking)
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+Revision 4 closes the three prior defects on their terms: the header now exposes
+the executable surface and External plan-review obligation; the withdrawal has a
+bounded, verbatim Maintainer allowance; and C2 now names the ordinary and
+Security return edges without silently lowering an existing External floor. C6
+also correctly isolates the important distinction between a defect in behavior
+and a correction to a record. That is a promising boundary for a termination
+rule, because it identifies where another independent read can change the
+answer.
+
+### Findings
+
+#### RLT-07 — BLOCKING: the latest current contract is still assembled from history, contrary to the rule this proposal leaves in force
+
+Revision 4 is a delta over C1–C5 and Revision 5 is an additive C6. Neither is
+a self-contained current contract. The operative template requires every
+Response to append one complete revision, with scope, exclusions, invariants,
+failure dispositions, public paths, evidence, omissions, deferred work, and
+exactly one withdrawal ledger. That requirement remains current because Change
+1, which proposed replacing it, was withdrawn. A Decision now requires a reader
+to reconstruct the contract from the opening proposal plus five revisions—the
+same repeated assembly this proposal identifies as the present failure mode.
+
+Append one complete current-contract revision covering C1–C6 and the Revision
+4 changes, with one explicit ledger, before seeking another clearing review.
+Do not make the reviewer infer which earlier prose survives.
+
+#### RLT-08 — BLOCKING: a record-only code-review finding has no valid correction-and-closeout transition
+
+C6 says a review with record findings is `PASS`, then requires the author to
+correct those findings in a Response without another read. The current graph
+allows `awaiting-code-review` to move only to `revising-code` or
+`ready-to-archive`; the latter makes archive the next obligation, while the
+former asserts a blocking review. The current conformance predicate is equally
+explicit that a Response to code review does not clear a blocking pass. C6 names
+neither a state nor a commit carrier that lets the author make the promised
+correction before archive, nor an evidence predicate that proves the correction
+landed while preserving review attribution.
+
+Specify the record-only path end to end: the state(s), next owner, status move,
+author commit, required response binding, evidence/closeout predicate, and the
+condition that distinguishes it from a behavior loop. Alternatively retain a
+clearing correction review. A `PASS` whose required author action cannot happen
+in a legal state is not a termination condition.
+
+#### RLT-09 — BLOCKING: C6 names a parser enforcement but does not define the predicate that must relate headings, counts, and verdict
+
+The proposed `**Findings**: 1 behaviour, 4 record, 2 observation` currently
+fails the named parser: its closed Findings vocabulary is only `none` / `raised`.
+The parser also does not read a Code-review `Tier` field, despite C6 describing
+this as the same pass that checks one. More importantly, C6 requires both a
+class on every finding heading and counts by class, but gives no rule requiring
+the two to agree. A parser that only recognizes the three words could accept a
+missing heading, an unclassified finding, duplicate id, or false count while
+still deriving a `PASS`.
+
+Define one shared parser/predicate for C6, its exact input population and
+backward-compatibility boundary, and its fail-closed cases. Map directed tests
+for unknown class, missing class, duplicate id, malformed count, heading/count
+mismatch, and a behavior finding that must refuse `ready-to-archive`; name both
+planner twins as one atomic commit. The present Revision 4 test mapping covers
+C3's Security-review section only, not this new executable contract.
+
+#### RLT-10 — BLOCKING: C6's supporting classification is arithmetically and grammatically inconsistent
+
+C6 says thirteen findings were classified, then lists three behavior, six
+record, two prose, and one additional behavior finding: twelve in total. It
+also uses `prose`, which is absent from C6's closed `behaviour` / `record` /
+`observation` vocabulary. The actual two code-review passes enumerate CR1
+through CR13, so this is not an approximate count: one named finding is missing
+from the evidence that motivates the rule.
+
+Re-derive and show a CR1–CR13 classification using the final closed vocabulary
+(or revise that vocabulary), with each count adding to thirteen. Until then the
+claim that the present contract inverted those classifications cannot support
+the proposed new mechanism.
+
+### Coverage
+
+Covered: Revision 4's header, allowance, transition, and prospective-only
+closures; Revision 5/C6; the complete-current-contract rule in the proposal
+template and its shipped twin; the live code-review template and lifecycle
+state/evidence predicates; both byte-identical planner twins; and the two
+`full-suite-interception` code-review passes (CR1–CR13). Targeted probes:
+`tools/lifecycle_planner.py scan` and direct parser input for C6's Findings
+form, which returned an unrecognized closed-vocabulary value. Not covered:
+implementation-level performance of the proposed parser, because no C6
+implementation exists; that omission is not material to the structural
+failures above. Third-round recommendation: **recommended** after a complete
+revision closes RLT-07 through RLT-10.
