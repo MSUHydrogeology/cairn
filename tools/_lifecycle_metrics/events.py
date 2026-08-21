@@ -469,7 +469,20 @@ def _followed_history(repo_root: Path, relpath: str) -> List[_FollowedCommit]:
     earlier name it was renamed from), each carrying the full parent SHA
     list (so a merge commit's multi-parent shape is visible) and the
     path the artifact held AT that commit (so content reads survive a
-    rename without a second, hand-rolled rename detector)."""
+    rename without a second, hand-rolled rename detector).
+
+    **A known limitation of ``--follow``, discovered building this
+    reader's own test fixtures (row 7-1/7-2): its rename detection is
+    CONTENT-SIMILARITY-based, not identity-based.** Two unrelated
+    proposals whose bodies happen to be near-identical -- a hand-built
+    test fixture using boilerplate text for both, most concretely -- can
+    make git attribute a brand-new file's CREATION commit as a "rename"
+    from an entirely different, pre-existing file, pulling that other
+    file's own commit into this one's history. For a real lifecycle
+    corpus this is very unlikely (each proposal/plan carries a distinct
+    title, author, date, and substantive prose), but it is a real
+    property of this function, not a hypothetical one -- named here
+    rather than only worked around in the fixtures that hit it."""
     parents_out = _run_git(
         repo_root,
         ["log", "--follow", "--format=%H%x00%P", "--", relpath],

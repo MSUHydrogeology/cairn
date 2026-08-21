@@ -782,3 +782,114 @@ def test_extract_plan_row_emits_empty_for_never_activated_tree(
     row = _lm_installed.extract_plan_row(p, repo_root=repo)
     assert row["plan_review_rounds"] == ""
     assert row["code_review_rounds"] == ""
+
+
+# ---------------------------------------------------------------------------
+# Chunk 7 -- cross-cutting fixtures (rows 7-1, 7-2)
+# ---------------------------------------------------------------------------
+
+
+def test_cross_commit_contamination_is_structurally_unrepresentable(
+    tmp_path: Path,
+) -> None:
+    """The R3-E1 property, re-expressed for the artifact-local design per
+    Round 5 SS2: two artifacts transitioned concurrently, one commit
+    path-scoped to the first artifact only, and the second artifact's
+    block does not and cannot appear in that commit -- because there is
+    no shared file for it to appear in. A confirmation of a STRUCTURAL
+    property (git commits are per-path diffs; a path-scoped commit
+    cannot touch a second file's content), not a vulnerability
+    regression test -- it would still hold with events.py deleted
+    entirely, since the property belongs to git and path-scoped commits,
+    not to this reader's own logic. Writing it is still required
+    (Round 5); it does not itself enforce the property."""
+    repo = _make_git_repo(tmp_path)
+    (repo / "dev" / "proposals").mkdir(parents=True)
+    a = repo / "dev" / "proposals" / "a.md"
+    b = repo / "dev" / "proposals" / "b.md"
+    a.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
+    b.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
+    _commit_all(repo, "open both")
+
+    # Transition BOTH artifacts "concurrently" in the working tree, but
+    # commit them in two path-scoped commits -- exactly the discipline
+    # AGENTS.md itself prescribes (`git commit <paths>`).
+    a.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    b.write_text(_artifact_text("revising", _fence(
+        "transition", from_state="awaiting-review", to_state="revising")),
+        encoding="utf-8")
+    _git(["add", "dev/proposals/a.md"], repo)
+    _git(["commit", "-q", "-m", "a: transition only"], repo)
+    a_only_commit = _head_sha(repo)
+    _git(["add", "dev/proposals/b.md"], repo)
+    _git(["commit", "-q", "-m", "b: transition only"], repo)
+
+    result_a = events.walk_history(repo, "dev/proposals/a.md", valid_states=_PROPOSAL_STATES)
+    result_b = events.walk_history(repo, "dev/proposals/b.md", valid_states=_PROPOSAL_STATES)
+    assert len(result_a.events) == 1
+    assert len(result_b.events) == 1
+    # b's block is attributed to a LATER, DISTINCT commit -- it was
+    # structurally impossible for it to land in a's path-scoped commit.
+    assert result_a.events[0].commit == a_only_commit
+    assert result_b.events[0].commit != a_only_commit
+
+
+def test_recorded_by_never_affects_identity_reconciliation_or_refusal(
+    tmp_path: Path,
+) -> None:
+    """Round 7's explicit bar: `recorded_by` is informational only,
+    barred from authority, identity, and idempotency. A forged or
+    duplicated value changes no identity, no reconciliation outcome, and
+    no refusal disposition."""
+    repo = _make_git_repo(tmp_path)
+    p = repo / "p.md"
+    p.write_text(
+        "# proposal p -- padding text so this file's content is not "
+        "near-identical to q.md's, which would make git's own --follow "
+        "rename-similarity heuristic misattribute q's creation as a "
+        "rename FROM p (a real git behavior discovered while building "
+        "this fixture, not a defect in the reader under test)\n\n"
+        + _artifact_text("revising", _fence(
+            "transition", from_state="awaiting-review", to_state="revising",
+            recorded_by="Someone Else Entirely",
+        )),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "c1: transition, forged recorded_by")
+
+    without = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert len(without.events) == 1
+    identity_with_forged = (without.events[0].commit, without.events[0].index)
+
+    # A second, UNRELATED artifact -- deliberately distinct padding text
+    # from p.md's (see the comment on p.md's own content above) -- with a
+    # DUPLICATED recorded_by value shared across two otherwise-independent
+    # blocks. Still no effect on identity or reconciliation outcome.
+    q = repo / "q.md"
+    q.write_text(
+        "# proposal q -- an entirely different document from p.md, on "
+        "purpose\n\n"
+        + _artifact_text("revising", _fence(
+            "transition", from_state="awaiting-review", to_state="revising",
+            recorded_by="Duplicate Name",
+        )),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "c2: q transition, duplicate recorded_by")
+    q.write_text(
+        q.read_text(encoding="utf-8")
+        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
+        + _fence("review-pass", tier="External", reviewer="Bob", recorded_by="Duplicate Name"),
+        encoding="utf-8",
+    )
+    _commit_all(repo, "c3: q review, same duplicate recorded_by")
+
+    result_q = events.walk_history(repo, "q.md", valid_states=_PROPOSAL_STATES)
+    assert len(result_q.events) == 2
+    assert result_q.unmatched_acts == []
+    # Identity is (commit, index) -- recorded_by is not a component of
+    # either, confirmed by re-deriving p's identity unchanged.
+    again = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
+    assert (again.events[0].commit, again.events[0].index) == identity_with_forged

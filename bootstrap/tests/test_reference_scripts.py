@@ -290,7 +290,16 @@ class TestGeneralizationGate:
             f"{stems}"
         )
         row = next(r for r in rows if r["stem"] == "2026-05-01-alice-thing")
-        assert row["review_rounds"] == 1
+        # Chunk 6 (metrics-events-not-prose): this tree's installed
+        # dev/proposals/_template.md carries the marker, but no `git init`
+        # ever runs here -- with no git at all, the extractor cannot prove
+        # this artifact is past any activation cutoff (Chunk 5's Activation
+        # section), so the act is pre-cutoff by the same rule a missing
+        # marker gets. review_rounds is a review-pass-kind field, and a
+        # pre-cutoff (or unprovable-cutoff) review-pass field emits the
+        # literal '', never the retired heading-count value -- the one
+        # genuine value change this audit's row 7-3 confirms, not a hold-over.
+        assert row["review_rounds"] == ""
 
 
 # ---------------------------------------------------------------------------
@@ -441,8 +450,18 @@ class TestDependencyGate:
 
 class TestVcsRobustness:
     def test_no_git_target_degrades(self, tmp_path: Path) -> None:
-        """No .git in the target: the optional commit-timestamp
-        augmentation degrades to Best-effort rather than raising."""
+        """No .git in the target: Chunk 6's post-activation refusal
+        presupposes PROOF that an artifact is past its cutoff, which only a
+        history read can supply -- with no `.git` at all, that proof is
+        impossible either way, so the refusal's own precondition is unmet
+        and this transition-kind field falls back to its existing,
+        unconditional quiet-degrade computation (Chunk 5's Activation
+        section) rather than raising or going empty. Confirmed unaffected,
+        not merely assumed: `stage_timestamp_reliability` is a
+        transition-kind field, and Part 3 does not touch that historical
+        portion at all -- distinct from `test_installed_lifecycle_metrics_runs_on_target`'s
+        `review_rounds` (a review-pass-kind field), which DOES change under
+        the identical no-git shape (7-3)."""
         assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
         lm = _load_script(
             tmp_path / "tools" / "lifecycle_metrics.py", "f4_lifecycle")
@@ -456,7 +475,17 @@ class TestVcsRobustness:
 
     def test_main_branch_target_runs(self, tmp_path: Path) -> None:
         """A git target whose default branch is 'main' (not 'master')
-        runs cleanly -- no branch-name assumption."""
+        runs cleanly -- no branch-name assumption.
+
+        Also the concrete case Chunk 5's exclusive-cutoff reading exists
+        to keep passing: the marker-carrying installed template and the
+        sample proposal's own opening act land in ONE commit below, so
+        under the exclusive reading (the marker's own introducing commit
+        is itself pre-cutoff) that commit is pre-cutoff and `proposal_rows`
+        must not raise. An inclusive reading would refuse here -- this is
+        the regression this plan would otherwise silently depend on
+        (confirmed, row 7-8), not merely a coincidence of an unrelated
+        fixture."""
         import subprocess
         assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
         (tmp_path / "dev" / "proposals" / "2026-05-01-alice-thing.md").write_text(
