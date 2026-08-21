@@ -1,7 +1,7 @@
 # Plan: an in-suite guard against an unconsidered full-suite run
 
 **Source proposal**: [`dev/proposals/archive/2026-08-19-claude-full-suite-interception.md`](../proposals/archive/2026-08-19-claude-full-suite-interception.md)
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(**Internal**) — the Maintainer ratified this exact tier
 by amendment at `6fcc9bd` (2026-08-19-claude-full-suite-interception, "amend
 Decision to ratify Plan review: required(Internal)"), overriding
@@ -316,7 +316,7 @@ same class as the unlogged 2026-08-12 Boundary-B-bounding-clause landing;
 ```
 1. Chunk A -- the guard + the additive child environment          [landed a316d75]
 2. Chunk B -- the vendor-neutral sentence, AGENTS.md + its twin    [landed 8610a79]
-3. Chunk S -- the sibling seam (rows A6/A7)                        [BLOCKED on suite-run-diagnostics]
+3. Chunk S -- the sibling seam (rows A6/A7)                        [A6 landed 193139d; A7 NOT landed -- see below]
 4. Chunk C -- Security Review of the implementation                [done 0fe4145; REVISE answered a7cd83d; closed 0917cd6]
 5. Chunk D -- the gate re-anchor ceremony                           [Maintainer-owned, not this plan's commit]
 ```
@@ -396,12 +396,37 @@ in `bootstrap/tests/test_broad_run_guard.py` unless noted):
 | 13 | a refused session's refusal is countable, and does not deflate any session-level aggregate | `test_refused_sessions_are_excluded_from_cost_and_counted_separately` — build a ledger fixture mixing real runs with refusals, render it, and assert (a) the refusal count is correctly reported and differs from a fixture with no refusals, and (b) any session-level aggregate not purely `by_file`-derived is byte-identical to the same fixture with the refused rows absent. The cost profile, concentration table and growth curve are `by_file`-derived and may already be byte-identical without (b)'s exclusion code, since a refused row's `by_file` is empty; (a) is the falsifiable core, and a reader that surfaces no refusal count, or miscounts it, fails the row regardless of (b). | A3 (asserting A7) |
 | 14 | a refusal-expecting child never inherits an ambient exemption token | `test_a_refusal_expecting_child_never_receives_an_exemption_token` — the meta-guard on the environment-construction discipline stated above: assert that a child built for a refusal-expecting row never carries `CAIRN_FULL_SUITE` or `CAIRN_RELEASE_GATE_ACTIVE`, so this plan's own Boundary B wrapper or a release ceremony's active token cannot leak into a spawned child by omission and make a refusal-expecting row pass without exercising anything. | A3 |
 
-### Chunk S — the sibling seam (blocked until `suite-run-diagnostics` lands)
+### Chunk S — the sibling seam (unblocked 2026-08-21; A6 landed, A7 not)
 
-**Do not start this chunk while `tools/suite_cost.py` is absent.** Both rows act
-on artifacts the sibling plan creates. Check for the file and for the ledger
-hooks in `bootstrap/tests/conftest.py` before beginning; if either is missing,
-this chunk is not ready and Chunks A and B proceed without it.
+**No longer blocked.** `suite-run-diagnostics` landed its ledger and reader
+(`2d9500e`..`fc93c1a`, Boundary B record `aff7f34`) before this chunk began.
+Both artifacts this chunk needs -- `tools/suite_cost.py` and the ledger hooks
+in `bootstrap/tests/conftest.py` -- exist on disk, confirmed before either row
+was attempted.
+
+**A6 landed at `193139d`.** `test_a_refused_session_is_scoped_unknown` in
+`bootstrap/tests/test_broad_run_guard.py`, directional on both halves per the
+row mapping, mutation-tested against the real classifier (see that commit's
+message and the code review below for the numbers).
+
+**A7 did NOT land this round, and the reason is this session's own file
+ownership, not a technical blocker.** Three agents worked this plan
+concurrently; `tools/suite_cost.py` and `bootstrap/tests/test_suite_ledger.py`
+were fenced to a different one for this pass, so the code-reviewing agent
+(this session) could not touch either. A7's actual work -- reporting the
+refusal count and confirming no non-`by_file` aggregate is pulled toward zero
+by a refused row -- is real, non-trivial, and was Maintainer-authorized in the
+Scope section above ("I'll take your recommendation on Decision 3. b + c");
+it is not being dropped, only left unimplemented past this session. The exact
+recommended edit to `tools/suite_cost.py`, the open question about how far
+"exclusion" should reach, and the test that would pin it in
+`test_broad_run_guard.py` are recorded verbatim in the code review round 3
+section below, unapplied. **Flagged for the Maintainer**: this plan's own
+Scope > "A second expansion" frames accepted scope as a floor that a
+narrowing reviewer cannot quietly remove; A7 not landing this round is a
+session-ownership artifact of this pass, not a disposition this review is
+making on the Maintainer's behalf, and it should be read as open work, not as
+scope this review declines.
 
 | # | File | Change |
 |---|------|--------|
@@ -414,6 +439,16 @@ the refused-session scope guard is directional (a refused session resolves
 that answers `unknown` unconditionally fails it), and the reader's exclusion is
 asserted by byte-identical output against the same fixture with refused rows
 removed, so a reader that down-weights rather than excludes fails it.
+
+**As of 2026-08-21, only the first half is met.** A6's falsifier
+(`test_a_refused_session_is_scoped_unknown`) exists, runs against the real
+guard and the real classifier, and passes -- see the code review below for
+the mutation-testing numbers. A7's falsifier does not exist: it would assert
+behaviour `tools/suite_cost.py` does not have yet (there is currently no
+refusal count anywhere in its output, confirmed by reading the file and by
+rendering it against a constructed fixture -- see the code review). This
+chunk's acceptance criterion is therefore **not fully met**; recorded here
+rather than silently treated as satisfied by A6 alone.
 
 ### Chunk B — the vendor-neutral sentence
 
@@ -779,7 +814,78 @@ and not discharged by it.
 
 ## Lasting-truth migration
 
-*Filled in at archive time.*
+*Filled in at archive time.* See `doctrine/plans.md` > "Lasting-truth
+migration doctrine" for the disposition vocabulary and the loop-fidelity
+sign-off rule. This section is append-only once written.
+
+---
+
+*Filled in 2026-08-21 by Claude Sonnet 5, at the close of code review round 3.*
+
+Dispositions:
+
+* **Chunk S row A7** (`tools/suite_cost.py` reports a refusal count and
+  excludes refused sessions from any non-`by_file` aggregate) -> **defer**
+  (MAINTAINER-GATED). Maintainer-authorized scope ("I'll take your
+  recommendation on Decision 3. b + c") that did not land this round --
+  the file is fenced to a concurrent agent's ownership for this pass, not
+  technically blocked. The exact recommended diff and test are recorded in
+  the round-3 code review (CR15), unapplied. Not a scope reduction this
+  review is making; the Maintainer holds whether to route it to another
+  session or accept the gap.
+* **CR14, the hook-ownership guard's `__code__`-swap residual** -> **wontfix**.
+  Requires code written specifically to defeat the identity check -- the same
+  class the Security Review already accepted for an explicit
+  `_OWNED_HOOKS.pop(name)` bypass, and not the accidental-shadowing threat
+  model the guard targets. Documented in `_refuse_if_a_hook_was_shadowed`'s
+  docstring and pinned by
+  `test_a_code_object_swap_evades_the_ownership_check` so it stays a stated
+  boundary rather than a rediscovered mystery. Not closed structurally --
+  doing so would need more than object-identity comparison, with real
+  false-positive risk this pass did not evaluate.
+* **FSI-SR1, the outer-`tryfirst`-wrapper limit** -> **defer**. Open by the
+  Maintainer's own prior disposition (round 2's Security Review), not
+  reassessed or newly decided in round 3. Still pinned by
+  `test_the_guard_loses_to_an_outer_tryfirst_wrapper`.
+* **The three live commands the guard breaks outside `AGENTS.md`**
+  (`docs/release-process.md:78`, `bootstrap/AST_BASELINE_RUNBOOK.md:126`,
+  `AGENTS.md:487`) -> **defer**. Already a stated "Known omission" with its
+  own revival condition in the plan body (Chunk B's "Live commands..."
+  subsection); not touched by any chunk, and not newly decided here.
+* **Chunk D, the gate re-anchor ceremony** -> **defer** (MAINTAINER-GATED).
+  Five `FROZEN-MODIFIED` entries owed as of `193139d`
+  (`bootstrap/tests/conftest.py`, `scripts/quality_gate.py`,
+  `bootstrap/tests/test_security_check.py`,
+  `bootstrap/tests/test_quality_gate_order_independence.py`,
+  `bootstrap/tests/_gate_manifest.py`), unchanged by this round's edits to an
+  already-counted file; `bootstrap/tests/test_broad_run_guard.py` remains
+  `FROZEN-NEW`. Not run by this session, per its own explicit fence.
+* **The "Sequencing" section's `collected` ≈ full-set claim for a refused
+  session** -> **accept, corrected**. Measured false in round 3 (`collected`
+  is 0, not ≈ the full set -- `Session.perform_collect` assigns
+  `testscollected` only after `pytest_collection_finish` returns, and this
+  guard's `UsageError` propagates out before that point). Does not change
+  A6's conclusion; the correction stands in the round-3 code review and in
+  `test_a_refused_session_is_scoped_unknown`'s own docstring, not by editing
+  the append-only prior section.
+
+**Loop-fidelity sign-off.** The implementation at `a316d75` (Chunk A -- the
+guard and the additive child environment), `8610a79` (Chunk B -- the
+vendor-neutral sentence), `7e2fa00`/`954c1a8`/`5d9eeba` (the hook-ownership
+guard added and closed against the round-2 Security Review), and `193139d`
+(Chunk S row A6, and round 3's CR14 documentation fix) delivers the contract
+in the accepted source proposal (Revision 5) as this plan's own Scope section
+records it, including its two Maintainer-authorized contract expansions
+(A4/A5, and A6/A7). Checked against that governing scope rather than this
+plan's own restatement of it: the 40-file threshold guard at
+`pytest_collection_finish`, the additive child-environment fix, the
+vendor-neutral `AGENTS.md` sentence pair, and the hook-ownership guard
+(itself a Maintainer-authorized addition beyond Revision 5, closing CR12) are
+all present and exercised across three code-review rounds and one Security
+Review. **One accepted term is not yet delivered, not deleted by amendment**:
+row A7 of Chunk S, dispositioned `defer` above -- this sign-off does not
+claim it as delivered, only that its absence is recorded rather than
+concealed.
 
 ## Plan review -- Claude (Internal, fresh-context subagent) -- 2026-08-20
 
@@ -2063,6 +2169,8 @@ worse defect than the gap it conceals.
 
 ## Response to code review -- Claude Opus 5 (Implementation) -- 2026-08-20
 
+Answers: Claude Opus 5 (Code Review, independent context) -- 2026-08-20
+
 **Model**: Claude Opus 5
 
 All three blocking findings accepted and fixed at `91bd32f`. The first was the
@@ -2926,6 +3034,8 @@ asserts on -- is unchanged), was the worse of the two options on offer.
 
 ## Response to code review -- Claude Sonnet 5 (Implementation) -- 2026-08-21 (round 2)
 
+Answers: Claude Opus 5 (Code Review, independent context) -- 2026-08-21 (round 2)
+
 **Model**: Claude Sonnet 5
 
 **Scope delta**: none. CR9 and CR13 target the append-only `### A correction to
@@ -2992,3 +3102,299 @@ the correction above rather than by an edit to the false sentence, since the
 section is append-only. CR10, CR11, CR12, and CR13 are closed. CR8 stands as
 already dispositioned by the Maintainer allowance. No finding from this round
 remains open.
+
+## Code review -- Claude Sonnet 5 (Code Review, independent context) -- 2026-08-21 (round 3)
+
+Reviewed commit: `193139d68f97a9682f0d5b934cd0ee4b734325fb`
+Target: Chunk S as built this round (row A6, `test_a_refused_session_is_scoped_unknown`),
+plus targeted falsification of the accumulated hook-ownership guard and
+release-mode outcome rule since round 2 -- the range `7e2fa00`..`193139d`
+(`7e2fa00`, `954c1a8`, `5d9eeba`, and this round's own `193139d`). Row A7
+(`tools/suite_cost.py`) was assessed but not implemented -- see CR15.
+Prior findings: CR1-CR8, CR10-CR13 closed (round 1 at `15906df`/`906b315`;
+round 2 response at `5d9eeba`); CR9 dispositioned by re-measurement, append-only
+section stands corrected in the round-2 response rather than edited; FSI-SR1
+open by Maintainer disposition, not reassessed here; FSI-SR2, FSI-SR3, FSI-SR4,
+FSI-SR5, FSI-SR6, FSI-SR7 closed (`7e2fa00`, `954c1a8`, and the round-2
+Security Review response).
+Assurance path: high-assurance
+**Tier**: Internal
+**Model**: Claude Sonnet 5
+**Findings**: raised -- 2 non-blocking, both dispositioned in this same pass:
+CR14 (the hook-ownership guard's `__code__`-swap residual -- found this
+round, fixed in the same commit); CR15 (Chunk S row A7 -- not landed this
+round, recorded with the exact edit, unapplied)
+
+**Verdict: ACCEPT.** -> `ready-to-archive`, with one open item named plainly
+rather than folded into "done." This round's mandate was to fan out, fix what
+can be fixed in one pass, and record the rest -- not to raise a finding and
+wait for a fourth round. Both findings below follow that: CR14 was found and
+closed in the same commit; CR15 was found not-doable in this session's own
+ownership fence and is handed off complete rather than left as a vague TODO.
+
+**One structural addition to two prior sections, named here rather than left
+silent.** The archive-conformance checker (`tools/lifecycle_planner.py`)
+requires every `## Response to code review` section to carry an `Answers:
+<reviewer> -- <date>` binding naming the exact pass it responds to -- a
+requirement neither of this plan's two Responses (2026-08-20, and round 2 at
+2026-08-21) carried, since the field postdates neither of them being written
+this late; both are new enough to owe it and old enough to have shipped
+without it. I added the one missing `Answers:` line to each, placed
+immediately under its heading. **This is not the kind of edit the append-only
+rule forbids.** That rule protects the *substance* of what a prior section
+argued or found -- "the record shows what was believed at each point" -- and
+a binding line changes no argument, no finding, and no claim: which pass each
+Response answers was already unambiguous from its heading, its date, and its
+content (the round-2 Response's own table visibly answers CR9-CR13 by name).
+Making that binding machine-readable is bibliography, not history, and CR9
+and CR13 above are the actual precedent for what append-only *does* forbid in
+this file -- a correction to a false *claim*, which went in a new section
+instead, exactly as this round's CR15 and the "Sequencing" correction below
+do. Verified: `tools/lifecycle_planner.py next dev/plans/full-suite-interception.md`
+now reports all three archive preconditions `[ok]`, where it previously
+listed both missing bindings by name.
+
+### CR14 -- The hook-ownership guard has a second disarming shape beyond the one the last Security Review closed, and it is silent by construction. [found and fixed at `193139d`]
+
+**The brief asked whether there is another shape besides `@_own` on the
+shadow (FSI-SR3's fix).** There is. The identity check --
+`globals().get(name) is not fn` in `_refuse_if_a_hook_was_shadowed` -- proves
+a hook's module binding was *rebound* to a different object. It says nothing
+about the *same* object's internals. A CPython function's `__code__` attribute
+is writable, so:
+
+```python
+def _swap_pytest_sessionfinish():
+    def _evil(session, exitstatus):
+        return None
+    pytest_sessionfinish.__code__ = _evil.__code__
+_swap_pytest_sessionfinish()
+```
+
+appended to the conftest leaves `globals()['pytest_sessionfinish']` pointing
+at the *exact same object* `_OWNED_HOOKS['pytest_sessionfinish']` holds --
+`is not` is `False`, nothing is reported -- while pluggy still calls that
+object, which now runs `_evil`'s bytecode. Measured directly against `7e2fa00`
+(the commit the last Security Review reviewed) before any fix, on a tree with
+one real `skipif`-style skip:
+
+| invocation | control (unmodified conftest) | `__code__`-swapped |
+|---|---|---|
+| `CAIRN_RELEASE_GATE_ACTIVE=1 pytest -q` | exit **1**, full `RELEASE MODE` report naming the skipped nodeid | exit **0**, "3 skipped", no report, no diagnostic anywhere |
+
+That is the complete pre-fix hazard the whole mechanism exists to prevent,
+restored silently, with no `@_own` involved at all -- so FSI-SR3's fix does
+not touch it.
+
+**Disposition, and why it stops at documentation rather than a structural
+fix.** This is the same *class* of residual the Security Review already
+accepted and left unguarded: an explicit `_OWNED_HOOKS.pop(name)` ahead of a
+shadowing `def` reaches the same silent result by a different route (noted in
+that review's own Coverage section, "deliberate, and I do not think it is
+worth guarding," never closed). Both require code written specifically to
+defeat this check -- nobody extending a hook "the ordinary way," which is the
+guard's actual stated threat model (a future agent copying the file's own
+`def`/`@_own` convention), writes a `__code__` swap by accident. Closing it
+structurally would mean comparing something more than identity (bytecode
+hash, `__globals__`, `__defaults__`, ...) with real false-positive risk against
+legitimate patterns this file does not currently use, and evaluating that
+properly is more than one pass affords under this round's own "don't
+manufacture more Boundary Bs" instruction. **Fixed as: documented, not
+closed** -- `_refuse_if_a_hook_was_shadowed`'s docstring in
+`bootstrap/tests/conftest.py` now states the boundary explicitly (the
+identity check catches every rebinding, not an in-place mutation of the same
+object) and names both known routes past it, matching the precedent
+`test_the_guard_loses_to_an_outer_tryfirst_wrapper` set for FSI-SR1: a known
+limit stated plainly is safer than one left to be rediscovered as a mystery.
+Pinned by `test_a_code_object_swap_evades_the_ownership_check`
+(`bootstrap/tests/test_broad_run_guard.py`), directional: the swapped tree
+loses the release report, the same tree without the swap keeps it.
+
+**Why this is non-blocking rather than blocking.** It does not regress
+anything this plan shipped -- the pre-`193139d` state had the identical gap,
+undocumented and untested. The fix here is a strict improvement (honesty
+where there was silence) even though it does not close the residual, matching
+the `.pop()` precedent's own disposition on the same guard.
+
+### CR15 -- Chunk S row A7 was not implemented this round; recorded with the exact edit. [not landed, unapplied]
+
+**What A7 needs, confirmed by reading `tools/suite_cost.py` in full and by
+rendering it against a constructed fixture.** As of `193139d`, nothing in
+that file's output reports how many sessions the broad-run guard refused --
+confirmed by grep (`refus` appears nowhere in the file) and by running the
+real `render()` against two fixtures, one plain full-scope row and the same
+plus one refused row (`exitstatus=4`, `scope="unknown"`, `by_file={}`,
+`collected=executed=0`, real `wall_s`). Diffed byte-for-byte:
+
+```
+5,6c5,6
+< Rows read: 1. Unreadable lines: 0.
+> Rows read: 2. Unreadable lines: 0.
+21c21
+< Recorded top-level sessions: **1** -- ...
+> Recorded top-level sessions: **2** -- ...
+35a36
+> | 2026-08-21 | ... | 5.0s | 0 of 0 collected | ... |
+```
+
+Every other section -- concentration table, trend, full-runs-per-day,
+disagreements -- is **already byte-identical** with and without the refused
+row present. This confirms the plan's own claim in Scope > "A second
+expansion" ("their byte-identity ... may already hold structurally, without
+any exclusion code") against the real, unmodified reader: it does. What is
+missing is narrower than the row's own prose implies -- purely the refusal
+count itself; no existing aggregate is silently pulled toward zero today.
+
+**The recommended edit** (not applied -- `tools/suite_cost.py` is fenced to a
+concurrent agent this round):
+
+```python
+def _is_refused(row: dict) -> bool:
+    """A session the broad-run guard refused before any test ran --
+    pinned schema, no schema change: pytest's own exit code for a
+    UsageError."""
+    status = row.get("exitstatus")
+    return isinstance(status, int) and not isinstance(status, bool) and status == 4
+
+
+def _render_refusals(add, rows: list[dict]) -> None:
+    add("## Sessions the broad-run guard refused")
+    add("")
+    add("`scope == \"unknown\"` alone cannot tell a guard refusal apart "
+        "from any other non-full run (a `-k` run, say); this keys on "
+        "`exitstatus == 4`, which the guard's own UsageError sets, instead.")
+    add("")
+    refused = [row for row in rows if _is_refused(row)]
+    add(f"**{len(refused)}** of {len(rows)} recorded session(s).")
+    add("")
+    if not refused:
+        return
+    per_day: dict[str, int] = {}
+    for row in refused:
+        per_day[_day(row)] = per_day.get(_day(row), 0) + 1
+    for day in sorted(per_day):
+        add(f"* **{day}** -- {per_day[day]} refusal(s).")
+    add("")
+```
+
+called from `render()` right after `_render_sessions(add, rows)`. No change
+needed to `_render_concentration`, `_render_trend`, `_render_full_runs_per_day`
+or `_render_disagreements` -- measured above to already exclude a refused
+row's effect structurally.
+
+**One open question, left for whoever lands this rather than decided here.**
+The row's acceptance text says the exclusion applies to "any session-level
+aggregate not purely `by_file`-derived," read literally. Under that literal
+reading, `_render_sessions`'s own count (`len(rows)`) and the per-session
+table both still change when a refused row is added, since neither is
+`by_file`-derived. I do not recommend hiding a refused session from either:
+`_render_sessions` already states its own number is "a lower bound, never a
+count," and the per-session table is titled "every recorded session" --
+removing a real recorded session from either would trade honesty for a
+narrower reading of "exclusion" than the row's own rationale needs (a refused
+session's real `wall_s` and empty `by_file` never enter any *summed cost*
+figure regardless, which is the actual hazard the row names). Whoever
+implements this should re-read the row's acceptance text against this
+question and decide; I did not decide it on the Maintainer's behalf by
+choosing the narrower reading unilaterally.
+
+**The test A7 needs** (unapplied, `bootstrap/tests/test_broad_run_guard.py`,
+row mapping's own designated file): build two ledger fixtures the way the
+diff above did (real subprocess-produced rows preferred over hand-built ones,
+following this file's "why every test here spawns a real pytest" convention)
+-- one plain, one with a refused row added -- import `tools/suite_cost.py`
+directly (`sys.path` trick or `importlib`, matching
+`test_the_ownership_registry_is_complete`'s existing pattern for importing a
+sibling module without a package), call `render(*read_ledger(path))` on both,
+and assert: (a) the refusal-count section differs and reports the correct
+count in the "with" fixture; (b) the concentration/trend/full-runs-per-day/
+disagreements sections are byte-identical between the two (slice the rendered
+text by section heading, not a whole-document diff, since the session-table
+and session-count sections are expected to differ per the open question
+above).
+
+### Re-verified from the brief, no finding
+
+* **`test_the_ownership_registry_is_complete` goes red when it should.**
+  Mutated a scratch copy of `193139d`'s conftest to remove `@_own` from
+  `pytest_deselected`; the test failed with
+  `['pytest_deselected'] define a pytest_* hook without @_own`. Restored,
+  re-ran clean. Not vacuous.
+* **FSI-SR7's message change kept the substring `test_shadowing_an_owned_hook_is_refused_by_name`
+  asserts on.** `grep`-confirmed both sides: the message text at
+  `conftest.py:176` and the assertion at `test_broad_run_guard.py:375` both
+  read `"have been replaced by a later definition"`, verbatim.
+* **The release-mode outcome rule is unimpaired.** Direct run, unmodified
+  `193139d` conftest, one real skip, `CAIRN_RELEASE_GATE_ACTIVE=1`: exit
+  **1**, full `RELEASE MODE` report naming the skipped nodeid -- this is the
+  control half of CR14's own table above.
+
+### A correction to the plan's own "Sequencing" section, surfaced by mutation-testing A6
+
+That section (well above, pre-Chunk-S) states a refused session "writes a row
+with `collected` ≈ the full set and `executed` = 0." **`collected` is 0, not
+≈ the full set.** Measured directly: `Session.perform_collect`
+(`_pytest/main.py`, pytest 9.0.3) only executes
+`self.testscollected = len(items)` *after* `hook.pytest_collection_finish`
+returns; this guard's `pytest.UsageError` propagates out of that hook before
+the assignment is reached, so `session.testscollected` stays at its
+initialized `0`. Consequence, found by mutation testing rather than
+inspection: `collected > 0` is *independently* sufficient to keep a refused
+session out of `scope == "full"` -- removing only `executed > 0` from the
+classifier's postcondition (leaving `collected > 0` and `not_run == 0`) does
+**not** flip A6's first half; removing both does, since
+`not_run = collected - executed = 0 - 0 = 0` still holds. This does not change
+A6's conclusion (a refused session still resolves `unknown`, doubly so), only
+the earlier section's account of *why*. Not edited in place -- that section is
+append-only; the correction and its evidence are also recorded in
+`test_a_refused_session_is_scoped_unknown`'s own docstring in the shipped
+test.
+
+### Chunk D accounting -- FROZEN-MODIFIED count, unchanged
+
+Checked directly against `bootstrap/tests/_gate_manifest.py::_frozen_files()`
+at `193139d` rather than carried forward: **still five** `FROZEN-MODIFIED`
+entries (`bootstrap/tests/conftest.py`, `scripts/quality_gate.py`,
+`bootstrap/tests/test_security_check.py`,
+`bootstrap/tests/test_quality_gate_order_independence.py`,
+`bootstrap/tests/_gate_manifest.py`) -- this round's conftest.py edit
+(CR14's docstring) modifies an already-counted file, not a new one.
+`bootstrap/tests/test_broad_run_guard.py` remains `FROZEN-NEW` (a note, not a
+`FROZEN-MODIFIED` entry) -- it matches a frozen glob now that it is tracked,
+confirmed the same way, and carries two more tests than Chunk C's review
+counted (22 total). `tools/suite_cost.py` remains outside every frozen glob
+(0 obligation), unchanged whether or not CR15's edit ever lands there.
+
+### Coverage
+
+**Exercised**: the `__code__`-swap disarming shape, both directions, against
+`7e2fa00` and `193139d`; the ownership-registry completeness test under
+mutation; the FSI-SR7 message/assertion pairing, by direct grep of both
+sides; the release-mode outcome rule, directly, as CR14's control; A6's
+falsifier under two mutations of the sibling's classifier postconditions
+(`executed > 0` alone removed: does not flip; both `collected > 0` and
+`executed > 0` removed: flips), isolating which postcondition is actually
+load-bearing for a refused session; `tools/suite_cost.py`'s real `render()`
+against two constructed fixtures, byte-diffed, to confirm which sections A7
+would and would not need to touch; the frozen-file membership of every file
+this round modified or reviewed, checked against the live gate manifest
+rather than inferred.
+
+**Not exercised**: the full suite -- deliberately, per this round's own
+verification instructions. A7's actual implementation, since it was not
+written. Windows. Every mechanism in this conftest unrelated to the
+ownership guard, the release rule, or A6 (the shuffle hook, the ledger's own
+accumulation and encoding paths, already covered by `test_suite_ledger.py`
+and not re-walked here). Whether a bytecode-hash or `__globals__`-based
+closure of CR14 is feasible without new false positives -- flagged as future
+work, not attempted.
+
+**Note on Chunk S's acceptance criterion.** As recorded above, only A6's half
+is met; A7's is not. This review's `ready-to-archive` disposition treats that
+as a fully recorded, actionable open item rather than "real damage" (data
+loss, a silent security-control defeat, a false durable record) -- the
+current `tools/suite_cost.py` does not claim anything false, it simply does
+not yet surface one figure. The Maintainer may weigh this differently given
+A7 was explicitly authorized scope ("I'll take your recommendation on
+Decision 3. b + c"), not merely a nice-to-have; that tension is named here
+rather than resolved unilaterally by this review.
