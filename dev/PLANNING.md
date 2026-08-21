@@ -124,6 +124,65 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **[TOOL, URGENT] `dev/plans/` corpus-wide metrics extraction is currently
+  broken -- `lifecycle_metrics.py plans` exits 3 (`INCOMPLETE`) against the
+  live tree** *(filed 2026-08-21, from `metrics-events-not-prose`'s code
+  review, CR1)* -- `dev/plans/metrics-events-not-prose.md`'s own commit
+  `822cf903` flipped its header `**Status**` from `implementing` to
+  `awaiting-code-review` after this plan's Chunk 6 established the
+  `cairn-event-v1` activation cutoff for `dev/plans/` (`126cda5`), with no
+  matching event block -- a direct miss of that same chunk's own acceptance
+  criterion ("every act *this plan's own commits* perform, from this chunk
+  onward, carries a matching block and reconciles cleanly").
+
+  **This is not recoverable by editing code.** The reconciler's own rule --
+  a `transition` block may only be attributed to the commit whose diff also
+  changes `**Status**` -- means no later commit can retroactively supply the
+  missing block without either rewriting `822cf903` (destructive, and it
+  would invalidate the commit hashes this plan's own Implementation section
+  already cites) or building a new, explicitly-authorized grandfather /
+  exemption mechanism in the reconciler. `plan_rows()` aborts the *entire*
+  `dev/plans/` walk on the first unreconciled artifact (checked: confirmed
+  via `git merge-base --is-ancestor` that this is currently the *only*
+  artifact in the corpus with post-cutoff history, so today's blast radius
+  is total but self-contained to this one file), and archiving this plan
+  does not remove it from the walk (`iter_plan_files()` includes
+  `dev/plans/archive/**/*.md`).
+
+  **Needs a Maintainer decision**, not a routine backlog pick: whether to
+  accept a permanently-`INCOMPLETE` `plans` corpus walk as the cost of this
+  feature landing the way it did, or to scope a small, explicit exemption
+  mechanism (a `(path, commit)` grandfather list, most likely) as new,
+  authorized work. Reproduce with `python tools/lifecycle_metrics.py plans
+  --root .` on the current tree. Full writeup: the plan's own `## Code
+  review -- Claude Sonnet 5 -- 2026-08-21` section, finding CR1, and its
+  `## Lasting-truth migration` Dispositions entry.
+
+* **[TOOL] The divergent-activation-marker safety check the accepted
+  `metrics-events-not-prose` contract requires ("Both refuse") is
+  implemented but never reachable from a real corpus walk** *(filed
+  2026-08-21, from the same code review, CR3)* -- `events.activation_commit()`'s
+  `companion_relpath` parameter is the mechanism for catching Cairn's own
+  installed template (`dev/proposals/_template.md` / `dev/plans/_template.md`)
+  diverging from its shipped doctrine twin (`templates/core/dev/proposals/_template.md`
+  / `templates/core/dev/plans/_template.md`), and it works correctly when
+  called directly. `extract.py`'s `_reconcile_artifact` -- the only call site
+  the real `proposal_rows()`/`plan_rows()` walk goes through -- never passes
+  `companion_relpath`, confirmed end to end against a real divergent-marker
+  scratch repo through `extract_proposal_row`. Currently harmless (all four
+  marker paths agree at `HEAD` as of this writing) and already
+  transparently disclosed in `126cda5`'s own commit body, not hidden.
+
+  Wiring it needs the four companion paths threaded through
+  `extract_proposal_row`/`extract_plan_row` and `_reconcile_artifact`, a
+  decision about whether `templates/core/` is always Cairn's own
+  self-hosted layout or something a `config.py` override could relocate
+  (guessing wrong risks a false refusal on an adopter tree that happens to
+  carry an unrelated `templates/core/` directory), and a new
+  corpus-walk-level fixture proving the *real* `proposal_rows()`/
+  `plan_rows()` path refuses on a synthetic divergence -- none of which
+  exists today. Full writeup: the same code review section, finding CR3.
+
 * **[DOC] Candidate: a withdrawal ledger records the correction, not the
   reasoning — so a later agent can re-derive the original error**
   *(filed 2026-08-20, from the adopter-issue proposal set)* — `scanner-claim-scope`

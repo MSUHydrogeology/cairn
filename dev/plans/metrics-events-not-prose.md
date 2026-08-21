@@ -1200,6 +1200,144 @@ reviewer identity (not the implementing agent), and the append-only rule.
 *Filled in at archive time.* See `doctrine/plans.md` > "Lasting-truth migration
 doctrine."
 
+**The archive gate now checks substance, not the label.** An attestation is
+required **every time**: either at least one entry naming `accept`, `guard`,
+`wontfix` or `defer`, or the explicit form `Dispositions: none` on its own
+line when there are genuinely no follow-ups.
+
+The loop-fidelity sign-off must sit **inside this section** and name at least
+one implementing commit id plus the governing accepted/Revised section.
+Promising that it is owed does not satisfy it.
+
+This section is append-only once written.
+
+---
+
+*Filled in 2026-08-21 by Claude Sonnet 5 (Code Review, independent context),
+at the close of the code review pass.*
+
+Dispositions:
+
+* **Row 6-9's heading-vs-`tier` classification of `plan_review_rounds`/
+  `code_review_rounds`** -> **accept**. The round-4 Response flagged this as
+  its own design choice, under-specified by Round 7's text, for "a future
+  round" to treat as such. This code review is that round: verified directly
+  (`extract_plan_row`'s classification reads `ReconciledEvent.section_kind`,
+  derived from the matched `## Plan review`/`## Code review` heading via
+  `_PLAN_REVIEW_HEADING_RE`/`_CODE_REVIEW_HEADING_RE`, never the block's own
+  self-reported `tier` field) and exercised end to end against a real plan
+  schema. Sound, and the rejected alternative (the block's own `tier` field)
+  remains correctly unused, for the reason row 6-9 gives: the reconciler
+  already inspected the heading to find the act at all, so classifying by it
+  does not depend on a block author correctly setting `tier: Code`.
+* **Chunk 3's v2 schema-identity versioning, flagged by the coordinator as "a
+  reviewer question, not a settled one"** -> **accept**. Verified complete: a
+  `schema_version` column is stamped on every v2-code-path row, a
+  pre-existing v1 file is confirmed byte-identical after a v2 run and never
+  gains the column retroactively, `--manifest` surfaces the identity, and
+  `test_v1_snapshot_bytes_survive_a_v2_run_and_the_two_are_distinguishable`
+  exercises all of it against real bytes, not only structural assertions.
+* **CR2 (the divergent-marker companion check read the working copy instead
+  of committed HEAD)** -> **accept**. Fixed in this review's own commit
+  (`7ebb7cb`): both `events.py` copies now read the companion via
+  `_show(repo_root, "HEAD", companion_relpath)`, matching the function's own
+  "as of HEAD" contract and every other read in the module. Guarded by
+  `test_divergence_check_reads_the_companion_at_head_not_the_working_copy`
+  (`bootstrap/tests/test_lifecycle_metrics_events.py`), confirmed to fail
+  against the pre-fix code before landing.
+* **CR4 (a test docstring misstated a 2-to-3-tuple widening as 1-to-2)** ->
+  **accept**. Fixed in `7ebb7cb`; the one affected test re-run to confirm the
+  edit changed no behavior.
+* **CR1 (this plan's own file already carries a permanent, currently-live
+  break of the real `dev/plans/` corpus walk -- `822cf903`'s status
+  transition has no matching event block, and the same-commit rule makes
+  this unrecoverable without rewriting published history)** -> **defer** ->
+  `dev/PLANNING.md` > Queued. No landing place outside the plan exists for
+  this yet -- there is no fix landed, guarded, or declared a stated boundary;
+  it is a live defect with no resolution path this pass could execute, so
+  per this doctrine's own rule ("An item with no landing place outside the
+  plan is a `defer`, and needs a row") it cannot be `accept`ed as closed. Full
+  writeup: this plan's own `## Code review` section, CR1.
+* **CR3 (the divergent-marker refusal the accepted contract requires --
+  "Both refuse" -- is never reachable from the real corpus-walk call path)**
+  -> **defer** -> `dev/PLANNING.md` > Queued. Same reasoning as CR1: no fix
+  landed, and wiring it correctly needs work (config-awareness, new
+  corpus-walk-level fixtures) this pass does not have standing to build
+  unilaterally, per `PLANNING.md`'s own "fix defects, build nothing new"
+  direction. Full writeup: this plan's own `## Code review` section, CR3.
+
+**On the two `defer` entries' authorization.** No item-by-item Maintainer
+consent was sought for either; both are presented at archive-preparation as
+this doctrine's own precondition requires, under the Maintainer's general
+authorization for this pass, quoted verbatim and visually isolated:
+
+> "Do at least one or two on the others. No more."
+
+Stated plainly so it is auditable as what it is -- a blanket approval applied
+to review this plan through to a decision without a further round, not
+item-by-item consent to CR1 or CR3 specifically. Both are recorded in full,
+named in `dev/PLANNING.md`, and neither is folded into "done."
+
+**Evidence shipped.** The full event-v1 grammar and closed-key validator
+(Chunk 4); the rename-aware, oldest-first history-diff reader and its
+merge-commit safety net (Chunk 5); fail-closed reconciliation wired to both
+the proposal and plan schemas, with the INCOMPLETE exit code reaching the CLI
+at both call sites (Chunk 6, closed further by `4de41ce`); the eight-column
+retirement and `--backfill-from` removal with 22/6-column pins (Chunk 1); the
+doctrine statement and honest re-description (Chunk 2); the v2 schema
+identity with byte-preserved v1 files (Chunk 3); the cross-cutting fixture
+audit against a recorded, re-runnable enumeration command (Chunk 7); the
+CHANGELOG entry (Chunk 8); this code review's own CR2/CR4 fixes and
+regression coverage. 300 tests passing in the scoped suite (299 landed by the
+implementation, +1 from this review), a clean live `proposals` corpus run (68
+rows, exit 0), and `python scripts/claim_check.py` clean throughout.
+11 `FROZEN-MODIFIED` entries against the gate manifest, all named in the
+Code review section's Coverage subsection.
+
+**Evidence deferred.**
+* A corpus-walk-level fixture proving the real `proposal_rows()`/
+  `plan_rows()` path refuses on a genuine divergent-marker case (CR3's own
+  missing coverage -- would need to exist alongside any future wiring, not
+  before it).
+* Any resolution -- code, mechanism, or an explicit Maintainer acceptance of
+  the permanent limitation -- for CR1's corpus-break.
+* A re-timed corpus walk beyond the commit-body figures already in the
+  Implementation section (`~8s`/`~1s` proposals/plans post-`126cda5`,
+  `71s -> 22s` / `did-not-finish -> 7.8s` across `4de41ce`); this review
+  measured only the live `plans` `INCOMPLETE` exit itself (~2.6s).
+* An independent re-run of `test_lifecycle_contract.py` /
+  `test_lifecycle_stage_patterns.py` (the ~640-770-test corpus-soundness
+  suite Chunks 7/8 ran); this review relied on the coordinator's and Chunk
+  8's own commit-body figures for those rather than re-running them.
+
+**Deferred evidence home.** `dev/PLANNING.md` > Queued, alongside the CR1 and
+CR3 entries this same commit adds.
+
+**Loop-fidelity sign-off.** The implementation at
+`cb9685331dfc13d06cde586bbde87d0d2ee66b7c` (Chunk 1) through
+`7b60b6b4302bd171693ea8833ec767d9eed4eec9` (Chunk 8), including
+`4de41cee4d498becc2ebf30768c9d78705dd30cc`'s in-range fixup to Chunk 6's own
+acceptance, delivers the contract this plan's own operative cells state as
+they stood after `## Response to plan review -- Claude Sonnet 5 (author) --
+2026-08-20 (round 4)` -- the section `## Plan-review disposition -- Anthony
+Kendall (Maintainer) -- 2026-08-21` authorized moving straight to
+implementation from, without a fifth review round. Checked against that
+governing text directly, not against this plan's own restatement of it: the
+`valid_states`-parameter vocabulary bound (EPR-14's resolution), the
+committed-history-only act/block reading (EPR-15's resolution), and the
+`plan_review_rounds`/`code_review_rounds` wiring by reconciled block,
+classified by heading (EPR-13's resolution) are all present, all sourced from
+the real planner vocabulary and the real reconciled event stream, and all
+exercised end to end in this code review, not only through `events.py`'s own
+unit tests. The eight-column retirement, the v2 schema identity, the
+doctrine statement, and the CHANGELOG entry are all present and match
+Chunks 1-3/8 as revised. Two items this implementation does **not** fully
+carry, both recorded above rather than silently absorbed into "delivered":
+the divergent-marker refusal Round 7 accepts is implemented but not wired
+into the real corpus-walk call path (CR3), and this plan's own file carries
+one post-cutoff act with no matching block, from a commit outside the eight
+implementation chunks (CR1).
+
 ## Plan review -- Codex (External plan reviewer) -- 2026-08-20
 
 Reviewed commit: 3f82d07a1d0b32b0d778fd5c557c7acc1713c85c
