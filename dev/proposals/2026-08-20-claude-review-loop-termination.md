@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: claude-opus-5 (Claude Opus 5)
 **Date opened**: 2026-08-20
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: **high-assurance** — this changes governing doctrine and the
 lifecycle planner's own section-parsing, which the assurance-path triggers name
 directly. Uncertainty resolves high.
@@ -1310,3 +1310,139 @@ force when that plan opens.
 One successor proposal, registered in `dev/PLANNING.md`: a stable section
 identity for an append-only artifact and a complete-set rule over it — the work
 that made Change 1 unbuildable. Grouped because they are one problem.
+
+## Review -- Anthony Kendall (Maintainer) -- 2026-08-21 (round 4)
+
+**Reviewer**: Anthony Kendall (Human Maintainer). **Scribed by** Claude
+(claude-opus-5), who is this proposal's author; the findings below were surfaced
+in a working session with the Maintainer, who adopts and signs them. The
+scribing is disclosed because several findings are the author's own about their
+own contract, and a joint byline would misstate the independence of this read.
+
+Reviewed commit: 906b315a5a2ee6d0eed770d333abe2b2aa25f314
+Target: THE COMPLETE CURRENT CONTRACT (Revision 6), C1-C6
+Prior findings: RLT-01 through RLT-10
+Assurance path: high-assurance
+**Tier**: External (human)
+**Findings**: raised (5 blocking)
+
+### Steelman
+
+Revision 6 is the first genuinely self-contained contract in this file, and
+RLT-07 is closed on its own terms. C1 and C2 name the two rules that would have
+stopped the 25 rounds this proposal was opened over. C3, C4 and C5 are correct,
+cheap, and have drawn no finding in four rounds. The diagnosis in the Context is
+sound as far as it goes. What follows is mostly about how far it goes.
+
+### Findings
+
+#### RLT-11 — BLOCKING: C6 classifies findings, not fixes, so the code-review loop still has no termination condition
+
+C6 decides whether a *review* passes. It does not decide whether the author's
+*fix* needs another review, which is the question that produces the round count.
+A `behaviour` finding "blocks and loops" unconditionally, so a corrected typo
+and a redesigned guard return through the same edge. Measured 2026-08-21:
+`PLAN_TRANSITIONS` gives `revising-code` exactly one exit,
+`awaiting-code-review`; `full-suite-interception` has taken 8 review rounds. C2
+already invents the missing shape for plans — `revising-plan ->
+ready-to-implement` on the author's Response commit — and does not consider it
+for code.
+
+Add the symmetric edge, with closure bound at the time the finding is raised: a
+reviewer raising a `behaviour` finding may name the evidence that closes it, and
+the author's `## Response to code review` carrying that evidence moves
+`revising-code -> ready-to-archive` without a fresh read. A finding with no such
+binding loops as today — fail-closed. This puts the judgement with the reviewer,
+who knows whether verifying the fix needs judgement or a glance, and fixes it
+before the fix exists so the author cannot claim it after. This is the
+highest-value change available in this proposal and it is currently absent.
+
+#### RLT-12 — BLOCKING: `Plan readiness` is a ratchet with one position, and C2's Internal default is inert while it stands
+
+Measured 2026-08-21 across the whole live corpus: **19 recorded
+`**Plan readiness**:` values, 19 `DISTINCT REVIEW REQUIRED`, zero `READY`.** The
+proposal cites 11/11 scoped to two proposals as evidence the toll is wasted; the
+damaging reading is that the field cannot express the common case. Per
+`doctrine/proposals.md:571`, omitting the field gives the derived plan its
+declared tier (Internal); recording the finding escalates it to External.
+Silence buys Internal and speech buys External, and a reviewer who has read a
+complete contract and judges the ordinary Internal plan review correct has no
+token to write. Nineteen reviewers met that binary and escalated.
+
+C2 makes plan review Internal by default. This field will override it every time
+it is recorded. Either extend the vocabulary with a third token meaning "read,
+and the ordinary Internal review is right", or state in the contract that C2 is
+inert until one exists, and register the fix. Do not ship C2 as though the
+default will hold.
+
+#### RLT-13 — BLOCKING: C1 stops a reviewer ending a proposal and leaves a reviewer assigning a downstream review tier
+
+`AGENTS.md:134` names "a proposal reviewer recorded `DISTINCT REVIEW REQUIRED`"
+as a ground for an External plan review. That is a reviewer imposing an
+obligation on work not yet written, by an author not yet assigned —
+structurally the same defect C1 corrects, pointed forward in time instead of
+backward. C1's rule ("a reviewer never ends a proposal; the editor does") does
+not reach it and Exclusions does not name it.
+
+Extend C1 to cover tier assignment — the editor sets the derived plan's tier,
+informed by the reviewer's finding — or name it in Exclusions and register it.
+Do not leave it unaddressed in a proposal whose subject is who may end a review
+loop.
+
+#### RLT-14 — BLOCKING: the Context names three cost mechanisms and misses the largest
+
+Measured 2026-08-21: `PROPOSAL_TRANSITIONS` has exactly one reader
+(`lifecycle_planner.py:1372`, a `get()` returning a list for display) and
+refuses nothing. The only predicate binding a raised finding is on the resting
+state `awaiting-decision`; `accepted` has no such branch. **A Decision was
+available at every point in this proposal's four rounds.** What prevented one
+was agents telling the Maintainer it was unavailable — including this
+proposal's own author, on 2026-08-21, in the session that produced this review.
+
+Add this as the fourth mechanism and say plainly that C1 corrects a practice,
+not a tool gate. Without it C1 reads as lifting a restriction that never
+existed, and its real value — displacing a habit that cost four rounds — is
+invisible to the next reader.
+
+#### RLT-15 — BLOCKING: the contract asserts a registration that does not exist
+
+`### Deferred work` states the successor proposal is "registered in
+`dev/PLANNING.md`". It is not; no match for section identity, complete-set or
+stable section in that file, instrument confirmed against a file that greps
+freely at 2,499 lines. By C6's own vocabulary this is a `record` defect. Resolve
+it by making the claim true — register the item — rather than by editing the
+appended section.
+
+#### RLT-16 — non-blocking: this proposal's header carries the defect RLT-12 describes
+
+`**Plan review**: required(External)` is present because a round-1 reviewer
+recorded `DISTINCT REVIEW REQUIRED`, not because anyone judged an External plan
+review warranted for this change. The proposal arguing that a toll was paid
+eleven times for a bridge that never opened is itself paying it. Not the
+author's to fix: I will set `required(Internal)` at the Decision. Precedent
+`b9a0324`.
+
+### Coverage
+
+Covered: the complete current contract C1-C6 and its ledger; the header;
+`PROPOSAL_TRANSITIONS` and `PLAN_TRANSITIONS` and their readers;
+`status_evidence_violations` for every proposal state; the `Plan readiness`
+contract in `doctrine/proposals.md` and `doctrine/dual-review.md`; every
+recorded `Plan readiness` value in `dev/`; the `Security review` parsed-kind
+claim in C3, confirmed — 0 case-sensitive occurrences in both byte-identical
+twins, and `_KNOWN_KINDS` matches on first word, so such sections parse to
+nothing.
+
+Not covered: **C6's motivating classification.** CR1-CR13 exist and the classes
+sum to 13, but the assignments are the author's own judgement, and C6 turns on
+one claim — that CR12 (`behaviour`, on a security control) was filed
+non-blocking while CR8 and CR9 (`record`) blocked. That single fact motivates a
+five-rule predicate and six directed tests, and deserves one independent read.
+Also not covered: C6's runtime behaviour, since no implementation exists; C4 is
+the intended mitigation and I accept it as such.
+
+**Plan readiness**: deliberately omitted. See RLT-12 — the field cannot express
+this pass's actual judgement, and recording either token would misstate it.
+
+**Recommendation**: one revision closes all five blocking findings. I intend to
+accept on that revision without a further review round.
