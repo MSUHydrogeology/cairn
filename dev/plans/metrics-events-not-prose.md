@@ -4,7 +4,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: implementing (ready-to-implement -> implementing at Chunk 1's
+**Status**: awaiting-code-review
 commit, per the "Plan-review disposition" section's authorization; see
 `## Implementation verification` for the commit evidence once appended)
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
@@ -2442,3 +2442,55 @@ implementation record, and proceed -- per the Maintainer's instruction above,
 not by silent default.
 
 **Status**: `awaiting-plan-review` -> `ready-to-implement`.
+
+## Implementation -- recorded by Claude Opus 5 (coordinator) -- 2026-08-21
+
+**Status**: implementing -> awaiting-code-review.
+
+**Who wrote this section, and why that matters.** The implementing agent
+committed all eight chunks and then died mid-turn -- its host slept -- while
+composing its own implementation notes. Those notes do not exist and cannot be
+reconstructed: only the agent knew what it weighed and rejected. This section is
+therefore written by the coordinator **from the commits and from my own
+verification run**, and it does not speak for the implementer. Where a chunk's
+rationale is not recoverable from its commit body, that is stated rather than
+invented.
+
+**The eight chunks, all landed:**
+
+| chunk | commit |
+|---|---|
+| 1 -- retire the eight prose-scraped columns + `--backfill-from` | `cb96853` |
+| 2 -- doctrine: the selection principle, the honest description, the glossary sharpen | `3263854` |
+| 3 -- version the break: v2 schema identity | `2774b90` |
+| 4 -- event-v1 grammar, planner surfacing, engine registration | `4256a77` |
+| 5 -- the history-diff reader | `babdc20` |
+| 6 -- activation markers, fail-closed reconciliation, wiring the retained fields | `126cda5` |
+| 7 -- cross-cutting fixtures and the pre-existing-test audit | `fc2e539` |
+| 8 -- CHANGELOG entry | `7b60b6b` |
+
+**Verification, run by the coordinator after the implementer's death**, since no
+record from the implementer survives to be trusted:
+`test_lifecycle_metrics_config.py`, `test_lifecycle_metrics_events.py`,
+`test_lifecycle_vocabulary.py`, `test_reference_scripts.py`,
+`test_notice_install.py`, `test_reanchor.py` -- **299 passed**, canonical
+interpreter 3.13.13 / pytest 9.0.3, `PYTHONDONTWRITEBYTECODE=1`.
+
+**No Boundary B record is written, deliberately.** The Maintainer suspended that
+ceremony for this pass: *"Fan out, do all of the code, don't do a bunch of
+Boundary Bs."* The figure above is a scoped Boundary A run over the touched
+surface, and it is labelled as such rather than dressed as integration
+evidence.
+
+**What the code reviewer should treat with extra care**, because it is the one
+place this plan is weaker than its siblings: round 4's Response introduced
+architecture no review has seen -- vocabulary parameter-passing, HEAD-based
+act-list resolution, and heading-vs-tier classification. Those answers were
+written after the last plan review and went straight to implementation on the
+Maintainer's direction to stop reviewing. They are the highest-value target in
+the reviewed range, and this is the only pass that will look at them.
+
+**Contract surface.** This changes the emitted schema of a **default-on**
+module installed by nearly every adopter, who may already be parsing its
+output. Chunk 3 versions the break as v2 rather than mutating v1 in place.
+Whether that versioning is complete is a reviewer question, not a settled one.
