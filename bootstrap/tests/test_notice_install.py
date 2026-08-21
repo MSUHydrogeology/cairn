@@ -36,6 +36,7 @@ _OWN_ONLY_SCRIPTS = (
     "scripts/quality_gate_unused_def_whitelist.py",
     "scripts/token_budget.py",
     "scripts/verify_counts.py",
+    "tools/suite_cost.py",
 )
 
 
