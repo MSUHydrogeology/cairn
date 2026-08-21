@@ -1169,3 +1169,24 @@ def test_the_report_names_every_condition_a_figure_depends_on(tmp_path):
     assert "bbbbbbbbbbbb" in text
     assert "cpython 3.13.13" in text
     assert "no overlap with another recorded session" in text
+
+
+def test_a_days_median_wall_clock_is_the_true_median_not_the_upper_middle_value(
+        tmp_path):
+    """A day with an even number of complete runs has two middle values, and
+    the median is their average -- not either one alone. Found by code review
+    against the shipped `sorted(values)[len(values) // 2]` pattern, which
+    returns the *upper* of the two middle values on an even count: two runs
+    of 100s and 200s on the same day reported a median of 200s, a real run's
+    own figure, rather than 150s, the true median. Fixed in the same pass
+    (`_median`); this pins the fix. A second day carries one run so the trend
+    section renders at all -- it needs complete runs on at least two
+    different days before it prints anything."""
+    module = collector()
+    text = _rendered(tmp_path, [
+        _reader_row(module, "19", "10:00:00", "10:01:40", wall_s=100.0),
+        _reader_row(module, "19", "10:05:00", "10:08:20", wall_s=200.0),
+        _reader_row(module, "20", "10:00:00", "10:02:30", wall_s=150.0),
+    ])
+    assert "**2026-08-19** -- median 150.0s over 2 run(s)" in text
+    assert "median 200.0s over 2 run(s)" not in text

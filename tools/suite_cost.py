@@ -414,6 +414,21 @@ def _render_concentration(add, rows: list[dict], top: int) -> None:
     add("")
 
 
+def _median(values: list[float]) -> float:
+    """The true median: the mean of the two middle values on an even count.
+
+    ``sorted(values)[len(values) // 2]`` -- the pattern this replaces --
+    returns the upper of the two middle values on an even count, which is
+    not the median; it silently passed here because no two-run day was ever
+    exercised. Odd counts are unaffected.
+    """
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[mid]
+    return (ordered[mid - 1] + ordered[mid]) / 2.0
+
+
 def _render_trend(add, rows: list[dict]) -> None:
     add("## Whether it is getting slower")
     add("")
@@ -437,11 +452,11 @@ def _render_trend(add, rows: list[dict]) -> None:
     add("")
     days = sorted(per_day)
     for day in days:
-        values = sorted(per_day[day])
-        median = values[len(values) // 2]
+        values = per_day[day]
+        median = _median(values)
         add(f"* **{day}** -- median {median:.1f}s over {len(values)} run(s).")
-    first = sorted(per_day[days[0]])[len(per_day[days[0]]) // 2]
-    last = sorted(per_day[days[-1]])[len(per_day[days[-1]]) // 2]
+    first = _median(per_day[days[0]])
+    last = _median(per_day[days[-1]])
     add("")
     if last > first:
         add(f"From {days[0]} to {days[-1]} the median complete run got "

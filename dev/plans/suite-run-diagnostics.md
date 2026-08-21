@@ -1,7 +1,7 @@
 # Plan: the suite reports its own cost
 
 **Source proposal**: `dev/proposals/archive/2026-08-19-claude-suite-run-diagnostics.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(**Internal**) — ratified by Maintainer amendment at
 `e6e854d58f7083b5497cfa77a5d319285e7626b9`, overriding the plan-review
 template's default escalation path. See "Plan-review tier rationale" below
@@ -1420,3 +1420,226 @@ number is not meaningfully the ledger measuring itself.
   `dev/measurement/suite-runs.jsonl` may carry rows from both, and it is
   gitignored and non-authoritative. Recorded because an unrecorded contaminant
   is worse than a bounded one.
+
+## Code review -- Claude Sonnet 5 (Code Review, independent context) -- 2026-08-21
+
+Reviewed commit: aff7f34f03562016e3d7faeda8df2778dc2e9db4
+Target: the seven implementation commits named in the Implementation
+verification section above (`2d9500e`, `9dde505`, `60a76ce`, `99d62bb`,
+`945cce6`, `e242818`, `fc93c1a` -- non-contiguous, sibling-plan commits
+interleave) -- `bootstrap/tests/conftest.py` (the ledger writer, read-only:
+owned by a concurrent session, see below), `tools/suite_cost.py` (the
+reader), `bootstrap/tests/test_suite_ledger.py` (the contract tests),
+`.gitignore`, `dev/measurement/README.md` and its shipped twin,
+`CHANGELOG.md`, and the lockfile finalize.
+Prior findings: none
+Assurance path: high-assurance
+
+**Model**: Claude Sonnet 5 (`claude-sonnet-5`). Independent context: did not
+implement this plan, has no memory of authoring it.
+
+**A note on this pass's mode**, per the Maintainer's explicit instruction for
+this round: one pass, review and fix rather than raise-and-wait. Where a
+finding's fix was clear and safe I made it directly and recorded it below,
+rather than filing it for a second round that this pass is not supposed to
+have.
+
+**Ownership, honoured as instructed.** I edited `tools/suite_cost.py` and
+`bootstrap/tests/test_suite_ledger.py` (both mine) and this plan file. I did
+**not** edit `bootstrap/tests/conftest.py` or
+`bootstrap/tests/test_broad_run_guard.py` -- both are owned by a concurrent
+session, and both were under active, uncommitted, in-progress edits in the
+working tree while this review ran (confirmed via `git status`: a `git
+stash`/`pop` scoped to `tools/suite_cost.py` alone left an unrelated
+101-line, uncommitted change to `test_broad_run_guard.py` untouched,
+belonging to someone else's session, not this one). No finding below asks
+for an edit to either file; where `conftest.py`'s current behaviour mattered,
+I read it and probed it, never patched it.
+
+**Why "reviewed commit" is a plan-document commit, not a code commit.**
+Three unrelated plans (`full-suite-interception`, `review-loop-termination`,
+`metrics-events-not-prose`) landed commits in this repository while this
+review was in progress; `HEAD` moved twice during the pass. None touched this
+plan's four surfaces (checked: `git log --oneline aff7f34..HEAD --
+bootstrap/tests/conftest.py bootstrap/tests/test_suite_ledger.py
+tools/suite_cost.py dev/plans/suite-run-diagnostics.md` returns nothing), so
+`aff7f34` -- the commit that set this plan to `awaiting-code-review` -- is
+still the correct anchor, following the same convention the Internal plan
+review above used (`86adf62`, itself a plan-document commit, not a code
+commit).
+
+**Verdict: SHIP.** → `ready-to-archive`.
+
+The writer, the reader and the contract tests are sound. I did not re-derive
+the design (that is not this pass's job and the Internal plan review already
+did it), but I attacked the three claims in the verification record most
+likely to be wrong if the implementation had drifted from what it asserts --
+the `scope == "full"` positive/negative boundary, the encoded-row budget's
+survival half, and the row-per-session invariant under abort -- with real
+subprocesses against a throwaway fixture tree, never the live ledger, and
+every one held. One real defect turned up, in code neither the accepted
+contract nor any existing test exercised (a "median" that wasn't one on an
+even-count day); fixed in this pass, with a mutation-confirmed regression
+test added.
+
+**One structural fact worth recording rather than treating as background
+noise**: `bootstrap/tests/conftest.py` has moved substantially since the
+last of this plan's seven implementation commits (`fc93c1a`) -- the sibling
+`full-suite-interception` plan's hook-ownership/shadow-detection guard
+(`7e2fa00`, `954c1a8`, `5d9eeba`) landed on top of it, and the file was
+under active further edits by yet another session as this review ran. This
+plan's own contract tests (`test_suite_ledger.py`) still pass in full against
+the *current* `conftest.py`, not merely the one at the tested commit --
+verified fresh, immediately before writing this section (69 passed; see
+"Falsification" below). That is what makes `ready-to-archive` honest here:
+the record below describes the tree as it stands, not only as it stood at
+`906b315`.
+
+### Findings
+
+**CR1 (fixed, non-blocking) -- `tools/suite_cost.py`'s day-level "median"
+wall-clock figure was not the median on an even-count day.**
+
+`_render_trend`'s `sorted(values)[len(values) // 2]` returns the **upper**
+of the two middle values when a day has an even number of complete runs, not
+their average. Concretely: two runs of 100.0s and 200.0s on the same day
+reported "median 200.0s" -- one real run's own figure, not the true median
+of 150.0s. This is not pinned by any acceptance-criteria bullet (the
+"reader outcomes" list the plan commits to never mentions trend rendering),
+and no existing test exercised a two-value day, so it shipped untested --
+confirmed by grep: no test in `test_suite_ledger.py` references `_render_trend`
+or `median` before this pass.
+
+**Fixed directly**, per this pass's mode: added a `_median` helper (mean of
+the two middle values on an even count, unchanged on an odd count) and used
+it in all three call sites `_render_trend` had duplicated the buggy pattern
+into. Added `test_a_days_median_wall_clock_is_the_true_median_not_the_upper_middle_value`,
+which constructs a two-run day (100.0s, 200.0s) plus a second day so the
+trend section renders at all, and asserts the true median (150.0s) appears
+and the old wrong figure (200.0s) does not. **Mutation-verified rather than
+trusted**: `git stash`-reverted `tools/suite_cost.py` alone and re-ran the
+new test -- it fails on the pre-fix code (`AssertionError`, "median 150.0s"
+absent from the rendered text) and passes on the fix. 69 tests pass in
+`test_suite_ledger.py` after the addition (68 before).
+
+### Falsification (Boundary C)
+
+Instructed to attack the two or three claims that matter most rather than
+repeat Boundary B's broad command, and to confirm each instrument against a
+known-present case before trusting an absence. Every probe below ran a real
+`python -m pytest` subprocess against a throwaway fixture tree carrying its
+own copy of the shipped collector -- never the live ledger -- on the
+canonical interpreter (`/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+3.13.13).
+
+* **Runtime skip vs. collection-time skip -- the two suggested targets that
+  are opposites of each other.** A run with an ordinary runtime
+  `pytest.skip()` (not module-level) still classifies `full`
+  (`scope=full, collection_errors=0, executed=3, collected=3, skipped=1`) --
+  confirms an everyday skip doesn't sterilize every "full" row, which is
+  what made PR2's original positive-case falsifier hard to write. A
+  module-level `pytest.skip(..., allow_module_level=True)` correctly forces
+  `unknown`, matching the accepted contract and the Maintainer's own second
+  allowance. **Mutation-tested the negative case rather than trusting the
+  passing test**: patched a fixture copy of the collector so
+  `_ledger_accumulate_collect` ignored skips (counted only outright collect
+  failures) and re-ran the identical module-level-skip construction -- it
+  now wrongly reports `full` (`collection_errors=0, executed=2,
+  collected=2`). Confirms the shipped assertion is load-bearing, not
+  vacuously true against an instrument that could not have failed.
+* **Encoded-row byte budget, exact boundary rather than the shipped tests'
+  round numbers.** Binary-searched the real boundary: a `by_file` map that
+  encodes to exactly 4086 bytes (<=4096, unforced) survives with
+  `truncated=False`, `by_file_kept == by_file_total`, zero eviction. One
+  file more (4125 bytes unforced) evicts exactly one entry, lands at 4085
+  bytes, and keeps `truncated=True` alongside real `label`/`invocation`/
+  `scope=full` content -- not the skeleton. Confirms PR4's "survival half"
+  fix holds in the actual byte arithmetic at the boundary, not only in the
+  fixtures the shipped tests happen to use.
+* **Row-per-session invariant under a genuine external abort**, distinct
+  from all seven `_ABORT_SHAPES` in the test file, which raise from inside
+  a test body -- a different code path than an OS signal actually
+  interrupting the interpreter. Sent a real `SIGINT` to a running child
+  mid-session: exactly one row, correctly `interrupted=True`,
+  `scope=unknown`, `exitstatus=2`, `executed=1` of `collected=3`, no
+  corruption. A `SIGKILL` mid-session (no cleanup possible at all) leaves
+  zero rows and no ledger file at all -- matches the documented "crashed
+  sessions may not be recorded" omission exactly, with no torn or partial
+  line.
+* **Investigated and did not confirm**: whether an in-process
+  `pytest.main()` call nested *inside a running test* of a genuine
+  top-level session could corrupt that outer session's own row, since
+  `_ledger_begin_session` calls `_ledger_reset()` unconditionally before it
+  checks the ownership marker -- a real risk on paper, since a reset mid-run
+  would wipe the outer session's already-accumulated nodes. Constructed the
+  nesting (a test under `bootstrap/tests` calling `pytest.main()` against a
+  subdirectory that shares the same conftest, mid-session) and instrumented
+  `_ledger_begin_session` directly to watch it fire: it ran exactly once,
+  for the outer session only. pytest does not re-invoke a conftest module's
+  `pytest_configure` for a call nested inside an already-running session in
+  the same process -- only for genuinely sequential `pytest.main()` calls,
+  which `test_consecutive_top_level_sessions_are_each_recorded` already
+  covers. The outer session's row came back complete and correct
+  (`executed=5, collected=5`). Recorded because the theory was concrete
+  enough to test and worth ruling out explicitly, not because it held.
+* **Standing-gate and doc-surface confirmations, each checked against a
+  known-present violation first so a clean result means something**:
+  `tools/suite_cost.py` carries no manifest row (`bootstrap/scaffold.py
+  --manifest`, grepped, zero hits) and is registered in
+  `test_notice_install.py`'s `_OWN_ONLY_SCRIPTS` (read directly, not
+  inferred from absence) with its SPDX MIT header present; `diff
+  templates/core/dev/measurement/README.md dev/measurement/README.md` is
+  empty and the note names neither `suite-runs.jsonl` nor
+  `tools/suite_cost.py`; `bootstrap/verify_integrity.py --target .` does
+  **not** flag `dev/measurement/README.md` while correctly flagging 12
+  *other*, unrelated pre-existing violations (`AGENTS.md`, six
+  `tools/_lifecycle_metrics/*.py` files, etc.) -- proving the instrument can
+  still fail and that D4's finalize genuinely landed, not that the check is
+  silently toothless; `CHANGELOG.md` and `.gitignore` both carry their
+  entries; `scripts/claim_check.py dev/plans/suite-run-diagnostics.md` --
+  clean.
+* **Targeted re-run against the current tree**, not the tested commit:
+  `CAIRN_SUITE_LEDGER=0 PYTHONDONTWRITEBYTECODE=1 python3.13 -m pytest
+  bootstrap/tests/test_suite_ledger.py -q -p no:cacheprovider` -- **69
+  passed** (68 pre-existing plus CR1's new test), confirming this plan's
+  contract still holds against `conftest.py` as it stands now, after the
+  sibling plan's hook-ownership guard landed on top of the reviewed range.
+  `bootstrap/tests/test_notice_install.py` -- 12 passed.
+
+### Coverage
+
+**Read in full**: `bootstrap/tests/conftest.py` at the current tree (read
+for understanding, not edited -- owned elsewhere); `tools/suite_cost.py`;
+`bootstrap/tests/test_suite_ledger.py`; this plan document in full,
+including the Internal plan review, the author's Response, the plan-review
+disposition, and the Implementation verification section.
+
+**Ran**: the targeted command named in the review brief
+(`test_suite_ledger.py`, 68 passed before CR1, 69 after);
+`test_notice_install.py` (12 passed); `bootstrap/scaffold.py --manifest`
+(grepped for `suite_cost`/`suite-runs`, zero hits);
+`bootstrap/verify_integrity.py --target .` (12 unrelated violations, none on
+the D2/D4 destination); `diff` on the README twin; `scripts/claim_check.py`
+on this plan; five hand-built falsification probes against throwaway
+fixture trees (runtime-skip, module-level-skip mutation test, byte-budget
+boundary, external `SIGINT`, external `SIGKILL`, nested-`pytest.main()`
+investigation) plus a mutation test of the fix itself (CR1).
+
+**Not run, by the Maintainer's explicit instruction for this pass**: the
+full suite. `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests` was not
+re-executed; Boundary B's own record (above) is taken as read, not
+re-verified broadly.
+
+**Not touched, Maintainer-owned**: Chunk E (Security Review + re-anchor
+ceremony).
+
+**Out of scope by construction**: did not re-litigate the accepted design --
+the five hooks, the guard set, the 4,096-byte budget, the `flock` contract,
+the `scope_basis` mechanism -- or the plan-review tier. The brief's
+instruction was to attack the claims already made, not to redesign what
+they claim.
+
+The lasting-truth `Dispositions:` ledger belongs to the `## Lasting-truth
+migration` section below, filled in at archive time -- not duplicated here.
+For that section's benefit: CR1 is fully closed by this same pass (fixed,
+tested, mutation-verified), nothing from this review is deferred.
