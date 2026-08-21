@@ -4,7 +4,7 @@
 # Plan: measure structural events, not prose
 
 **Source proposal**: [`dev/proposals/archive/2026-08-11-claude-metrics-events-not-prose.md`](../proposals/archive/2026-08-11-claude-metrics-events-not-prose.md)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**Internal**) from round 3 onward — the Maintainer
 converted the tier after two External rounds landed. See "The review tier, and
 why it changed" below.
@@ -2957,4 +2957,16 @@ reviewer: Claude Sonnet 5
 kind: transition
 from_state: awaiting-code-review
 to_state: ready-to-archive
+-->
+
+**This plan's own final status flip (`ready-to-archive` -> `archived`),
+recorded per row 6-8, in the same commit as the `git mv` to `archive/`** --
+identity survives the rename by construction (`(introducing commit SHA,
+added-block index)`, Chunk 5), which this move itself now exercises for real
+on this plan's own file rather than only in 5-3's synthetic fixture:
+
+<!-- cairn-event-v1
+kind: transition
+from_state: ready-to-archive
+to_state: archived
 -->
