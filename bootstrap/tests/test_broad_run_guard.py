@@ -421,3 +421,47 @@ def test_a_release_refused_outcome_is_not_masked_by_the_guard(tmp_path) -> None:
     assert "Refusing a broad run" not in (
         with_release.stdout + with_release.stderr), (
         "the guard fired in release mode and may have masked the release rule")
+
+
+def test_a_shadow_carrying_the_ownership_decorator_is_still_refused(
+        tmp_path) -> None:
+    """The decorator must not disarm the guard it arms.
+
+    ``@_own`` sits above every hook in the conftest, so an agent copying the
+    file's own convention writes ``@_own def <existing hook>`` -- and if the
+    decorator re-registered silently, that would overwrite the record of the
+    function it just deleted, leaving the identity check comparing the shadow
+    against itself. Measured before the double-registration refusal existed:
+    that restored the complete pre-fix hazard, and stayed silent under the
+    order-independence seed.
+
+    Directional: the undecorated shadow is refused too, by the other arm.
+    """
+    decorated = ("@_own\n"
+                 "def pytest_sessionfinish(session, exitstatus):\n"
+                 "    pass\n")
+    proc = _run(_tree(tmp_path / "decorated", 3, extra_conftest=decorated))
+    assert proc.returncode != 0, proc.stdout + proc.stderr
+    assert "twice" in proc.stdout + proc.stderr
+    plain = ("def pytest_sessionfinish(session, exitstatus):\n"
+             "    pass\n")
+    assert _run(_tree(tmp_path / "plain", 3, extra_conftest=plain)).returncode == 4
+
+
+def test_the_check_runs_before_the_option_hook_it_used_to_live_in(
+        tmp_path) -> None:
+    """Shadowing ``pytest_addoption`` must not evade the check.
+
+    The check ran from ``pytest_addoption`` until a Security Review measured
+    that ``pytest_addhooks`` is call #1 for a conftest plugin. An append
+    shadowing both hooks was silent for every invocation that omits the shuffle
+    flag -- which is all Boundary A iteration.
+    """
+    both = ("def pytest_addoption(parser):\n"
+            "    pass\n"
+            "def pytest_sessionfinish(session, exitstatus):\n"
+            "    pass\n")
+    proc = _run(_tree(tmp_path, 3, extra_conftest=both))
+    assert proc.returncode == 4, proc.stdout + proc.stderr
+    combined = proc.stdout + proc.stderr
+    assert "pytest_addoption" in combined and "pytest_sessionfinish" in combined

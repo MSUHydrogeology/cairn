@@ -106,8 +106,30 @@ _OWNED_HOOKS: dict[str, object] = {}
 
 
 def _own(fn):
-    """Record a hook implementation so that shadowing it becomes detectable."""
-    _OWNED_HOOKS[fn.__name__] = fn
+    """Record a hook implementation so that shadowing it becomes detectable.
+
+    **Refuses a second registration of a name already held**, and that refusal
+    is the load-bearing half. Without it the decorator disarms the guard it
+    exists to arm: a shadowing ``def`` carrying ``@_own`` -- which is exactly
+    what an agent copying this file's own convention writes, since ``@_own``
+    sits above every hook here -- overwrites the record of the function it just
+    deleted, leaving the identity check comparing the shadow against itself.
+    Measured: that restores the complete pre-fix hazard, silently, and stays
+    silent under the order-independence seed.
+
+    The collision is visible at the second decoration, which is why this needs
+    no ordering trick: import order is definition order.
+    """
+    name = fn.__name__
+    if name in _OWNED_HOOKS:
+        raise RuntimeError(
+            "bootstrap/tests/conftest.py defines " + name + " twice. The "
+            "second definition replaces the first and would delete it "
+            "silently -- including, depending on the name, the release-mode "
+            "outcome rule or the broad-run guard. Extend the existing hook "
+            "instead of adding another."
+        )
+    _OWNED_HOOKS[name] = fn
     return fn
 
 
@@ -120,12 +142,10 @@ def _refuse_if_a_hook_was_shadowed() -> None:
     still correct. A hook body runs after the import has completed, which is the
     only moment the final bindings are visible.
 
-    **One limit, stated rather than implied**: this runs from
-    ``pytest_addoption``, so shadowing *that* hook evades the check. It is the
-    earliest hook available and no earlier one exists to guard it from. Losing
-    ``pytest_addoption`` removes the shuffle flag, which the order-independence
-    sub-gate fails on loudly -- so that one case is noisy where the others were
-    silent, which is why this is a limit and not a hole.
+    Runs from ``pytest_addhooks``, which is call #1 for a conftest plugin --
+    ahead of ``pytest_addoption``. An earlier version ran from ``addoption`` and
+    claimed no earlier hook existed; that was false, and it left an append
+    shadowing both hooks silent.
     """
     shadowed = sorted(
         name for name, fn in _OWNED_HOOKS.items()
@@ -138,8 +158,8 @@ def _refuse_if_a_hook_was_shadowed() -> None:
             + " have been replaced by a later definition in the same "
             "module. A same-named `def` appended to this file rebinds the "
             "name and deletes the original -- including the release-mode "
-            "outcome rule and the broad-run guard. Add your hook under a "
-            "different name, or extend the existing one."
+            "outcome rule and the broad-run guard. Extend the existing hook "
+            "-- an unrecognised `pytest_*` name is refused by pytest itself."
         )
 
 
@@ -160,6 +180,19 @@ def _release_mode() -> bool:
 
 
 @_own
+def pytest_addhooks(pluginmanager):
+    """Earliest hook a plugin receives -- call #1, ahead of ``pytest_addoption``.
+
+    The shadow check runs here rather than in ``pytest_addoption`` so that an
+    append shadowing *both* is still caught. Measured hook order for a conftest
+    plugin: ``pytest_addhooks`` then ``pytest_addoption``. An earlier review
+    recorded that no earlier hook existed; that was false, and the residual it
+    described was therefore avoidable rather than necessary.
+    """
+    _refuse_if_a_hook_was_shadowed()
+
+
+@_own
 def pytest_addoption(parser):
     """Register the ``--quality-gate-shuffle-seed`` flag, and verify this
     module's own hooks have not been shadowed.
@@ -167,7 +200,6 @@ def pytest_addoption(parser):
     Default ``None`` means "do not shuffle" (the normal pytest
     invocation path).  Any int activates the shuffle.
     """
-    _refuse_if_a_hook_was_shadowed()
     parser.addoption(
         "--quality-gate-shuffle-seed",
         action="store",
