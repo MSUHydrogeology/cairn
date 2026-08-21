@@ -376,3 +376,36 @@ built.
 
 Three changes and one model correction. The contract has shrunk at every
 revision, which for this proposal is the argument.
+
+### Addendum to Revision 2 -- where a loop is allowed, and why
+
+One further Maintainer correction, quoted verbatim:
+
+> "I don't mind if code review enters a bit of a loop"
+
+**Plan review is single-pass; code review may loop.** That asymmetry is not a
+compromise, it is the whole principle stated in one line: **a loop is allowed
+where the artifact is executable.**
+
+| stage | loops? | why |
+|---|---|---|
+| Proposal | yes, bounded by the Decision | the Maintainer is the editor and terminates it |
+| Plan review | **no** — one pass | prose about work not yet done; a second reader finds a different set, not a smaller one |
+| Code review | **yes** | the artifact runs; findings are reproducible; a clean pass is a real result rather than a failure of effort |
+
+The reason a prose loop does not converge and a code loop does: on prose,
+"nothing further to say" is indistinguishable from "did not look hard enough,"
+so a reviewer with more time always produces more findings. On code, a finding is
+a behaviour you can make happen, its absence is a probe that came back clean, and
+the reviewer's own measurement tells them when to stop.
+
+Today's corpus shows both. Four plan-review rounds on `metrics-events-not-prose`
+produced escalating find counts in regions earlier rounds had never entered. The
+code review of the guard, by contrast, produced three findings anchored to
+reproductions — and the most valuable of them was that **a test could not fail**,
+which is only discoverable by running it.
+
+**Consequence for change 3.** Constructibility is declared before the Decision
+precisely so the single-pass stage is not the one asked to catch an unbuildable
+contract. The loop that would have caught it is the one that no longer runs
+there.
