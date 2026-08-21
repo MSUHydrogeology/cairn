@@ -20,10 +20,15 @@ a session that has set it -- the order-independence sub-gate sets it for every
 child, and an operator running the full suite sets it by hand. A child that
 simply inherited the parent's environment would find the guard disabled, and
 every refusal assertion here would pass without testing anything. That failure
-is silent, which is what makes it worth a paragraph.
+is silent, which is what makes it worth a paragraph. The same scrubbing covers
+``CAIRN_SUITE_LEDGER``: this plan's own mandated verification command sets it
+to ``0`` (opt the *outer* session out of ledger writes), and a test reading a
+*child's* ledger row for its ``scope`` would silently see nothing at all if
+that value leaked down.
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -71,25 +76,44 @@ def _tree(tmp_path: Path, n_files: int, *, tests_per_file: int = 1,
     return tmp_path
 
 
-def _run(root: Path, *args: str, env_overrides: dict | None = None
-         ) -> subprocess.CompletedProcess:
-    """Run pytest in ``root`` with both exemption tokens explicitly removed.
+def _run(root: Path, *args: str, env_overrides: dict | None = None,
+         family_clean: bool = False) -> subprocess.CompletedProcess:
+    """Run pytest in ``root`` with all three of this conftest's tokens
+    explicitly removed from the child's environment before any override is
+    applied, so a test asserting a refusal -- or a specific ledger outcome --
+    cannot be silently satisfied by something this process inherited.  See the
+    module docstring.
 
-    Removal is unconditional and happens before any override is applied, so a
-    test asserting a refusal cannot be silently satisfied by an inherited
-    token.  See the module docstring.
+    ``family_clean=True`` drops the ``-p no:cacheprovider`` flag every other
+    call here carries. The sibling's ledger classifies ``scope`` from the raw
+    invocation, and its closed option family
+    (``bootstrap/tests/conftest.py::LEDGER_FAMILY_FLAGS``) does not include
+    ``-p`` -- so a run carrying it can never classify ``full``, regardless of
+    what actually happened. Tests that read the ledger's ``scope`` field need
+    the unflagged invocation; every other test here, which never looks at the
+    ledger, keeps the flag for cache hygiene.
     """
     env = dict(os.environ)
     env.pop("CAIRN_FULL_SUITE", None)
     env.pop("CAIRN_RELEASE_GATE_ACTIVE", None)
+    env.pop("CAIRN_SUITE_LEDGER", None)
     env.update(env_overrides or {})
     env["PYTHONPATH"] = str(root) + os.pathsep + env.get("PYTHONPATH", "")
     plugin = ["-p", "competitor_plugin"] if (root / "competitor_plugin.py").exists() else []
+    cache_flag = [] if family_clean else ["-p", "no:cacheprovider"]
     return subprocess.run(
         [sys.executable, "-m", "pytest", "bootstrap/tests", "-q",
-         "-p", "no:cacheprovider", *plugin, *args],
+         *cache_flag, *plugin, *args],
         cwd=str(root), env=env, capture_output=True, text=True, check=False,
     )
+
+
+def _ledger_rows(ledger_path: Path) -> list[dict]:
+    """Every decodable JSONL row in ``ledger_path``, in file order."""
+    if not ledger_path.is_file():
+        return []
+    return [json.loads(line) for line in
+            ledger_path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _refused(proc: subprocess.CompletedProcess) -> bool:
@@ -466,6 +490,65 @@ def test_the_check_runs_before_the_option_hook_it_used_to_live_in(
     assert "pytest_addoption" in combined and "pytest_sessionfinish" in combined
 
 
+def test_a_code_object_swap_evades_the_ownership_check(tmp_path) -> None:
+    """A known, measured limit, pinned rather than left to be rediscovered --
+    the same treatment ``test_the_guard_loses_to_an_outer_tryfirst_wrapper``
+    gives FSI-SR1's limit.
+
+    The check compares object identity (``globals().get(name) is not fn``),
+    which catches every *rebinding* of a hook's name -- a second ``def``, a
+    ``functools.wraps`` wrap, a bare reassignment -- because each makes
+    ``globals()[name]`` a different object from the one ``_own`` recorded.
+    It does not catch a mutation of that *same* object's internals:
+    swapping ``__code__`` leaves the name bound to the identical object
+    ``_OWNED_HOOKS`` already holds, so the comparison finds nothing to
+    report, and the release-mode outcome rule the swapped hook carries goes
+    silent with it -- discovered while falsifying this guard for round 3 of
+    code review, found round 2's Security Review did not (the disarming
+    shape it found and closed was ``@_own`` on the shadow; this one carries
+    no ``@_own`` decoration to catch).
+
+    Not the accidental-shadowing threat model this guard was built for (see
+    the module docstring): it requires code written specifically to defeat
+    the check, the same class as an explicit ``_OWNED_HOOKS.pop(name)``
+    ahead of a shadow. Directional: the same tree without the swap reports
+    the release evidence normally.
+    """
+    swap = (
+        "def _swap_pytest_sessionfinish():\n"
+        "    def _evil(session, exitstatus):\n"
+        "        return None\n"
+        "    pytest_sessionfinish.__code__ = _evil.__code__\n"
+        "_swap_pytest_sessionfinish()\n"
+    )
+    root = _tree(tmp_path / "swapped", 1, extra_conftest=swap)
+    (root / "bootstrap" / "tests" / "test_probe_skips.py").write_text(
+        "import pytest\n\n"
+        "def test_it_skips():\n"
+        "    pytest.skip('release evidence must not include a skip')\n",
+        encoding="utf-8")
+    proc = _run(root, env_overrides={"CAIRN_RELEASE_GATE_ACTIVE": "1"})
+    assert proc.returncode == 0, (
+        "the documented limit is that a __code__ swap evades the ownership "
+        "check and silences the release-mode outcome rule; this now returns "
+        f"{proc.returncode}:\n" + proc.stdout + proc.stderr)
+    combined = proc.stdout + proc.stderr
+    assert "RELEASE MODE" not in combined
+    assert "have been replaced by a later definition" not in combined
+
+    control = _tree(tmp_path / "control", 1)
+    (control / "bootstrap" / "tests" / "test_probe_skips.py").write_text(
+        "import pytest\n\n"
+        "def test_it_skips():\n"
+        "    pytest.skip('release evidence must not include a skip')\n",
+        encoding="utf-8")
+    unswapped = _run(control, env_overrides={"CAIRN_RELEASE_GATE_ACTIVE": "1"})
+    assert unswapped.returncode != 0, (
+        "the control without the swap must still report the release "
+        "evidence:\n" + unswapped.stdout + unswapped.stderr)
+    assert "RELEASE MODE" in unswapped.stdout + unswapped.stderr
+
+
 def test_the_ownership_registry_is_complete(tmp_path) -> None:
     """Every module-level ``pytest_*`` callable in the conftest must carry
     ``@_own``, or a shadow of it evades the identity check entirely -- the
@@ -492,3 +575,87 @@ def test_the_ownership_registry_is_complete(tmp_path) -> None:
     assert not unowned, (
         f"{unowned} define a pytest_* hook without @_own -- a later shadow of "
         "that name would replace it with no diagnostic")
+
+
+# --------------------------------------------------------------------------
+# Chunk S -- the sibling seam (dev/plans/full-suite-interception.md, row A6)
+
+
+def test_a_refused_session_is_scoped_unknown(tmp_path) -> None:
+    """A6 -- a regression guard on the sibling's contract, not a change to it.
+
+    The sibling's accepted classifier (``bootstrap/tests/conftest.py``'s
+    ``_ledger_scope``, and its read-only twin in ``tools/suite_cost.py``)
+    already requires ``collected > 0``, ``executed > 0`` and ``not_run == 0``
+    for ``scope == "full"``. A session this guard refuses has ``executed ==
+    0`` by construction -- the refusal fires at collection-finish, before any
+    test runs. This pins that property against a later relaxation of the
+    sibling's contract rather than adding special-case code for a shape the
+    general rule already covers; see the plan's Scope > "A second expansion"
+    for the full derivation and the Maintainer's disposition ("Sure, I like
+    the regression guard idea").
+
+    **Correcting a claim in this plan's own "Sequencing" section, which this
+    test's mutation-testing exposed.** That section says a refused session
+    "writes a row with `collected` ≈ the full set and `executed` = 0" --
+    measured here, `collected` (`session.testscollected`) is **0**, not ≈
+    the full set: `Session.perform_collect` (`_pytest/main.py`, pytest 9.0.3)
+    only assigns `self.testscollected = len(items)` *after*
+    `hook.pytest_collection_finish` returns, and this guard's `UsageError`
+    propagates out of that hook before the assignment is reached. So
+    `collected > 0` is independently sufficient to keep a refused session out
+    of `full` -- removing only `executed > 0` from the classifier's postcondition
+    (leaving `collected > 0` and `not_run == 0`) does **not** flip this test's
+    first half, confirmed by mutation; removing both `collected > 0` and
+    `executed > 0` does (`not_run = collected - executed = 0 - 0 = 0` still
+    holds). The assertions below check both fields directly so a reader does
+    not have to take either claim on faith.
+
+    Reads the ledger row directly (raw JSONL), not through
+    ``tools/suite_cost.py`` -- that reader's own refused-session handling is
+    row A7 of the same chunk, unimplemented as of this test (see the code
+    review's finding on that row).
+
+    Directional on both halves, per the row mapping: a refused session
+    resolves ``unknown``, **and** the same tree under the override resolves
+    ``full`` -- a classifier answering ``unknown`` unconditionally would pass
+    the first half and fail the second. Both runs use ``family_clean=True``:
+    without it, ``-p no:cacheprovider`` alone forces ``unknown`` regardless of
+    ``executed``, which would make the second half vacuous (measured -- see
+    ``_run``'s own docstring).
+    """
+    refused_root = _tree(tmp_path / "refused", THRESHOLD + 5)
+    refused_ledger_dir = refused_root / "dev" / "measurement"
+    refused_ledger_dir.mkdir(parents=True)
+    refused_ledger = refused_ledger_dir / "suite-runs.jsonl"
+
+    refused = _run(refused_root, family_clean=True)
+    assert _refused(refused), refused.stdout + refused.stderr
+    refused_rows = _ledger_rows(refused_ledger)
+    assert refused_rows, "the refused session wrote no ledger row at all"
+    row = refused_rows[-1]
+    assert row["exitstatus"] == 4, row
+    assert row["executed"] == 0, row
+    assert row["collected"] == 0, row
+    assert row["scope"] == "unknown", (
+        f"a refused session (executed=0) classified {row['scope']!r}, not "
+        "'unknown' -- the sibling's full-classification postconditions no "
+        "longer exclude a session that never ran anything")
+
+    full_root = _tree(tmp_path / "full", THRESHOLD + 5)
+    full_ledger_dir = full_root / "dev" / "measurement"
+    full_ledger_dir.mkdir(parents=True)
+    full_ledger = full_ledger_dir / "suite-runs.jsonl"
+
+    full = _run(full_root, env_overrides={"CAIRN_FULL_SUITE": "1"},
+                family_clean=True)
+    assert full.returncode == 0, full.stdout + full.stderr
+    full_rows = _ledger_rows(full_ledger)
+    assert full_rows, "the overridden session wrote no ledger row at all"
+    full_row = full_rows[-1]
+    assert full_row["executed"] == THRESHOLD + 5, full_row
+    assert full_row["scope"] == "full", (
+        f"the same tree, actually run to completion under the override, "
+        f"classified {full_row['scope']!r} -- a classifier that answers "
+        "'unknown' unconditionally would still have passed the first half "
+        "of this test")

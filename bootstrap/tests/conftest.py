@@ -146,6 +146,24 @@ def _refuse_if_a_hook_was_shadowed() -> None:
     ahead of ``pytest_addoption``. An earlier version ran from ``addoption`` and
     claimed no earlier hook existed; that was false, and it left an append
     shadowing both hooks silent.
+
+    **A known limit, stated rather than left to be rediscovered.** The
+    comparison is by object identity (``globals().get(name) is not fn``), so
+    it catches every *rebinding* of the module attribute -- a second ``def``,
+    a ``functools.wraps`` wrap, a bare reassignment -- because all of those
+    make ``globals()[name]`` a different object from the one ``_own`` recorded.
+    It does **not** catch a mutation of that *same* object's internals:
+    ``pytest_sessionfinish.__code__ = other.__code__`` leaves the name bound
+    to the identical object ``_OWNED_HOOKS`` already holds, so the comparison
+    finds nothing to report. Measured: this silences the release-mode outcome
+    rule as completely as the pre-fix hazard -- exit 0, no ``RELEASE MODE``
+    report, no diagnostic anywhere -- on a tree with a real skip present.  An
+    explicit ``_OWNED_HOOKS.pop(name)`` ahead of a shadowing ``def`` reaches
+    the same result by a different route (the shadow's own identity check
+    then compares the registry against itself). Both require code written
+    specifically to defeat this check; neither is the accidental shadowing --
+    a future contributor copying this file's own ``def``/``@_own`` idiom --
+    this guard was built to catch, and neither is closed here.
     """
     shadowed = sorted(
         name for name, fn in _OWNED_HOOKS.items()
