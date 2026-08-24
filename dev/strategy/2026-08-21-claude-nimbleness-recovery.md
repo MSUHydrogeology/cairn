@@ -692,7 +692,15 @@ C+D — **the one careful phase**: install contract, deliberate lane,
 manifests + gate re-anchor + UPGRADE deprecation note; adopters keep
 their installed copies and choose at next upgrade; (4) prose. Not on
 the list: the security stack (Maintainer decision), the scaffold
-engine and tests, claim/link/content checkers, the quality gate.
+engine and tests, claim/link/content checkers, the quality gate —
+and **the work-intent system** (`intents.jsonl`, `tools/intent.py`
+and `_intent/`, twins and tests, ~8.7k lines; Maintainer, 2026-08-24:
+*"critical feature for multi-agent collaboration"*). Reclassified:
+it is **coordination, not deliberation** — it prevents concurrent
+sessions destroying each other's work, a hazard that has actually
+occurred, which is a C0-grade harm the deliberation complex never
+guarded. It stays advisory per 1.5 (warn, never refuse), and the
+collision log stays with it. Sweep total adjusts to **~61k**.
 Structure calls with defaults: keep `suite_cost.py`; retire
 progressive onboarding; keep the session skills, thinned.
 
