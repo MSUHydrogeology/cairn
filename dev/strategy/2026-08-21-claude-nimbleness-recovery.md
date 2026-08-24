@@ -649,6 +649,34 @@ filing four issues, and it disciplined priorities better than any
 internal mechanism. Tier 3 remains the counterforce that matters most:
 build for the people whose leaving is the real price.
 
+## The minimal build
+
+(Maintainer, 2026-08-24: accomplish all of this *"with as little
+machinery as possible."*) The inventory answer: **~30 required new
+lines of code against 60,000+ deleted.** Every mechanism above is
+words or deletion — the lanes, briefs, review form, balance sheet,
+digest, audit packet, and labor-market table are paragraphs and
+goodnight duties; the gauges are an optional ~50-line script or three
+git one-liners; the only mandatory new code is the security marker
+and its manifest. The reason is the deepest difference between
+managing agents and managing humans: **for an agent, a sentence of
+doctrine is the machinery.** Humans skim, forget, and drift, so
+human norms erode without enforcement code; agents re-read the
+constitution completely at every session start and comply with what
+it says — the 67k-line deliberation complex enforced text on a
+reader who never needed enforcing. Code keeps only the jobs text
+cannot do: compute (gauges), execute (tests, the release gate), and
+physically protect (scaffold containment). In-session drift is
+caught by review and the sampling audit — themselves text-defined.
+Four moves, in order: decide the two pending proposals (text); the
+rewrite change note — `agent_collaboration.md` to ~150 lines,
+`AGENTS.md` conformed, templates to ~80 (text); the marker (~30
+lines, one Security Review); the subtraction sweep — board
+bankruptcy, park the deliberation complex, diet the suite (deletion,
+by a tireless agent). The standing razor for every future addition:
+**could this be a sentence instead of a script?** In a firm staffed
+by readers who never skip the manual, it almost always can.
+
 ## What would falsify this note
 
 * Shortened artifacts measurably letting through defects the long form
