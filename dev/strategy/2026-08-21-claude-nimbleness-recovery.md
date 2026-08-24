@@ -519,9 +519,25 @@ incentives built from them:
   it light while the OSI committees deliberated themselves into
   irrelevance): a working, tested demonstration outranks any document
   in a decision, and the alternative to blocking a direction is
-  building the alternative. Deliberation gains a predator — the
-  cheapest way to win an argument becomes doing the thing, because
-  the patch ends the argument while the finding only extends it.
+  building the alternative. Stated precisely, after stress-testing
+  (2026-08-24): **the failing test, not the patch, is what ends an
+  argument** — it settles *does the defect exist* objectively while
+  leaving the fix's design with the author; a patch is an attached
+  *offer*, declinable in one sentence, never a verdict (else review-
+  by-patch becomes the reviewer dictating implementation — the tier
+  over-reach in a new costume). The mechanism is frame-completion,
+  not competitiveness: agents do the task as defined, so define the
+  reviewer's success as *"the change is correct when you're done,"*
+  not *"defects are found."* Its real economics: it **symmetrizes
+  costs** — blocking someone comes to cost what resolving the block
+  costs, so findings get fewer and truer (this week's record: every
+  finding that ran something was right; several that only argued were
+  half-right). It is enforced by what visibly wins Decisions — the
+  Maintainer must seed it by letting a few demonstrations
+  conspicuously beat essays. And it deliberately does not eat the
+  RCL-06 class — the structural, undemonstrable finding — which
+  blocks through C0 on argument alone; the norm prices routine
+  findings, it does not outlaw structural ones.
 * **One session owns the outcome, end to end.** For standard work,
   the session that opens it ships it — so the author's own finite
   context becomes the clock, and every page of deliberation visibly
