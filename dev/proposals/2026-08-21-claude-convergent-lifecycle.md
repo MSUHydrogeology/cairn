@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-21
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Supersedes**: `2026-08-20-claude-review-loop-termination` (accepted Revision 7,
 superseded same day; its objective binds here, its scope does not)
@@ -178,3 +178,144 @@ standard lane — show a hazard `git log` does not already cover. Third seam:
 silently breaks a security family and is not seen until release; the defense
 to test is the carve-out (security-surface changes still run their family in
 the loop) plus the release run as the backstop.
+
+## Review -- Codex (External) -- 2026-08-24
+
+**Model**: GPT-5.6 (Codex)
+
+Reviewed commit: b0e78e82ac4ce3a35e2613914665666ed3d7b613
+Target: the complete opened contract, especially lane triage and C0, the standard-note lifecycle, the enforcement demotion, the security-suite split, and transition
+Prior findings: none
+Assurance path: high-assurance
+**Tier**: External
+**Findings**: raised (5 blocking)
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+The proposal identifies a genuine operational cost and preserves the two parts
+that matter most: an independent reader who tries to falsify the work, and a
+durable decision record.  A short, deliberately scoped change note can be a
+better tool than two long artifacts when its state, obligations, and escalation
+boundary are equally explicit.  Separating security-family scheduling from
+whether those tests exist is also a reasonable objective, provided the release
+ceremony can prove it still owns the complete family.
+
+### Findings
+
+#### RCL-01 — BLOCKING: the triage rules do not give hard-to-undo work a determinate, safe lane
+
+The two claimed defenses of the standard lane conflict.  Section 1 allows a
+trivial change "even on a named surface" when it changes no contract, while the
+next bullet makes every `AGENTS.md` high-risk surface deliberate.  Section 2
+then asks whether shipping would cause hard-to-undo damage, but says that a
+finding that fails that test is only a non-blocking note.  The polarity is not
+defined: if the question's answer is yes, that is precisely the damage the
+test names; if "fail" instead means no, the text still does not say what
+answer requires escalation.  Either reading leaves the reviewer unable to
+prevent the reviewer brief's own hard-to-undo standard-lane example.
+
+Define a closed triage decision: the named high-risk set, the outcome of the
+C0 question, the owner who may override it, and the resulting lane.  In
+particular, a true hard-to-undo risk must force the deliberate lane (or an
+explicit Maintainer disposition), not merely create a note.  Exercise the rule
+with directed examples, including a no-public-contract release-ceremony edit,
+so the trivial exception cannot silently swallow the mandatory lane.
+
+#### RCL-02 — BLOCKING: the standard change note is not yet a constructible lifecycle artifact
+
+The proposal names plan-status words but supplies no grammar for a parentless
+change note: no required header fields, distinction from an ordinary plan,
+review/response/decision record shape, next-owner table, event/metrics rule,
+or exact meaning of a warning.  The existing plan machinery is not merely a
+vocabulary list: `tools/lifecycle_planner.py`'s `PLAN_TRANSITIONS` and
+`status_evidence_violations` bind `awaiting-plan-review` to plan-review
+evidence, and its conformance check rejects a plan without a `**Plan review**:`
+declaration.  Demoting that machinery to warnings without a separate grammar
+means an incomplete note can look operationally complete while neither the
+human nor the metrics reader can tell what review or closure it owes.
+
+Add a compact standard-note schema and a transition table: state, next owner,
+required record, evidence required to advance, whether the planner reports a
+warning or refusal, and how deliberate plans retain the existing behavior.
+Specify whether `cairn-event-v1` survives for notes and how a note is
+distinguished from a deliberate plan in both self-hosted and shipped twins.
+The lifecycle tests need directed malformed-note, missing-design-review,
+closure, and deliberate-lane regression cases; writing this proposal's own
+derived note is not evidence until that grammar and those transitions exist.
+
+#### RCL-03 — BLOCKING: the proposed security-marker evidence can pass with no security tests selected
+
+There is currently no registered or applied `security` pytest marker in the
+repository.  The stated collection probe is therefore vacuous: at the reviewed
+commit, `python -m pytest bootstrap/tests --collect-only -q -m security`
+reported `no tests collected (4623 deselected)`.  A future check that merely
+asserts the two marker expressions collect/omit the "named families" can keep
+passing if the named set is empty, and the proposal never defines which nodes
+belong to the security family, including cross-cutting tests whose failure
+protects a security property.
+
+Before changing Boundary B, publish a complete test-node or test-file
+classification with its owner and the reason each member is security-only;
+register the marker; and make the release command select that exact set in
+release mode.  Pin both directions against a non-empty manifest and add
+directed mutations that remove/reclassify a security node and prove the
+membership test fails.  State the exact per-change and release commands,
+including the release environment and broad-run guard, so "full" cannot mean
+two incompatible collections.
+
+#### RCL-04 — BLOCKING: the proposal omits the mandatory security preflight and its own transition assurance
+
+This artifact has no `#### Security preflight` section at all.  The proposal
+template requires either answers to S1--S5 for a security-touching/high-risk
+change or an explicit N/A line; an absent answer is expressly a finding.  Here
+the proposed work changes `bootstrap/tests/conftest.py`, whose release-mode
+outcome rule and broad-run guard use environment-derived authority and whose
+comments document a silent release-gate bypass if its hooks are shadowed.  It
+also changes the release ceremony and makes current lifecycle refusals advisory.
+
+Add the five answers against the accepted architecture, including the marker
+classification/selection path, the release environment, failure direction,
+and a mutation for every claimed enforcement point.  The derived plan must
+also state how this change is verified under the *current* contract: a new
+definition of non-security "full" cannot retroactively satisfy the current
+release/trust-ceremony verification obligation for the implementation that
+installs it.  Name the resulting Security Review and canonical pre-change
+Boundary-B evidence explicitly rather than leaving their applicability to the
+implementer.
+
+#### RCL-05 — BLOCKING: the in-flight conversion has no authority or record-preserving migration
+
+"In-flight accepted proposals may elect" does not name who elects, which
+artifact statuses qualify, what happens to an already accepted scope and its
+derived plan, or how the old and new records are linked.  The three alleged
+first candidates are unnamed.  A Decision summary copied into a mutable
+parentless note also loses the accepted artifact's explicit exclusions,
+review basis, and any plan-review obligation unless the migration says exactly
+which record remains authoritative.  This is a scope and audit migration, not
+a formatting convenience.
+
+Provide a per-artifact migration table with the source stem and commit,
+current status, Maintainer authorization, target note/status, retained review
+and verification obligations, link/archival treatment, and the commit that
+effects the move.  Require a Maintainer allowance for any accepted outcome
+that the condensed note does not retain.  Until that table exists, make the
+new lane prospective for newly opened work only.
+
+### Coverage and recommendation
+
+**Covered**: the complete current contract at
+`b0e78e82ac4ce3a35e2613914665666ed3d7b613`; current proposal and plan templates'
+review, preflight, and event-block rules; the planner's plan transitions,
+conformance, and shared status-evidence predicates; the release-mode and
+broad-run hooks in `bootstrap/tests/conftest.py`; the current release command
+in `docs/release-process.md`; and the collection-only marker falsifier above.
+
+**Not covered / low confidence**: no implementation or revised contract exists,
+so no proposed marker manifest, warning behavior, shipped-twin parity, or
+release selection can yet be executed.  I did not run the full suite, as this
+is a pre-implementation review and the request excludes it.
+
+**Second-round recommendation**: recommended.  The revised contract should be
+read again after it makes triage, the standard-note state machine, the
+non-vacuous security selection, and the migration auditable.
