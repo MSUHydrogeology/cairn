@@ -712,8 +712,18 @@ history). Phases: (0) the rewritten constitution lands first, grep-
 falsified against dangling references; (1) A+B — own-repo only, zero
 contract impact, immediately safe; (2) E with re-measured suite; (3)
 C+D — **the one careful phase**: install contract, deliberate lane,
-manifests + gate re-anchor + UPGRADE deprecation note; adopters keep
-their installed copies and choose at next upgrade; (4) prose. **Execution corrections from External review
+manifests + gate re-anchor; (4) prose; **(5) both sister repos come
+into full compliance — no deprecation, no frozen modules** (Maintainer
+direction, 2026-08-24: *"Rip off the band-aid. I just didn't want to
+lose things that are necessary functionality"*). At the sweep's
+completion, `modflow_tools` and `lhm` are upgraded to the lean
+install: retired modules are **removed from their trees too**, the new
+constitution lands, and the necessary-functionality guarantee is the
+manifest's sister-repo usage check — every module a sister actively
+uses (the intent system, the checkers, the security stack, the board
+view; `foldback` is on the check-first list as a live adopter→Cairn
+channel) either survives upstream or has its replacement in place
+before it is removed from their trees. **Execution corrections from External review
 (2026-08-24), all accepted:** the sweep proceeds from a committed
 **per-file manifest** (per-function for mixed files) recording the
 property removed, its replacement or an explicit decision the
