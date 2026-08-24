@@ -290,16 +290,16 @@ class TestGeneralizationGate:
             f"{stems}"
         )
         row = next(r for r in rows if r["stem"] == "2026-05-01-alice-thing")
-        # Chunk 6 (metrics-events-not-prose): this tree's installed
-        # dev/proposals/_template.md carries the marker, but no `git init`
-        # ever runs here -- with no git at all, the extractor cannot prove
-        # this artifact is past any activation cutoff (Chunk 5's Activation
-        # section), so the act is pre-cutoff by the same rule a missing
-        # marker gets. review_rounds is a review-pass-kind field, and a
-        # pre-cutoff (or unprovable-cutoff) review-pass field emits the
-        # literal '', never the retired heading-count value -- the one
-        # genuine value change this audit's row 7-3 confirms, not a hold-over.
-        assert row["review_rounds"] == ""
+        # retire-event-blocks (2026-08-24): review_rounds is sourced from
+        # the artifact's own dated section headings, a pure function of the
+        # text -- no git, no activation cutoff, no `git init` needed for
+        # this scaffolded target to prove anything.  `_SAMPLE_PROPOSAL`
+        # carries one genuine dated `## Review -- Bob (External
+        # Reviewer) -- 2026-05-02` pass, so it counts here exactly as it
+        # would over the real corpus history this replaces the event-block
+        # reconciler to reach retroactively.
+        assert row["review_rounds"] == 1
+        assert row["reviewer_agents"] == "Bob"
 
 
 # ---------------------------------------------------------------------------
@@ -450,18 +450,16 @@ class TestDependencyGate:
 
 class TestVcsRobustness:
     def test_no_git_target_degrades(self, tmp_path: Path) -> None:
-        """No .git in the target: Chunk 6's post-activation refusal
-        presupposes PROOF that an artifact is past its cutoff, which only a
-        history read can supply -- with no `.git` at all, that proof is
-        impossible either way, so the refusal's own precondition is unmet
-        and this transition-kind field falls back to its existing,
-        unconditional quiet-degrade computation (Chunk 5's Activation
-        section) rather than raising or going empty. Confirmed unaffected,
-        not merely assumed: `stage_timestamp_reliability` is a
-        transition-kind field, and Part 3 does not touch that historical
-        portion at all -- distinct from `test_installed_lifecycle_metrics_runs_on_target`'s
-        `review_rounds` (a review-pass-kind field), which DOES change under
-        the identical no-git shape (7-3)."""
+        """No .git in the target: the git-log commit-timestamp
+        augmentation (``hours_*``/``stage_timestamp_reliability``) quietly
+        degrades to ``Best-effort`` rather than raising, exactly as it
+        always has for an unavailable-VCS target. Unlike that transition-
+        kind data, ``review_rounds`` and the other review-pass-sourced
+        columns (retire-event-blocks, 2026-08-24) need no git at all --
+        they are a pure function of the artifact's own text -- so this
+        no-git target does not change their population; see
+        `test_installed_lifecycle_metrics_runs_on_target` for the
+        review-pass columns this same fixture populates."""
         assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
         lm = _load_script(
             tmp_path / "tools" / "lifecycle_metrics.py", "f4_lifecycle")
@@ -475,17 +473,12 @@ class TestVcsRobustness:
 
     def test_main_branch_target_runs(self, tmp_path: Path) -> None:
         """A git target whose default branch is 'main' (not 'master')
-        runs cleanly -- no branch-name assumption.
-
-        Also the concrete case Chunk 5's exclusive-cutoff reading exists
-        to keep passing: the marker-carrying installed template and the
-        sample proposal's own opening act land in ONE commit below, so
-        under the exclusive reading (the marker's own introducing commit
-        is itself pre-cutoff) that commit is pre-cutoff and `proposal_rows`
-        must not raise. An inclusive reading would refuse here -- this is
-        the regression this plan would otherwise silently depend on
-        (confirmed, row 7-8), not merely a coincidence of an unrelated
-        fixture."""
+        runs cleanly -- no branch-name assumption. `proposal_rows` must
+        not raise regardless of what the git-log commit-timestamp
+        augmentation finds; review-pass columns (retire-event-blocks) read
+        no git state at all, so this case is purely about the
+        `hours_*`/`stage_timestamp_reliability` augmentation's own branch-
+        name independence."""
         import subprocess
         assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
         (tmp_path / "dev" / "proposals" / "2026-05-01-alice-thing.md").write_text(

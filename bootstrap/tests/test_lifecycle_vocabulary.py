@@ -324,24 +324,21 @@ def _status_literal_assignments(source: str, vocab: frozenset) -> list[tuple[int
 #: quietly incomplete.  Its contained loader's own matrix lives in
 #: ``bootstrap/tests/test_pilot_evidence.py`` (``TestVocabularyLoader``), which
 #: is also where the counting rule's fail-closed behavior is pinned.
-#: `events.py` joined once it existed (`metrics-events-not-prose` Chunk 4):
-#: it is a new consumer of the runtime status vocabulary (the closed
-#: grammar's `from_state`/`to_state` bound), so a local status literal
-#: written there would be exactly the vocabulary fork this audit exists to
-#: catch, in a file it did not yet scan.  It declares no local status
-#: literal today (row 4-1's own design: the `valid_states` bound is a
-#: parameter, not a loaded value), which makes THIS addition presently
-#: vacuous against the literal-detection test below -- it is still
-#: required, because the audit's purpose is to catch a *future* local
-#: literal in a file it already scans, not only a present one.
+#:
+#: **Why `events.py` is absent.**  It joined once it existed
+#: (`metrics-events-not-prose` Chunk 4) as a consumer of the closed
+#: `from_state`/`to_state` grammar, and left when `retire-event-blocks`
+#: deleted it (2026-08-24) along with the block/reconciliation machinery
+#: that grammar bounded -- there is no file left to scan.  `extract.py`'s
+#: review-pass heading reader that replaced it declares no status literal
+#: at all (it reads dated section headings, not `from_state`/`to_state`),
+#: so no replacement entry is owed here.
 _AUDITED_CONSUMER_SOURCES = (
     TL_SRC,
     METRICS_PKG_SRC / "extract.py",
     METRICS_PKG_TEMPLATE_SRC / "extract.py",
     LIFECYCLE_CLI_SRC,
     LIFECYCLE_CLI_TEMPLATE_SRC,
-    METRICS_PKG_SRC / "events.py",
-    METRICS_PKG_TEMPLATE_SRC / "events.py",
 )
 
 
@@ -360,16 +357,16 @@ class TestSourceAudit:
             "source rule (R5 replacement) is violated:\n" + "\n".join(violations)
         )
 
-    def test_the_audit_actually_scans_all_seven_named_sources(self) -> None:
+    def test_the_audit_actually_scans_all_five_named_sources(self) -> None:
         # A guard on the guard: if a future edit narrows
         # _AUDITED_CONSUMER_SOURCES, the audit above would go quietly green
         # over fewer files without ever failing.  Pin the exact set by name.
         names = {p.name for p in _AUDITED_CONSUMER_SOURCES}
         assert names == {
-            "transition_lint.py", "extract.py", "lifecycle.py", "events.py",
+            "transition_lint.py", "extract.py", "lifecycle.py",
         }
-        assert len(_AUDITED_CONSUMER_SOURCES) == 7
-        assert len(set(_AUDITED_CONSUMER_SOURCES)) == 7, (
+        assert len(_AUDITED_CONSUMER_SOURCES) == 5
+        assert len(set(_AUDITED_CONSUMER_SOURCES)) == 5, (
             "each installed file and its template twin must be two distinct "
             "paths, not the same file scanned twice"
         )
@@ -379,10 +376,6 @@ class TestSourceAudit:
         )
         assert _AUDITED_CONSUMER_SOURCES[3] != _AUDITED_CONSUMER_SOURCES[4], (
             "the installed lifecycle.py and its template twin must be two "
-            "distinct paths, not the same file scanned twice"
-        )
-        assert _AUDITED_CONSUMER_SOURCES[5] != _AUDITED_CONSUMER_SOURCES[6], (
-            "the installed events.py and its template twin must be two "
             "distinct paths, not the same file scanned twice"
         )
         for path in _AUDITED_CONSUMER_SOURCES:
@@ -1030,34 +1023,15 @@ class TestMetricsLocationCases:
             "be evidence about the shipped consumer's behaviour"
         )
 
-    def test_missing_proposal_states_export_is_purged_not_cached(
-        self, tmp_path: Path,
-    ) -> None:
-        """`metrics-events-not-prose` Chunk 4 widened `extract.py`'s
-        `_REQUIRED_EXPORTS` from a 2-tuple to a 3-tuple
-        (`PLAN_STATES`, `HISTORICAL_PLAN_STATES`, `PROPOSAL_STATES`) --
-        the shared `TestLoaderContainmentMatrix` case 6 poison already
-        exercises omitting `_REQUIRED_EXPORTS[0]` (`PLAN_STATES`) across
-        both consumers, but that leaves the newly-required THIRD export
-        unexercised: a poisoned cache entry present for every export
-        except `PROPOSAL_STATES` must still be purged and reloaded, not
-        mistaken for complete because the sentinel and the two
-        already-required exports both happened to be present."""
-        root = METRICS_SPEC.make_root(tmp_path, with_planner=True)
-        module = METRICS_SPEC.load(root)
-        real_path = METRICS_SPEC.planner_path(root).resolve()
-
-        module._purge_planner_module()
-        module._planner_cache = None
-        sys.modules[module._PLANNER_MODULE_NAME] = _fake_planner_module(
-            module, sentinel=True, file=str(real_path), omit="PROPOSAL_STATES",
-        )
-        vocab = module._vocabulary()
-        assert all(hasattr(vocab, n) for n in module._REQUIRED_EXPORTS), (
-            "the reloaded vocabulary is missing a required export"
-        )
-        assert vocab.PROPOSAL_STATES != ("POISON",), (
-            "the poisoned cache entry was trusted instead of purged and "
-            "reloaded"
-        )
-        assert sys.modules[module._PLANNER_MODULE_NAME] is vocab
+    # A prior revision of this class carried
+    # test_missing_proposal_states_export_is_purged_not_cached: `extract.py`'s
+    # `_REQUIRED_EXPORTS` briefly widened to a 3-tuple
+    # (`PLAN_STATES`, `HISTORICAL_PLAN_STATES`, `PROPOSAL_STATES`) while the
+    # deleted `cairn-event-v1` reconciler needed `PROPOSAL_STATES` to bound a
+    # `transition` block's `from_state`/`to_state`.  `retire-event-blocks`
+    # (2026-08-24) deleted that reconciler and, with it, `extract.py`'s only
+    # use of `PROPOSAL_STATES` -- `_REQUIRED_EXPORTS` reverted to its
+    # original 2-tuple, and the shared `TestLoaderContainmentMatrix` case 6
+    # poison (omitting `_REQUIRED_EXPORTS[0]`, `PLAN_STATES`, across both
+    # consumers) is again complete coverage on its own; the third-export
+    # case this test pinned no longer exists to cover.

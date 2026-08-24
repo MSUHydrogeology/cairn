@@ -1,21 +1,23 @@
-"""Fixtures for the `cairn-event-v1` grammar / history-diff / reconciliation
-machinery (`metrics-events-not-prose` Parts 3, Chunks 4-7).
+"""Fixtures for the review-pass heading grammar (retire-event-blocks,
+2026-08-24), which replaced the deleted `cairn-event-v1` block / history-
+diff / reconciliation machinery (`metrics-events-not-prose` Parts 3,
+Chunks 4-7).
 
 Loaded through the installed launcher facade
 (`templates/modules/default-on/lifecycle_metrics.py`), the same surface an
 adopter imports -- consistent with the other `bootstrap/tests/test_lifecycle_*`
-files. This is a NEW test file (recorded as FROZEN-NEW by the gate manifest;
-its node-IDs as COLLECTION-ADDED), so it adds coverage without a gate
-re-anchor.
+files. This file's collection stays at the SAME COLLECTION size the retired
+event-block content set (retained-plus-fixture-oracle replaces
+reconciliation-and-history-walk node for node); the gate manifest sees
+CONTENT-CHANGED nodes, not new collection.
 """
 from __future__ import annotations
 
 import importlib.util
-import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import List, Tuple
+from typing import Dict, List
 
 import pytest
 
@@ -24,14 +26,10 @@ _LM_PATH = CAIRN_ROOT / "templates" / "modules" / "default-on" / "lifecycle_metr
 #: The REAL installed location -- has a genuine `tools/lifecycle_planner.py`
 #: sibling, unlike `_LM_PATH` above (the template source location, which
 #: `_validated_planner_path()` deliberately refuses beside -- see that
-#: function's own docstring). The row-level `extract_proposal_row`/
-#: `extract_plan_row` fixtures below need REAL vocabulary resolution (a
-#: plan's own `**Status**:` normalization already depended on it before
-#: this plan's own Chunk 6 added a second, independent dependency for the
-#: event grammar's `valid_states` bound), so they load through here
-#: instead of `_lm`.  The scratch git repos those fixtures build are
-#: unrelated to and never confused with this real, installed location:
-#: vocabulary is a static, well-known status-token set, not project data.
+#: function's own docstring). `extract_plan_row` reads a plan's `**Status**:`
+#: through the real vocabulary loader, so plan-row fixtures load through
+#: here instead of `_lm`; proposal-row fixtures need no vocabulary at all
+#: (review-pass sourcing is now a pure text read) and load through `_lm`.
 _LM_INSTALLED_PATH = CAIRN_ROOT / "tools" / "lifecycle_metrics.py"
 
 
@@ -70,896 +68,403 @@ def _load_lm_installed() -> ModuleType:
 
 _lm = _load_lm()
 _lm_installed = _load_lm_installed()
-events = _lm.events
 
-_PROPOSAL_STATES = (
-    "awaiting-review", "revising", "awaiting-decision",
-    "accepted", "rejected", "superseded",
-)
-_PLAN_STATES = (
-    "awaiting-plan-review", "revising-plan", "ready-to-implement",
-    "implementing", "awaiting-code-review", "revising-code",
-    "ready-to-archive", "archived",
+
+def _proposal_row(text: str, tmp_path: Path) -> Dict[str, object]:
+    """`extract_proposal_row` over synthetic `text`, pure-logic (no git)."""
+    p = tmp_path / "p.md"
+    p.write_text(text, encoding="utf-8")
+    return _lm.extract_proposal_row(p, include_git_timestamps=False)
+
+
+def _plan_row(text: str, tmp_path: Path) -> Dict[str, object]:
+    """`extract_plan_row` over synthetic `text`, through the installed
+    engine (needs the real planner sibling for `**Status**:` normalization;
+    review-pass sourcing itself is git-free either way)."""
+    p = tmp_path / "p.md"
+    p.write_text(text, encoding="utf-8")
+    return _lm_installed.extract_plan_row(p, include_git_timestamps=False)
+
+
+_HEADER = (
+    "# t\n\n**Author**: Claude (Strategy)\n"
+    "**Date opened**: 2026-01-01\n**Status**: revising\n\n"
 )
 
 
 # ---------------------------------------------------------------------------
-# Chunk 4 -- grammar fixtures (pure, no git)
+# Fixture oracle -- named artifacts, expected per-artifact counts for all
+# seven review-pass-sourced columns (RTE-03 / S2's own acceptance: an
+# aggregate population table is a readable consequence, not the check).
 # ---------------------------------------------------------------------------
 
 
-def _fence(kind: str, **fields: str) -> str:
-    lines = ["<!-- cairn-event-v1", f"kind: {kind}"]
-    lines.extend(f"{k}: {v}" for k, v in fields.items())
-    lines.append("-->")
-    return "\n".join(lines) + "\n"
-
-
-def test_no_fence_at_all_returns_empty_list() -> None:
-    """A document with no event fence at all is not an error -- nothing
-    is wrong with a tree that has not yet recorded any events."""
-    assert events.parse_event_blocks(
-        "just ordinary proposal prose, no fence here\n",
-        valid_states=_PROPOSAL_STATES,
-    ) == []
-
-
-def test_three_worked_examples_parse_cleanly() -> None:
-    """The three block shapes reproduced verbatim from Round 7 §1.  The
-    transition example's ``reviewed``/``revised`` tokens are the
-    pre-vocabulary-migration HISTORICAL states (an archived artifact may
-    still declare them; `_plan_status_enum()`/`_proposal_status_enum()`
-    resolve current + historical together) -- included here alongside a
-    current token so the fixture is not silently narrowed to the
-    current-only vocabulary."""
-    historical_and_current = _PLAN_STATES + ("proposed", "reviewed", "revised")
-    transition = _fence("transition", from_state="reviewed", to_state="revised")
-    review_pass = _fence(
-        "review-pass", tier="External",
-        reviewer="<reviewer name as written in the section heading>",
-    )
-    response = _fence(
-        "response",
-        model="<model identity as written in the Response's Model field>",
-    )
-    b1 = events.parse_event_blocks(transition, valid_states=historical_and_current)
-    assert len(b1) == 1 and b1[0].kind == "transition"
-    assert b1[0].from_state == "reviewed" and b1[0].to_state == "revised"
-
-    b2 = events.parse_event_blocks(review_pass, valid_states=_PROPOSAL_STATES)
-    assert len(b2) == 1 and b2[0].kind == "review-pass"
-    assert b2[0].tier == "External"
-
-    b3 = events.parse_event_blocks(response, valid_states=_PROPOSAL_STATES)
-    assert len(b3) == 1 and b3[0].kind == "response"
-
-
-def test_unknown_version_token_refuses() -> None:
-    text = _fence("transition", from_state="revising", to_state="accepted").replace(
-        "cairn-event-v1", "cairn-event-v2"
-    )
-    with pytest.raises(events.EventGrammarError, match="unknown event version"):
-        events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-
-
-def test_unknown_kind_refuses() -> None:
-    text = "<!-- cairn-event-v1\nkind: bogus\n-->\n"
-    with pytest.raises(events.EventGrammarError, match="unknown event kind"):
-        events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-
-
-def test_missing_required_key_per_kind_refuses() -> None:
-    cases = [
-        "<!-- cairn-event-v1\nkind: transition\nfrom_state: revising\n-->\n",
-        "<!-- cairn-event-v1\nkind: review-pass\ntier: External\n-->\n",
-        "<!-- cairn-event-v1\nkind: response\n-->\n",
-    ]
-    for text in cases:
-        with pytest.raises(events.EventGrammarError, match="missing required"):
-            events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-
-
-def test_unknown_key_refuses() -> None:
-    text = _fence(
-        "transition", from_state="revising", to_state="accepted", bogus="x",
-    )
-    with pytest.raises(events.EventGrammarError, match="unknown key"):
-        events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-
-
-def test_reviewer_and_model_over_120_chars_refuses() -> None:
-    long_value = "x" * 121
-    reviewer_text = _fence("review-pass", tier="External", reviewer=long_value)
-    with pytest.raises(events.EventGrammarError, match="exceeds 120"):
-        events.parse_event_blocks(reviewer_text, valid_states=_PROPOSAL_STATES)
-
-    model_text = _fence("response", model=long_value)
-    with pytest.raises(events.EventGrammarError, match="exceeds 120"):
-        events.parse_event_blocks(model_text, valid_states=_PROPOSAL_STATES)
-
-
-def test_recorded_by_is_optional_and_informational() -> None:
-    text = _fence(
-        "transition", from_state="revising", to_state="accepted",
-        recorded_by="Someone",
-    )
-    blocks = events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-    assert blocks[0].recorded_by == "Someone"
-
-
-def test_malformed_field_line_refuses() -> None:
-    text = "<!-- cairn-event-v1\nkind transition\n-->\n"
-    with pytest.raises(events.EventGrammarError, match="malformed event field"):
-        events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-
-
-def test_duplicate_key_refuses() -> None:
+def test_single_review_one_reviewer_external_tier(tmp_path: Path) -> None:
+    """One dated `## Review` pass, one reviewer, an External tier line, one
+    Response with a Model field -- the baseline shape most proposals in
+    Cairn's own corpus carry."""
     text = (
-        "<!-- cairn-event-v1\nkind: transition\nfrom_state: revising\n"
-        "from_state: accepted\nto_state: accepted\n-->\n"
+        _HEADER
+        + "## Review -- Codex (External) -- 2026-01-05\n\n"
+        "**Tier**: External\n\n"
+        "findings.\n\n"
+        "## Response -- Claude -- 2026-01-06\n\n"
+        "**Model**: claude-opus-5\n\n"
+        "accepted.\n"
     )
-    with pytest.raises(events.EventGrammarError, match="duplicate event key"):
-        events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-
-
-def test_from_state_outside_valid_states_refuses() -> None:
-    """Row 4-13: a `from_state`/`to_state` value outside the supplied
-    `valid_states` refuses, using a small literal test vocabulary --
-    this chunk's own fixtures stay pure-function and need no planner on
-    disk (the integration-level fixture against the real loader is
-    Chunk 6's row 6-3/6-4)."""
-    text = _fence("transition", from_state="revising", to_state="nonexistent-state")
-    with pytest.raises(events.EventGrammarError, match="not a declared lifecycle status"):
-        events.parse_event_blocks(text, valid_states=("revising", "accepted"))
-
-
-def test_bad_tier_refuses() -> None:
-    text = _fence("review-pass", tier="Bogus", reviewer="Bob")
-    with pytest.raises(events.EventGrammarError, match="tier"):
-        events.parse_event_blocks(text, valid_states=_PROPOSAL_STATES)
-
-
-# ---------------------------------------------------------------------------
-# Chunk 5 -- history-diff reader fixtures, against a REAL scratch git repo
-# (never a mocked history), reusing the `_git` helper pattern already
-# present in `bootstrap/tests/test_lifecycle_contract.py` rather than
-# inventing a second one.
-# ---------------------------------------------------------------------------
-
-
-def _git(args: List[str], cwd: Path) -> None:
-    subprocess.run(["git", *args], cwd=str(cwd), check=True,
-                    capture_output=True, text=True)
-
-
-def _make_git_repo(tmp_path: Path) -> Path:
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    _git(["init", "-q"], repo)
-    _git(["config", "user.email", "t@example.com"], repo)
-    _git(["config", "user.name", "Test"], repo)
-    return repo
-
-
-def _commit_all(repo: Path, msg: str = "fixture") -> None:
-    _git(["add", "-A"], repo)
-    _git(["commit", "-q", "-m", msg], repo)
-
-
-def _head_sha(repo: Path) -> str:
-    r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(repo),
-                        capture_output=True, text=True, check=True)
-    return r.stdout.strip()
-
-
-def _current_branch(repo: Path) -> str:
-    r = subprocess.run(["git", "symbolic-ref", "--short", "HEAD"], cwd=str(repo),
-                        capture_output=True, text=True, check=True)
-    return r.stdout.strip()
-
-
-def _artifact_text(status: str, body: str = "") -> str:
-    return f"# p\n\n**Status**: {status}\n\n{body}"
-
-
-def test_mutated_existing_block_refuses(tmp_path: Path) -> None:
-    repo = _make_git_repo(tmp_path)
-    p = repo / "p.md"
-    p.write_text(
-        _artifact_text(
-            "revising",
-            _fence("transition", from_state="awaiting-review", to_state="revising"),
-        ),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "c1: transition")
-    # Edit the existing block's own text in a later commit -- the value
-    # changes, nothing is added.
-    p.write_text(
-        _artifact_text(
-            "revising",
-            _fence("transition", from_state="awaiting-review", to_state="awaiting-decision"),
-        ),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "c2: mutate the block")
-    with pytest.raises(events.ReconciliationError, match="mutated"):
-        events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-
-
-def test_reordered_or_deleted_block_refuses(tmp_path: Path) -> None:
-    repo = _make_git_repo(tmp_path)
-    p = repo / "p.md"
-    p.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _commit_all(repo, "c1")
-    # Delete the existing block entirely.
-    p.write_text(_artifact_text("revising"), encoding="utf-8")
-    _commit_all(repo, "c2: delete the block")
-    with pytest.raises(events.ReconciliationError, match="mutated"):
-        events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-
-
-def test_merge_commit_introducing_a_block_refuses(tmp_path: Path) -> None:
-    repo = _make_git_repo(tmp_path)
-    p = repo / "p.md"
-    p.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
-    _commit_all(repo, "base")
-    base_branch = _current_branch(repo)
-
-    _git(["checkout", "-b", "feature"], repo)
-    (repo / "other.md").write_text("unrelated\n", encoding="utf-8")
-    _commit_all(repo, "feature change")
-
-    _git(["checkout", base_branch], repo)
-    (repo / "another.md").write_text("also unrelated\n", encoding="utf-8")
-    _commit_all(repo, "main change")
-
-    _git(["merge", "--no-ff", "--no-commit", "feature"], repo)
-    # Manual merge resolution that smuggles a new block into the merge
-    # commit -- neither parent's own diff carries it.
-    p.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _git(["add", "-A"], repo)
-    _git(["commit", "-q", "-m", "merge with a smuggled block"], repo)
-
-    with pytest.raises(events.ReconciliationError, match="merge commit"):
-        events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-
-
-def test_identity_survives_the_archive_rename(tmp_path: Path) -> None:
-    """The concrete correctness case R5-E1 found broken in the prior
-    `(artifact path, block position)` identity scheme: the identity here
-    is `(introducing commit, added-block index)`, and neither term names
-    a path, so a `git mv` to `archive/` cannot discontinue the series."""
-    repo = _make_git_repo(tmp_path)
-    (repo / "dev" / "proposals").mkdir(parents=True)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _commit_all(repo, "open+transition")
-
-    before = events.walk_history(repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES)
-    assert len(before.events) == 1
-    identity_before = (before.events[0].commit, before.events[0].index)
-
-    (repo / "dev" / "proposals" / "archive").mkdir(parents=True)
-    _git(["mv", "dev/proposals/p.md", "dev/proposals/archive/p.md"], repo)
-    _git(["commit", "-q", "-m", "archive move"], repo)
-
-    after = events.walk_history(
-        repo, "dev/proposals/archive/p.md", valid_states=_PROPOSAL_STATES)
-    assert len(after.events) == 1
-    identity_after = (after.events[0].commit, after.events[0].index)
-    assert identity_after == identity_before
-
-
-def test_missing_marker_returns_none_not_refuse(tmp_path: Path) -> None:
-    repo = _make_git_repo(tmp_path)
-    t = repo / "dev" / "proposals" / "_template.md"
-    t.parent.mkdir(parents=True)
-    t.write_text("no marker here\n", encoding="utf-8")
-    _commit_all(repo, "no marker")
-    assert events.activation_commit(repo, "dev/proposals/_template.md") is None
-
-
-def test_multiply_introduced_marker_refuses(tmp_path: Path) -> None:
-    repo = _make_git_repo(tmp_path)
-    t = repo / "dev" / "proposals" / "_template.md"
-    t.parent.mkdir(parents=True)
-    t.write_text("no marker\n", encoding="utf-8")
-    _commit_all(repo, "no marker")
-    t.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
-    _commit_all(repo, "add marker")
-    t.write_text("no marker\n", encoding="utf-8")
-    _commit_all(repo, "remove marker")
-    t.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
-    _commit_all(repo, "re-add marker")
-    with pytest.raises(events.ReconciliationError, match="removed and re-added"):
-        events.activation_commit(repo, "dev/proposals/_template.md")
-
-
-def test_divergent_marker_refuses(tmp_path: Path) -> None:
-    """This module's own design choice for a mechanism Round 7's text
-    names ("the pair -- Cairn's own installed copy and the shipped
-    template -- disagrees") but does not specify: `companion_relpath`
-    is compared at HEAD only, and the check is vacuously skipped when no
-    companion exists in the tree at all (the ordinary adopter case)."""
-    repo = _make_git_repo(tmp_path)
-    primary = repo / "dev" / "proposals" / "_template.md"
-    primary.parent.mkdir(parents=True)
-    primary.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
-    companion = repo / "templates" / "core" / "dev" / "proposals" / "_template.md"
-    companion.parent.mkdir(parents=True)
-    companion.write_text("no marker\n", encoding="utf-8")
-    _commit_all(repo, "divergent")
-    with pytest.raises(events.ReconciliationError, match="divergent"):
-        events.activation_commit(
-            repo, "dev/proposals/_template.md",
-            companion_relpath="templates/core/dev/proposals/_template.md",
-        )
-
-
-def test_no_companion_in_tree_skips_the_divergence_check(tmp_path: Path) -> None:
-    """The ordinary adopter shape: no `templates/core/` tree at all, so
-    the divergence check is vacuous rather than a spurious refusal."""
-    repo = _make_git_repo(tmp_path)
-    primary = repo / "dev" / "proposals" / "_template.md"
-    primary.parent.mkdir(parents=True)
-    primary.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
-    _commit_all(repo, "no companion")
-    result = events.activation_commit(
-        repo, "dev/proposals/_template.md",
-        companion_relpath="templates/core/dev/proposals/_template.md",
-    )
-    assert result == _head_sha(repo)
-
-
-def test_divergence_check_reads_the_companion_at_head_not_the_working_copy(
-    tmp_path: Path,
-) -> None:
-    """Code-review regression (metrics-events-not-prose code review,
-    2026-08-21): `activation_commit`'s docstring says the companion is
-    compared "as of HEAD", and every other content read in this module
-    goes through committed history (`git show`) so an uncommitted edit is
-    invisible everywhere alike (EPR-15's resolution) -- but the divergence
-    check as first implemented called `Path.read_text()` on the companion,
-    reading the live working copy instead. Here HEAD agrees (both carry
-    the marker) and only an uncommitted local edit to the companion
-    disagrees; the correct, HEAD-based reading must not refuse."""
-    repo = _make_git_repo(tmp_path)
-    primary = repo / "dev" / "proposals" / "_template.md"
-    primary.parent.mkdir(parents=True)
-    primary.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
-    companion = repo / "templates" / "core" / "dev" / "proposals" / "_template.md"
-    companion.parent.mkdir(parents=True)
-    companion.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
-    _commit_all(repo, "agree at HEAD")
-
-    # Uncommitted local edit to the companion only -- never committed.
-    companion.write_text("no marker (uncommitted)\n", encoding="utf-8")
-
-    result = events.activation_commit(
-        repo, "dev/proposals/_template.md",
-        companion_relpath="templates/core/dev/proposals/_template.md",
-    )
-    assert result == _head_sha(repo), (
-        "the divergence check must compare committed HEAD content, not "
-        "the live working copy -- an uncommitted edit to the companion "
-        "must be as invisible here as it is to walk_history()"
-    )
-
-
-def test_act_in_markers_own_introducing_commit_shares_that_commit(
-    tmp_path: Path,
-) -> None:
-    """The boundary case `test_main_branch_target_runs` (the real
-    reference-scripts test, Chunk 7) exercises informally: the marker's
-    own introducing commit and a co-committed lifecycle act resolve to
-    the SAME commit SHA from both `activation_commit` and
-    `walk_history`. Whether that shared commit counts as pre- or
-    post-cutoff is Chunk 6's own comparison logic (the exclusive
-    reading); this fixture pins the raw material that comparison
-    needs."""
-    repo = _make_git_repo(tmp_path)
-    template = repo / "dev" / "proposals" / "_template.md"
-    template.parent.mkdir(parents=True)
-    p = repo / "dev" / "proposals" / "p.md"
-    template.write_text(f"marker: {events.VERSION_TOKEN}\n", encoding="utf-8")
-    p.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _commit_all(repo, "marker + act together")
-
-    cutoff = events.activation_commit(repo, "dev/proposals/_template.md")
-    result = events.walk_history(
-        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES)
-    assert len(result.events) == 1
-    assert result.events[0].commit == cutoff
-
-
-def test_two_commits_each_adding_one_block_get_distinct_stable_identities(
-    tmp_path: Path,
-) -> None:
-    repo = _make_git_repo(tmp_path)
-    p = repo / "p.md"
-    p.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _commit_all(repo, "c1: transition")
-    result1 = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert len(result1.events) == 1
-
-    review_section = (
-        "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
-    )
-    p.write_text(
-        p.read_text(encoding="utf-8") + review_section
-        + _fence("review-pass", tier="External", reviewer="Bob"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "c2: review pass")
-    result2 = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert len(result2.events) == 2
-    ids = [(e.commit, e.index) for e in result2.events]
-    assert len(set(ids)) == 2, "two distinct commits must yield two distinct identities"
-    assert result2.events[0].commit == result1.events[0].commit, (
-        "the first identity is stable across the later commit"
-    )
-    assert result2.events[1].kind == "review-pass"
-    assert result2.events[1].section_kind == "review"
-
-
-def test_root_commit_introducing_a_block_is_attributed_not_refused(
-    tmp_path: Path,
-) -> None:
-    """Step 5 refuses on AMBIGUOUS multi-parent attribution; a root
-    commit has ZERO parents, which is not ambiguity -- its empty parent
-    sequence is trivially a prefix of its own block sequence."""
-    repo = _make_git_repo(tmp_path)
-    p = repo / "p.md"
-    p.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _commit_all(repo, "root commit with a block")
-    head = _head_sha(repo)
-
-    r = subprocess.run(["git", "rev-list", "--parents", "-n", "1", head],
-                        cwd=str(repo), capture_output=True, text=True, check=True)
-    assert len(r.stdout.strip().split()) == 1, "fixture assumption: HEAD must be a root commit"
-
-    result = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert len(result.events) == 1
-    assert result.events[0].commit == head
-
-
-def test_uncommitted_edit_is_invisible_to_both_sides(tmp_path: Path) -> None:
-    """The act list the reconciler checks is read from the same
-    committed history it reads blocks from, not from the live
-    working-copy file (EPR-15's resolution) -- an uncommitted lifecycle
-    act is invisible to BOTH sides symmetrically, neither refused nor
-    counted, until it is committed."""
-    repo = _make_git_repo(tmp_path)
-    p = repo / "p.md"
-    p.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _commit_all(repo, "c1")
-    before = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert len(before.events) == 1 and before.unmatched_acts == []
-
-    # An uncommitted review-pass act, written to disk but never committed.
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
-        encoding="utf-8",
-    )
-    during = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert len(during.events) == 1 and during.unmatched_acts == [], (
-        "an uncommitted act must be neither refused nor counted"
-    )
-
-    _commit_all(repo, "c2: commit the review act without its block")
-    after = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert len(after.events) == 1
-    assert len(after.unmatched_acts) == 1
-    assert after.unmatched_acts[0].kind == "review-pass"
-
-
-# ---------------------------------------------------------------------------
-# Chunk 6 -- fail-closed reconciliation (`events.reconcile`), the mandatory
-# red fixtures (Round 6 / R4-E1 / R4-E2) plus the pre/post-activation split.
-# ---------------------------------------------------------------------------
-
-
-def _make_activated_repo(tmp_path: Path) -> Path:
-    """A repo whose `dev/proposals/_template.md` carries the marker,
-    committed on its OWN, so every later commit touching a proposal is
-    strictly after the cutoff (never co-committed with the marker's own
-    introduction, which would make it pre-cutoff by the exclusive
-    reading -- see `test_act_in_markers_own_introducing_commit_shares_that_commit`
-    above)."""
-    repo = _make_git_repo(tmp_path)
-    template = repo / "dev" / "proposals" / "_template.md"
-    template.parent.mkdir(parents=True)
-    template.write_text(f"guidance mentioning {events.VERSION_TOKEN}\n", encoding="utf-8")
-    _commit_all(repo, "activate")
-    return repo
-
-
-def test_status_only_commit_with_no_block_is_incomplete(tmp_path: Path) -> None:
-    """A file's own CREATION commit is exempt (there is no prior state to
-    declare a transition FROM -- see the `is_creation` exemption in
-    `walk_history`); the mandatory red fixture is a SUBSEQUENT status
-    flip with no block, which is the ordinary shape Round 6 / R4-E2
-    names."""
-    repo = _make_activated_repo(tmp_path)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
-    _commit_all(repo, "open, no block needed (creation)")
-    p.write_text(_artifact_text("revising"), encoding="utf-8")
-    _commit_all(repo, "status flip, no block")
-    result = events.reconcile(
-        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
-        template_relpath="dev/proposals/_template.md",
-    )
-    assert result.incomplete
-    assert any("transition" in r for r in result.incomplete_reasons)
-
-
-def test_review_only_commit_with_no_block_is_incomplete(tmp_path: Path) -> None:
-    repo = _make_activated_repo(tmp_path)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.write_text(
-        _artifact_text("awaiting-review")
-        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
-        encoding="utf-8",
-    )
-    _commit_all(repo, "review, no block")
-    result = events.reconcile(
-        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
-        template_relpath="dev/proposals/_template.md",
-    )
-    assert result.incomplete
-    assert any("review-pass" in r for r in result.incomplete_reasons)
-
-
-def test_two_review_commits_no_status_change_yield_two_review_pass_events(
-    tmp_path: Path,
-) -> None:
-    """Round 6 / R4-E1's mandatory taxonomy fixture: two review commits
-    with no intervening status change produce TWO review-pass events."""
-    repo = _make_activated_repo(tmp_path)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.write_text(_artifact_text("revising"), encoding="utf-8")
-    _commit_all(repo, "open")
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
-        + _fence("review-pass", tier="External", reviewer="Bob"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "review 1")
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Review -- Alice (Internal Reviewer) -- 2026-01-03\n\nmore findings\n"
-        + _fence("review-pass", tier="Internal", reviewer="Alice"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "review 2")
-    result = events.reconcile(
-        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
-        template_relpath="dev/proposals/_template.md",
-    )
-    assert not result.incomplete
-    review_events = [e for e in result.post_cutoff_events if e.kind == "review-pass"]
-    assert len(review_events) == 2
-    assert {e.block.reviewer for e in review_events} == {"Bob", "Alice"}
-
-
-def test_pre_and_post_activation_review_pass_split(tmp_path: Path) -> None:
-    """Chunk 6's pre/post-activation split fixture: a review pass before
-    the artifact's activation cutoff (no block -- correct, not an
-    error) and one after (with a block -- reconciled, not INCOMPLETE)."""
-    repo = _make_git_repo(tmp_path)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.parent.mkdir(parents=True)
-    p.write_text(
-        _artifact_text("revising")
-        + "\n## Review -- Bob (External Reviewer) -- 2026-01-01\n\nfindings\n",
-        encoding="utf-8",
-    )
-    _commit_all(repo, "pre-cutoff review, no block, no marker yet")
-
-    template = repo / "dev" / "proposals" / "_template.md"
-    template.parent.mkdir(parents=True, exist_ok=True)
-    template.write_text(f"guidance mentioning {events.VERSION_TOKEN}\n", encoding="utf-8")
-    _commit_all(repo, "activate")
-
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Review -- Alice (Internal Reviewer) -- 2026-01-03\n\nmore\n"
-        + _fence("review-pass", tier="Internal", reviewer="Alice"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "post-cutoff review, with block")
-
-    result = events.reconcile(
-        repo, "dev/proposals/p.md", valid_states=_PROPOSAL_STATES,
-        template_relpath="dev/proposals/_template.md",
-    )
-    assert not result.incomplete, (
-        "the pre-cutoff review has no block, which is correct -- not an error"
-    )
-    assert len(result.post_cutoff_events) == 1
-    assert result.post_cutoff_events[0].block.reviewer == "Alice"
-
-
-# ---------------------------------------------------------------------------
-# Row-level wiring: extract_proposal_row / extract_plan_row actually source
-# their retained fields from the reconciliation layer above, end to end.
-# ---------------------------------------------------------------------------
-
-
-def test_extract_proposal_row_sources_review_fields_from_reconciled_blocks(
-    tmp_path: Path,
-) -> None:
-    repo = _make_activated_repo(tmp_path)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.write_text(
-        "# t\n\n**Author**: Claude (Strategy)\n"
-        "**Date opened**: 2026-01-01\n**Status**: revising\n",
-        encoding="utf-8",
-    )
-    _commit_all(repo, "open")
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
-        + _fence("review-pass", tier="External", reviewer="Bob"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "review 1")
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Response -- Claude -- 2026-01-03\n\n* accept\n"
-        + _fence("response", model="Claude Opus 5"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "response")
-
-    row = _lm_installed.extract_proposal_row(p, repo_root=repo)
+    row = _proposal_row(text, tmp_path)
     assert row["review_rounds"] == 1
-    assert row["reviewer_agents"] == "Bob"
+    assert row["reviewer_agents"] == "Codex"
+    # One distinct reviewer identity is not "two or more" -- blank, not
+    # True: review having happened at all is what review_rounds reports.
+    assert row["cross_agent_type_review"] == ""
     assert row["external_tier_review"] is True
-    assert row["cross_agent_type_review"] is True
-    assert row["response_models"] == "Claude Opus 5"
+    assert row["response_models"] == "claude-opus-5"
 
 
-def test_extract_proposal_row_emits_empty_for_pre_cutoff_review(
-    tmp_path: Path,
-) -> None:
-    """The one real, confirmed change EPR-06/row 7-3 names: a review-pass
-    act that cannot be proven post-cutoff emits the literal `''`, never
-    the retired heading-count value."""
-    repo = _make_git_repo(tmp_path)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.parent.mkdir(parents=True)
-    p.write_text(
-        "# t\n\n**Author**: Claude (Strategy)\n"
-        "**Date opened**: 2026-01-01\n**Status**: revising\n"
-        "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
-        encoding="utf-8",
+def test_two_distinct_reviewers_flip_cross_agent_type(tmp_path: Path) -> None:
+    """Two DIFFERENT reviewer identities across accepted passes -- the
+    condition `cross_agent_type_review` actually claims."""
+    text = (
+        _HEADER
+        + "## Review -- Codex (External) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nfindings.\n\n"
+        "## Review -- Gemini (External) -- 2026-01-07\n\n"
+        "**Tier**: External\n\nfindings, round 2.\n"
     )
-    _commit_all(repo, "open + review, no marker anywhere")
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == 2
+    assert row["reviewer_agents"] == "Codex|Gemini"
+    assert row["cross_agent_type_review"] is True
+    assert row["external_tier_review"] is True
 
-    row = _lm_installed.extract_proposal_row(p, repo_root=repo)
+
+def test_same_reviewer_twice_stays_blank_not_true(tmp_path: Path) -> None:
+    """The same reviewer identity across multiple rounds does NOT flip
+    `cross_agent_type_review` -- this is the semantic this column changed
+    under retire-event-blocks (previously: reviewer-differs-from-author;
+    now: two-or-more-distinct-reviewers), pinned directly rather than left
+    to be discovered by a stale assumption."""
+    text = (
+        _HEADER
+        + "## Review -- Codex (External) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nfindings.\n\n"
+        "## Review -- Codex (External) -- 2026-01-09 (round 2)\n\n"
+        "**Tier**: External\n\nfindings, round 2.\n"
+    )
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == 2
+    assert row["reviewer_agents"] == "Codex"
+    assert row["cross_agent_type_review"] == ""
+
+
+def test_bare_template_stub_is_not_a_pass(tmp_path: Path) -> None:
+    """A `## Review` heading with no ` -- ` and no date -- the installed
+    template's own unfilled section -- is not a pass. 9 of 46 plans in
+    Cairn's own corpus carry exactly this shape for `## Code review`."""
+    text = _HEADER + "## Review\n\n<fill in reviewer, tier, findings>\n"
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == ""
+    assert row["reviewer_agents"] == ""
+    assert row["cross_agent_type_review"] == ""
+    assert row["external_tier_review"] == ""
+
+
+def test_disposition_heading_is_excluded_by_name(tmp_path: Path) -> None:
+    """A Maintainer `disposition` about a pass is not itself a pass, even
+    though it otherwise matches the grammar in full (kind word, ` -- `,
+    date) -- Cairn's own corpus carries exactly this trap:
+    `## Security review disposition -- Anthony Kendall (Maintainer) --
+    2026-08-20`."""
+    text = (
+        _HEADER
+        + "## Review disposition -- Anthony Kendall (Maintainer) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nruling.\n"
+    )
+    row = _proposal_row(text, tmp_path)
     assert row["review_rounds"] == ""
     assert row["reviewer_agents"] == ""
     assert row["external_tier_review"] == ""
-    assert row["cross_agent_type_review"] == ""
-    assert row["response_models"] == ""
 
 
-def test_extract_plan_row_sources_plan_and_code_review_rounds_separately(
+def test_response_heading_is_not_a_pass_but_feeds_response_models(
     tmp_path: Path,
 ) -> None:
-    """Rows 6-9..6-12: `plan_review_rounds`/`code_review_rounds` are
-    reconciled-block-derived post-cutoff, classified by the matched
-    HEADING (Plan review vs. Code review), not the block's own `tier`."""
-    repo = _make_git_repo(tmp_path)
-    template = repo / "dev" / "plans" / "_template.md"
-    template.parent.mkdir(parents=True)
-    template.write_text(f"guidance mentioning {events.VERSION_TOKEN}\n", encoding="utf-8")
-    _commit_all(repo, "activate")
+    """`## Response ...` never matches the pass kind group (its own first
+    word is 'Response', not one of the five kinds) -- structurally
+    excluded, not name-checked -- but its `**Model**:` field still
+    populates `response_models` independent of any pass existing."""
+    text = (
+        _HEADER
+        + "## Response to review -- Claude -- 2026-01-06\n\n"
+        "**Model**: claude-opus-5\n\naccepted.\n"
+    )
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == ""
+    assert row["reviewer_agents"] == ""
+    assert row["response_models"] == "claude-opus-5"
 
-    p = repo / "dev" / "plans" / "myplan.md"
-    p.write_text(
-        "# myplan\n\n**Status**: revising-plan\n\n## Scope\n\nx\n",
-        encoding="utf-8",
-    )
-    _commit_all(repo, "open plan")
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Plan review -- Bob -- 2026-01-02\n\nfindings\n"
-        + _fence("review-pass", tier="Internal", reviewer="Bob"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "plan review")
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Code review -- Alice -- 2026-01-04\n\nfindings\n"
-        + _fence("review-pass", tier="Internal", reviewer="Alice"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "code review")
 
-    row = _lm_installed.extract_plan_row(p, repo_root=repo)
+def test_correction_heading_is_not_a_pass(tmp_path: Path) -> None:
+    """`## Correction to ...` never matches the pass kind group either,
+    for the same structural reason as Response -- its own first word is
+    'Correction'."""
+    text = (
+        _HEADER
+        + "## Correction to the Security review disposition -- Claude -- 2026-01-07\n\n"
+        "**Tier**: External\n\ncorrected.\n"
+    )
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == ""
+    assert row["reviewer_agents"] == ""
+    assert row["external_tier_review"] == ""
+
+
+def test_h3_or_deeper_review_heading_is_never_a_pass(tmp_path: Path) -> None:
+    """`_split_h2_sections` only ever offers an H2 line as a section
+    header, so an H3-or-deeper 'Review'-shaped heading is structurally
+    invisible to the pass reader, never counted."""
+    text = (
+        _HEADER
+        + "## Findings\n\n"
+        "### Review -- Codex (External) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nnested, not a real pass.\n"
+    )
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == ""
+    assert row["reviewer_agents"] == ""
+
+
+def test_quoted_example_inside_a_fence_is_never_a_pass(tmp_path: Path) -> None:
+    """A worked example of the heading grammar, quoted verbatim inside a
+    fenced code block while discussing it, is not a live pass -- Cairn's
+    own `2026-08-10-claude-code-review-blindness` is exactly this shape:
+    it quotes `## Code review -- Independent Human -- 2026-08-10` and
+    `## Plan review -- Jane (Lab) Smith -- 2026-08-10` as illustrative
+    examples while arguing a gate defect, and only its own real `##
+    Review -- Codex -- ...` passes are genuine."""
+    text = (
+        _HEADER
+        + "## Review -- Codex (External) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nfindings.\n\n"
+        "## Context\n\n"
+        "Reproduced directly:\n\n"
+        "```\n"
+        "## Code review -- Independent Human -- 2026-01-06\n\n"
+        "**Tier**: External\n"
+        "```\n\n"
+        "discussion continues.\n"
+    )
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == 1
+    assert row["reviewer_agents"] == "Codex"
+    assert "Independent Human" not in row["reviewer_agents"]
+
+
+def test_proposal_hosted_code_review_pass_feeds_reviewer_agents_not_review_rounds(
+    tmp_path: Path,
+) -> None:
+    """A real, dated `## Code review` pass recorded directly in a proposal
+    (Cairn's own corpus carries this, e.g.
+    `2026-08-11-claude-intent-ledger-pruning`) is a genuine accepted pass
+    -- it populates `reviewer_agents`/`external_tier_review` -- but is not
+    the bare `## Review` kind `review_rounds` counts, by the accepted
+    grammar's own per-column definition."""
+    text = (
+        _HEADER
+        + "## Code review -- Codex (External) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nverdict.\n"
+    )
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == ""
+    assert row["reviewer_agents"] == "Codex"
+    assert row["external_tier_review"] is True
+
+
+def test_internal_and_unknown_tier_values(tmp_path: Path) -> None:
+    """`external_tier_review` is a genuine three-state read of the free-
+    text `**Tier**:` field: True when an accepted pass's tier starts with
+    'External', False when the best evidence is 'Internal', and
+    ``'unknown'`` when a tier line exists but names neither."""
+    internal_only = _proposal_row(
+        _HEADER + "## Review -- Claude -- 2026-01-05\n\n"
+        "**Tier**: Internal, same agent type as the author\n\nfindings.\n",
+        tmp_path,
+    )
+    assert internal_only["external_tier_review"] is False
+
+    unknown_tier = _proposal_row(
+        _HEADER + "## Security review -- Codex -- 2026-01-05\n\n"
+        "**Tier**: Security\n\nfindings.\n",
+        tmp_path,
+    )
+    assert unknown_tier["external_tier_review"] == "unknown"
+
+
+def test_plan_review_and_code_review_counted_separately(tmp_path: Path) -> None:
+    """Cairn's own corpus baseline: a plan with one dated `## Plan
+    review` pass and one dated `## Code review` pass counts each in its
+    own column."""
+    text = (
+        "# t\n\n**Status**: archived\n\n"
+        "## Plan review -- Claude (Internal) -- 2026-01-05\n\n"
+        "**Tier**: Internal\n\nfindings.\n\n"
+        "## Code review -- Codex (External) -- 2026-01-08\n\n"
+        "**Tier**: External\n\nverdict.\n"
+    )
+    row = _plan_row(text, tmp_path)
     assert row["plan_review_rounds"] == 1
     assert row["code_review_rounds"] == 1
 
 
-def test_extract_plan_row_emits_empty_for_never_activated_tree(
+def test_plan_with_only_bare_stubs_is_blank_in_both_columns(tmp_path: Path) -> None:
+    """Cairn's own corpus carries 9 plans with exactly this shape: both
+    section headers present, neither carrying ` -- `/a date."""
+    text = (
+        "# t\n\n**Status**: archived\n\n"
+        "## Plan review\n\n<fill in>\n\n"
+        "## Code review\n\n<fill in>\n"
+    )
+    row = _plan_row(text, tmp_path)
+    assert row["plan_review_rounds"] == ""
+    assert row["code_review_rounds"] == ""
+
+
+def test_plan_hosted_security_review_counts_toward_neither_column(
     tmp_path: Path,
 ) -> None:
-    repo = _make_git_repo(tmp_path)
-    p = repo / "dev" / "plans" / "myplan.md"
-    p.parent.mkdir(parents=True)
-    p.write_text(
-        "# myplan\n\n**Status**: revising-plan\n\n"
-        "## Plan review -- Bob -- 2026-01-02\n\nfindings\n",
-        encoding="utf-8",
+    """A dated `## Security review` pass on a plan is grammatically legal
+    but is neither `## Plan review` nor `## Code review` -- the accepted
+    grammar's per-kind definition leaves it out of both counts."""
+    text = (
+        "# t\n\n**Status**: archived\n\n"
+        "## Security review -- Codex (External Security) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nfindings.\n"
     )
-    _commit_all(repo, "open + plan review, no marker at all")
-
-    row = _lm_installed.extract_plan_row(p, repo_root=repo)
+    row = _plan_row(text, tmp_path)
     assert row["plan_review_rounds"] == ""
     assert row["code_review_rounds"] == ""
 
 
 # ---------------------------------------------------------------------------
-# Chunk 7 -- cross-cutting fixtures (rows 7-1, 7-2)
+# S2 directed mutations -- each REQUIRED RED: a text transformation that
+# must move the observed column in the stated direction.  Copied verbatim
+# from the accepted proposal's security preflight (RTE-05, S2).
 # ---------------------------------------------------------------------------
 
 
-def test_cross_commit_contamination_is_structurally_unrepresentable(
+def test_mutation_1_stripping_the_date_drops_the_count(tmp_path: Path) -> None:
+    dated = _HEADER + "## Review -- Codex (External) -- 2026-01-05\n\nfindings.\n"
+    undated = _HEADER + "## Review -- Codex (External)\n\nfindings.\n"
+    before = _proposal_row(dated, tmp_path)
+    after = _proposal_row(undated, tmp_path)
+    assert before["review_rounds"] == 1
+    assert after["review_rounds"] == ""
+
+
+def test_mutation_2_adding_a_bare_stub_does_not_raise_the_count(
     tmp_path: Path,
 ) -> None:
-    """The R3-E1 property, re-expressed for the artifact-local design per
-    Round 5 SS2: two artifacts transitioned concurrently, one commit
-    path-scoped to the first artifact only, and the second artifact's
-    block does not and cannot appear in that commit -- because there is
-    no shared file for it to appear in. A confirmation of a STRUCTURAL
-    property (git commits are per-path diffs; a path-scoped commit
-    cannot touch a second file's content), not a vulnerability
-    regression test -- it would still hold with events.py deleted
-    entirely, since the property belongs to git and path-scoped commits,
-    not to this reader's own logic. Writing it is still required
-    (Round 5); it does not itself enforce the property."""
-    repo = _make_git_repo(tmp_path)
-    (repo / "dev" / "proposals").mkdir(parents=True)
-    a = repo / "dev" / "proposals" / "a.md"
-    b = repo / "dev" / "proposals" / "b.md"
-    a.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
-    b.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
-    _commit_all(repo, "open both")
-
-    # Transition BOTH artifacts "concurrently" in the working tree, but
-    # commit them in two path-scoped commits -- exactly the discipline
-    # AGENTS.md itself prescribes (`git commit <paths>`).
-    a.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    b.write_text(_artifact_text("revising", _fence(
-        "transition", from_state="awaiting-review", to_state="revising")),
-        encoding="utf-8")
-    _git(["add", "dev/proposals/a.md"], repo)
-    _git(["commit", "-q", "-m", "a: transition only"], repo)
-    a_only_commit = _head_sha(repo)
-    _git(["add", "dev/proposals/b.md"], repo)
-    _git(["commit", "-q", "-m", "b: transition only"], repo)
-
-    result_a = events.walk_history(repo, "dev/proposals/a.md", valid_states=_PROPOSAL_STATES)
-    result_b = events.walk_history(repo, "dev/proposals/b.md", valid_states=_PROPOSAL_STATES)
-    assert len(result_a.events) == 1
-    assert len(result_b.events) == 1
-    # b's block is attributed to a LATER, DISTINCT commit -- it was
-    # structurally impossible for it to land in a's path-scoped commit.
-    assert result_a.events[0].commit == a_only_commit
-    assert result_b.events[0].commit != a_only_commit
+    text = (
+        "# t\n\n**Status**: archived\n\n"
+        "## Plan review -- Claude (Internal) -- 2026-01-05\n\n"
+        "**Tier**: Internal\n\nfindings.\n"
+    )
+    text_plus_stub = text + "\n## Code review\n\n<fill in>\n"
+    before = _plan_row(text, tmp_path)
+    after = _plan_row(text_plus_stub, tmp_path)
+    assert before["code_review_rounds"] == ""
+    assert after["code_review_rounds"] == ""
+    assert before["plan_review_rounds"] == after["plan_review_rounds"] == 1
 
 
-def test_recorded_by_never_affects_identity_reconciliation_or_refusal(
+def test_mutation_3_renaming_to_a_disposition_does_not_raise_the_count(
     tmp_path: Path,
 ) -> None:
-    """Round 7's explicit bar: `recorded_by` is informational only,
-    barred from authority, identity, and idempotency. A forged or
-    duplicated value changes no identity, no reconciliation outcome, and
-    no refusal disposition."""
-    repo = _make_git_repo(tmp_path)
-    p = repo / "p.md"
-    p.write_text(
-        "# proposal p -- padding text so this file's content is not "
-        "near-identical to q.md's, which would make git's own --follow "
-        "rename-similarity heuristic misattribute q's creation as a "
-        "rename FROM p (a real git behavior discovered while building "
-        "this fixture, not a defect in the reader under test)\n\n"
-        + _artifact_text("revising", _fence(
-            "transition", from_state="awaiting-review", to_state="revising",
-            recorded_by="Someone Else Entirely",
-        )),
-        encoding="utf-8",
+    would_be_pass = (
+        _HEADER + "## Review -- Anthony Kendall (Maintainer) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nruling.\n"
     )
-    _commit_all(repo, "c1: transition, forged recorded_by")
-
-    without = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert len(without.events) == 1
-    identity_with_forged = (without.events[0].commit, without.events[0].index)
-
-    # A second, UNRELATED artifact -- deliberately distinct padding text
-    # from p.md's (see the comment on p.md's own content above) -- with a
-    # DUPLICATED recorded_by value shared across two otherwise-independent
-    # blocks. Still no effect on identity or reconciliation outcome.
-    q = repo / "q.md"
-    q.write_text(
-        "# proposal q -- an entirely different document from p.md, on "
-        "purpose\n\n"
-        + _artifact_text("revising", _fence(
-            "transition", from_state="awaiting-review", to_state="revising",
-            recorded_by="Duplicate Name",
-        )),
-        encoding="utf-8",
+    actual_disposition = (
+        _HEADER + "## Review disposition -- Anthony Kendall (Maintainer) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nruling.\n"
     )
-    _commit_all(repo, "c2: q transition, duplicate recorded_by")
-    q.write_text(
-        q.read_text(encoding="utf-8")
-        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n"
-        + _fence("review-pass", tier="External", reviewer="Bob", recorded_by="Duplicate Name"),
-        encoding="utf-8",
-    )
-    _commit_all(repo, "c3: q review, same duplicate recorded_by")
+    before = _proposal_row(would_be_pass, tmp_path)
+    after = _proposal_row(actual_disposition, tmp_path)
+    assert before["review_rounds"] == 1
+    assert after["review_rounds"] == ""
 
-    result_q = events.walk_history(repo, "q.md", valid_states=_PROPOSAL_STATES)
-    assert len(result_q.events) == 2
-    assert result_q.unmatched_acts == []
-    # Identity is (commit, index) -- recorded_by is not a component of
-    # either, confirmed by re-deriving p's identity unchanged.
-    again = events.walk_history(repo, "p.md", valid_states=_PROPOSAL_STATES)
-    assert (again.events[0].commit, again.events[0].index) == identity_with_forged
+
+def test_mutation_4_a_second_distinct_reviewer_flips_cross_agent_type(
+    tmp_path: Path,
+) -> None:
+    one_reviewer = (
+        _HEADER + "## Review -- Codex (External) -- 2026-01-05\n\nfindings.\n"
+    )
+    two_reviewers = one_reviewer + (
+        "\n## Review -- Gemini (External) -- 2026-01-09 (round 2)\n\nfindings.\n"
+    )
+    before = _proposal_row(one_reviewer, tmp_path)
+    after = _proposal_row(two_reviewers, tmp_path)
+    assert before["cross_agent_type_review"] == ""
+    assert after["cross_agent_type_review"] is True
+
+
+def test_mutation_5_removing_the_tier_line_clears_external_tier_review(
+    tmp_path: Path,
+) -> None:
+    with_tier = (
+        _HEADER + "## Review -- Codex (External) -- 2026-01-05\n\n"
+        "**Tier**: External\n\nfindings.\n"
+    )
+    without_tier = (
+        _HEADER + "## Review -- Codex (External) -- 2026-01-05\n\nfindings.\n"
+    )
+    before = _proposal_row(with_tier, tmp_path)
+    after = _proposal_row(without_tier, tmp_path)
+    assert before["external_tier_review"] is True
+    assert after["external_tier_review"] == ""
+
+
+# ---------------------------------------------------------------------------
+# The never-refuse property outlives the mechanism it was written against.
+# ---------------------------------------------------------------------------
 
 
 def test_an_unreconciled_act_empties_its_own_fields_and_never_refuses_the_run(
     tmp_path: Path, capsys: pytest.CaptureFixture,
 ) -> None:
-    """A measurement reports what it can and leaves the rest blank. It never
-    refuses.
+    """A measurement reports what it can and leaves the rest blank. It
+    never refuses -- not on an ordinary artifact, and not on a heading
+    that only partially matches the accepted grammar.
 
-    An act with no matching event block means this artifact's structured series
-    cannot be computed, so the fields derived from it are empty -- and every
-    other row still renders, and the exit code is still success.
-
-    This inverts an earlier design in which the missing block took the whole
-    run's exit code with it. That design was not merely inconvenient: an
-    instrument able to halt what it observes is no longer an instrument. It
-    fired first on an ordinary status flip, and the result could not be repaired
-    without rewriting published history, because a block is only ever paired
-    with an act in its own introducing commit. The artifact still appears here
-    -- being unmeasurable is not being invisible."""
-    repo = _make_activated_repo(tmp_path)
-    p = repo / "dev" / "proposals" / "p.md"
-    p.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
-    _commit_all(repo, "open")
-    p.write_text(
-        p.read_text(encoding="utf-8")
-        + "\n## Review -- Bob (External Reviewer) -- 2026-01-02\n\nfindings\n",
+    This property was written against the deleted `cairn-event-v1`
+    reconciler, where an act with no matching event block took the whole
+    run's exit code with it (fixed 2026-08-21, `8416d9d`). The heading
+    reader that replaced the reconciler has no exception type to raise in
+    the first place -- an unparseable or partial heading is simply not
+    counted -- but the property this test pins (every row still renders;
+    the process still exits 0; nothing about a hard-to-parse artifact
+    escalates into a refusal for the whole corpus) is the one the
+    Decision named as outliving the mechanism, so it is re-aimed at the
+    heading reader rather than dropped."""
+    proposals_dir = tmp_path / "dev" / "proposals"
+    proposals_dir.mkdir(parents=True)
+    # Adversarial but not malformed at the OS/encoding level: an em-dash
+    # separator instead of the accepted ` -- `, a heading missing its
+    # second separator, and a non-ASCII reviewer name -- none of it is a
+    # dated pass under the accepted grammar, and none of it may raise.
+    (proposals_dir / "p.md").write_text(
+        "# t\n\n**Author**: Claude (Strategy)\n"
+        "**Date opened**: 2026-01-01\n**Status**: revising\n\n"
+        "## Review — Bob — 2026-01-02\n\nfindings.\n\n"
+        "## Review -- Étoile\n\nno second separator, no date.\n",
         encoding="utf-8",
     )
-    _commit_all(repo, "review, deliberately no block -- post-cutoff")
-
-    rc = _lm_installed.main(["proposals", "--root", str(repo)])
+    rc = _lm_installed.main(["proposals", "--root", str(tmp_path)])
     captured = capsys.readouterr()
     assert rc == 0
     assert "INCOMPLETE" not in captured.err
-    assert "p" in captured.out
+    # The row still renders -- being unmeasurable is not being invisible.
+    assert "revising" in captured.out
+    assert len(captured.out.strip().splitlines()) == 2  # header + one row
