@@ -10,7 +10,8 @@ superseded same day; its objective binds here, its scope does not)
 **Touches**: `doctrine/lifecycle.md`, `doctrine/proposals.md`,
 `doctrine/plans.md`, `doctrine/dual-review.md`, both `dev/` templates and their
 shipped twins, `AGENTS.md` + shipped twin, `tools/lifecycle_planner.py` + twin
-(refusals → warnings), lifecycle tests
+(refusals → warnings), lifecycle tests; `bootstrap/tests/conftest.py`
+(security marker) and `docs/release-process.md` (the release-only run, §5)
 **Related**: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
 **Plan review**: required(Internal) — this lands under the rules it replaces
 
@@ -28,10 +29,16 @@ independent review with real falsification stays, and recorded decisions stay.
 The costs are measured and recorded elsewhere (`nimbleness-recovery`; the
 superseded proposal): ~90 lines of prose per shipped line of code across the
 recent corpus; median proposal ~900 lines and median plan ~1,800; readiness
-inheritance granted 0 times in 19; six-round review chains. The superseded
-proposal softened the loop inside the existing container. This one replaces the
-container, carrying forward its three prizes: **C0** (risk posture), **C1**
-(editor authority), **C7** (closure binding).
+inheritance granted 0 times in 19; six-round review chains. The weekly series
+in `nimbleness-recovery` puts the composite figure at **~5% of all lines
+written since July being functional product**, and splits the machinery three
+ways: the adopter-facing capability layer (kept whole), the ~67k-line
+deliberation complex (this proposal's target), and the security apparatus —
+**which stays fully enabled, by Maintainer decision (2026-08-21)**; §5 moves
+only *when* it runs. The superseded proposal softened the loop inside the
+existing container. This one replaces the container, carrying forward its
+three prizes: **C0** (risk posture), **C1** (editor authority), **C7**
+(closure binding).
 
 ## Proposal
 
@@ -90,7 +97,23 @@ safety: scaffold containment and release trust-root verification. This also
 makes the migration safe — an artifact the planner does not yet parse is a
 warning, not a stranded file.
 
-### 5. Transition
+### 5. The security suite becomes a release-only step
+
+Maintainer decision, 2026-08-21, verbatim: *"The security suite should be a
+release-only step."* The security apparatus — portable sweeps, content scan,
+the differential-oracle gate and preflight, AST attestation — **stays enabled
+with its full strength**; what moves is when its tests run. The security test
+families (roughly half the suite's ~10-minute runtime; `test_gate_preflight`
+alone is ~24%) are marked (`pytest -m security` / `-m "not security"`) and run
+**in the release ceremony only**, where the supply-chain threat model bites.
+The per-change loop runs the non-security suite (~5 minutes immediately,
+falling as the deliberation complex's tests shrink). Boundary-B "full suite"
+language reads accordingly: full = full non-security suite, with the security
+families owned by the release ceremony that already exists as a separate
+strict step. A change *to a security surface itself* still runs its own
+family in the loop — the exclusion is temporal, not jurisdictional.
+
+### 6. Transition
 
 Prospective. In-flight accepted proposals may elect the standard lane: their
 Decision summaries seed change notes (the three adopter-issue proposals are the
@@ -103,16 +126,19 @@ The speed is mostly subtraction: the complete-restatement rule and its section
 manifest; the `Plan readiness` vocabulary and the entire inheritance apparatus
 (granted 0/19); constructibility as a named gate (it becomes a falsification
 question); finding-class notation (C0's single test replaces four classes);
-and roughly half the lifecycle commits per change.
+roughly half the lifecycle commits per change; and ~5 minutes from every
+per-change verification run (§5 — moved to release, not deleted).
 
 ## Evidence / verification plan
 
 Template and doctrine edits pass the claim, link, and neutrality gates;
 planner demotion is covered by updating the existing lifecycle tests; the
-change-note path is exercised by this proposal's own derived plan being
-written as one. Ongoing measurement is staff gauges only, read at goodnight,
-no ledger: median artifact length, rounds per artifact, open→archive days,
-adopter issue→fix sessions.
+security marker is verified in both directions (`-m security` collects the
+named families; `-m "not security"` collects none of them) and the release
+runbook names the full run as its step; the change-note path is exercised by
+this proposal's own derived plan being written as one. Ongoing measurement is
+staff gauges only, read at goodnight, no ledger: median artifact length,
+rounds per artifact, open→archive days, adopter issue→fix sessions.
 
 ## Signals the change is wrong
 
@@ -121,6 +147,8 @@ adopter issue→fix sessions.
 * Arcane escalations reach the Maintainer again — the lanes are misrouted.
 * Change notes routinely exceed ~300 lines — the container was not the
   constraint, and the culture work (`nimbleness-recovery` 3.5) is the gap.
+* Release-time security failures trace to changes that never touched a named
+  security surface — §5's jurisdictional carve-out is drawn too narrow.
 
 ## Reviewer brief
 
@@ -128,4 +156,8 @@ One round expected. The load-bearing seam to attack: **triage** — construct a
 change that causes hard-to-undo damage yet plausibly enters the standard lane.
 The defense to test is that named high-risk surfaces force the deliberate lane
 and triage uncertainty resolves upward. Second seam: in-place revision on the
-standard lane — show a hazard `git log` does not already cover.
+standard lane — show a hazard `git log` does not already cover. Third seam:
+§5's temporal exclusion — construct a non-security-surface change that
+silently breaks a security family and is not seen until release; the defense
+to test is the carve-out (security-surface changes still run their family in
+the loop) plus the release run as the backstop.
