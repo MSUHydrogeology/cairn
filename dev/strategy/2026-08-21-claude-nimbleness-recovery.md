@@ -421,123 +421,82 @@ isn't the point of 1.2 — the author deciding is); and the numbers
 **sunset** under 2.4 once the median artifact settles — scaffolding for
 a culture reset, not architecture.
 
-## The missing force — a market for maintainer attention
+## The missing force — net-zero attention, per artifact
 
-(Maintainer diagnosis, 2026-08-24, in two parts. First: Cairn has
-*"only really one basic driving force: discover issues … through
-review. There is nothing that fundamentally pushes back in the other
-direction — there is no cost to deliberation."* Second, correcting this
-section's first draft: elapsed time is not the scarce resource —
-**maintainer attention is**; and a naive price on attention creates an
-incentive to *defer* — one removal proposal spawning ten follow-ups, a
-chain reaction ending in *"a Hiroshima sized PLANNING.md."*)
+(Maintainer diagnosis and co-design, 2026-08-24, in three steps. One:
+Cairn has *"only really one basic driving force: discover issues …
+through review. There is nothing that fundamentally pushes back … there
+is no cost to deliberation."* Two: the scarce currency is **maintainer
+attention**, not elapsed time — and a naive attention price makes
+*deferral* the cheap escape, a chain reaction of follow-ups ending in
+*"a Hiroshima sized PLANNING.md."* Three: rather than tracking an
+economy, aim for **net-zero cost per proposal** and incentives for
+positive outcomes — while avoiding both market externalities and *"a
+brutal economy of feature destruction that just removes everything
+Cairn is."*)
 
 The structural point is new to the agent era: human bureaucracies are
-bounded by payroll and boredom — the implicit scarcity of human
-attention disciplined every prior methodology. Agents removed that
-scarcity, and review is perfect work for a compliance-shaped optimizer:
-findings are legible wins, their cost diffuse, and a finding can never
-be shown not-worth-raising because the lighter path never runs. The one
-resource still genuinely scarce is the Maintainer's attention — and it
-is priced at zero, so demand is unbounded. Worse, any naive tax on
-attention gets externalized onto the backlog: a deferral converts a
-present, visible ask into a future, invisible liability — a promissory
-note drawn on future attention, issued free. Call the follow-ups
-spawned per item processed **R**: the system explodes whenever R > 1,
-and the 2,513-line board is the accumulated unpriced debt.
+bounded by payroll and boredom; agents removed that scarcity, and
+review is perfect work for a compliance-shaped optimizer — findings are
+legible wins, their cost diffuse, and a finding can never be shown
+not-worth-raising because the lighter path never runs. The one
+genuinely scarce resource is the Maintainer's attention, currently
+priced at zero. The design answer, after three iterations (wall-clock
+decay: wrong variable; an agent credit economy: gameable, and its
+removal earners strip-mine the product), is **outcome-backed, net-zero
+attention accounting, settled inside each artifact**:
 
-Two coupled rules price both the ask and the deferral; uncoupled,
-either one just pumps mass into the other pool:
+* **Every proposal and change note carries its own balance sheet.**
+  Three entries, human-written, advisory. (1) **Attention asked**: the
+  decisions, questions, and reads it will consume — *including the
+  follow-up items it spawns*. Net item spawn appears on the artifact's
+  own face at the Decision, which internalizes the externality: one
+  proposal spawning ten follow-ups shows −10 where the Maintainer
+  decides, not as silent board debt. (2) **Outcome that repays it**:
+  named, falsifiable, mission-denominated. (3) At archive, one line:
+  the outcome landed, or it did not.
+* **Additions and removals are both costs. Only outcomes earn.** This
+  is the anti-strip-mining asymmetry: a deletion is not intrinsically
+  profitable — it costs review attention like anything else and repays
+  only through the outcome it serves ("the suite drops to 5 minutes"
+  is an outcome; "removed 3,000 lines" is not). A stewardship fix
+  repays through the adopter issue never filed; research repays
+  through the question permanently settled (negative results count —
+  the suite-cost page ending four re-derivations is the archetype;
+  findings alone are inventory, not outcome). **Cairn's point is what
+  it enables, not what it weighs** — weight reduction is instrumental,
+  never terminal.
+* **What lowers the cost side is practice, not price.** The typed ask
+  formats — recommendation-with-default over open question, FYI-acting-
+  unless-stopped over either (the ~90% acceptance rate is why they are
+  cheap) — and the **stewardship warrant**: standing trivial-lane
+  authority to fix an incidental defect (failing-test repro, agent
+  code review, zero Maintainer involvement, a provenance line). This
+  supplies the authority the stewardship-ethic note (2026-08-20) found
+  missing, and it is how an artifact cheaply improves its own balance.
+* **The balance is advisory, and deficit is information.** No wallet,
+  no running economy, no machinery — two header lines and an archive
+  line. A genuinely attention-negative artifact can still be worth
+  accepting; the point is that the Maintainer sees the price and the
+  promised repayment at the moment of deciding, and the archive line
+  says later whether the promise was kept. The governor stays: the
+  weekly product-share gauge sets the default posture at goodnight.
 
-* **The attention market — fixed supply, typed prices, unfunded asks
-  resolve forward immediately.** The Maintainer sets a per-session
-  interaction budget. Asks are priced by format, per the measured cost
-  structure (~90% acceptance): an **open question** is expensive, a
-  **recommendation-with-default** cheap, an **FYI-acting-unless-
-  stopped** nearly free. Agents rank their asks against the budget —
-  and an ask that misses the cut does not queue: **it resolves to the
-  author's call, now, with reasoning recorded.** Non-purchase means
-  author-decides, never deferral, so the queue structurally cannot
-  grow, and agents compress toward cheap formats because a trivial ask
-  displaces their own more important one.
-* **The conservation law — R < 1, enforced at the board.** The board
-  has a fixed row budget: adding a row evicts one (merge, close now,
-  or outrank — the author argues and settles it). Every proposal,
-  review, and Decision states its item balance — *opened N, closed M*
-  — next to its finding count. Rows are **self-liquidating**: an item
-  no live work re-cites within its window expires; renewal is a
-  purchase from the Maintainer's wallet, so a standing row is actively
-  paid for, never parked free. A follow-up its raiser would not rank
-  above a standing row is a decline-with-dissent, not a follow-up.
-* **The income side — credits are earned by destroying future demands
-  on attention** (Maintainer co-design, 2026-08-24: a pure spend-down
-  budget would squash genuine deliberation; *"incentivize things that
-  genuinely reduce maintainer effort"*). Earners: a **stewardship fix**
-  — an incidental defect found during work, fixed on the trivial lane
-  with a failing-test reproduction, zero Maintainer involvement (+1;
-  the repro is the Goodhart guard — no repro, no credit; no credit for
-  self-introduced defects; diminishing returns per session so plan
-  work isn't abandoned for bug-hunting); **net board rows closed** (+1
-  — the conservation law gains a pull, not just a fence); an **adopter
-  issue resolved and shipped** (+2 — otherwise the Maintainer is the
-  support desk); an **accepted removal of governing mass** through the
-  rule-removal pathway (+1, gated on acceptance). This supplies the
-  standing authority the stewardship-ethic note (2026-08-20) found
-  missing: the fix-in-passing that used to *cost* a permission
-  interaction now *earns* — the same unpriced-attention problem seen
-  from the other side. **Proactive research** (Maintainer addition,
-  2026-08-24) earns too, with the sharpest guard of any earner —
-  unguarded, "research that identifies issues" is the bureaucracy's
-  own founding force with a wallet. So research pays **on resolution,
-  not on discovery**: a worry *killed* with evidence (negative results
-  count — a measurement that settles a recurring question forever,
-  like the suite-cost page that ended four re-derivations of the same
-  number, is pure attention savings); a structural shortcoming *fixed
-  and shipped*; a debate *closed* by a measurement. Findings alone are
-  inventory, not income — they earn nothing until resolved, and the
-  rows they open still cost under the conservation law, so a research
-  pass that nets ten open findings is a net *debtor* until it clears
-  them. Equilibrium personality: tidy the world, settle questions for
-  good, then spend the earnings on the big ones.
-* **Realized-cost pricing: the frictionless-acceptance refund.** An
-  ask is charged what it actually consumed: a recommendation-with-
-  default accepted with a bare "yes" refunds most of its price (it
-  cost a veto-scan, not a deliberation); an ask that spirals costs
-  what it cost. Well-prepared genuine questions become cheap by
-  construction; the unprepared open-ended ask stays expensive — the
-  correct target. The ~90% acceptance rate says most asks trade at
-  the refunded price.
-* **Deficit is information, never refusal.** A broke agent with a
-  genuine question asks anyway; the ledger shows it and the Maintainer
-  reads the pattern. A zero balance that blocks a question would be
-  the refusing gate rebuilt out of play money. Your-lane questions —
-  science, real scope calls — are the budget's *purpose*; the routing
-  rules already ban at any price the asks that shouldn't exist.
-* **The ledger, denominated correctly.** The Decision header shows
-  *maintainer interactions consumed* and *net board items ±N*; the
-  session reflection carries the running tally. No new machinery — the
-  moratorium applies to the economy too — and the ledger carries the
-  same sunset clause as the caps: if the numbers become theater, it
-  retires under the rule-removal pathway it helped fund.
-* **The governor** (unchanged): the weekly product-share gauge, read
-  at goodnight, sets the next week's default posture.
+**Transition: one board bankruptcy.** The accounting cannot start atop
+2,513 lines of unpriced liability: one write-down — rows to one line,
+a cull, everything below the line expires rather than migrates.
 
-**Transition: one board bankruptcy.** The conservation law cannot be
-installed atop an unpriced backlog. One write-down: rows to one line
-each, a cull to the cap, everything below the line expires rather than
-migrates.
-
-The forward-resolution principle from this section's first draft
-survives in general form — not "time passes → resolve forward" but
-**"attention not purchased → resolve forward"** (the decay clock was a
-special case aimed at the wrong variable, elapsed time, which costs the
-Maintainer nothing). Held deliberately, as before: per-artifact token
-budgets and reviewer calibration scores (P8 traps for agent
-reviewers). And the honest limit stands: none of this is a real
-market — the only external price signal Cairn has ever had was an
-adopter filing four issues, and it disciplined priorities better than
-any internal mechanism. Tier 3 remains the counterforce that matters
-most: build for the people whose leaving is the real price.
+Retired from earlier drafts of this section, on the Maintainer's
+corrections: decay clocks (priced elapsed time, which costs the
+Maintainer nothing; the surviving general law is *attention not
+purchased resolves forward*), and the agent credit economy with typed
+prices, refunds, and banking (an economy is itself machinery, its
+balances gameable, and its removal earners reward dismantling the
+product). And the honest limit stands: none of this is a real market —
+the only external price signal Cairn has ever had was an adopter
+filing four issues, and it disciplined priorities better than any
+internal mechanism. Tier 3 remains the counterforce that matters most:
+build for the people whose leaving is the real price.
 
 ## What would falsify this note
 
