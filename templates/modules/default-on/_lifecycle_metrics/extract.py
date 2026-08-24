@@ -197,10 +197,19 @@ def extract_proposal_row(
     # the column from 34 artifacts to 24.  A single consistent reviewer who is
     # not the author is exactly what the External floor asks for.
     author_key = (author or '').strip().casefold()
-    cross_agent_type_review: object = True if any(
-        r and author_key and r.strip().casefold() != author_key
-        for r in reviewer_agents
-    ) else ''
+    if not reviewer_agents or not author_key:
+        # No accepted pass, or no author to compare against: nothing was
+        # measured, so the column says nothing.  Distinct from False below,
+        # which is a measured answer.
+        cross_agent_type_review: object = ''
+    elif any(r and r.strip().casefold() != author_key for r in reviewer_agents):
+        cross_agent_type_review = True
+    else:
+        # Reviewers exist and every one of them is the author.  That is the
+        # self-review this column exists to detect, and it is a finding --
+        # rendering it blank would file the one case that matters as
+        # unmeasured.  Same three-state shape as ``external_tier_review``.
+        cross_agent_type_review = False
 
     # `external_tier_review`: a `**Tier**:` line inside an accepted pass's
     # field block.  Blank when no pass carries one at all; otherwise True/

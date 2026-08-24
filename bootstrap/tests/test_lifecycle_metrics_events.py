@@ -163,7 +163,10 @@ def test_an_author_reviewing_their_own_work_is_not_cross_agent_type(
     row = _proposal_row(text, tmp_path)
     assert row["review_rounds"] == 2
     assert row["reviewer_agents"] == "Claude"
-    assert row["cross_agent_type_review"] == ""
+    # False, not blank: reviewers exist and every one is the author, which is
+    # a measured answer. Blank would file this -- the one case the column is
+    # for -- as indistinguishable from an artifact nobody reviewed.
+    assert row["cross_agent_type_review"] is False
 
 
 def test_one_reviewer_who_is_not_the_author_is_cross_agent_type(
@@ -441,7 +444,7 @@ def test_mutation_4_a_reviewer_differing_from_the_author_flips_cross_agent_type(
     )
     before = _proposal_row(self_reviewed, tmp_path)
     after = _proposal_row(independently_reviewed, tmp_path)
-    assert before["cross_agent_type_review"] == ""
+    assert before["cross_agent_type_review"] is False
     assert after["cross_agent_type_review"] is True
 
 
@@ -503,3 +506,55 @@ def test_an_unreconciled_act_empties_its_own_fields_and_never_refuses_the_run(
     # The row still renders -- being unmeasurable is not being invisible.
     assert "revising" in captured.out
     assert len(captured.out.strip().splitlines()) == 2  # header + one row
+
+
+_SELF_REVIEWED = """# P
+
+**Author**: Claude
+**Status**: accepted
+
+## Review -- Claude (Internal) -- 2026-01-02
+
+findings.
+"""
+
+_CROSS_REVIEWED = """# P
+
+**Author**: Claude
+**Status**: accepted
+
+## Review -- Codex (External) -- 2026-01-02
+
+findings.
+"""
+
+_UNREVIEWED = """# P
+
+**Author**: Claude
+**Status**: awaiting-review
+"""
+
+
+def test_a_self_review_reports_False_rather_than_blank(tmp_path: Path) -> None:
+    """An author reviewing their own work is the single case this column exists
+    to detect, so it must be a measured answer and not an absence. Rendering it
+    blank would file the finding as "nothing was measured" -- indistinguishable
+    from an artifact nobody reviewed at all, which is the row below."""
+    assert _proposal_row(_SELF_REVIEWED, tmp_path)['cross_agent_type_review'] is False
+
+
+def test_an_unreviewed_proposal_reports_blank_not_False(tmp_path: Path) -> None:
+    """The other half, and the reason the column is three-state. Without this a
+    correct-looking implementation could return False whenever it cannot prove
+    True, which would report every unreviewed artifact as a self-review."""
+    assert _proposal_row(_UNREVIEWED, tmp_path)['cross_agent_type_review'] == ''
+
+
+def test_one_reviewer_who_is_not_the_author_is_a_cross_agent_review(
+        tmp_path: Path) -> None:
+    """The textbook case, pinned because the accepted proposal's own wording got
+    it wrong. RTE-01's table said "two or more distinct reviewer identities",
+    which scores one agent writing and a different agent reviewing -- exactly the
+    structural independence Dual-Review rests on -- as blank. The column means
+    "a reviewer who is not the author", and this is what it is for."""
+    assert _proposal_row(_CROSS_REVIEWED, tmp_path)['cross_agent_type_review'] is True
