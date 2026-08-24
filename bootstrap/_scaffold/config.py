@@ -756,12 +756,6 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "tools/_lifecycle_metrics/gitmeta.py", verbatim=True),
         InstallSpec("default-on/_lifecycle_metrics/report.py",
                     "tools/_lifecycle_metrics/report.py", verbatim=True),
-        # events.py (metrics-events-not-prose Part 3): the cairn-event-v1
-        # grammar + history-diff reader + reconciliation engine.  Installed
-        # here, before subsystems/extract, so extract.py's own import of it
-        # (Chunk 6) resolves against an already-registered sibling.
-        InstallSpec("default-on/_lifecycle_metrics/events.py",
-                    "tools/_lifecycle_metrics/events.py", verbatim=True),
         InstallSpec("default-on/_lifecycle_metrics/subsystems.py",
                     "tools/_lifecycle_metrics/subsystems.py", verbatim=True),
         InstallSpec("default-on/_lifecycle_metrics/extract.py",
