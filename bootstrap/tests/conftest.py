@@ -617,6 +617,30 @@ def _ledger_path() -> Path:
     return _ledger_dir() / "suite-runs.jsonl"
 
 
+def _ledger_dir_is_contained() -> bool:
+    """The ledger directory is a real directory at its expected place in this
+    repository -- not a symlink pointing somewhere else.
+
+    ``_ledger_dir().is_dir()`` alone cannot answer this: ``is_dir()`` follows
+    symlinks, so a ``dev/measurement`` replaced by a link to any other
+    directory satisfies it, and the collector then creates the ledger inside
+    whatever it points at.
+
+    **This check is not a tautology, and the difference is the whole point.**
+    ``expected`` is built lexically from the *resolved repository root*, which
+    comes from this collector module's own file location -- an input the ledger
+    path cannot influence. It is then compared against what the ledger
+    directory actually resolves to. Comparing a path against its own
+    ``resolve()`` without an independently-derived expectation would compare
+    the object with itself and could never fail, which is the shape of check
+    this file exists to refuse elsewhere.
+    """
+    try:
+        expected = _ledger_repo_root().resolve(strict=True) / "dev" / "measurement"
+        return expected.is_dir() and expected.resolve(strict=True) == expected
+    except OSError:
+        return False
+
 def _ledger_rel(path: Path, root: Path) -> str:
     try:
         rel = path.relative_to(root).as_posix()
@@ -1184,7 +1208,16 @@ def _ledger_append(path: Path, line: str,
     if fcntl is None:                             # pragma: no cover
         return False
     payload = line.encode("ascii") + b"\n"
-    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    # O_NOFOLLOW refuses when the final component is a symlink, and does it
+    # in the same syscall as the open -- an is_symlink() check beforehand
+    # would leave a window between the look and the write. Directory
+    # components are still followed by the kernel, which is why
+    # _ledger_dir_is_contained() has to guard those separately.
+    flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(str(path), flags, 0o644)
+    except OSError:
+        return False
     try:
         deadline = time.monotonic() + deadline_s
         while True:
@@ -1224,7 +1257,7 @@ def _ledger_finish_session(session, exitstatus) -> None:
             return
         if _ledger_opted_out():
             return
-        if not _ledger_dir().is_dir():
+        if not _ledger_dir_is_contained():
             return
         line, _skeletonized = _ledger_fit(_ledger_build_row(session, exitstatus))
         _ledger_append(_ledger_path(), line)

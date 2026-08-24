@@ -1328,3 +1328,67 @@ def test_a_single_field_cannot_bury_the_table_under_its_own_length(tmp_path):
     ])
     assert "[truncated]" in text
     assert "A" * 500 not in text
+
+
+def test_the_ledger_refuses_to_write_through_a_symlinked_file(tmp_path):
+    """The ledger path is gitignored and normally absent, so anything that can
+    write into the checkout can create it first -- as a symlink to a file of its
+    choosing. Following it would append attacker-chosen bytes to that file under
+    the identity of whoever runs the suite, and needs no code execution inside
+    pytest at all, which is weaker than the threat model the rest of this
+    collector assumes.
+
+    Refused at the open, not by an is_symlink() check beforehand: a look-then-
+    open leaves a window in which the link can be swapped. Failing toward
+    silence -- no row -- matches this collector's stated behaviour for every
+    state it cannot handle."""
+    module = collector()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    target = outside / "not_the_ledger.txt"
+    original = "PRE-EXISTING CONTENT\n"
+    target.write_text(original, encoding="utf-8")
+
+    measurement = tmp_path / "dev" / "measurement"
+    measurement.mkdir(parents=True)
+    link = measurement / "suite-runs.jsonl"
+    link.symlink_to(target)
+
+    assert module._ledger_append(link, '{"probe":"payload"}') is False
+    assert target.read_text(encoding="utf-8") == original
+
+
+def test_a_symlinked_ledger_directory_is_not_contained(tmp_path, monkeypatch):
+    """The same attack one level up, and the reason `is_dir()` cannot be the
+    gate: `is_dir()` follows symlinks, so a `dev/measurement` replaced by a link
+    to any other directory satisfies it and the ledger is created inside
+    whatever it points at -- no pre-existing file required.
+
+    The containment check derives what it expects from the resolved repository
+    root, which comes from this collector's own file location and cannot be
+    influenced by the ledger path. A check that compared the directory with its
+    own `resolve()` would compare the object against itself and could never
+    fail."""
+    module = collector()
+    (tmp_path / "dev").mkdir()
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    (tmp_path / "dev" / "measurement").symlink_to(
+        elsewhere, target_is_directory=True)
+    monkeypatch.setattr(module, "_ledger_repo_root", lambda: tmp_path)
+
+    # The positive control: is_dir() -- the old gate -- is satisfied by the
+    # symlink, so a test asserting only "contained is False" would pass against
+    # an implementation that never looked.
+    assert (tmp_path / "dev" / "measurement").is_dir() is True
+    assert module._ledger_dir_is_contained() is False
+
+
+def test_a_real_ledger_directory_is_contained(tmp_path, monkeypatch):
+    """The other direction. Without this the containment check could return
+    False unconditionally and every test above would still pass, while the
+    ledger silently stopped recording anything."""
+    module = collector()
+    (tmp_path / "dev" / "measurement").mkdir(parents=True)
+    monkeypatch.setattr(module, "_ledger_repo_root", lambda: tmp_path)
+    assert module._ledger_dir_is_contained() is True
