@@ -60,18 +60,18 @@ lives, including `bootstrap/`, `tools/`, `scripts/`, and templates'
 executable code; product = science code, tests of it, teaching,
 examples, and Cairn's doctrine/docs/template prose), as_of 2026-08-21:
 
-| week of | dev/ | machinery | product | product share |
-|---|---:|---:|---:|---:|
-| pre-Cairn (Mar–Apr) | ~0 | ~2k | ~164k | ~98% |
-| 2026-04-27 | 18,584 | 2,888 | 40,268 | 65% |
-| 2026-05-04 | 14,567 | 354 | 15,215 | 50% |
-| 2026-05-11 | 29,590 | 1,121 | 15,043 | 33% |
-| 2026-05-18 | 53,730 | 10,520 | 45,008 | 41% |
-| 2026-05-25 | 47,057 | 26,523 | 18,891 | 20% |
-| 2026-06-01 | 42,859 | 43,101 | 20,514 | 19% |
-| 2026-06-08 | 27,301 | 53,852 | 3,351 | 4% |
-| *(break June 15 – July 5)* | | | | |
-| 2026-07-06 → 08-17 | 210,829 | 121,898 | 17,141 | **~5%** |
+| week of | dev/ | security mach. | other mach. | product | product share |
+|---|---:|---:|---:|---:|---:|
+| pre-Cairn (Mar–Apr) | ~0 | 0 | ~2k | ~164k | ~98% |
+| 2026-04-27 | 18,584 | 0 | 2,888 | 40,268 | 65% |
+| 2026-05-04 | 14,567 | 119 | 235 | 15,215 | 50% |
+| 2026-05-11 | 29,590 | 0 | 1,121 | 15,043 | 33% |
+| 2026-05-18 | 53,730 | 0 | 10,520 | 45,008 | 41% |
+| 2026-05-25 | 47,057 | 2,223 | 24,300 | 18,891 | 20% |
+| 2026-06-01 | 42,859 | 5,171 | 37,930 | 20,514 | 19% |
+| 2026-06-08 | 27,301 | 6,886 | 46,966 | 3,351 | 4% |
+| *(break June 15 – July 5)* | | | | | |
+| 2026-07-06 → 08-24 | 211,013 | 53,812 | 68,155 | 17,116 | **~5%** |
 
 Since the July restart: nineteen lines of process for every line of
 the thing the process exists to produce. The one point of light is the
@@ -87,11 +87,18 @@ intent, metrics, transition lint, pilot ledgers, plus twins and tests
 (~67k lines, 101 files): machinery for deliberating about the product,
 i.e. bureaucracy mechanized — 2.4× the capability layer, zero adopter
 engagement ever, and shipped by default as if it were the point.
-**~20% is the release ceremony** (gate, re-anchor, AST attestation,
-~32k lines) — a genuine supply-chain property built about two releases
-before its threat model exists. The 2.1 dispositions follow: keep the
-first bin whole, dismantle the second, park the third behind signed
-tags until distribution widens.
+**~20% is the security/release apparatus** (gate, re-anchor, AST
+attestation, plus the security stack's tests) — genuine product
+properties, not paperwork. **The security column stays enabled — a
+Maintainer call, 2026-08-21** ("I am not sure that I want to disable
+it"), and the table shows the call is cheap: security is ~a quarter of
+the machinery mass and ~10% of all process lines ever written, so
+keeping every line of it still leaves the overwhelming majority of the
+burden — the deliberation complex and its ecosystem — on the table.
+Security's real cost is runtime, not maintenance (its test families
+are roughly half the 10-minute suite), and that is answered by
+**tiering, not parking**: security tests run at release, pre-push, or
+weekly — out of the inner per-change loop, protection intact.
 
 **The honest other side:** review catches real defects — a regex that
 refused dotted branch names, an invariant satisfied only over an empty
@@ -327,14 +334,17 @@ in inert-key fence" — not a narrated arc.
 table, Maintainer decides each row. Suggested dispositions — **keep**
 (cheap, real defects, serves adopters): the scaffold engine and its
 tests, `claim_check.py`, `link_check.py`, the neutrality gate, the
-four-part core. **Park** (defends hazards no current adopter has): the
-differential-oracle gate anchor and preflight, AST attestation,
-`transition_lint.py`, the pilot ledgers, the intent log, the slot
-ratchet, most of the ~10,500 lines of lifecycle tooling — a project
-with one adopter does not need airport security. **Diet**: the test
-suite — 4,468 tests at ~10 minutes mostly defend parked machinery;
-pruning toward ~2 minutes also dissolves the Boundary-A/B/C bookkeeping
-that exists mainly because the suite is slow.
+four-part core. **Keep, tiered** (Maintainer call, 2026-08-21): the
+entire security apparatus — sweeps, content scan, gate anchor and
+preflight, AST attestation — stays enabled; its slow test families
+move to a release/pre-push/weekly lane, out of the per-change loop.
+**Park or dismantle** (mechanizes deliberation; zero adopter
+engagement): `transition_lint.py`, the pilot ledgers, the intent log,
+the slot ratchet, most of the ~10,500 lines of lifecycle tooling.
+**Diet**: the non-security remainder of the suite — what defends the
+deliberation complex shrinks with it; with security tiered out, the
+inner-loop suite lands near ~2 minutes and the Boundary-A/B/C
+bookkeeping that exists mainly because the suite is slow dissolves.
 
 **2.2 Merge proposal + plan into a single "change note" for standard
 work.** One artifact, ≤2 pages: what / why / approach / verification /
