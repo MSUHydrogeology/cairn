@@ -193,8 +193,9 @@ structural, not discretionary:
    omission reads as an oversight rather than a decision.
 3. **Agent-dispatch tier.** Whether the next step wants a same-agent-type
    read or a cross-agent-type one — aligned with any review tier the
-   task carries (a `required(External)` plan-review wants a
-   cross-type dispatch; an internal pass can be same-type-fresh-session).
+   task carries (a declared-External **proposal** review wants a
+   cross-type dispatch; a plan review is always Internal, same-type
+   fresh-session).
 4. **Reading order.** The two or three artifacts to read first, in
    order, *after* the session-start re-anchor — the durable surfaces
    that carry the load-bearing context, not an exhaustive list.

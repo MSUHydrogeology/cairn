@@ -190,11 +190,13 @@ sequencing, or deferred follow-ups — it opens a plan; see
 **The plan-review decision is part of accepting a non-trivial
 change**, not an afterthought at plan-open. For non-trivial work the
 `**Plan review**` metadata line states the anticipated plan-review
-tier — `required(<tier>)` or `not required(<rationale>)`, with **no
-silent default; a missing line is a review finding, like an unfilled
-slot**. The author states it (they see the cross-cutting / contract /
-new-abstraction risk); the Maintainer's Decision ratifies or
-overrides. Valid `not required` rationales include "pure doc sync",
+tier — `required(Internal)`, `required(Internal + Internal Security
+Review)` for a security-sensitive surface, or `not
+required(<rationale>)`, with **no silent default; a missing line is a
+review finding, like an unfilled slot**. The author states it (they
+see the cross-cutting / contract / new-abstraction / security risk);
+the Maintainer's Decision ratifies or overrides. Valid `not required`
+rationales include "pure doc sync",
 "trivial layout only", "straightforward follow-up to a
 recently-reviewed sibling plan"; a reviewer treats an unjustified
 `not required` on a clearly-risky change as a finding. A `required`
@@ -553,45 +555,17 @@ What the check *cannot* do is read: it never judges whether the revision is
 genuinely complete, and it never verifies that the ledger is true. Both are the
 reviewer's, per the comparison in `doctrine/dual-review.md`.
 
-## Plan readiness — the finding a derived plan may inherit
+## Plan review — the derived plan's tier
 
-**The proposal is the deliberative boundary.** That is why this field exists on
-the *proposal* side: the weight of the deliberation belongs where an independent
-reviewer read the complete contract, and a derived plan that only translates
-already-reviewed decisions should not pay for a second cross-type read of the
-same design.
-
-An **External** reviewer who has read a *complete* current contract may record,
-beside their review basis:
-
-```
-**Plan readiness**: READY | DISTINCT REVIEW REQUIRED
-```
-
-`READY` means that exact contract fixes scope and exclusions, invariants,
-failure dispositions, public paths, omissions, test homes and standing gates,
-documentation and release-note surfaces, implementation areas and sequence, and
-any Maintainer fences or ceremonies. The derived plan then takes a fresh-context
-**Internal** plan review rather than a second different-agent-type round, and
-binds this record by commit.
-
-* **The field is optional and has no default.** Omit it and the derived plan
-  takes a distinct plan review at its declared tier. A value outside the two
-  tokens refuses rather than reading as `READY`.
-* **`DISTINCT REVIEW REQUIRED` is a finding, not a fallback** — you saying
-  consequential design necessarily remains for planning. It is an explicit
-  judgement about *this* contract, never inferred from the topic, and a
-  fresh-context Internal pass does not satisfy it.
-* **Only an External pass may supply it.** What inheritance spends is the
-  different-agent-type read; an Internal review has none to spend.
-* **The assurance path does not decide it.** A high-assurance proposal may
-  record `READY` too; high assurance keeps governing verification, Security
-  Review, protected surfaces and ceremonies.
-
-The record needs no separate basis line — the reviewed commit and the contract
-section it fixed are already the review's own mandatory basis. The full
-inheritance contract, and the seven things that invalidate readiness in both
-directions, live in `doctrine/dual-review.md` > "Plan-readiness inheritance".
+A proposal's `**Plan review**:` header field states the anticipated tier
+for its non-trivial work's derived plan, and that tier is **always
+Internal** — `required(Internal)`, `required(Internal + Internal
+Security Review)` for a security-sensitive surface, or `not
+required(<rationale>)`. A plan review is a fresh-context Internal
+pass, the only tier there is; there is no different-agent-type plan
+round to earn, recommend, or inherit, so a proposal reviewer records no
+plan-tier finding at all. Full contract:
+`doctrine/dual-review.md` > "Plan review is Internal, always".
 
 ## Scope reduction — the pre-Decision obligation
 

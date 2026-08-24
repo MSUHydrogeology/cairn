@@ -164,10 +164,10 @@ an agent's memory (the recurring plan-review-skip failure mode). The
 plan header's `Plan review:` line makes the gate legible to a cold
 reader; a static plan-review lint is the mechanical backstop (a
 `required` plan past `awaiting-plan-review` must carry a dated review
-subsection). The
-review *tier* follows the structural-independence framing in
-`doctrine/dual-review.md`. See `doctrine/lifecycle.md` for the full
-cross-type statement.
+subsection). The review *tier* is **always Internal** — see
+`doctrine/dual-review.md` > "Plan review is Internal, always" for the
+full statement, including the `+ Internal Security Review` obligation
+a security-sensitive plan declares.
 
 ---
 
@@ -581,34 +581,28 @@ chunk-table cell edits that accepted findings motivate are inline,
 with a documenting Sharpening subsection.** See the Mutability rule
 above for the full inline-vs-append split.*
 
-### The default allocation — the proposal carries the deliberative weight
+### Internal, always — the plan review has one tier
 
-**A plan review is Internal by default.** The proposal is the deliberative
-boundary: when an **External** proposal review has read a complete current
-contract and recorded `Plan readiness: READY`, the derived plan takes a
-fresh-context **Internal** plan review, not a second different-agent-type round.
-The plan declares both facts — `Plan review: required(Internal)` and the
-`Inherited proposal basis` binding — and `doctrine/dual-review.md` >
-"Plan-readiness inheritance" carries the record's exact shape, the seven things
-that invalidate it, and the honest boundary of what a checker reaches.
+**A plan review is Internal, fresh-context — always.** External plan
+review does not exist as a tier, a requirement, a recommendation slot,
+or an escalation target; there is nothing to inherit or invalidate,
+because there is only one tier to declare. The External floor lives at
+the deliberate lane's proposal review, where the design is still
+movable; a plan that only translates already-reviewed decisions does
+not pay for a second cross-type read of the same design.
 
-Two consequences worth stating plainly, because both invert an older reflex:
+Two consequences worth stating plainly:
 
-* **Assurance path does not decide plan-review independence.** A
-  high-assurance proposal may record `READY` exactly as a standard one may.
-  High assurance keeps governing verification, Security Review, scientific
-  review, protected-surface handling, risk acceptance and ceremonies; it does
-  not automatically buy a second External read of a plan that only translates
-  already-reviewed decisions.
-* **An External plan round is an explicit escalation, never an inferred
-  default.** It is chosen — by a proposal reviewer recording `DISTINCT REVIEW
-  REQUIRED`, by an invalidated inheritance, or by a reviewer or the Maintainer
-  deliberately spending one — not acquired by a plan being large or touching a
-  protected surface.
-
-**Inheritance reallocates the plan review; it never removes it.** A plan that
-declares an inherited basis and `not required(...)` has bought itself no
-independent read at all, and refuses.
+* **Assurance path does not change the plan-review tier.** High
+  assurance keeps governing verification, Security Review, scientific
+  review, protected-surface handling, risk acceptance and ceremonies;
+  it does not buy, or owe, a different-agent-type plan round.
+* **A plan whose surface or triggers call for security treatment**
+  declares the obligation as `Plan review: required(Internal +
+  Internal Security Review)` — a distinct obligation, satisfied only
+  by an appended `## Security review (Internal)` record, never by an
+  ordinary Internal pass. Full contract:
+  `doctrine/dual-review.md` > "Plan review is Internal, always".
 
 ### When to use it
 
@@ -631,16 +625,19 @@ chunks are straightforward. Trivial accepts that skip the plan entirely
 
 ### Reviewer identity
 
-**Internal-review floor** — same-agent-fresh-session is sufficient. The
-plan is a deliberation artifact (parallel to the proposal Review
-section's tier), not implementing code. The Code-review floor below
-(**not the implementing agent**) applies to *implementation* review, not here.
+**Internal-review floor** — same-agent-fresh-session is sufficient, and
+it is also the ceiling: the plan is a deliberation artifact (parallel
+to the proposal Review section's tier), not implementing code, and a
+plan review never escalates to a different-agent-type round. The
+Code-review floor below (**not the implementing agent**) applies to
+*implementation* review, not here.
 
-Escalate to the External-review tier (different agent type or human) when
-consequential design necessarily remains for planning — which is the proposal
-reviewer's `DISTINCT REVIEW REQUIRED` finding, or a scientific or architectural
-risk the proposal review did not settle. Escalation is a *stated* judgement
-about this contract, not an inference from the plan's size or subject.
+A plan whose surface or triggers call for security treatment declares
+the `+ Internal Security Review` obligation (see "Internal, always"
+above) — still a fresh-context same-agent-type session, in the
+Security Review role, never a different agent type. The Maintainer may
+still choose to ask any additional reader for a plan; that choice is
+never a tier and is never inferred from the plan's size or subject.
 
 ### Format
 
@@ -767,10 +764,13 @@ group only** of the header's `**Plan review**:` field: match
 word, case-fold, and require `internal` or `external`. Text after the
 closing paren is ignored; text after the first word *inside* the group
 is a **lens annotation** — preserved in the record, ignored by the
-comparison, so `required(**External**, security lens)` and
-`required(External + External Security Review)` both resolve to
-`external`. Negations fail closed: `required(not External)` is a
-violation, not an External requirement.
+comparison, so `required(**Internal**, security lens)` and
+`required(Internal + Internal Security Review)` both resolve to
+`internal`. Negations fail closed: `required(not Internal)` is a
+violation, not an Internal requirement. A plan's `Plan review:` field
+resolving to `external` is the legacy case (`doctrine/dual-review.md` >
+"Plan review is Internal, always"): recognized so it can be warned and
+re-declared, never accepted as a live requirement.
 
 **Disposition pairing is positional, and either house form counts.**
 When a pass declares `**Findings**: raised`, a disposition must follow

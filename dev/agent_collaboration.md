@@ -109,39 +109,38 @@ awaiting-review -> awaiting-decision -> accepted` (see
 Code review — the implementation-side pass, before a plan archives
 — has its own floor: **not the implementing agent**.
 
-**Where the deliberative weight sits, and why the plan does not pay twice.**
-The proposal is the deliberative boundary. When an **External** proposal
-review has read a *complete current contract* and recorded
-`Plan readiness: READY`, the derived plan takes a **fresh-context Internal**
-plan review, not a second different-agent-type round — the plan is
-translating decisions an independent reviewer already tested, and a routine
-cross-type reread of that translation buys little for what it costs in
-elapsed time and hurdles. The plan records what it is inheriting, by commit,
-so the reallocation is auditable rather than assumed.
+**A plan review is Internal, fresh-context — always.** The proposal is
+the deliberative boundary — that is where different-agent-type
+independence pays, because the design is still movable there — and a
+plan that only translates already-reviewed decisions does not pay for
+a second cross-type read of the same design. External plan review does
+not exist as a tier, a requirement, a recommendation slot, or an
+escalation target; there is nothing for a plan review to inherit or
+invalidate, because there is only one tier to declare.
 
-Three boundaries this does **not** move, stated because each is easy to
-assume away:
+Two boundaries this does **not** move:
 
-* **Code review is untouched.** Its floor is still *not the implementing
-  agent*, and nothing here upgrades it to External or downgrades it to none.
-* **An independent read is reallocated, never removed.** A plan claiming an
-  inherited basis while declaring no plan review at all is the one
-  combination the record exists to make impossible.
-* **Escalation stays available and is explicit.** `DISTINCT REVIEW REQUIRED`
-  is the proposal reviewer's finding that consequential design remains for
-  planning; a declared expansion *or* a scope reduction invalidates
-  inheritance; and `recommend-and-decide` lets any reviewer ask the
-  Maintainer to spend a second independent pass. What went away is the
-  *automatic* second round, not the option.
+* **Code review is untouched.** Its floor is still *not the
+  implementing agent*, and nothing here upgrades it to External or
+  downgrades it to none.
+* **Security Reviews are untouched.** A high-risk surface still takes
+  its own Security Review wherever it attaches — to a proposal, a
+  plan, or code. A plan whose surface calls for one declares
+  `Plan review: required(Internal + Internal Security Review)`,
+  satisfied only by an appended `## Security review (Internal)` record
+  from a fresh-context same-type session in the Security Review role,
+  never by an ordinary Internal pass.
 
-The honest trade: for high-assurance work that is not security or
-trust-boundary — a scientific assumption, a destructive migration, a
-doctrine or lifecycle-enforcement change — the fresh-context Internal
-reviewer is now the only structurally guaranteed read of the sequencing
-before implementation. Security and trust-boundary work keeps its backstop
-outside this allocation, in the Security Review its surface triggers on its
-own. See `doctrine/dual-review.md` > "Plan-readiness inheritance" for the
-record's exact shape and the seven invalidators.
+The Maintainer may still *choose* to ask any additional reader —
+different agent type or human — for any artifact; that option
+survives the retirement of the mandate. For high-assurance work that
+is not security or trust-boundary — a scientific assumption, a
+destructive migration, a doctrine or lifecycle-enforcement change —
+the fresh-context Internal reviewer's judgement plus the *optional*
+`recommend-and-decide` escalation is the whole structural guarantee a
+plan gets before implementation; there is no tier a plan acquires from
+its topic or its assurance path. See `doctrine/dual-review.md` > "Plan
+review is Internal, always" for the full contract.
 
 Every first-pass review — Internal or External — works through the
 shared **review sweep** (a generic, change-agnostic lens roster) and

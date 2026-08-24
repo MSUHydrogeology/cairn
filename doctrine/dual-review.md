@@ -193,124 +193,87 @@ adding a new tier. Internal-, External-, Code-, and
 domain-rotation-review floors all still apply when a
 Round-2 reviewer fills the role.
 
-## Plan-readiness inheritance — the record, and what a tool can check
+## Plan review is Internal, always
 
-When an **External proposal review** has reviewed a complete current contract and
-records a readiness finding, the derived plan takes a fresh-context **Internal**
-plan review rather than a second different-agent-type round. That is the review
-*allocation*; this section is the **record** that makes it auditable, and the
-honest boundary of what a checker reaches.
+A plan review is an **Internal, fresh-context review — always**.
+Standard or security-flavored, the reviewer is a fresh session of the
+same agent type, never a mandated different-type round. External plan
+review does not exist as a tier, a requirement, a recommendation slot,
+or an escalation target. **External independence lives at the
+proposal; Internal freshness lives at the plan and at code review; the
+Maintainer decides** whether to spend anything more, per artifact,
+never by tier.
 
-The proposal reviewer's finding sits in their own `## Review` record:
+**A plan whose surface or triggers call for security treatment**
+declares `Plan review: required(Internal + Internal Security Review)`
+— a **distinct obligation**, not a lens annotation on the ordinary
+Internal tier. It is satisfied **only** by an appended `## Security
+review (Internal)` record, authored by a fresh-context same-agent-type
+session acting in the Security Review role (the role's high-capability
+floor and the security-review protocol, including its trust-boundary
+checklist, apply unchanged), and it is **not** satisfied by an
+ordinary Internal review record however clean: an ordinary Internal
+pass against a plan carrying this obligation reports it **unmet**;
+only the appended Security review record clears it. This reuses the
+`+` grammar `normalize_required_obligations` already reads as two
+distinct obligations and two distinct passes (`doctrine/plans.md` >
+"Normalizing the required tier") — no new parser branch is invented
+for it.
 
-```text
-Plan readiness: READY | DISTINCT REVIEW REQUIRED
-```
+**What survives this abolition, unmoved:**
 
-`READY` means that exact contract fixes scope and exclusions, invariants, failure
-dispositions, public paths, omissions, test homes and standing gates,
-documentation and release-note surfaces, implementation areas and sequence, and
-any Maintainer fences or ceremonies. **`DISTINCT REVIEW REQUIRED` is a finding,
-not a default** — the reviewer saying consequential design necessarily remains
-for planning. It is not inferred from the topic, and a fresh-context Internal
-pass does not satisfy it.
+* **The External floor on deliberate-lane proposal review.** The
+  proposal is where different-agent-type independence pays, because
+  the design is still movable there.
+* **The code-review floor.** Unchanged and independent: **not the
+  implementing agent** — a same-type agent in an independent context
+  clears it (see "Code review — the implementation side" below).
+* **Security Reviews wherever they attach** — to a proposal, a plan,
+  or code — on their own standing trigger, outside the plan-review
+  allocation entirely. A high-risk surface named in `AGENTS.md` takes
+  a Security Review on its own trigger, and a plan may fence a chunk
+  to a named authorization; this abolition does not touch either
+  mechanism.
+* **Assurance path does not change the plan-review tier.** High
+  assurance continues to govern verification, Security Review,
+  scientific review, protected-surface handling, risk acceptance and
+  ceremonies; it never buys, or owes, a different-agent-type plan
+  round.
+* **The Maintainer's option to ask any reader for anything.** Nothing
+  places a review beyond the Maintainer's reach; what retires is the
+  *automatic*, reviewer-triggered escalation to a mandated
+  different-agent-type plan round — never the Maintainer's own choice
+  to spend one.
 
-The record needs no separate basis line: the reviewed commit and the contract
-section it fixed are already the review record's own mandatory basis (`Reviewed
-commit`, `Target`). One vocabulary, not two.
+**For a scientific assumption, a destructive migration, or a
+governing-doctrine / lifecycle-enforcement change**, the fresh-context
+Internal reviewer's judgement plus the *optional* `recommend-and-decide`
+escalation below is the whole structural guarantee a plan gets before
+implementation — there is no tier a plan can acquire from its topic or
+its assurance path that buys a different-agent-type read automatically.
+Any reviewer, author, or Maintainer may still spend a second
+independent pass deliberately, through `recommend-and-decide`.
 
-The derived plan then carries **both facts separately**:
+**Type-scoped removal, not vocabulary deletion.** `External` remains
+valid vocabulary where it survives: **proposal** reviews and
+**archived** records, including longitudinal metrics. Only the
+**plan-tier** meaning retires. A legacy plan whose header still
+declares the retired external plan-review tier, or a proposal still
+carrying the retired proposal-side readiness-finding field, is
+warned, never silently rewritten; the Maintainer re-declares the
+plan's tier at its next transition. Archived records carrying either
+legacy token remain readable history and draw no warnings.
 
-```text
-Plan review: required(Internal)
-Inherited proposal basis: review=<full External-review commit>;
-                            proposal=<full accepted commit>
-```
-
-`proposal=` names the proposal commit the Decision **binds** — the Maintainer's
-Decision binds the same commit without changing its contract — so it equals the
-`Reviewed commit` of the review that recorded the finding.
-
-**Inheritance reallocates the plan review; it never removes it.** A plan that
-declares an inherited basis and `not required(...)` has bought itself no
-independent read at all, which is the one combination this record exists to make
-impossible.
-
-### What invalidates readiness — seven things, in both directions
-
-A new **scope item**, **invariant**, **public path**, **failure disposition**,
-**trust boundary**, or **ceremony** invalidates inheritance: the plan takes
-`required(<tier>)` and stops until a distinct plan review lands. Those six all
-guard a translation that **adds**.
-
-The seventh guards the other direction, and it was the asymmetry worth naming: a
-**scope reduction or removed accepted outcome** relative to the proposal's
-committed scope invalidates readiness exactly as an addition does, unless a
-Maintainer-recorded `Scope delta` allowance admits it (the outcome test below).
-The Internal reviewer's charter — *it does not reopen the accepted design* — is
-precisely the posture in which a quiet narrowing reads as faithful translation,
-and under this allocation that reviewer is the only read most plans get before
-implementation.
-
-**Assurance path does not decide plan-review independence.** Standard and
-high-assurance proposals may both receive `READY` when their External review
-settled the complete contract. High assurance continues to govern verification,
-Security Review, scientific review, protected-surface handling, risk acceptance
-and ceremonies — it does not automatically purchase a second External read of a
-plan that only translates already-reviewed decisions.
-
-#### Which triggers still keep an independent backstop, and which do not
-
-Inheritance removes the automatic second different-agent-type read of the *plan*
-for some high-assurance triggers and not others. The difference is stated here
-rather than left implicit, because a reader who assumes "high assurance" still
-buys a cross-type plan round would be wrong for three of the five categories:
-
-* **Security / trust-boundary.** Keeps an independent backstop, *outside* the
-  plan-review allocation entirely: a high-risk surface named in `AGENTS.md`
-  takes a Security Review on its own trigger, and a plan may fence a chunk to a
-  named authorization. Inheritance does not reach either mechanism.
-* **Scientific assumption**; **destructive migration, data-loss risk or
-  compatibility break**; **governing-doctrine or lifecycle-enforcement change.**
-  These now rest on the fresh-context Internal reviewer's judgement plus the
-  *optional* `recommend-and-decide` escalation below. There is no structural
-  requirement that a different agent type ever reads the sequencing.
-
-That is a real trade, made deliberately: the deliberative weight sits at the
-proposal, where an External reviewer read the complete contract, and a routine
-second cross-type read of a plan that only translates it was the cost being
-removed. What replaces the structural guarantee is a named affordance — any
-reviewer, author or Maintainer may spend a second independent pass through
-`recommend-and-decide`, and an Internal reviewer who finds consequential design
-still open records that as a finding rather than absorbing it.
-
-**A change to this allocation is itself in the third category.** Rewriting the
-review model is a governing-doctrine change, so it is reviewed under whatever
-allocation is in force when it is made — including the one it installs. That
-reflexivity is not a defect to be engineered away; it is a property to *name*, so
-a later reader sees which read the change actually received instead of inferring
-a stronger one.
-
-### What a checker reaches, and what stays review's job
-
-A tool can bind this record: two full commit ids, a resolvable source proposal,
-the operative finding's value and tier, and equality between `proposal=` and the
-review's `Reviewed commit`. **A malformed or partial declaration refuses and
-never reads as `READY`** — including a wrong field name, which is otherwise
-silent by construction.
-
-Three things it cannot reach, stated so the silence is not mistaken for a check:
-
-* **which commit a review landed in.** A commit cannot contain its own id, so
-  `review=` is shape-checked and required to differ from `proposal=` (a review
-  lands after the commit it reviews) — its *identity* is not verifiable from
-  repository bytes.
-* **whether the translation is faithful.** Both delta directions are **author
-  declarations**; an undeclared expansion or reduction is invisible. That is the
-  same limit the counterweight below states for reductions, and it is why review,
-  not tooling, is the enforcement.
-* **whether the Internal pass was fresh-context.** No repository byte
-  distinguishes a fresh session from a continued one.
+**What a checker reaches, and what stays review's job.** A tool can
+bind the security-obligation record: that the classifier (the declared
+`+ Internal Security Review` clause) and the satisfier (the appended
+review record) have different authors, so no artifact clears its own
+obligation, and that an ordinary Internal pass against that obligation
+reports it **unmet**. It cannot verify that the Security-Review-role
+session was genuinely fresh-context, or that the review's substance
+actually covered the trust boundary — those remain review's job, not a
+checker's, exactly as the Internal-review floor's freshness was never
+mechanically verifiable either.
 
 ## Code review — the implementation side
 
@@ -329,15 +292,11 @@ silently upgrades into.
 The *entry*-side counterpart is the **plan-review precondition**
 (`lifecycle.md`): a review-required plan does not start implementation
 until its plan-review section lands. The `Plan review: required(<tier>)`
-line names the tier. **The default is Internal**, and the proposal is where the
-deliberative weight sits: when an External proposal review recorded
-`Plan readiness: READY` over a complete current contract, the derived plan takes
-a fresh-context Internal pass (the inheritance section above). A
-different-agent-type External plan round is the **explicit escalation** — chosen
-because the proposal reviewer recorded `DISTINCT REVIEW REQUIRED`, because
-readiness was invalidated, or because a reviewer or the Maintainer spent one
-deliberately — not a tier a plan acquires by being large or by touching a
-protected surface.
+line names the tier, and for a plan the tier is **always Internal** —
+the only tier there is (see "Plan review is Internal, always" above).
+A plan whose surface calls for security treatment declares the
+`+ Internal Security Review` obligation there; nothing upgrades a
+plan review to External.
 
 ### Boundary C — Falsification (targeted, after broad verification)
 
@@ -660,9 +619,10 @@ authority to weigh competing reads and Decide.
 
 **A declared-`required` tier stays a floor.** Recommend-and-decide
 governs only the *optional escalation beyond* what the lifecycle already
-declared. A `Plan review: required(External cross-type)` line still runs
-regardless of any recommendation — "don't default to a second round"
-never downgrades a tier the proposal or plan declared `required`.
+declared. A `Plan review: required(Internal + Internal Security Review)`
+line still runs regardless of any recommendation — "don't default to a
+second round" never downgrades a tier the proposal or plan declared
+`required`.
 
 Why this shape: the cost of a reviewer-pass is real, and most redundant
 later passes only re-caught *lens-coverage* misses the sweep now folds

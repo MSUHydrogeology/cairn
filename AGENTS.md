@@ -123,24 +123,22 @@ Review is asynchronous and commit-mediated: a review is a section
 appended to the artifact and committed, not a conversation that
 leaves no record.
 
-**The proposal is where the deliberative weight sits — so plan review is
-Internal by default.** When an **External** proposal review has read a
-complete current contract and recorded `Plan readiness: READY`, the
-derived plan takes a **fresh-context Internal** plan review, not a second
-different-agent-type round; it declares `Plan review: required(Internal)`
-plus a commit-bound `Inherited proposal basis`. **Code review's floor is
-unchanged and independent: not the implementing agent** — a same-type
-agent in an independent context clears it. **External or Security review
-of a plan or of code is an explicit escalation**, taken because a
-proposal reviewer recorded `DISTINCT REVIEW REQUIRED`, because readiness
-was invalidated, or because a reviewer or the Maintainer spent one
-deliberately — never inferred from a change's size, its assurance path,
-or the surfaces it touches. A high-risk surface named below still takes
-its own Security Review; that trigger is untouched by this routing.
-Inheritance reallocates the plan review, it never removes it: an
-inherited basis paired with `not required(...)` refuses. Contract and
-rationale: `doctrine/dual-review.md` > "Plan-readiness inheritance";
-process framing in `dev/agent_collaboration.md`.
+**A plan review is Internal, fresh-context — always.** External plan
+review does not exist as a tier, a requirement, a recommendation slot,
+or an escalation target; the External floor lives at the deliberate
+lane's **proposal** review, where the design is still movable.
+**Code review's floor is unchanged and independent: not the
+implementing agent** — a same-type agent in an independent context
+clears it. A plan whose surface or triggers call for security
+treatment declares `Plan review: required(Internal + Internal Security
+Review)`, satisfied only by an appended `## Security review (Internal)`
+record from a fresh-context same-type session in the Security Review
+role — never by an ordinary Internal pass. A high-risk surface named
+below still takes its own Security Review; that trigger is untouched
+by this routing, and the Maintainer may still choose to ask any
+additional reader for any artifact — a choice is not a tier. Contract
+and rationale: `doctrine/dual-review.md` > "Plan review is Internal,
+always"; process framing in `dev/agent_collaboration.md`.
 
 **Reviews are attributed and self-committed.** No agent writes or
 commits a review attributed to another agent — the named reviewer

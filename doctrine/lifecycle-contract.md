@@ -147,19 +147,20 @@ flowchart TD
 | awaiting-plan-review → **revising-plan** | author | plan-review findings are folded into the plan's operative cells; the plan returns to `awaiting-plan-review`. |
 | → **ready-to-implement** → **implementing** | author | for a review-required plan, a plan-review section **at or above the declared tier** has landed and the plan-open and first-implementation commits are **distinct**; for a `not required` plan, execution may combine with plan-open (fast multi-stage). |
 
-**The plan-review tier is Internal by default.** The proposal is the
-deliberative boundary: a plan derived from a proposal whose **External** review
-recorded `Plan readiness: READY` declares `Plan review: required(Internal)` plus
-a commit-bound `Inherited proposal basis`, and a different-agent-type External
-plan round is an **explicit escalation** rather than a tier inferred from size,
-assurance path, or touched surface. Code review's floor is unchanged and
-independent of this: **not the implementing agent**. The checker binds the
-*record* — two full commit ids, a resolvable source proposal, the operative
-finding's value and tier, and `proposal=` equal to the readiness review's
-`Reviewed commit` — and a malformed or partial declaration **refuses** rather
-than reading as `READY`. Pairing an inherited basis with `not required(...)`
-refuses: inheritance reallocates the plan review, it never removes it. Full
-contract in [`dual-review.md`](dual-review.md) > "Plan-readiness inheritance".
+**The plan-review tier is Internal, always.** A plan review is a
+fresh-context Internal pass, the only tier there is; a different-agent-
+type plan round is not a tier the checker recognizes as required. A
+plan whose surface calls for security treatment declares `Plan review:
+required(Internal + Internal Security Review)`, an obligation the
+checker reads as **two** distinct passes (`normalize_required_obligations`),
+satisfied only by an appended `## Security review (Internal)` record —
+an ordinary Internal pass against that declaration reports the
+obligation **unmet**. Code review's floor is unchanged and independent
+of this: **not the implementing agent**. A plan whose header still
+declares the retired external tier is warned, not silently rewritten;
+the Maintainer re-declares its tier at the plan's next transition. Full
+contract in [`dual-review.md`](dual-review.md) > "Plan review is
+Internal, always".
 | implementing → **awaiting-code-review** → **revising-code** | a reviewer, then the implementer | a code-review pass section is appended (append-only); the reviewer is **never** the implementing agent. Findings return the plan to `revising-code` and thence to `awaiting-code-review`. |
 | awaiting-code-review → **ready-to-archive** → **archived** | author | **the plan-archive precondition holds: a code review has occurred** (the archive commit is distinct from the implementing commits); **and** every explicitly-deferred follow-up carries a recorded disposition in an auditable `Dispositions: …` block (the older `Follow-ups migrated to: …` spelling stays valid), presented as one batch at archive-preparation, with any `defer` carrying the Maintainer's quoted authorization; the loop-fidelity sign-off names the implementing commit and the governing Revised section. |
 
