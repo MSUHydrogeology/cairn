@@ -430,7 +430,14 @@ isn't the point of 1.2 — the author deciding is); and the numbers
 **sunset** under 2.4 once the median artifact settles — scaffolding for
 a culture reset, not architecture.
 
-## The missing force — net-zero attention, per artifact
+## The missing force — return on attention, per artifact
+
+*(Objective refined 2026-08-24 from "net-zero": minimization starves
+the high-value spend — science, direction — and break-even both caps
+legitimate large investments and invites offset-gaming. The objective
+is **return**: every piece of work must be worth more than the
+attention it costs. The balance-sheet mechanics below are unchanged;
+only the pass line moves.)*
 
 (Maintainer diagnosis and co-design, 2026-08-24, in three steps. One:
 Cairn has *"only really one basic driving force: discover issues …
