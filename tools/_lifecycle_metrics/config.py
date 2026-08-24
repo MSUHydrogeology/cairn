@@ -34,7 +34,7 @@ def plans_dir(root: Path) -> Path:
 #: vendor / model is a config edit, never a code edit.  Shipped defaults
 #: cover the agent families the reference corpus exercises; they carry
 #: no project-specific roster (the human/AI split a closed roster would
-#: encode is deliberately absent -- see ``_agent_of``).
+#: encode is deliberately absent).
 _DEFAULT_MODEL_TIERS: List[Tuple[str, str]] = [
     ('opus', 'Opus'),
     ('sonnet', 'Sonnet'),

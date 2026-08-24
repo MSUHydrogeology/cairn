@@ -77,21 +77,29 @@ whose commit subjects do not carry the lifecycle-stage wording the
 reader looks for, and it is indistinguishable in the output from having
 no git at all.
 
-That quiet-degrade contract does **not** extend to ``review_rounds``,
-reviewer identity, ``external_tier_review``, or ``response_models``.
-Once an artifact's activation marker exists (the installed
-``_template.md`` carries the literal ``cairn-event-v1`` token) and the
-artifact carries an act strictly after that marker's own introducing
-commit, those columns are sourced from reconciled event blocks and
-**refuse** the whole run (a nonzero, ``INCOMPLETE`` exit naming the
-artifact/commit/kind) rather than downgrading quietly, when a
-post-activation act has no matching block. An artifact with no
-provable post-activation status -- no activation marker at all,
-git itself unavailable, or every act on it pre-dating the marker's own
-introduction -- reports those same columns as the literal empty string
-``''``, never a heading-count or regex-scraped value: the old
-prose-parsing path is retired outright, not merely superseded once a
-cutoff exists.
+``review_rounds``, ``plan_review_rounds``, ``code_review_rounds``,
+reviewer identity, ``cross_agent_type_review``, ``external_tier_review``,
+and ``response_models`` are sourced from the artifact's own dated section
+headings -- an H2 naming a review-pass kind, carrying a `` -- ``-delimited
+reviewer segment and an ISO date on the same line (see
+``parse._pass_kind_of`` for the exact accepted grammar and its named
+exclusions: a bare template stub, a Maintainer *disposition*, a
+Response, a Correction, and anything below H2). This supersedes the
+retired ``cairn-event-v1`` block machinery (``events.py``, deleted
+2026-08-24): a pure function of the artifact's own text rather than a
+git-history reconciliation, so it is **retroactive over the whole
+corpus**, not merely forward from an activation cutoff, and it **never
+refuses** -- an artifact whose headings do not parse as dated passes
+reports these columns as the literal empty string ``''``, exactly like
+every other quietly-degrading column above, and every other row in the
+corpus is still produced.
+
+**These metrics are self-reported and forgeable by anyone with write
+access to the artifacts, and must never gate anything.** A heading
+declares its own review count by existing; no parser can tell an
+authored heading from an honest one, and that class is closed by
+neither construction nor enumeration. The measurement reports what it
+can and leaves the rest blank -- it is an instrument, not a control.
 
 What the ``hours_*`` columns measure is the interval between the
 **commits that recorded** each transition -- not how long the
@@ -112,17 +120,15 @@ from __future__ import annotations
 
 import importlib as _importlib
 
-# Leaf-first load order (acyclic): config/parse/report/events have no
-# sibling deps (events.py carries no import of extract.py by design --
-# see events.py's own module docstring for why the dependency runs the
-# other way); subsystems -> parse,config; extract -> config,parse,
-# gitmeta,subsystems,events; snapshot -> config,extract,subsystems,
-# gitmeta,report; cli -> the rest.
+# Leaf-first load order (acyclic): config/parse/report have no sibling
+# deps; subsystems -> parse,config; extract -> config,parse,gitmeta,
+# subsystems; snapshot -> config,extract,subsystems,gitmeta,report;
+# cli -> the rest.
 # Loaded via ``import_module`` (not ``from . import ...``) so resolution needs
 # only THIS package in ``sys.modules`` -- no top-level ``tools`` parent, keeping
 # the launcher's fail-closed containment surface minimal.
 _SUBMODULES = (
-    "config", "parse", "gitmeta", "report", "events",
+    "config", "parse", "gitmeta", "report",
     "subsystems", "extract", "snapshot", "cli",
 )
 

@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .parse import _parse_date
+from .parse import _parse_date, _pass_kind_of, _pass_reviewer_of
 from .config import _DEFAULT_MODEL_TIERS
 
 
@@ -107,6 +107,50 @@ def _extract_response_models(
         m = _MODEL_FIELD_RE.search(body_text)
         models.append(m.group(1).strip() if m else '')
     return models
+
+
+#: ``**Tier**:`` field shape, parallel to ``_MODEL_FIELD_RE`` above -- the
+#: free-text tier line inside a review-pass section's body.  Only the
+#: value's leading word matters to the extractor (does it start with
+#: ``External`` / ``Internal``); the rest is free-form justification prose
+#: (``External, different agent type from the author``, ``External
+#: (security lens)``, ...).
+_TIER_FIELD_RE = re.compile(
+    r'^\*\*Tier\*\*\s*:\s*(.+?)\s*$',
+    re.MULTILINE,
+)
+
+
+def _extract_review_passes(
+    sections: Sequence[Tuple[str, List[str]]],
+) -> List[Dict[str, str]]:
+    """Every dated review-pass section, under the accepted heading grammar
+    (``parse._pass_kind_of`` / ``_pass_reviewer_of``).
+
+    Returns one dict per pass, in document order:
+    ``{'kind': ..., 'reviewer': ..., 'tier': ...}`` -- ``kind`` is the
+    matched kind word verbatim, ``reviewer`` is ``''`` when the heading
+    carries no reviewer segment to read, and ``tier`` is the pass's own
+    ``**Tier**:`` field value (``''`` when the section body carries none).
+    Callers derive every review-pass-sourced column (``review_rounds``,
+    ``plan_review_rounds``, ``code_review_rounds``, ``reviewer_agents``,
+    ``cross_agent_type_review``, ``external_tier_review``) from this one
+    list, so the accepted grammar is applied exactly once per artifact.
+    ``sections`` should already be fence-blanked (see
+    ``parse._blank_fenced_code_blocks``) so a heading quoted verbatim
+    inside a fenced code block -- discussing the grammar rather than using
+    it -- is never counted as a live pass."""
+    passes: List[Dict[str, str]] = []
+    for heading, body in sections:
+        kind = _pass_kind_of(heading)
+        if kind is None:
+            continue
+        reviewer = _pass_reviewer_of(heading)
+        body_text = '\n'.join(body)
+        tier_m = _TIER_FIELD_RE.search(body_text)
+        tier = tier_m.group(1).strip() if tier_m else ''
+        passes.append({'kind': kind, 'reviewer': reviewer, 'tier': tier})
+    return passes
 
 
 def _classify_model_to_tier(
