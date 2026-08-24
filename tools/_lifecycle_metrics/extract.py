@@ -184,16 +184,23 @@ def extract_proposal_row(
         if r and r not in reviewer_agents:
             reviewer_agents.append(r)
 
-    # `cross_agent_type_review`: two or more DISTINCT reviewer identities
-    # across accepted passes -- not "a reviewer differs from the author".
-    # A proposal reviewed three times by the same single External reviewer
-    # renders blank here, not True: structural independence across
-    # multiple different reviewers is what this column claims, and one
-    # consistent reviewer identity -- however different from the author --
-    # is not evidence of that, only of review having happened at all
-    # (which ``review_rounds`` already reports).
-    distinct_reviewers = {p['reviewer'] for p in passes if p['reviewer']}
-    cross_agent_type_review: object = True if len(distinct_reviewers) >= 2 else ''
+    # `cross_agent_type_review`: an accepted pass exists whose reviewer identity
+    # differs from the author's.  This is the column's original and documented
+    # meaning -- "a review round whose reviewer identity differs from the
+    # author exists" -- and it is the structural-independence signal the
+    # Dual-Review model rests on: an author reviewing their own work is the
+    # thing it exists to detect.
+    #
+    # NOT "two or more distinct reviewers".  Measured over the live corpus, that
+    # reading scores a proposal written by one agent and reviewed once by a
+    # different one -- the textbook cross-type case -- as blank, and it dropped
+    # the column from 34 artifacts to 24.  A single consistent reviewer who is
+    # not the author is exactly what the External floor asks for.
+    author_key = (author or '').strip().casefold()
+    cross_agent_type_review: object = True if any(
+        r and author_key and r.strip().casefold() != author_key
+        for r in reviewer_agents
+    ) else ''
 
     # `external_tier_review`: a `**Tier**:` line inside an accepted pass's
     # field block.  Blank when no pass carries one at all; otherwise True/

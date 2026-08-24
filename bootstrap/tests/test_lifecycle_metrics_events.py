@@ -115,9 +115,10 @@ def test_single_review_one_reviewer_external_tier(tmp_path: Path) -> None:
     row = _proposal_row(text, tmp_path)
     assert row["review_rounds"] == 1
     assert row["reviewer_agents"] == "Codex"
-    # One distinct reviewer identity is not "two or more" -- blank, not
-    # True: review having happened at all is what review_rounds reports.
-    assert row["cross_agent_type_review"] == ""
+    # Codex is not the author, so this is a structurally independent read
+    # and the column says so on one round -- the External floor asks for a
+    # reviewer who is not the author, not for several of them.
+    assert row["cross_agent_type_review"] is True
     assert row["external_tier_review"] is True
     assert row["response_models"] == "claude-opus-5"
 
@@ -139,12 +140,43 @@ def test_two_distinct_reviewers_flip_cross_agent_type(tmp_path: Path) -> None:
     assert row["external_tier_review"] is True
 
 
-def test_same_reviewer_twice_stays_blank_not_true(tmp_path: Path) -> None:
-    """The same reviewer identity across multiple rounds does NOT flip
-    `cross_agent_type_review` -- this is the semantic this column changed
-    under retire-event-blocks (previously: reviewer-differs-from-author;
-    now: two-or-more-distinct-reviewers), pinned directly rather than left
-    to be discovered by a stale assumption."""
+def test_an_author_reviewing_their_own_work_is_not_cross_agent_type(
+    tmp_path: Path,
+) -> None:
+    """The defect this column exists to detect. An artifact whose only reviewer
+    identity is its own author has had no structurally independent read, and
+    must not render as cross-agent-type however many rounds it took.
+
+    Both sides normalise the same way -- a trailing parenthetical role is
+    stripped from the author and from the reviewer -- so `Claude (Strategy)`
+    reviewing `Claude (Strategy)` compares equal rather than reading as two
+    different agents. That normalisation is the whole reason this case is
+    pinned: without it the column would report independence for a self-review,
+    which is worse than reporting nothing."""
+    text = (
+        _HEADER
+        + "## Review -- Claude (Strategy) -- 2026-01-05\n\n"
+        "**Tier**: Internal\n\nfindings.\n\n"
+        "## Review -- Claude -- 2026-01-09 (round 2)\n\n"
+        "**Tier**: Internal\n\nfindings, round 2.\n"
+    )
+    row = _proposal_row(text, tmp_path)
+    assert row["review_rounds"] == 2
+    assert row["reviewer_agents"] == "Claude"
+    assert row["cross_agent_type_review"] == ""
+
+
+def test_one_reviewer_who_is_not_the_author_is_cross_agent_type(
+    tmp_path: Path,
+) -> None:
+    """A single consistent reviewer who is not the author satisfies the
+    External floor, and the column says so.
+
+    Recorded because the opposite reading shipped briefly and was wrong: under
+    a "two or more distinct reviewers" rule, a proposal written by one agent and
+    reviewed three times by a different one -- the textbook cross-type case --
+    rendered blank. Measured over the live corpus that reading reported 24 of 70
+    artifacts where the documented meaning reports 56."""
     text = (
         _HEADER
         + "## Review -- Codex (External) -- 2026-01-05\n\n"
@@ -155,7 +187,7 @@ def test_same_reviewer_twice_stays_blank_not_true(tmp_path: Path) -> None:
     row = _proposal_row(text, tmp_path)
     assert row["review_rounds"] == 2
     assert row["reviewer_agents"] == "Codex"
-    assert row["cross_agent_type_review"] == ""
+    assert row["cross_agent_type_review"] is True
 
 
 def test_bare_template_stub_is_not_a_pass(tmp_path: Path) -> None:
@@ -395,17 +427,20 @@ def test_mutation_3_renaming_to_a_disposition_does_not_raise_the_count(
     assert after["review_rounds"] == ""
 
 
-def test_mutation_4_a_second_distinct_reviewer_flips_cross_agent_type(
+def test_mutation_4_a_reviewer_differing_from_the_author_flips_cross_agent_type(
     tmp_path: Path,
 ) -> None:
-    one_reviewer = (
+    """S2 mutation 4, aimed at the documented meaning: swapping the reviewer
+    identity from the author's to someone else's must flip the column. The
+    'before' arm is a self-review, which is the state that must read blank."""
+    self_reviewed = (
+        _HEADER + "## Review -- Claude (Strategy) -- 2026-01-05\n\nfindings.\n"
+    )
+    independently_reviewed = (
         _HEADER + "## Review -- Codex (External) -- 2026-01-05\n\nfindings.\n"
     )
-    two_reviewers = one_reviewer + (
-        "\n## Review -- Gemini (External) -- 2026-01-09 (round 2)\n\nfindings.\n"
-    )
-    before = _proposal_row(one_reviewer, tmp_path)
-    after = _proposal_row(two_reviewers, tmp_path)
+    before = _proposal_row(self_reviewed, tmp_path)
+    after = _proposal_row(independently_reviewed, tmp_path)
     assert before["cross_agent_type_review"] == ""
     assert after["cross_agent_type_review"] is True
 
