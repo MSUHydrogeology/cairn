@@ -371,9 +371,9 @@ carries its own declared Security Review, which is the stronger instrument.
 
 ---
 
-## THE COMPLETE CURRENT CONTRACT (Revision 1)
+## THE COMPLETE CURRENT CONTRACT
 
-Supersedes the opened Proposal section in full. Objective, Context, header
+Revision 1. Supersedes the opened Proposal section in full. Objective, Context, header
 fields, and the review record above are unchanged.
 
 ### 1. Three lanes, chosen by a closed triage procedure
@@ -711,7 +711,9 @@ trigger RCL-06 names).
 **Corrected header value**: `Plan review: required(External)` — current-rule
 binding, given the recorded token. The header line is updated to match.
 
-### Withdrawn / superseded commitments (cumulative with Revision 1's)
+### Withdrawn / superseded commitments
+
+Cumulative with Revision 1's.
 
 * Revision 1's recommendation that the derived plan take Internal review —
   withdrawn (RCL-06); the current rule binds until the replacement is accepted.
@@ -727,9 +729,9 @@ binding, given the recorded token. The header line is updated to match.
 
 ---
 
-## THE COMPLETE CURRENT CONTRACT (Revision 2)
+## THE COMPLETE CURRENT CONTRACT
 
-Supersedes Revision 1's contract in full. Objective, Context, and the review
+Revision 2. Supersedes Revision 1's contract in full. Objective, Context, and the review
 record are unchanged. Header values: as opened, except
 `Plan review: required(External)` (RCL-06).
 

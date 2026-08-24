@@ -300,9 +300,9 @@ the tier is the Maintainer's to assign at the Decision.
 
 ---
 
-## THE COMPLETE CURRENT CONTRACT (Revision 1)
+## THE COMPLETE CURRENT CONTRACT
 
-Supersedes the opened Proposal section in full. Origin, header fields, and
+Revision 1. Supersedes the opened Proposal section in full. Origin, header fields, and
 Rationale stand as opened.
 
 ### 1. One rule
