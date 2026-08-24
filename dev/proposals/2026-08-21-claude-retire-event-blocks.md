@@ -595,3 +595,39 @@ note lane ships with no measurement story.
 
 **Nothing else in the Decision is altered**, and its accepted terms are
 unchanged.
+
+## Implementation note -- the note lane's measurement story -- Claude -- 2026-08-24
+
+Closes the open item the Maintainer's Correction (`b812f28`) named: *"this
+proposal deletes the `cairn-event-v1` grammar that convergent-lifecycle 2a
+requires for change notes. The implementer must extend the heading reader to the
+note lane ... or the note lane ships with no measurement story."*
+
+**No extension was needed, and the item is closed by measurement rather than by
+argument.** `convergent-lifecycle` section 1 puts a change note at
+`dev/plans/<slug>.md` -- the same directory as plans, with no `dev/notes/`
+created anywhere. `iter_plan_files` already walks `dev/plans/*.md` plus
+`dev/plans/archive/**/*.md`, and a note carries the same `## Plan review -- X --
+<date>` and `## Code review -- X -- <date>` headings every other artifact does.
+
+Verified against a change note written to that section's own spec (Why / What /
+Approach / Verification / Risk, plan status vocabulary, no parent proposal):
+
+    stem                 'tighten-dotted-branch-fence'
+    status               'awaiting-code-review'
+    plan_review_rounds   1
+    code_review_rounds   1
+
+**The lane is better off than its accepted text assumed.** That text says notes
+"emit the same `cairn-event-v1` records as plans ... so longitudinal metrics
+survive the merge" -- which placed an emission obligation on every note author at
+every act, and made the lane's measurability depend on nobody forgetting. The
+heading reader charges nothing: a note is measured because of headings it
+already carries for human readers. The obligation that the enforcement incident
+proved unrepairable never attaches to the new lane at all.
+
+**The one condition, stated so it is not rediscovered.** This holds *because*
+notes live under `dev/plans/`. If the note lane is ever given its own directory,
+`iter_plan_files` must be widened in the same change -- otherwise notes become
+invisible to the walk silently, which is the failure mode this whole proposal
+exists to remove. That is a one-line change plus a test, not a redesign.
