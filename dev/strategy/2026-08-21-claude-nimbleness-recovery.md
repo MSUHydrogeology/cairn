@@ -97,8 +97,10 @@ keeping every line of it still leaves the overwhelming majority of the
 burden — the deliberation complex and its ecosystem — on the table.
 Security's real cost is runtime, not maintenance (its test families
 are roughly half the 10-minute suite), and that is answered by
-**tiering, not parking**: security tests run at release, pre-push, or
-weekly — out of the inner per-change loop, protection intact.
+**tiering, not parking**: the security suite is a **release-only step**
+(Maintainer decision, 2026-08-21) — out of the inner per-change loop
+entirely, run in full as part of the release ceremony, where its
+threat model actually bites.
 
 **The honest other side:** review catches real defects — a regex that
 refused dotted branch names, an invariant satisfied only over an empty
@@ -334,10 +336,11 @@ in inert-key fence" — not a narrated arc.
 table, Maintainer decides each row. Suggested dispositions — **keep**
 (cheap, real defects, serves adopters): the scaffold engine and its
 tests, `claim_check.py`, `link_check.py`, the neutrality gate, the
-four-part core. **Keep, tiered** (Maintainer call, 2026-08-21): the
-entire security apparatus — sweeps, content scan, gate anchor and
-preflight, AST attestation — stays enabled; its slow test families
-move to a release/pre-push/weekly lane, out of the per-change loop.
+four-part core. **Keep, release-only** (Maintainer decision, 2026-08-21): the entire
+security apparatus — sweeps, content scan, gate anchor and preflight,
+AST attestation — stays enabled with its teeth; its test families run
+as a **release-only step**, part of the release ceremony and nowhere
+in the per-change loop.
 **Park or dismantle** (mechanizes deliberation; zero adopter
 engagement): `transition_lint.py`, the pilot ledgers, the intent log,
 the slot ratchet, most of the ~10,500 lines of lifecycle tooling.
