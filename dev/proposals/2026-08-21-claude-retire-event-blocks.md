@@ -631,3 +631,54 @@ notes live under `dev/plans/`. If the note lane is ever given its own directory,
 `iter_plan_files` must be widened in the same change -- otherwise notes become
 invisible to the walk silently, which is the failure mode this whole proposal
 exists to remove. That is a one-line change plus a test, not a redesign.
+
+## Deviation from accepted scope -- `cross_agent_type_review` -- Claude -- 2026-08-24
+
+**The implementation does not match RTE-01's table, deliberately, and the
+Maintainer allowed it** once the discrepancy was measured:
+
+> "Go ahead, thank you"
+
+**What the accepted contract said.** RTE-01's disposition table defines
+`cross_agent_type_review` as *"two or more distinct reviewer identities across
+accepted passes"*.
+
+**What shipped.** The column's original meaning: **an accepted pass exists whose
+reviewer identity differs from the author's.**
+
+**Why the accepted wording was wrong.** Measured over the live corpus, the two
+readings differ on **32 of 70 proposals** -- every case where one agent wrote a
+proposal and a *different* agent reviewed it once:
+
+| definition | reports True |
+|---|---|
+| "two or more distinct reviewers" (as accepted) | 24 / 70 |
+| "a reviewer who is not the author" (as shipped) | **56 / 70** |
+
+The accepted wording scores the textbook cross-type case -- one author, one
+independent reviewer -- as **blank**, on the column the proposal itself calls the
+flagship Dual-Review signal. A single consistent reviewer who is not the author
+is exactly what the External floor asks for. The wording was mine and it was
+wrong; the implementer caught it and wrote the reason into the code rather than
+following the table off a cliff.
+
+**A second correction, same column.** A self-review -- reviewers exist and every
+one is the author -- rendered **blank**, indistinguishable from an artifact
+nobody reviewed. That files the one case the column exists to detect as
+unmeasured. It is now `False`, matching `external_tier_review`'s three-state
+shape; blank is reserved for no accepted pass at all. Corpus: True=56, False=4,
+blank=10.
+
+**How this was found, and what it says about the report it came in.** The
+implementing agent's own report stated *"I implemented exactly what RTE-01's
+table specifies"* and gave `cross_agent_type_review` as 24/70. Both were wrong:
+it had implemented the opposite (correctly), and 24/70 is `external_tier_review`
+-- two columns transposed. The discrepancy surfaced only because a follow-up
+count showed `False = 0` on a column defined as a comparison, which cannot be
+right. **An agent's report of its own work is a claim, not evidence**; the
+column counts are.
+
+**Scope delta**: preserved in substance, corrected in wording. No capability is
+dropped -- the column is more populated, not less. What changed is a definition
+that would have made the flagship signal worse, and the record now matches the
+code rather than the code silently disagreeing with the record.
