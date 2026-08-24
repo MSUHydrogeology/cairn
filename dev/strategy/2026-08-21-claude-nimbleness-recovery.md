@@ -585,6 +585,29 @@ their proper, secondary role: policing these incentives — running
 code that skips verification, sessions shipping garbage to beat the
 clock — not generating the force.
 
+**The honest label: this is a firm, not a market** (Maintainer,
+2026-08-24: *"I don't know of any other economy that actually
+self-regulates and allocates effort."*). Real markets self-regulate
+through real scarcity, discovered prices, borne losses, and exit —
+none of which an internal design can fake (internal pseudo-markets
+inside real firms have a famously bad record). Coase, "The Nature of
+the Firm" (*Economica*, 1937), resolves it: where price coordination
+is too costly, the efficient structure is hierarchy — briefs,
+budgets, audit, culture — and that is what everything above actually
+is: **management technology, which requires a manager, irreducibly.**
+The mechanisms economize the Maintainer's management attention; they
+cannot eliminate it, and expecting them to self-regulate is the
+category error. The genuinely self-regulating forces live at the
+firm's boundaries, where markets always are: **the product market**
+(adopters — the only price signal that ever disciplined this
+project); **the labor market** (agent types compete for role seats —
+real scarcity, real selection on visible performance, real exit: the
+other model gets the review seat); and **the capital market** (the
+Maintainer's own continued investment of attention and motivation —
+the ultimate exit, and this week was it speaking). Strengthen the
+boundaries; manage the inside; stop expecting the inside to manage
+itself.
+
 **Transition: one board bankruptcy.** The accounting cannot start atop
 2,513 lines of unpriced liability: one write-down — rows to one line,
 a cull, everything below the line expires rather than migrates.
