@@ -677,6 +677,25 @@ by a tireless agent). The standing razor for every future addition:
 **could this be a sentence instead of a script?** In a firm staffed
 by readers who never skip the manual, it almost always can.
 
+**The subtraction sweep, measured** (as_of 2026-08-24): ~70k lines
+across ~100 files. A: Cairn's own process tooling (`tools/`, 16,659).
+B: self-host process scripts (transition lint, foldback, onboarding,
+3,914). C: shipped twins (`templates/skills/_lib/`, 10,642). D:
+shipped process modules (intent/metrics/foldback/onboarding, 8,832).
+E: their tests (23,839, riding in the same commits as their
+subjects). Prose: ~6,000 (PLANNING bankruptcy, both templates to
+~80, doctrine's dead sections, attic notes pointing into git
+history). Phases: (0) the rewritten constitution lands first, grep-
+falsified against dangling references; (1) A+B — own-repo only, zero
+contract impact, immediately safe; (2) E with re-measured suite; (3)
+C+D — **the one careful phase**: install contract, deliberate lane,
+manifests + gate re-anchor + UPGRADE deprecation note; adopters keep
+their installed copies and choose at next upgrade; (4) prose. Not on
+the list: the security stack (Maintainer decision), the scaffold
+engine and tests, claim/link/content checkers, the quality gate.
+Structure calls with defaults: keep `suite_cost.py`; retire
+progressive onboarding; keep the session skills, thinned.
+
 ## What would falsify this note
 
 * Shortened artifacts measurably letting through defects the long form
