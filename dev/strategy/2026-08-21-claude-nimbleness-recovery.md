@@ -474,6 +474,28 @@ attention accounting, settled inside each artifact**:
   code review, zero Maintainer involvement, a provenance line). This
   supplies the authority the stewardship-ethic note (2026-08-20) found
   missing, and it is how an artifact cheaply improves its own balance.
+* **Attention is denominated in comprehension, not message count**
+  (Maintainer, 2026-08-24: the most expensive cost is *"translating
+  what the agents say — usually incredibly dense systems and design
+  lingo — into my understanding"*). The comprehension floor already
+  demands plain-first prose and is not working, for a structural
+  reason: most prose is written to survive agent review, and agent
+  reviewers reward density — the audience who *blocks* sets the
+  register, not the audience who *decides*. Three fixes, all riding
+  the balance sheet rather than adding machinery: **(a) plain layer
+  first** — the top of every Maintainer-facing artifact is written
+  for a competent scientific software builder with no CS training,
+  and the Maintainer must be able to decide from it alone; needing to
+  read below the line is a defect the reviewing agent flags like any
+  bug, and the reviewer's matching duty is fidelity — a plain layer
+  that misleads is worse than density. **(b) Coinages are priced** —
+  every new term is a tax on every future sentence containing it, so
+  minted vocabulary appears on the artifact's cost line and had
+  better be repaid. **(c) The register is testable** — "explain it as
+  you would to a colleague in the department, not to a systems
+  engineer," and the review checks the top layer by asking whether a
+  non-CS reader could answer *what am I deciding, and what happens if
+  it's wrong?* from it alone.
 * **The balance is advisory, and deficit is information.** No wallet,
   no running economy, no machinery — two header lines and an archive
   line. A genuinely attention-negative artifact can still be worth
