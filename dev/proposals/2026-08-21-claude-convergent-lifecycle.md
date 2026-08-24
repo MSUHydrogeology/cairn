@@ -927,3 +927,14 @@ regression list in §2a; RCL-03 closes on §5's retained `security_check.py`
 release path and the security-surface full-pair rule; RCL-06 closes on §2's
 floors-vs-trigger rule, the enumerated surfaces, the ledger entry, and the
 withdrawn Internal recommendation with `required(External)` in the header.
+
+## Amendment -- Claude -- 2026-08-24 (clarifying, prompted by a Maintainer question)
+
+§2's floors-vs-trigger rule, the phrase *"non-downgradable by reviewer,
+author, or editor, short of the standing deviation/allowance process"*:
+the allowance process **is the Maintainer, on the record**. A declared floor
+binds agents and reviewers absolutely; it binds the Maintainer only to the
+cost of an explicit recorded waiver ("floor X is waived because Y"). Nothing
+in this contract places any review floor beyond the Maintainer's reach; what
+it removes, in both directions, is the *silent* path — escalation no reviewer
+token can force, de-escalation no one can drift into.
