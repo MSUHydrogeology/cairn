@@ -34,12 +34,7 @@ rather than a notebook. Confusingly, both this and append-only use the words
 `reviewed` and `revised` — they mean opposite things about what you keep.
 
 **Archive** — the closed end of the lifecycle. An archived artifact is history:
-read it for context, do not edit it, and never mine it for metrics. The one
-narrow exception: a closed-schema `cairn-event-v1` block, emitted by the same
-edit that performed the lifecycle act it records, is read back by the
-lifecycle-metrics extractor — that is reading a block written *at* the
-transition, not retrospectively parsing prose the artifact was never designed
-to carry, and the general rule stands unweakened for everything else.
+read it for context, do not edit it, and never mine it for metrics.
 
 ## Review
 
