@@ -421,6 +421,64 @@ isn't the point of 1.2 — the author deciding is); and the numbers
 **sunset** under 2.4 once the median artifact settles — scaffolding for
 a culture reset, not architecture.
 
+## The missing force — a cost that pushes back
+
+(Maintainer diagnosis, 2026-08-24: Cairn has *"only really one basic
+driving force: discover issues … through review. There is nothing that
+fundamentally pushes back in the other direction — there is no cost to
+deliberation. Without a cost, this was destined to occur."*)
+
+The diagnosis is structural, and it is new to the agent era. Human
+bureaucracies are naturally bounded by payroll, boredom, and careers —
+every prior methodology was implicitly disciplined by the scarcity of
+human attention. Agents removed that scarcity, and review is the
+perfect work for a compliance-shaped optimizer: findings are legible,
+numbered, defensible wins; their cost is diffuse and invisible; and a
+finding can never be shown not-worth-raising, because the lighter path
+never runs. A system with one legible currency, where that currency
+only ever argues for more deliberation, converges on what Cairn became.
+
+Design constraints for the counterforce: price deliberation in the
+genuinely scarce currency (Maintainer attention and motivation, with
+tokens/time as proxies); make cost as legible as findings; charge for
+*delay*, not for care (Reinertsen — the queue is the cost, P3); and
+keep the ledger advisory with a human enforcing (P4, P8 — a scored
+metric handed to compliance-maximizers is the next zombie). Three
+mechanisms, strongest first:
+
+* **Decay — every deliberative state gets a clock, and expiry resolves
+  *forward*.** Apache's lazy-consensus precedent: silence past the
+  clock is consent. A review not delivered in N days records
+  `no objection`; a stalled `awaiting-decision` resolves to the
+  author's recommendation with dissent noted; an unclosed finding
+  closes on the author's defense. Nothing expires backward into more
+  process. This inverts the physics: work stops waiting on
+  deliberation, and delay prices itself — the work escapes. Machinery
+  cost: none (dates already exist in headers).
+* **The cost line — every lifecycle append states what it cost, and
+  every Decision sees the total.** One self-reported line per
+  review/response/revision (tokens or hours, lines added); the
+  Decision header carries the tally next to the finding count ("3
+  rounds, ~800k tokens, 1,900 lines of deliberation, 40-line diff").
+  No thresholds, no enforcement — the number appears where the
+  decision is made, which is where it changes behavior.
+* **The governor — the product-share gauge sets the default posture.**
+  The weekly dev/machinery/product table, read at goodnight, as a
+  thermostat: product share below the Maintainer's floor tightens the
+  next week's default posture (single-round, C0-blocking-only, shorter
+  decay clocks); above it, normal. The system gains a signal that
+  pushes back in proportion to how far deliberation has crowded out
+  the mission.
+
+Held deliberately: per-artifact deliberation budgets (machinery-shaped;
+revisit if the three above prove insufficient) and reviewer calibration
+scores (a P8 trap for agent reviewers; revisit only if finding quality
+degrades). And the honest limit: none of this is a market. The only
+external cost signal Cairn has ever had — an adopter filing four issues
+— disciplined priorities better than any internal mechanism. The
+counterforce that matters most long-term is Tier 3: build for the
+people whose leaving is the real price.
+
 ## What would falsify this note
 
 * Shortened artifacts measurably letting through defects the long form
