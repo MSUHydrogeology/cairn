@@ -608,6 +608,31 @@ the ultimate exit, and this week was it speaking). Strengthen the
 boundaries; manage the inside; stop expecting the inside to manage
 itself.
 
+**Staffing the firm: agents do the labor of management, the
+Maintainer keeps the judgments** (Maintainer direction, 2026-08-24:
+structure it so *"a tireless agent provides the labor intensive
+aspects"*). The organizing principle: separate judgment from the
+preparation of judgment, and delegate all preparation. Five
+delegations: a **chief-of-staff role** that collects every pending
+ask, forces each into recommendation-with-default form in plain
+register, and delivers one batched digest; the **books** (gauges,
+balance sheets, item counts) computed at goodnight; the **audit
+packet** — an agent screens 100% of agent-closed threads and
+prepares the sample with anomalies flagged, so the Maintainer judges
+exceptions in minutes; the human-facing **"what happened, what needs
+you"** page; and the **labor-market table** (whose findings survived,
+whose outcomes landed) consulted when reallocating seats. The
+resulting interface contract: the firm reaches the Maintainer through
+four surfaces only — digest, audit packet, direct science/tripwire
+questions (never batched), and the gauges. The principal-agent hazard
+is named and checked four ways: every digest line links to its raw
+record; summary fidelity is reviewable as a defect; the
+chief-of-staff seat rotates across agent types so no model owns the
+Maintainer's information diet; and random direct dips into the raw
+record keep the preparer honest. Implementation is roles and
+routines, not machinery: the goodnight routine extends into the
+back-office close; the only new text is a role paragraph.
+
 **Transition: one board bankruptcy.** The accounting cannot start atop
 2,513 lines of unpriced liability: one write-down — rows to one line,
 a cull, everything below the line expires rather than migrates.
