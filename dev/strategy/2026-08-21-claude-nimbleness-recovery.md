@@ -469,9 +469,56 @@ either one just pumps mass into the other pool:
   purchase from the Maintainer's wallet, so a standing row is actively
   paid for, never parked free. A follow-up its raiser would not rank
   above a standing row is a decline-with-dissent, not a follow-up.
+* **The income side — credits are earned by destroying future demands
+  on attention** (Maintainer co-design, 2026-08-24: a pure spend-down
+  budget would squash genuine deliberation; *"incentivize things that
+  genuinely reduce maintainer effort"*). Earners: a **stewardship fix**
+  — an incidental defect found during work, fixed on the trivial lane
+  with a failing-test reproduction, zero Maintainer involvement (+1;
+  the repro is the Goodhart guard — no repro, no credit; no credit for
+  self-introduced defects; diminishing returns per session so plan
+  work isn't abandoned for bug-hunting); **net board rows closed** (+1
+  — the conservation law gains a pull, not just a fence); an **adopter
+  issue resolved and shipped** (+2 — otherwise the Maintainer is the
+  support desk); an **accepted removal of governing mass** through the
+  rule-removal pathway (+1, gated on acceptance). This supplies the
+  standing authority the stewardship-ethic note (2026-08-20) found
+  missing: the fix-in-passing that used to *cost* a permission
+  interaction now *earns* — the same unpriced-attention problem seen
+  from the other side. **Proactive research** (Maintainer addition,
+  2026-08-24) earns too, with the sharpest guard of any earner —
+  unguarded, "research that identifies issues" is the bureaucracy's
+  own founding force with a wallet. So research pays **on resolution,
+  not on discovery**: a worry *killed* with evidence (negative results
+  count — a measurement that settles a recurring question forever,
+  like the suite-cost page that ended four re-derivations of the same
+  number, is pure attention savings); a structural shortcoming *fixed
+  and shipped*; a debate *closed* by a measurement. Findings alone are
+  inventory, not income — they earn nothing until resolved, and the
+  rows they open still cost under the conservation law, so a research
+  pass that nets ten open findings is a net *debtor* until it clears
+  them. Equilibrium personality: tidy the world, settle questions for
+  good, then spend the earnings on the big ones.
+* **Realized-cost pricing: the frictionless-acceptance refund.** An
+  ask is charged what it actually consumed: a recommendation-with-
+  default accepted with a bare "yes" refunds most of its price (it
+  cost a veto-scan, not a deliberation); an ask that spirals costs
+  what it cost. Well-prepared genuine questions become cheap by
+  construction; the unprepared open-ended ask stays expensive — the
+  correct target. The ~90% acceptance rate says most asks trade at
+  the refunded price.
+* **Deficit is information, never refusal.** A broke agent with a
+  genuine question asks anyway; the ledger shows it and the Maintainer
+  reads the pattern. A zero balance that blocks a question would be
+  the refusing gate rebuilt out of play money. Your-lane questions —
+  science, real scope calls — are the budget's *purpose*; the routing
+  rules already ban at any price the asks that shouldn't exist.
 * **The ledger, denominated correctly.** The Decision header shows
-  *maintainer interactions consumed* and *net board items ±N* — not
-  tokens or hours, which measure agent effort, which is nearly free.
+  *maintainer interactions consumed* and *net board items ±N*; the
+  session reflection carries the running tally. No new machinery — the
+  moratorium applies to the economy too — and the ledger carries the
+  same sunset clause as the caps: if the numbers become theater, it
+  retires under the rule-removal pathway it helped fund.
 * **The governor** (unchanged): the weekly product-share gauge, read
   at goodnight, sets the next week's default posture.
 
