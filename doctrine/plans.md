@@ -11,6 +11,15 @@ Review-tier and structural-independence doctrine lives in
 `doctrine/dual-review.md`.  Proposal-lifecycle doctrine (triage,
 file moves, Response grammars) lives in `doctrine/proposals.md`.
 
+**The standard lane's change note also lives at `dev/plans/<slug>.md`**,
+reusing the status vocabulary and much of the machinery below without a
+parent proposal — see `doctrine/lifecycle.md` > "Three lanes, chosen by
+a closed triage procedure" for the triage that routes there, and the
+plan template for the note's own header fields, transitions, and
+warnings. This page's plan-review and code-review doctrine below
+applies to the deliberate lane's plan; the standard lane's own review
+and warning behavior is the note's own contract, not restated here.
+
 ---
 
 ## The plan lifecycle

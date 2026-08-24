@@ -94,6 +94,29 @@ is deliberate:
   happened in conversation and was never written down did not
   happen.
 
+## C0 — the blocking test, and C1 — the editor ends the loop
+
+Two rules govern when a review finding stops a change and who may close
+a review round. They apply across the lifecycle's lanes — the
+deliberate lane's proposal and plan review, and the standard lane's
+design and code review alike. The **editor** is whoever holds the
+artifact at that point in its lifecycle status — the author during
+revision, the Maintainer at Decision.
+
+**C0 is the blocking test, with explicit polarity**: *would shipping this
+cause damage that is hard to undo?* **Yes → blocking**; a blocking finding
+on the standard lane forces escalation to deliberate or an explicit
+recorded Maintainer disposition. No → `note` / `nit`, recorded, non-blocking.
+
+Full review weight remains on the deliberate lane, where every finding
+gets the complete review the lane already runs; C0 is what lets the
+standard lane stay light without becoming a place hard-to-undo damage can
+slip through unblocked.
+
+**The editor may end any loop at any time** over open findings by naming
+them (C1). A clearing verdict requires a whole-artifact read — cheap at
+two pages, which is the point.
+
 ## Decision-support Round-2 review
 
 Once an author has Responded and produced a revised proposal,

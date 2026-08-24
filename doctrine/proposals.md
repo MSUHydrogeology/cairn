@@ -154,32 +154,32 @@ deliberation.
 
 ---
 
-## Triage: trivial vs. non-trivial
+## Triage: three lanes, chosen by a closed triage procedure
 
-A trivial fix — a typo, a one-line bug, an obvious correction — is
-just made; it needs no proposal. Open a proposal (rather than just
-commit) when the change:
+**The canonical triage procedure — the three lanes, evaluated in
+order, and the defect-repair carve-out — lives in** `doctrine/lifecycle.md`
+**> "Three lanes, chosen by a closed triage procedure".** A proposal is
+opened only when that procedure's first rule assigns the
+**deliberate** lane: the change touches a high-risk surface
+`AGENTS.md` names, breaks or widens a contract, is release or security
+ceremony, is a major new feature, or the author or Maintainer elects
+it for anything else genuinely architectural. **Uncertainty resolves
+upward.**
 
-* Touches a public API or a config contract.
-* Introduces a new abstraction, class, or module.
-* Moves files / restructures a directory.
-* **Revives a deferred follow-up from `dev/PLANNING.md`** whose
-  execution is itself proposal-worthy under this triage rule (file
-  moves, public / config contract changes, new abstractions, or
-  non-trivial design tradeoffs) when the original proposal/plan named
-  only the trigger or revival condition and did not settle the design
-  choices. Approval of a trigger is not approval of a design. Small
-  pickable-cold queued items that are not otherwise proposal-worthy —
-  mechanical doc cleanups, single-file test additions, typo-class
-  fixes that happen to live in the queue — proceed under the normal
-  "just commit" path; revival of a queued item does not by itself
-  summon proposal review.
-* Has implementation tradeoffs you want a second opinion on before
-  baking it in.
+**Revives a deferred follow-up from `dev/PLANNING.md`** is a further
+deliberate-lane trigger when the original proposal/plan named only the
+trigger or revival condition and did not settle the design choices —
+approval of a trigger is not approval of a design. Small pickable-cold
+queued items that are not otherwise proposal-worthy — mechanical doc
+cleanups, single-file test additions, typo-class fixes that happen to
+live in the queue — proceed under the trivial lane; revival of a
+queued item does not by itself summon proposal review.
 
-Everything else — a new helper, a test, a typo fix, a docstring
-polish, a self-contained refactor — just commit. The proposal system
-is for "I want to bake this in for a while; let's check it first."
+Everything else that is not itself trivial takes the **standard
+lane** — a change note, not a proposal (`doctrine/lifecycle.md` >
+"Three lanes"). Genuinely trivial work — a typo, a one-line bug with a
+failing-test reproduction, a self-contained helper, a docstring polish
+— is just made, with no proposal and no change note.
 
 Once accepted, the implementation is **trivial** (a single commit, a
 single area, no follow-ups — implemented and the proposal archived
@@ -507,6 +507,13 @@ so a `<sha>` is referenceable):
 * **[F3]** accept (followup commit `<sha>`) — …
 
 ### Append one complete current contract with the Response, every time
+
+**This rule governs the proposal, the deliberate lane's own artifact —
+the standard lane's change note does not carry it** (`doctrine/lifecycle.md`
+> "Write once, restate never"). A proposal can run to hundreds of lines
+across several rounds, where a delta-only record forces the next reader
+to reassemble the contract from the whole history; a ≤150-line change
+note does not have that problem, so it is not asked to pay that cost.
 
 A Response disposes findings; it does not restate the design. On its own it
 leaves the next reviewer to reassemble the contract out of the whole history —

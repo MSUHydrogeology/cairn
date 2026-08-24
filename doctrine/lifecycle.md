@@ -8,10 +8,15 @@ state transition is its own commit, and the deliberation is
 append-only, so the record cannot be quietly rewritten after the
 fact.
 
-Two artifacts carry a change: a **proposal** (the deliberation —
-what to do, and why) and, for non-trivial work, a **plan** (the
-execution — how it was carried out, and that it was verified).
-They have separate lifecycles.
+A change is triaged into one of **three lanes** before any artifact
+opens — trivial (just commit), standard (a change note), or
+deliberate (today's two-stage) — by the closed procedure in "Three
+lanes, chosen by a closed triage procedure" below. The deliberate lane
+carries two artifacts: a **proposal** (the deliberation — what to do,
+and why) and, for non-trivial work, a **plan** (the execution — how it
+was carried out, and that it was verified). They have separate
+lifecycles; the standard lane's change note reuses the plan's
+lifecycle below without a parent proposal.
 
 ## Why a recorded lifecycle
 
@@ -31,6 +36,70 @@ trustworthy:
 * **Commit-mediated.** The record lives in version control beside
   the code. It survives context loss and contributor handoff, and
   it is timestamped by the same history as the change it explains.
+
+## Three lanes, chosen by a closed triage procedure
+
+Not every change carries the same weight, and routing all of them
+through one container was expensive for what most of them are. A
+change is triaged into exactly one of three lanes, evaluated **in
+order** — the first match assigns the lane:
+
+1. **Deliberate** if the change (a) touches a high-risk surface
+   `AGENTS.md` names, (b) breaks or widens a contract, (c) is release
+   or security ceremony, or (d) is a **major new feature** — a new
+   user-facing capability, module, or subsystem, because *what to
+   build* is a structure question, not an implementation one. One
+   carve-out crosses this rule: a **defect repair** — all three of
+   (i) a failing-test reproduction, (ii) restores documented or
+   intended behavior with no contract change, (iii) the touched
+   surface's own test family runs in the loop — takes the trivial
+   lane even on a named surface. An edit that changes what a ceremony
+   or surface *does* is not a defect repair and stays deliberate,
+   whether or not a public contract moved.
+2. **Trivial — just commit** for defect repairs meeting the
+   carve-out and the existing just-commit class (a typo, a one-line
+   bug fix, an obvious correction): code + test + one code review, no
+   proposal.
+3. **Standard — the change note** for everything else: a change
+   whose shape is already settled but that is not itself trivial. One
+   artifact replaces proposal *and* plan — a file opening with *Why /
+   What / Approach / Verification / Risk*, target ≤150 lines —
+   reusing the plan status vocabulary below without a parent
+   proposal. Its header fields, transitions, and warnings are the
+   standard-note contract carried in the plan template.
+
+The **deliberate** lane is today's two-stage proposal-then-plan
+machinery below, unchanged: review floors — who is independent enough
+to review — stay as declared, including the External floor on
+**proposal** review (`dual-review.md`); a floor is not a reviewer's
+lever. Election upward to the deliberate lane is open to the author or
+the Maintainer for anything else genuinely architectural.
+**Uncertainty resolves upward**, and only the Maintainer may override
+the procedure's result, on the record.
+
+### Write once, restate never — the standard lane's contrast
+
+The deliberate lane's proposal carries a bright-line rule: every
+Response appends **one complete current-contract revision**, never a
+delta (see `proposals.md` > "Append one complete current contract with
+the Response, every time"). That rule exists because a proposal can
+run to hundreds of lines across several rounds, and a delta-only
+record forces the next reader to reassemble the contract out of the
+whole history.
+
+The standard lane does not carry that cost, because it does not have
+that problem. A change note is short by construction (target ≤150
+lines), so `git log` already preserves every prior state at zero
+authoring cost, and the silent-section-loss failure that restatement
+guards against cannot hide in two pages. Its operative sections (Why /
+What / Approach / Verification / Risk) are **revised in place** while
+the note is in design; reviews, responses, and decisions **append**
+and are never edited, exactly as the deliberate lane's review record
+already does. **Write once, restate never** names the difference
+precisely: the note is written once and edited in place until review
+closes it, not rewritten in full at every round. The deliberate lane
+keeps full append-only, including the mandatory restatement, as
+today.
 
 ## The lifecycle as a Registered Report
 
@@ -55,9 +124,10 @@ goalposts sit in an append-only commit that predates the work.
 
 ## The proposal lifecycle
 
-A proposal is the deliberation artifact for a substantive change —
+A proposal is the deliberation artifact for the **deliberate lane** —
 a new abstraction, a cross-cutting refactor, a contract change,
-anything worth a second opinion before it is baked in.
+anything worth a second opinion before it is baked in, or anything
+the closed triage procedure above routes there.
 
 ```mermaid
 flowchart LR
