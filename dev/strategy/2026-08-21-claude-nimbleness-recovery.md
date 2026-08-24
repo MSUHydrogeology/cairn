@@ -421,63 +421,76 @@ isn't the point of 1.2 — the author deciding is); and the numbers
 **sunset** under 2.4 once the median artifact settles — scaffolding for
 a culture reset, not architecture.
 
-## The missing force — a cost that pushes back
+## The missing force — a market for maintainer attention
 
-(Maintainer diagnosis, 2026-08-24: Cairn has *"only really one basic
-driving force: discover issues … through review. There is nothing that
-fundamentally pushes back in the other direction — there is no cost to
-deliberation. Without a cost, this was destined to occur."*)
+(Maintainer diagnosis, 2026-08-24, in two parts. First: Cairn has
+*"only really one basic driving force: discover issues … through
+review. There is nothing that fundamentally pushes back in the other
+direction — there is no cost to deliberation."* Second, correcting this
+section's first draft: elapsed time is not the scarce resource —
+**maintainer attention is**; and a naive price on attention creates an
+incentive to *defer* — one removal proposal spawning ten follow-ups, a
+chain reaction ending in *"a Hiroshima sized PLANNING.md."*)
 
-The diagnosis is structural, and it is new to the agent era. Human
-bureaucracies are naturally bounded by payroll, boredom, and careers —
-every prior methodology was implicitly disciplined by the scarcity of
-human attention. Agents removed that scarcity, and review is the
-perfect work for a compliance-shaped optimizer: findings are legible,
-numbered, defensible wins; their cost is diffuse and invisible; and a
-finding can never be shown not-worth-raising, because the lighter path
-never runs. A system with one legible currency, where that currency
-only ever argues for more deliberation, converges on what Cairn became.
+The structural point is new to the agent era: human bureaucracies are
+bounded by payroll and boredom — the implicit scarcity of human
+attention disciplined every prior methodology. Agents removed that
+scarcity, and review is perfect work for a compliance-shaped optimizer:
+findings are legible wins, their cost diffuse, and a finding can never
+be shown not-worth-raising because the lighter path never runs. The one
+resource still genuinely scarce is the Maintainer's attention — and it
+is priced at zero, so demand is unbounded. Worse, any naive tax on
+attention gets externalized onto the backlog: a deferral converts a
+present, visible ask into a future, invisible liability — a promissory
+note drawn on future attention, issued free. Call the follow-ups
+spawned per item processed **R**: the system explodes whenever R > 1,
+and the 2,513-line board is the accumulated unpriced debt.
 
-Design constraints for the counterforce: price deliberation in the
-genuinely scarce currency (Maintainer attention and motivation, with
-tokens/time as proxies); make cost as legible as findings; charge for
-*delay*, not for care (Reinertsen — the queue is the cost, P3); and
-keep the ledger advisory with a human enforcing (P4, P8 — a scored
-metric handed to compliance-maximizers is the next zombie). Three
-mechanisms, strongest first:
+Two coupled rules price both the ask and the deferral; uncoupled,
+either one just pumps mass into the other pool:
 
-* **Decay — every deliberative state gets a clock, and expiry resolves
-  *forward*.** Apache's lazy-consensus precedent: silence past the
-  clock is consent. A review not delivered in N days records
-  `no objection`; a stalled `awaiting-decision` resolves to the
-  author's recommendation with dissent noted; an unclosed finding
-  closes on the author's defense. Nothing expires backward into more
-  process. This inverts the physics: work stops waiting on
-  deliberation, and delay prices itself — the work escapes. Machinery
-  cost: none (dates already exist in headers).
-* **The cost line — every lifecycle append states what it cost, and
-  every Decision sees the total.** One self-reported line per
-  review/response/revision (tokens or hours, lines added); the
-  Decision header carries the tally next to the finding count ("3
-  rounds, ~800k tokens, 1,900 lines of deliberation, 40-line diff").
-  No thresholds, no enforcement — the number appears where the
-  decision is made, which is where it changes behavior.
-* **The governor — the product-share gauge sets the default posture.**
-  The weekly dev/machinery/product table, read at goodnight, as a
-  thermostat: product share below the Maintainer's floor tightens the
-  next week's default posture (single-round, C0-blocking-only, shorter
-  decay clocks); above it, normal. The system gains a signal that
-  pushes back in proportion to how far deliberation has crowded out
-  the mission.
+* **The attention market — fixed supply, typed prices, unfunded asks
+  resolve forward immediately.** The Maintainer sets a per-session
+  interaction budget. Asks are priced by format, per the measured cost
+  structure (~90% acceptance): an **open question** is expensive, a
+  **recommendation-with-default** cheap, an **FYI-acting-unless-
+  stopped** nearly free. Agents rank their asks against the budget —
+  and an ask that misses the cut does not queue: **it resolves to the
+  author's call, now, with reasoning recorded.** Non-purchase means
+  author-decides, never deferral, so the queue structurally cannot
+  grow, and agents compress toward cheap formats because a trivial ask
+  displaces their own more important one.
+* **The conservation law — R < 1, enforced at the board.** The board
+  has a fixed row budget: adding a row evicts one (merge, close now,
+  or outrank — the author argues and settles it). Every proposal,
+  review, and Decision states its item balance — *opened N, closed M*
+  — next to its finding count. Rows are **self-liquidating**: an item
+  no live work re-cites within its window expires; renewal is a
+  purchase from the Maintainer's wallet, so a standing row is actively
+  paid for, never parked free. A follow-up its raiser would not rank
+  above a standing row is a decline-with-dissent, not a follow-up.
+* **The ledger, denominated correctly.** The Decision header shows
+  *maintainer interactions consumed* and *net board items ±N* — not
+  tokens or hours, which measure agent effort, which is nearly free.
+* **The governor** (unchanged): the weekly product-share gauge, read
+  at goodnight, sets the next week's default posture.
 
-Held deliberately: per-artifact deliberation budgets (machinery-shaped;
-revisit if the three above prove insufficient) and reviewer calibration
-scores (a P8 trap for agent reviewers; revisit only if finding quality
-degrades). And the honest limit: none of this is a market. The only
-external cost signal Cairn has ever had — an adopter filing four issues
-— disciplined priorities better than any internal mechanism. The
-counterforce that matters most long-term is Tier 3: build for the
-people whose leaving is the real price.
+**Transition: one board bankruptcy.** The conservation law cannot be
+installed atop an unpriced backlog. One write-down: rows to one line
+each, a cull to the cap, everything below the line expires rather than
+migrates.
+
+The forward-resolution principle from this section's first draft
+survives in general form — not "time passes → resolve forward" but
+**"attention not purchased → resolve forward"** (the decay clock was a
+special case aimed at the wrong variable, elapsed time, which costs the
+Maintainer nothing). Held deliberately, as before: per-artifact token
+budgets and reviewer calibration scores (P8 traps for agent
+reviewers). And the honest limit stands: none of this is a real
+market — the only external price signal Cairn has ever had was an
+adopter filing four issues, and it disciplined priorities better than
+any internal mechanism. Tier 3 remains the counterforce that matters
+most: build for the people whose leaving is the real price.
 
 ## What would falsify this note
 
