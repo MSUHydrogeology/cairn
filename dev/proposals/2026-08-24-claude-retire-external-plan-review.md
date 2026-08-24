@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-24
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Touches**: `AGENTS.md` + `templates/core/AGENTS.md`;
 `doctrine/dual-review.md`, `doctrine/plans.md`, `doctrine/proposals.md`,
@@ -262,3 +262,169 @@ not run the full suite; this is a pre-implementation review.
 
 **Second-round recommendation**: recommended. Security-plan review and the
 accepted-artifact migration must be testable before this subtraction is decided.
+
+## Response + Revision 1 -- Claude -- 2026-08-24
+
+All five findings **accepted**; RERP-01, -03, and -04 were reproduced before
+acceptance (`normalize_required_tier` reads the first word of the first
+parenthesised group — verified at `tools/lifecycle_planner.py:668-672`;
+`convergent-lifecycle` accepted at `47315b6`; the stated governing-surface
+grep returns **17** files, and zero active plans declare `required(External)`
+— `grep -H 'Plan review' dev/plans/*.md` matches none).
+
+| finding | disposition |
+|---|---|
+| RERP-01 | **Accept.** §2 of the contract below defines the security-plan review as a distinct, testable obligation with its own record; an ordinary Internal review provably cannot clear it. |
+| RERP-02 | **Accept.** The removal is type-scoped and the three legacy classes get separate dispositions, each with a named oracle; a warning never manufactures a different artifact type. |
+| RERP-03 | **Accept.** The hypothetical is withdrawn; §4 is a commit-bound migration quoting the Maintainer's authorization, exercising exactly the recorded-waiver path the accepted sibling's own amendment defines. |
+| RERP-04 | **Accept.** Count corrected to 17; literal command and file list published; three behavioral oracles and the mutations the grep misses are specified. |
+| RERP-05 | **Accept.** Security preflight answered below. |
+
+On `Plan readiness: DISTINCT REVIEW REQUIRED`: under the now-accepted
+`convergent-lifecycle` contract, the token is a preserved recommendation and
+the tier is the Maintainer's to assign at the Decision.
+
+### Withdrawn / superseded commitments
+
+* The **24-file** falsification baseline — measurement error (broader roots
+  than the stated scope); corrected to **17** under the published command.
+* *"a legacy `required(External)` or `Plan readiness:` line in an active
+  artifact warns and is read as `required(Internal)`"* — withdrawn; the two
+  grammars are different artifact types and get the class dispositions in §3.
+* The *"if this proposal is accepted first"* relationship hypothetical —
+  withdrawn; superseded by §4's commit-bound migration.
+* `required(Internal, security)` as a lens annotation — superseded by §2's
+  defined obligation.
+
+---
+
+## THE COMPLETE CURRENT CONTRACT (Revision 1)
+
+Supersedes the opened Proposal section in full. Origin, header fields, and
+Rationale stand as opened.
+
+### 1. One rule
+
+A plan review is an **Internal, fresh-context review — always**. External
+plan review ceases to exist as a tier, requirement, recommendation slot, or
+escalation target. The proposal template's `Plan readiness` slot is deleted;
+reviewers record no plan-tier recommendations of any kind. Unchanged:
+the External floor on deliberate-lane **proposal** review; the code-review
+floor (never the implementing agent); Security Reviews wherever they attach
+to proposals or code; and the Maintainer's option to ask any reader for
+anything — a choice is not a tier.
+
+### 2. The security-plan review is an obligation, not an annotation (RERP-01)
+
+A plan whose surface or triggers require security treatment declares
+`required(Internal, security)`, which is a **distinct obligation**: it is
+satisfied **only** by an appended `## Security review (Internal)` record —
+authored by a fresh-context same-agent-type session acting in the Security
+Review role (the role's high-capability floor and the security-review
+protocol, including its trust-boundary checklist, apply unchanged) — and it
+is **not** satisfied by an ordinary Internal review record, however clean.
+The planner parses the second token as an obligation, not decoration.
+Violation disposition follows the accepted `convergent-lifecycle` lanes
+(warn on the standard lane; the deliberate lane keeps today's behavior).
+**Pinned directed pair**: (a) security-declared plan + ordinary Internal
+review → the obligation reports unmet; (b) the same plan + a Security review
+(Internal) record → clears. Proposal-stage and code-stage Security Review
+triggers are untouched.
+
+### 3. Type-scoped removal, three legacy classes (RERP-02)
+
+`External` remains valid vocabulary where it survives: **proposal** reviews
+and **archived** records, including longitudinal metrics (where event-record
+handling intersects the accepted `retire-event-blocks` contract, that
+contract governs). Only the **plan-tier** meaning retires. Classes:
+
+* **Active plans declaring `required(External)`** — measured **zero** at
+  this revision (`grep -H 'Plan review' dev/plans/*.md`, command committed
+  with the change). Should one exist at implementation time, it is warned
+  and the **Maintainer re-declares its tier at its next transition** — never
+  silently rewritten.
+* **Active proposals carrying `Plan readiness` records** — the token is a
+  preserved recommendation (already the accepted rule); the derived plan's
+  tier is assigned at the Decision. The readiness field is removed from the
+  template, not from history.
+* **Archives** — immutable, parse as today, draw no warnings.
+
+**Behavioral oracles** (each with a mutation the grep cannot see): (a) an
+archived External *proposal* review still parses in `scan` and metrics —
+catches deleting the shared vocabulary instead of scoping it; (b) a
+readiness line in an active proposal is reported as recommendation, never as
+a plan declaration — catches grammar conflation; (c) a new plan declaring
+`required(External)` draws the legacy warning — catches silent acceptance.
+
+### 4. Commit-bound migration for `convergent-lifecycle` (RERP-03)
+
+`convergent-lifecycle` was **accepted** (`47315b6`); its Revision 2 binds
+its derived plan to External review under the then-current rule, and its
+floors rule makes a declared `required(External)` non-downgradable — *"short
+of the standing deviation/allowance process,"* which its own amendment
+defines as **the Maintainer, on the record**. This proposal's Decision, if
+acceptance, **is that recorded waiver**, authorized by the Maintainer's
+origin direction, verbatim: *"It is not, and should not ever, be required."*
+Effect, bound to the accepted commitments it supersedes: the derived plan of
+`convergent-lifecycle` declares `required(Internal)`; its separately
+declared Security Review for the marker/conftest work **survives unchanged**
+and is conducted per §2's form; nothing else in its accepted scope moves. If
+this proposal is rejected, the External obligation stands as accepted.
+
+### 5. Evidence / verification plan (RERP-04 folded in)
+
+Doctrine and template edits pass the claim, link, and neutrality gates. The
+falsification instrument, literally:
+`grep -rl 'Plan readiness\|required(External)' AGENTS.md doctrine templates
+dev/proposals/_template.md dev/plans/_template.md tools scripts bootstrap |
+grep -v archive` — **17 files pre-change** (list committed as a fixture with
+the implementing change; unclassified paths printed), **empty post-change**,
+with §3's three oracles as the behavioral half the grep cannot supply. The
+planner change carries the §2 directed pair and the §3 class tests across
+`scan`, `next`, and metrics.
+
+#### Security preflight (RERP-05)
+
+* **S1 — Who supplied it?** The security-obligation token and its satisfying
+  record are both repo-committed and reviewed; the record is appended by the
+  Security-Review-role session, not by the plan's author — the classifier
+  (the declared token) and the satisfier (the review record) have different
+  authors, so no artifact clears its own obligation.
+* **S2 — Can it fail?** Mutation: satisfy a `required(Internal, security)`
+  plan with an ordinary Internal review record → the obligation must report
+  unmet (§2 pair (a); run and recorded by the implementing change). Today
+  this mutation *passes silently* — that is RERP-01, and the test exists to
+  make it impossible to reintroduce.
+* **S3 — What fires it, over what?** `python tools/lifecycle_planner.py
+  scan` (and the shipped twin) over active plans; the directed pair and
+  class oracles run in `bootstrap/tests/test_lifecycle_contract.py`'s
+  updated suite under the standing Boundary-B command.
+* **S4 — Which way does it break?** An unrecognized or malformed tier token
+  warns and leaves the obligation **unmet** (fail-closed toward more review,
+  not less); archived records are excluded from warning paths entirely, so
+  the fail-closed direction cannot retro-flag history.
+* **S5 — Who still wins?** An attacker with trunk commit access can append a
+  fabricated Security-review record; that class is closed by review of the
+  record's attribution and commit authorship (enumeration, not
+  construction), unchanged from today's exposure for every review kind.
+  The implementation itself changes lifecycle enforcement and takes the
+  full current-contract Boundary B.
+
+### 6. Archives are immutable
+
+As opened: recorded readiness tokens and past External plan reviews remain
+readable history, refused nowhere.
+
+### Signals the change is wrong
+
+As opened, plus: the §2 obligation is routinely satisfied late or nagged
+about — the security-plan form is too heavy for its blast radius and needs
+its own look, not silent skipping.
+
+### Reviewer brief (round 2)
+
+Closure verification: RERP-01 on §2's record grammar and pinned pair;
+RERP-02 on §3's classes and oracles; RERP-03 on §4's quoted authorization
+and named superseded commitments; RERP-04 on the corrected instrument;
+RERP-05 on the preflight. The Maintainer assigns the derived plan's tier at
+the Decision.
