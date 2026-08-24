@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-21
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: high-assurance (a `default-on` module adopters install)
 **Supersedes**: `2026-08-11-claude-metrics-events-not-prose` (accepted;
 implemented and archived 2026-08-21 as plan `metrics-events-not-prose`). Its
@@ -143,3 +143,120 @@ forward-only precision over data that does not exist**. Attack that. The
 measurement tables are reproducible with the commands in Context; re-run them
 rather than trusting them, and if the 28/38-versus-46/46 comparison is unfair
 in a way I have not seen, that is the finding worth having.
+
+## Review -- Codex (External) -- 2026-08-24
+
+**Model**: GPT-5.6 (Codex)
+
+Reviewed commit: b586a3f45d2c9de6dfd656732b8ffe8233b52dd4
+Target: the complete opened contract, especially the replacement schema, deletion surface, verification plan, and plan-review routing
+Prior findings: none
+Assurance path: high-assurance
+**Tier**: External
+**Findings**: raised (5 blocking)
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+The core observation holds: the event reader cannot recover the historical
+record it was installed after, and an instrument must not prevent the work it
+observes. Returning to a bounded structural reader is a defensible direction.
+The proposal also correctly distinguishes measurable lifecycle structure from
+prose volume and commits to a non-enforcing reporting posture.
+
+### Findings
+
+#### RTE-01 — BLOCKING: the replacement leaves the event-derived output schema without a contract
+
+The proposed replacement names only review-round counts. The current proposal
+schema also sources `reviewer_agents`, `cross_agent_type_review`,
+`external_tier_review`, and `response_models` from reconciled event blocks; the
+plan schema separately sources `plan_review_rounds` and `code_review_rounds`.
+Those identity, tier, and model fields are the very publication-relevant zeros
+the Context identifies, but neither Proposal item 2 nor the verification plan
+says whether each is restored from defined text, deliberately removed from the
+public schema, or remains blank. “No column currently populated becomes less
+so” cannot protect a column presently empty everywhere.
+
+Give every current event-derived output column one explicit disposition:
+retained with its exact parser and blank/unknown behavior, or removed with the
+adopter-facing schema migration. Include it in the before/after table and in
+the module doctrine. The Decision cannot leave an implementer to choose which
+part of Dual-Review evidence Cairn retains.
+
+#### RTE-02 — BLOCKING: deleting `events.py` is not a two-file removal or a one-function replacement
+
+Both package initializers import `events`; both CLIs catch its exception types;
+both extractors and snapshot modules use its reconciliation types; and the
+scaffold's `lifecycle-metrics` InstallSpec installs it. The lifecycle planner
+and its byte-identical twin still preview `cairn-event-v1` blocks, while both
+shipped proposal/plan templates teach authors to emit them. The deletion also
+changes the three install/count pins: the manifest-source count 57, manifest
+row count 115, and on-disk template count 53 all explicitly include this file.
+
+Add the complete source/template pair set, `bootstrap/_scaffold/config.py`,
+the planner pair, both template pairs, all affected test homes and count pins,
+and every live adopter-facing grammar reference to `Touches` and the execution
+contract. State which event tests are deleted, replaced, or retained. Without
+that inventory the promised one-commit twin rule cannot cover the installed
+module, and the scaffold can ship an import of a file it no longer installs.
+
+#### RTE-03 — BLOCKING: the heading-count acceptance criterion can pass while reporting the wrong history
+
+“At least 37/46” populated rows tests coverage, not correctness: assigning one
+review to every plan passes it. The two alleged false positives are unnamed and
+their exclusion grammar is not specified. The Context also says its commands
+are reproducible but supplies none. Against the unchanged corpus at the
+reviewed commit, the repository's existing dated-heading patterns yield 43/46
+plans with a plan-review heading and 46/46 with a code-review heading, not the
+table's 45/46 and 37/46. A different intended grammar may be valid, but it must
+be stated and tested rather than inferred from a hand-filtered aggregate.
+
+Define the exact accepted heading grammar and exclusions, including responses,
+containers, dispositions, security passes, and historical H2/H3 forms. Pin a
+corpus oracle or named fixture table with expected per-artifact counts and
+directed false-positive and false-negative mutations; the aggregate population
+table is then a readable consequence, not the only check.
+
+#### RTE-04 — BLOCKING: the proposal cannot waive its derived plan or its independent sequencing review
+
+This implementation deletes a default-on installed file, rewires a public
+metrics schema, changes scaffold manifest rows and count pins, replaces
+extractor behavior, and updates templates, planner output, tests, and doctrine.
+It therefore satisfies several independent plan-triage conditions (multiple
+files/areas and multi-stage sequencing). The strategy note is not a Maintainer
+Decision authorizing a `not required` plan review, and the opened header's
+claim that this is a module deletion plus one function is contradicted by the
+live imports and manifest.
+
+Open a plan with the full implementation and verification mapping. This review
+records `DISTINCT REVIEW REQUIRED`, so that plan must declare
+`required(External)` rather than bypassing the independent sequencing read.
+
+#### RTE-05 — BLOCKING: the required security preflight is absent
+
+The proposal changes parsing behavior and the default-on install contract, a
+high-risk surface named in `AGENTS.md`, but includes neither the five written
+preflight answers nor the required explicit N/A statement. The absence matters
+here: a heading parser must state what artifact text supplies it, how malformed
+or ambiguous headings fail, which real command exercises the installed tool,
+and how deleting the history reader changes the no-git and malformed-record
+paths. Those are design decisions, not implementation commentary.
+
+Add the applicable five-question preflight, with mutations that falsify the
+new counter and the install outcome. If the author concludes no trust boundary
+is touched, record the template's required N/A sentence and substantiate it
+against the install-contract trigger.
+
+### Coverage
+
+Covered: the full opened proposal; the accepted `metrics-events-not-prose`
+contract it supersedes; the live metrics extractor, package initializer, CLI,
+snapshot reader, scaffold InstallSpec, planner previews, and their byte-identical
+twins; the three manifest/count pins; the shipped proposal and plan templates;
+and the existing event test module. Targeted probes: the read-only metrics
+corpus walk and the dated-heading counter over all 46 plans; byte-parity checks
+for the affected twins. Not covered: an implementation of the new heading
+reader, because the proposal does not yet specify one. Second-round
+recommendation: **recommended** after a complete revision closes RTE-01 through
+RTE-05.
