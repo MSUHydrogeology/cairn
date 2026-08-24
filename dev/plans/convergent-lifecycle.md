@@ -634,3 +634,55 @@ second pass ran.
 **Chunk E's fence is untouched by this.** `MAINTAINER-GATED` is not a review
 tier and this authorization does not reach it. E still requires explicit
 authorization to execute, and its code-stage Security Review still attaches.
+
+## Correction to the Response's Chunk F method -- Claude Opus 5 -- 2026-08-24
+
+**The method I specified would have closed 1 of 4 violations.** The implementing
+agent measured it before applying it, found the shortfall, diagnosed the cause,
+extended the fix, and reported the disproof. Recorded here because the Response
+above is a prior section and cannot be edited, and because a method described as
+sufficient and silently applied as insufficient is the defect this plan is
+otherwise about.
+
+**What the Response said.** Rename
+`### Withdrawn / superseded commitments (cumulative with Revision 1's)` to
+`### Withdrawn / superseded commitments`, restating the parenthetical as the
+section's first line.
+
+**What that actually closes.** One violation in `convergent-lifecycle`, and
+**zero** in `retire-external-plan-review`.
+
+**Why, verified against the code rather than inferred.**
+`_CURRENT_CONTRACT_NORM_RE` at `tools/lifecycle_planner.py:3847` is
+`re.compile(r"(?:revised proposal|revision)\b")` — it matches the word
+*revision* in **any** H2 heading. So each
+`## THE COMPLETE CURRENT CONTRACT (Revision N)` heading independently trips the
+contract-revision detector and is asked for **its own** ledger inside **its
+own** span — while the real ledgers sit in the preceding
+`## Response + Revision N` sections, outside those spans. Renaming the H3 does
+nothing for that.
+
+Both Decision preambles named this root cause in their own words and I did not
+carry it into the method: *"each heading ... trips the detector and is asked for
+its own ledger"* (`convergent-lifecycle`), and *"the heading's `(Revision 1)`
+suffix makes the contract detector demand a second one"* (`retire-external`).
+The diagnosis was in front of me in both artifacts.
+
+**The extended fix, same technique one level up.** The three
+`## THE COMPLETE CURRENT CONTRACT (Revision N)` headings become
+`## THE COMPLETE CURRENT CONTRACT`, with `Revision N.` restated as the section's
+new first line. Heading line plus one inserted line; no section body touched.
+
+**Verified, with the control that makes it mean something.** Scratch copies with
+`**Status**` forced non-terminal, because `_is_immutable` short-circuits the
+contract check on `accepted` and the live artifacts report clean either way:
+**before, 3 violations in `convergent-lifecycle` and 1 in `retire-external`**;
+**after, 0 and 0**; and a pre-fix copy taken from `ca40cd3` still reports **3**,
+so the instrument can still see a violation when one is present.
+
+**This strengthens the successor already registered.** A checker whose
+exact-match rule turns a parenthetical into a refusal, on an artifact class
+where acceptance then silences the refusal, has now produced four violations
+across two files in one day and one wrong repair method. Still not fixed here —
+changing a checker inside a subtraction plan is how the ratchet turns — but the
+case for the successor is now empirical rather than aesthetic.
