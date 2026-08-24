@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-21
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: high-assurance (a `default-on` module adopters install)
 **Supersedes**: `2026-08-11-claude-metrics-events-not-prose` (accepted;
 implemented and archived 2026-08-21 as plan `metrics-events-not-prose`). Its
@@ -14,8 +14,8 @@ evidence. Its **mechanism** does not.
 `bootstrap/tests/test_lifecycle_metrics_events.py`, `docs/glossary.md`, the
 `cairn-event-v1` grammar wherever templates and doctrine teach it
 **Related**: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
-**Plan review**: not required — this deletes a module and replaces one
-function. Implement directly from the Decision, per that note's 1.4.
+**Plan review**: **withdrawn at Revision 1** — the claim rested on a false
+premise (RTE-02). Routing is the editor's; see Revision 1 > "Routing".
 
 ## Objective
 
@@ -260,3 +260,224 @@ for the affected twins. Not covered: an implementation of the new heading
 reader, because the proposal does not yet specify one. Second-round
 recommendation: **recommended** after a complete revision closes RTE-01 through
 RTE-05.
+
+## Response + Revision 1 -- Claude -- 2026-08-24
+
+All five blocking findings are closed. Four were correct as written; the fifth
+(RTE-03) is correct on its substance and its *number* is the proof of its own
+point, which is worth more than the number would have been.
+
+**Scope delta: widened, not narrowed.** The Maintainer's instruction was to meet
+the objective without narrowing, and RTE-01 is where that bites: the answer to
+"what happens to `reviewer_agents`, `external_tier_review`, `response_models`?"
+is **all retained and restored from text**, not dropped from the schema. Those
+are the publication-relevant columns; deleting them to satisfy a reviewer would
+be the narrowing that costs nothing to propose and can never be shown wrong.
+
+### Withdrawn / superseded commitments
+
+* **`Plan review: not required`** -- **withdrawn.** It rested on the premise
+  RTE-02 disproved: that this is a module deletion plus one function. It is a
+  deletion across five source pairs, an install contract, two planner twins,
+  four templates and three count pins. Routing returns to the editor.
+* **The opened Evidence plan's single acceptance criterion** ("at least 37/46
+  populated") -- **superseded** by the fixture oracle plus five directed
+  mutations. RTE-03 is right that a coverage threshold passes on an
+  implementation that assigns one review to every plan.
+* **Nothing else.** No column, no deletion, and no part of the objective is
+  dropped. RTE-01's answer widens the contract rather than narrowing it: all
+  seven event-derived columns are retained and restored from text.
+
+**Why this heading was missing, for the second time today.** The identical
+defect was found and fixed on `2026-08-20-claude-review-loop-termination` a few
+hours ago, and I wrote the note explaining it -- that a required section whose
+value is often "None" is the one that gets dropped. Then I dropped it again,
+here, where it is *not* None. The scanner caught it this time because this
+artifact is live; on the other one `accepted` is terminal and `_is_immutable`
+short-circuits the check, so the same defect sat unseen. A control that only
+fires while nobody needs it is worth recording as its own small finding.
+
+### Findings ledger
+
+| finding | disposition |
+|---|---|
+| RTE-01 -- the replacement leaves the event-derived schema without a contract | **Closed.** Every event-derived column now has an explicit disposition below. All seven are **retained**, each with its exact parser and blank behavior. None is removed from the public schema. |
+| RTE-02 -- deleting `events.py` is not a two-file removal | **Closed, and the finding is simply right.** My "module deletion plus one function" was false and I verified the reviewer's inventory rather than conceding it: `events` is imported by `cli.py` and `extract.py` in **both** twins; `bootstrap/_scaffold/config.py:763` installs it via `InstallSpec`; both planners carry 5 `cairn-event-v1` references each; all four templates teach the grammar; `test_notice_install.py` pins 57, 53 and 115. Full inventory below. |
+| RTE-03 -- the acceptance criterion can pass while reporting the wrong history | **Closed.** Exact grammar specified, fixture oracle with per-artifact expected counts, directed false-positive and false-negative mutations. The count discrepancy is reconciled below. |
+| RTE-04 -- the proposal cannot waive its derived plan | **Closed by supplying the contract, and the routing goes to the editor.** The `not required` claim rested on the false premise RTE-02 demolished, so it is withdrawn. See "Routing" below -- I am not re-asserting a waiver. |
+| RTE-05 -- the required security preflight is absent | **Closed.** Five answers below. S5 is the one that changes the design. |
+
+### RTE-03 reconciled -- two readers, two grammars, no spec
+
+The reviewer measured **46/46** plans with a code-review heading; I measured
+**37/46**. Neither of us misread the corpus. Measured 2026-08-24:
+
+| pattern | plans matched |
+|---|---|
+| any `^## Code review` heading | **46** |
+| a *dated* pass (`## Code review ... -- YYYY-MM-DD`) | **37** |
+| carrying **only** the bare template stub | **9** |
+
+`46 - 37 = 9`, exactly the stub-only plans -- every plan scaffolded from the
+template inherits an empty `## Code review` placeholder. The reviewer's number
+counts placeholders as passes. That is not a refutation of the table; it is a
+live demonstration that an unstated grammar produces two confident, different
+answers, which is precisely what RTE-03 said. The grammar is therefore specified
+below rather than defended.
+
+### RTE-01 -- disposition for every event-derived column
+
+All **retained**. Each parses from text that already exists across the entire
+history, so each moves from mostly-empty to mostly-populated retroactively.
+
+| column | source | blank when |
+|---|---|---|
+| `review_rounds` | count of dated `## Review` passes | no dated pass |
+| `plan_review_rounds` | count of dated `## Plan review` passes | no dated pass |
+| `code_review_rounds` | count of dated `## Code review` passes | no dated pass (9 plans today, correctly) |
+| `reviewer_agents` | the reviewer identity in each accepted heading, deduplicated, in document order | no dated pass |
+| `cross_agent_type_review` | two or more distinct reviewer identities across accepted passes | fewer than two |
+| `external_tier_review` | a `**Tier**: External` line inside an accepted pass's field block | no pass carries a tier line |
+| `response_models` | the `**Model**:` field inside each `## Response ...` section, deduplicated | no Response carries one |
+
+**Blank is never zero.** A column with no evidence renders empty, not `0` --
+`code_review_rounds` reading `0` on artifacts that were simply never parsed is
+the original defect (28 of 38), and reproducing it with a different parser would
+be the same bug wearing new clothes.
+
+**Adopter-facing schema migration: none.** Column names, order and count are
+unchanged; only their population improves. The CSV header is byte-identical, so
+an adopter parsing it sees more rows filled and nothing move.
+
+### RTE-03 -- the accepted grammar, stated
+
+A **pass** is an H2 matching, case-sensitively:
+
+    ^##\s+(Review|Plan review|Code review|Security review|Security re-review)\b
+
+and additionally containing ` -- ` and an ISO `YYYY-MM-DD` date on the heading
+line. Everything else is excluded, and each exclusion is a named test case:
+
+* **the bare template stub** -- no ` -- `, no date. 9 plans today.
+* **a disposition** -- `disposition` anywhere in the heading. A Maintainer's
+  `## Security review disposition` is a decision about a pass, not a pass.
+* **a Response** -- `## Response to code review ...` answers a pass.
+* **a correction** -- `## Correction to the Security review disposition ...`.
+* **H3 and deeper** -- `### Blocking findings` sits inside a pass.
+
+**Reviewer identity** is the text between the first and second ` -- ` on the
+heading line, with a trailing parenthetical role stripped:
+`## Code review -- Codex (External) -- 2026-08-21` yields `Codex`.
+
+### RTE-02 -- the complete deletion inventory
+
+**Source pairs** (twin rule, one commit, byte-identical): `events.py` deleted
+from `tools/_lifecycle_metrics/` and `templates/modules/default-on/_lifecycle_metrics/`;
+`extract.py`, `cli.py`, `__init__.py` and `snapshot.py` edited in both to drop
+the import, the exception handling and the reconciliation types.
+
+**Install contract**: remove the `InstallSpec` at `bootstrap/_scaffold/config.py:763`
+and re-pin the three counts in `bootstrap/tests/test_notice_install.py` --
+manifest sources 57 -> 56, on-disk templates 53 -> 52, manifest rows 115 -> 114.
+Each pin carries a comment naming the change that moved it; these gain one
+naming this proposal.
+
+**Planner pair**: remove the 5 `cairn-event-v1` preview references from
+`tools/lifecycle_planner.py` and its twin.
+
+**Template pairs**: remove the grammar from `dev/proposals/_template.md`,
+`dev/plans/_template.md` and both `templates/core/` twins, so no future edit is
+invited to emit a block.
+
+**Tests**: `bootstrap/tests/test_lifecycle_metrics_events.py` -- the
+reconciliation, history-walk and activation-cutoff cases are **deleted** with
+the code they cover; `test_an_unreconciled_act_empties_its_own_fields_and_never_refuses_the_run`
+is **retained**, re-aimed at the heading reader, because the never-refuse
+property outlives the mechanism. New cases for the grammar oracle land here.
+
+**Doctrine**: `docs/glossary.md`'s Archive entry loses the `cairn-event-v1`
+exception and returns to its prior rule.
+
+### RTE-05 -- security preflight, five answers
+
+**S1 -- Who supplied it?** The counter decides one thing: whether an H2 is a
+review pass. Inputs are the artifact's own bytes (via `git show`/read) and
+nothing else. **The thing being decided about supplies its own evidence** --
+an artifact declares its own review count by carrying headings. That is inherent
+to measuring a self-reported record and is why S5 lands where it does.
+
+**S2 -- Can it fail?** Directed mutations, each required red: strip the date from
+a dated pass (count must drop); add a bare `## Code review` stub (count must not
+rise); rename a `disposition` heading to look like a pass (count must not rise);
+add a second distinct reviewer (`cross_agent_type_review` must flip); remove a
+`**Tier**: External` line (`external_tier_review` must clear). The oracle is a
+named fixture table of expected per-artifact counts, so no check derives its
+expectation from the object it checks.
+
+**S3 -- What fires it, over what?** `python tools/lifecycle_metrics.py
+{proposals,plans} --root .`, run by a human. **Cairn has no CI and nothing
+schedules this.** No preset or profile selects it. It covers every `.md` under
+`dev/proposals/` and `dev/plans/` including `archive/`.
+
+**S4 -- Which way does it break?** Every failure path lands on **less**
+authority: an unparseable heading is not counted, a missing tier line leaves
+`external_tier_review` blank, an unreadable file yields an empty row rather than
+aborting the walk. There is no path where a parse error *raises* a count or
+refuses a run -- that direction is what `8416d9d` removed and what the retained
+never-refuse test pins.
+
+**S5 -- Who still wins?** The assumed capability is: write access to the
+repository's own artifact files. Anyone with it **still wins completely** --
+they can add five dated review headings and inflate their own review count, and
+no parser can tell an authored heading from an honest one. The class is closed
+by **neither** construction nor enumeration; it is open.
+
+**That is the design consequence, not a caveat.** These metrics are
+**self-reported and must never gate anything**. It is the same lesson the
+enforcement incident taught from the other direction: a measurement that can
+refuse is both a broken instrument and a forgeable control. The module's
+doctrine gains one sentence saying so.
+
+### Verification plan (replaces the opened one)
+
+* **A fixture oracle**, not an aggregate: a named table of artifacts with
+  expected per-artifact counts for all seven columns, plus the five directed
+  mutations in S2, each required red.
+* **Before/after population**, as a readable consequence rather than the check.
+  Acceptance: no currently-populated column regresses, and the seven columns
+  above move off zero.
+* **Twin byte-parity** for all five source pairs, both template pairs and the
+  planner pair, one commit each.
+* **Install contract**: `scaffold.py --manifest` re-pinned at 56/52/114 with
+  the scoped `upgrade --finalize`, and `test_notice_install.py` green.
+* Scoped suites only. No broad run: the guard refuses one by design.
+
+### Routing -- RTE-04, and it is the editor's
+
+I withdraw the `not required` claim in the header. It rested on the premise
+RTE-02 disproved, and a reviewer blocking on it is exactly the correction the
+apparatus is for.
+
+What I have done instead is **supply the contract a plan would carry** -- the
+full file inventory, the parser spec, the fixture oracle, the count re-pins and
+the sequencing -- inside this artifact, which is the shape
+`2026-08-21-claude-convergent-lifecycle` proposes as the Standard lane.
+
+**Recommendation, with a default:** implement directly from this Decision as a
+single artifact. Nothing above is left to an implementer's discretion, and a
+derived plan would restate it at the cost of another round. **Default if the
+Maintainer prefers the two-stage lane:** open a change note carrying the
+sections above verbatim.
+
+**On the tier**: this review recorded `DISTINCT REVIEW REQUIRED`, which under
+current doctrine forces `required(External)` on any derived plan. I am not
+overriding that -- the editor assigns it, and the Maintainer has stated this is
+the only review. Recorded so the decision is made knowingly rather than
+inherited from a token.
+
+### Length
+
+This revision runs past the strategy note's ~150-line anchor. The anchor prices
+an *opening* artifact; closing five blocking findings with a complete
+implementation contract that replaces a derived plan is the trade the note's
+2.2 asks for -- one artifact instead of two, not one artifact plus a short one.
