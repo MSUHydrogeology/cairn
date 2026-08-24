@@ -54,10 +54,15 @@ three prizes: **C0** (risk posture), **C1** (editor authority), **C7**
   implementing → awaiting-code-review ↔ revising-code → ready-to-archive →
   archived`) and needs no parent proposal.
 * **Deliberate — today's two-stage, unchanged.** Mandatory for the high-risk
-  surfaces `AGENTS.md` names, contract breaks, and release/security ceremony;
-  electable by author or Maintainer for anything genuinely architectural.
-  Existing review floors (including External) apply here untouched. Uncertainty
-  at triage resolves upward, as now.
+  surfaces `AGENTS.md` names, contract breaks, release/security ceremony, and
+  **major new features** (Maintainer direction, 2026-08-21): a new user-facing
+  capability, module, or subsystem takes a proposal before code, because the
+  design space is wide, the commitment is durable, and the choice of *what to
+  build* is a structure question — the Maintainer's lane. The change note
+  covers work whose shape is already settled; a feature whose shape is the
+  question deliberates first. Electable by author or Maintainer for anything
+  else genuinely architectural. Existing review floors (including External)
+  apply here untouched. Uncertainty at triage resolves upward, as now.
 
 ### 2. One design review, one code review, each with an exit
 
