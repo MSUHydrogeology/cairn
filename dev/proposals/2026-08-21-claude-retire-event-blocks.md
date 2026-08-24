@@ -605,8 +605,8 @@ note lane ... or the note lane ships with no measurement story."*
 
 **No extension was needed, and the item is closed by measurement rather than by
 argument.** `convergent-lifecycle` section 1 puts a change note at
-`dev/plans/<slug>.md` -- the same directory as plans, with no `dev/notes/`
-created anywhere. `iter_plan_files` already walks `dev/plans/*.md` plus
+`dev/plans/<slug>.md` -- the same directory as plans. No separate notes
+directory is created anywhere in the accepted text. `iter_plan_files` already walks `dev/plans/*.md` plus
 `dev/plans/archive/**/*.md`, and a note carries the same `## Plan review -- X --
 <date>` and `## Code review -- X -- <date>` headings every other artifact does.
 
