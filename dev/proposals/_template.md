@@ -33,52 +33,6 @@ The directory location encodes **work-status**; the `Status:` field encodes
 [`dev/plans/_template.md`](../plans/_template.md) for the plan
 counterpart and the trivial-vs-non-trivial triage rule.
 
-## Event blocks — recording the act structurally, alongside the prose
-
-The lifecycle-metrics extractor reads `review_rounds`, reviewer identity,
-and `response_models` from small, closed-schema `cairn-event-v1` blocks —
-not by parsing prose — so **whoever commits a status flip, a `## Review`
-section, or a `## Response` section appends the matching block in the
-SAME commit**, immediately after the section (or, for a bare status flip
-that adds no section of its own, anywhere in the diff). Three shapes,
-one per act:
-
-A status flip:
-
-```markdown
-<!-- cairn-event-v1
-kind: transition
-from_state: awaiting-review
-to_state: revising
--->
-```
-
-A `## Review` section:
-
-```markdown
-<!-- cairn-event-v1
-kind: review-pass
-tier: External
-reviewer: <your name, exactly as written in the section heading above>
--->
-```
-
-A `## Response` section:
-
-```markdown
-<!-- cairn-event-v1
-kind: response
-model: <your model identity, exactly as written in the Response's **Model** field>
--->
-```
-
-`from_state`/`to_state` must be a currently-declared status; `tier` is one
-of `Internal`/`External`/`Security`/`Code`. An artifact whose history
-carries an act with no matching block — once this template's own
-installed copy carries this marker — makes the extractor refuse rather
-than silently under-count; append the block in the same commit as the
-act it records, every time.
-
 ## Triage: trivial vs. non-trivial
 
 See `doctrine/proposals.md` > "Triage: trivial vs. non-trivial" for the full
