@@ -54,6 +54,45 @@ rounds**, commit subjects read as process narration, and roughly
 three-quarters of recent commits are lifecycle traffic rather than
 hydrology.
 
+**The takeover, as a time series.** Weekly lines added across both
+repos (`dev/` = deliberation; machinery = process apparatus wherever it
+lives, including `bootstrap/`, `tools/`, `scripts/`, and templates'
+executable code; product = science code, tests of it, teaching,
+examples, and Cairn's doctrine/docs/template prose), as_of 2026-08-21:
+
+| week of | dev/ | machinery | product | product share |
+|---|---:|---:|---:|---:|
+| pre-Cairn (Mar–Apr) | ~0 | ~2k | ~164k | ~98% |
+| 2026-04-27 | 18,584 | 2,888 | 40,268 | 65% |
+| 2026-05-04 | 14,567 | 354 | 15,215 | 50% |
+| 2026-05-11 | 29,590 | 1,121 | 15,043 | 33% |
+| 2026-05-18 | 53,730 | 10,520 | 45,008 | 41% |
+| 2026-05-25 | 47,057 | 26,523 | 18,891 | 20% |
+| 2026-06-01 | 42,859 | 43,101 | 20,514 | 19% |
+| 2026-06-08 | 27,301 | 53,852 | 3,351 | 4% |
+| *(break June 15 – July 5)* | | | | |
+| 2026-07-06 → 08-17 | 210,829 | 121,898 | 17,141 | **~5%** |
+
+Since the July restart: nineteen lines of process for every line of
+the thing the process exists to produce. The one point of light is the
+trend inside August (1% → 3% → 12%). This table is the staff gauge 3.3
+asks for — recovery is the product column climbing back past 50%.
+
+**And the machinery itself is three different things** (~161k lines in
+Cairn, split by whether an adopter's own project benefits):
+**~38% is the product** — the scaffold engine, the shipped security
+modules, and their tests; the layer all four adopter issues actually
+targeted. **~42% is the deliberation complex** — lifecycle, planner,
+intent, metrics, transition lint, pilot ledgers, plus twins and tests
+(~67k lines, 101 files): machinery for deliberating about the product,
+i.e. bureaucracy mechanized — 2.4× the capability layer, zero adopter
+engagement ever, and shipped by default as if it were the point.
+**~20% is the release ceremony** (gate, re-anchor, AST attestation,
+~32k lines) — a genuine supply-chain property built about two releases
+before its threat model exists. The 2.1 dispositions follow: keep the
+first bin whole, dismantle the second, park the third behind signed
+tags until distribution widens.
+
 **The honest other side:** review catches real defects — a regex that
 refused dotted branch names, an invariant satisfied only over an empty
 set, a dependency-closure inflation of 580 vs 5. But every one of those
