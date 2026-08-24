@@ -232,12 +232,25 @@ test.
   it is warned and the **Maintainer re-declares its tier at the next
   transition** — never silently rewritten.
 
-**Confirm the instrument before trusting an absence.** Two traps already
-measured in this repository, both of which produced false passes today:
-`test_lifecycle_metrics_events.py` loads the **template** twin, not `tools/`, so
-mutating `tools/` leaves tests green while the mutation is live; and a bare
-`## Code review` template stub exists in 9 plans, so any heading count reporting
-46/46 is counting placeholders.
+**Confirm the instrument before trusting an absence.** Two traps produced false
+passes during the work that preceded this plan. **Both statements as I first
+wrote them were too strong, and the plan reviewer corrected them; re-measured
+2026-08-24:**
+
+* **The twin trap is half true, and the half matters.**
+  `test_lifecycle_metrics_events.py` loads **both** copies —
+  `_LM_PATH` (the `templates/` twin) and `_LM_INSTALLED_PATH`
+  (`tools/lifecycle_metrics.py`), with 4 tests on the installed one. So
+  mutating `tools/` leaves the `_lm` tests green while the mutation is live,
+  but the `_lm_installed` tests do exercise it. An implementer told "this file
+  loads the template" would hunt a trap that is absent half the time. **Check
+  which loader a given test uses before trusting its mutation.**
+* **The stub trap is historical, not live.** A bare `## Code review` template
+  stub does exist in 9 plans, but the dated-heading grammar
+  `retire-event-blocks` shipped already excludes it: the reader reports
+  **37/47** plans with a code-review count, not 47/47. The hazard is real as
+  history and is why the grammar names its exclusions; it is not something this
+  plan's implementer has to defend against.
 
 ## Risk
 
