@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Claude Opus 5
 **Date opened**: 2026-08-21
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: high-assurance (a `default-on` module adopters install)
 **Supersedes**: `2026-08-11-claude-metrics-events-not-prose` (accepted;
 implemented and archived 2026-08-21 as plan `metrics-events-not-prose`). Its
@@ -14,8 +14,12 @@ evidence. Its **mechanism** does not.
 `bootstrap/tests/test_lifecycle_metrics_events.py`, `docs/glossary.md`, the
 `cairn-event-v1` grammar wherever templates and doctrine teach it
 **Related**: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
-**Plan review**: **withdrawn at Revision 1** — the claim rested on a false
-premise (RTE-02). Routing is the editor's; see Revision 1 > "Routing".
+**Plan review**: **not required** — assigned by the editor at the Decision.
+Revision 1 carries the contract a derived plan would restate; a plan would cost
+a round and add nothing. The `DISTINCT REVIEW REQUIRED` token is advisory under
+C8 of `review-loop-termination` (accepted 2026-08-21) and does not bind the
+tier. See the Decision below, including the fence on the install-contract
+re-pin.
 
 ## Objective
 
@@ -481,3 +485,62 @@ This revision runs past the strategy note's ~150-line anchor. The anchor prices
 an *opening* artifact; closing five blocking findings with a complete
 implementation contract that replaces a derived plan is the trade the note's
 2.2 asks for -- one artifact instead of two, not one artifact plus a short one.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-24
+
+**ACCEPTED as revised (Revision 1).** Authorization, quoted verbatim and
+visually isolated:
+
+> "Okay, this looks ready to go to me. Please scribe my acceptance as revised."
+
+**Summary of accepted terms (Revision 1)**:
+
+- **Delete the event-block machinery.** `events.py` (1,017 lines per twin) with
+  its reconciler, history walk and activation-marker resolution; the
+  `cairn-event-v1` grammar removed from both planner twins, both template pairs
+  and `docs/glossary.md`, so no future edit is invited to emit a block.
+- **Count from section headings, retroactively.** A pass is an H2 matching
+  `^##\s+(Review|Plan review|Code review|Security review|Security re-review)\b`
+  carrying ` -- ` and an ISO date. Named exclusions, each a test case: the bare
+  template stub, a `disposition`, a `Response`, a `Correction`, and H3-or-deeper.
+- **All seven event-derived columns are retained**, each with its stated parser
+  and blank behavior. None is removed from the public schema; the CSV header is
+  byte-identical, so no adopter migration. **Blank is never zero.**
+- **Enforcement does not return.** A measurement reports what it can and leaves
+  the rest empty, pinned by the retained never-refuse test. Per RTE-05's S5,
+  these metrics are self-reported and forgeable by anyone with write access to
+  the artifacts, and must never gate anything.
+- **Verification** is a fixture oracle of expected per-artifact counts plus five
+  directed mutations each required red -- not the aggregate population table,
+  which is a readable consequence.
+
+**Routing, assigned by the editor.** Implement **directly from this Decision as
+a single artifact**; no derived plan. Revision 1 supplies the complete file
+inventory, the parser grammar, the fixture oracle, the count re-pins and the
+sequencing, so a derived plan would restate a settled contract at the cost of a
+round. RTE-04's `DISTINCT REVIEW REQUIRED` is advisory under C8 of
+`review-loop-termination` and does not force an External tier.
+
+**One fence, and it is where the risk actually is.** The install-contract
+re-pin -- removing the `InstallSpec` at `bootstrap/_scaffold/config.py:763` and
+moving the pins 57 -> 56, 53 -> 52, 115 -> 114 -- is **MAINTAINER-GATED**. It
+does not execute without explicit authorization, and `scaffold.py --manifest`,
+the scoped `upgrade --finalize` and `test_notice_install.py` must all be green
+and shown before it is sought. Reason: C0 of `review-loop-termination` lowers
+review calibration on ordinary work but retains full weight for the install
+contract by name, and that is the one surface here where a silent error reaches
+adopters. Everything else in this proposal implements without a gate.
+
+*Scribe's note, separated from the authorization above:* the routing and the
+fence are the recommendation put to the Maintainer immediately before the quoted
+instruction, adopted by it. They are the editor's assignment under C1 as
+extended, recorded here rather than deferred.
+
+**Open item, named rather than left implied.** RTE-01's seven column parsers are
+unverified at runtime -- no implementation exists, the same limit the reviewer
+recorded as not covered. The fixture oracle is what settles it, and it is an
+acceptance criterion above rather than a discovery for the implementer.
+
+**Scribed by** Claude (claude-opus-5), this proposal's author, on explicit
+Maintainer instruction. The scribe wrote no part of the authorization quoted
+above.
