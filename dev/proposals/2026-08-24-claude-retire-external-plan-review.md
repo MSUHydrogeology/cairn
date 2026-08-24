@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-24
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Touches**: `AGENTS.md` + `templates/core/AGENTS.md`;
 `doctrine/dual-review.md`, `doctrine/plans.md`, `doctrine/proposals.md`,
@@ -138,3 +138,127 @@ of the doctrine the removal misses; (2) the legacy-token warning path —
 active vs archived handling; (3) doctrine wording — confirm no sentence
 survives that makes External plan review *available as a requirement*, since
 a dormant requirement is how the ratchet rebuilds.
+
+## Review -- Codex (External) -- 2026-08-24
+
+**Model**: GPT-5.6 (Codex)
+
+Reviewed commit: e753882621b4a8da245eb4e350003084c1efaec7
+Target: the complete opened contract, especially the security-plan form, legacy handling, convergent-lifecycle relationship, and removal evidence
+Prior findings: none
+Assurance path: high-assurance
+**Tier**: External
+**Findings**: raised (5 blocking)
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+The Maintainer direction is unambiguous about removing External *plan* review,
+and the proposal correctly keeps proposal-stage External independence and the
+separate code-review floor. A smaller allocation model is viable, but only if
+security review and migration of the live grammar remain explicit rather than
+becoming ignored text after a tier name.
+
+### Findings
+
+#### RERP-01 — BLOCKING: `required(Internal, security)` is an ordinary Internal review, not a Security Review
+
+The proposed security-plan spelling has no enforceable security semantics in
+the current planner. `normalize_required_tier` deliberately reads only the
+first word inside `required(...)`; its docstring calls remaining text a lens
+annotation. `normalize_required_obligations` likewise sees one Internal-tier
+clause unless `+` introduces distinct obligations. An ordinary Internal pass
+therefore clears `required(Internal, security)` today, with no Security Review
+record, protocol, high-capability role, or separate falsification obligation.
+That contradicts item 4's claim that high-risk Security Reviews are unchanged.
+
+Define the replacement security obligation: its record grammar, reviewer role
+and fresh-context requirement, preflight, and predicate that blocks advancement
+until it lands. It may be same-agent-type if the recorded Maintainer direction
+requires that, but it cannot be an ignored annotation. Pin the directed pair:
+an ordinary Internal pass cannot clear a security-plan requirement; the
+required Internal Security Review record does. Keep proposal/code triggers
+distinct and intact.
+
+#### RERP-02 — BLOCKING: active and archived legacy records have incompatible grammars, not one warn-and-reinterpret path
+
+`required(External)` is a plan header, while `Plan readiness:` is a
+proposal-review field. The proposal says either line in an active artifact
+warns and is read as `required(Internal)`, but a readiness finding cannot be
+read as a plan declaration. The planner's shared External vocabulary also
+validates proposal-review tiers and event records that must survive. Deleting
+External-tier validation without a type-scoped replacement can invalidate the
+External proposal floor item 4 keeps or discard archived metric evidence. No
+inventory or migration rule states which record supplies the new Internal
+requirement, how an inherited basis retires, or what `scan`, `next`, and metrics
+report during the transition.
+
+Specify separate dispositions for active External plans, active proposals with
+readiness records, and immutable archives. Name parser branches and output
+fields that remain proposal-External versus plan-Internal, then test each class
+across `scan`, `next`, and longitudinal metrics. A warning cannot manufacture a
+different artifact type.
+
+#### RERP-03 — BLOCKING: the relationship section is stale and omits the accepted-scope migration it now requires
+
+`convergent-lifecycle` is no longer awaiting review: commit `47315b6` records
+the Maintainer Decision accepting Revision 2. Its accepted contract says a
+declared `required(External)` floor is non-downgradable and that its own derived
+plan takes that External review under the current rule. This proposal instead
+uses a counterfactual — "if accepted first" — and declares the later plan
+Internal. That is a change to accepted scope and a live review obligation, not
+a choice between two unaccepted baselines.
+
+Replace the hypothetical with a commit-bound migration: identify the accepted
+commitments superseded, quote the Maintainer authorization allowing the
+review-floor change, name the new plan declaration/linkage, and state whether
+the former External obligation is waived or remains. A new rule can govern
+future plans after acceptance, but cannot silently make itself the first
+beneficiary or rewrite a sibling's accepted floor.
+
+#### RERP-04 — BLOCKING: the falsification baseline is wrong and the grep cannot prove the claimed removal
+
+The stated instrument does not reproduce its claim. At the reviewed commit,
+the proposal's governing-surface query for `Plan readiness` or
+`required(External)` over its named roots, excluding this proposal, matches
+**17 files**, not 24. Its post-change empty-result test also cannot show that
+External validation remains for proposal reviews/events while being removed
+only for plans; lexical absence cannot distinguish correct type scoping from
+deleting the shared vocabulary.
+
+Publish the literal command, exclusions, and checked-in expected file list,
+corrected to 17 or accompanied by the different measurement that yields 24.
+Pair it with behavioral oracles: an External proposal review and archived
+External event still parse, while a new plan receives the accepted legacy
+disposition. Mutate each property in a way the grep misses and the oracle
+catches.
+
+#### RERP-05 — BLOCKING: the mandatory security preflight is absent
+
+This proposal has no `#### Security preflight` section or N/A statement. The
+template requires one or the other, and this is not credibly N/A: it changes how
+a high-risk surface's Security Review is declared, selected, and allowed to
+clear a plan. RERP-01 gives the concrete failure mode — an ordinary Internal
+pass can impersonate the proposed security review.
+
+Answer S1--S5 for the replacement security-review record and legacy parser:
+classification source, mutation proving a standard Internal pass cannot clear
+it, triggering command and artifact scope, failure direction, remaining
+attacker capability, and the Security Review/current-contract verification the
+implementation requires.
+
+### Coverage and recommendation
+
+**Covered**: the complete opened contract at
+`e753882621b4a8da245eb4e350003084c1efaec7`; review-allocation and Security
+Review rules in `AGENTS.md`, `doctrine/dual-review.md`, and `doctrine/roles.md`;
+live and shipped templates; planner tier/multi-obligation parsing and review
+predicate; the stated governing-surface grep; and the accepted
+`convergent-lifecycle` Decision history.
+
+**Not covered / low confidence**: no replacement parser, migration fixture, or
+security-plan record exists yet, so proposed behavior cannot be executed. I did
+not run the full suite; this is a pre-implementation review.
+
+**Second-round recommendation**: recommended. Security-plan review and the
+accepted-artifact migration must be testable before this subtraction is decided.
