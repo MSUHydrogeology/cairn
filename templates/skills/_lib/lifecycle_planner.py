@@ -3286,16 +3286,17 @@ def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
 # own `**Plan review**:` field may no longer legitimately choose the External
 # tier. Three legacy classes, per that section:
 #
-#   1. Active plans declaring `required(External)` -- measured zero at the
-#      fold. Should one exist, `legacy_external_plan_tier_warnings` below
-#      warns it, naming the closed (Internal-only, plus the `+ Internal
-#      Security Review` obligation) vocabulary -- and does NOT rewrite the
-#      declaration: enforcement (an actual External-tier pass is still what
-#      a declared `required(External)` needs to clear) is unchanged, so nothing
-#      is silently weakened OR strengthened. The Maintainer re-declares the
+#   1. Active plans declaring an External plan-review floor -- measured
+#      zero at the fold. Should one exist,
+#      `legacy_external_plan_tier_warnings` below warns it, naming the
+#      closed (Internal-only, plus the `+ Internal Security Review`
+#      obligation) vocabulary -- and does NOT rewrite the declaration:
+#      enforcement (an actual External-tier pass is still what a declared
+#      External floor needs to clear) is unchanged, so nothing is
+#      silently weakened OR strengthened. The Maintainer re-declares the
 #      tier at the plan's own next transition.
-#   2. Active proposals carrying the retired `Plan readiness:` field -- inert
-#      prose now (Chunk B deleted the parser that ever read it specially),
+#   2. Active proposals carrying the retired proposal-readiness field --
+#      inert prose now (Chunk B deleted the parser that ever read it specially),
 #      covered by test coverage in `bootstrap/tests/test_lifecycle_contract.py`
 #      (`TestPlanReviewInheritanceIsRetired` and the oracle-(b) test beside
 #      this section's own tests).
@@ -3310,7 +3311,7 @@ def legacy_external_plan_tier_warnings(art: Artifact) -> List[str]:
     """Oracle (c): a PLAN still declaring the retired External tier -- bare,
     or as one clause of a `+` obligation -- draws an advisory warning naming
     the closed vocabulary.  Never a refusal, and never a silent rewrite: an
-    existing `required(External)` declaration keeps meaning exactly what it
+    existing External-floor declaration keeps meaning exactly what it
     always meant for enforcement purposes until the Maintainer edits it.
     Silent for a proposal (External is fully valid there, unaffected by this
     retirement) and for an immutable/archived plan (legacy class 3).
