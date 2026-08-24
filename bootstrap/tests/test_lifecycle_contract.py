@@ -6858,3 +6858,300 @@ class TestTheDerivedEnablingCommitHasNoStoredCounterpart:
         root = _p6c_repo(tmp_path, extra_key="enabling_commit: " + "0" * 40)
         with pytest.raises(cli.LifecycleError, match="unknown key"):
             cli._read_activation(root)
+
+
+# =============================================================================
+# Chunk C -- the standard-lane change note (`convergent-lifecycle` §2a)
+# =============================================================================
+#
+# The note is a `plan`-kind artifact discriminated by `**Lane**: standard`.
+# It reuses the SAME `## Plan review` / `## Code review` record grammar the
+# deliberate lane already parses (`_pass_block`/`_code_review_pass` below are
+# the same fixture builders the rest of this file uses) -- what differs is the
+# transition table (`NOTE_TRANSITIONS_OVERRIDE`) and the disposition of a
+# defect (advisory `note-*` warnings here; Chunk D wires that disposition for
+# the REST of `_conformance_violations`'s surface in `cmd_scan`/`cmd_next`).
+
+
+def _note_text(*, status: str = "awaiting-plan-review", author: str = "Claude",
+               lane: str | None = "standard",
+               plan_review: str | None = "required(Internal)",
+               risk: str = "low, reversible", related: str = "none",
+               sections: dict | None = None, extra: str = "") -> str:
+    if sections is None:
+        sections = {"Why": "reason.", "What": "thing.", "Approach": "how.",
+                    "Verification": "tests.", "Risk": "low."}
+    header = (
+        "# Change note: fixture\n\n"
+        f"**Author**: {author}\n"
+        "**Date opened**: 2026-08-24\n"
+        f"**Status**: {status}\n"
+    )
+    if lane is not None:
+        header += f"**Lane**: {lane}\n"
+    header += f"**Risk**: {risk}\n"
+    if plan_review is not None:
+        header += f"**Plan review**: {plan_review}\n"
+    if related is not None:
+        header += f"**Related**: {related}\n"
+    header += "\n"
+    body = "".join(f"## {name}\n\n{text}\n\n" for name, text in sections.items())
+    return header + body + extra
+
+
+def _note_art(tmp_path: Path, *, stem: str = "note-fixture", **kw):
+    d = tmp_path / "dev" / "plans"
+    d.mkdir(parents=True, exist_ok=True)
+    path = d / f"{stem}.md"
+    stem_suffix = 0
+    while path.exists():
+        stem_suffix += 1
+        path = d / f"{stem}-{stem_suffix}.md"
+    path.write_text(_note_text(**kw), encoding="utf-8")
+    return planner._read_artifact(path)
+
+
+class TestChangeNoteLaneDiscriminator:
+    """`**Lane**: standard` is what distinguishes a note from a deliberate
+    plan (§2a); its absence means deliberate, unchanged."""
+
+    def test_a_note_declaring_lane_standard_is_recognized(self, tmp_path):
+        assert planner._is_standard_note(_note_art(tmp_path))
+
+    def test_lane_matching_is_case_and_emphasis_tolerant(self, tmp_path):
+        art = _note_art(tmp_path, lane="**STANDARD**")
+        assert planner._is_standard_note(art)
+
+    def test_an_ordinary_plan_with_no_lane_field_is_deliberate(self, tmp_path):
+        assert not planner._is_standard_note(_note_art(tmp_path, lane=None))
+
+    def test_a_proposal_is_never_a_standard_note(self, tmp_path):
+        art = _e_prop(tmp_path, status="awaiting-review")
+        assert not planner._is_standard_note(art)
+
+
+class TestChangeNoteNineDirectedTransitions:
+    """The nine directed transitions §2a's table names, exhaustively.  Each
+    row is red under the mutation that removes `NOTE_TRANSITIONS_OVERRIDE`'s
+    corresponding entry (verified by hand at review time: with the override
+    dict emptied, `awaiting-plan-review` and `revising-code` fall through to
+    the deliberate `PLAN_TRANSITIONS` values and every row below reds)."""
+
+    _NOTE_CYCLE = [
+        ("awaiting-plan-review", ["revising-note", "ready-to-implement"]),
+        ("revising-note", ["ready-to-implement"]),
+        ("ready-to-implement", ["implementing"]),
+        ("implementing", ["awaiting-code-review"]),
+        ("awaiting-code-review", ["revising-code", "ready-to-archive"]),
+        ("revising-code", ["ready-to-archive"]),
+        ("ready-to-archive", ["archived"]),
+        ("archived", []),
+    ]
+
+    @pytest.mark.parametrize("status,expected", _NOTE_CYCLE)
+    def test_the_note_cycle_matches_the_accepted_table(
+            self, tmp_path, status, expected):
+        art = _note_art(tmp_path, status=status)
+        assert planner._legal_transitions(art) == expected
+
+    def test_the_note_cycle_differs_from_the_deliberate_cycle_at_exactly_two_rows(
+            self, tmp_path):
+        """C7 applied to both revision loops: a note's `revising-note` and
+        `revising-code` each exit straight to their waiting-room's successor,
+        where a deliberate plan's `revising-plan`/`revising-code` cycle back
+        through another full review round.  Every other row is identical.
+        `revising-note` itself is a new row (the deliberate cycle has no
+        state by that name at all), so it is reported separately from the
+        two rows that are genuinely REWRITTEN."""
+        note_by_status = dict(self._NOTE_CYCLE)
+        plan_cycle = {
+            "awaiting-plan-review": ["revising-plan", "ready-to-implement"],
+            "revising-plan": ["awaiting-plan-review"],
+            "ready-to-implement": ["implementing"],
+            "implementing": ["awaiting-code-review"],
+            "awaiting-code-review": ["revising-code", "ready-to-archive"],
+            "revising-code": ["awaiting-code-review"],
+            "ready-to-archive": ["archived"],
+            "archived": [],
+        }
+        shared = set(note_by_status) & set(plan_cycle)
+        rewritten = {s for s in shared if note_by_status[s] != plan_cycle[s]}
+        new_rows = set(note_by_status) - set(plan_cycle)
+        assert rewritten == {"awaiting-plan-review", "revising-code"}
+        assert new_rows == {"revising-note"}
+
+
+class TestChangeNoteNamedWarnings:
+    """§2a's four named warnings: each emits under its trigger, and each is
+    silent once the defect it names is fixed.  None of the four is wired into
+    `_conformance_violations` at all (`note_conformance_warnings` is a
+    separate function `_conformance_violations` never calls) -- so from the
+    moment this chunk lands, none of the four can affect `cmd_scan`'s
+    `flagged` count or `cmd_next`'s legality check; Chunk D's own tests cover
+    the REST of the conformance surface becoming advisory for a note."""
+
+    # -- note-malformed: a missing header field or section, named ------------
+
+    def test_note_malformed_names_a_missing_header_field(self, tmp_path):
+        art = _note_art(tmp_path, related=None)
+        warnings = planner.note_conformance_warnings(art)
+        assert any(w.startswith(f"[{planner.NOTE_WARNING_MALFORMED}]")
+                   and "Related" in w for w in warnings)
+
+    def test_note_malformed_names_a_missing_section(self, tmp_path):
+        sections = {"Why": "x", "What": "y", "Approach": "z",
+                    "Verification": "w"}  # Risk section omitted
+        art = _note_art(tmp_path, sections=sections)
+        warnings = planner.note_conformance_warnings(art)
+        assert any(w.startswith(f"[{planner.NOTE_WARNING_MALFORMED}]")
+                   and "Risk" in w for w in warnings)
+
+    def test_a_complete_note_carries_no_malformed_warning(self, tmp_path):
+        art = _note_art(tmp_path)
+        assert not [w for w in planner.note_conformance_warnings(art)
+                   if planner.NOTE_WARNING_MALFORMED in w]
+
+    # -- note-missing-design-review: advance with no appended review ---------
+
+    def test_note_missing_design_review_fires_with_no_appended_review(
+            self, tmp_path):
+        art = _note_art(tmp_path, status="awaiting-plan-review")
+        warnings = planner.note_conformance_warnings(art)
+        assert any(w.startswith(f"[{planner.NOTE_WARNING_MISSING_DESIGN_REVIEW}]")
+                   for w in warnings)
+
+    def test_note_missing_design_review_is_silent_once_a_pass_is_appended(
+            self, tmp_path):
+        extra = _pass_block(tier="Internal", findings="none")
+        art = _note_art(tmp_path, status="ready-to-implement", extra=extra)
+        warnings = planner.note_conformance_warnings(art)
+        assert not [w for w in warnings
+                   if planner.NOTE_WARNING_MISSING_DESIGN_REVIEW in w]
+
+    # -- note-unclosed-findings: raised review, no closure evidence yet ------
+
+    def test_raised_design_review_without_closure_fires_unclosed_findings(
+            self, tmp_path):
+        extra = _pass_block(tier="Internal", findings="raised",
+                            sharpening=False, response=False)
+        art = _note_art(tmp_path, status="revising-note", extra=extra)
+        warnings = planner.note_conformance_warnings(art)
+        assert any(w.startswith(f"[{planner.NOTE_WARNING_UNCLOSED_FINDINGS}]")
+                   for w in warnings)
+
+    def test_raised_design_review_closed_by_sharpening_is_silent(
+            self, tmp_path):
+        extra = _pass_block(tier="Internal", findings="raised", sharpening=True)
+        art = _note_art(tmp_path, status="ready-to-implement", extra=extra)
+        warnings = planner.note_conformance_warnings(art)
+        assert not [w for w in warnings
+                   if planner.NOTE_WARNING_UNCLOSED_FINDINGS in w]
+
+    def test_raised_code_review_without_closure_fires_unclosed_findings(
+            self, tmp_path):
+        extra = _code_review_pass(reviewer="Reviewer B", verdict="REVISE",
+                                  findings="raised")
+        art = _note_art(tmp_path, status="revising-code", extra=extra)
+        warnings = planner.note_conformance_warnings(art)
+        assert any(w.startswith(f"[{planner.NOTE_WARNING_UNCLOSED_FINDINGS}]")
+                   for w in warnings)
+
+    def test_raised_code_review_closed_by_a_response_is_silent(self, tmp_path):
+        extra = (_code_review_pass(reviewer="Reviewer B", verdict="REVISE",
+                                   findings="raised")
+                + "## Response to code review -- Claude -- 2026-08-25\n\n"
+                  "Answers: '## Code review -- Reviewer B -- 2026-08-10'\n\n"
+                  "the reply.\n")
+        art = _note_art(tmp_path, status="ready-to-archive", extra=extra)
+        warnings = planner.note_conformance_warnings(art)
+        assert not [w for w in warnings
+                   if planner.NOTE_WARNING_UNCLOSED_FINDINGS in w]
+
+    # -- note-reviewer-independence: code review authored by the note's author
+
+    def test_note_reviewer_independence_fires_when_the_reviewer_is_the_author(
+            self, tmp_path):
+        extra = _code_review_pass(reviewer="Claude", verdict="SHIP",
+                                  findings="none")
+        art = _note_art(tmp_path, author="Claude", status="awaiting-code-review",
+                        extra=extra)
+        warnings = planner.note_conformance_warnings(art)
+        assert any(w.startswith(f"[{planner.NOTE_WARNING_REVIEWER_INDEPENDENCE}]")
+                   for w in warnings)
+
+    def test_note_reviewer_independence_is_silent_for_a_distinct_reviewer(
+            self, tmp_path):
+        extra = _code_review_pass(reviewer="Reviewer B", verdict="SHIP",
+                                  findings="none")
+        art = _note_art(tmp_path, author="Claude", status="awaiting-code-review",
+                        extra=extra)
+        warnings = planner.note_conformance_warnings(art)
+        assert not [w for w in warnings
+                   if planner.NOTE_WARNING_REVIEWER_INDEPENDENCE in w]
+
+
+class TestChangeNoteClearingPaths:
+    """§2a's two clearing paths -- a clean design review, then a clean code
+    review -- carry no named warning at all."""
+
+    def test_the_design_review_clearing_path_is_silent(self, tmp_path):
+        extra = _pass_block(tier="Internal", findings="none")
+        art = _note_art(tmp_path, status="ready-to-implement", extra=extra)
+        assert planner.note_conformance_warnings(art) == []
+        assert "ready-to-implement" in planner._legal_transitions(
+            _note_art(tmp_path, stem="note-fixture-t2", status="awaiting-plan-review"))
+
+    def test_the_code_review_clearing_path_is_silent(self, tmp_path):
+        extra = _code_review_pass(reviewer="Reviewer B", verdict="SHIP",
+                                  findings="none")
+        art = _note_art(tmp_path, author="Claude", status="ready-to-archive",
+                        extra=extra)
+        assert planner.note_conformance_warnings(art) == []
+
+
+class TestChangeNoteDeliberateLaneRegression:
+    """The same invalid advances still REFUSE on a deliberate plan, unchanged
+    -- `note_conformance_warnings` takes no part in a deliberate plan's own
+    conformance check, and the pre-existing `review_record_violations` /
+    `_code_review_violations` machinery is untouched by this chunk."""
+
+    def test_note_checks_never_apply_to_a_deliberate_plan(self, tmp_path):
+        body = _pass_block(tier="Internal", findings="raised", sharpening=False,
+                           response=False)
+        art = _plan_art(tmp_path, body, status="revising-plan",
+                        plan_review="required(Internal)")
+        assert not planner._is_standard_note(art)
+        assert planner.note_conformance_warnings(art) == []
+
+    def test_a_missing_plan_review_pass_still_refuses_on_a_deliberate_plan(
+            self, tmp_path):
+        art = _plan_art(tmp_path, "", status="awaiting-plan-review",
+                        plan_review="required(Internal)")
+        assert planner.review_record_violations(art), (
+            "a deliberate plan with no conforming Plan-review pass must "
+            "still be reported as a violation -- this is the property "
+            "'note-missing-design-review' is advisory-only for a note, and "
+            "only for a note")
+
+    def test_a_raised_plan_review_without_disposition_still_refuses_on_a_deliberate_plan(
+            self, tmp_path):
+        body = _pass_block(tier="Internal", findings="raised", sharpening=False,
+                           response=False)
+        art = _plan_art(tmp_path, body, status="revising-plan",
+                        plan_review="required(Internal)")
+        violations = planner.review_record_violations(art)
+        assert any("no disposition follows" in v for v in violations)
+
+    def test_an_illegal_note_only_target_is_refused_from_a_deliberate_plan(
+            self, tmp_path, monkeypatch, capsys):
+        """`revising-note` is `NOTE_TRANSITIONS_OVERRIDE`-only; a deliberate
+        plan sitting at `awaiting-plan-review` never sees it as a legal
+        target, so asking `next --to revising-note` still refuses exactly
+        like any other illegal target."""
+        repo = _e_repo(tmp_path)
+        _write_plan(repo, "d.md", status="awaiting-plan-review")
+        monkeypatch.chdir(repo)
+        rc = planner.main(["next", "dev/plans/d.md", "--to", "revising-note"])
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "not a legal next transition" in out

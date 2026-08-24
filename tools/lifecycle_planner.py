@@ -516,6 +516,7 @@ class Artifact:
         self.status: str = ""
         self.author: str = ""
         self.plan_review: str = ""  # "required(...)" | "not required(...)" | ""
+        self.lane: str = ""  # "standard" (a change note) | "" (deliberate)
         self.sections: List[Section] = []
         self.has_disposition_attestation = False
         self.has_fidelity_signoff = False
@@ -853,6 +854,7 @@ def _read_artifact(path: Path) -> Artifact:
     art.status = _parse_status(text)
     art.author = _parse_field(text, "Author")
     art.plan_review = _parse_field(text, "Plan review")
+    art.lane = _parse_field(text, "Lane")
     art.sections = _parse_sections(text)
     # Markdown emphasis is tolerated around the label.  The repository's own
     # house style writes ``**Dispositions:**``, which the original unbolded-only
@@ -1112,9 +1114,17 @@ def _has_code_review_marker(text: str) -> bool:
 #: (checked: none of the eleven pairs collide).
 PROPOSAL_STATES = ("awaiting-review", "revising", "awaiting-decision",
                    "accepted", "rejected", "superseded")
-PLAN_STATES = ("awaiting-plan-review", "revising-plan", "ready-to-implement",
-               "implementing", "awaiting-code-review", "revising-code",
-               "ready-to-archive", "archived")
+#: `revising-note` (Chunk C, `convergent-lifecycle` §2a) is the standard-lane
+#: change note's own design-revision state -- distinct from `revising-plan`
+#: because its exit differs: a note's closure evidence advances straight to
+#: `ready-to-implement` (C7, "closes it without a fresh full read"), where a
+#: deliberate plan's `revising-plan` returns to `awaiting-plan-review` for
+#: another round.  Recognized here (so it is `RECOGNIZED_STATES`/board-legible
+#: for every artifact); which artifacts may actually REACH it is decided by
+#: `_legal_transitions`' lane-scoped override below, not by this tuple.
+PLAN_STATES = ("awaiting-plan-review", "revising-plan", "revising-note",
+               "ready-to-implement", "implementing", "awaiting-code-review",
+               "revising-code", "ready-to-archive", "archived")
 
 #: Terminal = no status flip leaves them.  A proposal's `accepted` IS terminal:
 #: its archive move is a file operation, not a transition.
@@ -1161,6 +1171,12 @@ PLAN_TRANSITIONS = {
     "": ("awaiting-plan-review",),
     "awaiting-plan-review": ("revising-plan", "ready-to-implement"),
     "revising-plan": ("awaiting-plan-review",),
+    # `revising-note` (Chunk C) has one target regardless of lane, so it lives
+    # in the base table rather than `NOTE_TRANSITIONS_OVERRIDE` -- an
+    # override entry here would be redundant, and (measured) `next_owner`'s
+    # terminality check reads this table directly, so a state absent from it
+    # reads as terminal no matter what `PLAN_NEXT_OWNERS` says about it.
+    "revising-note": ("ready-to-implement",),
     "ready-to-implement": ("implementing",),
     "implementing": ("awaiting-code-review",),
     "awaiting-code-review": ("revising-code", "ready-to-archive"),
@@ -1181,6 +1197,27 @@ PLAN_TRANSITIONS = {
 #: `required(...)` and has not cleared it is exactly the refusal case.
 PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED = {
     "": ("ready-to-implement", "implementing"),
+}
+
+#: The standard-lane change note's own adjacency, overriding `PLAN_TRANSITIONS`
+#: at exactly the rows that differ (`convergent-lifecycle` §2a's nine directed
+#: transitions; the rows not named here -- `""`, `ready-to-implement`,
+#: `implementing`, `awaiting-code-review`, `ready-to-archive`, `archived` --
+#: are identical on both lanes and fall through to the shared table).  Applied
+#: only to an artifact `_is_standard_note` recognizes; a deliberate plan never
+#: consults this table, which is what keeps the deliberate-lane regression
+#: (the same invalid advances still refuse there) true by construction rather
+#: than by a second check.
+#:
+#: **Both differences are C7** ("the revision carrying that evidence closes it
+#: without a fresh full read"): `awaiting-plan-review` gains `revising-note` in
+#: place of `revising-plan`, and BOTH revision states exit straight to their
+#: waiting-room's successor -- `ready-to-implement` / `ready-to-archive` --
+#: instead of cycling back through another full review round the way
+#: `revising-plan`/`revising-code` do on the deliberate lane.
+NOTE_TRANSITIONS_OVERRIDE: Dict[str, Tuple[str, ...]] = {
+    "awaiting-plan-review": ("revising-note", "ready-to-implement"),
+    "revising-code": ("ready-to-archive",),
 }
 
 #: Historical tokens -- admitted ONLY for archived-artifact compatibility and
@@ -1318,6 +1355,7 @@ PROPOSAL_NEXT_OWNERS = {
 PLAN_NEXT_OWNERS = {
     "awaiting-plan-review": "plan-reviewer",   # required plan reviewer
     "revising-plan": "plan-author",            # plan author
+    "revising-note": "plan-author",            # the note's own author (C7)
     "ready-to-implement": "implementation",    # Implementation
     "implementing": "implementation",          # Implementation
     "awaiting-code-review": "code-reviewer",   # independent code reviewer
@@ -1364,12 +1402,30 @@ def next_owner(kind: str, status: str) -> str:
 _PROPOSAL_STATES = PROPOSAL_STATES
 _PLAN_STATES = PLAN_STATES
 
+#: The change note's own header discriminator (`convergent-lifecycle` §2a):
+#: `**Lane**: standard`, case-insensitively.  Its absence -- the ordinary case,
+#: every plan in the tree today -- means the deliberate lane, unchanged.  Only
+#: a `plan`-kind artifact can be standard-lane: the lane retires the PROPOSAL
+#: for that work entirely, so a proposal is never asked which lane it is on.
+_NOTE_LANE_VALUE = "standard"
+
+
+def _is_standard_note(art: Artifact) -> bool:
+    """True iff *art* is a standard-lane change note (`Lane: standard`)."""
+    return (art.kind == "plan"
+            and art.lane.strip().strip("*_`").casefold() == _NOTE_LANE_VALUE)
+
 
 def _legal_transitions(art: Artifact) -> List[str]:
     """The legal next target states from the artifact's current status."""
     s = art.status
     if art.kind == "proposal":
         return list(PROPOSAL_TRANSITIONS.get(s, ()))
+    if _is_standard_note(art):
+        override = NOTE_TRANSITIONS_OVERRIDE.get(s)
+        if override is not None:
+            return list(override)
+        return list(PLAN_TRANSITIONS.get(s, ()))
     if not art.plan_review.lower().startswith("required"):
         override = PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED.get(s)
         if override is not None:
@@ -3998,6 +4054,150 @@ def current_contract_violations(art: Artifact) -> List[str]:
     return v
 
 
+# === Chunk C: the standard-lane change note's own advisory checks ============
+#
+# `convergent-lifecycle` §2a's "named warnings" -- the planner emits these on
+# the standard lane and NEVER refuses on them (Chunk D wires the disposition
+# at the two consumer sites, `cmd_scan`/`cmd_next`; this section supplies the
+# content). No second record grammar is introduced: a note's design and code
+# reviews are the SAME `## Plan review -- <reviewer> -- <date>` / `## Code
+# review -- <reviewer> -- <date>` headings the deliberate lane already parses
+# (`_pass_headings`, `_code_review_pass_lines`), read here through the same
+# helpers `review_record_violations`/`_code_review_violations` use. What
+# differs is only the disposition (advisory, not a violation) and the
+# transition shortcut a raised finding's closure takes (`NOTE_TRANSITIONS_
+# OVERRIDE`), not the shape of the record itself.
+
+#: The four warning-code tokens, embedded verbatim in the message a note's
+#: check returns so a caller (a human, or a test) can find the exact trigger
+#: without re-deriving it from prose.
+NOTE_WARNING_MISSING_DESIGN_REVIEW = "note-missing-design-review"
+NOTE_WARNING_UNCLOSED_FINDINGS = "note-unclosed-findings"
+NOTE_WARNING_MALFORMED = "note-malformed"
+NOTE_WARNING_REVIEWER_INDEPENDENCE = "note-reviewer-independence"
+
+#: The note's required header fields (§2a, "all required").  `Lane` is read
+#: from `art.lane` (parsed the same way as every other header field) rather
+#: than re-scanned here, so there is one parse per field, not two.
+#:
+#: **`Plan review`, not the contract prose's bare `Review`.**  §2a names the
+#: field descriptively -- *"`Review` (who reads it)"* -- but every piece of
+#: machinery a note's review declaration must drive (`_legal_transitions`'
+#: fast-path check, `review_record_violations`, Chunk G's `+`-obligation
+#: grammar) is keyed on the ONE existing field, `**Plan review**:`, unchanged
+#: from the deliberate lane.  Reading §2a as naming a SECOND, differently-
+#: spelled field would be exactly the new grammar the Decision preamble
+#: refuses to invent for Chunk G; naming it here is the correction, not a
+#: silent substitution.
+_NOTE_HEADER_FIELDS = ("Author", "Date opened", "Status", "Lane", "Risk",
+                       "Plan review", "Related")
+
+#: The note's five required sections (§2a), matched as raw `## <Name>` H2
+#: headings rather than through `_parse_sections`: `_KNOWN_KINDS` gates that
+#: parser to the review/response/decision vocabulary, so `Why`/`What`/
+#: `Approach`/`Verification`/`Risk` are invisible to it by design -- widening
+#: `_KNOWN_KINDS` to admit them would also hand them to every OTHER consumer
+#: that iterates `art.sections` (transition, disposition, and ledger logic
+#: among them), which is a far larger blast radius than this one check needs.
+_NOTE_SECTIONS = ("Why", "What", "Approach", "Verification", "Risk")
+_NOTE_SECTION_RE = {
+    name: re.compile(rf"^##\s+{re.escape(name)}\b", re.MULTILINE)
+    for name in _NOTE_SECTIONS
+}
+
+
+#: The already-parsed `Artifact` attribute backing each field that has one, so
+#: this check reads the SAME value everything else reads rather than a second
+#: parse of the same line.  A field with no dedicated attribute (`Date
+#: opened`, `Status` is `art.status`, `Risk`, `Related`) is re-parsed directly.
+_NOTE_HEADER_FIELD_ATTR = {"Lane": "lane", "Plan review": "plan_review",
+                          "Author": "author"}
+
+
+def _note_malformed_warnings(art: Artifact) -> List[str]:
+    """`note-malformed`: a missing required header field or section, named."""
+    v: List[str] = []
+    for field in _NOTE_HEADER_FIELDS:
+        attr = _NOTE_HEADER_FIELD_ATTR.get(field)
+        value = (getattr(art, attr) if attr is not None
+                  else (art.status if field == "Status"
+                        else _parse_field(art.text, field)))
+        if not value.strip():
+            v.append(
+                f"[{NOTE_WARNING_MALFORMED}] no '**{field}**:' header field -- "
+                "a change note requires all seven (Author, Date opened, "
+                "Status, Lane, Risk, Plan review, Related); advisory on the "
+                "standard lane, never a refusal.")
+    for name in _NOTE_SECTIONS:
+        if not _NOTE_SECTION_RE[name].search(art.text):
+            v.append(
+                f"[{NOTE_WARNING_MALFORMED}] no '## {name}' section -- a "
+                "change note requires all five (Why, What, Approach, "
+                "Verification, Risk); advisory on the standard lane, never "
+                "a refusal.")
+    return v
+
+
+def _note_review_warnings(art: Artifact) -> List[str]:
+    """`note-missing-design-review` / `note-unclosed-findings` /
+    `note-reviewer-independence`: the three review-grammar named warnings.
+    """
+    v: List[str] = []
+    plan_passes = _pass_headings(art)
+    code_passes = _code_review_pass_lines(art)
+    if not plan_passes and not code_passes:
+        v.append(
+            f"[{NOTE_WARNING_MISSING_DESIGN_REVIEW}] no '## Plan review' or "
+            "'## Code review' pass is appended yet -- a change note advances "
+            "on an appended review (design, then code); advisory on the "
+            "standard lane, never a refusal.")
+    for sec, _dig in plan_passes:
+        find, _fv = _parse_one_field(
+            sec.body, _FINDINGS_LINE_RE, _FINDINGS, "Findings")
+        if find == "raised" and not _has_disposition(art, sec):
+            v.append(
+                f"[{NOTE_WARNING_UNCLOSED_FINDINGS}] '{sec.kind} -- "
+                f"{sec.name} -- {sec.date}' declares 'Findings: raised' with "
+                "no closure evidence following it yet (C7: a blocking "
+                "finding binds its closure evidence when raised, and the "
+                "response carrying that evidence is what closes it); "
+                "advisory on the standard lane, never a refusal.")
+    response_starts = [start for start, _end in
+                       _response_to_code_review_lines(art)]
+    for line_no, reviewer, date, _round in code_passes:
+        label = f"'## Code review -- {reviewer} -- {date}'"
+        body = _code_review_pass_body(art, line_no)
+        verdict, _vv = _parse_verdict(body)
+        if verdict == "blocking" and not any(
+                s > line_no for s in response_starts):
+            v.append(
+                f"[{NOTE_WARNING_UNCLOSED_FINDINGS}] {label} carries a "
+                "BLOCKING verdict with no response appended after it yet; "
+                "advisory on the standard lane, never a refusal.")
+        if art.author and reviewer and (
+                _identity_token(reviewer) == _identity_token(art.author)):
+            v.append(
+                f"[{NOTE_WARNING_REVIEWER_INDEPENDENCE}] {label} is authored "
+                f"by {reviewer!r}, which matches this note's own Author "
+                f"({art.author!r}) -- code review is never the implementing "
+                "agent; advisory on the standard lane, never a refusal.")
+    return v
+
+
+def note_conformance_warnings(art: Artifact) -> List[str]:
+    """Every named advisory for a standard-lane change note.  **Never a
+    violation** -- `cmd_scan`/`cmd_next` print these and neither counts them
+    toward `flagged` nor blocks a transition (Chunk D).  Empty for a
+    deliberate plan or a proposal: those keep today's refusing behavior
+    through the unmodified `review_record_violations`/`_conformance_
+    violations` path, which is the deliberate-lane regression this function
+    takes no part in.
+    """
+    if not _is_standard_note(art):
+        return []
+    return _note_malformed_warnings(art) + _note_review_warnings(art)
+
+
 def review_record_violations(art: Artifact,
                              effective_state: Optional[str] = None
                              ) -> List[str]:
@@ -5289,6 +5489,14 @@ def cmd_next(args: argparse.Namespace) -> int:
     else:
         _emit("structural conformance: current state is structurally sound.")
 
+    # Chunk C: the standard-lane note's own named advisories -- printed, never
+    # counted toward a violation and never a cause of a legality refusal below.
+    note_warnings = note_conformance_warnings(art)
+    if note_warnings:
+        _emit_section("standard-lane advisories (never refuse)")
+        for msg in note_warnings:
+            _emit(f"NOTE: {msg}")
+
     legal = _legal_transitions(art)
 
     if not args.to:
@@ -5410,12 +5618,18 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 flagged += 1
                 _emit(f"{path.relative_to(root)}: UNREADABLE -- {exc}")
                 continue
+            rel = path.relative_to(root)
             violations = _conformance_violations(art, identity)
             if violations:
                 flagged += 1
-                rel = path.relative_to(root)
                 for msg in violations:
                     _emit(f"{rel}: {msg}")
+            # Chunk C: the standard-lane note's own named advisories.  Never
+            # counted toward `flagged` and never a cause of a non-zero exit --
+            # `convergent-lifecycle` §2a is explicit that the planner "emits,
+            # never refuses" on these four.
+            for msg in note_conformance_warnings(art):
+                _emit(f"{rel}: NOTE (standard lane, advisory only): {msg}")
     _emit("")
     if flagged:
         _emit(f"{flagged} of {total} artifact(s) carry structural violations.")

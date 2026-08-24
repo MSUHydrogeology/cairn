@@ -105,6 +105,63 @@ review, it never removes it, and the pairing refuses.
 Code review is a separate obligation with a separate floor -- **not the
 implementing agent** -- and nothing in this field changes it.
 
+## The change note (standard lane)
+
+See `doctrine/lifecycle.md` > "Three lanes" and `doctrine/plans.md` for the
+full standard-lane doctrine. A change note is what the **standard lane**
+opens instead of a proposal + plan pair: it lives at the same path a plan
+would, `dev/plans/<slug>.md`, target **≤150 lines**, and needs no parent
+proposal.
+
+**Header fields (all required):** `Author`, `Date opened`, `Status`,
+`**Lane**: standard` (the discriminator from a deliberate plan -- its
+absence means deliberate, unchanged), `Risk` (the C0 answer, one sentence --
+*"would shipping this cause damage that is hard to undo?"*), `**Plan
+review**:` (who reads it, and at what tier -- the same field and vocabulary
+the deliberate lane declares; see "Plan review — choosing the tier you
+declare" above, which now governs both lanes), `Related`.
+
+**Sections, in order:** Why / What / Approach / Verification / Risk.
+
+**Directed transitions** (every branch; owner is who acts next):
+
+| from | on | to | next owner |
+|---|---|---|---|
+| `awaiting-plan-review` | design review appended, **clearing** | `ready-to-implement` | author |
+| `awaiting-plan-review` | design review appended, **raised** | `revising-note` | author |
+| `revising-note` | response appended carrying every blocking finding's bound closure evidence | `ready-to-implement` | author |
+| `ready-to-implement` | work begins | `implementing` | author |
+| `implementing` | implementation committed + verification record appended | `awaiting-code-review` | code reviewer (never the author) |
+| `awaiting-code-review` | code review appended, **clearing** | `ready-to-archive` | editor/author |
+| `awaiting-code-review` | code review appended, **raised** | `revising-code` | author |
+| `revising-code` | response appended with closure evidence | `ready-to-archive` | editor/author |
+| `ready-to-archive` | archive move | `archived` | -- |
+
+Both revision states (`revising-note`, `revising-code`) exit straight to
+their waiting-room's successor on closure evidence (C7: *"the revision
+carrying that evidence closes it without a fresh full read"*) rather than
+cycling back through another full review round the way a deliberate plan's
+`revising-plan`/`revising-code` do.
+
+**Named warnings** (standard lane; the planner emits, **never refuses**):
+
+* `note-missing-design-review` -- advancing with no appended review at all.
+* `note-unclosed-findings` -- advancing from `revising-note`/`revising-code`
+  without every blocking finding's bound closure evidence, naming them.
+* `note-malformed` -- a missing required header field or section, naming
+  the element.
+* `note-reviewer-independence` -- a code review authored by the note's own
+  author.
+
+**Deliberate-lane regression**: each of these same invalid advances still
+**refuses** on a deliberate plan, unchanged.
+
+**Write once, restate never.** The note's operative sections (Why / What /
+Approach / Verification / Risk) revise **in place** while the note is in
+design; reviews, responses, and decisions **append** and are never edited.
+No complete-restatement requirement on this lane: at ≤150 lines, `git log`
+is the history.
+
 ## Forward-reference paths — `Proposed paths:` marker doctrine
 
 See `doctrine/plans.md` > "Forward-reference paths" for the full
