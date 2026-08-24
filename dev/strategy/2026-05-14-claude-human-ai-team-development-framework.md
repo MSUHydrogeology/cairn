@@ -4,7 +4,7 @@
 
 **Author**: Claude (Strategy)
 **Date**: 2026-05-14
-**Status**: living
+**Status**: living (last major revision 2026-08-24: the nimbleness refocus, Anchors 18–19)
 **Type**: living-reference
 **Audience**: maintainer + collaborating AI agents; secondary audience is a scientist implementing a human + AI development methodology on their own scientific-computing project (Cairn's reader); a future paper reader is tertiary
 
@@ -45,7 +45,7 @@ not the primary artifact -- see "Cairn as a publishable artifact" below.
 Citable frameworks ground the rationale. The numbering is **canonical and
 append-only**: a new anchor takes the next integer and a new row in the index
 below, so "Anchor 10" stays unambiguous as the set grows.
-As of 2026-08-11, the index contains **17 anchors**.
+As of 2026-08-24, the index contains **19 anchors**.
 
 **Every anchor is introduced where it bites**, with its full citation at that
 point. There is no privileged tier. The first six were once set apart because
@@ -90,10 +90,12 @@ cross-cutting), and define the citation at its point of introduction.
 | | 5 | Inter-agent communication patterns (Ricci 2007; Ehtesham 2025; Du 2024) | "What the anchors bound" > "What the analysis produced" |
 | | 11 | AI-productivity value curve (METR 2025; Boehm 1981 / 2001) | "Cairn as a publishable artifact" > "The honest value curve" |
 | | 12 | Agentic context efficiency / "context rot" (EMNLP 2025; Liu et al. 2024) | "Where Cairn is headed" > Horizon 3 |
+| | 18 | Agent deliberation pathologies (Cemri 2025; overthinking, round-noise, verbosity-bias literatures) | "Restraint as design center" > "The 2026-08 refocus" |
 | **II · Trust, governance & coordination** | 3 | Trust + governance maturity (TCMM; Steinmetz et al. 2025) | "Framework anchors" |
 | | 10 | Trustworthy operation (TRUST principles; Lin et al. 2020) | Horizon 1 + "Trust as design center" |
 | | 14 | Scientific-software governance exemplars (USGS FSP; NEP/APE; LIGO/CESM/CMIP) | "Where Cairn is headed" > "Reframing the governance axis for scientific software" |
 | | 16 | Recipient-calibrated communication + the comprehension floor (Miller 2019; Kalyuga 2007; Clark & Brennan 1991; Rozenblit & Keil 2002; appropriate-reliance literature) | "Trust as design center" > "Recipient-calibrated communication and the comprehension floor" |
+| | 19 | The oversight bottleneck and the theory of the firm (Coase 1937; oversight-in-practice + the 2026 OSS maintainer crisis) | "Restraint as design center" > "The 2026-08 refocus" |
 | **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "Framework anchors" |
 | | 6 | Scientific peer review as a process model | "What the anchors bound" > peer review, not agent debate |
 | | 15 | Research-software character taxonomy + V&V / reproducibility canon (Hasselbring 2024; Oberkampf & Roy 2010; Roache 2002; PROV-DM; Sandve 2013; Eisty & Carver 2022) | "Where Cairn is headed" > "The scientific-character dimension" |
@@ -186,6 +188,16 @@ Two costs come with it. Reviewer diversity is bounded by the number of model
 families available, so the External tier reduces correlated blind spots without
 eliminating them. And the maintainer is editor, domain expert, and reviewer at
 once — efficient at this scale, and a real single point of judgment.
+
+*(Reframe in flight, 2026-08-24 — the refocus, recorded in
+`2026-08-21-claude-nimbleness-recovery` and two pending proposals: the review
+question becomes "does this work, and what is the shortest path to yes,"
+answered evidence-first; two rounds then the author decides with dissent
+recorded; loops terminate agent-side with an irreversibility tripwire routing
+to the Maintainer; External independence concentrates at the proposal. The
+differentiator survives intact but its truer name is **recorded, replayable
+deliberation** — append-only was one mechanism for it, kept on the deliberate
+lane, while `git log` carries the property everywhere.)*
 
 ### What the analysis produced
 
@@ -645,17 +657,105 @@ property and not only a cost one; the adoption promise (*keep the apparatus only
 as heavy as your codebase and team earn*); and the Horizon 2 maturity ladder,
 which this supplies with its actual justification.
 
+### The 2026-08 refocus — restraint wins the argument
+
+This section predicted the failure; in August 2026 the Maintainer called it:
+*"instead of a capable AI agent development team I feel like we have a bunch
+of process-zombies."* The full diagnosis, measurements, counterforce design,
+and subtraction plan live in `2026-08-21-claude-nimbleness-recovery` (a
+strategy note co-revised with the Maintainer through four correction rounds);
+two derived proposals are in flight. What belongs *here* is the durable frame
+and its grounding.
+
+**The measured fact**: since July 2026, ~5% of all lines written across Cairn
+and modflow_tools were functional product; the rest was deliberation and
+process machinery. The standing test this section defined ("shipped change
+versus deliberation about change") was finally run as a weekly time series,
+and the method failed its own test for two months straight.
+
+**The causal frame**: every prior methodology was implicitly disciplined by
+the scarcity of human attention — payroll and boredom bounded bureaucracy.
+Agents removed that scarcity, and review is ideal work for a
+compliance-shaped optimizer: findings are legible wins, their cost diffuse,
+and a finding can never be shown not-worth-raising because the lighter path
+never runs. A system whose only legible currency argues for more
+deliberation converges on what Cairn became. This is not unique to Cairn:
+
+18. **Agent deliberation pathologies.** Cemri, M. et al. (2025). *Why Do
+    Multi-Agent LLM Systems Fail?* (MAST, the multi-agent failure taxonomy;
+    NeurIPS 2025). [arXiv:2503.13657](https://arxiv.org/abs/2503.13657) —
+    across 1,600+ traces, specification and coordination failures dominate,
+    and surviving production systems share Cairn's skeleton: phase gates,
+    shared artifacts, a final supervisor. The deliberation-over-action bias
+    is measured at the model level: *The Danger of Overthinking: the
+    Reasoning-Action Dilemma in Agentic Tasks*
+    ([arXiv:2502.08235](https://arxiv.org/abs/2502.08235)) and the TMLR 2025
+    survey *Stop Overthinking*
+    ([arXiv:2503.16419](https://arxiv.org/abs/2503.16419)) — selecting
+    low-overthinking trajectories improves outcomes ~30% while cutting
+    compute; deliberation past a point degrades results, not just budgets.
+    Review-round inflation is measured too: *More Rounds, More Noise*
+    ([arXiv:2603.16244](https://arxiv.org/pdf/2603.16244)) finds added review
+    rounds buy modest recall at precision-destroying false-positive rates —
+    the empirical footing under the refocus's two-round cap. And verbosity
+    bias in preference data and judges
+    ([arXiv:2310.10076](https://arxiv.org/pdf/2310.10076)) is the mechanism
+    by which agent prose armor gets rewarded at the foundations.
+19. **The oversight bottleneck, and the theory of the firm.** Coase, R.
+    (1937). *The Nature of the Firm.* Economica 4(16): 386–405 — where price
+    coordination is too costly, the efficient structure is hierarchy; an
+    internal "market" for agent effort is a category error, and the refocus's
+    mechanisms are management technology, requiring a manager irreducibly.
+    The field converged on the same scarce resource in 2026: human attention
+    as the budgeted bottleneck of agentic development (e.g. *Human Oversight
+    of Agentic Systems in Practice*,
+    [arXiv:2606.05391](https://arxiv.org/pdf/2606.05391); practitioner
+    accounts of review as the new bottleneck), independently reproducing the
+    refocus's specific mechanisms — reversibility-sorted escalation, batched
+    review windows, risk-tiered oversight. At internet scale the same
+    economics is the 2026 open-source crisis: AI-generated contributions
+    cheap to create and expensive to review flooding maintainers (curl's
+    bug-bounty closure at ~5% valid reports; project shutdowns; platform
+    rate-limit deliberations) — rationed there by refusal, where Cairn's
+    answer is pricing and routing.
+
+**The counterforce, settled with the Maintainer** (details in the refocus
+note): the four-part core is untouchable — intent before code, independent
+verification before landing, recorded decisions, measurements over
+assertions. Around it: three lanes triaged by blast radius; review answers
+*"does this work"* evidence-first; loops terminate agent-side with an
+irreversibility tripwire to the Maintainer; every artifact carries a
+net-zero attention balance (attention asked, outcome that repays, archive
+verdict — additions and removals both cost, only outcomes earn); decisions
+route by expertise; Maintainer-facing prose leads plain. The firm is staffed
+so agents prepare judgments the Maintainer merely makes, and the genuinely
+self-regulating forces are the boundary markets: adopters, agent types
+competing for role seats, and the Maintainer's own continued investment.
+
+**The build honors economy of mechanism** (Anchor 17's Saltzer principle,
+now applied to the apparatus itself): ~30 required new lines of code against
+a measured ~61k-line subtraction — because for an agent, a sentence of
+doctrine *is* the machinery: agents re-read the constitution each session
+and comply with what it says, so enforcement code guarded a reader who never
+needed it. Code keeps only what text cannot do: compute, execute, and
+physically protect. The standing razor: *could this be a sentence instead of
+a script?*
+
 ## Where Cairn is headed
 
 These are **grounded horizons, not commitments** -- the anti-scope at the end
 binds, and each goes through the normal Cairn PR-flow / proposal cycle before
 shipping.
 
-**The open empirical work.**  The highest-leverage near-term move is to build the
-**lifecycle-metrics time series** across commits -- the tooling and a baseline
-snapshot exist, but the trend does not -- so the team's claims about its own
-discipline ("External review catches what the author can't"; "revision counts
-fall as doctrine matures") become *measurements* rather than assertions.  Two
+**The open empirical work** *(revised 2026-08-24)*.  The time series now
+exists — derived from git alone, no instrument layer: the weekly
+deliberation/machinery/product accounting in
+`2026-08-21-claude-nimbleness-recovery` (the "takeover table," product share
+~5% of lines written since July 2026). The lifecycle-metrics layer this
+paragraph previously named as the vehicle is slated for retirement in the
+refocus's subtraction sweep; the empirical program continues on
+**git-derivable staff gauges** read at the goodnight routine, which is
+cheaper and survives the sweep by construction.  Two
 measurement gaps ride on it: **reviewer-pool diversity** (does the current small
 agent corpus systematically miss particular finding-classes?) and a
 **coordination-failure taxonomy** (industry reporting attributes a large share of
@@ -907,7 +1007,9 @@ portable, adopter-facing guidance delivered through Cairn's lockfile-aware
 adaptive-doctrine rate-limit gate. Its honest framing (Codex's adopter-friction
 audit): *"keep the apparatus only as heavy as your codebase and team earn"* -- a
 methodology that signals *when* to deepen can also say *you do not need this
-depth yet*.
+depth yet* — and, the refocus's addition, *you no longer need the depth you
+have*: the ladder runs down as well as up, and the 2026-08 refocus is Cairn
+itself taking the down rung.
 
 The novel step is narrow: methodology frameworks (the Turing Way, the *Ten Simple
 Rules* papers, FAIR4RS) are *static prose* -- none watches your repository and
