@@ -4318,6 +4318,80 @@ class TestMultiObligationPlanReview:
         assert planner.review_record_violations(art) == []
 
 
+class TestTheSecurityPlanObligationPair:
+    """`retire-external-plan-review` §2 on `dev/plans/convergent-lifecycle.md`
+    Chunk G: a plan whose surface or triggers require security treatment
+    declares `required(Internal + Internal Security Review)` -- the SAME
+    `+`-obligation grammar `TestMultiObligationPlanReview` already pins
+    generically (Decision preamble item 1: *"no new grammar"*), applied to
+    the specific pair the Decision names.  The directed pair, pinned as
+    written: (a) an ordinary Internal pass never clears the second clause;
+    (b) an appended pass whose `**Obligation**:` names it, at Internal tier,
+    does.  Today, before this pairing existed, mutation (a) passed silently
+    -- that is the defect this pair exists to make unreintroducible.
+    """
+
+    _PAIR = "required(Internal + Internal Security Review)"
+
+    def _pass(self, obligation, *, tier="Internal", date="2026-05-01",
+              findings="none"):
+        block = _pass_block(reviewer=f"R{date[-2:]}", date=date, tier=tier,
+                            findings=findings)
+        if obligation is None:
+            return block
+        return block.replace("**Tier**:", f"**Obligation**: {obligation}\n**Tier**:")
+
+    def _v(self, tmp_path, body):
+        return _violations(tmp_path, body, stem=_E_STEM, plan_review=self._PAIR)
+
+    def test_the_declaration_resolves_to_the_named_pair(self):
+        obligations, violation = planner.normalize_required_obligations(self._PAIR)
+        assert violation is None
+        assert obligations == (("Internal", "internal"),
+                               ("Internal Security Review", "internal"))
+
+    def test_an_ordinary_internal_pass_alone_reports_the_obligation_unmet(
+            self, tmp_path):
+        """Mutation (a), pinned as written: today, before this obligation
+        existed as a declared `+` pair, an ordinary Internal pass silently
+        cleared a floor that named a Security Review nowhere -- exactly
+        RERP-01's failure mode.  With the pair declared, a single ordinary
+        pass (no `**Obligation**:` line at all) clears nothing, because a
+        multi-obligation floor requires one pass PER named clause."""
+        v = self._v(tmp_path, self._pass(None))
+        assert len(v) == 2, v
+        assert any("'Internal'" in m for m in v), v
+        assert any("'Internal Security Review'" in m for m in v), v
+
+    def test_an_ordinary_internal_pass_explicitly_bound_still_leaves_the_security_clause_open(
+            self, tmp_path):
+        """The sharper form of mutation (a): even when the ordinary pass
+        explicitly binds itself to the plain `Internal` clause, the second,
+        Security-specific clause is untouched -- an ordinary Internal review
+        record, however clean, never satisfies it."""
+        v = self._v(tmp_path, self._pass("Internal"))
+        assert len(v) == 1, v
+        assert "'Internal Security Review'" in v[0]
+
+    def test_an_appended_internal_security_review_pass_clears_the_pair(
+            self, tmp_path):
+        """Mutation (b): the same plan, plus a second pass whose
+        `**Obligation**: Internal Security Review` line matches the declared
+        clause exactly, at a Tier satisfying it -- clears both."""
+        assert self._v(tmp_path, self._pass("Internal")
+                       + self._pass("Internal Security Review",
+                                    date="2026-05-02")) == []
+
+    def test_an_external_security_review_pass_also_satisfies_the_internal_floor(
+            self, tmp_path):
+        """Tiers are non-cumulative but ordered: `External >= Internal`, so a
+        stronger-than-required pass still clears the Internal Security
+        Review clause."""
+        assert self._v(tmp_path, self._pass("Internal")
+                       + self._pass("Internal Security Review", tier="External",
+                                    date="2026-05-02")) == []
+
+
 class TestBlockedByIsNonAuthoritative:
     """*"The field never changes the legal state machine and never
     substitutes for a status."*  Three negatives and two shape checks."""
