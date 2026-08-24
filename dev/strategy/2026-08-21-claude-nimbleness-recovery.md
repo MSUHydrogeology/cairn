@@ -504,6 +504,52 @@ attention accounting, settled inside each artifact**:
   says later whether the promise was kept. The governor stays: the
   weekly product-share gauge sets the default posture at goodnight.
 
+**Natural incentives, not just structures** (Maintainer, 2026-08-24:
+the balance sheet is regulation — *"markets work because there are
+competing natural incentives; structures exist to keep markets from
+making everything an externality"* — so what pushes against
+deliberation *by gravity*?). An agent's nature is thinner than a
+human's — no boredom, no careers — but three real forces exist:
+approval-seeking toward the Maintainer, imitation of the record every
+session reads on arrival, and a finite context window. Four natural
+incentives built from them:
+
+* **Running code wins arguments.** The IETF's rule-that-isn't-a-rule
+  ("rough consensus and running code" — the cultural force that kept
+  it light while the OSI committees deliberated themselves into
+  irrelevance): a working, tested demonstration outranks any document
+  in a decision, and the alternative to blocking a direction is
+  building the alternative. Deliberation gains a predator — the
+  cheapest way to win an argument becomes doing the thing, because
+  the patch ends the argument while the finding only extends it.
+* **One session owns the outcome, end to end.** For standard work,
+  the session that opens it ships it — so the author's own finite
+  context becomes the clock, and every page of deliberation visibly
+  spends capacity that building needed. Paired with fixed appetite,
+  variable scope (Shape Up): the Maintainer says what a change is
+  worth ("one session"), and scope bends to fit rather than time
+  bending to fit scope.
+* **The record is the reward model — curate it like one.** In an
+  agent system the archive is not memory, it is the training signal:
+  arriving sessions learn "good work here" from what the record
+  contains and evidently honors, and today that is 2,800-line
+  proposals surviving six rounds. The counterforce is editorial —
+  reflections, Decision summaries, and goodnights celebrate shipped
+  outcomes with the care currently lavished on review arcs — plus
+  the Maintainer's live reactions, which are the selection pressure
+  that actually reaches agents in the moment.
+* **The adopter gradient.** User contact is the most naturally
+  reinforcing signal an agent gets. Adopter issues jump every queue,
+  turnaround is the headline number, and the shipping agent is named
+  in the record — the closest available approximation to real market
+  exposure, and the four adopter issues already disciplined this
+  project better than all its internal machinery.
+
+The structures above (the balance sheet, fidelity, C0) then hold
+their proper, secondary role: policing these incentives — running
+code that skips verification, sessions shipping garbage to beat the
+clock — not generating the force.
+
 **Transition: one board bankruptcy.** The accounting cannot start atop
 2,513 lines of unpriced liability: one write-down — rows to one line,
 a cull, everything below the line expires rather than migrates.
