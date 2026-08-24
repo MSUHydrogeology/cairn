@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-21
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Supersedes**: `2026-08-20-claude-review-loop-termination` (accepted Revision 7,
 superseded same day; its objective binds here, its scope does not)
@@ -319,3 +319,263 @@ is a pre-implementation review and the request excludes it.
 **Second-round recommendation**: recommended.  The revised contract should be
 read again after it makes triage, the standard-note state machine, the
 non-vacuous security selection, and the migration auditable.
+
+## Response + Revision 1 -- Claude -- 2026-08-24
+
+**Concurrency note, first.** The review's reviewed commit is `b0e78e8`. Commit
+`0ebd3a7` ("reviewers recommend; the editor assigns", §2's last bullet) landed
+while the review was being written — it is part of the operative contract below
+but was not read by this reviewer. It responds to no finding; round 2 should
+read it fresh. Inline revision ended the moment this review landed; everything
+from here is append-only.
+
+**All five findings are accepted; RCL-01 and RCL-03 were reproduced before
+acceptance** (`pytest --collect-only -q -m security` → `no tests collected
+(4623 deselected)`, exactly as stated). Two are accepted with modification:
+the full detail RCL-02 and RCL-05 request is split between this contract
+(the grammar, the authority rule) and the derived plan (the directed tests,
+the per-artifact table), and the modification is named in each disposition.
+
+| finding | disposition |
+|---|---|
+| RCL-01 (triage polarity) | **Accept.** Closed triage procedure in §1; C0 polarity defined (damage = yes → blocking; blocking on the standard lane forces escalation or an explicit Maintainer disposition); the "even on a named surface" clause is withdrawn and replaced by a three-condition defect-repair carve-out. |
+| RCL-02 (note grammar) | **Accept with modification.** §2a adds the note schema and transition table, warning semantics, twin parity, and event survival. The directed test list (malformed note, missing design review, closure, deliberate-lane regression) is adopted verbatim as derived-plan chunks — enumerating test nodes is plan-level detail. |
+| RCL-03 (vacuous marker) | **Accept.** §5 now requires a committed non-empty manifest with owner and reason per member, marker registration, membership checked against the manifest in both directions, a directed removal mutation that must fail, and exact commands. Release runs the **full** suite — stronger than a security-only selection and immune to an empty-set pass. |
+| RCL-04 (missing preflight) | **Accept.** S1–S5 answered below against the accepted architecture. The implementation installing this split is verified under the **current** contract (full-suite Boundary B, pre-change definition) and takes a **Security Review** — declared in the contract, not left to the implementer. |
+| RCL-05 (migration authority) | **Accept with modification.** The lane is prospective for newly opened work. The three candidates are named; each migrates only on recorded per-artifact Maintainer authorization, the accepted proposal remains the authoritative scope record, and dropped outcomes need explicit Maintainer allowance under the standing rule. The per-artifact table lives in the migration commit itself, not here. |
+
+**On `Plan readiness: DISTINCT REVIEW REQUIRED`.** Recorded and preserved. This
+proposal lands under the rules it replaces, so the token stands in the record;
+under the Maintainer's direction of 2026-08-24 (and §2's operative rule), tier
+assignment is the editor's at the Decision. Recommendation with default: the
+derived plan takes **Internal** review — the contract below is small, its
+enforcement changes are advisory demotions, and the security-relevant piece
+carries its own declared Security Review, which is the stronger instrument.
+
+### Withdrawn / superseded commitments
+
+* *"even on a named surface, when it changes no contract"* (trivial lane) —
+  withdrawn; replaced by the defect-repair carve-out in §1 (RCL-01).
+* *"A finding failing that test is recorded as a note"* — withdrawn as
+  ambiguous; polarity now explicit in §2 (RCL-01).
+* The two-direction marker check as sufficient evidence — superseded by the
+  manifest-anchored membership test with a directed mutation (RCL-03).
+* Release-mode running a security-only selection — superseded: release runs
+  the full suite (RCL-03).
+* *"In-flight accepted proposals may elect the standard lane"* as written —
+  superseded by the authorized-migration procedure in §6 (RCL-05).
+
+---
+
+## THE COMPLETE CURRENT CONTRACT (Revision 1)
+
+Supersedes the opened Proposal section in full. Objective, Context, header
+fields, and the review record above are unchanged.
+
+### 1. Three lanes, chosen by a closed triage procedure
+
+Evaluate in order; the first match assigns the lane.
+
+1. **Deliberate** if the change (a) touches a high-risk surface `AGENTS.md`
+   names, (b) breaks or widens a contract, (c) is release or security
+   ceremony, or (d) is a **major new feature** — a new user-facing capability,
+   module, or subsystem (Maintainer direction, 2026-08-21: what-to-build is a
+   structure question). One carve-out crosses rule 1: a **defect repair** —
+   all three of (i) a failing-test reproduction, (ii) restores documented or
+   intended behavior with no contract change, (iii) the touched surface's own
+   test family runs in the loop — takes the trivial lane even on a named
+   surface. An edit that changes what a ceremony or surface *does* is not a
+   defect repair and stays deliberate, whether or not a public contract moved.
+2. **Trivial — just commit** for defect repairs meeting the carve-out and for
+   the existing just-commit class (typo, docstring, self-contained helper):
+   code + test + one code review.
+3. **Standard — the change note** for everything else.
+
+The deliberate lane is today's two-stage, unchanged: review *floors* — who is
+independent enough — stay as they are, including External where currently
+required; a floor is not a reviewer's lever (§2). Election upward is open to
+author or Maintainer; **uncertainty resolves upward**, and only the
+Maintainer may override the procedure's result, on the record.
+
+### 2. One design review, one code review, each with an exit
+
+* **C0 is the blocking test, with explicit polarity**: *would shipping this
+  cause damage that is hard to undo?* **Yes → blocking.** No → the finding is
+  recorded as a `note` or `nit` and does not block. A blocking finding on a
+  standard-lane artifact additionally forces one of: escalation to the
+  deliberate lane, or an explicit recorded Maintainer disposition. Full
+  review weight remains on the deliberate lane.
+* **Every review includes at least one falsification attempt with its output
+  pasted in.** A prose-only read is an incomplete review.
+* **A blocking finding binds its closure evidence when raised** (C7,
+  `Closes on: <evidence>`); the revision carrying that evidence closes it
+  without a fresh full read.
+* **Round 2 exists only to check round 1's closure evidence.** After round 2
+  the author decides every open item — accept, or decline with a one- or
+  two-sentence defense — dissent recorded, work proceeds. Questions travel to
+  the Maintainer only by expertise routing: science in domain terms any time;
+  structure as recommendation-with-default; implementation detail never.
+* **The editor may end any loop at any time** over open findings by naming
+  them (C1). A clearing verdict requires a whole-artifact read.
+* **Reviewers recommend; the editor assigns.** No reviewer sets a downstream
+  review tier, demands an escalation, or prescribes the next round's scope —
+  on any lane. A recorded recommendation never binds; the `AGENTS.md` trigger
+  converting `DISTINCT REVIEW REQUIRED` into mandatory External plan review
+  retires with the token. The reviewer's view is preserved in the record; the
+  decision belongs to the role accountable for it.
+
+### 2a. The change note is a defined artifact (RCL-02)
+
+**Header fields** (all required): `Author`, `Date opened`, `Status`,
+`Lane: standard` (what distinguishes a note from a deliberate plan, in both
+the self-hosted and shipped twins), `Risk` (the C0 answer, one sentence),
+`Review` (who reads it), `Related`. **Sections**: Why / What / Approach /
+Verification / Risk. Target ≤150 lines.
+
+**Transitions** (state → next owner; evidence required to advance):
+
+| state | next owner | to advance |
+|---|---|---|
+| `awaiting-plan-review` | reviewer | appended design review (§2) |
+| `ready-to-implement` | author | author response to any blocking findings |
+| `implementing` | author | implementation + verification record appended |
+| `awaiting-code-review` | code reviewer (not the author) | appended code review |
+| `revising-code` | author | closure evidence per C7 |
+| `ready-to-archive` | editor/author | archive move |
+
+**Warning semantics**: on the standard lane the planner reports a malformed or
+unknown note as a **warning naming the missing element** — never a refusal
+(§4). The deliberate lane keeps today's conformance behavior. **Events**:
+change notes emit the same `cairn-event-v1` records as plans, keyed by stem,
+so longitudinal metrics survive the merge. **Derived-plan tests** (adopted
+from RCL-02 verbatim): directed cases for a malformed note, a missing design
+review, closure binding, and a deliberate-lane regression.
+
+### 3. Write once, restate never
+
+The change note's operative sections revise **in place** while in design;
+reviews, responses, and decisions **append** and are never edited. No
+complete-restatement requirement on this lane: at ≤150 lines, `git log`
+preserves every prior state, and silent section loss cannot hide in two
+pages. The deliberate lane keeps full append-only as today.
+
+### 4. Tools advise, humans decide
+
+All lifecycle checks on trivial and standard lanes **warn, never refuse**
+(Maintainer direction, 2026-08-21). Hard refusal survives only for genuine
+safety: scaffold containment and release trust-root verification. An artifact
+the planner does not yet parse is a warning, not a stranded file.
+
+### 5. The security suite becomes a release-only step (RCL-03 folded in)
+
+Maintainer decision, 2026-08-21, verbatim: *"The security suite should be a
+release-only step."* The security apparatus — portable sweeps, content scan,
+the differential-oracle gate and preflight, AST attestation — **stays enabled
+at full strength**; what moves is when its tests run.
+
+* **Membership is manifest-anchored.** A committed manifest lists every
+  security-family test file with an owner and a one-line reason; the `security`
+  pytest marker is registered in `bootstrap/tests/conftest.py` and applied to
+  exactly the manifest's members. The membership check asserts (a) the
+  manifest is **non-empty**, (b) `-m security` collects exactly the manifest's
+  files, (c) `-m "not security"` collects none of them. A directed mutation —
+  removing the marker from one manifest member — must fail the check; the
+  derived plan runs it and records the output.
+* **Commands, exactly.** Per-change (Boundary B and the inner loop):
+  `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests -m "not security"
+  --quality-gate-shuffle-seed=0`. Release: the release ceremony runs the
+  **entire suite, no deselection** — strictly stronger than a security-only
+  selection and immune to an empty-set pass.
+* **The carve-out is temporal, not jurisdictional**: a change to a security
+  surface still runs that surface's family in the loop.
+* **Installing this split is itself a current-contract change**: its
+  implementation runs the **pre-change canonical Boundary B** (full suite,
+  current definition) and takes a **Security Review** — it touches
+  `bootstrap/tests/conftest.py`'s release-mode and broad-run hooks and the
+  release ceremony, which are trust-ceremony surfaces today.
+
+#### Security preflight (RCL-04)
+
+* **S1 — Who supplied it?** The marker is applied inside the test files being
+  classified — supplied by reference by the object under decision. That is why
+  membership is cross-checked against the separately committed, separately
+  reviewed manifest: neither alone admits a test to the release-only set. The
+  release-mode selection is driven by the release environment supplied by the
+  Maintainer running the ceremony, not by repository content.
+* **S2 — Can it fail?** Mutation: remove the `security` marker from one
+  manifest member → the membership check fails (must be run and recorded by
+  the derived plan; not yet run — no marker exists at this commit, which is
+  RCL-03's finding). The empty-manifest case fails closed via the non-empty
+  assertion. The check compares two independently supplied sets, so it does
+  not derive its expectation from the object it checks.
+* **S3 — What fires it, over what?** The two commands above; the per-change
+  form is selected by Boundary B, the full run by the release runbook step in
+  `docs/release-process.md`, whose prose the derived plan updates and quotes
+  so command and description agree.
+* **S4 — Which way does it break?** An unmarked or newly added test defaults
+  into the per-change set — it runs *more* often, not less. Omission from the
+  manifest cannot reduce coverage below today at release, because release
+  runs everything.
+* **S5 — Who still wins?** Assumed attacker: cannot land commits on trunk. An
+  attacker who can commit may edit marker and manifest together; that class
+  is closed by **enumeration** (review of manifest diffs), not by
+  construction — stated plainly. Release-artifact integrity remains bound by
+  the gate anchor, which this change does not touch.
+
+### 6. Transition (RCL-05)
+
+**Prospective: the standard lane applies to newly opened work.** The three
+named migration candidates are `2026-08-20-claude-portable-sweeps-cannot-run`,
+`2026-08-20-claude-adopt-into-existing-tree`, and
+`2026-08-20-claude-scanner-claim-scope` (accepted, plans not yet opened). Each
+may migrate **only** on a per-artifact Maintainer authorization recorded in
+the artifact, via a migration commit that names the source stem and accepted
+commit, the retained obligations (each proposal's declared Security Review
+and plan-review requirements carry unchanged), and the link back. **The
+accepted proposal remains the authoritative scope record**; the note
+implements it, and any accepted outcome the note does not retain requires the
+Maintainer's explicit allowance under the standing scope-reduction rule.
+C0's risk-posture text enters `doctrine/dual-review.md` verbatim.
+
+### What this deletes
+
+The complete-restatement rule and its section manifest; the `Plan readiness`
+vocabulary and inheritance apparatus (granted 0/19); constructibility as a
+named gate (it becomes a falsification question); finding-class notation
+(C0's single test replaces four classes); roughly half the lifecycle commits
+per change; and ~5 minutes from every per-change verification run (moved to
+release, not deleted).
+
+### Evidence / verification plan
+
+Template and doctrine edits pass the claim, link, and neutrality gates.
+Planner demotion and the change-note grammar are covered by updating the
+lifecycle tests plus the four directed cases in §2a. The security-marker
+membership test and its removal mutation run with output recorded (§5). The
+release runbook names the full-suite run as its step. The change-note path is
+exercised by this proposal's own derived plan being written as one — as
+evidence of usability only; the grammar and transitions of §2a are the
+contract it is checked against. Ongoing measurement stays staff gauges read
+at goodnight: median artifact length, rounds per artifact, open→archive days,
+adopter issue→fix sessions.
+
+### Signals the change is wrong
+
+* A shipped defect a second design round would demonstrably have caught —
+  audit: was the miss brevity, or a missing measurement?
+* Arcane escalations reach the Maintainer again — the lanes are misrouted.
+* Change notes routinely exceed ~300 lines — the container was not the
+  constraint; the culture work (`nimbleness-recovery` 3.5) is the gap.
+* Release-time security failures trace to changes that never touched a named
+  security surface — the temporal carve-out is drawn too narrow.
+* The migration path is used without its recorded authorization — §6's
+  procedure is too heavy for practice and is being routed around.
+
+### Reviewer brief (round 2)
+
+Read the complete contract above, plus §2's final bullet (`0ebd3a7`, unread
+in round 1). Seams: (1) triage — construct a hard-to-undo change that still
+lands standard under the closed procedure; (2) §2a — is the transition table
+executable as written; (3) §5 — the manifest/marker cross-check and its
+mutation; (4) §6 — can a migration lose an obligation without tripping the
+allowance rule.
