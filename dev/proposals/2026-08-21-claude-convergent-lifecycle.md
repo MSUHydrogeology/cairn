@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-21
-**Status**: revising
+**Status**: awaiting-review
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Supersedes**: `2026-08-20-claude-review-loop-termination` (accepted Revision 7,
 superseded same day; its objective binds here, its scope does not)
@@ -13,7 +13,7 @@ shipped twins, `AGENTS.md` + shipped twin, `tools/lifecycle_planner.py` + twin
 (refusals → warnings), lifecycle tests; `bootstrap/tests/conftest.py`
 (security marker) and `docs/release-process.md` (the release-only run, §5)
 **Related**: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
-**Plan review**: required(Internal) — this lands under the rules it replaces
+**Plan review**: required(External) — the round-2 reviewer's recorded token binds under the rules this proposal lands under (RCL-06); corrected in Revision 2
 
 ## Objective
 
@@ -689,3 +689,241 @@ run the full suite.
 **Second-round recommendation**: recommended after a complete revision closes
 the three findings.  The tier-authority widening particularly needs an
 independent read because it changes the mechanism that allocates that read.
+
+## Response + Revision 2 -- Claude -- 2026-08-24
+
+All three findings are **accepted**. RCL-03's factual claims were verified
+before acceptance (`bootstrap/security_check.py` defines
+`RELEASE_GATE_ENV = "CAIRN_RELEASE_GATE_ACTIVE"` and owns the whole-suite,
+Bandit, repository, and quality-gate phases; `AGENTS.md:135` carries the
+trigger RCL-06 names).
+
+| finding | disposition |
+|---|---|
+| RCL-02 | **Accept.** §2a is replaced with a fully branched transition table — clearing vs raised review, `revising-note`, the closure record at each branch, next owner per row — plus named warnings for each invalid advance and a deliberate-lane regression that proves the same advance still refuses there. |
+| RCL-03 | **Accept, and the fix shrinks the change.** The release step is **`bootstrap/security_check.py`, retained unchanged** — it already runs the entire suite under the release gate with skips/xfails failing closed, plus its other phases. §5 no longer touches the release path at all. The security-surface carve-out no longer needs a bespoke command: such a change runs **today's full canonical Boundary-B pair, unchanged**. The deselect-contradiction disappears with it. |
+| RCL-06 | **Accept, in both halves.** (a) The tier-authority widening is accounted as a scope expansion: ledger entry, enumerated surfaces, directed tests in both directions, and an explicit floors-vs-trigger distinction — a *declared* `required(External)` or Security Review is non-downgradable; only the reviewer-token *trigger* retires. (b) **Conceded on the self-application**: under the current contract this review's recorded `DISTINCT REVIEW REQUIRED` binds. Revision 1's recommendation of Internal is withdrawn; **this proposal's derived plan takes External review**, and the new tier rule applies prospectively only, after acceptance. A proposal must not be the first beneficiary of the rule it proposes. |
+
+**Corrected header value**: `Plan review: required(External)` — current-rule
+binding, given the recorded token. The header line is updated to match.
+
+### Withdrawn / superseded commitments (cumulative with Revision 1's)
+
+* Revision 1's recommendation that the derived plan take Internal review —
+  withdrawn (RCL-06); the current rule binds until the replacement is accepted.
+* The opened contract's "review floors apply here untouched" *as it read
+  before `0ebd3a7`* — that commit changed the meaning of the
+  `DISTINCT REVIEW REQUIRED` mechanism and is now accounted as a scope
+  expansion with its own ledger entry, surfaces, and tests (RCL-06).
+* Revision 1's "release runs the entire suite, no deselection" as a new
+  command — superseded: the existing `security_check.py` release step is
+  retained byte-for-byte; no release command changes (RCL-03).
+* Revision 1's §2a transition table — superseded by the branched table
+  below (RCL-02).
+
+---
+
+## THE COMPLETE CURRENT CONTRACT (Revision 2)
+
+Supersedes Revision 1's contract in full. Objective, Context, and the review
+record are unchanged. Header values: as opened, except
+`Plan review: required(External)` (RCL-06).
+
+### 1. Three lanes, chosen by a closed triage procedure
+
+Evaluate in order; the first match assigns the lane.
+
+1. **Deliberate** if the change (a) touches a high-risk surface `AGENTS.md`
+   names, (b) breaks or widens a contract, (c) is release or security
+   ceremony, or (d) is a **major new feature** — a new user-facing capability,
+   module, or subsystem (Maintainer direction, 2026-08-21). One carve-out
+   crosses rule 1: a **defect repair** — all three of (i) a failing-test
+   reproduction, (ii) restores documented or intended behavior with no
+   contract change, (iii) the touched surface's own verification runs per §5's
+   security-surface rule — takes the trivial lane even on a named surface. An
+   edit that changes what a ceremony or surface *does* is not a defect repair
+   and stays deliberate, whether or not a public contract moved.
+2. **Trivial — just commit** for defect repairs meeting the carve-out and the
+   existing just-commit class: code + test + one code review.
+3. **Standard — the change note** for everything else.
+
+The deliberate lane is today's two-stage. Review floors stay as declared (see
+§2's floors-vs-trigger rule). Election upward is open to author or Maintainer;
+**uncertainty resolves upward**; only the Maintainer may override the
+procedure's result, on the record.
+
+### 2. One design review, one code review, each with an exit
+
+* **C0 is the blocking test, with explicit polarity**: *would shipping this
+  cause damage that is hard to undo?* **Yes → blocking**; a blocking finding
+  on the standard lane forces escalation to deliberate or an explicit
+  recorded Maintainer disposition. No → `note` / `nit`, recorded, non-blocking.
+* **Every review includes at least one falsification attempt with output
+  pasted in.**
+* **A blocking finding binds its closure evidence when raised** (C7,
+  `Closes on: <evidence>`); the response carrying that evidence closes it
+  without a fresh full read.
+* **Round 2 exists only to check round 1's closure evidence.** After round 2
+  the author decides every open item with a one- or two-sentence defense;
+  dissent recorded; work proceeds. Escalation only by expertise routing.
+* **The editor may end any loop at any time** over open findings by naming
+  them (C1). A clearing verdict requires a whole-artifact read.
+* **Floors and triggers are distinct decisions (RCL-06).** An artifact's
+  **declared floor** — its own `Plan review: required(External)`, or a
+  Security Review named by a standing trigger — is non-downgradable by
+  reviewer, author, or editor, short of the standing deviation/allowance
+  process. What retires is the **escalation trigger**: the `AGENTS.md` /
+  `doctrine/dual-review.md` rule converting a reviewer's recorded
+  `DISTINCT REVIEW REQUIRED` into a mandatory External plan review. After
+  acceptance, that token is a preserved recommendation and tier assignment is
+  the editor's at the Decision. Affected surfaces, all updated together:
+  `AGENTS.md` (plan-readiness inheritance paragraph) + shipped twin,
+  `doctrine/dual-review.md`, both templates' readiness slots,
+  `tools/lifecycle_planner.py` readiness parsing + shipped twin, and their
+  tests. Directed tests in both directions: a recorded token imposes nothing
+  once the rule lands, and a declared `required(External)` or Security Review
+  survives every path that tries to lower it. **Prospective only: this
+  proposal's own derived plan takes External review under the current rule.**
+
+### 2a. The change note is a defined artifact
+
+**Header fields** (all required): `Author`, `Date opened`, `Status`,
+`Lane: standard` (the discriminator from a deliberate plan, in self-hosted
+and shipped twins), `Risk` (the C0 answer, one sentence), `Review` (who
+reads it), `Related`. **Sections**: Why / What / Approach / Verification /
+Risk. Target ≤150 lines.
+
+**Directed transitions** (every branch; owner is who acts next):
+
+| from | on | to | next owner |
+|---|---|---|---|
+| `awaiting-plan-review` | design review appended, **clearing** (no blocking findings; whole-artifact read) | `ready-to-implement` | author |
+| `awaiting-plan-review` | design review appended, **raised** (blocking findings, each with `Closes on:`) | `revising-note` | author |
+| `revising-note` | response appended carrying every blocking finding's bound closure evidence | `ready-to-implement` | author |
+| `ready-to-implement` | work begins | `implementing` | author |
+| `implementing` | implementation committed + verification record appended | `awaiting-code-review` | code reviewer (never the implementer) |
+| `awaiting-code-review` | code review appended, **clearing** | `ready-to-archive` | editor/author |
+| `awaiting-code-review` | code review appended, **raised** (each finding bound per C7) | `revising-code` | author |
+| `revising-code` | response appended with closure evidence per C7 | `ready-to-archive` | editor/author |
+| `ready-to-archive` | archive move | `archived` | — |
+
+The editor-ends edge (C1) is available from every state. A reviewer's
+optional round 2 verifies closure evidence only. **Records**: a review is an
+appended `## Review` (tier, target, findings with `Closes on:`); a response
+is an appended `## Response` (per-finding disposition + the evidence); both
+are append-only even on this lane (§3 governs only the operative sections).
+
+**Named warnings** (standard lane; the planner emits, never refuses): advance
+with no appended review → `note-missing-design-review`; advance from
+`revising-note`/`revising-code` without every blocking finding's closure
+evidence → `note-unclosed-findings`, naming them; missing header field or
+section → `note-malformed`, naming the element; code review authored by the
+implementer → `note-reviewer-independence`. **Deliberate-lane regression**:
+directed tests prove each of these same invalid advances still **refuses** on
+a deliberate plan, unchanged. **Events**: notes emit `cairn-event-v1` keyed
+by stem, so longitudinal metrics survive. **Derived-plan tests**: malformed
+note; raised design review without closure; raised code review without
+closure; both clearing paths; the deliberate-lane regression.
+
+### 3. Write once, restate never
+
+Operative sections of a change note revise **in place** during design;
+reviews, responses, and decisions **append** and are never edited. No
+complete-restatement requirement on this lane; `git log` is the history. The
+deliberate lane keeps full append-only as today.
+
+### 4. Tools advise, humans decide
+
+All lifecycle checks on trivial and standard lanes **warn, never refuse**
+(Maintainer direction, 2026-08-21), with §2a's named warnings. Hard refusal
+survives for genuine safety (scaffold containment, release trust-root) and,
+unchanged, on the deliberate lane's conformance checks.
+
+### 5. The security suite becomes a release-only step
+
+Maintainer decision, 2026-08-21, verbatim: *"The security suite should be a
+release-only step."* The security apparatus stays enabled at full strength;
+what moves is when its tests run in the **per-change** loop. Three rules:
+
+* **The release path does not change (RCL-03).** The release step is
+  `python bootstrap/security_check.py`, retained unchanged: it already runs
+  the **entire suite** under `CAIRN_RELEASE_GATE_ACTIVE=1` — skips, xfails,
+  and xpasses failing closed — plus its Bandit, repository, and quality-gate
+  phases. §5 adds nothing to it and removes nothing from it. The derived plan
+  adds a directed release-mode fixture (a skipped/xfailed security test) and
+  records that the gate fails closed on it.
+* **Per-change (Boundary B and the inner loop)**:
+  `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests -m "not security"
+  --quality-gate-shuffle-seed=0`, followed by the standing
+  `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
+* **A security-surface change runs today's full canonical Boundary-B pair,
+  unchanged** — no bespoke selection, no deselection of the family under
+  test. The carve-out is temporal for everyone else and simply absent for
+  security surfaces.
+
+**Membership is manifest-anchored** (unchanged from Revision 1): a committed
+manifest lists every security-family test file with owner and reason; the
+registered `security` marker is applied to exactly those members; the
+membership check asserts the manifest is non-empty, `-m security` collects
+exactly its members, `-m "not security"` collects none; a directed mutation
+(unmark one member) must fail, run and recorded by the derived plan.
+**Installing this split** runs the pre-change canonical Boundary B and takes
+a declared **Security Review** (it touches `bootstrap/tests/conftest.py` and
+Boundary-B doctrine — trust-ceremony surfaces).
+
+#### Security preflight
+
+Carried from Revision 1 verbatim, with one strengthening: S3's answer now
+names `bootstrap/security_check.py` as the release trigger and the exact
+per-change commands above; S4 gains: the release path cannot weaken because
+it is not modified.
+
+### 6. Transition
+
+**Prospective: the standard lane applies to newly opened work.** Named
+migration candidates: `2026-08-20-claude-portable-sweeps-cannot-run`,
+`2026-08-20-claude-adopt-into-existing-tree`,
+`2026-08-20-claude-scanner-claim-scope`. Each migrates only on a per-artifact
+Maintainer authorization recorded in the artifact, via a migration commit
+naming the source stem and accepted commit, retained obligations (declared
+Security Reviews and plan-review requirements carry unchanged), and the link
+back. The accepted proposal remains the authoritative scope record; dropped
+outcomes need the Maintainer's explicit allowance under the standing rule.
+C0's risk-posture text enters `doctrine/dual-review.md` verbatim.
+
+### What this deletes
+
+The complete-restatement rule and its section manifest; the `Plan readiness`
+vocabulary and inheritance apparatus (granted 0/19), with the trigger
+retirement scoped by §2's floors-vs-trigger rule; constructibility as a named
+gate; finding-class notation; roughly half the lifecycle commits per change;
+and ~5 minutes from every per-change verification run (moved to the release
+step that already runs it, not deleted).
+
+### Evidence / verification plan
+
+Template and doctrine edits pass the claim, link, and neutrality gates.
+Planner demotion, the §2a grammar, its named warnings, and the
+deliberate-lane refusal regression are covered by directed lifecycle tests
+(§2a's list). The marker membership test and unmark mutation run with output
+recorded; the release-mode fixture proves fail-closed (§5). Tier-rule tests
+run in both directions (§2). The release runbook is updated to state that
+`security_check.py` is unchanged and remains the ceremony's entry point. The
+change-note path is exercised by this proposal's own derived plan as evidence
+of usability, checked against §2a's grammar. Ongoing measurement stays staff
+gauges read at goodnight.
+
+### Signals the change is wrong
+
+Carried from Revision 1 unchanged, plus: a declared External floor or
+Security Review is downgraded anywhere without the standing allowance
+process — the floors-vs-trigger rule has a hole.
+
+### Reviewer brief (round 3, if the editor takes one)
+
+Closure verification only, per the loop this proposal proposes and the rules
+it lands under: RCL-02 closes on the branched table + named warnings +
+regression list in §2a; RCL-03 closes on §5's retained `security_check.py`
+release path and the security-surface full-pair rule; RCL-06 closes on §2's
+floors-vs-trigger rule, the enumerated surfaces, the ledger entry, and the
+withdrawn Internal recommendation with `required(External)` in the header.
