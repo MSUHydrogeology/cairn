@@ -68,8 +68,8 @@ def _pass_kind_of(header: str) -> Optional[str]:
 def _pass_reviewer_of(header: str) -> str:
     """Reviewer identity from a dated pass heading: the text between the
     first and second ` -- ` separator, with a trailing parenthetical role
-    stripped (``## Code review -- Codex (External) -- 2026-08-21`` ->
-    ``'Codex'``).  ``''`` when the heading carries no second separator to
+    stripped (``## Code review -- Alice (External) -- 2026-08-21`` ->
+    ``'Alice'``).  ``''`` when the heading carries no second separator to
     read between."""
     parts = header.split(_DASH_SEP)
     if len(parts) < 2:
