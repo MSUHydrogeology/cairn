@@ -13,7 +13,7 @@ Do them simultaneously."*:
 "Relationship" section says so, and it is a strict subtraction from either
 baseline.
 
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(**Internal**) — and under the rule this plan lands,
 that is the only tier there is. **Basis corrected at the fold**: the External
 floor was waived in `convergent-lifecycle`'s *own* Decision (`47315b6`), hours
@@ -610,3 +610,27 @@ infer it:
 defect -- four wording artifacts across two files in one day, each silenced at
 acceptance. That wants a successor proposal, and changing a checker inside a
 plan whose thesis is subtraction is how the ratchet turns.
+
+## Plan-review disposition -- Anthony Kendall (Maintainer) -- 2026-08-24
+
+**Status**: awaiting-plan-review -> ready-to-implement.
+
+The Internal plan review raised one blocking finding and four notes; the
+author's Response closed all five. The Maintainer directed implementation
+without a clearing pass:
+
+> "Go ahead and implement as is"
+
+Quoted verbatim rather than paraphrased — the authorization is what makes this
+transition legitimate, and paraphrase admits condition-softening. It disposes of
+the clearing *round*, not of the findings, which were already closed.
+
+**This is the editor's judgement on magnitude**, which is the standard §2 of
+this plan's own contract states: the reviewer bound closure when it raised the
+finding, the Response carries that evidence, and re-reading a text correction
+buys nothing. Recorded here because the plan is otherwise silent on why no
+second pass ran.
+
+**Chunk E's fence is untouched by this.** `MAINTAINER-GATED` is not a review
+tier and this authorization does not reach it. E still requires explicit
+authorization to execute, and its code-stage Security Review still attaches.
