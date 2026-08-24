@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-21
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Supersedes**: `2026-08-20-claude-review-loop-termination` (accepted Revision 7,
 superseded same day; its objective binds here, its scope does not)
@@ -13,7 +13,11 @@ shipped twins, `AGENTS.md` + shipped twin, `tools/lifecycle_planner.py` + twin
 (refusals → warnings), lifecycle tests; `bootstrap/tests/conftest.py`
 (security marker) and `docs/release-process.md` (the release-only run, §5)
 **Related**: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
-**Plan review**: required(External) — the round-2 reviewer's recorded token binds under the rules this proposal lands under (RCL-06); corrected in Revision 2
+**Plan review**: required(Internal) — the Maintainer waived the External floor
+at the Decision, on the record: *"No external plan review is required."* Revision
+2's `required(External)` was correct under the trigger rule then in force; the
+waiver is the Amendment's explicit-recorded-waiver path, and its reasoning is in
+the Decision preamble below. The ordinary Internal plan review is unchanged.
 
 ## Objective
 
@@ -938,3 +942,99 @@ cost of an explicit recorded waiver ("floor X is waived because Y"). Nothing
 in this contract places any review floor beyond the Maintainer's reach; what
 it removes, in both directions, is the *silent* path — escalation no reviewer
 token can force, de-escalation no one can drift into.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-24
+
+### Preamble -- findings at the Decision
+
+Recorded by the scribe at the Maintainer's instruction, and **binding on the
+implementing agent**: the Decision below accepts this contract *with these
+issues to be addressed in implementation*. They are not review findings; no
+reviewer has seen items 1 and 2, because item 1 did not exist when the round-2
+review was written.
+
+**1. The contract requires a grammar that an accepted proposal deletes.** §2a
+states *"notes emit `cairn-event-v1` keyed by stem, so longitudinal metrics
+survive."* `2026-08-21-claude-retire-event-blocks`, accepted 2026-08-24
+(`919a519`), deletes that grammar from both planner twins, both template pairs
+and `docs/glossary.md`. The round-1 reviewer asked this exact question and was
+told the grammar survives for notes; that answer became false at `919a519`.
+**Resolve it by counting change notes with the dated-heading grammar
+`retire-event-blocks` establishes** -- the same reader, extended to the note
+lane -- and state it rather than leaving the two accepted contracts in
+contradiction. The justification *"so longitudinal metrics survive"* must be
+made true by the replacement mechanism, not dropped.
+
+**2. §2's strongest justification is missing, and it is a correctness argument
+rather than an efficiency one.** §2 retires the `DISTINCT REVIEW REQUIRED`
+escalation trigger on cost grounds. The stronger ground is that the trigger
+**contradicts Cairn's own Adaptation doctrine**:
+
+> "A solo, single-agent team runs the kernel's review -- the same agent in a
+> fresh session ... **The bootstrap never installs more review apparatus than
+> the team can staff.**" -- `doctrine/dual-review.md`, *Adaptation*
+
+> "a solo, single-agent team runs the lifecycle with a lighter review tier; it
+> still runs the lifecycle." -- `doctrine/lifecycle.md`, *Adaptation*
+
+A reviewer token that *forces* an External plan review is, by construction,
+apparatus a single-agent adopter cannot staff -- and `AGENTS.md` (the
+plan-readiness inheritance paragraph) currently makes it binding. That is a
+live inconsistency in shipped doctrine, not a matter of taste, and it is the
+justification §2 should lead with. Note also that External's floor is *"a
+different agent type, **or a human**"*, so the requirement is always nominally
+satisfiable -- which is exactly why it is wrong: satisfying it routes to the
+Maintainer's own reading time, the scarcest resource in a solo project. A
+reviewer recording a token does not summon a second agent; it bills the human.
+
+**3. Three ledger violations stand, and acceptance silences the check that
+reports them.** `lifecycle_planner.py scan` refuses this artifact three times
+for a missing `### Withdrawn / superseded commitments` heading. All three are
+wording and structure artifacts, not missing accountability: both ledgers exist
+(lines 355 and 710); `_LEDGER_HEADING` is an exact string match, so
+*"(cumulative with Revision 1's)"* fails it, and the two
+`## THE COMPLETE CURRENT CONTRACT (Revision N)` headings each trip the
+contract-revision detector and are asked for their own ledger. **This item is
+recorded here because `accepted` is a terminal status: `_is_immutable`
+short-circuits the contract check, so from this commit forward the scan reports
+this artifact clean and the implementing agent will never be reminded.** Fix the
+wording; consider whether the checker's exact-match rule is itself a defect
+worth a successor.
+
+**4. C0-C8 were accepted and never implemented, so this proposal is where they
+land or they do not land at all.** `2026-08-20-claude-review-loop-termination`
+is `superseded`, it has no derived plan, and `ORDINARY` -- its C8 third token --
+occurs 0 times in `AGENTS.md`, `doctrine/dual-review.md` and
+`doctrine/proposals.md`. The rule this proposal retires is still live at
+`AGENTS.md`. Any implementation citing C0, C1, C7 or C8 as already in force is
+citing an unimplemented contract; they are carried forward by *this* artifact.
+A correction is owed on `retire-event-blocks`, whose Decision cites C8 as
+governing.
+
+### The Decision
+
+**ACCEPTED as revised (Revision 2), with the implementing agent addressing the
+preamble above.** Authorization, quoted verbatim and visually isolated:
+
+> "accepted as revised, with the implementing agent addressing issues noted in
+> the preamble to this decision. No external plan review is required."
+
+**On the waived External floor.** Revision 2 conceded, correctly under the rule
+then in force, that this proposal's own derived plan takes External review. The
+Maintainer waives that floor at the Decision, which is the Amendment's explicit
+recorded path. The Maintainer's reasoning, in their own words:
+
+> "There can be no "required(External)" in Cairn because what if an External
+> agent type doesn't exist? Such a recommendation can only EVER be advisory."
+
+> "I happen to pay for three different agent types, but many/most scientist
+> developers do not"
+
+The header is updated to `required(Internal)`: the External floor is waived, the
+ordinary Internal plan review is not. Preamble item 2 records why this waiver is
+doctrine-consistent rather than an exception.
+
+**Scribed by** Claude (claude-opus-5) on explicit Maintainer instruction. The
+scribe wrote no part of the authorization or reasoning quoted above; the
+preamble is the scribe's own finding record, requested by the Maintainer and
+adopted into this Decision.
