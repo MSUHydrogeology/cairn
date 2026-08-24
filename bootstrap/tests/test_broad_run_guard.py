@@ -97,6 +97,14 @@ def _run(root: Path, *args: str, env_overrides: dict | None = None,
     env.pop("CAIRN_FULL_SUITE", None)
     env.pop("CAIRN_RELEASE_GATE_ACTIVE", None)
     env.pop("CAIRN_SUITE_LEDGER", None)
+    # The nesting marker, and it is not optional. A parent session that is
+    # itself recording exports CAIRN_SUITE_LEDGER_SESSION; a child that
+    # inherits it classifies itself as nested and writes no row at all. Tests
+    # here that read a child's ledger row would then fail with "wrote no
+    # ledger row", but only when the parent has the ledger enabled -- which is
+    # the canonical Boundary B command and NOT the CAIRN_SUITE_LEDGER=0 form
+    # used while iterating. Scrubbed so the two agree.
+    env.pop("CAIRN_SUITE_LEDGER_SESSION", None)
     env.update(env_overrides or {})
     env["PYTHONPATH"] = str(root) + os.pathsep + env.get("PYTHONPATH", "")
     plugin = ["-p", "competitor_plugin"] if (root / "competitor_plugin.py").exists() else []
