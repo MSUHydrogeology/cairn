@@ -538,6 +538,25 @@ incentives built from them:
   RCL-06 class — the structural, undemonstrable finding — which
   blocks through C0 on argument alone; the norm prices routine
   findings, it does not outlaw structural ones.
+* **The loop terminates sideways, not upward** (Maintainer push-back,
+  2026-08-24: findings — which already arrive with suggested
+  resolutions — are the quality engine and stay at full strength; the
+  needed incentive is *"to not require more maintainer time,"* with
+  checks against crazy decisions). Agent deliberation is nearly free
+  in the currency that matters; the cost arrives when a loop
+  terminates at the Maintainer. So both roles share one briefed
+  definition of success: **the change is correct, and the Maintainer
+  was not needed** — an escalation is the pair visibly failing its
+  joint task, and "maintainer interactions: 0" is the number a good
+  thread is proud of. Four checks, none costing per-instance
+  attention: the **irreversibility tripwire** (anything hard to undo
+  *must* surface — the one mandatory upward path; reversible mistakes
+  are cheap lessons); **deadlock breaks sideways** (a third fresh
+  agent tiebreaks, not the Maintainer); **audit by sample** (the
+  Maintainer spot-checks agent-closed threads at goodnight — nobody
+  inspects everything, everybody behaves as if inspected); and the
+  **outcome line** (a bad agent-side call surfaces as a failed,
+  attributed outcome in the record that trains the next agents).
 * **One session owns the outcome, end to end.** For standard work,
   the session that opens it ships it — so the author's own finite
   context becomes the clock, and every page of deliberation visibly
