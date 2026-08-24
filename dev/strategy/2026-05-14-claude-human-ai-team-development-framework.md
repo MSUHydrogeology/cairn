@@ -45,7 +45,7 @@ not the primary artifact -- see "Cairn as a publishable artifact" below.
 Citable frameworks ground the rationale. The numbering is **canonical and
 append-only**: a new anchor takes the next integer and a new row in the index
 below, so "Anchor 10" stays unambiguous as the set grows.
-As of 2026-08-24, the index contains **19 anchors**.
+As of 2026-08-24, the index contains **20 anchors**.
 
 **Every anchor is introduced where it bites**, with its full citation at that
 point. There is no privileged tier. The first six were once set apart because
@@ -96,6 +96,7 @@ cross-cutting), and define the citation at its point of introduction.
 | | 14 | Scientific-software governance exemplars (USGS FSP; NEP/APE; LIGO/CESM/CMIP) | "Where Cairn is headed" > "Reframing the governance axis for scientific software" |
 | | 16 | Recipient-calibrated communication + the comprehension floor (Miller 2019; Kalyuga 2007; Clark & Brennan 1991; Rozenblit & Keil 2002; appropriate-reliance literature) | "Trust as design center" > "Recipient-calibrated communication and the comprehension floor" |
 | | 19 | The oversight bottleneck and the theory of the firm (Coase 1937; oversight-in-practice + the 2026 OSS maintainer crisis) | "Restraint as design center" > "The 2026-08 refocus" |
+| | 20 | The operator's own allocation (Ferster & Skinner 1957; Alter 2017) | "Restraint as design center" > "The human side of restraint" |
 | **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "Framework anchors" |
 | | 6 | Scientific peer review as a process model | "What the anchors bound" > peer review, not agent debate |
 | | 15 | Research-software character taxonomy + V&V / reproducibility canon (Hasselbring 2024; Oberkampf & Roy 2010; Roache 2002; PROV-DM; Sandve 2013; Eisty & Carver 2022) | "Where Cairn is headed" > "The scientific-character dimension" |
@@ -740,6 +741,56 @@ and comply with what it says, so enforcement code guarded a reader who never
 needed it. Code keeps only what text cannot do: compute, execute, and
 physically protect. The standing razor: *could this be a sentence instead of
 a script?*
+
+### The human side of restraint — the operator's own allocation
+
+The refocus's causal frame has a second application the 2026-08 record
+surfaced last, in the Maintainer's own words: agent-based development is
+*addictive for the human*, and it genuinely displaced paid work — affecting
+interactions and overall output *"despite building some amazing stuff."*
+The mechanism is the same missing scarcity, one level up. Working with
+agents is compulsion-shaped by accident: each prompt is a cheap pull with a
+variable payout — the most habit-forming reinforcement schedule known —
+
+20. **The operator's own allocation.** Ferster, C. B., & Skinner, B. F.
+    (1957). *Schedules of Reinforcement.* Appleton-Century-Crofts — the
+    variable-ratio schedule produces the highest, most extinction-resistant
+    response rates; with Alter, A. (2017). *Irresistible: The Rise of
+    Addictive Technology.* Penguin — modern behavioral design assembles
+    exactly these ingredients (variable reward, no stopping cues, frictionless
+    re-engagement). Agentic development assembles them *unintentionally*, and
+    adds two amplifiers no consumer product has: extraordinary real leverage
+    per pull, and an infinitely patient, responsive, appreciative
+    collaborator — which removes the social stopping cues human collaboration
+    provides. The surveyed oversight literature prices the human's *burden*;
+    operator *compulsion* — the human volunteering the attention the system
+    no longer even has to demand — is, as far as this framework has found,
+    undescribed. It is the missing-scarcity thesis applied to the operator.
+
+and there is no natural end: no tiredness on the other side, no one to
+disappoint by continuing, always one more visible improvement — with
+**meta-work as the strongest attractor**, because process work always yields
+legible motion. A methodology for scientists must say this plainly, because
+its adopter is a person whose paid work is the science and whose calendar is
+the same unpriced commons the process once was. The guidance mirrors the
+firm design, applied to the operator:
+
+* **Async over synchronous.** The interface contract (digest, batched
+  decisions, the goodnight window) bounds the *human's presence*, not only
+  the system's demands. The compulsive modality is the rapid back-and-forth
+  loop; variable-ratio reinforcement dies at long intervals. Scope, fire,
+  close the laptop, read at the window.
+* **A calendar appetite for methodology work**, set outside the pull — the
+  operator's own objective function: is this session worth more than what it
+  costs, denominated in paid work and people.
+* **A personal staff gauge**: hours in agent sessions against real output,
+  glanced at, not ledgered — the takeover table for the calendar.
+* **Say it to a colleague.** Named compulsions lose power; a team that knows
+  is a natural boundary. Persistent displacement after structure is in place
+  is a reasonable thing to bring to a professional.
+* **Agent-side norms carry part of it**: clean closes without dangling
+  next-step hooks; no treatment of late-night presence as an opportunity to
+  extend work; energy steered toward the science over the meta-work.
 
 ## Where Cairn is headed
 
