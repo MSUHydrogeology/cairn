@@ -111,9 +111,13 @@ planner change carries directed tests: the closed two-token vocabulary
 accepted; a legacy External/readiness line warns and resolves to Internal; an
 archived artifact with either token draws no warning. Falsification for the
 review of this proposal: grep the post-change tree for `Plan readiness` and
-`required(External)` outside `dev/*/archive/` and this proposal's own record
-— the result must be empty, and the instrument is confirmed against the
-pre-change tree where it matches (19 files, as_of 2026-08-24).
+`required(External)` across the **governing surfaces** — `AGENTS.md`,
+`doctrine/`, `templates/`, both live `_template.md` files, `tools/`,
+`scripts/`, `bootstrap/` — and the result must be empty. Append-only records
+of active and archived deliberation artifacts legitimately retain the tokens
+as history and are out of scope. The instrument is confirmed against the
+pre-change tree, where the same grep matches **24 files** (as_of 2026-08-24,
+archives and this proposal excluded).
 
 ## Signals the change is wrong
 
