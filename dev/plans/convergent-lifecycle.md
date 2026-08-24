@@ -13,7 +13,7 @@ Do them simultaneously."*:
 "Relationship" section says so, and it is a strict subtraction from either
 baseline.
 
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(**Internal**) — and under the rule this plan lands,
 that is the only tier there is. **Basis corrected at the fold**: the External
 floor was waived in `convergent-lifecycle`'s *own* Decision (`47315b6`), hours
@@ -293,3 +293,205 @@ The gate re-anchor ceremony is already owed across the frozen files touched by
 four changes landed 2026-08-21 through 2026-08-24. Chunk E adds
 `bootstrap/tests/conftest.py` to that batch. This plan does not run it; it is
 the Maintainer's, and it should run once after E settles rather than twice.
+
+## Plan review -- Claude Sonnet 5 (Internal, fresh context) -- 2026-08-24
+
+Reviewed commit: a788890b128b4ea89fa0299ba58cf1041bdaac22
+Target: the merged plan in full -- both accepted contracts
+(`convergent-lifecycle` Revision 2, `retire-external-plan-review` Revision 1),
+all eight chunks (A-H), the four `convergent-lifecycle` preamble items
+answered in Approach, and the five `retire-external` preamble items answered
+in Scope fold
+Prior findings: none
+Assurance path: high-assurance (governing lifecycle doctrine and tooling)
+
+**Tier**: Internal
+**Model**: Claude Sonnet 5
+**Findings**: raised -- 1 blocking
+**Verdict**: One blocking finding, closable by a text correction rather than a
+redesign; every other claim checked -- including both re-measured "Confirm the
+instrument" corrections, the 17-file and zero-active-plans figures, and the
+full contract-to-chunk mapping across both proposals -- held up under direct
+re-measurement.
+
+### Steelman
+
+This is a well-run fold. The governing-conflict rule (`retire-external`
+governs where the two disagree) is applied consistently rather than asserted
+once and forgotten -- Chunk B is genuinely rewritten as an abolition, not
+patched. The new obligation grammar (Chunk G) reuses
+`normalize_required_obligations`'s existing `+` form instead of inventing a
+parser branch, exactly per that Decision's preamble item 1, and the plan
+states *why* (the comma form's silent-discard failure mode) rather than just
+citing the instruction. Every headline number in the plan that I re-measured
+independently -- the 17-file falsification grep, the zero active
+`required(External)` plans, the three ledger violations, the `plan_review_
+rounds=1`/`code_review_rounds=1` note reading, the twin-loader split, the
+stub-exclusion behavior -- came back exactly as stated. That is not the usual
+hit rate for a plan this size, and it is why my one finding below is worth
+taking seriously rather than as a symptom of a sloppy draft.
+
+### Findings
+
+**1. BLOCKING -- Chunk E's stated enforcement mechanism does not match the
+plan's own header, and Chunk E is the one place a mistake here is silent.**
+
+Chunk E's Risk section says: *"this chunk's obligation is written
+`required(Internal + Internal Security Review)`"* (present tense, "written").
+It is not written anywhere. The plan's own `**Plan review**:` header (line 17)
+reads `required(Internal)` -- a single clause, no `+`. I confirmed by reading
+`review_record_violations`/`normalize_required_obligations` in
+`tools/lifecycle_planner.py` (the same code Chunk G will extend, unchanged
+today) that the `+`-obligation grammar operates on exactly one field, read
+once, for the *whole artifact*, at the `ready-to-implement`/archive
+transition -- there is no notion anywhere in that code of a clause that binds
+only once a particular chunk is reached. So the sentence describes a
+mechanism that cannot exist in the form stated, and either horn of fixing it
+matters:
+
+* If the header *should* carry `+ Internal Security Review`, then per the
+  same code that clause blocks `ready-to-implement` for the **entire
+  document** -- A, C, D, B, G, H, F included -- until a `## Security review
+  (Internal)` record lands, which directly contradicts the Risk section's own
+  "Chunks A-D and F implement without a gate."
+* If the header should stay single-clause (which is what "A-D and F implement
+  without a gate" requires), then Chunk E's actual protection is the
+  MAINTAINER-GATED prose plus whatever review record the Maintainer requires
+  before authorizing Chunk E specifically -- most likely a `## Security
+  review (Internal)` on Chunk E's own *implementation* commit at code-review
+  time, not on this plan document's plan-review gate at all. That is a
+  defensible design, but it is not what "this chunk's obligation is written
+  `required(...)`" says, and it is not what Chunk G's mechanism does (Chunk G
+  is a whole-artifact plan-review-stage obligation; Chunk E needs a
+  chunk-scoped, later-stage one).
+
+I ran the actual mutation to make sure this isn't a reading-comprehension
+slip: `next` on the current file reports `ready-to-implement` reachable once
+any single conforming `## Plan review -- <reviewer> -- YYYY-MM-DD` pass
+exists satisfying `required(internal)` -- no Security Review pass is asked
+for. Given the Risk section's own words -- "a marker split fails silently,
+and the thing that stops running is the security suite" -- an inaccurate
+claim about how *this specific* safeguard is mechanically checked is exactly
+the failure mode the fence exists to prevent, even though the prose fence
+itself (MAINTAINER-GATED, explicit authorization) is still intact and I found
+no path where it is bypassed.
+
+**On the coordinator's specific worry** ("does Chunk B's abolition weaken
+Chunk E?"): no defect found on that axis specifically. `Security review` is
+one of five pass-*kinds* the grammar recognizes
+(`_PASS_KIND_RE` in `tools/_lifecycle_metrics/parse.py`; the parallel kind
+check lives in `lifecycle_planner.py`'s pass-heading grammar), matched
+independently of the Internal/External *tier* vocabulary Chunk B edits.
+Removing "External" from the tier list has no code path into the pass-kind
+matcher. The defect I found is adjacent, not the one named: it's not that B
+lowers E, it's that E's own paragraph misdescribes which mechanism protects
+it, in a way introduced by grafting Chunk G's new vocabulary onto E's
+pre-existing, differently-scoped requirement.
+
+**Closes on**: Chunk E's paragraph states, without contradiction elsewhere in
+the plan, exactly which record and which review stage clears its Security
+Review requirement -- consistent with what the plan's own `**Plan review**:`
+header actually declares. Concretely, either (a) rewrite the paragraph to
+describe a chunk-scoped, code-review-stage requirement instead of invoking
+the whole-document `**Plan review**:` obligation grammar, or (b) add the `+`
+clause to the header and reconcile "Chunks A-D and F implement without a
+gate" with the resulting whole-plan block. `tools/lifecycle_planner.py
+next dev/plans/convergent-lifecycle.md` after the fix should show a
+transition path whose unmet conditions match the paragraph's own claim.
+
+**2. Note -- Chunk F's surface list is missing the file the Scope-fold
+section says it covers.** The Scope-fold section's item 5 says "Chunk F fixes
+the wording **on all of them**" (plural), referring to the ledger-heading
+violation retire-external's own Decision preamble item 5 names in *that*
+proposal ("fix the wording here"). I confirmed `retire-external-plan-review.md`
+independently carries exactly the violation its own preamble describes (ran
+`next` against a scratch copy with status forced non-terminal: one
+`VIOLATION` line, `'## THE COMPLETE CURRENT CONTRACT (Revision 1)': no
+'### Withdrawn / superseded commitments' heading`). Chunk F's table row
+(line 62) still lists only `dev/proposals/2026-08-21-claude-convergent-
+lifecycle.md`. An implementer working from the table alone would miss the
+second file; the Scope-fold prose is the only place that says otherwise.
+Not blocking -- the prose obligation is recorded and binding regardless of
+the table -- but cheap to fix and worth fixing given both are Maintainer-
+binding preamble items.
+
+**3. Note -- Chunk A's table row doesn't cite §2, even though Approach
+assigns part of §2 to it.** Preamble item 4's discussion says "C0 by A, C1
+and C7 by C's transition table, C8's advisory-token reading by B" -- so §2's
+blocking-test polarity, falsification-attempt requirement, and editor-ends-
+loop rule land in Chunk A. The table row for A cites only "§6's C0
+risk-posture text," not §2 itself. `doctrine/dual-review.md` does appear in
+both A's and B's surface lists, which is consistent with a split edit, but a
+reader relying on the table alone would not know A carries any of §2.
+Suggest folding "§2 (C0/C1 doctrine, outside floors-vs-trigger)" into A's
+contract column.
+
+**4. Note -- Boundary A's per-chunk test list wasn't extended for the two
+new chunks.** The Verification section's Boundary A paragraph still reads
+"Per chunk: `test_lifecycle_contract.py`, `test_lifecycle_board.py`,
+`test_lifecycle_vocabulary.py` for A-D; ... for E" -- G and H aren't named,
+and H's own surface list includes `bootstrap/tests/test_pilot_evidence.py`,
+which appears nowhere in Boundary A. Low risk in practice (Boundary B is
+already forced to `full`, so nothing touched by G/H escapes verification
+entirely), but the per-chunk iteration mapping AGENTS.md's Boundary A rule
+asks for is incomplete for the two newest chunks.
+
+**5. Note -- Chunk F's correction mechanism for the ledger headings isn't
+specified.** Both violations sit inside sections that are, by ordinary
+append-only convention, historical record (`accepted`/terminal proposals).
+The Maintainer's Decision preamble explicitly authorizes "the implementing
+agent addressing the preamble," which I read as covering a direct wording
+fix here, but the plan doesn't say whether Chunk F edits the existing
+`### Withdrawn / superseded commitments` headings in place or appends a
+correction pointing at them. Given the ledger *content* isn't changing
+(only heading text/position), either is low-risk, but stating which avoids
+an implementer guessing at a rule that's normally bright-line.
+
+### On the coordinator's second question -- is eight chunks too large to
+verify as one unit?
+
+No, and I don't think the chunk *count* is the right lens. Boundary B is
+already `full` regardless of how many chunks land in it (Chunk E and the
+`AGENTS.md`/template edits both independently force it), so combining G and H
+into this plan adds no additional full-suite runs versus a separate plan
+would have. The directed-test list is long but itemized per contract section,
+which is the thing that actually bounds a code reviewer's job -- falsify
+named mutations, not "review the diff." The one place review attention is
+genuinely concentrated is Chunks A/C/D/B/G/H/F sharing a single ordinary code
+review while E gets an independent additional Security Review specifically
+because it's the highest-risk piece -- which is the right allocation, not a
+gap. My finding above is a reason to fix one paragraph, not a reason to split
+the plan.
+
+### Coverage
+
+**Exercised**: `tools/lifecycle_planner.py scan` over the live corpus;
+`next` against both the pre-fold and post-fold plan; a scratch change-note
+built to §2a's spec with `extract_plan_row` run directly against
+`tools/_lifecycle_metrics/extract.py` (confirmed `plan_review_rounds=1`,
+`code_review_rounds=1`); scratch copies of both `convergent-lifecycle` and
+`retire-external-plan-review` with status forced non-terminal, to reproduce
+the ledger violations each preamble describes (3 and 1 respectively,
+confirmed); direct reads of `_pass_kind_of`/`_PASS_KIND_RE` (stub exclusion),
+`test_lifecycle_metrics_events.py` (twin-loader split), `review_record_
+violations`/`_code_review_violations`/`normalize_required_obligations`-
+adjacent code, `_readiness_records`/`_canonical_readiness`/`plan_inheritance_
+violations`, and `_LEDGER_HEADING`/`current_contract_violations`; a byte
+diff confirming `tools/lifecycle_planner.py` and its shipped twin are
+identical; independent re-runs of the 17-file falsification grep (exactly
+17) and the zero-active-`required(External)`-plans grep (confirmed empty);
+full reads of both proposals' accepted contracts, Decisions, and preambles;
+cross-check of every file in `retire-external`'s `Touches` header against
+the merged chunk table (all five new surfaces rowed).
+
+**Not exercised**: no directed test for any chunk exists yet to run --
+correctness of G/H/E's actual test code is Boundary C's job, not this one.
+I did not independently re-derive whether A -> C -> D -> B is *strictly*
+necessary from the shared-function claim beyond confirming the claimed
+functions (`review_record_violations`, `normalize_required_tier`/
+`normalize_required_obligations`, the readiness/inheritance functions) are
+real, central, and plausibly shared -- I did not attempt a prototype
+implementation to prove the ordering is load-bearing rather than merely
+convenient. No full suite run (not requested, and a bare run is refused by
+design); no `bootstrap/tests/_gate_manifest.py produce` or fixture
+regeneration (out of scope per instruction).
