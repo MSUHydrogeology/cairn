@@ -5480,12 +5480,19 @@ def cmd_next(args: argparse.Namespace) -> int:
     _emit_section(f"{art.kind}: {art.path.name}")
     _emit(f"current state: {art.status or '(no status line)'}")
 
-    # Surface any current-state structural violations up front.
+    # Surface any current-state structural violations up front.  Chunk D:
+    # on the standard lane these are advisory only -- printed with the same
+    # detail, tagged so an operator (or a test) can tell the disposition
+    # apart from a deliberate-lane refusal at a glance.  The predicate itself
+    # (`_conformance_violations`) is unchanged for every lane; only the label
+    # here differs, matching `cmd_scan`'s `flagged` disposition below.
     violations = _conformance_violations(art, identity)
+    standard = _is_standard_note(art)
     if violations:
         _emit_section("structural conformance (current state)")
+        tag = "NOTE (standard lane, advisory only)" if standard else "VIOLATION"
         for msg in violations:
-            _emit(f"VIOLATION: {msg}")
+            _emit(f"{tag}: {msg}")
     else:
         _emit("structural conformance: current state is structurally sound.")
 
@@ -5621,9 +5628,21 @@ def cmd_scan(args: argparse.Namespace) -> int:
             rel = path.relative_to(root)
             violations = _conformance_violations(art, identity)
             if violations:
-                flagged += 1
-                for msg in violations:
-                    _emit(f"{rel}: {msg}")
+                # Chunk D: standard lane checks warn, never refuse -- these
+                # are printed either way (an operator or metrics reader sees
+                # the same defect), but only a deliberate-lane (or proposal)
+                # finding counts toward `flagged`/the non-zero exit.  Hard
+                # refusal is unchanged for everything ELSE this scan touches:
+                # an unreadable artifact above, and every proposal, since the
+                # standard lane retires the proposal for that work entirely.
+                if _is_standard_note(art):
+                    for msg in violations:
+                        _emit(f"{rel}: NOTE (standard lane, advisory only): "
+                              f"{msg}")
+                else:
+                    flagged += 1
+                    for msg in violations:
+                        _emit(f"{rel}: {msg}")
             # Chunk C: the standard-lane note's own named advisories.  Never
             # counted toward `flagged` and never a cause of a non-zero exit --
             # `convergent-lifecycle` §2a is explicit that the planner "emits,

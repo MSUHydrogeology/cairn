@@ -7155,3 +7155,121 @@ class TestChangeNoteDeliberateLaneRegression:
         out = capsys.readouterr().out
         assert rc == 1
         assert "not a legal next transition" in out
+
+
+# =============================================================================
+# Chunk D -- lifecycle checks warn, never refuse, on trivial/standard lanes
+# =============================================================================
+#
+# `convergent-lifecycle` §4: the ONLY hard-refusal surfaces `cmd_scan`/
+# `cmd_next` carry are `_conformance_violations`'s disposition (`cmd_scan`'s
+# `flagged`/exit code) and `next --to`'s FSM-legality check.  The second is a
+# usage error ("this target does not exist from here"), not a lifecycle
+# conformance finding, and stays a hard refusal on every lane -- the note's
+# own transition table (Chunk C) already bounds what is reachable.  So Chunk D
+# touches exactly one disposition: `_conformance_violations`'s output no
+# longer counts toward `flagged` (or reads as `VIOLATION`) for a standard-lane
+# note.  The trivial lane opens no artifact at all, so it has nothing for
+# `scan`/`next` to check -- this chunk's claim about it is vacuously true by
+# construction, not by a code path.  Scaffold containment and release
+# trust-root verification live outside this file entirely (`bootstrap/
+# scaffold.py`'s symlink/containment check, the differential-oracle gate) and
+# are untouched by this chunk.
+
+
+def _write_note(repo: Path, name: str, **kw) -> Path:
+    path = repo / "dev" / "plans" / name
+    path.write_text(_note_text(**kw), encoding="utf-8")
+    return path
+
+
+class TestStandardLaneChecksWarnNeverRefuse:
+    """The same defect, on the same predicate, disposed of two different
+    ways by lane -- proven through the real CLI entry points, not the
+    predicate alone, because the predicate was never lane-aware and does
+    not need to be: only `cmd_scan`/`cmd_next` read the lane."""
+
+    def test_scan_does_not_flag_a_broken_standard_lane_note(
+            self, tmp_path, monkeypatch, capsys):
+        repo = _make_repo(tmp_path)
+        _write_note(repo, "broken-note.md", plan_review=None)
+        monkeypatch.chdir(repo)
+        rc = planner.main(["scan"])
+        out = capsys.readouterr().out
+        assert rc == 0, out
+        assert "NOTE (standard lane, advisory only)" in out
+        assert "all 1 artifact(s) structurally sound" in out
+
+    def test_scan_still_flags_the_same_defect_on_a_deliberate_plan(
+            self, tmp_path, monkeypatch, capsys):
+        """The deliberate-lane regression for Chunk D specifically: the SAME
+        `_conformance_violations` finding (no `**Plan review**:` line) --
+        not a note-grammar warning -- still refuses when the lane is not
+        standard, unchanged from before this chunk."""
+        repo = _make_repo(tmp_path)
+        path = repo / "dev" / "plans" / "broken-plan.md"
+        path.write_text(
+            "# broken-plan\n\n**Status**: awaiting-plan-review\n\n"
+            "## Scope\n\nx\n", encoding="utf-8")
+        monkeypatch.chdir(repo)
+        rc = planner.main(["scan"])
+        out = capsys.readouterr().out
+        assert rc == 1, out
+        assert "NOTE (standard lane, advisory only)" not in out
+        assert "structural violations" in out
+        assert "no '**Plan review**:' line" in out
+
+    def test_a_clean_standard_lane_note_carries_no_advisory_at_all(
+            self, tmp_path, monkeypatch, capsys):
+        """`awaiting-plan-review` with no pass yet is not itself a defect --
+        it just legitimately owes a review it has not gotten -- so it
+        carries `note-missing-design-review`, correctly.  A note that HAS
+        cleared its design review carries nothing."""
+        repo = _make_repo(tmp_path)
+        extra = _pass_block(tier="Internal", findings="none")
+        _write_note(repo, "clean-note.md", status="ready-to-implement",
+                   extra=extra)
+        monkeypatch.chdir(repo)
+        rc = planner.main(["scan"])
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "NOTE (standard lane, advisory only)" not in out
+
+    def test_next_labels_a_standard_lane_defect_advisory_not_violation(
+            self, tmp_path, monkeypatch, capsys):
+        repo = _make_repo(tmp_path)
+        _write_note(repo, "broken-note.md", plan_review=None)
+        monkeypatch.chdir(repo)
+        rc = planner.main(["next", "dev/plans/broken-note.md"])
+        out = capsys.readouterr().out
+        assert rc == 0
+        assert "NOTE (standard lane, advisory only)" in out
+        assert "VIOLATION:" not in out
+
+    def test_next_still_labels_the_same_deliberate_plan_defect_a_violation(
+            self, tmp_path, monkeypatch, capsys):
+        repo = _make_repo(tmp_path)
+        path = repo / "dev" / "plans" / "broken-plan.md"
+        path.write_text(
+            "# broken-plan\n\n**Status**: awaiting-plan-review\n\n"
+            "## Scope\n\nx\n", encoding="utf-8")
+        monkeypatch.chdir(repo)
+        rc = planner.main(["next", "dev/plans/broken-plan.md"])
+        out = capsys.readouterr().out
+        assert rc == 0  # `next` itself never refuses on conformance; the
+        # label is the thing under test here.
+        assert "VIOLATION:" in out
+        assert "NOTE (standard lane, advisory only)" not in out
+
+    def test_an_illegal_transition_request_still_refuses_on_a_standard_lane_note(
+            self, tmp_path, monkeypatch, capsys):
+        """The FSM-legality refusal is a usage error, not a conformance
+        finding -- it stays a hard refusal on every lane, note included."""
+        repo = _make_repo(tmp_path)
+        _write_note(repo, "note.md", status="awaiting-plan-review")
+        monkeypatch.chdir(repo)
+        rc = planner.main(
+            ["next", "dev/plans/note.md", "--to", "ready-to-archive"])
+        out = capsys.readouterr().out
+        assert rc == 1
+        assert "not a legal next transition" in out
