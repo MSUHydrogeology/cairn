@@ -722,3 +722,192 @@ recorded decision trail, append-only on the artifacts that keep it,
 verification for shipped code, or editing history. The four-part core
 is the point of Cairn and stays. What goes is the mass around it — the
 armor agents grew because nothing in the rules ever told them to stop.
+
+## Review -- GPT 5.6-Sol (External) -- 2026-08-24
+
+**Summary for the Maintainer.** The diagnosis is real, the measured scale is
+real, and Cairn should make the proposed turn. But I would not execute the
+61,000-line sweep from the present bucket list. The note assumes that agents
+read every rule and that agent-prepared sampling will catch their own shared
+blind spots; Cairn's actual session routine says neither, and this sweep
+already misclassified one critical coordination control before you caught it.
+The same mistake remains for the work board and for the measurements needed by
+the new audit. Keep neither bureaucracy nor refusal gates: keep a tiny,
+warn-only audit that deterministically selects the Maintainer's sample and
+reports whether the four-part core has evidence. Make any participant's
+hard-to-undo answer an upward tripwire; do not let a third similar agent vote it
+away. Then classify the deletion file by file and require each replacement to
+exist before its old producer is parked. With those corrections, proceed. Cairn
+still has a product beyond “prompt carefully”: a small, durable, independently
+reviewed record centered on an attempted falsification.
+
+**Reviewed state**: `9faa7d25612567e85cf2538a90b9e68071e16833`
+
+**Target read**: this strategy note in full; the complete arc and operative
+Revision 2 plus Decision of `convergent-lifecycle`; the open review in
+`retire-external-plan-review`; and “Restraint as design center” plus “Horizon
+3” in the May strategy note.
+
+**Verdict**: **PROCEED WITH CORRECTIONS.** The direction is stronger than the
+opposite case. The corrections below preserve a small independent observation
+path; they do not restore External plan review, binding ordinary-work gates, or
+the lifecycle complex.
+
+### Findings, ranked by hard-to-undo damage
+
+#### NIM-EXT-01 -- The proposed control chain can be confidently wrong as one unit
+
+The opposite case is not that 900-line proposals were good. It is that the old
+apparatus supplied several imperfectly independent chances to notice a bad
+classification before shipping. The replacement puts four decisions in one
+correlated chain: the agent answers C0, author and reviewer close findings, a
+third agent of potentially the same family breaks deadlock, and an agent
+prepares the Maintainer's sample. The outcome line is then written by that same
+system. A confidently wrong agent need not evade any control; it can satisfy
+all of them sincerely.
+
+**Concrete counterexample.** The first subtraction sweep classified the
+work-intent system for deletion. The next commit records the Maintainer's
+correction that it prevents a C0-grade multi-agent collision that has actually
+occurred (lines 696--703). That is exactly the failure mode at issue: a careful
+agent read, measured, and categorized the files, yet the category omitted the
+property that made the system load-bearing. Agent-side convergence did not
+supply the missing lens; Maintainer attention did.
+
+**Damage.** A wrong answer about prose length is cheap. A wrong answer about a
+scientific assumption, install contract, executable trust root, or concurrent
+write is discovered after adopters or data have relied on it. Git can restore
+deleted code; it cannot cheaply retract a wrong scientific result or recreate
+lost concurrent work.
+
+**Required correction.** Make the irreversibility tripwire a one-way latch:
+if *any* author or reviewer answers “hard to undo,” sideways resolution cannot
+downgrade it; only the Maintainer can dispose it. A third agent may resolve an
+implementation disagreement, but must not majority-vote away C0. Keep science
+questions on the already-set direct-to-Maintainer route. This is one structural
+backstop, not routine human approval.
+
+#### NIM-EXT-02 -- “A sentence is the machinery” is too categorical for Cairn's actual reader
+
+The claim at lines 662--670 depends on agents re-reading the constitution
+completely at every session start. The installed routine says the opposite.
+`.agents/skills/session-start/SKILL.md` is manual-only, runs only on an explicit
+operator request, and tells the agent to read the *load-bearing* artifacts, not
+everything (lines 10--14 and 49--58). `AGENTS.md` likewise requires a complete
+read only on first entry and permits skimming later. In-session summarization
+and higher-priority harness instructions are properties of the execution
+environment, not failures doctrine can prohibit. Therefore a sentence is a
+necessary instruction, but not an independent observation that the instruction
+survived the session.
+
+**Concrete counterexample.** I opened the two named triggers rather than
+trusting their names. Neither performs the complete re-read the strategy uses
+as its premise. Review also cannot be the independent observer claimed here
+when the reviewer shares the same compressed context, model family, or mistaken
+risk classification.
+
+**Required correction.** Retain a tiny, read-only, warn-only audit reporter at
+goodnight/archive. It should compute only facts text cannot: whether each
+closed non-trivial change has a risk answer, a non-author review, one recorded
+falsification attempt and output, verification evidence, and an outcome state;
+and it should select the human sample deterministically from committed identity
+(for example, a documented hash rule), not let the packet preparer choose it.
+No warning blocks a transition. Keep the bright-line kernel short and
+always-loaded; let the reporter expose drift after the fact. This fits the
+note's own “code keeps compute” rule and survives both summarization and
+selection bias.
+
+The outcome field also needs `pending` plus an observable condition or revisit
+date. “Outcome: landed” at archive is implementation status, not evidence that
+the change worked; latent scientific failures otherwise never become the
+negative training signal the design promises.
+
+#### NIM-EXT-03 -- The 61k deletion is not yet a reviewable inventory, and two more coordination/audit functions are in it
+
+The bucket arithmetic is reproducible but the membership is not recorded.
+`find`/`wc -l` over current `tools/` shows that the stated 16,659-line bucket A
+is exactly all files there except `suite_cost.py` and cache metadata. It
+therefore includes `lifecycle_planner.py` (6,540 lines), `lifecycle.py` (3,910),
+and the lifecycle-metrics launcher/package. The later work-intent carve-out
+changes the grand total but does not replace A with a per-file list. A reviewer
+cannot tell which parts of those mixed files are keep, thin, park, or kill.
+
+Two classifications fail on current evidence:
+
+* The compact board is coordination, for the same reason work intent is.
+  `AGENTS.md`, `templates/core/AGENTS.md`, and both session-start skills invoke
+  `python tools/lifecycle_planner.py board --compact`; its output joins active
+  artifact, owner, intent, review obligation, evidence, and blocker. Removing
+  it loses a multi-session coordination view, not a refusal gate.
+* The full-handoff path calls `_run_lifecycle_metrics`, while the replacement
+  design requires gauges, an audit packet, outcome history, and a labor-market
+  table (lines 616--634). Deleting the producer before a minimal replacement
+  exists removes the evidence needed to tell whether the refocus is working.
+
+`lifecycle.py` also contains the validated local-interpreter binding named as a
+high-risk executable trust root in `AGENTS.md`. If thinning the session skills
+removes all execution through that binding, delete it. If any subprocess path
+remains, preserve the validator or give its removal the required security
+treatment; do not erase it as generic deliberation code.
+
+**Required correction.** Execute the note's earlier keep/park/kill promise as
+an explicit per-file (and, for mixed files, per-function) manifest. For every
+deletion record the property removed, the replacement or an explicit decision
+that the property ends, and the test/reference/install-manifest twins that move
+with it. Before phase 1, land a minimal board replacement and the audit/gauge
+reporter from NIM-EXT-02, or explicitly decide that those promised functions
+are withdrawn. “No dangling grep reference” is necessary but cannot detect a
+lost behavior; use one positive probe showing each retained command produces
+the promised field.
+
+#### NIM-EXT-04 -- The headline measurements hold; the 5% classifier does not yet support a repeatable gauge
+
+I re-derived the following without running the test suite:
+
+* At the last commit on 2026-08-21 (`f7491e7`), `git rev-list --count`
+  reports 2,016 commits and 1,305 touching `dev/` (64.73%). Through the
+  reviewed strategy state it is 1,341 of 2,061 (65.07%). The ~65% claim holds.
+* At `f7491e7`, enumerating Markdown artifacts from the git tree, excluding
+  only `README.md` and `_template.md`, gives 68 proposals / 76,551 lines
+  (median 899.5, mean 1,125.8, largest 2,807) and 46 plans / 89,890 lines
+  (median 1,905.5). Their sum is 166,441. The note's 67 is off by one and
+  “~1,800” understates the plan median by about 106 lines, but the stated shape
+  is correct.
+* Replaying `git log --numstat` from 2026-07-06 through the timestamp of the
+  time-series commit gives exactly 350,096 added lines across Cairn and
+  `modflow_tools`, of which exactly 211,013 are under `dev/`. Those totals match
+  the table.
+
+I could not reproduce the remaining split of 53,812 security / 68,155 other
+machinery / 17,116 product because the file classifier and the file-level
+totals were not committed. The boundary is consequential: `bootstrap/`
+contains both adopter capability and ceremony, while `templates/` contains
+both product prose and executable process twins. A crude one-liner can produce
+the same grand total while assigning these paths differently. The 5% figure is
+credible as a diagnostic estimate, but not yet a gauge whose movement can be
+compared month to month.
+
+**Required correction.** Commit the small classifier (or a dated path-to-class
+snapshot) used for the table and print unclassified paths. Keep additions,
+deletions, renames, and generated/fixture lines explicit. Use the result to
+measure recovery, not as evidence that the removed controls were causally
+useless. Commit share measures process cost; the caught defects are
+survivorship evidence about benefit, and this dataset has no counterfactual.
+
+#### NIM-EXT-05 -- The refocused product remains distinct, but only if the evidence grammar survives
+
+After the refocus, Cairn can still offer something materially stronger than
+“prompt carefully”: a git-native intent and decision trail, an independent
+reviewer whose centerpiece is a concrete falsification, empirical verification,
+explicit science routing, and a lightweight template that another scientific
+team can install. That combination is the differentiator; 61,000 lines of
+enforcement are not.
+
+The answer becomes **no** if “sentence as machinery” removes the last stable
+shape and the only independent observation of whether it was followed. Then an
+adopter receives prose norms, self-attestation, and an agent-selected audit
+sample—the same ingredients as careful prompting with extra vocabulary. The
+minimum product boundary is therefore: one compact change-note grammar, one
+non-author falsification record, one Maintainer-only C0/science escape hatch,
+and one deterministic warn-only audit/sample view. Preserve that boundary and
+the subtraction makes Cairn more adoptable without making it ordinary.
