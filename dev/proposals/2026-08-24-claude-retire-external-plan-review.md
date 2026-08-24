@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-24
-**Status**: awaiting-review
+**Status**: accepted
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Touches**: `AGENTS.md` + `templates/core/AGENTS.md`;
 `doctrine/dual-review.md`, `doctrine/plans.md`, `doctrine/proposals.md`,
@@ -14,8 +14,10 @@
 shipped twin; `bootstrap/tests/test_lifecycle_contract.py`,
 `bootstrap/tests/test_pilot_evidence.py`,
 `bootstrap/tests/fixtures/gate_manifest.json`
-**Related**: `2026-08-21-claude-convergent-lifecycle` (awaiting-review; see
-"Relationship" below), `dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
+**Related**: `2026-08-21-claude-convergent-lifecycle` (**accepted** `47315b6`;
+see "Relationship" below and Decision preamble item 2 — the migration §4
+anticipates is already discharged),
+`dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
 **Plan review**: required(Internal) — set by the Maintainer direction this
 proposal records; a recorded readiness token is a preserved recommendation
 the Maintainer resolves at the Decision
@@ -428,3 +430,94 @@ RERP-02 on §3's classes and oracles; RERP-03 on §4's quoted authorization
 and named superseded commitments; RERP-04 on the corrected instrument;
 RERP-05 on the preflight. The Maintainer assigns the derived plan's tier at
 the Decision.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-24
+
+### Preamble -- findings at the Decision
+
+Recorded by the scribe at the Maintainer's instruction and **binding on the
+implementing agent**. These are not review findings; item 2 could not have been
+a review finding, because the fact it rests on was created after the round-1
+review was written.
+
+**1. Use the obligation grammar that already exists.** §2 introduces
+`required(Internal, security)` and asks the planner to parse the second token
+as an obligation. That is a new parser branch on a proposal whose whole thesis
+is subtraction. `normalize_required_obligations` **already** reads
+`required(A + B)` as *"two obligations and two distinct review passes"*, it is
+documented at `doctrine/plans.md` > the `required(External + External Security
+Review)` example, and it exists **because that exact form silently discarded
+its second obligation** -- RERP-01's failure mode, already found and already
+fixed once. **Declare the security-plan obligation as
+`required(Internal + Internal Security Review)`.** §2's semantics are
+unchanged: satisfied only by an appended `## Security review (Internal)` record
+from a fresh-context same-type session in the Security Review role, never by an
+ordinary Internal pass, with §2's directed pair pinned as written. What changes
+is that no new grammar is invented, and the tested path carries it. If the `+`
+form turns out not to express something §2 needs, say what and why in the
+implementation record rather than reverting silently to the comma form.
+
+**2. §4's migration is already discharged; no accepted scope moves.** §4 states
+that this Decision *"is that recorded waiver"* for `convergent-lifecycle`'s
+derived plan. It is not: that waiver already exists. On 2026-08-24, before this
+Decision, the Maintainer waived the External floor in `convergent-lifecycle`'s
+**own** Decision (`47315b6`), through the recorded-waiver path its own Amendment
+defines, and its header already reads `required(Internal)` with the reasoning
+quoted verbatim. **Consequence, and it is favourable**: accepting this proposal
+changes **no accepted commitment of any sibling artifact**, so RERP-03's concern
+-- that a new rule must not make itself the first beneficiary or rewrite a
+sibling's accepted floor -- does not arise. This is a pure doctrine subtraction
+with no migration. Record that in the implementation rather than performing a
+waiver that has already happened; a future reader of §4 as written would believe
+this Decision moved a floor it did not touch. `convergent-lifecycle`'s separately
+declared Security Review for the marker/conftest work survives unchanged, as §4
+says.
+
+**3. The `Related` header was stale and is corrected in this commit.** It
+described `convergent-lifecycle` as `awaiting-review`; it is accepted. Noted
+because the same staleness produced RERP-03 one round earlier, and this is the
+second generation of it in the same file.
+
+**4. Verify the gate-manifest fixture change is a consequence, not a cover.**
+`Touches` lists `bootstrap/tests/fixtures/gate_manifest.json`. `AGENTS.md` names
+the gate manifest part of the install contract, a high-risk surface -- but that
+path is the **test fixture**, not the shipped manifest, so no fence is placed
+here. The implementer should nonetheless show the fixture edit falls out of the
+intended parser change, rather than masking an unintended one.
+
+**5. Three-in-a-row: acceptance silences the check that reports the remaining
+defect.** `scan` refuses this artifact once, for a missing
+`### Withdrawn / superseded commitments` under
+`## THE COMPLETE CURRENT CONTRACT (Revision 1)`. The ledger exists (line 287);
+the heading's `(Revision 1)` suffix makes the contract detector demand a second
+one. From this commit forward `_is_immutable` short-circuits that check and the
+artifact reports clean. This is the third artifact today with the same
+wording-artifact violation and the same silencing. **The checker's exact-match
+rule is now a standing defect in its own right and wants a successor proposal**;
+fix the wording here, and stop paying it three times a day.
+
+### The Decision
+
+**ACCEPTED as revised (Revision 1), with the implementing agent addressing the
+preamble above.** Authorization, quoted verbatim and visually isolated:
+
+> "Please scribe my acceptance as revised, and with your recommendations."
+
+**Accepted terms**: a plan review is an Internal, fresh-context review --
+always. External plan review ceases to exist as a tier, requirement,
+recommendation slot, or escalation target; the proposal template's
+`Plan readiness` slot is deleted. Unchanged: the External floor on
+deliberate-lane **proposal** review; the code-review floor; Security Reviews
+attaching to proposals or code; and the Maintainer's option to ask any reader
+for anything. Removal is type-scoped -- `External` stays valid for proposal
+reviews and archived records -- with §3's three legacy classes and behavioral
+oracles, and archives immutable.
+
+**Plan review for this proposal's own derived work**: `required(Internal)`, as
+the header declares. Under the rule this proposal lands, that is the only
+tier there is.
+
+**Scribed by** Claude (claude-opus-5) on explicit Maintainer instruction. The
+scribe wrote no part of the authorization quoted above; the preamble is the
+scribe's own finding record, requested by the Maintainer and adopted into this
+Decision.
