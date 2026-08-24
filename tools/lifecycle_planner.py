@@ -3277,6 +3277,61 @@ def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
     return ASSURANCE_NOT_INHERITED, []
 
 
+# === Chunk H (`retire-external-plan-review` §3): type-scoped removal ==========
+#
+# `External` is NOT deleted as a vocabulary word: it stays valid where it
+# always was, for a proposal's own `## Review` tier attestation (`_TIERS`,
+# `_TIER_RANK` -- untouched by Chunks B/G/H) and for every archived record
+# (immutable history, parsed as always). What retires is narrower: a PLAN's
+# own `**Plan review**:` field may no longer legitimately choose the External
+# tier. Three legacy classes, per that section:
+#
+#   1. Active plans declaring `required(External)` -- measured zero at the
+#      fold. Should one exist, `legacy_external_plan_tier_warnings` below
+#      warns it, naming the closed (Internal-only, plus the `+ Internal
+#      Security Review` obligation) vocabulary -- and does NOT rewrite the
+#      declaration: enforcement (an actual External-tier pass is still what
+#      a declared `required(External)` needs to clear) is unchanged, so nothing
+#      is silently weakened OR strengthened. The Maintainer re-declares the
+#      tier at the plan's own next transition.
+#   2. Active proposals carrying the retired `Plan readiness:` field -- inert
+#      prose now (Chunk B deleted the parser that ever read it specially),
+#      covered by test coverage in `bootstrap/tests/test_lifecycle_contract.py`
+#      (`TestPlanReviewInheritanceIsRetired` and the oracle-(b) test beside
+#      this section's own tests).
+#   3. Archives -- immutable, parse as today, draw no warnings (the `not
+#      _is_immutable(art)` guard below).
+
+#: The one named warning this section adds (legacy class 1 / oracle (c)).
+LEGACY_WARNING_EXTERNAL_PLAN_TIER = "legacy-external-plan-tier"
+
+
+def legacy_external_plan_tier_warnings(art: Artifact) -> List[str]:
+    """Oracle (c): a PLAN still declaring the retired External tier -- bare,
+    or as one clause of a `+` obligation -- draws an advisory warning naming
+    the closed vocabulary.  Never a refusal, and never a silent rewrite: an
+    existing `required(External)` declaration keeps meaning exactly what it
+    always meant for enforcement purposes until the Maintainer edits it.
+    Silent for a proposal (External is fully valid there, unaffected by this
+    retirement) and for an immutable/archived plan (legacy class 3).
+    """
+    if art.kind != "plan" or _is_immutable(art):
+        return []
+    obligations, _violation = normalize_required_obligations(art.plan_review)
+    externals = [clause for clause, tier in obligations if tier == "external"]
+    if not externals:
+        return []
+    return [
+        f"[{LEGACY_WARNING_EXTERNAL_PLAN_TIER}] '**Plan review**: "
+        f"{art.plan_review.strip()}' declares {clause!r} at the retired "
+        "External plan tier (retire-external-plan-review §1: a plan review "
+        "is Internal, fresh-context, always). Warned, never refused, and "
+        "never silently rewritten -- the Maintainer re-declares this "
+        "plan's tier at its own next transition."
+        for clause in externals
+    ]
+
+
 # === the complete current contract and its withdrawal ledger ==================
 #
 # The accepted `review-efficient-lifecycle` parent, "Bounded current contracts"
@@ -5016,6 +5071,15 @@ def cmd_next(args: argparse.Namespace) -> int:
         for msg in note_warnings:
             _emit(f"NOTE: {msg}")
 
+    # Chunk H: the legacy External plan-tier warning -- advisory on EVERY
+    # lane (unlike the two blocks above, this is not lane-gated), and never
+    # a cause of a legality refusal below.
+    legacy_warnings = legacy_external_plan_tier_warnings(art)
+    if legacy_warnings:
+        _emit_section("legacy advisories (never refuse)")
+        for msg in legacy_warnings:
+            _emit(f"NOTE: {msg}")
+
     legal = _legal_transitions(art)
 
     if not args.to:
@@ -5161,6 +5225,10 @@ def cmd_scan(args: argparse.Namespace) -> int:
             # never refuses" on these four.
             for msg in note_conformance_warnings(art):
                 _emit(f"{rel}: NOTE (standard lane, advisory only): {msg}")
+            # Chunk H: the legacy External plan-tier warning -- advisory on
+            # EVERY lane, never counted toward `flagged`.
+            for msg in legacy_external_plan_tier_warnings(art):
+                _emit(f"{rel}: NOTE: {msg}")
     _emit("")
     if flagged:
         _emit(f"{flagged} of {total} artifact(s) carry structural violations.")

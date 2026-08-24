@@ -5005,6 +5005,123 @@ class TestPlanReviewInheritanceIsRetired:
             f"validated: {declaring}")
 
 
+class TestTypeScopedRemovalThreeLegacyClasses:
+    """`retire-external-plan-review` §3 on `dev/plans/convergent-lifecycle.md`
+    Chunk H: `External` is NOT deleted as a vocabulary word -- it stays valid
+    for a proposal's own `## Review` tier attestation and for every archived
+    record. Only a PLAN's own `**Plan review**:` tier retires. Three legacy
+    classes, each with its own behavioral oracle a grep cannot supply.
+    """
+
+    # -- legacy class 1 / oracle (c): an active plan declaring `required
+    # (External)` draws the legacy warning, never a refusal, never a
+    # silent rewrite --------------------------------------------------------
+
+    def test_an_active_plan_declaring_required_external_draws_the_legacy_warning(
+            self, tmp_path):
+        art = _plan_art(tmp_path, _pass_block(tier="External"),
+                        status="implementing", plan_review="required(External)")
+        warnings = planner.legacy_external_plan_tier_warnings(art)
+        assert any(
+            w.startswith(f"[{planner.LEGACY_WARNING_EXTERNAL_PLAN_TIER}]")
+            for w in warnings), warnings
+        assert any("'External'" in w for w in warnings), warnings
+
+    def test_the_warning_never_rewrites_enforcement(self, tmp_path):
+        """"Never silently rewritten": the SAME plan still needs an actual
+        External-tier pass to clear its declared floor -- the warning is
+        purely additive, and an Internal pass alone does not satisfy
+        `required(External)` just because the tier is now legacy."""
+        art = _plan_art(tmp_path, _pass_block(tier="Internal"),
+                        status="implementing", plan_review="required(External)")
+        assert planner.legacy_external_plan_tier_warnings(art)
+        assert planner.review_record_violations(art, "implementing"), (
+            "an Internal pass must still fail to clear a declared External "
+            "floor -- the legacy warning does not weaken or strengthen "
+            "enforcement")
+
+    def test_an_active_plan_declaring_required_internal_draws_no_legacy_warning(
+            self, tmp_path):
+        art = _plan_art(tmp_path, _pass_block(tier="Internal"),
+                        status="implementing", plan_review="required(Internal)")
+        assert planner.legacy_external_plan_tier_warnings(art) == []
+
+    def test_the_warning_fires_on_the_external_clause_of_a_plus_declaration_too(
+            self, tmp_path):
+        body = (_pass_block(tier="External")
+                + _pass_block(reviewer="R2", date="2026-05-02",
+                             tier="External").replace(
+                    "**Tier**:", "**Obligation**: External Security Review\n"
+                                 "**Tier**:"))
+        art = _plan_art(
+            tmp_path, body, status="implementing",
+            plan_review="required(External + External Security Review)")
+        warnings = planner.legacy_external_plan_tier_warnings(art)
+        assert len(warnings) == 2, warnings
+
+    # -- legacy class 3: archives are immutable and draw no warnings --------
+
+    def test_an_archived_plan_declaring_required_external_draws_no_warning(
+            self, tmp_path):
+        repo = _make_repo(tmp_path)
+        archive = repo / "dev" / "plans" / "archive"
+        archive.mkdir(parents=True, exist_ok=True)
+        path = archive / "old.md"
+        path.write_text(
+            "# old\n\n**Status**: archived\n"
+            "**Plan review**: required(External)\n\n"
+            "## Scope\n\nx\n\n" + _pass_block(tier="External"),
+            encoding="utf-8")
+        art = planner._read_artifact(path)
+        assert planner.legacy_external_plan_tier_warnings(art) == []
+
+    # -- oracle (a): an archived External PROPOSAL review still parses in
+    # `scan` (and, by the same shared vocabulary, in metrics) -- catches
+    # deleting `_TIERS`/`_TIER_RANK` instead of only retiring the plan-tier
+    # meaning ----------------------------------------------------------------
+
+    def test_an_archived_external_proposal_review_still_parses(self, tmp_path):
+        """The property "an archived External proposal review still parses
+        in `scan` and metrics" -- catches deleting the shared `_TIERS`/
+        `_TIER_RANK` vocabulary instead of only retiring the plan-tier
+        meaning.  Read through `_latest_proposal_review`, the general
+        reader every proposal-side contradiction check consumes, and
+        through `_conformance_violations` end to end (immutable, so it
+        raises and reports nothing, but it must not raise)."""
+        identity = planner.IdentityModel(frozenset(), frozenset())
+        art = _p3_prop(tmp_path, _prop_review_pass(tier="External"),
+                       status="accepted", archived=True)
+        line_no, tier, findings, problems = planner._latest_proposal_review(art)
+        assert tier == "External", (tier, problems)
+        assert findings == "none"
+        assert problems == []
+        # No unrelated crash, and specifically no tier-vocabulary complaint --
+        # the one unrelated finding this fixture owes (no `## Decision`
+        # section, irrelevant to this oracle) is excluded by name.
+        violations = planner._conformance_violations(art, identity)
+        assert not any("tier" in m.lower() or "external" in m.lower()
+                      for m in violations), violations
+
+    # -- oracle (b): a `Plan readiness` line in an active proposal is
+    # unstructured prose now -- never read as a plan declaration, and no
+    # longer even a proposal-side finding (Chunk B deleted the parser
+    # entirely; this is the type-scoping half of that deletion) -----------
+
+    def test_a_plan_readiness_line_in_an_active_proposal_is_never_a_plan_declaration(
+            self, tmp_path):
+        """No plan anywhere reads a PROPOSAL's `Plan readiness:` line at all
+        any more -- `plan_inheritance_violations` never opens the proposal
+        (Chunk B), so a proposal's readiness text cannot become a plan's
+        tier under any circumstance, malformed or not."""
+        art = _p2_tree(tmp_path, readiness="DISTINCT REVIEW REQUIRED")
+        value, problems = planner.resolve_plan_assurance_path(art.path)
+        assert value is None
+        # The refusal is about the PLAN's own retired declaration, never a
+        # read of the proposal's readiness value.
+        assert not any("DISTINCT" in m for m in problems), problems
+        assert any("retired" in m for m in problems), problems
+
+
 class TestTheMeasuredBlastRadiusAndTheFencesHoldingIt:
     """The shared `Basis:` binding implementation, and the fence that keeps
     a generalization from silently rewriting a landed contract's refusals.
