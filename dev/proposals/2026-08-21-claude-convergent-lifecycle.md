@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-21
-**Status**: awaiting-review
+**Status**: revising
 **Assurance path**: high-assurance (governing doctrine and lifecycle)
 **Supersedes**: `2026-08-20-claude-review-loop-termination` (accepted Revision 7,
 superseded same day; its objective binds here, its scope does not)
@@ -579,3 +579,113 @@ lands standard under the closed procedure; (2) §2a — is the transition table
 executable as written; (3) §5 — the manifest/marker cross-check and its
 mutation; (4) §6 — can a migration lose an obligation without tripping the
 allowance rule.
+
+## Review -- Codex (External) -- 2026-08-24 (round 2)
+
+**Model**: GPT-5.6 (Codex)
+
+Reviewed commit: c2bc3d340f767773d4600c3689e13846a22c7311
+Target: the complete current contract (Revision 1), including the concurrent `0ebd3a7` review-tier expansion, the standard-note state machine, security selection, and transition
+Prior findings: RCL-01–RCL-05 (closure read)
+Assurance path: high-assurance
+**Tier**: External
+**Findings**: raised (3 blocking)
+**Plan readiness**: DISTINCT REVIEW REQUIRED
+
+### Steelman
+
+Revision 1 meaningfully improves the earlier contract.  C0 now has a usable
+polarity; the note has a declared lane discriminator and minimum fields; and
+the marker proposal no longer accepts an empty security selection.  Retaining
+the accepted proposal as the migration's authoritative scope record is also
+the right direction.  The remaining problems are at the seams where the new
+rules must determine an actual transition or release outcome.
+
+### Findings
+
+#### RCL-02 — BLOCKING, not closed: §2a has no valid path through a blocking design review
+
+The table sends `awaiting-plan-review` directly to `ready-to-implement` when a
+design review is appended, then says the author response to blocking findings
+is what advances `ready-to-implement`.  It supplies neither a
+`revising-plan`-equivalent state nor a condition that the design review cleared
+before the note becomes ready.  The code-review half has the same omission:
+`awaiting-code-review` lists an appended code review, but no branch from a
+raised review to revision or from a clearing review to `ready-to-archive`.
+This contradicts C7's closure binding and makes the proposed
+missing-design-review test too weak: a note can carry a raised review, declare
+itself ready, and have no defined record that closes it.  "Warn, never refuse"
+changes the disposition of a detected violation; it does not supply the
+missing state and evidence rule.
+
+Replace the table with complete directed transitions, including the from/to
+states, clearing versus raised-review conditions, the response/closure record
+shape, and the next owner at each branch.  The standard-note tests must then
+falsify a raised design review without closure and a raised code review without
+closure, as well as the clearing paths.  State explicitly which warnings are
+emitted for each invalid advance and prove a deliberate plan still refuses the
+same invalid advance.
+
+#### RCL-03 — BLOCKING, not closed: the release-only split still lacks the release command and the security-surface branch
+
+Section 5 labels its commands "exactly," but it gives only the ordinary
+`-m "not security"` command.  "The release ceremony runs the entire suite" is
+not a command and omits the release environment that makes skips, xfails, and
+xpasses fail closed.  The current release runner is
+`bootstrap/security_check.py`: it sets `CAIRN_RELEASE_GATE_ACTIVE=1`, runs the
+whole suite, and also owns the Bandit, repository, and quality-gate phases.
+Replacing that executable release path with an unqualified full pytest command
+would weaken the ceremony while still meeting the prose.  Conversely, the
+stated security-surface carve-out cannot use the one supplied per-change
+command, because that command deselects the very family it says must run.
+
+Name the exact release entry point and environment, and state whether it
+remains the current security-check runner or a replacement with every phase
+accounted for.  Add the exact alternate per-change command/mapping for a
+security-surface change.  Exercise a release-mode skipped/xfail fixture and a
+security-surface change so both paths demonstrate the claimed fail-closed and
+carve-out behavior.  This closes the exact-command part of RCL-03 rather than
+leaving it for the implementer to infer.
+
+#### RCL-06 — BLOCKING: the concurrent tier-authority expansion is unaccounted and tries to retire the review that bounds this plan
+
+Commit `0ebd3a7` is a material extension of the opened contract, not merely a
+clarification: it retires the current `AGENTS.md`/`doctrine/dual-review.md`
+rule that turns an External reviewer's `DISTINCT REVIEW REQUIRED` into a
+mandatory External plan review.  That is the same rule this External review
+already invoked.  Revision 1 repeats the retirement at §2, but its withdrawal
+ledger does not name the earlier commitment that deliberate-lane review floors
+were "untouched," nor does the verification plan map the affected doctrine,
+template, planner, and shipped-twin behavior.  Calling the result an editor
+assignment also conflates two distinct decisions: the Maintainer's ordinary
+choice to spend an optional extra pass, and a lifecycle-declared independent
+review floor.
+
+Treat this as a scope expansion in the current contract: add its withdrawn
+commitment and rationale to the ledger; enumerate every rule and twin whose
+meaning changes; and provide directed tests for both sides (a recorded
+`DISTINCT REVIEW REQUIRED` no longer imposes External only if the accepted new
+rule says so, while an independently declared `required(External)` and every
+Security Review remain non-downgradable).  Until that change is accepted, the
+current rule still binds this proposal's derived plan, so this review's
+`DISTINCT REVIEW REQUIRED` cannot be reclassified to Internal by the proposal
+it is reviewing.
+
+### Coverage and recommendation
+
+**Covered**: Revision 1 and its response/withdrawal ledger; the concurrent
+`0ebd3a7` diff; current plan lifecycle and event grammar in
+`dev/plans/_template.md`; planner transition and evidence predicates in
+`tools/lifecycle_planner.py`; current review-floor and
+recommend-and-decide rules in `AGENTS.md` and `doctrine/dual-review.md`; and
+the actual release-mode entry point in `bootstrap/security_check.py`.
+
+**Not covered / low confidence**: no implementation, marker manifest, or
+change-note parser exists yet, so the proposed warning, membership, release,
+and twin-parity behavior cannot be executed.  This is a closure read by the
+same External reviewer, not a new structurally independent pass.  I did not
+run the full suite.
+
+**Second-round recommendation**: recommended after a complete revision closes
+the three findings.  The tier-authority widening particularly needs an
+independent read because it changes the mechanism that allocates that read.
