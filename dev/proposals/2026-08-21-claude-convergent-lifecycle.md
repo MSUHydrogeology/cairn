@@ -61,8 +61,10 @@ three prizes: **C0** (risk posture), **C1** (editor authority), **C7**
   build* is a structure question — the Maintainer's lane. The change note
   covers work whose shape is already settled; a feature whose shape is the
   question deliberates first. Electable by author or Maintainer for anything
-  else genuinely architectural. Existing review floors (including External)
-  apply here untouched. Uncertainty at triage resolves upward, as now.
+  else genuinely architectural. Existing review *floors* — who is independent
+  enough to review — apply here untouched, including External where currently
+  required; but a floor is not a reviewer's lever: tier assignment is the
+  editor's (see §2). Uncertainty at triage resolves upward, as now.
 
 ### 2. One design review, one code review, each with an exit
 
@@ -84,6 +86,16 @@ three prizes: **C0** (risk posture), **C1** (editor authority), **C7**
 * **The editor may end any loop at any time** over open findings by naming
   them (C1). A clearing verdict requires a whole-artifact read — cheap at two
   pages, which is the point.
+* **Reviewers recommend; the editor assigns** (carrying the superseded
+  proposal's extended C1). No reviewer sets a downstream review tier, demands
+  an escalation, or prescribes the next round's scope — on either lane. A
+  reviewer may *recommend* External review for a derived plan, on the record;
+  the assignment is the editor's, made at the Decision, and a recorded
+  recommendation never binds. The standing `AGENTS.md` trigger that converts a
+  reviewer's `DISTINCT REVIEW REQUIRED` into a mandatory External plan review
+  is retired with the token itself. Tier authority follows the same shape as
+  the dissent rule above: the reviewer's view is preserved in the record, and
+  the decision belongs to the role accountable for it.
 
 ### 3. Write once, restate never
 
