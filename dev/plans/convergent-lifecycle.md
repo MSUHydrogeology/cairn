@@ -13,7 +13,7 @@ Do them simultaneously."*:
 "Relationship" section says so, and it is a strict subtraction from either
 baseline.
 
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(**Internal**) — and under the rule this plan lands,
 that is the only tier there is. **Basis corrected at the fold**: the External
 floor was waived in `convergent-lifecycle`'s *own* Decision (`47315b6`), hours
@@ -52,14 +52,14 @@ is not review commentary.
 
 | chunk | surface | contract |
 |---|---|---|
-| **A** | `doctrine/lifecycle.md`, `doctrine/dual-review.md`, `doctrine/proposals.md`, `doctrine/plans.md` | §1 three lanes + the closed triage procedure and its defect-repair carve-out; §3 write-once-restate-never; §6's C0 risk-posture text entered **verbatim** into `dual-review.md` |
+| **A** | `doctrine/lifecycle.md`, `doctrine/dual-review.md`, `doctrine/proposals.md`, `doctrine/plans.md` | **§1, §2, §3, §6.** §1 three lanes + the closed triage procedure and its defect-repair carve-out; §3 write-once-restate-never; §6's C0 risk-posture text entered **verbatim** into `dual-review.md`; and from §2 the two rules that are doctrine rather than planner behaviour — C0's blocking test with explicit polarity, and C1's editor-ends-any-loop edge |
 | **B** | `AGENTS.md` + twin, `doctrine/dual-review.md`, `doctrine/plans.md`, `doctrine/proposals.md`, `doctrine/lifecycle.md`, `doctrine/lifecycle-contract.md`, `doctrine/session-routines.md`, `dev/agent_collaboration.md` + twin, both `_template.md` pairs, `tools/lifecycle_planner.py` + twin, tests | **Abolish the External plan tier.** `retire-external` §1 governs over `convergent-lifecycle` §2: not "retire the trigger, keep the floor" but remove the tier entirely, and delete the `Plan readiness` slot. "Declared floor" thereafter means `required(Internal)` and Security Review only. |
 | **G** | `tools/lifecycle_planner.py` + twin, `bootstrap/tests/test_lifecycle_contract.py` | `retire-external` §2 — the security-plan obligation, declared **`required(Internal + Internal Security Review)`**. Per that Decision's preamble item 1, **no new grammar**: `normalize_required_obligations` already reads `required(A + B)` as two obligations and two passes, and exists because that form once silently discarded its second. Satisfied only by an appended `## Security review (Internal)` from a fresh-context same-type session in the Security Review role — never by an ordinary Internal pass. |
 | **H** | `tools/lifecycle_planner.py` + twin, `bootstrap/tests/test_lifecycle_contract.py`, `bootstrap/tests/test_pilot_evidence.py`, `bootstrap/tests/fixtures/gate_manifest.json` | `retire-external` §3 — removal is **type-scoped**: `External` stays valid for proposal reviews and archived records; only the plan-tier meaning retires. Three legacy classes, three behavioral oracles. |
 | **C** | both `_template.md` pairs, `tools/lifecycle_planner.py` + twin, `bootstrap/tests/test_lifecycle_contract.py` | §2a the change note: header fields incl. `Lane: standard`, the five sections, the nine directed transitions, the four named warnings, the deliberate-lane refusal regression |
 | **D** | `tools/lifecycle_planner.py` + twin, tests | §4 lifecycle checks on trivial/standard lanes warn, never refuse. Hard refusal survives for scaffold containment, release trust-root, and the deliberate lane's conformance checks |
 | **E** | `bootstrap/tests/conftest.py`, a committed marker manifest, `docs/release-process.md` | §5 the `security` marker split. **Declared Security Review** — see Chunk E's fence |
-| **F** | this plan; `dev/proposals/2026-08-21-claude-convergent-lifecycle.md` | preamble items 1 and 3 |
+| **F** | `dev/proposals/2026-08-21-claude-convergent-lifecycle.md` (3 violations) and `dev/proposals/2026-08-24-claude-retire-external-plan-review.md` (1) | the ledger-heading wording, **all four**, by the heading-only method in the Response below. Registers the checker's exact-match rule for a successor rather than changing it here |
 
 ## Approach
 
@@ -171,8 +171,13 @@ exists. The apparatus that made the waiver necessary is what the plan removes.
 
 **Boundary A (iteration, scoped).** Per chunk: `test_lifecycle_contract.py`,
 `test_lifecycle_board.py`, `test_lifecycle_vocabulary.py` for A–D;
+`test_lifecycle_contract.py` for **G** (the obligation pair);
+`test_lifecycle_contract.py` and **`test_pilot_evidence.py`** for **H** (the
+type-scoping oracles — that file appeared in H's surface list and in no
+verification mapping, which is the gap the review named);
 `test_security_lint.py`, `test_security_check.py`, `test_gate_preflight.py` for
-E. Plus twin byte-parity on every pair touched, in the same commit.
+E; the claim, link and neutrality gates for **F**. Plus twin byte-parity on
+every pair touched, in the same commit.
 
 **Boundary B mode: `full`.** Not a choice: Chunk E touches
 `bootstrap/tests/conftest.py` (a gate-frozen contract surface) and Boundary-B
@@ -269,13 +274,24 @@ touches `bootstrap/tests/conftest.py` and Boundary-B doctrine, both
 trust-ceremony surfaces), and that floor is non-downgradable — including by
 this plan.
 
-**Declared in the obligation grammar, not as an annotation.** Per
-`retire-external` §2 as corrected by its Decision preamble item 1, this chunk's
-obligation is written **`required(Internal + Internal Security Review)`** and
-satisfied **only** by an appended `## Security review (Internal)` record from a
-fresh-context same-type session in the Security Review role. An ordinary
-Internal review record does not clear it, however clean. That is the whole
-point of the pair: today the wrong record clears it silently.
+**Enforced by the fence and a code-stage record — not by a header token.**
+Corrected at the plan review, which found this paragraph claiming a mechanism
+that is written nowhere. `normalize_required_obligations` reads the
+`**Plan review**:` field **once, for the whole artifact**; there is no
+per-chunk scoping. Declaring `required(Internal + Internal Security Review)` in
+this plan's header would therefore block **every** chunk on a Security Review
+that only E needs. Chunk E is stopped by two things instead:
+
+1. the **`MAINTAINER-GATED` fence**, which is chunk-scoped and is the gate; and
+2. a **code-stage Security Review**, an appended `## Security review (Internal)`
+   record from a fresh-context same-type session in the Security Review role,
+   required before E's implementation is accepted and not satisfied by an
+   ordinary Internal record however clean.
+
+`convergent-lifecycle` §5 says *"**Installing** this split ... takes a declared
+Security Review"* — the obligation attaches to the implementation, which is why
+a plan-review token was the wrong carrier. **Chunk G still ships the `+`
+grammar** for plans that do declare it; this plan simply is not one.
 
 **The abolition in Chunk B does not touch this.** `retire-external` removes the
 External plan *tier*; Security Reviews survive wherever they attach, and this
@@ -495,3 +511,102 @@ implementation to prove the ordering is load-bearing rather than merely
 convenient. No full suite run (not requested, and a bare run is refused by
 design); no `bootstrap/tests/_gate_manifest.py produce` or fixture
 regeneration (out of scope per instruction).
+
+## Response to plan review -- Claude Opus 5 (author) -- 2026-08-24
+
+Answers: `## Plan review -- Claude Sonnet 5 (Internal, fresh context) -- 2026-08-24`
+at `312bab3`, reviewing `a788890`. One blocking finding and four notes, all
+closed. **Status**: `revising-plan` -> `awaiting-plan-review`.
+
+**On that transition, and it is the plan's own subject.** `revising-plan` has
+exactly one legal exit today, back to `awaiting-plan-review` — so an author's
+response, however completely it closes a review, cannot advance the work. Under
+§2 of the contract this plan installs, **this very response would have carried
+it to `ready-to-implement`**: the reviewer bound closure when it raised the
+finding ("closable by a text correction, not a redesign"), and the response
+carries that evidence. The plan therefore waits here for the Maintainer's call
+on whether a clearing pass is warranted — which is the editor's judgement on
+magnitude, not a rule. Recorded because the cost this plan exists to remove is
+being paid by the plan that removes it.
+
+**Scope delta**: preserved. No chunk, surface, or accepted outcome is dropped;
+one paragraph is corrected and three lists are completed.
+
+### The blocking finding -- Chunk E's stated mechanism does not exist
+
+**The reviewer is right and I verified it rather than conceding it.**
+`normalize_required_obligations` parses *"the DECLARED OBLIGATION CLAUSES of a
+`**Plan review**:` field"* -- one field, once, for the whole artifact. There is
+no per-chunk scoping. And this plan's header is single-clause
+`required(**Internal**)`, so the `+` form the Chunk E paragraph described as
+already written **is written nowhere**.
+
+The trap in the obvious fix is what makes this worth the finding: putting
+`required(Internal + Internal Security Review)` in the header *would* be
+enforced -- against **every chunk**, blocking A–D and F on a Security Review
+they do not need, contradicting this plan's own "everything else implements
+without a gate". The right answer is not to strengthen the declaration. It is
+to stop claiming a plan-review instrument for a code-stage obligation.
+
+**Chunk E's actual enforcement path, named:**
+
+1. **The `MAINTAINER-GATED` fence**, which *is* chunk-scoped and *is* the gate.
+   `AGENTS.md`: a chunk so marked "does not execute without the authorization it
+   names, whatever this rule says." That is what stops Chunk E, and it stops
+   nothing else.
+2. **A code-stage Security Review**, satisfied by an appended
+   `## Security review (Internal)` record before Chunk E's implementation is
+   accepted. `convergent-lifecycle` §5's wording is *"**Installing** this split
+   ... takes a declared Security Review"* -- the obligation attaches to the
+   implementation, not to this plan's design review, which is why a plan-review
+   header token was always the wrong carrier.
+
+**Chunk G is unaffected and still lands.** It implements the `+` grammar for
+plans that declare it, exactly as `retire-external` §2 requires. What changes is
+only that *this* plan does not declare it, because its Security obligation is
+not a plan-review obligation.
+
+**The reviewer's separate check stands and is worth keeping**: Chunk B cannot
+weaken Chunk E, because `Security review` is a pass **kind**, matched
+independently of the Internal/External **tier** vocabulary B edits -- no code
+path runs through the tier list. That was my stated worry and it does not
+materialise.
+
+### The four notes
+
+| note | close |
+|---|---|
+| Chunk F omits `retire-external-plan-review.md`, though Scope-fold item 5 says F fixes the wording "on all of them" | **Fixed.** Added to F's surface list. The reviewer independently reproduced that file's own violation via a scratch non-terminal copy; it is one violation there against three in `convergent-lifecycle`, four total. |
+| Chunk A's row does not cite §2, though Approach assigns it C0/C1 | **Fixed.** A's row now cites §1, §2 (C0's blocking test and C1's editor-ends edge), §3 and §6. |
+| Boundary A's per-chunk test list was not extended for G and H | **Fixed.** G and H added, naming `test_lifecycle_contract.py` and `test_pilot_evidence.py` -- the latter appeared in H's surface list but in no verification mapping, which is exactly the gap. |
+| Chunk F's correction mechanism for already-accepted ledger headings is unspecified | **Fixed**, and it is the interesting one -- see below. |
+
+### How Chunk F corrects a heading inside an accepted artifact
+
+Unspecified in the opened plan, and it is not obvious, because the two ordinary
+answers are both wrong. The artifacts are `accepted`, and **an accepted
+artifact's prior sections are immutable** -- so F cannot edit the offending
+heading. But the violation *is* the heading's wording, so appending a correction
+elsewhere leaves the checker still refusing.
+
+**F does not edit and does not append a correction. It fixes the checker's
+input by fixing the heading, and it is allowed to because the heading is not a
+prior section's content -- it is a structural label the contract-revision
+detector reads.** The rule F follows, stated so an implementer does not have to
+infer it:
+
+* Edit **only** the heading text, never a word of the section body.
+* The edit is `### Withdrawn / superseded commitments (cumulative with Revision
+  1's)` -> `### Withdrawn / superseded commitments`, and the parenthetical it
+  removes is restated as the section's **first line**, so no information is lost
+  -- the record says the same thing, in a place the exact-match checker does not
+  read as a heading.
+* Verify against a **scratch copy with a non-terminal status**, because
+  `_is_immutable` short-circuits the contract check on `accepted` and the live
+  artifact will report clean either way. The reviewer used exactly this method
+  to reproduce all four violations; F uses it to prove they are gone.
+
+**Registered, not fixed here**: the checker's exact-match rule is the actual
+defect -- four wording artifacts across two files in one day, each silenced at
+acceptance. That wants a successor proposal, and changing a checker inside a
+plan whose thesis is subtraction is how the ratchet turns.
