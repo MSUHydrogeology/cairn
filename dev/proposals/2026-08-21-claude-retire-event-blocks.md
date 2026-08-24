@@ -14,12 +14,14 @@ evidence. Its **mechanism** does not.
 `bootstrap/tests/test_lifecycle_metrics_events.py`, `docs/glossary.md`, the
 `cairn-event-v1` grammar wherever templates and doctrine teach it
 **Related**: `dev/strategy/2026-08-21-claude-nimbleness-recovery.md`
-**Plan review**: **not required** — assigned by the editor at the Decision.
-Revision 1 carries the contract a derived plan would restate; a plan would cost
-a round and add nothing. The `DISTINCT REVIEW REQUIRED` token is advisory under
-C8 of `review-loop-termination` (accepted 2026-08-21) and does not bind the
-tier. See the Decision below, including the fence on the install-contract
-re-pin.
+**Plan review**: **not required** — assigned by the editor at the Decision under
+their ordinary authority over plan triage. Revision 1 carries the contract a
+derived plan would restate; a plan would cost a round and add nothing, and with
+no derived plan there is no tier for RTE-04's recorded token to bind. *(The
+original wording justified this by C8 of `review-loop-termination`, which was
+never implemented; corrected below — see "Correction to the Decision". The
+routing itself is unchanged.)* See the Decision below, including the fence on
+the install-contract re-pin.
 
 ## Objective
 
@@ -544,3 +546,52 @@ acceptance criterion above rather than a discovery for the implementer.
 **Scribed by** Claude (claude-opus-5), this proposal's author, on explicit
 Maintainer instruction. The scribe wrote no part of the authorization quoted
 above.
+
+## Correction to the Decision -- Claude -- 2026-08-24
+
+Appended on Maintainer instruction. The Decision above stands as accepted; two
+of its citations are wrong, and one downstream consequence was not visible when
+it was written.
+
+**The C8 citation is false.** The Decision's routing paragraph says RTE-04's
+`DISTINCT REVIEW REQUIRED` "is advisory under C8 of `review-loop-termination`",
+and the header repeats it. Measured 2026-08-24:
+`2026-08-20-claude-review-loop-termination` carries `**Status**: superseded`, it
+has no derived plan, and `ORDINARY` -- the third token C8 introduces -- occurs
+**0 times** in `AGENTS.md`, `doctrine/dual-review.md` and
+`doctrine/proposals.md`. The escalation trigger it would have retired is still
+live in `AGENTS.md`. C0-C8 were accepted and superseded the same day without
+being implemented, so **nothing in that proposal was in force when this Decision
+cited it.** The error is mine as scribe: I trusted an acceptance without
+checking whether it had landed, which is the same defect this repository's own
+verify-before-asserting rule exists to prevent.
+
+**What does not change, and why.** The routing -- implement directly from the
+Decision, no derived plan -- is unaffected: with no derived plan there is no
+plan-review tier for the token to bind, so the token was never reached. Its
+correct basis is the Maintainer's ordinary Decision authority over plan triage,
+not C8. The **MAINTAINER-GATED fence on the install-contract re-pin also stands
+unchanged**: `AGENTS.md` names the install contract a high-risk surface
+directly, so the fence never depended on C0. Both outcomes were right; one
+citation was not.
+
+**Where the rule now actually comes from.** On 2026-08-24 the Maintainer waived
+the External floor on `2026-08-21-claude-convergent-lifecycle` and recorded the
+reasoning: a binding `required(External)` is apparatus a single-agent adopter
+cannot staff, which contradicts `doctrine/dual-review.md`'s own commitment that
+"the bootstrap never installs more review apparatus than the team can staff."
+That proposal is accepted and is where C0, C1 and C7 now land. Cite it, not C8.
+
+**A downstream consumer of this deletion exists.** This proposal removes the
+`cairn-event-v1` grammar from both planner twins, both template pairs and
+`docs/glossary.md`. `convergent-lifecycle` §2a -- accepted the same day --
+requires change notes to *emit* that grammar, "so longitudinal metrics
+survive." **The implementing agent of this proposal must not treat the grammar's
+removal as unobserved.** The agreed resolution is recorded as item 1 of that
+proposal's Decision preamble: change notes are counted by the dated-heading
+grammar this proposal establishes, extended to the note lane. Whichever
+implementation lands first, the heading reader must cover change notes, or the
+note lane ships with no measurement story.
+
+**Nothing else in the Decision is altered**, and its accepted terms are
+unchanged.
