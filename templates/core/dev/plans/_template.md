@@ -84,24 +84,28 @@ with no follow-up needing a `defer` home (a follow-up headed for
 The `**Plan review**:` header field is mandatory and has **no silent default**;
 this is how to choose its value.
 
-**Internal is the default, because the proposal is the deliberative boundary.**
-When the source proposal's **External** review read a complete current contract
-and recorded `Plan readiness: READY`, this plan takes a fresh-context
-**Internal** pass -- it is translating decisions an independent reviewer already
-tested, not proposing new ones. Declare `required(Internal)` and bind the two
-inherited commits (see "Inherited plan readiness" under `## Verification`).
+**A plan review is an Internal, fresh-context review — always.** External
+plan review does not exist as a tier, a requirement, a recommendation slot,
+or an escalation target: declare `required(Internal)`. This holds regardless
+of the source proposal's own review tier or assurance path, and regardless of
+size or the surface touched -- a high-risk surface takes its **Security
+Review** on its own trigger (next), which this field neither replaces nor
+implies. The Maintainer may still *choose* to ask any additional reader for
+any artifact; a choice is not a tier, and this field never records one.
 
-**Escalate to `required(External)` explicitly, never by inference.** Reach for
-it when the proposal reviewer recorded `DISTINCT REVIEW REQUIRED`, when
-readiness was invalidated by an expansion or a reduction, or when you or the
-Maintainer want a second independent read of the sequencing. A plan does not
-acquire an External tier from being large, from carrying a high assurance path,
-or from touching a protected surface -- a high-risk surface takes its **Security
-Review** on its own trigger, which this field neither replaces nor implies.
+**A security-touching plan declares the obligation directly, as a second
+clause.** When a Security Review attaches to this plan (a surface trigger
+`AGENTS.md` names, or a proposal's own declared Security Review carried
+forward), declare `required(Internal + Internal Security Review)` --
+`normalize_required_obligations` already reads `required(A + B)` as two
+distinct obligations and two distinct passes, so no new grammar is needed.
+The second obligation is satisfied **only** by an appended pass whose
+`**Obligation**: Internal Security Review` line matches it exactly, authored
+by a fresh-context same-agent-type session in the Security Review role; an
+ordinary Internal pass with no such line clears the first obligation and
+leaves the second unmet.
 
-**`not required(<rationale>)` still needs a real rationale**, and it is
-incompatible with claiming an inherited basis: inheritance reallocates the plan
-review, it never removes it, and the pairing refuses.
+**`not required(<rationale>)` still needs a real rationale.**
 
 Code review is a separate obligation with a separate floor -- **not the
 implementing agent** -- and nothing in this field changes it.
@@ -425,37 +429,6 @@ surface silently.
 snippets that diverged from their source) catch **drift**, not
 **absence** of new doc updates. Confirm each doc named in Acceptance
 was actually updated; the gates don't enforce that.
-
-**Inherited plan readiness -- the two-field declaration.** When the source
-proposal's **External** review recorded `Plan readiness: READY`, this plan takes
-a fresh-context **Internal** plan review instead of a second
-different-agent-type round, and it says so in *two* header fields, not one:
-
-    **Plan review**: required(Internal)
-    **Inherited proposal basis**: review=<full External-review commit>;
-                                    proposal=<full accepted commit>
-
-`proposal=` is the proposal commit the Decision binds -- the same commit the
-readiness review recorded as its `Reviewed commit`. Both ids are full 40-character
-lowercase hex; an abbreviation can collide, and a colliding binding names two
-commits. Omit the field entirely when this plan does not inherit: a partial or
-misspelled declaration **refuses** and never reads as `READY`.
-
-**Inheritance reallocates the plan review; it never removes it.** Pairing an
-inherited basis with `not required(...)` would leave the plan no independent read
-at all, and refuses.
-
-**Seven things invalidate it, in both directions.** A new scope item, invariant,
-public path, failure disposition, trust boundary or ceremony -- declared as
-
-    **Contract expansion**: none | <dimension>[; <dimension>]
-
--- and, equally, a **scope reduction** relative to the accepted proposal, declared
-through the `Scope delta` prompt below. Either one means this plan takes
-`required(<tier>)` and a distinct plan review before implementation continues; a
-reduction is admitted only by the Maintainer's recorded allowance. Both are
-**author declarations**: the checker binds the record, and whether the translation
-is faithful stays the reviewer's judgement.
 
 **The four-field review basis is mandatory in every plan-review pass.** Its
 first four lines name the bounded target that pass actually read:

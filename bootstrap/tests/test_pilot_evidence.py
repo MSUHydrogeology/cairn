@@ -1293,25 +1293,6 @@ class TestTheAssurancePathFieldIsClosedMandatoryAndDerived:
                                "--source-commit", "0" * 40,
                                "--assurance-path", "standard"])
 
-    @pytest.mark.parametrize("assurance", ["standard", "high-assurance"])
-    def test_the_writer_derives_the_value_from_the_chain(
-            self, repo, lifecycle_ready, monkeypatch, capsys, assurance) -> None:
-        _write_inheritance_chain(repo, assurance=assurance)
-        head = _commit(repo, "the chain", PROPOSAL_REL, INHERITED_PLAN_REL)
-        self._ledger(repo)
-        monkeypatch.chdir(repo)
-        rc = lifecycle_ready.main([
-            "pilot-record", "--kind", "plan-counted", "--subject", "inherited",
-            "--source-artifact", INHERITED_PLAN_REL, "--source-commit", head,
-            "--date", "2026-02-05", "--review-input-bytes", "10",
-            "--transitions-removed", "1", "--maintainer-prompts", "0",
-        ])
-        assert rc == 0, capsys.readouterr()
-        events = lifecycle_ready._parse_fenced_records(
-            (repo / EVENTS_REL).read_text(encoding="utf-8"),
-            lifecycle_ready._EVENT_FENCE, "x")
-        assert events[0]["assurance_path"] == assurance
-
     def test_a_plan_with_no_inheritance_chain_records_not_inherited(
             self, repo, lifecycle_ready, monkeypatch, capsys) -> None:
         """A POSITIVE resolved answer, not a default: the plan declares no chain,

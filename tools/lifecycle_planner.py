@@ -1986,12 +1986,10 @@ _REVIEW_FIELD_RE = {
     for name in _REVIEW_BASIS_FIELDS + (
         "Model", "Verdict", "Findings",
         "Contract non-expansion", "Basis", "Inherited proposal basis",
-        # P2-R: the proposal-side readiness declaration, the plan-side
-        # expansion/reduction declarations, and the plan's pointer at the
-        # proposal whose readiness it inherits.  Same emphasis-optional
-        # full-line shape, so the same matcher factory.
-        "Plan readiness", "Contract expansion", "Scope delta",
-        "Source proposal",
+        # The general scope-reduction-trap declaration (`_declared_reduction`,
+        # unrelated to the retired plan-review inheritance chain).  Same
+        # emphasis-optional full-line shape, so the same matcher factory.
+        "Scope delta",
         # The per-pass obligation binding, the orthogonal blocker, and
         # `Tier` -- which the Plan-review pass reads through the bold-only
         # `_TIER_LINE_RE`, but the PROPOSAL review record needs in the same
@@ -3102,394 +3100,73 @@ def _non_expansion_violations(art: Artifact, line_no: int,
     return v
 
 
-# === P2-R -- plan-readiness inheritance, the two-field shape =================
+# === Chunk B (`retire-external-plan-review` §1/§3): plan-review inheritance
+# is retired ====================================================================
 #
-# The accepted `review-efficient-lifecycle` parent, "Standard-path
-# plan-readiness inheritance":
+# `review-efficient-lifecycle`'s "Standard-path plan-readiness inheritance"
+# (P2-R) let a plan take a lighter Internal-only pass when the source
+# proposal's External review recorded its readiness field as `READY`.
+# `retire-external-plan-review` §1 retires the allocation this fed
+# entirely: a plan review is Internal, fresh-context -- always -- so there is
+# nothing left to inherit FROM, and no lighter tier a finding could earn.
+# What survives, and why:
 #
-#     A proposal reviewer may record:
+#   * `_declares_inheritance` / `_INHERITANCE_FIELD` (defined above, part of
+#     the separate Code-review "Contract non-expansion" backstop) still
+#     recognize the header field -- a plan that still writes it needs a clear
+#     refusal, not silent acceptance. Retirement is enforced, not merely
+#     undocumented.
+#   * `plan_inheritance_violations`, `resolve_plan_assurance_path` and
+#     `ASSURANCE_NOT_INHERITED` stay PUBLIC and keep their names:
+#     `tools/lifecycle.py`'s monitoring report imports and calls all three
+#     directly, so deleting them would break a consumer this chunk does not
+#     own. Their bodies are retired to the new, much smaller contract below
+#     rather than deleted.
 #
-#         Plan readiness: READY | DISTINCT REVIEW REQUIRED
-#         Basis: <full reviewed proposal commit and complete-current-contract
-#                heading>
-#
-#     `READY` means that exact contract fixes scope and exclusions; invariants;
-#     failure dispositions; public paths; omissions; test homes and standing
-#     gates; documentation and release-note surfaces; implementation areas and
-#     sequence; and any Maintainer fences or ceremonies. ...
-#     The Maintainer's Decision binds the same proposal commit without changing
-#     its contract. ... A new scope item, invariant, public path, failure
-#     disposition, trust boundary, or ceremony invalidates inheritance.  The
-#     metadata becomes `required(<tier>)`, and implementation stops until a
-#     distinct plan review lands.
-#
-# FOUR divergences from that text govern this block.  Each comes from a landed,
-# append-only section of `dev/plans/review-efficient-lifecycle.md`, and each is
-# named here because a reader comparing this code with the accepted proposal
-# alone would otherwise read a faithful implementation as a drifted one:
-#
-# 1. **The plan-side shape is TWO fields, not one** (`## Maintainer-directed
-#    contract revision -- 2026-08-11`).  The parent folded the whole fact into
-#    the plan-review field -- `Plan review: inherited(<review commit>;
-#    proposal=<accepted commit>)`.  That spelling is retired; a plan under the
-#    current contract "carries both facts separately":
-#
-#        Plan review: required(Internal)
-#        Inherited proposal basis: review=<full External-review commit>;
-#                                    proposal=<full accepted commit>
-#
-# 2. **The automatic high-assurance refusal is REMOVED** (same section):
-#    *"Standard and high-assurance proposals may both receive `READY` when their
-#    External review settled the complete contract."*  That is a Maintainer
-#    decision, quoted verbatim there.  There is therefore deliberately **no**
-#    assurance-path branch below, and re-adding one would restore a refusal the
-#    Maintainer removed.
-#
-# 3. **A SEVENTH trigger** (that plan's 2026-08-11 `## Response to plan
-#    review`, Amendment B): *"a scope reduction or removed accepted outcome relative to
-#    the proposal's committed scope, absent a Maintainer-recorded `Scope delta`
-#    allowance per `AGENTS.md` > Git and commit workflow"*.  The parent's six all
-#    guard a translation that ADDS; narrowing was unguarded, and the Internal
-#    reviewer's charter ("it does not reopen the accepted design") is exactly the
-#    posture in which a quiet narrowing reads as faithful translation.
-#
-# 4. **Malformed never means READY** (same section, Amendment D): a partial or
-#    unparseable `Inherited proposal basis` refuses.
-#
-# WHICH COMMIT `proposal=` NAMES -- decided rather than left ambiguous.  The
-# parent calls it "<accepted commit>", which reads two ways: the commit that
-# LANDED the Decision, or the proposal commit the Decision BINDS.  The parent's
-# own next sentence settles it -- *"The Maintainer's Decision binds the same
-# proposal commit without changing its contract"* -- and only that reading is
-# checkable from repository bytes, because a commit cannot contain its own id, so
-# a binding to the Decision commit could never be more than a shape.  So
-# `proposal=` is the reviewed-and-accepted proposal commit, which every
-# conforming `## Review` record already carries as its `Reviewed commit:`, and
-# the equality below is what makes the binding *exact* rather than well-formed.
-#
-# WHY THE PARENT'S `Basis:` LINE ON THE READINESS RECORD IS NOT A THIRD FIELD.
-# The parent asks the readiness record to carry "<full reviewed proposal commit
-# and complete-current-contract heading>".  Both of those already land as
-# mandatory fields of every review record -- `Reviewed commit:` ("full commit
-# id") and `Target:` ("complete current-contract section") -- so requiring a
-# second spelling of the same two facts would fork a vocabulary, which is the
-# defect Chunk A exists to prevent.  The readiness record's basis IS its
-# four-field basis.
-#
-# WHAT IS NOT CHECKED.  Stated where a reader will look for it, because a gate
-# whose reach is over-read is worse than a narrow one (`AGENTS.md` > *Verifying
-# claims*: a check that returns success without testing the claimed property is
-# silent, and silence is the expensive failure):
-#
-#   * **That `review=` names the commit the External review landed in.**  No
-#     repository byte carries it: the review cannot name its own commit, and this
-#     block reaches no git at all -- `scan` runs over the whole corpus and a
-#     per-artifact `git cat-file` would be both slow and, worse, *silently
-#     degrading* wherever git is unavailable (this file's read-only git helper
-#     returns `None` on failure, and a gate that quietly stops checking is the
-#     same defect class).  `review=` therefore gets shape, uniqueness, full-hex
-#     form and distinctness from `proposal=` -- a real invariant, since a review
-#     lands *after* the commit it reviews -- and nothing more.  A source fence
-#     pins the absence (`test_the_p2_block_reaches_no_git`), so a later widening
-#     has to add the reach explicitly rather than arrive by edit.
-#   * **Whether the plan's chunks really translate the accepted contract**, in
-#     either direction.  Both delta declarations below are AUTHOR DECLARATIONS,
-#     exactly as that field requires: *"Semantic triggers are author
-#     declarations, not inferences ... the tooling checks that the record exists
-#     and binds, never the truth of the classification."*  An UNDECLARED
-#     expansion or reduction is invisible here.  For the reduction direction that
-#     limit is already doctrine in its own words (`doctrine/dual-review.md` >
-#     "The counterweight": *"A formal check could confirm that a declaration
-#     exists; it could not confirm that it is true ... would catch forgetting and
-#     not evading"*), which is also why an ABSENT or unrecognized `Scope delta`
-#     value is not a refusal here.
-#   * **That the Internal plan review was performed in a FRESH context.**  No
-#     repository byte distinguishes a fresh session from a continued one.
+# What is GONE, because it existed only to serve the inheritance chain: the
+# proposal-side readiness field and its two-token vocabulary
+# (`READY` / `DISTINCT REVIEW REQUIRED`), the resolver that chased a plan's
+# `**Inherited proposal basis**:` out to its source proposal, the exact-commit
+# binding check, and the two chain-specific invalidation triggers
+# (`Contract expansion`, and `Scope delta` READ AS an inheritance concern --
+# the general scope-reduction-trap use of `Scope delta` elsewhere in this file
+# is untouched, and so is `_declared_reduction`, which no longer has a caller
+# here but remains a tested, standalone utility).
+# `bootstrap/tests/test_lifecycle_contract.py`'s former "Chunk P2-R" test
+# block (~650 lines, `TestTheReadinessPredicateIsSharedNotReimplemented`
+# through `TestThePlanSideAssurancePathTheMonitoringReportNeeds`) is removed
+# with it: its subject no longer exists to falsify.
 
-#: The proposal-side declaration, its closed vocabulary, and the tier that may
-#: supply it.  `READY` is a finding a proposal REVIEWER records; the plan then
-#: names it.  Only an External pass can supply the inherited basis -- the
-#: revision's default is "an External proposal review ... records `Plan
-#: readiness: READY`", and the required test matrix states the negative directly:
-#: *"an Internal proposal review cannot supply the inherited External basis"*.
-_PLAN_READINESS_FIELD = "Plan readiness"
-_PLAN_READINESS_READY = "READY"
-_PLAN_READINESS_DISTINCT = "DISTINCT REVIEW REQUIRED"
-_PLAN_READINESS_VALUES = (_PLAN_READINESS_READY, _PLAN_READINESS_DISTINCT)
-_PLAN_READINESS_TIER = "External"
+#: The resolved fact `tools/lifecycle.py`'s monitoring report reads for a
+#: plan carrying no proposal-inheritance chain -- which, after this
+#: retirement, is every plan.  A POSITIVE answer, not a default: it is NOT one
+#: of `ASSURANCE_PATHS`, so no second vocabulary is created.
+ASSURANCE_NOT_INHERITED = "not-inherited"
 
-#: The two sub-fields of the plan-side declaration, in the revision's order
-#: (which is the reported order).  **No free-text member**, unlike the
-#: Code-review `Basis:` line's `changed-paths`: both of these are full commit ids.
-_INHERITANCE_BINDINGS = ("review", "proposal")
-_INHERITANCE_KEY_RE = re.compile(r"\b(review|proposal)=")
+#: The RETIRED parent spelling that folded both inheritance facts into the
+#: `**Plan review**:` field itself -- `Plan review: inherited(<review
+#: commit>; proposal=<accepted commit>)`.  Still worth its own refusal: the
+#: plan-review floor is evaluated only for a value beginning `required`, so
+#: an author who reused this old wording would otherwise get NO plan-review
+#: obligation checked at all -- a live bypass, not a tidiness item.
+_RETIRED_INHERITED_PLAN_REVIEW_RE = re.compile(r"^\s*inherited\s*\(", re.I)
 
-#: The fold, for the reason `_BASIS_FOLD_RE` exists: the revision's own rendering
-#: of the field wraps, putting `proposal=` on an indented second line, and an
-#: author who copies that block verbatim must not be refused by the tool that
-#: quotes it.  Indented AND opening with a binding key, so nothing else is
-#: swallowed.
-_INHERITANCE_FOLD_RE = re.compile(r"^[ \t]+(?:review|proposal)=")
-
-#: The plan-side EXPANSION declaration and the parent's six dimensions, verbatim
-#: from *"A new scope item, invariant, public path, failure disposition, trust
-#: boundary, or ceremony invalidates inheritance"*.  Header-bounded for the reason
-#: `_declares_inheritance` is: this very plan quotes the dimension names in prose,
-#: and a whole-text search would fire the gate on the artifact that defines it.
-_CONTRACT_EXPANSION_FIELD = "Contract expansion"
-_EXPANSION_NONE = "none"
-_EXPANSION_DIMENSIONS = ("scope item", "invariant", "public path",
-                         "failure disposition", "trust boundary", "ceremony")
-
-#: Amendment B's seventh trigger, expressed in the vocabulary that **already
-#: exists** rather than a new one.  `**Scope delta**: preserved | degraded | lost`
-#: is the concurrently-landed `scope-reduction-trap` grammar (`doctrine/
-#: dual-review.md` > "The outcome test"; both authoring templates and both
-#: planner scaffolds already print it), and Amendment B names that exact record
-#: as the thing whose allowance admits a reduction.  Inventing a second spelling
-#: of "this narrowed" would fork it.
-#:
-#: **Read whole-text, not header-bounded, and that asymmetry is forced**: the
-#: landed grammar places the declaration inside a `### Sharpening` or `##
-#: Response` -- the record where a narrowing is decided -- not in the header.
+#: The general scope-reduction-trap declaration -- UNRELATED to the retired
+#: inheritance chain above (this is the `AGENTS.md` "Removal counts as a
+#: deviation" rule's own record shape, standing on its own).  `_declared_
+#: reduction` has no caller left in this file now that inheritance no longer
+#: exists to invalidate, but it remains a tested, standalone utility: both
+#: authoring templates and the plan-side scaffold still print `**Scope
+#: delta**: preserved | degraded | lost` as a prompt, and a future caller
+#: (or a human) reads this record shape, not a second one.
 _SCOPE_DELTA_FIELD = "Scope delta"
 _SCOPE_DELTA_PRESERVED = "preserved"
 _SCOPE_DELTA_REDUCTIONS = ("degraded", "lost")
 
-#: The plan's pointer at the proposal whose readiness it inherits.  Every one of
-#: the 41 plans in this tree carries this field (measured 2026-08-12), in half a
-#: dozen spellings -- a bare stem, a backticked stem, a backticked path, a
-#: markdown link with `../` or `../../`.  Only the *path* spellings resolve, and
-#: for an inheritance-declaring plan that is a requirement rather than a
-#: limitation: the refusal below says so, and no plan in the tree declares
-#: inheritance today.
-_SOURCE_PROPOSAL_FIELD = "Source proposal"
-_ARTIFACT_FILE_RE = re.compile(r"([A-Za-z0-9][A-Za-z0-9._-]*)\.md")
-
-#: Any markdown heading, for bounding the record a `Scope delta` declaration sits
-#: in.  Levels 1-6, because the declaration may sit under an H3 `### Sharpening`.
+#: Any markdown heading, for bounding the record a `Scope delta` declaration
+#: sits in.  Levels 1-6, because the declaration may sit under an H3
+#: `### Sharpening`.
 _ANY_HEADING_RE = re.compile(r"^#{1,6} ")
-
-#: **Amendment D's third shape: a WRONG FIELD NAME.**  A header field whose label
-#: speaks of inheriting but is not the exact field name is a *near miss* -- and a
-#: near miss here is silent by construction, because a plan that fails to declare
-#: inheritance is simply not an inherited plan.  Amendment D requires it to
-#: refuse, so it is detected the way a near-miss review heading already is
-#: heading: recognize the neighbourhood, then quote the line that did not count.
-#: Deliberately keyed on the word `inherit`, which is what every plausible
-#: misspelling of this field retains (`Inherited basis`, `Inherited proposal`,
-#: `inherited proposal basis` in the wrong case, `Proposal basis inherited`).
-_INHERITANCE_NEAR_MISS_RE = re.compile(
-    r"^(?:\*\*|__)?(?P<label>[^:\n]*inherit[^:\n]*?)(?:\*\*|__)?:", re.I)
-
-#: The RETIRED parent spelling, refused at the `**Plan review**:` field.  Filed
-#: this gap explicitly at P2-R (`test_the_retired_parent_spelling_is_not_the_
-#: trigger`: *"Refusing the retired spelling AT the `Plan review:` field is the
-#: `Plan review` vocabulary's business (P2-R / Chunk E), not this block's"*), and
-#: it is a live bypass rather than a tidiness item: `review_record_violations`
-#: evaluates the plan-review floor only for a value beginning `required`, so an
-#: author who used the accepted parent's own wording -- `Plan review:
-#: inherited(<review commit>; proposal=<accepted commit>)` -- got **no**
-#: plan-review obligation checked at all.
-_RETIRED_INHERITED_PLAN_REVIEW_RE = re.compile(r"^\s*inherited\s*\(", re.I)
-
-#: The third value the monitoring ledger's `assurance_path` field may
-#: carry, and it is NOT an assurance path: it is the resolved fact that a plan
-#: declares no inheritance chain, so there is no proposal declaration to inherit.
-#: A positive answer, not a default -- the two real tokens stay exactly
-#: `ASSURANCE_PATHS`, so no second vocabulary is created.
-ASSURANCE_NOT_INHERITED = "not-inherited"
-
-
-def _dev_root(path: Path) -> Optional[Path]:
-    """The `dev/` directory containing this plan, from its own path.
-
-    Walks the parents for a directory named `plans`, so it holds for a live plan
-    (`dev/plans/<stem>.md`), an archived one (`dev/plans/archive/<stem>.md`) and
-    a fixture under a `tmp_path` root alike -- the property
-    `_is_archived_by_location` gets the same way, and for the same reason.
-    """
-    for parent in path.parents:
-        if parent.name == "plans":
-            return parent.parent
-    return None
-
-
-def _resolve_source_proposal(art: Artifact
-                             ) -> Tuple[Optional[Artifact], Optional[str]]:
-    """The plan's source proposal, read from this tree -> ``(art, violation)``.
-
-    Read-only, no globbing, and bounded to the two locations a proposal may live
-    in (`dev/proposals/` and `dev/proposals/archive/`).  Every failure direction
-    is a *refusal*, never a fallthrough: an unresolvable pointer means the
-    inheritance chain cannot be checked, and Amendment D's rule -- never default
-    to `READY` -- applies to the whole chain, not only to the field's shape.
-    """
-    header = "\n".join(_iter_header_lines(art.text))
-    found = _REVIEW_FIELD_RE[_SOURCE_PROPOSAL_FIELD].findall(header)
-    if not found:
-        return None, (
-            f"no '**{_SOURCE_PROPOSAL_FIELD}**:' line in the header -- an "
-            f"inherited plan's readiness comes from a specific proposal, so the "
-            f"pointer at it is what makes the inheritance checkable")
-    if len(found) > 1:
-        return None, (
-            f"duplicate '**{_SOURCE_PROPOSAL_FIELD}**:' ({len(found)} header "
-            f"lines) -- two source proposals may disagree about readiness, and "
-            f"there is no rule to choose between them")
-    names = _ARTIFACT_FILE_RE.findall(found[0])
-    if not names:
-        return None, (
-            f"'**{_SOURCE_PROPOSAL_FIELD}**: {found[0].strip()}' names no "
-            f"'<stem>.md' file -- an inherited plan cites its proposal by PATH "
-            f"(e.g. `../proposals/archive/<stem>.md`), because a bare stem is "
-            f"not resolvable and this chain is checked, not trusted")
-    stem = names[0]
-    dev = _dev_root(art.path)
-    if dev is None:
-        return None, (
-            f"cannot locate the 'dev/' root from {art.path.name} -- an inherited "
-            f"plan must sit under 'dev/plans/' so its proposal can be resolved")
-    try:
-        for candidate in (dev / "proposals" / f"{stem}.md",
-                          dev / "proposals" / "archive" / f"{stem}.md"):
-            if candidate.is_symlink():
-                return None, (
-                    f"{candidate.name} is reached through a symlink -- refusing "
-                    f"to resolve an inheritance chain through one")
-            if candidate.is_file():
-                return _read_artifact(candidate), None
-    except OSError as exc:
-        return None, (f"cannot resolve the source proposal {stem}.md: {exc} -- "
-                      f"an unreadable chain is a refusal, never a pass")
-    return None, (
-        f"'**{_SOURCE_PROPOSAL_FIELD}**:' names {stem}.md, which is in neither "
-        f"'dev/proposals/' nor 'dev/proposals/archive/' -- the inherited "
-        f"readiness cannot be read from a proposal that is not there")
-
-
-def _readiness_records(art: Artifact) -> List[Dict[str, object]]:
-    """Every proposal `## Review` record that declares `Plan readiness:`.
-
-    Read from the record's **field scope** (`_record_field_scope`) -- the body
-    above the pass's first H3, the same scope every other mandatory field of
-    every other record kind is read from, so a readiness line parked under a
-    subsection does not count.  Emphasis is stripped first, for the reason
-    `_non_expansion_violations` strips it: this tree's house form bolds label and
-    value in one span.
-    """
-    lines = art.text.split("\n")
-    boundaries = _record_boundaries(art)
-    out: List[Dict[str, object]] = []
-    for line_no, raw in _proposal_review_records(art):
-        scope = _EMPHASIS_RE.sub(
-            "", _record_field_scope(lines, line_no, boundaries))
-        values = [v.strip() for v in
-                  _REVIEW_FIELD_RE[_PLAN_READINESS_FIELD].findall(scope)]
-        if not values:
-            continue
-        tier, _problem = _parse_one_field(
-            scope, _REVIEW_FIELD_RE["Tier"], _TIERS, "Tier")
-        commits = [c.strip().strip("`") for c in
-                   _REVIEW_FIELD_RE["Reviewed commit"].findall(scope)]
-        out.append({"line": line_no, "heading": raw.strip(), "values": values,
-                    "tier": tier, "commits": commits})
-    return out
-
-
-def _canonical_readiness(raw: str) -> Optional[str]:
-    """One readiness value against the closed vocabulary, or ``None``.
-
-    Case-insensitive and tolerant of a trailing clause after a break character
-    (`_VERDICT_CLAUSE_RE`'s rule), because the reviewer writing this line is the
-    same author writing `**Verdict: SHIP.**` -- but only *after* a break, so
-    `READY but actually DISTINCT REVIEW REQUIRED` is out of vocabulary and
-    refuses rather than parsing as `READY`.
-    """
-    clause = _VERDICT_CLAUSE_RE.match(raw).group(0).strip()
-    for canonical in _PLAN_READINESS_VALUES:
-        if clause.casefold() == canonical.casefold():
-            return canonical
-    return None
-
-
-def plan_readiness_violations(art: Artifact) -> List[str]:
-    """P2-R -- the proposal-side `Plan readiness:` declaration's SHAPE.
-
-    Public because both gate surfaces consume it, the rule the two predicates
-    already follow: wiring only `scan` leaves `next` presence-only, and the loose
-    surface is the one an author drives.
-
-    Shape only: presence is optional (a reviewer *may* record readiness -- the
-    parent's word), a duplicate within one record refuses, and a value outside
-    the closed vocabulary refuses.  Whether `READY` is *warranted* is the
-    reviewer's judgement and no scanner's.
-    """
-    if art.kind != "proposal" or _is_immutable(art):
-        return []
-    v: List[str] = []
-    for rec in _readiness_records(art):
-        label = f"'{rec['heading']}'"
-        values = rec["values"]
-        if len(values) > 1:
-            v.append(
-                f"{label}: duplicate '{_PLAN_READINESS_FIELD}:' "
-                f"({len(values)} lines) -- exactly one is required, even when "
-                f"the values agree; a derived plan inherits ONE finding")
-            continue
-        if _canonical_readiness(values[0]) is None:
-            v.append(
-                f"{label}: unrecognized '{_PLAN_READINESS_FIELD}' value: "
-                f"{values[0]!r} -- the vocabulary is closed "
-                f"({' | '.join(_PLAN_READINESS_VALUES)}) and has NO default; an "
-                f"unreadable finding cannot be read as '{_PLAN_READINESS_READY}'")
-    return v
-
-
-def _declared_expansion(art: Artifact) -> Tuple[List[str], List[str]]:
-    """The plan header's `Contract expansion:` -> ``(dimensions, violations)``.
-
-    Absent is legal and yields ``([], [])`` -- the contract's words are *"any
-    **declared** expansion refuses"*, and a mandatory third field is not what the
-    revision specified.  Present-but-unreadable is a violation, because a
-    declaration nobody can parse is the one shape that must not buy silence.
-    """
-    header = "\n".join(_iter_header_lines(art.text))
-    found = _REVIEW_FIELD_RE[_CONTRACT_EXPANSION_FIELD].findall(header)
-    if not found:
-        return [], []
-    if len(found) > 1:
-        return [], [f"duplicate '**{_CONTRACT_EXPANSION_FIELD}**:' "
-                    f"({len(found)} header lines) -- exactly one is required, "
-                    f"even when the values agree"]
-    raw = _strip_emphasis_chars(found[0]).strip()
-    if not raw:
-        return [], [f"empty '**{_CONTRACT_EXPANSION_FIELD}**:' value -- omit the "
-                    f"line entirely when the translation added nothing, or name "
-                    f"'{_EXPANSION_NONE}' explicitly; a present-but-empty field "
-                    f"declares neither"]
-    if raw.casefold() == _EXPANSION_NONE:
-        return [], []
-    named: List[str] = []
-    unknown: List[str] = []
-    for token in raw.split(";"):
-        token = token.split("--")[0].strip().rstrip(".").strip()
-        if not token:
-            continue
-        match = next((d for d in _EXPANSION_DIMENSIONS
-                      if token.casefold() == d or token.casefold() == d + "s"),
-                     None)
-        if match is None:
-            unknown.append(token)
-        else:
-            named.append(match)
-    if unknown:
-        return named, [
-            f"'**{_CONTRACT_EXPANSION_FIELD}**:' names {unknown!r}, which is "
-            f"outside the declared dimensions ({' | '.join(_EXPANSION_DIMENSIONS)}"
-            f" | {_EXPANSION_NONE}) -- an unrecognized dimension is refused, not "
-            f"ignored, because ignoring it is how an expansion becomes invisible"]
-    return named, []
 
 
 def _declaration_record(lines: List[str], index: int) -> str:
@@ -3549,211 +3226,55 @@ def _declared_reduction(art: Artifact) -> List[Tuple[int, str, bool]]:
 
 
 def plan_inheritance_violations(art: Artifact) -> List[str]:
-    """P2-R -- the whole inheritance chain over one plan.  **Refusal-first.**
-
-    Silent for every plan that does not declare inheritance, which today is
-    **every plan in this tree** (measured 2026-08-12: zero of 94 artifacts carry
-    a header `Inherited proposal basis:`).  The trigger is `_declares_inheritance`
-    -- deliberately the *same* predicate, so the two meet at one key
-    rather than at two spellings of "this plan is inherited".
-
-    Every direction below is a refusal and **none defaults to `READY`**
-    (Amendment D).  The order is: the field's own shape first, because with an
-    unparseable binding there is nothing left to compare; then the plan's own
-    plan-review declaration; then the chain out to the proposal; then the two
-    delta declarations.
+    """Plan-review inheritance is retired (`retire-external-plan-review`
+    §1): a plan review is Internal, fresh-context, always, so there is
+    nothing left to inherit.  A plan that still declares the retired field
+    -- in either its current or its earlier-retired spelling -- is refused
+    with one explanatory finding naming the replacement.  PUBLIC: `tools/
+    lifecycle.py`'s monitoring report calls this name directly, so the
+    function stays even though its old chain-following body does not.
     """
     if art.kind != "plan":
         return []
     v: List[str] = []
-    # The retired spelling, refused UNCONDITIONALLY -- it is not gated on the
-    # trigger below, because its whole hazard is that it *replaces* the trigger.
     if _RETIRED_INHERITED_PLAN_REVIEW_RE.match(art.plan_review):
         v.append(
-            f"'**Plan review**: {art.plan_review.strip()}' uses the RETIRED "
-            f"spelling from the accepted parent.  The 2026-08-11 "
-            f"Maintainer-directed revision split that one field in two: write "
-            f"'**Plan review**: required(Internal)' AND "
-            f"'**{_INHERITANCE_FIELD}**: "
-            f"{'; '.join(k + '=<full commit>' for k in _INHERITANCE_BINDINGS)}'. "
-            f"Left as written this declares NO plan-review obligation at all -- "
-            f"the floor is evaluated only for a 'required(...)' value -- so the "
-            f"retired spelling silently buys a plan no independent read.")
-    if not _declares_inheritance(art):
-        # Amendment D's wrong-field-name shape.  Only reached when the exact
-        # field is absent, so a correct declaration can never be reported as its
-        # own near miss.
-        for line in _iter_header_lines(art.text):
-            match = _INHERITANCE_NEAR_MISS_RE.match(line.strip())
-            if match is None:
-                continue
-            v.append(
-                f"header line {line.strip()!r} names a field that speaks of "
-                f"inheriting but is not the exact "
-                f"'**{_INHERITANCE_FIELD}**:' -- a near miss declares nothing, "
-                f"and this one is reported rather than ignored because Amendment "
-                f"D requires a wrong field name to REFUSE, never to read as "
-                f"'{_PLAN_READINESS_READY}'.  Correct the spelling, or delete "
-                f"the line if this plan takes a distinct plan review.")
-        return v
-    label = f"'**{_INHERITANCE_FIELD}**:'"
-    never = ("; a malformed or partial declaration REFUSES and never defaults "
-             f"to '{_PLAN_READINESS_READY}'")
-    header = "\n".join(_iter_header_lines(art.text))
-    value, problem = _basis_value(header, field=_INHERITANCE_FIELD,
-                                  fold_re=_INHERITANCE_FOLD_RE)
-    if problem:
-        return v + [f"{problem} -- an inherited plan declares "
-                    f"'{_INHERITANCE_FIELD}: "
-                    f"{'; '.join(k + '=<full commit>' for k in _INHERITANCE_BINDINGS)}'"
-                    + never]
-    bindings: Dict[str, str] = {}
-    shape = _basis_binding_violations(
-        value, label, field=_INHERITANCE_FIELD, keys=_INHERITANCE_BINDINGS,
-        key_re=_INHERITANCE_KEY_RE, free_text=(), found_out=bindings)
-    if shape:
-        return v + [s + never for s in shape]
-    review_sha = bindings["review"].strip("`")
-    proposal_sha = bindings["proposal"].strip("`")
-    if review_sha == proposal_sha:
+            f"'**Plan review**: {art.plan_review.strip()}' uses the "
+            f"RETIRED 'inherited(...)' spelling. Plan-review inheritance no "
+            f"longer exists at all (retire-external-plan-review §1): "
+            f"declare '**Plan review**: required(Internal)' directly.")
+    if _declares_inheritance(art):
         v.append(
-            f"{label} binds review= and proposal= to the SAME commit "
-            f"({review_sha[:12]}) -- an External review lands after the commit "
-            f"it reviews, so one commit cannot be both; one of the two bindings "
-            f"is wrong")
-    # The revision's own shape: `Plan review: required(Internal)` **and** the
-    # inheritance field.  Inheritance reallocates the plan review from External
-    # to Internal; it never removes it, so `not required(...)` beside an
-    # inheritance declaration is the one combination that would buy a plan no
-    # independent read at all.
-    if not art.plan_review.lower().startswith("required"):
-        v.append(
-            f"a plan declaring '{_INHERITANCE_FIELD}:' also declares "
-            f"'**Plan review**: required(Internal)'"
-            f" -- inheritance REALLOCATES the plan review to a fresh-context "
-            f"Internal pass, it does not remove it, and "
-            f"{art.plan_review.strip()!r} would leave the plan with no "
-            f"independent read")
-    proposal, problem = _resolve_source_proposal(art)
-    if problem:
-        return v + [problem + never]
-    records = _readiness_records(proposal)
-    where = f"{proposal.path.name}"
-    if not records:
-        return v + [
-            f"{where} records no '{_PLAN_READINESS_FIELD}:' in any '## Review' "
-            f"-- inheritance rests on a reviewer's explicit finding, and an "
-            f"absent finding is not '{_PLAN_READINESS_READY}'" + never]
-    # The LAST declaring record is operative.  A later review supersedes an
-    # earlier one (the parent: "A later review does not silently inherit an
-    # earlier" basis), so resurrecting an early `READY` after a later pass is
-    # exactly what this ordering forbids.
-    rec = records[-1]
-    at = f"{where} '{rec['heading']}'"
-    values = rec["values"]
-    if len(values) > 1:
-        return v + [f"{at} declares '{_PLAN_READINESS_FIELD}:' {len(values)} "
-                    f"times -- a derived plan inherits ONE finding, and "
-                    f"agreement is not a judgement this chain may make" + never]
-    canonical = _canonical_readiness(values[0])
-    if canonical is None:
-        return v + [f"{at} declares an unrecognized "
-                    f"'{_PLAN_READINESS_FIELD}' value {values[0]!r} -- the "
-                    f"vocabulary is closed "
-                    f"({' | '.join(_PLAN_READINESS_VALUES)})" + never]
-    if canonical == _PLAN_READINESS_DISTINCT:
-        return v + [
-            f"{at} declares '{_PLAN_READINESS_FIELD}: "
-            f"{_PLAN_READINESS_DISTINCT}' -- that finding is the reviewer saying "
-            f"consequential design remains for planning, so this plan takes a "
-            f"DISTINCT plan review at the tier the proposal/Decision names and "
-            f"cannot inherit.  A fresh-context Internal pass does not satisfy it."]
-    if rec["tier"] != _PLAN_READINESS_TIER:
-        v.append(
-            f"{at} declares '{_PLAN_READINESS_FIELD}: {_PLAN_READINESS_READY}' "
-            f"at tier {rec['tier']!r} -- only an {_PLAN_READINESS_TIER} proposal "
-            f"review can supply the inherited basis, because what is being "
-            f"inherited IS the different-agent-type read")
-    commits = rec["commits"]
-    if len(commits) != 1:
-        v.append(
-            f"{at} carries {len(commits)} readable 'Reviewed commit:' values -- "
-            f"the accepted-proposal binding is checked against exactly one, and "
-            f"P1 already requires exactly one of every review record")
-    elif commits[0] != proposal_sha:
-        v.append(
-            f"{label} binds proposal={proposal_sha} but {at} reviewed "
-            f"{commits[0]!r} -- the binding must name the EXACT proposal commit "
-            f"whose contract the readiness finding fixed (the Decision binds "
-            f"that same commit without changing it), so a mismatch means the "
-            f"plan inherits readiness for bytes nobody declared ready")
-    dimensions, problems = _declared_expansion(art)
-    v.extend(problems)
-    if dimensions:
-        v.append(
-            f"the plan declares '**{_CONTRACT_EXPANSION_FIELD}**: "
-            f"{'; '.join(dimensions)}' -- a new "
-            f"{' / '.join(_EXPANSION_DIMENSIONS)} INVALIDATES inheritance.  "
-            f"Return the change to the proposal boundary, or set '**Plan "
-            f"review**: required(<tier>)', drop the "
-            f"'{_INHERITANCE_FIELD}:' line and land a distinct plan review "
-            f"before implementation continues.")
-    for line_no, reduction, allowed in _declared_reduction(art):
-        if allowed:
-            continue
-        v.append(
-            f"line {line_no} declares '**{_SCOPE_DELTA_FIELD}**: {reduction}' "
-            f"with no Maintainer allowance in that record -- accepted scope is a "
-            f"FLOOR, so a removed or partly-delivered accepted outcome "
-            f"invalidates inheritance exactly as a new one does (Amendment B).  "
-            f"A reviewer cannot create that authority by calling the remainder "
-            f"'out of scope': record the Maintainer's verbatim allowance as an "
-            f"isolated blockquote in the same record, beside the grouped "
-            f"'Removed scope' entry and its 'Disposition/home'.")
+            f"'**{_INHERITANCE_FIELD}**:' is declared, but plan-review "
+            f"inheritance is retired (retire-external-plan-review §1): "
+            f"a plan review is Internal, fresh-context, always, so there is "
+            f"no lighter tier left to inherit. Delete this field and "
+            f"declare '**Plan review**: required(Internal)' directly (add "
+            f"'+ Internal Security Review' as a second clause if a Security "
+            f"Review attaches).")
     return v
 
 
 def resolve_plan_assurance_path(path: Path) -> Tuple[Optional[str], List[str]]:
-    """The assurance path a PLAN carries, through the inheritance chain.
-
-    Returns ``(value, [])`` where *value* is one of `ASSURANCE_PATHS` or
-    `ASSURANCE_NOT_INHERITED`, or ``(None, problems)``.  **Never guesses**: a plan
-    that declares inheritance whose chain does not resolve yields `None` and the
-    reasons, so the caller refuses loudly instead of recording a default.
-
-    This exists because a plan has no artifact-level assurance declaration of its
-    own -- that absence is pinned deliberately
-    (`test_a_plan_carries_no_artifact_level_declaration`: *"the plan carries the
-    inheritance metadata instead"*) -- so the only honest way to answer "what
-    assurance path did this plan run under" is to follow the chain to the
-    proposal that declared one.  `tools/lifecycle.py`'s monitoring report is the
-    caller, and it reaches this function through the same contained loader it
-    reads `PLAN_STATES` through, so no second vocabulary is created.
+    """The assurance path a PLAN carries.  Retired to a constant answer
+    (`retire-external-plan-review` §1): a plan has no artifact-level
+    assurance declaration of its own (`test_a_plan_carries_no_artifact_
+    level_declaration` pins that, unaffected by this retirement) and
+    inheritance no longer exists, so every readable plan resolves to
+    `ASSURANCE_NOT_INHERITED`.  PUBLIC: `tools/lifecycle.py`'s monitoring
+    report calls this name directly.
     """
     try:
         art = _read_artifact(path)
     except (PlannerError, OSError) as exc:
         return None, [f"cannot read {path.name}: {exc}"]
     if art.kind != "plan":
-        return None, [f"{path.name} is not a plan -- only a plan inherits an "
-                      f"assurance path"]
-    if not _declares_inheritance(art):
-        return ASSURANCE_NOT_INHERITED, []
+        return None, [f"{path.name} is not a plan -- only a plan resolves "
+                      f"an assurance path here"]
     problems = plan_inheritance_violations(art)
     if problems:
         return None, problems
-    proposal, problem = _resolve_source_proposal(art)
-    if problem:
-        return None, [problem]
-    header = "\n".join(_iter_header_lines(proposal.text))
-    value, problem = _parse_one_field(
-        header, _REVIEW_FIELD_RE["Assurance path"], ASSURANCE_PATHS,
-        "Assurance path")
-    if value is None:
-        return None, [f"{proposal.path.name}: {problem} -- a plan's assurance "
-                      f"path is INHERITED from its proposal's declaration, and "
-                      f"there is no default"]
-    return value, []
+    return ASSURANCE_NOT_INHERITED, []
 
 
 # === the complete current contract and its withdrawal ledger ==================
@@ -4771,11 +4292,6 @@ def _conformance_violations(art: Artifact, identity: "IdentityModel") -> List[st
         # arrives at some later state.
         v.extend(assurance_declaration_violations(art))
         v.extend(proposal_review_basis_violations(art))
-        # P2-R -- the readiness finding a derived plan may inherit.  Optional by
-        # contract ("a proposal reviewer MAY record"), so this is silent unless
-        # the field is present; what it refuses is a present one that cannot be
-        # read as exactly one of the two closed values.
-        v.extend(plan_readiness_violations(art))
         # The complete current-contract revision and its withdrawal ledger.
         # Unconditional on status for the same reason the sibling pair is: the obligation
         # arrives with the Response, not at some later state, and an author who
@@ -4938,10 +4454,6 @@ def _gating_preconditions(art: Artifact, target: str,
                  "every '## Review' record carries the four-field review basis "
                  "(Reviewed commit / Target / Prior findings / Assurance path) "
                  "before its first H3"),
-                (plan_readiness_violations(art),
-                 "any '## Review' record's 'Plan readiness:' finding reads as "
-                 "exactly one of READY | DISTINCT REVIEW REQUIRED (optional "
-                 "field; no default)"),
                 (current_contract_violations(art),
                  "a proposal that has answered a review carries a complete "
                  "current-contract revision, and every such revision carries its "
@@ -5002,22 +4514,22 @@ def _gating_preconditions(art: Artifact, target: str,
                               "archive/."))
     else:  # plan
         requires_review = art.plan_review.lower().startswith("required")
-        # P2-R -- the SAME predicate `_conformance_violations` uses, reported on
-        # every forward transition for the reason the proposal-side pair is: a
-        # gate wired to only one surface is the defect executed, and the loose
-        # surface is the one an author drives.  Silent for a plan that declares
-        # no inheritance.
+        # The SAME predicate `_conformance_violations` uses, reported on every
+        # forward transition for the reason the proposal-side pair is: a gate
+        # wired to only one surface is the defect executed, and the loose
+        # surface is the one an author drives.  Silent for a plan that
+        # declares no inheritance -- which, since retire-external-plan-review
+        # §1 retired the whole allocation, is every plan; a plan that still
+        # declares it is refused outright rather than validated.
         inheritance = plan_inheritance_violations(art)
         if _declares_inheritance(art):
             detail = ("" if not inheritance
                       else "  UNMET: " + "; ".join(inheritance))
             gates.append((
                 not inheritance,
-                "the inherited proposal basis binds: two full commit ids, a "
-                "resolvable source proposal whose LATEST 'Plan readiness:' "
-                "finding is READY at an External tier, 'proposal=' equal to that "
-                "review's 'Reviewed commit', and no declared contract expansion "
-                "or unallowed scope reduction" + detail))
+                "plan-review inheritance is retired -- delete the "
+                "'Inherited proposal basis' field and declare "
+                "'Plan review: required(Internal)' directly" + detail))
         if target == "awaiting-plan-review":
             gates.append((requires_review,
                           "'Plan review: required(<tier>)' (else the plan goes "
@@ -6246,7 +5758,6 @@ def _board_declaration_violations(art: Artifact) -> List[str]:
     if art.kind == "proposal":
         return (assurance_declaration_violations(art)
                 + proposal_review_basis_violations(art)
-                + plan_readiness_violations(art)
                 + current_contract_violations(art))
     return plan_inheritance_violations(art)
 

@@ -174,12 +174,13 @@ reviewer checks it the way they check any other claim in the proposal.
 **What the path does *not* decide: how the derived plan is reviewed.** A
 high-assurance declaration governs verification, Security Review, scientific
 review, protected-surface handling, risk acceptance and ceremonies. It does
-**not** buy a second different-agent-type read of the plan: a high-assurance
-proposal may record `Plan readiness: READY` exactly as a standard one may, and
-the derived plan then takes a fresh-context **Internal** pass. Where a
-high-assurance trigger keeps an independent backstop, it keeps it outside the
-plan-review allocation -- a named high-risk surface takes its Security Review on
-its own trigger, whatever this field says.
+**not** buy or cost a different plan-review tier: a plan review is an
+Internal, fresh-context review — always, high-assurance or not (External
+plan review is retired as a tier, requirement, recommendation slot, or
+escalation target). Where a high-assurance trigger keeps an independent
+backstop, it keeps it outside the plan-review allocation -- a named
+high-risk surface takes its Security Review on its own trigger, declared on
+the derived plan as `required(Internal + Internal Security Review)`.
 
 <!-- cairn:slot assurance-path-triggers -->
 Cairn's own mandatory high-assurance surfaces, each named in `AGENTS.md` >
@@ -481,32 +482,14 @@ accounts for every commitment the earlier contract carried and this one does
 not. The conformance check can only see that the heading is there with a written
 value; whether the ledger is *true* is this pass's finding to make.
 
-**Plan readiness — the finding a derived plan may inherit.** An **External**
-reviewer who has read a *complete* current contract may record, beside the basis
-above:
-
-    **Plan readiness**: READY | DISTINCT REVIEW REQUIRED
-
-`READY` means that exact contract fixes scope and exclusions, invariants, failure
-dispositions, public paths, omissions, test homes and standing gates,
-documentation and release-note surfaces, implementation areas and sequence, and
-any Maintainer fences or ceremonies. The derived plan then takes a fresh-context
-**Internal** plan review rather than a second different-agent-type round, and
-binds this record by commit.
-
-Three things about the field, each of which a checker enforces:
-
-* **It is optional, and it has no default.** Omit it and the derived plan takes a
-  distinct plan review at its declared tier. A value outside the two tokens
-  refuses rather than reading as `READY`.
-* **`DISTINCT REVIEW REQUIRED` is a finding, not a fallback** — you saying
-  consequential design necessarily remains for planning. It is an explicit
-  judgement about *this* contract, never inferred from the topic.
-* **Only an External pass may supply it.** What inheritance spends is the
-  different-agent-type read; an Internal review has none to spend. The assurance
-  path does *not* decide this: a high-assurance proposal may record `READY` too,
-  and high assurance keeps governing verification, Security Review, protected
-  surfaces and ceremonies.
+**No plan-review recommendation slot.** A plan review is an Internal,
+fresh-context review — always. Do not record a plan-review tier
+recommendation of any kind here (the retired proposal-review readiness
+field and its two-token vocabulary): the Maintainer's option to
+ask any reader for anything, for any artifact, is a standing choice and not
+a tier a reviewer declares. If a security-touching surface needs a
+Security Review at plan stage, say so in prose here — the derived plan
+declares it directly as `required(Internal + Internal Security Review)`.
 
 The record needs no extra basis line — the reviewed commit and contract section
 are already the four fields above.
@@ -603,13 +586,11 @@ The **newest reviewed** complete revision is what the Decision and the
 implementation bind. Every earlier section stays as immutable history — you are
 appending a new contract, never editing the old one.
 
-**Completeness is what buys the derived plan its lighter review.** Only an
-**External** reviewer who has read a *complete* current contract may record
-`Plan readiness: READY`, and only that finding lets the plan take a
-fresh-context Internal pass instead of a second different-agent-type round. A
-revision that leaves the reviewer reassembling the contract out of the history
-cannot earn it -- so the completeness this section asks for is not bookkeeping,
-it is the thing that removes a review round downstream.
+**Completeness is what lets the next reader work from this file alone.** A
+revision that leaves the reviewer -- or the derived plan's own fresh-context
+Internal review -- reassembling the contract out of the whole history is
+exactly the repeated-reading cost this rule exists to remove; it is not
+bookkeeping.
 
 Three mechanical facts, each of which the lifecycle conformance check enforces:
 
