@@ -930,13 +930,23 @@ def test_recorded_by_never_affects_identity_reconciliation_or_refusal(
     assert (again.events[0].commit, again.events[0].index) == identity_with_forged
 
 
-def test_cli_exits_nonzero_and_names_the_unreconciled_artifact(
+def test_an_unreconciled_act_empties_its_own_fields_and_never_refuses_the_run(
     tmp_path: Path, capsys: pytest.CaptureFixture,
 ) -> None:
-    """Row 6-3's own acceptance, end to end through the CLI: a report run
-    against a fixture tree containing a deliberately unreconciled act
-    exits nonzero and names which artifact/commit/kind failed to
-    reconcile -- never a shorter, silently-clean series."""
+    """A measurement reports what it can and leaves the rest blank. It never
+    refuses.
+
+    An act with no matching event block means this artifact's structured series
+    cannot be computed, so the fields derived from it are empty -- and every
+    other row still renders, and the exit code is still success.
+
+    This inverts an earlier design in which the missing block took the whole
+    run's exit code with it. That design was not merely inconvenient: an
+    instrument able to halt what it observes is no longer an instrument. It
+    fired first on an ordinary status flip, and the result could not be repaired
+    without rewriting published history, because a block is only ever paired
+    with an act in its own introducing commit. The artifact still appears here
+    -- being unmeasurable is not being invisible."""
     repo = _make_activated_repo(tmp_path)
     p = repo / "dev" / "proposals" / "p.md"
     p.write_text(_artifact_text("awaiting-review"), encoding="utf-8")
@@ -950,7 +960,6 @@ def test_cli_exits_nonzero_and_names_the_unreconciled_artifact(
 
     rc = _lm_installed.main(["proposals", "--root", str(repo)])
     captured = capsys.readouterr()
-    assert rc == _lm_installed.cli.EXIT_INCOMPLETE
-    assert "INCOMPLETE" in captured.err
-    assert "p.md" in captured.err
-    assert "review-pass" in captured.err
+    assert rc == 0
+    assert "INCOMPLETE" not in captured.err
+    assert "p" in captured.out

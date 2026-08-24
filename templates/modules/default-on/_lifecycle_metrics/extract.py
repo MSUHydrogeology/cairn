@@ -155,16 +155,20 @@ def _reconcile_artifact(
         )
     except events.GitUnavailable:
         return None
-    # Fail-closed measurement on read (row 6-3's own acceptance): a
-    # post-activation event-bearing act with no matching block makes the
-    # WHOLE run refuse, naming the artifact/commit/kind -- never a
-    # shorter, silently-clean series.  Raised here (not swallowed into
-    # an empty field) so it propagates through extract_proposal_row/
-    # extract_plan_row to the CLI's own exit code.
+    # A measurement never refuses.  An act with no matching event block means
+    # this artifact's structured series cannot be computed -- so the fields
+    # derived from it go empty, exactly as they do when git is unavailable
+    # above, and every other row in the corpus is still produced.
+    #
+    # This deliberately reverses an earlier design in which the missing block
+    # raised and took the whole run's exit code with it.  An instrument that can
+    # halt what it observes has stopped being an instrument: the first thing it
+    # caught was an ordinary status flip, and the failure was unrecoverable
+    # without rewriting published history, because a block is only ever paired
+    # with an act in its own introducing commit.  Empty fields are honest about
+    # what is unknown; a refused corpus is not more honest, only less usable.
     if reconciliation.incomplete:
-        raise events.ReconciliationError(
-            f"{path}: INCOMPLETE -- " + "; ".join(reconciliation.incomplete_reasons)
-        )
+        return None
     return reconciliation
 
 
