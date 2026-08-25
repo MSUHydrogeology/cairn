@@ -687,7 +687,17 @@ across two files in one day and one wrong repair method. Still not fixed here �
 changing a checker inside a subtraction plan is how the ratchet turns — but the
 case for the successor is now empirical rather than aesthetic.
 
-## Security review (Internal) -- Claude Sonnet 5 -- 2026-08-24 (Chunk E, the marker split)
+## Security review -- Claude Sonnet 5 (Internal) -- 2026-08-24
+
+*(Chunk E, the marker split. Heading corrected 2026-08-25 -- heading line
+only, no word of the body touched, by the method Chunk F established. The
+original read `## Security review (Internal) -- ... -- date`, which
+`_HEADER_RE` cannot match: the `kind` group admits no parenthesis, and the
+` -- ` separator must precede the optional `(role)`. So this record parsed
+as no section at all and was invisible to the planner -- verified before and
+after. The unparseable form came from `retire-external` §2 and from the
+brief that commissioned this review; both are corrected in the plan's own
+record below.)*
 
 Reviewed commit: `5831f83c6392dcaa6707f8cd114794fd90947c8c` (HEAD at review start;
 parent `62e5710`, both authored by the Maintainer under the quoted MAINTAINER-GATED
@@ -1381,3 +1391,63 @@ sections; it does not implement new scope.
   own reference)
 
 **Status**: ready-to-archive.
+
+## Correction -- the unparseable Security-review heading, and where it came from -- Claude Opus 5 -- 2026-08-25
+
+The code review's blocking finding was right, and it reaches further than the
+doctrine it fixed. Recorded here because the propagation path matters more than
+the defect.
+
+**The defect.** `## Security review (Internal) -- <name> -- <date>` does not
+match `_HEADER_RE`. Verified directly against the unmodified parser:
+
+| heading | parses as |
+|---|---|
+| `## Security review (Internal) -- X -- 2026-08-24` | **no match** |
+| `## Security review -- X -- 2026-08-24` | `kind='Security review'` |
+| `## Code review -- X (Code Review) -- 2026-08-25` | `kind='Code review'` |
+
+The `kind` group is `[A-Za-z][A-Za-z /-]*?` — it admits no parenthesis — and the
+` -- ` separator must precede the optional `(role)`. A parenthetical placed
+immediately after the kind ends the match. The section is then not a record
+boundary at all: it is swallowed into whatever record precedes it, silently.
+
+**Where it came from, in order.** Not a typo, and not the reviewer's or the
+implementer's:
+
+1. `retire-external-plan-review` §2, accepted, specifies the obligation is
+   satisfied *"only by an appended `## Security review (Internal)` record"*.
+2. The brief that commissioned Chunk E's Security Review copied that literal
+   form and instructed the reviewer to use it. **That brief was mine.**
+3. The reviewer wrote the heading it was told to write.
+4. Chunk B then wrote the same form into six live doctrine files as the
+   documented clearing path.
+
+So an unparseable form travelled from an accepted contract, through a brief,
+into a review record, and into shipped doctrine, without anyone running it
+through the parser it names. Every step was faithful to the step before it.
+**Fidelity to an upstream specification is not verification of it.**
+
+**What is fixed.** The six live doctrine copies, by the code review at
+`503247b`. This plan's own Security-review heading, above — heading line only,
+no body word touched, by the method Chunk F established; verified before and
+after that the planner now sees `Security review` among its parsed kinds, where
+before it saw nothing.
+
+**What is deliberately not fixed.** The two occurrences inside
+`retire-external-plan-review` itself. That artifact is `accepted` and terminal,
+its sections are immutable, and it is the origin rather than a copy. Editing it
+would rewrite the record that explains where this came from.
+
+**Nothing mechanical depended on it here**, which is luck rather than design.
+Chunk E's obligation is enforced by its `MAINTAINER-GATED` fence and a
+code-stage record — the plan review's own blocking finding established that a
+header token could not carry it. Had the `+` grammar been the enforcement, as
+the doctrine claimed, the obligation would have reported unmet against a
+Security Review that had actually been performed.
+
+**Registered, not fixed here**: `_HEADER_RE` accepts `(role)` after the name but
+not after the kind, and fails **silently** on the other arrangement — no
+warning, no refusal, the section simply ceases to exist. That is the same
+silent-parser class as the ledger exact-match rule already registered for a
+successor, and it belongs in the same successor.
