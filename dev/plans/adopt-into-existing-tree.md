@@ -9,10 +9,19 @@ under the rule that landed 2026-08-24 no External plan tier exists to claim.
 **Security Review**: **REQUIRED**, surface-based (`AGENTS.md` > High-risk
 surfaces, the scaffold / merge engine). D1 adds profile parsing and YAML loading
 inside `bootstrap/_scaffold/`, where the parsed result gates a fail-closed
-refusal and then a lockfile write. Declared here as
-`required(Internal + Internal Security Review)` — the obligation grammar, not an
-annotation. The trigger is the surface; whether a boundary moved is a different
-question and does not discharge it.
+refusal and then a lockfile write. The trigger is the surface; whether a
+boundary moved is a different question and does not discharge it.
+
+**It attaches to the implementation, not to this plan's design review** — the
+accepted Revision 2 declares the two separately, and its Decision says
+*"Implementation carries a Security Review REQUIRED trigger."* An earlier draft
+of this header also claimed
+`required(Internal + Internal Security Review)`, which would have been a
+**plan-review** obligation blocking the design read on a security pass the
+change had not yet produced. That is the identical overclaim a plan reviewer
+blocked on `convergent-lifecycle` Chunk E a day earlier — a plan-review token
+carrying a code-stage obligation — and it is corrected here rather than
+rediscovered. The obligation is real and unchanged; only its stage is.
 **Last update**: 2026-08-25
 **Opened**: 2026-08-25
 
@@ -173,3 +182,37 @@ command.
 
 **Known dependency.** None. This plan shares no file with the subtraction sweep
 and is blocked by nothing.
+
+
+## Maintainer allowance -- D3 drops the recommendation -- 2026-08-25
+
+**Option 3 is allowed.** Authorization, quoted verbatim and visually isolated:
+
+> "Drop the recommendation"
+
+**What this permits.** D3 removes the obsolete `--include-archive`
+recommendation from `bootstrap/UPGRADE.md` **without naming a successor
+command**, leaving the surrounding prose intact. The accepted Revision 2 text
+had that line become `python tools/lifecycle_planner.py scan`.
+
+**Why it is a deviation, stated plainly.** Revision 2 is an accepted contract
+and it names a specific replacement string. Removing rather than replacing is a
+different outcome, however small, and accepted scope is a floor. The allowance
+is what makes it legitimate; the reasoning is what makes it right.
+
+**The reasoning.** `tools/lifecycle_planner.py` is on the subtraction sweep's
+removal list (build table order 5, basis `570fedb`), and that sweep's
+constitution rewrite carries the falsifier *"no governing document references a
+tool this sweep removes."* Implementing D3 as written would put a reference into
+an adopter-facing document that the next accepted proposal must delete —
+rewriting one line twice, and shipping a dead command in between.
+
+**Scope delta: preserved.** D3's accepted purpose is to *drop the obsolete
+recommendation*; the subtraction is the change. Naming a successor was
+Revision 2 avoiding a gap, and the sweep is about to demonstrate the gap was
+never load-bearing. Nothing the accepted contract set out to achieve is lost.
+
+**What the plan reviewer should check anyway**: that the surrounding prose still
+reads correctly with the sentence gone, and that no other line in
+`bootstrap/UPGRADE.md` depends on the removed one. A removal that leaves a
+dangling "as described above" is worse than the flag it deleted.
