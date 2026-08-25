@@ -848,6 +848,7 @@ positive check that the promised function still exists afterward.
 | Security marker + manifest | landed | — | +~30 | membership mutation fails / done |
 | Intent system + collision log | **keep** | — | 0 | claim/release round-trip / — |
 | Trust-root validator (`_resolve_interpreter`) | keep, or removal takes a Security Review | 4 | 0 | validator rejects a bad binding / Maintainer-visible |
+| Claim/link checkers | keep, **de-scoped** (Maintainer, 2026-08-25: file-top directive junk; agents fixate on flags, esp. on archives) | 4 | −directive comments tree-wide, small code | an archived file draws no flag; prose files carry zero checker boilerplate; success is silent / author |
 | Transition lint, pilot ledgers, slot ratchet | remove | 4 | −~4,000 | suite green after / author |
 | Lifecycle CLI + planner (+ twins, tests) | remove **after** order-3 rows land | 5 | −~45,000 | order-3 probes pass / author |
 | Onboarding; foldback | per-sister evidence first | 5 | −~4,000 | sister routines still run / **Maintainer decides foldback** |
