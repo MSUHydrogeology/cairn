@@ -760,6 +760,39 @@ collision log stays with it. Sweep total adjusts to **~61k**.
 Structure calls with defaults: keep `suite_cost.py`; retire
 progressive onboarding; keep the session skills, thinned.
 
+## What the firm literature adds to the build
+
+(From a 2026-08-24 literature pass: the Coasean-singularity/reversal
+debate, the principal-agent formalization of LLM delegation, and
+prediction-vs-judgment economics. Most of it confirms the design; three
+things are new and bind on the implementation.)
+
+* **The residual-rights sentence** (incomplete-contract theory —
+  Grossman & Hart 1986, Hart & Moore 1990: complete contracts are
+  impossible; what matters is who decides in the uncovered cases).
+  The constitution gains one named principle: **"Where doctrine is
+  silent, the author decides if the action is reversible; the
+  Maintainer if it is not."** This is the preventive counterpart to
+  the rule-removal flush — with silence owned, most future rules never
+  need writing.
+* **Judgment capture** (Agrawal, Gans & Goldfarb: judgment is the
+  scarce complement to cheap machine cognition, so standardizing it is
+  the highest-return machinery). Chief-of-staff duty: an ask the
+  Maintainer has answered the same way twice becomes a proposed
+  standing default — decisions amortize instead of being re-consumed.
+* **The labor-market table is load-bearing, not optional** (adverse
+  selection: the principal cannot assess agent quality before
+  engaging; the track record is the screening instrument). It is a
+  standing goodnight book from day one.
+
+Confirmations worth recording so they are not re-litigated: many small
+delegations over few large ones (repeated feedback is what makes
+delegation safe); the C0 tripwire is the "dynamic decision rights"
+pattern the org-design literature independently converged on; and the
+vendor-neutral git-file coordination layer is the firm's switching-cost
+control — the thing that makes the agent labor market a real market —
+so no machinery may bind the record to one vendor's harness.
+
 ## The minimum product boundary
 
 (From the External review, adopted verbatim in substance.) After the
