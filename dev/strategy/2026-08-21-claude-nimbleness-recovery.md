@@ -3,9 +3,10 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date**: 2026-08-21
-**Status**: revised (Maintainer feedback folded inline throughout; External
-review — GPT 5.6-Sol, 2026-08-24, verdict PROCEED WITH CORRECTIONS — folded in
-and removed per strategy-note discipline; the arc is in git log)
+**Status**: revised (Maintainer feedback folded inline throughout; two
+External reviews — GPT 5.6-Sol, 2026-08-24 and 2026-08-25, both PROCEED WITH
+CORRECTIONS — folded in and removed per strategy-note discipline; the arc is
+in git log)
 **Type**: product-strategy
 **Audience**: the Maintainer first; the agents who work here second
 **Surfaces this would feed**: `AGENTS.md`, the proposal/plan templates,
@@ -163,7 +164,7 @@ discipline. The high-reliability literature (Weick & Sutcliffe,
 *Managing the Unexpected*, 2001; Perrow, *Normal Accidents*, 1984)
 warrants heavy control for tight coupling and irreversible failure —
 neither describes a template repository. *Licenses: the three lanes,
-C0's hard-to-undo test, the deliberate lane for named surfaces.*
+the irreversibility tripwire (*could shipping this cause harm that is hard to undo?*), the deliberate lane for named surfaces.*
 
 **P2 — Decision rights belong where the specific knowledge is.**
 Hayek, "The Use of Knowledge in Society" (*Am. Econ. Rev.* 35(4),
@@ -213,7 +214,7 @@ stops at good-enough. Merton, "Bureaucratic Structure and Personality"
 (*Social Forces* 18(4), 1940) names the alternative: goal displacement
 — rules conceived as means become ends in themselves. A process-zombie
 is a Mertonian ritualist. *Licenses: termination rules, author-decides
-after round two, C0 as a satisficing test, the moratorium.*
+after round two, the tripwire as a satisficing test, the moratorium.*
 
 **P6 — The record serves the reader's comprehension, not completeness.**
 Parnas & Clements, "A Rational Design Process: How and Why to Fake It"
@@ -258,10 +259,11 @@ repetition), deliberately left out as machinery this scale doesn't earn.
 
 **Convergent work, same day:** `2026-08-20-claude-review-loop-termination`
 (accepted at Revision 7, superseded the same day on the Maintainer's
-direction) attacked the same disease from inside the lifecycle; its C0
-risk posture and C1 editor authority are this note's 3.5 and 1.2,
+direction) attacked the same disease from inside the lifecycle; its risk
+posture and editor authority are this note's 3.5 and 1.2,
 independently derived. Its successor,
-`2026-08-21-claude-convergent-lifecycle`, carries C0, C1, and C7 forward
+`2026-08-21-claude-convergent-lifecycle`, carries forward its risk
+posture, editor authority, and bound-closure-evidence rules
 and replaces the container — this note's Tier 1 and much of Tier 2, cast
 as one 131-line proposal.
 
@@ -351,8 +353,11 @@ AST attestation — stays enabled with its teeth; its test families run
 as a **release-only step**, part of the release ceremony and nowhere
 in the per-change loop.
 **Park or dismantle** (mechanizes deliberation; zero adopter
-engagement): `transition_lint.py`, the pilot ledgers, the intent log,
-the slot ratchet, most of the ~10,500 lines of lifecycle tooling.
+engagement): `transition_lint.py`, the pilot ledgers, the slot
+ratchet, most of the ~10,500 lines of lifecycle tooling — *except*
+the intent log and a minimal board view, which are coordination and
+stay (conformed after the second External pass caught this list
+contradicting the sweep section).
 **Diet**: the non-security remainder of the suite — what defends the
 deliberation complex shrinks with it; with security tiered out, the
 inner-loop suite lands near ~2 minutes and the Boundary-A/B/C
@@ -446,7 +451,7 @@ is no cost to deliberation."* Two: the scarce currency is **maintainer
 attention**, not elapsed time — and a naive attention price makes
 *deferral* the cheap escape, a chain reaction of follow-ups ending in
 *"a Hiroshima sized PLANNING.md."* Three: rather than tracking an
-economy, aim for **net-zero cost per proposal** and incentives for
+economy, aim for **a per-artifact attention balance** and incentives for
 positive outcomes — while avoiding both market externalities and *"a
 brutal economy of feature destruction that just removes everything
 Cairn is."*)
@@ -459,8 +464,8 @@ not-worth-raising because the lighter path never runs. The one
 genuinely scarce resource is the Maintainer's attention, currently
 priced at zero. The design answer, after three iterations (wall-clock
 decay: wrong variable; an agent credit economy: gameable, and its
-removal earners strip-mine the product), is **outcome-backed, net-zero
-attention accounting, settled inside each artifact**:
+removal earners strip-mine the product), is **outcome-backed attention
+accounting, settled inside each artifact and judged on return**:
 
 * **Every proposal and change note carries its own balance sheet.**
   Three entries, human-written, advisory. (1) **Attention asked**: the
@@ -469,8 +474,12 @@ attention accounting, settled inside each artifact**:
   own face at the Decision, which internalizes the externality: one
   proposal spawning ten follow-ups shows −10 where the Maintainer
   decides, not as silent board debt. (2) **Outcome that repays it**:
-  named, falsifiable, mission-denominated. (3) At archive, one line:
-  the outcome landed, or it did not.
+  named, falsifiable, mission-denominated. (3) at archive, one line
+  answering the actual objective — `Return: positive | negative |
+  unknown — <one sentence comparing what it delivered with the
+  attention it consumed>`. "Landed" alone is not the test: a week of
+  attention can deliver a cosmetic outcome exactly as promised
+  (second External pass).
 * **Additions and removals are both costs. Only outcomes earn.** This
   is the anti-strip-mining asymmetry: a deletion is not intrinsically
   profitable — it costs review attention like anything else and repays
@@ -552,7 +561,7 @@ incentives built from them:
   Maintainer must seed it by letting a few demonstrations
   conspicuously beat essays. And it deliberately does not eat the
   RCL-06 class — the structural, undemonstrable finding — which
-  blocks through C0 on argument alone; the norm prices routine
+  blocks through the tripwire on argument alone; the norm prices routine
   findings, it does not outlaw structural ones.
 * **The loop terminates sideways, not upward** (Maintainer push-back,
   2026-08-24: findings — which already arrive with suggested
@@ -572,7 +581,7 @@ incentives built from them:
   chain being confidently wrong as one unit, exactly as the sweep's
   own intent-system misclassification showed); **deadlock breaks
   sideways for implementation disputes only** (a third fresh agent
-  tiebreaks — but never votes away a C0 answer); **audit by sample** (the
+  tiebreaks — but never votes away a hard-to-undo answer); **audit by sample** (the
   Maintainer spot-checks agent-closed threads at goodnight — nobody
   inspects everything, everybody behaves as if inspected); and the
   **outcome line** (a bad agent-side call surfaces as a failed,
@@ -600,7 +609,7 @@ incentives built from them:
   exposure, and the four adopter issues already disciplined this
   project better than all its internal machinery.
 
-The structures above (the balance sheet, fidelity, C0) then hold
+The structures above (the balance sheet, fidelity, the tripwire) then hold
 their proper, secondary role: policing these incentives — running
 code that skips verification, sessions shipping garbage to beat the
 clock — not generating the force.
@@ -640,8 +649,9 @@ balance sheets, item counts) computed at goodnight; the **audit
 packet** — an agent screens 100% of agent-closed threads and
 prepares the sample with anomalies flagged, so the Maintainer judges
 exceptions in minutes; the human-facing **"what happened, what needs
-you"** page; and the **labor-market table** (whose findings survived,
-whose outcomes landed) consulted when reallocating seats. The
+you"** page; and — only after Tier 2 lands — **seat evidence** for
+reallocating roles, held as contextual evidence with its guards
+(below), never a score. The
 resulting interface contract: the firm reaches the Maintainer through
 four surfaces only — digest, audit packet, direct science/tripwire
 questions (never batched), and the gauges. The principal-agent hazard
@@ -672,8 +682,11 @@ build for the people whose leaving is the real price.
 ## The minimal build
 
 (Maintainer, 2026-08-24: accomplish all of this *"with as little
-machinery as possible."*) The inventory answer: **~30 required new
-lines of code against 60,000+ deleted.** Every mechanism above is
+machinery as possible."*) The honest inventory — conformed after the
+second External pass; the first draft's "~30 new lines" headline went
+stale the moment the first review's safeguards were accepted: **a few
+hundred required new lines against a five-figure deletion**, with the
+final figures owned by the build table below. Every mechanism above is
 words or deletion — the lanes, briefs, review form, balance sheet,
 digest, audit packet, and labor-market table are paragraphs and
 goodnight duties; the gauges are an optional ~50-line script or three
@@ -698,12 +711,13 @@ The outcome field gains `pending` with a revisit condition —
 scientific change *worked*. Code keeps the jobs text cannot do:
 compute (gauges, the reporter), execute (tests, the release gate),
 and physically protect (scaffold containment).
-Four moves, in order: decide the two pending proposals (text); the
-rewrite change note — `agent_collaboration.md` to ~150 lines,
-`AGENTS.md` conformed, templates to ~80 (text); the marker (~30
-lines, one Security Review); the subtraction sweep — board
-bankruptcy, park the deliberation complex, diet the suite (deletion,
-by a tireless agent). The standing razor for every future addition:
+The sequence, conformed to the live state (both proposals are
+**accepted**; the combined plan is in implementation — the
+security-marker chunk has landed): finish the convergent-lifecycle
+plan; the constitution rewrite (`agent_collaboration.md` to ~150
+lines, `AGENTS.md` conformed, templates to ~80); the small tools
+(audit reporter, minimal board view, gauge classifier); the per-file
+manifest; the sweep phases; then the sisters, one at a time. The standing razor for every future addition:
 **could this be a sentence instead of a script?** In a firm staffed
 by readers who never skip the manual, it almost always can.
 
@@ -724,13 +738,20 @@ into full compliance — no deprecation, no frozen modules** (Maintainer
 direction, 2026-08-24: *"Rip off the band-aid. I just didn't want to
 lose things that are necessary functionality"*). At the sweep's
 completion, `modflow_tools` and `lhm` are upgraded to the lean
-install: retired modules are **removed from their trees too**, the new
-constitution lands, and the necessary-functionality guarantee is the
-manifest's sister-repo usage check — every module a sister actively
-uses (the intent system, the checkers, the security stack, the board
-view; `foldback` is on the check-first list as a live adopter→Cairn
-channel) either survives upstream or has its replacement in place
-before it is removed from their trees. **Execution corrections from External review
+install: retired modules **removed from their trees too**, the new
+constitution landed. **A manifest row is evidence, never the
+guarantee** (second External pass, with probes): the sisters run
+project-owned routines and *ignored* operational state no tracked
+manifest can see — lhm's own goodnight invokes the intent tool and
+the foldback scanner; modflow's executable interpreter binding is
+present and gitignored; the two lockfiles start from different Cairn
+versions, so nothing inferred for one sister transfers to the other.
+The migration is therefore **sequential and independently green per
+sister**: per-repository discovery (tracked command references,
+installed-file provenance, ignored state and hooks, project-owned
+routines), a positive probe for every retained or replaced command,
+that repository's own verification — and one sister fully green
+before the other begins. **Execution corrections from External review
 (2026-08-24), all accepted:** the sweep proceeds from a committed
 **per-file manifest** (per-function for mixed files) recording the
 property removed, its replacement or an explicit decision the
@@ -754,7 +775,7 @@ and `_intent/`, twins and tests, ~8.7k lines; Maintainer, 2026-08-24:
 *"critical feature for multi-agent collaboration"*). Reclassified:
 it is **coordination, not deliberation** — it prevents concurrent
 sessions destroying each other's work, a hazard that has actually
-occurred, which is a C0-grade harm the deliberation complex never
+occurred, which is hard-to-undo harm the deliberation complex never
 guarded. It stays advisory per 1.5 (warn, never refuse), and the
 collision log stays with it. Sweep total adjusts to **~61k**.
 Structure calls with defaults: keep `suite_cost.py`; retire
@@ -767,38 +788,83 @@ debate, the principal-agent formalization of LLM delegation, and
 prediction-vs-judgment economics. Most of it confirms the design; three
 things are new and bind on the implementation.)
 
-* **The residual-rights sentence** (incomplete-contract theory —
+* **The residual-rights rule** (incomplete-contract theory —
   Grossman & Hart 1986, Hart & Moore 1990: complete contracts are
-  impossible; what matters is who decides in the uncovered cases).
-  The constitution gains one named principle: **"Where doctrine is
-  silent, the author decides if the action is reversible; the
-  Maintainer if it is not."** This is the preventive counterpart to
-  the rule-removal flush — with silence owned, most future rules never
-  need writing.
+  impossible; what matters is who owns the uncovered cases). One rule
+  everywhere, **consequences-based** — the second External pass caught
+  an earlier action-based wording that opened a weaker route around
+  the tripwire: *within already-authorized scope, where doctrine and
+  Maintainer direction are silent, the author decides only when every
+  plausible consequence of shipping is readily reversible; any
+  participant's hard-to-undo answer latches upward; science always
+  routes to the Maintainer.* The question is never whether the *edit*
+  can be reverted — a reverted commit does not recall a published
+  hydrograph or restore overwritten data. With silence owned, most
+  future rules never need writing.
 * **Judgment capture** (Agrawal, Gans & Goldfarb: judgment is the
-  scarce complement to cheap machine cognition, so standardizing it is
-  the highest-return machinery). Chief-of-staff duty: an ask the
-  Maintainer has answered the same way twice becomes a proposed
-  standing default — decisions amortize instead of being re-consumed.
-* **The labor-market table is load-bearing, not optional** (adverse
-  selection: the principal cannot assess agent quality before
-  engaging; the track record is the screening instrument). It is a
-  standing goodnight book from day one.
+  scarce complement to cheap machine cognition — the standardization
+  design is Cairn's inference, not the paper's result). Chief-of-staff
+  duty: an ask answered the same way in **three independent,
+  materially equivalent cases** (matching the doctrine-promotion
+  threshold — two context-bound permissions are not one general rule)
+  becomes a *candidate* standing default; the Maintainer approves its
+  exact scope, exceptions, and sunset. Explicit authorizations and
+  science or hard-to-undo judgments are never generalized.
+* **Seat evidence, deferred and guarded** (adverse selection says
+  the principal needs a screening instrument — but the second
+  External pass caught the first design recreating the
+  finding-production ratchet: a scored table pays reviewers for
+  accepted findings, the exact disease). Deferred until after Tier 2
+  under the construction moratorium, then piloted as **contextual
+  evidence, never a ranking**: no composite score, assignment class
+  and denominator always shown, small or non-comparable samples
+  marked.
 
 Confirmations worth recording so they are not re-litigated: many small
 delegations over few large ones (repeated feedback is what makes
-delegation safe); the C0 tripwire is the "dynamic decision rights"
+delegation safe); the irreversibility tripwire is the "dynamic decision rights"
 pattern the org-design literature independently converged on; and the
 vendor-neutral git-file coordination layer is the firm's switching-cost
 control — the thing that makes the agent labor market a real market —
-so no machinery may bind the record to one vendor's harness.
+so no machinery may bind the record to one vendor's harness. One
+vocabulary rule rides with all of this (second External pass): the
+coordinates `C0`/`C1`/`C7` are historical ledger references, not
+product vocabulary — durable text says **the irreversibility
+tripwire** and spells its question.
+
+## The build table (authoritative)
+
+One account of the build, superseding every earlier figure in this
+note; the per-file manifest fixes the final numbers. "Probe" means one
+positive check that the promised function still exists afterward.
+
+| Function | Disposition | Order | Code Δ (est.) | Probe / owner |
+|---|---|---|---|---|
+| Convergent-lifecycle plan (marker chunk landed) | finish | 1 | small | the plan's own tests / author |
+| Constitution rewrite + templates | replace (text) | 2 | −~1,300 prose | grep: no dangling tool references / author |
+| Audit reporter (warn-only, hash-picked sample) | new | 3 | +~250 | reporter lists a known-closed change / author |
+| Minimal board view | replace | 3 | +~200 | board lists the active artifacts / author |
+| Gauge classifier + dated snapshot | new | 3 | +~80 | re-derives the takeover table / author |
+| Security marker + manifest | landed | — | +~30 | membership mutation fails / done |
+| Intent system + collision log | **keep** | — | 0 | claim/release round-trip / — |
+| Trust-root validator (`_resolve_interpreter`) | keep, or removal takes a Security Review | 4 | 0 | validator rejects a bad binding / Maintainer-visible |
+| Transition lint, pilot ledgers, slot ratchet | remove | 4 | −~4,000 | suite green after / author |
+| Lifecycle CLI + planner (+ twins, tests) | remove **after** order-3 rows land | 5 | −~45,000 | order-3 probes pass / author |
+| Onboarding; foldback | per-sister evidence first | 5 | −~4,000 | sister routines still run / **Maintainer decides foldback** |
+| PLANNING bankruptcy + dead doctrine prose | remove | 6 | −~6,000 | claim/link gates / author |
+| Sister migration: `modflow_tools` | sequential | 7 | its tree | its own verification green / Maintainer sign-off |
+| Sister migration: `lhm` | after modflow is green | 8 | its tree | its own verification green / Maintainer sign-off |
+
+Net: roughly **+550 new lines against ~59,000 removed**, pending the
+manifest. Where this table contradicts anything earlier in the note,
+**the table governs**.
 
 ## The minimum product boundary
 
 (From the External review, adopted verbatim in substance.) After the
 subtraction, Cairn's offer must never shrink past four things: **one
 compact change-note grammar; one non-author falsification record per
-change; one Maintainer-only escape hatch for C0 and science; one
+change; one Maintainer-only escape hatch for hard-to-undo and science calls; one
 deterministic, warn-only audit/sample view.** Preserve that boundary
 and the subtraction makes Cairn more adoptable without making it
 ordinary — a git-native intent-and-decision trail with independent,
@@ -824,190 +890,3 @@ recorded decision trail, append-only on the artifacts that keep it,
 verification for shipped code, or editing history. The four-part core
 is the point of Cairn and stays. What goes is the mass around it — the
 armor agents grew because nothing in the rules ever told them to stop.
-
-## Review -- GPT 5.6-Sol (External) -- 2026-08-25 (second pass)
-
-**Summary for the Maintainer.** The first review's five corrections were folded
-faithfully, and the refocus remains the right direction. The new scope is not
-yet safe to execute as written. “The author decides if the action is
-reversible” tests the git change, not its consequences; a reversible commit can
-produce irreversible science, data, or adopter effects. The forced sister-repo
-upgrade also treats a manifest as proof of use, although one sister currently
-depends on ignored runtime state and both have project-owned routines. The new
-agent scorecard would reward the same finding production this note diagnoses,
-and the repeated-answer rule contradicts the note's three-recurrence threshold.
-The build estimate is now stale: accepted audit, board, classifier, screening,
-and migration work cannot coexist with “only 30 mandatory lines.” Reconcile one
-current build before demolition. And yes: stop calling the hard-to-undo check
-`C0`; that coordinate already failed its intended reader. Proceed with the
-already-reviewed lifecycle plan, but revise these additions before the
-subtraction and sister-repository migration.
-
-**Reviewed state**: `48644180a579645c56346630bc8f8a8f169fb3f3`
-
-**Target read**: the complete current strategy note, with special attention to
-the folded first review, the sister-repository widening, return-on-attention,
-and the three firm-literature additions. I also opened the current accepted
-proposals and ready implementation plan, inspected both sister repositories'
-tracked operational references and lockfiles, and checked the cited primary
-literature behind residual rights and prediction-versus-judgment.
-
-**Verdict**: **PROCEED WITH THE CONVERGENT-LIFECYCLE PLAN; REVISE BEFORE THE
-SUBTRACTION SWEEP OR SISTER-REPOSITORY MIGRATION.** The findings below narrow
-new authority and repair execution accounting; none restores External plan
-review, refusal tooling, or the retired lifecycle complex.
-
-### Findings, ranked by hard-to-undo damage
-
-#### NIM-EXT2-01 -- Residual rights must test consequences, not whether the edit can be reverted
-
-Lines 773--777 assign doctrine-silent decisions to the author “if the action is
-reversible.” That silently changes the stronger rule already accepted at lines
-568--575: if any participant sees hard-to-undo harm, only the Maintainer may
-dispose it. It also conflicts with lines 302--307, where science goes to the
-Maintainer every time. The new sentence asks about the action; the established
-tripwire asks what shipping could cause.
-
-**Concrete counterexample.** An author can revert a commit that changes a
-scientific default or runs a data migration. They cannot thereby recall
-published hydrographs, restore overwritten external data, or make an adopter's
-already-produced result disappear. Under the literal new sentence the *action*
-is reversible and the author owns the silence, even though its consequences
-are not.
-
-I opened the cited source rather than accepting the inference. Grossman and
-Hart's [1986 paper](https://www.journals.uchicago.edu/doi/10.1086/261404)
-supports allocating unspecified control rights and explicitly says a wrong
-allocation creates distortions; it does not select “author” using edit
-reversibility. The literature supports naming an owner, not this polarity.
-
-**Required correction.** Reuse one rule everywhere: *within already-authorized
-scope, where doctrine and Maintainer direction are silent, the author decides
-only when every plausible consequence of shipping is readily reversible; any
-participant's hard-to-undo answer latches upward; science always routes to the
-Maintainer.* This preserves residual ownership without opening a second,
-weaker route around the tripwire.
-
-#### NIM-EXT2-02 -- A lock manifest cannot guarantee that the sister repositories lose no necessary function
-
-Phase 5 says the manifest's sister-repository usage check is the
-“necessary-functionality guarantee” (lines 723--733). An install manifest can
-prove what Cairn placed and hash it. It cannot, by itself, observe operator
-habits, ignored state, external hooks, or project-owned routines.
-
-**Concrete probes.** `git grep` over the two sisters' live (non-archive)
-surfaces found direct operational calls, not merely installed inventory:
-both session skills invoke `tools/lifecycle.py`; `modflow_tools` invokes the
-compact board from both `AGENTS.md` and session-start; LHM's project-owned
-goodnight invokes `tools/intent.py whoami` and
-`scripts/foldback_export_scan.py`. `git check-ignore` also found that
-`modflow_tools/dev/.cairn/local-env.json` is both present and ignored. That
-active executable binding cannot appear in a tracked manifest scan. The two
-lockfiles also start from different Cairn versions (`0.3.0` and `0.2.0`), so
-one inferred migration is not evidence for the other.
-
-**Required correction.** Keep the no-deprecation, full-compliance decision, but
-make it sequential and independently green per sister. The per-repository map
-must combine: tracked command/reference discovery; installed-file provenance;
-ignored operational-state and hook discovery; project-owned routine review;
-positive probes for each retained/replaced command; and that repository's own
-native verification. Commit and verify one sister before starting the other.
-A static manifest row is evidence, never the guarantee.
-
-#### NIM-EXT2-03 -- The proposed agent scorecard recreates the finding-production incentive
-
-The labor-market table counts “whose findings survived, whose outcomes landed”
-and is used to allocate role seats (lines 631--654); lines 783--786 now make it
-load-bearing from day one. That turns the note's gauges into a score despite
-its Goodhart warning at lines 421--431. It also pays reviewers for producing
-accepted findings—the exact ratchet diagnosed at lines 127--131.
-
-**Concrete counterexample.** A reviewer assigned three difficult security
-changes can record ten surviving findings; one assigned ten already-clean doc
-changes can correctly record none. A raw table ranks the first as productive
-without measuring exposure, false positives, escaped defects, or task
-difficulty. Once seat allocation consults that number, agents have a natural
-reason to raise more findings and authors have a reason to choose easy work.
-
-The cited AI-economics result does not supply this mechanism. Agrawal, Gans and
-Goldfarb's [formal framing](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3112030)
-defines judgment as determining payoffs for action/state pairs and treats it as
-a complement to prediction. “Two matching answers become a default” and “a
-finding/outcome table screens agent quality” are Cairn design inferences, not
-results established by that paper.
-
-There is a second internal conflict: judgment capture proposes a standing
-default after two same-way answers (lines 778--782), while the anti-ratchet rule
-allows promotion to doctrine only after three independent recurrences (lines
-374--379). Two context-bound permissions are not necessarily one general rule;
-two approvals to push or scribe a Decision, for example, never become standing
-authority.
-
-**Required correction.** Honor the construction moratorium: defer the
-labor-market book until after Tier 2, then pilot it as contextual evidence, not
-a ranking—no composite score, show assignment class and denominator, and mark
-small/non-comparable samples. A repeated judgment may become a *candidate*
-only after three independent, materially equivalent cases; the Maintainer must
-approve its exact scope, exceptions, and sunset. Explicit authorizations and
-science/hard-to-undo judgments are never generalized.
-
-#### NIM-EXT2-04 -- The document no longer has one executable build account
-
-The folded corrections and later widening are individually sensible, but the
-older operative prose was not conformed. Three contradictory pairs are now
-simultaneously current:
-
-* Tier 2 parks the intent log (lines 353--355); the subtraction section says it
-  is critical coordination that stays (lines 750--759).
-* The minimal build says about 30 mandatory new lines and only the security
-  marker is mandatory code (lines 674--681); the same section now mandates an
-  audit reporter, a minimal board replacement, a committed classifier or
-  snapshot, sister-usage checks, and a standing screening book.
-* The four-move sequence begins by deciding two pending proposals (lines
-  701--706); both are accepted, and `lifecycle_planner.py board --compact`
-  reports their combined plan `ready-to-implement`.
-
-**Damage.** A deletion implementer following the early inventory can remove
-intent; one following the later carve-out keeps it. An implementer held to
-“~30 lines” must either omit accepted safeguards or disguise their real cost.
-This is how a large demolition becomes green while delivering only one of two
-contracts.
-
-**Required correction.** Because strategy notes are inline-revised, conform or
-strike the superseded statements. End with one authoritative build table:
-function, keep/replace/remove, repository, dependency order, estimated retained
-and new code, positive probe, and decision owner. Recalculate the 61k deletion
-and new-code figures from that table. Brevity is the objective; a stale
-30-line headline is not.
-
-#### NIM-EXT2-05 -- “Return” changed the objective but not the archive test
-
-Lines 435--440 correctly replace net-zero attention with positive return, yet
-the mechanics still call themselves “net-zero” at lines 449 and 462--463, and
-archive records only whether the promised outcome landed (lines 465--473). A
-landed outcome can cost far more attention than it was worth; the current line
-would record success without testing the new objective.
-
-**Concrete counterexample.** A week-long artifact can deliver a cosmetic wording
-improvement exactly as promised. “Outcome landed” is true; “worth more than the
-attention it cost” is false. The renamed objective and its evidence disagree.
-
-**Required correction.** Remove the surviving net-zero language and make the
-single archive line answer the actual test: `Return: positive | negative |
-unknown — <one-sentence comparison of realized outcome with attention spent>`.
-No prices, ledger, or score are needed.
-
-#### NIM-EXT2-06 -- Retire `C0` from the durable vocabulary
-
-The Maintainer's live question—“I don't know what that references”—is already a
-decisive comprehension falsifier. `rg -n '\bC0\b'` finds ten uses in this
-strategy and 36 across the strategy, accepted proposal, and ready plan. In this
-note it appears before a reader is given the underlying question and continues
-after the prose has a clear durable name for it.
-
-**Required correction.** In the current strategy and every governing output,
-call it the **hard-to-undo harm tripwire** or **irreversibility tripwire**. State
-the question where needed: *could shipping this cause harm that is hard to
-undo?* Historical proposal/review ledgers may retain `C0` as a coordinate, but
-the derived plan should translate it when naming what lands. Apply the same
-test to `C1`/`C7`: historical coordinates are not product vocabulary.
