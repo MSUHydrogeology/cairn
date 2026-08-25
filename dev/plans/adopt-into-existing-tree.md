@@ -556,3 +556,154 @@ the plan "should carry the actual replacement text (or an explicit instruction
 to fold to prose)". It now carries the text itself rather than the
 instruction, because an instruction to "fold to prose" re-opens at
 implementation time exactly the judgement the review just closed.
+
+
+## Implementation verification -- Claude Sonnet 5 -- 2026-08-25
+
+**Tested SHA**: `cc6c6c7` (the second of two implementation commits --
+`bec2cca` D1+D2, `cc6c6c7` D3 -- both direct ancestors of the current
+`master` tip; two unrelated `subtraction-sweep` commits landed on top from a
+concurrent session during this verification and are not part of this
+plan's diff). **Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(3.13.13, the canonical interpreter). **Pre-state**: `git status --short --
+bootstrap/ dev/plans/adopt-into-existing-tree.md` empty (clean) immediately
+before the Boundary B run. **Post-state**: clean again after (`git diff
+cc6c6c7 -- bootstrap/_scaffold/upgrade.py` empty).
+
+**Boundary B mode**: full. Not a choice -- `bootstrap/_scaffold/upgrade.py`
+is the scaffold/merge engine (a named high-risk surface) and this touches
+the install contract's `--adopt-module` write path, per the plan's own Risk
+section.
+
+### Boundary A (iteration, scoped) -- run before landing D1/D2
+
+* `CAIRN_SUITE_LEDGER=1 python -m pytest bootstrap/tests/test_upgrade.py -k TestAdoptModule -q` -- **13 passed** (4 pre-existing + 9 new).
+* `python -m pytest bootstrap/tests/test_upgrade.py -q` (full file) -- **96 passed**.
+* `python -m pytest bootstrap/tests/test_profile_grammar.py -q` -- **45 passed** (41 pre-existing + 4 new/extended).
+* `python -m pytest bootstrap/tests/test_upgrade_module.py bootstrap/tests/test_module_merge_lockfile.py -q` -- **23 passed**, unaffected by the `_superseded_surface_note` signature extension (its 2 callers there pass only 2 positional args; `exclude` defaults to empty).
+
+Full output inspected for every run (not just the tail); no `INTERNALERROR`
+found in any of them.
+
+**The five S2 mutations, self-verified before the Boundary B run** (each
+applied to a saved-original copy of `bootstrap/_scaffold/upgrade.py`, the
+named test run, then the file restored and the restoration confirmed
+byte-identical by sha256 -- `b8c5867349f4d9d89f50252051fbe8f30327c388efde1c1aaf646383136c04ed`
+before the first mutation and after every restore):
+
+| mutation | test that must redden | result |
+|---|---|---|
+| delete the persist call (`lock["tokens"] = tokens`) | `test_adopt_required_token_seeded_from_profile` | **reddened** (assertion on the persisted token value failed) |
+| make the placeholder predicate curly-brace-only | `test_adopt_required_token_angle_placeholder_refuses_closed` | **reddened** (`<my package>` no longer refused) |
+| move `_refuse_secret_tokens` back to just before `_commit_lock_and_caches` | `test_adopt_secret_shaped_required_token_refuses_closed` | **reddened** (the no-destination-written assertion failed -- the file was written before the guard fired) |
+| make the byte comparison always-equal | `test_adopt_advisory_fires_when_kept_file_differs` | **reddened** (the advisory never printed) |
+| make the byte comparison always-unequal | `test_adopt_advisory_silent_when_kept_file_matches` | **reddened** (the advisory printed on a byte-identical kept file) |
+
+### Boundary B (integration, full)
+
+```
+CAIRN_FULL_SUITE=1 PYTHONDONTWRITEBYTECODE=1 \
+  /Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest bootstrap/tests \
+  --quality-gate-shuffle-seed=0
+```
+
+**4596 passed, 3 failed, in 797.00s (13m17s).** Full output (4728 lines)
+inspected, not just the tail; no `INTERNALERROR`. Non-pass disposition, all
+three:
+
+1. **`test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package`**
+   and **`test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set`**
+   -- **Fence 1, expected.** `python bootstrap/tests/_ast_attest.py verify
+   bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py`
+   reports exactly **4 CHANGED** baselined symbols, **0 MISSING, 0
+   DUPLICATE** -- the derived CHANGED set, precisely:
+
+   | symbol | baseline digest | live digest |
+   |---|---|---|
+   | `FunctionDef:_cmd_adopt_module` | `81a91762d82268ba` | `e94a89ec4083cd40` |
+   | `FunctionDef:_compute_upgrade` | `d8c2e51016e736c8` | `a98e65843a1c67be` |
+   | `FunctionDef:_superseded_surface_note` | `183df5ea0106c0c1` | `f68dc613d601aa1f` |
+   | `FunctionDef:cmd_upgrade` | `3a1480d796d59488` | `d98eff085ea46b43` |
+
+   This is **not** the two-symbol set the briefing anticipated
+   (`_cmd_adopt_module` + `_resolve_lock_profile_fields`) -- empirically,
+   `_resolve_lock_profile_fields` is untouched (D1's strict predicate lives
+   in the new `_adopt_token_unfilled`, deliberately not in that helper, per
+   the plan's own instruction). The actual fourth-and-fifth deltas are a
+   consequence not called out in the plan: `_resolve_current_profile`
+   (itself **not** baseline-pinned) gained a third return value (`tokens`,
+   for D1's profile-seeding), and its two upgrade-materialization call
+   sites -- inside the baseline-pinned `_compute_upgrade` and `cmd_upgrade`
+   -- each needed a one-token unpacking-arity edit (`_new_profile, new_axes,
+   _new_tokens = ...`) to keep receiving it; that edit changes *their*
+   digest even though neither function's own logic moved. `_superseded_surface_note`
+   changed because D2's "must not both fire" edge case
+   (architecture-review's destination is also its own declared superseded
+   surface) needed an `exclude` parameter -- confirmed via
+   `bootstrap/tests/test_upgrade.py::TestAdoptModule::test_adopt_advisory_fires_when_kept_file_differs`,
+   which asserts both that D2's advisory fires AND that `"reconcile or
+   retire"` does not appear in the same run's stderr.
+
+   Per the fences in this brief: **not fixed, not routed around.** The
+   baseline file was not edited; no `_ast_attest.py update-symbol` command
+   was run (and none of the 4 symbols is in `_UPDATE_ALLOWLIST` regardless).
+   Re-anchoring this baseline over the reviewed tree is a Maintainer-run,
+   dry-run-verified direct correction per `bootstrap/AST_BASELINE_RUNBOOK.md`.
+
+2. **`test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`**
+   -- **pre-existing, confirmed unrelated to this plan.** Fails on
+   `dev/proposals/2026-08-20-claude-portable-sweeps-cannot-run.md`'s `##
+   Review` (line 395) reading as authored by the proposal author rather
+   than an independent reviewer -- a file this plan never touches, in a
+   family (`dev/proposals/`) this plan's diff does not reach. Verified the
+   same node fails **identically** (same file, same message) at the
+   pre-implementation commit `7dc66a1` (this plan's D1/D2 commit's parent),
+   checked out into an isolated `git worktree` (no destructive operation on
+   the working tree) and run in isolation
+   (`CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests/test_lifecycle_contract.py -k test_the_live_corpus_is_sound_under_the_p1_contract`)
+   -- same failure, same corpus finding. The worktree was removed
+   (`git worktree remove --force`) after the check; nothing else touched.
+
+`python scripts/quality_gate.py --sub neutrality --sub redundancy`:
+`[neutrality] fail=86 info=21`, `[redundancy] fail=0 info=2` -- **every**
+flagged path is outside this plan's diff (`docs/`, `doctrine/`,
+`templates/`, `bootstrap/tests/fixtures/skills/README.md`,
+`templates/modules/default-on/_lifecycle_metrics/subsystems.py`); **zero**
+flags in any of `bootstrap/UPGRADE.md`, `bootstrap/_scaffold/upgrade.py`,
+`bootstrap/tests/test_upgrade.py`, or `bootstrap/tests/test_profile_grammar.py`.
+Matches the tracked pre-existing gate-findings state; this plan introduces
+no new neutrality or redundancy flag.
+
+### Fence 2 -- the gate manifest, derived precisely (not run, not touched)
+
+`bootstrap/tests/test_upgrade.py` and `bootstrap/tests/test_profile_grammar.py`
+are both in `bootstrap/tests/fixtures/gate_manifest.json`'s 209-entry
+`frozen_files` (confirmed by direct lookup, not assumed); no other file this
+plan touches (`bootstrap/_scaffold/upgrade.py`, `bootstrap/UPGRADE.md`) is in
+that set. Their live sha256 now differs from the committed manifest's
+recorded value for each:
+
+| file | recorded sha256 | live sha256 |
+|---|---|---|
+| `bootstrap/tests/test_upgrade.py` | `a85513e156e61d35d17690442583ba70acebf9d295cc3a0736f8c6bb576103d9` | `fdf758022386aab86e6cd403048d7803bb52a66b72e40b5af17734866a292791` |
+| `bootstrap/tests/test_profile_grammar.py` | `9d6b777bfe48a1012bdfbbb92bdb5e43b2c25bfe0c9e364c46c39b93b4ccc89d` | `86cf4755fb60d66c6800397f3b9e4cd8e842a8488aefddcbd0ac0ef291d350b1` |
+
+`bootstrap/tests/test_gate_manifest.py`'s own suite does **not** exercise
+this drift (its `produced()` fixture calls `_gate_manifest.produce(_REPO)`
+fresh at test time and verifies self-consistently -- it never diffs against
+the committed `fixtures/gate_manifest.json`), so this did not and could not
+show up as a Boundary B pytest failure; it is a property of the
+differential-oracle gate ceremony
+(`python bootstrap/tests/_gate_manifest.py verify --anchor-ref <SHA>`),
+which was **not run**. Per the fences in this brief: the committed manifest
+was not edited, and no re-anchor command was run; re-anchoring is
+`bootstrap/REANCHOR_RUNBOOK.md`, a Maintainer ceremony.
+
+### Known omissions
+
+Windows filesystem semantics not checked (matches the plan's own plan-review
+omission list). The sibling proposal `2026-08-20-claude-scanner-claim-scope`'s
+status for the issue-#5 closure dependency was not re-checked (out of scope
+for implementation). No attempt to reproduce the original adopter's tree or a
+hand-edited lockfile beyond the fixtures constructed in
+`bootstrap/tests/test_upgrade.py`.
