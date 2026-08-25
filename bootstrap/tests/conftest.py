@@ -285,6 +285,19 @@ def _security_family():
     import importlib.util
 
     path = Path(__file__).resolve().parent / "security_manifest.py"
+    if not path.is_file():
+        # Absent means "this is not Cairn's own suite" -- the scratch fixture
+        # trees throughout these tests copy conftest.py and nothing beside it.
+        # Marking nothing there is the SAFE direction: no member is deselected,
+        # so the family runs. Treating absence as an error instead made every
+        # subprocess fixture tree fail with an INTERNALERROR, measured.
+        #
+        # Absent and unreadable are different conditions and are handled
+        # differently on purpose. A manifest that EXISTS but cannot be loaded is
+        # a broken security control in a tree that is meant to have one, and it
+        # raises -- the release ceremony reads this same marker, so that failure
+        # has to be loud where it happens rather than found at a release.
+        return {}
     spec = importlib.util.spec_from_file_location("_cairn_security_manifest", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
