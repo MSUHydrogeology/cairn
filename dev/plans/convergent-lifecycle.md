@@ -13,7 +13,7 @@ Do them simultaneously."*:
 "Relationship" section says so, and it is a strict subtraction from either
 baseline.
 
-**Status**: ready-to-implement
+**Status**: awaiting-code-review
 **Plan review**: required(**Internal**) — and under the rule this plan lands,
 that is the only tier there is. **Basis corrected at the fold**: the External
 floor was waived in `convergent-lifecycle`'s *own* Decision (`47315b6`), hours
@@ -906,3 +906,100 @@ One round was sufficient to reach this verdict: the surface under review is smal
 important finding was both reachable and closable within the round, and the recorded
 residual is precisely bounded by a constraint stated in the brief itself (the frozen
 file that would carry a stronger fix), not by time.
+
+## Implementation verification -- Claude Opus 5 -- 2026-08-24
+
+**Status**: ready-to-implement -> implementing -> awaiting-code-review. Both
+edges recorded here: the plan occupied `implementing` across the commits below,
+and writing that state into the file only to overwrite it in the same breath
+would assert a moment the file never held.
+
+**Boundary B mode**: `full`, and **undeselected**. Chunk E is a security-surface
+change, and §5's own rule refuses that surface the carve-out it creates: *"A
+security-surface change runs today's full canonical Boundary-B pair, unchanged
+-- no bespoke selection, no deselection of the family under test."* So this run
+carries no `-m "not security"`. The chunk does not get to use the shortcut it
+builds.
+
+**Tested commit**: `997c6a985aa750c239ca8b9398db22325e839245`
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — Python
+3.13.13, pytest 9.0.3, `PYTHONDONTWRITEBYTECODE=1`.
+**Pre-run state**: clean, 0 tracked modifications. **Post-run state**: clean, 0.
+
+### Command table
+
+| Command | Exit | Outcomes | Elapsed |
+| --- | --- | --- | --- |
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -q` | 1 | **4588 passed, 1 failed** | 733.52 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality `fail=86 info=21`; redundancy `fail=0 info=2` | -- |
+
+### HEAD moved during the run, and what that does not invalidate
+
+`HEAD` was `997c6a9` at the start and `570fedb` at the end: another session
+committed twice mid-run. `git diff --name-only 997c6a9 570fedb` returns exactly
+one file, `dev/strategy/2026-08-21-claude-nimbleness-recovery.md` — a strategy
+note, no implementation surface, and not an artifact the corpus-scanning tests
+read. Checked rather than assumed.
+
+### Non-pass disposition
+
+**One failure, and it is not this plan's.**
+`test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`
+reports three live proposals whose `## Review` sections appear authored by the
+proposal author: `2026-08-20-claude-adopt-into-existing-tree`,
+`-portable-sweeps-cannot-run`, `-scanner-claim-scope`. Identified **by name**,
+not by count — a matching count is not evidence that the identities match. The
+same three failed this morning, before any chunk landed.
+
+`quality_gate` exits 1 on 86 pre-existing neutrality findings, unchanged
+throughout: checked after every prose commit precisely because copying a worked
+example out of a proposal into a shipped template is how that number moves, and
+it moved once already today on a different plan.
+
+### A defect this run caught that no scoped run could
+
+The **previous** full run failed `test_broad_run_guard.py::test_a_refused_session_is_scoped_unknown`,
+which passed every scoped check. Cause: `_run` scrubbed three environment
+variables from the child but not `CAIRN_SUITE_LEDGER_SESSION`, the ledger's
+nesting marker. A parent session that is recording exports it, the subprocess
+inherits it, `conftest.py` classifies the child as nested, and it writes no row.
+
+That condition is exactly the canonical Boundary B command and **not** the
+`CAIRN_SUITE_LEDGER=0` form used while iterating — the form every implementing
+brief in this plan specified. **The instruction masked the defect it existed to
+avoid.** Fixed at `e392a3a`; the test passes here under an enabled ledger.
+
+Recorded because it is an argument about this plan's own subject: a per-change
+loop that never runs the broad form cannot see this class of defect at all.
+§5 moves 1,328 tests out of that loop, and the release ceremony is where they
+are caught instead. That is the design working, and it is also the cost.
+
+### Plan-specific acceptance
+
+* **The split reconciles exactly**: `-m security` 1,328, `-m "not security"`
+  3,260, unfiltered 4,588 — and 1,328 + 3,260 = 4,588, against an independent
+  per-file count of the seventeen members.
+* **Membership is mutation-tested, not counted.** Drop a member, name a
+  nonexistent file, empty the manifest, wrongly add a real unrelated file, drop
+  a non-victim member — each detected, each naming the offending file.
+* **The falsification instrument** reaches 0 across every doctrine and tool
+  surface. Two test files retain the literal strings as fixture input; see the
+  Coverage note below, which is a finding about the instrument, not residue.
+
+### Known omissions
+
+* **Chunk E's Security Review found that all eight of my membership checks were
+  self-comparing** — each derived its expected set from the manifest it was
+  verifying, so a wrongly-added member passed all eight while its tests left the
+  per-change loop. Fixed in-pass with an external oracle (`_REVIEWED_MEMBERS`).
+  Recorded here and not only in the review because the same author wrote the
+  manifest docstring naming that exact failure mode and then built eight
+  instances of it.
+* **The release-path guard is a source-text substring check**, not a behavioural
+  one. Accurate today and bounded by a stated constraint: the stronger version
+  belongs in `test_security_check.py`, which is gate-frozen.
+* **The gate re-anchor ceremony is owed and not run** — MAINTAINER-GATED, now
+  spanning the frozen files touched by every change since 2026-08-21. It should
+  run once, after all of it settles.
+* Wall-clock savings from the split are **unmeasured**: the collect-time counts
+  are pinned, the runtime difference is not.
