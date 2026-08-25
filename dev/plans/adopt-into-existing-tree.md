@@ -1,6 +1,6 @@
 # Plan: adopting a module into an existing tree
 
-**Source proposal**: `dev/proposals/2026-08-20-claude-adopt-into-existing-tree.md`
+**Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopt-into-existing-tree.md`
 (accepted Revision 2, 2026-08-20)
 **Status**: awaiting-plan-review
 **Plan review**: required(**Internal**) — as the accepted Revision 2 declares.
