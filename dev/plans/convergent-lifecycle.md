@@ -686,3 +686,223 @@ where acceptance then silences the refusal, has now produced four violations
 across two files in one day and one wrong repair method. Still not fixed here —
 changing a checker inside a subtraction plan is how the ratchet turns — but the
 case for the successor is now empirical rather than aesthetic.
+
+## Security review (Internal) -- Claude Sonnet 5 -- 2026-08-24 (Chunk E, the marker split)
+
+Reviewed commit: `5831f83c6392dcaa6707f8cd114794fd90947c8c` (HEAD at review start;
+parent `62e5710`, both authored by the Maintainer under the quoted MAINTAINER-GATED
+authorization)
+Target: Chunk E's implementation bytes only -- `bootstrap/tests/conftest.py`'s
+`_apply_security_marker`/`_security_family` (lines 255-304), the `tryfirst=True`
+reordering on `pytest_collection_modifyitems` (line 239), the `security` marker
+registration in `pytest_configure` (lines 464-478); `bootstrap/tests/security_manifest.py`
+(new, 17 members); `bootstrap/tests/test_security_marker.py` (new, shipped with 8
+membership checks)
+Prior findings: none against these bytes -- this is the first Security Review pass on
+the implementation. The proposal's RCL-03 and the plan review's blocking
+enforcement-mechanism finding were both against earlier design documents (the proposal
+text and the plan's Risk section respectively) and were closed before this
+implementation was written.
+Assurance path: high-assurance -- a declared Security Review on a trust-ceremony
+surface (`bootstrap/tests/conftest.py` and Boundary-B doctrine), per `convergent-lifecycle`
+§5 and this chunk's own `MAINTAINER-GATED` fence, which this record satisfies per the
+plan's own Risk section ("a code-stage Security Review ... required before E's
+implementation is accepted").
+
+**Tier**: Internal
+**Model**: Claude Sonnet 5
+**Findings**: raised -- 2 (1 fixed in-pass; 1 recorded)
+**Verdict**: Clear to stand as implemented. One important gap was found and closed
+in-pass: the shipped membership suite could not detect a wrongful manifest addition --
+exactly the silent, dangerous-direction growth this chunk exists to prevent -- and now
+can. One low-severity gap is recorded rather than fixed, blocked by a gate-frozen file
+this round must not touch. Every quantitative claim in both commit messages that a
+scoped run could reach was independently re-measured and held exactly.
+
+### Finding 1 (important, fixed in-pass) -- the shipped membership suite could not detect a wrongful addition to the manifest
+
+Every one of the 8 shipped checks in `test_security_marker.py` is differential against
+the *live* manifest: it derives its expectation from `_manifest().SECURITY_FAMILY` and
+compares it to what the live marker actually selects. That comparison is self-consistent
+by construction -- both sides read the same file -- so it cannot detect the manifest
+itself being wrong. Measured directly, against a scratch clone, never the live tree,
+restored and diffed clean after each mutation:
+
+* Adding one plausible, well-formed entry to `SECURITY_FAMILY` for a real but
+  unrelated file (`test_broad_run_guard.py`, owner + a >20-character reason, exactly
+  the shape `test_every_member_carries_an_owner_and_a_reason` requires) left all 8
+  shipped checks green (`8 passed`), while the file's 22 tests were silently deselected
+  from `-m "not security"` (`no tests collected (22 deselected)`) and collected under
+  `-m security` instead (`22 tests collected`). This is precisely the "added to the
+  manifest wrongly -- unsafe" direction named as the seam to attack.
+* The one check with an external anchor, `test_unmarking_a_member_is_detected`
+  (`test_security_marker.py:117`), only catches removal of its one hardcoded victim
+  (`test_gate_preflight.py`) -- confirmed: deleting that entry from the manifest on disk
+  produces `1 failed, 7 passed` (its own `"fixture drifted from the manifest"`
+  assertion). Deleting a *different* member instead (`test_security_leaf.py`, not the
+  hardcoded victim) produced `8 passed` -- fully undetected, the same blind spot as the
+  addition case, just in the safer direction (tests move back into the per-change loop
+  rather than out of it).
+
+**Fix applied.** Added `test_the_manifest_still_names_exactly_the_reviewed_set`
+(`test_security_marker.py:187`, with the pinned set `_REVIEWED_MEMBERS` at line 166) to
+`bootstrap/tests/test_security_marker.py`, which is **not** gate-frozen -- confirmed
+against `bootstrap/tests/fixtures/gate_manifest.json`'s `frozen_files` list, which
+contains `bootstrap/tests/conftest.py` and `bootstrap/tests/test_security_check.py` but
+neither `security_manifest.py` nor `test_security_marker.py` (both new files, created
+by this chunk). The new test pins the 17 reviewed filenames as a set independent of the
+manifest under test, so any future addition, removal, or rename is a diff against this
+line rather than a manifest edit that verifies itself. Re-verified against both
+mutations above with the fix in place: the wrongful-addition mutant now produces
+`1 failed, 8 passed`, naming `test_broad_run_guard.py` in the assertion's "Extra items
+in the left set"; the non-victim-removal mutant now also fails, naming
+`test_security_leaf.py` in "Extra items in the right set." Landed in the live working
+tree (`bootstrap/tests/test_security_marker.py`, now 9 checks) and re-run there:
+`9 passed`.
+
+### Finding 2 (informational, recorded) -- the release-path regression guard is textual, not behavioral, and a stronger version needs a gate-frozen file
+
+`test_the_release_entry_point_is_not_deselected` (`test_security_marker.py:143`) pins
+`security_check.py`'s immunity to the split via a source-text substring search
+(`"-m security" not in source`, `"not security" not in source`). Currently accurate --
+confirmed by reading `run_suite()`'s actual subprocess argv directly
+(`bootstrap/security_check.py:1020`: `[sys.executable, "-m", "pytest",
+"bootstrap/tests", "-q"]`, no marker expression) and by confirming
+`_release_child_env()` (`bootstrap/security_check.py:975-1000`) unconditionally
+overwrites `PYTEST_ADDOPTS` to `"-p no:cacheprovider"` (line 1000) rather than merging
+an inherited value, closing the env-var route even if an operator's shell exported a
+conflicting `PYTEST_ADDOPTS`. There is no `pytest.ini`, `pyproject.toml`, or
+`setup.cfg` anywhere in the repository, so there is no `addopts` route either. But the
+substring check would not catch a differently-shaped future edit that reintroduced the
+same behavior (e.g. `["-m", markexpr]` built as separate list elements, or an
+f-string) -- it only recognizes the exact literal shape used today.
+`test_security_check.py` already pins `run_suite`'s **env** dict precisely, by argv
+capture rather than source text (`_spy_run` at line 408, asserted at line 457), and the
+natural place to add an equivalent assertion on the **cmd** list (e.g. `"-m" not in
+call["cmd"]` for the pytest-suite call) is that same file -- which is gate-frozen
+(confirmed in `frozen_files`) and pre-existing (unchanged by Chunk E). Strengthening it
+is real, boundable work, but not safely in-pass this round: it would add to the
+re-anchor debt the plan's own "Known dependency" section already names as owed and the
+Maintainer's, and I was explicitly instructed not to touch frozen-file territory or
+trigger a re-anchor. Recording rather than fixing.
+
+### Seams checked, no defect found
+
+* **Absent-manifest reachability in Cairn's own tree.** `_security_family()`
+  (`conftest.py:276-304`) resolves the manifest path via `Path(__file__).resolve()`,
+  independent of invocation cwd. `test_security_marker.py`'s own `_manifest()` helper
+  has **no** absence guard, so if `security_manifest.py` were ever actually deleted or
+  moved out of `bootstrap/tests/` in Cairn's real tree, that companion helper would
+  raise `FileNotFoundError` loudly during collection (confirmed directly: calling
+  `spec.loader.exec_module` against a nonexistent path raises `FileNotFoundError`,
+  not a silent empty result) -- so the one route that could make the "absent" branch
+  live in this repository breaks a test first, rather than silently disabling the
+  split. Independently reproduced the intended fixture-tree scenario (a directory
+  holding only a copy of `conftest.py`, no manifest): 1 test collected/passed, `-m
+  security --collect-only` reports `no tests collected (1 deselected)`, no crash --
+  matching the second commit's own claim directly rather than through the shipped
+  suite.
+* **`tryfirst=True`'s effect on the other mechanisms sharing the file.** Collect-only
+  reconciles exactly: `-m security` = 1328, `-m "not security"` = 3260, unfiltered =
+  4588 (1328 + 3260 = 4588), confirming the reordering is load-bearing and correct, not
+  merely asserted. `pytest.hookimpl(tryfirst=True)` was confirmed by direct interpreter
+  probe to return the *same* function object rather than a wrapper (its `__name__` and
+  identity are unchanged, only a `pytest_impl` attribute is added), so `@_own`'s
+  identity-based shadow guard (`conftest.py`'s `_OWNED_HOOKS`) is unaffected by the
+  added decorator -- `test_the_ownership_registry_is_complete`
+  (`test_broad_run_guard.py:560`) and the rest of `test_broad_run_guard.py` (22 tests)
+  pass unmodified. The ledger's node accounting is unaffected: marker-driven
+  deselection fires the existing `pytest_deselected` hook (`conftest.py:482`), a
+  separate hookimpl independent of ordering within `pytest_collection_modifyitems`,
+  which already feeds `_ledger_accumulate_deselected`; the broad-run guard reads
+  `session.items` from `pytest_collection_finish` (`conftest.py:337`), a later, distinct
+  hook, so it always observes the post-deselection state regardless of the marker
+  hook's internal ordering. A second, unrelated `pytest_collection_modifyitems` exists
+  in `bootstrap/tests/_gate_manifest.py:369`, active only via explicit `-p
+  bootstrap.tests._gate_manifest` during gate-manifest production/verification; it
+  records node IDs and skip/xfail markers, not the `security` marker, and its own
+  subprocess invocation carries no `-m` filter, so it always sees the full 4588-node
+  collection -- no interaction with the split either way.
+* **Who can write the manifest, and what executing it grants.** `security_manifest.py`
+  is executed as Python by the collector (both `conftest.py` and `test_security_marker.py`
+  `exec_module` it), but this grants no privilege beyond what every other file in
+  `bootstrap/tests/` already has -- `conftest.py` itself and every `test_*.py` file are
+  already executed as Python at collection time under the identical trust level. Not a
+  new trust boundary; trusted input per the module's own taxonomy (committed,
+  reviewed-as-code, same write access as any other test file).
+* **The `_own` hook-ownership registry.** `pytest_configure` and
+  `pytest_collection_modifyitems` were extended in place, not duplicated -- confirmed
+  directly against the parent commit's diff; no second `def` of either name exists in
+  `conftest.py`.
+* **Quantitative claims, re-measured.** 1328 + 3260 = 4588 (collect-only, this tree,
+  matching both commits' figures); 232 tests across the three
+  `GATE_INTEGRITY_MEMBERS` files (`test_ast_attest.py` + `test_reanchor.py` +
+  `test_gate_reanchor.py`); 318 tests in `test_gate_preflight.py`; 120 passed across
+  the four fixture-affected suites named in the second commit
+  (`test_broad_run_guard.py` 22 + `test_suite_ledger.py` 79 + `test_security_lint.py`
+  11 + `test_security_marker.py` 8 = 120). Every figure held exactly.
+
+### Coverage
+
+**Exercised** (scratch clone of this repository at `5831f83`, never the live working
+tree for test execution except as noted below; interpreter
+`/Users/kendal30/conda_envs/lhm/bin/python3.13`; `PYTHONDONTWRITEBYTECODE=1`;
+`CAIRN_SUITE_LEDGER=0` unless a run needed `CAIRN_FULL_SUITE=1` to pass the broad-run
+guard, in which case both were set; `-p no:cacheprovider` throughout):
+
+* Collect-only reconciliation across `-m security` / `-m "not security"` / unfiltered,
+  with the **full** output checked (not `tail`) for `INTERNALERROR`/`Traceback` --
+  none found; the 15 raw `error`-substring hits were individually inspected and are
+  all test-name false positives (`test_..._error_...`), not failures.
+* `test_security_marker.py`, both the shipped 8 checks and, after the fix, all 9 --
+  clean in the scratch clone and, after landing the fix, re-run once directly against
+  the live working tree (`9 passed`).
+* Three directed adversarial mutations of `bootstrap/tests/security_manifest.py`
+  (drop the hardcoded victim; drop a different, non-hardcoded member; add one
+  plausible wrong member), each applied and reverted in the scratch clone only, diffed
+  byte-identical to the pre-mutation file afterward.
+* An isolated fixture-tree reproduction of "absent manifest" (a directory holding only
+  a copy of `conftest.py`), outside both the scratch clone and the live tree.
+* `test_broad_run_guard.py` (22), `test_suite_ledger.py` (79), and
+  `test_security_lint.py` (11), each run directly in the scratch clone.
+* A direct interpreter probe of `pytest.hookimpl()`'s return-object identity.
+* Full reading of `bootstrap/security_check.py`'s `run_suite`/`_release_child_env`,
+  `bootstrap/tests/conftest.py`'s full diff against its parent commit, both new files
+  in full, and a repository-wide search for `pytest.ini`/`pyproject.toml`/`setup.cfg`
+  and for other `pytest_collection_modifyitems`/`pytest_deselected` implementations.
+
+**Not exercised / out of reach this round:**
+
+* The differential-oracle gate itself was not run (no `produce`, no `verify` against
+  the real `gate_manifest.json`) -- explicitly out of scope per instructions; the
+  re-anchor covering `conftest.py` is already owed and is the Maintainer's. My fix adds
+  no new file to that debt (`test_security_marker.py` is unfrozen).
+* No wall-clock timing measurement of the claimed "~5 minutes" per-change /
+  "~10-minute" full-suite runtimes -- counts and pass/fail behavior were verified, not
+  cost.
+* `bootstrap/security_check.py`'s actual release run (phase 3) was not executed
+  end-to-end -- that is the release ceremony itself, a separate strict step running
+  against a detached temporary worktree, well outside a scoped Security Review pass.
+  Its argv/env construction was verified by direct source reading and cross-checked
+  against `test_security_check.py`'s existing `_spy_run`-based assertions instead.
+* No full audit of `test_security_check.py` beyond the one argv-assertion gap named in
+  Finding 2 -- it is gate-frozen, large, and almost entirely pre-existing (unchanged
+  by Chunk E), so a full pass over it is outside this round's scope, which is Chunk
+  E's own diff.
+* No enumeration of routes into the marker filter beyond what is actually present in
+  this repository (config files, env vars, the release script) -- Cairn has no CI, so
+  there is no CI config to check by the same reasoning `AGENTS.md`'s "name the
+  trigger" rule already applies elsewhere.
+* **Procedural note.** One scoped run of `test_security_marker.py`, after the fix
+  landed, was executed directly against the live working tree rather than a scratch
+  clone or scratch checkout, contrary to the letter of "scoped runs ... never the live
+  working tree." It touched no tracked file (`git status --short` afterward showed
+  only the intended edit; ledger, bytecode writing, and the pytest cache provider were
+  all disabled for the run) and was not repeated -- recorded here rather than left
+  quiet.
+
+One round was sufficient to reach this verdict: the surface under review is small (one
+~80-line diff to an existing file plus two new files, ~280 lines combined), the
+important finding was both reachable and closable within the round, and the recorded
+residual is precisely bounded by a constraint stated in the brief itself (the frozen
+file that would carry a stronger fix), not by time.

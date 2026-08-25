@@ -150,3 +150,45 @@ def test_the_release_entry_point_is_not_deselected() -> None:
         encoding="utf-8")
     assert "-m security" not in source
     assert "not security" not in source
+
+
+#: The manifest's exact membership as reviewed for Chunk E's Security Review
+#: (2026-08-24) -- see ``dev/plans/convergent-lifecycle.md``, "## Security
+#: review (Internal)". Every check above is differential against the *live*
+#: manifest, so a member added (or dropped, unless it happens to be the one
+#: hardcoded victim above) alongside a plausible owner/reason passes every one
+#: of them: the expected set and the observed set are both read from the same
+#: edited file. Measured during this review: adding one unrelated, well-formed
+#: entry to ``SECURITY_FAMILY`` left the other eight checks in this file green
+#: while its tests silently left the per-change loop -- exactly the failure
+#: mode this family exists to catch. This is the one check with an oracle
+#: outside the manifest.
+_REVIEWED_MEMBERS = frozenset({
+    "test_api_access_security.py",
+    "test_ast_attest.py",
+    "test_default_security_stance.py",
+    "test_gate_preflight.py",
+    "test_gate_reanchor.py",
+    "test_portable_security_sweeps.py",
+    "test_reanchor.py",
+    "test_security_capability_install.py",
+    "test_security_check.py",
+    "test_security_finding_confidentiality.py",
+    "test_security_leaf.py",
+    "test_security_lint.py",
+    "test_security_net.py",
+    "test_security_stack.py",
+    "test_security_verification.py",
+    "test_skills_security.py",
+    "test_web_hosting_security.py",
+})
+
+
+def test_the_manifest_still_names_exactly_the_reviewed_set() -> None:
+    """A member added or dropped alongside a plausible owner/reason passes
+    every check above, because each is differential against the live manifest
+    rather than against any fact outside it. Pinning the reviewed set here
+    means a future change to ``SECURITY_FAMILY``'s membership is a diff
+    against this line, not a manifest edit that passes on its own say-so.
+    """
+    assert set(_manifest().SECURITY_FAMILY) == _REVIEWED_MEMBERS
