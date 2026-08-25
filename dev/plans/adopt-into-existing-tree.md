@@ -216,3 +216,271 @@ never load-bearing. Nothing the accepted contract set out to achieve is lost.
 reads correctly with the sentence gone, and that no other line in
 `bootstrap/UPGRADE.md` depends on the removed one. A removal that leaves a
 dangling "as described above" is worse than the flag it deleted.
+
+## Plan review -- Claude Sonnet 5 (Internal, fresh context) -- 2026-08-25
+
+Reviewed commit: 86e49a34d2c2646d094620d5f5448ab7bbd48491
+Target: the complete plan -- Why, What (D1-D3), Approach (including "The D3
+collision" subsection), Verification (Boundary A/B, the five S2 mutations,
+edge cases), Risk, and the "Maintainer allowance -- D3 drops the
+recommendation" section
+Prior findings: none
+Assurance path: high-assurance (the source proposal's declared path; D1/D2
+write into the install contract, D1 is a scaffold/merge-engine surface)
+
+**Tier**: Internal
+**Model**: Claude Sonnet 5
+**Findings**: raised -- 4 notes, all non-blocking
+**Verdict**: No blocking findings. Every load-bearing design claim I
+re-measured against the real code held: the D1 step-ordering fix, the
+strict-predicate/helper-scope claim, D2's substituted-bytes comparison
+target, the three-row fallback-disposition table, and the D3 collision's
+factual basis (the `570fedb` build-table row, the subtraction sweep's own
+quoted falsifier) all confirmed exactly as stated. The four notes below are
+citation drift and prose-precision issues, each cheap to close and each
+backstopped by Boundary B's mandatory full run before anything ships --
+none of them let a wrong implementation pass silently.
+
+### Steelman
+
+* **D1's step ordering is real and matches the code it changes.**
+  `_cmd_adopt_module` (`upgrade.py:1358-1452`) today reads tokens from the
+  lockfile only (`:1387`), preflights `missing_required_tokens` before the
+  spec loop (`:1393-1402`, already correctly ordered), then the loop
+  (`:1408-1440`) writes destination files via `dst_abs.write_text` at `:1427`
+  before `_commit_lock_and_caches` at `:1444`. `_refuse_secret_tokens` is
+  **not called anywhere in `upgrade.py` today** (confirmed by
+  `grep -rn _refuse_secret_tokens bootstrap/_scaffold/` -- its one production
+  caller is `install.py:1667`), so the plan's step 3 is a new call site being
+  wired in, not a call being repositioned -- and the plan's diagram places it
+  correctly, before step 4's loop.
+* **The strict-predicate placement claim is correct on both halves I was
+  asked to check.** `_resolve_lock_profile_fields` (`upgrade.py:1064-1084`)
+  builds its token map with `if isinstance(k, str) and k in KNOWN_TOKENS and
+  v` -- no angle-bracket test anywhere in the function. `_cmd_init_lock`'s
+  actual guard is `placeholder_tokens = sorted(k for k, v in tokens.items()
+  if v.strip().startswith("<") and v.strip().endswith(">"))`, and the profile
+  template it writes (`_INIT_LOCK_TOKEN_PLACEHOLDERS` /
+  `_AXIS_PLACEHOLDERS`, `upgrade.py:1054-1061`) genuinely contains values
+  like `"<your project name>"` and `"<small|medium|large>"`. So "the helper
+  would hand the plan the narrower predicate by construction" is true, and
+  "the strict check lives in the adopt path itself" is the right call --
+  reused, the helper really would silently readmit the `<my package>`
+  regression. (The plan's specific line pin for this guard is off; see
+  Note 1.)
+* **D2's substitution claim is not asserted, it is measured.**
+  `claim-check.md`, `lifecycle-metrics.md` and `architecture_review_template.md`
+  are declared without `verbatim=True` in `_MODULE_MAPPINGS`
+  (`config.py:739-785`, `:1144-1145`; `InstallSpec.verbatim` defaults to
+  `False` at `config.py:664`), and each raw template genuinely carries a
+  `{{...}}` token (`{{claim_check_command}}`, `{{metrics_command}}`,
+  `{{project_name}}` -- confirmed by direct grep of the shipped templates).
+  `run_security_audit.py` is confirmed `verbatim=True`
+  (`config.py:1043-1044`), so the motivating example really can't
+  distinguish raw-vs-substituted comparison, exactly as the plan says.
+  Comparing against raw `theirs_b` would genuinely fire on every one of
+  those three mergeable specs on a clean install.
+* **The fallback-disposition table matches `_resolve_current_profile` as it
+  reads today.** Absent profile (`upgrade.py:235-236`) returns silently;
+  the parse-exception branch (`:237-253`) warns; the incomplete/invalid
+  branch (`missing or invalid or not axes`, `:255-259`) returns
+  **silently** today -- so the plan's "chosen: warn, then fall back" for
+  that row is correctly identified as the one behaviour change, not a
+  restatement of existing behaviour.
+* **The D3 collision's factual basis is real, not asserted.** `570fedb`
+  resolves to a real commit (`Build table complete: the three open calls
+  decided (Maintainer, 2026-08-25)`); its build table does carry `Lifecycle
+  CLI + planner (+ twins, tests) | remove` at
+  `dev/strategy/2026-08-21-claude-nimbleness-recovery.md:853`; and the
+  quoted falsifier `"no governing document references a tool this sweep
+  removes"` appears verbatim in `dev/proposals/2026-08-25-claude-
+  subtraction-sweep.md:56` and `:309`. The Maintainer allowance quotes
+  `"Drop the recommendation"` standalone and visually isolated, as the rule
+  requires.
+* **The five S2 mutations are sound and none is satisfiable by a circular
+  test.** Walking each: (1) delete-the-persist and (2) curly-brace-only
+  both have fixture-determined expectations independent of the code under
+  test. (3) is the exact shape of the External reviewer's own [A2] finding
+  (guard-not-really-wired-before-writes), reproduced correctly. (4)/(5),
+  the always-equal/always-unequal pair, is the minimum needed to pin a
+  boolean comparison -- one alone cannot distinguish "correct" from
+  "trivially satisfies this one test." And `KNOWN_TOKENS`
+  (`config.py:63-73`: `project_name`, `test_command`,
+  `claim_check_command`, `metrics_command`, `python_package`) genuinely
+  contains no name matching `_SECRET_TOKEN_RE`
+  (`password|passwd|secret|credential|token|key`), so the plan's "the
+  secret-token test must **arrange** its own known required token" is not
+  optional caution -- there is no real required token today that would
+  exercise that refusal branch, and `_MODULE_REQUIRED_TOKENS`
+  (`config.py:1268`) is a plain module-level dict a test can patch to
+  arrange one.
+
+### Findings
+
+**Note 1 -- the D1 predicate's line citation points at the wrong lines,
+though the claim it supports is correct.** The plan (and Revision 2 before
+it) cites `upgrade.py:1146-1148` for `_cmd_init_lock`'s angle-bracket guard.
+Those lines are actually `if not profile_path.is_file(): return
+_write_init_lock_profile_template(target)` / `try:` -- the "no committed
+profile" branch, not the placeholder check. The real guard is
+`placeholder_tokens = sorted(...)` at `upgrade.py:1158-1160`. The
+`:1058-1061` citation for the placeholder template is correct as given. Not
+blocking: I independently re-derived the same conclusion (helper lacks the
+guard; template does write `<...>`) straight from the code, so the design
+is right even though this particular pointer is stale -- but it is
+inherited into a plan an implementer will read literally, and a 12-line
+drift is enough to send someone looking at the wrong branch. Worth a
+one-line fix before implementation.
+
+**Note 2 -- "leaving the surrounding prose intact" (D3, option 3) is not
+literally true against the actual `UPGRADE.md` text, and the plan does not
+yet say what the corrected paragraph reads.** The live text
+(`bootstrap/UPGRADE.md:251-267`) is:
+
+> **What that means for your tree.** ... **every** review-required plan in
+> your tree is judged by the full schema from the moment you upgrade. Two
+> consequences:
+>
+> 1. Run `python tools/lifecycle_planner.py scan --include-archive`
+>    **before** you rely on the upgraded gate. It is read-only; it reports
+>    each non-conforming record, and when the problem is a heading that did
+>    not count as a pass it quotes that heading back to you rather than
+>    leaving you to guess which of the near-miss shapes you hit.
+> 2. A plan already past `open` whose review predates the schema will be
+>    reported. ...
+
+Deleting item 1's recommending sentence leaves "Two consequences:" false --
+there is now one -- and the numbered list needs renumbering either way.
+If item 1's *second* sentence ("It is read-only; it reports each
+non-conforming record...") survives the cut, "It" loses its antecedent,
+since the sentence naming the command is what "It" refers back to. I ran
+this exact check the allowance section itself asks for ("does the
+surrounding prose ... still read correctly with that sentence gone") and
+the literal answer is no -- not without also rewriting the lead-in
+("Two consequences:" -> "One consequence:" or folding to flowing prose)
+and either dropping or re-anchoring the "It is read-only" sentence. I found
+no other file or line depending on this passage (`grep -rn "Two
+consequences|consequences" bootstrap/UPGRADE.md` finds only this one
+occurrence; nothing anchors to it by name elsewhere in the tree). Not
+blocking under the C0 test -- this is a doc-legibility defect in Cairn's
+own `UPGRADE.md`, trivially correctable in the same commit, not damage
+reaching an adopter's tree -- but per the plan's own words, "worse than the
+flag it deleted" is exactly what shipping the naive deletion would produce,
+so the plan should carry the actual replacement text (or an explicit
+instruction to fold to prose) rather than "delete X, leave the rest," which
+this passage's shape does not support as written.
+
+**Note 3 -- the Boundary A / "Public paths -> tests" file list (inherited
+from Revision 2) misidentifies where `--adopt-module`'s real-CLI-entry-point
+tests live.** I read all three cited files:
+
+* `bootstrap/tests/test_upgrade_module.py` -- its own docstring says
+  "Stage 7 -- the extracted upgrade subsystem," and its four tests check
+  import direction, single-identity-across-facades, and that CLI entry
+  points stay out of the module. `_cmd_adopt_module` appears once, inside a
+  tuple of names checked for object identity (`:70`) -- there is no
+  behavioral or CLI-level adopt-module coverage in this file today.
+* `bootstrap/tests/test_module_merge_lockfile.py` -- its docstring is about
+  a different defect entirely (`run_module_merge_pass` /
+  `write_install_lockfile` divergence during `install_core`). `grep -c
+  "adopt"` returns 0 real hits (the only "adopt" substrings are inside the
+  word "adopter").
+* The actual CLI-level `--adopt-module` regression suite --
+  `class TestAdoptModule`, four tests exercised through the real
+  `s.main([..., "--adopt-module", ...])` entry point, including
+  `test_adopt_records_on_disk_content_not_template` (the exact
+  already-on-disk-and-customized scenario D2 is about) -- lives in
+  `bootstrap/tests/test_upgrade.py:1133-1203`, which appears in **none** of
+  the plan's Boundary A command or its "Public paths -> tests" mapping.
+  `test_profile_grammar.py`'s citation, by contrast, is accurate: it
+  already contains `TestResolveCurrentProfileIsAudible`
+  (`:79-155`), pinning exactly the fallback-disposition behavior the plan
+  changes.
+
+Not blocking: Boundary B is already pinned `full` (not a choice, per the
+plan's own Risk section), so `python -m pytest bootstrap/tests` runs
+`test_upgrade.py` regardless of this citation, and nothing here lets a
+regression ship silently. But as written, an implementer following
+Boundary A's scoped command literally would iterate without ever running
+the four pre-existing tests for the exact command being changed, and new
+CLI-level tests risk landing in a file whose own stated contract
+(Stage-7 layering) doesn't fit them. Worth naming `test_upgrade.py`
+(`TestAdoptModule`) explicitly in both the Boundary A command and the
+public-paths mapping before implementation starts.
+
+**Note 4 -- the Approach section's step 1 is looser than the "What" table's
+scoping, and a careless read could widen it.** The "What" table (D1 row)
+says "resolves required tokens from profile ∪ lockfile ... persists
+newly-resolved values" -- correctly scoped to the adopting module's
+required tokens, and to values that are new. The Approach diagram's step 1
+just says "resolve the candidate token map (profile ∪ lockfile, lockfile
+wins)," with no scoping word. `_resolve_lock_profile_fields` returns
+**every** `KNOWN_TOKENS` entry present in `profile.yml`, not just the
+tokens the module being adopted requires -- so a literal read of the
+Approach diagram alone could lead an implementer to merge the *entire*
+profile token map into `lock["tokens"]`, and to do it by assignment
+(`lock["tokens"] = candidate_map`) rather than update, which would also
+silently drop any previously-tracked token not present in this profile
+read. Both would still likely be caught by adjacent tests (existing specs'
+token substitution depends on tokens like `project_name` surviving), so
+this is not blocking, but the two sections should say the same thing in
+the same words -- "the currently-adopting module's required tokens,
+merged into the existing lockfile token map" -- rather than leaving the
+tighter scope to be inferred from a different section.
+
+<!-- claim-check-allow: dev/architecture_review.md -->
+
+### Coverage
+
+**Exercised** -- direct reads of `_cmd_adopt_module`
+(`upgrade.py:1358-1452`), `_resolve_lock_profile_fields` (`:1064-1084`),
+`_cmd_init_lock` (`:1128-1170`), `_resolve_current_profile` (`:216-260`),
+`_commit_lock_and_caches` (`:1275-1334`), `_superseded_surface_note`
+(`:1337-1355`); `_refuse_secret_tokens` / `_SECRET_TOKEN_RE`
+(`lockfile.py:121-259`) and its one production caller
+(`install.py:1667`); `KNOWN_TOKENS` / `_MODULE_REQUIRED_TOKENS` /
+`missing_required_tokens` / `_UNFILLED_TOKEN_VALUE`
+(`config.py:63-73`, `:1268`, `:1282-1327`) -- confirmed
+`missing_required_tokens` also lacks an angle-bracket test, a third
+location (besides `_resolve_lock_profile_fields`) with the narrower
+predicate; `_MODULE_MAPPINGS` entries and raw template bytes for
+`claim-check`, `lifecycle-metrics`, `architecture-review` and
+`python-security` (`config.py:737-1146`, plus the four template files
+directly); confirmed `dev/architecture_review.md` is simultaneously a spec
+destination (`config.py:1144-1145`) and a declared superseded surface for
+the same module name (`config.py:1209`), matching the plan's named edge
+case. Read Revision 2 in full (the operative contract) plus the Internal
+and External review rounds and both Responses that produced it, to confirm
+the plan's inherited claims (fallback table, D2 branch coverage, S1-S5)
+against their own history rather than against the plan's restatement
+alone. Read `bootstrap/UPGRADE.md:200-290` around the D3 line. Ran
+`CAIRN_SUITE_LEDGER=0 PYTHONDONTWRITEBYTECODE=1
+/Users/kendal30/conda_envs/lhm/bin/python3.13 -m pytest
+bootstrap/tests/test_upgrade_module.py
+bootstrap/tests/test_module_merge_lockfile.py
+bootstrap/tests/test_profile_grammar.py -q -p no:cacheprovider` --
+**67 passed**, exit 0, full output inspected (2 lines total, not just the
+tail) for a hidden `INTERNALERROR` -- none found. Confirmed the instrument
+before trusting it: all three files import their targets from
+`bootstrap._scaffold` directly (`from bootstrap._scaffold import upgrade as
+UP`, etc.), not from the `templates/skills/_lib` twin, so a mutation to the
+real engine would actually redden these tests rather than being masked by
+a stale copy. Ran `python scripts/claim_check.py
+dev/plans/adopt-into-existing-tree.md` -- clean (confirms the checker is a
+path/line-bounds tool only; it does not and cannot catch the semantic
+citation drift in Note 1 or Note 3, which is why this pass exists). Ran
+`tools/lifecycle_planner.py next` against the plan to confirm current
+state (`awaiting-plan-review`, structurally sound) before drafting this
+pass.
+
+**Not exercised** -- no code changes exist yet, so there is nothing to
+mutation-test; the five S2 mutations and the D2/edge-case fixtures are
+Boundary C's job once implementation lands. I did not attempt to reproduce
+the original adopter's tree or hand-edited lockfile. I did not check
+Windows filesystem semantics. I did not verify the sibling proposal
+(`2026-08-20-claude-scanner-claim-scope`)'s own status for the issue-#5
+closure dependency -- out of scope for a plan review of this proposal
+alone. I did not run the full suite (not requested, and a bare
+`python -m pytest bootstrap/tests` is refused by design) or touch
+`bootstrap/tests/_gate_manifest.py` or any fixture under
+`bootstrap/tests/fixtures/`.
