@@ -250,21 +250,14 @@ removed.
 
 **What that means for your tree.** Cairn's manifest enumerates *Cairn's* old
 records, not yours, so **every** review-required plan in your tree is judged by
-the full schema from the moment you upgrade. Two consequences:
-
-1. Run `python tools/lifecycle_planner.py scan --include-archive` **before** you
-   rely on the upgraded gate. It is read-only; it reports each non-conforming
-   record, and when the problem is a heading that did not count as a pass it
-   quotes that heading back to you rather than leaving you to guess which of
-   the near-miss shapes you hit.
-2. A plan already past `open` whose review predates the schema will be reported.
-   Append-only forbids editing that landed review, so the repair is a **new**
-   conforming pass appended to the plan (a re-read, by whoever performs it, with
-   the two attestation lines) — not a rewrite of the old one. If instead you
-   want your own pre-existing records enumerated the way Cairn's are, that is a
-   code change to a committed constant in your installed checker, and it shows
-   up as a code diff in review; it is deliberately not something a plan file can
-   ask for.
+the full schema from the moment you upgrade. The consequence: a plan already
+past `open` whose review predates the schema will be reported. Append-only
+forbids editing that landed review, so the repair is a **new** conforming pass
+appended to the plan (a re-read, by whoever performs it, with the two
+attestation lines) — not a rewrite of the old one. If instead you want your own
+pre-existing records enumerated the way Cairn's are, that is a code change to a
+committed constant in your installed checker, and it shows up as a code diff in
+review; it is deliberately not something a plan file can ask for.
 
 **What the gate does not do.** It checks that a record is *conformant*. It
 cannot establish that the declared review happened, that the named reviewer
