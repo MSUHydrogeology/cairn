@@ -600,9 +600,12 @@ Two consequences worth stating plainly:
 * **A plan whose surface or triggers call for security treatment**
   declares the obligation as `Plan review: required(Internal +
   Internal Security Review)` — a distinct obligation, satisfied only
-  by an appended `## Security review (Internal)` record, never by an
-  ordinary Internal pass. Full contract:
-  `doctrine/dual-review.md` > "Plan review is Internal, always".
+  by an appended `## Plan review` pass whose `**Obligation**:
+  Internal Security Review` line matches it, never by an ordinary
+  Internal pass and never by a record merely titled `## Security
+  review (...)` -- the heading text carries no mechanical weight.
+  Full contract: `doctrine/dual-review.md` > "Plan review is
+  Internal, always".
 
 ### When to use it
 

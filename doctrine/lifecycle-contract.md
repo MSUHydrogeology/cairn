@@ -153,8 +153,10 @@ type plan round is not a tier the checker recognizes as required. A
 plan whose surface calls for security treatment declares `Plan review:
 required(Internal + Internal Security Review)`, an obligation the
 checker reads as **two** distinct passes (`normalize_required_obligations`),
-satisfied only by an appended `## Security review (Internal)` record —
-an ordinary Internal pass against that declaration reports the
+satisfied only by a second `## Plan review` pass whose `**Obligation**:
+Internal Security Review` line matches it — never by a record headed
+`## Security review (...)`, which the checker does not read as a pass
+at all; an ordinary Internal pass against that declaration reports the
 obligation **unmet**. Code review's floor is unchanged and independent
 of this: **not the implementing agent**. A plan whose header still
 declares the retired external tier is warned, not silently rewritten;

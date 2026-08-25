@@ -105,9 +105,12 @@ Two boundaries this does **not** move:
   its own Security Review wherever it attaches — to a proposal, a
   plan, or code. A plan whose surface calls for one declares
   `Plan review: required(Internal + Internal Security Review)`,
-  satisfied only by an appended `## Security review (Internal)` record
-  from a fresh-context same-type session in the Security Review role,
-  never by an ordinary Internal pass.
+  satisfied only by an appended `## Plan review` pass whose
+  `**Obligation**: Internal Security Review` line matches it, authored
+  by a fresh-context same-type session in the Security Review role,
+  never by an ordinary Internal pass and never by a record headed
+  `## Security review (...)`, which the checker does not read as a
+  pass at all.
 
 The Maintainer may still *choose* to ask any additional reader —
 different agent type or human — for any artifact; that option

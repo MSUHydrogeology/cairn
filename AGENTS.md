@@ -131,9 +131,12 @@ lane's **proposal** review, where the design is still movable.
 implementing agent** — a same-type agent in an independent context
 clears it. A plan whose surface or triggers call for security
 treatment declares `Plan review: required(Internal + Internal Security
-Review)`, satisfied only by an appended `## Security review (Internal)`
-record from a fresh-context same-type session in the Security Review
-role — never by an ordinary Internal pass. A high-risk surface named
+Review)`, satisfied only by an appended `## Plan review` pass whose
+`**Obligation**: Internal Security Review` line matches it, authored
+by a fresh-context same-type session in the Security Review role —
+never by an ordinary Internal pass, and never by a record headed
+`## Security review (...)`, which the checker does not read as a pass
+at all. A high-risk surface named
 below still takes its own Security Review; that trigger is untouched
 by this routing, and the Maintainer may still choose to ask any
 additional reader for any artifact — a choice is not a tier. Contract

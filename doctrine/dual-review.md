@@ -207,18 +207,25 @@ never by tier.
 **A plan whose surface or triggers call for security treatment**
 declares `Plan review: required(Internal + Internal Security Review)`
 — a **distinct obligation**, not a lens annotation on the ordinary
-Internal tier. It is satisfied **only** by an appended `## Security
-review (Internal)` record, authored by a fresh-context same-agent-type
-session acting in the Security Review role (the role's high-capability
-floor and the security-review protocol, including its trust-boundary
-checklist, apply unchanged), and it is **not** satisfied by an
-ordinary Internal review record however clean: an ordinary Internal
-pass against a plan carrying this obligation reports it **unmet**;
-only the appended Security review record clears it. This reuses the
-`+` grammar `normalize_required_obligations` already reads as two
-distinct obligations and two distinct passes (`doctrine/plans.md` >
-"Normalizing the required tier") — no new parser branch is invented
-for it.
+Internal tier. It is satisfied **only** by an appended `## Plan
+review -- <reviewer> -- <date>` pass whose `**Obligation**: Internal
+Security Review` line matches it exactly, authored by a fresh-context
+same-agent-type session acting in the Security Review role (the
+role's high-capability floor and the security-review protocol,
+including its trust-boundary checklist, apply unchanged), and it is
+**not** satisfied by an ordinary Internal review record however
+clean: an ordinary Internal pass against a plan carrying this
+obligation reports it **unmet**; only the appended, obligation-bound
+pass clears it. **The heading text is not the binding.** `## Plan
+review` is the only heading `_pass_headings` recognizes as a pass at
+all; a record titled `## Security review (...)` instead carries no
+mechanical weight and is not even a record boundary for the parser
+-- the obligation is bound by the `**Obligation**:` field inside an
+ordinary Plan-review pass, never by what the heading calls itself.
+This reuses the `+` grammar `normalize_required_obligations` already
+reads as two distinct obligations and two distinct passes
+(`doctrine/plans.md` > "Normalizing the required tier") — no new
+parser branch is invented for it.
 
 **What survives this abolition, unmoved:**
 
