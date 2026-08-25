@@ -13,7 +13,7 @@ Do them simultaneously."*:
 "Relationship" section says so, and it is a strict subtraction from either
 baseline.
 
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**Internal**) — and under the rule this plan lands,
 that is the only tier there is. **Basis corrected at the fold**: the External
 floor was waived in `convergent-lifecycle`'s *own* Decision (`47315b6`), hours
