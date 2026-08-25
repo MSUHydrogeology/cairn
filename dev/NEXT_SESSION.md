@@ -6,6 +6,13 @@ current; this file is a hand-written orientation and may already be stale.*
 
 ## Where the project stands
 
+**Do not take a lifecycle tool's blessing as the reason to do something.** The
+checkers, the board, the transition gates — these are on the removal list. They
+are advisory and they are dying. A question like *"does this need another
+review?"* is answered by judgement about the work, not by whether a gate reads
+`[ok]`. This note was itself written once with a re-review step in it that
+nothing required.
+
 **Cairn spent this session removing its own process, and the removal is now the
 work.** The Maintainer's judgement, given repeatedly and plainly, was that the
 apparatus had become the bottleneck: *"This isn't nuclear launch software here,
@@ -33,8 +40,12 @@ revision, and awaits re-review.
      **This never shows up as a test failure**: `test_gate_manifest.py` only
      self-verifies a freshly-produced manifest and never diffs the committed
      fixture. Do not read a green suite as "no re-anchor needed."
-2. **`subtraction-sweep` re-review.** Both passes blocked; the revision answers
-   all seven findings. The two reviewers hold whether it clears.
+2. **`subtraction-sweep` — start C1. No re-review.** Both passes blocked, the
+   revision answers all seven findings, and that is the end of it. Do not send
+   it round again because a status field or a checker suggests it: the plan is
+   answered, deletion is recoverable, and the sweep is *dismantling* the
+   machinery that would ask. If a tool's gate disagrees, the tool is wrong —
+   it is on the removal list for exactly this reason.
 3. **`adopt-into-existing-tree` code review.** Floor is a same-type agent in an
    independent context, not the implementing agent.
 4. **35 unpushed commits.** Pushing is the Maintainer's, always.
