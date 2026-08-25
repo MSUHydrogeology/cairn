@@ -824,3 +824,190 @@ recorded decision trail, append-only on the artifacts that keep it,
 verification for shipped code, or editing history. The four-part core
 is the point of Cairn and stays. What goes is the mass around it — the
 armor agents grew because nothing in the rules ever told them to stop.
+
+## Review -- GPT 5.6-Sol (External) -- 2026-08-25 (second pass)
+
+**Summary for the Maintainer.** The first review's five corrections were folded
+faithfully, and the refocus remains the right direction. The new scope is not
+yet safe to execute as written. “The author decides if the action is
+reversible” tests the git change, not its consequences; a reversible commit can
+produce irreversible science, data, or adopter effects. The forced sister-repo
+upgrade also treats a manifest as proof of use, although one sister currently
+depends on ignored runtime state and both have project-owned routines. The new
+agent scorecard would reward the same finding production this note diagnoses,
+and the repeated-answer rule contradicts the note's three-recurrence threshold.
+The build estimate is now stale: accepted audit, board, classifier, screening,
+and migration work cannot coexist with “only 30 mandatory lines.” Reconcile one
+current build before demolition. And yes: stop calling the hard-to-undo check
+`C0`; that coordinate already failed its intended reader. Proceed with the
+already-reviewed lifecycle plan, but revise these additions before the
+subtraction and sister-repository migration.
+
+**Reviewed state**: `48644180a579645c56346630bc8f8a8f169fb3f3`
+
+**Target read**: the complete current strategy note, with special attention to
+the folded first review, the sister-repository widening, return-on-attention,
+and the three firm-literature additions. I also opened the current accepted
+proposals and ready implementation plan, inspected both sister repositories'
+tracked operational references and lockfiles, and checked the cited primary
+literature behind residual rights and prediction-versus-judgment.
+
+**Verdict**: **PROCEED WITH THE CONVERGENT-LIFECYCLE PLAN; REVISE BEFORE THE
+SUBTRACTION SWEEP OR SISTER-REPOSITORY MIGRATION.** The findings below narrow
+new authority and repair execution accounting; none restores External plan
+review, refusal tooling, or the retired lifecycle complex.
+
+### Findings, ranked by hard-to-undo damage
+
+#### NIM-EXT2-01 -- Residual rights must test consequences, not whether the edit can be reverted
+
+Lines 773--777 assign doctrine-silent decisions to the author “if the action is
+reversible.” That silently changes the stronger rule already accepted at lines
+568--575: if any participant sees hard-to-undo harm, only the Maintainer may
+dispose it. It also conflicts with lines 302--307, where science goes to the
+Maintainer every time. The new sentence asks about the action; the established
+tripwire asks what shipping could cause.
+
+**Concrete counterexample.** An author can revert a commit that changes a
+scientific default or runs a data migration. They cannot thereby recall
+published hydrographs, restore overwritten external data, or make an adopter's
+already-produced result disappear. Under the literal new sentence the *action*
+is reversible and the author owns the silence, even though its consequences
+are not.
+
+I opened the cited source rather than accepting the inference. Grossman and
+Hart's [1986 paper](https://www.journals.uchicago.edu/doi/10.1086/261404)
+supports allocating unspecified control rights and explicitly says a wrong
+allocation creates distortions; it does not select “author” using edit
+reversibility. The literature supports naming an owner, not this polarity.
+
+**Required correction.** Reuse one rule everywhere: *within already-authorized
+scope, where doctrine and Maintainer direction are silent, the author decides
+only when every plausible consequence of shipping is readily reversible; any
+participant's hard-to-undo answer latches upward; science always routes to the
+Maintainer.* This preserves residual ownership without opening a second,
+weaker route around the tripwire.
+
+#### NIM-EXT2-02 -- A lock manifest cannot guarantee that the sister repositories lose no necessary function
+
+Phase 5 says the manifest's sister-repository usage check is the
+“necessary-functionality guarantee” (lines 723--733). An install manifest can
+prove what Cairn placed and hash it. It cannot, by itself, observe operator
+habits, ignored state, external hooks, or project-owned routines.
+
+**Concrete probes.** `git grep` over the two sisters' live (non-archive)
+surfaces found direct operational calls, not merely installed inventory:
+both session skills invoke `tools/lifecycle.py`; `modflow_tools` invokes the
+compact board from both `AGENTS.md` and session-start; LHM's project-owned
+goodnight invokes `tools/intent.py whoami` and
+`scripts/foldback_export_scan.py`. `git check-ignore` also found that
+`modflow_tools/dev/.cairn/local-env.json` is both present and ignored. That
+active executable binding cannot appear in a tracked manifest scan. The two
+lockfiles also start from different Cairn versions (`0.3.0` and `0.2.0`), so
+one inferred migration is not evidence for the other.
+
+**Required correction.** Keep the no-deprecation, full-compliance decision, but
+make it sequential and independently green per sister. The per-repository map
+must combine: tracked command/reference discovery; installed-file provenance;
+ignored operational-state and hook discovery; project-owned routine review;
+positive probes for each retained/replaced command; and that repository's own
+native verification. Commit and verify one sister before starting the other.
+A static manifest row is evidence, never the guarantee.
+
+#### NIM-EXT2-03 -- The proposed agent scorecard recreates the finding-production incentive
+
+The labor-market table counts “whose findings survived, whose outcomes landed”
+and is used to allocate role seats (lines 631--654); lines 783--786 now make it
+load-bearing from day one. That turns the note's gauges into a score despite
+its Goodhart warning at lines 421--431. It also pays reviewers for producing
+accepted findings—the exact ratchet diagnosed at lines 127--131.
+
+**Concrete counterexample.** A reviewer assigned three difficult security
+changes can record ten surviving findings; one assigned ten already-clean doc
+changes can correctly record none. A raw table ranks the first as productive
+without measuring exposure, false positives, escaped defects, or task
+difficulty. Once seat allocation consults that number, agents have a natural
+reason to raise more findings and authors have a reason to choose easy work.
+
+The cited AI-economics result does not supply this mechanism. Agrawal, Gans and
+Goldfarb's [formal framing](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3112030)
+defines judgment as determining payoffs for action/state pairs and treats it as
+a complement to prediction. “Two matching answers become a default” and “a
+finding/outcome table screens agent quality” are Cairn design inferences, not
+results established by that paper.
+
+There is a second internal conflict: judgment capture proposes a standing
+default after two same-way answers (lines 778--782), while the anti-ratchet rule
+allows promotion to doctrine only after three independent recurrences (lines
+374--379). Two context-bound permissions are not necessarily one general rule;
+two approvals to push or scribe a Decision, for example, never become standing
+authority.
+
+**Required correction.** Honor the construction moratorium: defer the
+labor-market book until after Tier 2, then pilot it as contextual evidence, not
+a ranking—no composite score, show assignment class and denominator, and mark
+small/non-comparable samples. A repeated judgment may become a *candidate*
+only after three independent, materially equivalent cases; the Maintainer must
+approve its exact scope, exceptions, and sunset. Explicit authorizations and
+science/hard-to-undo judgments are never generalized.
+
+#### NIM-EXT2-04 -- The document no longer has one executable build account
+
+The folded corrections and later widening are individually sensible, but the
+older operative prose was not conformed. Three contradictory pairs are now
+simultaneously current:
+
+* Tier 2 parks the intent log (lines 353--355); the subtraction section says it
+  is critical coordination that stays (lines 750--759).
+* The minimal build says about 30 mandatory new lines and only the security
+  marker is mandatory code (lines 674--681); the same section now mandates an
+  audit reporter, a minimal board replacement, a committed classifier or
+  snapshot, sister-usage checks, and a standing screening book.
+* The four-move sequence begins by deciding two pending proposals (lines
+  701--706); both are accepted, and `lifecycle_planner.py board --compact`
+  reports their combined plan `ready-to-implement`.
+
+**Damage.** A deletion implementer following the early inventory can remove
+intent; one following the later carve-out keeps it. An implementer held to
+“~30 lines” must either omit accepted safeguards or disguise their real cost.
+This is how a large demolition becomes green while delivering only one of two
+contracts.
+
+**Required correction.** Because strategy notes are inline-revised, conform or
+strike the superseded statements. End with one authoritative build table:
+function, keep/replace/remove, repository, dependency order, estimated retained
+and new code, positive probe, and decision owner. Recalculate the 61k deletion
+and new-code figures from that table. Brevity is the objective; a stale
+30-line headline is not.
+
+#### NIM-EXT2-05 -- “Return” changed the objective but not the archive test
+
+Lines 435--440 correctly replace net-zero attention with positive return, yet
+the mechanics still call themselves “net-zero” at lines 449 and 462--463, and
+archive records only whether the promised outcome landed (lines 465--473). A
+landed outcome can cost far more attention than it was worth; the current line
+would record success without testing the new objective.
+
+**Concrete counterexample.** A week-long artifact can deliver a cosmetic wording
+improvement exactly as promised. “Outcome landed” is true; “worth more than the
+attention it cost” is false. The renamed objective and its evidence disagree.
+
+**Required correction.** Remove the surviving net-zero language and make the
+single archive line answer the actual test: `Return: positive | negative |
+unknown — <one-sentence comparison of realized outcome with attention spent>`.
+No prices, ledger, or score are needed.
+
+#### NIM-EXT2-06 -- Retire `C0` from the durable vocabulary
+
+The Maintainer's live question—“I don't know what that references”—is already a
+decisive comprehension falsifier. `rg -n '\bC0\b'` finds ten uses in this
+strategy and 36 across the strategy, accepted proposal, and ready plan. In this
+note it appears before a reader is given the underlying question and continues
+after the prose has a clear durable name for it.
+
+**Required correction.** In the current strategy and every governing output,
+call it the **hard-to-undo harm tripwire** or **irreversibility tripwire**. State
+the question where needed: *could shipping this cause harm that is hard to
+undo?* Historical proposal/review ledgers may retain `C0` as a coordinate, but
+the derived plan should translate it when naming what lands. Apply the same
+test to `C1`/`C7`: historical coordinates are not product vocabulary.
