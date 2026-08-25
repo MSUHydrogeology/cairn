@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-25
-**Status**: revising
+**Status**: awaiting-review
 **Lane**: deliberate — touches the install contract (named high-risk surface)
 and removes ~61k lines
 **Attention asked**: one External proposal review; one Decision (which also
@@ -246,3 +246,133 @@ non-substantive; the plain-language Security Review obligation in §5 is clear.
 be narrow: verify the reviewed per-file manifest and atomic commit partition,
 the single chosen claim-check contract, the convergent-plan fence, and the
 Security/AST ceremonies. The Maintainer decides whether to spend that pass.
+
+## Response + Revision 1 -- Claude -- 2026-08-25
+
+All four findings **accepted**; each was reproduced or source-verified before
+acceptance (`_SKILLS_MAPPINGS` at `config.py:586`, `_ALWAYS_ON_MAPPINGS` at
+`:689` and absent from `_ast_attest._UPDATE_ALLOWLIST`; `scan_targets()`
+deriving from the registries at `security_check.py:683-717`; 112 files
+carrying `claim-check-allow`; the convergent-lifecycle plan at
+`awaiting-code-review`).
+
+| finding | disposition |
+|---|---|
+| SSP-1 | **Accept.** The claim "the scaffold engine is not touched" was false for the accepted inventory — the registries publish what chunk 4 deletes. Withdrawn; replaced by atomic source+registry commits, the Security Review moved ahead of the first shipped-file removal, and the AST-baseline ceremony named (§4–5 below). |
+| SSP-2 | **Accept.** The inventory moves inside the reviewed material: the strategy basis is pinned by commit, the per-file manifest becomes a deliverable of the *plan* (checked at plan review), every chunk is a closed subset of it, and the convergent-lifecycle code-review fence is explicit (§1). |
+| SSP-3 | **Accept, and the design is now chosen** (author's call — implementation detail): `cairn-internal-ref-allow` retires into checker-internal knowledge of the doctrine-citation convention (this kills the repeated file-top boilerplate, which was the Maintainer's actual complaint); `claim-check-allow` survives as the sole, rare inline escape hatch per the accepted exemption-hygiene precedent; archives are excluded from bulk scans and labeled informational on direct invocation; a directive that matches nothing draws a stale-exemption warning. Four falsifiers pinned (§4). |
+| SSP-4 | **Accept.** Byte-identity checked the wrong property. Replaced by a set comparison — shipped verbatim Python surface vs `scan_targets()` — with a positive-control mutation, the release scanner after each registry commit, and the canonical full pair after the final install-contract commit (§5). |
+
+### Withdrawn / superseded commitments
+
+* *"The … scaffold engine … [is] not touched"* — false for the registries;
+  withdrawn (SSP-1). The engine's *logic* is untouched; its **registries are
+  edited under ceremony**.
+* The chunk 4 → chunk 5 ordering (delete sources, then fix the contract) —
+  superseded by atomic per-source commits (SSP-1).
+* The manifest as implementation Chunk 1 — superseded: it is plan-review
+  material (SSP-2).
+* *"checker-internal convention or one config"* — the undecided disjunction
+  is withdrawn; the design is chosen (SSP-3).
+* *"`security_check.py` byte-identical throughout"* as a coverage guarantee —
+  superseded by the set comparison (SSP-4).
+
+---
+
+## THE COMPLETE CURRENT CONTRACT (Revision 1)
+
+Supersedes the opened Proposal, Evidence, and Signals sections in full.
+Header fields and Origin stand, with one correction: **Touches** gains
+`bootstrap/_scaffold/config.py` (the three install registries) and the
+AST baseline. **Basis pin**: this contract executes the strategy note's
+build table **as of commit `570fedb`**; later note edits do not change this
+proposal's scope without a revision here.
+
+### 1. Fence, then manifest — nothing deletes before both
+
+No chunk of this proposal executes until the `convergent-lifecycle` plan's
+code review has cleared and any corrections from it are folded into the
+basis. The **per-file / per-function manifest** is authored *in the derived
+plan* and checked at its (Internal, security) plan review: every file, the
+property removed, its replacement or the explicit decision the property
+ends, its registry row, its twins and tests, and its commit grouping. Every
+implementation chunk is a closed subset of that reviewed inventory.
+
+### 2. The constitution rewrite
+
+As opened: `dev/agent_collaboration.md` to ~150 lines around the accepted
+lifecycle; `AGENTS.md` conformed; both templates to ~80. Falsifier: no
+governing document references a tool this sweep removes.
+
+### 3. The three small tools, before their predecessors die
+
+As opened: the warn-only audit reporter (hash-picked sample, `Return:` and
+`pending`), the ~100-line standalone board view, the gauge classifier with
+dated snapshot — each landing with its build-table probe passing.
+
+### 4. The removals — atomic with their registries (SSP-1), checkers de-scoped by the chosen design (SSP-3)
+
+Cairn-internal removals (transition lint, pilot ledgers, slot ratchet; the
+suite-run ledger, **whose accepted-scope allowance is granted by this
+proposal's Decision**) proceed in table order after §3's probes pass.
+**Every installed-source removal is one atomic commit** carrying: the source
+files, their owning registry rows in `bootstrap/_scaffold/config.py`, the
+fidelity/gate/`--manifest` consequences, lockfile and upgrade expectations,
+and the directly affected tests — with a **green fresh scaffold install**
+recorded per commit. Registry edits to `_SKILLS_MAPPINGS` and
+`_MODULE_MAPPINGS` use the AST runbook's self-service path under its
+one-change preconditions; **`_ALWAYS_ON_MAPPINGS` is not in the AST
+allowlist, so its edit is the Maintainer-run, dry-run-verified direct
+correction — a MAINTAINER-GATED step**. Foldback retires into "file a Cairn
+issue" (sister goodnights updated); onboarding removed; prose phase as
+opened. Claim/link checkers: the chosen design above, pinned by four
+falsifiers — a broken live path still fails; an archived artifact is
+excluded from bulk scans and labeled informational when invoked directly; a
+legitimate `claim-check-allow` still works; a directive matching nothing
+draws a stale warning (so an unused exemption cannot silently persist).
+Untouched: the intent system, board view, security stack, scaffold engine
+*logic*, and the `_resolve_interpreter` validator.
+
+### 5. The install-contract ceremony — before, not after (SSP-1, SSP-4)
+
+**The Security Review clears the exact registry-edit plan before the first
+installed-source removal lands.** The differential-oracle gate re-anchor
+(Maintainer-run) and the AST-baseline handling accompany the registry
+commits they belong to, not a later phase. Security coverage is proven by
+**set comparison, not byte identity**: after each registry commit, the
+shipped verbatim Python surface equals `scan_targets()`'s derivation, with a
+positive-control mutation (one unexpected shipped executable must fail the
+check) recorded once; the release scanner runs after each registry-removal
+commit; the canonical full suite and neutrality/redundancy pair run after
+the final install-contract commit.
+
+### 6. Sister migrations — as opened
+
+Sequential, each MAINTAINER-GATED: `modflow_tools`, then `lhm` after modflow
+is green; per-repo discovery beyond the manifest (tracked references,
+provenance, ignored state and hooks, project-owned routines), positive
+probes per retained/replaced command, native verification, Maintainer
+sign-off fires each. Retired modules removed from sister trees; nothing
+frozen.
+
+### Evidence / verification plan
+
+Per chunk: the build-table probe, run and recorded. Sweep-wide: the
+dangling-reference grep (instrument confirmed pre-change); suite green and
+re-timed per removal phase (target ≈ 2 minutes inner loop); §5's set
+comparison and ceremonies; prose through the de-scoped gates. This
+proposal's archive line states `Return:` against its header's attention
+balance.
+
+### Signals the change is wrong
+
+As opened, plus: a fresh scaffold install fails at any atomic
+source+registry commit — stop and restore, never patch forward; and any
+registry edit found outside its declared ceremony path.
+
+### Reviewer brief (round 2, narrow, if the Maintainer spends it)
+
+Verify closure only: the manifest-in-plan and atomic commit partition
+(SSP-1/-2), the single chosen claim-check contract and its four falsifiers
+(SSP-3), the fence on the convergent-lifecycle code review (SSP-2), and the
+set-comparison ceremony (SSP-4).
