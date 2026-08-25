@@ -1,7 +1,7 @@
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(**Internal** + **Internal Security Review**) — two passes, one per clause, each naming its clause in its own `**Obligation**:` line. The Internal pass reads the deletion manifest. **The Security Review is a single pass covering both security surfaces this plan touches** — the trust-root extraction (C1) and the registry-edit approach (C5/C6) — because both are decided here, in this document, and reviewing the same design twice is the ratchet this sweep removes. C1 and C4 are its *fences*, not additional reviews.
 **Last update**: 2026-08-25
 **Opened**: 2026-08-25
@@ -280,3 +280,256 @@ On archive: the measured-versus-estimated table above migrates to the strategy
 note as the record of what the sweep actually cost, and the three struck rows
 migrate with their revival conditions. The trust-root's new location updates
 `AGENTS.md`'s high-risk-surface list in C1, not at archive.
+
+## Plan review -- Claude Sonnet 5 -- 2026-08-25
+
+**Reviewed commit**: 7dc66a10fb668b54c67782cfd544139ead70b939
+**Target**: the complete plan (header through Lasting-truth migration),
+cross-checked against `tools/lifecycle.py` and its twin
+`templates/skills/_lib/lifecycle.py`, `templates/skills/session-start/SKILL.md`,
+`templates/skills/session-end/SKILL.md`, `bootstrap/_scaffold/config.py`
+(`_SKILLS_MAPPINGS`, `_ALWAYS_ON_MAPPINGS`), `bootstrap/security_check.py`'s
+`scan_targets()`, `bootstrap/tests/security_manifest.py`,
+`bootstrap/tests/_ast_attest.py`'s `_UPDATE_ALLOWLIST`,
+`bootstrap/tests/test_skills_security.py`, and
+`bootstrap/tests/test_lifecycle_brief.py`'s `TestInterpreterFence`, against the
+accepted source proposal's Revision 1 and its Decision.
+**Prior findings**: none
+**Assurance path**: high-assurance (inherited from the source proposal's
+header; the sweep touches the install contract and a named executable trust
+root)
+**Model**: Claude Sonnet 5
+**Tier**: Internal
+**Obligation**: Internal Security Review
+**Findings**: raised
+
+**Verdict: REVISE.** This pass covers both surfaces the plan declares for the
+Security Review -- the trust-root extraction (C1) and the registry-edit
+approach (C5/C6) -- per the plan's own framing that one pass covers both
+because both are decided in this document. Two blocking findings, and both
+are instances of the exact hazard this review was briefed to hunt: a
+security-relevant surface goes quiet rather than failing loud, in a way the
+plan's own line-count reconciliation cannot see.
+
+### Steelman
+
+* The trust-root line citations are exact. `_has_symlink_component` at
+  `tools/lifecycle.py:431`, `_probe_interpreter` at `:457`,
+  `_resolve_interpreter` at `:474`; the three call sites at `:307`, `:894`,
+  `:1395` all resolve to `_resolve_interpreter(...)` calls, confirmed by
+  direct read and grep. The twin (`templates/skills/_lib/lifecycle.py`) is
+  byte-identical to `tools/lifecycle.py` today (`diff` confirms), matching
+  the plan's framing that this is one duplicated pair, not two designs.
+* `_ALWAYS_ON_MAPPINGS` (`config.py:689-708`, confirmed exact) really is
+  absent from `_ast_attest._UPDATE_ALLOWLIST` (which holds only
+  `_MODULE_MAPPINGS`, `_SKILLS_MAPPINGS`, `_CORE_MAPPINGS`,
+  `install_onboarding` -- confirmed by reading the allowlist), so the plan's
+  MAINTAINER-GATED fence on that edit is placed correctly.
+* The gate-anchor and sister-migration fences are stated at the point that
+  binds (C8/C9, both MAINTAINER-ONLY / MAINTAINER-GATED); I found nothing
+  that routes around them. I did not move `refs/cairn/gate-anchor` or touch
+  any code or fixture.
+* C5's "tests needing rehoming" list is a real, useful catch -- I
+  independently confirmed `test_the_two_lifecycle_copies_are_byte_identical`
+  lives in `test_pilot_evidence.py:1173`, exactly as cited, and that
+  `TestVocabularyLoader`'s callers survive the removed span.
+
+### Finding 1 (blocking) -- C6 deletes the session-start/session-end orchestration mechanism, its only trust-root callers, and its dedicated security-gate suite, and the plan names none of it
+
+**What C6 actually deletes.** `tools/lifecycle.py` is 3,910 lines today; the
+plan's own double-counting arithmetic ("C5 removes ~1,440 lines from each
+side of the `lifecycle.py` twin pair and C6 then removes all 3,910 of each")
+states plainly that C6 removes the entire file, both copies, to zero. That
+file is not only "the CLI" in the abstract -- `cmd_session_start` (`:825`)
+and `cmd_session_end` (`:1332`) live inside it, and they are the **only** code
+path the two skills Cairn keeps unconditionally (`_SKILLS_MAPPINGS`, "install
+unconditionally, like core/") invoke:
+
+* `templates/skills/session-start/SKILL.md`, step 1: `` python
+  tools/lifecycle.py session-start `` -- described in the skill's own prose
+  as performing the read-only gather **and** "one idempotent write ... the
+  skills fan-out self-heal: it ensures every eligible, in-use symlink-tier
+  read-path ... points at the canonical `.agents/skills/` source ... never
+  clobbers a divergent target (it refuses or quarantines)."
+* `templates/skills/session-end/SKILL.md`, step 1: `` python
+  tools/lifecycle.py session-end $ARGUMENTS `` -- reflection scaffolding by
+  default, and under `--handoff` the fail-closed concurrent-handoff lock and
+  the work-intent-log prune, reached through `_do_full_handoff`
+  (`lifecycle.py:1395`) -- the **third** of the plan's own three named
+  `_resolve_interpreter` call sites.
+
+Neither SKILL.md file is named anywhere in the plan's Sequence, and neither is
+covered by C2 (whose scope is `AGENTS.md` / `dev/agent_collaboration.md` /
+the two proposal-and-plan templates, with a named, specific "known real hits"
+list that does not include either SKILL.md). After C6, both files still
+instruct an agent to run `python tools/lifecycle.py session-start` /
+`session-end` against a path that no longer exists.
+
+**The trust root's only callers disappear with the file that dies.** I
+grepped the tree for `_resolve_interpreter(` outside `tools/lifecycle.py` and
+its twin: the only other hits are in test files. The plan's own C1 chunk
+names exactly three call sites for repointing -- `:307` (inside
+`cmd_session_start`), `:894` and `:1395` (inside `_do_full_handoff`, called
+from `cmd_session_end`) -- and all three sit inside the very functions C6
+deletes. Nothing in the plan names what calls the C1-extracted module once
+C6 lands. An extraction with no surviving caller either ships dead code
+(contradicting the Maintainer's "move the interpreter trust root **as
+needed**" -- needed implies used), or, if a new caller gets invented during
+C6 implementation to fill the gap, that caller and its own subprocess-use
+pattern were never reviewed here -- defeating the point of gating C1 on this
+Security Review at all.
+
+**C1's own extraction scope misses a pinned fourth symbol.**
+`bootstrap/tests/test_lifecycle_brief.py`'s `TestInterpreterFence`
+(`:217-218`) names itself "Fence M3, asserted on both copies" -- the same
+fence `AGENTS.md`'s high-risk-surfaces entry describes -- and pins **four**
+symbols byte- and AST-digest-identical (`:119-143`): `_resolve_interpreter`,
+`_probe_interpreter`, `_warn_stale_once`, and `_REBIND_REMEDY` -- "the reader
+itself ..., its validation order classifier ..., its warning visibility ...,
+and the remedy text those warnings carry." `_REBIND_REMEDY`
+(`lifecycle.py:447-454`) sits inside the plan's cited `431-579` extraction
+range and would move correctly under a literal line-range lift.
+`_warn_stale_once` does **not** -- it is defined at `lifecycle.py:201`,
+outside the cited range, yet `_resolve_interpreter` calls it directly
+(`:561`) to emit the fallback-stale warning. The plan's C1 row names only
+`_resolve_interpreter` + `_has_symlink_component` + `_probe_interpreter`; it
+omits `_warn_stale_once` from the extraction's own stated scope, even though
+warning *visibility* is one of the exact properties `AGENTS.md` requires a
+Security Review to change, and the existing fence test already treats it as a
+fourth, independently-pinned member of the same protected surface. Left as
+scoped, the extraction either breaks loudly (an undefined-name error once
+`lifecycle.py` is gone -- better than silent, but still a defect a plan
+review exists to catch) or gets quietly reimplemented from scratch by
+whoever notices, with no digest to check it against.
+
+**The security-gate suite for exactly this surface goes silent, not red.**
+`bootstrap/tests/test_skills_security.py` (418 lines) is a member of
+`bootstrap/tests/security_manifest.py`'s `SECURITY_FAMILY` (`:104-108`),
+described there in the manifest's own words as covering "the skills fan-out
+symlink self-heal, which writes into the adopter's tree." It loads
+`templates/skills/_lib/lifecycle.py` directly (`LIFECYCLE_SRC`, `:44`) and
+tests exactly the surface above: content-scan over the canonical and
+installed CLI/SKILL.md files, no-network-import in the CLI source,
+`lifecycle.main(["session-start"])` opens no socket, three independent
+anti-forgery oracles against a hostile artifact name forging an orientation
+line, path-containment for the reflection write, per-artifact lockfile-hash
+integrity, and a generated-output leak check. Its own guard is `pytestmark =
+pytest.mark.skipif(not LIFECYCLE_SRC.exists(), reason="templates/skills not
+available")` (`:48-50`). `test_lifecycle_brief.py`'s `TestInterpreterFence`
+carries the identical guard pattern (`not (MODULE_PATH.exists() and
+PLANNER_PATH.exists())`, `:68-71`). Once C6 deletes both copies of
+`lifecycle.py`, **every one of these checks disappears by skipping, not by
+failing and not by a line-count drop** -- the plan's own Verification
+section's falling-test-count reconciliation ("An unexplained drop is a
+defect, not a success") cannot catch this, because a skip does not change the
+collected line count, only the outcome. Neither file is named anywhere in
+the plan: not in the Sequence, not in "Tests needing rehoming, not deletion"
+(which names four specific, narrower items and stops), not in the acceptance
+criteria.
+
+**This is an undeclared scope reduction, not just a gap.** The plan's own
+"Not touched" list omits session-start/session-end orchestration by silence
+rather than by naming it kept, or struck with a revival condition, unlike the
+three items the plan does handle that way ("slot ratchet," "attic notes," the
+third directive family). `AGENTS.md`'s own rule is explicit: "Removal counts
+as a deviation, in both directions ... dropping an outcome the accepted
+artifact committed to is a deviation exactly as adding one is ... a reviewer
+cannot create that authority by calling the remainder out of scope." The
+accepted proposal's Revision 1 §4 says only "onboarding removed; prose phase
+as opened" for what order-5 touches beyond the CLI/planner/twins/tests it
+names, and never scopes out session-start/session-end's mechanized
+orchestration, its self-heal write, or its dedicated security tests.
+Silently losing all three needs the Maintainer's explicit allowance under
+this project's own rule, not a plan review pass.
+
+**Falsifier, if the intended answer is "the SKILL.md files get rewritten in
+some later, unnamed step":** name the chunk, and give the replacement command
+its own registry-row and manifest bookkeeping (SKILL.md's `dst` is already a
+`_SKILLS_MAPPINGS` row, so changing what it tells an agent to run is a
+routine edit, not a deletion, but it still needs a named home in the sequence
+and its own security coverage, given `test_skills_security.py` exists
+specifically because this surface writes into the adopter's tree). If the
+intended answer is instead "session-start/session-end lose their mechanized
+gather and self-heal, and an agent does it by hand" -- that is a real,
+larger reduction than any of the three the plan already discloses, and it
+needs the same explicit-allowance treatment those three got, not silence.
+
+### Finding 2 (blocking) -- the accepted set-comparison mechanics for C5/C6 are named but not carried into the plan's own acceptance criteria
+
+The Decision's accepted terms state plainly: "security coverage proven by set
+comparison rather than byte identity." The accepted proposal's Revision 1 §5
+-- the material the Decision approved -- gave that phrase two concrete,
+falsifiable components beyond the phrase itself: (a) a **positive-control
+mutation**, "one unexpected shipped executable must fail the check," recorded
+once; and (b) "the release scanner runs after each registry-removal commit."
+`bootstrap/security_check.py`'s `scan_targets()` (`:683-755`, confirmed by
+direct read) derives its scanned surface from `_MODULE_MAPPINGS`,
+`_ALWAYS_ON_MAPPINGS`, and `install_manifest(modules=None)` -- exactly the
+registries C5/C6 edit -- so a registry-row deletion that silently narrows
+this union is precisely the failure mode SSP-4 (the External review)
+identified and the Decision accepted the fix for.
+
+The plan carries forward only the bare phrase "set comparison, not byte
+identity," three times (`:193`, `:245`, `:273`), with no positive-control
+mutation step and no per-registry-commit release-scan requirement anywhere in
+C5 or C6's acceptance criteria (which say only "suite green after each ... a
+fresh scaffold is recorded green per commit"). "Suite green" is not the same
+falsifier as "one unexpected shipped executable must fail the check" -- a
+suite can stay green while `scan_targets()`'s derivation has quietly shrunk,
+which is the exact scenario SSP-4 demonstrated was possible with byte-identity
+checks and the reason set comparison was chosen at all. Since "every
+implementation chunk is a closed subset of that reviewed inventory" (Revision
+1 §1) and the Decision's accepted terms include this mechanism by name,
+dropping the positive-control mutation and the per-commit cadence without
+flagging it is a narrowing of a Decision-approved commitment, and needs the
+same explicit-allowance treatment as any other accepted-scope reduction, not
+a silent restatement of the headline phrase.
+
+**Falsifier, if this is intentional:** name where in Boundary A/B/C or the
+C5/C6 acceptance criteria the positive-control mutation and the
+per-registry-commit release scan actually live; I did not find them, and
+their absence is exactly the kind of thing that reads as prudence at review
+time and can never be shown wrong, because the version with them is never
+built.
+
+### What I could not reach
+
+* I did not execute anything -- no test run, no scan, no scaffold install;
+  the plan has no implementation yet to run against, and I was instructed to
+  change no code or fixture.
+* I did not independently re-derive the "36,332 across 15 files" / "11
+  tests" figure for C6. The 15-files arithmetic is *consistent* with
+  `lifecycle.py` + twin + `lifecycle_planner.py` + twin (20,526 lines) plus
+  11 test files, but the closest 11-file combination of the obvious
+  candidates I tried (every test file that imports `lifecycle.py` or
+  `lifecycle_planner.py`, minus `test_lifecycle_metrics_events.py`, which
+  belongs to the untouched `lifecycle-metrics` tool) sums to 14,460, about
+  1,300 lines short of the 15,806 the arithmetic implies. I flag this as
+  unresolved arithmetic, not a security finding -- the deletion manifest's
+  completeness is the Internal pass's mandate, and I did not want to
+  duplicate that reconciliation without also being able to close it.
+* I did not review C2 through C9 end to end for non-security concerns (prose
+  targets, the claim-check design, sister-migration discovery) -- out of this
+  pass's scope by the plan's own framing.
+
+### Coverage
+
+**Covered:** `tools/lifecycle.py` and `templates/skills/_lib/lifecycle.py` in
+full (diff-confirmed byte-identical); every line citation in this plan's C1
+row and in my review brief, verified against the file; both SKILL.md files in
+full; `bootstrap/_scaffold/config.py`'s `_SKILLS_MAPPINGS` (`:586-592`) and
+`_ALWAYS_ON_MAPPINGS` (`:689-708`, exact); `bootstrap/tests/_ast_attest.py`'s
+`_UPDATE_ALLOWLIST`; `bootstrap/security_check.py`'s `scan_targets()`
+(`:683-755`); `bootstrap/tests/security_manifest.py` in full;
+`bootstrap/tests/test_skills_security.py` (header plus the tests cited
+above); `bootstrap/tests/test_lifecycle_brief.py`'s `TestInterpreterFence`
+class and its header; the accepted source proposal's Revision 1 §§1, 4, 5 and
+the Decision.
+
+**Not covered / low confidence:** the exact byte accounting behind "36,332
+across 15 files" (see above); whether `bootstrap/tests/test_lifecycle_failsafe.py`
+(538 lines, also loads `templates/skills/_lib/lifecycle.py` behind an
+identical `skipif` guard, also unnamed in the plan) is intended as part of
+C6's "11 tests" or is a further, unnamed instance of the same gap -- I read
+its header but not its full body; the C7 claim-check design and C9
+sister-migration mechanics, out of scope for this pass.
