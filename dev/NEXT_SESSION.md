@@ -1,66 +1,95 @@
 # Next session
 
-*Rewritten from scratch at the 2026-08-19 goodnight. Read
+*Rewritten from scratch at the 2026-08-25 goodnight. Read
 `python tools/lifecycle_planner.py board --compact` first — it is derived and
 current; this file is a hand-written orientation and may already be stale.*
 
 ## Where the project stands
 
-**`ceremony-as-code` is done and archived.** The re-anchor ceremony is now one
-command the Maintainer runs from a launcher an independent review produces — no
-agent generating a script, retyping a digest, or improvising a reader. It was
-not merely implemented but **performed**: the trust root moved `089a9db` →
-`5f992736`, published atomically, and the roster now names a single dedicated
-ceremony key (`SHA256:8R549gtP…`), verified end to end.
+**Cairn spent this session removing its own process, and the removal is now the
+work.** The Maintainer's judgement, given repeatedly and plainly, was that the
+apparatus had become the bottleneck: *"This isn't nuclear launch software here,
+shipping a bug is okay"* and *"they are too onerous and will ALWAYS be
+circumvented."* Four things landed on that basis — the metrics module stopped
+doing enforcement, event blocks were retired, `convergent-lifecycle` +
+`retire-external-plan-review` shipped together, and the subtraction sweep now
+has a reviewed plan.
 
-**No live plans.** Three accepted proposals sit terminal on the board; two of
-them want plans (below).
+**Two plans are live.** `adopt-into-existing-tree` is implemented and awaits
+code review. `subtraction-sweep` has been through two blocking reviews and one
+revision, and awaits re-review.
 
 ## Start here
 
-1. **5 unpushed commits** (`d091cdd`..`2c9cc57`). Pushing is the Maintainer's.
-   `d091cdd` changes `bootstrap/reanchor.sh`, a closure member, so it is **not
-   covered by the current anchor** — the next re-anchor needs a fresh M2, as any
-   closure change would.
-2. **Two accepted proposals await plans**: `2026-08-19-claude-full-suite-interception`
-   (a conftest guard refusing collections spanning >40 test files) and
-   `2026-08-19-claude-suite-run-diagnostics` (a JSONL cost ledger). Both declare
-   `Plan review: required(Internal)`.
-3. **`dev/PLANNING.md` carries three `[SEC]` rows filed 2026-08-19** — the
-   lockfile's missing regeneration procedure, M2's review/produce conflation,
-   and the lasting-truth attestation drift (prose clarified; deliberately not
-   mechanised).
+1. **Two Maintainer-run ceremonies, both derived and neither performed.** These
+   gate nothing else today, but they are stale until done:
+   * **AST baseline** — 4 CHANGED symbols from `adopt-into-existing-tree`:
+     `_cmd_adopt_module`, `_compute_upgrade`, `_superseded_surface_note`,
+     `cmd_upgrade`. Digests are in that plan's `## Implementation verification`.
+     None is in `_UPDATE_ALLOWLIST`, so this is the dry-run-verified direct
+     correction, per `bootstrap/AST_BASELINE_RUNBOOK.md`.
+   * **Gate manifest** — `bootstrap/tests/test_upgrade.py` and
+     `test_profile_grammar.py` now differ from their recorded sha256.
+     **This never shows up as a test failure**: `test_gate_manifest.py` only
+     self-verifies a freshly-produced manifest and never diffs the committed
+     fixture. Do not read a green suite as "no re-anchor needed."
+2. **`subtraction-sweep` re-review.** Both passes blocked; the revision answers
+   all seven findings. The two reviewers hold whether it clears.
+3. **`adopt-into-existing-tree` code review.** Floor is a same-type agent in an
+   independent context, not the implementing agent.
+4. **35 unpushed commits.** Pushing is the Maintainer's, always.
+
+## The sweep, in one place
+
+Nine chunks, `awaiting-plan-review`. **C1 is the load-bearing one and must land
+before C6** — it extracts a ~700-line-per-side *session kernel* from
+`tools/lifecycle.py`: the interpreter trust root, `_warn_stale_once`,
+`_heal_skills_fanout`, and both session commands. C6 deletes that file, and the
+kept `session-start` / `session-end` SKILL.md files invoke it **by name**.
+
+Net removal is **~51,000**, not the 61,000 headline — the estimates were wrong
+on every row, the order-4/order-5 boundary double-counts ~4,300 lines, and the
+surviving kernel plus ~1,500 lines of repointed tests are not removals at all.
+
+Three build-table rows are **struck** because they name nothing in the tree
+("slot ratchet", "attic notes"), or were never addressed by the accepted design
+(`link-check-allow`, folded in with its own falsifiers). Each carries the
+condition that revives it.
 
 ## What this session learned that is worth not relearning
 
-**The mechanism held; the guidance did not.** The ceremony took six attempts and
-four stalls were the assisting agent's instructions rather than the code — a
-placeholder taken literally, a stage-1 rule applied at stage 2 where the answer
-is opposite, a values file naming the new key when a rollover must sign with the
-old, and stage 1 printing a stage-2 command that routed around a security
-property. **Tests that drive commands directly cannot see this class**; two
-External Security reviews and a code review passed over it.
+**A membership claim cannot be verified against the list under test.** The sweep
+manifest was checked by `wc -l` over its own file list: the sum was right and
+the set was wrong — one file marked for deletion tests a module the sweep keeps,
+and six coupled files were missing. This is the identical self-comparing-oracle
+defect measured on the security manifest three days earlier, reproduced by
+someone who knew about it. **For membership, the instrument must be something
+other than the list.**
 
-**A summary is not the thing.** Three separate agents spent the day acting on
-descriptions instead of measurements: a truncated pytest repr read as a result, a
-count kept without its failure identities, a convention known by name rather than
-by form, a baseline run under the wrong interpreter. Re-derive; do not carry a
-figure forward. The AST runbook says this explicitly and was cited by people
-doing the opposite.
+**A `skipif` guard hides the deletion it was written to survive.** The tests
+covering the session kernel load `lifecycle.py` behind `pytest.mark.skipif`, so
+deleting the file makes them *skip, not fail*. A falling-test-count check reads
+a skip as neither pass nor failure. Any deletion sweep needs its repointed tests
+shown **failing** against a tree without the target before they count.
 
-**Verify in an isolated worktree.** Concurrent sessions hold uncommitted edits in
-the shared tree. `test_check_runs_against_the_live_repo_and_reports` always fails
-in a plain clone — a clone has no `refs/cairn/gate-anchor`.
+**A passing test is not evidence that a ceremony is unnecessary.** Both
+re-anchor fences were predicted wrong this session — first too few symbols, then
+"no gate re-anchor needed" on the strength of a green gate suite that never
+checks the property. Check what the test actually compares.
 
-**Canonical interpreter is `/Users/kendal30/conda_envs/lhm/bin/python3.13`.**
-Running the suite under the system `python` (3.12) produces ~40 spurious
-failures.
+**`--root` defaults are not repo roots.** Two false regressions were nearly
+recorded here from running a *template* copy of a tool from the wrong directory.
+Both times the correct evidence already existed in the goodnight run's own
+output.
 
-## Open, not urgent
+## Open threads
 
-* `dev/measurement/tag-pass-dispositions.md:56` still calls `ceremony-as-code`
-  an active plan. Another session's record to correct.
-* The `_has_symlink_component` fence-coverage gap: the interpreter-binding pin
-  covers the caller, not the callee implementing symlink-freedom.
-* Neutrality gate: **86** pre-existing FAILs, none in ceremony surfaces.
-  Redundancy is clean.
+* `2026-08-20-claude-adopter-path-consolidation` — `awaiting-review`, untouched
+  this session.
+* `portable-sweeps-cannot-run` and `scanner-claim-scope` — accepted, terminal,
+  no plans yet.
+* `dev/measurement/collision_log.md` is untracked and unclaimed; it predates
+  this session and no intent covers it.
+* Fold-back: both sisters' ledgers are drained (backlog reads 0). `lhm` #59 went
+  upstream as issue #18 with its **export affirmation deliberately unsigned** —
+  that signature is the Maintainer's and is still outstanding.

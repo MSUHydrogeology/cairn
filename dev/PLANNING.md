@@ -124,9 +124,23 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
-* **[TOOL, URGENT] `dev/plans/` corpus-wide metrics extraction is currently
+* **[TOOL, URGENT] ~~`dev/plans/` corpus-wide metrics extraction is currently
   broken -- `lifecycle_metrics.py plans` exits 3 (`INCOMPLETE`) against the
-  live tree** *(filed 2026-08-21, from `metrics-events-not-prose`'s code
+  live tree~~ -- CLOSED 2026-08-25.** The 2026-08-25 goodnight run walked the
+  whole corpus clean: `dev/measurement/snapshots/2026-08-25-1.csv`, **120 rows,
+  71 proposals + 49 plans**, exit 0 -- every plan file in the tree, none
+  refused. The `cairn-event-v1` cutoff that caused the `INCOMPLETE` no longer
+  applies: `retire-event-blocks` removed the event machinery this row depended
+  on, so the unreconcilable transition it describes cannot arise. **No
+  Maintainer decision is needed** -- neither of the two options below (accept a
+  permanently-`INCOMPLETE` walk, or build a grandfather list) has anything left
+  to decide. **Note the reproduction command below is wrong and always was:**
+  running the *template* copy refuses by design ("no planner installed
+  alongside"), and `--root` defaults to the script's own directory. Use the
+  self-hosted tool from the repo root. The original text is kept below for the
+  record.
+
+  ~~Original finding:~~ *(filed 2026-08-21, from `metrics-events-not-prose`'s code
   review, CR1)* -- `dev/plans/metrics-events-not-prose.md`'s own commit
   `822cf903` flipped its header `**Status**` from `implementing` to
   `awaiting-code-review` after this plan's Chunk 6 established the
