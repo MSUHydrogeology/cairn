@@ -533,3 +533,314 @@ identical `skipif` guard, also unnamed in the plan) is intended as part of
 C6's "11 tests" or is a further, unnamed instance of the same gap -- I read
 its header but not its full body; the C7 claim-check design and C9
 sister-migration mechanics, out of scope for this pass.
+
+## Plan review -- Claude Sonnet 5 (Internal, fresh context) -- 2026-08-25
+
+**Reviewed commit**: 7dc66a10fb668b54c67782cfd544139ead70b939
+**Target**: the complete plan (header through "Lasting-truth migration"),
+cross-checked against `tools/lifecycle.py` and its twin
+`templates/skills/_lib/lifecycle.py`; `bootstrap/tests/conftest.py`;
+`tools/suite_cost.py`; `bootstrap/tests/test_suite_ledger.py`; all nine
+`bootstrap/tests/test_lifecycle_*.py` files plus `test_pilot_evidence.py`,
+`test_byline_identity.py`, `test_doctrine_vocabulary_drift.py`,
+`test_scope_reduction_trap.py`, `test_skills_self_heal.py`;
+`templates/modules/default-on/lifecycle_metrics.py` and its
+`_lifecycle_metrics/` engine package; `bootstrap/_scaffold/config.py`;
+`bootstrap/tests/_ast_attest.py`; both `session-start`/`session-end`
+`SKILL.md` pairs; against the accepted source proposal's Revision 1 and its
+Decision.
+**Prior findings**: the `## Plan review -- Claude Sonnet 5 -- 2026-08-25`
+Security Review pass immediately above this one. I reached the findings below
+independently -- the deletion-manifest trace in Finding 1 was already
+complete before I read that section -- and note the overlap and the division
+of labor explicitly rather than re-deriving or restating its analysis.
+**Assurance path**: high-assurance (inherited from the source proposal's
+header; the sweep touches the install contract and deletes ~55k lines)
+
+**Obligation**: Internal
+**Tier**: Internal
+**Model**: Claude Sonnet 5
+**Findings**: raised -- 2 blocking, 3 non-blocking notes
+
+**Verdict: REVISE.** My mandate is the deletion manifest itself: "every file
+... authored in the derived plan," per the accepted proposal's Revision 1 §1,
+checked at this review because it is "the last point at which the deletion
+inventory is inspectable while the thing being deleted still exists" (the
+Decision). Both blocking findings below are failures of that mandate rather
+than of any one chunk's design: a load-bearing production dependency the
+manifest never names (converging, from the manifest side, on the same fact
+the concurrent Security Review pass found from the security side), and two
+removal rows -- the suite-run ledger (C5) and the whole of C6's order-5 row
+-- that give only aggregate totals rather than the file-by-file account the
+Decision required.
+
+### Steelman
+
+* C1's citations are exact: `_has_symlink_component` at `tools/lifecycle.py:431`,
+  `_probe_interpreter` at `:457`, `_resolve_interpreter` at `:474`, all inside
+  the cited `431-579` range; the three call sites `:307`, `:894`, `:1395` all
+  resolve to `_resolve_interpreter(...)` calls, confirmed by direct grep.
+* The transition-lint file/line trio in C5 is exact: `scripts/transition_lint.py`
+  is 923 lines, `scripts/transition_lint_whitelist.py` is 46,
+  `bootstrap/tests/test_transition_lint.py` is 1,486 -- all three match the
+  plan's citation to the line.
+* `_ALWAYS_ON_MAPPINGS` at `config.py:689-708` (exact) really is absent from
+  `_ast_attest._UPDATE_ALLOWLIST` (`:142-147`, which holds only
+  `_MODULE_MAPPINGS`, `_SKILLS_MAPPINGS`, `_CORE_MAPPINGS`,
+  `install_onboarding`) -- the MAINTAINER-GATED fence is placed correctly.
+* The three struck rows are correctly disposed. I ran the grep myself (see
+  "Verified negatives" below) after first confirming the instrument on a
+  known-present pattern, per `AGENTS.md`'s "confirm the instrument before
+  trusting an absence" -- "slot ratchet" and "attic notes pointing into git
+  history" both return zero identifier/file hits beyond the plan's own prose
+  and the two known upstream mentions (proposal §4, strategy note), and
+  `link-check-allow` is confirmed real, live, and genuinely unaddressed by
+  the accepted claim/link de-scope design.
+* The order-4/order-5 double-count arithmetic is internally consistent:
+  `2 x ~1,440 (the pilot/monitoring span, both copies) + 1,437
+  (test_pilot_evidence.py, counted once under each row) = ~4,317`, matching
+  the plan's stated "~4,300."
+* The first two items of "Tests needing rehoming, not deletion"
+  (`TestVocabularyLoader`, the twin-identity test) are real: I confirmed
+  `_declared_assurance`/`_build_closeout`/`cmd_review_brief` all sit outside
+  C5's pilot/monitoring span and all call into the vocabulary loader, and
+  that `test_the_two_lifecycle_copies_are_byte_identical` is exactly where
+  the plan cites it (`test_pilot_evidence.py:1173`).
+
+### Finding 1 (blocking) -- the manifest omits the one dependency that makes C6 an outage, not a deletion; independently reached, and it converges with the concurrent Security Review's Finding 1
+
+Before reading the Security Review section above, I traced C1's own three
+call-site citations (`:307`, `:894`, `:1395`) into their enclosing functions
+and found: `:307` sits inside an early helper, `:894` sits inside
+`cmd_session_start` (`tools/lifecycle.py:825-911`), and `:1395` sits inside
+`_do_full_handoff`, called from `cmd_session_end` (`:1332-1446`). Both
+`cmd_session_start` and `cmd_session_end` are the **entire mechanized
+content** of `.agents/skills/session-start/SKILL.md` step 1
+(`python tools/lifecycle.py session-start`, `:19`) and
+`.agents/skills/session-end/SKILL.md` step 1
+(`python tools/lifecycle.py session-end $ARGUMENTS`, `:19`) -- I confirmed
+both shipped twins (`templates/skills/session-start/SKILL.md`,
+`templates/skills/session-end/SKILL.md`) are byte-identical to the
+self-hosted copies (`diff -q`, no output). `cmd_session_start` also performs
+`_heal_skills_fanout` (defined `:785`, called `:850`) -- the mechanism this
+very harness's own `CLAUDE.md` names as the reason "session-start self-heals
+a `.claude/skills` symlink so this harness surfaces them as slash commands."
+C6 removes `tools/lifecycle.py` and its twin to zero (the plan's own
+double-count arithmetic says so: "C6 ... removes all 3,910 of each"), and I
+grepped the plan, the source proposal, and the strategy note's build table
+for `session-start`, `session-end` as a lifecycle-CLI subcommand, and
+`_heal_skills_fanout`: **zero hits** in any of the three. Neither C2 (whose
+touched-file list is `AGENTS.md`, `dev/agent_collaboration.md`, both
+`_template.md` files, and their four shipped twins -- not either `SKILL.md`)
+nor C3 (three small tools, none of which orchestrate session-start/end or
+perform the fan-out self-heal) nor any other chunk names a replacement.
+
+I will not re-derive the Security Review pass's fuller treatment of this same
+fact (the missing `_warn_stale_once` fourth trust-root symbol, and
+`test_skills_security.py`/`security_manifest.py`'s `SECURITY_FAMILY` going
+silent-by-skip rather than red) -- it is thorough and I have nothing to add
+to it on the security axis. What I add, from the manifest side: this is not
+an isolated corner of `lifecycle.py`. `cmd_session_end` is also the one
+production caller of the foldback-surfacing check the plan's own C6 row
+deletes elsewhere (`bootstrap/tests/test_lifecycle_cli.py:379-420`,
+`test_handoff_surfaces_foldback_candidates` /
+`test_session_end_without_handoff_does_NOT_surface_foldback`, both exercising
+`cmd_session_end`'s interaction with `scripts/foldback_suggest.py`) -- so the
+session-start/session-end orchestration is entangled with at least two other
+order-4/5 removals, not a self-contained thing a later chunk could patch in
+isolation without re-deriving how it touches the rest of the sweep. Both
+reviews independently landing on the same fact from different angles is not
+redundant coverage; it is confirmation that this is a real hole and not an
+artifact of either review's framing. **Same disposition as the Security
+Review's Finding 1**: name the chunk that keeps or replaces this mechanism,
+with its own registry-row/manifest bookkeeping, or record the Maintainer's
+explicit allowance for losing it -- silence is not available under
+`AGENTS.md`'s scope-floor rule.
+
+### Finding 2 (blocking) -- the per-file manifest Revision 1 §1 requires is missing for the suite-run ledger (C5) and given only as an aggregate total for the whole of C6's order-5 row
+
+**What the plan actually contains, by chunk.** C1 names three functions and
+three call sites. C2 names four self-hosted documents, four shipped twins,
+and a "known real hits" list of specific line numbers. C5's transition-lint
+item names three files with exact line counts. Everything else in the
+removal rows is a **total with no file list**: C5's "the suite-run ledger"
+(part of the measured 7,240-7,450 row, no filename anywhere); C6's "lifecycle
+CLI + planner + twins + 11 tests (36,332)," "onboarding (8,500-9,100)," and
+"foldback (3,152)" -- three aggregate figures covering, by my estimate, on
+the order of 48,000 lines, roughly 85% of the sweep's net removal, with not
+one filename attached to any of the three beyond the phrase itself. I found
+no companion manifest file anywhere in the tree (`find dev -iname
+"*subtraction*"` returns only the plan and its source proposal) and no
+per-file table in the plan document itself -- I read it in full. This is a
+direct shortfall against Revision 1 §1's own words: "every file, the property
+removed, its replacement or the explicit decision the property ends, its
+registry row, its twins and tests, and its commit grouping" is authored **in
+the plan**; a category total is not that.
+
+**The suite-run ledger's actual files, traced independently (not named in
+the plan, and unmentioned by the concurrent Security Review pass):**
+`tools/suite_cost.py` (619 lines, unregistered in `bootstrap/_scaffold/config.py`
+-- Cairn-internal, matching the "Cairn-internal removals" framing) and
+`bootstrap/tests/test_suite_ledger.py` (1,394 lines, wholly about the
+ledger). The third piece is the one that most needs a plan reviewer's eye:
+`bootstrap/tests/conftest.py` carries a **~795-line block** (lines 535-1330,
+"The suite-cost ledger" through "Durability," confirmed by reading the
+file's own section markers) that must be deleted, immediately adjacent to
+and interleaved with the `CAIRN_FULL_SUITE` gate rule / `--quality-gate-shuffle-seed`
+flag / broad-run guard machinery (lines 204-533) that **this plan's own
+mandated Boundary A/B verification command depends on** and that must not be
+touched. Worse, `pytest_sessionfinish` itself (`:493-502`) is a **mixed
+hook** that calls both `_release_mode_outcome_rule(...)` (must survive) and
+`_ledger_step(_ledger_finish_session, ...)` (must go) in the same nine-line
+function body -- exactly the "mixed files, per-function" granularity the
+source proposal promised (Origin, item 1) but that this plan does not carry
+through to this file. A file this central to the sweep's own verification
+trustworthiness being entirely absent from the manifest is precisely the
+"file nobody agreed to delete" the Decision was written to prevent.
+
+**C6's "11 tests" cannot be fully reconstructed from the plan as written --
+by either reviewer.** I independently identified 10 of the 11 wholly-dependent
+test files with high confidence: `test_lifecycle_board.py` (1,885),
+`test_lifecycle_brief.py` (1,170), `test_lifecycle_cli.py` (684),
+`test_lifecycle_contract.py` (6,983), `test_lifecycle_failsafe.py` (538, and I
+can now resolve the concurrent Security Review's open question about this
+file -- yes, it is wholly dependent, gated on `MODULE_PATH.exists()` where
+`MODULE_PATH` is `lifecycle.py`, exactly like the other confirmed files),
+`test_lifecycle_vocabulary.py` (1,037), `test_byline_identity.py` (685),
+`test_doctrine_vocabulary_drift.py` (216), `test_scope_reduction_trap.py`
+(694), and `test_skills_self_heal.py` (224 -- purely about
+`_heal_skills_fanout`/`session-start`, and not found by the Security Review
+pass either). Together with `test_pilot_evidence.py` (1,437, the
+double-counted file) that is 11 files summing to 15,553 lines, against the
+15,806 the "36,332 across 15 files" figure implies once the 20,526-line
+source total (`lifecycle.py` + twin + `lifecycle_planner.py` + twin) is
+subtracted -- a 253-line (1.6%) gap I could not close in the time available.
+Three of the nine files that **do** match the `test_lifecycle_*` naming
+pattern are false positives for a name-based search: `test_lifecycle_metrics_events.py`
+(560), `test_lifecycle_metrics_config.py` (266), and
+`test_lifecycle_stage_patterns.py` (753) all test the separate, surviving
+`lifecycle-metrics` module (`templates/modules/default-on/lifecycle_metrics.py`
+plus its `_lifecycle_metrics/` engine package, ~4,383 lines per copy, itself
+never named as touched or as "not touched" anywhere in the plan). This is
+exactly the hazard the plan's own prose warns about for the *missing* six
+files ("would be invisible to a name-based search") -- but it cuts the other
+way too, and two structurally-independent reviewers working the same
+question in parallel still could not fully close it. That is the strongest
+evidence I have that the manifest, not the prose, is where this plan
+currently falls short.
+
+**`bootstrap/_scaffold/config.py`'s foldback/onboarding registrations
+inherit the same problem.** A repo-wide grep for "foldback" returns 27 files,
+spanning the intent system (`tools/_intent/cli.py`, `tools/_intent/conflict.py`
+-- explicitly "not touched"), `scripts/claim_check.py` (explicitly "kept and
+de-scoped," not deleted), and other clearly-surviving surfaces alongside the
+actual foldback-ledger files (`scripts/foldback_suggest.py`,
+`scripts/foldback_export_scan.py`, and their dedicated tests). A name-based
+approach cannot safely separate these without the plan doing that work once,
+in the manifest, the way C1 and C2 already do for their own chunks.
+
+### Note 1 (non-blocking) -- "Tests needing rehoming, not deletion" undersells its own third and fourth bullets: this is a code-span-boundary correctness issue, not only a test-coverage one
+
+`_has_symlink_component_below` (`lifecycle.py:1846-1870`) and `_git_ok`
+(`:1999-2011`) are function **definitions**, not just tested behaviour,
+physically inside the ~1,440-line span C5 is scoped to delete. `_git_ok` is
+called from `_artifact_path` (`:3029`) via `_has_symlink_component_below`'s
+own call at `:3077`, and `_artifact_path` is what `cmd_review_brief` and
+`cmd_closeout` -- both outside C5's span, both surviving until C6 -- resolve
+artifact paths through. If C5's implementation deletes the literal span
+containing these two function bodies, the very next `session-end --handoff`
+or `review-brief` invocation between C5 and C6 landing raises a
+`NameError`, not a quiet coverage loss. The plan should say explicitly that
+C5's actual deletion boundary carves these two functions (not just their
+tests) out of whatever it deletes; "rehome the tests" is necessary but not
+sufficient if the code under test also has to keep existing.
+
+### Note 2 (non-blocking) -- link-check-allow's fold-in doesn't carry forward its own falsifiers
+
+The disposition (C7 folds `link-check-allow` into the same rule as the other
+two directive families) is correctly scoped -- I confirmed it is real and
+live (`scripts/link_check.py`, `scripts/check_cairn.py`,
+`templates/modules/team-gated/link_check.py`,
+`bootstrap/tests/test_link_check_exclusions.py`) and genuinely unaddressed by
+the accepted claim/link de-scope design (Revision 1 §4 never names it). But
+Revision 1 §4's four falsifiers for the chosen design (a broken live path
+still fails; an archived artifact is excluded from bulk scans and labeled
+informational on direct invocation; a legitimate exemption still works; an
+exemption matching nothing draws a stale warning) are not restated for this
+third family anywhere; C7's acceptance criteria say only "claim and link
+gates pass ... success is silent," which does not by itself pin those four
+behaviours for `link-check-allow` specifically.
+
+### Note 3 (non-blocking) -- a class of installer/security tests referencing `tools/lifecycle.py` by path is unnamed, but self-correcting
+
+`test_skills_install.py`, `test_skills_upgrade.py`, `test_security_check.py`,
+`test_security_lint.py`, `test_skill_contract.py`, `test_security_stack.py`,
+`test_first_session_report.py`, and `test_prune_tools.py` all assert on
+`tools/lifecycle.py` as a registered/installed source (hash policy,
+security-scan target membership, an exact-string invocation check). None is
+named in the plan. Unlike Finding 2's items, this class is self-correcting:
+C5/C6's own "suite green after each" criterion forces these assertions to
+surface and be fixed the moment the owning registry row is removed, so it is
+loud, not silent. Still worth a one-line mention in C6's acceptance criteria
+so the implementer isn't surprised by which tests break on the first
+registry-removal commit.
+
+### Verified negatives (item 2 of my review brief)
+
+Per `AGENTS.md`'s "confirm the instrument before trusting an absence," I
+first ran the same grep shape against a pattern known to be present
+(`cairn-internal-ref-allow`, 161 hits repo-wide) before trusting the negative
+results below.
+
+* **"slot ratchet" / "slot_ratchet"**: zero identifier or file hits anywhere
+  in the tree. The only prose occurrences are the plan's own row, the
+  proposal's §4, and the strategy note's build table row -- exactly the "two
+  places" the plan states. Disposition (struck) confirmed correct.
+* **"attic notes pointing into git history"**: zero identifiable file-set
+  hits. Same two known prose-only occurrences (proposal, strategy note).
+  Disposition (struck) confirmed correct.
+* **`link-check-allow`**: real and live, ten files repo-wide including
+  production code (see Note 2). Correctly identified as a genuine third
+  directive family, correctly folded into C7's disposition (see Note 2 for
+  the one gap in how it's folded in).
+
+### What I could not reach
+
+* I did not run any test, scan, or scaffold install -- there is no
+  implementation yet to run against, and I was not asked to change code or
+  fixtures.
+* I did not close the final 253-line gap in the "36,332 across 15 files"
+  reconstruction (Finding 2).
+* I did not independently verify the "8,500-9,100" (onboarding) or "3,152"
+  (foldback) figures at file granularity, for the reason given in Finding 2
+  (a name-based approach cannot safely separate touched from untouched files
+  sharing the same grep term).
+* I did not review C7's prose-phase content, C8's install-contract ceremony
+  mechanics, or C9's sister-migration discovery in depth, beyond confirming
+  the fences (`_ALWAYS_ON_MAPPINGS`, the AST baseline, the gate anchor, both
+  sister migrations) are stated at the point that binds and that I found
+  nothing routing around them.
+
+### Coverage
+
+**Covered:** the full plan document; `tools/lifecycle.py` and its twin in
+full (structurally, via section markers and targeted reads, not line-by-line);
+`bootstrap/tests/conftest.py` in full; `tools/suite_cost.py`'s existence and
+registration status; all thirteen candidate test files named in Findings 1-2
+(existence, line count, and the specific path constant each loads);
+`templates/modules/default-on/lifecycle_metrics.py` and its module doc;
+`bootstrap/_scaffold/config.py`'s `_ALWAYS_ON_MAPPINGS` (`:689-708`) and
+`_lifecycle-metrics`/`_onboarding` registrations; `bootstrap/tests/_ast_attest.py`'s
+`_UPDATE_ALLOWLIST` (`:142-147`); both `session-start`/`session-end`
+`SKILL.md` pairs in full, confirmed byte-identical; the accepted source
+proposal's Revision 1 in full and its Decision.
+
+**Not covered / low confidence:** the exact byte accounting behind "36,332
+across 15 files" (253 lines unresolved); the "8,500-9,100" onboarding and
+"3,152" foldback figures at file granularity; C7 through C9's content beyond
+the fence-placement check above; whether the residual 253 lines belong to a
+twelfth test file, to `conftest.py` fixtures shared across files, or to a
+rounding/approximation in the plan's own "measured" figure (the plan's count
+discipline treats chunk-size estimates as decision-irrelevant approximations,
+so a small residual is not itself evidence of an error, only of an
+incomplete reconstruction on my part).
