@@ -3,7 +3,11 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date opened**: 2026-08-25
-**Status**: awaiting-review
+**Status**: accepted
+**Assurance path**: high-assurance — added by the scribe at the Decision; the
+field is still live doctrine (`convergent-lifecycle`'s own accepted header
+carries one, and `Lane:` is defined there only as `Lane: standard`, the
+change-note discriminator). It is a label on a fact nobody disputed, not a gate.
 **Lane**: deliberate — touches the install contract (named high-risk surface)
 and removes ~61k lines
 **Attention asked**: one External proposal review; one Decision (which also
@@ -376,3 +380,84 @@ Verify closure only: the manifest-in-plan and atomic commit partition
 (SSP-1/-2), the single chosen claim-check contract and its four falsifiers
 (SSP-3), the fence on the convergent-lifecycle code review (SSP-2), and the
 set-comparison ceremony (SSP-4).
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-08-25
+
+### Preamble -- findings at the Decision
+
+Recorded by the scribe at the Maintainer's instruction. Only items that survive
+the sweep are here: an earlier draft of this preamble carried three findings
+about conformance to `lifecycle_planner.py`, and the Maintainer struck them by
+asking the right question -- *the tools doing the checking are the tools being
+dismantled.* That correction is item 4, and it is the most useful thing in this
+section.
+
+**1. The ~61k figure is an estimate, not a verified account.** No one has
+derived it: the External reviewer explicitly declined ("I did not independently
+re-derive the 61k-line total"), correctly deferring to the per-file manifest.
+Scribe's magnitude check, 2026-08-25: the planner twins plus the lifecycle CLI
+are 16,616 lines and the lifecycle test modules 16,799, before onboarding,
+foldback, metrics, or the prose phase -- so the order of magnitude is plausible
+and nothing more. **Treat 61k as a headline until the manifest lands**, and do
+not let it appear in a published claim before then.
+
+**2. The plan review is the load-bearing moment of this entire sweep.** It is
+the last point at which the deletion inventory is inspectable *while the thing
+being deleted still exists*. §1 puts the per-file/per-function manifest there
+deliberately; §5's Security Review obligation is stated in prose, which is what
+a human reviewer reads, and prose is the right carrier because the parser that
+would otherwise express it is itself on the removal list. Spend the attention
+there rather than on a second proposal round.
+
+**3. `Assurance path: high-assurance` was added to the header at this
+Decision.** The field remains live doctrine and had been dropped in favour of
+`Lane: deliberate`, which is not a defined proposal field. It is a label on an
+undisputed fact -- the header already named the install contract, the reviewer
+recorded high-assurance, and §5 declares a Security Review -- so it changes no
+obligation. Recorded so the addition is visible rather than silent.
+
+**4. Findings against retiring machinery are not findings.** Verifying an
+artifact's conformance to `lifecycle_planner.py` -- its scan, its predicates,
+its field vocabularies -- stops meaning anything as this sweep proceeds, because
+that instrument is part of what is being removed. Cairn's own checks are
+advisory by the accepted `convergent-lifecycle` contract ("warn, never refuse"),
+so they were never the thing producing safety in the first place. **The plan
+review, the Security Review, and every code review in this sweep should anchor
+findings in code behaviour, trust roots, and install-contract consequences --
+the class the External review actually used**: the registries publishing what
+chunk 4 deletes (reproduced with a named failing test), `_ALWAYS_ON_MAPPINGS`
+being absent from `_ast_attest._UPDATE_ALLOWLIST` and therefore Maintainer-run,
+and `scan_targets()` deriving coverage from those same registries. A reviewer
+who spends a round on field spellings against a dying parser is doing the
+ratchet the strategy note names, on the proposal that removes it.
+
+### The Decision
+
+**ACCEPTED as revised (Revision 1).** Authorization, quoted verbatim and
+visually isolated:
+
+> "Please scribe my decision as accept as revised."
+
+**Accepted terms**: execute the strategy note's build table as of commit
+`570fedb`, in dependency order -- the constitution rewrite; the three small
+replacement tools before their predecessors die; the removals, each installed-
+source deletion **atomic with its owning registry row** in
+`bootstrap/_scaffold/config.py` and a green fresh scaffold recorded per commit;
+the claim/link checkers kept and de-scoped on the chosen design; the install-
+contract ceremony with its Security Review clearing the registry-edit plan
+**before** the first removal lands, and security coverage proven by set
+comparison rather than byte identity; then the two sister migrations,
+sequential and each MAINTAINER-GATED. Nothing executes until the
+`convergent-lifecycle` plan's code review has cleared.
+
+**This Decision is also the Maintainer's explicit allowance for the accepted-
+scope reduction** the suite-run ledger's removal causes to
+`full-suite-interception`, as §4 states.
+
+**`_ALWAYS_ON_MAPPINGS` remains a MAINTAINER-GATED edit** -- it is not in the
+AST update allowlist, so its registry change is the Maintainer-run,
+dry-run-verified direct correction, not self-service.
+
+**Scribed by** Claude (claude-opus-5) on explicit Maintainer instruction. The
+scribe wrote no part of the authorization quoted above; the preamble is the
+scribe's own finding record, adopted into this Decision.
