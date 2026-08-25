@@ -2,7 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopt-into-existing-tree.md`
 (accepted Revision 2, 2026-08-20)
-**Status**: awaiting-plan-review
+**Status**: ready-to-implement
 **Plan review**: required(**Internal**) — as the accepted Revision 2 declares.
 No `Plan readiness` inheritance is claimed; the External pass withheld it, and
 under the rule that landed 2026-08-24 no External plan tier exists to claim.
@@ -55,7 +55,9 @@ Three changes, exactly as Revision 2 accepted them.
 **The order of operations in D1 is the change**, not a detail:
 
 ```
-1. resolve the candidate token map (profile ∪ lockfile, lockfile wins)
+1. resolve **the currently-adopting module's required tokens** (profile ∪
+   lockfile, lockfile wins) — not the whole profile map, and **merged into**
+   the existing lockfile token map, never assigned over it
 2. strict placeholder predicate            -> refuse
 3. _refuse_secret_tokens(candidate map)    -> refuse
 4. ONLY THEN the spec loop (which writes destination files)
@@ -71,7 +73,7 @@ review found.
 required token is unfilled when absent, blank, `{{...}}` (`_UNFILLED_TOKEN_VALUE`,
 `config.py:1284`), **or** `<...>`. The angle-bracket form is what the profile
 template `_cmd_init_lock` writes actually contains, and its guard at
-`upgrade.py:1146-1148` is **not** in `_resolve_lock_profile_fields` — so "reuse
+`upgrade.py:1158-1160` is **not** in `_resolve_lock_profile_fields` — so "reuse
 the helper" would hand this plan the narrower predicate by construction and
 reintroduce the bug for the exact shape the adopter hit.
 
@@ -109,6 +111,29 @@ successor command was Revision 2's way of not leaving a gap; the sweep is about
 to prove the gap was never load-bearing. Option 3 removes a line instead of
 rewriting it twice.
 
+**The replacement text, written out — because "leave the surrounding prose
+intact" does not hold here.** The passage is a two-item numbered list under the
+lead-in *"Two consequences:"*. Deleting item 1 makes that lead-in false, orphans
+the *"It is read-only"* sentence whose antecedent is the command being removed,
+and leaves a one-item list. The fold is to flowing prose.
+`bootstrap/UPGRADE.md:251-267` becomes, in full:
+
+> **What that means for your tree.** Cairn's manifest enumerates *Cairn's* old
+> records, not yours, so **every** review-required plan in your tree is judged
+> by the full schema from the moment you upgrade. The consequence: a plan
+> already past `open` whose review predates the schema will be reported.
+> Append-only forbids editing that landed review, so the repair is a **new**
+> conforming pass appended to the plan (a re-read, by whoever performs it, with
+> the two attestation lines) — not a rewrite of the old one. If instead you want
+> your own pre-existing records enumerated the way Cairn's are, that is a code
+> change to a committed constant in your installed checker, and it shows up as a
+> code diff in review; it is deliberately not something a plan file can ask for.
+
+Nothing but the command recommendation is lost: the numbered list, the "Two
+consequences" lead-in and the orphaned sentence all go, and item 2's substance
+survives verbatim as the body. Confirmed no other line in the tree anchors to
+this passage by name.
+
 **This is a deviation from an accepted term and needs the Maintainer's
 allowance.** Recorded here rather than taken: the plan-review reviewer should
 say whether the reasoning holds, and the Decision on this plan's disposition
@@ -117,11 +142,24 @@ sweep work later.
 
 ## Verification
 
-**Boundary A (iteration, scoped).** `bootstrap/tests/test_upgrade_module.py`,
+**Boundary A (iteration, scoped).** `bootstrap/tests/test_upgrade.py`,
+`bootstrap/tests/test_upgrade_module.py`,
 `bootstrap/tests/test_module_merge_lockfile.py`,
 `bootstrap/tests/test_profile_grammar.py`. `--adopt-module` is exercised through
 its **real CLI entry point**, and the secret-token refusal through the CLI, not
 by a direct helper call.
+
+**`test_upgrade.py` is the load-bearing one and is named first on purpose.**
+`class TestAdoptModule` (`test_upgrade.py:1133-1203`) is the only pre-existing
+CLI-level regression suite for the command this plan changes — four tests
+driven through `s.main([..., "--adopt-module", ...])`, including
+`test_adopt_records_on_disk_content_not_template`, which is precisely D2's
+already-on-disk-and-customized scenario. New CLI-level tests belong here.
+They do **not** belong in `test_upgrade_module.py`, whose stated contract is
+Stage-7 import layering and single-identity-across-facades, and which has no
+behavioural adopt-module coverage at all; `test_module_merge_lockfile.py`
+covers an unrelated `install_core` defect and is retained only as a
+neighbouring-surface check.
 
 **Boundary B mode: `full`.** Not a choice — `bootstrap/_scaffold/upgrade.py` is
 the scaffold/merge engine, a named high-risk surface, and the change touches the
@@ -484,3 +522,37 @@ alone. I did not run the full suite (not requested, and a bare
 `python -m pytest bootstrap/tests` is refused by design) or touch
 `bootstrap/tests/_gate_manifest.py` or any fixture under
 `bootstrap/tests/fixtures/`.
+
+
+## Response to plan review -- Claude (Author) -- 2026-08-25
+
+Reviewer: Claude Sonnet 5 (Internal, fresh context), reviewing `86e49a3`.
+Verdict was **no blocking findings**; all four notes are folded into the
+operative cells below, per this lane's rule that a plan answers plan review
+in its cells rather than in a contract revision.
+
+| # | Finding | Disposition | Where it landed |
+|---|---|---|---|
+| 1 | `upgrade.py:1146-1148` cited for `_cmd_init_lock`'s angle-bracket guard; those lines are the "no committed profile" branch | -> accept | "The strict predicate lives in the adopt path" — citation corrected to `upgrade.py:1158-1160` |
+| 2 | D3's "leaving the surrounding prose intact" is false against the live text; the plan carried no replacement paragraph | -> accept | "The D3 collision" — new subsection carries the full replacement text for `bootstrap/UPGRADE.md:251-267` |
+| 3 | Boundary A named no file containing real `--adopt-module` CLI coverage; the actual suite is `test_upgrade.py:1133-1203` | -> accept | Verification / Boundary A — `test_upgrade.py` added and named first, with where new CLI tests belong and why not the other two |
+| 4 | Approach step 1's token-map scoping looser than the "What" table's; a literal read permits a whole-profile merge by assignment | -> accept | Approach step 1 — rewritten to "the currently-adopting module's required tokens", merged into the existing map, never assigned over it |
+
+**All four verified independently before folding, not taken on the reviewer's
+word.** `upgrade.py:1146-1148` reads `if not profile_path.is_file(): return
+_write_init_lock_profile_template(target)` / `try:`; the `placeholder_tokens`
+guard begins at `:1158`. `class TestAdoptModule` is at
+`bootstrap/tests/test_upgrade.py:1133`. `bootstrap/UPGRADE.md` does carry
+"Two consequences:" above a two-item list whose item 1 is the recommendation
+D3 removes, and whose "It is read-only" sentence refers back to the command
+named in the sentence being deleted.
+
+**Nothing was narrowed.** Every accepted outcome D1-D3 committed to is still
+delivered; the four edits sharpen pointers, prose and scoping. The D3
+allowance recorded above is unchanged and still the only deviation.
+
+**One correction the reviewer flagged and I am not making.** Note 2 suggests
+the plan "should carry the actual replacement text (or an explicit instruction
+to fold to prose)". It now carries the text itself rather than the
+instruction, because an instruction to "fold to prose" re-opens at
+implementation time exactly the judgement the review just closed.
