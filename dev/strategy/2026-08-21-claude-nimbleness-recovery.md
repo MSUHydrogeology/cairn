@@ -847,16 +847,18 @@ positive check that the promised function still exists afterward.
 | Gauge classifier + dated snapshot | new | 3 | +~80 | re-derives the takeover table / author |
 | Security marker + manifest | landed | — | +~30 | membership mutation fails / done |
 | Intent system + collision log | **keep** | — | 0 | claim/release round-trip / — |
-| Trust-root validator (`_resolve_interpreter`) | keep, or removal takes a Security Review | 4 | 0 | validator rejects a bad binding / Maintainer-visible |
+| Trust-root validator (`_resolve_interpreter`) | **keep** (Maintainer, 2026-08-25: *"I like the trust root concept"*); any future removal takes its own Security Review | — | 0 | validator rejects a bad binding / — |
 | Claim/link checkers | keep, **de-scoped** (Maintainer, 2026-08-25: file-top directive junk; agents fixate on flags, esp. on archives) | 4 | −directive comments tree-wide, small code | an archived file draws no flag; prose files carry zero checker boilerplate; success is silent / author |
 | Transition lint, pilot ledgers, slot ratchet | remove | 4 | −~4,000 | suite green after / author |
 | Lifecycle CLI + planner (+ twins, tests) | remove **after** order-3 rows land | 5 | −~45,000 | order-3 probes pass / author |
-| Onboarding; foldback | per-sister evidence first | 5 | −~4,000 | sister routines still run / **Maintainer decides foldback** |
+| Onboarding | remove | 5 | −~2,000 | sister routines still run / author |
+| Foldback | **retire — "file a Cairn issue" is the channel** (Maintainer, 2026-08-25: *"the foldback ledger should become just a 'file an issue with Cairn', which we are already set up to do"*) | 5 | −~2,000 | sister goodnight routines updated and run clean / author |
+| Suite-run ledger (`suite-runs.jsonl`, `test_suite_ledger.py`) | remove — drops accepted `full-suite-interception` scope, so the sweep proposal's Decision grants the allowance explicitly (Maintainer accepted this recommendation, 2026-08-25) | 4 | −~1,700 | suite green after / allowance at Decision |
 | PLANNING bankruptcy + dead doctrine prose | remove | 6 | −~6,000 | claim/link gates / author |
 | Sister migration: `modflow_tools` | sequential | 7 | its tree | its own verification green / Maintainer sign-off |
 | Sister migration: `lhm` | after modflow is green | 8 | its tree | its own verification green / Maintainer sign-off |
 
-Net: roughly **+550 new lines against ~59,000 removed**, pending the
+Net: roughly **+550 new lines against ~61,000 removed**, pending the
 manifest. Where this table contradicts anything earlier in the note,
 **the table governs**.
 
