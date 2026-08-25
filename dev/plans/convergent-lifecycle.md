@@ -13,7 +13,7 @@ Do them simultaneously."*:
 "Relationship" section says so, and it is a strict subtraction from either
 baseline.
 
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(**Internal**) — and under the rule this plan lands,
 that is the only tier there is. **Basis corrected at the fold**: the External
 floor was waived in `convergent-lifecycle`'s *own* Decision (`47315b6`), hours
@@ -1003,3 +1003,381 @@ are caught instead. That is the design working, and it is also the cost.
   run once, after all of it settles.
 * Wall-clock savings from the split are **unmeasured**: the collect-time counts
   are pinned, the runtime difference is not.
+
+## Code review -- Claude Sonnet 5 (Code Review, independent context) -- 2026-08-25
+
+Reviewed commit: `b9e7874cc3f51ba4069f74546cf89ddb9896ad41` (HEAD at review
+start -- the stated end of the reviewed range, `ca40cd3..b9e7874`; ignoring
+`c29c9c9`/`570fedb`/`b07f2aa` and any `Nimbleness`/`strategy-review` commits
+per instruction, all other-session work)
+Target: the full implementation of both accepted proposals across all eight
+chunks (A-H), against `convergent-lifecycle` Revision 2 and
+`retire-external-plan-review` Revision 1 (governing where they conflict, per
+this plan's own Scope fold)
+Prior findings: the Internal plan review's one blocking finding (Chunk E's
+stated enforcement mechanism) -- closed by the Response, confirmed still
+closed against the implementation; the Chunk E Security Review's two findings
+against `bootstrap/tests/conftest.py`/`security_manifest.py`/
+`test_security_marker.py` -- one fixed in-pass (the self-comparing membership
+suite), one recorded (the release-guard's textual, not behavioral, pin). This
+is the first Code-review pass over the implementation as a whole.
+Assurance path: high-assurance (governing lifecycle doctrine and tooling)
+
+**Tier**: Internal
+**Model**: Claude Sonnet 5
+**Findings**: raised -- 3 (1 blocking, fixed in-pass; 2 notes, recorded)
+**Verdict**: Accept-with-followups. The Boundary B verification record holds
+exactly as stated against the reviewed range; the seams named in the review
+brief -- Chunk E's external oracle, Chunk D's lane split, Chunk B's second
+over-deletion risk, Chunk C's transitions, Chunk G's obligation pair, twin
+parity -- were each independently falsified rather than re-read, and one
+genuine, previously-undetected defect was found and fixed in-pass. Two lower-
+severity gaps are recorded, not fixed, with reasons given below.
+
+### Boundary B record, verified against the reviewed range
+
+`git diff --name-only 997c6a9 b9e7874` returns exactly three files:
+`dev/plans/convergent-lifecycle.md`, `dev/proposals/2026-08-25-claude-
+subtraction-sweep.md`, `dev/strategy/2026-08-21-claude-nimbleness-
+recovery.md` -- none an implementation surface, confirming the tested commit
+997c6a9 is representative of the reviewed range's code state. Re-ran
+`test_the_live_corpus_is_sound_under_the_p1_contract` directly: it fails with
+the **same three** proposals the record names
+(`2026-08-20-claude-adopt-into-existing-tree`, `-portable-sweeps-cannot-run`,
+`-scanner-claim-scope`), each an author-attributed `## Review`, confirmed by
+checking that `dev/proposals/2026-08-25-claude-subtraction-sweep.md` --
+which produces a **fourth**, unrelated failure at current HEAD (a missing
+`**Assurance path**:` declaration) -- did not exist at `997c6a9`
+(`git cat-file -e 997c6a9:dev/proposals/2026-08-25-claude-subtraction-
+sweep.md` fails). The fourth failure is real at HEAD but is `c29c9c9`'s, an
+other-session proposal explicitly out of this plan's scope per instruction --
+not a regression in the reviewed range. `python scripts/quality_gate.py
+--sub neutrality --sub redundancy` reproduces `fail=86 info=21` /
+`fail=0 info=2` exactly, both unchanged by my own edits (re-run after Finding
+1's fix, same counts).
+
+### Findings
+
+**1. BLOCKING, fixed in-pass -- Chunk B's doctrine text describes an
+Internal-Security-Review clearing mechanism that does not mechanically
+exist, and following it as written silently defeats the obligation it
+installs.**
+
+`doctrine/dual-review.md` (written fresh by `ce8df6b`, Chunk B) said the
+`required(Internal + Internal Security Review)` obligation "is satisfied
+**only** by an appended `## Security review (Internal)` record" -- and the
+same sentence, near-verbatim, was propagated by the same commit into
+`doctrine/plans.md`, `doctrine/lifecycle-contract.md`, `AGENTS.md` + its
+`templates/core/` twin, and `dev/agent_collaboration.md` + its twin (six live
+files, plus two instances inside the already-accepted, terminal
+`retire-external-plan-review` proposal, where the claim originates and which
+I did not and could not touch). `dev/plans/_template.md` (the SAME commit,
+`2b6eaa2`) says something different and correct: satisfied by "a pass whose
+`**Obligation**: Internal Security Review` line matches it."
+
+Verified against the actual, unmodified parser rather than inferred: I built
+a plan declaring `required(Internal + Internal Security Review)` with a
+clean `## Plan review -- Alice -- 2026-08-24` pass (`**Obligation**:
+Internal`, `**Tier**: Internal`, `**Findings**: none`) followed by a record
+headed exactly as the doctrine instructs, `## Security review (Internal) --
+Bob -- 2026-08-25`, with its own `**Obligation**: Internal Security Review`
+field. `next --to ready-to-implement` reports **both** clauses unmet, and
+Alice's otherwise-clean pass now shows six spurious `duplicate 'Reviewed
+commit:'`-style violations. Traced to source: `_HEADER_RE`'s `kind` group
+(`tools/lifecycle_planner.py:530`) cannot cross a parenthetical immediately
+after the kind word (only `(role)` after the *name* is handled, the same
+class of gap `_pass_headings`' own docstring already documents for a
+reviewer name containing parentheses) -- so `## Security review (Internal)
+-- ...` never becomes an `art.sections` Section at all. Printed `art.sections`
+for both my scratch fixture and the **live plan file itself**: the real
+`## Security review (Internal) -- Claude Sonnet 5 -- 2026-08-24` record at
+line 690 is not a Section either -- it and everything from
+`## Plan-review disposition` (614) through `## Implementation verification`
+(910) are swallowed into `## Response to plan review`'s (515) body, which
+consequently runs 490 lines instead of terminating at line 614. This does
+**not** presently break this plan's own gating (`review_record_violations`
+and `_conformance_violations` both still return `[]` on the live artifact,
+because `## Response to plan review` is itself a recognized boundary that
+correctly closes the *actual* `## Plan review -- Claude Sonnet 5` pass at
+line 313), but it is exactly the shape a **future** plan declaring this
+exact obligation, following this exact doctrine, would hit -- and it fails
+in the *safe* direction (the obligation reports permanently unmet, never
+falsely cleared) while still corrupting an adjacent, legitimate pass's own
+conformance.
+
+This is a false durable record on a freshly-authored, security-relevant
+mechanism -- doctrine promising a satisfaction path the tooling it cites
+does not implement -- so I fixed it rather than only recording it: corrected
+the six live copies (`AGENTS.md`, `templates/core/AGENTS.md`,
+`dev/agent_collaboration.md`, `templates/core/dev/agent_collaboration.md`,
+`doctrine/dual-review.md`, `doctrine/plans.md`,
+`doctrine/lifecycle-contract.md`) to name the mechanism that actually works
+-- an appended `## Plan review` pass carrying the `**Obligation**: Internal
+Security Review` field -- and to say explicitly that a bare `## Security
+review (...)` heading carries no mechanical weight. Left the two instances
+inside `dev/proposals/2026-08-24-claude-retire-external-plan-review.md`
+untouched: `**Status**: accepted`, terminal, append-only, and the likely
+origin of the error rather than something Chunk B introduced from nothing.
+
+**Closed on**: commit `503247b` (path-scoped, the seven files above only).
+Verified: `python scripts/claim_check.py` clean on all seven edited files;
+`python scripts/link_check.py` clean; `python scripts/quality_gate.py --sub
+neutrality --sub redundancy` unchanged (`fail=86`/`fail=0`) before and after;
+a repo-wide grep for the retired phrasing
+(`appended.*Security review|Security review (Internal).?. record`) returns
+only the two untouchable proposal instances and this finding's own prose;
+`python scripts/check_cairn.py` reports the same 3 pre-existing, unrelated
+link issues, no new ones; scoped
+`test_doc_governance.py`/`test_check_cairn_content.py`/
+`test_comprehension_floor.py`/`test_core_dev_folders.py`/
+`test_cairn_prefix_links.py` -- 54 passed, unchanged; the full
+`test_lifecycle_contract.py`/`test_lifecycle_board.py`/
+`test_lifecycle_vocabulary.py`/`test_pilot_evidence.py` scoped run --
+903 passed, the same 1 pre-existing unrelated failure, both before and after
+this fix.
+
+**2. NOTE, recorded not fixed -- `cmd_board` is not lane-gated the way
+`cmd_scan`/`cmd_next` are, so a standard-lane note's advisory-only
+conformance issue still marks its board row invalid and the `board` command's
+own exit code non-zero.**
+
+Chunk D's commit message scopes itself to exactly two surfaces
+("the only two hard-refusal surfaces `cmd_scan`/`cmd_next` carry") but that
+scoping is not quite right: `_board_validity`
+(`tools/lifecycle_planner.py:5834`) calls `_conformance_violations` with no
+`_is_standard_note` branch anywhere in `board_rows`'s call chain, and
+`cmd_board`'s own final line (`if any(row["validity"] != BOARD_VALID ...):
+return 1`) makes `board`'s exit code non-zero on the same finding `scan`
+correctly treats as `NOTE (standard lane, advisory only)`/exit 0. Verified
+live: a scratch standard-lane note missing `**Plan review**:` (the exact
+fixture Chunk D's own directed tests use) reports `rc=0` from `scan` and
+`next`, but `board --compact` on the identical artifact shows
+`validity: review-floor` and the command's own `rc=1`.
+
+This matters because `python tools/lifecycle_planner.py board --compact` is
+the first command `AGENTS.md` (session-start orientation) and
+`.agents/skills/session-start/SKILL.md` tell every agent to run at the start
+of every session -- so a standard-lane note anywhere in the live tree with a
+purely-advisory defect currently makes the board read "invalid" and exit
+non-zero with no lane-aware label to say so, unlike `scan`/`next`.
+
+**Not blocking under C0**: `board` is read-only/informational; grepped every
+consumer of `board --compact`'s invocation across the tree (`AGENTS.md`,
+`doctrine/session-routines.md`, `.agents/skills/session-start/SKILL.md`,
+`dev/agent_collaboration.md`, `dev/NEXT_SESSION.md`) and none pipes its exit
+code into a conditional -- it is read by a human/agent, not gated on. The
+failure direction is a louder-than-intended false alarm, not a defeated
+control.
+
+**Left unfixed** because the natural fix touches `_board_validity`, whose own
+docstring states an invariant from a different, already-accepted plan
+("Whether a row is invalid at all is decided by `_conformance_violations`
+alone... A new predicate therefore cannot make a row read `valid`") --
+reconciling that with Chunk D's "standard lane never refuses" principle is a
+small design decision (a new reason code, vs. excluding standard-lane rows
+from the final exit check specifically, vs. something else), not a blind
+patch a reviewer should make inline. Spawned as an actionable follow-up
+(`task_6ecb6399`, "Lane-gate cmd_board's validity/exit code") rather than
+left to be rediscovered.
+
+**3. NOTE, recorded not fixed -- this plan owes 3 `FROZEN-MODIFIED` entries,
+not the 1 its own "Known dependency" section names.**
+
+That section says only "Chunk E adds `bootstrap/tests/conftest.py`" to the
+already-owed re-anchor batch. Measured directly against the committed anchor
+fixture (`bootstrap/tests/fixtures/gate_manifest.json`, `refs/cairn/gate-
+anchor` at `5f99273`, already fetched -- no re-fetch needed): sha256 of the
+current working-tree bytes differs from the pinned value for **three**
+frozen files touched anywhere in the reviewed range --
+`bootstrap/tests/conftest.py`, `bootstrap/tests/test_lifecycle_contract.py`,
+and `bootstrap/tests/test_pilot_evidence.py`. Checked which were already
+dirty *before* this plan started, at its own base commit `ca40cd3`: only
+`conftest.py` was (consistent with the plan's own framing -- prior,
+unrelated work already owed it); `test_lifecycle_contract.py` and
+`test_pilot_evidence.py` were both byte-identical to the pinned anchor at
+`ca40cd3` and were newly dirtied by this plan's own chunks (A/C/D/B/G/H touch
+the former; B's `2b6eaa2` touches the latter).
+
+**Not blocking**: the re-anchor ceremony is explicitly Maintainer-run,
+already deferred by the plan's own "Known dependency" section, and by design
+sweeps every currently-dirty frozen file in one pass regardless of how many
+there are -- this is a documentation undercount with no independent action
+owed, corrected here for the ceremony's own reference. **Answer to the
+review brief's question: 3 `FROZEN-MODIFIED` entries owed, not 1.**
+
+### Seams checked, no defect found
+
+* **Chunk E's external oracle.** Re-confirmed the Security Review's own fix
+  (`_REVIEWED_MEMBERS` in `test_security_marker.py`) is present and the
+  manifest membership figures still reconcile: `-m security` 1328,
+  `-m "not security"` 3260, unfiltered 4588 (collect-only, this tree,
+  matching every prior count exactly). Did not re-run the Security Review's
+  own adversarial-mutation sweep (drop/add a member) a second time -- that
+  round already falsified it directly against a scratch clone with a
+  before/after/control triple; re-deriving it would be repetition, not
+  falsification.
+* **Chunk B's second over-deletion risk.** Delegated to an independent,
+  read-only sweep of `ce8df6b`/`2b6eaa2`'s full diffs plus the current state
+  of every touched file (doctrine cross-references, the four `_template.md`
+  files, orphaned symbols via `pyflakes`, `test_pilot_evidence.py`'s 19-line
+  deletion). No second over-deletion found; the only remaining hits for
+  retired vocabulary live in `dev/plans/archive/`, `dev/proposals/archive/`,
+  and `CHANGELOG.md`, outside this chunk's scope by design.
+* **Chunk C's transitions and warnings.** `NOTE_TRANSITIONS_OVERRIDE` overrides
+  exactly two rows (`awaiting-plan-review`, `revising-code`); every other row
+  falls through to the shared `PLAN_TRANSITIONS` table used by deliberate
+  plans, so the "same invalid advance still refuses on a deliberate plan" claim
+  is true by construction, not by a second, driftable check -- confirmed by
+  reading, not just by the directed tests (which also pass: 903/904 in the
+  scoped run, the one failure pre-existing and unrelated). Independently
+  verified a standard-lane note with a **raised, unclosed** design-review
+  finding: `next --to ready-to-implement` surfaces it as
+  `note-unclosed-findings` (advisory) *and* the FSM gate still reports the
+  obligation `MISSING` (unsatisfied disposition) -- an open finding does not
+  silently unlock the transition on either lane; `next` never hard-refuses
+  on an unmet precondition on *any* lane (that has always been true, unrelated
+  to Chunk D), so this is not a lane-keyed gap.
+* **Chunk G's obligation pair, the direct question.** An ordinary Internal
+  pass -- with no `**Obligation**:` line, and separately with
+  `**Obligation**: Internal` explicitly bound -- reports the
+  `Internal Security Review` clause unmet in both cases, verified against a
+  fresh scratch fixture built independently of the test suite's own
+  fixtures. (The obligation-pair mechanism's *documented* clearing path being
+  broken is Finding 1, above -- a different, deeper claim than "does an
+  ordinary record wrongly clear it," which it does not.)
+* **Twin parity.** `diff -q tools/lifecycle_planner.py
+  templates/skills/_lib/lifecycle_planner.py` -- byte-identical. The four
+  `_template.md` files and the `AGENTS.md`/`dev/agent_collaboration.md`
+  pairs are NOT byte-identical overall (expected, by design), but the
+  specific paragraphs Finding 1's fix touched in each pair diff to nothing
+  between the `dev/` original and its `templates/core/` twin -- confirmed
+  with a direct `diff` of the two spans after editing both, not assumed from
+  editing them the same way.
+* **Chunk H's type-scoped removal.** Re-ran all three named oracles' directed
+  tests plus one independent construction: a newly-opened plan declaring
+  `required(External)` in a fresh scratch repo draws exactly
+  `[legacy-external-plan-tier]`, warned, `rc=0`, never refused. The proposal-
+  side "Plan readiness" field is confirmed **fully inert** (no warning, no
+  violation) rather than "reported as a recommendation" as the plan's own
+  Verification section's oracle (b) prose put it -- checked against
+  `test_a_proposal_carrying_the_legacy_readiness_field_is_inert`'s own
+  docstring, which reconciles this directly: `plan_readiness_violations` is
+  gone from the module entirely, not merely silenced, which is a stronger and
+  safer resolution than "a recommendation," not a gap.
+
+### Coverage
+
+**Exercised**: the full reviewed-range diff (`git show --stat` on all 14
+implementation commits); `git diff --name-only 997c6a9 b9e7874` and a direct
+re-run of `test_the_live_corpus_is_sound_under_the_p1_contract` and
+`quality_gate.py --sub neutrality --sub redundancy` to verify the Boundary B
+record against the live tree rather than trust the field; the full
+`test_lifecycle_contract.py` + `test_lifecycle_board.py` +
+`test_lifecycle_vocabulary.py` + `test_pilot_evidence.py` scoped suite, twice
+(before and after my own fix commit) -- 903 passed / 1 pre-existing unrelated
+failure both times, full output read (not `tail`), zero
+`INTERNALERROR`/traceback hits; five scratch git repositories built
+independently of the test suite's own fixtures to mutate: a standard-lane
+note's board row (Finding 2), the `required(Internal + Internal Security
+Review)` pair against both the documented-but-broken and the actually-working
+clearing heading (Finding 1), a raised-unclosed design review's transition
+gate, and a fresh `required(External)` plan declaration (Chunk H oracle c);
+direct Python-level inspection of `art.sections`/`_record_boundaries`/
+`_pass_headings` against both my scratch fixtures and the live plan file
+itself; a full independent read-only sweep of Chunk B's diffs by a separate
+agent instance (no shared context, reported no second over-deletion); the
+gate-anchor fixture's pinned sha256 values against both the current working
+tree and the plan's own base commit, for the FROZEN-MODIFIED count; `git
+blame` on both doctrine paragraphs Finding 1 corrects, to confirm they were
+authored fresh by this plan's own Chunk B commit rather than inherited.
+
+**Not exercised**: the full `bootstrap/tests` suite (a bare run is refused by
+design; not requested); `bootstrap/tests/_gate_manifest.py produce` or any
+fixture regeneration (explicitly out of scope -- the re-anchor is the
+Maintainer's); the differential-oracle gate's own `verify` against the real
+manifest; wall-clock timing of any of Chunk E's claimed savings; a full
+line-by-line re-derivation of `test_lifecycle_contract.py`'s ~700-line
+Chunk-B deletion beyond the delegated sweep's targeted checks; `git mv` /
+archiving (explicitly reserved for the Maintainer); re-running the Chunk E
+Security Review's own adversarial-mutation triple a second time (reasoned
+above); the release ceremony itself (`bootstrap/security_check.py` end to
+end) -- untouched by any reviewed commit and outside this round's surface.
+
+## Lasting-truth migration -- 2026-08-25
+
+**Model**: Claude Sonnet 5
+
+**Evidence shipped**: eight chunks' own directed tests (all landed, all
+passing in the scoped and Boundary-B runs); the Chunk E Security Review's
+added external-oracle test
+(`test_the_manifest_still_names_exactly_the_reviewed_set`); this Code
+review's own fix, `503247b`, correcting the Internal-Security-Review
+clearing-mechanism doctrine across six live files; the falsification record
+above (twin parity, the three named oracles, the transition table, the
+obligation pair, the board gap, the FROZEN-MODIFIED recount).
+
+**Evidence deferred**: a lane-aware fix for `cmd_board`'s validity/exit-code
+path (Finding 2); a parser fix so `## Security review (...)`-headed records
+are recognized as record boundaries (would close the *deeper* cause behind
+Finding 1's doctrine fix, but is a change to `_HEADER_RE`/`_KNOWN_KINDS`
+with a wider blast radius than a doctrine-text correction, and those two
+constants are explicitly untouched by every commit in this plan); the
+checker's ledger exact-match rule (already registered by Chunk F's own
+Response, not new here).
+
+**Deferred evidence home**: Finding 2 is tracked as a spawned follow-up
+(`task_6ecb6399`, "Lane-gate cmd_board's validity/exit code"); the
+`_HEADER_RE` parenthetical-after-kind gap and the ledger exact-match rule are
+both registered for a successor proposal, per this plan's own established
+pattern (Chunk F's Response; the Approach section's preamble item 3)
+-- no new proposal is queued by this review, consistent with that
+precedent's practice of registering rather than filing immediately.
+
+**Fidelity sign-off**: the landed implementation commits (`630d357` through
+`9b005fb`, `1dfe42b`, `e392a3a` -- all fourteen implementation commits in the
+reviewed range `ca40cd3..b9e7874`, per the plan's own commit table) match
+`convergent-lifecycle`'s accepted Revision 2
+(`dev/proposals/2026-08-21-claude-convergent-lifecycle.md`) and
+`retire-external-plan-review`'s accepted Revision 1
+(`dev/proposals/2026-08-24-claude-retire-external-plan-review.md`), governed
+jointly per this plan's own "Scope fold" section and its "where they
+conflict, `retire-external-plan-review` governs" rule -- every chunk's
+contract in the `## What` table traces to a named section of one or both
+proposals, and this review's own falsification pass found no chunk that
+implements something neither proposal authorized. This code review's own
+fix commit (`503247b`) corrects doctrine text against the same governing
+sections; it does not implement new scope.
+
+**Dispositions:**
+
+* Code review Finding 1 (Chunk B/G doctrine misdescribed the Internal
+  Security Review clearing mechanism as an appended `## Security review
+  (Internal)` record, which the unmodified parser does not recognize as a
+  pass at all) -> accept (fixed at `503247b`: corrected `AGENTS.md`,
+  `templates/core/AGENTS.md`, `dev/agent_collaboration.md`,
+  `templates/core/dev/agent_collaboration.md`, `doctrine/dual-review.md`,
+  `doctrine/plans.md`, `doctrine/lifecycle-contract.md` to name the working
+  `## Plan review` + `**Obligation**:` mechanism; the two instances inside
+  the accepted, terminal `retire-external-plan-review` proposal are
+  untouched by design)
+* Code review Finding 2 (`cmd_board`'s row-validity/exit-code path is not
+  lane-gated the way `cmd_scan`/`cmd_next` are, so a standard-lane note's
+  advisory-only conformance issue still marks its board row invalid and
+  makes `board`'s own exit code non-zero) -> wontfix (read-only/informational
+  surface; no consumer treats its exit code as a gate; the natural fix
+  touches `_board_validity`'s own documented invariant from a different
+  accepted plan and deserves its own small design decision rather than an
+  inline patch -- tracked as spawned follow-up `task_6ecb6399` rather than
+  left to be rediscovered)
+* Code review Finding 3 (the plan's own "Known dependency" section names
+  only `bootstrap/tests/conftest.py` as newly added to the owed gate
+  re-anchor batch; measured against the anchor fixture, this plan also newly
+  dirtied `bootstrap/tests/test_lifecycle_contract.py` and
+  `bootstrap/tests/test_pilot_evidence.py`, for 3 `FROZEN-MODIFIED` entries
+  total, not 1) -> wontfix (the re-anchor ceremony is Maintainer-run,
+  already deferred, and by design sweeps every currently-dirty frozen file
+  in one pass regardless of count -- a documentation undercount with no
+  independent action owed; corrected count recorded here for the ceremony's
+  own reference)
+
+**Status**: ready-to-archive.
