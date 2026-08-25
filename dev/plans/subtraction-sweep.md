@@ -2,7 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
 **Status**: awaiting-plan-review
-**Plan review**: required(**Internal** + **Internal Security Review**) — two passes, one per clause, each naming its clause in its own `**Obligation**:` line. The Internal pass reads the deletion manifest; the Security Review clears the registry-edit approach, and by the Decision's terms it must clear **before the first removal lands**.
+**Plan review**: required(**Internal** + **Internal Security Review**) — two passes, one per clause, each naming its clause in its own `**Obligation**:` line. The Internal pass reads the deletion manifest. **The Security Review is a single pass covering both security surfaces this plan touches** — the trust-root extraction (C1) and the registry-edit approach (C5/C6) — because both are decided here, in this document, and reviewing the same design twice is the ratchet this sweep removes. C1 and C4 are its *fences*, not additional reviews.
 **Last update**: 2026-08-25
 **Opened**: 2026-08-25
 
@@ -136,10 +136,10 @@ archived at `211c1f4`.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | **Trust-root extraction** — lift `_resolve_interpreter` + `_has_symlink_component` + `_probe_interpreter` (`tools/lifecycle.py:431-579`) and the twin into a standalone module with its own tests; repoint all call sites (`:307`, `:894`, `:1395`) | **Security Review** (the surface's own standing requirement) | 1–2 commits |
+| C1 | **Trust-root extraction** — lift `_resolve_interpreter` + `_has_symlink_component` + `_probe_interpreter` (`tools/lifecycle.py:431-579`) and the twin into a standalone module with its own tests; repoint all call sites (`:307`, `:894`, `:1395`) | fenced on the plan-level **Security Review** having cleared | 1–2 commits |
 | C2 | **Constitution rewrite** — `AGENTS.md` 598→~350, `dev/agent_collaboration.md` 399→~150, `dev/proposals/_template.md` 674→~80, `dev/plans/_template.md` 594→~80, plus the four shipped `templates/core/` twins | — | 2–3 commits |
 | C3 | **Three replacement tools** — warn-only audit reporter; ~100-line standalone board view; gauge classifier + dated snapshot. Each lands with its build-table probe passing | — | 3 commits |
-| C4 | **Security Review of the registry-edit approach** — clears **before any removal**, per the Decision. Reviews how installed-source deletions pair atomically with their `config.py` registry rows, and proves security coverage **by set comparison, not byte identity** | **MAINTAINER-GATED entry** | review only |
+| C4 | **Removal fence** — confirm the plan-level Security Review has landed and cleared before any removal commit, per the Decision's *"clearing the registry-edit plan before the first removal lands"*. Nothing to implement; this is the checkpoint that makes the ordering binding | **fence** | no commits |
 | C5 | **Order-4 removals** — transition lint (`scripts/transition_lint.py` 923, `transition_lint_whitelist.py` 46, `test_transition_lint.py` 1486); the pilot/monitoring engine (~1,440 lines/side inside `lifecycle.py`); the suite-run ledger | — | 4–6 commits |
 | C6 | **Order-5 removals** — lifecycle CLI + planner + twins + 11 tests (36,332); onboarding (8,500–9,100); foldback (3,152). **Only after C3's probes pass and C1 has landed** | `_ALWAYS_ON_MAPPINGS` edit is **MAINTAINER-GATED** | 6–9 commits |
 | C7 | **Prose phase** — PLANNING bankruptcy; dead doctrine sections; claim/link checkers de-scoped across all three directive families | — | 3–4 commits |
@@ -187,8 +187,11 @@ Per chunk, and each falsifiable.
 * **C3** — each tool's build-table probe passes: the reporter lists a
   known-closed change; the board view lists the active artifacts; the classifier
   re-derives the takeover table.
-* **C4** — the Security Review is appended and clears, with an
-  `**Obligation**: Internal Security Review` line. **No C5 commit lands before it.**
+* **C4** — the plan-level Security Review is appended and clears, carrying an
+  `**Obligation**: Internal Security Review` line, and it addresses **both**
+  surfaces: the trust-root extraction and the registry-edit approach, the latter
+  with security coverage proven **by set comparison, not byte identity**.
+  **No C5 commit lands before it, and no C1 commit either.**
 * **C5, C6** — suite green after each; each installed-source deletion is atomic
   with its registry row; a fresh scaffold is recorded green per commit.
 * **C6 (onboarding)** — sister routines still run. **C6 (foldback)** — sister
