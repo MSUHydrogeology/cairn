@@ -1,7 +1,7 @@
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
-**Status**: revising-plan
+**Status**: awaiting-plan-review
 **Plan review**: required(**Internal** + **Internal Security Review**) — two passes, one per clause, each naming its clause in its own `**Obligation**:` line. The Internal pass reads the deletion manifest. **The Security Review is a single pass covering both security surfaces this plan touches** — the trust-root extraction (C1) and the registry-edit approach (C5/C6) — because both are decided here, in this document, and reviewing the same design twice is the ratchet this sweep removes. C1 and C4 are its *fences*, not additional reviews.
 **Last update**: 2026-08-25
 **Opened**: 2026-08-25
@@ -27,8 +27,12 @@ inventory is a file nobody agreed to delete.
 
 ## Proposed paths
 
-None. Every path below exists today; this plan removes and edits, and creates
-only the three replacement tools of C2 and the extracted trust-root module of C1.
+Every other path in this plan exists today; it removes and edits. These two are
+created by C1 and do not resolve until it lands.
+
+Proposed paths:
+- `tools/session.py` — the session kernel C1 extracts from `tools/lifecycle.py`; lands in C1, before C6 deletes its source.
+- `templates/skills/_lib/session.py` — its byte-identical shipped twin; lands in the same C1 commit.
 
 ## Scope
 
@@ -57,6 +61,101 @@ appears under both rows. Net removal is closer to **~55,000** than 61,000, and
 that figure is a *consequence* of the manifest, not a target the manifest was
 fitted to.
 
+### The manifest, per file
+
+**This replaces the aggregate totals the first draft carried.** A plan reviewer
+tried to reconstruct C6's inventory from those totals and could not — which is
+the finding, in its strongest form. Line counts `as_of 2026-08-25`.
+
+**C5 — transition lint** (2,455)
+
+| file | lines | disposition |
+|---|---|---|
+| `scripts/transition_lint.py` | 923 | whole |
+| `scripts/transition_lint_whitelist.py` | 46 | whole |
+| `bootstrap/tests/test_transition_lint.py` | 1,486 | whole |
+
+Self-host only; **no install-manifest row**, so no registry edit pairs with it.
+
+**C5 — pilot / monitoring** (~4,315 + twin span)
+
+| file | lines | disposition |
+|---|---|---|
+| `tools/lifecycle.py` + twin | ~1,440 each | partial — the monitoring span (`:1447` through `cmd_pilot_record`), **minus** `_has_symlink_component_below` (`:1846-1870`) and `_git_ok` (`:1999-2011`), both used by surviving code |
+| `bootstrap/tests/test_pilot_evidence.py` | 1,437 | whole, **after** `TestVocabularyLoader` (`:362-514`) and `test_the_two_lifecycle_copies_are_byte_identical` (`:1173-1232`) are rehomed |
+| `bootstrap/tests/test_lifecycle_contract.py` | 578 of 6,983 | partial — a gap-closing section a name-based search does not surface |
+| `dev/measurement/pilot-activation.md`, `pilot-events.md` | — | whole |
+
+**C5 — suite-run ledger** (2,285 + partials)
+
+| file | lines | disposition |
+|---|---|---|
+| `bootstrap/tests/test_suite_ledger.py` | 1,394 | whole |
+| `tools/suite_cost.py` | 619 | whole |
+| `bootstrap/tests/conftest.py` | ~795 of 1,330 | **partial, and the delicate one** — interleaved with the `CAIRN_FULL_SUITE` broad-run guard and release-mode machinery **this plan's own verification depends on**. Isolate before cutting |
+| `bootstrap/tests/test_broad_run_guard.py` | 82 of 669 | partial |
+| `dev/measurement/suite-runs.jsonl` | — | whole |
+
+**C6 — order 5, wholly removed sources** (19,126 after the kernel leaves)
+
+| file | lines | disposition |
+|---|---|---|
+| `tools/lifecycle_planner.py` + twin | 6,353 each | whole |
+| `tools/lifecycle.py` + twin | 3,910 each | whole **minus** the ~700-line kernel C1 extracts and minus C5's span |
+
+**C6 — order 5, wholly removed tests** (13,413)
+
+| file | lines |
+|---|---|
+| `bootstrap/tests/test_lifecycle_contract.py` | 6,983 |
+| `bootstrap/tests/test_lifecycle_board.py` | 1,885 |
+| `bootstrap/tests/test_lifecycle_vocabulary.py` | 1,037 |
+| `bootstrap/tests/test_lifecycle_brief.py` | 1,170 |
+| `bootstrap/tests/test_pilot_evidence.py` | 1,437 |
+| `bootstrap/tests/test_byline_identity.py` | 685 |
+| `bootstrap/tests/test_doctrine_vocabulary_drift.py` | 216 |
+
+**C6 — repointed to the session kernel, NOT deleted** (~1,510 + two splits)
+
+The first draft marked several of these for deletion. They test surfaces that
+**survive C1**, so deleting them is coverage loss with no corresponding removal.
+
+| file | lines | why it survives |
+|---|---|---|
+| `bootstrap/tests/test_skills_security.py` | 418 | a **member of `security_manifest.py`'s `SECURITY_FAMILY`** — covers the skills read-path that C1 keeps |
+| `bootstrap/tests/test_skills_self_heal.py` | 224 | tests `_heal_skills_fanout` directly |
+| `bootstrap/tests/test_prune_tools.py` | 256 | tests session-end's `_prune_reflections` |
+| `bootstrap/tests/test_skills_upgrade.py` | 252 | upgrade round-trip for the kept CLI |
+| `bootstrap/tests/test_skills_install.py` | 144 | install path for the kept CLI |
+| `bootstrap/tests/test_skill_contract.py` | 126 | the SKILL.md contract itself |
+| `bootstrap/tests/test_first_session_report.py` | 90 | session-start's output |
+| `bootstrap/tests/test_lifecycle_failsafe.py` | 538 | **split** — trust-root fallback coverage repoints, the rest dies |
+| `bootstrap/tests/test_lifecycle_cli.py` | 684 | **split** — the session subcommands repoint, the rest dies |
+
+**C6 — partial edits, no deletion** (4 files)
+
+`test_security_stack.py` (1,533, uses `tools/lifecycle.py` as a tamper-target
+fixture), `test_security_check.py` (1,270, asserts both files in scan targets),
+`test_security_lint.py` (483, lists both in a lint target set),
+`test_scope_reduction_trap.py` (694, imports the planner; ~330 lines coupled).
+
+**Two corrections to the first draft's own membership, both found by measuring
+each file's actual target rather than its name:**
+
+* `test_lifecycle_stage_patterns.py` (753) was listed as wholly dependent. It
+  tests `templates/modules/default-on/lifecycle_metrics.py` — a module this
+  sweep **keeps**. **Struck from the manifest.** Deleting live coverage of a
+  surviving surface is the worse error direction, and a name-based reading
+  produced it.
+* `test_lifecycle_metrics_events.py` (560) is the same case, and was never in
+  the manifest. Recorded here so a later reader does not re-add it.
+
+**The order-5 headline moves, and downward.** The first draft claimed 36,332
+across 15 files. Corrected membership plus the surviving kernel puts wholly-
+removed order-5 nearer **32,500**, with ~1,500 lines of tests repointed rather
+than deleted and ~1,400 lines of source (both kernel sides) surviving. The
+sweep's net is nearer **~51,000** than the 61,000 headline.
+
 ### Three things the build table names that the tree does not contain
 
 Found by discovery; each needs the reviewer's eye because a plan cannot execute
@@ -73,7 +172,12 @@ a row that names nothing.
 3. **A third directive family, `link-check-allow`, exists** and the accepted
    claim/link de-scope design does not address it. **Disposition: C7 handles it
    on the same rule as the other two families**, and says so, rather than
-   leaving a third convention alive beside two retired ones.
+   leaving a third convention alive beside two retired ones. Because this is an
+   *addition* to accepted scope rather than a cut, it carries the same four
+   falsifiers the accepted design states for the other two families: an archived
+   file draws no flag; a prose file carries zero checker boilerplate; success is
+   silent; and a genuinely broken link still fails. If `link-check-allow` cannot
+   meet all four on the same rule, it stays as it is and this row is struck.
 
 ### The trust root is inside the thing being deleted
 
@@ -89,6 +193,46 @@ A plain file deletion destroys a surface the Maintainer explicitly kept.
 requires. Maintainer decision, 2026-08-25, quoted verbatim:
 
 > "Yes, move the interpreter trust root as needed"
+
+### What C1 extracts, and why it is not just the trust root
+
+**Both plan reviewers reached this independently, and they were right.** C6
+deletes `tools/lifecycle.py` and its twin to zero — 3,910 lines each. That file
+is not only the dying machinery. It also holds:
+
+* `cmd_session_start` (`:825`) and `cmd_session_end` (`:1332`) — the **entire
+  mechanized content** of `.agents/skills/session-start/SKILL.md` and
+  `session-end/SKILL.md`, both of which invoke `python tools/lifecycle.py
+  session-start` / `session-end` **by name**. Those SKILL.md files are kept.
+* `_heal_skills_fanout` (`:785`) — the skills fan-out self-heal that this
+  repository's own `CLAUDE.md` names as load-bearing.
+* `_warn_stale_once` (`:201`) — pinned by `test_lifecycle_brief.py`'s
+  `TestInterpreterFence` as part of the **same protected surface** as the trust
+  root. The first draft's extraction range (`:431-579`) omitted it.
+* The trust root itself (`:431-579`) and all three call sites (`:307`, `:894`,
+  `:1395`).
+
+**Why the first draft missed it, stated plainly:** the coverage that would have
+caught it — `test_skills_security.py`, `test_skills_self_heal.py`, and
+`TestInterpreterFence` — loads `lifecycle.py` behind a `pytest.mark.skipif`
+guard. Delete the file and those tests **skip rather than fail**. They go
+*silent, not red*, which means this plan's own falling-test-count reconciliation
+would not have caught it either. A guard written to keep a suite green in a
+tree that lacks the file becomes, at deletion time, the thing that hides the
+deletion.
+
+**So C1 extracts a session kernel, not a validator.** `tools/session.py` and its
+byte-identical twin `templates/skills/_lib/session.py` carry: `_warn_stale_once`; the trust-root trio (`:431-579`);
+`_heal_skills_fanout` (`:785-821`); `cmd_session_start` (`:825-911`); the
+full-handoff guards and prune/surface helpers (`:915-1262`); and the session-end
+block (`:1282-1446`). That is **~800 lines before subtraction**, and two of its
+helpers leave with their own rows — `_surface_foldback_candidates`
+(`:1227-1262`) goes with foldback, and `_run_evolution_infer` (`:1194-1226`)
+with the metrics work — so the kernel lands nearer **~700 lines per side**.
+Measure it at implementation; do not carry this estimate forward as a fact.
+
+**Every `skipif`-guarded loader of `lifecycle.py` is repointed in C1, not C6.**
+That ordering is what converts a silent skip into a real test.
 
 ### The pilot window ends, and that is an accepted-scope reduction
 
@@ -136,7 +280,7 @@ archived at `211c1f4`.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | **Trust-root extraction** — lift `_resolve_interpreter` + `_has_symlink_component` + `_probe_interpreter` (`tools/lifecycle.py:431-579`) and the twin into a standalone module with its own tests; repoint all call sites (`:307`, `:894`, `:1395`) | fenced on the plan-level **Security Review** having cleared | 1–2 commits |
+| C1 | **The session kernel** — extract everything in `tools/lifecycle.py` that must outlive it into `tools/session.py` + twin, and repoint all call sites. See "What C1 extracts, and why it is not just the trust root" below | fenced on the plan-level **Security Review** having cleared | 2–3 commits |
 | C2 | **Constitution rewrite** — `AGENTS.md` 598→~350, `dev/agent_collaboration.md` 399→~150, `dev/proposals/_template.md` 674→~80, `dev/plans/_template.md` 594→~80, plus the four shipped `templates/core/` twins | — | 2–3 commits |
 | C3 | **Three replacement tools** — warn-only audit reporter; ~100-line standalone board view; gauge classifier + dated snapshot. Each lands with its build-table probe passing | — | 3 commits |
 | C4 | **Removal fence** — confirm the plan-level Security Review has landed and cleared before any removal commit, per the Decision's *"clearing the registry-edit plan before the first removal lands"*. Nothing to implement; this is the checkpoint that makes the ordering binding | **fence** | no commits |
@@ -193,7 +337,20 @@ Per chunk, and each falsifiable.
   with security coverage proven **by set comparison, not byte identity**.
   **No C5 commit lands before it, and no C1 commit either.**
 * **C5, C6** — suite green after each; each installed-source deletion is atomic
-  with its registry row; a fresh scaffold is recorded green per commit.
+  with its registry row; a fresh scaffold is recorded green per commit. **The
+  accepted set-comparison mechanics, carried in full rather than as a phrase**
+  (Revision 1 §5): after each registry commit, the shipped verbatim Python
+  surface **equals** `scan_targets()`'s derivation; a **positive-control
+  mutation** — one unexpected shipped executable **must fail** the check —
+  is recorded **once**; the **release scanner runs after each registry-removal
+  commit**; and the canonical full suite plus the neutrality/redundancy pair run
+  after the final install-contract commit. The Maintainer-run gate handling and
+  the AST-baseline re-anchor **accompany the registry commits they belong to**,
+  not a later phase.
+* **C1** — every `skipif`-guarded loader of `lifecycle.py` is repointed at the
+  kernel **in C1**, and each such test is shown *failing* against a tree without
+  the kernel before it is called repointed. A test that skips is not a test that
+  passes, and that distinction is what the first draft got wrong.
 * **C6 (onboarding)** — sister routines still run. **C6 (foldback)** — sister
   goodnight routines updated and run clean.
 * **C7** — claim and link gates pass; an archived file draws no flag; prose files
@@ -259,7 +416,15 @@ with their host loses coverage of something that survives.
 * `_has_symlink_component_below` (`lifecycle.py:1846-1870`) and `_git_ok`
   (`:1999-2011`) — inside C5's span, used by surviving code.
 * Six tests using `lifecycle.py` purely as a generic scaffold-mechanism fixture
-  need repointing; two need single-line edits.
+  need repointing; two need single-line edits. A further class of **installer
+  tests references `tools/lifecycle.py` by path** and self-corrects only if the
+  path still resolves — enumerate them in C1, not C6.
+
+**`_has_symlink_component_below` and `_git_ok` are a code-span-boundary
+correctness issue, not a coverage one.** They sit *inside* C5's removal span and
+are called by surviving code, so the span's boundaries are wrong as drawn, not
+merely under-tested. Fix the boundary; do not carve the functions out as an
+afterthought.
 
 ## Code review
 
@@ -844,3 +1009,61 @@ rounding/approximation in the plan's own "measured" figure (the plan's count
 discipline treats chunk-size estimates as decision-irrelevant approximations,
 so a small residual is not itself evidence of an error, only of an
 incomplete reconstruction on my part).
+
+
+## Response to plan review -- Claude (Author) -- 2026-08-25
+
+Two passes, both **REVISE**: the Internal pass (`37d570d`) and the Internal
+Security Review (`3ff6e4a`). They reached the same Finding 1 independently,
+from different evidence, which is why it is treated below as established rather
+than argued. Corrections are folded into the operative cells per this lane's
+rule; this table points at them.
+
+| # | Pass | Finding | Disposition | Where it landed |
+|---|---|---|---|---|
+| 1 | both | C6 deletes `cmd_session_start`, `cmd_session_end` and `_heal_skills_fanout`, which the kept SKILL.md files invoke by name; no replacement named | -> accept | C1 rewritten as **the session kernel** — new subsection "What C1 extracts, and why it is not just the trust root" |
+| 2 | Security | C1's extraction range omitted `_warn_stale_once` (`:201`), pinned by `TestInterpreterFence` as the same protected surface | -> accept | Included in the kernel's extraction list |
+| 3 | Security | The accepted §5 set-comparison mechanics were carried as a bare phrase, not as criteria | -> accept | C5/C6 acceptance criteria now carry all four verbatim: set equality vs `scan_targets()`, the positive-control mutation, the per-registry-removal release scan, the final canonical pair |
+| 4 | Internal | The per-file manifest is aggregate-only for C6, and the suite-run ledger row names no files | -> accept | New "### The manifest, per file" section — every row, every file, every partial span |
+| 5 | Internal | `_has_symlink_component_below` / `_git_ok` is a code-span-boundary issue, not a coverage one | -> accept | Rehoming section reframed: the span's boundaries are wrong as drawn |
+| 6 | Internal | `link-check-allow`'s fold-in states no falsifiers of its own | -> accept | Its four falsifiers written out, with the row struck if it cannot meet them |
+| 7 | Internal | A class of installer tests references `tools/lifecycle.py` by path, unnamed | -> accept | Enumerated in C1 rather than C6 |
+
+### What I found while answering, and what it cost the manifest
+
+Answering Finding 4 meant rebuilding the inventory by measuring **each file's
+actual target rather than its name**. That turned up errors the reviewers had
+not reached, in both directions:
+
+* **`test_lifecycle_stage_patterns.py` (753) was a false inclusion.** It tests
+  `lifecycle_metrics.py`, a module this sweep **keeps**. The first draft had it
+  marked for deletion — live coverage of a surviving surface.
+* **Six files were missing** from the manifest entirely, all genuinely coupled.
+* **Most of those six do not die at all.** They test the surface C1 now keeps,
+  so they are **repointed**, not deleted — including `test_skills_security.py`,
+  a member of `security_manifest.py`'s `SECURITY_FAMILY`.
+
+**A correction I owe the Internal reviewer.** Its pass reported the 36,332
+figure as unreconcilable, ~1,300 short. I checked and reported that the
+arithmetic was mine and correct — the fifteen files do sum to exactly 36,332.
+That was true and beside the point: **the sum was right and the set was wrong**,
+which is the only thing a deletion manifest is. The reviewer was pointing at a
+real defect through an arithmetic disagreement, and the defect was mine.
+
+### The order-5 figure moved, downward, and that is not a scope reduction
+
+Wholly-removed order-5 lands nearer **32,500** than 36,332, and the sweep's net
+nearer **~51,000** than 61,000 — because ~1,500 lines of tests are repointed
+instead of deleted and ~1,400 lines of source survive as the kernel. Nothing
+the accepted proposal set out to remove is being kept: the machinery still
+goes. What changed is that the first draft counted surviving code as removed.
+
+### One thing neither pass raised, recorded because it explains both
+
+The tests that would have caught Finding 1 — `test_skills_security.py`,
+`test_skills_self_heal.py`, `TestInterpreterFence` — all load `lifecycle.py`
+behind `pytest.mark.skipif`. Delete the file and they **skip rather than fail**.
+This plan's falling-test-count reconciliation, added precisely to catch coverage
+loss, reads a skip as neither pass nor failure and would have missed it. C1's
+acceptance criterion now requires each repointed test to be shown *failing*
+against a tree without the kernel before it counts as repointed.
