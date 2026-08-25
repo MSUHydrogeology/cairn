@@ -236,6 +236,7 @@ def pytest_addoption(parser):
 
 
 @_own
+@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config, items):
     """Shuffle ``items`` in-place when the seed flag is set.
 
@@ -243,11 +244,51 @@ def pytest_collection_modifyitems(config, items):
     permutation, so a failing seed is reproducible.  When the seed
     is None (no flag passed), this is a strict no-op.
     """
+    _apply_security_marker(items)
     seed = config.getoption("--quality-gate-shuffle-seed")
     if seed is None:
         return
     rng = random.Random(seed)
     rng.shuffle(items)
+
+
+def _apply_security_marker(items) -> None:
+    """Mark every collected item whose file is a security-family member.
+
+    Applied from the manifest rather than written into each file: the seventeen
+    members are gate-frozen, so marking them in place would add seventeen
+    entries to the re-anchor ceremony to express a fact about none of them.
+
+    Import failure is deliberately NOT swallowed. Everywhere else this collector
+    fails toward silence, because a missing ledger row costs a measurement. Here
+    silence would deselect nothing and the family would run in the per-change
+    loop -- the safe direction. But a manifest that cannot be imported is a
+    broken security control, and the release ceremony reads the same marker, so
+    the failure must be loud where it happens rather than discovered at a
+    release.
+    """
+    family = _security_family()
+    for item in items:
+        if Path(str(item.fspath)).name in family:
+            item.add_marker(pytest.mark.security)
+
+
+def _security_family():
+    """The manifest's membership set, loaded by path.
+
+    By path and not by ``import security_manifest``: this collector runs with
+    the repository root on ``sys.path``, not its own directory, so a bare import
+    raises ``ModuleNotFoundError`` -- measured, as an ``INTERNALERROR`` during
+    collection. Resolving against ``__file__`` makes the load independent of how
+    pytest was invoked and of the caller's working directory.
+    """
+    import importlib.util
+
+    path = Path(__file__).resolve().parent / "security_manifest.py"
+    spec = importlib.util.spec_from_file_location("_cairn_security_manifest", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.SECURITY_FAMILY
 
 
 def _full_suite_override() -> bool:
@@ -415,6 +456,13 @@ def pytest_configure(config):
     ``_ledger_begin_session``.
     """
     _ledger_step(_ledger_begin_session, config)
+    config.addinivalue_line(
+        "markers",
+        "security: a member of the security test family (see "
+        "bootstrap/tests/security_manifest.py). Deselected from the per-change "
+        "loop with -m 'not security'; always run by the release ceremony, "
+        "which executes the entire suite with skips and xfails failing closed.",
+    )
 
 
 @_own
