@@ -80,13 +80,19 @@ def _lock_with_profile() -> dict:
 
 
 class TestResolveCurrentProfileIsAudible:
-    """An unreadable / ungrammatical committed profile makes
-    ``_resolve_current_profile`` say so **and** still fall back.
+    """An unreadable / ungrammatical / incomplete-or-invalid committed
+    profile makes ``_resolve_current_profile`` say so **and** still fall
+    back -- all three fallback dispositions, including the one D1
+    (`adopt-into-existing-tree`) made loud: an incomplete/invalid profile
+    used to fall back silently.
 
     Both halves are asserted, so a future change that makes the fallback
     loud-and-fatal, or quiet-and-tolerant again, fails.  The oracle is the
     *stderr channel*, not any value the function returns; the fixture profile
-    is written by the test, never produced by the engine.
+    is written by the test, never produced by the engine.  ``tokens`` (the
+    third return value, added for D1's adopt-time seeding) is asserted
+    empty on every fallback path -- a fallback means the profile seeds
+    nothing.
     """
 
     def test_unreadable_profile_names_what_it_swallowed(
@@ -100,7 +106,7 @@ class TestResolveCurrentProfileIsAudible:
         profile.write_bytes(b"project_name: \xff\xfe not utf-8\n")
 
         lock = _lock_with_profile()
-        block, axes = _resolve_current_profile(tmp_path, lock)
+        block, axes, tokens = _resolve_current_profile(tmp_path, lock)
 
         err = capsys.readouterr().err
         assert _PROFILE_REL in err, (
@@ -112,6 +118,7 @@ class TestResolveCurrentProfileIsAudible:
         # the disposition is unchanged -- still the lockfile's embedded profile
         assert block == lock["profile"]
         assert axes["human_team"] == "solo"
+        assert tokens == {}
 
     def test_ungrammatical_profile_names_what_it_swallowed(
         self, tmp_path: Path, capsys,
@@ -124,7 +131,7 @@ class TestResolveCurrentProfileIsAudible:
         profile.write_text("parent:\n  child: val\n", encoding="utf-8")
 
         lock = _lock_with_profile()
-        block, axes = _resolve_current_profile(tmp_path, lock)
+        block, axes, tokens = _resolve_current_profile(tmp_path, lock)
 
         err = capsys.readouterr().err
         assert _PROFILE_REL in err, (
@@ -132,6 +139,44 @@ class TestResolveCurrentProfileIsAudible:
         )
         assert block == lock["profile"]
         assert axes["human_team"] == "solo"
+        assert tokens == {}
+
+    def test_incomplete_profile_now_names_what_it_lacks(
+        self, tmp_path: Path, capsys,
+    ) -> None:
+        """D1's one behaviour change: readable + grammatical, but an
+        incomplete/invalid axis set used to fall back **silently** --
+        an adopter's committed ``profile.yml`` edit that had no effect was
+        invisible.  It now warns, naming the missing axis(es) and/or the
+        invalid value(s), exactly like the unreadable/ungrammatical rows
+        above."""
+        profile = tmp_path / _PROFILE_REL
+        profile.parent.mkdir(parents=True, exist_ok=True)
+        profile.write_text(
+            textwrap.dedent("""\
+                project_name: Demo
+                test_command: pytest
+                age: greenfield
+                size: not-a-real-size
+            """),
+            encoding="utf-8",
+        )
+        lock = _lock_with_profile()
+        block, axes, tokens = _resolve_current_profile(tmp_path, lock)
+
+        err = capsys.readouterr().err
+        assert _PROFILE_REL in err, (
+            "the incomplete/invalid swallow must name the profile path; "
+            "got:\n" + err
+        )
+        assert "size" in err, (
+            "the message must name what's wrong, not just that something "
+            "is; got:\n" + err
+        )
+        # the disposition is unchanged -- still the lockfile's embedded profile
+        assert block == lock["profile"]
+        assert axes["human_team"] == "solo"
+        assert tokens == {}
 
     def test_a_readable_profile_stays_silent(self, tmp_path: Path, capsys) -> None:
         """The message fires on the swallow, not on every upgrade."""
@@ -145,10 +190,14 @@ class TestResolveCurrentProfileIsAudible:
             """),
             encoding="utf-8",
         )
-        block, axes = _resolve_current_profile(tmp_path, _lock_with_profile())
+        block, axes, tokens = _resolve_current_profile(
+            tmp_path, _lock_with_profile())
         assert capsys.readouterr().err == ""
         assert block["preset"] == "high-rigor-legacy"
         assert axes["size"] == "large"
+        # a fully-valid current profile is not a fallback: its OWN token map
+        # is returned, not discarded (D1's reason for this return value).
+        assert tokens == {"project_name": "Demo", "test_command": "pytest"}
 
 
 # ---------------------------------------------------------------------------

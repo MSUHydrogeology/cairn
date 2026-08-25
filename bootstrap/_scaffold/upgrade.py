@@ -33,8 +33,10 @@ from .config import (
     _GITIGNORE_SEEDS,
     _KNOWN_VENDOR_WRAPPERS,
     _MODULE_MAPPINGS,
+    _MODULE_REQUIRED_TOKENS,
     _SKILLS_GITIGNORE,
     _SKILLS_MAPPINGS,
+    _UNFILLED_TOKEN_VALUE,
     duplicate_destinations,
     load_config,
     missing_required_tokens,
@@ -56,6 +58,7 @@ from .lockfile import (
     _cairn_provenance,
     _cairn_version,
     _emit_lock_yaml,
+    _refuse_secret_tokens,
     _sha256_hex,
     classify_verbatim,
     format_forked_facade_warning,
@@ -215,10 +218,11 @@ def _embedded_axes(profile: dict[str, Any] | None) -> dict[str, str]:
 
 def _resolve_current_profile(
     target: Path, lock: dict[str, Any],
-) -> tuple[dict[str, Any], dict[str, str]]:
-    """The adopter\'s CURRENT profile for upgrade-time materialization.
+) -> tuple[dict[str, Any], dict[str, str], dict[str, str]]:
+    """The adopter\'s CURRENT profile for upgrade-time materialization **and**
+    adopt-time token seeding.
 
-    Returns ``(profile_block, axes)``.  Reads the committed
+    Returns ``(profile_block, axes, tokens)``.  Reads the committed
     ``dev/.cairn/profile.yml`` -- the adopter may have changed their profile
     since install (solo -> multi or back) -- and resolves it exactly as install
     / init-lock do.  **Falls back to the pre-upgrade lockfile's embedded
@@ -228,15 +232,23 @@ def _resolve_current_profile(
     ``theirs`` materialize under the new profile, so the 3-way merge sees a
     newly-selected section as a clean ADD and a newly-dropped one as a clean
     DELETE -- never a spurious conflict, and slot-transplant still preserves
-    every filled adopter slot."""
+    every filled adopter slot.
+
+    ``tokens`` is ``_resolve_lock_profile_fields``'s own token map on the one
+    path that actually parses and validates the committed profile; ``{}`` on
+    every fallback (absent / unparseable / incomplete-or-invalid) -- a
+    fallback means the profile seeds nothing, not that a partial reading is
+    worth using.  Callers that only need the axes (the upgrade-materialization
+    call sites below) ignore it; ``_cmd_adopt_module``'s D1 token resolution
+    is what it exists for."""
     lock_profile = lock.get("profile") or {}
     lock_axes = _embedded_axes(lock_profile)
     profile_path = target / _PROFILE_REL
     if not profile_path.is_file():
-        return lock_profile, lock_axes
+        return lock_profile, lock_axes, {}
     try:
         cfg = load_config(profile_path)
-        block, _tokens, missing, invalid = _resolve_lock_profile_fields(cfg)
+        block, tokens, missing, invalid = _resolve_lock_profile_fields(cfg)
     except Exception as exc:  # noqa: BLE001 -- a malformed profile.yml falls back
         # The fallback DISPOSITION is unchanged; only its silence is
         # (profile-parse-fail-open Chunk A).  A stricter ``load_config``
@@ -250,14 +262,31 @@ def _resolve_current_profile(
             "fix the profile and re-run to upgrade under it.",
             file=sys.stderr,
         )
-        return lock_profile, lock_axes
+        return lock_profile, lock_axes, {}
     axes = _embedded_axes(block)
     if missing or invalid or not axes:
         # An incomplete/invalid current profile is not a safe basis to re-strip
-        # the upgrade ancestor: fall back to the lockfile profile (a no-op vs.
-        # the install-time sizing) rather than risk dropping a section.
-        return lock_profile, lock_axes
-    return block, axes
+        # the upgrade ancestor OR to seed an adopt-module token: fall back to
+        # the lockfile profile (a no-op vs. the install-time sizing) -- but
+        # LOUDLY (D1's one behaviour change): the adopter committed an edit
+        # that could not be used, and silence here would hide that it had no
+        # effect.
+        parts: list[str] = []
+        if missing:
+            parts.append(f"missing axis(es): {', '.join(missing)}")
+        if invalid:
+            parts.append("invalid axis value(s): " + ", ".join(
+                f"{a}={v!r}" for a, v in invalid.items()))
+        print(
+            f"  [warn] {profile_path} is incomplete -- "
+            + ("; ".join(parts) if parts else "no axis resolved")
+            + ".\n         falling back to the lockfile's embedded profile; "
+            "fill every value (upgrade --init-lock shows the required "
+            "shape) and re-run.",
+            file=sys.stderr,
+        )
+        return lock_profile, lock_axes, {}
+    return block, axes, tokens
 
 
 def _assert_mapping_ownership(lock_modules: set[str]) -> None:
@@ -300,7 +329,7 @@ def _compute_upgrade(
     # the adopter's CURRENT profile.  `ours` (on disk) is already old-profile-
     # sized and is left untouched.
     old_axes = _embedded_axes(lock.get("profile"))
-    _new_profile, new_axes = _resolve_current_profile(target, lock)
+    _new_profile, new_axes, _new_tokens = _resolve_current_profile(target, lock)
     plans: list[FilePlan] = []
     for rec in lock.get("files", []):
         dst = rec["dst"]
@@ -1334,16 +1363,25 @@ def _commit_lock_and_caches(
     os.replace(lock_tmp, lock_path)
 
 
-def _superseded_surface_note(target: Path, name: str) -> str | None:
+def _superseded_surface_note(
+    target: Path, name: str, *, exclude: frozenset[str] | set[str] = frozenset(),
+) -> str | None:
     """Advisory note for a just-adopted module's superseded pre-module local
     surfaces present on disk (foldback rollup #1).
 
-    Returns ``None`` when the module declares no supersession or none of the
-    declared surfaces exist -- no false note.  **Advisory only:** it flags the
-    drift; it never deletes, edits, or blocks (the adopter reconciles or
+    Returns ``None`` when the module declares no supersession, none of the
+    declared surfaces exist, or every present one is in *exclude* -- no false
+    note.  *exclude* is the caller's own spec-destination set: a module can
+    declare a path as BOTH its own ``InstallSpec`` destination AND a
+    pre-module surface it supersedes (``architecture-review`` does --
+    ``config.py:1144-1145`` vs. ``:1209``), and when adopting that module D2's
+    kept-and-differing advisory already covers that exact file, so this note
+    must not also fire about it in the same run. **Advisory only:** it flags
+    the drift; it never deletes, edits, or blocks (the adopter reconciles or
     retires).  Wired at ``--adopt-module`` (the explicit adoption point); a
     config/folder-convention-move trigger is a future extension."""
-    present = superseded_local_surfaces(name, target)
+    present = [rel for rel in superseded_local_surfaces(name, target)
+               if rel not in exclude]
     if not present:
         return None
     lines = [
@@ -1355,6 +1393,27 @@ def _superseded_surface_note(target: Path, name: str) -> str | None:
     return "\n".join(lines)
 
 
+def _adopt_token_unfilled(value: str | None) -> bool:
+    """The D1 strict placeholder predicate: a required token counts as
+    unfilled when absent, blank, a ``{{...}}`` placeholder
+    (``_UNFILLED_TOKEN_VALUE``), **or** an angle-bracket ``<...>`` one -- the
+    shape ``_cmd_init_lock``'s own guard checks (``upgrade.py:1187-1189``)
+    because that is what the profile template it writes
+    (``_INIT_LOCK_TOKEN_PLACEHOLDERS`` / ``_AXIS_PLACEHOLDERS``) actually
+    contains.  Deliberately **not** ``missing_required_tokens`` /
+    ``_resolve_lock_profile_fields``, neither of which tests the
+    angle-bracket form -- reusing either would readmit the ``<my package>``
+    regression this predicate exists to close (issue #5)."""
+    if value is None:
+        return True
+    v = value.strip()
+    if not v:
+        return True
+    if _UNFILLED_TOKEN_VALUE.fullmatch(v):
+        return True
+    return v.startswith("<") and v.endswith(">")
+
+
 def _cmd_adopt_module(
     target: Path, name: str, cairn_root: Path, templates_root: Path,
 ) -> int:
@@ -1362,13 +1421,34 @@ def _cmd_adopt_module(
     module into the lockfile so it 3-way-merges on later upgrades.
 
     Explicit, never automatic (modules are a deliberate choice -- the opt-in
-    contrast to #47's auto-add of the unconditional core/skills tier). For each
-    of the module's ``InstallSpec``s it records a lockfile ``files`` entry
-    exactly as ``init`` would (``src``/``dst``/``verbatim``, on-disk ``hash``;
-    non-verbatim -> ``base_cache`` raw template + ``base_hash``), installing a
-    spec's ``dst`` from the template first only if it is missing on disk. Adds
-    the module to ``modules`` and seeds its ``.gitignore`` entries. Fail-closed
-    on an unknown name; a no-op if the module is already locked."""
+    contrast to #47's auto-add of the unconditional core/skills tier).
+
+    **D1 (issue #5).** Required tokens resolve from the committed profile
+    seeded **into**, never assigned over, a copy of the lockfile's token map
+    (lockfile wins on a conflict) -- scoped to THIS module's required tokens
+    only, not the whole profile, so an unrelated previously-tracked token
+    this profile read doesn't mention still survives. The strict placeholder
+    predicate (:func:`_adopt_token_unfilled`) and the secret-token guard
+    (:func:`_refuse_secret_tokens`) both run BEFORE the spec loop below
+    writes anything, and any newly-resolved token value is persisted in the
+    same atomic :func:`_commit_lock_and_caches` the roster/file records use.
+
+    For each of the module's ``InstallSpec``s it records a lockfile ``files``
+    entry exactly as ``init`` would (``src``/``dst``/``verbatim``, on-disk
+    ``hash``; non-verbatim -> ``base_cache`` raw template + ``base_hash``),
+    installing a spec's ``dst`` from the template first only if it is missing
+    on disk.
+
+    **D2 (issue #7).** When a spec's ``dst`` is NOT missing, it is kept as-is
+    (never overwritten) -- but if its on-disk bytes differ from what this
+    spec would have installed, an advisory says so.  A destination already
+    tracked under another roster entry is skipped (as before) but now also
+    advises, so the ``recorded N file(s)`` line's count is never silently
+    under-explained.
+
+    Adds the module to ``modules`` and seeds its ``.gitignore`` entries.
+    Fail-closed on an unknown name; a no-op if the module is already
+    locked."""
     lock = read_lockfile(target)
     if lock is None:
         print(f"error: no {_LOCKFILE_REL} in the target; run "
@@ -1384,31 +1464,57 @@ def _cmd_adopt_module(
               f"{_LOCKFILE_REL}; nothing to adopt.", file=sys.stderr)
         return 0
 
-    tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+    # D1 step 1 -- the candidate token map: this module's required tokens,
+    # profile UNION lockfile (lockfile wins), merged into a COPY of the
+    # existing lockfile token map -- never assigned over it.
+    lock_tokens = {str(k): str(v) for k, v in (lock.get("tokens") or {}).items()}
+    required = _MODULE_REQUIRED_TOKENS.get(name, ())
+    _profile_block, _profile_axes, profile_tokens = _resolve_current_profile(
+        target, lock)
+    profile_seed = {t: profile_tokens[t] for t in required if t in profile_tokens}
+    tokens = {**profile_seed, **lock_tokens}
 
-    # Required-token preflight: adopting a
-    # module whose required token is unfilled in the lockfile would install a
-    # placeholder-bearing file and record it.  Fail closed BEFORE any write or
-    # lockfile mutation.
-    gaps = missing_required_tokens([name], tokens)
+    # D1 step 2 -- the strict placeholder predicate, BEFORE any write or
+    # lockfile mutation: adopting a module whose required token is unfilled
+    # would install a placeholder-bearing file and record it.
+    gaps = sorted(t for t in required if _adopt_token_unfilled(tokens.get(t)))
     if gaps:
         print(
-            f"error: module {name!r} requires token(s) "
-            f"{', '.join(sorted(t for _m, t in gaps))} but the lockfile has no "
-            "filled value; refusing to adopt (no files written, lockfile "
-            "unchanged). Fill the token (upgrade --init-lock) and retry.",
+            f"error: module {name!r} requires token(s) {', '.join(gaps)} but "
+            f"no filled value is available from the lockfile or "
+            f"{_PROFILE_REL}; refusing to adopt (no files written, lockfile "
+            "unchanged). Fill the token (upgrade --init-lock, or commit a "
+            "filled dev/.cairn/profile.yml) and retry.",
             file=sys.stderr,
         )
         return 2
 
+    # D1 step 3 -- the secret-token guard, BEFORE any write: #49's adopt path
+    # never routed through this guard, so a secret-shaped required token
+    # value could reach the lockfile through --adopt-module alone.
+    try:
+        _refuse_secret_tokens(tokens)
+    except PresetError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    # D1 step 4 -- ONLY THEN the spec loop, which creates destination files.
     lock_dsts = {rec["dst"] for rec in lock.get("files", [])}
+    spec_dsts = {sp.dst for sp in _MODULE_MAPPINGS[name]}
     new_files = [dict(rec) for rec in lock.get("files", [])]
     cache_writes: list[tuple[Path, bytes]] = []
     added: list[str] = []
+    skipped: list[str] = []
     for spec in _MODULE_MAPPINGS[name]:
         src_rel = f"modules/{spec.src}"        # lockfile src convention
         dst_rel = spec.dst
         if dst_rel in lock_dsts:
+            skipped.append(dst_rel)
+            print(
+                f"  [advisory] {dst_rel} is already tracked under another "
+                f"roster entry; left untouched while adopting {name!r}.",
+                file=sys.stderr,
+            )
             continue  # already tracked under another roster entry; skip the file
         theirs_b = _theirs_bytes(cairn_root, templates_root, src_rel, None)
         if theirs_b is None:
@@ -1425,6 +1531,33 @@ def _cmd_adopt_module(
             content = (theirs_b.decode("utf-8", "replace") if spec.verbatim
                        else substitute_tokens(theirs_b.decode("utf-8"), tokens))
             dst_abs.write_text(content, encoding="utf-8")
+        else:
+            # D2: advisory-only comparison against what THIS spec would
+            # install -- theirs_b verbatim, substituted for mergeable,
+            # matching the branch immediately above line for line. Never
+            # blocks, never overwrites; silent on a byte-for-byte match.
+            try:
+                would_install = (
+                    theirs_b if spec.verbatim else
+                    substitute_tokens(theirs_b.decode("utf-8"), tokens)
+                    .encode("utf-8"))
+                differs = dst_abs.read_bytes() != would_install
+            except Exception as exc:  # noqa: BLE001 -- advisory never blocks
+                print(
+                    f"  [advisory] {dst_rel} already exists; could not "
+                    f"compare it against what module {name!r} would install "
+                    f"({type(exc).__name__}: {exc}). Kept as-is.",
+                    file=sys.stderr,
+                )
+            else:
+                if differs:
+                    print(
+                        f"  [advisory] {dst_rel} already exists and differs "
+                        f"from what module {name!r} would install; kept "
+                        "as-is (not overwritten). Reconcile by hand if this "
+                        "drift is unintended.",
+                        file=sys.stderr,
+                    )
         # Record via the shared fork primitive: base_hash = upstream for BOTH
         # verbatim and mergeable (a verbatim adopt previously recorded no
         # base_hash, so a later upstream change classified `update` and
@@ -1441,12 +1574,16 @@ def _cmd_adopt_module(
 
     lock["files"] = new_files
     lock["modules"] = sorted(set(lock.get("modules", [])) | {name})
+    lock["tokens"] = tokens  # D1 step 1's persist -- a superset of lock_tokens
     _commit_lock_and_caches(target, lock, cache_writes)
     seeded = seed_gitignore(target, _GITIGNORE_SEEDS.get(name, ()))
     note = f"; seeded .gitignore: {', '.join(seeded)}" if seeded else ""
+    skip_note = (
+        f"; {len(skipped)} already tracked under another roster entry"
+        if skipped else "")
     print(f"Adopted module {name!r}: recorded {len(added)} file(s) in "
-          f"{_LOCKFILE_REL}{note}.")
-    sup_note = _superseded_surface_note(target, name)
+          f"{_LOCKFILE_REL}{skip_note}{note}.")
+    sup_note = _superseded_surface_note(target, name, exclude=spec_dsts)
     if sup_note:
         print(sup_note, file=sys.stderr)
     return 0
@@ -2306,7 +2443,7 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         args.to or _cairn_commit(cairn_root))
 
     if args.stage:
-        _new_profile, _new_axes = _resolve_current_profile(target, lock)
+        _new_profile, _new_axes, _new_tokens = _resolve_current_profile(target, lock)
         try:
             stage, adopt_hints = _write_stage(
                 target, plans, lock, args.to, cairn_root,

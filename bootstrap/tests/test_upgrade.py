@@ -1202,6 +1202,244 @@ class TestAdoptModule:
                      str(CAIRN_ROOT), "--adopt-module", "no-such-module"])
         assert rc == 1
 
+    # -- D1: required-token resolution (profile seed + lockfile authority,
+    # the strict placeholder predicate, the secret-token guard) --------------
+
+    #: `python-security` (not `architecture-review`): the one module with a
+    #: declared required token (`_MODULE_REQUIRED_TOKENS`), so it is the
+    #: right fixture for D1's token-resolution + refusal edge cases.
+    TOKEN_NAME = "python-security"
+
+    def test_adopt_required_token_absent_entirely_refuses_closed(
+        self, tmp_path: Path,
+    ) -> None:
+        """No dev/.cairn/profile.yml AND no lockfile value: the required
+        token resolves from nowhere -- refuse before any write or lockfile
+        mutation (edge cases: no profile.yml; token absent)."""
+        target = tmp_path.resolve()
+        _install(target)
+        before = s.read_lockfile(target)
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 2
+        assert not (target / "scripts" / "run_security_audit.py").exists()
+        assert not (target / "dev" / "modules" / "python-security.md").exists()
+        assert s.read_lockfile(target) == before  # lockfile byte-for-byte unchanged
+
+    def test_adopt_required_token_curly_placeholder_refuses_closed(
+        self, tmp_path: Path,
+    ) -> None:
+        """A `{{...}}` placeholder value in the lockfile is unfilled, not a
+        real value -- refuse (edge case: an unfilled placeholder, curly
+        form)."""
+        target = tmp_path.resolve()
+        _install(target)
+        lock = s.read_lockfile(target)
+        lock["tokens"]["python_package"] = "{{python_package}}"
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        before = s.read_lockfile(target)
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 2
+        assert not (target / "scripts" / "run_security_audit.py").exists()
+        assert s.read_lockfile(target) == before
+
+    def test_adopt_required_token_angle_placeholder_refuses_closed(
+        self, tmp_path: Path,
+    ) -> None:
+        """The `<my package>` regression (#5): an angle-bracket placeholder
+        -- the shape `_cmd_init_lock`'s own template writes -- must refuse
+        too, even though `missing_required_tokens` alone would not catch it
+        (edge case: an unfilled placeholder, angle-bracket form)."""
+        target = tmp_path.resolve()
+        _install(target)
+        lock = s.read_lockfile(target)
+        lock["tokens"]["python_package"] = "<my package>"
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        before = s.read_lockfile(target)
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 2
+        assert not (target / "scripts" / "run_security_audit.py").exists()
+        assert s.read_lockfile(target) == before
+
+    def test_adopt_required_token_seeded_from_profile(
+        self, tmp_path: Path,
+    ) -> None:
+        """D1: a required token absent from the lockfile resolves from the
+        committed `dev/.cairn/profile.yml` and is PERSISTED into the
+        lockfile by the adopt itself -- the profile is a seed, and after
+        adoption the lockfile is the single authority, as before."""
+        target = tmp_path.resolve()
+        _install(target)
+        assert "python_package" not in s.read_lockfile(target)["tokens"]
+        (target / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (target / "dev" / ".cairn" / "profile.yml").write_text(
+            "project_name: Demo\ntest_command: pytest\n"
+            "age: greenfield\nsize: small\ncomplexity: simple\n"
+            "language: single\nhuman_team: solo\nagent_team: single\n"
+            "python_package: mypkg\n",
+            encoding="utf-8",
+        )
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 0
+        lock = s.read_lockfile(target)
+        assert self.TOKEN_NAME in lock["modules"]
+        assert lock["tokens"]["python_package"] == "mypkg"
+        # a previously-tracked token this profile read doesn't mention
+        # survives -- merged into the lockfile map, never assigned over it.
+        assert lock["tokens"]["project_name"] == "Demo"
+
+    def test_adopt_required_token_lockfile_wins_over_profile(
+        self, tmp_path: Path,
+    ) -> None:
+        """Token in both sources, disagreeing: the lockfile value wins
+        (the lockfile is the single post-adoption authority; the profile is
+        only ever a seed for a gap)."""
+        target = tmp_path.resolve()
+        _install(target)
+        lock = s.read_lockfile(target)
+        lock["tokens"]["python_package"] = "from_lockfile"
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        (target / "dev" / ".cairn" / "profile.yml").write_text(
+            "project_name: Demo\ntest_command: pytest\n"
+            "age: greenfield\nsize: small\ncomplexity: simple\n"
+            "language: single\nhuman_team: solo\nagent_team: single\n"
+            "python_package: from_profile\n",
+            encoding="utf-8",
+        )
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 0
+        assert s.read_lockfile(target)["tokens"]["python_package"] == "from_lockfile"
+
+    def test_adopt_secret_shaped_required_token_refuses_closed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The secret-token guard now runs on `--adopt-module`, before any
+        write. No real `KNOWN_TOKENS` name is secret-shaped today, so this
+        ARRANGES its own known required token (per the plan's S2) rather
+        than deriving an expectation from the live registry -- a test that
+        reads its expectation from the thing it checks cannot fail."""
+        from bootstrap._scaffold import upgrade as UP  # noqa: PLC0415
+
+        target = tmp_path.resolve()
+        _install(target)
+        monkeypatch.setitem(
+            UP._MODULE_REQUIRED_TOKENS, self.NAME, ("api_secret_key",))
+        lock = s.read_lockfile(target)
+        lock["tokens"]["api_secret_key"] = "sk-not-a-real-secret"
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+        before = s.read_lockfile(target)
+
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.NAME])
+        assert rc == 2
+        # no destination written (the no-destination-written assertion the
+        # plan's S2 table names for this exact mutation's regression)
+        assert not (target / "dev" / "architecture_review.md").exists()
+        assert not (target / "dev" / "modules" / "architecture-review.md").exists()
+        assert s.read_lockfile(target) == before
+
+    # -- D2: advisory on both quiet branches ----------------------------------
+
+    def test_adopt_advisory_fires_when_kept_file_differs(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """A kept (already-on-disk) destination that differs from what this
+        spec would install gets an advisory -- never blocks, never
+        overwrites. `dev/architecture_review.md` is ALSO a declared
+        superseded surface for this same module (`config.py:1144-1145` vs.
+        `:1209`), so this also pins the D2/`_superseded_surface_note`
+        must-not-both-fire edge case: only the more precise D2 advisory
+        fires, not the coarser 'reconcile or retire' note."""
+        target = tmp_path.resolve()
+        _install(target)
+        dst = target / "dev" / "architecture_review.md"
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text("ADOPTER-CUSTOM-CONTENT\n", encoding="utf-8")
+
+        capsys.readouterr()
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.NAME])
+        assert rc == 0
+        err = capsys.readouterr().err
+        assert "dev/architecture_review.md" in err
+        assert "differs from what module" in err
+        assert "reconcile or retire" not in err  # D2 covers it; the note must not also fire
+        # advisory only: the customized content survives untouched
+        assert dst.read_text() == "ADOPTER-CUSTOM-CONTENT\n"
+
+    def test_adopt_advisory_silent_when_kept_file_matches(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """The paired case: a kept destination byte-identical to what this
+        spec would install gets NO advisory -- without this pair, the byte
+        comparison could always-fire and still pass the differs-case alone."""
+        target = tmp_path.resolve()
+        _install(target)
+        assert s.main(["upgrade", "--target", str(target), "--cairn-root",
+                       str(CAIRN_ROOT), "--adopt-module", self.NAME]) == 0
+        # Strip the module back out of the lockfile; the files stay on disk,
+        # UNTOUCHED -- still byte-identical to what adoption would install.
+        lock = s.read_lockfile(target)
+        dsts = {sp.dst for sp in s._MODULE_MAPPINGS[self.NAME]}
+        lock["modules"] = [m for m in lock["modules"] if m != self.NAME]
+        lock["files"] = [r for r in lock["files"] if r["dst"] not in dsts]
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+
+        capsys.readouterr()
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.NAME])
+        assert rc == 0
+        err = capsys.readouterr().err
+        assert "differs from what module" not in err
+
+    def test_adopt_advisory_and_count_when_destination_already_tracked(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """The OTHER quiet branch (`continue`, not `else`): a destination
+        already tracked under another roster entry is skipped, but now
+        advises instead of producing no output whatsoever -- and the
+        `recorded N file(s)` line is reconciled to say what happened rather
+        than silently under-counting."""
+        target = tmp_path.resolve()
+        _install(target)
+        lock = s.read_lockfile(target)
+        lock["files"].append({
+            "src": "modules/other/placeholder.md",
+            "dst": "dev/modules/architecture-review.md",
+            "verbatim": False,
+            "hash": "sha256:" + s._sha256_hex(b"pre-existing\n"),
+        })
+        (target / "dev" / "modules").mkdir(parents=True, exist_ok=True)
+        (target / "dev" / "modules" / "architecture-review.md").write_text(
+            "pre-existing\n", encoding="utf-8")
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+
+        capsys.readouterr()
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.NAME])
+        assert rc == 0
+        out = capsys.readouterr()
+        assert "dev/modules/architecture-review.md" in out.err
+        assert "already tracked under another roster entry" in out.err
+        assert "recorded 1 file(s)" in out.out
+        assert "1 already tracked under another roster entry" in out.out
+        lock2 = s.read_lockfile(target)
+        assert "dev/architecture_review.md" in {r["dst"] for r in lock2["files"]}
+        # the pre-existing record for the skipped destination is untouched
+        pre = next(r for r in lock2["files"]
+                   if r["dst"] == "dev/modules/architecture-review.md")
+        assert pre["src"] == "modules/other/placeholder.md"
+
 
 # ---------------------------------------------------------------------------
 # RULES.md never surfaces in the upgrade path (the project-owned rules file
