@@ -6,6 +6,12 @@
      paths in this doc carry the `cairn/` prefix (first segment not a local dir,
      so unflagged); modflow_tools paths are written in full. -->
 
+<!-- Archived 2026-08-26: the version-independent procedure lives in
+     docs/release-process.md (extracted earlier; two remaining techniques
+     hoisted at archive time). This file is the preserved provenance — the
+     v0.2.0 instance, its findings, and the lessons that produced the
+     roster. -->
+
 # Cairn pre-release sweep — a version-independent release strategy
 
 **Initiating author**: Claude (Strategy & Research Agent)

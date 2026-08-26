@@ -5,11 +5,11 @@ It is version-independent: the roster, the method, and the cut steps below are
 the same every time; only the findings change.
 
 **Where the evidence lives.** Each cut's actual sweep records — who ran what,
-what they found, how it was triaged — stay in
-`dev/strategy/2026-05-27-claude-cairn-pre-release-sweep.md`, alongside the
-v0.2.0 instance that established the pattern. This page is the procedure; that
-note is the provenance. Read this to run a release; read that to see how a past
-one went.
+what they found, how it was triaged — live with the cut. The v0.2.0 instance
+that established this pattern is preserved at
+`dev/strategy/archive/2026-05-27-claude-cairn-pre-release-sweep.md` (archived
+2026-08-26; this page carries everything version-independent). Read this to
+run a release; read that to see how the first one went.
 
 ## Why a sweep before every cut
 
@@ -84,6 +84,16 @@ Name the interpreter alongside every suite figure — see
 `bootstrap/DEPENDENCY_BUDGET.md` for the canonical one. Security-capability
 sweeps are run through their own module runners rather than this list; see
 `bootstrap/SAFETY.md` for which surfaces carry which gate.
+
+Two techniques that earned their place in past runs:
+
+* **Grep the tree for the outgoing version string first.** It proves the
+  version is single-sourced in one command — the highest confidence per
+  effort of any release check. Make it the first release-mechanics step.
+* **Test upgrades against a real prior version with `git worktree add
+  <old-commit>`.** A throwaway worktree gives a genuine older base without
+  touching the live checkout, so the upgrade round-trip runs on real trees
+  rather than synthetic fixtures.
 
 ## The cut
 
