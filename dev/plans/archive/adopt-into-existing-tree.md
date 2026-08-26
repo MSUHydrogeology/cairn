@@ -2,7 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopt-into-existing-tree.md`
 (accepted Revision 2, 2026-08-20)
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**Internal**) — as the accepted Revision 2 declares.
 No `Plan readiness` inheritance is claimed; the External pass withheld it, and
 under the rule that landed 2026-08-24 no External plan tier exists to claim.
