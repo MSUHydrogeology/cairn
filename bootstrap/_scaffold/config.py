@@ -65,7 +65,6 @@ KNOWN_TOKENS: frozenset[str] = frozenset(
         "project_name",
         "test_command",
         "claim_check_command",
-        "metrics_command",
         # The repo-relative Python package a python-security adopter scans
         # A *required*
         # token for that module -- see ``_MODULE_REQUIRED_TOKENS`` and the
@@ -81,7 +80,6 @@ KNOWN_TOKENS: frozenset[str] = frozenset(
 #: step 2 ("Default-on modules (installed *unless* a dimension removes
 #: them)").
 _DEFAULT_ON_MODULES: tuple[str, ...] = (
-    "lifecycle-metrics",
     "reflections",
     "claim-check",
     "incident-trackers",
@@ -734,36 +732,6 @@ def duplicate_destinations(
 # so the doc's "run it via {{...}}" line and the install destination
 # cannot desync.
 _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
-    # default-on
-    "lifecycle-metrics": [
-        InstallSpec("default-on/lifecycle-metrics.md",
-                    "dev/modules/lifecycle-metrics.md"),
-        InstallSpec("default-on/lifecycle_metrics.py",
-                    "tools/lifecycle_metrics.py", verbatim=True),
-        # lifecycle-metrics fold-up (phase C, 2026-06): lifecycle_metrics.py is
-        # now a thin launcher/facade over an owned `_lifecycle_metrics/` engine
-        # package; the ten package files install verbatim beside the facade so
-        # `python tools/lifecycle_metrics.py` resolves its sibling engine at
-        # runtime (parity with the _intent/ + _onboarding/ splits).  Byte-for-byte code.
-        InstallSpec("default-on/_lifecycle_metrics/__init__.py",
-                    "tools/_lifecycle_metrics/__init__.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/config.py",
-                    "tools/_lifecycle_metrics/config.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/parse.py",
-                    "tools/_lifecycle_metrics/parse.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/gitmeta.py",
-                    "tools/_lifecycle_metrics/gitmeta.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/report.py",
-                    "tools/_lifecycle_metrics/report.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/subsystems.py",
-                    "tools/_lifecycle_metrics/subsystems.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/extract.py",
-                    "tools/_lifecycle_metrics/extract.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/snapshot.py",
-                    "tools/_lifecycle_metrics/snapshot.py", verbatim=True),
-        InstallSpec("default-on/_lifecycle_metrics/cli.py",
-                    "tools/_lifecycle_metrics/cli.py", verbatim=True),
-    ],
     "reflections": [
         InstallSpec("default-on/reflections.md", "dev/modules/reflections.md"),
         # A tracked directory guide so dev/reflections/ materializes on a
@@ -1137,7 +1105,6 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
 # installs to are one source of truth.
 _REFERENCE_SCRIPT_TOKEN: dict[str, str] = {
     "claim-check": "claim_check_command",
-    "lifecycle-metrics": "metrics_command",
 }
 
 #: Module → ``.gitignore`` entries the scaffold seeds when the module is
@@ -1188,7 +1155,7 @@ def reference_script_token_defaults(module_names: list[str]) -> dict[str, str]:
     modules.
 
     For each selected module that ships a verbatim reference script, map
-    its command token (``claim_check_command`` / ``metrics_command``) to
+    its command token (``claim_check_command``) to
     ``python <dst>`` where ``<dst>`` is the exact path the scaffold
     installs the script to.  The caller injects these into the token set
     *without* overriding a value the profile already supplied
