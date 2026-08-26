@@ -6,9 +6,10 @@
 
 **Author**: Claude (Strategy & Research Agent)
 **Model**: Opus 5
-**Date**: 2026-06-05, last revised 2026-08-11
-**Status**: revised (External rounds 1–2 — Codex, security lens — folded in and
-removed 2026-08-11)
+**Date**: 2026-06-05, last revised 2026-08-11; program closed 2026-08-26
+**Status**: settled — the measurement program is retired until its named
+trigger fires (see "Closure under the 2026-08 refocus" at the end); External
+rounds 1–2 (Codex, security lens) folded in and removed 2026-08-11
 **Type**: design-exploration
 **Surfaces this would feed**: one bounded validation proposal carrying the
 instrument and its golden fixtures; a lightweight file-attribution field on
@@ -425,8 +426,9 @@ Three design constraints, and they are what keep this from becoming ceremony:
   the committed plan, human-readable, reviewable by the person it concerns.
   No separate database, no side-channel, no telemetry, nothing collected that
   is not already being written down. This is the posture the
-  **Measurement Compact** already fixes
-  (`templates/modules/default-on/lifecycle-metrics.md`): internal-diagnostic,
+  **Measurement Compact** already fixes (now hosted in
+  `2026-05-20-claude-team-productivity-metrics.md`; its shipped module home
+  was removed by the 2026-08 subtraction sweep): internal-diagnostic,
   not evaluative; system learning, not agent ranking.
 * **Analysis declared before the data exists** (anchor 12) — outcome,
   covariates (review tier, changed lines, mechanical-only changes, trust-surface
@@ -593,3 +595,55 @@ one-incident-is-not-doctrine rate-limit gate:
   the old one with the hypothesis in hand. The corollary is a design rule: if
   you want a question answerable later, add the field that answers it *before*
   you need it, where the person who knows the answer is already writing.
+
+## Closure under the 2026-08 refocus — 2026-08-26
+
+Measured first, per this note's own doctrine: in the eleven weeks since the
+last revision, **none of the recommendation was executed**. No validation
+proposal opened, the instrument script was never checked in, no
+file-attribution field entered either plan template, and no artifact besides
+the migration ledger cites this note. Zero uptake over eleven weeks is itself
+a demand measurement, and the note is obliged to read it.
+
+The recommendation therefore moves from Option 4 to **Option 1 — retire the
+inquiry until something hurts** — on four grounds the refocus
+(`2026-08-21-claude-nimbleness-recovery`) makes explicit:
+
+* **The return-on-attention objective prunes exactly this class.** A
+  validation program with golden fixtures, a preregistered analysis, and a
+  maintained instrument is apparatus built to measure the apparatus — and the
+  uptake measurement above says nobody was paying its interest even as a
+  proposal.
+* **The better-supported half already shipped, as something else.** Anchors
+  2, 4, and 5 — process metrics beat static ones; churn over shape — are
+  precisely the warrant for the refocus's ~80-line gauge classifier: pure
+  git-derived churn accounting with a declared corpus and dated snapshots.
+  The static half (nesting, concentration) was never validated, and the
+  decorrelation obligation lapses with the instrument that owed it.
+* **The trust-surface question was answered without the instrument — and the
+  triage was vindicated on its own terms.** This note ranked `lockfile.py`
+  second and said *"the inspection is the evidence; the metric is only the
+  triage."* The v0.4.0 release bar's independent audit subsequently confirmed
+  a real defect on exactly that surface — the integrity check reads its
+  expected hashes from the candidate's own lockfile, so a coordinated tamper
+  verifies as clean — now owned by `2026-08-05-codex-security-strategy.md`
+  under [TRU-1]. The defect was design (trust material from the subject), not
+  comprehension cost: the surface pick was right, the hypothesized mechanism
+  was not, and a fair test returning exactly that split is what the note said
+  honest triage looks like.
+* **The ranked corpus is being reshaped.** The subtraction sweep deletes two
+  of the top-twelve production artifacts and the top test artifact outright;
+  any revival re-declares the corpus post-sweep, per this note's own corpus
+  rule.
+
+What stands unconditionally: the anchor set, the declared-corpus and
+stated-limits discipline, and the three fold-up lessons above — all of which
+have already migrated into the refocus's doctrine and the metrics strategy
+note. The program retires; its epistemics are now the house style.
+
+**Revival trigger, so retirement is not silence:** a comprehension or defect
+burden that traces to a specific file's *shape* — a reviewer recording "I
+cannot hold this," or a defect cluster on one surface — reopens the question,
+with this note's forward-evidence design (attribution at the moment of
+finding; analysis declared before data; no per-person totals) as the
+starting point.
