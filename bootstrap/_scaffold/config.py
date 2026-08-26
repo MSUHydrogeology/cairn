@@ -775,7 +775,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/reflections/README.md", verbatim=True),
         # Fold 2 (foldback-drain-tooling): explicit prune tool the reflections
         # module doctrine prescribes.  Complements the simpler date-cutoff prune
-        # inside tools/lifecycle.py session-end (which runs at full-handoff);
+        # inside tools/session.py session-end (which runs at full-handoff);
         # this standalone script allows independent invocation and offers a
         # keep-by-distinct-date window rather than a wall-clock cutoff.
         InstallSpec("default-on/prune_reflections.py",
