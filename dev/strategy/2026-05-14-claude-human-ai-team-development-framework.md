@@ -659,11 +659,10 @@ repository supplied its own instance: an instrument that paid for findings
 was rebuilt twice in one week before the rule against it was written down.
 
 Five rules, distilled from the two retired programs
-(`archive/2026-06-05-claude-cairn-complexity-debt-audit.md`, closed and
-archived 2026-08-26;
-`2026-05-20-claude-team-productivity-metrics.md`, which hosts the Measurement
-Compact) and binding on all of Cairn's measurement — today that means the
-gauge classifier, the takeover table, and the mission metrics:
+(`archive/2026-06-05-claude-cairn-complexity-debt-audit.md` and
+`archive/2026-05-20-claude-team-productivity-metrics.md`, both closed and
+archived 2026-08-26) and binding on all of Cairn's measurement — today that
+means the gauge classifier, the takeover table, and the mission metrics:
 
 1. **Measure structural events; never measure prose.** A metric scraped from
    written text makes the text the optimization target — any metric that
@@ -683,6 +682,14 @@ gauge classifier, the takeover table, and the mission metrics:
 5. **No composite scores, no per-person totals, ever.** Metrics serve system
    learning, not member ranking — the instrument that pays for *findings*
    rather than outcomes recreates the disease it was built to watch.
+
+Rule 5 carries the **Measurement Compact** (its live home as of 2026-08-26,
+hoisted from the archived metrics note), whose remaining commitments bind
+alongside it: no role- or tier-confounded metric is read as capability proof;
+no cross-team generality is claimed from a single corpus; the posture is
+internal-diagnostic, never external-marketing — any externally published
+artifact derived from these measurements is a separate act gated on an
+explicit Maintainer decision.
 
 ### Not all weight is waste
 

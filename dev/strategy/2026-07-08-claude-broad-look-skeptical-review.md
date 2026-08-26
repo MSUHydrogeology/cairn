@@ -134,7 +134,7 @@ words are easier to hold.
 * **The zero-rejections optic** — "51 proposals, zero rejections, same-day
   approval" reads as theater to a skeptic. The record has since gained its
   rebuttal (4 supersessions, and review rounds that demonstrably block work
-  as written — see `2026-05-20-claude-team-productivity-metrics.md`), but
+  as written — see `archive/2026-05-20-claude-team-productivity-metrics.md`), but
   the honest explanation — bad ideas die in conversation before a proposal
   is written — should be stated wherever the numbers are shown.
 

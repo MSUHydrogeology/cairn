@@ -1,6 +1,10 @@
 <!-- Origin: authored 2026-05-20 in modflow_tools' dev/strategy/ and migrated
      2026-06-12; see dev/strategy/MIGRATION.md. Vantage adaptation completed
-     and cut to its load-bearing core 2026-08-11. -->
+     and cut to its load-bearing core 2026-08-11.
+     Archived 2026-08-26: the gauge posture it describes is live doctrine in
+     guide-star Anchor 21 (../2026-05-14-claude-human-ai-team-development-framework.md),
+     which now also hosts the Measurement Compact. This file is the preserved
+     research record. -->
 
 # What to measure while building, and what never to measure
 
