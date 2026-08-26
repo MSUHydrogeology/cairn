@@ -5,7 +5,8 @@
 # What to measure while building, and what never to measure
 
 **Author**: Claude (Strategy)
-**Date**: 2026-05-20; cut to current scope 2026-08-11
+**Date**: 2026-05-20; cut to current scope 2026-08-11; revised to the
+post-sweep gauge posture 2026-08-26
 **Status**: living
 **Type**: living-reference
 **Audience**: the Maintainer and collaborating agents; secondarily an adopter
@@ -34,60 +35,55 @@ discontinuity), invites retroactive reinterpretation, and quietly pressures the
 team against evolving its own practice. Human + AI development is moving fast.
 Measure forward.
 
-## What is measured now
+## What is measured, after the refocus (revised 2026-08-26)
 
-`tools/lifecycle_metrics.py` walks the proposal and plan corpora and emits
-rows. Sorted by whether the column survives the principle:
+The instrument this section previously described — `tools/lifecycle_metrics.py`
+and the shipped `lifecycle-metrics` module, a corpus walker re-deriving facts
+from proposal and plan prose — **is removed by the subtraction sweep**
+(Maintainer decision, 2026-08-26, recorded as a scope-delta in the
+`subtraction-sweep` plan). The removal is this note's own principle applied to
+its own instrument: the walker parsed prose to reconstruct facts the commit
+discipline already records structurally, and it parses a grammar the refocus's
+constitution rewrite replaces.
 
-**Structural — keep.** Transitions and their dates; time between stages
-(`days_*`, `hours_*`, `stage_timestamp_reliability`); declared review tier;
-`cross_agent_type_review`; `revised`; review-round counts; `response_models`.
-These are events; writing more cannot inflate them.
+What carries productivity measurement now, in three layers:
 
-**Prose-scraped — retire.** `total_findings`, `findings_p1/p2/p3`,
-`review_yield_*`. A finding count rewards splitting one finding into three,
-which is the cheapest way for an agent to look thorough. These are this note's
-historical showcase numbers and they are the wrong kind.
+* **The gauge classifier** (the sweep's order-3 replacement, ~80 lines):
+  re-derives the takeover table — weekly lines of dev / machinery / product /
+  security — from `git log --numstat`. This is the number that caught the
+  2026-08 drift, and it never came from the metrics layer.
+* **Git as the event log.** One commit per lifecycle transition means every
+  open, review, response, and decision is already a timestamped, authored,
+  structural event with **one writer per fact** — which is all the retired
+  emit-at-transition direction was asking for. Time-to-decision,
+  cross-agent-type review share, and round counts are one-line queries run
+  when a question actually arises, not columns maintained in advance.
+* **The mission metrics, deliberately toolless** (nimbleness-recovery note,
+  3.3): adopter issue → shipped fix ≤ 2 sessions; new adopter → first
+  reviewed commit ≤ 1 hour; median artifact ≤ 150 lines; science-commit
+  share in `modflow_tools` > 50% — monthly-ish glances, plus the one-line
+  `Return:` verdict at each archive.
 
-**Cairn's own corpus, 2026-08-11** — the honest current state, not a trend to
-track: 49 proposals (45 accepted, **4 superseded**, 0 rejected), 38 plans, 76%
-reviewed cross-agent-type, median time-to-decision 0 days. The four
-supersessions carry the weight: they are the only hard evidence that
-adversarial review blocks work *as written*, which a zero-rejection count
-cannot show on its own.
+**Dated snapshot, 2026-08-11** (kept as history, not a trend to track): 49
+proposals (45 accepted, **4 superseded**, 0 rejected), 38 plans, 76% reviewed
+cross-agent-type, median time-to-decision 0 days. The four supersessions carry
+the weight: they are the only hard evidence that adversarial review blocks
+work *as written*, which a zero-rejection count cannot show on its own.
 
-### Two live items
+**A defect worth keeping as the removal's epitaph.** Both of the walker's
+review-round regexes required an H3 heading while the plan template prescribed
+dated H2 passes, so `plan_review_rounds` counted 2 across the whole corpus and
+`code_review_rounds` read 0 for 28 of 38 plans — fixed 2026-08-11, but the
+lesson stands: **two components independently parsed the same prose for the
+same fact and disagreed.** A structural event has one writer; git's is the
+one that remains.
 
-* **The time series is not in the record.** `dev/measurement/snapshots/` holds
-  real snapshots and is **untracked — not gitignored, merely uncommitted**
-  (unlike `dev/intents.jsonl`, ignored deliberately). Decide: commit them, or
-  ignore them on purpose. Under emit-at-transition the question mostly
-  dissolves.
-* **A fixed defect worth keeping as a lesson.** Both review-round regexes
-  required an H3 heading while `dev/plans/_template.md` prescribes dated H2
-  passes, so `plan_review_rounds` counted 2 across the whole corpus and
-  `code_review_rounds` read 0 for 28 of 38 plans. Fixed 2026-08-11 to
-  `#{2,3}`. The lesson is not the regex: **two components independently parsed
-  the same prose for the same fact and disagreed.** An emitted event has one
-  writer.
+## Constraints on any future collection
 
-## The direction: emit at the transition
-
-The corpus walk should become a one-time backfill tool, not the running
-instrument. Metrics should be **emitted when the event happens**, by the
-component that already knows — the lifecycle planner gates transitions, so it
-is the natural emission point — and appended to a durable record as data.
-
-What that buys: a number written once cannot be rewritten by a later tool
-change; format evolution stops being measurement discontinuity; one writer per
-fact.
-
-What it costs, plainly: you give up re-deriving history under a better
-definition. A recorded metric is frozen at the definition of its day. That is
-the right trade, and it needs **schema versioning on emitted records** so a
-definition change adds a field rather than rewriting the past.
-
-Three constraints keep this from becoming ceremony:
+The emit-at-transition direction is retired with its emission point (the
+lifecycle planner is removed by the same sweep), and git's transition commits
+already deliver what it promised. If a future proposal adds collection beyond
+the gauges, three constraints from that direction still bind:
 
 * **A field, not a workflow.** If the writer already knows the answer, capture
   it there; do not add a step.
@@ -100,9 +96,11 @@ Three constraints keep this from becoming ceremony:
 
 ## The Measurement Compact
 
-Operative, and shipped to adopters that install the module — its home is
-`templates/modules/default-on/lifecycle-metrics.md`, **not** `AGENTS.md`, so it
-binds only adopters who select the module. Whether that scope is right is open.
+Operative. Its shipped home (the module doc) is removed with the module, so
+as of 2026-08-26 the Compact lives **here**, binding how Cairn — and any
+adopter who reads this note — holds the gauges. Nothing about retiring the
+instrument retires the commitments; a gauge glanced at monthly can be misused
+in the same five ways a column could.
 
 1. **Metrics serve system learning, not member punishment.**
 2. **No single composite score.**
@@ -146,16 +144,19 @@ Three cautions survive:
 
 **No-telemetry posture**, unchanged and load-bearing: data stays local, no
 auto-upload, no central server, no implicit consent, and it leaves with the
-adopter. Per-project efficacy-data collection is a `0.5+` horizon item in
-`dev/PLANNING.md`, gated on that trust architecture landing first.
+adopter. Any future per-project efficacy-data collection stays gated on that
+trust architecture landing first.
 
-## Open questions
+## Open questions — all three closed (2026-08-26)
 
-1. **Retire the prose-scraped columns, or keep them with a warning?**
-   *(Recommended: retire. A metric that rewards splitting findings is not
-   fixable by a caveat.)*
-2. **Snapshots: commit or ignore?** *(Recommended: ignore, and move to
-   emit-at-transition rather than committing re-derivations.)*
-3. **Does the Compact bind all adopters, or only module installers?** *(Open —
-   moving it to `AGENTS.md` would bind everyone. A scope decision, not an
-   editorial one.)*
+1. **Prose-scraped columns**: resolved past the recommendation — the whole
+   instrument retires, columns of both kinds with it. The principle that
+   condemned finding counts stands on its own and now guards the gauges.
+2. **Snapshots**: the takeover table, carried in strategy notes with `as_of`
+   dates, is the committed dated snapshot; the gauge classifier re-derives it
+   on demand. Working CSVs under `dev/measurement/snapshots/` remain
+   uncommitted scratch, kept or deleted freely.
+3. **Compact scope**: dissolved — with the module gone there are no module
+   installers to distinguish. The Compact binds through this note; whether the
+   rewritten collaboration doctrine carries a one-line pointer to it is that
+   rewrite's call, not a new obligation this note creates.
