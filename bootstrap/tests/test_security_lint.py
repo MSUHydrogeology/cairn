@@ -57,10 +57,10 @@ from bootstrap.security_check import (  # noqa: E402
 
 #: Declared exclusions from the on-disk oracle below: repo-relative path ->
 #: MANDATORY rationale. **Empty today**, and it stays empty: disk and DISTINCT
-#: manifest-verbatim sources agree at 52 (``as_of`` 2026-08-10; re-measure
+#: manifest-verbatim sources agree at 53 (``as_of`` 2026-08-26; re-measure
 #: rather than carrying this figure forward), so it costs nothing to introduce
 #: and fires the moment they disagree. Note the counting rule this table does
-#: **not** key on: manifest *rows* are 56, not 52, because
+#: **not** key on: manifest *rows* are 57, not 53, because
 #: api-web-security-modules installs one engine source tree to two destination
 #: trees. Rows and distinct files are different questions and only the second
 #: one is this oracle's. Mirrors the ``ALLOWLIST`` +
@@ -308,6 +308,7 @@ def test_every_manifest_verbatim_py_is_scanned_by_some_path() -> None:
 _SKILLS_PY = (
     "templates/skills/_lib/lifecycle.py",
     "templates/skills/_lib/lifecycle_planner.py",
+    "templates/skills/_lib/session.py",
 )
 
 
@@ -373,8 +374,8 @@ def test_templates_py_count_is_pinned() -> None:
     as ``assert scanned == 9`` for the always-on group in
     ``bootstrap/tests/test_upgrade_side_door_parity.py``."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
-    assert len(on_disk) == 52, (
-        f"expected 52 .py under templates/, found {len(on_disk)} -- if this "
+    assert len(on_disk) == 53, (
+        f"expected 53 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
         "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
@@ -388,7 +389,10 @@ def test_templates_py_count_is_pinned() -> None:
         "(run_security_verification.py); moved 46 -> 52 by "
         "api-web-security-modules (two facades + four engine members); "
         "moved 52 -> 53 by metrics-events-not-prose Chunk 4 (one new "
-        "source, one destination -- events.py)."
+        "source, one destination -- events.py); moved back 53 -> 52 by "
+        "retire-event-blocks; moved 52 -> 53 by the subtraction sweep C1, "
+        "which adds templates/skills/_lib/session.py -- the session kernel "
+        "extracted so the session routines outlive the lifecycle CLI."
     )
 
 
@@ -428,8 +432,8 @@ def test_the_on_disk_oracle_goes_red_when_a_registry_stops_delivering(monkeypatc
         row for row in install_mod._SKILLS_MAPPINGS
         if not row[0].endswith(".py")
     )
-    assert len(stripped) == len(install_mod._SKILLS_MAPPINGS) - 2, (
-        "expected exactly two .py rows in _SKILLS_MAPPINGS to strip")
+    assert len(stripped) == len(install_mod._SKILLS_MAPPINGS) - len(_SKILLS_PY), (
+        f"expected exactly {len(_SKILLS_PY)} .py rows in _SKILLS_MAPPINGS to strip")
     monkeypatch.setattr(install_mod, "_SKILLS_MAPPINGS", stripped)
 
     assert _unscanned_disk_py(CAIRN_ROOT) == list(_SKILLS_PY)
