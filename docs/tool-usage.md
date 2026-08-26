@@ -144,79 +144,6 @@ that introduced it; treat it as the link sibling of a `claim_check` path flag.
 External-link probing is opt-in (slower, network-dependent) — run it at
 release-prep, not every edit.
 
-## scripts/transition_lint.py — check a commit's message against its lifecycle diff *(Cairn-maintainer-only)*
-
-**What it does.** Reads commit *subjects* over a bounded rev-range and flags
-two shapes: **(a)** a subject claiming a review / response / decision
-transition whose diff adds no such section, and **(b)** a proposal- or
-plan-*open* commit whose added file already carries a real, dated review. It
-enforces a rule that already exists — one commit per lifecycle transition —
-rather than creating one. **Not installed into adopter trees**: it has no row
-in the install manifest, and its heuristics are pinned against Cairn's own
-subject conventions.
-
-```bash
-python scripts/transition_lint.py d6646a3..57d1daf   # rev-range is REQUIRED
-python scripts/transition_lint.py <sha>..<sha> --report   # TAB-separated
-```
-
-**The exit contract, which is the whole point.** `0` on **any** completed
-scan, with findings or without. `2` **only** for a usage error — a missing,
-malformed, or unresolvable rev-range. **Never `1`.** Nothing may wire it to a
-gate; a finding is a printed line a human reads. There is no default
-rev-range, deliberately: a `HEAD`-relative default is a window that moves
-under the reader.
-
-**Every run prints a census**, including a clean one —
-`scanned 120 commits, 52 triggered, 0 findings` — so a zero-finding run is
-positive evidence rather than silence.
-
-**Suppression is two layers, and a third was pre-registered and not
-shipped.** The layers that exist: the *narrowing* (only commits adding or
-modifying a file under `dev/proposals/` or `dev/plans/`, excluding
-`archive/` destinations and `_template.md`), and the commit-SHA whitelist in
-`scripts/transition_lint_whitelist.py`. The layer that does not: a
-class-level downgrade of a whole false-positive class to `info`. It was
-dropped on the argument that no recurring false-positive shape had ever
-occurred — an argument that is now **falsified**, and it is recorded here
-rather than left for a reader to notice. It stays unshipped because a
-class-level downgrade lets a bad shape be absorbed rather than surfaced; the
-intended replacement is that a recurring false-positive shape becomes a
-proposal.
-
-**What it does not cover.** Stated as gaps, never claimed as coverage.
-
-* **Bundling.** It checks only that a claim is *supported*. It does not
-  detect unannounced lifecycle work, or lifecycle work bundled with
-  implementation work — leftmost-wins makes that structural.
-* **Rename-only commits.** Reject / supersede Decisions and plan-archives are
-  never examined; `reject` and `supersede` are commented dead tokens.
-* **Merge commits, squashed / rebased / amended history, `git notes`, and
-  commit bodies.** Only the subject line is read — which is also why there is
-  nowhere to write an in-message opt-out.
-* **False negatives are unmeasured.** Its silence on the commits it triggers
-  on but does not flag has never been audited.
-* **Shape (b) is not corpus-derived the way shape (a) is.** Shape (a)'s
-  heuristics were re-derived over a 332-commit window. Shape (b)'s
-  discriminator rests on **2 true positives and 1 false positive** — its
-  requirement that a review section's heading carry an ISO date is what
-  separates a landed review from a *brief* that quotes finding-id grammar,
-  and that is thin evidence, said plainly rather than hidden behind shape
-  (a)'s much stronger result.
-
-**Its test posture.** The corpus-regression tier lives in
-[`bootstrap/tests/test_transition_lint.py`](../bootstrap/tests/test_transition_lint.py)
-rather than in a manual command, and it **self-skips** — never fails — if
-Cairn's own history is absent, so a history rewrite cannot redden the suite
-for a reason unrelated to the code.
-
-**How to add a whitelist entry.** An entry needs a **written reason** *and* a
-**paired follow-up** on the heuristic that produced the finding — the reason
-is a mandatory dict value precisely so a test can assert it is there. An
-entry that suppresses nothing is a latch, and the suite fails on one. If
-entries accumulate past a handful, that is the signal to **retire the tool**
-to a manual checklist item, not to grow the list.
-
 ## scripts/run_portable_security_sweeps.py — one measured offline secret sweep *(team-gated: portable-security-sweeps)*
 
 **Installation check.** The module installs three files as one group:
@@ -278,8 +205,6 @@ admission is a reviewed source change.
 
 ## See also
 
-* The advisory transition check — `scripts/transition_lint.py` above, and the
-  lifecycle rule it makes visible (one commit per lifecycle transition).
 * The role-dispatch heuristics — `doctrine/roles.md` > "When to dispatch which
   role".
 * The verify-before-asserting discipline these tools serve —
