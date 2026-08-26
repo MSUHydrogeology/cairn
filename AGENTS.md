@@ -78,7 +78,10 @@ review what you cannot penetrate, so an opaque change quietly turns "review and
 decide" into "approve". Lead plain and keep the precision beneath it; define a
 specialist term the first time it carries weight; and treat *"I don't understand
 this yet"* as a **mandatory pause**. This binds the agent, who is typically the
-stronger party on the software, not the reader.
+stronger party on the software, not the reader. The floor itself, and why it
+reaches forward in time to durable artifacts, is stated in
+`doctrine/rationale.md` — pointed at rather than restated, so there is one
+place it can change.
 
 ## Session routines
 
@@ -175,7 +178,8 @@ The roster is in `dev/agent_collaboration.md`.
     --quality-gate-shuffle-seed=0` then
     `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
     Run the **full suite unless the plan's reviewed mapping bounds the change's
-    effects confidently**. **Bounded mode refuses**, and the full suite runs,
+    effects confidently** — if a substantive surface has no reviewed mapping,
+    or its effects **cannot be bounded confidently**, the full suite runs. **Bounded mode refuses**, and the full suite runs,
     whenever the change touches a **contract surface** (the install contract,
     the fidelity or gate manifest, the lockfile schema, the published
     `scaffold.py --manifest`) or a **trust-ceremony surface**. **Uncertainty
@@ -196,9 +200,14 @@ The roster is in `dev/agent_collaboration.md`.
     bounded record the reviewer records
     `**Bounding**: ACCEPTED | FULL RUN REQUIRED` after challenging at least one
     named surface, mapped test, or stated omission — never "the field is
-    present". Missing or stale evidence, unexplained non-pass outcomes, newly
-    discovered coupling, changed implementation/test/fixture bytes, or concrete
-    doubt requires a fresh full run.
+    present". A fresh full run is required when: **no valid Boundary B record exists**;
+    an **unrecorded cross-surface dependency** appears; the run reports a
+    **skip, xfail, or xpass** that the record does not dispose of; **review
+    sharpening changes implementation, tests, executable templates, or**
+    fixtures — any change to
+    **implementation/test/executable-template/fixture bytes** invalidates the
+    record; a **trust ceremony that explicitly requires** one applies; or there
+    is a **concrete reason to distrust or falsify** the evidence.
 
   Prose-only work runs its applicable claim, link, snippet and neutrality gates.
   Release verification is a separate strict ceremony. Name the interpreter

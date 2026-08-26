@@ -92,6 +92,12 @@ binds to something specific.
 
 Per chunk, each falsifiable. A criterion you cannot imagine failing is not one.
 
+A security-touching plan re-answers the five security-preflight
+questions only where its chunking changes an answer — most often S2
+(which chunk runs the mutation) and S3 (which gate command fires the
+check).
+
+
   <!-- cairn:slot acceptance-doc-tooling -->
   (Adopter-specific doc-generation tooling — the exact schema source +
   render command, the snippet-sync command, the CLI / notebook smoke
@@ -181,8 +187,17 @@ tested SHA, interpreter, clean pre/post state, commands, outcomes, timing,
 disposition of every non-pass, known omissions.
 
 **Boundary C (falsification)** is the code reviewer's, and it is not re-running
-Boundary B's command. Verify the record against the reviewed range, then attack
-the claims that would hurt most if wrong.
+Boundary B's command. Verify the record against the reviewed range, then run
+independent **targeted falsification** — attack the claims that would hurt most
+if wrong.
+
+A **fresh full run** is required, and the record does not carry, when any of
+these holds: **no valid Boundary B record exists**; an **unrecorded
+cross-surface dependency** appears; the run reports a **skip, xfail, or xpass**
+the record does not dispose of; **review sharpening changes implementation,
+tests, executable templates, or** fixtures; a **trust ceremony that explicitly
+requires** one applies; or there is a **concrete reason to distrust or falsify**
+the evidence.
 
 ## Plan review -- <reviewer> -- <YYYY-MM-DD>
 

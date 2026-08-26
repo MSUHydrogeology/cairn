@@ -79,6 +79,7 @@ line each. Drop a line once its path resolves.
 **Author**: {{agent or human}}
 **Status**: awaiting-review
 **Review**: {{required(Internal) | required(External) | required(Internal + Security Review)}}
+**Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}} — the tier the derived plan will declare, decided here where the surface is still visible
 **Opened**: {{YYYY-MM-DD}}
 
 ## Context
@@ -161,15 +162,29 @@ End-to-end surfaces a change can exercise:
   any Markdown / doctrine change.
 <!-- cairn:end examples-smoke-home -->
 
-## Author accounting — the five questions
+#### Security preflight — five questions, answered in writing
+
+*Gated to a **security-touching** change: one that adds, moves, or widens a
+trust boundary (deserialization, subprocess invocation, parsing, file and path
+handling, network I/O, credentials and environment), or one that touches a
+high-risk surface this project's `AGENTS.md` names. For every other change, one
+line — "N/A: no trust boundary added, moved, or widened" — is the correct
+entry.*
+
+Answer all five, one or two sentences each. These are **design questions, asked
+while the design is still movable** — not documentation written after it is
+fixed. An absent answer is a review finding; a *wrong* answer is a falsifiable
+one, which is the point: the reviewer checks a stated claim in one read instead
+of hunting for an absence over four rounds.
 
 Structural questions about where material comes from and what runs. They do not
 check whether an answer is *true*; they convert a hidden property into a written
 claim a reviewer can falsify. Prospective only — an archived artifact is never
 retro-fitted with them.
 
-* **S1 — What decides, on what input?** For each step that decides something,
-  name every input and the channel it arrives by, and say whether any input is
+* **S1 — Who supplied it?** For each step where this change *decides*
+  something (verifies, authenticates, authorizes, classifies, admits), name
+  every input and the channel it arrives by, and say whether any input is
   supplied — directly or **by reference** — by the thing being decided about.
 * **S2 — Can it fail?** For each check this change relies on, state the one-line
   mutation that makes it fail, and confirm you ran it. **If a check derives what
@@ -188,6 +203,9 @@ retro-fitted with them.
 
 **What they do not reach.** A semantically valid instruction that is hostile
 carries no lexical signature, and no question here finds it.
+
+**Prospective only.** This accounting applies to active and future artifacts;
+an archived proposal or plan is immutable and is never retro-fitted with it.
 
 ## Signals the change is wrong
 
