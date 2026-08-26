@@ -134,7 +134,7 @@ What is unresolved and would need settling before (or at) promotion.
 
 If the convention/finding is methodology-general rather than project-specific,
 name it here as a fold-back candidate for the project's upstream methodology
-record (if using Cairn: `dev/.cairn/cairn_foldback.md`).
+record (if using Cairn: an issue on Cairn's tracker).
 
 ---
 

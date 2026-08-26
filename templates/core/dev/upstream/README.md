@@ -33,13 +33,13 @@ OSS libraries and tools {{project_name}} uses.
 
 It is **not** the methodology channel. If {{project_name}} runs the Cairn
 methodology and discovers an improvement to Cairn's *own* doctrine or
-tooling, that belongs in `dev/.cairn/cairn_foldback.md` (the fold-back
+tooling, that belongs upstream as a Cairn issue (the fold-back
 ledger, installed by the `fold-back-ledger` module), not here.
 
 | Channel | Home | What it carries |
 |---------|------|-----------------|
 | Code dependencies | `dev/upstream/` (this folder) | Bug reports + capability gaps in external OSS |
-| Methodology | `dev/.cairn/cairn_foldback.md` | Improvements to the Cairn methodology itself |
+| Methodology | a Cairn issue | Improvements to the Cairn methodology itself |
 
 A finding that spans both (e.g. a dependency bug that also reveals a gap in
 Cairn's review doctrine) gets a file here for the upstream code report and

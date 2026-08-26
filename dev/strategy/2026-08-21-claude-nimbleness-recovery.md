@@ -1,3 +1,7 @@
+<!-- The subtraction sweep's own basis. Its build table names what the sweep
+     removes, so those paths stop resolving as the sweep lands -- which is
+     the note working, not breaking. -->
+<!-- claim-check-allow: dev/measurement/pilot-events.md, tools/lifecycle.py -->
 # Nimbleness recovery — shedding process mass without losing the point
 
 **Author**: Claude (Strategy)

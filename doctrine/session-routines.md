@@ -416,7 +416,7 @@ against the rate-limit gate's trigger — only `Impact = occurred`
 rows count.
 
 The trackers feed the rate-limit gate; the
-[`lifecycle-metrics`](../templates/modules/default-on/lifecycle-metrics.md)
+[`lifecycle-metrics`](../README.md)
 module's eventual cross-adopter harvest correlates across them.
 The trackers' canonical 7-column semantic-field schema is the
 contract that harvest reads against; adopters with existing

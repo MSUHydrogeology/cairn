@@ -34,8 +34,8 @@ not into shared doctrine in place — see below.)
   review tiers, work-intents. That stays in `dev/agent_collaboration.md`
   and other top-level `dev/` coordination docs.
 * **General (non-project) agent doctrine.** If a rule generalizes beyond
-  this project it is a Cairn fold-back candidate
-  (`dev/.cairn/cairn_foldback.md`), not a project rule — it belongs *up*
+  this project it is a Cairn fold-back candidate (filed as a Cairn
+  issue), not a project rule — it belongs *up*
   in Cairn methodology, not here.
 
 ## How files arrive and leave

@@ -54,7 +54,7 @@ revision, and awaits re-review.
 
 Nine chunks, `awaiting-plan-review`. **C1 is the load-bearing one and must land
 before C6** — it extracts a ~700-line-per-side *session kernel* from
-`tools/lifecycle.py`: the interpreter trust root, `_warn_stale_once`,
+`tools/session.py`: the interpreter trust root, `_warn_stale_once`,
 `_heal_skills_fanout`, and both session commands. C6 deletes that file, and the
 kept `session-start` / `session-end` SKILL.md files invoke it **by name**.
 

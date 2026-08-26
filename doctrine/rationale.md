@@ -502,7 +502,7 @@ standing process that closes that gap.
   is *deliberated*, not applied raw — the harvest feeds the lifecycle,
   it does not bypass it. The fold-back ledger itself — the deployment-side
   artifact, its lifecycle and status vocabulary, the nightly capture, and
-  the scrub-before-export rule — is specified in `doctrine/fold-back.md`;
+  the scrub-before-export rule — is specified in the retired fold-back doctrine;
   the harvest is the framework-side *pull*, the ledger the deployment-side
   *push*, and both record here.
 

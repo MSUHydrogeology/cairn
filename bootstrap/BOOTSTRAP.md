@@ -665,7 +665,7 @@ The scaffold fills these **inline tokens** from the profile config
 | `{{project_name}}` | `AGENTS.md`, `dev/README.md`, `dev/collaboration_agreement.md`, `dev/agent_collaboration.md` | The project's display name |
 | `{{test_command}}` | `AGENTS.md` | The command to run the test suite |
 | `{{claim_check_command}}` | `dev/modules/claim-check.md` (when the claim-check module is installed) | The command to run the write-time claim checker |
-| `{{metrics_command}}` | `dev/modules/lifecycle-metrics.md` (when the lifecycle-metrics module is installed) | The command to run the lifecycle-metrics extractor |
+| `{{metrics_command}}` | a module doc (when the lifecycle-metrics module is installed) | The command to run the lifecycle-metrics extractor |
 
 **Document-author placeholders** — written as `{{...}}` but **kept**
 in the installed templates for the document author to fill at write

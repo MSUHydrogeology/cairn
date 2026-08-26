@@ -1,6 +1,9 @@
+<!-- A dated record of a completed measurement pass. It cites the tree as it
+     stood then; rewriting it would falsify the measurement. -->
+<!-- claim-check-allow: ../plans/comprehension-outlives-the-artifact.md, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_transition_lint.py, scripts/transition_lint.py, templates/core/dev/proposals/_template.md, tools/lifecycle.py, tools/lifecycle_planner.py -->
 # Finding-tag pass — the keep ledger
 
-Chunk C of [`comprehension-outlives-the-artifact`](../plans/comprehension-outlives-the-artifact.md).
+Chunk C of [`comprehension-outlives-the-artifact`](../plans/archive/comprehension-outlives-the-artifact.md).
 
 **What this file is for.** The pass revises every finding-tag candidate in a
 comment or docstring so the sentence states its reason rather than citing the
@@ -52,10 +55,10 @@ the stated method and is recorded here rather than absorbed silently.
 | `bootstrap/tests/test_gate_preflight.py` | `N4` | Same fence, same reason. |
 | `tools/lifecycle_planner.py` + twin | `H2`, `H3` | Markdown heading levels, not coordinates. The parser's field scopes are literally defined as "the body above the pass's first H3". |
 | `tools/lifecycle_planner.py` + twin | `C0` | The Unicode C0 control-character block, in a rule about which code points are refused. |
-| `tools/lifecycle.py` + twin | `H2` | Markdown heading level, as above. |
+| `tools/session.py` + twin | `H2` | Markdown heading level, as above. |
 | `bootstrap/tests/test_lifecycle_brief.py` | `M3` | **A live fence, like `N4`.** `M3` names the interpreter-binding fence and carries **23 citations in `dev/plans/ceremony-as-code.md`, an active plan** (siblings `M2` at 59, `M4`, `M7`). The test's whole subject is that fence, so the name stays and the sentence now says what it fences. Caught by grepping the tree before deleting — the rule working as intended rather than after a test died. |
 | `bootstrap/tests/test_transition_lint.py` | `A1`–`A20`, `B3`–`B15`, `C2`–`C11` | **A live internal labelling scheme, not citations.** The file defines ~29 of these itself (`# A9.`, `# C4.`, plus more in docstrings) and cross-references between them — *"Run with C10"*, *"C6/C7 is the second pair"*. A reader resolves them by scanning the same file, which is exactly what makes them live. Same test as `N4`: the referent is in reach. Only the references pointing *out* of the file (to the archived plan) were revised. |
-| `tools/lifecycle.py` + twin | `E1`, `S12`, `CF3` | **Examples of the pattern the code matches**, in `#: A bracketed finding id -- \`[E1]\`, \`[S12]\`, \`[CF3]\`, \`[M6-R]\``. The module parses finding ids, so naming their shapes is the docstring doing its job. |
+| `tools/session.py` + twin | `E1`, `S12`, `CF3` | **Examples of the pattern the code matches**, in `#: A bracketed finding id -- \`[E1]\`, \`[S12]\`, \`[CF3]\`, \`[M6-R]\``. The module parses finding ids, so naming their shapes is the docstring doing its job. |
 
 
 ---
@@ -109,7 +112,7 @@ enumeration reports separately and never counts as candidates.
 
 ## A second correction: the pass ran into a security fence
 
-Five comment lines in `tools/lifecycle.py` were revised and then **put back**.
+Five comment lines in `tools/session.py` were revised and then **put back**.
 They sit inside the three symbols `bootstrap/tests/test_lifecycle_brief.py`
 pins byte-and-AST-identical, guarding the local interpreter binding --
 a surface `AGENTS.md` lists as high-risk and Security-Review-gated.
@@ -138,7 +141,7 @@ binding. **The Maintainer authorized the edit and the re-pin:**
 > fine with this."*
 
 All five are now revised and the four digests in
-`bootstrap/tests/test_lifecycle_brief.py::_INTERPRETER_SYMBOL_DIGESTS` are
+the retired `test_lifecycle_brief.py`'s interpreter-symbol digests are
 re-derived. **Nothing is deferred, so the plan's "no revival row" claim holds
 again.**
 
@@ -180,11 +183,11 @@ explicit Maintainer authorization, not by a Security Review.
 
 | File | Was | Now |
 |------|-----|-----|
-| `tools/lifecycle.py` + twin | `binary runs (S2).` | `binary runs.` |
-| `tools/lifecycle.py` + twin | `Resolve-don't-bake (Decision 6 / R3):` | `Resolve-don't-bake:` |
-| `tools/lifecycle.py` + twin | `... corrected on the record (S1).` | `... corrected on the record.` |
-| `tools/lifecycle.py` + twin | `later used to run (R7)` | `later used to run` |
-| `tools/lifecycle.py` + twin | `... any fatal check (finding 1; corrected R2/R6).` | `... any fatal check.` |
+| `tools/session.py` + twin | `binary runs (S2).` | `binary runs.` |
+| `tools/session.py` + twin | `Resolve-don't-bake (Decision 6 / R3):` | `Resolve-don't-bake:` |
+| `tools/session.py` + twin | `... corrected on the record (S1).` | `... corrected on the record.` |
+| `tools/session.py` + twin | `later used to run (R7)` | `later used to run` |
+| `tools/session.py` + twin | `... any fatal check (finding 1; corrected R2/R6).` | `... any fatal check.` |
 
 ---
 
@@ -473,7 +476,7 @@ opening the referent does.
 
 **A homograph against a *live* scheme, which is the dangerous direction.**
 `_loader_proto.py` described "the reproduced **S1** attack", and `S1` is live
-vocabulary: `templates/core/dev/proposals/_template.md:347` ships
+vocabulary: `templates/core/dev/proposals/_template.md` (pre-rewrite line 347) ships
 `**S1 — Who supplied it?**` as the first security-preflight question. A
 grep-for-liveness returns that hit and it is genuinely live — and it is not this
 `S1`, which named a Security Review finding about import hijack. The earlier
@@ -594,7 +597,7 @@ and they should be a follow-up rather than a silent widening here.
 | `bootstrap/tests/test_trigger_evaluation_action.py` | 3 | 0 | — |
 | `bootstrap/tests/test_skills_install.py` | 3 | 0 | — |
 | `bootstrap/tests/test_security_net.py` | 3 | 0 | — |
-| `tools/lifecycle.py` + twin | 4 | 4 | **all** — see below |
+| `tools/session.py` + twin | 4 | 4 | **all** — see below |
 
 **`tools/lifecycle.py:2909` is the purest keep in the pass, and it took no
 research at all.** The comment reads:
@@ -649,7 +652,7 @@ recorded at the top of this ledger, re-run at the Chunk C head commit.
 * **Two live fences** — `N4` (the gate preflight pair) and `M3` (the interpreter
   binding), each cited by an active plan.
 * **One live principal ordinal** — `P1`, in `CAIRN_API_P1_CREDENTIAL`.
-* **Four specimens** — the bracketed examples in `tools/lifecycle.py`'s
+* **Four specimens** — the bracketed examples in `tools/session.py`'s
   finding-id regex comment and its twin.
 
 **One stray was found inside a live scheme, at the very end.**

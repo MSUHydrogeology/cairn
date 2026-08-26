@@ -1,3 +1,6 @@
+<!-- A release history necessarily names files as they were at each version; a
+     path that later stopped existing does not make the entry wrong. -->
+<!-- claim-check-allow: bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, dev/.cairn/cairn_foldback.md, doctrine/fold-back.md, templates/modules/default-on/_lifecycle_metrics/, templates/modules/default-on/fold-back-active-prompt.md, templates/modules/default-on/fold-back-ledger.md, templates/modules/default-on/foldback_export_scan.py, templates/modules/default-on/foldback_suggest.py, templates/modules/default-on/lifecycle-metrics.md, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle_planner.py, tools/lifecycle.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
 <!-- claim-check-allow: scripts/onboarding_activate.py, scripts/_onboarding/ -->
 <!-- Historical lifecycle paths: this changelog narrates Cairn's construction, tracked in the modflow_tools-side dev/ lifecycle (and earlier Cairn locations) -- the cited stems are history, not claims about Cairn's own tree. -->
 <!-- claim-check-allow: dev/plans/byline-classification.md -->
@@ -2099,7 +2102,7 @@ and a new empty `Unreleased` is started above.
   verbatim authorization, unambiguous-instruction-or-confirm, Decision-only
   commit ([`doctrine/lifecycle.md`](doctrine/lifecycle.md) cross-links it).
   **(C)** the deployment-side improvement channel is now formalized:
-  [`doctrine/fold-back.md`](doctrine/fold-back.md) specifies the fold-back
+  ``doctrine/fold-back.md`` specifies the fold-back
   ledger mechanism, a default-on `fold-back-ledger` module ships a forkable
   ledger (carrying a `[SECURITY WARNING]` export-safety header) into
   `dev/.cairn/`, and the goodnight routine gains a foldback-capture step.
@@ -2321,7 +2324,7 @@ and a new empty `Unreleased` is started above.
   * **Two packaged scripts** —
     [`templates/modules/default-on/claim_check.py`](templates/modules/default-on/claim_check.py)
     (verify-before-asserting tripwire) and
-    [`templates/modules/default-on/lifecycle_metrics.py`](templates/modules/default-on/lifecycle_metrics.py)
+    ``templates/modules/default-on/lifecycle_metrics.py``
     (proposal/plan lifecycle extractor, v1 core). Both vendor-neutral and
     **standard-library only**; generalized from the modflow_tools adopter
     implementations with a `--root` override so they run against any
@@ -2346,7 +2349,7 @@ and a new empty `Unreleased` is started above.
     set grew.
   * Module docs rewritten to point at what ships
     ([`templates/modules/default-on/claim-check.md`](templates/modules/default-on/claim-check.md),
-    [`templates/modules/default-on/lifecycle-metrics.md`](templates/modules/default-on/lifecycle-metrics.md));
+    ``templates/modules/default-on/lifecycle-metrics.md``);
     `bootstrap/tests` grew an install / generalization-gate / external-
     path / stdlib-only / VCS-robustness suite (47 → 61 passing). Source:
     the modflow_tools-hosted `cairn-v0.2-p1-reference-scripts` arc (P1 of
@@ -2390,7 +2393,7 @@ and a new empty `Unreleased` is started above.
     the **adaptive-doctrine rate-limit gate** (no doctrine change
     from a single incident unless high-risk; else recurrence or
     routine-boundary synthesis).
-  * [`templates/modules/default-on/lifecycle-metrics.md`](templates/modules/default-on/lifecycle-metrics.md)
+  * ``templates/modules/default-on/lifecycle-metrics.md``
     > "The Measurement Compact" — five commitments + two-tier
     enforcement, with **doctrine decoupled from enforcement** (the
     optional wording gate parameterizes its banned-token list; no

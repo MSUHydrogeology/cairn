@@ -99,9 +99,9 @@ doctrine (`on-ramp/README.md`):
   `dev/proposals/**/*.md` + `dev/plans/**/*.md` -- a flavor of
   explicit-state observation (the file content IS the explicit
   state; not git archaeology of trailers).
-* `first-foldback-candidate` -- the fold-back ledger
-  (`dev/.cairn/cairn_foldback.md`) has at least one open
-  `candidate`-status row.
+* `first-foldback-candidate` -- the fold-back ledger has at least one open
+  `candidate`-status row.  (The ledger is retired upstream; this trigger
+  fires only where an adopter still keeps one.)
 * `collab-agreement-signing` -- the team-roster slot in
   `dev/collaboration_agreement.md` is unfilled (template default
   text OR empty between the slot tags) AND
@@ -348,7 +348,7 @@ stays vendor-neutral; the wrapper carries the spawn recipe.
   heuristics a fresh session is framed by.
 * `doctrine/coordination.md` -- the work-intent mechanism the
   multi-agent presets exercise from day one.
-* `doctrine/fold-back.md` -- the active-surfacing 6-step
+* the retired fold-back doctrine -- the active-surfacing 6-step
   protocol Component 3 Row 4 invokes.
 * `doctrine/session-routines.md` -- the goodnight step the
   activation helper runs at.

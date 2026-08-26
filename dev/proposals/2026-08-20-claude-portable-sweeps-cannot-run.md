@@ -18,7 +18,7 @@ change to executable resolution or the revalidation points, no change to
 **Related**: adopter issue
 [#4](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/4).
 Sibling drafts opened the same day:
-[`2026-08-20-claude-adopt-into-existing-tree`](2026-08-20-claude-adopt-into-existing-tree.md),
+[`2026-08-20-claude-adopt-into-existing-tree`](archive/2026-08-20-claude-adopt-into-existing-tree.md),
 [`2026-08-20-claude-scanner-claim-scope`](2026-08-20-claude-scanner-claim-scope.md).
 **Plan review**: required(**Internal**) — an Internal proposal review spends no
 different-agent-type read, so no `Plan readiness` inheritance is claimed and the
