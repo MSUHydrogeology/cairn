@@ -340,6 +340,54 @@ fences -- installed-source deletion atomic with its registry row, the Security
 Review cleared before the first removal, a green fresh scaffold per commit.
 Nothing about this delta is executed in the session that recorded it.
 
+## C6 onboarding -- measured at the gate, not estimated -- 2026-08-26
+
+**The gate is the first domino, not the last.** `_ALWAYS_ON_MAPPINGS` contains
+exactly the nine onboarding engine files and nothing else, and the engine ships
+verbatim to every adoption. So its tests, doctrine and presets all document live
+code: there is no safe prefix to remove before the Maintainer's registry edit.
+An earlier reading of this plan assumed the opposite.
+
+**Validated in a throwaway worktree rather than estimated.** Three rounds, each
+finding another importer the previous draft missed. What the edit actually
+reaches:
+
+| file | change |
+|---|---|
+| `bootstrap/_scaffold/config.py` | `_ALWAYS_ON_MAPPINGS` 9 rows -> `()` — **the gated edit** |
+| `bootstrap/_scaffold/install.py` | `install_onboarding`, 222 lines |
+| `bootstrap/_scaffold/__init__.py` | facade export |
+| `bootstrap/_scaffold/cli.py` | import **and a named phase of the live install sequence** |
+| `bootstrap/tests/test_upgrade_side_door_parity.py` | 126 of 444 lines |
+| `bootstrap/tests/test_security_leaf.py` | roster entry |
+| `bootstrap/tests/test_hardening.py`, `test_install_module.py` | the install-writer roster naming `install_onboarding` |
+| `bootstrap/tests/_ast_attest.py` | a `_UPDATE_ALLOWLIST` key that would name nothing |
+| `bootstrap/_scaffold/SECURITY_MUTATIONS.md` | its mutation-table row |
+
+With all of that applied the suite collects and runs: **2,988 passed**, with the
+residue being the two standing fences, the oracle's uncommitted-engine
+comparison, and count pins.
+
+**Two properties lose their subject, and that is a decision rather than
+bookkeeping.**
+
+* `assert_always_on_complete` fails closed before any write on an incomplete
+  launcher+engine group. With the group empty it guards nothing, and
+  `SECURITY_MUTATIONS.md` documents it as a live security mutation.
+* The **side-door parity** property exists because always-on helpers ship
+  *outside* `_MODULE_MAPPINGS` and were once missed by the release scan. Empty
+  the group and the category is empty. Deleting those tests closes the record
+  of a real blind spot; converting them into a guard that any *future*
+  always-on member must be scanned keeps it closed. The second is an addition,
+  so it is the Maintainer's call.
+
+**~73 tests sit behind onboarding-shaped guards** across at least five files.
+Three (`test_active_surfacing_mechanism`, `test_active_surfacing_render`,
+`test_deferred_task_store`) name the progressive-onboarding plan in their own
+docstrings and die with it. The others need reading one at a time — the
+`guard names more than its tests need` rule this plan already carries, applied
+here rather than assumed.
+
 ## Sequence
 
 Nine chunks. **The `convergent-lifecycle` fence in §1 is satisfied** — its code
