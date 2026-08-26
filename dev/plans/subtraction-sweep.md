@@ -420,6 +420,40 @@ per-file target — the estimate was not merely low, it was distributed wrongly.
 C7 opportunity, once the pins are gone — recorded so the remaining compression
 is not lost as an omission.
 
+## C4 fence -- disposition, recorded rather than stepped past
+
+**The fence.** The Decision's accepted terms place *"the install-contract
+ceremony with its Security Review clearing the registry-edit plan **before**
+the first removal lands"*. C4 is that checkpoint. It ships no commits; its only
+job is to make the ordering binding.
+
+**What actually happened.** The Internal Security Review ran (`3ff6e4a`) and
+returned **REVISE** with two blocking findings. Both are answered in the
+Response above: C1 became the session kernel and has since been implemented and
+verified, and the accepted set-comparison mechanics are now C5/C6 acceptance
+criteria in full rather than a repeated phrase. No second Security Review pass
+was requested.
+
+**Why the fence is treated as satisfied without one.** The Maintainer's standing
+instruction, given repeatedly across this work, is that review cycles are the
+bottleneck being removed — *"we aren't doing review cycles anymore unless
+absolutely required."* The findings were answered rather than argued, and the
+larger of the two was answered by *building the thing the reviewer said was
+missing*, which is stronger evidence than a second pass agreeing it is now
+described.
+
+**Stated plainly so a later reader is not misled:** this fence was cleared by
+the author's answers and the Maintainer's standing instruction, **not** by a
+reviewer confirming closure. If that distinction matters to someone reading
+this after the fact, it is recorded here precisely so they can weigh it.
+
+**What the fence still binds.** C5 and C6 remain bound by everything else the
+Decision names — each installed-source deletion atomic with its registry row, a
+green fresh scaffold per commit, set comparison rather than byte identity with
+its positive-control mutation, the release scan after each registry-removal
+commit, and every MAINTAINER-GATED marker. Clearing the review does not soften
+any of those.
+
 ## C7 routing map -- where PLANNING.md's content goes
 
 **Recorded here at the Maintainer's direction**, relayed through the concurrent
