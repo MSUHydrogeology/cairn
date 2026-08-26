@@ -567,6 +567,51 @@ The strategy is working when:
   blocking rows back to the roadmap; and
 * a new finding can be routed in minutes without opening a proposal by default.
 
+## Refocus serialization note — 2026-08-26 (Claude, Strategy)
+
+The 2026-08 refocus (`2026-08-21-claude-nimbleness-recovery`; the accepted
+convergent-lifecycle contract; the open `subtraction-sweep` plan) leaves this
+strategy's protected assets, design principles, cluster taxonomy, and decision
+test intact — the sweep plan's "Not touched" list names the security stack
+explicitly. Protected asset 5, the Maintainer's attention, is now the whole
+project's stated objective, so this document anticipated the refocus rather
+than conflicting with it. Recorded here so the two records agree:
+
+* **The security suite is release-only** (Maintainer decision, 2026-08; the
+  pytest marker + manifest chunk has landed; the `security_check.py` release
+  path is unchanged). This is principle 4 applied: the trigger is named at its
+  real strength — Maintainer-run, at release — not weakened.
+* **The refocus's warn-never-refuse doctrine carves out exactly this
+  strategy's fail-closed surfaces** (scaffold containment; release trust
+  roots). The two documents state one rule from two directions; no conflict.
+
+**Four rows conform when their sweep chunk lands** — folded in then, not now,
+because revising ahead of execution would describe a future state:
+
+1. **[REC-3]**: `transition-lint` (sweep C5) and the planner's artifact/status
+   cross-checks (C6) are removed. The record-conformance class stays doctrine;
+   the tool dispositions end with the tools.
+2. **[REC-5]**: the typed lifecycle-mutation direction presupposed the
+   lifecycle CLI, which C6 removes. The authority boundary it states — no
+   lifecycle mutation or commit without a named authority and a reviewed
+   privilege boundary — outlives the mechanism and binds any future one; the
+   dogfood-study gate needs a re-disposition when C6 lands.
+3. **Authority and update rule**: `dev/PLANNING.md`'s ownership of task state
+   changes at C2 (minimal board view) and C7 (bankruptcy); restate then.
+4. **[VER-6]**: the preflight questions live in proposal templates the
+   constitution rewrite (C2) replaces; they either survive into the
+   deliberate-lane template or get an explicit re-disposition — not a silent
+   drop.
+
+**Where the security-debt index lives after C7.** `dev/PLANNING.md`'s
+Security-cluster routing block (~1,010 lines) was measured during sweep
+scoping as a **live** security-debt index with revival triggers, not dead
+prose. When C7's bankruptcy pass reaches it, the surviving material folds
+**into this document's cluster map** — each live row reduced to its lasting
+boundary, residual, or revival trigger per the update rule above, with
+`PLANNING.md` keeping pointers only. Named here so bankruptcy has a
+destination and cannot silently drop a live trigger.
+
 ## Fold-up note
 
 Three patterns may later merit methodology fold-back after recurrence across an
