@@ -341,10 +341,14 @@ trustworthy is the signature on the commit it names.
   [`bootstrap/AST_BASELINE_RUNBOOK.md`](bootstrap/AST_BASELINE_RUNBOOK.md) —
   derive the expected CHANGED set against the committed baseline rather than
   carrying a figure forward.
-* **The gate manifest goes stale silently.** A frozen file whose bytes change
-  does **not** redden the suite: `test_gate_manifest.py` self-verifies a freshly
-  produced manifest and never diffs the committed fixture. A green suite is not
-  evidence that no re-anchor is owed.
+* **The gate manifest goes stale silently — but only for a *changed* file.**
+  A frozen file whose bytes change does **not** redden the suite:
+  `test_gate_manifest.py` self-verifies a freshly produced manifest and never
+  diffs the committed fixture, so a green suite is not evidence that no
+  re-anchor is owed. A frozen file that is **deleted** behaves the opposite way
+  and fails loudly, because the verifier cannot hash a path that is gone. So
+  removal work reddens this file until the re-anchor runs; that is expected, and
+  it is not a reason to treat the failure as noise.
 * **Commit hygiene.** Always `git commit <paths>`; see *Git and commit workflow*.
 * **Doctrine changes clear the rate-limit gate** — a single incident does not
   justify a doctrine change unless it is the high-risk case.

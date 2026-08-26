@@ -704,11 +704,12 @@ with the plan's filename stem.
   wherever a record was kept and failed only where nothing observes. So measuring
   whether this rule works depends on the run-frequency ledger proposed in
   `2026-08-19-claude-suite-run-diagnostics`; without it, the next reading of this
-  row is another hand-count of one plan. **That ledger shipped 2026-08-21**
-  (plan `suite-run-diagnostics`, archived): the collector writes one row per
-  top-level session to the gitignored `dev/measurement/suite-runs.jsonl`, and
-  `tools/suite_cost.py` renders it without re-running anything. The dependency
-  this row names is satisfied; what it still needs is elapsed time and rows.
+  row is another hand-count of one plan. That ledger shipped 2026-08-21 and was
+  **retired 2026-08-26** by the subtraction sweep, under the accepted-scope
+  allowance its Decision grants. So this row's stated dependency no longer
+  exists and will not be satisfied: measuring whether the rule works is back to
+  reading the plans themselves. Recorded rather than left implying a collector
+  that is coming.
   *Trigger:* the next plan that fans work out to subagents, or any change to how
   briefs are composed.
 

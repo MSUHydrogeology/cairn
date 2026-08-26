@@ -20,11 +20,7 @@ a session that has set it -- the order-independence sub-gate sets it for every
 child, and an operator running the full suite sets it by hand. A child that
 simply inherited the parent's environment would find the guard disabled, and
 every refusal assertion here would pass without testing anything. That failure
-is silent, which is what makes it worth a paragraph. The same scrubbing covers
-``CAIRN_SUITE_LEDGER``: this plan's own mandated verification command sets it
-to ``0`` (opt the *outer* session out of ledger writes), and a test reading a
-*child's* ledger row for its ``scope`` would silently see nothing at all if
-that value leaked down.
+is silent, which is what makes it worth a paragraph.
 """
 from __future__ import annotations
 
@@ -76,39 +72,20 @@ def _tree(tmp_path: Path, n_files: int, *, tests_per_file: int = 1,
     return tmp_path
 
 
-def _run(root: Path, *args: str, env_overrides: dict | None = None,
-         family_clean: bool = False) -> subprocess.CompletedProcess:
-    """Run pytest in ``root`` with all three of this conftest's tokens
-    explicitly removed from the child's environment before any override is
-    applied, so a test asserting a refusal -- or a specific ledger outcome --
-    cannot be silently satisfied by something this process inherited.  See the
-    module docstring.
-
-    ``family_clean=True`` drops the ``-p no:cacheprovider`` flag every other
-    call here carries. The sibling's ledger classifies ``scope`` from the raw
-    invocation, and its closed option family
-    (``bootstrap/tests/conftest.py::LEDGER_FAMILY_FLAGS``) does not include
-    ``-p`` -- so a run carrying it can never classify ``full``, regardless of
-    what actually happened. Tests that read the ledger's ``scope`` field need
-    the unflagged invocation; every other test here, which never looks at the
-    ledger, keeps the flag for cache hygiene.
+def _run(root: Path, *args: str,
+         env_overrides: dict | None = None) -> subprocess.CompletedProcess:
+    """Run pytest in ``root`` with this conftest's tokens explicitly removed
+    from the child's environment before any override is applied, so a test
+    asserting a refusal cannot be silently satisfied by something this process
+    inherited.  See the module docstring.
     """
     env = dict(os.environ)
     env.pop("CAIRN_FULL_SUITE", None)
     env.pop("CAIRN_RELEASE_GATE_ACTIVE", None)
-    env.pop("CAIRN_SUITE_LEDGER", None)
-    # The nesting marker, and it is not optional. A parent session that is
-    # itself recording exports CAIRN_SUITE_LEDGER_SESSION; a child that
-    # inherits it classifies itself as nested and writes no row at all. Tests
-    # here that read a child's ledger row would then fail with "wrote no
-    # ledger row", but only when the parent has the ledger enabled -- which is
-    # the canonical Boundary B command and NOT the CAIRN_SUITE_LEDGER=0 form
-    # used while iterating. Scrubbed so the two agree.
-    env.pop("CAIRN_SUITE_LEDGER_SESSION", None)
     env.update(env_overrides or {})
     env["PYTHONPATH"] = str(root) + os.pathsep + env.get("PYTHONPATH", "")
     plugin = ["-p", "competitor_plugin"] if (root / "competitor_plugin.py").exists() else []
-    cache_flag = [] if family_clean else ["-p", "no:cacheprovider"]
+    cache_flag = ["-p", "no:cacheprovider"]
     return subprocess.run(
         [sys.executable, "-m", "pytest", "bootstrap/tests", "-q",
          *cache_flag, *plugin, *args],
@@ -116,12 +93,6 @@ def _run(root: Path, *args: str, env_overrides: dict | None = None,
     )
 
 
-def _ledger_rows(ledger_path: Path) -> list[dict]:
-    """Every decodable JSONL row in ``ledger_path``, in file order."""
-    if not ledger_path.is_file():
-        return []
-    return [json.loads(line) for line in
-            ledger_path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def _refused(proc: subprocess.CompletedProcess) -> bool:
@@ -589,81 +560,3 @@ def test_the_ownership_registry_is_complete(tmp_path) -> None:
 # Chunk S -- the sibling seam (dev/plans/full-suite-interception.md, row A6)
 
 
-def test_a_refused_session_is_scoped_unknown(tmp_path) -> None:
-    """A6 -- a regression guard on the sibling's contract, not a change to it.
-
-    The sibling's accepted classifier (``bootstrap/tests/conftest.py``'s
-    ``_ledger_scope``, and its read-only twin in ``tools/suite_cost.py``)
-    already requires ``collected > 0``, ``executed > 0`` and ``not_run == 0``
-    for ``scope == "full"``. A session this guard refuses has ``executed ==
-    0`` by construction -- the refusal fires at collection-finish, before any
-    test runs. This pins that property against a later relaxation of the
-    sibling's contract rather than adding special-case code for a shape the
-    general rule already covers; see the plan's Scope > "A second expansion"
-    for the full derivation and the Maintainer's disposition ("Sure, I like
-    the regression guard idea").
-
-    **Correcting a claim in this plan's own "Sequencing" section, which this
-    test's mutation-testing exposed.** That section says a refused session
-    "writes a row with `collected` ≈ the full set and `executed` = 0" --
-    measured here, `collected` (`session.testscollected`) is **0**, not ≈
-    the full set: `Session.perform_collect` (`_pytest/main.py`, pytest 9.0.3)
-    only assigns `self.testscollected = len(items)` *after*
-    `hook.pytest_collection_finish` returns, and this guard's `UsageError`
-    propagates out of that hook before the assignment is reached. So
-    `collected > 0` is independently sufficient to keep a refused session out
-    of `full` -- removing only `executed > 0` from the classifier's postcondition
-    (leaving `collected > 0` and `not_run == 0`) does **not** flip this test's
-    first half, confirmed by mutation; removing both `collected > 0` and
-    `executed > 0` does (`not_run = collected - executed = 0 - 0 = 0` still
-    holds). The assertions below check both fields directly so a reader does
-    not have to take either claim on faith.
-
-    Reads the ledger row directly (raw JSONL), not through
-    ``tools/suite_cost.py`` -- that reader's own refused-session handling is
-    row A7 of the same chunk, unimplemented as of this test (see the code
-    review's finding on that row).
-
-    Directional on both halves, per the row mapping: a refused session
-    resolves ``unknown``, **and** the same tree under the override resolves
-    ``full`` -- a classifier answering ``unknown`` unconditionally would pass
-    the first half and fail the second. Both runs use ``family_clean=True``:
-    without it, ``-p no:cacheprovider`` alone forces ``unknown`` regardless of
-    ``executed``, which would make the second half vacuous (measured -- see
-    ``_run``'s own docstring).
-    """
-    refused_root = _tree(tmp_path / "refused", THRESHOLD + 5)
-    refused_ledger_dir = refused_root / "dev" / "measurement"
-    refused_ledger_dir.mkdir(parents=True)
-    refused_ledger = refused_ledger_dir / "suite-runs.jsonl"
-
-    refused = _run(refused_root, family_clean=True)
-    assert _refused(refused), refused.stdout + refused.stderr
-    refused_rows = _ledger_rows(refused_ledger)
-    assert refused_rows, "the refused session wrote no ledger row at all"
-    row = refused_rows[-1]
-    assert row["exitstatus"] == 4, row
-    assert row["executed"] == 0, row
-    assert row["collected"] == 0, row
-    assert row["scope"] == "unknown", (
-        f"a refused session (executed=0) classified {row['scope']!r}, not "
-        "'unknown' -- the sibling's full-classification postconditions no "
-        "longer exclude a session that never ran anything")
-
-    full_root = _tree(tmp_path / "full", THRESHOLD + 5)
-    full_ledger_dir = full_root / "dev" / "measurement"
-    full_ledger_dir.mkdir(parents=True)
-    full_ledger = full_ledger_dir / "suite-runs.jsonl"
-
-    full = _run(full_root, env_overrides={"CAIRN_FULL_SUITE": "1"},
-                family_clean=True)
-    assert full.returncode == 0, full.stdout + full.stderr
-    full_rows = _ledger_rows(full_ledger)
-    assert full_rows, "the overridden session wrote no ledger row at all"
-    full_row = full_rows[-1]
-    assert full_row["executed"] == THRESHOLD + 5, full_row
-    assert full_row["scope"] == "full", (
-        f"the same tree, actually run to completion under the override, "
-        f"classified {full_row['scope']!r} -- a classifier that answers "
-        "'unknown' unconditionally would still have passed the first half "
-        "of this test")

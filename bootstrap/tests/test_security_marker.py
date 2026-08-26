@@ -52,7 +52,6 @@ def _child_env() -> dict:
     env = dict(os.environ)
     env["CAIRN_FULL_SUITE"] = "1"
     env["PYTHONDONTWRITEBYTECODE"] = "1"
-    env.pop("CAIRN_SUITE_LEDGER_SESSION", None)
     return env
 
 
