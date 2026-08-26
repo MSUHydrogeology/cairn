@@ -27,12 +27,9 @@ inventory is a file nobody agreed to delete.
 
 ## Proposed paths
 
-Every other path in this plan exists today; it removes and edits. These two are
-created by C1 and do not resolve until it lands.
-
-Proposed paths:
-- `tools/session.py` — the session kernel C1 extracts from `tools/lifecycle.py`; lands in C1, before C6 deletes its source.
-- `templates/skills/_lib/session.py` — its byte-identical shipped twin; lands in the same C1 commit.
+None outstanding. `tools/session.py` and `templates/skills/_lib/session.py`
+were forward references until C1 created them; the declarations are dropped
+because the paths now resolve.
 
 ## Scope
 
@@ -271,6 +268,72 @@ The intent system and collision log; the minimal board view once C2 lands it;
 the security stack; the scaffold engine itself; the claim/link checkers (kept,
 de-scoped in C7); and the trust-root validator, which relocates in C1 and is
 never removed.
+
+## Scope delta -- the lifecycle-metrics module is removed -- 2026-08-26
+
+**Relayed authorization, quoted verbatim and visually isolated.** The Maintainer
+gave this in a concurrent Strategy session, not to this session; it reached here
+through that session's agent, and the attribution says so rather than implying
+it was spoken to me:
+
+> "Wow, okay, yes please tell the other agent to remove it"
+
+"It" is the **lifecycle-metrics module**, from the immediately preceding
+exchange: the Maintainer asked *"If we remove that module, how do we track our
+productivity?"* and accepted the answer that the gauge classifier plus git's
+one-commit-per-transition discipline carry what is needed.
+
+**Why this is a delta and not an ordinary row.** The accepted build table has no
+metrics row -- a drafting omission, acknowledged as such by its author. The
+module therefore survived the sweep **by silence**, not by decision, while the
+strategy note's measured-sweep section and the 2026-08-24 guide star both stated
+the removal intent. A plan reviewer flagged it as never named in either
+direction. Silence is not a decision, so this records one.
+
+**Measured per file, not by name** (`as_of 2026-08-26`):
+
+| file | lines | disposition |
+|---|---|---|
+| `tools/lifecycle_metrics.py` + `tools/_lifecycle_metrics/` | 2,226 | whole |
+| `templates/modules/default-on/lifecycle_metrics.py` + `_lifecycle_metrics/` | 2,226 | whole, byte-identical twin |
+| `bootstrap/tests/test_lifecycle_stage_patterns.py` | 753 | whole |
+| `bootstrap/tests/test_lifecycle_metrics_events.py` | 560 | whole |
+| `bootstrap/tests/test_lifecycle_metrics_config.py` | 266 | whole |
+| `bootstrap/tests/test_metrics_status_normalization.py` | 162 | whole |
+| `bootstrap/_scaffold/config.py` | registry rows | edited, atomic with the deletion |
+
+**Total ~6,193 lines**, against the ~5,980 the relaying session estimated. The
+gap is `test_metrics_status_normalization.py`, which matches no
+`lifecycle_metrics` name pattern and is invisible to a name-based sweep -- the
+same failure mode that put a false inclusion and six missing files in this
+plan's first manifest.
+
+**This reverses a strike recorded above, and the reversal is deliberate.**
+`test_lifecycle_stage_patterns.py` was struck from the order-5 manifest as a
+false inclusion *because it tests a module this sweep keeps*. That premise is
+now retired: the module does not survive, so the file dies -- for its own
+reason, as a metrics test, not as the planner test it was wrongly filed as. A
+later reader should not read this as drift.
+
+**One premise of the recommendation was stale, and the record says so.** The
+relaying session argued in part that the module "is currently broken
+(`dev/PLANNING.md:128` -- exits `INCOMPLETE`)". That row was **closed** at the
+2026-08-25 goodnight: the handoff's own run wrote
+`dev/measurement/snapshots/2026-08-25-1.csv` -- 120 rows, 71 proposals + 49
+plans, exit 0, none refused -- because `retire-event-blocks` removed the
+machinery whose activation cutoff caused the refusal. The row's reproduction
+command was also wrong as written: it names the *template* copy, which refuses
+by design, with a `--root` defaulting to the script's own directory.
+
+The other two reasons are untouched and are what this delta rests on: the tool
+parses the proposal/plan grammar the constitution rewrite replaces, and the
+gauge classifier carries the empirical program. But if "it is already broken"
+was weighed, it was weighed wrongly, and reversing this delta should stay cheap.
+
+**Execution.** Removal runs inside the existing chunks and behind their existing
+fences -- installed-source deletion atomic with its registry row, the Security
+Review cleared before the first removal, a green fresh scaffold per commit.
+Nothing about this delta is executed in the session that recorded it.
 
 ## Sequence
 
