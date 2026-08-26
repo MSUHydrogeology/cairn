@@ -1,285 +1,71 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- Author tip: numeric claims follow the three-kind precision /
-     `as_of` discipline -- approximate a decision-irrelevant count
-     (`~4900 lines`), date a snapshot (`N, as_of YYYY-MM-DD`, never
-     re-measured), register a live invariant; never quote one from
-     memory.  Chunk-size estimates ("ships in 2-3 commits") are
-     decision-irrelevant -- approximate them.  See `doctrine/plans.md` >
-     "Count claims".  (The old `claim_check` count soft-flag +
-     `claim-check-allow-count` directive were retired 2026-06-05 --
-     claim_check no longer flags counts.) -->
+<!-- The plan template. Copy everything below the rule into
+     `dev/plans/<slug>.md`. Keep it short: a plan is a working
+     document, not a second proposal. -->
 
 # Plan template
 
-> **This is the plan template.** A non-trivial accepted proposal
-> opens a plan: copy the section template below the rule into
-> `dev/plans/<short-slug>.md`. The lifecycle, archive-precondition,
-> plan-review-precondition, triage, mutability, planning-handshake,
-> forward-reference-path, count-claim, and plan-review/code-review
-> doctrine above the rule live in `doctrine/plans.md` — read it once,
-> then work from the sections below.
+A non-trivial accepted proposal opens a plan. The plan says how the work
+happens and how you will know it worked; it does not re-argue the decision.
 
-## The plan lifecycle
-
-See `doctrine/plans.md` > "The plan lifecycle" for the full lifecycle
-diagram, the plan-archive precondition (a plan never archives until
-a code review has occurred), the plan-review precondition (a
-review-required plan does not start implementation until its plan-review
-section has landed), the release-gated parked-state note, and the
-fast-multi-stage sub-pattern.
+## Lifecycle
 
 ```
-awaiting-plan-review <-> revising-plan
-         |
-         v
-ready-to-implement -> implementing -> awaiting-code-review <-> revising-code
-                                              |
-                                              v
-                                      ready-to-archive -> archived
+awaiting-plan-review <-> revising-plan -> ready-to-implement
+  -> implementing -> awaiting-code-review <-> revising-code
+  -> ready-to-archive -> archived
 ```
 
-A plan whose review is **not required** may open directly at
-`ready-to-implement`, or at `implementing` if the opening commit carries the
-implementation evidence that makes the skipped state true. That fast path is
-offered only at opening — never from `awaiting-plan-review`, where a
-`required(...)` review is outstanding by definition.
+Each status names **who holds it next**. Opening a plan archives its source
+proposal in the same commit.
 
-A plan is an *execution* artifact: status, progress markers, and commit
-hashes are updated in place. Review findings and the archive record are
-**append-only**. See `doctrine/plans.md` > "Mutability rule" for the
-full mutable-in-place vs. append-only split.
+**Reviews, responses and decisions append and are never edited. Operative
+cells — Scope, Sequence, Acceptance criteria, Verification — revise in place
+until implementation begins.**
 
 **A plan answers plan review in its cells, not in a contract revision.** This
 is the one place the plan's rule is the *opposite* of the proposal's, so it is
-stated rather than left to be inferred. A proposal Response appends a complete
-current-contract revision carrying a mandatory
-`### Withdrawn / superseded commitments` ledger; a plan does not. **Before
-implementation**, fold plan-review corrections straight into the mutable
-operative cells — scope, the chunk rows, acceptance criteria, verification —
-and let the appended `## Response to plan review` be a finding-disposition
-table that *points at* those cells. Do not reproduce replacement cells in an
-amendment ledger: the plan's cells are the live contract, so a second copy of
-them would immediately be a second answer to the same question. **Once
-execution of a chunk begins**, the append-only sequence-revision rules take
-over and a correction is appended, not folded.
+stated rather than left to be inferred: a proposal Response appends a complete
+current contract carrying a withdrawal ledger; a plan does not. Before
+implementation, fold plan-review corrections straight into the mutable
+operative cells and let the appended `## Response to plan review` be a
+disposition table that *points at* them — a second copy of a cell is
+immediately a second answer to the same question.
+Once execution of a chunk begins, changes append instead.
 
-**The plan is Stage 2 of the Registered Report** (see
-`doctrine/lifecycle.md` > "The lifecycle as a Registered Report"):
-the plan and its code review check the implementation and the evidence
-it produced against the locked proposal (Stage 1).
+**A plan review is Internal, fresh-context.** Code review's floor is separate
+and independent: not the implementing agent.
 
-## Plan triage rule
+**Deviating from an accepted plan takes the Maintainer's word** — new scope, a
+contract review never saw, an acceptance criterion you cannot meet, **or
+accepted scope removed**. Removal counts in both directions: accepted scope is
+a floor, and a reviewer cannot create authority to narrow by calling the
+remainder out of scope.
 
-See `doctrine/plans.md` > "Plan triage rule" for the full rule.
+## Forward-reference paths
 
-Open a plan when an accepted proposal's implementation: (a) lands
-across multiple commits, (b) touches multiple files / areas, (c) has
-multi-stage sequencing, or (d) carries deferred follow-ups. Skip the
-plan when the implementation is a single commit, single-file / single-area,
-with no follow-up needing a `defer` home (a follow-up headed for
-`accept`, `guard` or `wontfix` does not by itself require a plan).
-
-## Plan review — choosing the tier you declare
-
-The `**Plan review**:` header field is mandatory and has **no silent default**;
-this is how to choose its value.
-
-**A plan review is an Internal, fresh-context review — always.** External
-plan review does not exist as a tier, a requirement, a recommendation slot,
-or an escalation target: declare `required(Internal)`. This holds regardless
-of the source proposal's own review tier or assurance path, and regardless of
-size or the surface touched -- a high-risk surface takes its **Security
-Review** on its own trigger (next), which this field neither replaces nor
-implies. The Maintainer may still *choose* to ask any additional reader for
-any artifact; a choice is not a tier, and this field never records one.
-
-**A security-touching plan declares the obligation directly, as a second
-clause.** When a Security Review attaches to this plan (a surface trigger
-`AGENTS.md` names, or a proposal's own declared Security Review carried
-forward), declare `required(Internal + Internal Security Review)` --
-`normalize_required_obligations` already reads `required(A + B)` as two
-distinct obligations and two distinct passes, so no new grammar is needed.
-The second obligation is satisfied **only** by an appended pass whose
-`**Obligation**: Internal Security Review` line matches it exactly, authored
-by a fresh-context same-agent-type session in the Security Review role; an
-ordinary Internal pass with no such line clears the first obligation and
-leaves the second unmet.
-
-**`not required(<rationale>)` still needs a real rationale.**
-
-Code review is a separate obligation with a separate floor -- **not the
-implementing agent** -- and nothing in this field changes it.
-
-## The change note (standard lane)
-
-See `doctrine/lifecycle.md` > "Three lanes" and `doctrine/plans.md` for the
-full standard-lane doctrine. A change note is what the **standard lane**
-opens instead of a proposal + plan pair: it lives at the same path a plan
-would, `dev/plans/<slug>.md`, target **≤150 lines**, and needs no parent
-proposal.
-
-**Header fields (all required):** `Author`, `Date opened`, `Status`,
-`**Lane**: standard` (the discriminator from a deliberate plan -- its
-absence means deliberate, unchanged), `Risk` (the C0 answer, one sentence --
-*"would shipping this cause damage that is hard to undo?"*), `**Plan
-review**:` (who reads it, and at what tier -- the same field and vocabulary
-the deliberate lane declares; see "Plan review — choosing the tier you
-declare" above, which now governs both lanes), `Related`.
-
-**Sections, in order:** Why / What / Approach / Verification / Risk.
-
-**Directed transitions** (every branch; owner is who acts next):
-
-| from | on | to | next owner |
-|---|---|---|---|
-| `awaiting-plan-review` | design review appended, **clearing** | `ready-to-implement` | author |
-| `awaiting-plan-review` | design review appended, **raised** | `revising-note` | author |
-| `revising-note` | response appended carrying every blocking finding's bound closure evidence | `ready-to-implement` | author |
-| `ready-to-implement` | work begins | `implementing` | author |
-| `implementing` | implementation committed + verification record appended | `awaiting-code-review` | code reviewer (never the author) |
-| `awaiting-code-review` | code review appended, **clearing** | `ready-to-archive` | editor/author |
-| `awaiting-code-review` | code review appended, **raised** | `revising-code` | author |
-| `revising-code` | response appended with closure evidence | `ready-to-archive` | editor/author |
-| `ready-to-archive` | archive move | `archived` | -- |
-
-Both revision states (`revising-note`, `revising-code`) exit straight to
-their waiting-room's successor on closure evidence (C7: *"the revision
-carrying that evidence closes it without a fresh full read"*) rather than
-cycling back through another full review round the way a deliberate plan's
-`revising-plan`/`revising-code` do.
-
-**Named warnings** (standard lane; the planner emits, **never refuses**):
-
-* `note-missing-design-review` -- advancing with no appended review at all.
-* `note-unclosed-findings` -- advancing from `revising-note`/`revising-code`
-  without every blocking finding's bound closure evidence, naming them.
-* `note-malformed` -- a missing required header field or section, naming
-  the element.
-* `note-reviewer-independence` -- a code review authored by the note's own
-  author.
-
-**Deliberate-lane regression**: each of these same invalid advances still
-**refuses** on a deliberate plan, unchanged.
-
-**Write once, restate never.** The note's operative sections (Why / What /
-Approach / Verification / Risk) revise **in place** while the note is in
-design; reviews, responses, and decisions **append** and are never edited.
-No complete-restatement requirement on this lane: at ≤150 lines, `git log`
-is the history.
-
-## Forward-reference paths — `Proposed paths:` marker doctrine
-
-See `doctrine/plans.md` > "Forward-reference paths" for the full
-marker mechanism, placement rules, and the two other marker keywords
-(`Untracked paths:`, `External-repo paths:`).
-
-Place `Proposed paths:` lines near the top of the plan (after this section,
-before `## Scope`), each listing a batch of related tokens. The marker
-exempts tokens on its own line and any contiguous structured block
-immediately beneath it.
-
-**The marker block is also a small document registry.** Every *exact*
-backticked path listed in the block may recur anywhere else in the same
-document without a second, document-wide `claim-check-allow` directive. Write
-the declaration in registry form and you will rarely need the directive at all:
-
-    Proposed paths:
-    * `tests/test_widget_contract.py` -- the acceptance tests
-    * `docs/widget-tour.md` -- the topic doc this lands
-
-What counts as an entry: on the marker line itself, **every** backticked token
-(the compact ``Proposed paths: `a.md`, `b.md` `` form); on a continuation row,
-the row's **first** backticked token only -- a row names one path and then
-explains it, so a path cited later in that row's prose is a reference, not a
-second declaration.
-
-Four rules keep the registry exact, and each fails **closed**:
-
-* **Literal paths, never globs.** A wildcard makes the entry *malformed*: it
-  grants no document-wide authority at all.
-* **Exact match only** -- never a sibling, a descendant, or a look-alike prefix.
-* **A placeholder declares nothing.** A token carrying `<slug>` or a brace is an
-  illustrative form, not a declaration -- so write the real path when you mean
-  to register it.
-* **Declared twice inside one block** is a duplicate and grants nothing. The
-  same path in two *different* blocks is fine: an append-only record whose
-  later section restates its proposed paths is doing the right thing.
-
-**An exemption is temporary debt, and liveness says so.** While this artifact is
-non-terminal, every registry entry must authorize at least one exemption
-*outside its own block*; an entry whose path has since materialized -- or that
-nothing outside the block cites -- is a hard finding, as is a
-`claim-check-allow` glob that suppresses nothing. Every exemption is reported
-together with the declaration that authorized it, so the audit trail is the
-report, not a reading of the file.
-
-## Count claims — the three-kind precision / `as_of` discipline
-
-See `doctrine/plans.md` > "Count claims" for the three-kind discipline
-(decision-irrelevant / dated snapshot / live invariant) and the retired
-`claim-check-allow-count` directive.
+A path that does not exist yet trips `claim_check`. Declare it instead — the
+literal `Proposed paths:` line, no blank line before the first bullet, one
+physical line per bullet. Drop a line once its path resolves.
 
 ---
 
 # Plan: {{short title}}
 
-**Source proposal**: {{link to dev/proposals/archive/...}}
+**Source proposal**: {{dev/proposals/archive/...}}
 **Status**: awaiting-plan-review
-**Plan review**: {{required(<tier>) | not required(<rationale>)}}
-**Last update**: {{YYYY-MM-DD}}
-**Opened**: {{YYYY-MM-DD alongside the proposal's Decision-and-archive commit}}
+**Plan review**: {{required(Internal) | required(Internal + Internal Security Review)}}
+**Opened**: {{YYYY-MM-DD}}
 
 ## Source proposal
 
-A one-paragraph summary of what the proposal decided. The plan
-executes the decision; it does not re-litigate it.
-
-## Proposed paths
-
-*(Optional. Populate as forward-reference paths accrue — relocation
-targets, suggested filenames, future module homes — so they don't
-trigger `claim_check` while the plan is being authored. Each entry is
-the path **and** a one-line note on what it is / when it materializes.
-Remove the section if empty. Once a path resolves on disk, drop its
-line.*
-
-*Three structural rules for the marker to work: (a) the literal
-`Proposed paths:` line below is the marker `claim_check` matches —
-don't drop it while bullets remain; (b) **no blank line between
-the marker line and the first bullet** — `claim_check`'s
-continuation check uses original line numbers, so a gap breaks
-adjacency; (c) **keep each bullet on a single physical line** —
-wrapped/indented bullet continuations close the marker block and
-re-expose subsequent paths to hard-check.)*
-
-Proposed paths:
-- `path/to/proposed/file.md` — what it is; when it lands.
+One paragraph: what the proposal decided. The plan executes it.
 
 ## Scope
 
-What this plan executes — and, explicitly, what it does *not* (the
-**scope fence**: work the proposal deferred to a follow-up, and
-anything deliberately left untouched this pass). Cite the proposal's
-"v1 scope" (or equivalent) as authoritative; if the proposal deferred
-work to a later phase or proposal, name the deferrals explicitly so
-they don't drift back into this pass by accident. See
-`doctrine/plans.md` > "The planning handshake" for the convergence
-questions this section answers.
-
-**The fence bounds this pass; it does not bound the accepted proposal.**
-Accepted scope is a **floor** — a plan that drains less than the proposal
-it executes has deviated from approved scope, not chosen a tidy fence,
-and no reviewer can create that authority by calling the remainder "out
-of scope". If this fence leaves an accepted outcome undelivered, say so
-here and get the Maintainer's explicit disposition; see the `Scope delta`
-prompt in the plan-review section below.
+What this plan does and, where it is not obvious, what it deliberately does
+not. Name the surfaces it touches.
 
 ### Documentation / doctrine surface
-
-What documentation, doctrine, or contract surface does this plan
-touch? If none, say so explicitly — silent omission is a code-review
-finding (the plan must name what doc state is mutated, not surface
-it at review time).
 
 <!-- cairn:slot documentation-tier-home -->
 (Filled from the `documentation-plan` default-on module when installed
@@ -293,61 +79,18 @@ slot is a review finding.)
 
 ## Sequence
 
-Rough commit-by-commit execution order. Allowed to evolve as work
-proceeds; revisions are append-only (don't edit prior Sequence entries
-that are already in flight — add a "Sequence revision YYYY-MM-DD"
-sub-section if the plan materially changes).
+One row per chunk: what it does, what gates it, roughly what it ships. Mark a
+chunk MAINTAINER-GATED or MAINTAINER-ONLY where approval is actually
+load-bearing — that fence, not a blanket per-commit gate, is where approval
+binds to something specific.
 
-```
-1. <chunk A> -- <one-line description>      [commit <sha or "pending">]
-2. <chunk B> -- <one-line description>      [commit <sha or "pending">]
-3. <chunk C> -- <one-line description>      [commit <sha or "pending">]
-```
-
-For larger plans, break each chunk into its own subsection with a file
-table:
-
-### Chunk A -- <descriptive name>
-
-| # | File | Change |
-|---|------|--------|
-| A1 | `path/to/file` | <code change> |
-| A2 | `path/to/tests/test_<thing>` | <test that pins the contract> |
-| A3 | `docs/<topic>` *(if user-facing or developer-facing docs change)* | <topic-doc update> |
-| A4 | `CHANGELOG.md > Unreleased > Added/Fixed/Changed` *(if release-facing behavior changes)* | <release-note line> |
-
-For multi-chunk plans where doc updates cut across implementation
-chunks, **prefer a dedicated documentation chunk** to repeated
-"no change" rows in every chunk:
-
-### Chunk D -- documentation
-
-| # | File | Change |
-|---|------|--------|
-| D1 | `docs/<topic>` | <topic-doc update covering all impl chunks> |
-| D2 | `CHANGELOG.md > Unreleased > Added` | <release-note line> |
-
-Authors choose between per-chunk conditional rows (small / single-area
-plans) and a dedicated documentation chunk (large / cross-cutting
-plans).
+| # | Chunk | Gate | Ships |
+|---|---|---|---|
+| C1 | | | |
 
 ## Acceptance criteria
 
-The concrete deliverables that define "done". The first three — tests,
-docs, examples — mirror the proposal template's evidence treatment;
-name each, or give an explicit "**N/A**: <reason>".
-
-* **Tests that must pass**, named by tier (or "**N/A**: <reason>" —
-  e.g. a pure-doc plan).
-* **Doc updates that must land** (or "**N/A**: <reason>"). Doc updates
-  come in three shapes; route each correctly:
-  - **Hand-authored** — narrative docs you edit directly.
-  - **Generated** — docs rendered from a source by a script: update
-    the source, run the generator, never hand-edit the rendered file.
-  - **Snippet-synced** — doc fenced blocks pulled from example sources
-    via directives: update the source, then run the sync.
-  - `CHANGELOG.md > Unreleased > Added/Fixed/Changed` — one-line
-    release note.
+Per chunk, each falsifiable. A criterion you cannot imagine failing is not one.
 
   <!-- cairn:slot acceptance-doc-tooling -->
   (Adopter-specific doc-generation tooling — the exact schema source +
@@ -355,34 +98,36 @@ name each, or give an explicit "**N/A**: <reason>".
   surfaces the project uses. Fill with the project's commands, or
   replace with `N/A: no generated or snippet-synced docs`.)
   <!-- cairn:end acceptance-doc-tooling -->
-* **Examples / smoke checks required** — name the artifact and, if it
-  is not a runnable command, the gate that verifies it (snippet-sync,
-  doc-link, etc.). Or "**N/A**: <reason>".
-* Inbound path-link updates in `dev/` docs that link the moved file.
-  `PLANNING.md` and `NEXT_SESSION.md` refer to plans by filename stem,
-  not path link (per `AGENTS.md > Shared communication files`), so they
-  need no update on an archive-move.
 
-### Author-accounting — invariants, failure modes, edge cases
+## Scope delta
 
-<!-- Triage-gated (high-stakes changes only; a one-line "N/A: no new
-contract / invariant / public path" for routine) — same discipline as the
-proposal template's author-accounting. At PLAN stage the satisfier is
-*sequencing*: each invariant has an enforcing test sequenced into a chunk,
-and each public entry point this plan touches is mapped, in its acceptance
-criteria, to the test that exercises it through its public path. A
-security-touching plan re-answers the five security-preflight questions only
-where its chunking changes an answer — most often S2 (which chunk runs the
-mutation) and S3 (which gate command fires the check). Cite tests as
-relative markdown links so the link checker verifies they exist. Include a
-known-omissions line. Reviewed as evidence — the reviewer challenges a row
-or names the one they sampled, never "table present." Prospective only: an
-archived plan is never retro-fitted. See `doctrine/dual-review.md` > "Review
-expectations — the clean-pass trap". -->
+**Accepted scope is a floor.** The baseline is the scope as accepted by the
+proposal, and dropping an outcome it committed to is a deviation exactly as
+adding one is. Sequencing is free — moving work between chunks owes nothing —
+but delivering less does not.
+
+**A reviewer cannot create that authority by calling the remainder "out of
+scope."** Narrowing is the path of least resistance in review: it costs the
+reviewer nothing, reads as prudence, and can never be shown wrong, because the
+wider version is never built. Neither author nor reviewer may concede a
+baseline outcome; only the Maintainer can.
+
+If scope is reduced, declare it here — one grouped record, not a set of roadmap
+rows, and each entry blocks archive until dispositioned:
+
+**Scope delta**: preserved | degraded | lost
+
+One line per removed unit, each carrying its own
+`**disposition**: <accept | guard | wontfix | defer>` — a group-level home is a
+location, not a decision. Say what was dropped, why specifying was rejected in
+favour of cutting, and quote the Maintainer's allowance. Declining a proposed *expansion* is not a
+reduction — it was never in the baseline. A chunk's own fence bounds this pass,
+not the accepted proposal.
 
 ## Verification
 
-The concrete commands the implementation must pass.
+**Boundary A (iteration, scoped).** The tests owning each touched surface,
+plus its standing gates.
 
 <!-- cairn:slot verification-commands -->
 Before implementation, make Boundary A a **reviewed mapping**: for each changed
@@ -425,159 +170,49 @@ gates here. If none applies, record `N/A` with a reason rather than omitting the
 surface silently.
 <!-- cairn:end verification-commands -->
 
-**Note on doc gates**: drift gates (broken references, stale renders,
-snippets that diverged from their source) catch **drift**, not
-**absence** of new doc updates. Confirm each doc named in Acceptance
-was actually updated; the gates don't enforce that.
+**Boundary B (integration).** After the final implementation commit, against a
+clean unchanged commit under the canonical interpreter. Record
+`**Boundary B mode**: full | bounded`. **Uncertainty resolves to `full`**, and
+`full` is mandatory for any contract or trust-ceremony surface. On `bounded`,
+name the touched surfaces, the mapping run, and why the effects are bounded.
 
-**The four-field review basis is mandatory in every plan-review pass.** Its
-first four lines name the bounded target that pass actually read:
+Append the evidence as `## Implementation verification -- <agent> -- YYYY-MM-DD`:
+tested SHA, interpreter, clean pre/post state, commands, outcomes, timing,
+disposition of every non-pass, known omissions.
 
-    Reviewed commit: <full commit id>
-    Target: <the operative plan sections this pass reviewed>
-    Prior findings: <ids being closed, or none>
-    Assurance path: <standard | high-assurance>
+**Boundary C (falsification)** is the code reviewer's, and it is not re-running
+Boundary B's command. Verify the record against the reviewed range, then attack
+the claims that would hurt most if wrong.
 
-They sit above the pass's first `###` heading -- a field parked below an H3 does
-not count -- and the emphasis is optional, because the field name is the
-contract. `Assurance path` restates the source proposal's declaration rather
-than re-deciding it. The basis is a default navigation target, not permission to
-ignore relevant history: a reviewer reads any earlier section a current claim
-depends on, and a correctness, security, scientific-validity, or scope defect is
-blocking whenever it is found.
+## Plan review -- <reviewer> -- <YYYY-MM-DD>
 
-<!-- Each review pass is its own dated H2 section, appended below this
-     comment as:
+Open every pass with its basis, so a later reader knows what was actually read:
 
-       ## Plan review -- <reviewer> -- YYYY-MM-DD
+```
+Reviewed commit: <full commit id>
+Target: <the sections this pass reviewed>
+Prior findings: <ids being closed, or none>
+Assurance path: <the plan's declared path>
+```
 
-       Reviewed commit: <full commit id>
-       Target: <the operative plan sections this pass reviewed>
-       Prior findings: <ids being closed, or none>
-       Assurance path: <standard | high-assurance>
-       **Tier**: <Internal|External>
-       **Findings**: <none|raised>
+**Obligation**: <the one clause this pass clears>
+**Tier**: <Internal | Internal Security Review>
+**Findings**: <raised | none>
 
-     with its `### Sharpening` at H3 inside the pass body. There is no
-     `## Plan review` container heading: an empty container reads as a
-     landed review, and a review is what the `**Plan review**:` metadata
-     line makes *mandatory* -- `doctrine/plans.md` requires that line with
-     "no silent default", so this section is not optional. Whether a *pass*
-     is required is what `required(<tier>)` vs `none` on that line decides.
-     See `doctrine/plans.md` > "Plan review" for reviewer identity, format,
-     sharpening, multi-round review, and the distinction from
-     discovery-driven plan revision.
+An H3 inside another pass does not count as a pass of its own — a heading at
+the left margin is what the checker reads.
 
-     SCOPE DELTA -- accepted scope is a FLOOR, and the Sharpening is where
-     that most often bites, because a reviewer's narrowing recommendation and
-     the author's acceptance of it land in the same section.  Sequencing is
-     free: moving work between chunks, re-ordering them, or splitting one
-     across commits changes no outcome and owes nothing.  REMOVING an accepted
-     outcome is a deviation from approved scope under `AGENTS.md`, not a scope
-     fence the plan may draw for itself -- and a plan reviewer cannot create
-     that authority by calling the remainder "out of scope".
+## Code review -- <reviewer> -- <YYYY-MM-DD>
 
-     So when a Sharpening disposition narrows what this plan will deliver,
-     judge it against the scope AS ACCEPTED and declare the result inside the
-     Sharpening:
+Floor: a same-type agent in an independent context, not the implementing agent.
+Self-committed by its author; blocking findings move the plan to
+`revising-code`. Same basis block, with the range made explicit:
 
-       **Scope delta**: preserved | degraded | lost
+```
+Reviewed commit: <full commit id>
+Target: <the code range this pass reviewed>
+Prior findings: <ids being closed, or none>
+```
 
-       **Removed scope**
-       * <unit> -- source section; reason; disposition (accept | guard |
-         wontfix | defer); revival/closure condition.
-
-       **Disposition/home**: <where the grouped remainder lives>
-
-     Each entry needs its OWN disposition: a shared home is a location, not a
-     decision, and each entry blocks archive independently.
-
-     State `preserved` if you want the record to show you checked; only
-     `degraded` and `lost` require the block above -- a lighter mechanism that still delivers is what
-     restraint asks for, and a declaration on every revision would be ritual
-     within a month.  `degraded` and `lost` both additionally need the
-     Maintainer's explicit disposition under the deviation gate; partial
-     changes what residual is recorded, never who may concede it.  Full rule:
-     `doctrine/dual-review.md` > "Review expectations -- the scope-reduction
-     trap". -->
-
-## Code review
-
-*Filled in after implementation commits land.* See `doctrine/plans.md` >
-"Code review" for the full doctrine: falsification ledger, coverage
-line, reviewer identity (not the implementing agent), and the
-append-only rule.
-
-Each pass is its own dated H2 section, `## Code review -- <reviewer> --
-YYYY-MM-DD[ (round N)]`, and opens with the mandatory review basis on its own
-lines above the pass's first `###` heading:
-
-    Reviewed commit: <full commit id>
-    Target: <the code range this pass reviewed>
-    Prior findings: <ids being closed, or none>
-    Assurance path: <standard | high-assurance>
-
-Then the reviewer identity line, the verdict, and the findings declaration. A
-field parked below an H3 does not count toward the basis.
-
-Before reusing Boundary B, verify its Tested commit, Reviewed range, path
-validity, pre/post clean state, command results, and non-pass disposition.
-Then run an independent targeted falsification ledger; copying Boundary B's
-broad command is not independent review. Require a fresh full-suite run when:
-
-1. no valid Boundary B record exists;
-2. review discovers an unrecorded cross-surface dependency;
-3. a skip, xfail, or xpass lacks an adequate disposition;
-4. review sharpening changes implementation, tests, executable templates, or
-   fixtures in the reviewed range;
-5. the accepted plan governs a trust ceremony that explicitly requires
-   independent full execution; or
-6. the reviewer has a concrete reason to distrust or falsify the broad result.
-
-Begin with `**Model**: <model or tier when known; "unknown" if not. Do not
-copy-paste old model labels from past templates or archives; query and
-state your actual running model identity.>` immediately below the
-section header (or below a `### Code review -- <reviewer> -- YYYY-MM-DD`
-sub-heading if used).
-
-## Lasting-truth migration
-
-*Filled in at archive time.* See `doctrine/plans.md` > "Lasting-truth
-migration doctrine" for the full rule: the disposition vocabulary, the
-`Dispositions:` commit-body form, the evidence ledger, and the
-loop-fidelity sign-off.
-
-**The archive gate now checks substance, not the label.** An attestation is
-required **every time**: either at least one entry naming `accept`, `guard`,
-`wontfix` or `defer`, or the explicit form `Dispositions: none` on its own
-line when there are genuinely no follow-ups. This supersedes the earlier rule that
-allowed the block to be *omitted* in the zero-follow-up case — omission and an
-empty label are now indistinguishable to a reader, and both refuse.
-
-The loop-fidelity sign-off must sit **inside this section** and name at least
-one implementing commit id plus the governing accepted/Revised section.
-Promising that it is owed does not satisfy it.
-
-See also `doctrine/lifecycle.md` > "Loop-fidelity verification" for
-the Decision→implementation fidelity sign-off checkpoint.
-
-Per the [Archive preconditions rule](../PLANNING.md#archive-preconditions-proposals-and-plans),
-plans archive only after every deferred follow-up carries a recorded
-disposition — `accept`, `guard`, `wontfix`, or (with the Maintainer's
-quoted authorization) `defer`. Only `defer` needs a durable home
-outside the plan; the other dispositions *are* the home.
-
-**That last sentence holds only when the disposition landed somewhere a
-reader will meet** — a commit, a comment, a test, a doc. Ordinary for a
-fixed defect; **not** true of an observation or a design gap, where
-`accept` leaves the item in a file that is about to stop being read. An
-item with no landing place outside the plan is a `defer` and needs a row.
-
-**An append re-opens the attestation.** The section is filled at archive
-time and append-only afterwards, so it accretes — and an attestation that
-was accurate when written can be false by the time the section grows
-under it. If you add anything here, re-read the disposition line and
-restate or amend it. `Dispositions: none` is a claim about the whole
-section, not about the moment it was typed.
-
-This section is append-only once written.
+**Bounding**: ACCEPTED | FULL RUN REQUIRED — recorded only after challenging a
+named surface or mapped test, never because the field is present.
