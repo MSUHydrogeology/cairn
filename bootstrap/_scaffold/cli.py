@@ -468,7 +468,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(
             "[dry-run] Skills:          "
-            "tools/lifecycle.py + .agents/skills/{session-start,session-end}/"
+            "tools/session.py + .agents/skills/{session-start,session-end}/"
             "SKILL.md (+ untracked dev/.cairn/local-env.json)"
         )
         for mod in modules:
@@ -514,8 +514,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(
         f"  Installed {_n_skills} lifecycle skill(s) -> .agents/skills/ "
-        f"(+ the tools/lifecycle.py CLI). Try "
-        f"`python tools/lifecycle.py session-start`."
+        f"(+ the tools/session.py CLI). Try "
+        f"`python tools/session.py session-start`."
     )
     env_result = write_local_env(target, force=args.force)
     if env_result[3] == "installed":

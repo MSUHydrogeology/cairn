@@ -7,7 +7,7 @@ upgrade machinery exactly like a ``core/`` file --
 * a substituted ``SKILL.md`` an adopter customized **rides the token-/slot-aware
   3-way merge** (an upstream advance folds in while the adopter's edit is
   preserved -- never a silent clobber);
-* the verbatim CLI (``tools/lifecycle.py``) follows the **hash policy**: a local
+* the verbatim CLI (``tools/session.py``) follows the **hash policy**: a local
   edit is surfaced for review, not 3-way-merged.
 
 Run from the cairn repo root:
@@ -33,7 +33,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 SKILL_START = ".agents/skills/session-start/SKILL.md"
-CLI = "tools/lifecycle.py"
+CLI = "tools/session.py"
 
 
 def _install(target: Path) -> None:
@@ -109,7 +109,7 @@ def test_verbatim_cli_local_edit_is_surfaced_not_merged(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 SKILL_END = ".agents/skills/session-end/SKILL.md"
-LIFECYCLE = "tools/lifecycle.py"
+LIFECYCLE = "tools/session.py"
 _SKILL_DSTS = {SKILL_START, SKILL_END, LIFECYCLE}
 
 
@@ -148,7 +148,7 @@ def test_pre_skills_compute_surfaces_skills_as_new_core(tmp_path: Path):
     assert all(p.kind in s._ADVANCING_KINDS for p in new_core.values())
     # The verbatim CLI is hash-tracked; the SKILL.md files are mergeable.
     assert new_core[LIFECYCLE].verbatim is True
-    assert new_core[LIFECYCLE].src == "skills/_lib/lifecycle.py"
+    assert new_core[LIFECYCLE].src == "skills/_lib/session.py"
     assert new_core[SKILL_START].verbatim is False
     assert new_core[SKILL_START].base_cache  # mergeable -> base cache seeds
 

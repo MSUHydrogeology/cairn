@@ -41,7 +41,11 @@ sys.path.insert(0, str(CAIRN_ROOT))
 from bootstrap.scaffold import main, read_lockfile  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
-LIFECYCLE_SRC = TEMPLATES_ROOT / "skills" / "_lib" / "lifecycle.py"
+LIFECYCLE_SRC = TEMPLATES_ROOT / "skills" / "_lib" / "session.py"
+#: The pre-extraction CLI, still shipped and so still scanned. It carries a
+#: duplicate of the kernel until it is removed, and a duplicate nobody scans
+#: is the half that rots.
+LEGACY_CLI_SRC = TEMPLATES_ROOT / "skills" / "_lib" / "lifecycle.py"
 CONTENT_SCAN_SRC = TEMPLATES_ROOT / "modules" / "team-gated" / "content_scan.py"
 SKILL_SOURCES = sorted((TEMPLATES_ROOT / "skills").glob("*/SKILL.md"))
 
@@ -67,7 +71,7 @@ content_scan = _load("cairn_content_scan", CONTENT_SCAN_SRC)
 
 
 @pytest.mark.parametrize(
-    "artifact", [LIFECYCLE_SRC, *SKILL_SOURCES],
+    "artifact", [LIFECYCLE_SRC, LEGACY_CLI_SRC, *SKILL_SOURCES],
     ids=lambda p: p.name if p.name != "SKILL.md" else p.parent.name,
 )
 def test_canonical_artifacts_pass_content_scan(artifact: Path):
@@ -80,6 +84,7 @@ def test_installed_artifacts_pass_content_scan(tmp_path: Path):
     for rel in (
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
+        "tools/session.py",
         "tools/lifecycle.py",
     ):
         assert content_scan.scan_file(target / rel) == [], rel
@@ -171,9 +176,9 @@ def test_safe_field_round_trips_international_text_below_cap():
 def test_capped_field_pins_every_reachable_partial_escape():
     """The marker is unauthenticated and counts escaped, not source, characters.
 
-    The escape set comes from `tools/lifecycle_planner.py`'s `encode_display`
-    -- the one terminal encoder -- rather than a second translation table this
-    module owns, so the two cannot drift.  The property: a cut that lands
+    The escape set comes from the session kernel's own `encode_display` -- the
+    one terminal encoder -- rather than a second translation table this module
+    owns, so the two cannot drift.  The property: a cut that lands
     inside an escape sequence must never leave a raw control or invisible character
     behind, and the partial prefix must be a genuine prefix of the full escape.  What
     The enumeration is over every code point the
@@ -181,11 +186,11 @@ def test_capped_field_pins_every_reachable_partial_escape():
     endpoints and the syntax characters), and the prefix set is bounded by the encoder's
     three escape widths instead of pinned as a table-shaped literal.
     """
-    encode = lifecycle._vocabulary().encode_display
+    encode = lifecycle.encode_display
     sources = [chr(c) for c in range(0x20)] + [chr(0x7F)]
     sources += [chr(c) for c in range(0x80, 0xA0)]
     sources += ["\u2028", "\u2029", "\\", "|", "\t", "\r"]
-    for low, high in lifecycle._vocabulary()._DISPLAY_UNSAFE_RANGES:
+    for low, high in lifecycle._DISPLAY_UNSAFE_RANGES:
         sources += [chr(low), chr(high)]
     partials, widths = set(), set()
     for source in sources:
@@ -347,6 +352,7 @@ def test_installed_artifacts_match_lockfile_hash(tmp_path: Path):
     skill_dsts = {
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
+        "tools/session.py",
         "tools/lifecycle.py",
     }
     for rec in lock["files"]:
@@ -363,6 +369,7 @@ def test_tracked_artifacts_have_no_local_path_or_token_leak(tmp_path: Path):
     for rel in (
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
+        "tools/session.py",
         "tools/lifecycle.py",
     ):
         text = (target / rel).read_text(encoding="utf-8")

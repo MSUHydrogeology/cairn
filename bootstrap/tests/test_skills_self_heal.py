@@ -1,7 +1,7 @@
 """Session-start skills fan-out self-heal.
 
-The runtime self-heal lives in the lifecycle backend (`templates/skills/_lib/
-lifecycle.py`, propagated to adopters as `tools/lifecycle.py`), *not* in the
+The runtime self-heal lives in the session kernel (`templates/skills/_lib/
+session.py`, propagated to adopters as `tools/session.py`), *not* in the
 SKILL.md prose -- a doc edit cannot make the routine self-heal.  These tests
 exercise the **real backend** (`_heal_skills_fanout`, and the full
 `session-start` entry point), never scaffold internals, and never a sibling
@@ -31,10 +31,10 @@ from types import ModuleType
 import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
-MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "lifecycle.py"
+MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"
 
 pytestmark = pytest.mark.skipif(
-    not MODULE_PATH.exists(), reason="lifecycle.py template not available"
+    not MODULE_PATH.exists(), reason="session.py template not available"
 )
 
 

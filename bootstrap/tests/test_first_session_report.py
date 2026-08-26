@@ -45,7 +45,7 @@ def test_no_phantom_good_morning_and_names_the_real_invocation(
     assert rc == 0
     out = capsys.readouterr().out
     assert "/good-morning" not in out
-    assert "python tools/lifecycle.py session-start" in out
+    assert "python tools/session.py session-start" in out
 
 
 def test_skipped_vendor_absent_is_a_calm_no_action_line(

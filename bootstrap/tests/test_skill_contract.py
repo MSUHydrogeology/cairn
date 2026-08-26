@@ -123,4 +123,4 @@ def test_session_end_plumbs_arguments():
         (SKILLS_ROOT / "session-end" / "SKILL.md").read_text(encoding="utf-8"))
     assert "$ARGUMENTS" in body, (
         "session-end must $ARGUMENTS-plumb so /session-end --handoff routes "
-        "the flag to tools/lifecycle.py")
+        "the flag to tools/session.py")

@@ -7,7 +7,7 @@ and ``coordination-tiers`` modules respectively.  This module covers:
 * ``prune_reflections`` dry-run smoke: no files deleted, correct report.
 * ``prune_intents`` dry-run smoke: no file mutations, correct report.
 * Deduplication check: the prune_reflections tool here is NOT a duplicate
-  of the ``lifecycle.py`` session-end ``_prune_reflections`` -- it is a
+  of the ``session.py`` session-end ``_prune_reflections`` -- it is a
   complementary standalone tool (keep-by-distinct-date vs. wall-clock cutoff).
 
 Run from the cairn repo root::
