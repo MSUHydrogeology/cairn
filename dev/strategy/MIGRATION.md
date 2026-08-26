@@ -26,7 +26,7 @@ modflow_tools' own science and must not enter the public Cairn repo.
 | `2026-05-27-claude-cairn-pre-release-sweep.md` | same | living | Version-independent release-strategy sweep. |
 | `2026-05-27-codex-cairn-adopter-friction-audit.md` | → `archive/` (2026-06-12) | settled | Prospective-scientist adopter-friction lens. Superseded + archived by the v0.3 re-run `2026-06-12-claude-adopter-friction-audit.md` — itself merged into `2026-07-08-claude-broad-look-skeptical-review.md` and archived 2026-08-26. |
 | `2026-06-04-claude-documentation-graphics.md` | → `archive/` (2026-08-10) | settled | Docs-graphics strategy (`docs/assets/`). Superseded + archived by the Cairn-vantage re-scope `2026-08-10-claude-documentation-enhancement.md`, which carries the portable production model forward and drops the modflow_tools figure inventory. |
-| `2026-06-05-claude-cairn-complexity-debt-audit.md` | same | revised | Complexity-debt audit. |
+| `2026-06-05-claude-cairn-complexity-debt-audit.md` | → `archive/` (2026-08-26) | settled | Complexity-debt audit. Program closed under the 2026-08 refocus with a named revival trigger; its measurement epistemics hoisted to guide-star Anchor 21. |
 
 Each migrated file carries a `<!-- Migrated 2026-06-12 … -->` provenance
 header. Original authorship dates and `Status:` fields are preserved.

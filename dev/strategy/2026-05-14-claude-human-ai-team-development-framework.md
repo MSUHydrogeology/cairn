@@ -659,7 +659,8 @@ repository supplied its own instance: an instrument that paid for findings
 was rebuilt twice in one week before the rule against it was written down.
 
 Five rules, distilled from the two retired programs
-(`2026-06-05-claude-cairn-complexity-debt-audit.md`, closed 2026-08-26;
+(`archive/2026-06-05-claude-cairn-complexity-debt-audit.md`, closed and
+archived 2026-08-26;
 `2026-05-20-claude-team-productivity-metrics.md`, which hosts the Measurement
 Compact) and binding on all of Cairn's measurement — today that means the
 gauge classifier, the takeover table, and the mission metrics:

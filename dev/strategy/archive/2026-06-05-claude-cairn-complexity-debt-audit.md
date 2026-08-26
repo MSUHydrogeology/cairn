@@ -1,6 +1,9 @@
 <!-- Migrated 2026-06-12 from modflow_tools dev/strategy/ (Cairn's development
      home before self-hosting); see dev/strategy/MIGRATION.md. Strategy notes
-     are inline-revised, so the deliberation arc lives in git log, not here. -->
+     are inline-revised, so the deliberation arc lives in git log, not here.
+     Archived 2026-08-26: the program closed under the refocus (see "Closure"
+     at the end); its measurement epistemics live on as guide-star Anchor 21
+     in ../2026-05-14-claude-human-ai-team-development-framework.md. -->
 
 # Cairn complexity — a measured instrument, its grounding, and what it finds
 
