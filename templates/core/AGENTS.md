@@ -1,17 +1,15 @@
-<!-- cairn-internal-ref-allow: doctrine/ reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/modules/security-verification.md -->
-<!-- ^ Forward reference: security-verification-activation Chunk B creates
-     Cairn's own self-hosted dev/modules/security-verification.md (matching
-     the other six default-on modules); it does not exist yet at Chunk A.
-     In an ADOPTER's installed tree the path always resolves (the module is
-     default-on). -->
 # AGENTS.md — {{project_name}}
 
-> **Single living reference for AI agents working on this
-> repository.** Read top-to-bottom on first entry; skim or jump on
-> later sessions. This repository runs the **Cairn** methodology —
-> a human + AI development method built on recorded, reviewed
-> deliberation.
+> **The operational reference for AI agents working on this repository.**
+> Read it top-to-bottom on first entry; skim on later sessions. The deeper
+> *why* lives in [`dev/agent_collaboration.md`](dev/agent_collaboration.md)
+> and the `dev/` tree; this file carries the rules you need to make a correct
+> change and to operate safely.
+>
+> The marked slots below are yours to fill. An unfilled one is a review
+> finding, not a default.
+
+## What this project is
 
 <!-- cairn:slot project-overview -->
 (One or two paragraphs: what {{project_name}} is, what it does, and
@@ -20,59 +18,22 @@ the maintainer confirms it. An unfilled slot at first release is a
 review finding.)
 <!-- cairn:end project-overview -->
 
-## How this project is built
-
-Work on {{project_name}} is **deliberated, reviewed, and
-recorded**. A substantive change does not land because its author
-is confident; it lands because it went through a proposal, was
-reviewed across structural independence, and the reasoning is
-committed to the durable record. The coordination space is the
-`dev/` tree — a tree of git-committed files, which makes the
-method **model-agnostic**: this project can mix or swap AI vendors
-(or run a local open-weights model) without changing the
-coordination layer.
-
-* [`dev/README.md`](dev/README.md) — the entry point to the `dev/`
-  tree.
-* [`dev/collaboration_agreement.md`](dev/collaboration_agreement.md)
-  — the working norms and decision rights.
-* [`dev/agent_collaboration.md`](dev/agent_collaboration.md) — the
-  roles, the review loop, and the coordination doctrine in full.
-
-This file (`AGENTS.md`) is the **operational** reference — the
-rules an agent must follow to make a correct change. The `dev/`
-docs carry the deeper *why*. Which file a given rule belongs in —
-and the discipline that keeps this file's operational-safety content
-a compact imperative rather than a process manual — is the
-**doc-governance** routing rule (`doctrine/doc-governance.md`):
-build-the-software and operate-safely rules live here; the
-deliberation and decision process lives in
-`dev/agent_collaboration.md`; each rule has one canonical home and
-the other file only points.
-
-**Where `doctrine/` references resolve.** Throughout this file and the
-`dev/` tree, a reference to a `doctrine/<name>.md` file points to **Cairn's
-published methodology doctrine** — the repository you adopted from — **not
-a file in your own tree**. The bootstrap installs your `AGENTS.md` + `dev/`
-tree and the modules you selected, *not* Cairn's `doctrine/` directory; the
-doctrine is the shared methodology you consult in the Cairn repository (or
-its docs). So such a reference is a citation, never a broken local link.
+**Where `doctrine/` references resolve.** A reference to `doctrine/<name>.md`
+points to **Cairn's published methodology doctrine** — the repository you
+adopted from — **not** a file in your own tree. The bootstrap installs your
+`AGENTS.md` and `dev/` tree, not Cairn's `doctrine/` directory, so such a
+reference is a citation, never a broken local link.
 
 ## The lifecycle
-
-A substantive change — a new abstraction, a cross-cutting
-refactor, a contract change, anything worth a second opinion —
-goes through a **proposal**:
 
 ```
 awaiting-review <-> revising -> awaiting-decision
                              -> accepted / rejected / superseded
 ```
 
-A blocking review moves a proposal to `revising`; the author's Response
-and complete current-contract revision return it to `awaiting-review`; a
-clearing review moves it to `awaiting-decision`, which is the
-Maintainer's. A non-trivial accepted proposal then gets a **plan**:
+A blocking review moves a proposal to `revising`; the author's Response returns
+it to `awaiting-review`; a clearing review moves it to `awaiting-decision`,
+which is the Maintainer's. A non-trivial accepted proposal then gets a plan:
 
 ```
 awaiting-plan-review <-> revising-plan -> ready-to-implement
@@ -80,288 +41,185 @@ awaiting-plan-review <-> revising-plan -> ready-to-implement
   -> ready-to-archive -> archived
 ```
 
-Each status names **who holds it next**, so the board can say whose move
-it is without inferring. Two rules are bright-line:
+Each status names **who holds it next**. Two rules are bright-line:
 
-* **Append-only.** Never edit a prior section of a proposal —
-  append a revising one. The record shows what was believed *at
-  each point*, not a tidied final state.
-* **One commit per lifecycle transition.** Open, review, response,
-  and decision each get their own commit; bundling hides who
-  changed what.
+* **Append-only.** Never edit a prior section of a proposal — append a revising
+  one. The record shows what was believed *at each point*, not a tidied final
+  state. (A plan is the exception, and says so in its own template: its
+  operative cells revise in place until implementation begins.)
+* **One commit per lifecycle transition.** Open, review, response, and decision
+  each get their own commit; bundling hides who changed what.
 
-The full lifecycle, the trivial-vs-non-trivial triage, and the
-file-move rules are in
-[`dev/proposals/_template.md`](dev/proposals/_template.md) and
-[`dev/plans/_template.md`](dev/plans/_template.md).
+Details are in the two `_template.md` files.
 
 ## Review
 
-Every substantive change is reviewed (see
-`dev/agent_collaboration.md`):
+* **Internal review** helps a change land — a constructive second read. Floor:
+  the same agent in a fresh session.
+* **External review** makes a change prove it should land. Floor: a different
+  agent type, or a human.
 
-* **Internal review** helps a change land — a constructive second
-  read. Floor: the same agent in a fresh session.
-* **External review** makes a change prove it should land — an
-  independent read. Floor: a different agent type, or a human.
+Review is asynchronous and commit-mediated: a review is a section appended to
+the artifact and committed, not a conversation that leaves no record.
 
-Review is asynchronous and commit-mediated: a review is a section
-appended to the artifact and committed, not a conversation that
-leaves no record.
+**A plan review is Internal, fresh-context — always.** External plan review does
+not exist as a tier; the External floor lives at the deliberate lane's
+**proposal** review, where the design is still movable. **Code review's floor is
+separate and independent: not the implementing agent.** A plan whose surface
+calls for security treatment declares
+`Plan review: required(Internal + Internal Security Review)`, satisfied only by
+an appended `## Plan review` pass whose `**Obligation**` line matches — never by
+an ordinary Internal pass, and never by a heading the checker cannot parse.
 
-**A plan review is Internal, fresh-context — always.** External plan
-review does not exist as a tier, a requirement, a recommendation slot,
-or an escalation target; the External floor lives at the deliberate
-lane's **proposal** review, where the design is still movable.
-**Code review's floor is unchanged and independent: not the
-implementing agent** — a same-type agent in an independent context
-clears it. A plan whose surface or triggers call for security
-treatment declares `Plan review: required(Internal + Internal Security
-Review)`, satisfied only by an appended `## Plan review` pass whose
-`**Obligation**: Internal Security Review` line matches it, authored
-by a fresh-context same-type session in the Security Review role —
-never by an ordinary Internal pass, and never by a record headed
-`## Security review (...)`, which the checker does not read as a pass
-at all. A high-risk surface named
-below still takes its own Security Review; that trigger is untouched
-by this routing, and the Maintainer may still choose to ask any
-additional reader for any artifact — a choice is not a tier. Contract
-and rationale: `doctrine/dual-review.md` > "Plan review is Internal,
-always"; process framing in `dev/agent_collaboration.md`.
-
-**Reviews are attributed and self-committed.** No agent writes or
-commits a review attributed to another agent — the named reviewer
-commits their own findings, or the Maintainer does. The attribution
-*is* the record's integrity: a review you did not write is not yours to
-sign, and a structurally-independent read is only independent if its
-author is its committer.
+**Reviews are attributed and self-committed.** No agent writes or commits a
+review attributed to another. The attribution *is* the record's integrity: a
+review you did not write is not yours to sign, and a structurally-independent
+read is only independent if its author is its committer.
 
 **Comprehension is a precondition of the Decision, not a courtesy.** You cannot
 review what you cannot penetrate, so an opaque change quietly turns "review and
 decide" into "approve". Lead plain and keep the precision beneath it; define a
-specialist term the first time it carries weight; and treat *"I don't
-understand this yet"* as a **mandatory pause** — a decision surface the
-Maintainer cannot follow is not decidable. This binds the agent, who is
-typically the stronger party on the software, not the reader. **The same floor
-reaches forward in time** — see the durable-artifact rules under
-*Project-specific conventions*. Rationale and
-grounding: `doctrine/rationale.md` > the comprehension floor.
+specialist term the first time it carries weight; and treat *"I don't understand
+this yet"* as a **mandatory pause**. This binds the agent, who is typically the
+stronger party on the software, not the reader.
 
 ## Session routines
 
-* **Session start** — at a cold start, or after a context-loss
-  event, run a short orientation pass: if the project keeps a
-  `RULES.md` (tracked, project-owned agent rules — Cairn never
-  templates it; see `doctrine/doc-governance.md`), read it *first*;
-  then re-anchor on the `dev/` tree, read the commit log since the
-  last handoff, note in-flight proposals, and confirm your role
-  before substantive work.
-
-  For the in-flight threads, **start from the board, not from the
-  artifacts**:
-
-  ```
-  python tools/lifecycle_planner.py board --compact
-  ```
-
-  One row per active artifact — kind, artifact, status, owner role,
-  active work-intent, review obligation, evidence, what blocks it, and
-  row validity. **Run the board, choose the row you need, then read that
-  artifact and the evidence it cites** — not every active record. The
-  view is derived and says so; the artifact is authoritative, and it
-  mutates nothing.
-* **Goodnight** — at the end of a session, leave a clean handoff:
-  a status summary, a per-agent reflection, and (for the
-  designated owner) a scrub of the roadmap boards. The handoff commit is
-  part of the routine and its owner lands it; **pushing is never implied
-  by the routine** and waits on explicit maintainer approval.
+* **Session start** — at a cold start or after a context-loss event, orient
+  before substantive work. If the project keeps a `RULES.md`, read it *first*;
+  then re-anchor on the `dev/` tree, read the commit log since the last handoff,
+  and confirm your role. `python tools/session.py session-start` gathers the
+  mechanical half — commits since the last handoff, working-tree state, the
+  in-flight proposals and plans, and the resolved interpreter. **Read the
+  artifacts it names and the evidence they cite, not every active record.**
+* **Goodnight** — leave a clean handoff: a status summary, a per-agent
+  reflection, and (for the designated owner) a roadmap scrub. The handoff commit
+  is part of the routine; **pushing is never implied by it** and waits on
+  explicit Maintainer approval.
 
 ## Roles
 
-Work is organized by **roles**, not people — a role is a frame.
-The **Human Maintainer** holds final Decision authority and is the
-one role that is not interchangeable. Other roles (Strategy,
-Implementation, the reviewer tiers, and any the dimensional
-profile adds) are frames any capable agent fills; name your role
-before substantive work, and if it is not explicit, ask. The
-roster is in `dev/agent_collaboration.md`.
+Work is organized by **roles**, not people. The **Human Maintainer** holds final
+Decision authority and is the one role that is not interchangeable. Other roles
+(Strategy, Implementation, the reviewer tiers) are frames any capable agent
+fills; name your role before substantive work, and if it is not explicit, ask.
+The roster is in `dev/agent_collaboration.md`.
 
 ## Git and commit workflow
 
-* **Implementing an accepted plan, commit your own work.** An agent executing a
-  reviewed, accepted plan commits as it goes — code, tests, templates, docs and
-  deliberation artifacts alike. There is **no per-commit approval gate**.
-  Approval attaches to exactly four things:
+* **Implementing an accepted plan, commit your own work.** There is **no
+  per-commit approval gate**. Approval attaches to exactly four things:
   * **Pushing.** Always, without exception. The plan authorized the change; it
     did not authorize publishing it.
-  * **A Decision on a proposal** (accept / reject / supersede) — the
-    Maintainer's to make, and theirs to land, bounded by the scribing
-    guard-rail below.
+  * **A Decision on a proposal** — the Maintainer's to make, bounded by the
+    scribing guard-rail below.
   * **A deviation from the approved plan** — new scope, a struck chunk revived,
     a contract the review never saw, an acceptance criterion you cannot meet,
-    **or accepted scope removed**. *Deviating* is what needs asking; committing
-    is not.
+    **or accepted scope removed**.
 
     **Removal counts as a deviation, in both directions.** Accepted scope is a
     **floor**: sequencing may move work between chunks, but dropping an outcome
     the accepted artifact committed to is a deviation exactly as adding one is.
-    Judge it against the baseline's own commitments — if every accepted outcome
-    is still delivered, a lighter mechanism owes nothing; otherwise declare the
-    `Scope delta`, group the remainder into one record, and get the
-    Maintainer's explicit allowance. **A reviewer cannot create that authority
-    by calling the remainder "out of scope."** Narrowing is the path of least
-    resistance in review — it costs the reviewer nothing, reads as prudence,
-    and can never be shown wrong, because the wider version is never built.
+    If every accepted outcome is still delivered, a lighter mechanism owes
+    nothing; otherwise declare the `Scope delta`, group the remainder into one
+    record, and get the Maintainer's explicit allowance. **A reviewer cannot
+    create that authority by calling the remainder "out of scope."** Narrowing
+    is the path of least resistance in review — it costs the reviewer nothing,
+    reads as prudence, and can never be shown wrong, because the wider version
+    is never built.
   * **A plan's own explicit fence.** A chunk marked MAINTAINER-GATED or
-    MAINTAINER-ONLY does not execute without the authorization it names,
-    whatever this rule says. Fences are the mechanism by which a plan places
-    approval where it is actually load-bearing.
+    MAINTAINER-ONLY does not execute without the authorization it names.
 
-  Report what changed when you report, and keep the commit body a faithful
-  snapshot. **Never a bare `git commit`** — but that rule (below) protects
-  against the *shared index*, not against missing approval; the two are
-  unrelated and only one of them is a gate.
-
-  **Why this is stated positively, and why it must not be re-tightened by
-  reflex.** A blanket *never commit without approval* rule is the common first
-  instinct, and it is the wrong instrument once this apparatus exists. The hazard
-  it addresses — unreviewed agent commits accumulating faster than a human can
-  read them — is real, and it is answered by the lifecycle itself: a proposal, a
-  review across structural independence, an accepted plan with per-chunk
-  acceptance criteria, and fences at the points that genuinely need a human. A
-  per-commit gate layered on top is not additional safety; it is a cruder
-  instrument left running after its replacement was built, and its observed cost
-  is agents stranding verified work uncommitted rather than landing it. If an
+  **Why this is stated positively.** The rule it replaces — *never commit
+  without explicit approval* — predates Cairn and was the reaction that led to
+  building it. That hazard is now answered by the apparatus itself: a proposal,
+  a review across structural independence, an accepted plan with per-chunk
+  acceptance criteria, and fences where a human is genuinely needed. A blanket
+  per-commit gate on top of all that is the earlier, cruder instrument left
+  running after its replacement was built, and it has cost real work. If an
   incident argues for tightening, tighten *the plan's fences* or the review
-  tier — that is where approval binds to something specific.
-* **Scribing a Decision — the guard-rail.** The Maintainer's Decision
-  (accept / reject / supersede) is theirs to land; an
-  explicitly-instructed agent may *scribe and commit* it, bounded by
-  three rules:
-  * **Attribution — quote the authorization verbatim.** Quote the
-    Maintainer's authorizing phrase(s) **verbatim and visually
-    isolated** in both the `## Decision` block and the commit body. Do
-    **not** paraphrase the authorization itself — paraphrase admits
-    semantic drift, condition-softening, or a hallucinated approval.
-    Surrounding explanatory prose is allowed, but clearly separated
-    from the quoted words, so a reader can tell exactly what was
-    authorized.
-  * **Unambiguous instruction, or confirm.** Act only on an instruction
-    unambiguous on *both* the disposition and the commit; if either is
-    unclear, confirm with the Maintainer before scribing.
-  * **Decision-only commit.** Flip the status and append the Decision
-    section, and nothing else — no implementation, plan-open, archive,
-    or roadmap work rides in a scribed Decision commit.
-
-  Absent an explicit, unambiguous (or confirmed) instruction, no agent
-  lands a Decision commit.
-* **Commit with explicit paths** — `git commit <path> [<path> ...]`,
-  naming exactly the files the commit should contain. **Never a bare
-  `git commit`**: it commits the *entire* staged index, so anything
-  another agent has staged rides into your commit under your message
-  and author. A path-scoped commit makes that collision *structurally
-  impossible*; the windowless habit below removes the staged window the
-  old backstops only narrowed.
-  * **Prefer the windowless commit** — for *tracked* files, `git commit
-    <paths>` stages *and* commits atomically: **no separate `git add`**,
-    so no staged window is ever exposed. **Verify via the working tree**
-    (`git status --short`, `git diff <paths>`) as its own step —
-    index-independent, and it does **not** show other agents' staged
-    work; do **not** verify with `git diff --cached`, which both
-    *manufactures* the window (it needs a prior `git add`) and reads back
-    *everyone's* staged index.
-  * **New / untracked files** — `git add <paths> && git commit <paths>`
-    in one invocation. If the chain aborts on a pre-commit / intent
-    check, the files are left staged — immediately `git restore --staged
-    <paths>` so a failed commit leaves no residue.
-  * **A `git mv` rename needs *both* sides named** in a path-scoped
-    commit — naming only the destination commits the "add" and leaves
-    the source-side deletion unstaged, so HEAD carries the file at both
-    paths until a fixup. Name both source and destination, and verify via
-    `git status --short` (the `R  source -> destination` line), not
-    `git diff --cached`.
-  * **Bright line** — never leave a `git add` / `git mv` sitting exposed
-    across tool calls, verification, or other work.
-* **Untracked lifecycle artifacts — commit atomically.** If you write a
-  lifecycle-opening artifact (plan, proposal, strategy doc) meaning to ship it,
-  commit it the *same turn* — write + `git mv` + `git commit` together; never
-  leave it untracked for another agent to inherit (the written-but-uncommitted
-  state is the failure surface). If you can't commit this turn, don't write it
-  yet (draft in chat or the harness scratch surface). Cold-start orientation
-  checks `dev/proposals/`, `dev/plans/`, `dev/strategy/` for untracked drafts:
-  commit one your own intent claim covers, leave one another agent's claim
-  covers, surface an unclaimed one to the maintainer. This is the third
-  commit-discipline hazard alongside the staged-index discipline
-  (`doctrine/coordination.md`); recurrences are tracked via the
-  `incident-trackers` module.
-* **Shared communication files** — the roadmap boards, the
-  changelog, and (when the `progressive-onboarding` mechanism is
-  installed) its activation log — are edited
-  only at defined serialization points (a lifecycle archive, the
-  goodnight routine, explicit instruction).  Refer to proposals
-  and plans by filename stem, not path link.
-* **Verification boundaries.** Verification has three jobs; do not pay for the
-  same broad run at every one (full doctrine: `doctrine/plans.md` and
-  `doctrine/dual-review.md`).
-  * **A — Iteration (scoped).** During implementation, run the tests and public-
-    path probes mapped by the reviewed plan, plus standing gates for every
-    touched surface. If a substantive code surface has no reviewed mapping, or
-    its effects cannot be bounded confidently, run the configured full suite.
+  tier, which is where approval binds to something specific.
+* **Scribing a Decision.** An explicitly-instructed agent may scribe and commit
+  the Maintainer's Decision, bounded by three rules: **quote the authorization
+  verbatim and visually isolated** in both the `## Decision` block and the
+  commit body (paraphrase admits drift, condition-softening, or a hallucinated
+  approval); act only on an instruction unambiguous on *both* disposition and
+  commit, or confirm first; and land **nothing else** in that commit.
+* **Commit with explicit paths** — `git commit <path> ...`, naming exactly the
+  files. **Never a bare `git commit`**: it commits the entire staged index, so
+  another agent's staged work rides in under your message and author.
+  * **Prefer the windowless commit** — for tracked files `git commit <paths>`
+    stages *and* commits atomically, so no staged window is ever exposed.
+    **Verify via the working tree** (`git status --short`, `git diff <paths>`);
+    do **not** verify with `git diff --cached`, which manufactures the window
+    and reads back everyone's staged index.
+  * **New / untracked files** — `git add <paths> && git commit <paths>` in one
+    invocation. If the chain aborts, `git restore --staged <paths>` immediately.
+  * **A `git mv` rename needs *both* sides named** — naming only the destination
+    leaves the source-side deletion unstaged.
+  * **Bright line** — never leave a `git add` / `git mv` exposed across tool
+    calls, verification, or other work.
+* **Untracked lifecycle artifacts — commit atomically.** If you write a plan,
+  proposal or strategy doc meaning to ship it, commit it the *same turn*; never
+  leave it untracked for another agent to inherit. If you can't commit this
+  turn, don't write it yet.
+* **Shared communication files** — the roadmap boards, the changelog — are
+  edited only at defined serialization points (a lifecycle archive, the goodnight
+  routine, explicit instruction).
+* **Verification boundaries.** Three jobs; do not pay for the same broad run at
+  every one.
+  * **A — Iteration (scoped).** During implementation, run the tests and probes
+    the reviewed plan maps, plus standing gates for every touched surface. If a
+    substantive surface has no reviewed mapping, run the full suite.
   * **B — Integration (stable evidence).** After the final implementation commit
-    and before code review, run against a clean, unchanged commit under the
-    project's configured interpreter/runtime. A project's Boundary B command
-    may require an explicit override token to run as a full suite; verification
-    records written before such a guard lands cite the bare form and remain
-    accurate for the runs they describe.
-    Run the **configured full suite
-    unless the plan's reviewed mapping bounds the change's effects
-    confidently**, in which case run that mapping plus every standing gate for
-    every touched surface — the same test and the same fail-closed direction as
-    Boundary A. **Bounded mode refuses**, and the full suite runs, whenever the
-    change touches a **contract surface** (the project's install contract,
-    manifests, or lockfile schema) or a **trust-ceremony surface** (any
-    high-risk surface this file names, or work under a release or security
-    ceremony). **Uncertainty resolves to `full`** — the fence is a refusal
-    rule, not a checklist to argue past. Record `**Boundary B mode**: full |
-    bounded`; on `bounded`, name the touched surfaces, the mapping and gates
-    run, why the effects are bounded, and the explicit absence of any contract
-    or trust-ceremony surface.
+    and before code review, against a clean unchanged commit under the
+    **canonical interpreter (Python 3.13.x)**. Cairn's pair is
+    `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests
+    --quality-gate-shuffle-seed=0` then
+    `python scripts/quality_gate.py --sub neutrality --sub redundancy`.
+    Run the **full suite unless the plan's reviewed mapping bounds the change's
+    effects confidently**. **Bounded mode refuses**, and the full suite runs,
+    whenever the change touches a **contract surface** (the install contract,
+    the fidelity or gate manifest, the lockfile schema, the published
+    `scaffold.py --manifest`) or a **trust-ceremony surface**. **Uncertainty
+    resolves to `full`** — the fence is a refusal rule, not a checklist to argue
+    past. Record `**Boundary B mode**: full | bounded`; on `bounded`, name the
+    touched surfaces, the mapping and gates run, why the effects are bounded, and
+    the explicit absence of any contract or trust-ceremony surface.
 
     **An already-open plan keeps the verification contract written in it.**
-    Bounded mode becomes available to it only through that plan's own explicit,
-    append-only revision under the deviation rule above. A plan opened after
-    this rule landed may use bounded mode where its reviewed mapping supports
-    it. Editing this file acts immediately; editing the plan templates acts
-    prospectively, so without this sentence an in-flight plan would get two
-    answers. Append
-    the tested revision/range, runtime, clean pre/post state, commands, outcomes,
-    timing, non-pass disposition, and known omissions to the plan as
+    Bounded mode reaches it only through that plan's own append-only revision.
+
+    Append the tested SHA/range, interpreter, clean pre/post state, commands,
+    outcomes, timing, non-pass disposition, and known omissions as
     `## Implementation verification -- <agent> -- YYYY-MM-DD`.
-  * **C — Falsification (independent).** The code reviewer verifies that record against
-    the reviewed range, then runs independent targeted falsification; copying
-    Boundary B's broad command is not a falsification ledger. On a bounded record the
-    reviewer records `**Bounding**: ACCEPTED | FULL RUN REQUIRED` after
-    challenging at least one named surface, mapped test, or stated omission —
-    never "the field is present". `FULL RUN REQUIRED` **invalidates** the
-    bounded record, which lands it on the first trigger below; it adds no
-    seventh trigger. Missing or stale
-    evidence, unexplained non-pass outcomes, newly discovered coupling, changed
-    implementation/test/executable-template/fixture bytes, a stronger trust-
-    ceremony rule, or concrete doubt requires a fresh full run.
-  Prose-only work runs its applicable documentation and policy gates unless its
-  plan maps it to the test suite. A project's release verification remains a
-  separate strict ceremony.
-* **Keep commit bodies concise.** The body is a *snapshot* — what
-  shipped and how it was verified — not a restatement of the proposal,
-  plan, or changelog (those are the durable audit trail). Target 15–30
-  lines for a non-trivial implementing commit (soft cap ~50; a trivial
-  fix is often just the subject + a one-line body): a one- or
-  two-sentence opener cross-referencing the source proposal / plan, a
-  short bullet list of the substantive changes by file or surface, and
-  a one-line verification snapshot with concrete numbers. Optimize for
-  `git log --oneline` skimmability.
+  * **C — Falsification (independent).** The code reviewer verifies that record
+    against the reviewed range, then runs independent targeted falsification;
+    copying Boundary B's broad command is not a falsification ledger. On a
+    bounded record the reviewer records
+    `**Bounding**: ACCEPTED | FULL RUN REQUIRED` after challenging at least one
+    named surface, mapped test, or stated omission — never "the field is
+    present". Missing or stale evidence, unexplained non-pass outcomes, newly
+    discovered coupling, changed implementation/test/fixture bytes, or concrete
+    doubt requires a fresh full run.
+
+  Prose-only work runs its applicable claim, link, snippet and neutrality gates.
+  Release verification is a separate strict ceremony. Name the interpreter
+  alongside every suite figure.
+* **Keep commit bodies concise.** The body is a *snapshot* — what shipped and how
+  it was verified — not a restatement of the proposal or plan. Target 15–30
+  lines for a non-trivial commit: a one- or two-sentence opener cross-referencing
+  the source artifact, a short bullet list of substantive changes by file or
+  surface, and a one-line verification snapshot with concrete numbers.
 
 ## Verifying claims
+
+**Verify before asserting.** Before committing a proposal, plan, or doc, run
+the claim checker over it: it hard-flags broken repo paths and out-of-bounds
+line citations. A hard flag is resolved before commit; a deliberate
+forward-reference is *marked*, not left to assert. The checker is a
+**discipline aid, not a gate** — the verify-before-asserting habit is the
+doctrine; the tool only shifts its cheap, mechanical part left.
 
 <!-- cairn:slot claim-check -->
 (Filled from the `claim-check` default-on module when installed — the
@@ -370,6 +228,20 @@ verify-before-asserting discipline and how to run the checker (see
 installed, replace with `N/A: claim-check not installed`. An unfilled
 slot is a review finding.)
 <!-- cairn:end claim-check -->
+
+**Name the trigger, check what it checks, and open it.** Any document that
+describes a check says what runs it — a command a person runs, a test, a git
+hook, or a CI job. Cairn has no CI; do not write "in CI" for something no CI
+runs. A check whose only trigger is a human remembering is described that way.
+A tool that returns success without testing the claimed property is a worse
+defect than no tool, because it is silent. **A named trigger is checked by
+opening it — a path that resolves is not a trigger that governs — and the check
+recurses until it reaches a human or a machine.**
+
+**Confirm the instrument before trusting an absence.** A grep that returns
+nothing, a count that matches, a failure list that comes back clean — each is
+evidence only if the pattern *could* have matched. Before acting on a negative
+result, run the same measurement against a case known to be present.
 
 ## Security verification
 
@@ -391,6 +263,9 @@ installed` between the markers below. An unfilled slot is a review finding.)
 
 ## Documentation discipline
 
+Identify what a piece of content is *doing* — prescription, deliberation, or
+description — and route it by layer rather than by topic.
+
 <!-- cairn:slot documentation-discipline -->
 (Filled from the `documentation-plan` default-on module when installed
 — paste content from `dev/modules/documentation-plan.md` > "Merged
@@ -405,39 +280,20 @@ finding.)
 
 ## Project-specific conventions
 
-**Durable artifacts stand without the deliberation that produced them.**
-A test name, a comment, a docstring outlives the plan chunk and the review
-finding that prompted it. The next reader has no proposal open and no reviewer
-to ask, so a coordinate — a finding id, a chunk letter, a plan row — is a
-pointer into a conversation that has ended. It reads as information and carries
-none. Two consequences, both at authoring time:
+**Durable artifacts stand without the deliberation that produced them.** A test
+name, a comment, a docstring outlives the plan chunk and the review finding that
+prompted it. The next reader has no proposal open and no reviewer to ask, so a
+coordinate — a finding id, a chunk letter, a plan row — is a pointer into a
+conversation that has ended.
 
 * **Name a test for the property it pins, not for what produced it.**
-  `TestP2AmendmentBScopeReduction` tells the next reader nothing they can act
-  on -- P2 is a plan chunk and Amendment B a review finding, both long
-  archived. `TestScopeReductionNeedsMaintainerAllowance` tells them what breaks
-  if it fails. Put the *reason* in the docstring — why the obligation exists, what
-  goes wrong without it — and no coordinate:
-
-  ```python
-  class TestScopeReductionNeedsMaintainerAllowance:
-      """Accepted scope is a floor, so dropping an outcome takes an explicit
-      allowance. Without this, narrowing passes as prudence: it costs the
-      reviewer nothing and can never be shown wrong, because the wider
-      version is never built."""
-  ```
-
-* **Comments and docstrings explain the code, not the process.** State the
-  reason the code is the way it is; do not cite the finding that asked for it.
-  `# CR3: use a set here` decays the moment CR3 archives; `# set, not list --
-  membership is checked once per candidate and the candidate list is large`
-  still works in five years. The bar is not *"is the reasoning recorded somewhere"* but **"can the
-  next reader act on this without the record?"** — usually one sentence, and
-  sometimes none. Writing the reason in is not licence to narrate: restating
-  what the code already says is waste, not comprehension.
-
-Grounding: `doctrine/rationale.md`, Anchor 16 (the comprehension floor and its
-temporal half), fenced by Anchor 17.
+  `TestP2AmendmentBScopeReduction` tells the next reader nothing they can act on;
+  `TestScopeReductionNeedsMaintainerAllowance` tells them what breaks if it
+  fails. Put the *reason* in the docstring, and no coordinate.
+* **Comments and docstrings explain the code, not the process.** `# CR3: use a
+  set here` decays the moment CR3 archives; `# set, not list -- membership is
+  checked once per candidate and the list is large` still works in five years.
+  The bar is **"can the next reader act on this without the record?"**
 
 <!-- cairn:slot project-conventions -->
 (Naming conventions, the development environment, the high-risk
@@ -464,20 +320,12 @@ project ships no `CONTRIBUTING.md`, and this section is informational.
 <!-- cairn:endif -->
 ## Vendor addendum
 
-`AGENTS.md` is vendor-neutral — it names no specific AI agent tool.
-Doctrine specific to one agent tool (a harness path, a
-session-model habit) goes in that tool's own file, which opens by
-importing this one (`@AGENTS.md`), so the shared content stays
-single-sourced. Cairn ships the thin wrapper as `VENDOR.md`; the
-adopter renames it to their tool's auto-loaded file (`CLAUDE.md`,
-`GEMINI.md`, …).
+`AGENTS.md` is vendor-neutral — it names no specific AI agent tool. Doctrine
+specific to one tool (a harness path, a session-model habit) goes in that tool's
+own file, which opens by importing this one (`@AGENTS.md`). Cairn ships the thin
+wrapper as `VENDOR.md`; the adopter renames it to their tool's auto-loaded file.
 
-**Drift guard.** The wrapper carries *only* harness-specific habits —
-this tool's session/context model, its scratch directory, its
-command quirks. Everything an agent of a *different* tool would also
-need — the required reading, the session routines, the CLI, the
-conventions, the development environment, the test command, the git
-rules — stays canonical **here**, and the wrapper points at it. A
-wrapper that duplicates this content has drifted into a fat fourth
-doc; fold it back and leave only the pointer. (`VENDOR.md` carries the
-same guard inline; `bootstrap/fidelity-check.md` notes it as a check.)
+**Drift guard.** The wrapper carries *only* harness-specific habits. Everything
+an agent of a *different* tool would also need stays canonical **here**, and the
+wrapper points at it. A wrapper that duplicates this content has drifted into a
+fat fourth doc; fold it back and leave only the pointer.
