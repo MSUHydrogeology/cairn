@@ -117,12 +117,16 @@ words are easier to hold.
   Windows unsupported — use WSL" in the contract and quickstart. Today it
   fails silently, which is worse than either answer.
 * **The reviewer's question** — "how is this different from decision
-  records, RFC processes, lab notebooks, pre-registration?" The real
-  answers (review *before* code is written, across genuinely different
-  models; verification plans locked in advance; the record in the repo, not
-  a chat log) still appear nowhere a skeptic looks first, and the
-  two-sentence pitch still does not exist. Unowned; the natural next home
-  is a Cairn issue when someone picks it up.
+  records, RFC processes, lab notebooks, pre-registration?" *(Corrected
+  2026-08-26, same day as the merge: this was carried as still-open and it
+  is not.)* Answered at the public surface since 2026-08-11 (`6df71b7`):
+  `docs/related-practices.md` gives the honest comparison — including
+  "where the answer is 'nothing much,' it says so" — `docs/glossary.md`
+  defines the vocabulary, and the README now opens with the two-sentence
+  pitch and links the comparison. What remains of the original finding is
+  a sliver: no CONTRIBUTING/support path, and `CITATION.cff` still titles
+  Cairn "An Adaptable Framework" against the README's methodology
+  identity.
 * **Upgrade reality.** A cross-version upgrade of an installed Cairn has
   still never been rehearsed end-to-end. The subtraction sweep's sister
   migrations will be the first forced, real exercise of adoption-surface
