@@ -378,6 +378,101 @@ never filed — now filed as issue **#18** and the ledger updated (`e205a110`).
 The replacement channel already exists and is proven:
 `.github/ISSUE_TEMPLATE/foldback.md` and the matching PR template.
 
+## C2 deviation -- the ~80-line template target is not reachable
+
+**Declared under the deviation rule, and the direction matters: this delivers
+*less compression* than the plan projected, not less scope.** Every outcome C2
+committed to still lands. The estimate was wrong.
+
+| file | before | after | cut |
+|---|---|---|---|
+| `dev/proposals/_template.md` | 674 | 298 | 56% |
+| `dev/plans/_template.md` | 594 | 230 | 61% |
+| `templates/core/dev/proposals/_template.md` | 623 | 246 | 60% |
+| `templates/core/dev/plans/_template.md` | 583 | 218 | 63% |
+| `AGENTS.md` | 602 | 353 | 41% |
+
+**Why ~80 lines was never available.** Cutting to the target first and running
+the suite after surfaced 28 failures across `test_scope_reduction_trap` and
+`test_lifecycle_contract`. Three classes of content in these files are
+load-bearing rather than preamble:
+
+* **Doctrine the suite actively pins** — the anti-narrowing floor, the review
+  basis, the assurance path, the contract revision and its withdrawal ledger.
+  The scope-reduction rule is the one *this sweep's own plan* cites against
+  itself, and the test pinning it demands the author say "why specifying was
+  rejected" before cutting it.
+* **Eight adopter-customization slots**, each a paired block whose guidance
+  prose is ~100 lines across the two templates. Removing them removes adopter
+  customization, not verbosity.
+* **The five design-time security questions (S1-S5)**, which the first cut
+  dropped by omission. S2 — *"if a check derives what it expects from the same
+  object it is checking, that check cannot fail"* — is precisely the defect
+  that put a false inclusion in this sweep's own manifest.
+
+**The honest number is ~1,482 lines removed across the four templates**, against
+a `-1,357` build-table estimate that covered all six constitution files. So the
+templates alone exceeded the estimate for the whole row while missing their own
+per-file target — the estimate was not merely low, it was distributed wrongly.
+
+**What would make ~80 reachable, and why it is not done here.** The pins live in
+`test_lifecycle_contract.py`, which C6 removes. Cutting further is therefore a
+C7 opportunity, once the pins are gone — recorded so the remaining compression
+is not lost as an omission.
+
+## C7 routing map -- where PLANNING.md's content goes
+
+**Recorded here at the Maintainer's direction**, relayed through the concurrent
+Strategy session that inventoried the file. The authorization, verbatim:
+
+> "Please, yes, and ask them to add it to the plan to survive compaction"
+
+The inventory is that session's; the direction is the Maintainer's; the reason
+it lives here rather than in a session's context is the quoted instruction.
+
+**The question it answers.** C7 previously carried checker-gate acceptance
+criteria and no destination map — so "bankruptcy" had no answer to *where does
+this go?*, which is the difference between retiring a roadmap and dropping it.
+`dev/PLANNING.md` is 2,590 lines in nine blocks (`as_of 2026-08-26`; re-verify
+the boundaries when C7 executes, since C2 and C6 both edit this file first).
+
+| section | ~lines | disposition |
+|---|---|---|
+| Where the project stands (`:22`) | 55 | survives — trimmed PLANNING keeps a short status plus pointers |
+| Onboarding (`:57`) | 63 | dies with the onboarding mechanism |
+| Queued (`:120`) | 850 | triaged row by row: live to GitHub issues, dead to an explicit decline |
+| Active (`:971`) | 204 | collapses to pointers; state lives in the artifacts and the board view |
+| Status taxonomy (`:1175`) | 25 | to the constitution rewrite (C2) |
+| Archive + removal preconditions (`:1200`) | 69 | to the constitution rewrite (C2) |
+| Migrated roadmap (`:1269`) | 230 | one issue each, revival condition in the issue body |
+| Security-cluster routing (`:1508`) | 1,010 | folds into `dev/strategy/2026-08-05-codex-security-strategy.md`'s cluster map; PLANNING keeps pointers |
+| Release path (`:2518`) | 72 | survives — the version ladder is PLANNING's remaining job |
+
+**The Queued block is not one-pass adjudication, and that distinction is load-
+bearing.** The accepted `2026-08-04-claude-board-retro-disposition` rejected
+one-pass adjudication as *"the load-bottleneck failure mode ... reproduced at
+the worst possible size"* and bulk-decline as *"visible debt traded for
+invisible debt, the strictly worse trade."* The Maintainer's supersession
+(recorded above) licenses bankruptcy; it does not license either of the two
+shapes that proposal named. So the 850-line Queued block is drained row by row
+across one or more conducted sessions, with parks batched to the Maintainer —
+not adjudicated in a single pass.
+
+**Two sequencing constraints this adds:**
+
+* **C7 runs after C6** for the Onboarding block, so no orphaned surface is left
+  pointing at a removed mechanism.
+* **The Queued drain may run before or alongside C7** rather than inside a
+  single C7 commit.
+
+**The acceptance criterion the map enables**, which C7 could not previously
+state: **no live row is deleted without a named destination or an explicit
+decline in the record.** A checker gate cannot express that; a destination map
+can.
+
+The security block's authority is that strategy doc's own committed
+serialization note, not this table.
+
 ## Acceptance criteria
 
 Per chunk, and each falsifiable.
