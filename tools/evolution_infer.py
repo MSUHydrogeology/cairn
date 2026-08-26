@@ -4,8 +4,8 @@
 
 """Deterministic decision-support for the self-evolution loop.
 
-Reads the **incident trackers** + the **fold-back ledger** and
-machine-evaluates the **adaptive-doctrine rate-limit gate**
+Reads the **incident trackers** and machine-evaluates the
+**adaptive-doctrine rate-limit gate**
 (``doctrine/rationale.md`` > "Adaptive-doctrine rate-limit gate"), emitting
 text decision-support:
 
@@ -13,12 +13,10 @@ text decision-support:
   ``>=`` the threshold (default 2) ``Impact = occurred`` rows within the
   tracker's rolling window, the gate's recurrence trigger is met and a
   doctrine proposal *may* be justified;
-* a **fold-up-backlog alarm** -- when the fold-back ledger holds ``>=`` the
-  backlog threshold of open ``candidate`` rows (a fold-up sweep may be due).
 
 It is **deterministic, rule-based, and zero-token** (no model calls): the
 recurrence count is *computed*, not eyeballed. It **only suggests** -- it
-emits text and **never mutates** the trackers, the ledger, doctrine, or
+emits text and **never mutates** the trackers, doctrine, or
 anything else (it opens no proposal and files no issue). Any richer
 LLM-driven clustering is a separate, on-demand command, deliberately *out*
 of this deterministic pipeline.
@@ -37,14 +35,13 @@ Usage::
     python tools/evolution_infer.py
     python tools/evolution_infer.py --root /path/to/repo
     python tools/evolution_infer.py --trackers dev/measurement/collision_log.md
-    python tools/evolution_infer.py --ledger dev/.cairn/cairn_foldback.md
-    python tools/evolution_infer.py --threshold 2 --backlog-threshold 10
+    python tools/evolution_infer.py --threshold 2
     python tools/evolution_infer.py --json
 
 Exit codes::
 
     0  -- evaluated cleanly (with or without findings)
-    2  -- usage error (a named tracker / ledger path does not exist)
+    2  -- usage error (a named tracker path does not exist)
     3  -- fail-closed: a tracker has an Incidents table but an unparseable
           rolling window (the gate could not be evaluated)
 """
@@ -59,9 +56,7 @@ from pathlib import Path
 
 
 DEFAULT_TRACKER_DIR = "dev/measurement"
-DEFAULT_LEDGER_PATH = "dev/.cairn/cairn_foldback.md"
 DEFAULT_THRESHOLD = 2
-DEFAULT_BACKLOG_THRESHOLD = 10
 
 _INCIDENTS_HEADING = "## Incidents"
 
@@ -197,24 +192,6 @@ def evaluate_tracker(
 
 
 # ---------------------------------------------------------------------------
-# Fold-up backlog
-# ---------------------------------------------------------------------------
-
-
-def count_open_candidates(ledger_text: str) -> int:
-    """Count ``candidate``-status rows in the ledger's ``## Open candidates``
-    table (the fold-up backlog; markdown emphasis on the status is tolerated)."""
-    body = _section_body(ledger_text, "## Open candidates")
-    n = 0
-    for cells in _data_rows(body):
-        if len(cells) >= 4:
-            status = cells[3].strip().strip("*").strip().lower()
-            if status == "candidate":
-                n += 1
-    return n
-
-
-# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -240,8 +217,8 @@ def main(argv: list[str] | None = None) -> int:
         prog="evolution_infer",
         description=(
             "Deterministic, zero-token decision-support: machine-evaluate the "
-            "adaptive-doctrine rate-limit gate over the incident trackers and "
-            "flag a fold-up backlog. Emits suggestions only -- never mutates."
+            "adaptive-doctrine rate-limit gate over the incident trackers. "
+            "Emits suggestions only -- never mutates."
         ),
     )
     parser.add_argument(
@@ -256,22 +233,11 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
-        "--ledger", type=Path, default=Path(DEFAULT_LEDGER_PATH),
-        help=f"Fold-back ledger (relative to --root). Default: {DEFAULT_LEDGER_PATH}.",
-    )
-    parser.add_argument(
         "--threshold", type=int, default=DEFAULT_THRESHOLD,
         help=(
             "Recurrence trigger: an event-class with this many 'occurred' rows "
             f"in the window is suggested. Default: {DEFAULT_THRESHOLD} (the "
             "doctrine's '>=2 same-shape' rule)."
-        ),
-    )
-    parser.add_argument(
-        "--backlog-threshold", type=int, default=DEFAULT_BACKLOG_THRESHOLD,
-        help=(
-            "Open-candidate count at/above which a fold-up sweep is flagged. "
-            f"Default: {DEFAULT_BACKLOG_THRESHOLD}."
         ),
     )
     parser.add_argument(
@@ -311,36 +277,22 @@ def main(argv: list[str] | None = None) -> int:
             f["tracker"] = rel
             findings.append(f)
 
-    backlog: int | None = None
-    ledger_path = root / args.ledger
-    if args.trackers is None and not ledger_path.is_file():
-        backlog = None  # default ledger simply absent -> no alarm
-    elif ledger_path.is_file():
-        backlog = count_open_candidates(
-            ledger_path.read_text(encoding="utf-8", errors="replace")
-        )
-
-    backlog_alarm = backlog is not None and backlog >= args.backlog_threshold
-
     if args.json:
         print(json.dumps({
             "findings": findings,
             "fail_closed_trackers": failclosed,
-            "backlog_count": backlog,
-            "backlog_alarm": backlog_alarm,
             "threshold": args.threshold,
-            "backlog_threshold": args.backlog_threshold,
         }, indent=2))
     else:
-        _print_human(findings, failclosed, backlog, backlog_alarm, args)
+        _print_human(findings, failclosed, args)
 
     # Fail-closed is the only non-zero exit (besides usage): an unparseable
     # window must not pass silently.
     return 3 if failclosed else 0
 
 
-def _print_human(findings, failclosed, backlog, backlog_alarm, args) -> None:
-    print("evolution_infer: rate-limit gate + fold-up backlog (advisory only)")
+def _print_human(findings, failclosed, args) -> None:
+    print("evolution_infer: rate-limit gate (advisory only)")
     if findings:
         print(f"\nRATE-LIMIT SUGGESTIONS ({len(findings)}):")
         for f in findings:
@@ -361,16 +313,6 @@ def _print_human(findings, failclosed, backlog, backlog_alarm, args) -> None:
                 "'**Rolling window**:' line -- the rate-limit gate cannot be "
                 "evaluated until you set it (no silent default)."
             )
-    if backlog is not None:
-        if backlog_alarm:
-            print(
-                f"\nFOLD-UP BACKLOG ALARM: the ledger holds {backlog} open "
-                f"candidate(s) (>= {args.backlog_threshold}) -- a fold-up "
-                "sweep may be due."
-            )
-        else:
-            print(f"\nFold-up backlog: {backlog} open candidate(s) "
-                  f"(under {args.backlog_threshold}).")
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -26,7 +26,6 @@ CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 FACADES = [
     ("templates/modules/team-gated/intent.py", "tools._intent"),
     ("templates/modules/default-on/onboarding_activate.py", "scripts._onboarding"),
-    ("templates/modules/default-on/lifecycle_metrics.py", "tools._lifecycle_metrics"),
 ]
 
 

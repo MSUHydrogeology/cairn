@@ -36,7 +36,6 @@ import pytest
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(CAIRN_ROOT))
 
-from tools import lifecycle_planner as planner  # noqa: E402
 
 #: Each entry: surface -> {obligation label: alternation pattern}.
 #:
@@ -332,7 +331,7 @@ def test_the_canonical_section_exists_and_sits_beside_its_mirror() -> None:
 #: still only emits `**Scope delta**` for the literal string "executing",
 #: which is no longer reachable from any state in `PLAN_TRANSITIONS` or
 #: `PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED` (checked by hand against
-#: `tools/lifecycle_planner.py`). There is currently NO live plan
+#: the retired lifecycle planner). There is currently NO live plan
 #: transition that scaffolds the declaration -- not `ready-to-implement`
 #: (the reviewer's clearing move, using the generic `_status_move_manifest`
 #: with no declaration block) and not `revising-plan`'s return arm to
@@ -353,59 +352,11 @@ _SCAFFOLDED_TRANSITIONS = (
 )
 
 
-@pytest.mark.parametrize("kind,status,target", _SCAFFOLDED_TRANSITIONS,
-                         ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
-def test_the_emitted_scaffold_carries_the_declaration(kind: str, status: str,
-                                                      target: str) -> None:
-    """Through `_scaffold`, not by grepping the source.
-
-    The scaffold is built from adjacent string literals, so a source-text
-    search tests the line wrapping rather than what an author is handed. What
-    matters is the text that reaches STDOUT.
-    """
-    art = planner.Artifact(path=Path(f"some-{kind}.md"), kind=kind, text="")
-    art.status = status
-    _, _, blocks = planner._scaffold(art, target, "2026-08-11")
-    emitted = "\n".join(blocks)
-
-    assert "**Scope delta**" in emitted, (
-        f"the {kind} -> {target} scaffold no longer offers the Scope-delta "
-        f"declaration; this is the surface where an author meets the rule "
-        f"while typing rather than recalling it from doctrine later."
-    )
-    assert "Removed scope" in emitted and "Disposition/home" in emitted, (
-        f"the {kind} -> {target} scaffold offers the declaration without the "
-        f"grouped remainder block it requires."
-    )
-    # The manifest must tell the author WHICH HALF is mechanical, and the
-    # distinction is what must survive -- not either sentence. It used to say
-    # "THE TOOL DOES NOT CHECK THIS" flatly; Amendment B then landed a refusal
-    # for a declared loss carrying no Maintainer allowance, so the flat claim
-    # became false in a later pass and was corrected here.
-    lowered = emitted.lower()
-    assert re.search(r"missing(?: or malformed)? declaration", lowered), (
-        f"the {kind} -> {target} manifest no longer says that a MISSING "
-        f"declaration goes uncaught. A scaffold implying full enforcement "
-        f"invites the reader to trust it as a gate."
-    )
-    # NOT "says what DOES refuse" -- that assertion was satisfied by the words
-    # "NO TRANSITION REFUSES", so it could never have caught the false claim it
-    # was meant to guard. Nothing refuses today: the
-    # only consumer of `_declared_reduction` returns early for proposals and is
-    # gated for plans on a field no artifact declares. The manifest must not
-    # claim otherwise -- a scaffold that promises a check an author can rely on
-    # is the "green check to sit behind" this proposal exists to prevent.
-    assert "does refuse" not in lowered, (
-        f"the {kind} -> {target} manifest claims something refuses on the "
-        f"scope declaration. Verify the caller chain before restoring that: "
-        f"`_declared_reduction`'s only consumer bails for proposals and is "
-        f"gated for plans on `_declares_inheritance`."
-    )
 
 
 #: The one declaration grammar, across every surface that prints it. A review
 #: unified six surfaces on `preserved | degraded | lost`; the clearing pass
-#: then found the planner scaffolds still telling the author to "omit
+#: then found the (since-retired) planner scaffolds still telling the author to "omit
 #: entirely when preserved" one line above a list offering `preserved`, and
 #: NOTHING pinned the grammar -- reverting all six stayed green.
 _DECLARATION_VALUES = "**Scope delta**: preserved | degraded | lost"
@@ -431,41 +382,8 @@ def test_every_template_prints_the_same_declaration_grammar(rel: str) -> None:
     )
 
 
-@pytest.mark.parametrize("kind,status,target", _SCAFFOLDED_TRANSITIONS,
-                         ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
-def test_the_scaffolds_print_the_same_declaration_grammar(
-        kind: str, status: str, target: str) -> None:
-    """Through `_scaffold`, because the block is built from adjacent literals."""
-    art = planner.Artifact(path=Path(f"some-{kind}.md"), kind=kind, text="")
-    art.status = status
-    _, _, blocks = planner._scaffold(art, target, "2026-08-12")
-    emitted = " ".join("\n".join(blocks).split())
-    assert _DECLARATION_VALUES in emitted, (
-        f"the {kind} -> {target} scaffold prints a different declaration "
-        f"grammar than the templates do."
-    )
 
 
-@pytest.mark.parametrize("kind,status,target", _SCAFFOLDED_TRANSITIONS,
-                         ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
-def test_the_scaffolds_do_not_contradict_the_offered_values(
-        kind: str, status: str, target: str) -> None:
-    """The exact defect, pinned.
-
-    A scaffold that offers `preserved` in its value list and tells the author
-    to omit the block when preserved contradicts itself in adjacent lines. The
-    author follows one or the other, so the field means different things in
-    different records -- which is the failure the unified grammar removed.
-    """
-    art = planner.Artifact(path=Path(f"some-{kind}.md"), kind=kind, text="")
-    art.status = status
-    _, _, blocks = planner._scaffold(art, target, "2026-08-12")
-    emitted = " ".join("\n".join(blocks).split()).lower()
-    assert "omit entirely" not in emitted, (
-        f"the {kind} -> {target} scaffold tells the author to omit the block "
-        f"when preserved while offering `preserved` as a value. The templates "
-        f"say `preserved` may be stated; the scaffold must not disagree."
-    )
 
 
 # --- the `_declared_reduction` boundary contract lives with its owner --------
@@ -489,37 +407,12 @@ def test_the_scaffolds_do_not_contradict_the_offered_values(
 # `test_an_absent_field_yields_nothing` pin the forbidden half there.
 #
 # What stays here is what this plan owns: that no transition refuses on a
-# missing declaration, pinned below through the planner's own refusal surfaces.
+# missing declaration.  The planner that once refused on it is gone; what
+# survives here is the doctrine-text half, which is what adopters receive.
 
 
-@pytest.mark.parametrize("kind,status,target", _SCAFFOLDED_TRANSITIONS,
-                         ids=[f"{k}->{t}" for k, _, t in _SCAFFOLDED_TRANSITIONS])
-def test_the_emitted_scaffold_asks_each_entry_for_its_disposition(
-        kind: str, status: str, target: str) -> None:
-    """The two of six shapes the first version of this guard did not reach.
-
-    `_PER_ENTRY_DISPOSITION_SURFACES` covers the four Markdown templates. The
-    emitted scaffolds are the other two author-facing shapes, and removing the
-    per-entry prompt from both planner copies left the mapped set at 778 passed
-    (correction review, R2-X1). Checked through `_scaffold` rather than by
-    grepping source, because the block is built from adjacent string literals.
-    """
-    art = planner.Artifact(path=Path(f"some-{kind}.md"), kind=kind, text="")
-    art.status = status
-    _, _, blocks = planner._scaffold(art, target, "2026-08-13")
-    emitted = " ".join("\n".join(blocks).split())
-    assert re.search(r"disposition \(accept", emitted), (
-        f"the {kind} -> {target} scaffold no longer asks each removed unit for "
-        f"its own disposition. A group-level home is a location, not a "
-        f"decision, and each entry blocks archive independently."
-    )
 
 
-def test_the_two_planner_twins_stay_byte_identical() -> None:
-    """The scaffold change had to land in both copies or adopters get neither."""
-    a = (CAIRN_ROOT / "tools/lifecycle_planner.py").read_bytes()
-    b = (CAIRN_ROOT / "templates/skills/_lib/lifecycle_planner.py").read_bytes()
-    assert a == b, "lifecycle_planner twins have drifted"
 
 
 #: A proposal at `revising`, i.e. one transition BEFORE the `-> awaiting-review`
@@ -571,22 +464,6 @@ Narrowed chunk B away.
 #: The proposal row's target is exactly `_SCAFFOLDED_TRANSITIONS`' proposal
 #: row -- the one place the declaration is offered live today.
 #:
-#: **The two plan rows below no longer match `_SCAFFOLDED_TRANSITIONS`' plan
-#: row.** That row still names the retired `executing` token deliberately
-#: (see the comment above `_SCAFFOLDED_TRANSITIONS`) because there is no live
-#: transition that scaffolds the declaration on the plan side post-H1 -- but
-#: `target in planner._legal_transitions(art)` below REQUIRES a live target,
-#: so the two plan fixtures are re-pointed at `ready-to-implement`, the
-#: nearest live state both preconditions can legally reach (the only target
-#: common to `PLAN_TRANSITIONS["awaiting-plan-review"]` and
-#: `PLAN_TRANSITIONS_REVIEW_NOT_REQUIRED[""]`), preserving the original
-#: design's shape -- both fixtures converging on ONE target reached via two
-#: different preconditions -- as a regression floor on "the planner does not
-#: gate here" even though neither target carries the declaration today.
-#: A plan on the `not required` path, which reaches `ready-to-implement`
-#: straight from the not-yet-opened state (no `**Status**:` line, i.e.
-#: `art.status == ""`) -- the review-required fixture alone left that route
-#: unswept.
 _PLAN_NO_REVIEW_REQUIRED = """# Plan: something
 
 **Plan review**: not required(single commit, single area)
@@ -606,89 +483,3 @@ _FENCE_FIXTURES = (
 )
 
 
-@pytest.mark.parametrize("kind,subdir,name,body,target", _FENCE_FIXTURES,
-                         ids=[f"{k}->{t}" for k, _, _, _, t in _FENCE_FIXTURES])
-def test_the_planner_does_not_gate_on_a_missing_declaration(
-        tmp_path, kind: str, subdir: str, name: str, body: str,
-        target: str) -> None:
-    """A bounded regression check over KNOWN gate placements -- not a proof
-    that no presence gate exists.
-
-    **What this does not do**: it collects gate and
-    violation messages and rejects the phrases `scope delta` / `scope-remainder`.
-    A gate worded off those phrases evades it -- Codex added a real unmet
-    `proposal -> revised` gate described as "the narrowing record is complete"
-    and the whole suite stayed green. Refusal by withholding a target from
-    `_legal_transitions`, and a gate on `plan -> archived`, also remain outside
-    it. Proving the negative universal is not realistically reachable by adding
-    more banned phrases, and pretending otherwise is worse than the gap: it
-    invites a reader to trust a check that cannot deliver.
-
-    So this is a regression check on the placements known to matter, and the
-    real enforcement of the declined gate is review reading review -- the same
-    answer Round 3 gave for why the gate was declined at all.
-
-    Round 3 of the source proposal declined a transition gate and the
-    Maintainer accepted that disposition. The reason is worth keeping in front
-    of whoever reads this next: a formal check can confirm a declaration
-    *exists*, never that it is *true*. It would catch forgetting and not
-    evading -- and would make evading easier, by handing a quiet cut a green
-    check to sit behind.
-
-    So this asserts the *absence* of enforcement. If someone later adds the
-    gate, this fails and sends them to the recorded revival condition rather
-    than letting it arrive unremarked.
-    """
-    d = tmp_path / "dev" / subdir
-    d.mkdir(parents=True)
-    f = d / name
-    f.write_text(body, encoding="utf-8")
-
-    art = planner._read_artifact(f)
-    assert art.kind == kind, f"fixture parsed as {art.kind!r}, not {kind!r}"
-
-    # The fence is pinned to vocabulary another plan is retiring. Without
-    # this, `reviewed -> revised` disappearing would leave these nodes passing
-    # against a transition that no longer exists -- green forever, checking
-    # nothing. This makes the retirement loud instead of silent.
-    assert target in planner._legal_transitions(art), (
-        f"{kind} {art.status!r} -> {target!r} is no longer a legal transition, "
-        f"so this fence is testing vocabulary that has been retired. Re-point "
-        f"it at the transitions that scaffold the Scope-delta declaration "
-        f"today; do not delete it."
-    )
-
-    identity = planner.IdentityModel(frozenset(), frozenset())
-
-    # Both refusal surfaces. `_conformance_violations` reports structural
-    # unsoundness; `_gating_preconditions` reports a transition as MISSING.
-    # Pinning only the first left a gate on the second entirely green;
-    # pinning the second over the WRONG targets left it green again.
-    # The scaffolded target AND every other legal target. The first version of
-    # this fence swept `_legal_transitions` and missed the scaffolded ones
-    # The fix swept only the scaffolded ones and lost the rest, so a gate
-    # at `proposal -> accepted` went undetected. Both, or neither is
-    # covered.
-    targets = {target, *planner._legal_transitions(art)}
-    surfaces = {
-        "_conformance_violations":
-            planner._conformance_violations(art, identity),
-    }
-    for tgt in sorted(targets):
-        surfaces[f"_gating_preconditions(-> {tgt})"] = [
-            desc for _met, desc
-            in planner._gating_preconditions(art, tgt, identity)
-        ]
-
-    for surface, messages in surfaces.items():
-        joined = " ".join(messages).lower()
-        assert "scope delta" not in joined and "scope-remainder" not in joined, (
-            f"the lifecycle planner now refuses the {kind} -> {target} "
-            f"transition over the scope-delta declaration, via {surface}. "
-            f"That gate was declined in the accepted proposal (Round 3) "
-            f"because a presence check cannot establish semantic truth -- it "
-            f"catches forgetting and not evading, and hands a quiet cut a "
-            f"green check to sit behind. Reviving it takes a new proposal "
-            f"against the recorded revival condition: authors omitting the "
-            f"declaration in practice."
-        )

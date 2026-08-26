@@ -773,12 +773,12 @@ class TestOrchestrator:
 
     def test_adopted_executable_gate_detects_tamper(self, orch, tmp_path):
         root, lock = self._adopter(tmp_path)
-        # tamper a NON-apparatus adopted .py (tools/lifecycle.py) -> the source
+        # tamper a NON-apparatus adopted .py (tools/session.py) -> the source
         # gate flags it (the apparatus subset is caught by the preflight).
-        lifecycle = root / "tools" / "lifecycle.py"
-        assert lifecycle.is_file()
-        lifecycle.write_text(lifecycle.read_text(encoding="utf-8") + "\n# x\n",
-                             encoding="utf-8")
+        adopted = root / "tools" / "session.py"
+        assert adopted.is_file()
+        adopted.write_text(adopted.read_text(encoding="utf-8") + "\n# x\n",
+                           encoding="utf-8")
         status, tier = orch.run_adopted_executable_gate(root, lock)
         assert tier == orch._AGG_DEGRADED and "tamper" in status
 

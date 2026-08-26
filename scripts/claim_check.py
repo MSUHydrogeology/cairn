@@ -60,7 +60,7 @@ directories.  The active path is always authoritative when it
 exists.  When **both** the active file and its archived sibling exist
 at once, that is a lifecycle-state violation this checker refuses to
 silently normalize: it hard-flags rather than guess which candidate
-is live.  ``tools/lifecycle_planner.py``'s ``scan`` owns the
+is live.  The retired planner's ``scan`` once owned the
 repository-state invariant (the same filename may not exist both
 actively and archived within one family); this is claim-check's own
 defense in depth when *consuming* a token that names one, per the

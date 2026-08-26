@@ -71,8 +71,8 @@ def _has_header(path: Path) -> bool:
 
 def test_manifest_has_the_expected_py_source_count():
     sources = _manifest_py_sources()
-    assert len(sources) == 57, (
-        f"expected 57 templates/**/*.py manifest sources, found "
+    assert len(sources) == 44, (
+        f"expected 44 templates/**/*.py manifest sources, found "
         f"{len(sources)} -- if this moved intentionally, update this test. "
         f"Moved 44 -> 45 by portable-security-sweeps Chunk A, which registers "
         f"templates/modules/team-gated/run_portable_security_sweeps.py; "
@@ -181,7 +181,7 @@ def test_notice_is_a_core_mapping():
 
 def test_notice_appears_in_manifest_data_row_count():
     rows = install_manifest(modules=None)
-    assert len(rows) == 115, (
+    assert len(rows) == 97, (
         f"expected 115 manifest rows (94 + NOTICE.md + portable-security-"
         f"sweeps' three + security-verification's two + api-web-security-"
         f"modules' fourteen + metrics-events-not-prose's one), found "

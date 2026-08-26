@@ -189,9 +189,9 @@ scales **by file class**:
   Layer-4 code reached by the recursive `scripts/` + `bootstrap/` scan; plus
   `link_check.py`, `sync_doc_snippets.py`, and the
   `content-security` / `python-security` apparatus —
-  `content_scan_runner.py`, `run_security_audit.py`; **plus the two
-  session-lifecycle tools `lifecycle.py` → `tools/lifecycle.py` and
-  `lifecycle_planner.py` → `tools/lifecycle_planner.py`**, which install
+  `content_scan_runner.py`, `run_security_audit.py`; **plus the session
+  kernel `session.py` → `tools/session.py` and the board view
+  `board.py` → `tools/board.py`**, which install
   verbatim and **unconditionally** to every adoption as the command-line
   backend behind the `session-start` / `session-end` routines) *and* Cairn's
   own dev tools (`check_cairn.py`, `content_scan.py`, `security_check.py`,

@@ -158,7 +158,7 @@ class TestLayerAStepsOneThroughThree:
         )
         # The preview prints the preset's identity + the default-on roster.
         assert "Preset: solo-greenfield" in result.stdout
-        for default_on in ("lifecycle-metrics", "reflections", "claim-check", "fold-back-ledger"):
+        for default_on in ("reflections", "claim-check"):
             assert default_on in result.stdout, (
                 f"--summary output should include {default_on!r}; got:\n{result.stdout}"
             )
@@ -198,11 +198,8 @@ class TestLayerAStepsOneThroughThree:
             "dev/agent_collaboration.md",
             "dev/proposals/_template.md",
             "dev/plans/_template.md",
-            "dev/modules/lifecycle-metrics.md",
             "dev/modules/reflections.md",
             "dev/modules/claim-check.md",
-            "dev/modules/fold-back-ledger.md",
-            "tools/lifecycle_metrics.py",
             "scripts/claim_check.py",
             "dev/.cairn/cairn-lock.yml",
         ]

@@ -115,7 +115,7 @@ source is a git checkout** carrying that ref; a packaged release (tarball
   make.
 * **The lifecycle skills participate exactly like `core/`.** The canonical
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
-  (base cache + provenance), and `tools/lifecycle.py` follows the verbatim
+  (base cache + provenance), and `tools/session.py` follows the verbatim
   hash policy above. The gitignored vendor fan-out copies (where symlinks
   are unavailable) are **regenerated** from the canonical source on upgrade,
   with a divergence guard that **warns rather than clobbers** a copy you
@@ -133,7 +133,7 @@ it. `--plan` / `--stage` list these under **`new core/skills (added)`**, and
 `--apply`:
 
 * writes the file (a mergeable `SKILL.md` is token-substituted + base-cached
-  like any `core/` doc; a verbatim CLI such as `tools/lifecycle.py` is
+  like any `core/` doc; a verbatim CLI such as `tools/session.py` is
   hash-tracked),
 * **records it in the lockfile** so the next upgrade tracks it, and
 * fans the skills out to your in-use vendor read-paths (e.g. `.claude/skills`)
@@ -195,11 +195,11 @@ heading began `Plan review`. It now reads the **record**: a bare
 The rules are in `doctrine/plans.md` > *The record schema*; this section is
 what you have to do about it.
 
-**Behaviour and policy ship together.** The checker
-(`templates/skills/_lib/lifecycle_planner.py`) is a `verbatim` manifest source
-installed as `tools/lifecycle_planner.py`, so an upgrade that brings you the new
-doctrine brings you the enforcing code in the same pass — there is no window in
-which your tree carries one and not the other.
+**Behaviour and policy ship together.** A verbatim manifest source — the
+session kernel (`templates/skills/_lib/session.py`, installed as
+`tools/session.py`) is the current example — arrives in the same pass as the
+doctrine it backs, so there is no window in which your tree carries one and not
+the other.
 
 **What a pass must now carry.** A conforming pass is a heading
 

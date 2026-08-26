@@ -14,11 +14,11 @@ preconditions a transition has not yet met — **without** re-litigating
 or fragmenting the doctrine.
 
 It is the foundation two things read against: the **read-only
-checker/planner** (`templates/skills/_lib/lifecycle_planner.py`), which
-reports state + legal transitions + unmet preconditions and emits a
-*proposed* scaffold for a chosen transition; and the **conformance
-test** (`bootstrap/tests/test_lifecycle_contract.py`), which guards this
-contract's executable form Cairn-side.
+checker/planner** (retired by the subtraction sweep), which
+reported state + legal transitions + unmet preconditions and emitted a
+*proposed* scaffold for a chosen transition. Both were retired by the
+subtraction sweep along with their conformance test; this contract is now
+held by review and by the templates adopters receive, not by a checker.
 
 ## The authority contract — the safety boundary
 

@@ -880,9 +880,11 @@ class TestRecognizedProfileKeys:
                       "forge"}
         expected = set(KNOWN_TOKENS) | set(_AXES) | structural | {"schema"}
         assert set(RECOGNIZED_PROFILE_KEYS) == expected
-        # the three sources union to 16; with the reserved key, 17
-        assert len(set(KNOWN_TOKENS) | set(_AXES) | structural) == 16
-        assert len(RECOGNIZED_PROFILE_KEYS) == 17
+        # the three sources union to 15; with the reserved key, 16.
+        # Was 16/17 until the subtraction sweep retired the lifecycle-metrics
+        # module and with it the metrics_command token.
+        assert len(set(KNOWN_TOKENS) | set(_AXES) | structural) == 15
+        assert len(RECOGNIZED_PROFILE_KEYS) == 16
 
     def test_unrecognized_profile_keys_is_pure_and_sorted(self) -> None:
         from bootstrap._scaffold.config import (  # noqa: PLC0415

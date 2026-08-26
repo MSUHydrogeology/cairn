@@ -12,7 +12,6 @@ Covers, per the executing plan (cairn-v0.2-p1-reference-scripts):
 * E: the file-scoped external-path allowance exempts case-study-style
   files; a genuine broken local path still flags.
 * the installed scripts are standard-library only.
-* lifecycle_metrics degrades on no-git / main-branch targets.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -46,15 +45,6 @@ _SCRIPT_MODULES = {
     "claim-check": (
         "default-on/claim_check.py", "scripts/claim_check.py",
     ),
-    "lifecycle-metrics": (
-        "default-on/lifecycle_metrics.py", "tools/lifecycle_metrics.py",
-    ),
-    # Active-surfacing scanner (ships alongside fold-back-ledger; see
-    # 2026-05-28-claude-cairn-foldback-active-surfacing > Chunk 4).
-    "fold-back-ledger": (
-        "default-on/foldback_export_scan.py",
-        "scripts/foldback_export_scan.py",
-    ),
     # Active-surfacing helper (Chunk 8 of the same arc).  Optional
     # helper, but ships alongside the scanner via the same
     # fold-back-ledger module.  Note: this dict allows only one
@@ -62,7 +52,7 @@ _SCRIPT_MODULES = {
     # iterates over what's here; the second script under the same
     # module is covered by direct assertion in TestInstallPath /
     # TestGeneralizationGate where they verify both scripts install.
-    # (The pattern lifecycle-metrics + coordination-tiers establish
+    # (The pattern claim-check + coordination-tiers establish
     # is one mapping-entry per script; we deviate here only because
     # the fold-back-ledger module ships 2 verbatim scripts.  The
     # _SCRIPT_MODULES dict's parametrize-shape was designed for the
@@ -74,14 +64,10 @@ _SCRIPT_MODULES = {
 # Multi-script modules: modules that ship more than one verbatim
 # script.  Verified by an explicit test below (not by the
 # _SCRIPT_MODULES parametrize machinery, which assumes 1:1).
-_MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {
-    "fold-back-ledger": [
-        ("default-on/foldback_export_scan.py",
-         "scripts/foldback_export_scan.py"),
-        ("default-on/foldback_suggest.py",
-         "scripts/foldback_suggest.py"),
-    ],
-}
+#: Modules shipping more than one verbatim script.  Empty since the
+#: fold-back-ledger module was retired; kept because the shape is a real
+#: install case and re-deriving it from scratch is worse than an empty dict.
+_MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {}
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
@@ -191,7 +177,7 @@ class TestInstallPath:
         not be scanned as template tokens / slots."""
         (tmp_path / "dev" / "modules").mkdir(parents=True)
         results = install_modules(
-            TEMPLATES_ROOT, tmp_path, {}, ["claim-check", "lifecycle-metrics"]
+            TEMPLATES_ROOT, tmp_path, {}, ["claim-check"]
         )
         script_results = [
             r for r in results if str(r[0]).endswith(".py")
@@ -228,7 +214,7 @@ class TestInstallPath:
         """The default command-token value points at the exact path
         the scaffold installs the script to."""
         defaults = reference_script_token_defaults(
-            ["claim-check", "lifecycle-metrics"]
+            ["claim-check"]
         )
         # claim-check
         cc_dst = next(
@@ -236,12 +222,6 @@ class TestInstallPath:
         )
         assert defaults["claim_check_command"] == f"python {cc_dst}"
         assert cc_dst == "scripts/claim_check.py"
-        # lifecycle-metrics
-        lm_dst = next(
-            s.dst for s in _MODULE_MAPPINGS["lifecycle-metrics"] if s.verbatim
-        )
-        assert defaults["metrics_command"] == f"python {lm_dst}"
-        assert lm_dst == "tools/lifecycle_metrics.py"
 
 
 # ---------------------------------------------------------------------------
@@ -274,55 +254,12 @@ class TestGeneralizationGate:
             f"marker-exempt path was flagged: {res2.hard_flags}"
         )
 
-    def test_installed_lifecycle_metrics_runs_on_target(
-        self, tmp_path: Path
-    ) -> None:
-        assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
-        lm = _load_script(
-            tmp_path / "tools" / "lifecycle_metrics.py", "gen_lifecycle")
-        (tmp_path / "dev" / "proposals" / "2026-05-01-alice-thing.md").write_text(
-            _SAMPLE_PROPOSAL
-        )
-        rows = lm.proposal_rows(tmp_path)
-        stems = [r["stem"] for r in rows]
-        assert "2026-05-01-alice-thing" in stems, (
-            f"lifecycle_metrics emitted no row for the sample proposal: "
-            f"{stems}"
-        )
-        row = next(r for r in rows if r["stem"] == "2026-05-01-alice-thing")
-        # retire-event-blocks (2026-08-24): review_rounds is sourced from
-        # the artifact's own dated section headings, a pure function of the
-        # text -- no git, no activation cutoff, no `git init` needed for
-        # this scaffolded target to prove anything.  `_SAMPLE_PROPOSAL`
-        # carries one genuine dated `## Review -- Bob (External
-        # Reviewer) -- 2026-05-02` pass, so it counts here exactly as it
-        # would over the real corpus history this replaces the event-block
-        # reconciler to reach retroactively.
-        assert row["review_rounds"] == 1
-        assert row["reviewer_agents"] == "Bob"
 
 
 # ---------------------------------------------------------------------------
 # Mixed / upper-case author names in slug pairing
 # ---------------------------------------------------------------------------
 
-class TestProposalSlugPairing:
-    def test_proposal_slug_strips_mixed_case_author(
-        self, tmp_path: Path
-    ) -> None:
-        """The author segment must not be lowercase-only, else a mixed /
-        upper-case author name (Codex, Alice) silently defeats the
-        plan<->proposal slug pairing (the match would fail and return the
-        whole stem)."""
-        assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
-        lm = _load_script(
-            tmp_path / "tools" / "lifecycle_metrics.py", "slug_lifecycle")
-        for author in ("Codex", "Alice", "claude2", "claude"):
-            stem = f"2026-05-26-{author}-my-thing"
-            assert lm._proposal_slug(stem) == "my-thing", (
-                f"author={author!r}: slug not stripped (got "
-                f"{lm._proposal_slug(stem)!r})"
-            )
 
 
 # ---------------------------------------------------------------------------
@@ -445,76 +382,7 @@ class TestDependencyGate:
 
 
 # ---------------------------------------------------------------------------
-# VCS robustness (lifecycle_metrics)
 # ---------------------------------------------------------------------------
 
-class TestVcsRobustness:
-    def test_no_git_target_degrades(self, tmp_path: Path) -> None:
-        """No .git in the target: the git-log commit-timestamp
-        augmentation (``hours_*``/``stage_timestamp_reliability``) quietly
-        degrades to ``Best-effort`` rather than raising, exactly as it
-        always has for an unavailable-VCS target. Unlike that transition-
-        kind data, ``review_rounds`` and the other review-pass-sourced
-        columns (retire-event-blocks, 2026-08-24) need no git at all --
-        they are a pure function of the artifact's own text -- so this
-        no-git target does not change their population; see
-        `test_installed_lifecycle_metrics_runs_on_target` for the
-        review-pass columns this same fixture populates."""
-        assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
-        lm = _load_script(
-            tmp_path / "tools" / "lifecycle_metrics.py", "f4_lifecycle")
-        (tmp_path / "dev" / "proposals" / "2026-05-01-alice-thing.md").write_text(
-            _SAMPLE_PROPOSAL
-        )
-        # No exception, and the stage-timestamp reliability degrades.
-        rows = lm.proposal_rows(tmp_path)
-        assert rows, "no rows emitted on a no-git target"
-        assert rows[0]["stage_timestamp_reliability"] == "Best-effort"
-
-    def test_main_branch_target_runs(self, tmp_path: Path) -> None:
-        """A git target whose default branch is 'main' (not 'master')
-        runs cleanly -- no branch-name assumption. `proposal_rows` must
-        not raise regardless of what the git-log commit-timestamp
-        augmentation finds; review-pass columns (retire-event-blocks) read
-        no git state at all, so this case is purely about the
-        `hours_*`/`stage_timestamp_reliability` augmentation's own branch-
-        name independence."""
-        import subprocess
-        assert _scaffold(tmp_path, ["lifecycle-metrics"]) == 0
-        (tmp_path / "dev" / "proposals" / "2026-05-01-alice-thing.md").write_text(
-            _SAMPLE_PROPOSAL
-        )
-        env_ok = True
-        try:
-            subprocess.run(["git", "init", "-q", "-b", "main", str(tmp_path)],
-                           check=True, capture_output=True)
-            subprocess.run(["git", "-C", str(tmp_path), "add", "-A"],
-                           check=True, capture_output=True)
-            subprocess.run(
-                ["git", "-C", str(tmp_path),
-                 "-c", "user.email=t@t.t", "-c", "user.name=t",
-                 "commit", "-qm", "Open proposal alice thing"],
-                check=True, capture_output=True,
-            )
-        except (OSError, subprocess.CalledProcessError):
-            env_ok = False
-        if not env_ok:
-            pytest.skip("git not available for the main-branch case")
-        lm = _load_script(
-            tmp_path / "tools" / "lifecycle_metrics.py", "f4b_lifecycle")
-        rows = lm.proposal_rows(tmp_path)  # must not raise
-        assert any(r["stem"] == "2026-05-01-alice-thing" for r in rows)
 
 
-def test_lifecycle_metrics_csv_neutralizes_formula_injection() -> None:
-    """format_csv prefixes a formula-leading cell (= + - @, tab, CR) with a
-    single quote so a spreadsheet treats it as literal text, not a formula
-    (security-hardening Chunk 9)."""
-    lm = _load_script(
-        TEMPLATES_ROOT / "modules" / "default-on" / "lifecycle_metrics.py",
-        "lm_csvsafe")
-    out = lm.format_csv([{"title": "=cmd|'/calc'!A1", "n": 3}], ["title", "n"])
-    assert "'=cmd" in out, "formula-leading cell was not neutralized"
-    # A benign cell is untouched (no spurious leading quote).
-    benign = lm.format_csv([{"title": "ok title", "n": 3}], ["title", "n"])
-    assert "'ok title" not in benign

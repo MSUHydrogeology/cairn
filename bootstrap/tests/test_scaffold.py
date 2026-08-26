@@ -1067,7 +1067,6 @@ class TestCLI:
         assert rc == 0
         # Default-on module files should be present
         for module_file in (
-            "lifecycle-metrics.md",
             "reflections.md",
             "claim-check.md",
         ):

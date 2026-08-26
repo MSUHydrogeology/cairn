@@ -22,7 +22,7 @@ method and `dimensions/` describes how an adoption is *adapted*,
   CLI they orchestrate (`_lib/lifecycle.py`) and the data-driven vendor
   fan-out table (`_data/vendor_targets.yml`). Because the session routines
   are invariant kernel, the skills install **unconditionally, like `core/`**
-  (to the canonical `.agents/skills/` + `tools/lifecycle.py`), not
+  (to the canonical `.agents/skills/` + `tools/session.py`), not
   conditionally like a module.
 
 ## The `{{placeholder}}` convention

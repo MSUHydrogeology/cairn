@@ -29,28 +29,34 @@ from bootstrap._scaffold.config import InstallSpec  # noqa: E402
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 
 pytestmark = pytest.mark.skipif(
-    not (TEMPLATES_ROOT / "modules" / "default-on" / "_lifecycle_metrics").exists(),
-    reason="the _lifecycle_metrics split package is not in templates",
+    not (TEMPLATES_ROOT / "modules" / "team-gated" / "_intent").exists(),
+    reason="the _intent split package is not in templates",
 )
 
-# The lifecycle-metrics module (default-on, always adopted) ships its engine as a
-# facade + a sibling `_lifecycle_metrics/` package -- the canonical split case.
-_FACADE = "tools/lifecycle_metrics.py"
-_PKG_NAMES = ("__init__", "config", "parse", "gitmeta", "report",
-              "subsystems", "extract", "snapshot", "cli")
-_PKG_DSTS = [f"tools/_lifecycle_metrics/{n}.py" for n in _PKG_NAMES]
+# The coordination-tiers module ships its engine as a facade + a sibling
+# `_intent/` package -- the canonical split case. It was `lifecycle_metrics.py`
+# -> `_lifecycle_metrics/` until the subtraction sweep retired that module;
+# the capability under test is the upgrade path for module-internal additions,
+# not the module that happens to exemplify it, so the fixture moved rather than
+# the file being deleted with its example.
+_MODULE = "coordination-tiers"
+_FACADE = "tools/intent.py"
+_PKG_NAMES = ("__init__", "shared", "record_io", "identity", "conflict",
+              "hooks", "cli")
+_PKG_DSTS = [f"tools/_intent/{n}.py" for n in _PKG_NAMES]
 
 
 def _src_for(dst: str) -> str:
     """The canonical lockfile source key for a `_lifecycle_metrics/` dst --
     install records `f"modules/{spec.src}"` (the canonical namespace)."""
-    return "modules/default-on/_lifecycle_metrics/" + dst.rsplit("/", 1)[1]
+    return "modules/team-gated/_intent/" + dst.rsplit("/", 1)[1]
 
 
 def _install(target: Path) -> None:
     cfg = target / "profile.yml"
     cfg.write_text(
-        "project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n",
+        "project_name: Demo\ntest_command: pytest\npreset: solo-greenfield\n"
+        f"modules_add:\n  - {_MODULE}\n",
         encoding="utf-8",
     )
     assert s.main([
@@ -362,7 +368,7 @@ def test_malformed_module_destination_is_refused_at_stage(tmp_path: Path, monkey
     patched = dict(UP._MODULE_MAPPINGS)
     adopted = next(m for m in lock.get("modules", []) if m in patched)
     patched[adopted] = list(patched[adopted]) + [
-        InstallSpec("default-on/_lifecycle_metrics/__init__.py",
+        InstallSpec("team-gated/_intent/__init__.py",
                     "../../../../escaped.txt", verbatim=True)]
     monkeypatch.setattr(UP, "_MODULE_MAPPINGS", patched)
 

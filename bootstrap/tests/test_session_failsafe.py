@@ -41,10 +41,10 @@ from types import ModuleType
 import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
-MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "lifecycle.py"
+MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"
 
 pytestmark = pytest.mark.skipif(
-    not MODULE_PATH.exists(), reason="lifecycle.py template not available"
+    not MODULE_PATH.exists(), reason="session kernel template not available"
 )
 
 

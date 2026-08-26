@@ -57,10 +57,10 @@ from bootstrap.security_check import (  # noqa: E402
 
 #: Declared exclusions from the on-disk oracle below: repo-relative path ->
 #: MANDATORY rationale. **Empty today**, and it stays empty: disk and DISTINCT
-#: manifest-verbatim sources agree at 53 (``as_of`` 2026-08-26; re-measure
+#: manifest-verbatim sources agree at 40 (``as_of`` 2026-08-26; re-measure
 #: rather than carrying this figure forward), so it costs nothing to introduce
 #: and fires the moment they disagree. Note the counting rule this table does
-#: **not** key on: manifest *rows* are 57, not 53, because
+#: **not** key on: manifest *rows* are 44, not 40, because
 #: api-web-security-modules installs one engine source tree to two destination
 #: trees. Rows and distinct files are different questions and only the second
 #: one is this oracle's. Mirrors the ``ALLOWLIST`` +
@@ -306,8 +306,7 @@ def test_every_manifest_verbatim_py_is_scanned_by_some_path() -> None:
 
 
 _SKILLS_PY = (
-    "templates/skills/_lib/lifecycle.py",
-    "templates/skills/_lib/lifecycle_planner.py",
+    "templates/skills/_lib/board.py",
     "templates/skills/_lib/session.py",
 )
 
@@ -374,8 +373,8 @@ def test_templates_py_count_is_pinned() -> None:
     as ``assert scanned == 9`` for the always-on group in
     ``bootstrap/tests/test_upgrade_side_door_parity.py``."""
     on_disk = _templates_py_on_disk(CAIRN_ROOT)
-    assert len(on_disk) == 53, (
-        f"expected 53 .py under templates/, found {len(on_disk)} -- if this "
+    assert len(on_disk) == 40, (
+        f"expected 40 .py under templates/, found {len(on_disk)} -- if this "
         "moved intentionally, update BOTH this pin and its sibling in "
         "bootstrap/tests/test_notice_install.py "
         "(test_manifest_has_the_expected_py_source_count) in the SAME commit. "
@@ -454,10 +453,11 @@ def test_a_templates_py_no_registry_delivers_is_reported_unscanned(tmp_path, mon
     assert _unscanned_disk_py(tmp_path) == ["templates/optional/rogue.py"]
 
 
-def test_the_two_session_lifecycle_tools_are_scanned_by_name() -> None:
+def test_the_session_kernel_is_scanned_by_name() -> None:
     """Belt to the oracle's braces: this specific 63-day miss cannot recur
-    silently even if the derivation is later refactored. Two path literals
-    typed by a human -- no shared derivation with the subject."""
+    silently even if the derivation is later refactored. A path literal typed
+    by a human -- no shared derivation with the subject. It named two tools
+    until the subtraction sweep left one."""
     targets = set(_scan_targets())
     for path in _SKILLS_PY:
         assert path in targets, path

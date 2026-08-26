@@ -322,12 +322,12 @@ def test_scan_targets_are_explicit_files_and_name_the_expected_executables() -> 
     assert "templates/modules/team-gated/link_check.py" in targets
     # content_scan is single-sourced as the content-security module script.
     assert "templates/modules/team-gated/content_scan.py" in targets
-    # The two session-lifecycle tools: shipped verbatim to EVERY adoption via
+    # The session kernel: shipped verbatim to EVERY adoption via
     # _SKILLS_MAPPINGS, and release-unscanned for 63 days because no registry
-    # loop reached them. These literals are genuine -- they fail if the
-    # manifest union is removed from scan_targets().
-    assert "templates/skills/_lib/lifecycle.py" in targets
-    assert "templates/skills/_lib/lifecycle_planner.py" in targets
+    # loop reached it. This literal is genuine -- it fails if the manifest
+    # union is removed from scan_targets().  It named two tools until the
+    # subtraction sweep retired the lifecycle CLI and its planner.
+    assert "templates/skills/_lib/session.py" in targets
     # Always-on executable helpers (onboarding launcher + every engine member)
     # are release-scanned -- they ship verbatim outside _MODULE_MAPPINGS, so the
     # side-door-parity change (security_check consumes _ALWAYS_ON_MAPPINGS too)

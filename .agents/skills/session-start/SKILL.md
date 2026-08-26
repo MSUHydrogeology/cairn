@@ -1,6 +1,6 @@
 ---
 name: session-start
-description: Manual lifecycle routine -- session-start (good-morning) orientation. Invoke only on an explicit operator request to orient / catch up; not a conversational helper and not a response to chatter. Mechanics live in tools/lifecycle.py; the canonical doctrine is doctrine/session-routines.md.
+description: Manual lifecycle routine -- session-start (good-morning) orientation. Invoke only on an explicit operator request to orient / catch up; not a conversational helper and not a response to chatter. Mechanics live in tools/session.py; the canonical doctrine is doctrine/session-routines.md.
 disable-model-invocation: true
 ---
 <!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
@@ -30,12 +30,12 @@ Code's `.claude/skills`) points at the canonical `.agents/skills/` source, so
 an adopter established by lockfile-copy -- or whose harness was absent at
 install -- gets working skills with no manual step. It is a no-op when already
 linked, and never clobbers a divergent target (it refuses or quarantines). The
-mechanics live in `tools/lifecycle.py`; this skill never reimplements them.
+mechanics live in `tools/session.py`; this skill never reimplements them.
 
 ## 2. Route through the board before reading artifacts
 
 ```
-python tools/lifecycle_planner.py board --compact
+python tools/board.py
 ```
 
 One row per active artifact -- kind, artifact, status, owner role, active

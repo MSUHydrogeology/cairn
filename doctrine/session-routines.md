@@ -42,12 +42,12 @@ The pass has four moves:
    active claim it never saw.
 
    *If the lifecycle checker/planner is installed*
-   (`tools/lifecycle_planner.py`, the read-only arm of
+   (`tools/board.py`, the read-only arm of
    [`lifecycle-contract.md`](lifecycle-contract.md)), start from the
    **board** rather than from the artifacts:
 
    ```
-   python tools/lifecycle_planner.py board --compact
+   python tools/board.py
    ```
 
    One row per active artifact — kind, artifact, status, owner role,
@@ -61,13 +61,11 @@ The pass has four moves:
 
    The board is *derived*, and its own footer says so — the artifact is
    authoritative, and a row that looks wrong is a reason to open the
-   artifact, not to trust the row. Alongside it, `lifecycle_planner.py
-   scan` reports any open artifact whose status is not structurally
-   supported by its documentary attestations (it doubles as the **adopter
-   fidelity scan**), and `lifecycle_planner.py next <artifact>` reports one
-   artifact's state, legal transitions, and unmet preconditions. All three
-   are an **optional orientation aid**: they attest structure, never
-   authenticity, and they **mutate nothing** — never a mandate to act.
+   artifact, not to trust the row. It is an **optional orientation aid**:
+   it reports header fields, attests nothing about authenticity, and
+   **mutates nothing** — never a mandate to act. The structural scan and
+   the per-artifact transition report that once sat beside it were retired
+   with the lifecycle planner; what they enforced now lives in review.
 4. **Confirm role and starting point** (`roles.md`) before
    committing to substantive work.
 
@@ -213,7 +211,7 @@ The routines above are also **invokable skills**, installed at scaffold time as
 the agentskills.io `SKILL.md` pair under `.agents/skills/` (`session-start` and
 `session-end`, invoked as `/session-start` / `/session-end`), backed by a
 deterministic CLI
-(`tools/lifecycle.py`). The skill bodies orchestrate the *mechanizable* steps
+(`tools/session.py`). The skill bodies orchestrate the *mechanizable* steps
 (gather git state, scaffold the reflection, prune, surface intents); this
 doctrine stays the single source of *what* each routine is and *why*, and the
 *judgment* steps remain the agent's.
@@ -235,7 +233,7 @@ Two invariants are load-bearing and structural, not stylistic:
 
 ### Project-owned routine customization — `custom_session_routines.md`
 
-The skills + `tools/lifecycle.py` carry the *universal* routine — the
+The skills + `tools/session.py` carry the *universal* routine — the
 invocation, the mechanizable gather/scaffold/prune, and the judgment steps every
 adopter runs. The *tail* — a project's **concrete** steps (which doc-build
 command, which test environment, the changelog cadence, a foldback-capture
@@ -332,9 +330,9 @@ judgment-gated decision the framework's harvest cadence governs. The
 ledger is a cross-repository export surface, so candidates carry no
 secrets, credentials, internal hostnames/IPs, local paths, or
 proprietary domain detail, and the Maintainer confirms no private
-coordinate leaks before any item becomes a public Cairn proposal. The
-mechanism is specified in `doctrine/fold-back.md`; this step is the
-capture cadence that feeds it.
+coordinate leaks before any item becomes a public Cairn proposal. A
+candidate is filed as an issue upstream rather than staged in a local
+ledger; this step is the capture cadence that feeds it.
 
 ### Goodnight RULES.md maintenance — when the project keeps a RULES.md
 

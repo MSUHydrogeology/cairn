@@ -34,10 +34,10 @@ from types import ModuleType
 import pytest
 
 CAIRN_ROOT = Path(__file__).resolve().parent.parent.parent
-MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "lifecycle.py"
+MODULE_PATH = CAIRN_ROOT / "templates" / "skills" / "_lib" / "session.py"
 
 pytestmark = pytest.mark.skipif(
-    not MODULE_PATH.exists(), reason="lifecycle.py template not available"
+    not MODULE_PATH.exists(), reason="session kernel template not available"
 )
 
 
@@ -376,32 +376,6 @@ def repo_with_foldback(tmp_path: Path) -> Path:
     return root
 
 
-def test_handoff_surfaces_foldback_candidates(
-    repo_with_foldback, monkeypatch, capsys
-):
-    """(f) session-end --handoff surfaces aging fold-back candidates."""
-    root = repo_with_foldback
-    monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
-    monkeypatch.setenv("CAIRN_AGENT", "tester")
-    monkeypatch.setenv("CAIRN_SESSION", "sessF")
-    monkeypatch.chdir(root)
-
-    rc = lifecycle.main(["session-end", "--handoff"])
-
-    out, err = capsys.readouterr()
-    assert rc == 0, f"rc={rc}\nstdout={out}\nstderr={err}"
-    # The stub emits "Surfaceable candidates: 1"; it must appear in output.
-    assert "Surfaceable candidates" in out or "MyAgingCandidate" in out, (
-        f"fold-back surfacing output not found in:\n{out}"
-    )
-    # The standing capture prompt must appear.
-    assert "scan today's doctrine activity" in out, (
-        f"capture prompt not found in:\n{out}"
-    )
-    # The manifest line must appear (emitted before the marker check).
-    assert "aging fold-back candidates" in out, (
-        f"manifest line not found in:\n{out}"
-    )
 
 
 def test_session_end_without_handoff_does_NOT_surface_foldback(
@@ -429,20 +403,8 @@ def test_session_end_without_handoff_does_NOT_surface_foldback(
 # --- lifecycle-metrics v2 snapshot layer -------------------------------------
 
 #: The lifecycle_metrics template source (loaded directly, no scaffold needed).
-_LM_PATH = CAIRN_ROOT / "templates" / "modules" / "default-on" / "lifecycle_metrics.py"
 
 
-def _load_lm() -> ModuleType:
-    """Load lifecycle_metrics.py directly from the template source."""
-    spec = importlib.util.spec_from_file_location("cairn_lm_snapshot", _LM_PATH)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["cairn_lm_snapshot"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-_lm = _load_lm() if _LM_PATH.exists() else None
 
 _SAMPLE_PROPOSAL = (
     "# Sample proposal\n\n"
@@ -468,82 +430,10 @@ def lm_repo(tmp_path: Path) -> Path:
     return root
 
 
-@pytest.mark.skipif(_lm is None, reason="lifecycle_metrics.py template not available")
-def test_emit_snapshot_creates_indexed_csv(lm_repo: Path) -> None:
-    """emit_snapshot() persists an indexed ``<date>-1.csv`` under
-    dev/measurement/snapshots/ carrying the unified ``kind,...`` snapshot
-    schema.  The injected ``timestamp_utc=`` makes the path deterministic."""
-    import datetime
-
-    snap_path, row_count = _lm.emit_snapshot(
-        root=lm_repo, timestamp_utc=datetime.datetime(2026, 6, 1)
-    )
-
-    assert snap_path == (
-        lm_repo / "dev" / "measurement" / "snapshots" / "2026-06-01-1.csv"
-    )
-    assert snap_path.exists(), "snapshot file was not created"
-    assert row_count == 1, "the one sample proposal should yield one row"
-
-    content = snap_path.read_text(encoding="utf-8")
-    header = content.splitlines()[0]
-    # Unified snapshot schema: a leading ``kind`` column plus the snapshot
-    # meta-columns appended after the proposal/plan columns.
-    assert header.startswith("kind,"), f"unexpected CSV header: {header!r}"
-    assert "snapshot_event" in header
-    # The sample proposal row must appear.
-    assert "2026-05-01-alice-thing" in content
 
 
-@pytest.mark.skipif(_lm is None, reason="lifecycle_metrics.py template not available")
-def test_emit_snapshot_same_day_coalesces_by_index(lm_repo: Path) -> None:
-    """A same-day re-run does NOT overwrite: it coalesces into the next
-    monotonic index (``<date>-2.csv``), preserving the audit trail."""
-    import datetime
-
-    fixed = datetime.datetime(2026, 6, 1)
-    snap_path, _ = _lm.emit_snapshot(root=lm_repo, timestamp_utc=fixed)
-    assert snap_path.name == "2026-06-01-1.csv"
-    snap_path.write_text("stale content", encoding="utf-8")  # sentinel
-
-    snap_path2, _ = _lm.emit_snapshot(root=lm_repo, timestamp_utc=fixed)
-    assert snap_path2 != snap_path, "same-day re-run must not reuse the path"
-    assert snap_path2.name == "2026-06-01-2.csv"
-    assert snap_path2.exists()
-    # The first snapshot is left untouched (audit-trail retention).
-    assert snap_path.read_text(encoding="utf-8") == "stale content", (
-        "same-day re-run must not overwrite the prior snapshot"
-    )
 
 
-@pytest.mark.skipif(_lm is None, reason="lifecycle_metrics.py template not available")
-def test_snapshot_flag_via_main(lm_repo: Path, capsys) -> None:
-    """main([..., '--snapshot']) writes an indexed snapshot file under
-    dev/measurement/snapshots/ and reports the write on stderr.  The
-    snapshot is the only write surface on this path -- no report CSV is
-    emitted to stdout."""
-    import datetime
-
-    rc = _lm.main(["proposals", "--root", str(lm_repo), "--snapshot"])
-    assert rc == 0
-
-    out, err = capsys.readouterr()
-    # The --snapshot path is snapshot-only: nothing is written to stdout.
-    assert out == "", f"unexpected stdout on --snapshot path: {out!r}"
-    # The write is reported on stderr (row count + default event label).
-    assert "wrote" in err and "rows to" in err
-    assert "event='manual'" in err
-
-    # An indexed snapshot file must have been written for today's UTC date
-    # (emit_snapshot stamps the path from datetime.now(UTC)).
-    today_str = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
-    snap_path = (
-        lm_repo / "dev" / "measurement" / "snapshots"
-        / f"{today_str}-1.csv"
-    )
-    assert snap_path.exists(), (
-        f"snapshot file not found at {snap_path}"
-    )
 
 
 # --- session-start's self-description (first-session survivability) --------

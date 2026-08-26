@@ -1,5 +1,5 @@
 """Tests for evolution_infer.py -- the deterministic rate-limit-gate /
-fold-up-backlog decision-support tool (self-evolution-loop Part B).
+decision-support tool (self-evolution-loop Part B).
 
 Covers:
 
@@ -9,7 +9,6 @@ Covers:
   rolling window -> a suggestion; ``prevented`` / out-of-window rows excluded;
 * fail-closed: an Incidents table with no parseable rolling window -> the gate
   is NOT evaluated and the tool exits 3 (no silent default);
-* backlog: ``>=`` the backlog threshold of open ``candidate`` rows -> an alarm;
 * only-suggests: the tool mutates nothing.
 
 Run from the cairn repo root::
@@ -190,48 +189,6 @@ class TestGateEval:
         with redirect_stdout(out):
             rc = ei.main(["--root", str(tmp_path)])
         assert rc == 0          # not fail-closed -- simply skipped
-
-
-# ---------------------------------------------------------------------------
-# Fold-up backlog
-# ---------------------------------------------------------------------------
-
-class TestBacklog:
-    def _ledger(self, n_candidates: int) -> str:
-        body = (
-            "## Open candidates\n\n"
-            "| Candidate | Type | Size | Status | Source |\n"
-            "|---|---|---|---|---|\n"
-        )
-        for i in range(n_candidates):
-            body += f"| c{i} | tooling | small | candidate | src |\n"
-        body += "| done | tooling | small | filed -> #1 | src |\n"  # not counted
-        return body
-
-    def test_count_open_candidates(self, ei) -> None:
-        assert ei.count_open_candidates(self._ledger(3)) == 3
-
-    def test_backlog_alarm_fires(self, ei, tmp_path) -> None:
-        (tmp_path / "dev" / ".cairn").mkdir(parents=True)
-        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
-            self._ledger(5)
-        )
-        out = io.StringIO()
-        with redirect_stdout(out):
-            rc = ei.main(["--root", str(tmp_path), "--backlog-threshold", "5"])
-        assert rc == 0
-        assert "FOLD-UP BACKLOG ALARM" in out.getvalue()
-
-    def test_backlog_under_threshold_no_alarm(self, ei, tmp_path) -> None:
-        (tmp_path / "dev" / ".cairn").mkdir(parents=True)
-        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
-            self._ledger(2)
-        )
-        out = io.StringIO()
-        with redirect_stdout(out):
-            rc = ei.main(["--root", str(tmp_path), "--backlog-threshold", "10"])
-        assert rc == 0
-        assert "FOLD-UP BACKLOG ALARM" not in out.getvalue()
 
 
 # ---------------------------------------------------------------------------

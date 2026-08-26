@@ -19,7 +19,7 @@ a strict delete-filter rather than a retyped shell one-liner:
 * it never touches ``README.md``, directories, symlinks, or any non-matching
   file.
 
-Note: the ``tools/lifecycle.py`` session-end full-handoff path runs its own
+Note: the ``tools/session.py`` session-end full-handoff path runs its own
 simpler date-cutoff reflection prune.  This standalone script is the
 *explicit* tool the ``reflections`` module doctrine prescribes -- it gives
 a finer keep-by-distinct-date window and can be invoked independently.

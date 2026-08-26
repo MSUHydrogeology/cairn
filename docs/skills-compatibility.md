@@ -20,7 +20,7 @@
 
 A **symlink**-tier target's read-path is fanned out from the canonical
 `.agents/skills/` source at install time. It is *also* re-ensured at
-**session-start** by the lifecycle backend (`tools/lifecycle.py
+**session-start** by the session kernel (`tools/session.py
 session-start`), so an adopter established by lockfile-copy -- or whose
 symlink-tier harness was not present at install -- self-heals on first
 run instead of silently having no skills in that harness. The self-heal

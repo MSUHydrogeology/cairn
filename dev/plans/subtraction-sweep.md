@@ -1,3 +1,8 @@
+<!-- A deletion manifest necessarily cites what it deletes: each path in the
+     directive below resolved when this plan was written, and stops resolving
+     as the chunk that removes it lands. The citation IS the record of what
+     went, so it stays and the checker is told why. -->
+<!-- claim-check-allow: bootstrap/tests/test_byline_identity.py, bootstrap/tests/test_doctrine_vocabulary_drift.py, bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, bootstrap/tests/test_lifecycle_failsafe.py, bootstrap/tests/test_lifecycle_metrics_config.py, bootstrap/tests/test_lifecycle_metrics_events.py, bootstrap/tests/test_lifecycle_stage_patterns.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_metrics_status_normalization.py, bootstrap/tests/test_pilot_evidence.py, bootstrap/tests/test_suite_ledger.py, bootstrap/tests/test_transition_lint.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, scripts/foldback_export_scan.py, scripts/foldback_suggest.py, scripts/transition_lint.py, scripts/transition_lint_whitelist.py, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle.py, tools/_lifecycle_metrics/, tools/lifecycle.py, tools/lifecycle_metrics.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
@@ -593,6 +598,22 @@ This sweep deletes ~15,800 lines of tests in C6 alone. Every Boundary B record
 states the expected delta and reconciles it against the files that chunk removed.
 An unexplained drop is a defect, not a success — the whole hazard of a deletion
 sweep is that a suite gets quieter as it gets weaker.
+
+**Reconcile the SKIP count too, and reconcile it first.** A passed→skipped
+transition leaves the collected total unchanged, so a reconciliation that
+watches only passes is blind to exactly the failure this criterion exists to
+catch. **Measured, not hypothetical:** C5's transition-lint removal moved
+`test_lifecycle_vocabulary.py` from 30 passed to 30 skipped, and the chunk was
+recorded as verified — its module guard required four paths to exist, one of
+them the deleted lint, so an unrelated removal silently switched the file off.
+Confirmed by running that file at `3b6f51e~1` in a throwaway worktree: 30
+passed. Every Boundary B record now states passed **and** skipped, with any
+movement in either named against the files that caused it.
+
+**A guard that names more than its tests need converts an unrelated deletion
+into invisible coverage loss.** When a removal makes a `skipif` fire, the
+question is never "is the skip correct?" but "does this guard still describe
+what these tests read?"
 
 **Boundary C (falsification, independent).** The code reviewer verifies each
 record against the reviewed range and runs independent targeted falsification.

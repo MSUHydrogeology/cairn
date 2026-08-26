@@ -125,9 +125,9 @@ python "$CAIRN/bootstrap/scaffold.py" \
 
 The `--summary` flag is **preview-only**: it prints the resolved
 axes and the module roster, then exits without touching the target.
-For the `solo-greenfield` profile you should see **8** modules listed `<!-- verify: solo_greenfield_module_count -->`
-(the default-on floor): `lifecycle-metrics`, `reflections`, `claim-check`,
-`fold-back-ledger`, `incident-trackers`, `documentation-plan`,
+For the `solo-greenfield` profile you should see **6** modules listed `<!-- verify: solo_greenfield_module_count -->`
+(the default-on floor): `reflections`, `claim-check`,
+`incident-trackers`, `documentation-plan`,
 `content-security`, `security-verification`.
 
 > **What the six axes mean.** Cairn adapts the apparatus along
@@ -171,7 +171,7 @@ The landmarks worth recognising:
 * the **lifecycle tooling** -- `tools/` and `scripts/` hold the runnable
   reference tools (the metrics extractor, the claim-checker), and
   `.agents/skills/` ships the `session-start` / `session-end` routines
-  your harness surfaces as commands (`tools/lifecycle.py` is their CLI).
+  your harness surfaces as commands (`tools/session.py` is their CLI).
   Ignore these for the shakedown -- they are orientation, not homework.
 * `dev/.cairn/` -- machine state (the fold-back ledger, the
   lockfile + base-cache upgrade anchor); you do not need to read it.
@@ -179,7 +179,7 @@ The landmarks worth recognising:
 (The `tools/` and `scripts/` files install *into your target repo*; they
 are not Cairn-tree paths.)
 
-The scaffold also reports **23 unfilled block slots** -- placeholders
+The scaffold also reports **22 unfilled block slots** -- placeholders
 your agent will fill during dogfood.  See
 [`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md) Act II-4 for the
 full filling pass.  For this quickstart we leave them: the trivial dogfood

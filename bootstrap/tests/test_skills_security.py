@@ -42,10 +42,6 @@ from bootstrap.scaffold import main, read_lockfile  # noqa: E402
 
 TEMPLATES_ROOT = CAIRN_ROOT / "templates"
 LIFECYCLE_SRC = TEMPLATES_ROOT / "skills" / "_lib" / "session.py"
-#: The pre-extraction CLI, still shipped and so still scanned. It carries a
-#: duplicate of the kernel until it is removed, and a duplicate nobody scans
-#: is the half that rots.
-LEGACY_CLI_SRC = TEMPLATES_ROOT / "skills" / "_lib" / "lifecycle.py"
 CONTENT_SCAN_SRC = TEMPLATES_ROOT / "modules" / "team-gated" / "content_scan.py"
 SKILL_SOURCES = sorted((TEMPLATES_ROOT / "skills").glob("*/SKILL.md"))
 
@@ -71,7 +67,7 @@ content_scan = _load("cairn_content_scan", CONTENT_SCAN_SRC)
 
 
 @pytest.mark.parametrize(
-    "artifact", [LIFECYCLE_SRC, LEGACY_CLI_SRC, *SKILL_SOURCES],
+    "artifact", [LIFECYCLE_SRC, *SKILL_SOURCES],
     ids=lambda p: p.name if p.name != "SKILL.md" else p.parent.name,
 )
 def test_canonical_artifacts_pass_content_scan(artifact: Path):
@@ -85,7 +81,6 @@ def test_installed_artifacts_pass_content_scan(tmp_path: Path):
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
         "tools/session.py",
-        "tools/lifecycle.py",
     ):
         assert content_scan.scan_file(target / rel) == [], rel
 
@@ -353,7 +348,6 @@ def test_installed_artifacts_match_lockfile_hash(tmp_path: Path):
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
         "tools/session.py",
-        "tools/lifecycle.py",
     }
     for rec in lock["files"]:
         if rec["dst"] not in skill_dsts:
@@ -370,7 +364,6 @@ def test_tracked_artifacts_have_no_local_path_or_token_leak(tmp_path: Path):
         ".agents/skills/session-start/SKILL.md",
         ".agents/skills/session-end/SKILL.md",
         "tools/session.py",
-        "tools/lifecycle.py",
     ):
         text = (target / rel).read_text(encoding="utf-8")
         assert "/Users/" not in text and "/home/" not in text, rel

@@ -34,6 +34,11 @@ It also owns `encode_display`, the single terminal encoder for externally
 sourced values.  There is no second escape table in this tree; a fallback would
 be a weaker path that engages exactly when something is already wrong.
 
+`session-end` honors `--dry-run`: it prints the planned writes and exits
+writing nothing. `session-start` has no `--dry-run` -- it performs one
+idempotent write (the skills fan-out self-heal) and there is nothing to
+preview, so the flag would promise a preview it cannot give.
+
 Standard-library only, vendor-neutral.  Usage:
 
     python tools/session.py session-start
@@ -323,7 +328,7 @@ def _repo_root(start: Optional[Path] = None) -> Path:
     """Return the git repository root containing `start` (default: cwd).
 
     Resolved via `git rev-parse` so it is correct regardless of where the
-    installed `tools/lifecycle.py` sits relative to the working directory.
+    installed `tools/session.py` sits relative to the working directory.
     """
     cwd = str(start) if start is not None else None
     try:
@@ -1155,7 +1160,7 @@ def _prune_intents(root: Path, interpreter: str, days: int, *,
     line; both are reported.
     """
     _emit_section("pruning the work-intent surface")
-    # Resolve against *root*, the way _surface_foldback_candidates does, not via
+    # Resolve against *root*, not via
     # _sibling_tool -- which returns the copy beside THIS file regardless of the
     # target root.  That distinction is invisible in an adopter tree (the CLI is
     # installed in the tree it operates on) but it matters here: the intent
@@ -1219,40 +1224,6 @@ def _surface_intents(root: Path, interpreter: str) -> None:
         _warn(f"could not run intent.py list: {exc}")
 
 
-def _run_lifecycle_metrics(root: Path, interpreter: str) -> None:
-    """Run the optional lifecycle-metrics tool with ``--snapshot``, if installed.
-
-    Passes ``--snapshot`` so each full-handoff persists an indexed CSV
-    snapshot to ``dev/measurement/snapshots/<YYYY-MM-DD>-<N>.csv`` (the
-    unified proposal+plan schema; same-day runs coalesce by ``N`` rather
-    than overwriting, preserving the audit trail).  Only runs in the
-    ``--handoff`` full-handoff path (the caller in ``_do_full_handoff``
-    gates it).  Skip-with-note when the tool is absent; never fails the
-    handoff on a non-zero exit.
-    """
-    tool = _sibling_tool("lifecycle_metrics.py")
-    if tool is None:
-        _warn("lifecycle_metrics.py not installed -- skipping the metrics pass.")
-        return
-    try:
-        proc = subprocess.run(
-            [interpreter, str(tool), "proposals", "--snapshot"],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-            check=False,
-            env=_git_env(),
-        )
-        if proc.returncode == 0:
-            snap_note = (proc.stderr or "").strip()
-            _emit(
-                f"lifecycle-metrics: ran with --snapshot."
-                + (f"  {snap_note}" if snap_note else "")
-            )
-        else:
-            _warn(f"lifecycle_metrics reported: {(proc.stderr or '').strip()}")
-    except OSError as exc:
-        _warn(f"could not run lifecycle_metrics.py: {exc}")
 
 
 def _run_evolution_infer(root: Path, interpreter: str) -> None:
@@ -1288,40 +1259,6 @@ def _run_evolution_infer(root: Path, interpreter: str) -> None:
         _warn(f"could not run evolution_infer.py: {exc}")
 
 
-def _surface_foldback_candidates(root: Path, interpreter: str) -> None:
-    """Surface aging fold-back candidates via foldback_suggest.py, if installed.
-
-    Read-only: installed at ``scripts/foldback_suggest.py`` (the module
-    installs into ``scripts/``, not ``tools/``).  Skip-with-note when absent
-    so the full-handoff path is never blocked by an optional module.  Never
-    crashes the handoff: both a missing tool and a nonzero exit code are
-    surfaced as notes, not failures.
-    """
-    _emit_section("aging fold-back candidates")
-    tool = root / "scripts" / "foldback_suggest.py"
-    if not tool.is_file():
-        _warn(
-            "scripts/foldback_suggest.py not installed -- skipping the "
-            "fold-back surfacing pass; install the fold-back-ledger module "
-            "to enable it."
-        )
-        return
-    try:
-        proc = subprocess.run(
-            [interpreter, str(tool)],
-            cwd=str(root),
-            capture_output=True,
-            text=True,
-            check=False,
-            env=_git_env(),
-        )
-        sys.stdout.write(proc.stdout)
-        if proc.returncode != 0 and proc.stderr:
-            _warn(
-                f"foldback_suggest reported: {proc.stderr.strip()}"
-            )
-    except OSError as exc:
-        _warn(f"could not run scripts/foldback_suggest.py: {exc}")
 
 
 _REFLECTION_SKELETON = """\
@@ -1432,12 +1369,10 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
     names = ", ".join(p.name for p in would_prune) or "(none)"
     _emit(f"would prune {len(would_prune)} reflection(s) older than {grace}d: "
           f"{names}")
-    _emit("would run lifecycle-metrics (read-only) if installed")
     _emit("would surface active intents (read-only) if installed")
     _emit(f"would prune released work-intent pairs older than "
           f"{args.intent_grace_days}d (never an unreleased claim) if installed")
-    _emit("would surface aging fold-back candidates (read-only) if installed")
-    _emit("would run the rate-limit-gate / backlog check (read-only) if installed")
+    _emit("would run the rate-limit gate (read-only) if installed")
 
     if args.dry_run:
         _emit("[dry-run] manifest only -- nothing mutated, no marker required.")
@@ -1464,10 +1399,6 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
         _emit(f"pruned {len(pruned)} reflection(s) older than {grace}d.")
         lock.heartbeat()
 
-        _emit_section("lifecycle metrics")
-        _run_lifecycle_metrics(root, interpreter)
-        lock.heartbeat()
-
         # Coordination-safety check: whether another session still holds claimed
         # work (read-only).  Mirrors the manifest line above (finding 2).
         _surface_intents(root, interpreter)
@@ -1483,18 +1414,18 @@ def _do_full_handoff(root: Path, args: argparse.Namespace) -> int:
 
         # Fold-back surfacing -- gated behind --handoff: fires
         # only in the full-handoff path, never in the reflection-only goodnight.
-        _surface_foldback_candidates(root, interpreter)
         lock.heartbeat()
 
-        # Standing capture prompt: invite the owner to scan today's
-        # doctrine activity for Cairn-portable fold-back candidates.
+        # Standing capture prompt.  The practice survives the ledger that
+        # used to hold its output: a candidate is filed as an issue upstream
+        # rather than staged locally, so there is nothing here to drain later.
         _emit(
-            "scan today's doctrine activity for Cairn-portable fold-back "
-            "candidates? (capture stays judgment -- an empty capture is "
+            "scan today's doctrine activity for portable improvements worth "
+            "filing upstream? (capture stays judgment -- an empty capture is "
             "success; never manufacture marginal candidates)"
         )
 
-        # Rate-limit-gate + fold-up-backlog check -- deterministic, zero-token,
+        # Rate-limit-gate check -- deterministic, zero-token,
         # read-only decision-support (it emits suggestions only, mutates nothing).
         _emit_section("rate-limit gate + fold-up backlog")
         _run_evolution_infer(root, interpreter)

@@ -349,7 +349,7 @@ def install_skills(
 
     A sibling to :func:`install_core` (kept separate rather than folded into
     it): the skills install to distinct destinations (``.agents/skills/`` +
-    ``tools/lifecycle.py``) and carry per-file verbatim/substituted rules that
+    ``tools/session.py``) and carry per-file verbatim/substituted rules that
     differ from core docs, so a dedicated installer keeps each surface's rules
     legible.  Because the routines are invariant kernel they are not a
     conditional module.  ``verbatim`` is read per spec from
@@ -453,7 +453,7 @@ def render_compatibility_matrix(templates_root: Path) -> str:
         "",
         "A **symlink**-tier target's read-path is fanned out from the canonical",
         "`.agents/skills/` source at install time. It is *also* re-ensured at",
-        "**session-start** by the lifecycle backend (`tools/lifecycle.py",
+        "**session-start** by the session kernel (`tools/session.py",
         "session-start`), so an adopter established by lockfile-copy -- or whose",
         "symlink-tier harness was not present at install -- self-heals on first",
         "run instead of silently having no skills in that harness. The self-heal",

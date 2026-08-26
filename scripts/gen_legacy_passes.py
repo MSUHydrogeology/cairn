@@ -14,7 +14,7 @@ produces that enumeration.
 **It deliberately does not import the gate.**  The population a gate exempts
 must not be defined by the gate: this module carries its own exact-anchored
 heading regex, and must never be rewritten to call ``_pass_headings``,
-``_has_kind`` or any other predicate from ``tools/lifecycle_planner.py``.  A
+``_has_kind`` or any other predicate from the retired lifecycle planner.  A
 generator that shares the gate's parser cannot detect a defect in it -- the
 same reason a fixture written by the code under test is not an oracle.
 
