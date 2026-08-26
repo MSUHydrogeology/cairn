@@ -2,7 +2,7 @@
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopt-into-existing-tree.md`
 (accepted Revision 2, 2026-08-20)
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(**Internal**) — as the accepted Revision 2 declares.
 No `Plan readiness` inheritance is claimed; the External pass withheld it, and
 under the rule that landed 2026-08-24 no External plan tier exists to claim.
@@ -707,3 +707,200 @@ status for the issue-#5 closure dependency was not re-checked (out of scope
 for implementation). No attempt to reproduce the original adopter's tree or a
 hand-edited lockfile beyond the fixtures constructed in
 `bootstrap/tests/test_upgrade.py`.
+
+
+## Code review -- Claude Sonnet 5 (Internal, fresh context) -- 2026-08-26
+
+Reviewed range: `219426e..cc6c6c7` (`bec2cca` D1+D2, `cc6c6c7` D3) --
+independent code review, did not implement this change.
+
+**Tier**: Internal (same agent type, structurally independent fresh
+context).
+**Model**: Claude Sonnet 5.
+**Findings**: 3 notes, none blocking the code itself.
+**Verdict**: No blocking findings against the implementation. Every
+load-bearing claim I attacked survived independent falsification, checked
+against the filesystem and the live code, not against the record's own
+prose. This pass satisfies the ordinary code-review floor and the
+plan-archive precondition (`doctrine/plans.md` > "The plan-archive
+precondition" -- "a plan never archives until a code review has occurred");
+see the note immediately below for what it does **not** satisfy.
+
+### Not this plan's blocker, but do not lose it: the GitHub issue-closure gate is still open
+
+This pass is **Internal, same agent type as the implementer** (Claude). The
+accepted proposal's Decision is explicit that closing Issue #7 and Issue #5
+needs more than that: "Implementation carries a **Security Review REQUIRED**
+trigger and requires **External Security code review** prior to closing
+Issue #7 and Issue #5" (`dev/proposals/archive/2026-08-20-claude-adopt-into-
+existing-tree.md:1540`), restated in full in that same proposal's "issue-
+closure contract" (`:1496-1512`): each close is **MAINTAINER-GATED** on (1)
+implementation landed and code-reviewed, (2) **the implementation's External
+Security code review** completed -- *not* this proposal pass -- (3) a
+closing comment naming what was declined, (4) an answer to what issue #5 is
+owed, (5) Maintainer authorization for the outward-facing act.
+
+Item (1) is what this pass provides. Item (2) is a **separate, still-
+outstanding obligation this pass does not and cannot discharge** -- a
+same-type Internal pass is not an External Security pass, whatever verdict
+it reaches. I read the plan's own text for a restatement of this
+issue-closure contract and found none; the plan mentions the "issue-#5
+closure dependency" only twice, both in "out of scope" notes on unrelated
+questions, never the External Security requirement itself.
+
+**Why this does not block `ready-to-archive` here.** The plan-archive
+precondition (`doctrine/plans.md`) is "a plan never archives until a code
+review has occurred" -- full stop, no carve-out requiring Security Review
+before *archival specifically*. The issue-closure contract above gates a
+**different, later, Maintainer-authorized outward-facing act** (closing the
+GitHub issues), not this plan's own dev/-tree lifecycle. Marking this plan
+`ready-to-archive` is therefore consistent with the archive precondition as
+written. **But closing Issue #5 or Issue #7 on the strength of this pass
+alone would not be** -- that needs the External Security code review, the
+closing comment, and Maintainer authorization, none of which this pass
+provides or can provide by construction. Flagging this here so it is not
+silently lost between this plan's archive and whoever next touches the
+GitHub issues.
+
+### What I verified against the diff (not the record's restatement)
+
+* **The D3 replacement text is byte-accurate.** `git diff 219426e..cc6c6c7 --
+  bootstrap/UPGRADE.md` matches the plan's "Approach > The D3 collision"
+  quoted replacement paragraph word for word; the "Two consequences:" lead-in
+  and the orphaned "It is read-only" sentence are both gone, folded to the
+  single flowing paragraph the Maintainer allowance authorized.
+* **`_refuse_secret_tokens` is wired correctly.** It lives in `lockfile.py`,
+  raises `PresetError` on a token *name* matching
+  `password|passwd|secret|credential|token|key` (case-insensitive substring),
+  and `_cmd_adopt_module`'s new `except PresetError as exc:` block
+  (`upgrade.py`) is the only place in the diff that catches it -- `PresetError`
+  is already imported at module scope (line 29), so nothing was missed.
+* **`_adopt_token_unfilled`'s citation checks out.** Its docstring cites
+  `upgrade.py:1187-1189` for `_cmd_init_lock`'s own angle-bracket guard; that
+  is exactly the three-line `placeholder_tokens = sorted(...)` statement --
+  confirmed by direct line lookup, not assumed.
+* **`_resolve_current_profile` has exactly three production callers,
+  repo-wide** (`grep -rn "_resolve_current_profile(" --include="*.py"` over
+  the whole tree): `_compute_upgrade` (`upgrade.py:332`), the new call inside
+  `_cmd_adopt_module` (`upgrade.py:1472`), and `cmd_upgrade`
+  (`upgrade.py:2446`) -- all three correctly unpack the new 3-tuple. The four
+  `test_profile_grammar.py` call sites also unpack three values. No orphaned
+  2-tuple unpacking exists anywhere in the tree.
+* **`_superseded_surface_note`'s `exclude` param has exactly one production
+  caller** (`upgrade.py:1586`, inside `_cmd_adopt_module`, the only one that
+  passes `exclude=`) and three test callers, all in
+  `test_upgrade_module.py`, all passing only the two positional args
+  (`target, name`) -- `exclude` is keyword-only with a `frozenset()` default,
+  so those three calls are behaviourally unchanged. Confirmed by grepping
+  every call site in the repo, not just the two the plan named.
+
+### Falsification ledger -- what I attacked, what I ran, what survived
+
+**1. D1's ordering claim (top priority).** Wrote an independent script
+(outside the existing test suite) that snapshots the ENTIRE target tree
+(sha256 of every file) before and after adopting a module with a
+`monkeypatch`-arranged secret-shaped required token (`api_secret_key`,
+mirroring the plan's S2 note that no real `KNOWN_TOKENS` name matches
+`_SECRET_TOKEN_RE`). Result: `rc == 2`, **zero new files, zero removed
+files, zero changed files, lockfile bytes byte-identical** before and after
+-- checked against a full-tree content diff, not the exit code or the two
+destination paths the existing test names. Survived.
+
+**2. The strict placeholder predicate, adjacent shapes.** Called
+`_adopt_token_unfilled` directly with the shapes named in my brief plus a
+few more: `<>`→unfilled, `< >`→unfilled, `<my package>`→unfilled (the
+original regression, and with leading/trailing whitespace),
+`{{python_package}}` and `{{ python_package }}`→unfilled,
+`<<nested>>`→unfilled; `<a`, `a>`, `>reversed<`, `a<b>c`, `{python_package}`
+(single brace), `mypkg`→all correctly treated as **filled** (no bracket pair
+bounding the whole trimmed value). No false negative on the bug shape or its
+whitespace-padded variant; no case where a plausible real token value gets
+wrongly refused. Survived.
+
+**3. D2's byte comparison, false-positive/false-negative check.** Wrote an
+independent script exercising two module/spec pairs not used by the existing
+tests' primary assertions: `architecture-review`'s substituted
+`dev/architecture_review.md` (genuinely carries `{{project_name}}`) and
+`python-security`'s verbatim `run_security_audit.py` (installed to an
+adopter tree's `scripts/` dir; not a path in this repo). Four cases, all
+against the real CLI entry point:
+  * substituted spec, raw (unsubstituted) bytes on disk -> advisory fired
+    (correctly detected as differing from what would install);
+  * substituted spec, correctly-substituted bytes on disk -> silent
+    (no false difference);
+  * verbatim spec, byte-identical to upstream -> silent (**no false
+    difference for a verbatim spec** -- the specific risk named in my
+    brief);
+  * verbatim spec, locally modified -> advisory fired (no false match).
+  All four passed. Survived.
+
+**4/5. `_resolve_current_profile` arity and `_superseded_surface_note`
+exclude.** Covered under "What I verified against the diff" above --
+exhaustive repo-wide grep, not a sample. Survived.
+
+**Re-ran the Boundary-A-scoped suite at current HEAD** (not a Boundary-B
+broad rerun): `CAIRN_FULL_SUITE=1 python3.13 -m pytest
+bootstrap/tests/test_upgrade.py bootstrap/tests/test_profile_grammar.py
+bootstrap/tests/test_upgrade_module.py
+bootstrap/tests/test_module_merge_lockfile.py -q` -- **164 passed** (matches
+the record's per-file counts, 96+45+23), exit 0, full 4-line output
+inspected directly (not `tail`), no `INTERNALERROR`.
+
+### The two known fences -- checked, not fixed
+
+* **AST attestation.** `python bootstrap/tests/_ast_attest.py verify
+  bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py`
+  at current HEAD reports **six** CHANGED symbols, not the five my brief
+  named: this plan's four (`_cmd_adopt_module`, `_compute_upgrade`,
+  `_superseded_surface_note`, `cmd_upgrade`), plus `_SKILLS_MAPPINGS`, plus a
+  sixth -- `FunctionDef:main` in `bootstrap/_scaffold/cli.py`. That sixth
+  symbol is from the `C1` session-kernel-extraction commits (`ea3d649`,
+  `82671c7`) that landed on `master` after this plan's range and after my
+  brief was written -- confirmed by `git log`: neither commit touches
+  `upgrade.py`, `test_upgrade.py`, or `test_profile_grammar.py`, and this
+  plan's diff never touches `cli.py`. Not caused by this plan; the fence has
+  simply drifted further since the brief was drafted, from unrelated
+  concurrent work in the same tree. Not fixed, not routed around --
+  re-anchoring stays Maintainer-run.
+* **Gate manifest.** Direct lookup in `bootstrap/tests/fixtures/gate_manifest.json`
+  confirms both recorded sha256 values the record cites for
+  `test_upgrade.py` and `test_profile_grammar.py`, and both live sha256
+  values match the record exactly. Confirmed `test_gate_manifest.py`'s
+  `produced` fixture calls `_gate_manifest.produce(_REPO)` fresh and never
+  diffs against the committed fixture, so this drift is correctly invisible
+  to pytest, exactly as claimed.
+* **The third failure, `test_lifecycle_contract.py::test_the_live_corpus_is_sound_under_the_p1_contract`,
+  is pre-existing but the record's description is incomplete.** Reproduced
+  at current HEAD **and** independently at the parent commit `7dc66a1` (a
+  fresh `git worktree`, removed after, no destructive operation on the
+  working tree): at BOTH commits the assertion fails on **two** files, not
+  the one the record names --
+  `2026-08-20-claude-portable-sweeps-cannot-run.md` (line 395) **and**
+  `2026-08-20-claude-scanner-claim-scope.md` (line 405), both a `## Review`
+  section reading as author-written rather than independently reviewed. Both
+  files already carried this at `7dc66a1`, before this plan's implementation
+  commits, so the substance of the record's claim -- pre-existing,
+  unrelated to this plan, unchanged by this plan's diff -- holds; the record
+  simply under-named it (one file quoted where two already failed). `dev/proposals/`
+  is outside this plan's diff either way. Non-blocking, per my brief's own
+  "spot-check if cheap; do not spend the round on it" -- flagged here as a
+  minor completeness gap in the verification record's prose, not a defect
+  in the shipped code.
+
+### Bounding
+
+**Bounding: ACCEPTED.** This is not a bounded record -- Boundary B mode is
+`full`, and I confirmed that was the correct, non-discretionary call rather
+than accepting the plan's assertion: `bootstrap/_scaffold/upgrade.py` is
+AGENTS.md's named scaffold/merge-engine high-risk surface, and the diff
+lands inside `--adopt-module`'s write path (the install contract), either
+of which alone forces `full` under AGENTS.md's Verification-boundaries
+refusal rule -- there was no bounded option available to choose incorrectly.
+
+### C0
+
+Yes -- this writes into an adopter's tree through the install contract. I
+attacked the two directions a wrong guard could hurt someone not in this
+conversation (a legitimate adopt wrongly refused; a placeholder or secret
+reaching the lockfile) and found neither. Nothing here reaches
+`ready-to-archive` on trust.
