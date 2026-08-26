@@ -1,3 +1,7 @@
+<!-- Merged 2026-08-26 into ../2026-07-08-claude-broad-look-skeptical-review.md
+     (live core carried forward; this file is the preserved full record) and
+     archived. -->
+
 # Cairn adopter friction: make the smallest recommended path executable
 
 **Author**: Claude (2026-06-12 audit); rebuilt by Codex (Strategy)

@@ -7,7 +7,7 @@
 **Date opened**: 2026-06-12
 **Status**: accepted
 **Touches**: `docs/quickstart.md`, `README.md`, `examples/scientific-minimal/README.md`, `bootstrap/profiles/solo-greenfield.yml` (the doc-refresh); a new drift-gate (a `bootstrap/tests/` test, plus possibly a `check_cairn` hook).
-**Related**: the adopter-friction audit `dev/strategy/2026-06-12-claude-adopter-friction-audit.md` (this proposal implements its recommended package); the `doc-drift-prevention` module.
+**Related**: the adopter-friction audit `dev/strategy/archive/2026-06-12-claude-adopter-friction-audit.md` (this proposal implements its recommended package); the `doc-drift-prevention` module.
 **Plan review**: required(Internal) — multi-file doc change plus a new gate on a self-check surface; ratified at Decision.
 
 ## Context

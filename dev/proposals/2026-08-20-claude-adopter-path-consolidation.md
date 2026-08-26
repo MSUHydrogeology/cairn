@@ -17,7 +17,7 @@ table, and the maturity ladder); `docs/getting-started.md`;
 `scripts/_onboarding/triggers.py` and its byte-twin
 `templates/modules/default-on/_onboarding/triggers.py`; the onboarding trigger
 tests under `bootstrap/tests/`.
-**Related**: `dev/strategy/2026-06-12-claude-adopter-friction-audit.md` — this is
+**Related**: `dev/strategy/archive/2026-06-12-claude-adopter-friction-audit.md` (merged 2026-08-26 into `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`) — this is
 the "adopter-path consolidation proposal" that note named as its first
 downstream surface and that was never opened;
 `dev/strategy/archive/2026-08-10-claude-documentation-enhancement.md` > F9 (which
