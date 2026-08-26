@@ -581,8 +581,7 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
 #: and a token-/slot-aware 3-way merge on upgrade, exactly like ``core/`` docs).
 _SKILLS_MAPPINGS: tuple[tuple[str, str, bool], ...] = (
     ("skills/_lib/session.py",           "tools/session.py",                         True),
-    ("skills/_lib/lifecycle.py",         "tools/lifecycle.py",                       True),
-    ("skills/_lib/lifecycle_planner.py", "tools/lifecycle_planner.py",               True),
+    ("skills/_lib/board.py",             "tools/board.py",                           True),
     ("skills/_data/vendor_targets.yml",  ".agents/skills/_data/vendor_targets.yml",  True),
     ("skills/session-start/SKILL.md",   ".agents/skills/session-start/SKILL.md",    False),
     ("skills/session-end/SKILL.md",     ".agents/skills/session-end/SKILL.md",      False),
