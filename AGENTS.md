@@ -527,8 +527,12 @@ against the anchored roster.
   and document templates are CC BY 4.0; the brand mark alone is CC
   BY-ND. Keep the three families from overlapping.
 * **The local interpreter binding** — `dev/.cairn/local-env.json`, its
-  reader `_resolve_interpreter` in `templates/skills/_lib/lifecycle.py`,
-  and every call site that executes the path it returns. This is an
+  reader `_resolve_interpreter` in `templates/skills/_lib/session.py`
+  (self-hosted at `tools/session.py`, kept byte-identical), and every
+  call site that executes the path it returns. The same module owns
+  `encode_display`, the single terminal encoder — there is no second
+  escape table in this tree, because a fallback engages exactly when
+  something is already wrong. This is an
   untracked, gitignored, lockfile-uncovered **executable trust root**,
   and the reader is a strict *shape* validator, not an authenticator: it
   checks absoluteness, schema, symlink-freedom and the executable bit,

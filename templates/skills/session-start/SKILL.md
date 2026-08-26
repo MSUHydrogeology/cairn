@@ -16,7 +16,7 @@ restates that rationale here.
 ## 1. Run the mechanizable gather + skills self-heal
 
 ```
-python tools/lifecycle.py session-start
+python tools/session.py session-start
 ```
 
 It **reports** (read-only): commits since the last handoff (with a graceful

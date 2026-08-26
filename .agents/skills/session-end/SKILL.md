@@ -16,7 +16,7 @@ roadmap). The canonical doctrine for *what* this routine is and *why* lives in
 ## 1. Run the mechanizable step
 
 ```
-python tools/lifecycle.py session-end $ARGUMENTS
+python tools/session.py session-end $ARGUMENTS
 ```
 
 `$ARGUMENTS` is whatever follows the command (e.g. `/session-end --handoff`):
@@ -25,11 +25,11 @@ python tools/lifecycle.py session-end $ARGUMENTS
   Scaffolds your per-session reflection file and surfaces open threads; writes
   nothing destructive.
 * **`--handoff` -- the full handoff, the designated full-handoff owner only.**
-  Preview first (changes nothing): `python tools/lifecycle.py session-end
+  Preview first (changes nothing): `python tools/session.py session-end
   --handoff --dry-run`. Then run it with the owner marker:
 
   ```
-  CAIRN_HANDOFF_OWNER=1 python tools/lifecycle.py session-end --handoff
+  CAIRN_HANDOFF_OWNER=1 python tools/session.py session-end --handoff
   ```
 
   The marker is an **anti-accidental-run gate, not an authorization control**;
