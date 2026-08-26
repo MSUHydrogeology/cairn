@@ -39,7 +39,33 @@ The suite is green apart from one standing fence and one pre-existing finding.
    keeping pointers only. **This is the next substantive work and needs nothing
    from you.**
 
-5. **75 unpushed commits.** Pushing is yours, always.
+5. **C7's other half: the checker de-scope.** The accepted falsifier is
+   *"an archived file draws no flag; prose files carry zero checker
+   boilerplate; success is silent."* Current state:
+
+   | family | active | archived |
+   |---|---:|---:|
+   | `claim-check-allow` | 34 | 68 |
+   | `cairn-internal-ref-allow` | 44 | 74 |
+   | `link-check-allow` | 4 | 3 |
+
+   **145 archived files carry directives that are never read** —
+   `--include-archives` already defaults off — so those delete for free and
+   satisfy the first falsifier immediately. The 82 active ones move into one
+   config per family, reason text preserved.
+
+   **Read "retire the directives" carefully.** It means retire them *into a
+   config*, not delete the exemptions. `_CAIRN_INTERNAL_PREFIXES` is
+   `('doctrine/',)` — `doctrine/` is the only internal prefix, so exempting it
+   by convention would make that check a no-op reporting success while testing
+   nothing. This session nearly did exactly that.
+
+   Four active `claim-check-allow` directives were added on 2026-08-26 (the
+   sweep plan, `CHANGELOG.md`, `tag-pass-dispositions.md`, the nimbleness
+   note). Correct for a tree that still uses file-top directives; debt against
+   the accepted outcome, and they move into the config with the rest.
+
+6. **76 unpushed commits.** Pushing is yours, always.
 
 ## What is left after that
 
