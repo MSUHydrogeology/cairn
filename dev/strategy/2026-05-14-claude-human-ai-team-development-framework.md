@@ -631,9 +631,32 @@ absolute churn does not. Kruchten, P., Nord, R. L., & Ozkaya, I. (2012).
 the debt metaphor is useful only when principal and interest are concrete; a
 ledger without a cost model has no stopping rule. Chambers, C. D. (2013).
 *Registered Reports: A New Publishing Initiative at Cortex.* Cortex 49(3) —
-declare hypothesis, population, and analysis before the results exist.
+declare hypothesis, population, and analysis before the results exist; with
+Kerr, N. L. (1998). *HARKing: Hypothesizing After the Results Are Known.*
+Personality and Social Psychology Review 2(3): 196–217 — presenting a post-hoc
+hypothesis as a priori is the named malpractice rule 4 guards against.
 Forsgren, N., et al. (2021). *The SPACE of Developer Productivity.* ACM Queue
-19(1) — productivity is multidimensional; no single number captures it.
+19(1) — productivity is multidimensional; no single number captures it; with
+Campbell, D. T. (1979). *Assessing the Impact of Planned Social Change.*
+Evaluation and Program Planning 2(1): 67–90 — the more a quantitative
+indicator is used for decision-making, the more it corrupts and distorts the
+process it monitors; and Austin, R. D. (1996). *Measuring and Managing
+Performance in Organizations.* Dorset House — the book-length treatment of
+measurement dysfunction, grounded in software organizations: people respond
+to being measured with unanticipated sophistication, and dysfunction follows
+a recognizable pattern.
+
+*Evidence status, in the discipline's own spirit.* Rule 2 rests on **direct
+measured comparisons** (Rahman & Devanbu; Nagappan & Ball) — though measured
+for defect prediction, and extrapolation beyond that is argued, not measured.
+Rules 1, 3, 4, and 5 rest on **established methodological literature**
+(Campbell's law, registered reports, HARKing, measurement dysfunction, SPACE)
+applied to the human + AI setting by argument; no one has measured them in a
+setting like Cairn's. One mechanistic datum is native to the agent context:
+the verbosity-bias literature under Anchor 18 shows judges rewarding length,
+which is rule 1's failure mode observed at the model level. And this
+repository supplied its own instance: an instrument that paid for findings
+was rebuilt twice in one week before the rule against it was written down.
 
 Five rules, distilled from the two retired programs
 (`2026-06-05-claude-cairn-complexity-debt-audit.md`, closed 2026-08-26;
