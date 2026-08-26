@@ -72,7 +72,6 @@ def test_frozen_set_boundary(produced):
     # the three phase-split facade targets are NOT frozen — they are phase_mutable
     assert "templates/modules/team-gated/intent.py" not in frozen
     assert "templates/modules/default-on/onboarding_activate.py" not in frozen
-    assert "templates/modules/default-on/lifecycle_metrics.py" not in frozen
     assert set(produced["phase_mutable"]) == set(G.PHASE_SPLIT_TARGETS)
 
 

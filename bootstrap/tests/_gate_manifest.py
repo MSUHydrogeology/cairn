@@ -109,8 +109,6 @@ PHASE_SPLIT_TARGETS: dict[str, str] = {
         "phase A intent-split facade — per-phase AST source-motion attestation + External-stance review",
     "templates/modules/default-on/onboarding_activate.py":
         "phase B onboarding-split facade — per-phase AST attestation + External-stance review",
-    "templates/modules/default-on/lifecycle_metrics.py":
-        "phase C metrics fold-up — per-phase AST attestation + External-stance review",
     "bootstrap/tests/test_intents_tool.py":
         "phase A intent-split TEST FIXTURE — _git_repo (+ inline copies) stage the _intent/ "
         "package beside the copied facade so the git-hook subprocess tests find the engine; "
