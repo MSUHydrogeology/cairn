@@ -411,3 +411,45 @@ lifecycle-based method interacts with unbidden work. Finding 7 is general to
 is Cairn-specific measurement plus a general measurement caution. If this note
 promotes, 1/4/5/6/7/9 are the fold-back candidates for
 `dev/.cairn/cairn_foldback.md`.
+
+## Closure — integrated into the refocus — 2026-08-26
+
+This note's questions were settled by the 2026-08 refocus
+(`2026-08-21-claude-nimbleness-recovery`, accepted through the
+subtraction-sweep Decision), five days after it was written. The map:
+
+* **Finding 1 (the authority question) — answered.** The accepted
+  counterforce carries the **stewardship warrant**: standing trivial-lane
+  authority to fix an incidental defect, fenced objectively — a failing-test
+  reproduction, agent code review, zero Maintainer involvement, a provenance
+  line. The refocus note says so in terms: it *"supplies the authority the
+  stewardship-ethic note (2026-08-20) found missing."* The residual-rights
+  rule supplies the consequence test this note asked for: the author decides
+  only when every plausible consequence of shipping is readily reversible;
+  any hard-to-undo answer latches upward; **science always routes to the
+  Maintainer** — which is Finding 7's protection for numerical and kernel
+  logic, stated as a routing rule rather than a refusal list.
+* **Finding 4 (filing dominates fixing) — answered by the attention books.**
+  A stewardship fix *repays* attention ("the adopter issue never filed"),
+  and the filing channel became a lightweight Cairn issue rather than a
+  board row, so the gradient this finding measured has been re-priced on
+  both sides.
+* **Findings 5 and 6 (the fence and the record)** — carried by the warrant's
+  objective conditions and the standing path-scoped, separate-commit
+  discipline.
+* **Finding 3 (the observation window) — superseded, deliberately.** The
+  refocus settled the design by bounding the warrant objectively instead of
+  measuring the candidate class first. The measurement-first ordering this
+  note recommended was overtaken, not refuted; if the warrant misbehaves in
+  practice, the discovery-time ledger design above is the instrument to
+  revive.
+* **Findings 8–9 (docs-first pilot; slot precedence) — overtaken.** The
+  subtraction sweep rewrites the templates and constitution wholesale; slot
+  precedence against a retired rule set is moot. An explicit
+  numerical-kernel refusal list in the installed contract remains available
+  if adopter experience asks for more than the science-routing rule.
+
+What this note contributed that survives: the two-context authority
+distinction, the fence-not-exhortation principle, semantic humility about
+scientific code, and two instrument-failure lessons already folded into
+`AGENTS.md`'s confirm-the-instrument discipline. Archived as integrated.
