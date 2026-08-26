@@ -84,7 +84,6 @@ _DEFAULT_ON_MODULES: tuple[str, ...] = (
     "lifecycle-metrics",
     "reflections",
     "claim-check",
-    "fold-back-ledger",
     "incident-trackers",
     "documentation-plan",
     # Measured-zero install cost, with a loud modules_remove opt-out for an
@@ -559,8 +558,7 @@ _CORE_MAPPINGS: tuple[tuple[str, str], ...] = (
     # proposals/ + plans/ (a core dir installed via its content file).
     ("core/dev/measurement/README.md",              "dev/measurement/README.md"),
     # External-dependency upstream channel (core-dev-folder-set proposal):
-    # draft issue reports for external OSS deps, distinct from the
-    # methodology fold-back ledger (dev/.cairn/cairn_foldback.md).
+    # draft issue reports for external OSS deps.
     # archive/.gitkeep is verbatim (an empty placeholder, not a template).
     ("core/dev/upstream/README.md",                 "dev/upstream/README.md"),
     ("core/dev/upstream/_template.md",              "dev/upstream/_template.md"),
@@ -810,7 +808,7 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/incident_log_template.md"),
         # The deterministic, zero-token rate-limit-gate evaluator +
         # fold-up-backlog checker (self-evolution-loop Part B). Reads the
-        # trackers + the fold-back ledger and emits suggestions only.
+        # incident trackers and emits rate-limit suggestions only.
         InstallSpec("default-on/evolution_infer.py",
                     "tools/evolution_infer.py", verbatim=True),
     ],
@@ -840,36 +838,6 @@ _MODULE_MAPPINGS: dict[str, list[InstallSpec]] = {
                     "dev/modules/documentation-plan.md"),
         InstallSpec("default-on/documentation_plan_template.md",
                     "docs/DOCUMENTATION_PLAN.md"),
-    ],
-    # The deployment-side fold-back channel (doctrine: doctrine/fold-back.md).
-    # Default-on but omittable: ships the module doctrine + the forkable
-    # ledger artifact into dev/.cairn/, the active-surfacing prompt asset
-    # into dev/modules/, the export-scrub scanner doc into dev/modules/, and
-    # the scanner itself verbatim into scripts/.  The ledger is a cross-repo
-    # export surface, so its template carries a [SECURITY WARNING] header;
-    # the scanner is the machine half of the active-surfacing protocol's
-    # two-gate export boundary (the manual half is the maintainer-signed
-    # affirmation field in the Cairn issue / PR template).
-    "fold-back-ledger": [
-        InstallSpec("default-on/fold-back-ledger.md",
-                    "dev/modules/fold-back-ledger.md"),
-        InstallSpec("default-on/fold-back-ledger-template.md",
-                    "dev/.cairn/cairn_foldback.md"),
-        # Active-surfacing additions (Chunks 4-6 of
-        # 2026-05-28-claude-cairn-foldback-active-surfacing).
-        InstallSpec("default-on/foldback_export_scan.md",
-                    "dev/modules/foldback_export_scan.md"),
-        InstallSpec("default-on/foldback_export_scan.py",
-                    "scripts/foldback_export_scan.py", verbatim=True),
-        InstallSpec("default-on/fold-back-active-prompt.md",
-                    "dev/modules/fold-back-active-prompt.md"),
-        # Optional helper (Chunk 8): lists open `candidate`-status
-        # rows from the ledger eligible for active surfacing.  Ships
-        # verbatim into adopter scripts/; invocation in the agent
-        # prompt is `python scripts/foldback_suggest.py [--ledger
-        # <path>] [--all]`.
-        InstallSpec("default-on/foldback_suggest.py",
-                    "scripts/foldback_suggest.py", verbatim=True),
     ],
     # team-gated
     "dual-review": [
@@ -1179,14 +1147,6 @@ _REFERENCE_SCRIPT_TOKEN: dict[str, str] = {
 #: non-clobber + idempotent (see :func:`seed_gitignore`).
 _GITIGNORE_SEEDS: dict[str, tuple[str, ...]] = {
     "coordination-tiers": ("dev/intents.jsonl",),
-    # Foldback active-surfacing (2026-05-28 arc): the protocol's Scrub
-    # step writes the drafted issue / PR body to a gitignored temp
-    # file pattern under `dev/.cairn/` before invoking the scanner.
-    # The draft file is intentionally never committed -- the durable
-    # record is the filed Cairn issue / PR + the ledger row's
-    # status transition.  Seeded by default so an adopter does not
-    # have to remember the pattern themselves.
-    "fold-back-ledger": ("dev/.cairn/.foldback-draft-*.md",),
     # Reflections are per-agent + ephemeral (gitignored); only the tracked
     # README.md guide survives, so the dir materializes on a fresh scaffold
     # without committing reflection content (fold-back #42).  Order matters:
