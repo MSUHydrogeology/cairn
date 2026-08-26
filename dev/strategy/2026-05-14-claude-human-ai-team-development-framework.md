@@ -45,7 +45,7 @@ not the primary artifact -- see "Cairn as a publishable artifact" below.
 Citable frameworks ground the rationale. The numbering is **canonical and
 append-only**: a new anchor takes the next integer and a new row in the index
 below, so "Anchor 10" stays unambiguous as the set grows.
-As of 2026-08-24, the index contains **20 anchors**.
+As of 2026-08-26, the index contains **21 anchors**.
 
 **Every anchor is introduced where it bites**, with its full citation at that
 point. There is no privileged tier. The first six were once set apart because
@@ -100,6 +100,7 @@ cross-cutting), and define the citation at its point of introduction.
 | **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "Framework anchors" |
 | | 6 | Scientific peer review as a process model | "What the anchors bound" > peer review, not agent debate |
 | | 15 | Research-software character taxonomy + V&V / reproducibility canon (Hasselbring 2024; Oberkampf & Roy 2010; Roache 2002; PROV-DM; Sandve 2013; Eisty & Carver 2022) | "Where Cairn is headed" > "The scientific-character dimension" |
+| | 21 | Measurement discipline — the retired instruments' inheritance (Rahman & Devanbu 2013; Nagappan & Ball 2005; Kruchten, Nord & Ozkaya 2012; Chambers 2013; Forsgren et al. 2021) | "Restraint as design center" > "What the retired instruments leave behind" |
 | **IV · Open-source sustainability & community** | 7 | Maintenance-burden thesis + project typology (Eghbal 2020) | "Where Cairn is headed" > Horizon 1 |
 | | 8 | External reuse contract (FAIR4RS; Barker et al. 2022) | Horizon 1 |
 | | 9 | Open-development playbook for scientific software (Prlić & Procter 2012) | Horizon 1 |
@@ -612,6 +613,52 @@ mechanism**: *"Keep the design as simple and small as possible… design and
 implementation errors that result in unwanted access paths will not be noticed
 during normal use."* Over-building a protection mechanism is a security failure,
 not only a cost.
+
+### What the retired instruments leave behind (Anchor 21)
+
+The two instruments named above did not die because their science was wrong;
+they died because their *maintenance* exceeded their return. Their epistemics
+are the inheritance, preserved here so retiring the machinery does not retire
+the discipline (Maintainer direction, 2026-08-26).
+
+**21. Measurement discipline.** Rahman, F., & Devanbu, P. (2013). *How, and
+Why, Process Metrics Are Better.* ICSE 2013 — history-derived metrics (churn,
+change patterns) outperform code-derived metrics and generalize better; with
+Nagappan, N., & Ball, T. (2005). *Use of Relative Code Churn Measures to
+Predict System Defect Density.* ICSE 2005 — churn normalized by size predicts,
+absolute churn does not. Kruchten, P., Nord, R. L., & Ozkaya, I. (2012).
+*Technical Debt: From Metaphor to Theory and Practice.* IEEE Software 29(6) —
+the debt metaphor is useful only when principal and interest are concrete; a
+ledger without a cost model has no stopping rule. Chambers, C. D. (2013).
+*Registered Reports: A New Publishing Initiative at Cortex.* Cortex 49(3) —
+declare hypothesis, population, and analysis before the results exist.
+Forsgren, N., et al. (2021). *The SPACE of Developer Productivity.* ACM Queue
+19(1) — productivity is multidimensional; no single number captures it.
+
+Five rules, distilled from the two retired programs
+(`2026-06-05-claude-cairn-complexity-debt-audit.md`, closed 2026-08-26;
+`2026-05-20-claude-team-productivity-metrics.md`, which hosts the Measurement
+Compact) and binding on all of Cairn's measurement — today that means the
+gauge classifier, the takeover table, and the mission metrics:
+
+1. **Measure structural events; never measure prose.** A metric scraped from
+   written text makes the text the optimization target — any metric that
+   rewards writing more is a defect to remove, not a signal to tune.
+2. **Prefer history to shape.** Git-derived process measures are the
+   better-supported instrument class; a static metric owes decorrelation from
+   raw size before it earns a place.
+3. **Declare the population and the analysis before the results exist**, state
+   limits before findings, and give INCONCLUSIVE a defined branch — a ranking
+   without a declared corpus is not reproducible, and partial exclusions
+   reshape conclusions silently.
+4. **Measure forward; never annotate the archive with the hypothesis in
+   hand.** A closed record is evidence precisely because it predates the
+   question. If a question should be answerable later, add the field that
+   answers it before it is needed, where the person who knows is already
+   writing.
+5. **No composite scores, no per-person totals, ever.** Metrics serve system
+   learning, not member ranking — the instrument that pays for *findings*
+   rather than outcomes recreates the disease it was built to watch.
 
 ### Not all weight is waste
 
