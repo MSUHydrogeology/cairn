@@ -515,11 +515,16 @@ Per chunk, and each falsifiable.
   resolves through it; `AGENTS.md`'s high-risk-surface entry names the new
   location. **Falsifier**: a bad binding (non-absolute, symlinked, non-executable,
   schema-invalid) is still rejected, from the new home.
-* **C2** — the four self-hosted documents and their shipped twins land at target
-  size. **Falsifier**: no governing document references a tool this sweep removes.
-  Known real hits to clear: `AGENTS.md:178`, `:312`, `dev/agent_collaboration.md:238`,
-  `:341`, and their twins. `templates/core/AGENTS.md:457` is a confirmed false
-  positive (generic English "onboarding") and is excluded.
+* **C2** — the four self-hosted documents and their shipped twins land at their
+  honest size (see the C2 deviation above; the `~80` target was unreachable).
+  **Falsifier**: no governing document references a tool this sweep removes.
+  **Satisfied 2026-08-26** — a grep over all six governing documents for
+  `lifecycle_planner`, `lifecycle_metrics`, `transition_lint`, `suite_cost`,
+  `onboarding_activate` and `tools/lifecycle.py` returns nothing. The hits this
+  row used to enumerate by line are gone with the rewrite that removed them, so
+  the line numbers are not restated: they would cite text that no longer
+  exists, and a citation into a rewritten file is how a stale claim survives a
+  correct change.
 * **C3** — each tool's build-table probe passes: the reporter lists a
   known-closed change; the board view lists the active artifacts; the classifier
   re-derives the takeover table.
