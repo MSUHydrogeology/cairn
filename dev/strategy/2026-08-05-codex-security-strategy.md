@@ -967,6 +967,30 @@ than no check.
   *who* regenerates and re-records, and under what review. Coverage is a
   sequencing question — whatever the anchor is at ceremony time covers whatever
   is committed then — so this does not need another plan's scope widened.
+* **[TRU-4] "Re-anchor" names two operations, one of which signs.** *(Raised
+  2026-08-27 by the Maintainer, while naming a new tool: "Isn't this an
+  automated re-anchor?" -- it is, in the repository's own usage, and that is the
+  problem.)* The word appears **700+ times** across the tree covering two acts
+  that are not the same:
+
+  * **Rewriting a pinned fixture** -- the AST attestation baseline, the gate
+    manifest, the install lockfile. Moves no ref, holds no key, produces no
+    signature. `AGENTS.md` calls this a *"Maintainer-run, dry-run-verified
+    direct correction"* when it exceeds the self-service allowlist.
+  * **Moving `refs/cairn/gate-anchor`** -- the two-stage ceremony in
+    `bootstrap/reanchor.sh`, which loads a dedicated signing key and advances
+    branch and anchor in one transaction.
+
+  Both are called re-anchoring, including in the same runbook. **The hazard is
+  reach-for-the-wrong-one**: a tool named for the shared word sits one letter
+  from the ceremony that signs, and the operator who has done the harmless kind
+  three times has no linguistic cue that the fourth is different. The
+  `correct_pinned_digests.py` runner is named away from the collision for
+  exactly this reason, which is a mitigation for one file and not a fix for the
+  vocabulary. *Trigger:* the next document or tool that would use the bare word
+  for the fixture sense -- at which point the two senses want distinct names,
+  and the ceremony should keep "re-anchor" because it is the one where being
+  wrong costs a trust root.
 * **[TRU-4] Differential-oracle two-stage `promote`.** A dormant future-use
   mechanism for a Cairn-engine refactor needing behaviour-preservation
   promotion; trust root established, nothing pending. See

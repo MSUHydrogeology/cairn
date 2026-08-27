@@ -19,13 +19,13 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
-TOOL = REPO / 'scripts' / 'supervised_correction.py'
+TOOL = REPO / 'scripts' / 'correct_pinned_digests.py'
 
 
 def _load():
-    spec = importlib.util.spec_from_file_location('cairn_supervised', TOOL)
+    spec = importlib.util.spec_from_file_location('cairn_correct_pinned_digests', TOOL)
     mod = importlib.util.module_from_spec(spec)
-    sys.modules['cairn_supervised'] = mod
+    sys.modules['cairn_correct_pinned_digests'] = mod
     spec.loader.exec_module(mod)
     return mod
 
