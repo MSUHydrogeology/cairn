@@ -1016,8 +1016,8 @@ than no check.
   a `## Review` counted as independent of the author. **Measured 2026-08-27:
   `IdentityModel` has zero hits outside the deliberation record; so does
   `independent_review`; the only remaining reference to `human_maintainers` is
-  in `CHANGELOG.md`; and `dev/.cairn/agent-identities.json` is a two-line file
-  no code reads.** The sweep removed the classifier along with the lifecycle
+  in `CHANGELOG.md`; and the identity roster under `dev/.cairn/` was a two-line
+  file no code read.** The sweep removed the classifier along with the lifecycle
   machinery that hosted it.
 
   **What that changes, stated plainly.** Reviewer independence is one half of
@@ -1041,12 +1041,31 @@ than no check.
   meant a real surname classified as `ai` with no roster escape; a genuine
   hazard, now moot, and recorded here so it is not rediscovered as new.
 
-  *Decision, not a trigger:* the Maintainer decides whether mechanical
-  independence checking returns. If it does, it returns as a **reviewer**-identity
-  contract, which is the thing that never existed — the only human list Cairn has
-  confers Decision authority, and reusing it would couple two authorities to buy
-  one check. If it does not, `dev/.cairn/agent-identities.json` should be deleted
-  rather than left as configuration nothing consults.
+  **DECIDED 2026-08-27 — doctrinal-only independence, and the reason
+  generalizes.** The Maintainer's authorization, verbatim:
+
+  > "I am okay with doctrinal-only independence. Mechanical checks on process
+  > create major headaches. Mechanical checks on formatting, correctness,
+  > security, etc. are beneficial."
+
+  So reviewer independence stays doctrine: `AGENTS.md` states the floors, and the
+  attribution *is* the record's integrity. **No mechanical successor is owed**,
+  and this row is closed rather than parked behind a trigger. The identity roster under
+  `dev/.cairn/` was deleted in the same commit — nothing read
+  it, and configuration nothing consults is a claim of coverage that does not
+  exist. **If a future change wants mechanical independence back it needs a
+  reviewer-identity contract, which never existed**: the only human list Cairn
+  has confers Decision authority, and reusing it would couple two authorities to
+  buy one check.
+
+  **The general rule this settles**, recorded because it governs more than this
+  row: *mechanical checks earn their place on **formatting, correctness and
+  security**, and lose it on **process**.* A process check is a claim about
+  whether people followed a procedure, which drifts, self-judges, and gets
+  routed around — the failure this sweep spent 60,000 lines removing. A
+  correctness check is a claim about bytes, which either holds or does not. When
+  deciding whether a proposed gate is worth building, ask which of the two it is
+  before asking how well it would work.
 * **[REC] A second clearing review manufactures a competing authority pair.**
   *(Filed 2026-08-19 from `ceremony-as-code`'s M2; folded 2026-08-27 from
   `dev/PLANNING.md`'s Queued block.)* The M2 row says *"the **reviewer** produces

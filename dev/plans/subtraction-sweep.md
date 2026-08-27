@@ -2,7 +2,7 @@
      directive below resolved when this plan was written, and stops resolving
      as the chunk that removes it lands. The citation IS the record of what
      went, so it stays and the checker is told why. -->
-<!-- claim-check-allow: bootstrap/tests/test_byline_identity.py, bootstrap/tests/test_doctrine_vocabulary_drift.py, bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, bootstrap/tests/test_lifecycle_failsafe.py, bootstrap/tests/test_lifecycle_metrics_config.py, bootstrap/tests/test_lifecycle_metrics_events.py, bootstrap/tests/test_lifecycle_stage_patterns.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_metrics_status_normalization.py, bootstrap/tests/test_pilot_evidence.py, bootstrap/tests/test_suite_ledger.py, bootstrap/tests/test_transition_lint.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, scripts/foldback_export_scan.py, scripts/foldback_suggest.py, scripts/transition_lint.py, scripts/transition_lint_whitelist.py, templates/modules/default-on/_lifecycle_metrics/parse.py, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle.py, tools/_lifecycle_metrics/, tools/lifecycle.py, tools/lifecycle_metrics.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
+<!-- claim-check-allow: bootstrap/tests/test_byline_identity.py, bootstrap/tests/test_doctrine_vocabulary_drift.py, bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, bootstrap/tests/test_lifecycle_failsafe.py, bootstrap/tests/test_lifecycle_metrics_config.py, bootstrap/tests/test_lifecycle_metrics_events.py, bootstrap/tests/test_lifecycle_stage_patterns.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_metrics_status_normalization.py, bootstrap/tests/test_pilot_evidence.py, bootstrap/tests/test_suite_ledger.py, bootstrap/tests/test_transition_lint.py, dev/.cairn/agent-identities.json, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, scripts/foldback_export_scan.py, scripts/foldback_suggest.py, scripts/transition_lint.py, scripts/transition_lint_whitelist.py, templates/modules/default-on/_lifecycle_metrics/parse.py, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle.py, tools/_lifecycle_metrics/, tools/lifecycle.py, tools/lifecycle_metrics.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
@@ -628,12 +628,13 @@ subject and a stale figure is the thing this plan keeps getting wrong:
   `PYTHONDONTWRITEBYTECODE`: still red, still green under the suppressor,
   unchanged by the sweep. The row's own sharper diagnosis holds.
 
-**One orphan the pass surfaced, filed rather than fixed.**
-`dev/.cairn/agent-identities.json` is still on disk and **nothing reads it** --
-C6 removed its only consumer. It is untracked machine state, so nothing reddens;
-it is noted here because a config file no code reads is exactly the kind of
-residue a bankruptcy pass exists to find, and deleting a file in the machine-
-state directory is not this plan's scope.
+**One orphan the pass surfaced, and the Maintainer closed.** The identity
+roster was still on disk with **nothing reading it** -- C6 removed its only
+consumer. It was *tracked*, not machine state, and covered by no lockfile
+record, manifest entry or test, so nothing reddened. Deleted 2026-08-27 under
+the Decision recorded in the strategy's [REC-1] entry, which also settles the
+wider question the pass raised: reviewer independence stays doctrinal, and no
+mechanical successor is owed.
 
 **Two rows carry a Maintainer disposition and were preserved verbatim rather
 than summarized**: SC4's *"SC4 - fold in"* and the detached-checkout guard's
