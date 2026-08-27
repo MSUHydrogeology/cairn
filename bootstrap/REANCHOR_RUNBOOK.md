@@ -1,4 +1,8 @@
-<!-- ^ Maintainer-supplied trust-root configs, absent unless the supervised re-anchor flow creates them. -->
+<!-- `dev/.cairn/trusted-activation.yml` and `dev/.cairn/promotion-authorization.yml`
+     are Maintainer-supplied trust-root configs, absent unless the supervised
+     re-anchor flow creates them.  Their claim-check exemption moved to
+     dev/.cairn/claim-check-allow.json on 2026-08-27; this note names them so a
+     reader still learns why the paths do not resolve. -->
 
 # Supervised re-anchor runbook (differential-oracle gate)
 

@@ -1167,6 +1167,47 @@ than no check.
 
 ### [REL] Release evidence, disclosure, ceremonies
 
+* **[REL-1] The ceremony's human authorization is not being delivered, and the
+  Maintainer says so.** *(Raised by the Maintainer 2026-08-27, mid-ceremony,
+  verbatim: "this whole ceremony thing is really just me doing what you tell me
+  to do. It's a mess, and I've asked for it to be fully scripted multiple times
+  but that hasn't been delivered. I'm happy to compare two different sets of
+  checksums or something, but I don't have the qualifications or time to do
+  anything more.")*
+
+  **This is a security finding, not a usability complaint.** The two-stage
+  re-anchor rests on one claim: that a human who *understands the state*
+  authorizes the trust root to move. `REANCHOR_RUNBOOK.md` says the report step
+  is *"the only step at which you exercise judgement rather than checking
+  arithmetic"*, and it forbids the implementer blessing its own verifier. If the
+  agent composes the instructions and the Maintainer executes them, **the agent
+  is blessing its own verifier through a human relay** — the forbidden shape,
+  reached by a route the runbook does not describe. The control reads as
+  satisfied and is not.
+
+  **The evidence is this session.** Over one day the Maintainer ran three
+  supervised corrections — the gate manifest, the AST baseline, the lockfile —
+  each from a one-off script an agent wrote, dry-ran, and then discarded. The
+  same two scripts have now been written from scratch **three times each**
+  (`c3d5bd9`, `77d2b3b`, and today). Nothing accumulates. The Maintainer does not
+  end up with a tool; they end up with a standing dependency on whichever agent
+  is in the room, which is the opposite of what a trust ceremony should build.
+
+  **The stated constraint is the design input, and it is reasonable:** *compare
+  two sets of checksums*. That is a real authorization act — it is what signature
+  verification reduces to for every operator on earth — and it is within reach
+  without a security qualification. Everything above it in the current ceremony
+  is either mechanizable or is asking the operator to audit work they are not
+  positioned to audit.
+
+  **Two honest dispositions, and the third is not available.** Either (a) drive
+  the human step down to what the Maintainer can genuinely do — the ceremony
+  computes and presents two digests, the operator compares them and says yes or
+  no — with everything else committed as tested tooling rather than scratchpad
+  scripts; or (b) state plainly in the doctrine that the ceremony's human leg is
+  a formality and stop claiming operator judgement as a control. **What is not
+  available is continuing to run it as-is while describing it as (a).**
+  *Trigger:* fires now; the gate-anchor move is paused on it.
 * **[REL-3] Supervised re-anchor debt — one ceremony ledger, re-derived at the
   ceremony.** Four recorded contributors, none authorized as a standalone
   re-pin. (SC4) `bootstrap/security_check.py`,
