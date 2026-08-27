@@ -1,9 +1,7 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The test module is a forward reference registered under `Proposed paths`; the
      marker exempts only its own contiguous block, and the file table rows cite it
      many sections later, so it needs the file-scoped directive too.  Drop this
      directive once the path lands (Chunk A), per the marker discipline. -->
-<!-- claim-check-allow: bootstrap/tests/test_verify_ref.py -->
 
 # Plan: release authenticity — a public trust root before v0.4.0 mints a DOI
 

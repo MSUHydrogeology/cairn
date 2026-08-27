@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/lifecycle-contract.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/.cairn/pilot-state.json, tools/__init__.py -->
 <!-- Both paths above are PERMANENT exemptions, not forward references, and
      neither is expressible as a typed declaration -- which is why H2's
      metadata migration kept them while retiring the rest.

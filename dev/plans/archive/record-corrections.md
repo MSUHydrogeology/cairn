@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/proposals.md doctrine/lifecycle.md doctrine/rationale.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/strategy/2026-07-11-claude-cairn-adoption-record.md, dev/measurement/attestation-replay-failures.md -->
 <!-- The two paths above are forward-reference files this plan creates; they materialize as Chunks B and D land. -->
 <!-- claim-marker maintenance 2026-07-22: the plan-review section's own "Grounding" line self-cites
      `dev/plans/record-corrections.md:161` -- ACCURATE when written (this file's own pre-archive path).
@@ -7,7 +5,6 @@
      Retained unedited (append-only, reviewer prose); path marked so the checker clears. Fourth occurrence
      this session of the same shape (see the ast-known-new-repin, first-session-survivability, and
      transition-lint proposals' own marker notes). -->
-<!-- claim-check-allow: dev/plans/record-corrections.md* -->
 
 # Plan: record corrections (C1, C2, C3, OQ3 tracker)
 

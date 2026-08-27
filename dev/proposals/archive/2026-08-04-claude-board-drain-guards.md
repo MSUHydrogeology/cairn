@@ -880,7 +880,6 @@ leaves, so no forwarding entry is owed; the allowlist edit is out of scope).
 
 ### The reviewer's bonus finding becomes the proposal
 
-<!-- claim-check-allow: bootstrap/tests/test_security_lint.py::test_thing -->
 
 **The directive immediately above is the defect demonstrating itself.** The
 token cited below is the `guard` citation form `doctrine/lifecycle.md` mandates,

@@ -1,6 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/proposals.md doctrine/lifecycle.md doctrine/rationale.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create (the adoption record) or that materialize in its implementing plan / archive move. -->
-<!-- claim-check-allow: dev/strategy/2026-07-11-claude-cairn-adoption-record.md, dev/plans/record-corrections.md, dev/proposals/archive/2026-07-11-claude-record-corrections.md -->
 
 # Record corrections: the v0.3.0 attestation erratum, the missing adoption-decision record, and the zero-rejections gating-function caveat
 

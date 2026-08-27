@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/plans.md doctrine/proposals.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The helper below was WITHDRAWN at R1: the memo is local to
      `bootstrap/tests/test_transition_lint.py` and no shared helper file
      materializes, so this path never exists.  R7 scheduled this directive to
@@ -10,7 +9,6 @@
      not sit in a forward-reference registry -- and this directive is retained
      with its justification corrected: it now exempts *historical* prose in an
      append-only record, not a forward reference. -->
-<!-- claim-check-allow: bootstrap/tests/_immutable_git.py -->
 
 # The suite's expensive head re-derives constants
 

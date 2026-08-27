@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: ../../docs/DOCUMENTATION_PLAN.md, ../../bootstrap/tests/test_skills_security.py, ../../bootstrap/tests/test_lifecycle_cli.py, ../../bootstrap/tests/test_notice_install.py, ../PLANNING.md, dev/plans/agent-context-scrub.md -->
 
 # Plan: escape what the orientation stream relays
 

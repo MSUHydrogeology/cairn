@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/runtime-contract.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/modules/portable-security-sweeps.md, scripts/run_portable_security_sweeps.py, scripts/portable_security_policy.json, bootstrap/tests/test_portable_security_sweeps.py -->
 
 # Portable security sweeps for non-Python and polyglot adopters
 

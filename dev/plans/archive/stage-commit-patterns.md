@@ -1,12 +1,9 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/proposals.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- One deliberate forward reference: bootstrap/tests/test_lifecycle_stage_patterns.py is the
-<!-- claim-check-allow: dev/proposals/2026-07-22-claude-stage-commit-patterns.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
 
      behavioural test this plan creates in Chunk A. It is registered under `Proposed paths:`
      below and named repeatedly outside that block, so it is exempted here as well. -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_stage_patterns.py -->
 <!-- claim-marker maintenance 2026-08-04: `dev/plans:` below is a COMMIT-SUBJECT PREFIX
      LITERAL -- the area prefix in Cairn's subject grammar, which is exactly the token this
      plan's repaired reader must DECLINE to classify -- not a path reference. The real
@@ -17,7 +14,6 @@
 <!-- One further deliberate forward reference: `scripts/transition_lint.py` is the SIBLING
      proposal's proposed path, cited here once inside the scope fence solely to record that
      this plan does not build it. -->
-<!-- claim-check-allow: dev/plans:, dev/proposals:, scripts/transition_lint.py -->
 
 # Plan: the shipped lifecycle-stage commit vocabulary reads nothing — repair the reader
 

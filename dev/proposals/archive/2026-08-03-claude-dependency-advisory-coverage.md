@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/runtime-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: scripts/run_security_audit.py -->
 <!-- ^ ADOPTER-TREE DESTINATION path -- where the orchestrator lands in an installed
      target. It does not resolve in Cairn's source tree; the source of truth is
      templates/modules/team-gated/run_security_audit.py. Same directive and reason as

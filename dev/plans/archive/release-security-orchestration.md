@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/proposals/2026-08-05-claude-content-scan-url-classification.md, dev/plans/release-security-orchestration.md -->
 <!-- ^ The source proposal moved to dev/proposals/archive/ when its plan opened;
      that citation and the former live plan path occur in append-only review
      records, so archive preserves rather than rewrites them. -->

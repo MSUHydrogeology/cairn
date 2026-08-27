@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/runtime-contract.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Two YAML parsers, chosen by accident — the profile loader behaves differently depending on what happens to be installed
 

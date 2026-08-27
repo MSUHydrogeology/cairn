@@ -7,12 +7,8 @@
      another agent's review prose) and the path is marked below so the checker clears. Surfaced, not silenced.
      Note: this is the breakage `AGENTS.md`'s shared-communication-file rule avoids by referring to plans by
      filename stem rather than path link -- a protection proposals do not currently have. -->
-<!-- claim-check-allow: dev/plans/adopter-licensing-compliance.md* -->
 <!-- The paths below appear inside the appended Internal review: illustrative/deliberately-absent example paths, adopter-tree install destinations quoted from a manifest row, and multi-part line citations on real files. Marked, not edited -- reviewer prose is append-only. -->
-<!-- claim-check-allow: dev/plans/a-thing.md*, docs/tool-usage.md* -->
-<!-- cairn-internal-ref-allow: doctrine/lifecycle.md doctrine/proposals.md doctrine/rationale.md doctrine/coordination.md doctrine/consolidation-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create; they materialize in the implementing plan. -->
-<!-- claim-check-allow: scripts/transition_lint.py, scripts/transition_lint_whitelist.py, bootstrap/tests/test_transition_lint.py, dev/plans/transition-lint.md -->
 <!-- claim-marker maintenance 2026-07-22: the citations to `dev/proposals/2026-07-11-claude-record-corrections.md:248`
      below (Grounding lines quoting its "Open questions" vocabulary) were ACCURATE when written -- that proposal
      was accepted and still at `dev/proposals/`. A concurrent agent then opened its plan (this same implementing
@@ -21,7 +17,6 @@
      The citations are retained unedited (append-only) and the path marked so the checker clears. Surfaced, not
      silenced -- THIRD occurrence this session of the same shape (see this file's own marker note above, and the
      ast-known-new-repin / first-session-survivability proposals' marker notes). -->
-<!-- claim-check-allow: dev/proposals/2026-07-11-claude-record-corrections.md* -->
 
 # The transition-lint: an advisory check that a commit's message matches its lifecycle diff
 

@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/proposals.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: bootstrap/tests/test_fork_advisory.py -->
 <!-- ^ The forward-reference test file this proposal would create; declared under "Proposed paths" below and cited again in the Tests section. -->
 
 # Fork advisory semantics — the comparison bytes come from the caller, never from the tree being checked

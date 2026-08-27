@@ -1,4 +1,3 @@
-<!-- claim-check-allow: tools/verify.py -->
 <!-- `tools/verify.py` was a Proposed path through Revisions 1-2 and is
      WITHDRAWN at Revision 3: the mechanism moved into the suite and no reader
      is built, so the file will never exist. Its 25 remaining occurrences are

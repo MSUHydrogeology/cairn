@@ -1,11 +1,9 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- cairn-accept: instruction-html-comment reason="The comment below is an explanatory note to human readers and to the claim checker about two deliberately non-resolving probe paths; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-03 -->
 <!-- Two paths below are DELIBERATELY non-resolving: they are the throwaway
      probe files the Chunk C perturbations create and delete (`templates/optional/rogue.py`
      inside a tmp_path tree, `templates/_probe.py` transiently in the working tree).
      Neither is ever committed, so neither will ever resolve -- they are not
      forward references and must not be registered under `Proposed paths:`. -->
-<!-- claim-check-allow: templates/optional/rogue.py, templates/_probe.py -->
 
 # Plan: the release scan reaches every shipped Python file — and its guard can fail
 

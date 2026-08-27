@@ -1,8 +1,6 @@
-<!-- cairn-internal-ref-allow: doctrine/consolidation-review.md doctrine/rationale.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The two paths below are illustrative pytest fixture files written into a `tmp_path`
      sandbox by the proposed tests (the fixture shape the shipped `TestR6UnusedDef` class
      already uses); they are deliberately absent from this repository and always will be. -->
-<!-- claim-check-allow: scripts/x.py, scripts/__init__.py -->
 
 # R6's unused-def detector is blind to `from X import Y`, so 11 of its 13 current alarms are false — and one of them says to delete the installer's security boundary
 

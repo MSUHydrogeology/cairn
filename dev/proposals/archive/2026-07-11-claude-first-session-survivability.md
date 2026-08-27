@@ -1,6 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/session-routines.md doctrine/runtime-contract.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create; they materialize in the implementing plan. -->
-<!-- claim-check-allow: bootstrap/tests/test_first_session_report.py, bootstrap/tests/test_onboarding_seed_roster.py -->
 
 # First-session survivability: make the day-one install report honest, degrade gracefully on a stale interpreter, and gate onboarding seeds by the resolved roster
 

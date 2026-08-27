@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/rationale.md doctrine/runtime-contract.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- cairn-accept: instruction-html-comment reason="The comment below explains to human readers and to the claim checker which cited paths are forward references this plan creates and which are deliberately non-resolving; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-04 -->
 <!-- Three classes of cited path do not resolve today, and the allow directive
      below covers all three.  (a) FORWARD REFERENCES this plan creates -- the
@@ -11,7 +10,6 @@
      (c) `templates/_probe.py`, the throwaway file `scan-coverage`'s own
      perturbation created and deleted; it was never committed and never will
      resolve, so it is a historical citation rather than a forward reference. -->
-<!-- claim-check-allow: templates/modules/team-gated/portable-security-sweeps.md, templates/modules/team-gated/run_portable_security_sweeps.py, templates/modules/team-gated/portable_security_policy.json, dev/modules/portable-security-sweeps.md, scripts/run_portable_security_sweeps.py, scripts/portable_security_policy.json, bootstrap/tests/test_portable_security_sweeps.py, dev/measurement/gitleaks-version-support.md, scripts/run_security_audit.py, templates/_probe.py -->
 
 # Plan: one measured offline sweep, and the apparatus that keeps it measured
 

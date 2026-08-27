@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Plan: the review-before-implement gate checks the review, not its presence
 
@@ -71,7 +70,6 @@ the symbols are what an implementer greps for.
 * `bootstrap/tests/test_lifecycle_contract.py` — the new nodes.
 * `scripts/gen_legacy_passes.py` — **new file**, the legacy-manifest generator
   required by S9(c). Does not exist yet; it is a Chunk C deliverable.
-  <!-- claim-check-allow: scripts/gen_legacy_passes.py -->
 * `bootstrap/UPGRADE.md` — the adopter-facing disclosure home (D.1). Exists
   today (18,170 bytes `as_of 2026-08-05` at `ec57bf0`), with a
   `## Migrating a tree installed before upgrade support` section at `:170` as
@@ -915,7 +913,6 @@ that is itself reported below.
 (2026-08-04) → **71** at `da1de65` (2026-08-05). Within *this session* it moved
 again — between two of my own runs, bare containers went 4 → 5 and the loose
 count 70 → 71 as `dev/plans/board-drain-guards.md` opened, and HEAD advanced
-<!-- claim-check-allow: dev/plans/board-drain-guards.md -->
 <!-- Archived 2026-08-05 to dev/plans/archive/. A historical citation inside an
      append-only review section: it was true when written, and rewriting a prior
      section to chase a file move is what the cite-by-stem convention exists to

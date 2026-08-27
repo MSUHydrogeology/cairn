@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: ../proposals/2026-08-03-claude-planner-line-semantics.md, ../proposals/2026-08-03-claude-separator-detection.md, ../proposals/archive/2026-08-03-claude-separator-detection.md, ../../docs/DOCUMENTATION_PLAN.md, ../../bootstrap/tests/test_lifecycle_contract.py, ../../bootstrap/tests/test_lifecycle_cli.py, ../../bootstrap/tests/test_notice_install.py, ../PLANNING.md, dev/plans/planner-line-semantics.md, dev/plans/agent-context-scrub.md, dev/proposals/2026-08-03-claude-separator-detection.md, dev/proposals/2026-08-04-claude-review-gate-enforcement.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
 

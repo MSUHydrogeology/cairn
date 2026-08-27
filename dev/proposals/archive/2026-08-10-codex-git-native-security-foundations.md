@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/proposals.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 # Git-native security foundations: signed checkpoints, object validation, and durable trust refs
 
 **Author**: Codex (Strategy / Security)

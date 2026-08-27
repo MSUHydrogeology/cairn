@@ -1,9 +1,7 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The new test module is a forward reference registered under `Proposed paths`; the
      marker exempts only its own contiguous block, and the chunk tables cite it many
      sections later, so it needs the file-scoped directive too.  Drop this directive
      once the path lands (Chunk A), per the marker discipline. -->
-<!-- claim-check-allow: bootstrap/tests/test_fork_advisory.py -->
 <!-- This plan's own pre-move path. It is cited in prose inside the 2026-08-04
      code review, an append-only section authored by the reviewer, and inside a
      quoted command transcript recording what was actually typed at the time.
@@ -11,7 +9,6 @@
      a transcript, so the path is exempted rather than rewritten -- the same
      disposition security-preflight-checklist records for its archived-source
      citations. -->
-<!-- claim-check-allow: dev/plans/fork-advisory-semantics.md -->
 
 # Plan: fork advisory semantics — the comparison bytes come from the caller, never from the tree being checked
 

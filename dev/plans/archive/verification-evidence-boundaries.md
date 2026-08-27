@@ -1,6 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Historical sections cite the former live plan path after archive. -->
-<!-- claim-check-allow: dev/proposals/archive/2026-08-05-codex-verification-boundaries.md, bootstrap/tests/test_verification_boundaries.py, dev/plans/verification-evidence-boundaries.md -->
 
 # Plan: run the full suite once, at the boundary
 

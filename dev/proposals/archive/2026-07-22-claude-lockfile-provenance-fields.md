@@ -1,8 +1,5 @@
 <!-- The paths below appear inside the appended Internal review: illustrative/deliberately-absent example paths, adopter-tree install destinations quoted from a manifest row, and multi-part line citations on real files. Marked, not edited -- reviewer prose is append-only. -->
-<!-- claim-check-allow: scripts/run_security_audit.py*, dev/plans/adopter-licensing-compliance.md* -->
 <!-- The path below is a forward-reference test file this proposal would create; it materializes in the implementing plan. -->
-<!-- claim-check-allow: bootstrap/tests/test_lockfile_provenance.py -->
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/runtime-contract.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Lockfile provenance fields: make the install receipt say where it came from and under what licenses — without bumping the schema
 

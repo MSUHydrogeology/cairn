@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/proposals/2026-08-03-claude-content-scan-detectors.md, dev/proposals/2026-08-03-claude-default-security-stance.md, dev/proposals/2026-08-03-codex-api-web-security-modules.md, dev/proposals/2026-08-03-claude-identity-not-name.md, dev/plans/default-security-stance.md, dev/plans/content-scan-detectors.md, dev/plans/separator-detection.md -->
 <!-- ^ Source/sibling proposals and the default-security plan are archived.
      These citations sit in
      append-only sections, so the path is exempted rather than rewritten.

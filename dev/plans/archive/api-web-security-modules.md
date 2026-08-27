@@ -1,11 +1,6 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/coordination.md doctrine/rationale.md doctrine/runtime-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: templates/modules/team-gated/api-access-security.md, templates/modules/team-gated/api_access_security.py, templates/modules/team-gated/api_access_policy_stub.json, templates/modules/team-gated/web-hosting-security.md, templates/modules/team-gated/web_hosting_security.py, templates/modules/team-gated/web_hosting_policy_stub.json, templates/modules/team-gated/_security_net/__init__.py, templates/modules/team-gated/_security_net/policy.py, templates/modules/team-gated/_security_net/net.py, templates/modules/team-gated/_security_net/report.py, templates/modules/default-on/security-verification.md, templates/modules/default-on/run_security_verification.py, dev/modules/api-access-security.md, dev/modules/web-hosting-security.md, dev/modules/security-verification.md, scripts/api_access_security.py, scripts/web_hosting_security.py, scripts/run_security_verification.py, scripts/_api_access_security/net.py, scripts/_web_hosting_security/net.py, dev/.cairn/api-access-policy.json, dev/.cairn/web-hosting-policy.json, bootstrap/tests/test_security_net.py, bootstrap/tests/test_api_access_security.py, bootstrap/tests/test_web_hosting_security.py, bootstrap/tests/test_security_capability_install.py, bootstrap/tests/test_security_finding_confidentiality.py, bootstrap/tests/test_security_verification.py -->
-<!-- claim-check-allow: dev/plans/review-gate-enforcement.md, dev/plans/scan-coverage.md -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
-<!-- claim-check-allow: dev/proposals/2026-08-03-codex-security-verification-activation.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
-<!-- claim-check-allow: dev/plans/corpus-tier-cost.md -->
 <!-- ^ Archived 2026-08-11; the plan moved to dev/plans/archive/.  Cited once,
      at :3768, inside this plan's own append-only "Implementation verification
      -- Chunks H and D" record, which names it among the other sessions' live
@@ -14,14 +9,12 @@
      since rewriting a prior section to chase a later move is exactly what the
      append-only rule forbids.  Added by the corpus-tier-cost archive commit,
      which caused the move -- no content of this plan was edited. -->
-<!-- claim-check-allow: dev/plans/security-verification-activation.md, dev/plans/api-web-security-modules.md -->
 <!-- ^ Archived 2026-08-11; reciprocal plans moved to dev/plans/archive/. Cited in append-only sections. -->
 
      historical citations in append-only or logged content, so the path is
      exempted rather than rewritten -- editing a prior section to chase a
      file move is what AGENTS.md's cite-by-stem convention exists to avoid. -->
 
-<!-- link-check-allow: ../../bootstrap/tests/test_security_net.py, ../../bootstrap/tests/test_api_access_security.py, ../../bootstrap/tests/test_web_hosting_security.py, ../../bootstrap/tests/test_security_capability_install.py, ../../bootstrap/tests/test_security_finding_confidentiality.py -->
 
 # Plan: two selectable network-security capabilities, and the evidence that their clients are safe
 

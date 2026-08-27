@@ -1,12 +1,9 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/lifecycle.md doctrine/session-routines.md doctrine/onboarding.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: bootstrap/tests/test_first_session_report.py, bootstrap/tests/test_onboarding_seed_roster.py -->
 <!-- The two paths above are forward-reference files this plan creates; they materialize as the chunks land. -->
 <!-- claim-marker maintenance 2026-07-22: the plan-review section's own "Grounding" line self-cites
      `dev/plans/first-session-survivability.md` -- ACCURATE when written (this file's own pre-archive
      path). Archiving this same plan (git mv to dev/plans/archive/, this commit) breaks that self-citation.
      Retained unedited (append-only, reviewer prose); path marked so the checker clears. Same shape as the
      interpreter-trust-root-fallback and transition-lint proposals' own marker notes this session. -->
-<!-- claim-check-allow: dev/plans/first-session-survivability.md* -->
 
 # Plan: first-session survivability (F1, F3, F4)
 

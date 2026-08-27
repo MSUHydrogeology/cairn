@@ -1,9 +1,7 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Two non-resolving paths remain after archive. `scripts/run_security_audit.py`
      is an adopter-tree destination Cairn deliberately does not install; the
      live plan path is cited by append-only historical sections and ceased to
      resolve when this file moved to archive. -->
-<!-- claim-check-allow: scripts/run_security_audit.py, dev/plans/default-security-stance.md -->
 
 # Plan: the default install carries the content scanner, and the Python gate follows its token
 

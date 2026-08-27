@@ -1,9 +1,5 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- cairn-accept: instruction-html-comment reason="The comment below explains to human readers and to the claim checker why three adopter-tree destination paths are deliberately non-resolving; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-04 -->
-<!-- claim-check-allow: dev/plans/review-gate-enforcement.md, dev/plans/scan-coverage.md, dev/plans/gate-claims-vs-enforcement.md, dev/plans/default-security-stance.md, dev/plans/planner-line-semantics.md, dev/plans/agent-context-scrub.md -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
-<!-- claim-check-allow: dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md -->
-<!-- claim-check-allow: dev/plans/release-security-bar.md -->
 <!-- ^ This plan's own PRE-MOVE path, archived 2026-08-10. It is cited 25 times:
      inside Chunk-RUN evidence cells (which the H2 surface-list derivation parses
      by regex, so rewriting them would silently change the derived surface set),
@@ -11,7 +7,6 @@
      Both are append-only evidence, so the path is exempted rather than
      rewritten -- the same disposition security-preflight-checklist and
      fork-advisory-semantics record for their own archive moves. -->
-<!-- cairn-internal-ref-allow: dev/plans/release-security-bar.md reason=own pre-move path, exempted above -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
 
@@ -33,7 +28,6 @@
      is cited above) and never the high-rigor-legacy sibling.  The source,
      `templates/onboarding/high-rigor-legacy.md`, resolves and is cited
      throughout. -->
-<!-- claim-check-allow: scripts/content_scan.py, scripts/run_security_audit.py, dev/modules/content-security.md, dev/modules/onboarding/high-rigor-legacy.md -->
 
 # Plan: the v0.4.0 release security bar — the register, the deciders, and an audit that terminates
 

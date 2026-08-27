@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Adopter-entry doc-refresh + a drift-gate so the docs can't silently lag the scaffold
 

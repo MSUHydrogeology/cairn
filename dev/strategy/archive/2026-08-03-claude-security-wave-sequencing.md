@@ -1,4 +1,3 @@
-<!-- claim-check-allow: scripts/transition_lint.py -->
 <!-- ^ A forward reference: the accepted `transition-lint` proposal CREATES this
      file, so it cannot resolve until that scope lands. Named here because the
      fact that it is new is exactly why that scope collides with nothing. -->

@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md doctrine/proposals.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Committer independence for automated reviews: a disclosed-scribe carve-out for the Internal tier, ironclad committer for the External tier
 

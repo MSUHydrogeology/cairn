@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Bind to identities, not names — the same correction, on three shipped surfaces
 

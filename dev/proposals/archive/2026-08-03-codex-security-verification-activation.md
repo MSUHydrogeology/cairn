@@ -1,4 +1,3 @@
-<!-- claim-check-allow: templates/modules/default-on/security-verification.md, templates/modules/default-on/run_security_verification.py, dev/modules/security-verification.md, scripts/run_security_verification.py, bootstrap/tests/test_security_verification.py -->
 
 # Local security-verification activation
 

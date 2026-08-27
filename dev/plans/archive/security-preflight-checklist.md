@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/plans.md doctrine/rationale.md doctrine/lifecycle.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/proposals/2026-08-03-claude-security-preflight-checklist.md -->
 <!-- ^ Source/sibling proposals archived 2026-08-04. These citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->
 

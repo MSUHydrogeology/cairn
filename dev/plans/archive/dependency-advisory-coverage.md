@@ -1,8 +1,5 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/plans.md doctrine/dual-review.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: scripts/run_security_audit.py -->
 <!-- ^ ADOPTER-TREE DESTINATION path -- where the orchestrator lands in an installed
 <!-- Historical sections cite the former live plan path and its live-board link. -->
-<!-- claim-check-allow: dev/proposals/2026-08-03-claude-dependency-advisory-coverage.md, dev/plans/default-security-stance.md, dev/plans/dependency-advisory-coverage.md, ../PLANNING.md -->
 <!-- ^ The source proposal and cited default-security plan are archived. These
      citations sit in
      append-only sections, so the path is exempted rather than rewritten. -->

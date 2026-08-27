@@ -1,6 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create; they materialize in the implementing plan. -->
-<!-- claim-check-allow: scripts/transition_lint.py, bootstrap/tests/test_transition_lint.py, bootstrap/tests/test_onboarding_review_tiers.py, dev/measurement/review-floor-deviations.md -->
 
 # Review-record integrity: fix the mislabeled-independence onboarding, record the showcase-arc provenance, and guard lifecycle transitions
 

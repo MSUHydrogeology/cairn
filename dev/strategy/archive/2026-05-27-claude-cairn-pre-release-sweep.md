@@ -1,6 +1,4 @@
 <!-- Migrated 2026-06-12 from modflow_tools dev/strategy/ (Cairn's development home before self-hosting). Authored from modflow_tools' vantage; some path cites and "current state" reflect that origin and are being adapted to Cairn. Preserved as Cairn's living deliberation record -- see dev/strategy/MIGRATION.md. -->
-<!-- claim-check-allow: dev/strategy/archive/2026-05-22-claude-cairn-security-review.md, doctrine/… -->
-<!-- claim-check-allow: dev/.cairn-upgrade/, dev/.cairn-upgrade/files/AGENTS.md, dev/.cairn-upgrade/README -->
 <!-- ^ `dev/.cairn-upgrade/` is the transient upgrade-staging dir `scaffold.py`
      creates during an upgrade; it does not exist in a normal checkout. Cairn-tree
      paths in this doc carry the `cairn/` prefix (first segment not a local dir,

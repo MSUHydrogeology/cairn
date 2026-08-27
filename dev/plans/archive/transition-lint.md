@@ -1,17 +1,14 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/lifecycle.md doctrine/proposals.md doctrine/dual-review.md doctrine/rationale.md doctrine/consolidation-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The three paths below are forward references: every code file this plan
      creates is NEW, and they materialize across Chunks A-E. They are also
      registered under `Proposed paths:` -- that marker exempts only its own
      contiguous bullet block, so the file-scoped directive covers the chunk
      tables and acceptance criteria that cite the same paths in prose. Marked,
      not silenced; each line drops when its file lands. -->
-<!-- claim-check-allow: scripts/transition_lint.py, scripts/transition_lint_whitelist.py, bootstrap/tests/test_transition_lint.py -->
 <!-- The Antigravity code review below (2026-08-10) self-cites its own
      subject path from before this file's archive move; that attributed
      review text is append-only and is not rewritten to chase the move
      (AGENTS.md's cite-by-stem convention; the claim-marker-maintenance
      exception in doctrine/plans.md > "The plan lifecycle"). -->
-<!-- claim-check-allow: dev/plans/transition-lint.md -->
 
 # Plan: the transition-lint — an advisory check that a commit's message matches its lifecycle diff
 

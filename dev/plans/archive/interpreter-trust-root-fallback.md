@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/reviews/2026-07-22-interpreter-trust-root-security-review.md -->
 <!-- The path above is a forward reference: the raw Security Review's committer
      note in the source proposal cites this artifact path; it is not this
      plan's own concern and may or may not exist -- carried only because the
@@ -8,14 +7,12 @@
      sibling plan's own pre-archive path). Archiving that plan (git mv to
      dev/plans/archive/, a separate commit) breaks the citation here. Retained
      unedited (append-only, response prose); path marked so the checker clears. -->
-<!-- claim-check-allow: dev/plans/lockfile-provenance-fields.md* -->
 <!-- claim-marker maintenance 2026-07-31: this file's Chunk G and its ETR1-R3
      review round cite `dev/plans/interpreter-trust-root-fallback.md` -- this
      file's OWN pre-archive path, ACCURATE when written. Archiving it (git mv
      to dev/plans/archive/, this commit) breaks the self-citation. Retained
      unedited (append-only plan + review prose); path marked so the checker
      clears. -->
-<!-- claim-check-allow: dev/plans/interpreter-trust-root-fallback.md* -->
 
 # Plan: interpreter trust root -- absent degrades, present-but-wrong refuses
 

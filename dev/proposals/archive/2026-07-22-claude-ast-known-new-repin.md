@@ -7,7 +7,6 @@
      and the path marked so the checker clears. Surfaced, not silenced --
      same shape as the interpreter-trust-root-fallback and transition-lint
      proposals' own marker notes this session. -->
-<!-- claim-check-allow: dev/plans/first-session-survivability.md* -->
 # Re-pin the stale AST known-new manifest (and stop it recurring)
 
 **Author**: Claude (Strategy)

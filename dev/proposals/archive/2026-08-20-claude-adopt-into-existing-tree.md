@@ -431,7 +431,6 @@ has to move, not the sibling.
 
 **Model**: claude-opus-5 (Claude Opus 5)
 
-<!-- claim-check-allow: dev/architecture_review.md, scripts/run_security_audit.py -->
 
 *The directive above exempts two paths this review cites as **adopter-tree
 install destinations** -- the `dst` side of an `InstallSpec` -- not as Cairn

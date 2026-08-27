@@ -1,7 +1,4 @@
 <!-- Migrated 2026-06-12 from modflow_tools dev/strategy/ (Cairn's development home before self-hosting). Authored from modflow_tools' vantage; some path cites and "current state" reflect that origin and are being adapted to Cairn. Preserved as Cairn's living deliberation record -- see dev/strategy/MIGRATION.md. -->
-<!-- claim-check-allow: docs/developer/architecture.md, docs/developer/lhm_integration.md, docs/theory/calibration_theory.md, docs/theory/modflow_concepts.md, docs/user_guide/calibration.md, docs/user_guide/convergence.md, docs/user_guide/mesh.md, docs/user_guide/notebook_ui.md, docs/user_guide/particle_tracking.md, docs/user_guide/plotting.md, docs/user_guide/workflow.md, examples/freyberg_particle_tracking/expected_outputs/pathlines.png, examples/freyberg_pilot_points/obs_vs_sim.png, examples/freyberg_pilot_points/phi_vs_iteration.png, examples/freyberg_pilot_points/pilot_point_field.png, examples/freyberg_prior_mc/forecast_distributions.png, scripts/verify_doc_links.py -->
-<!-- claim-check-allow: docs/images/, docs/figures/, docs/figures/generate_docs_figures.py -->
-<!-- claim-check-allow-count: 260 lines -->
 <!-- ^ proposed asset paths this strategy would create; they do not resolve
      yet.  Count claims (README length, file counts) cite the command that
      computed them rather than quoting absolutes. -->

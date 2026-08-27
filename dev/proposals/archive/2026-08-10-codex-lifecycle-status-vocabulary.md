@@ -1119,7 +1119,6 @@ place. It resolves a question the record has left open since
 most: *"A gate HOLD is expected work to disposition, not permission to bypass
 the gate."*
 
-<!-- claim-check-allow: tools/__init__.py, templates/modules/default-on/lifecycle_planner.py -->
 <!-- Reviewer's note: `tools/__init__.py` is cited BECAUSE IT DOES NOT EXIST --
      its absence is finding [D1].  A path assertion about absence cannot be
      expressed by any typed path declaration (`Proposed paths:` means "will

@@ -1,6 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/proposals.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create; they materialize in the implementing plan. They are also named in the Proposed paths block, whose marker only exempts that block -- these citations recur in the header, the Proposal, and the Evidence sections. -->
-<!-- claim-check-allow: bootstrap/tests/_gate_preflight.py, bootstrap/tests/test_gate_preflight.py, dev/plans/gate-reanchor-preflight.md -->
 <!-- link-marker maintenance 2026-08-03: the Author-accounting section writes its
      public-path -> test mapping as a relative markdown link, per the proposal
      template's instruction that the link checker verify the cited test exists.
@@ -10,7 +8,6 @@
      proposals avoid this by writing the same mapping as a plain backticked path;
      that is the better convention and the implementing plan should adopt it.
      Drop this directive once the test lands. -->
-<!-- link-check-allow: ../../bootstrap/tests/test_gate_preflight.py -->
 
 # A reviewed pre-flight for the supervised gate re-anchor (Phase 0)
 

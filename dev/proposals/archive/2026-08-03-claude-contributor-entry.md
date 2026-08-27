@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/doc-governance.md doctrine/proposals.md doctrine/dual-review.md doctrine/fold-back.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 
 # The front door — a contributor entry point, and a disclosure channel that outlives the roster
 

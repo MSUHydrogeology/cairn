@@ -1,10 +1,8 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this plan creates; they materialize in Chunks A/E. -->
 <!-- `dev/.cairn/allowed_signers` needed a file-scoped exemption while it was a
      forward reference; the Maintainer ran M1-M5 on 2026-08-03 and the path now
      resolves, so the exemption is dropped per the marker discipline (drop it
      once the path lands) rather than left to rot. -->
-<!-- claim-check-allow: bootstrap/tests/_gate_preflight.py, bootstrap/tests/test_gate_preflight.py -->
 
 # Plan: a reviewed pre-flight for the supervised gate re-anchor (Phase 0)
 

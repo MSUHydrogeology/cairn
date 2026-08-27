@@ -1,4 +1,3 @@
-<!-- claim-check-allow: templates/modules/default-on/security-verification.md, templates/modules/default-on/run_security_verification.py, templates/modules/team-gated/api-access-security.md, templates/modules/team-gated/api_access_security.py, templates/modules/team-gated/api_access_policy_stub.json, templates/modules/team-gated/web-hosting-security.md, templates/modules/team-gated/web_hosting_security.py, templates/modules/team-gated/web_hosting_policy_stub.json, dev/modules/security-verification.md, dev/modules/api-access-security.md, dev/modules/web-hosting-security.md, scripts/run_security_verification.py, scripts/api_access_security.py, scripts/web_hosting_security.py, dev/.cairn/api-access-policy.json, dev/.cairn/web-hosting-policy.json, bootstrap/tests/test_security_verification.py, bootstrap/tests/test_api_access_security.py, bootstrap/tests/test_web_hosting_security.py -->
 
 # API access and web-hosting security modules
 
@@ -914,7 +913,6 @@ execution that non-loopback mutation is unreachable under every policy shape,
 and assess whether the network-client evidence list is sufficient before a
 plan is opened.
 
-<!-- link-check-allow: ../../bootstrap/tests/test_security_verification.py, ../../bootstrap/tests/test_api_access_security.py, ../../bootstrap/tests/test_web_hosting_security.py -->
 
 ## External Security Review, round 2 -- Claude -- 2026-08-03
 

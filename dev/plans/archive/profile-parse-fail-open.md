@@ -1,9 +1,7 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The new test module is a forward reference registered under `Proposed paths`; the
      marker exempts only its own contiguous block, and the chunk file tables cite it
      many sections later, so it needs the file-scoped directive too.  Drop this
      directive once the path lands (Chunk D), per the marker discipline. -->
-<!-- claim-check-allow: bootstrap/tests/test_profile_grammar.py -->
 
 # Plan: the profile loader stops guessing — a closed grammar on the installer's one input
 

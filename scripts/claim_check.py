@@ -696,6 +696,26 @@ _LIFECYCLE_DOC_RE = re.compile(
 #: artifact, grandfathered by *location* with no status parse at all.
 _LIFECYCLE_ARCHIVE_PREFIXES = ('dev/proposals/archive/', 'dev/plans/archive/')
 
+#: Directories whose contents are historical or ephemeral rather than
+#: authored claims: ``dev/**/archive/`` at any depth, and ``dev/reflections/``.
+#: Deliberately **broader** than ``_LIFECYCLE_ARCHIVE_PREFIXES`` above, which
+#: answers a different question (is this artifact immutable, so grandfather its
+#: directives) than this one (is this file in scope at all).  The rule is
+#: root-anchored and matches ``link_check.filter_sources`` exactly, so all three
+#: checkers agree on what "archived" means; a divergence here would make
+#: ``check_cairn`` and a direct run disagree about the same file.
+def is_out_of_scope_source(rel: Path) -> bool:
+    """Is ``rel`` a historical / ephemeral source rather than a live claim?
+
+    ``rel`` is repo-root-relative.  Returns ``True`` for anything under a
+    ``dev/**/archive/`` directory or under ``dev/reflections/``.
+    """
+    parent_parts = rel.parent.parts
+    if not parent_parts or parent_parts[0] != 'dev':
+        return False
+    return 'archive' in parent_parts or parent_parts[:2] == ('dev', 'reflections')
+
+
 #: The **terminal** status token of each lifecycle family -- deliberately
 #: *only* the terminal ones.  This is an immutability predicate, not a
 #: status vocabulary: the state machine and the full recognized-state set
@@ -1517,6 +1537,13 @@ def main(argv: list[str] | None = None) -> int:
              'soft-flag producer since the count flag was retired.)',
     )
     parser.add_argument(
+        '--include-archives', action='store_true',
+        help='Also check files under dev/**/archive/ and dev/reflections/, '
+             'which are skipped by default because their claims are a '
+             'historical record nobody may rewrite. Mirrors the flag of the '
+             'same name on link_check and check_cairn.',
+    )
+    parser.add_argument(
         '--external-allow', action='append', default=None, metavar='GLOB',
         help='File glob (relative to --root) whose backticked path-claims '
              'describe an EXTERNAL repo and are not resolved against the '
@@ -1534,15 +1561,23 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    result = check_file(
-        args.file, args.root, external_allow=args.external_allow,
-    )
-
     rel: Path = args.file
     try:
         rel = args.file.resolve().relative_to(args.root.resolve())
     except ValueError:
         pass
+
+    if not args.include_archives and is_out_of_scope_source(rel):
+        # An archived artifact is append-only: a flag on it names work nobody
+        # is allowed to do.  Reporting one trains readers to skip the output,
+        # which is how a checker stops being read at all.
+        print(f'claim_check: {rel} -- archived source, not checked '
+              f'(--include-archives to check it anyway).')
+        return 0
+
+    result = check_file(
+        args.file, args.root, external_allow=args.external_allow,
+    )
 
     if result.hard_flags:
         print(

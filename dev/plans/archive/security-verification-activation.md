@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/dual-review.md doctrine/lifecycle.md doctrine/rationale.md doctrine/coordination.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- cairn-accept: instruction-html-comment reason="The comment below is an explanatory note to human readers and to the claim checker about forward-reference and adopter-tree destination paths; it carries no directive to an agent and names no action to take." reviewer="Claude (author)" date=2026-08-04 -->
 <!-- Five paths are exempted below, in two classes, and the `Proposed paths:` ledger further down
      records which materializes when. FORWARD REFERENCES (they resolve once this plan executes):
@@ -10,8 +9,6 @@
      The file-scoped directive is used rather than the `Proposed paths:` marker alone because
      these tokens are cited throughout the chunk tables and acceptance criteria, not only in one
      contiguous block. -->
-<!-- claim-check-allow: scripts/run_security_verification.py, templates/modules/default-on/security-verification.md, templates/modules/default-on/run_security_verification.py, bootstrap/tests/test_security_verification.py, dev/modules/security-verification.md, dev/.cairn/api-access-policy.json, dev/.cairn/web-hosting-policy.json, scripts/api_access_security.py -->
-<!-- claim-check-allow: dev/plans/security-verification-activation.md, dev/plans/api-web-security-modules.md -->
 <!-- ^ Archived 2026-08-11; reciprocal plans moved to dev/plans/archive/. Cited in append-only sections. -->
 
 # Plan: local security-verification activation — a default-on dispatcher that can only narrow

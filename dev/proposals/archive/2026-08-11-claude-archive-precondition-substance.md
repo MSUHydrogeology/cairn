@@ -62,7 +62,6 @@ wrong ones are the plausible ones:
 
 ## Proposed paths
 
-<!-- claim-check-allow: doctrine/lifecycle-contract.md, doctrine/dual-review.md -->
 
 * `tools/lifecycle_planner.py` + `templates/skills/_lib/lifecycle_planner.py`
   (byte-identical twins — both, same commit)

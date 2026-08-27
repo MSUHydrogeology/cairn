@@ -7,13 +7,9 @@
      SECOND occurrence this session of the same shape (see the transition-lint proposal's marker note):
      a lifecycle artifact cited BY PATH, broken by a legitimate archive-move. `AGENTS.md`'s
      shared-communication-file rule already solves this for the boards by citing filename STEM, not path. -->
-<!-- claim-check-allow: dev/proposals/2026-07-11-claude-first-session-survivability.md* -->
 <!-- The paths below appear inside the appended Internal review: illustrative/deliberately-absent example paths, adopter-tree install destinations quoted from a manifest row, and multi-part line citations on real files. Marked, not edited -- reviewer prose is append-only. -->
-<!-- claim-check-allow: bootstrap/nope/missing.py*, dev/strategy/2026-07-08-* -->
 <!-- Defensive: the dangling-internal-ref gate runs only on template-instruction surfaces, so this marker is inert for a dev/proposals/ file (parent proposal, R10c). Kept for consistency with the doctrine-citation convention. -->
-<!-- cairn-internal-ref-allow: doctrine/runtime-contract.md doctrine/rationale.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference paths this proposal plans to create; they materialize at plan-open, at Security Review, and at archive. -->
-<!-- claim-check-allow: dev/plans/interpreter-trust-root-fallback.md, dev/reviews/2026-07-22-interpreter-trust-root-security-review.md, dev/proposals/archive/2026-07-22-claude-interpreter-trust-root-fallback.md -->
 
 # The interpreter trust root: absent degrades, present-but-wrong refuses
 

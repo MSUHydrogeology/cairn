@@ -418,7 +418,6 @@ the whole archive by stem." Section 1's exactness is doing real work, and the
 `Signals the change is wrong` list names the failure that would matter most
 (archive resolution accepting a near match).
 
-<!-- claim-check-allow: dev/plans/review-gate-enforcement.md, dev/plans/scan-coverage.md, dev/plans/planner-line-semantics.md, dev/proposals/2026-08-03-codex-security-verification-activation.md, dev/proposals/2026-08-03-claude-gate-claims-vs-enforcement.md, dev/proposals/2026-08-03-claude-security-preflight-checklist.md, dev/proposals/2026-07-22-claude-stage-commit-patterns.md -->
 <!-- Reviewer's note: this directive exists ONLY so the [C1] table can NAME the
      seven globs at issue.  Every token above is a lifecycle file that moved to
      `archive/`; each would resolve automatically under this proposal's own

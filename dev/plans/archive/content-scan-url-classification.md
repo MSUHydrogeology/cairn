@@ -1,6 +1,5 @@
 <!-- Historical review prose cites the live plan path, which ceases to resolve
      when this completed record moves to archive. -->
-<!-- claim-check-allow: dev/plans/content-scan-url-classification.md -->
 
 # Plan: classify URL scanning by adopter file role
 

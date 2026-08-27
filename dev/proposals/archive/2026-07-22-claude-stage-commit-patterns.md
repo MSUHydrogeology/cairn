@@ -4,10 +4,7 @@
      real directories are `dev/proposals/` and `dev/plans/` with a trailing slash. Typo guard applied:
      these are quoted strings, not mistyped paths. Marked so the checker clears; reviewer prose is
      append-only and untouched. Surfaced, not silenced. -->
-<!-- claim-check-allow: dev/proposals:, dev/plans: -->
-<!-- cairn-internal-ref-allow: doctrine/proposals.md doctrine/dual-review.md doctrine/rationale.md doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Two deliberate forward references, both named repeatedly outside the Proposed-paths block: the new test file lands with the implementing plan, and scripts/transition_lint.py is the SIBLING proposal's proposed path, cited here only to argue about whether it should be built. -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_stage_patterns.py, scripts/transition_lint.py -->
 
 # Repair `_STAGE_COMMIT_PATTERNS` — the shipped lifecycle-stage commit vocabulary reads nothing
 

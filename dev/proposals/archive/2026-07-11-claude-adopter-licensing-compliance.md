@@ -1,6 +1,4 @@
-<!-- claim-check-allow: templates/core/NOTICE.md, NOTICE.md, bootstrap/tests/test_notice_install.py -->
 <!-- The three paths above are forward-reference files this proposal would create; they materialize in the implementing plan. -->
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/proposals.md doctrine/runtime-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Adopter licensing compliance: install a notice file, self-propagate SPDX headers, and make the record carry license + source provenance
 

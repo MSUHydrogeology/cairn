@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/runtime-contract.md doctrine/lifecycle.md doctrine/plans.md doctrine/proposals.md doctrine/rationale.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Plan: a documented gate names what runs it — executing the enforcement-claim ledger
 

@@ -2,7 +2,6 @@
      dev/plans/archive/transition-lint.md on 2026-08-10; this proposal's
      closed [I8]-adjacent citation at :906 predates the move and is
      append-only, so the path is marked here rather than rewritten. -->
-<!-- claim-check-allow: dev/plans/transition-lint.md -->
 
 # Deferral is a Maintainer-approved exception, not an author default
 

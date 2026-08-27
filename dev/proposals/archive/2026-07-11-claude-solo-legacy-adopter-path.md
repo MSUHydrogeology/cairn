@@ -1,6 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/proposals.md doctrine/rationale.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Forward-reference + external-repo paths this proposal cites: the recipe doc it creates, and the adopter-repo `docs/assumptions.md` it points the postdoc at (which lives in the postdoc's tree, not Cairn's). -->
-<!-- claim-check-allow: docs/solo-legacy-recipe.md, docs/assumptions.md -->
 
 # The solo-legacy adopter recipe: a verified adoption path for the solo scientist + one agent + an existing research codebase
 

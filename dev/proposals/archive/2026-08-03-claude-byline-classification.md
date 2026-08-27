@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/lifecycle-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 
 # Exact byline classification — a fold that drops no letter and no digit, in any script
 

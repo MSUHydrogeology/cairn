@@ -1,4 +1,3 @@
-<!-- claim-check-allow: scripts/content_scan.py, scripts/run_security_audit.py, dev/modules/content-security.md -->
 <!-- ^ Three ADOPTER-TREE DESTINATION paths in the B6 reach table. They are the
      paths these controls occupy in an installed target, and they do not resolve
      in Cairn's own tree precisely because no preset installs them -- which is

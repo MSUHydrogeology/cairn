@@ -1,4 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/rationale.md doctrine/doc-governance.md doctrine/runtime-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see AGENTS.md, "Where doctrine/ references resolve") -->
 
 # A documented gate names what runs it — the enforcement-claim ledger
 

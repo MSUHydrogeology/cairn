@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/plans.md doctrine/lifecycle.md doctrine/runtime-contract.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: templates/core/NOTICE.md, NOTICE.md, bootstrap/tests/test_notice_install.py -->
 <!-- The three paths above are forward-reference files this plan creates; they materialize as the chunks land. -->
 
 # Plan: adopter licensing compliance (P1, P2, P4, P5, P6)

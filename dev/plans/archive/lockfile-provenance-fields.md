@@ -1,6 +1,4 @@
-<!-- claim-check-allow: bootstrap/tests/test_lockfile_provenance.py -->
 <!-- The path above is this plan's own forward reference; it materializes at Chunk F. -->
-<!-- claim-check-allow: scripts/run_security_audit.py -->
 <!-- The path above is cited only to explain it does NOT exist in Cairn's own
      tree (the module is team-gated / optional, not installed here) -- the
      real Cairn-tree source is templates/modules/team-gated/run_security_audit.py. -->
@@ -11,7 +9,6 @@
      Retained unedited (append-only, reviewer prose); path marked so the checker
      clears. Same shape as the first-session-survivability plan's own marker
      note this session. -->
-<!-- claim-check-allow: dev/plans/lockfile-provenance-fields.md* -->
 
 # Plan: lockfile provenance fields (P1-P5)
 

@@ -1,5 +1,3 @@
-<!-- cairn-internal-ref-allow: doctrine/proposals.md doctrine/rationale.md doctrine/dual-review.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: docs/solo-legacy-recipe.md, docs/assumptions.md -->
 <!-- The two paths above: the first is this plan's own forward-reference (materializes at Chunk A); the second is an external-repo path (the postdoc's own tree, not Cairn's). -->
 
 # Plan: the solo-legacy adopter recipe (Parts 1-5)

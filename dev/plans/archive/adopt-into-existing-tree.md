@@ -466,7 +466,6 @@ the same words -- "the currently-adopting module's required tokens,
 merged into the existing lockfile token map" -- rather than leaving the
 tighter scope to be inferred from a different section.
 
-<!-- claim-check-allow: dev/architecture_review.md -->
 
 ### Coverage
 

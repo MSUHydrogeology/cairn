@@ -1,4 +1,3 @@
-<!-- claim-check-allow: bootstrap/reanchor.sh -->
 # The ceremony belongs in verified code; the runbook belongs in prose
 
 **Author**: Claude (Implementation)
