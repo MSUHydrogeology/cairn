@@ -29,6 +29,30 @@ saving -- is caught rather than silently blessed.  This is the check/use gap
 that `AGENTS.md` names on the interpreter trust root, closed here by
 measurement rather than assumed away.
 
+BLOCKED -- DO NOT USE
+---------------------
+An External Security Review (Codex, 2026-08-27,
+``dev/reviews/2026-08-27-external-security-review-correct-pinned-digests.md``)
+returned **BLOCK** with seven blocking findings, two of them CRITICAL, each
+reproduced rather than argued.  The two that matter most:
+
+* ``--authorize`` lets any process perform the act this file called human
+  authorization, and removing the flag would not fix it -- an agent can
+  allocate a pseudo-terminal.  Same OS user, same shell, no identity signal.
+* The plan digest does **not** bind the complete preimage or output.  The
+  reviewer built two states with the same record count and the same
+  add/remove set, changed a *kept* record and a top-level field between
+  derivations, and got **identical digests** -- then apply wrote the changes
+  the operator never authorized.
+
+So this module's central claim, that the checksum is not theatre, was
+overstated.  The A/B comparison is real but narrow: it detects a mutation only
+where that mutation changes the plan's projection.
+
+``main()`` refuses on entry until the redesign in the review's final section
+lands.  The refusal is in code, not in a comment, because a warning nobody
+executes is how a blocked tool gets used anyway.
+
 What this tool is not
 ---------------------
 It is not the gate-anchor ceremony.  That one signs, and its irreducible human
@@ -310,11 +334,30 @@ def main(argv: list[str] | None = None) -> int:
         description='Correct a Cairn trust artifact under one human '
                     'authorization: read the plan, type the checksum.')
     ap.add_argument('correction', choices=sorted(CORRECTIONS))
+    ap.add_argument('--i-have-read-the-block-review', action='store_true',
+                    help=argparse.SUPPRESS)
     ap.add_argument('--authorize', metavar='DIGEST8',
                     help='the first 8 characters of the plan digest, for a '
                          'non-interactive run. Without a terminal this is '
                          'REQUIRED -- a pipe must not be able to say yes.')
     args = ap.parse_args(argv)
+
+    if not args.i_have_read_the_block_review:
+        print(
+            'REFUSE: this runner is BLOCKED by an External Security Review '
+            '(Codex, 2026-08-27).\n'
+            '  Seven blocking findings, two CRITICAL, each reproduced:\n'
+            '    - --authorize lets any process perform the "human" step, and\n'
+            '      removing it would not help; an agent can allocate a pty.\n'
+            '    - the plan digest does not bind the complete preimage or\n'
+            '      output: two materially different trees produced IDENTICAL\n'
+            '      digests and apply wrote the unauthorized values.\n'
+            '  Read dev/reviews/'
+            '2026-08-27-external-security-review-correct-pinned-digests.md\n'
+            '  Correct the artifacts by hand, under the runbooks, until the\n'
+            '  redesign in that review\'s final section lands.',
+            file=sys.stderr)
+        return 2
 
     build, render, apply_, label = CORRECTIONS[args.correction]
     try:

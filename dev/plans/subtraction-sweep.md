@@ -1162,6 +1162,73 @@ carries the correction; the repair is C8 ceremony work.
   real and none is load-bearing. They belong to the follow-up work the
   Dispositions block batches, not to this response.
 
+## Response to External Security Review (Codex) -- Claude (Author) -- 2026-08-27
+
+**Verdict accepted in full: BLOCK.** Seven blocking findings, two CRITICAL, each
+**reproduced** by the reviewer rather than argued. The runner now refuses on
+entry, in code, citing the review. `dev/reviews/2026-08-27-external-security-review-correct-pinned-digests.md`.
+
+**The claim I made was wrong, and precisely wrong.** I wrote that the checksum
+"is not theatre" because the two digests are separated in time. The reviewer's
+correction is exact: the A/B comparison is real but detects a mutation **only
+where that mutation changes the plan's projection**. They built two lockfile
+states with the same record count and the same add/remove set, changed a *kept*
+record's hash and a top-level field between derivations, and got **identical
+digests** -- then apply wrote both unauthorized values. The same holds for the
+baseline. A count is not a preimage, and I shipped a count.
+
+**The finding that reaches work already applied: CPD-5, provenance.** The runner
+derives a symbol's commit with `git log -1 -S <name>`. Pickaxe `-S` finds a
+commit that changes the *count* of a string -- usually the symbol's
+introduction, not the later change that altered its digest. Verified
+independently: for `FunctionDef:_compute_upgrade` it returns `ed5a670`
+(**2026-06-10**), while the commit that actually touched `upgrade.py` between
+the baseline anchor and HEAD is `bec2cca` (**2026-08-25**).
+
+**So the evidence shown to the Maintainer for the 15-symbol correction at
+`d283589` was misattributed.** The rendered line said *"Read those commit
+subjects: they are what you are authorizing"*, and some of those subjects were
+the wrong commits.
+
+**What was NOT wrong, stated precisely so this is neither overstated nor
+minimised:** the digests themselves came from the tree and are correct; the
+docstring-only / substantive determination came from an AST comparison and is
+correct; the baseline count was unchanged. The correction is sound. **The
+provenance displayed beside it was not.** Re-derived conservatively by file
+history over `77d2b3b..HEAD`, every corrected symbol traces to landed sweep
+work -- C1, C6, `adopt-into-existing-tree`, `metrics-events-not-prose`,
+`scaffold: retire the events.py InstallSpec`. Nothing unauthorized was
+attested; the operator was simply pointed at the wrong subjects while
+authorizing the right change.
+
+**Also accepted, not yet fixed** -- these are the redesign, and it is not a
+patch: `--authorize` lets any process perform the purported human act, and
+removing the flag would not help because an agent can allocate a pseudo-terminal
+(CPD-1); candidate engine code executes before authorization and is reused from
+`sys.modules` across both derivations, so A and B can be aliases (CPD-3); writes
+follow symlinks and can leave partial invalid JSON, which falsifies the test
+module's own total-write claim (CPD-4); the known-new complete-set guard the AST
+runbook requires is silently dropped (CPD-6); and `_tracked()` collapses every
+git error into "untracked", turning a failure into permission to delete a
+lockfile record (CPD-7).
+
+**On the test suite, which the reviewer assessed fairly.** The moving-plan test
+is honest within its model and its control does real work -- but both plans are
+injected dictionaries and both applies are lambdas. No test derives twice from
+changing real inputs, writes a scratch artifact, injects a write failure, or
+swaps a symlink. **The suite pinned the design's story, not its behaviour.**
+
+**Disposition: the runner stays blocked and is not being quietly patched.** The
+review's final section is a redesign -- closed JSON-native plan binding exact
+input and output bytes, re-derivation in a fresh process from verified checker
+bytes, exact-preimage compare-and-swap, atomic contained writes with read-back.
+That is a proposal's worth of work on a trust surface. Rewriting it immediately
+and handing it back would repeat exactly the pattern the Maintainer named this
+morning: an agent produces machinery the operator cannot independently check.
+
+**Until it lands, the two corrections are done by hand under their runbooks** --
+which is where they were, and is honest about what it costs.
+
 ## Dispositions
 
 *Drafted 2026-08-27, before archive, so the archive precondition is satisfiable

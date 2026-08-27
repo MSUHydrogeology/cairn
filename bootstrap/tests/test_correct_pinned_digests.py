@@ -1,6 +1,18 @@
 # Copyright (c) 2026 Anthony Kendall and the Cairn contributors
 # SPDX-License-Identifier: MIT
-"""The operator's one act is typing a checksum, so that act has to mean something.
+"""The mechanics behind a runner that is currently BLOCKED, and why they still matter.
+
+An External Security Review (Codex, 2026-08-27) returned BLOCK with seven
+blocking findings, so `main()` refuses on entry. These tests pass the
+acknowledgement flag explicitly to reach the machinery underneath, because the
+machinery is what a redesign has to preserve or deliberately replace -- and a
+suite that went silent the moment the tool was blocked would tell a future
+reader nothing about which properties were ever real.
+
+What they pin is narrower than this file once claimed. The review established
+that the digest binds only the plan's *projection*, not the complete preimage
+or output: two materially different trees can produce identical digests. The
+moving-plan test below is honest within that model and no wider.
 
 These pin the properties that make the typed digest an authorization rather
 than a keystroke: it must match the plan that was displayed, it must still
@@ -51,7 +63,7 @@ class TestAPipeCannotAuthorize:
                          tool.apply_lockfile, 'the install lockfile')})
         monkeypatch.setattr(sys.stdin, 'isatty', lambda: False, raising=False)
 
-        assert tool.main(['lockfile']) == 2
+        assert tool.main(['lockfile', '--i-have-read-the-block-review']) == 2
         assert 'must not be able to authorize' in capsys.readouterr().err
 
 
@@ -65,7 +77,8 @@ class TestTheTypedDigestMustMatchThePlan:
             'lockfile': (tool.plan_lockfile, tool.render_lockfile,
                          tool.apply_lockfile, 'the install lockfile')})
 
-        assert tool.main(['lockfile', '--authorize', 'deadbeef']) == 1
+        assert tool.main(['lockfile', '--i-have-read-the-block-review',
+                          '--authorize', 'deadbeef']) == 1
         assert 'not the plan digest' in capsys.readouterr().err
 
 
@@ -96,7 +109,8 @@ class TestTheTreeMustNotMoveWhileYouRead:
 
         first_digest = tool.plan_digest(plans[0])[:8]
         calls['n'] = 0
-        assert tool.main(['lockfile', '--authorize', first_digest]) == 2
+        assert tool.main(['lockfile', '--i-have-read-the-block-review',
+                          '--authorize', first_digest]) == 2
         err = capsys.readouterr().err
         assert 'the tree changed while you were reading' in err
         assert 'Nothing was written' in err
@@ -114,7 +128,8 @@ class TestTheTreeMustNotMoveWhileYouRead:
             'lockfile': (tool.plan_lockfile, tool.render_lockfile,
                          tool.apply_lockfile, 'the install lockfile')})
 
-        rc = tool.main(['lockfile', '--authorize', tool.plan_digest(plan)[:8]])
+        rc = tool.main(['lockfile', '--i-have-read-the-block-review',
+                        '--authorize', tool.plan_digest(plan)[:8]])
         assert rc == 0, capsys.readouterr().err
         assert applied.get('yes'), 'the stable path must actually apply'
 
@@ -127,12 +142,24 @@ class TestRefusalsAreLoudAndTotal:
         monkeypatch.setattr(tool, 'CORRECTIONS', {
             'lockfile': (tool.plan_lockfile, tool.render_lockfile,
                          tool.apply_lockfile, 'the install lockfile')})
-        assert tool.main(['lockfile']) == 2
+        assert tool.main(['lockfile', '--i-have-read-the-block-review']) == 2
         assert 'a named precondition failed' in capsys.readouterr().err
 
 
 class TestItRunsAgainstTheRealTree:
     """A tool that only works under monkeypatch is not a tool."""
+
+    @pytest.mark.parametrize('correction', ['ast-baseline', 'lockfile'])
+    def test_the_runner_refuses_until_the_block_review_is_answered(self, correction):
+        """BLOCKED by External Security Review, 2026-08-27. Seven blocking
+        findings, two CRITICAL. The refusal lives in code because a warning
+        nobody executes is how a blocked tool gets used anyway.
+        """
+        r = subprocess.run(
+            [sys.executable, str(TOOL), correction],
+            cwd=REPO, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+        assert r.returncode == 2, (r.returncode, r.stdout, r.stderr)
+        assert 'BLOCKED by an External Security Review' in r.stderr
 
     @pytest.mark.parametrize('correction', ['ast-baseline', 'lockfile'])
     def test_planning_the_real_repo_does_not_crash(self, correction):
@@ -143,7 +170,8 @@ class TestItRunsAgainstTheRealTree:
         versions of this script wrong on first run each time.
         """
         r = subprocess.run(
-            [sys.executable, str(TOOL), correction],
+            [sys.executable, str(TOOL), correction,
+             '--i-have-read-the-block-review'],
             cwd=REPO, capture_output=True, text=True, stdin=subprocess.DEVNULL)
         assert 'Traceback' not in r.stderr, r.stderr
         assert r.returncode in (0, 2), (r.returncode, r.stdout, r.stderr)
