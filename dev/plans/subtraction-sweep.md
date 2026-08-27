@@ -647,6 +647,54 @@ question was whether the five security-preflight questions survived C2's
 constitution rewrite. **They survived** -- verified in both templates -- so the
 answer is recorded as *survived*, not left as a silent drop.
 
+### Second pass -- the security rows the routing map did not see
+
+The map assigned the *Security-cluster routing* block to the strategy and the
+*Queued* block to forge issues, as if the two were disjoint. **They were not.**
+The strategy's own authority rule says placement under a general roadmap heading
+does not put an item outside it, and Queued held **twelve security-cluster rows**
+-- four tagged `[SEC]`, plus `[TRU-1]`x2, `[TRU-4]`, `[TRU-5]`, `[TRU-7]`,
+`[BND-6]`, `[REL-6]`, `[REC]` -- with revival triggers, sitting in a backlog
+routed to issue triage. Folded 2026-08-27 into the register with the rest; one
+(`[TRU-7]`, the unpublished gate anchor) was a **duplicate** of a row the
+strategy already carried in full and needed no content.
+
+**Seven more Queued rows were dead or closed**, taking the block from 852 lines
+to 260. Six lost their subject to this sweep; each measurement:
+
+| row | measurement |
+|---|---|
+| `[TOOL, URGENT]` corpus-wide metrics extraction is broken | the extractor is gone (C6); the row was already struck through |
+| `[TOOL]` divergent-activation-marker check unreachable | `activation_commit`, `_reconcile_artifact` and `extract_proposal_row` all have zero hits outside `dev/` |
+| `[TOOL]` the checker flags every Internal review as author-written | the planner's independence check is gone -- **the third independent corroboration** that nothing mechanical reads reviewer identity any more |
+| `[REC]` five plan-review sections owe three basis fields | doubly dead: `test_lifecycle_contract.py` does not resolve, **and** both plans it named (`comprehension-outlives-the-artifact`, `ceremony-as-code`) are archived, which the row itself said would clear it |
+| `[REC-3]` transition-lint | removed at C5 |
+| the review-allocation pilot, built but never switched on | the Maintainer ended the pilot window during this sweep; the machinery and `test_pilot_evidence.py` went with C5, so both remaining acts have no subject |
+
+The seventh, the AST-attestation re-anchor after the tag pass, was marked
+**CLOSED 2026-08-20** and needed no disposition. *(A different AST re-anchor is
+owed for this sweep's own changes; it is not this row.)*
+
+**Two rows were corrected rather than transcribed, both because the sweep moved
+the facts under them:**
+
+* **The loop-fidelity gate's live instance is gone.** The row's sharpest claim
+  was *"there is at least one live instance today"* -- `templates/core/AGENTS.md`
+  citing `bootstrap/fidelity-check.md`. C2's constitution rewrite removed that
+  citation, verified 2026-08-27, so the gap is latent rather than shipping. The
+  gap itself is unchanged: `_CAIRN_INTERNAL_PREFIXES` is still `('doctrine/',)`.
+* **The interpreter-binding re-pin's tier question outlived its pin.** The row
+  asked whether an implementing agent could re-derive symbol digests over a
+  high-risk surface. **The digests no longer exist** --
+  `_INTERPRETER_SYMBOL_DIGESTS` has zero hits tree-wide, deleted with its host
+  test module at C6 -- and what guards the trust root now is behavioural, in
+  `test_session_kernel.py` and `test_session_failsafe.py`. That is arguably
+  better coverage and certainly different, so the register carries the live
+  question in its new form: whether a declared executable trust root should
+  carry a byte-level pin at all.
+
+**Net for `dev/PLANNING.md` across both passes: 2,591 -> 860 lines.**
+
 ## Acceptance criteria
 
 Per chunk, and each falsifiable.

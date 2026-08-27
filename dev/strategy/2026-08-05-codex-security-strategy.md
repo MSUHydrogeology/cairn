@@ -508,6 +508,16 @@ than no check.
   other readers or of which inherit the same wrong inference. *Trigger:* the
   next change to `--finalize`'s backfill, or any new detector keyed on
   `base_hash`.
+* **[BND-6] Lockfile schema validate-on-read.** The `lockfile-provenance-fields`
+  work added two provenance fields without bumping `_LOCK_SCHEMA` or teaching
+  `read_lockfile` to validate on read — a **deliberate deferral, not an
+  oversight**: `read_lockfile` is the second trust anchor, and teaching it to
+  *reject* a lockfile on a version predicate is a fail-closed behaviour change on
+  the path `upgrade` and `verify_integrity` both traverse. Plausibly its own
+  Security-Review trigger, and exactly the "contract change married to a smaller
+  change" bundling that proposal was split out to avoid. *Revive as:* validate
+  `schema` on read, with a migration hint, and decide the fail-open /
+  fail-closed disposition — its own proposal, on its own review tier.
 * **[BND-3] Scaffold / engine shape — four boundary residuals.** Facade-loader
   symlink hardening across all three facades (refuse a submodule that is a
   symlink or resolves out-of-tree); cleanup of a partial `sys.modules` entry on
@@ -631,6 +641,37 @@ than no check.
   Python module sideways: define the authority for the checker's own bytes and
   policy inputs, then fail closed before any security phase executes when that
   authority disagrees.
+* **[VER-4] Portable-security-sweeps deferred set (LT-1, LT-2, LT-4, LT-6).**
+  Four follow-ups the plan fenced out of its own scope. **LT-1 — preset
+  selection:** the adoption amendment's five-row table is unimplemented, and its
+  home is a **new proposal** against the accepted `default-security-stance`
+  selection contract — it edits `_PRESETS`, a symbol
+  `_ast_attest._UPDATE_ALLOWLIST` does not admit, so it carries its own
+  re-anchor accounting, and it changes what fresh adopters receive.
+  *Trigger:* the next change to preset composition. **LT-2 — a permanent
+  documented residual, not a deferral.** Measured 2026-08-10:
+  `_selected_capability_ids` admits only module IDs ending in **`-security`**,
+  and this module's ID ends in `-sweeps`, so the module is installed yet the
+  dispatcher never sees it — a registry row would be **inert by construction**,
+  and the chunk's required deletion mutant *could not fail*. **Maintainer
+  accepted the third option** (*"Accept on the LT-2"*): portable sweeps runs via
+  its own standing command, not through the dispatcher. The two rejected
+  alternatives are recorded because the residual can be revisited — widening
+  `_selected_capability_ids` (a trust-boundary change to what the dispatcher
+  admits, so a Security Review) or renaming the module ID (shipped ID, lockfile,
+  three paths, so Decision-bearing). *Revival condition:* the filter widening
+  riding along with the activation plan's registry-admission chunk — at which
+  point the inert-row and vacuous-mutant analysis is the evidence to re-read,
+  **not** the branch table that assumes an effective row. **LT-4 — the three
+  withdrawn adapters** (OSV-Scanner, zizmor, Trivy), named as a set so they are
+  not silently forgotten; each arrives as its own proposal with its own
+  executable chain, ambient-config execution evidence, network posture, output
+  schema and offline-CLEAN disposition. **Distinct from** the conda-advisory row,
+  which cites two of the same tools as *evidence about conda coverage* — a
+  different question. **LT-6 — the `.json`-under-`templates/` precedent:** the
+  licence half landed; the open question is whether `_self_hosted_twins()` should
+  stop being `.py`-keyed, which generalizes a gate the plan does not own.
+  *Trigger:* the second non-`.py` verbatim asset under `templates/`.
 * **[VER-4] Conda advisory coverage.** `python-security` audits **Python
   distributions**; conda-managed native packages are outside its declared scope.
   Measured, not estimated: on the canonical environment **147 conda-only
@@ -727,6 +768,38 @@ than no check.
   happens when the caller's checkout *is* the candidate, and how a legitimately
   diverged fork is distinguished from a tamper — which is why this is a
   proposal, not a patch.
+* **[TRU-1] There is no command that regenerates an existing lockfile.**
+  *(Filed 2026-08-19 while executing the install-contract batch.)*
+  `test_cairns_own_install_records_all_three_files_in_the_lockfile` states the
+  rule in its own docstring — *"the lockfile is regenerated, never
+  hand-edited"* — and `scaffold.py upgrade --init-lock` is the only writer,
+  refusing when the file is already present (measured `as_of 2026-08-19` against
+  a throwaway worktree: *"already exists; nothing to migrate"*, 0 lines changed).
+  So a stale digest leaves an operator with two options the project forbids:
+  delete-and-reinit, which discards the records that were correct and rewrites
+  `migrated` / `cairn_commit` / `profile` besides, or hand-editing, which the
+  docstring rules out. **This is the named-trigger rule failing on an artifact
+  rather than a document** — it was invisible until someone needed the procedure,
+  because the sentence reads like it describes one. *What was done instead,* so
+  this is not read as an open failure: a purpose-built correction script,
+  dry-run-verified and Maintainer-applied, rewriting only records whose digest
+  disagreed with disk and moving a verbatim record's `hash` *and* `base_hash`
+  only after proving byte-identity with its template. That script is a one-off in
+  a scratchpad, deliberately — shipping it would answer the wrong question.
+  ***What is owed is a decision, not a script:*** either the writer grows a
+  targeted refresh with the same byte-identical proof, or the test's docstring
+  stops naming a procedure that does not exist. The first is better; the second
+  is the minimum. **Leaving both undone is the state that produced this row** —
+  the instruction is followed by nobody and believed by everybody.
+* **[TRU-1] Self-host lockfile reconciliation.** `scaffold.py upgrade --target .
+  --cairn-root . --plan` reported **38** files as *"no recoverable base
+  (review-only diff)"* against the base cache, each needing a by-hand
+  `--stage`/`--apply` merge or a reviewed `--finalize` once its customization
+  state is confirmed. Surfaced, not caused, by `solo-legacy-adopter-path`.
+  *Revive by* re-running `--plan` fresh — **the figure above predates the
+  subtraction sweep and will have moved** — confirming the current file list, and
+  scoping the pass as several small reviewed `--finalize` batches rather than one
+  large `--apply`.
 * **[TRU-1b] The doctrine overstates what the integrity check can promise.** The
   claim-side twin of [TRU-1], which owns the tool side.
   `doctrine/runtime-contract.md` lists the integrity check as core/Required and
@@ -831,10 +904,85 @@ than no check.
   merely run more checks.
 * **[TRU-4] Attestation kind-prefix validation.** `_ast_attest` should reject a
   mismatched `<kind>:` prefix. *Trigger:* the next attestation-format change.
+* **[TRU-4] The controlled re-anchor path cannot run for the ordinary case.**
+  *(Observed 2026-08-13 during the second real gate re-anchor.)* There are two
+  ways to move the gate's trust root and neither fits routine work. The
+  **controlled** path refuses unless the differential oracle has *run*, and that
+  oracle runs only when a pre-refactor baseline is configured — i.e. **during an
+  engine refactor**. It reports itself *"dormant between refactors"* and the
+  promotion then refuses, because the refusal cannot distinguish *"the check
+  failed"* from *"the check did not need to run."* So a re-anchor caused by
+  ordinary churn has only the **establishment** path, documented as *"supervised,
+  one-time"*, which skips the authorization binding and the compare-and-swap that
+  make the controlled path controlled. **Both of Cairn's real re-anchors went
+  through it, and the sweep's gate-manifest re-anchor is a third.** A one-time
+  procedure used three times is a routine procedure nobody designed. **Do not
+  close this by configuring a baseline to satisfy the check** — that declares a
+  refactor that did not happen, which is fabricating evidence to stop a control
+  objecting, on a trust root. The honest options: give the controlled path a way
+  to record *"no refactor, oracle not applicable"* without treating it as a
+  failure, or accept the establishment path as the routine one and give it the
+  bindings that absence currently costs.
+* **[TRU-4 / REL-3] Who re-anchors the trust artifacts, and under what review.**
+  The install-contract batch of 2026-08-19 was Maintainer-run under supervision
+  across three artifacts — the AST baseline, the lockfile, and the gate manifest
+  — and every figure in the row that requested it was stale by the time it ran,
+  which is why the runbook forbids carrying a delta forward. **The artifacts are
+  no longer stale; the question the batch raised is.** It is the same
+  self-certification question as the interpreter re-pin below, and it is narrow:
+  *who* regenerates and re-records, and under what review. Coverage is a
+  sequencing question — whatever the anchor is at ceremony time covers whatever
+  is committed then — so this does not need another plan's scope widened.
 * **[TRU-4] Differential-oracle two-stage `promote`.** A dormant future-use
   mechanism for a Cairn-engine refactor needing behaviour-preservation
   promotion; trust root established, nothing pending. See
   `bootstrap/REANCHOR_RUNBOOK.md`.
+* **[TRU-5] The gate-reanchor trusted-contributor posture is dated, and its
+  expiry is not mechanical.** *Folded 2026-08-27 from `dev/PLANNING.md`'s Active
+  block, where it survived a plan archive "because its commitments are live, not
+  completed" — which is a register row's definition.* The trust root is
+  established at `cfaace9` (re-anchored 2026-08-13, previously `e45e1fc`) and the
+  preflight is in the anchor, so every ceremony from here runs the anchored
+  loader. What stays open is the **posture**: Cairn accepts a
+  *trusted-contributor* model for its own trust root, **single-maintainer, as of
+  2026-08-03** — a dated acceptance, not a standing assumption. Its mechanical
+  expiry is the Maintainer's signature on a checkpoint whose message binds the
+  canonical range-review report digest, verified against the roster read from the
+  anchor. **Two triggers cannot be mechanical and are named on purpose:** (a) the
+  ceremony run on a checkout the Maintainer does not solely control; (b) any
+  adopter taking the mechanism. On either, revisit the posture. Named upgrade
+  paths: OS containment for the evidence stage, external anchoring via
+  `_gate_manifest.py verify --trusted-repo` — supported all along and usable now
+  that an anchor exists — and a single-use nonce or consumption ledger.
+  *Historical correction preserved:* an earlier per-commit "signing epoch"
+  tripwire was **retired, not renamed** — the epoch constant lived in the tree
+  being blessed, so a candidate could move the line deciding which of its own
+  commits were exempt, and refusing unsigned agent commits contradicted the
+  normal workflow badly enough that operations disabled it. **A control routinely
+  disabled is not a control.** Authorization now happens in exactly one place:
+  the signed checkpoint.
+* **[TRU-5] The interpreter-binding re-pin: reproduction confirmed, tier question
+  open, and the pin itself is now gone.** *(Filed 2026-08-18; reproduction
+  confirmed 2026-08-19; re-measured 2026-08-27.)* Symbol digests guarding the
+  local interpreter binding were re-derived by an **implementing agent under
+  explicit Maintainer authorization**, not by a Security Review, on a surface
+  `AGENTS.md` lists as high-risk. A second agent re-derived them with its own
+  stripper on both twins and got the recorded values exactly; the edit was
+  comment-only and none of the five gated properties changed. **What remained was
+  never technical:** the re-derivation rode an implementing commit while the pin's
+  own text said to re-derive *"in that review's own commit"*, and a same-agent-type
+  confirmation is a second reading rather than an independent tier. **Re-measured
+  2026-08-27: the digest pin no longer exists** — `_INTERPRETER_SYMBOL_DIGESTS`
+  has zero hits tree-wide, deleted with its host test module at C6. What guards
+  the trust root now is behavioural, in `bootstrap/tests/test_session_kernel.py`
+  and `test_session_failsafe.py`: a malformed binding refuses, a vanished
+  interpreter falls back audibly, and the twins are byte-identical. **That is
+  arguably better coverage than a digest and it is certainly different**, so the
+  live question is no longer the re-pin's tier but whether a declared executable
+  trust root should carry a byte-level pin at all. *Still open alongside it:* the
+  `_has_symlink_component` coverage gap — the fence pins the caller and not the
+  callee, so a behavioural change to symlink detection would not redden it. See
+  the [BND-3 / TRU-5] check/use race entry, which is the same callee.
 * **[TRU-6] RA1 (a) — Cairn's signing authority widens.** The principal-count
   warning in `bootstrap/container/verify-ref.sh` counts a roster the *adopter*
   typed and has no channel back here, so it is adopter hygiene, not a Cairn-side
@@ -899,30 +1047,20 @@ than no check.
   confers Decision authority, and reusing it would couple two authorities to buy
   one check. If it does not, `dev/.cairn/agent-identities.json` should be deleted
   rather than left as configuration nothing consults.
-* **[TRU-5] The gate-reanchor trusted-contributor posture is dated, and its
-  expiry is not mechanical.** *Folded 2026-08-27 from `dev/PLANNING.md`'s Active
-  block, where it survived a plan archive "because its commitments are live, not
-  completed" — which is a register row's definition.* The trust root is
-  established at `cfaace9` (re-anchored 2026-08-13, previously `e45e1fc`) and the
-  preflight is in the anchor, so every ceremony from here runs the anchored
-  loader. What stays open is the **posture**: Cairn accepts a
-  *trusted-contributor* model for its own trust root, **single-maintainer, as of
-  2026-08-03** — a dated acceptance, not a standing assumption. Its mechanical
-  expiry is the Maintainer's signature on a checkpoint whose message binds the
-  canonical range-review report digest, verified against the roster read from the
-  anchor. **Two triggers cannot be mechanical and are named on purpose:** (a) the
-  ceremony run on a checkout the Maintainer does not solely control; (b) any
-  adopter taking the mechanism. On either, revisit the posture. Named upgrade
-  paths: OS containment for the evidence stage, external anchoring via
-  `_gate_manifest.py verify --trusted-repo` — supported all along and usable now
-  that an anchor exists — and a single-use nonce or consumption ledger.
-  *Historical correction preserved:* an earlier per-commit "signing epoch"
-  tripwire was **retired, not renamed** — the epoch constant lived in the tree
-  being blessed, so a candidate could move the line deciding which of its own
-  commits were exempt, and refusing unsigned agent commits contradicted the
-  normal workflow badly enough that operations disabled it. **A control routinely
-  disabled is not a control.** Authorization now happens in exactly one place:
-  the signed checkpoint.
+* **[REC] A second clearing review manufactures a competing authority pair.**
+  *(Filed 2026-08-19 from `ceremony-as-code`'s M2; folded 2026-08-27 from
+  `dev/PLANNING.md`'s Queued block.)* The M2 row says *"the **reviewer** produces
+  and self-records the launcher/packet pair"*, singular — it assumes one
+  reviewer. Two independent External Security reviews cleared round 2, so **two
+  valid authority pairs exist**. They cannot be *mixed* — each launcher carries
+  its own packet's digest, so a cross-pair combination fails the binding check —
+  but nothing says which pair is canonical, and nothing stops someone later
+  finding the unused one and running it in good faith. One was used; the other
+  was never delivered to disk and is void by circumstance rather than by rule.
+  **The review redundancy is a gain; the pair redundancy is a liability.** *What
+  is owed is one sentence in the contract, not a mechanism:* a second clearing
+  review confirms the same bytes and **produces no pair** unless the first is
+  withdrawn.
 * **[REC-3 / VER-3] Implementation-verification record conformance.** The v1
   contract instructs authors to append a dated, field-complete record only after
   the stable Boundary B run, but nothing proves the section is nonempty or
@@ -942,6 +1080,28 @@ than no check.
   The proposal's "zero archive commits" is falsified; measured 2026-08-04, plan
   archives 1 of 10 and proposal archives 2 of 21. **Re-run the enumeration
   before writing any number** — the sweep has since moved both denominators.
+* **[REC-4] A lasting-truth attestation is written once and the section grows
+  after it, and nothing re-checks.** *(The general form of the row above.)* A
+  plan can archive attesting `Dispositions: none` while its own section names
+  follow-ups in prose — measured on `ceremony-as-code`, where the attestation was
+  accurate when written, three durable observations were appended below it, and
+  the archive gate passed because it reads the attestation and never compares it
+  to the section around it. **Two sentences in the instructions do most of the
+  work, and both are wrong in the same direction:** *"Only `defer` needs a
+  durable home outside the plan; the other dispositions **are** the home"* is
+  true for an `accept` that actually landed somewhere a reader will meet, and
+  **false for an observation**, where `accept` means nothing was written
+  anywhere living and the plan is about to stop being read; and *"filled in at
+  archive time"* implies one moment while *"append-only once written"* guarantees
+  accretion, with nothing saying **an append re-opens the attestation**.
+  *Suggested wording, deliberately not applied* — this is `templates/core`
+  doctrine and wants a decision rather than an edit in passing: qualify the first
+  as *"`accept` is the home only when the accepting change landed somewhere a
+  reader will meet; an observation with no landing place is a `defer` and needs a
+  row"*, and add to the second *"appending to this section re-opens the
+  attestation."* **Why prose rather than a mechanism:** the remaining gap is a
+  *consistency* question between an attestation and free prose, which a regex
+  answers badly.
 * **[REC-5] Lifecycle mutation authority — the boundary outlives its
   mechanism.** The typed-mutation direction presupposed the lifecycle CLI, which
   the sweep removed, and the Maintainer-run dogfood study that was to earn it
@@ -989,6 +1149,46 @@ than no check.
   procedure. `gate-claims-vs-enforcement` sampled both, and two ledger rows fell
   out of a single ad-hoc axis-3 pass, which is the argument for finishing the
   sweep as its own bounded inventory.
+
+* **[REL-5] The loop-fidelity gate covers one folder out of several.** *(Homed
+  2026-08-13 at the Maintainer's instruction from `review-efficient-lifecycle`
+  [CF9], which measured it and deliberately did not widen it.)*
+  `check_cairn`'s `_CAIRN_INTERNAL_PREFIXES` is `('doctrine/',)` — **confirmed
+  unchanged 2026-08-27**. The gate exists to stop a **shipped** `templates/**`
+  surface citing a path that exists in Cairn's tree but not in an adopter's;
+  with one prefix it catches `doctrine/` and nothing else, so a `bootstrap/`,
+  `dev/plans/`, `dev/proposals/`, `dev/measurement/`, `case-studies/` or
+  `dimensions/` citation dangles in an adopter tree and passes clean. **Measured,
+  not inferred:** with `bootstrap/fidelity-check.md` and a `dev/plans/` path
+  appended to a shipped surface, `check_cairn` printed *"OK -- 1 Markdown
+  file(s) scanned; no issues."* **The live instance this row carried is gone** —
+  `templates/core/AGENTS.md` cited `bootstrap/fidelity-check.md` in its
+  drift-guard paragraph until the sweep's constitution rewrite removed that
+  citation, verified 2026-08-27. So the gap is now latent rather than shipping,
+  which lowers the urgency and changes nothing about the gap. **Why it was not
+  fixed in passing, and what the first task is:** widening the tuple changes a
+  standing gate's verdict across the whole repository, and nobody knows how many
+  currently-passing surfaces it would flag — one, or dozens. **That count is the
+  first task**, and it decides the shape of the rest: a handful of real dangling
+  citations is an ordinary fix; a large population needs staging or a deprecation
+  window. Doing it as a side effect of an unrelated plan is how a standing gate
+  changes behaviour without anyone reviewing the change. *Trigger:* the next
+  change to `check_cairn`'s prefix set or to shipped-template citation policy.
+  **Note for the checker de-scope:** that work touches this exact tuple, so it is
+  the most likely thing to trip this row.
+* **[REL-6] `SECURITY.md` names no disclosure mechanism.** *(Split out of
+  `contributor-entry` by Maintainer direction, 2026-08-03.)* It tells a reporter
+  to report *"privately to the maintainer"* and names no route; verified
+  2026-08-03, no root `CONTRIBUTING.md` exists and `README.md` carries no
+  *Contributing* heading, so a would-be reporter has none. **Diagnosis of record:
+  a stated control with no mechanism behind it** — the same shape as
+  `bootstrap/PROVENANCE.md`'s unchecked signature. Fixing it needs no
+  `CONTRIBUTING.md` and no doctrine change, which is why it separates cleanly.
+  Two things travel with it: the channel's deciding property — whether the forge
+  setting is actually enabled — **cannot be established by a reviewer and is a
+  Maintainer live-verification step**; and `README.md` gains the pointer, because
+  it is the only entry-layer file a first-time visitor reliably reads and a
+  disclosure channel nobody can find from the front page is not a channel.
 
 ### Release bar (v0.5)
 
