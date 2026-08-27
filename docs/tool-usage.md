@@ -112,21 +112,27 @@ claim, either claim it or proceed deliberately — the check is warn-only, not a
 gate. If `status` shows a path held by another session, coordinate before
 editing it.
 
-## tools/lifecycle_metrics.py — measure the deliberation loop *(default-on)*
+## tools/board.py — see what is actually in flight *(default-on)*
 
-**What it does.** Derives per-proposal / per-plan lifecycle metrics — review
-rounds, revision counts, finding tallies — from the `dev/` tree. The report is
-a derived artifact, regenerable at any commit.
+**What it does.** Reads the header block of every proposal and plan under `dev/`
+and prints one row each: kind, artifact, status, review tier, when it opened,
+and its source proposal. It reports what the artifacts say and makes no
+judgments — the artifact is authoritative, and this is a view of it.
 
 ```bash
-python tools/lifecycle_metrics.py proposals --format md   # Markdown table to stdout
-python tools/lifecycle_metrics.py proposals --out metrics.csv
+python tools/board.py
 ```
 
-**What to do.** Read it as a health signal, not a target: a proposal that took
-many review rounds is a candidate for a retrospective, not a number to
-optimize. Regenerate it rather than quoting a stale figure from memory (exactly
-the numeric-drift the three-kind precision / `as_of` discipline guards against).
+**What to do.** Run it instead of maintaining a hand-written "currently active"
+list. A derived view cannot go stale the way a table does; the failure mode it
+replaces is a board still describing archived work as in flight. If a row looks
+wrong, fix the artifact's header block — not this output.
+
+*(The former lifecycle-metrics tool, which derived review-round and finding
+tallies from the same tree, was retired on 2026-08-26. Nothing replaces
+its counts: they measured a deliberation loop the project has deliberately made
+smaller, and a metric that survives the thing it measured only invites
+optimizing the wrong number.)*
 
 ## scripts/link_check.py — check cross-references resolve *(team-gated: doc-drift-prevention)*
 

@@ -1,15 +1,15 @@
 <!-- Cairn fold-back PR template.
 
-     Generated via the active-surfacing protocol when a deployment
-     has working code to contribute (not just an idea); see
-     cairn/doctrine/fold-back.md > "Active surfacing" for the
-     deliberation context.
+     For a deployment with working code to contribute, not just an
+     idea.  The fold-back ledger and its doctrine were retired
+     2026-08-26; a Cairn PR IS the channel now, and this template is
+     the surviving statement of the protocol.
 
      The maintainer of the source deployment fills the sections below
      before submitting.  An AI agent may have drafted the body from
-     the deployment's ledger entry + the PR diff, but the maintainer
-     reviews + submits by hand (the agent does not submit
-     autonomously, per the export-boundary bright-line). -->
+     the PR diff, but the maintainer reviews + submits by hand (the
+     agent does not submit autonomously, per the export-boundary
+     bright-line). -->
 
 ## Source proposal / plan
 
@@ -45,12 +45,10 @@
 
 ## Export-safety affirmation
 
-<!-- The maintainer-signed manual half of the active-surfacing
-     two-gate export boundary.  The machine half
-     (foldback_export_scan.py) ran fail-closed against this PR's
-     body AND every changed file in the diff before submission; this
-     manual affirmation covers the two no-export classes the scanner
-     cannot reliably detect. -->
+<!-- This affirmation is now the WHOLE export boundary, not half of
+     one.  The machine-half scrub (foldback_export_scan.py) was
+     retired with the fold-back ledger on 2026-08-26; it is not
+     available, and no command replaces it. -->
 
 I affirm that, to the best of my judgment, this PR's body AND every
 file it adds / modifies contain:
@@ -62,16 +60,19 @@ file it adds / modifies contain:
   customer specifics whose generalized form would be acceptable but
   whose verbatim shape is not.
 
-The machine-half scrub
-(`python scripts/foldback_export_scan.py <draft>` AND
-`python scripts/foldback_export_scan.py <each-changed-file>`)
-exited cleanly OR every finding was edited / explicitly
-dispositioned as a documented false positive before this submission.
+- [ ] **I read the diff once more with those two classes in mind**,
+  after writing it -- not only while writing it.
+
+**There is no machine-half scrub.** `foldback_export_scan.py` was retired
+with the fold-back ledger on 2026-08-26 and no command replaces it, so this
+affirmation is the whole export boundary rather than a second opinion on a
+scanner's output. A Cairn pull request is **public**; every changed file
+carries the same obligation as the description.
 
 ---
 
-<!-- Cairn maintainers reviewing this PR: see
-     cairn/doctrine/fold-back.md for the active-surfacing protocol
-     this contribution came through.  Squash-merge per Cairn
+<!-- Cairn maintainers reviewing this PR: the fold-back doctrine that
+     defined this protocol was retired 2026-08-26 along with the
+     ledger; this template is the surviving statement of it.  Squash-merge per Cairn
      convention; the deployment-side archived artifacts (above) are
      the durable deliberation home. -->

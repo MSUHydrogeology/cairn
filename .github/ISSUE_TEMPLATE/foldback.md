@@ -1,18 +1,18 @@
 ---
 name: Fold-back from a deployment
-about: A Cairn-portable improvement surfaced from a deployment's fold-back ledger via the active-surfacing protocol
+about: A Cairn-portable improvement surfaced from a deployment
 title: '[Fold-back from <deployment>] <short description>'
 labels: ['foldback']
 assignees: []
 ---
 
-<!-- Generated via the active-surfacing protocol; see
-     cairn/doctrine/fold-back.md > "Active surfacing" for the
-     deliberation context.
+<!-- The fold-back ledger and its doctrine were retired 2026-08-26;
+     a Cairn issue IS the channel now, and this template is the
+     surviving statement of the protocol.
 
      The maintainer of the source deployment fills the sections below
-     before submitting.  An AI agent may have drafted the body from
-     the deployment's ledger entry, but the maintainer reviews +
+     before submitting.  An AI agent may have drafted the body, but
+     the maintainer reviews +
      submits by hand (the agent does not submit autonomously, per
      the export-boundary bright-line).
 -->
@@ -51,8 +51,7 @@ assignees: []
 
 ## Suggested disposition
 
-<!-- The active-surfacing protocol's Choose step lands a candidate on
-     one of these four disposition lines.  Check one: -->
+<!-- Where this candidate should land in Cairn.  Check one: -->
 
 - [ ] **Cairn proposal** -- this candidate warrants a full Cairn proposal-lifecycle pass
 - [ ] **Cairn doctrine sharpening** -- a `cairn/doctrine/` edit captures it
@@ -61,11 +60,16 @@ assignees: []
 
 ## Export-safety affirmation
 
-<!-- The maintainer-signed manual half of the active-surfacing two-gate
-     export boundary.  The machine half (foldback_export_scan.py) ran
-     fail-closed against the drafted body before submission; this
-     manual affirmation covers the two no-export classes the scanner
-     cannot reliably detect. -->
+<!-- This affirmation is now the WHOLE export boundary, not half of one.
+     The machine-half scrub (foldback_export_scan.py) was retired with
+     the fold-back ledger on 2026-08-26; it is not available, and no
+     command replaces it.  Read the two boxes below as the control
+     itself rather than as a second opinion on a scanner's output. -->
+
+**Read this before you tick the boxes.** A Cairn issue is **public**. This
+template exists because a fold-back candidate is written by someone working
+inside a research repository, where the surrounding context is often
+unpublished. Nothing scans this body for you.
 
 I affirm that, to the best of my judgment, this issue body contains:
 
@@ -75,15 +79,12 @@ I affirm that, to the best of my judgment, this issue body contains:
 - [ ] **No proprietary domain detail** -- no client / project /
   customer specifics whose generalized form would be acceptable but
   whose verbatim shape is not.
-
-The machine-half scrub (`python scripts/foldback_export_scan.py
-<draft>`) exited cleanly OR every finding was edited / explicitly
-dispositioned as a documented false positive before this submission.
+- [ ] **I read the body once more with those two classes in mind**,
+  after writing it -- not only while writing it.
 
 ---
 
-<!-- Cairn maintainers reviewing this issue: see
-     cairn/doctrine/fold-back.md for the active-surfacing protocol
-     this filing came through, and cairn/doctrine/fold-back.md
-     > "The export boundary" for the no-export class taxonomy this
-     affirmation covers. -->
+<!-- Cairn maintainers reviewing this issue: the fold-back doctrine that
+     defined the active-surfacing protocol and the no-export class
+     taxonomy was retired on 2026-08-26 along with the ledger; this
+     template is the surviving statement of both. -->
