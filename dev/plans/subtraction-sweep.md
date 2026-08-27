@@ -959,6 +959,55 @@ reproduced with a named failing test; `_ALWAYS_ON_MAPPINGS` being Maintainer-run
 spends a round on field spellings against a dying parser is running the ratchet
 this sweep exists to remove.
 
+## C8 state, measured 2026-08-27 -- and the C9 ordering
+
+**Three of C8's surfaces are already satisfied.** Measured, not assumed:
+
+* **Gate manifest** -- `_gate_manifest.py verify` reports *OK, gate integrity
+  intact (179 frozen files, 3169 pinned nodes)*. Re-anchored by the Maintainer
+  today; the AST baseline's change registers as `CASCADE-CHANGED`, which is the
+  manifest correctly knowing that file moves under this ceremony.
+* **Published `scaffold.py --manifest`** -- 88 manifest tests pass.
+* **Fidelity / integrity** -- 108 tests across the lockfile, fidelity and
+  `verify_integrity` suites pass.
+
+**Two things remain, and the first is blocked on a row this sweep filed.**
+
+**(a) Three verbatim lockfile records disagree with disk.** The raw count of
+records diverging is 19, and **that number is misleading**: 16 are substituted
+or living-state files an adopter is *expected* to edit. Restricted to
+`verbatim` records, where byte-identity is the contract, it is **three**:
+
+| record | changed by |
+|---|---|
+| `scripts/claim_check.py` | the checker de-scope (C7) |
+| `tools/evolution_infer.py` | C6 -- the fold-back retirement removed its backlog half |
+| `tools/prune_reflections.py` | C6 |
+
+**The blocker is [TRU-1] in the security strategy's register, filed this
+morning**: *there is no command that regenerates an existing lockfile.*
+`scaffold.py upgrade --init-lock` is the only writer and refuses when the file
+is present, and the test that states the rule says the lockfile is *"regenerated,
+never hand-edited"* -- naming a procedure that does not exist. So this leg needs
+the same purpose-built, dry-run-verified correction the Maintainer ran at
+`77d2b3b`, and it is the second time that gap has cost a ceremony. That is the
+argument for closing [TRU-1] rather than routing around it a third time.
+
+**(b) The gate anchor has not moved.** `refs/cairn/gate-anchor` is at `5f99273`,
+**343 commits behind `HEAD`**. This is the two-stage signing ceremony in
+`REANCHOR_RUNBOOK.md`, and it walks into the register's [TRU-4] row: the
+*controlled* path refuses unless the differential oracle has run, which happens
+only during an engine refactor, so the **establishment** path -- documented as
+*"supervised, one-time"* -- is the only one available. It would be its **fourth**
+use. Do not close that by configuring a baseline to satisfy the check; that
+declares a refactor that did not happen, on a trust root.
+
+**C9 runs after code review** *(Maintainer, 2026-08-27)*. The sister migrations
+carry Cairn's changes into two live research repositories, so they should not
+begin until the code review this plan requires has run and its findings are
+answered. This ordering is recorded here because the chunk table's C8-then-C9
+sequence did not say where review sat.
+
 ## Dispositions
 
 *Drafted 2026-08-27, before archive, so the archive precondition is satisfiable
