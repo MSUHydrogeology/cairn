@@ -2451,3 +2451,29 @@ this has become the second-leg option and must be refused.
 
 **Scribed by** Antigravity (Gemini 3.7 Flash) on explicit Maintainer instruction.
 
+## Correction -- Claude -- 2026-08-27 (appended; nothing above is edited)
+
+**This proposal's line citations into `dev/.cairn/cairn-lock.yml` are void.**
+Four of them (`:631-637` twice more, and `:647-664`) named ranges in a file that
+has since been reconciled: the subtraction sweep deleted 19 recorded files and
+C1 added two, taking the lockfile from 682 lines to 562. The ranges now overrun
+the file and `claim_check` reports four `line-bounds` flags against this
+document.
+
+**They are not repaired in place, and that is deliberate.** This proposal is
+`accepted` -- terminal, append-only -- so its prior sections show what was
+believed when they were written. A pointer that has rotted is part of that
+record.
+
+**The lasting lesson, which is the reason this correction is worth appending at
+all: do not cite line ranges into a machine-generated, regenerate-only file.**
+The lockfile's own header says *"machine-generated ... regenerate-only; do not
+hand-edit"*. Any citation into it is a claim about a rendering, not about
+content, and it expires the next time the file is written. Cite the record by
+its `dst` key instead -- `"dst": "scripts/claim_check.py"` is stable across
+every regeneration; `cairn-lock.yml:631` was never going to be.
+
+**The four flags therefore stand as a dated, known non-pass** rather than being
+resolved or suppressed. Suppressing them would need a path exemption, which
+does not reach `line-bounds` flags anyway -- measured 2026-08-27 -- and would
+mask genuine path breakage in this document if it ever occurred.
