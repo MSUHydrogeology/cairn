@@ -971,207 +971,36 @@ file under "Migrated Cairn roadmap (2026-06-12)".)*
 
 ## Active
 
-Substantive work currently in flight: open plans, executing
-sub-tracks, in-progress proposals between Decision and
-plan-open. When an entry completes, it is **removed** from this
-section at the next goodnight scrub — the truth migrates to the
-archived plan / proposal, the implementing commits, and the
-changelog. There is no "completed recently" section on this
-board by design.
+**This section no longer lists work.** `python tools/board.py` derives the
+current view from the artifacts' own header blocks, so a hand-maintained table
+here could only be a second, staler copy of it.
 
-* **git-native-security-foundations** *(plan opened 2026-08-11)* -- align
-  Cairn's security boundary with Git's native object, signature, graph, and ref
-  primitives: replace incompatible per-agent signing with Maintainer-signed
-  checkpoints bound to a canonical range-review report, delegate blob ids and
-  strict object validation to Git, migrate the frozen-file leg to Git object
-  identity without dropping SHA-256 or losing collection semantics, add
-  diagnostic reflogs, and publish only the durable gate anchor atomically.
-  Eight chunks; `required(External + External Security Review)`. Four
-  Maintainer stops, enumerated in the plan's own fence table, including a
-  Maintainer-only exact-byte trust-root bootstrap that no agent performs.
-  **Chunk D is fenced behind `review-efficient-lifecycle`'s Chunk I ceremony
-  and B2** -- both plans touch the gate manifest, and this one migrates its
-  schema.
+```bash
+python tools/board.py
+```
 
-* **review-efficient-lifecycle** *(plan opened 2026-08-10; **archived
-  2026-08-13**)* -- one plan for the four accepted lifecycle contracts
-  (`review-efficient-lifecycle` plus the `claim-check-exemption-hygiene`,
-  `code-review-blindness`, and `lifecycle-status-vocabulary` amendments), which
-  three of them require by their own accepted text. **Delivered**: sixteen
-  implementation rows plus H1's retirement of the six legacy status tokens into
-  the historical tuples, one clearing code review (Internal, delegated -- SHIP,
-  eight findings, all answered), two Boundary B runs, and the Maintainer's gate
-  re-anchor `cfaace9` -> `089a9db`.
+**Why it was emptied (2026-08-27, the sweep's C7 bankruptcy pass).** All four
+entries named here were **archived plans and delivered proposals** —
+`git-native-security-foundations`, `review-efficient-lifecycle`,
+`lifecycle-status-vocabulary`, `claim-check-exemption-hygiene` — and the block
+carried 204 lines describing them as in flight. The section's own rule said a
+completed entry is removed at the next goodnight scrub; the scrub had not caught
+up, which is the argument for deriving the view rather than scrubbing it.
 
-  **Two things it did not deliver, both recorded rather than absorbed.** R3's
-  legacy multi-obligation mapping over three archived plans was **withdrawn by
-  the Maintainer** (quoted verbatim in the plan's `## Dispositions`) on the
-  principle that archives are a historical record, not an active area. And the
-  loop-fidelity gate's single-prefix gap is deferred to the Queued row above.
-  The review budget it planned -- one Boundary B -- became two, because the
-  re-anchor rewrote the gate manifest inside the reviewed range and the runbook
-  runs no tests.
+**Two entries carried live commitments rather than task state, and moved rather
+than died** — both into
+[`strategy/2026-08-05-codex-security-strategy.md`](strategy/2026-08-05-codex-security-strategy.md)'s
+Live residual register:
 
-* **lifecycle-status-vocabulary** *(accepted 2026-08-10; **proposal archived
-  2026-08-12**)* --
-  make proposal and plan status name the next responsible action: explicit
-  review, revision, implementation, Decision, and archive-readiness states;
-  orthogonal blocker metadata; evidence-backed transitions; and an
-  evidence-derived migration. Accepted and **executing inside** the
-  `review-efficient-lifecycle` plan (Chunks A, E, F); the archived proposal
-  remains the authoritative contract.
-
-* **claim-check-exemption-hygiene** *(accepted 2026-08-10; **proposal archived
-  2026-08-12**)* --
-  keep claim-check's useful path discipline while retiring exemption clutter:
-  resolve exact lifecycle archive moves, make typed path declarations reusable
-  and auditable, fail stale active exemptions, and stop copying inert internal-
-  reference headers into Cairn's self-hosted deliberation artifacts.
-  Accepted and **delivered** by the `review-efficient-lifecycle` plan's Chunk D
-  (`4723107` D1/D2/D5, `6869022` D3/D4); the archived proposal remains the
-  authoritative contract.
-
-* **Security program — clustered current view** *(living strategy opened
-  2026-08-05)* — the canonical taxonomy, threat posture, sequencing rules and
-  cluster exit conditions are in
-  [`strategy/2026-08-05-codex-security-strategy.md`](strategy/2026-08-05-codex-security-strategy.md).
-  This table is the roadmap view: lifecycle artifacts own design detail, and
-  the residual rows farther down retain their original evidence and triggers.
-
-  | Cluster | Current lifecycle owners | Next boundary |
-  |---|---|---|
-  | **[BND] Input, execution, containment** | `api-web-security-modules` (`fork-advisory-semantics` archived 2026-08-10, SHIP) | profile-authority consolidation; Class C no later than v0.4 preparation |
-  | **[VER] Verification and coverage** | `security-verification-activation`; `api-web-security-modules` | `content-scan-detectors` + `separator-detection` archived 2026-08-10 (both SHIP-reviewed), `security-preflight-checklist` archived 2026-08-10 (SHIP; its broad-run evidence is implementer-supplied, see its archive record), `portable-security-sweeps` archived 2026-08-10 (SHIP on the CR1-CR3 correction round; Chunk G took Branch 2 and did NOT land -- see LT-2): reconcile the live frozen-file union and run one supervised re-pin over `content_scan.py` + `test_content_scan.py`, batched per both plans' Maintainer fence; then repair the two portable-sweep code-review findings |
-  | **[TRU] Trust roots and provenance** | `fork-advisory-semantics` archived 2026-08-10 (SHIP); the live gate-reanchor posture below | trusted-source boundary after the release bar settles required source/install claims |
-  | **[REC] Deliberation authority, identity, context, record integrity** | `code-review-blindness` (proposal, 2026-08-10); byline residuals below — `review-gate-enforcement` **archived 2026-08-10** (SHIP, no findings; its two residuals owned by that proposal) | one identity-authority consolidation when a trigger fires, not one proposal per Unicode row |
-  | **[REL] Release evidence and ceremonies** | the landed Maintainer-run release command; the scheduled frozen-file union (`release-security-bar` **archived 2026-08-10** -- audited REVISE, all three pre-archive blockers discharged; residuals in the *Release bar (v0.5)* group) | serialize the SHIP-reviewed release register; derive every ceremony from the live held set, then run one reviewed supervised union |
-
-* **[TRU-5] gate-reanchor-preflight posture** *(plan archived 2026-08-03; this entry
-  survives because its commitments are live, not completed)* — the trust root is
-  established at `cfaace9` *(re-anchored 2026-08-13; previously `e45e1fc`)* and
-  the pre-flight is in the anchor, so every ceremony from here runs the anchored
-  loader. What remains open is the **dated
-  threat-model posture**: Cairn accepts a *trusted-contributor* model for its own
-  trust root, **single-maintainer, as of 2026-08-03** — not a standing
-  assumption. Its mechanical expiry is **the Maintainer's signature on a
-  checkpoint whose message binds the canonical range-review report digest**,
-  verified against the roster read from the anchor.
-  *(Corrected 2026-08-13: this entry previously named a per-commit "signing
-  epoch" tripwire at `a07fac8`. That mechanism was **retired**, not renamed —
-  the epoch constant lived in the tree being blessed, so a candidate could move
-  the line deciding which of its own commits were exempt, and refusing unsigned
-  agent commits contradicted the normal workflow badly enough that operations
-  disabled it. A control routinely disabled is not a control. Authorization now
-  happens in exactly one place: the signed checkpoint. The per-commit census
-  survives as diagnostics inside the range report and is never a verdict.)* *(Corrected at archive: this entry previously
-  named a committer-identity tripwire. That mechanism was superseded during
-  implementation — Git's committer name and email are unauthenticated and a
-  spoofing probe defeated it, GPR2.)* **Two triggers cannot be mechanical and
-  live here on purpose:** (a) the ceremony run on a checkout the Maintainer does
-  not solely control; (b) any adopter taking the mechanism. On either, revisit
-  the posture — the named upgrade paths are OS containment for the evidence stage
-  (SR7), external anchoring via `_gate_manifest.py verify --trusted-repo` (SR9,
-  supported all along and **newly usable now that a `P` exists to anchor**), and
-  a single-use nonce / consumption ledger (SR10). Archived plan
-  `gate-reanchor-preflight`; eleven findings closed across seven reviews (CR1,
-  FUR1-FUR10).
-
-* **[REC-1] byline-classification residuals** *(plan open 2026-08-03; the rows land at
-  plan-open, not at archive, so they outlive the proposal's readership)* — the
-  character-preserving identity fold and the whole-name exact match closed a
-  demonstrated privilege-widening defect in `IdentityModel.classify`. Six
-  residuals were ratified alongside it, each with a named trigger, plus one
-  pre-existing over-flag recorded so it is not mistaken for a regression. A
-  residual with a named trigger is a decision; one without is debt.
-  * **R1 — the exact-name spoof.** Anyone who can write bytes into the artifact
-    can write the rostered display name exactly; no name matcher fixes this,
-    and the tool attests structure while the operator guarantees authorization.
-    Accepted **as dated**: single maintainer, roster size **1**, `as_of
-    2026-08-03`. *Mechanical expiry:* `human_maintainers` in
-    `dev/.cairn/agent-identities.json` gaining a second entry. *Non-mechanical:*
-    a signing trust root that binds a Decision-introducing commit to a verified
-    signer, at which point this classifier is re-decided as a lint over an
-    authenticated signal rather than the thing standing in for one.
-    *Backstop:* re-state or re-decide 2027-02-03.
-  * **R2 — presentation-fold equivalence, RESTATED.** The granting fold makes
-    two names one key when they differ by **canonical decomposition or full
-    case folding**. The proposal asked the Decision to ratify this as "accent-
-    and case-variants … every member reads as the rostered name to a human";
-    three measured classes falsify that wording, so what is ratified here is
-    the restated form with the classes named: (a) **full case folding**
-    expands ligatures and long-s, so a byline a reader sees as *Kriften Long*
-    keys as the rostered *Kristen Long*; (b) **combining-mark stripping**
-    collapses marks that carry letter identity outside Latin — Vietnamese
-    tone, hiragana KA vs GA, the Devanagari nukta, Cyrillic YE vs YO — so a
-    *different person's* name keys as the rostered one; (c) case. All three are
-    **accepted with the class on the record** and pinned in
-    `bootstrap/tests/test_byline_identity.py`, so a later narrowing is a
-    visible test change, not a silent drift. The original mechanical expiry
-    ("the first demonstrated string that folds to a rostered name and does not
-    read as it") was satisfied *before* ratification and is therefore spent.
-    *Mechanical expiry, re-marked:* a demonstrated member of the class that is
-    **not** in the three named groups. *Non-mechanical:* a granting fold that
-    narrows (drops case folding or mark stripping) — which the pinned test is
-    designed to surface.
-  * **R3 — the independence widening, partially closed.** The independence
-    comparator now folds at `NFKD` and catches the precomposed-accent,
-    mathematical-bold and circled-letter disguises of an author byline — **3 of
-    4** measured variants. The **Cyrillic-homoglyph variant stays open**: a
-    same-agent review spelled with a confusable still satisfies the
-    `independent_review` gate. Not fixed here because every sound fix needs a
-    *reviewer*-identity contract that does not exist, and the only human list
-    that does exist confers Decision authority; reusing it would couple two
-    authorities to buy one fix. The 3-of-4 state is pinned in
-    `bootstrap/tests/test_byline_identity.py`. *Mechanical expiry:* the first
-    `## Review` in this repository authored by a human who is not the
-    Maintainer — the event that makes the gate load-bearing. *Non-mechanical:*
-    any durable list of people who may review but may not decide.
-    *Backstop:* 2026-11-03.
-  * **R4 — the flag is not a detector, CORRECTED.** The `unknown` violation
-    message appends the `ascii()`-escaped byline so a confusable is visible at
-    the moment of failure; it reveals, it does not detect. R4's stated expiry
-    was "when `agent-context-scrub` lands its escaping helper, this call site
-    adopts it rather than keeping a second escaper." Measured against that
-    sibling's accepted design (`c7266d4`): its `_FIELD_ESCAPES` table covers C0
-    and C1 controls, DEL, the two line separators and backslash, and states in
-    terms that ordinary international text passes through untouched. A Cyrillic
-    confusable **is** ordinary international text, so adopting that helper here
-    would produce **no diagnostic at all** — the exact failure this escaper
-    exists to fix. The two escapers serve opposite purposes: one renders a
-    payload inert while preserving international text, the other reveals that
-    international text is present. **The merge is measured as wrong**, and the
-    trigger is re-marked: *a shared helper that takes the reveal mode as a
-    parameter, or nothing.* (This is a correction to a residual's routing, not
-    a design change; flagged for the Maintainer alongside R2's restatement.)
-  * **R5 — the behaviour change for a token-style roster.** A `human_maintainers`
-    entry is now the complete display name, and names are compared
-    separator-for-separator; a fragment-style roster recognizes nobody after
-    this change, and a display name written with a non-ASCII `Zs` separator is
-    recognized *before* it and not after. *Mechanical expiry:* the entry under
-    `CHANGELOG.md` > Unreleased > Fixed reaching the **v0.4.0 release notes**.
-    If v0.4.0 ships without it, R5 is unresolved. Blast radius at ratification
-    is Cairn itself (corrected in the implementing commit) and **zero external
-    adopters**, which is why this is a release note rather than an upgrade
-    note; if an adopter exists by v0.4.0, an upgrade note is required instead.
-  * **R6 — the roster file has no documented home.**
-    `dev/.cairn/agent-identities.json` is read by shipped code, written by no
-    installer, and documented only in a code comment (revised by this change to
-    state the config's grammar). *Mechanical expiry:* one sentence in
-    `bootstrap/UPGRADE.md` or the adopter-facing skills documentation, **no
-    later than v0.4.0 release preparation**. Explicitly fenced out of the
-    implementing plan, which changes the *content* of an installed file, not
-    the set of installed files or their docs.
-  * **Pre-existing: the `Devine` over-flag.** The AI registry matches `devin`
-    as a *prefix*, so the real surname **Devine** classifies `ai` today and
-    after this change — and because the AI leg has precedence, a Maintainer
-    with that name cannot fix it from the roster. Not introduced here, not
-    fixed here, and a genuine postdoc-first hazard; recorded so it is owned
-    rather than rediscovered. *Trigger:* anyone whose display name
-    prefix-matches a registry entry needing to be recognized as human — at
-    which point the AI leg needs a roster-beats-registry escape, which is its
-    own proposal.
-
----
+* the **[TRU-5] gate-reanchor trusted-contributor posture**, which had outlived
+  its plan's archive on exactly the grounds that make it a register row;
+* the **[REC-1] byline-classification residuals** — six ratified residuals plus
+  the `Devine` over-flag. **These lost their subject to the sweep**: the identity
+  classifier, the independence comparator and every reader of the roster file
+  were removed with the lifecycle machinery that hosted them. The register
+  records that as a finding, because it means reviewer independence is now
+  enforced by doctrine and Maintainer reading alone, and no one decided that —
+  it fell out of deleting the host module.
 
 ## Status taxonomy
 

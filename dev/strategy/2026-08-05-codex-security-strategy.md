@@ -859,6 +859,70 @@ than no check.
 
 ### [REC] Deliberation authority, identity, context, record integrity
 
+* **[REC-1] The byline identity classifier is gone, and with it the only
+  mechanical reviewer-independence check.** *Raised 2026-08-27 by the C7
+  bankruptcy pass; this is a **finding**, not a carried residual — the register
+  would otherwise have inherited six ratified residuals whose subject no longer
+  exists.* The 2026-08-03 `byline-classification` work shipped an identity fold
+  and a whole-name exact match, and its independence comparator decided whether
+  a `## Review` counted as independent of the author. **Measured 2026-08-27:
+  `IdentityModel` has zero hits outside the deliberation record; so does
+  `independent_review`; the only remaining reference to `human_maintainers` is
+  in `CHANGELOG.md`; and `dev/.cairn/agent-identities.json` is a two-line file
+  no code reads.** The sweep removed the classifier along with the lifecycle
+  machinery that hosted it.
+
+  **What that changes, stated plainly.** Reviewer independence is one half of
+  the Dual-Review model, which is one of Cairn's two stated differentiators. It
+  is now enforced by doctrine and by the Maintainer reading the record — and by
+  nothing mechanical. **This may well be the right posture**: the check was
+  advisory, it never authenticated anyone (`AGENTS.md` has always said the
+  attribution *is* the record's integrity), and the roster it consulted had one
+  entry. The sweep's whole thesis is that a control nobody needs is worse than
+  no control. But the removal was a *side effect* of deleting the host module,
+  not a decision anyone took, and the difference matters.
+
+  **Six ratified residuals lose their subject with it** — the exact-name spoof
+  accepted as dated, the presentation-fold equivalence with its three measured
+  falsifying classes, the 3-of-4 independence widening with the Cyrillic
+  homoglyph left open, the reveal-versus-inert escaper split, the token-style
+  roster behaviour change, and the roster file's undocumented home. Their
+  evidence stays in `dev/plans/archive/byline-classification.md`; the four
+  archive-time follow-ups that sat on the board are on the sweep's dead list.
+  **The `Devine` over-flag goes with them** — the AI registry's prefix match
+  meant a real surname classified as `ai` with no roster escape; a genuine
+  hazard, now moot, and recorded here so it is not rediscovered as new.
+
+  *Decision, not a trigger:* the Maintainer decides whether mechanical
+  independence checking returns. If it does, it returns as a **reviewer**-identity
+  contract, which is the thing that never existed — the only human list Cairn has
+  confers Decision authority, and reusing it would couple two authorities to buy
+  one check. If it does not, `dev/.cairn/agent-identities.json` should be deleted
+  rather than left as configuration nothing consults.
+* **[TRU-5] The gate-reanchor trusted-contributor posture is dated, and its
+  expiry is not mechanical.** *Folded 2026-08-27 from `dev/PLANNING.md`'s Active
+  block, where it survived a plan archive "because its commitments are live, not
+  completed" — which is a register row's definition.* The trust root is
+  established at `cfaace9` (re-anchored 2026-08-13, previously `e45e1fc`) and the
+  preflight is in the anchor, so every ceremony from here runs the anchored
+  loader. What stays open is the **posture**: Cairn accepts a
+  *trusted-contributor* model for its own trust root, **single-maintainer, as of
+  2026-08-03** — a dated acceptance, not a standing assumption. Its mechanical
+  expiry is the Maintainer's signature on a checkpoint whose message binds the
+  canonical range-review report digest, verified against the roster read from the
+  anchor. **Two triggers cannot be mechanical and are named on purpose:** (a) the
+  ceremony run on a checkout the Maintainer does not solely control; (b) any
+  adopter taking the mechanism. On either, revisit the posture. Named upgrade
+  paths: OS containment for the evidence stage, external anchoring via
+  `_gate_manifest.py verify --trusted-repo` — supported all along and usable now
+  that an anchor exists — and a single-use nonce or consumption ledger.
+  *Historical correction preserved:* an earlier per-commit "signing epoch"
+  tripwire was **retired, not renamed** — the epoch constant lived in the tree
+  being blessed, so a candidate could move the line deciding which of its own
+  commits were exempt, and refusing unsigned agent commits contradicted the
+  normal workflow badly enough that operations disabled it. **A control routinely
+  disabled is not a control.** Authorization now happens in exactly one place:
+  the signed checkpoint.
 * **[REC-3 / VER-3] Implementation-verification record conformance.** The v1
   contract instructs authors to append a dated, field-complete record only after
   the stable Boundary B run, but nothing proves the section is nonempty or
