@@ -696,6 +696,24 @@ the facts under them:**
 
 **Net for `dev/PLANNING.md` across both passes: 2,591 -> 860 lines.**
 
+### Archived records are read, never enforced -- Maintainer principle, 2026-08-27
+
+The checker de-scope's first change made `claim_check` skip archived sources.
+The Maintainer ratified it and stated the principle it follows from, verbatim:
+
+> "Archived files are historical record and should never be scanned for the
+> intent of fixing them. It's fine to scan to read history, but they shouldn't
+> have enforcement--that was done (to the state that existed at the time)
+> during their active phases."
+
+This settles more than the one change. **Enforcement is bound to an artifact's
+active phase**, so a checker finding on an archived record is a finding nobody
+may act on: the record is append-only and the tree it described is gone. The
+`--include-archives` escape hatch is therefore correctly *read-only in intent*
+-- it exists so someone can inspect history, not so a gate can hold archives
+green. Any future check that walks `dev/**/archive/` inherits this: it may
+report, it may not enforce.
+
 ## Acceptance criteria
 
 Per chunk, and each falsifiable.

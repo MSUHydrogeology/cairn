@@ -1202,11 +1202,25 @@ than no check.
   was wrong: the widened copy ran from a scratch directory and resolved the repo
   root to itself. The control is what caught that.)*
 
-  **So this is the "large population" branch** — staging or a deprecation
-  window, not an ordinary fix. **The count is not the whole first task:** which
-  of those ten prefixes genuinely dangles in an adopter tree is a separate
-  judgment per prefix, and `docs/` — the largest contributor — is the most
-  arguable of them. Doing it as a side effect of an unrelated plan is how a standing gate
+  **Corrected the same day, and the correction is the more useful finding.**
+  128 was inflated by a prefix list chosen without checking the install
+  manifest. Measured against `scaffold.py --manifest`: `dev/` and `docs/` both
+  **ship to adopters**, so citations into them are not automatically dangling.
+  Re-scored per *cited path* rather than per prefix: **29 of the 128 name a
+  path the adopter actually receives** and would have been false alarms,
+  leaving 99. And 99 is still soft — a large share are bare directory
+  references (`docs/`, `dimensions/`, `dev/measurement/`) or files an adopter
+  creates rather than receives (`dev/measurement/incident_log.md`), which are
+  not broken links in any sense a reader would care about.
+
+  **So the number is not the finding, and it should not be quoted as one.**
+  128 → 99 → smaller again once someone judges the cases; it keeps shrinking
+  under inspection, which is the signature of a measurement standing in for a
+  judgment. What is solid is the *shape*: the gate inspects 64 shipped
+  surfaces and looks for exactly one folder name, so it cannot see the other
+  Cairn-only folders at all. Whether that matters is a per-case read nobody
+  has done. Per the nimbleness note's *"anchors, not scores"* rule, treat any
+  figure here as a trigger to look, never as a score to move. Doing it as a side effect of an unrelated plan is how a standing gate
   changes behaviour without anyone reviewing the change. *Trigger:* the next
   change to `check_cairn`'s prefix set or to shipped-template citation policy.
   **Note for the checker de-scope:** that work touches this exact tuple, so it is
