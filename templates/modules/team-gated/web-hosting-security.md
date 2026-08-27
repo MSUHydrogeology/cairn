@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/.cairn/web-hosting-policy.json, dev/modules/web-hosting-security.md, scripts/web_hosting_security.py -->
 <!-- ^ ADOPTER-TREE destinations. This file is a template: the scaffold
      installs it as dev/modules/<name>.md in an adopter's repository,
      where these paths resolve. Cairn selects neither capability -- it has

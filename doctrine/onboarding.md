@@ -1,4 +1,3 @@
-<!-- claim-check-allow: scripts/onboarding_activate.py, dev/.cairn/onboarding-activated.jsonl, dev/modules/onboarding/ -->
 <!-- The scripts/ + dev/ paths refer to ADOPTER install destinations.
      From Cairn's own checkout these paths do not resolve (the source
      of truth lives at templates/modules/default-on/onboarding_activate.py

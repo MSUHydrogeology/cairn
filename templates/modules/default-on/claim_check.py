@@ -258,6 +258,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import json
 import re
 import sys
 from dataclasses import dataclass, field
@@ -1044,6 +1045,49 @@ def check_line_citation(
     return None
 
 
+#: Repo-relative home of the document-exemption config.  Optional: a tree
+#: without one simply has no configured exemptions, which is the strict
+#: direction, not the lax one.
+_ALLOW_CONFIG_REL = 'dev/.cairn/claim-check-allow.json'
+
+
+def load_allow_config(repo_root: Path) -> dict[str, list[str]]:
+    """Exemption globs declared per document in the config, if one exists.
+
+    Returns ``{repo_relative_doc: [glob, ...]}``.  The config exists so a
+    prose file does not have to carry a checker directive in its own body; the
+    globs it declares are validated and reported exactly as an in-file
+    ``claim-check-allow`` directive's are.
+
+    **Every failure mode yields fewer exemptions, never more.**  A missing,
+    unreadable, malformed, or wrong-shaped config returns ``{}``, so the
+    checker gets stricter rather than quieter -- an exemption list that cannot
+    be read must not be able to grant exemptions.  A parse failure is announced
+    on stderr rather than swallowed, because silently checking *more* than the
+    operator configured is still a surprise.
+    """
+    cfg = repo_root / _ALLOW_CONFIG_REL
+    try:
+        raw = json.loads(cfg.read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError) as exc:
+        print(f'claim_check: {_ALLOW_CONFIG_REL} is unreadable ({exc}); '
+              f'proceeding with NO configured exemptions', file=sys.stderr)
+        return {}
+    entries = raw.get('exemptions') if isinstance(raw, dict) else None
+    if not isinstance(entries, dict):
+        print(f'claim_check: {_ALLOW_CONFIG_REL} has no "exemptions" object; '
+              f'proceeding with NO configured exemptions', file=sys.stderr)
+        return {}
+    out: dict[str, list[str]] = {}
+    for doc, spec in entries.items():
+        paths = spec.get('paths') if isinstance(spec, dict) else spec
+        if isinstance(paths, list):
+            out[str(doc)] = [str(g) for g in paths if str(g).strip()]
+    return out
+
+
 def parse_allow_directives(text: str) -> list[tuple[int, str]]:
     """Return ``(lineno, glob)`` for every glob declared in a
     document-scoped ``<!-- claim-check-allow: <glob>[, ...] -->``
@@ -1189,7 +1233,12 @@ def _scan(
     allow_globs: list[str] = []
     glob_lines: dict[str, int] = {}
     hard: list[Flag] = []
-    for lineno, glob in parse_allow_directives(text):
+    configured = load_allow_config(repo_root).get(doc_rel or '', [])
+    # Line 0 marks "declared in the config, not in this document" -- the
+    # document has no line to point at, and a real line number would be a lie.
+    declared_globs = ([(0, g) for g in configured]
+                      + parse_allow_directives(text))
+    for lineno, glob in declared_globs:
         err = allow_glob_error(glob)
         if err is not None:
             hard.append(Flag(lineno, 'directive', 'hard', glob, err))

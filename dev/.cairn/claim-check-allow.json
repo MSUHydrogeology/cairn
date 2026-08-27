@@ -1,0 +1,265 @@
+{
+  "version": 1,
+  "_comment": [
+    "Per-document claim-check exemptions. An entry says: inside THIS file, these",
+    "backticked paths are cited on purpose and must not be flagged as broken.",
+    "It lives here rather than as a comment in each document so prose files stay",
+    "prose. Scope is per-document deliberately -- a global exemption would waive",
+    "the path everywhere and the checker would stop being able to see it.",
+    "Absent or unreadable config = no exemptions, which is the strict direction."
+  ],
+  "exemptions": {
+    "CHANGELOG.md": {
+      "paths": [
+        "bootstrap/tests/test_lifecycle_cli.py",
+        "bootstrap/tests/test_lifecycle_contract.py",
+        "dev/.cairn/agent-identities.json",
+        "dev/.cairn/cairn_foldback.md",
+        "doctrine/fold-back.md",
+        "templates/modules/default-on/_lifecycle_metrics/",
+        "templates/modules/default-on/fold-back-active-prompt.md",
+        "templates/modules/default-on/fold-back-ledger.md",
+        "templates/modules/default-on/foldback_export_scan.py",
+        "templates/modules/default-on/foldback_suggest.py",
+        "templates/modules/default-on/lifecycle-metrics.md",
+        "templates/modules/default-on/lifecycle_metrics.py",
+        "templates/skills/_lib/lifecycle_planner.py",
+        "tools/lifecycle.py",
+        "tools/lifecycle_planner.py",
+        "tools/suite_cost.py",
+        "scripts/onboarding_activate.py",
+        "scripts/_onboarding/",
+        "dev/plans/byline-classification.md",
+        "dev/proposals/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md",
+        "dev/proposals/archive/2026-06-08-claude-cairn-lifecycle-template-thinning.md",
+        "dev/proposals/archive/2026-06-03-claude-cairn-model-tier-efficiency.md",
+        "dev/proposals/archive/2026-06-03-claude-cairn-doctrine-token-efficiency.md",
+        "dev/proposals/archive/0001-add-mass-balance-invariant-test.md",
+        "dev/plans/cairn-profile-sized-assembly.md",
+        "dev/plans/archive/2026-06-04-claude-retire-verify-doc-links.md",
+        "dev/plans/archive/2026-05-28-claude-cairn-progressive-onboarding.md",
+        "dev/plans/2026-06-04-claude-cairn-foldback-drain.md",
+        "dev/cairn-lock.yml",
+        "dev/architecture_review.md",
+        "docs/developer/vision.md",
+        "docs/developer/style.md",
+        "docs/style.md"
+      ]
+    },
+    "bootstrap/REANCHOR_RUNBOOK.md": {
+      "paths": [
+        "dev/.cairn/trusted-activation.yml",
+        "dev/.cairn/promotion-authorization.yml"
+      ]
+    },
+    "bootstrap/SAFETY.md": {
+      "paths": [
+        "scripts/_onboarding/",
+        "scripts/api_access_security.py",
+        "scripts/web_hosting_security.py",
+        "scripts/run_security_verification.py"
+      ]
+    },
+    "bootstrap/_scaffold/SECURITY_MUTATIONS.md": {
+      "paths": [
+        "bootstrap/_scaffold/",
+        "bootstrap/_scaffold/security.py",
+        "bootstrap/_scaffold/__init__.py"
+      ]
+    },
+    "dev/measurement/queued-issue-drafts.md": {
+      "paths": [
+        "scripts/transition_lint.py",
+        "templates/modules/default-on/_lifecycle_metrics/",
+        "templates/modules/default-on/lifecycle_metrics.py"
+      ]
+    },
+    "dev/measurement/tag-pass-dispositions.md": {
+      "paths": [
+        "../plans/comprehension-outlives-the-artifact.md",
+        "bootstrap/tests/test_lifecycle_brief.py",
+        "bootstrap/tests/test_lifecycle_cli.py",
+        "bootstrap/tests/test_lifecycle_vocabulary.py",
+        "bootstrap/tests/test_transition_lint.py",
+        "scripts/transition_lint.py",
+        "templates/core/dev/proposals/_template.md",
+        "tools/lifecycle.py",
+        "tools/lifecycle_planner.py"
+      ]
+    },
+    "dev/modules/claim-check.md": {
+      "paths": [
+        "scripts/check_cairn.py"
+      ]
+    },
+    "dev/modules/documentation-plan.md": {
+      "paths": [
+        "docs/developer/"
+      ]
+    },
+    "dev/modules/security-verification.md": {
+      "paths": [
+        "scripts/run_security_verification.py"
+      ]
+    },
+    "dev/plans/subtraction-sweep.md": {
+      "paths": [
+        "bootstrap/tests/test_byline_identity.py",
+        "bootstrap/tests/test_doctrine_vocabulary_drift.py",
+        "bootstrap/tests/test_lifecycle_board.py",
+        "bootstrap/tests/test_lifecycle_brief.py",
+        "bootstrap/tests/test_lifecycle_cli.py",
+        "bootstrap/tests/test_lifecycle_contract.py",
+        "bootstrap/tests/test_lifecycle_failsafe.py",
+        "bootstrap/tests/test_lifecycle_metrics_config.py",
+        "bootstrap/tests/test_lifecycle_metrics_events.py",
+        "bootstrap/tests/test_lifecycle_stage_patterns.py",
+        "bootstrap/tests/test_lifecycle_vocabulary.py",
+        "bootstrap/tests/test_metrics_status_normalization.py",
+        "bootstrap/tests/test_pilot_evidence.py",
+        "bootstrap/tests/test_suite_ledger.py",
+        "bootstrap/tests/test_transition_lint.py",
+        "dev/.cairn/agent-identities.json",
+        "dev/measurement/pilot-activation.md",
+        "dev/measurement/pilot-events.md",
+        "doctrine/fold-back.md",
+        "scripts/foldback_export_scan.py",
+        "scripts/foldback_suggest.py",
+        "scripts/transition_lint.py",
+        "scripts/transition_lint_whitelist.py",
+        "templates/modules/default-on/_lifecycle_metrics/parse.py",
+        "templates/modules/default-on/lifecycle_metrics.py",
+        "templates/skills/_lib/lifecycle.py",
+        "tools/_lifecycle_metrics/",
+        "tools/lifecycle.py",
+        "tools/lifecycle_metrics.py",
+        "tools/lifecycle_planner.py",
+        "tools/suite_cost.py"
+      ]
+    },
+    "dev/proposals/2026-08-20-claude-scanner-claim-scope.md": {
+      "paths": [
+        "scripts/run_security_audit.py"
+      ]
+    },
+    "dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md": {
+      "paths": [
+        "dev/security_review_protocols.md",
+        "templates/core/",
+        "templates/modules/",
+        "dev/cairn-lock.yml"
+      ]
+    },
+    "dev/strategy/2026-08-21-claude-nimbleness-recovery.md": {
+      "paths": [
+        "dev/measurement/pilot-events.md",
+        "tools/lifecycle.py"
+      ]
+    },
+    "docs/solo-legacy-recipe.md": {
+      "paths": [
+        "docs/assumptions.md"
+      ]
+    },
+    "doctrine/doc-governance.md": {
+      "paths": [
+        "docs/developer/",
+        "docs/developer/vision.md",
+        "docs/vision.md",
+        "docs/developer/style.md",
+        "docs/style.md",
+        "STYLE_GUIDE.md"
+      ]
+    },
+    "doctrine/onboarding.md": {
+      "paths": [
+        "scripts/onboarding_activate.py",
+        "dev/.cairn/onboarding-activated.jsonl",
+        "dev/modules/onboarding/"
+      ]
+    },
+    "doctrine/session-routines.md": {
+      "paths": [
+        "dev/rules/custom_session_start.md",
+        "dev/rules/custom_session_end.md",
+        "dev/incident_log.md",
+        "dev/coordination_log.md"
+      ]
+    },
+    "examples/minimal/README.md": {
+      "paths": [
+        "dev/proposals/archive/0001-add-name-argument.md"
+      ]
+    },
+    "examples/scientific-minimal/README.md": {
+      "paths": [
+        "dev/proposals/archive/0001-add-mass-balance-invariant-test.md"
+      ]
+    },
+    "templates/codebase-readiness-report.md": {
+      "paths": [
+        "dev/readiness-report.md",
+        "dev/readiness-report-summary.md",
+        "dev/readiness-report-decision.md"
+      ]
+    },
+    "templates/core/dev/collaboration_agreement.md": {
+      "paths": [
+        "dev/measurement/pilot-activation.md"
+      ]
+    },
+    "templates/modules/default-on/claim-check.md": {
+      "paths": [
+        "scripts/check_cairn.py"
+      ]
+    },
+    "templates/modules/default-on/documentation-plan.md": {
+      "paths": [
+        "docs/developer/"
+      ]
+    },
+    "templates/modules/default-on/documentation_plan_template.md": {
+      "paths": [
+        "docs/quickstart/",
+        "docs/user_guide/",
+        "docs/how-to/",
+        "docs/reference/",
+        "docs/theory/",
+        "docs/explanation/",
+        "docs/developer/",
+        "docs/developer/extending.md",
+        "docs/tutorials/"
+      ]
+    },
+    "templates/modules/default-on/security-verification.md": {
+      "paths": [
+        "scripts/run_security_verification.py"
+      ]
+    },
+    "templates/modules/team-gated/api-access-security.md": {
+      "paths": [
+        "dev/.cairn/api-access-policy.json",
+        "dev/modules/api-access-security.md",
+        "scripts/api_access_security.py"
+      ]
+    },
+    "templates/modules/team-gated/architecture-review.md": {
+      "paths": [
+        "dev/architecture_review.md"
+      ]
+    },
+    "templates/modules/team-gated/web-hosting-security.md": {
+      "paths": [
+        "dev/.cairn/web-hosting-policy.json",
+        "dev/modules/web-hosting-security.md",
+        "scripts/web_hosting_security.py"
+      ]
+    },
+    "templates/onboarding/high-rigor-legacy.md": {
+      "paths": [
+        "dev/modules/legacy-agent.md",
+        "dev/modules/dual-language-tests.md"
+      ]
+    }
+  }
+}

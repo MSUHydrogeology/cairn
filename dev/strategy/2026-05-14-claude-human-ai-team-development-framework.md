@@ -1,5 +1,4 @@
 <!-- Migrated 2026-06-12 from modflow_tools dev/strategy/ (Cairn's development home before self-hosting). Authored from modflow_tools' vantage; some path cites and "current state" reflect that origin and are being adapted to Cairn. Preserved as Cairn's living deliberation record -- see dev/strategy/MIGRATION.md. -->
-<!-- claim-check-allow: dev/security_review_protocols.md -->
 # Cairn -- the guide star: rationale, current state, and direction
 
 **Author**: Claude (Strategy)
@@ -896,7 +895,6 @@ hazard that raised it.
 
 Two horizons follow.
 
-<!-- claim-check-allow: templates/core/, templates/modules/, dev/cairn-lock.yml -->
 
 ### Horizon 1 -- community-maintained scientific software
 

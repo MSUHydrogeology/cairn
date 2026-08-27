@@ -1,4 +1,3 @@
-<!-- claim-check-allow: scripts/check_cairn.py -->
 <!-- ^ Adopter-safety: this module doc cites Cairn's own `scripts/check_cairn.py`
      (which exists in Cairn but not in an adopter tree). The directive travels
      with the rendered copy so every installed adopter passes its own claim
@@ -149,12 +148,26 @@ Three knobs cover most local needs:
   marker. Its in-document equivalent is the `claim-check-allow`
   directive (`<!-- claim-check-allow: GLOB, GLOB -->`), which exempts
   the named path globs document-wide.
-* **Document-scoped path exemption** (`<!-- claim-check-allow: <glob>,
-  <glob> -->`): a deliberate forward-reference the marker grammar does
-  not cover (e.g. a single cross-document path citation) is named in
-  this document-scoped directive and recorded for audit. Globs must be
-  specific (at least two literal path segments before any wildcard, and
-  a literal final filename stem) so they cannot exempt a whole subtree.
+* **Document-scoped path exemption**, declared in
+  `dev/.cairn/claim-check-allow.json`: a deliberate forward-reference the
+  marker grammar does not cover (e.g. a single cross-document path
+  citation) is named there against the document it applies to, and
+  recorded for audit. Globs must be specific (at least two literal path
+  segments before any wildcard, and a literal final filename stem) so
+  they cannot exempt a whole subtree.
+
+  The config is **optional** -- a tree without one has no exemptions,
+  which is the strict direction. It is also read **fail-toward-strict**:
+  a config that cannot be parsed exempts nothing and says so on stderr,
+  because an exemption list that cannot be read must not be able to
+  grant exemptions.
+
+  The equivalent in-document directive (`<!-- claim-check-allow: GLOB,
+  GLOB -->`) still works and is the right tool for a one-off. Prefer the
+  config for anything standing: an exemption comment is read by every
+  human who opens the document and acted on by none of them, and it
+  accumulates. Cairn moved 136 globs out of 29 of its own documents for
+  exactly that reason.
 * The markdown-context rules are small, readable edits at the top of
   the script if your conventions differ.
 

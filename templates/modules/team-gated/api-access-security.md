@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/.cairn/api-access-policy.json, dev/modules/api-access-security.md, scripts/api_access_security.py -->
 <!-- ^ ADOPTER-TREE destinations. This file is a template: the scaffold
      installs it as dev/modules/<name>.md in an adopter's repository,
      where these paths resolve. Cairn selects neither capability -- it has

@@ -1,5 +1,3 @@
-<!-- claim-check-allow: bootstrap/_scaffold/, bootstrap/_scaffold/security.py, bootstrap/_scaffold/__init__.py -->
-
 # SR6 — adopter-tree mutation inventory (scaffold-split Stage 1)
 
 Every write/removal the scaffold engine performs **into an adopter's target

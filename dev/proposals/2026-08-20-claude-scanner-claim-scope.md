@@ -414,7 +414,6 @@ Assurance path: high-assurance
 **Tier**: Internal
 **Findings**: raised (4 blocking, 4 non-blocking)
 
-<!-- claim-check-allow: scripts/run_security_audit.py -->
 <!-- The directive covers [R5] only, which cites that path *because it does not
      resolve*. It suppresses nothing of the author's: their two occurrences sit
      inside backticked commands, which claim_check never matched in the first

@@ -1,7 +1,3 @@
-<!-- claim-check-allow: scripts/transition_lint.py, templates/modules/default-on/_lifecycle_metrics/, templates/modules/default-on/lifecycle_metrics.py -->
-<!-- The three paths above are cited only as evidence that they no longer
-     exist -- all three were deleted by the 2026-08 subtraction sweep. -->
-
 # PLANNING.md bankruptcy — queued-block issue drafts
 
 Drafting-only working file. Nothing here has been filed as a GitHub issue;

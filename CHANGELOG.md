@@ -1,22 +1,17 @@
 <!-- A release history necessarily names files as they were at each version; a
      path that later stopped existing does not make the entry wrong. -->
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, dev/.cairn/agent-identities.json, dev/.cairn/cairn_foldback.md, doctrine/fold-back.md, templates/modules/default-on/_lifecycle_metrics/, templates/modules/default-on/fold-back-active-prompt.md, templates/modules/default-on/fold-back-ledger.md, templates/modules/default-on/foldback_export_scan.py, templates/modules/default-on/foldback_suggest.py, templates/modules/default-on/lifecycle-metrics.md, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle_planner.py, tools/lifecycle.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
-<!-- claim-check-allow: scripts/onboarding_activate.py, scripts/_onboarding/ -->
 <!-- Historical lifecycle paths: this changelog narrates Cairn's construction, tracked in the modflow_tools-side dev/ lifecycle (and earlier Cairn locations) -- the cited stems are history, not claims about Cairn's own tree. -->
-<!-- claim-check-allow: dev/plans/byline-classification.md -->
 <!-- ^ Archived 2026-08-04; the plans moved to dev/plans/archive/. These are
      historical citations in append-only or logged content, so the path is
      exempted rather than rewritten -- editing a prior section to chase a
      file move is what AGENTS.md's cite-by-stem convention exists to avoid. -->
 
-<!-- claim-check-allow: dev/proposals/archive/2026-06-04-claude-cairn-foldback-drain-7-candidates.md, dev/proposals/archive/2026-06-08-claude-cairn-lifecycle-template-thinning.md, dev/proposals/archive/2026-06-03-claude-cairn-model-tier-efficiency.md, dev/proposals/archive/2026-06-03-claude-cairn-doctrine-token-efficiency.md, dev/proposals/archive/0001-add-mass-balance-invariant-test.md, dev/plans/cairn-profile-sized-assembly.md, dev/plans/archive/2026-06-04-claude-retire-verify-doc-links.md, dev/plans/archive/2026-05-28-claude-cairn-progressive-onboarding.md, dev/plans/2026-06-04-claude-cairn-foldback-drain.md, dev/cairn-lock.yml, dev/architecture_review.md -->
 <!-- The adopter-install path is cited verbatim in the
      progressive-onboarding entry; from Cairn's own checkout the path
      does not resolve (the source-of-truth lives at
      templates/modules/default-on/onboarding_activate.py).  Same
      pattern as the fold-back-active-surfacing entry's claim-check
      exemptions. -->
-<!-- claim-check-allow: docs/developer/vision.md, docs/developer/style.md, docs/style.md -->
 <!-- The doc-governance Chunk 2 + Chunk 7 entries quote example
      paths for vision + style conventions an adopter MIGHT use; these
      are the doctrine's enumeration of "common homes" without

@@ -1,5 +1,3 @@
-<!-- claim-check-allow: dev/measurement/pilot-activation.md -->
-
 # Collaboration agreement — {{project_name}}
 
 This is the **working agreement** for {{project_name}}'s human + AI

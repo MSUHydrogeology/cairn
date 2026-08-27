@@ -1,5 +1,4 @@
 <!-- cairn-internal-ref-allow: doctrine/ reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
-<!-- claim-check-allow: dev/readiness-report.md, dev/readiness-report-summary.md, dev/readiness-report-decision.md -->
 <!-- ^ Illustrative output paths of the readiness assessment, created on first use; the cite travels with this template to adopters. -->
 
 # Codebase Readiness Report

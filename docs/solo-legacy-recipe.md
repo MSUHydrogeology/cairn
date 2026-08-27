@@ -1,4 +1,3 @@
-<!-- claim-check-allow: docs/assumptions.md -->
 <!-- The path above is external-repo: it lives in the adopter's own
      tree (created by their first substantive proposal), not Cairn's. -->
 

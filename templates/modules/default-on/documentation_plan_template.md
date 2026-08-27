@@ -1,4 +1,3 @@
-<!-- claim-check-allow: docs/quickstart/, docs/user_guide/, docs/how-to/, docs/reference/, docs/theory/, docs/explanation/, docs/developer/, docs/developer/extending.md, docs/tutorials/ -->
 <!-- The docs/* paths above are illustrative Diátaxis doc-tier examples in the
      structure table below — the dirs an *adopter* creates, not claims about
      this tree — so they are exempted from claim_check path resolution (they

@@ -1,4 +1,3 @@
-<!-- claim-check-allow: docs/developer/, docs/developer/vision.md, docs/vision.md, docs/developer/style.md, docs/style.md, STYLE_GUIDE.md -->
 <!-- ^ illustrative adopter-tree paths in the tier-recognition and
      common-homes-for-vision sections; these are adopter-side
      conceptual paths, not Cairn-tree paths. -->

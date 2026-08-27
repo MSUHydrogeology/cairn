@@ -1,6 +1,5 @@
 <!-- A dated record of a completed measurement pass. It cites the tree as it
      stood then; rewriting it would falsify the measurement. -->
-<!-- claim-check-allow: ../plans/comprehension-outlives-the-artifact.md, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_transition_lint.py, scripts/transition_lint.py, templates/core/dev/proposals/_template.md, tools/lifecycle.py, tools/lifecycle_planner.py -->
 # Finding-tag pass — the keep ledger
 
 Chunk C of [`comprehension-outlives-the-artifact`](../plans/archive/comprehension-outlives-the-artifact.md).

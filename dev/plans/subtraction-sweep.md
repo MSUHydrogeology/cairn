@@ -2,7 +2,6 @@
      directive below resolved when this plan was written, and stops resolving
      as the chunk that removes it lands. The citation IS the record of what
      went, so it stays and the checker is told why. -->
-<!-- claim-check-allow: bootstrap/tests/test_byline_identity.py, bootstrap/tests/test_doctrine_vocabulary_drift.py, bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, bootstrap/tests/test_lifecycle_failsafe.py, bootstrap/tests/test_lifecycle_metrics_config.py, bootstrap/tests/test_lifecycle_metrics_events.py, bootstrap/tests/test_lifecycle_stage_patterns.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_metrics_status_normalization.py, bootstrap/tests/test_pilot_evidence.py, bootstrap/tests/test_suite_ledger.py, bootstrap/tests/test_transition_lint.py, dev/.cairn/agent-identities.json, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, scripts/foldback_export_scan.py, scripts/foldback_suggest.py, scripts/transition_lint.py, scripts/transition_lint_whitelist.py, templates/modules/default-on/_lifecycle_metrics/parse.py, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle.py, tools/_lifecycle_metrics/, tools/lifecycle.py, tools/lifecycle_metrics.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`

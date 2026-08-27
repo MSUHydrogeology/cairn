@@ -1,4 +1,3 @@
-<!-- claim-check-allow: dev/architecture_review.md -->
 <!-- ^ Illustrative adopter-tree path: this module's output surface, created on first use; the cite travels with the template to adopters. -->
 
 # Module: architecture-review

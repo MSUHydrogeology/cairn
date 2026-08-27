@@ -1,4 +1,3 @@
-<!-- claim-check-allow: scripts/_onboarding/, scripts/api_access_security.py, scripts/web_hosting_security.py, scripts/run_security_verification.py -->
 <!-- The two `scripts/*_security.py` globs are ADOPTER-tree install destinations
      of Rule 11's two team-gated modules. Cairn does not select those modules on
      itself, so the paths deliberately do not resolve here; the reviewed sources
