@@ -2,7 +2,7 @@
      directive below resolved when this plan was written, and stops resolving
      as the chunk that removes it lands. The citation IS the record of what
      went, so it stays and the checker is told why. -->
-<!-- claim-check-allow: bootstrap/tests/test_byline_identity.py, bootstrap/tests/test_doctrine_vocabulary_drift.py, bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, bootstrap/tests/test_lifecycle_failsafe.py, bootstrap/tests/test_lifecycle_metrics_config.py, bootstrap/tests/test_lifecycle_metrics_events.py, bootstrap/tests/test_lifecycle_stage_patterns.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_metrics_status_normalization.py, bootstrap/tests/test_pilot_evidence.py, bootstrap/tests/test_suite_ledger.py, bootstrap/tests/test_transition_lint.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, scripts/foldback_export_scan.py, scripts/foldback_suggest.py, scripts/transition_lint.py, scripts/transition_lint_whitelist.py, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle.py, tools/_lifecycle_metrics/, tools/lifecycle.py, tools/lifecycle_metrics.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
+<!-- claim-check-allow: bootstrap/tests/test_byline_identity.py, bootstrap/tests/test_doctrine_vocabulary_drift.py, bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_brief.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_contract.py, bootstrap/tests/test_lifecycle_failsafe.py, bootstrap/tests/test_lifecycle_metrics_config.py, bootstrap/tests/test_lifecycle_metrics_events.py, bootstrap/tests/test_lifecycle_stage_patterns.py, bootstrap/tests/test_lifecycle_vocabulary.py, bootstrap/tests/test_metrics_status_normalization.py, bootstrap/tests/test_pilot_evidence.py, bootstrap/tests/test_suite_ledger.py, bootstrap/tests/test_transition_lint.py, dev/measurement/pilot-activation.md, dev/measurement/pilot-events.md, scripts/foldback_export_scan.py, scripts/foldback_suggest.py, scripts/transition_lint.py, scripts/transition_lint_whitelist.py, templates/modules/default-on/_lifecycle_metrics/parse.py, templates/modules/default-on/lifecycle_metrics.py, templates/skills/_lib/lifecycle.py, tools/_lifecycle_metrics/, tools/lifecycle.py, tools/lifecycle_metrics.py, tools/lifecycle_planner.py, tools/suite_cost.py -->
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
@@ -559,6 +559,93 @@ can.
 
 The security block's authority is that strategy doc's own committed
 serialization note, not this table.
+
+## C7 bankruptcy record -- the security block, executed 2026-08-27
+
+The routing map above gave the security block a destination. This records the
+pass that used it, and satisfies the map's own acceptance criterion -- *no live
+row is deleted without a named destination or an explicit decline in the
+record* -- for this block.
+
+**Shape.** `dev/PLANNING.md` `### Security-cluster routing`: 1,010 lines, 13
+groups, **93 top-level rows** (enumerated mechanically, not counted by eye).
+`dev/PLANNING.md` goes 2,591 -> 1,612 lines. The surviving rows are now the
+**Live residual register** in
+`dev/strategy/2026-08-05-codex-security-strategy.md`, which goes 621 -> 1,283
+lines; the board keeps a pointer and a where-to-look table.
+
+**Method, and why it was not judgment alone.** The hazard in a bankruptcy pass
+is dropping a row whose subject is still alive, or -- the quieter failure --
+carrying forward a row whose subject the sweep already deleted, so the register
+ships a revival trigger that can never fire. Both were checked mechanically
+before any row was judged:
+
+* Every backticked path in the block was extracted and resolved against the
+  tree: **77 distinct paths, 32 unresolved**, of which most are bare basenames
+  used in prose and four are cited *because* they do not exist (`pytest.ini`,
+  `pyproject.toml`, `tox.ini`, `setup.cfg` -- the root-conftest row's point is
+  that none exists).
+* Every cited symbol was resolved the same way. This is what caught the
+  byline-classification rows: `_fold_word` returns **zero non-`dev/` hits**, and
+  `dev/.cairn/agent-identities.json` has **no reader anywhere outside the
+  deliberation record**. Four rows whose class the cluster map still calls "one
+  identity authority surface" had lost their entire subject to C6.
+
+**Dead rows -- 14, each with the measurement that showed the subject gone.**
+These are not carried into the register.
+
+| row | measurement |
+|---|---|
+| Preflight **R3** | trigger was "the `transition-lint` proposal landing a lifecycle linter"; C5 removed the transition lint, so the trigger names a mechanism that cannot arrive |
+| Preflight **R5** | pinned a sub-block of `Author-accounting`; `git grep` finds **zero** occurrences of that block in `templates/` after C2's rewrite |
+| Preflight **R6** | `_has_kind` survives only in `scripts/gen_legacy_passes.py`, a one-off generator; the planner gate it described is gone |
+| Structural line-reader follow-ups | `_gitignore_status` has **zero** hits tree-wide; the audited class-D `splitlines()` sites named lifecycle-metrics, removed at C6. Its one live limb -- the two private CR/LF helpers -- is folded into the register's [BND-4] pairs-only entry |
+| Lifecycle mutation/commit arm | the lifecycle CLI it extended is gone (C6). The **authority boundary survives** and is restated in the register's [REC-5] entry as binding on any future mechanism |
+| Lifecycle mechanization dogfood study | the study existed to earn the row above; with no mechanism there is nothing to earn |
+| Planner cross-checks | `tools/lifecycle_planner.py` does not resolve (C6) |
+| `_agent_of` round-suffix regression test | `_agent_of` appears only in `CHANGELOG.md` and archived artifacts |
+| Lifecycle-routine skill payloads (post-v1) | the four proposed episodic skills were transitions of the removed CLI |
+| Marker grammar's second, weaker definition | `templates/modules/default-on/_lifecycle_metrics/parse.py` does not resolve (C6) |
+| One unchecked claim in the transition gates | `bootstrap/tests/test_lifecycle_contract.py` does not resolve; the planner that reported the claim met is gone |
+| **Four** byline-classification rows (NFKD mappings unpinned; `casefold()` sampled not enumerated; no hostile roster tested; the B2 adjacency undecided) | the identity normalizer is gone -- `_fold_word` has zero non-`dev/` hits and `dev/.cairn/agent-identities.json` has no reader |
+| SP8-1 item (b) | "fix `tools/lifecycle_planner.py`'s archive gate" -- the file does not resolve |
+| SP8-9's planner-owned residuals | the `Dispositions:` parser, the `--include-archive` scan mode and the loop-fidelity precondition regex were all planner code (C6). The separate `bootstrap/tests/test_loop_fidelity_gate.py` is a different gate and is untouched |
+
+**Already discharged, so not carried:** SP8-1 (a), SP8-2, SP8-9 and SP8-11 each
+record their own discharge in the block; the archived plans hold the evidence.
+
+**Live rows: 75, all folded.** Every remaining row reached the register. Two
+were re-measured rather than transcribed, because the sweep had moved their
+subject and a stale figure is the thing this plan keeps getting wrong:
+
+* **SC2's `B607` findings** -- the row said "four `B607` findings" in
+  `templates/skills/_lib/lifecycle.py` and `lifecycle_planner.py`, neither of
+  which resolves. Re-measured with Bandit 1.9.4 against the surviving
+  session-kernel twins: **9 LOW -- `B404` x1, `B603` x6, `B607` x2**, both
+  `B607` sites in `session.py`. The finding is live and smaller; the register
+  carries the new figure and says when it was taken.
+* **The detached-checkout `__pycache__` guard** -- re-run 2026-08-27 without
+  `PYTHONDONTWRITEBYTECODE`: still red, still green under the suppressor,
+  unchanged by the sweep. The row's own sharper diagnosis holds.
+
+**One orphan the pass surfaced, filed rather than fixed.**
+`dev/.cairn/agent-identities.json` is still on disk and **nothing reads it** --
+C6 removed its only consumer. It is untracked machine state, so nothing reddens;
+it is noted here because a config file no code reads is exactly the kind of
+residue a bankruptcy pass exists to find, and deleting a file in the machine-
+state directory is not this plan's scope.
+
+**Two rows carry a Maintainer disposition and were preserved verbatim rather
+than summarized**: SC4's *"SC4 - fold in"* and the detached-checkout guard's
+filing instruction. A quoted authorization does not get paraphrased in a
+compression pass.
+
+**What the strategy owed, now paid.** Its refocus serialization note listed four
+rows that would "conform when their sweep chunk lands". All four chunks have
+landed and all four are conformed in that note, including [VER-6], whose
+question was whether the five security-preflight questions survived C2's
+constitution rewrite. **They survived** -- verified in both templates -- so the
+answer is recorded as *survived*, not left as a silent drop.
 
 ## Acceptance criteria
 
