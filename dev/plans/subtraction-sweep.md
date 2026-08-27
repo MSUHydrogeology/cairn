@@ -882,6 +882,61 @@ are called by surviving code, so the span's boundaries are wrong as drawn, not
 merely under-tested. Fix the boundary; do not carve the functions out as an
 afterthought.
 
+## Implementation verification -- Claude -- 2026-08-27
+
+**Boundary B mode**: full.
+
+**Tested SHA**: `b1e655d` (C7's final implementation commit plus the Maintainer's
+gate-manifest regeneration). **Interpreter**: Python 3.13.13, the canonical
+binding at `dev/.cairn/local-env.json`. **Pre/post working-tree state**: clean
+apart from two long-standing untracked files (`.claude/`,
+`dev/measurement/collision_log.md`), neither read by the suite.
+
+**Why full and not bounded.** This plan's own reviewed contract names C7 as a
+full-run point, and the fence refuses bounded mode here on its own terms: the
+work touches the **gate manifest** (a contract surface) and a **shipped checker**
+(`claim_check.py`, both twins) on the path `check_cairn` walks tree-wide. No
+bounding argument was attempted.
+
+**Commands and outcomes**
+
+```
+CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
+  -> 2 failed, 3166 passed, 1 skipped   (560.26s / 9m20s)
+python scripts/quality_gate.py --sub neutrality --sub redundancy
+  -> neutrality fail=79 info=21 ; redundancy fail=0
+python scripts/check_cairn.py
+  -> 2 issues, both pre-existing in an open proposal's link targets
+```
+
+**Non-pass disposition**
+
+* **Both failures are `test_ast_attest.py`** -- the AST baseline debt, **red at
+  clean HEAD before any of this session's work** (established by stashing and
+  re-running both suites, where `test_gate_manifest` passed and these two failed
+  identically). Not caused here; owned by the separate Maintainer-run direct
+  correction.
+* **The five `test_gate_manifest` failures this work created are gone**, cleared
+  by the Maintainer's regeneration. The delta was verified by set equality
+  before and after: 178 -> 179 frozen files, **1 added** (the new config-guard
+  test), **0 removed**, **2 changed** (the `claim_check.py` twins) -- exactly the
+  predicted set.
+* **The 1 skip is disposed, not observed** -- and it is a finding.
+  `test_reference_scripts.py::TestMultiScriptModules` skips with *"got empty
+  parameter set for (module_name)"*, because C6 emptied `_MULTI_SCRIPT_MODULES`
+  when it deleted the fold-back ledger's two scripts. **Measured 2026-08-27:
+  eight modules ship more than one verbatim `.py` today** -- `api-access-security`
+  (5), `coordination-tiers` (9), `web-hosting-security` (5), `claim-check`,
+  `content-security`, `doc-drift-prevention`, `issue-capture` (2 each) -- and
+  this assertion now covers **none** of them. The sibling `_SCRIPT_MODULES` still
+  carries one live entry, so only the multi-script leg went dark. Filed to the
+  security strategy's register under [VER-5]; **not fixed here**, because
+  repopulating it is new test coverage rather than sweep work.
+
+**Known omissions.** The AST baseline correction is prepared and dry-run
+verified but not applied -- it is the Maintainer's to run. Release verification
+is a separate ceremony and was not performed.
+
 ## Code review
 
 Floor: a same-type agent in an independent context, not the implementing agent.

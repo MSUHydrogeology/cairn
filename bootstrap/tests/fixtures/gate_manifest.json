@@ -14,7 +14,7 @@
     }
   },
   "collection": {
-    "node_count": 3165,
+    "node_count": 3169,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -168,6 +168,10 @@
       "bootstrap/tests/test_check_cairn_counts.py::TestCheckCairnCountLens::test_drifted_annotation_flags",
       "bootstrap/tests/test_check_cairn_counts.py::TestCheckCairnCountLens::test_unannotated_file_is_a_noop",
       "bootstrap/tests/test_check_cairn_counts.py::TestCheckCairnCountLens::test_unregistered_key_is_refused",
+      "bootstrap/tests/test_claim_check_allow_config.py::TestProseCarriesNoClaimCheckDirective::test_no_live_markdown_declares_an_inline_directive",
+      "bootstrap/tests/test_claim_check_allow_config.py::TestTheConfigIsWhereExemptionsLive::test_a_configured_document_is_clean_and_is_not_clean_without_it",
+      "bootstrap/tests/test_claim_check_allow_config.py::TestTheConfigIsWhereExemptionsLive::test_a_tree_with_no_config_is_not_an_error",
+      "bootstrap/tests/test_claim_check_allow_config.py::TestTheConfigIsWhereExemptionsLive::test_an_unreadable_config_grants_nothing",
       "bootstrap/tests/test_claim_check_module.py::TestAllowGlobValidation::test_bare_wildcard_rejected",
       "bootstrap/tests/test_claim_check_module.py::TestAllowGlobValidation::test_directory_wide_subtree_glob_rejected",
       "bootstrap/tests/test_claim_check_module.py::TestAllowGlobValidation::test_filename_stem_globs_allowed",
@@ -4362,6 +4366,11 @@
       "oid": "dbe11dd7acfe57afb8c142cd58dd5ac2705f1540",
       "sha256": "1c5b3937a50eb1f150d5aedc59af76fb29091864094cb7513b866548dbf69dbf"
     },
+    "bootstrap/tests/test_claim_check_allow_config.py": {
+      "mode": "100644",
+      "oid": "597693b055db2402ee6cf9b918d53d2c899cba5f",
+      "sha256": "58700c2c3c6d6b0819722c04a91764c58e352c581d780f616a4f636dd1c416b7"
+    },
     "bootstrap/tests/test_claim_check_module.py": {
       "mode": "100644",
       "oid": "3cb45b670cf9e6110d9f15194b7850f30a1f4862",
@@ -4864,8 +4873,8 @@
     },
     "scripts/claim_check.py": {
       "mode": "100644",
-      "oid": "c5057a92bc54464e9411659749c67744584eaaba",
-      "sha256": "fb54d1aef0079c86cedd31b19531a9030f48cdb81f8349ca73999e810dee1485"
+      "oid": "8f70698b3ce296b03fb46e1f153bb2b7c6c9f35e",
+      "sha256": "56adeff64a28a154eb4706bbe9626e1b3cf7241bb36ce9b9ab3355fdb5820140"
     },
     "scripts/content_scan.py": {
       "mode": "100644",
@@ -4979,8 +4988,8 @@
     },
     "templates/modules/default-on/claim_check.py": {
       "mode": "100644",
-      "oid": "c5057a92bc54464e9411659749c67744584eaaba",
-      "sha256": "fb54d1aef0079c86cedd31b19531a9030f48cdb81f8349ca73999e810dee1485"
+      "oid": "8f70698b3ce296b03fb46e1f153bb2b7c6c9f35e",
+      "sha256": "56adeff64a28a154eb4706bbe9626e1b3cf7241bb36ce9b9ab3355fdb5820140"
     },
     "templates/modules/default-on/evolution_infer.py": {
       "mode": "100644",

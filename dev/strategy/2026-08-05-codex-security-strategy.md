@@ -708,6 +708,40 @@ than no check.
   demonstrable by a sentinel monkeypatch that reddens under a
   hand-rolled-mapping refactor. Anyone writing this guard writes that claim.
   *Trigger:* any edit to `scan_targets()`.
+* **[VER-5] The multi-script install assertion covers nothing, and eight modules
+  need it.** *(Found 2026-08-27 disposing of a single skip in a full-suite run.)*
+  `bootstrap/tests/test_reference_scripts.py::TestMultiScriptModules` asserts the
+  property *"a module that ships more than one verbatim script needs the scaffold
+  to install ALL of them."* Its parameter source `_MULTI_SCRIPT_MODULES` was
+  emptied by the subtraction sweep's C6 when the fold-back ledger's two scripts
+  were deleted, so the test now skips with *"got empty parameter set"*.
+  **Measured the same day: eight modules ship more than one verbatim `.py`** --
+  `coordination-tiers` (9), `api-access-security` (5), `web-hosting-security`
+  (5), and `claim-check`, `content-security`, `doc-drift-prevention`,
+  `issue-capture` (2 each). The assertion covers **none** of them. Its sibling
+  `_SCRIPT_MODULES` still carries one live entry, so only this leg went dark.
+  **Why it matters beyond the count:** two of the eight install a whole private
+  package (`_security_net/` twice, `_intent/` once), which is exactly the shape
+  where a partial install is both most likely and least visible -- the entry
+  script lands, a helper module does not, and the failure appears at an adopter's
+  first run rather than at install. *Trigger:* pick it up with any change to
+  module script delivery; repopulating the dict is the whole fix, and the test
+  body already handles the general case.
+* **[TRU-4] A symbol parked in known-new is invisible to the AST gate, and 15 of
+  them have changed.** *(Measured 2026-08-27 while preparing the baseline
+  correction.)* `_ast_attest` classifies a symbol listed in
+  `scaffold_ast_known_new.json` as NEW-and-allowed, so **its logic can change
+  without ever being reported as CHANGED** -- the baseline gate never looks at it
+  again. Against the pinned manifest the live engine shows **15 REKEYED**
+  symbols, including `trusted_upstream`, `_record_fork_entry`,
+  `assert_always_on_complete`, `_assert_mapping_ownership` and
+  `_resolve_current_profile` -- several of them on trust and containment
+  surfaces. **All 15 trace to named reviewed work**, several to explicit External
+  Security reviews, so nothing here is unaccounted for; the defect is that the
+  gate could not have told us either way. The runbook already names REKEYED as a
+  review item, which is why it was looked for. *Trigger:* the next AST re-anchor,
+  which should decide whether long-lived known-new entries graduate into the
+  baseline rather than accumulating there permanently.
 * **[VER-6] Security-preflight residuals — three of six survive the sweep.** The
   five-question preflight block ships **declared-unenforced**, and these are its
   named expiry triggers. **R1**: plan templates carry a clause, not the block, so
