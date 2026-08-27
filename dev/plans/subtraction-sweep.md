@@ -1162,6 +1162,51 @@ carries the correction; the repair is C8 ceremony work.
   real and none is load-bearing. They belong to the follow-up work the
   Dispositions block batches, not to this response.
 
+### Authority closure cleared -- and the freeze that follows from it
+
+**External Security Review, 2026-08-27, `048962f`: ADMIT IN PART.** All three
+changed closure members admitted --
+`bootstrap/tests/_gate_manifest.py` (inert or strictly narrowing),
+`bootstrap/REANCHOR_RUNBOOK.md` (prose, exemption scope verified with a
+positive control), `bootstrap/reanchor.sh` (purely additive refusal and
+`printf` changes; the two-stage boundary untouched, and it contains no
+ref-moving code at all). What carries the verdict is that **the other seven
+closure members are byte-identical to the anchor**: the code that decides what
+may be blessed did not change.
+
+**What was refused is not a file.** The end-to-end stage-1 -> stage-2 handoff
+rests on the *instantiated* launcher, which is outside the closure, changed
+since the anchor, and unreviewed. A separate review of
+`bootstrap/reanchor-launcher.template.sh` is running.
+
+**THE CONSTRAINT, and it binds any session that picks this up:** this review
+clears **content digests, not a ref**. Verified at `048962f`, the three files
+still hash to exactly the reviewed values. **Editing any of them voids the
+clearance and the review must be redone.** So the ceremony's remaining findings
+are *"fix before the NEXT ceremony"*, not before this one:
+
+| id | what | why it waits |
+|---|---|---|
+| R-1 | the runbook prints `reanchor.sh stage2 ...` then claims stage 2 "re-extracts and re-verifies its own bytes" -- **false for that invocation**; re-extraction is the launcher's `--stage2` property | editing the runbook voids its clearance |
+| M-1 | the `expect` beside the fixed gate command still says "0 skipped"; a real run reports 1 -- the same `TestMultiScriptModules` empty-parametrize defect filed independently under [VER-5] | same |
+| S-1 | the new precheck runs two values-file executables before the disclosure print its own comment says must come first | same |
+| S-3 | the printed stage-2 command is built from unquoted environment values | same |
+| S-2 | two of four claimed precheck test nodes are **vacuous** -- they exercise `validate`, which never runs the precheck, while their docstrings assert the opposite | a test-only fix, but it lives in the same closure |
+
+**R-1 is the one that reached a person.** That exact command and that exact
+false claim had already been relayed to the Maintainer as ceremony
+instructions, from the runbook, unverified. The defect predates the anchor; the
+propagation did not.
+
+**Process note, recorded because it cost the reviewer real work.** `HEAD` moved
+**five times** during that review and one of the moving commits edited a file in
+its scope. The reviewer handled it correctly -- re-deriving against each later
+commit and pinning content digests rather than a ref -- but the fix is upstream:
+**do not commit into a running review's scope.** The reviewer also corrected
+itself mid-review on a load-bearing point: a transition manifest must name **all
+ten** closure members, not only the three that changed, or `revalidate_transition`
+refuses it as "not the authority closure."
+
 ## Response to External Security Review (Codex) -- Claude (Author) -- 2026-08-27
 
 **Verdict accepted in full: BLOCK.** Seven blocking findings, two CRITICAL, each
