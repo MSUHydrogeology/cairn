@@ -163,6 +163,21 @@ parse_values() {
         refuse "values file: '$_pv_file' is not an existing regular file"
     fi
 
+    # Zero every output BEFORE reading, because the schema check below asks
+    # `[ -n "${V_key+s}" ]` -- "is this variable set" -- and an exported
+    # environment variable answers yes just as loudly as a values-file line.
+    # Without this, `V_python=/bin/echo` in the environment satisfies the
+    # "missing required key 'python'" refusal for a values file that never
+    # mentions python, and $V_python is what executes the checker below.
+    # The disclosure print then shows the injected value under the heading
+    # "nothing below was discovered", so the operator's stop-point asserts the
+    # opposite of what happened. Reproduced 2026-08-27; see
+    # dev/reviews/2026-08-27-external-security-review-launcher-template.md
+    # finding L-10. The values file is the ONLY channel; this line is what
+    # makes that true rather than merely stated.
+    unset V_schema V_checkout V_signing_key V_package V_home V_env V_git \
+          V_python V_mktemp V_mkdir V_shasum V_sort V_cat
+
     _pv_total=0
     _pv_lineno=0
 

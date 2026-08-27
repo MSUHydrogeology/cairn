@@ -426,6 +426,33 @@ class TestTheValuesFileIsParsedNeverExecuted:
 
 class TestThereIsNoAmbientFallback:
 
+    def test_an_absent_field_is_not_filled_from_an_EXPORTED_V_VARIABLE(self, bed):
+        """The reader's own variable name, exported, is a second channel.
+
+        The schema check asks `[ -n "${V_key+s}" ]` -- *is this variable set* --
+        and an exported environment variable answers exactly as a values-file
+        line does. Before the reader zeroed its outputs, `V_python=/bin/echo`
+        satisfied the missing-key refusal for a values file that never named
+        python, and `$V_python` is what executes the checker. Worse, the
+        disclosure print then showed the injected value beneath the heading
+        "nothing below was discovered", so the operator's stop-point asserted
+        the opposite of what had happened.
+
+        The sibling node above models PATH and builds its environment from
+        `dict(os.environ)`, so it could never have matched this shape. Reproduced
+        2026-08-27; see the launcher-template external security review.
+        """
+        for key, var in (("python", "V_python"), ("git", "V_git"),
+                         ("shasum", "V_shasum")):
+            env = dict(os.environ)
+            env[var] = "/bin/echo"
+            assert Path("/bin/echo").is_file(), (
+                "this node is vacuous unless the injected value would pass the "
+                "executable check that follows the schema check")
+            _assert_refused(
+                _run("validate", _write_values(bed, drop=(key,)), env=env),
+                f"missing required key '{key}'")
+
     def test_an_absent_executable_field_is_not_filled_from_PATH(self, bed):
         """The field is dropped while PATH still resolves the tool perfectly
         well. Refusing anyway is the whole point: ambient discovery is what let

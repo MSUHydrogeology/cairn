@@ -149,6 +149,17 @@ is_hex64() {
 # of one artifact that drift is a defect this repository has already had.
 
 read_values() {
+    # Zero every output BEFORE reading. The checks below ask
+    # `[ -n "${L_key+s}" ]` -- "is this set" -- and an exported environment
+    # variable answers yes exactly as a values-file line does. Without this,
+    # `L_shasum=/path/to/mine` in the environment satisfies the missing-key
+    # refusal for a values file that never names shasum, and that program then
+    # runs inside the pre-candidate window, hashing the packet. Reproduced
+    # 2026-08-27 with a marker program; see
+    # dev/reviews/2026-08-27-external-security-review-launcher-template.md
+    # finding L-1. The values file is the only channel; this makes it so.
+    unset L_checkout L_git L_shasum L_mktemp L_mkdir L_cat L_env
+
     _rv_file=$1
     require_regular_file "values file" "$_rv_file"
 
