@@ -696,6 +696,43 @@ the facts under them:**
 
 **Net for `dev/PLANNING.md` across both passes: 2,591 -> 860 lines.**
 
+### Scope delta -- the checker de-scope narrows to one directive family
+
+**Accepted outcome (build table):** *"an archived file draws no flag; prose
+files carry zero checker boilerplate; success is silent."* The middle clause is
+delivered for one of the two directive families and **not** the other. That is a
+scope reduction, so it is declared here with the Maintainer's allowance rather
+than absorbed.
+
+**What changes.** `claim-check-allow` -- 45 active directives, path lists with no
+reason text -- moves into a config, and Cairn's prose files carry none.
+`cairn-internal-ref-allow` -- 40 active directives -- **stays as per-file
+comments**.
+
+**Why, measured.** The two families look alike and are not. The
+`cairn-internal-ref-allow` directives are **19 distinct path sets across 40
+files**: each names which doctrine pages *that specific shipped template*
+deliberately cites. Centralizing them either preserves all 40 lists in a config,
+which moves the declaration away from the thing it describes, or collapses them
+to a blanket *"`doctrine/` is fine everywhere"* -- and since `doctrine/` is the
+**only** entry in `check_cairn`'s `_CAIRN_INTERNAL_PREFIXES`, the blanket form
+turns that check into a no-op that still reports success.
+
+**The evidence is from this sweep, not a hypothetical.** Four of those
+directives named `doctrine/fold-back.md`. C6 deleted that file, and nine live
+shipped surfaces were still citing it. They were findable *because the
+directives named the file*; a blanket prefix exemption would have hidden all
+thirteen citations with no trace.
+
+**Maintainer allowance, verbatim** -- given after the choice and its cost were
+put plainly:
+
+> "Okay, I accept this."
+
+**What the narrowing does not waive.** Boilerplate must not creep back into the
+family that was cleaned: Cairn's own prose carrying zero `claim-check-allow`
+directives is pinned by a test, not by habit.
+
 ### Archived records are read, never enforced -- Maintainer principle, 2026-08-27
 
 The checker de-scope's first change made `claim_check` skip archived sources.
