@@ -400,6 +400,35 @@ def test_session_end_without_handoff_does_NOT_surface_foldback(
     assert "scan today's doctrine activity" not in out
 
 
+def test_session_end_WITH_handoff_DOES_emit_the_standing_capture_prompt(
+    repo_with_foldback, monkeypatch, capsys
+):
+    """The full handoff still asks the capture question, and that is deliberate.
+
+    The fold-back *ledger* was retired -- a candidate is now filed upstream as an
+    issue rather than staged locally -- but the *practice* of scanning for
+    portable improvements was kept on purpose. Without this positive assertion
+    the only coverage is its negative twin above, which passes just as happily
+    when the prompt does not exist at all: deleting the emit entirely leaves the
+    whole session suite green. This test is what makes the removal visible.
+    """
+    root = repo_with_foldback
+    monkeypatch.setenv("CAIRN_AGENT", "tester")
+    monkeypatch.setenv("CAIRN_SESSION", "sessG-positive")
+    monkeypatch.setenv("CAIRN_HANDOFF_OWNER", "1")
+    monkeypatch.chdir(root)
+
+    rc = lifecycle.main(["session-end", "--handoff"])
+
+    out, _err = capsys.readouterr()
+    assert rc == 0
+    assert "scan today's doctrine activity" in out, (
+        "the full handoff no longer asks the standing capture question; it "
+        "survived the ledger's retirement on purpose, so its removal is a "
+        "decision and not a side effect"
+    )
+
+
 # --- lifecycle-metrics v2 snapshot layer -------------------------------------
 
 #: The lifecycle_metrics template source (loaded directly, no scaffold needed).

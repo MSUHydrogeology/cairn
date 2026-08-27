@@ -142,6 +142,23 @@
         "scripts/run_security_audit.py"
       ]
     },
+    "dev/reviews/2026-08-27-code-review-c1-session-kernel.md": {
+      "paths": [
+        "bootstrap/tests/test_lifecycle_board.py",
+        "bootstrap/tests/test_lifecycle_cli.py",
+        "bootstrap/tests/test_lifecycle_failsafe.py",
+        "tools/lifecycle.py"
+      ]
+    },
+    "dev/reviews/2026-08-27-code-review-c5-c6-removals.md": {
+      "paths": [
+        "bootstrap/tests/test_lifecycle_board.py",
+        "dev/.cairn/cairn_foldback.md",
+        "doctrine/fold-back.md",
+        "scripts/foldback_suggest.py",
+        "tools/suite_cost.py"
+      ]
+    },
     "dev/strategy/2026-05-14-claude-human-ai-team-development-framework.md": {
       "paths": [
         "dev/security_review_protocols.md",

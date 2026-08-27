@@ -1,3 +1,4 @@
+<!-- cairn-internal-ref-allow: doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The plan template. Copy everything below the rule into
      `dev/plans/<slug>.md`. Keep it short: a plan is a working
      document, not a second proposal. -->
@@ -198,6 +199,33 @@ the record does not dispose of; **review sharpening changes implementation,
 tests, executable templates, or** fixtures; a **trust ceremony that explicitly
 requires** one applies; or there is a **concrete reason to distrust or falsify**
 the evidence.
+
+## Dispositions
+
+*Filled at archive-preparation, and this section is why the plan cannot archive
+without it.* Every **explicitly-deferred follow-up** this plan carries takes one
+recorded disposition: `accept` (fixed in scope), `guard (<path>::<node>)` (homed
+in something that **executes** and names the node -- a comment is not eligible,
+because comments do not fire), `wontfix` (explicit non-action, with a
+rationale), or `defer` (deposited on the roadmap, **requiring the Maintainer's
+authorization quoted verbatim**, because a deposit is a scope decision).
+Present `defer` requests as **one batch** -- that batching is what keeps the
+Maintainer gate affordable.
+
+Record the outcome as a `Dispositions: ...` line so it reconstructs from the
+durable record alone. **An append re-opens the attestation**: this section is
+append-only, so if you add content after writing the line, restate or amend it.
+
+Two eligibility rules bound the choice: a follow-up that **reaches an adopter,
+blocks a release, or needs a Decision** cannot be `wontfix`; and one **named by
+a closed artifact's disposition block** cannot be `wontfix` without the
+Maintainer.
+
+**Nothing mechanical checks any of this.** The lifecycle planner that once
+parsed for a `Dispositions:` block was retired in August 2026; the enforcer is a
+reviewer opening the artifact at archive-preparation. The full rule, including
+why, is `doctrine/plans.md` > "Archive precondition" and "Lasting-truth
+migration doctrine".
 
 ## Plan review -- <reviewer> -- <YYYY-MM-DD>
 

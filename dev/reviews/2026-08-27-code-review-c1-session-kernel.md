@@ -1,4 +1,3 @@
-<!-- claim-check-allow: bootstrap/tests/test_lifecycle_board.py, bootstrap/tests/test_lifecycle_cli.py, bootstrap/tests/test_lifecycle_failsafe.py, tools/lifecycle.py -->
 <!-- Four deliberate backward references: files this sweep deleted, cited here
      because the review is about what moved out of them. Each is marked rather
      than left to assert. -->

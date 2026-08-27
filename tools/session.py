@@ -97,7 +97,8 @@ _DISPLAY_SYNTAX_CHARS = frozenset(
 #: and `_ASCII_GUARD` -- duplicated deliberately, because the board must not
 #: import the *conditional* content scanner at runtime (it is not installed in
 #: every adopter tree).  The duplication is admitted only with the **one-way**
-#: drift guard in `bootstrap/tests/test_lifecycle_board.py`: the board may escape
+#: drift guard in `bootstrap/tests/test_session_kernel.py`
+#: (`TestDirectionalDriftGuard`): the board may escape
 #: more than the scanner flags, and may never emit raw a code point the scanner
 #: recognizes.  So a newly added printable invisible reddens that test until this
 #: table follows it, and narrowing a detector cannot quietly weaken this output.
@@ -252,7 +253,8 @@ def _safe_field(value, *, limit=_FIELD_LIMIT):
     are `Mn`/`Lo`, so `str.isprintable()` calls them printable and the old table
     listed none of them -- they reached a terminal raw.  One encoder means there
     is no second, weaker path, and the board's directional drift test
-    (`bootstrap/tests/test_lifecycle_board.py`) is what keeps the range table
+    (`bootstrap/tests/test_session_kernel.py`, `TestDirectionalDriftGuard`)
+    is what keeps the range table
     ahead of the content scanner for **both** consumers at once.
 
     **Elision is layered OUTSIDE the encoder, not folded into it** (the same

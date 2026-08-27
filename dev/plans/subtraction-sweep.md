@@ -668,6 +668,40 @@ routed to issue triage. Folded 2026-08-27 into the register with the rest; one
 (`[TRU-7]`, the unpublished gate anchor) was a **duplicate** of a row the
 strategy already carried in full and needed no content.
 
+**The row-by-row mapping, added 2026-08-27 after code review.** The Internal
+review of C7 found the counts above reconstruct only by re-deriving them, which
+is a fair complaint about a record whose whole job is to make a drop
+inspectable. Re-derivation confirms the arithmetic (11 + 1 + 7 = 19) and that
+nothing live was lost, but the table belongs here rather than in a reviewer's
+working notes:
+
+| Queued row | disposition |
+|---|---|
+| `[SEC]` M2 conflates review with produce | folded -> register `[REC]`, second clearing review |
+| The lasting-truth attestation grows after it is written | folded -> `[REC-4]` |
+| `[SEC]` No regeneration procedure for an existing lockfile | folded -> `[TRU-1]` |
+| `[SEC]` Two install-contract artifacts stale (RESOLVED) | **live remainder only** folded -> `[TRU-4 / REL-3]`, who re-anchors and under what review |
+| `[SEC]` The interpreter-binding re-pin | folded -> `[TRU-5]` |
+| The controlled re-anchor path cannot run | folded -> `[TRU-4]` |
+| The loop-fidelity gate covers one folder | folded -> `[REL-5]` |
+| Portable-security-sweeps deferred set | folded -> `[VER-4]` |
+| `[REL-6]` `SECURITY.md` disclosure channel | folded -> `[REL-6]` |
+| `[TRU-1]` Self-host lockfile reconciliation | folded -> `[TRU-1]`, second entry |
+| `[BND-6]` Lockfile schema validate-on-read | folded -> `[BND-6]` |
+| `[TRU-7]` The gate anchor is unpublished | **duplicate** -- the register already carried it in full |
+| `[TOOL, URGENT]` metrics extraction broken | dead |
+| `[TOOL]` divergent-activation-marker unreachable | dead |
+| `[TOOL]` checker flags every Internal review as author-written | dead |
+| `[REC]` Five plan-review sections owe basis fields | dead |
+| `[REC-3]` Transition-lint | dead |
+| The review-allocation pilot, never switched on | dead |
+| `[VER]` AST attestation re-anchor after the tag pass | closed 2026-08-20 |
+
+The fourth row is the one that reads oddly and is correct: its headline was
+already marked RESOLVED, so only the live question it left behind -- *who*
+re-records the trust artifacts, under what review -- was carried, and it landed
+under a tag that does not match the row's original one.
+
 **Seven more Queued rows were dead or closed**, taking the block from 852 lines
 to 260. Six lost their subject to this sweep; each measurement:
 
@@ -973,7 +1007,40 @@ this sweep exists to remove.
 
 **Two things remain, and the first is blocked on a row this sweep filed.**
 
-**(a) Three verbatim lockfile records disagree with disk.** The raw count of
+**(a) CORRECTED 2026-08-27 by the C1 code review -- the lockfile gap is larger
+and different, and the executable trust root is inside it.** What follows the
+correction is the original measurement, kept because the error is instructive.
+
+**The correction.** The three hash mismatches below were real and the Maintainer
+fixed them at `610f521`. But that measurement **filtered out every record whose
+file no longer exists** -- it skipped a record when the path was absent, so it
+measured the intersection of lockfile and disk and reported it as the whole.
+Re-measured without that filter:
+
+* **14 verbatim records name files that no longer exist**, including
+  `tools/lifecycle.py` itself, both fold-back scripts, and the nine
+  `tools/_lifecycle_metrics/` modules.
+* **`tools/session.py` and `tools/board.py` have no lockfile record at all.**
+  C1 added their mappings; the lockfile writer was never re-run, because it
+  cannot be ([TRU-1]).
+
+**The security consequence, which is the reason this is blocking rather than
+tidy-up.** `tools/lifecycle.py` carried a `verbatim: true` record, so
+`bootstrap/verify_integrity.py` hashed the file holding the local interpreter
+binding. `tools/session.py` carries none. **The executable trust root
+`AGENTS.md` names under High-risk surfaces moved out of install-integrity
+coverage in C1, and nothing reddened**, because the integrity check can only
+verify records that exist.
+
+This escalates [TRU-1] from an operational annoyance to a security finding: the
+absent regeneration command is now demonstrated to have dropped a trust root
+from coverage silently. C8's lockfile leg is therefore **not** three digests --
+it is 14 removals plus 2 additions, and it should be done before C9 carries this
+lockfile into two live research repositories.
+
+*Original measurement, superseded:*
+
+**Three verbatim lockfile records disagree with disk.** The raw count of
 records diverging is 19, and **that number is misleading**: 16 are substituted
 or living-state files an adopter is *expected* to edit. Restricted to
 `verbatim` records, where byte-identity is the contract, it is **three**:
@@ -1007,6 +1074,93 @@ carry Cairn's changes into two live research repositories, so they should not
 begin until the code review this plan requires has run and its findings are
 answered. This ordering is recorded here because the chunk table's C8-then-C9
 sequence did not say where review sat.
+
+## Response to code review -- Claude (Author) -- 2026-08-27
+
+Four Internal code reviews ran in independent fresh contexts, one per chunk
+group, each author committing its own review under `dev/reviews/`. **I did not
+write them and could not**: this plan sets its floor at *a same-type agent in an
+independent context, not the implementing agent*, and I am the implementer.
+
+| group | verdict | blocking | non-blocking |
+|---|---|---:|---:|
+| C1 -- session kernel | **BLOCK** | 2 | 6 |
+| C2+C3 -- constitution, tools | ACCEPT-WITH-FOLLOWUPS | 2 | 5 |
+| C5+C6 -- the removals | ACCEPT-WITH-FOLLOWUPS | 3 | 6 |
+| C7 -- prose phase | ACCEPT-WITH-FOLLOWUPS | 0 | 2 |
+
+**Fixed in this response**
+
+* **The plan template had silently lost the archive-precondition doctrine.**
+  Neither `dev/plans/_template.md` nor its shipped twin mentioned `Dispositions`,
+  the four-verb vocabulary, the batching rule, or the append-re-opens-the-
+  attestation rule -- while `doctrine/plans.md` still carried all of it and C6
+  had deleted the parser that used to check it. Proven by my own behaviour: I
+  wrote this plan's Dispositions block from doctrine and archived plans, because
+  the template offered nothing. Restored to both twins, with the enforcement
+  reality stated plainly -- nothing mechanical checks it; a reviewer at
+  archive-preparation is the enforcer.
+* **The session kernel cited a deleted test file as the sole guard on a
+  deliberate duplication**, at two sites, in a file that installs verbatim into
+  every adopter tree. `claim_check` cannot see this class -- the reviewer
+  control-tested a planted broken path in a `.py` docstring and it returns OK.
+  Both sites now name `test_session_kernel.py`'s `TestDirectionalDriftGuard`,
+  where the oracle actually moved. Twins re-verified byte-identical.
+* **A deliberately-kept behaviour had lost its only positive pin.** The standing
+  capture prompt survived the fold-back ledger's retirement on purpose; the test
+  asserting it *fires* did not, leaving only a negative twin that passes equally
+  well when the behaviour is gone. Restored as
+  `test_session_end_WITH_handoff_DOES_emit_the_standing_capture_prompt`.
+  **Control-tested, and the first control was wrong**: deleting the emit from
+  `tools/session.py` left the test green, because the suite loads the *shipped
+  twin*. Re-probed against the file actually under test, it fails as it must.
+* **`dev/agent_collaboration.md` had dropped the work-intent protocol entirely**
+  while the mechanism runs on every commit -- the pre-commit hook fired
+  throughout this session. Restored as a pointer to
+  `dev/modules/coordination-tiers.md`, stating that the check is advisory and
+  never blocks, and that it earns its place on a shared worktree and not on
+  worktree-per-agent.
+* **A doctrine link pointed at the wrong file.** `doctrine/session-routines.md`
+  carried `[lifecycle-metrics](../README.md)` -- a label naming a deleted module,
+  a target that never mentions it, and a link both checkers pass because the
+  target resolves. The paragraph now states the tracker schema as a standing
+  contract that outlives the tool, which is what was actually true.
+* **The C7 fold's bookkeeping now reconstructs without re-derivation** -- a
+  row-by-row mapping table replaces counts a reader had to re-derive to check.
+* **The guard written this morning caught its first real case**: the C1 reviewer
+  opened its own review with an inline `claim-check-allow` directive. Moved to
+  the config, which is the remedy the guard's failure message names.
+
+**Corrected, not fixed: my C8 lockfile measurement was wrong.** I reported three
+stale verbatim records. The C1 and C5+C6 reviewers independently found the real
+shape, and the reason mine was wrong is instructive -- **my script skipped any
+record whose file no longer exists**, so it measured the intersection of lockfile
+and disk and reported it as the whole. The true state is **14-19 verbatim
+records naming deleted files, zero hash mismatches** (the Maintainer's `610f521`
+closed those), **and `tools/session.py` and `tools/board.py` recorded nowhere**.
+`bootstrap/verify_integrity.py --target .` refuses on Cairn's own tree today.
+The security consequence is the finding: `tools/lifecycle.py` carried a
+`verbatim` record, so the file holding the interpreter trust root was hashed;
+`tools/session.py` carries none, so **C1 moved a declared executable trust root
+out of install-integrity coverage and nothing reddened**. The C8 section above
+carries the correction; the repair is C8 ceremony work.
+
+**Accepted and not actioned here**, each with a reason rather than a shrug:
+
+* **C1's acceptance criterion is unmet and the deviation was never declared.**
+  Two suites guarded on `lifecycle.py` were repointed in C6, not C1, and the
+  "shown failing against a tree without the kernel" evidence appears in no
+  record. The reviewer ran the missing demonstration and **it passes** -- the
+  property holds, it was simply never shown. Declared here as the deviation it
+  is, rather than back-dated.
+* **No Boundary B record exists for C1, C5 or C6** -- only C7's. The plan asks
+  one per chunk. Reconstructing them now would be writing evidence after the
+  fact for runs nobody made; the honest disposition is that the sweep ran one
+  integration boundary at the end, and that is what the record shows.
+* The remaining non-blocking findings -- inert `skipif` guards, residual
+  naming, untested `main()` entry points, orphaned `.gitignore` rules -- are
+  real and none is load-bearing. They belong to the follow-up work the
+  Dispositions block batches, not to this response.
 
 ## Dispositions
 

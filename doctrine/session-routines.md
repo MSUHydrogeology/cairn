@@ -414,13 +414,14 @@ weren't) are logged for base-rate visibility but do NOT count
 against the rate-limit gate's trigger — only `Impact = occurred`
 rows count.
 
-The trackers feed the rate-limit gate; the
-[`lifecycle-metrics`](../README.md)
-module's eventual cross-adopter harvest correlates across them.
-The trackers' canonical 7-column semantic-field schema is the
-contract that harvest reads against; adopters with existing
-trackers may ship a per-tracker `tracker_schema.yml` mapping the
-adopter's columns onto the canonical fields.
+The trackers feed the rate-limit gate. Their canonical 7-column
+semantic-field schema is the contract any cross-adopter harvest
+reads against; adopters with existing trackers may ship a
+per-tracker `tracker_schema.yml` mapping the adopter's columns onto
+the canonical fields. The module that was to perform that harvest
+was retired in August 2026 — the schema outlives it and binds a
+successor, so it is stated here as a standing contract rather than
+as one tool's input format.
 
 ### Adoption drift surfacing — when the upgrade tooling is installed
 
