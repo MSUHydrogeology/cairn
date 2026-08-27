@@ -5,9 +5,18 @@
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
-**Status**: awaiting-plan-review
+**Status**: implementing — C1-C7 landed; **C8 and C9 remain, and both are the Maintainer's** (C8 MAINTAINER-ONLY, C9 MAINTAINER-GATED per sister). The plan is not `awaiting-code-review`, because it is not fully implemented.
 **Plan review**: required(**Internal** + **Internal Security Review**) — two passes, one per clause, each naming its clause in its own `**Obligation**:` line. The Internal pass reads the deletion manifest. **The Security Review is a single pass covering both security surfaces this plan touches** — the trust-root extraction (C1) and the registry-edit approach (C5/C6) — because both are decided here, in this document, and reviewing the same design twice is the ratchet this sweep removes. C1 and C4 are its *fences*, not additional reviews.
-**Last update**: 2026-08-25
+**Last update**: 2026-08-27
+
+> **Status-header correction, 2026-08-27.** This header read
+> `awaiting-plan-review` from plan-open until today, while C1 through C7 were
+> implemented and committed. Both plan reviews had landed and been answered; the
+> Maintainer had ruled that no re-review was owed (*"There isn't a lifecycle
+> requirement, we are dismantling it"*), and implementation began — but nobody
+> advanced the status, so `python tools/board.py` reported a plan awaiting review
+> that had in fact been built. Corrected here rather than at archive, because a
+> derived board is only worth having if the artifacts it reads are true.
 **Opened**: 2026-08-25
 
 ## Source proposal
@@ -949,6 +958,99 @@ reproduced with a named failing test; `_ALWAYS_ON_MAPPINGS` being Maintainer-run
 `scan_targets()` deriving coverage from those same registries. A reviewer who
 spends a round on field spellings against a dying parser is running the ratchet
 this sweep exists to remove.
+
+## Dispositions
+
+*Drafted 2026-08-27, before archive, so the archive precondition is satisfiable
+rather than assembled under time pressure. **Not final**: the `defer` batch at
+the bottom needs the Maintainer's authorization, and C8/C9 are unexecuted, so
+this block is revised once more before the plan moves to `ready-to-archive`.*
+
+`Dispositions:` accept x13, guard x2, defer x5 (**unauthorized -- batched
+below**), wontfix x0.
+
+### accept -- landed in scope, with the authorization where one was needed
+
+1. **Scope delta: the lifecycle-metrics module is removed** (C6), recorded at
+   its own scope-delta section above.
+2. **Scope delta: the review-allocation pilot window ends.** Authorized:
+   *"Yes, please end the pilot window now"*.
+3. **Scope delta: the suite-run ledger is removed** (C5).
+4. **Scope delta: the checker de-scope narrows to `claim-check-allow` only,
+   leaving `cairn-internal-ref-allow` as per-file directives.** Authorized:
+   *"Okay, I accept this."* The measurement behind it is in that section.
+5. **C2 deviation: the ~80-line template target is not reachable**, recorded
+   with its measurement rather than silently missed.
+6. **C4's fence disposition**, recorded before any removal landed.
+7. **The interpreter trust root moves to the session kernel.** Authorized:
+   *"Yes, move the interpreter trust root as needed"*.
+8. **`dev/PLANNING.md`'s bankruptcy, both passes** -- 2,591 to 869 lines. Every
+   removed row is either folded into the security strategy's Live residual
+   register or on this plan's dead lists with the measurement that showed its
+   subject gone.
+9. **Reviewer independence becomes doctrinal-only, and the identity roster is
+   deleted.** A Maintainer Decision, quoted verbatim in the strategy's [REC-1]
+   entry; no mechanical successor is owed.
+10. **Archived records are read, never enforced** -- a Maintainer principle,
+    quoted verbatim above, now binding on any check that walks
+    `dev/**/archive/`.
+11. **Thirteen shipped citations to the deleted fold-back doctrine repaired**,
+    and the four exemption directives that were suppressing them corrected.
+12. **`docs/tool-usage.md`, three onboarding templates and their twins
+    repointed** off tools the sweep removed.
+13. **The loop-fidelity widening count corrected and deflated** -- 128 to 99 to
+    smaller again, with the record now saying the shape is the finding and the
+    number is not.
+
+### guard -- homed in something that executes, and names the node
+
+1. **Boilerplate must not creep back into the cleaned directive family** --
+   `guard (bootstrap/tests/test_claim_check_allow_config.py::TestProseCarriesNoClaimCheckDirective::test_no_live_markdown_declares_an_inline_directive)`.
+   Control-tested: planting a directive fails it.
+2. **The exemption config must stay load-bearing, and must fail toward strict**
+   -- `guard (bootstrap/tests/test_claim_check_allow_config.py::TestTheConfigIsWhereExemptionsLive::test_a_configured_document_is_clean_and_is_not_clean_without_it)`.
+   Asserted against a document chosen at runtime from the config itself, so it
+   cannot pass by naming a file whose exemptions went away.
+
+### defer -- REQUESTED AS ONE BATCH, NOT YET AUTHORIZED
+
+**These five are deposits, and a deposit is a scope decision.** Doctrine
+requires the Maintainer's authorization quoted verbatim, presented as one batch
+so the gate stays affordable. Nothing below is self-authorized; each names where
+it already sits, so the deposit is inspectable before it is allowed.
+
+1. **[VER-5] The multi-script install assertion covers nothing.** C6 emptied
+   `_MULTI_SCRIPT_MODULES`; eight modules ship more than one verbatim `.py`
+   today and the assertion covers none. Homed in the strategy register.
+   *Why deferred:* repopulating it is new test coverage, not sweep work.
+2. **[TRU-4] A symbol parked in known-new is invisible to the AST gate**, and 15
+   are currently rekeyed, several on trust surfaces. All trace to reviewed work.
+   Homed in the strategy register. *Why deferred:* the fix is a decision about
+   whether long-lived known-new entries graduate into the baseline, which
+   belongs to the next re-anchor.
+3. **The `first-foldback-candidate` onboarding trigger cannot fire.**
+   `_foldback_has_open_candidate` in `scripts/_onboarding/triggers.py` reads a
+   ledger path C6 removed. *Why deferred:* it is downstream of the pending
+   onboarding decision, and rewriting those steps before that decision would
+   likely be thrown away.
+4. **C6's two onboarding findings** -- `assert_always_on_complete` loses its
+   subject, and the side-door parity property loses its category. Measured in a
+   throwaway worktree and recorded in the C6 onboarding section above. *Why
+   deferred:* both are decisions, not chores, and `_ALWAYS_ON_MAPPINGS` is
+   MAINTAINER-GATED.
+5. **The 20 queued rows drafted into 4 forge issues, unfiled.** Drafts in
+   `dev/measurement/queued-issue-drafts.md`. *Why deferred:* filing is
+   outward-facing and yours.
+
+### Still owed before this plan can archive
+
+Not dispositions -- outstanding work, listed so this block is not mistaken for
+completeness. **C8** (the install contract's remaining surfaces, and the gate
+anchor, which sits 343 commits behind `HEAD`), **C9** (both sister migrations),
+and the **code review** this plan's own text requires: *a same-type agent in an
+independent context, not the implementing agent*, one round per chunk group.
+Zero rounds have run; relaxing that floor is the Maintainer's call, not the
+author's.
 
 ## Lasting-truth migration
 
