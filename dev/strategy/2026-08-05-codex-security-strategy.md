@@ -1184,13 +1184,29 @@ than no check.
   `templates/core/AGENTS.md` cited `bootstrap/fidelity-check.md` in its
   drift-guard paragraph until the sweep's constitution rewrite removed that
   citation, verified 2026-08-27. So the gap is now latent rather than shipping,
-  which lowers the urgency and changes nothing about the gap. **Why it was not
-  fixed in passing, and what the first task is:** widening the tuple changes a
-  standing gate's verdict across the whole repository, and nobody knows how many
-  currently-passing surfaces it would flag — one, or dozens. **That count is the
-  first task**, and it decides the shape of the rest: a handful of real dangling
-  citations is an ordinary fix; a large population needs staging or a deprecation
-  window. Doing it as a side effect of an unrelated plan is how a standing gate
+  which lowers the urgency and changes nothing about the gap. **The first task was to count what
+  widening would flag, and it is now counted: 128.** Measured 2026-08-27 by
+  monkeypatching the prefix tuple to ten candidate prefixes (`doctrine/`,
+  `bootstrap/`, `dev/plans/`, `dev/proposals/`, `dev/measurement/`,
+  `dev/strategy/`, `case-studies/`, `dimensions/`, `examples/`, `docs/`) and
+  running the gate's own `_check_dangling_internal_refs` over the 64
+  template-instruction surfaces it inspects. **128 flags across 20 surfaces**,
+  by cited prefix: `docs/` 54, `dev/` 39, `bootstrap/` 21, `dimensions/` 10,
+  `case-studies/` 2, `examples/` 2. Concentrated rather than diffuse — four
+  surfaces carry 72 percent of them.
+
+  **Positive control, because a zero here would have meant nothing:** with a
+  `dev/plans/` citation planted in a shipped surface, the current prefix set
+  reports **0** and the widened set reports **129** — one more than the clean
+  tree, which is the planted line. *(An earlier attempt returned 0 for both and
+  was wrong: the widened copy ran from a scratch directory and resolved the repo
+  root to itself. The control is what caught that.)*
+
+  **So this is the "large population" branch** — staging or a deprecation
+  window, not an ordinary fix. **The count is not the whole first task:** which
+  of those ten prefixes genuinely dangles in an adopter tree is a separate
+  judgment per prefix, and `docs/` — the largest contributor — is the most
+  arguable of them. Doing it as a side effect of an unrelated plan is how a standing gate
   changes behaviour without anyone reviewing the change. *Trigger:* the next
   change to `check_cairn`'s prefix set or to shipped-template citation policy.
   **Note for the checker de-scope:** that work touches this exact tuple, so it is
