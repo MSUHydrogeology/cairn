@@ -155,8 +155,8 @@ The remaining tour surfaces -- the collaboration-agreement
 signing dialogue (Component 3, Row 1) + the upstream PR/issue
 walkthrough (Row 4) -- reuse existing mechanisms (the
 collab-agreement slot fill is just the slot-fill protocol; the
-foldback walkthrough invokes the existing
-`doctrine/fold-back.md > Active surfacing` 6-step protocol).
+foldback walkthrough hands off to the fold-back issue template
+(`.github/ISSUE_TEMPLATE/foldback.md`)).
 
 ## State-file schema + edit cadence
 

@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/fold-back.md doctrine/lifecycle.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: doctrine/coordination.md doctrine/lifecycle.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- Cairn progressive-onboarding task list: collaborative-team preset.
      Authored under plan 2026-05-28-claude-cairn-progressive-onboarding
      (Chunk P1.5 fills the full multi-agent + multi-human task list;
@@ -102,8 +102,8 @@ loop earns its keep early.
 
 * [trigger: first-foldback-candidate; id: walk-foldback-protocol]
   Your fold-back ledger has its first open candidate ready to
-  surface upstream. Walk the foldback active-surfacing protocol
-  (`doctrine/fold-back.md > Active surfacing`); the team-handoff
+  surface upstream. Use the fold-back issue template
+  (`.github/ISSUE_TEMPLATE/foldback.md`); the team-handoff
   owner files; coordinate with the team before filing to avoid
   duplicate Cairn issues.
 
@@ -148,7 +148,7 @@ preconditions, so spin-up is faster than a fresh start.
 ### Row 4 -- upstream PR/issue walkthrough prompt
 
 Your team's fold-back ledger now carries a candidate ready for
-upstream filing. The foldback active-surfacing prompt
-(`doctrine/fold-back.md > Active surfacing`) walks the team-
+upstream filing. The fold-back issue template
+(`.github/ISSUE_TEMPLATE/foldback.md`) walks the team-
 handoff owner through filing; coordinate with the team before
 filing to avoid duplicate Cairn issues.

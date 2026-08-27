@@ -1,4 +1,4 @@
-<!-- cairn-internal-ref-allow: doctrine/fold-back.md doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: doctrine/session-routines.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- claim-check-allow: dev/modules/legacy-agent.md, dev/modules/dual-language-tests.md -->
 <!-- ^ Profile-conditional module files: present only in an adopter that installs them (this preset does); Cairn's own profile does not, so they don't resolve here. -->
 
@@ -118,8 +118,8 @@ goes live.
 
 * [trigger: first-foldback-candidate; id: walk-foldback-protocol]
   Your fold-back ledger has its first open candidate ready to
-  surface upstream. The foldback active-surfacing prompt
-  (`doctrine/fold-back.md > Active surfacing`) walks through
+  surface upstream. The fold-back issue template
+  (`.github/ISSUE_TEMPLATE/foldback.md`) walks through
   filing; the high-rigor-legacy profile installs the
   content-security scanner and the security-review checklist --
   run `python scripts/content_scan.py` over the drafted filing
@@ -161,8 +161,8 @@ codebases carry.
 ### Row 4 -- upstream PR/issue walkthrough prompt
 
 Your fold-back ledger carries a candidate ready for upstream
-filing. The foldback active-surfacing prompt
-(`doctrine/fold-back.md > Active surfacing`) walks through
+filing. The fold-back issue template
+(`.github/ISSUE_TEMPLATE/foldback.md`) walks through
 filing; the high-rigor-legacy profile installs the
 content-security scanner and the security-review checklist --
 run `python scripts/content_scan.py` over the drafted filing

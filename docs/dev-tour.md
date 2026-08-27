@@ -68,8 +68,8 @@ A deployment captures Cairn-portable doctrine improvements here
 just yours -- and the goodnight foldback-capture step keeps the
 ledger populated. The ledger's job is to bridge the gap between
 "noticed something generalizable" and "filed a Cairn upstream
-issue or PR"; the foldback active-surfacing protocol
-(*doctrine/fold-back.md > Active surfacing*) walks you through
+issue or PR"; the fold-back issue template
+(*.github/ISSUE_TEMPLATE/foldback.md*) walks you through
 the filing when a candidate is ready.
 
 ## Worked example -- one trivial change end-to-end
@@ -125,6 +125,6 @@ scales; the artifact tree is the same shape.
   *doctrine/coordination.md* -- it carries the work-intent
   mechanism that prevents collision.
 * When your deployment's fold-back ledger has its first open
-  candidate, the foldback active-surfacing protocol
-  (*doctrine/fold-back.md > Active surfacing*) is the natural
+  candidate, the fold-back issue template
+  (*.github/ISSUE_TEMPLATE/foldback.md*) is the natural
   next read.

@@ -127,7 +127,7 @@ the first's claim and coordinates rather than colliding.
   together so the new agent gets the same dev-tree orientation the
   rest of the team has.
 * When your fold-back ledger acquires its first open candidate,
-  the foldback active-surfacing protocol
-  (*doctrine/fold-back.md > Active surfacing*) is the next
+  the fold-back issue template
+  (*.github/ISSUE_TEMPLATE/foldback.md*) is the next
   capability to exercise -- cross-type review is the
   prerequisite for that surface working at its intended rigor.
