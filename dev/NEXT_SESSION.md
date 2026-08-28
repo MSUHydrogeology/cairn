@@ -49,39 +49,49 @@ being done by hand under their runbooks until someone commissions it.
 
 ## What is genuinely next
 
-* **C9 — `modflow_tools` is ~90% migrated, on a branch, PAUSED mid-work.**
-  *(2026-08-28. Maintainer chose "do C9 now, then archive" over splitting it
-  out, and authorized the five-item `defer` batch as one batch.)*
+* **C9 IS COMPLETE.** *(2026-08-28. Maintainer chose "do C9 now, then archive"
+  and authorized the five-item `defer` batch as one batch.)* Both sisters
+  migrated, green, and committed to branch **`cairn-0.3.0-migration`** in each;
+  **both `master` branches are untouched**.
 
-  Work is committed to branch **`cairn-0.3.0-migration`** in
-  `/Users/kendal30/Code/modflow_tools`; **`master` is untouched**. Suite there:
-  **3470 passed, 3 failed**. The commit body lists what landed.
+  | repo | result | baseline |
+  |---|---|---|
+  | `modflow_tools` | 3472 passed, 0 failed | — |
+  | `lhm` | 1223 passed, 9 skipped, 0 failed | master had 1 failed |
 
-  **Three failures remain, all doc/config consequences of the removal:**
-  `test_living_state_partition_applied`;
-  `test_content_scan_audit[dev/.cairn/cairn_foldback.md]`;
-  `test_repo_passes_default_scan` (7 broken links). Also
-  `docs/{user_guide,reference}/lifecycle_metrics.md` still document the
-  deleted tool — a doc-cleanup agent was mid-read when the session paused and
-  had made **no edits**.
+  `verify_integrity` OK on both. `lhm` was the harder one: a 0.2.0 -> 0.3.0
+  jump across 1789 commits, 17 conflict hunks in 8 files.
 
-  **Two findings the next session must not rediscover the hard way:**
+  **Three things the next migration must not rediscover:**
 
   * **`upgrade --apply` deletes nothing.** `removed-upstream` is not in
-    `_ADVANCING_KINDS` and the apply path has no `unlink`. It *reports* the
-    files upstream dropped; removing them is the adopter's, by hand. Same for
-    `slot-removed`, which is why `dev/agent_collaboration.md` was never staged.
-  * **[TRU-1] cost a third ceremony.** The lockfile kept 19 records for files
-    the migration removed, and `--finalize` refuses on a missing record
-    ("fix or re-install first"). There is still no regenerate command. It was
-    resolved by a scratch prune that drops a record **only when its file AND
-    its upstream `src` are both gone**, never rewriting a hash — a different
-    class of act from the BLOCKED `correct_pinned_digests`, which rewrote
-    pinned digests. `verify_integrity` went 21 violations → OK. **If this
-    recurs on `lhm`, fix [TRU-1] instead of writing the script a third time.**
+    `_ADVANCING_KINDS` and the apply path has no `unlink`. It *reports* what
+    upstream dropped; removing it is the adopter's, by hand. Same for
+    `slot-removed`, which is why those files are never staged.
+  * **[TRU-1] cost a third and fourth ceremony.** Both sisters kept lockfile
+    records for files the migration removed, and `--finalize` refuses on a
+    missing record. Still no regenerate command. Resolved by a prune that
+    drops a record **only when its file AND its upstream `src` are both
+    gone**, never rewriting a hash.
+  * **Adopter files can hold a routine that cannot run.** `lhm`'s
+    `dev/rules/custom_session_routines.md` had a live goodnight step
+    requiring a deleted script and a deleted ledger. It is not
+    lockfile-tracked, so no upgrade classification would ever have surfaced
+    it. Grep the adopter's own rule files, not just the tracked set.
 
-  **`lhm` has not been started**, and must not be until `modflow_tools` is
-  green — the plan's fence is sequential and per-sister.
+* **The upgrade engine's phantom-fork defect is FIXED** (`3a99590`), and the
+  AST re-anchor it needs is the Maintainer's — see *Open threads*.
+
+* **A real gap the sweep left: Cairn still ships 24 references to the removed
+  machinery across 11 template files** (`core/dev/{measurement,upstream}/README.md`,
+  `modules/README.md`, `modules/default-on/{incident-trackers.md,claim_check.py,
+  _onboarding/triggers.py}`, `modules/team-gated/{doc-drift-prevention.md,
+  _intent/conflict.py}`, all three `onboarding/*.md`). **Every new adopter
+  installs prose describing tooling that does not exist**, and both sisters
+  inherited these *through* the upgrade, because a file classified `clean`
+  correctly takes upstream's version. Fixing an adopter's copy without fixing
+  the template is futile — the next upgrade restores it. C7's prose phase
+  stopped at Cairn's own `dev/` tree.
 
 * **C9's original framing.** Unblocked on every count: code review ran
   and was answered, the lockfile is correct, and the anchor the sisters would
@@ -147,6 +157,24 @@ Fix what the findings describe; withdraw only what cannot be made honest.
   **known, dated non-pass**: the lockfile shrank and that proposal is
   append-only, so its citations were corrected by appending, not editing.
 * `dev/measurement/collision_log.md` is untracked and predates all of this.
+* **The AST baseline is stale, and the re-anchor is the Maintainer's**
+  *(dated 2026-08-28)*. `3a99590` changed `_apply_upgrade`, which is baselined
+  but **not** in `_ast_attest._UPDATE_ALLOWLIST`, so `update-symbol` refuses it
+  and the runbook makes it a Maintainer-run direct correction. Derived against
+  the committed baseline, not carried forward:
+
+  ```
+  CHANGED 1   MISSING 0   DUPLICATE 0
+    FunctionDef:_apply_upgrade   65a5f59ef844cfb9 -> dc53397782e91c18
+  ```
+
+  Until it runs, `test_ast_attest.py` has exactly 2 failures. **Full suite:
+  3178 passed, 1 skipped, 2 failed** — those two and nothing else.
+
+  Also open on that commit: AGENTS.md makes the scaffold engine a proposal +
+  Security-Review trigger. The change is a bounded correctness fix restoring
+  intent the code already states at `upgrade.py:1561`, but whether it routes
+  through a proposal is the Maintainer's call, not the author's.
 * **`_gate_manifest.py verify` reports HOLD, and that is correct** *(dated
   2026-08-28)*. Two violations, both `scripts/reanchor_ceremony.py`:
   FROZEN-MODIFIED and FROZEN-OID. The 2026-08-28 ceremony re-froze the manifest
