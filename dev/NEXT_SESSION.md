@@ -81,7 +81,13 @@ nobody made.
 **Do not commit into a running review's scope.** `HEAD` moved five times during
 one review and one of those commits edited a file it was reading. The same
 applies to a *ceremony*: it refuses any dirty tracked file, so when two sessions
-share a worktree, agree an explicit hold window before starting one.
+share a worktree, agree an explicit hold window before starting one. **And to a
+verification run.** A full suite that was in flight while `dev/` docs were being
+rewritten returned 2 failures; the same commit on a quiet tree returned 0. The
+failures were real observations of a tree mid-edit, not a regression -- but a
+figure produced that way is worthless in both directions, and reporting the
+earlier clean run while a dirtier one was still going compounded it. Quiesce
+the tree, then measure.
 
 **Measure over what is DECLARED, not over what is PRESENT.** This error was made
 twice in one day, in unrelated code: a lockfile scan that skipped records whose
