@@ -171,6 +171,17 @@ draft, adopted as design rules:
   deletion but *silently on modification* — a green suite is not evidence
   that no re-anchor is owed. Unify a silently-stale component and the
   silence is unified with it. Loud-on-modification first, then one flow.
+* **Make staging cheap, because the infrequency and the opacity are the
+  same problem.** Observed live during this note's own writing: the
+  ceremony's WORKTREE check (correct — the blessed commit must contain the
+  bytes that were checked) refuses any dirty tracked file, so the ceremony
+  needs a globally quiet repository. Expensive staging pushes re-anchors
+  apart; each one then covers hundreds of commits; and an enormous diff is
+  exactly what no classification can make comprehensible. The causality
+  runs staging-cost → infrequency → opacity, so cadence is a *design goal*,
+  not a nicety: **a re-anchor cheap enough to run weekly largely dissolves
+  the diff problem on its own.** Keep the WORKTREE check; shrink everything
+  around it until quiet-repository moments are easy to find.
 
 **2. Two tiers, not four ceremonies.** *Re-pin* (routine): gate manifest,
 AST baseline, lockfile — the three-act loop above, no key ceremony, the
