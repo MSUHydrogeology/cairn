@@ -897,12 +897,14 @@ verification for shipped code, or editing history. The four-part core
 is the point of Cairn and stays. What goes is the mass around it — the
 armor agents grew because nothing in the rules ever told them to stop.
 
-## What the sweep actually cost — migrated on archive, 2026-08-28
+## What the sweep actually cost — outcome of Tier 2, 2026-08-28
 
-*Migrated from `dev/plans/archive/subtraction-sweep.md` under that plan's
-lasting-truth clause. The build table above is what this note estimated; this
-is what the work measured. Kept here because the estimate is only worth
-anything next to its outcome.*
+*Migrated here when **the subtraction sweep** archived, under that plan's
+lasting-truth clause — `dev/plans/archive/subtraction-sweep.md`. **This note is
+not archived**: Tier 2 was executed and is spent, but Tier 1 and Tier 3 remain
+unadopted, so its direction is still live. The build table above is what this
+note estimated; below is what the work measured. Kept together because an
+estimate is only worth something next to its outcome.*
 
 **The 61k headline did not survive contact**, and the Decision's own preamble
 said to treat it as a headline until the manifest landed. Summing the build
