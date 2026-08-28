@@ -1995,3 +1995,71 @@ This plan's falling-test-count reconciliation, added precisely to catch coverage
 loss, reads a skip as neither pass nor failure and would have missed it. C1's
 acceptance criterion now requires each repointed test to be shown *failing*
 against a tree without the kernel before it counts as repointed.
+
+## C8 complete -- the gate anchor moved -- 2026-08-28
+
+**C8 is done.** `refs/cairn/gate-anchor` advanced `5f99273 -> bd66a70`, signed
+by the ceremony key (`SHA256:8R549gtP0SJP...`, `git verify-commit` reports Good
+and fully trusted), branch and anchor moved in one transaction, and both refs
+were pushed. The anchor had been 362 commits stale.
+
+**The Maintainer's authorization, quoted rather than paraphrased:**
+
+> We don't need to re-review everything. I bless the security of this session
+> for re-anchoring. Let's go ahead with the ceremony.
+
+That waived the re-review the security fix at `4bb6bb4` had voided. It did not,
+and could not, waive arithmetic -- and arithmetic was the real blocker.
+
+**What was actually stopping the ceremony, which nobody had written down.** The
+instantiated launcher on the host was the **pre-fix** one from 2026-08-19: no
+`unset L_*`, so it carried the environment-injection path an External Security
+Review had found and this plan's `4bb6bb4` closed. It was also bound to a
+`reanchor.sh` that no longer exists -- its packet pinned `daaaf483...` against a
+tree at `b955542...` -- so it would have refused at RA-07. **That refusal would
+have been luck, not a control.** A fresh packet and launcher were composed
+against the current closure, and the pre-fix pair is to be deleted.
+
+**The tree was never the problem.** Run read-only before any key or package was
+spent, with the three changed closure members admitted as a transition, the
+ceremony's own checks returned `BLOCKED=False`. The security machinery was
+refusing nothing; the logistics were.
+
+**The injection fix was confirmed by positive control**, not assumed:
+
+| | input | result |
+|---|---|---|
+| A | values file with no `python` row, clean environment | REFUSE |
+| B | same, with `V_python` **exported** | REFUSE -- the fix holds |
+| C | same, against `reanchor.sh` **read from the old anchor** | **accepted** |
+
+Row C is why this ceremony was worth running: the superseded anchor vouched for
+a values reader with a live injection path.
+
+**What the checkpoint records**, and it is the first honest measure of what this
+sweep did to the protected surface:
+
+```
+frozen gate files   : 31 modified, 11 added, 32 removed
+pytest collection   : 4460 -> 3180
+admitted authority  : 10 members, transition mode
+```
+
+**Verification after the move.** Full suite `CAIRN_FULL_SUITE=1 pytest
+bootstrap/tests --quality-gate-shuffle-seed=0` -> **3179 passed, 1 skipped**,
+Python 3.13.13, 502s, exit 0. `_gate_manifest.py verify` -> OK, 182 frozen
+files, 3180 pinned nodes. Working tree clean; nothing unpushed.
+
+**A finding this ceremony surfaced and did not close.** The launcher is
+manufactured from `bootstrap/reanchor-launcher.template.sh`, and **the template
+is not a closure member** -- nothing in this repository pins it. The launcher is
+the pre-candidate trust root: everything it does runs before the checker exists,
+so none of the checker's internal pinning protects it. The ten-member closure
+therefore has a hole exactly where it matters most, and the hole is invisible
+because the closure looks complete. Mitigated only by reading the template from
+the object store and naming its blob digest; **making it the eleventh closure
+member is unclosed work**, and it predates this plan.
+
+**C9 is now unblocked on every count.** Code review ran and was answered, the
+lockfile is correct, and the anchor the sisters would inherit is current. C9
+remains MAINTAINER-GATED per sister.
