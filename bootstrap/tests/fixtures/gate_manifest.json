@@ -9,12 +9,12 @@
     "bootstrap/tests/fixtures/scaffold_ast_baseline.json": {
       "governed_by": "_ast_attest.py update-symbol \u2014 one allowlisted baseline key, --expect-old guarded",
       "mode": "100644",
-      "oid": "c1f80fa5847fdf79bc05c456e95b4d67abce58fa",
-      "pre_run_sha256": "efce82eb5310709093550fc41ecb54642cfad247e48163224cd4d059fd3df20d"
+      "oid": "6f794c9c4be0da765229d6811ce9e213c71fe74f",
+      "pre_run_sha256": "b2980146d014f36e2fefb513f431e5fa06759393efd554e921af32bd7c358dd5"
     }
   },
   "collection": {
-    "node_count": 3169,
+    "node_count": 3180,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
@@ -487,6 +487,15 @@
       "bootstrap/tests/test_core_dev_folders.py::TestScaffoldCompleteness::test_upstream_dir_and_files_created",
       "bootstrap/tests/test_core_dev_folders.py::TestScaffoldCompleteness::test_upstream_readme_substitutes_project_name",
       "bootstrap/tests/test_core_dev_folders.py::TestUpgradeNoClobber::test_diverged_upstream_readme_not_clobbered",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestAPipeCannotAuthorize::test_no_tty_and_no_flag_refuses",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestItRunsAgainstTheRealTree::test_planning_the_real_repo_does_not_crash[ast-baseline]",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestItRunsAgainstTheRealTree::test_planning_the_real_repo_does_not_crash[lockfile]",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestItRunsAgainstTheRealTree::test_the_runner_refuses_until_the_block_review_is_answered[ast-baseline]",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestItRunsAgainstTheRealTree::test_the_runner_refuses_until_the_block_review_is_answered[lockfile]",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestRefusalsAreLoudAndTotal::test_a_refusal_in_planning_exits_two_and_says_why",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestTheTreeMustNotMoveWhileYouRead::test_a_plan_that_changes_after_display_refuses",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestTheTreeMustNotMoveWhileYouRead::test_a_stable_plan_applies",
+      "bootstrap/tests/test_correct_pinned_digests.py::TestTheTypedDigestMustMatchThePlan::test_a_wrong_digest_aborts_and_writes_nothing",
       "bootstrap/tests/test_default_security_stance.py::test_a_declared_token_never_conscripts_a_module_into_an_exact_list",
       "bootstrap/tests/test_default_security_stance.py::test_a_new_default_on_module_stays_opt_in_for_an_existing_adopter",
       "bootstrap/tests/test_default_security_stance.py::test_an_exact_modules_list_is_never_widened_by_the_default_on_module",
@@ -1942,6 +1951,7 @@
       "bootstrap/tests/test_reanchor.py::TestTheValuesFileIsParsedNeverExecuted::test_the_artifact_contains_no_eval_or_source",
       "bootstrap/tests/test_reanchor.py::TestTheValuesFileIsParsedNeverExecuted::test_the_source_scan_would_notice_a_real_eval",
       "bootstrap/tests/test_reanchor.py::TestThereIsNoAmbientFallback::test_an_absent_executable_field_is_not_filled_from_PATH",
+      "bootstrap/tests/test_reanchor.py::TestThereIsNoAmbientFallback::test_an_absent_field_is_not_filled_from_an_EXPORTED_V_VARIABLE",
       "bootstrap/tests/test_reanchor.py::TestThereIsNoAmbientFallback::test_an_absent_home_field_is_not_filled_from_the_environment",
       "bootstrap/tests/test_reanchor.py::TestTransitionModeTakesBothInputsOrNeither::test_a_candidate_without_a_manifest_refuses",
       "bootstrap/tests/test_reanchor.py::TestTransitionModeTakesBothInputsOrNeither::test_a_manifest_without_a_candidate_refuses",
@@ -2711,6 +2721,7 @@
       "bootstrap/tests/test_session_routines.py::test_resolve_agent_honors_explicit_override",
       "bootstrap/tests/test_session_routines.py::test_resolve_agent_keeps_identity_without_digest_suffix",
       "bootstrap/tests/test_session_routines.py::test_resolve_session_honors_explicit_override",
+      "bootstrap/tests/test_session_routines.py::test_session_end_WITH_handoff_DOES_emit_the_standing_capture_prompt",
       "bootstrap/tests/test_session_routines.py::test_session_end_does_not_clobber_existing_reflection",
       "bootstrap/tests/test_session_routines.py::test_session_end_dry_run_writes_nothing",
       "bootstrap/tests/test_session_routines.py::test_session_end_handoff_refuses_without_marker",
@@ -3910,6 +3921,7 @@
       "bootstrap/tests/test_session_routines.py::test_resolve_agent_honors_explicit_override",
       "bootstrap/tests/test_session_routines.py::test_resolve_agent_keeps_identity_without_digest_suffix",
       "bootstrap/tests/test_session_routines.py::test_resolve_session_honors_explicit_override",
+      "bootstrap/tests/test_session_routines.py::test_session_end_WITH_handoff_DOES_emit_the_standing_capture_prompt",
       "bootstrap/tests/test_session_routines.py::test_session_end_does_not_clobber_existing_reflection",
       "bootstrap/tests/test_session_routines.py::test_session_end_dry_run_writes_nothing",
       "bootstrap/tests/test_session_routines.py::test_session_end_handoff_refuses_without_marker",
@@ -4406,6 +4418,11 @@
       "oid": "4624ca6d0efce47ab2e812ab288e34ad11b4cff9",
       "sha256": "49451d08924191ec41d984f660fe1caef7619eba41a04537a97c53f6eaf9a0fd"
     },
+    "bootstrap/tests/test_correct_pinned_digests.py": {
+      "mode": "100644",
+      "oid": "f1827d2150dd4efcf8b2690bd5b78fbc80feea92",
+      "sha256": "f4f2012396d9a54a908ee2c2a0115b07259c6cc1a1d736c5e1a9dd9ef8149e2c"
+    },
     "bootstrap/tests/test_default_security_stance.py": {
       "mode": "100644",
       "oid": "bdd73e9cb48196d065dd53e865f8f7872fa8ddfd",
@@ -4653,8 +4670,8 @@
     },
     "bootstrap/tests/test_reanchor.py": {
       "mode": "100644",
-      "oid": "29565e08d9d550a5886417348328e7bd397efa92",
-      "sha256": "b7741a5d8d0dd7bb786d46c3ef8d5c9e8716134776344727e997643edb6796ab"
+      "oid": "02a6a4439587a887bb3510f28443aaebf3f1a48f",
+      "sha256": "2c45e8985993f5539f084304c1256f28c09ec739aee05fd70356cdc9da0b2677"
     },
     "bootstrap/tests/test_reference_scripts.py": {
       "mode": "100644",
@@ -4738,8 +4755,8 @@
     },
     "bootstrap/tests/test_session_routines.py": {
       "mode": "100644",
-      "oid": "0130a7cb826058a225d4ba97e82f4b9dcf6715e8",
-      "sha256": "06e5223b83f3e3384895b09b1f3b5ada2a8833ae08d2b7978db734588b70a134"
+      "oid": "096882ff61cd2a8092655060a1cd158d93d69133",
+      "sha256": "1689060aa4b858485f7a1863f9e65250712fafd9924b8fd19254713246444984"
     },
     "bootstrap/tests/test_skill_contract.py": {
       "mode": "100644",
@@ -4886,6 +4903,11 @@
       "oid": "09ce0471b6e2717f0bb3e9e1d6d15c94a62f4893",
       "sha256": "4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390"
     },
+    "scripts/correct_pinned_digests.py": {
+      "mode": "100644",
+      "oid": "fe1fa964aa8cea57f29d79309071daf71d72dc18",
+      "sha256": "bcad27ce3df7c41505695b8e13c4cca4881dcfa76a06185d0899356b2d91c8db"
+    },
     "scripts/gen_legacy_code_review_passes.py": {
       "mode": "100644",
       "oid": "bd979a05dd2314116f4cac407fb6d66bda43df04",
@@ -4920,6 +4942,11 @@
       "mode": "100644",
       "oid": "542395ba04e8c4687a239e25c90b9963ca7c408a",
       "sha256": "de21df447aaa8e249bcc7ac6379604ab851fab15a62b4f7b8be6bb542d05c89b"
+    },
+    "scripts/reanchor_ceremony.py": {
+      "mode": "100644",
+      "oid": "1bde9bab2f5b76651dca19a6f4b0b9056d4a3090",
+      "sha256": "2c730b9b32c305839842663bcb5d78d51b5d6f5908a856d799e6be04be18bde6"
     },
     "scripts/run_portable_security_sweeps.py": {
       "mode": "100644",
@@ -5188,7 +5215,7 @@
       ]
     },
     "_MODULE_MAPPINGS": {
-      "baseline_digest": "0f42fa9a794a77da",
+      "baseline_digest": "3f868e8353a0a498",
       "may_change_in_phases": [
         "A intent-split",
         "B onboarding-split",
@@ -5196,7 +5223,7 @@
       ]
     },
     "_SKILLS_MAPPINGS": {
-      "baseline_digest": "8ec105a84b5e65bf",
+      "baseline_digest": "267bdfc1b02a3eae",
       "may_change_in_phases": [
         "E mechanization skill register"
       ]
