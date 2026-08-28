@@ -493,6 +493,49 @@ def run_stage(cmd: list[str], *, allow_agent: bool,
     return result.returncode, (result.stdout or "" if capture else "")
 
 
+def key_fingerprint(pub: Path) -> str | None:
+    """The SHA256 fingerprint of a public key, or None if it cannot be read."""
+    r = subprocess.run(["ssh-keygen", "-lf", str(pub)],
+                       capture_output=True, text=True, check=False)
+    if r.returncode != 0:
+        return None
+    for token in r.stdout.split():
+        if token.startswith("SHA256:"):
+            return token
+    return None
+
+
+def key_in_agent(fingerprint: str | None) -> bool | None:
+    """Is this key loaded? True / False / None when the agent cannot be asked.
+
+    Distinguishing "not loaded" from "cannot tell" matters at the end of the
+    ceremony: an unconditional `ssh-add -d` on a key that was never in the
+    agent returns "agent refused operation", which reads as a failure to put
+    the key away at the exact moment an operator is most alarmed by one.
+    """
+    if fingerprint is None:
+        return None
+    r = subprocess.run(["ssh-add", "-l"], capture_output=True, text=True,
+                       check=False)
+    if r.returncode == 2:          # cannot connect to the agent
+        return None
+    if r.returncode == 1:          # connected; holds nothing
+        return False
+    return fingerprint in r.stdout
+
+
+def key_away(private: Path, fingerprint: str | None) -> None:
+    """Say what to do about the key, based on where it actually is."""
+    state = key_in_agent(fingerprint)
+    if state is True:
+        say(f"    ssh-add -d {private}")
+    elif state is False:
+        say("    the ceremony key is NOT in the agent -- nothing to put away.")
+        say("    (If it had been, this would name the ssh-add to run.)")
+    else:
+        say(f"    ssh-add -d {private}   # could not query the agent to check")
+
+
 def packet_artifact_digest(packet: Path) -> str | None:
     for line in packet.read_text().splitlines():
         if line.startswith("artifact_sha256 "):
@@ -591,32 +634,44 @@ def drive(repo: Path, values: Path, packet: Path, launcher: Path,
     say("  boundary the two stages exist to create.")
     say("")
     say(f"    ssh-add {private}")
-    if not ask("Is the key loaded?"):
-        return 1
-
+    say("")
+    say("  EITHER WAY WORKS. The signer will use the agent if the key is in")
+    say("  it, and otherwise read the key file and prompt you for the")
+    say("  passphrase directly. This tool reports which it sees rather than")
+    say("  insisting on one:")
+    say("")
+    fp = key_fingerprint(Path(signing))
+    state = key_in_agent(fp)
+    say(f"    ceremony key fingerprint   {fp or '(could not read)'}")
+    if state is True:
+        say("    in the agent               yes")
+    elif state is False:
+        say("    in the agent               no -- stage 2 will prompt you")
+    else:
+        say("    in the agent               could not ask the agent")
     if not os.environ.get("SSH_AUTH_SOCK"):
-        say("\n  SSH_AUTH_SOCK is not set in THIS shell, so stage 2 has no agent")
-        say("  to sign through. Run stage 2 from the shell where you loaded it:")
-        say("")
-        say(f"    /bin/sh {launcher} {packet} {values} {candidate} \\")
-        say(f"        --stage2 {own_digest}")
-        say("")
-        say(f"  Then:  ssh-add -d {private}")
+        say("    SSH_AUTH_SOCK              unset in this shell")
+
+    if not ask("Ready for stage 2?"):
         return 1
 
     code, _ = run_stage(["/bin/sh", str(launcher), str(packet), str(values),
                          candidate, "--stage2", own_digest], allow_agent=True)
     if code != 0:
         say("")
-        say("  Stage 2 did not succeed. PUT THE KEY AWAY BEFORE ANYTHING ELSE:")
-        say(f"    ssh-add -d {private}")
+        say("  Stage 2 did not succeed. Deal with the key before anything else:")
+        key_away(Path(private), fp)
         return code
 
     head("Done -- and NOT published")
     say("\n  The branch and the anchor moved in one transaction, locally.")
     say("\n  Two things remain, and both are yours:")
-    say(f"    1.  ssh-add -d {private}")
-    say(f"    2.  git push origin HEAD '+{ANCHOR_REF}:{ANCHOR_REF}'")
+    say("")
+    say("  1. The key:")
+    key_away(Path(private), fp)
+    say("")
+    say("  2. Publish both refs -- this is the step that makes it real:")
+    say(f"    git push origin HEAD '+{ANCHOR_REF}:{ANCHOR_REF}'")
     say("\n  This tool does not push, ever.")
     return 0
 

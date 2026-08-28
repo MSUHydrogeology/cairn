@@ -11,39 +11,34 @@ Internal code reviews ran and were answered. `dev/PLANNING.md` went **2,591 →
 869**. Cairn's security debt now lives in one place: the **Live residual
 register** in `dev/strategy/2026-08-05-codex-security-strategy.md`.
 
-**109 commits are unpushed.** Nothing has been pushed at any point. Pushing is
-the Maintainer's, always.
+**Everything through the re-anchor is pushed.** The 2026-08-28 ceremony
+published `master` and `refs/cairn/gate-anchor` together; before that, nothing
+had ever been pushed. Pushing is still the Maintainer's, always -- that did not
+become routine because it happened once.
 
-## Two things are STOPPED, and both are stopped correctly
+## One thing is STOPPED, and it is stopped correctly
 
-**1. The gate-anchor ceremony. Do not run it.**
+**The gate anchor is DONE, not stopped.** It moved `5f99273 -> bd66a70` on
+2026-08-28, signed and verified, both refs pushed. It had been 362 commits
+stale. The Maintainer blessed the outstanding re-review; what had actually
+blocked it was arithmetic, not judgement -- the launcher on the host was the
+pre-fix vulnerable one *and* was bound to a `reanchor.sh` that no longer
+existed. Full record in the sweep plan, `## C8 complete`.
 
-An External Security Review of the launcher template found — and this session
-independently reproduced — an **environment-injection path into the ceremony's
-own values reader**. Neither reader initialised its outputs, and the schema
-check asks *"is this variable set"*, which an exported environment variable
-answers exactly as a values-file line does:
+**Run it with `scripts/reanchor_ceremony.py`.** Without `--run` it reports and
+stops: the closure printed three ways, the packet/launcher pair checked, and
+the ceremony's read-only checks run *before* a key or a package is spent. With
+`--run` it performs both stages and asks exactly two questions. It never
+pushes.
 
-```
-clean environment          ->  REFUSE: missing required key 'python'
-V_python=/bin/echo in env  ->  OK: the values file satisfies the schema
-```
+**One finding this left open.** `bootstrap/reanchor-launcher.template.sh` is
+not a closure member, so the pre-candidate trust root is pinned by nothing.
+Everything the launcher does runs before the checker exists. Making it the
+eleventh member is unclosed work and predates the sweep.
 
-`$V_python` is what executes the gate checker. Worse, the disclosure print then
-showed the injected value beneath *"nothing below was discovered"* — the
-operator's one moment of real oversight, handed a false statement.
+## The one thing that is still stopped
 
-Fixed at `4bb6bb4` with an `unset` in each reader plus a regression test that
-**fails against the unfixed reader** (control-run). **But editing `reanchor.sh`
-voided the authority-closure clearance** recorded at `57ba93a`. The three
-closure files must be re-reviewed before any ceremony.
-
-Also unresolved from that review: the **instantiated launcher is bound to the
-reviewed template by nothing** — not the closure, not the frozen set, not the
-packet. And the launcher performs 9 of the registry's 19 steps, including every
-step that decides whether candidate code starts.
-
-**2. `scripts/correct_pinned_digests.py`. It refuses on entry.**
+**`scripts/correct_pinned_digests.py` refuses on entry.**
 
 A Codex External Security Review returned **BLOCK** — seven findings, two
 CRITICAL, each reproduced. The headline: the plan digest binds only the plan's
@@ -54,10 +49,11 @@ being done by hand under their runbooks until someone commissions it.
 
 ## What is genuinely next
 
-* **C9 — the sister migrations.** Unblocked in principle: the Maintainer ruled
-  C9 follows code review, and code review has run and been answered. The
-  lockfile the sisters would inherit is now correct.
-* **C8's remainder** — only the gate anchor, which is stopped above.
+* **C9 — the sister migrations.** Unblocked on every count now: code review ran
+  and was answered, the lockfile is correct, and the anchor the sisters would
+  inherit is current rather than 362 commits stale. Still MAINTAINER-GATED per
+  sister.
+* **C8 is complete.** Nothing remains in it.
 * **The four unfiled issue drafts** in `dev/measurement/queued-issue-drafts.md`
   — drafted, verified, never filed. Filing is outward-facing.
 * **The `defer` batch** in the sweep plan's Dispositions block — five deposits
@@ -83,7 +79,26 @@ another. A figure that moves under inspection was standing in for a judgment
 nobody made.
 
 **Do not commit into a running review's scope.** `HEAD` moved five times during
-one review and one of those commits edited a file it was reading.
+one review and one of those commits edited a file it was reading. The same
+applies to a *ceremony*: it refuses any dirty tracked file, so when two sessions
+share a worktree, agree an explicit hold window before starting one.
+
+**Measure over what is DECLARED, not over what is PRESENT.** This error was made
+twice in one day, in unrelated code: a lockfile scan that skipped records whose
+file was missing and reported the intersection as the whole, and a packet check
+that compared only the rows the packet happened to contain -- so a packet with
+*zero* member rows would have read as matching. Both look correct while
+iterating over what you have. The fix is to iterate over the declared set and
+let a missing entry be visible as missing.
+
+**A security review's findings are a specification, not an argument for
+retreat.** An adversarial review of a convenience tool returned 28 confirmed
+findings, and the first response was to delete the half they landed in. The
+Maintainer pushed back, and they were right: only one of six root causes
+genuinely resisted automation, and even it had an honest form. Retreat *feels*
+like rigour and cannot be shown wrong, because the deleted version is never
+built -- the same asymmetry `AGENTS.md` names for reviewers narrowing scope.
+Fix what the findings describe; withdraw only what cannot be made honest.
 
 ## Open threads
 
