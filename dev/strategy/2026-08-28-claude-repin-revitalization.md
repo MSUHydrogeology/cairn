@@ -3,9 +3,10 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date**: 2026-08-28
-**Status**: open (working-agent input from the sweep/ceremony session folded
-in 2026-08-28 — it corrected this note's state, replaced one of its three
-human acts, and supplied four design constraints and four hidden hazards)
+**Status**: open (working-agent input folded 2026-08-28; Codex External
+strategy review at `9450676` — verdict REVISE BEFORE PROMOTION, five
+findings, all accepted — folded in and removed 2026-08-28 per the template;
+the review text lives at commit `65045a6`)
 **Type**: design-exploration
 **Surfaces this feeds**: a deliberate-lane proposal (trust-ceremony surface —
 Security Review required, External floor at the proposal);
@@ -77,9 +78,15 @@ machines verify and what the human attests.
 **What the machine attests** (committed, tested, itself in the protected
 set): what changed since the last pin, byte-exactly; which commits changed
 it, derived from file history — never pickaxe; which reviewed lifecycle
-artifacts cover those commits; that the A and B derivations are
-independent, complete-preimage, and freshly computed; that writes are
-atomic, contained, and read back.
+artifacts cover those commits; and one **immutable transaction object**
+(Codex RPR-1's resolution, chosen over fresh-process re-derivation as the
+simpler coherent design): every input bound — the signed commit's tree,
+plus every non-tree influence named explicitly — and the exact output
+bytes, rendered once as the thing the Maintainer reads, with **no later
+live or candidate read**, applied only through exact-preimage
+compare-and-swap with atomic, contained, read-back writes. The earlier
+A/B-independence claim is deleted, not weakened: the transaction object
+replaces it.
 
 **What the Maintainer attests** — corrected by the working agent's triage of
 the 19 registry steps, which found exactly **one judgment in the whole
@@ -99,11 +106,14 @@ Maintainer was handed a digest to paste. So the human leg is:
    changes is not, and the ceremony must stop pretending to ask for it.
    **The semantic assurance comes from the lifecycle reviews that landed
    the changes; the ceremony proves linkage, never repeats them.**
-2. **The typed confirmation** — an *authorization act, explicitly not an
-   authentication claim* (Codex item 3, as amended by the working agent:
-   under one human, one machine, one OS user, a tool can authenticate
-   nobody, and the honest fix is deleting the claim, not strengthening the
-   check).
+2. **The typed confirmation — named honestly as a confirmation and intent
+   record**, not authentication and not an enforceable authorization
+   boundary (Codex RPR-3): under one OS user a tool can authenticate
+   nobody, and the honest fix is deleting that claim. The *enforceable*
+   boundary during a root move is **capability separation — the dedicated
+   ceremony key**: Maintainer-only unlock, absent while candidate code
+   runs. The ordinary signing key, which agents commit with, supplies no
+   such boundary and is never described as one.
 3. **The key (RA-16)** — the one step in the entire registry no code can
    enforce, which the runbook itself calls the real fence. That it is the
    *only* such step is the runbook's own argument for this whole strategy:
@@ -124,8 +134,9 @@ runner and the thrice-rewritten scratch scripts. Three verbs:
   An uncovered change renders as a refusal-grade warning, not a footnote.
 * `package` — the reviewable bundle and its digest, computed fresh.
 * `apply` — exact-preimage compare-and-swap after the Maintainer types the
-  digest they computed independently; atomic contained writes with
-  read-back; no `--authorize`, no non-interactive path to the human act.
+  confirmation value from the rendered transaction (their intent record);
+  atomic contained writes with read-back; no `--authorize`, no
+  non-interactive path to the human act.
 
 The Codex redesign requirements are inherited **as triaged by the working
 agent, not verbatim**: items (1) and (5) without reservation — the closed
@@ -133,26 +144,37 @@ JSON-native plan binding exact input *and* output bytes (the fix to the
 whole projection class), and public-path tests for every reproduced failure
 *including controls proving a guard has not become refuse-all* (the
 discipline this repo failed three times in one session). Item (3) amended —
-typed confirmation as authorization, the authentication claim deleted. Item
-(2) — fresh-process re-derivation from separately verified checker bytes —
-**discarded as written**: it is the two-parser design again, it defends a
-line the same-user posture already concedes, and it costs a second
-implementation of everything. The AST runbook's complete-set guard is
-preserved; git errors fail closed. The tool joins the protected set, so the
-previous pin covers the tool that moves the next one.
+typed confirmation renamed to what it is, with the dedicated key as the
+real boundary (above). Item (2)'s **property is kept; its mechanism is
+replaced**: the working agent's "second parser" equivalence was false
+(Codex RPR-1 — fresh execution of *one* implementation is not a second
+grammar, and `sys.modules` staleness is a real defect the BLOCK
+reproduced), but rather than re-running derivations in sterile processes,
+this design delivers the same guarantee through the immutable transaction
+object — bind once, render that object, never read live again. Cutting the
+launcher's second values *parser* is a separate, compatible win. The AST
+runbook's complete-set guard is preserved; git errors fail closed. The tool
+joins the protected set, so the previous pin covers the tool that moves the
+next one.
 
 Four constraints from the working agent's attack on this note's first
 draft, adopted as design rules:
 
-* **Sign the complete preimage; demote the protected set from attested to
-  derived-and-linted.** A signed commit kills the projection class because
-  the tree hash covers every byte — but sign the whole tree and every prose
-  commit becomes an authority act; sign a subset and the projection is
-  reinvented. The resolution: the *signature* binds the whole tree, and the
-  manifest survives as a **check** (a lint that says which files decide),
-  never as the authority. Left implicit, the manifest quietly survives as
-  authority and nothing improves.
-* **Classify before showing.** A diff of 362 commits is not comprehensible
+* **Sign the whole tracked tree; name every other influence; keep the
+  protected-set rule as *policy* under prior-trusted control.** A signed
+  commit binds parent and complete tracked tree, which kills the
+  demonstrated projection defect — but only for tracked state (Codex
+  RPR-2): untracked and ignored inputs (the interpreter binding lives in
+  one), host executables, and any live read after the signed object was
+  shown are part of the preimage whenever they influence a result, so the
+  transaction names them explicitly. And calling the manifest a lint does
+  not make it non-authoritative — the rule that says which files *decide*
+  is policy authority; it is **derived from the prior trusted state, and a
+  change to the rule itself is separately authorized**, never smuggled
+  through an ordinary re-pin. A signature authenticates a key holder, not
+  the process that requested the signature; the design says so.
+* **Classify before showing.** A diff of 365 commits (measured at the
+  reviewed commit) is not comprehensible
   because it is a diff; it is comprehensible only behind a classification
   the machinery already knows and never presents: does this change touch
   code that **decides**, or content that is merely **pinned**? A strategy
@@ -171,26 +193,36 @@ draft, adopted as design rules:
   deletion but *silently on modification* — a green suite is not evidence
   that no re-anchor is owed. Unify a silently-stale component and the
   silence is unified with it. Loud-on-modification first, then one flow.
-* **Make staging cheap, because the infrequency and the opacity are the
-  same problem.** Observed live during this note's own writing: the
-  ceremony's WORKTREE check (correct — the blessed commit must contain the
-  bytes that were checked) refuses any dirty tracked file, so the ceremony
-  needs a globally quiet repository. Expensive staging pushes re-anchors
-  apart; each one then covers hundreds of commits; and an enormous diff is
-  exactly what no classification can make comprehensible. The causality
-  runs staging-cost → infrequency → opacity, so cadence is a *design goal*,
-  not a nicety: **a re-anchor cheap enough to run weekly largely dissolves
-  the diff problem on its own.** Keep the WORKTREE check; shrink everything
-  around it until quiet-repository moments are easy to find.
+* **Make staging cheap — cadence bounds the volume; classification makes
+  it intelligible; neither replaces the other** (Codex RPR-4 correcting
+  this rule's first form, which claimed cadence alone dissolves the diff
+  problem — it cannot make one subtle authority change comprehensible, and
+  too-frequent ceremonies risk habituation). Observed live during this
+  note's own writing: the WORKTREE check (correct, kept — the blessed
+  commit must contain the bytes that were checked) refuses any dirty
+  tracked file, so expensive staging pushes re-anchors apart and each one
+  then spans hundreds of commits. Two fixes ride together: **stage and
+  inspect the immutable candidate in a sterile temporary worktree or
+  clone**, so the live tree never has to go globally quiet; and give the
+  proposal both a **risk/volume trigger and a maximum review budget**, with
+  the classified report retained as a security acceptance criterion, not a
+  nicety cadence buys back.
 
-**2. Two tiers, not four ceremonies.** *Re-pin* (routine): gate manifest,
-AST baseline, lockfile — the three-act loop above, no key ceremony, the
-approval recorded as a signed ordinary Maintainer commit. *Re-anchor* (the
-root moves): keeps the two-stage key ceremony — the key boundary is real —
-but rides the same tool for all pre-work, and its human step becomes the
-same three acts plus the key. The routine path must be cheap enough that
-the baseline re-anchor after an ordinary `_scaffold/` change is minutes,
-not a supervised afternoon.
+**2. Two tiers, one kernel, typed adapters — not one generic algorithm.**
+*Re-pin* (routine): gate manifest, AST baseline, lockfile — the three-act
+loop above, no key ceremony, the approval recorded as a signed ordinary
+Maintainer commit. *Re-anchor* (the root moves): keeps the two-stage key
+ceremony — the key boundary is real — but rides the same tool for all
+pre-work. What the four systems share is the **command surface, transaction
+format, renderer, atomic writer, and confirmation experience**; what they
+do not share is an authority model (dedicated key and expected-old ref;
+complete known-new accounting; the protected/test set with its staleness
+asymmetry; the install contract's schema and living state — Codex RPR-5).
+Each gets a **typed adapter whose existing invariants are individually
+named and negatively tested**; consolidation is a UX and
+economy-of-mechanism decision, never permission to flatten the invariants.
+The routine path must be cheap enough that the baseline re-anchor after an
+ordinary `_scaffold/` change is minutes, not a supervised afternoon.
 
 **3. Shrink the apparatus — Saltzer, applied to our own ceremony.** Every
 line of launcher shell is surface the authority closure must re-review after
@@ -235,12 +267,20 @@ agent's inventory):
   injection hole; today it would refuse only by the *luck* of a stale
   binding, not by a control. It should be deleted — the Maintainer's file,
   the Maintainer's delete.
-* **The out-of-band independence control cannot be executed by anyone
-  here.** The runbook has the launcher and packet produced by an External
-  review and delivered out of band so the candidate's preparer is not its
-  attester — but this posture has one party. A written control nobody can
-  perform is worse than none, because it reads as verified. The redesign is
-  a **one-party ceremony, honestly**: delete the claim, keep the review.
+* **The out-of-band independence control cannot be executed as written.**
+  The runbook has the launcher and packet produced by an External review
+  and delivered out of band — but every actor here can alter the same
+  workspace, so *local* out-of-band delivery supplies no tamper resistance,
+  and a written control nobody can perform reads as verified while being
+  worse than none. The refinement (Codex RPR-3): this does **not** make
+  independence valueless — two different controls were being collapsed.
+  **Structural independence** (an External reviewer derives and
+  self-commits findings — the control that produced the BLOCK and this very
+  review) stays. **Capability separation** (the dedicated ceremony key) is
+  the same-user-resistant boundary and stays. What gets deleted is only the
+  claim that delivery mechanics on one machine add assurance — with a dated
+  upgrade trigger for external or hardware-backed authority if the posture
+  changes.
 * **The friction is packaging, not verification.** The read-only checks
   pass — with the three changed closure members admitted as a transition,
   the gate itself refuses nothing. What made the ceremony heavy was
@@ -287,183 +327,3 @@ agent's inventory):
   pins without reintroducing projection-digest bookkeeping, tier-1 keeps
   per-file digests — computed and compared by the tool, never by hand.
 
-## Review -- Codex (External) -- 2026-08-28
-
-> **Temporary strategy review.** Fold accepted substance into the note inline,
-> then remove this section as `dev/strategy/_template.md` requires.
-
-**Reviewed commit**: `9450676340b02b724cd20e626515c0679bdd52a3`
-**Role**: External strategy reviewer
-**Target**: the strategy note at the named commit, before proposal promotion
-**Verdict**: **REVISE BEFORE PROMOTION**
-
-### Steelman
-
-The direction is worth pursuing. The present ceremony asks a solo Maintainer to
-perform arithmetic and packaging through instructions assembled by an agent,
-then describes some of that relay as independent human assurance. A same-account
-terminal prompt cannot establish who typed, and re-running `shasum` under the
-same account supplies no independent trust root. Deleting those claims is more
-secure than preserving a control that cannot be performed. A Git commit also
-offers a much stronger state-binding primitive than the blocked runner's small
-JSON projection: its signature covers the commit object, whose tree and parent
-identify exact repository states. Finally, cheaper ceremonies would reduce the
-amount a person must inspect at once.
-
-The note should become a proposal after it separates those sound observations
-from three stronger conclusions that do not yet follow.
-
-### Findings
-
-1. **[RPR-1] HIGH -- discarding fresh-process derivation is based on a false
-   equivalence, and contradicts the note's own machine contract.**
-
-   The rejected redesign item is not a second parser or a second implementation.
-   It is the same derivation executed from separately verified checker bytes in
-   a fresh process. The blocked runner demonstrated why that matters:
-   `config.py` changed between A and B, but the second derivation reused the
-   first import from `sys.modules` and produced the same digest. Same OS user is
-   relevant to identity and containment; it does not concede stale module state,
-   candidate-code execution, or a checker/input substitution.
-
-   The note still promises that A and B are "independent" and "freshly
-   computed" at lines 80-82, while lines 137-140 discard the only named
-   mechanism that supplies that property. Lines 126-128 also retain the claim
-   that the Maintainer computed a digest independently after lines 88-91 call
-   that act fiction.
-
-   The proposal should choose one coherent design. Either run one implementation
-   twice in fresh, sterile processes from pinned bytes, or replace A/B entirely
-   with one immutable transaction object: bind every input and exact output,
-   render that object, perform no later live or candidate read, and apply it only
-   through exact-preimage compare-and-swap. The latter can be simpler, but then
-   the note must delete the A/B independence claim rather than claim it was
-   retained. Removing the launcher's second values parser is compatible with
-   either choice; process freshness does not require a second grammar.
-
-2. **[RPR-2] HIGH -- whole-tree signing closes the demonstrated projection only
-   under a narrower contract than "complete preimage," and the manifest remains
-   policy authority.**
-
-   A signed Git commit binds its parent and complete tracked tree. That prevents
-   the blocked runner's exact failure -- carrying an undigested kept record into
-   a different output tree -- if the authorized operation consumes only those
-   immutable objects. It does not, by itself, bind untracked or ignored inputs,
-   host executables and configuration, interpreter state, candidate code run to
-   derive collection evidence, filesystem path/symlink identity, or any live
-   read performed after the signed object was shown. Those are all part of the
-   preimage when they influence a result.
-
-   Nor does calling the protected-set manifest a lint make it non-authoritative.
-   The rule that says which files "decide," which drift refuses, and when the
-   rule itself may change is policy authority even if it is no longer the
-   cryptographic authenticity root. The safe form is to derive that rule from
-   the prior trusted state and separately authorize any rule transition. A
-   subset signature is not automatically the old projection defect: it is safe
-   when the prior trusted rule proves that the subset exactly equals the
-   operation's complete read/write footprint. Whole-tree signing is a useful
-   conservative alternative, not a proof that selection has disappeared.
-
-   Before promotion, define the signed transaction precisely: operation and
-   schema; input parent/commit and tree; output commit and tree; exact target
-   paths with old/new object identities; checker/tool identity; the classified
-   report or its digest; expected-old ref; and every non-tree input that can
-   influence derivation. Verification must use a pinned principal and must end
-   in an expected-old compare-and-swap. The proposal should say explicitly that
-   signing authenticates a key holder, not the process that requested the
-   signature.
-
-3. **[RPR-3] HIGH -- deleting false authentication is right; deleting every
-   independence claim, and calling a typed token authorization, is not.**
-
-   The note correctly concludes that a TTY and a same-account checksum do not
-   authenticate the Maintainer. It should delete the current runbook's claim
-   that local out-of-band delivery supplies tamper resistance when every actor
-   can alter the same workspace. But two different controls are being collapsed:
-
-   * structural independence -- an External reviewer derives and self-commits
-     findings or exact hashes, which can catch design and implementation error;
-   * capability separation -- a key, account, device, or external channel that
-     the executing agent cannot use, which can resist same-user substitution.
-
-   Cairn has the first and should keep it. The dedicated ceremony key may supply
-   the second during re-anchor only if the Maintainer alone can unlock it and it
-   is absent while candidate code runs. The ordinary signing key does not supply
-   it under the recorded posture in which agents commit with that key.
-
-   A typed digest without an authenticated principal is a confirmation and an
-   intent record, not an enforceable authorization boundary. Use that honest
-   name. State separately that the current trusted-contributor, solo-machine
-   posture accepts same-user substitution; name the dedicated key as the actual
-   re-anchor capability; and leave a dated upgrade trigger for an external or
-   hardware-backed authority if the threat model changes. "Delete the false
-   claim" is sustained. "One party makes independence valueless" is not.
-
-4. **[RPR-4] MEDIUM -- cadence reduces volume but cannot replace semantic
-   presentation, and a shared dirty worktree need not govern cadence.**
-
-   The claimed 362-commit range does not reproduce at the reviewed commit:
-   `git rev-list --count refs/cairn/gate-anchor..9450676` returns **365**. More
-   importantly, weekly cadence does not make one subtle authority change
-   comprehensible, while a well-classified report can make a longer mechanical
-   range tractable. Frequency and presentation are complementary controls:
-   cadence bounds volume; classification, provenance, exact old/new state, and
-   consequence rendering make the bounded material intelligible. Too-frequent
-   ceremonies also risk habituation.
-
-   Keep cheap cadence as an operational goal, but do not say it dissolves the
-   diff problem on its own. Give the future proposal both a risk/volume trigger
-   and a maximum review budget, with the report design retained as a security
-   acceptance criterion. Also test the simpler architectural answer to the
-   global-quiet-tree problem: prepare and inspect an immutable candidate in a
-   sterile temporary worktree or clone. The live-worktree refusal is sound, but
-   it need not force every concurrent session to become quiet.
-
-5. **[RPR-5] MEDIUM -- one user loop should not erase four different source
-   invariants.**
-
-   The gate anchor, gate manifest, AST baseline, and install lockfile can share
-   a command surface, transaction format, renderer, atomic writer, and
-   confirmation experience. They do not share an authority model. The gate
-   anchor moves a trust root under a dedicated key and expected-old ref; the AST
-   baseline requires complete known-new accounting; the gate manifest defines a
-   protected/test set and has asymmetric stale-state behavior; the lockfile is
-   the install contract and has schema and living-state rules. The proposal
-   should specify a small common kernel plus typed adapters whose existing
-   invariants are individually named and negatively tested. "One tool" is a UX
-   and economy-of-mechanism decision, not permission to reduce them to one
-   generic protected-set algorithm.
-
-### Central adjudication
-
-* **Delete same-account authentication and local out-of-band tamper-resistance
-  claims:** **YES**, while retaining structurally independent review and the
-  dedicated-key boundary.
-* **Discard redesign item 2 as a second parser:** **NO**. Either preserve fresh
-  execution of one implementation or replace A/B with a fully specified
-  immutable transaction; the present text does neither consistently.
-* **Whole-tree signature plus manifest lint kills the projection class:**
-  **CONDITIONALLY** for tracked Git state, once the complete influence set and
-  prior-trusted policy rule are explicit. It is not yet a complete-preimage
-  design.
-* **Cadence makes diffs comprehensible:** **NO as stated**. Cadence is volume
-  control; semantic presentation remains the comprehension control.
-
-### Coverage
-
-**Examined and exercised:** the exact strategy bytes at `9450676`; the complete
-2026-08-27 External Security Review and its reproduced CPD-1 through CPD-8
-record; `bootstrap/REANCHOR_RUNBOOK.md` including RA-01 through RA-19, the
-out-of-band launcher/packet contract, same-user residual, signing posture, and
-first-use bootstrap; [REL-1] in the live security strategy; the registered step
-output from `sh bootstrap/reanchor.sh steps`; current anchor identity and commit
-count; and the commit history that introduced the note's four design rules and
-cadence rule. The runbook's 615 lines, AST runbook's 182 lines, and 19 registered
-acts reproduce.
-
-**Not examined:** `scripts/reanchor_drive.py` is untracked at the reviewed
-commit and remains uncommitted in the working tree. I did not treat claims about
-its three-way report, rehearsal, questions, or adversarial review as evidence.
-I did not run a re-pin, re-anchor, signing operation, full suite, or destructive
-probe, and I did not review the future proposal or an implementation of the
-proposed transaction format.
