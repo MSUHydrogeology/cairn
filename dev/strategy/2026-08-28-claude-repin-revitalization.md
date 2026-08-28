@@ -3,8 +3,9 @@
 **Author**: Claude (Strategy)
 **Model**: Fable 5
 **Date**: 2026-08-28
-**Status**: open (cairn-5d's working-agent input requested 2026-08-28; folds
-in on arrival)
+**Status**: open (working-agent input from the sweep/ceremony session folded
+in 2026-08-28 — it corrected this note's state, replaced one of its three
+human acts, and supplied four design constraints and four hidden hazards)
 **Type**: design-exploration
 **Surfaces this feeds**: a deliberate-lane proposal (trust-ceremony surface —
 Security Review required, External floor at the proposal);
@@ -80,18 +81,38 @@ artifacts cover those commits; that the A and B derivations are
 independent, complete-preimage, and freshly computed; that writes are
 atomic, contained, and read back.
 
-**What the Maintainer attests** — three acts, one breath: *I read the
-provenance panel and every changed file traced to a reviewed record; I
-compared the digest the tool showed against one I computed myself; I chose
-this moment to move the pin.* Digest comparison is what signature
-verification reduces to for every operator on earth — the register says so —
-and checking that *reviews exist* is a judgment a non-specialist genuinely
-can make. Re-auditing the reviewed changes is not, and the redesigned
-ceremony must stop pretending to ask for it: **the semantic assurance comes
-from the lifecycle reviews that landed the changes, and the ceremony's job
-is to prove linkage to them, not to repeat them.** That is what makes the
-human leg real instead of a relay: the operator attests exactly what they
-verified, nothing more, and the claim matches the act.
+**What the Maintainer attests** — corrected by the working agent's triage of
+the 19 registry steps, which found exactly **one judgment in the whole
+ceremony**: RA-14, *read the report; does it describe what you intend to
+bless?* The first draft of this note kept "compare the digest against one
+you computed yourself" as a human act; the working agent showed that is
+**fiction on one machine** — a human running `shasum` and a program running
+`shasum` are the same act under the same OS user, and in practice the
+Maintainer was handed a digest to paste. So the human leg is:
+
+1. **The judgment (RA-14, promoted to the center).** Read the classified
+   report — every changed file traced to a reviewed record, each change
+   marked as touching code that **decides** or content that is merely
+   **pinned** — and answer one question: *does this describe what I intend
+   to bless?* Checking that reviews exist and the intent matches is a
+   judgment a non-specialist genuinely can make; re-auditing the reviewed
+   changes is not, and the ceremony must stop pretending to ask for it.
+   **The semantic assurance comes from the lifecycle reviews that landed
+   the changes; the ceremony proves linkage, never repeats them.**
+2. **The typed confirmation** — an *authorization act, explicitly not an
+   authentication claim* (Codex item 3, as amended by the working agent:
+   under one human, one machine, one OS user, a tool can authenticate
+   nobody, and the honest fix is deleting the claim, not strengthening the
+   check).
+3. **The key (RA-16)** — the one step in the entire registry no code can
+   enforce, which the runbook itself calls the real fence. That it is the
+   *only* such step is the runbook's own argument for this whole strategy:
+   everything else is arithmetic a script does faster and more reliably.
+
+Everything around these three goes silent. The steps whose only function is
+servicing the apparatus (RA-01, RA-03, RA-08, RA-15 per the working agent's
+triage) are deleted from the Maintainer's attention, not explained better —
+"I am doing nothing of use" was literally accurate for them.
 
 ## The shape of the build
 
@@ -106,12 +127,50 @@ runner and the thrice-rewritten scratch scripts. Three verbs:
   digest they computed independently; atomic contained writes with
   read-back; no `--authorize`, no non-interactive path to the human act.
 
-The Codex redesign requirements are inherited **verbatim as acceptance
-criteria**: closed JSON-native plan binding exact input *and* output bytes;
-re-derivation in a fresh process from verified checker bytes; the AST
-runbook's complete-set guard preserved; git errors fail closed rather than
-collapsing to "untracked". The tool joins the protected set, so the previous
-pin covers the tool that moves the next one.
+The Codex redesign requirements are inherited **as triaged by the working
+agent, not verbatim**: items (1) and (5) without reservation — the closed
+JSON-native plan binding exact input *and* output bytes (the fix to the
+whole projection class), and public-path tests for every reproduced failure
+*including controls proving a guard has not become refuse-all* (the
+discipline this repo failed three times in one session). Item (3) amended —
+typed confirmation as authorization, the authentication claim deleted. Item
+(2) — fresh-process re-derivation from separately verified checker bytes —
+**discarded as written**: it is the two-parser design again, it defends a
+line the same-user posture already concedes, and it costs a second
+implementation of everything. The AST runbook's complete-set guard is
+preserved; git errors fail closed. The tool joins the protected set, so the
+previous pin covers the tool that moves the next one.
+
+Four constraints from the working agent's attack on this note's first
+draft, adopted as design rules:
+
+* **Sign the complete preimage; demote the protected set from attested to
+  derived-and-linted.** A signed commit kills the projection class because
+  the tree hash covers every byte — but sign the whole tree and every prose
+  commit becomes an authority act; sign a subset and the projection is
+  reinvented. The resolution: the *signature* binds the whole tree, and the
+  manifest survives as a **check** (a lint that says which files decide),
+  never as the authority. Left implicit, the manifest quietly survives as
+  authority and nothing improves.
+* **Classify before showing.** A diff of 362 commits is not comprehensible
+  because it is a diff; it is comprehensible only behind a classification
+  the machinery already knows and never presents: does this change touch
+  code that **decides**, or content that is merely **pinned**? A strategy
+  that ships "show a diff" without "classify first" ships the old opacity
+  in a new costume.
+* **Cut the second parser — worth more than any single hardening.** One
+  values grammar has two implementations (the launcher's own reader, needed
+  before it can trust the artifact's), bound by a parity test; the
+  env-injection appeared in *both* because they are one design, and had to
+  be fixed twice; three registry steps exist only to service the split; and
+  the shared defect landed in the operator's one moment of real oversight
+  (the disclosure print). This, not the injection alone, is the
+  economy-of-mechanism evidence.
+* **Fix the asymmetric failure modes before consolidating.** The four
+  systems pin at four granularities, and the gate manifest fails loudly on
+  deletion but *silently on modification* — a green suite is not evidence
+  that no re-anchor is owed. Unify a silently-stale component and the
+  silence is unified with it. Loud-on-modification first, then one flow.
 
 **2. Two tiers, not four ceremonies.** *Re-pin* (routine): gate manifest,
 AST baseline, lockfile — the three-act loop above, no key ceremony, the
@@ -138,15 +197,46 @@ reporting, its honesty gets a control-run test that deliberately injects
 and confirms the report refuses — the guard-that-fails-when-broken
 discipline the sweep session proved three guards were missing.
 
-## What stays true while this is built
+## Current state, corrected — and what the stopped period was hiding
 
-Both stops stand: the gate-anchor ceremony does not run, and
-`correct_pinned_digests.py` stays refused. Corrections continue by hand
-under their runbooks — slower and honest. The three changed closure files
-are not re-reviewed under the *current* apparatus unless a ceremony is
-genuinely needed before the redesign lands; paying closure-review cost on
-machinery this note proposes to replace is the wrong spend, and that call is
-the Maintainer's.
+**The gate anchor is no longer stopped.** The Maintainer, in the working
+agent's session, verbatim: *"We don't need to re-review everything. I bless
+the security of this session for re-anchoring. Let's go ahead with the
+ceremony."* That ceremony is executing there. **`correct_pinned_digests.py`
+alone stays refused**; routine corrections continue by hand under their
+runbooks until the successor lands.
+
+The working agent is building **`scripts/reanchor_drive.py`** on exactly
+this note's principle — the machine does the arithmetic, the closure prints
+three ways so the transition is visible at a glance, a free read-only
+rehearsal runs before any key or package is spent, and the human is asked
+exactly two questions: *does this report describe what you intend to bless?*
+and *is the key loaded?* It is under adversarial review now. It is the
+concrete tier-*anchor* instance of this strategy; the routine-tier `repin`
+tool builds on the same skeleton rather than beside it.
+
+Four things the stopped period was hiding, now written down (working
+agent's inventory):
+
+* **A vulnerable pre-fix launcher sits on this machine** —
+  `~/Downloads/cairn-m2-codex-round2-20260819/reanchor-launcher.sh`, with no
+  `unset` hardening. A future session that "just runs the ceremony" runs the
+  injection hole; today it would refuse only by the *luck* of a stale
+  binding, not by a control. It should be deleted — the Maintainer's file,
+  the Maintainer's delete.
+* **The out-of-band independence control cannot be executed by anyone
+  here.** The runbook has the launcher and packet produced by an External
+  review and delivered out of band so the candidate's preparer is not its
+  attester — but this posture has one party. A written control nobody can
+  perform is worse than none, because it reads as verified. The redesign is
+  a **one-party ceremony, honestly**: delete the claim, keep the review.
+* **The friction is packaging, not verification.** The read-only checks
+  pass — with the three changed closure members admitted as a transition,
+  the gate itself refuses nothing. What made the ceremony heavy was
+  assembling a matching packet and launcher: logistics. That is where the
+  tooling effort goes first.
+* **RA-16 (key handling) is the only step no code can enforce** — the
+  runbook's own text, and the strongest argument for this whole direction.
 
 ## Route and sequencing
 
@@ -162,15 +252,18 @@ the Maintainer's.
 
 ## Success criteria — the Maintainer's, not the apparatus's
 
-* A routine re-pin is **three acts in minutes**, describable in one breath,
-  run from the **same committed tool every time** — nothing written for the
-  occasion by the agent in the room.
-* Every digest the Maintainer confirms is one they **computed
-  independently**; every provenance line names the **reviewed record** that
-  authorized the change; an unreviewed change **refuses**, loudly.
-* The runbooks shrink to a page each around the tool.
+* A routine re-pin is **three acts in minutes** — the judgment, the typed
+  confirmation, the key where the key applies — run from the **same
+  committed tool every time**, nothing written for the occasion by the
+  agent in the room.
+* Every change the Maintainer blesses is **classified** (decides vs pinned)
+  and every provenance line names the **reviewed record** that authorized
+  it; an unreviewed or unclassifiable change **refuses**, loudly.
+* The runbooks shrink to a page each around the tool; the second values
+  parser is gone; the modification-staleness silence is gone.
 * The register's [REL-1] finding closes under disposition (a) — operator
-  judgment claimed **only** where operator judgment actually occurs.
+  judgment claimed **only** where operator judgment actually occurs, and
+  no written control names a party who does not exist.
 
 ## What would falsify this direction
 
