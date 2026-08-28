@@ -45,29 +45,28 @@ _SCRIPT_MODULES = {
     "claim-check": (
         "default-on/claim_check.py", "scripts/claim_check.py",
     ),
-    # Active-surfacing helper (Chunk 8 of the same arc).  Optional
-    # helper, but ships alongside the scanner via the same
-    # fold-back-ledger module.  Note: this dict allows only one
-    # (src,dst) tuple per module name, so the test parametrize
-    # iterates over what's here; the second script under the same
-    # module is covered by direct assertion in TestInstallPath /
-    # TestGeneralizationGate where they verify both scripts install.
-    # (The pattern claim-check + coordination-tiers establish
-    # is one mapping-entry per script; we deviate here only because
-    # the fold-back-ledger module ships 2 verbatim scripts.  The
-    # _SCRIPT_MODULES dict's parametrize-shape was designed for the
-    # 1:1 case; for the 2-scripts-per-module case the test gains a
-    # separate assertion below.)
+    # This dict allows only ONE (src, dst) per module name, so it models
+    # the 1:1 case.  A module shipping several scripts belongs in
+    # _MULTI_SCRIPT_MODULES below instead.
 }
 
 
 # Multi-script modules: modules that ship more than one verbatim
 # script.  Verified by an explicit test below (not by the
 # _SCRIPT_MODULES parametrize machinery, which assumes 1:1).
-#: Modules shipping more than one verbatim script.  Empty since the
-#: fold-back-ledger module was retired; kept because the shape is a real
-#: install case and re-deriving it from scratch is worse than an empty dict.
-_MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {}
+#: Modules shipping more than one verbatim script.  An EMPTY dict here does
+#: not mean "no such module" -- it means the parametrize below has no cases,
+#: so pytest skips the class and the property goes unchecked while the suite
+#: still reads green.  It was empty for exactly that reason once, after the
+#: module it named was retired and nothing took its place.
+_MULTI_SCRIPT_MODULES: dict[str, list[tuple[str, str]]] = {
+    "issue-capture": [
+        ("team-gated/issue-capture/bootstrap_gitlab_labels.py",
+         "scripts/bootstrap_gitlab_labels.py"),
+        ("team-gated/issue-capture/bootstrap_github_labels.py",
+         "scripts/bootstrap_github_labels.py"),
+    ],
+}
 
 pytestmark = pytest.mark.skipif(
     not TEMPLATES_ROOT.exists(), reason="Cairn templates not available"
@@ -125,9 +124,11 @@ _SAMPLE_PROPOSAL = (
 
 class TestMultiScriptModules:
     """A module that ships more than one verbatim script needs the
-    scaffold to install ALL of them.  The standard parametrize over
-    `_SCRIPT_MODULES` covers the 1:1 case only; this test covers
-    fold-back-ledger's 2-script case (export_scan + suggest).
+    scaffold to install ALL of them.
+
+    The standard parametrize over `_SCRIPT_MODULES` allows one (src, dst)
+    per module name, so it covers the 1:1 case only -- a module whose
+    second script silently failed to install would pass it.
     """
 
     @pytest.mark.parametrize(
