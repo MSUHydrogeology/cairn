@@ -98,9 +98,6 @@ doctrine (`on-ramp/README.md`):
   `dev/proposals/**/*.md` + `dev/plans/**/*.md` -- a flavor of
   explicit-state observation (the file content IS the explicit
   state; not git archaeology of trailers).
-* `first-foldback-candidate` -- the fold-back ledger has at least one open
-  `candidate`-status row.  (The ledger is retired upstream; this trigger
-  fires only where an adopter still keeps one.)
 * `collab-agreement-signing` -- the team-roster slot in
   `dev/collaboration_agreement.md` is unfilled (template default
   text OR empty between the slot tags) AND
@@ -119,14 +116,12 @@ works for ordinary roadmap items.
 
 **Active surfacing** (for important transitions): a small named
 set of transitions also gets **terminal-output prompts** at the
-goodnight activation run. The four named rows:
+goodnight activation run. The three named rows:
 
 1. **Collab-agreement signing** -- fires on the
    `collab-agreement-signing` trigger above.
 2. **Level 1 → 2 graduation** -- fires on `level-1-to-2`.
 3. **Second-agent-type spin-up** -- fires on `second-agent-type`.
-4. **Upstream PR/issue walkthrough** -- fires on
-   `first-foldback-candidate`.
 
 Each row carries **per-preset prompt content** authored in the
 preset file's active-surfacing-prompt-content blocks. The
@@ -150,12 +145,12 @@ Two tour docs ship as part of progressive onboarding:
   collaborative-team + high-rigor-legacy preset's seed task
   lists (those presets expect multi-agent from day one).
 
-The remaining tour surfaces -- the collaboration-agreement
-signing dialogue (Component 3, Row 1) + the upstream PR/issue
-walkthrough (Row 4) -- reuse existing mechanisms (the
-collab-agreement slot fill is just the slot-fill protocol; the
-foldback walkthrough hands off to the fold-back issue template
-(`.github/ISSUE_TEMPLATE/foldback.md`)).
+The remaining tour surface -- the collaboration-agreement
+signing dialogue (Component 3, Row 1) -- reuses an existing
+mechanism (the collab-agreement slot fill is just the slot-fill
+protocol). The upstream PR/issue walkthrough is a day-one seed
+task (Component 1, not an active-surfacing row) that hands off to
+the fold-back issue template (`.github/ISSUE_TEMPLATE/foldback.md`).
 
 ## State-file schema + edit cadence
 
@@ -224,7 +219,6 @@ next morning doesn't surface a wall of text:
   1. `collab-agreement-signing`
   2. Level 1 → 2 graduation
   3. `second-agent-type` spin-up
-  4. Upstream PR/issue walkthrough
 
 The priority order is **v1-fixed**; adopter-tunable priority
 becomes a v1.x candidate (see "Capability-pull follow-ups" below).
@@ -292,7 +286,7 @@ below).
 ## Capability-pull follow-ups (v1.x)
 
 V1 ships at full L3 scope -- three presets, full trigger
-matrix, all four active-surfacing rows, both tour docs. **V1.x
+matrix, all three active-surfacing rows, both tour docs. **V1.x
 opens only when a real adopter hits a v1 gap**, not on a
 schedule. The named candidate gaps:
 
@@ -347,8 +341,8 @@ stays vendor-neutral; the wrapper carries the spawn recipe.
   heuristics a fresh session is framed by.
 * `doctrine/coordination.md` -- the work-intent mechanism the
   multi-agent presets exercise from day one.
-* the retired fold-back doctrine -- the active-surfacing 6-step
-  protocol Component 3 Row 4 invokes.
+* the retired fold-back doctrine -- the 6-step protocol the
+  walk-foldback-protocol seed task (Component 1) invokes.
 * `doctrine/session-routines.md` -- the goodnight step the
   activation helper runs at.
 * `docs/tool-usage.md` -- worked invocations of the shipped tools

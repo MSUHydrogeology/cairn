@@ -24,7 +24,6 @@ _ACTIVE_SURFACING_ROWS: tuple[tuple[str, str], ...] = (
     ("collab-agreement-signing", "collab-agreement-signing"),
     ("Level-1-to-2-graduation", "level-1-to-2"),
     ("second-agent-type", "second-agent-type"),
-    ("upstream-PR-issue-walkthrough", "first-foldback-candidate"),
 )
 
 

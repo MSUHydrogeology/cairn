@@ -98,14 +98,19 @@ class TestPriorityOrder:
         )
         assert chosen == "Level-1-to-2-graduation"
 
-    def test_second_agent_wins_over_foldback(
+    def test_collab_agreement_wins_over_second_agent_type(
         self, helper: ModuleType,
     ) -> None:
+        """Priority order holds for non-adjacent rows too: the
+        top-priority row still wins when it fires alongside the
+        lowest-priority row, not just its immediate neighbor (the
+        other two tests in this class each cover one adjacent pair;
+        this completes the pairwise coverage across all three rows)."""
         chosen = helper.select_active_prompt_to_fire(
-            {"second-agent-type", "first-foldback-candidate"},
+            {"collab-agreement-signing", "second-agent-type"},
             log_records=[],
         )
-        assert chosen == "second-agent-type"
+        assert chosen == "collab-agreement-signing"
 
     def test_no_triggers_returns_none(self, helper: ModuleType) -> None:
         chosen = helper.select_active_prompt_to_fire(set(), log_records=[])
@@ -173,8 +178,21 @@ class TestTaskCap:
         eligible activations: activates only MAX; the
         overflow lands in `deferred_over_cap`."""
         assert _scaffold_solo(tmp_path) == 0
-        # Solo-greenfield has 4 deferred tasks; fire all 4 triggers
-        # at once.  The cap is 3; the 4th should defer.
+        # Solo-greenfield ships 3 trigger-gated deferred tasks (the
+        # fold-back walkthrough moved to a day-one seed, so it no
+        # longer contributes a 4th). Append a 4th deferred task to
+        # the installed source file directly so 4 eligible
+        # activations still compete for the cap of 3.
+        source_path = (
+            tmp_path / "dev" / "modules" / "onboarding"
+            / "solo-greenfield.md"
+        )
+        source_path.write_text(
+            source_path.read_text(encoding="utf-8")
+            + "\n* [trigger: second-agent-type; id: extra-cap-test-task]\n"
+              "  Extra deferred task so 4 activations compete for the "
+              "3-task cap.\n"
+        )
         outcome = helper.activate(
             tmp_path,
             by_agent="claude-test",
@@ -182,7 +200,6 @@ class TestTaskCap:
                 "first-proposal-archived",
                 "collab-agreement-signing",
                 "second-agent-type",
-                "first-foldback-candidate",
             },
         )
         assert len(outcome.pending) == helper.MAX_NEW_TASKS_PER_GOODNIGHT

@@ -117,7 +117,6 @@ from .triggers import (  # noqa: F401  (re-exported for the facade)
     _count_archived_plans,
     _count_archived_proposals,
     _count_distinct_agents_in_roster,
-    _foldback_has_open_candidate,
     _has_cross_type_review_anywhere,
     _has_cross_type_review_in_file,
     _list_plan_files,

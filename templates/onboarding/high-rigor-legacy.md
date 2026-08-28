@@ -115,7 +115,7 @@ goes live.
   knowledge alone cannot supply. Make cross-type-review the
   default going forward.
 
-* [trigger: first-foldback-candidate; id: walk-foldback-protocol]
+* [seed; id: walk-foldback-protocol]
   The fold-back practice: when the method itself improves, not
   just this legacy tree, that improvement belongs upstream.
   Notice it, then file a Cairn issue with the fold-back issue
@@ -127,7 +127,7 @@ goes live.
 
 ## Active-surfacing prompt content (per-preset)
 
-The four active-surfacing rows the high-rigor-legacy preset emits:
+The three active-surfacing rows the high-rigor-legacy preset emits:
 
 ### Row 1 -- collab-agreement-signing prompt
 
@@ -156,14 +156,3 @@ your security-review module's bar -- a strong second agent
 strengthens the External-tier review's structural independence
 for the security-boundary class of finding that legacy
 codebases carry.
-
-### Row 4 -- upstream PR/issue walkthrough prompt
-
-When the method itself improves, not just this legacy tree, it
-belongs upstream. The fold-back issue template
-(`.github/ISSUE_TEMPLATE/foldback.md`) walks through
-filing; the high-rigor-legacy profile installs the
-content-security scanner and the security-review checklist --
-run `python scripts/content_scan.py` over the drafted filing
-body and walk the security-review checklist. Run the scrub
-scanner on the draft explicitly before submitting.

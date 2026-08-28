@@ -19,7 +19,7 @@ unambiguously:
   matching).
 * Active-surfacing prompt metadata blocks at the end -- per-row
   prompt content the activation helper emits to the terminal
-  when the row's trigger fires (the four named rows; P1.10b fills
+  when the row's trigger fires (the three named rows; P1.10b fills
   per-preset prompt content).
 
 The `solo-greenfield` preset assumes the lightest shape: one
@@ -80,7 +80,7 @@ no multi-agent coordination, no legacy-tree pre-pass.
   `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up
   checklist.
 
-* [trigger: first-foldback-candidate; id: walk-foldback-protocol]
+* [seed; id: walk-foldback-protocol]
   The fold-back practice: when you improve the method itself, not
   just your project, that improvement belongs upstream. This is
   your introduction to the fold-back issue template
@@ -91,7 +91,7 @@ no multi-agent coordination, no legacy-tree pre-pass.
 
 Per Codex External Review P2-3 + plan P1.10b: each active-surfacing
 row carries per-preset prompt content the activation helper emits
-to the terminal when the row's trigger fires. The four rows for
+to the terminal when the row's trigger fires. The three rows for
 the `solo-greenfield` shape:
 
 ### Row 1 -- collab-agreement-signing prompt
@@ -123,10 +123,3 @@ and eases how much falls on you alone. Walk
 `dev/modules/onboarding/agent-team-onboarding.md` for the spin-up
 checklist; the second agent's capability tier should match the
 work Dual-Review carries.
-
-### Row 4 -- upstream PR/issue walkthrough prompt
-
-When you notice you've improved the method itself, not just your
-project, it belongs upstream. This is your first introduction to
-the fold-back issue template (`.github/ISSUE_TEMPLATE/foldback.md`)
--- it walks you through filing a Cairn issue or PR.

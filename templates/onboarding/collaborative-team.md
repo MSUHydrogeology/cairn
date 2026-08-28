@@ -100,7 +100,7 @@ candidates upstream early, rather than letting the practice lapse.
   cross-type-review the default; same-vendor review is now
   the backup, not the baseline.
 
-* [trigger: first-foldback-candidate; id: walk-foldback-protocol]
+* [seed; id: walk-foldback-protocol]
   The fold-back practice: when the team improves the method
   itself, not just this project, that improvement belongs
   upstream. Notice it, then file a Cairn issue with the fold-back
@@ -116,7 +116,7 @@ candidates upstream early, rather than letting the practice lapse.
 
 ## Active-surfacing prompt content (per-preset)
 
-The four active-surfacing rows the collaborative-team preset emits:
+The three active-surfacing rows the collaborative-team preset emits:
 
 ### Row 1 -- collab-agreement-signing prompt
 
@@ -145,11 +145,3 @@ structural independence the same-vendor lens cannot. Walk
 `dev/modules/onboarding/agent-team-onboarding.md`; the team's existing roster +
 intent-claim discipline already cover the coordination
 preconditions, so spin-up is faster than a fresh start.
-
-### Row 4 -- upstream PR/issue walkthrough prompt
-
-When your team notices an improvement to the method itself, not
-just this project, it belongs upstream. The fold-back issue
-template (`.github/ISSUE_TEMPLATE/foldback.md`) walks the team-
-handoff owner through filing; coordinate with the team before
-filing to avoid duplicate Cairn issues.

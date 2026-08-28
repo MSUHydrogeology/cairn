@@ -33,7 +33,7 @@ from .security import _assert_safe_dir_for_glob, _assert_safe_read
 # * Action triggers (next section): first-proposal-opened,
 #   first-proposal-archived, first-plan-opened, first-plan-archived,
 #   first-changelog-entry, second-agent-type, first-cross-type-review,
-#   first-foldback-candidate, collab-agreement-signing.
+#   collab-agreement-signing.
 
 
 # Deepen-within-level thresholds (named here so doctrine + tests
@@ -361,23 +361,6 @@ def _has_cross_type_review_anywhere(target: Path) -> bool:
     return False
 
 
-def _foldback_has_open_candidate(target: Path) -> bool:
-    """The fold-back ledger has at least one row whose status is
-    ``candidate``.  Returns True if the canonical ledger
-    (``dev/.cairn/cairn_foldback.md``) carries one.
-    """
-    ledger = target / "dev" / ".cairn" / "cairn_foldback.md"
-    if not ledger.is_file():
-        return False
-    _assert_safe_read(ledger, target)
-    text = ledger.read_text(encoding="utf-8")
-    # Match a markdown table row whose status column is `candidate`
-    # (the ledger doctrine fixes the column names; the canonical
-    # status set is `candidate` / `queued` / `filed` / `pr` / `scoped`
-    # / `synced` / `dropped`).
-    return bool(re.search(r"\|\s*candidate\s*\|", text, re.IGNORECASE))
-
-
 def evaluate_action_triggers(
     target: Path,
     log_records: list["ActivationRecord"] | None = None,
@@ -405,8 +388,6 @@ def evaluate_action_triggers(
     * ``first-cross-type-review`` -- file-content scan finds a
       proposal/plan with a Review section attributed to a vendor
       different from the file's author.
-    * ``first-foldback-candidate`` -- fold-back ledger has a
-      ``candidate``-status row.
     * ``collab-agreement-signing`` -- roster slot is unfilled AND
       ``first-proposal-archived`` has fired (recorded in the
       activation log).
@@ -435,8 +416,6 @@ def evaluate_action_triggers(
 
     if _has_cross_type_review_anywhere(target):
         out.add("first-cross-type-review")
-    if _foldback_has_open_candidate(target):
-        out.add("first-foldback-candidate")
 
     # collab-agreement-signing: roster unfilled AND
     # first-proposal-archived has previously fired (in the log).

@@ -2,7 +2,7 @@
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 
-Validates the 12 fixture combinations (4 active-surfacing rows ×
+Validates the 9 fixture combinations (3 active-surfacing rows ×
 3 presets).  For each combination:
 
 * The prompt content extracted from the preset source file is
@@ -65,7 +65,6 @@ ROWS = (
     "collab-agreement-signing",
     "Level-1-to-2-graduation",
     "second-agent-type",
-    "upstream-PR-issue-walkthrough",
 )
 
 
@@ -86,7 +85,7 @@ class TestTwelveCombinations:
     ) -> None:
         # Match the heading slug used in the preset files:
         # "collab-agreement-signing", "Level 1->2 graduation",
-        # "second-agent-type spin-up", "upstream PR/issue walkthrough".
+        # "second-agent-type spin-up".
         # The render helper matches case-insensitive substring, so
         # passing the row name above works against the actual heading
         # text in each preset file IF the heading mentions the
@@ -95,7 +94,6 @@ class TestTwelveCombinations:
             "collab-agreement-signing": "collab-agreement-signing",
             "Level-1-to-2-graduation": "Level 1",
             "second-agent-type": "second-agent",
-            "upstream-PR-issue-walkthrough": "upstream",
         }[row]
         body = helper.render_active_surfacing_prompt(
             _preset_text(preset), keyword_for_row,

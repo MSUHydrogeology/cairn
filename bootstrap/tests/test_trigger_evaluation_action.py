@@ -256,43 +256,6 @@ class TestCrossTypeReviewTrigger:
 
 
 # ---------------------------------------------------------------------------
-# first-foldback-candidate (ledger scan)
-# ---------------------------------------------------------------------------
-
-
-class TestFoldbackCandidateTrigger:
-    def test_fires_with_candidate_row(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _empty_dev_tree(tmp_path)
-        (tmp_path / "dev" / ".cairn").mkdir()
-        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
-            "# Fold-back ledger\n"
-            "\n"
-            "| ID | Title | Status |\n"
-            "|----|-------|--------|\n"
-            "| F1 | thing | candidate |\n"
-        )
-        fired = helper.evaluate_action_triggers(tmp_path)
-        assert "first-foldback-candidate" in fired
-
-    def test_does_not_fire_without_candidate_row(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _empty_dev_tree(tmp_path)
-        (tmp_path / "dev" / ".cairn").mkdir()
-        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
-            "# Fold-back ledger\n"
-            "\n"
-            "| ID | Title | Status |\n"
-            "|----|-------|--------|\n"
-            "| F1 | thing | synced |\n"
-        )
-        fired = helper.evaluate_action_triggers(tmp_path)
-        assert "first-foldback-candidate" not in fired
-
-
-# ---------------------------------------------------------------------------
 # collab-agreement-signing (4 fixtures)
 # ---------------------------------------------------------------------------
 
@@ -372,8 +335,8 @@ class TestMixedAction:
         self, helper: ModuleType, tmp_path: Path,
     ) -> None:
         """Realistic fixture: multi-agent collaborative-team state
-        with proposals, plans, changelog entry, foldback candidate.
-        Several triggers should fire together."""
+        with proposals, plans, and a changelog entry. Several
+        triggers should fire together."""
         _empty_dev_tree(tmp_path)
         _write_collab_agreement(
             tmp_path,
@@ -389,16 +352,11 @@ class TestMixedAction:
         (tmp_path / "CHANGELOG.md").write_text(
             "# Changelog\n\n## [Unreleased]\n\n* Something.\n"
         )
-        (tmp_path / "dev" / ".cairn").mkdir()
-        (tmp_path / "dev" / ".cairn" / "cairn_foldback.md").write_text(
-            "| ID | T | Status |\n|--|--|--|\n| F1 | x | candidate |\n"
-        )
         fired = helper.evaluate_action_triggers(tmp_path, log_records=[])
         assert "first-proposal-opened" in fired
         assert "first-plan-opened" in fired
         assert "first-changelog-entry" in fired
         assert "second-agent-type" in fired
         assert "first-cross-type-review" in fired
-        assert "first-foldback-candidate" in fired
         # Roster is FILLED, so collab-agreement-signing must NOT fire.
         assert "collab-agreement-signing" not in fired

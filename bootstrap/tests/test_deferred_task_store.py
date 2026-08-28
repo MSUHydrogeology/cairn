@@ -83,7 +83,7 @@ _PRESET_SOURCE_WITH_THREE_DEFERRED = """\
 * [trigger: second-agent-type; id: deferred-gamma]
   Body for deferred-gamma.
 
-* [trigger: first-foldback-candidate; id: deferred-delta]
+* [trigger: first-cross-type-review; id: deferred-delta]
   Body for deferred-delta.
 """
 
@@ -132,7 +132,7 @@ class TestHeldDerivation:
             for tid, trig in [
                 ("deferred-beta", "first-proposal-archived"),
                 ("deferred-gamma", "second-agent-type"),
-                ("deferred-delta", "first-foldback-candidate"),
+                ("deferred-delta", "first-cross-type-review"),
             ]
         ]
         assert helper.derive_held_task_ids(
