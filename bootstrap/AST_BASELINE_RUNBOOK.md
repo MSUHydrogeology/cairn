@@ -84,12 +84,22 @@ writing:
 
 * **DROPPED** — a key in the pinned manifest that no longer exists. A removed
   facade symbol is a behavioural change; find out why before proceeding.
-* **REKEYED** — a key whose digest changed. This one is subtle and is the reason
-  the report exists: **a symbol in known-new is invisible to the baseline gate.**
-  `verify` classifies it NEW-and-allowed, so its logic can change without ever
-  appearing as CHANGED. Regenerating the manifest would absorb that change
+* **REKEYED** — a key whose digest changed. This one is subtle: `verify`
+  classifies an altered known-new body as NEW, never CHANGED, so the *baseline*
+  alone can never see it. Regenerating the manifest would absorb the change
   silently. Trace every rekeyed symbol to its commit and satisfy yourself the
   change was reviewed.
+
+  **The manifest is now enforced during ordinary verification**, not only
+  during `update-symbol`. Pass `--known-new` (the gate command and the
+  real-tree tests do) and a rekeyed symbol is a *failure* rather than a
+  `note: NEW`. Before that, the digest check lived only on the repair path, so
+  a known-new body was pinned during a surgical re-baseline and by nothing at
+  all the rest of the time — a statement injected into `verify_within_root`,
+  the containment guard, printed `note: NEW` and exited 0. Demonstrated with an
+  injection, then closed. **A `verify` run without `--known-new` still passes
+  over an altered known-new body and says so in a warning; treat a run that
+  emits that warning as not having checked.**
 
 ## Step 3 — dry-run, and confirm the preconditions
 
@@ -122,7 +132,9 @@ Apply by dropping `--dry-run`. Then:
 
 ```
 python bootstrap/tests/_ast_attest.py verify \
-  bootstrap/tests/fixtures/scaffold_ast_baseline.json bootstrap/_scaffold/*.py
+  bootstrap/tests/fixtures/scaffold_ast_baseline.json \
+  --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json \
+  bootstrap/_scaffold/*.py
 PYTHONDONTWRITEBYTECODE=1 CAIRN_FULL_SUITE=1 \
   python -m pytest bootstrap/tests -q
 ```

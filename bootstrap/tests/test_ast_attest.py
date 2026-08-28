@@ -19,6 +19,19 @@ from bootstrap.tests import _ast_attest as A
 _REPO = Path(__file__).resolve().parents[2]
 _SCAFFOLD = _REPO / "bootstrap" / "_scaffold" / "__init__.py"
 _BASELINE = _REPO / "bootstrap" / "tests" / "fixtures" / "scaffold_ast_baseline.json"
+_KNOWN_NEW = _REPO / "bootstrap" / "tests" / "fixtures" / "scaffold_ast_known_new.json"
+
+
+def _known_new() -> dict:
+    """The pinned known-new manifest.
+
+    Real-tree verification MUST pass this. The baseline covers only MOVED
+    symbols, so without the manifest every NEW symbol's body is unconstrained
+    -- `verify` classifies an altered known-new body as NEW, never CHANGED,
+    and returns non-zero only on CHANGED/MISSING/DUPLICATE.
+    """
+    import json
+    return json.loads(_KNOWN_NEW.read_text(encoding="utf-8"))
 
 
 def _write(tmp_path, name, body):
@@ -63,7 +76,7 @@ def test_committed_baseline_accounted_for_across_the_engine_package():
     # was dropped or single-source was broken by an extraction.
     assert _BASELINE.is_file(), "the pre-split AST baseline artifact is missing"
     modules = sorted(_SCAFFOLD.parent.glob("*.py"))
-    assert A.verify(_BASELINE, modules) == 0, (
+    assert A.verify(_BASELINE, modules, _known_new()) == 0, (
         "AST baseline not accounted for across the engine package -- a "
         "non-pure-motion change (CHANGED/MISSING/DUPLICATE) rode an extraction, "
         "or the baseline drifted (regenerate only intentionally, under the "
@@ -79,7 +92,7 @@ def test_ast_gate_passes_over_the_full_scaffold_module_set():
     a new module's docstring re-introducing a DUPLICATE)."""
     modules = sorted(_SCAFFOLD.parent.glob("*.py"))
     assert len(modules) >= 2, f"expected __init__.py + _guard.py at least, got {modules}"
-    assert A.verify(_BASELINE, modules) == 0
+    assert A.verify(_BASELINE, modules, _known_new()) == 0
 
 
 def test_module_docstrings_do_not_trip_single_source(tmp_path):
@@ -412,3 +425,28 @@ def test_update_symbol_still_refuses_a_fresh_unpinned_named_symbol(tmp_path, cap
     live = _write(tmp_path, "live.py", _SRC_INJECT)
     assert A.update_symbol(bp, "_MODULE_MAPPINGS", base[_MM]["digest"], [live]) == 4
     assert "new-symbol violation" in capsys.readouterr().err
+
+
+def test_an_altered_known_new_body_is_caught(tmp_path) -> None:
+    """A NEW symbol's body is pinned by the known-new manifest, or by nothing.
+
+    `verify` classifies an altered known-new body as NEW rather than CHANGED,
+    and returns non-zero only on CHANGED/MISSING/DUPLICATE -- so before the
+    manifest was enforced here, a statement injected into a known-new function
+    printed `note: NEW` and exited 0. `verify_within_root`, the containment
+    guard, is one such function.
+    """
+    mod = tmp_path / "m.py"
+    mod.write_text("def brand_new():\n    return 1\n")
+    base = tmp_path / "base.json"
+    base.write_text("{}")
+    digest = A.digest_module(mod)["FunctionDef:brand_new"]["digest"]
+
+    # pinned at its current body -> clean
+    assert A.verify(base, [mod], {"FunctionDef:brand_new": [digest]}) == 0
+    # body altered, manifest unchanged -> refused
+    mod.write_text("def brand_new():\n    _injected = 2\n    return 1\n")
+    assert A.verify(base, [mod], {"FunctionDef:brand_new": [digest]}) == 1
+    # and with no manifest at all it still passes -- which is the hole,
+    # kept visible here so the enforcing callers are not silently dropped
+    assert A.verify(base, [mod]) == 0

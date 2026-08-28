@@ -39,6 +39,7 @@ failure message.
    present, exactly once, with an unchanged digest, across the new module set::
 
        python bootstrap/tests/_ast_attest.py verify \
+           --known-new bootstrap/tests/fixtures/scaffold_ast_known_new.json \
            bootstrap/tests/fixtures/scaffold_ast_baseline.json \
            bootstrap/scaffold.py bootstrap/_scaffold/security.py ...
 
@@ -202,7 +203,63 @@ def _classify(baseline: dict[str, dict], merged: dict[str, list[tuple[str, str]]
     return problems, changed, missing, duplicate, new
 
 
-def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
+def known_new_violations(
+    new: set[str] | list[str],
+    merged: dict,
+    known_new: dict[str, list[str]] | None,
+) -> list[str]:
+    """Every NEW top-level symbol must match the pinned known-new manifest by
+    digest AND multiplicity, and every pinned key must still be live.
+
+    Shared by :func:`verify` and :func:`update_symbol` so the two cannot drift.
+    Before this was shared, only ``update-symbol`` applied it -- so a symbol
+    parked in the known-new manifest was pinned during a surgical re-baseline
+    and by nothing at all during ordinary verification. ``verify`` classifies
+    an altered known-new body as NEW (never CHANGED) and returns non-zero only
+    on CHANGED/MISSING/DUPLICATE, so a statement injected into a known-new
+    function -- ``verify_within_root``, the containment guard, among them --
+    printed ``note: NEW`` and exited 0. Demonstrated with an injection before
+    this was closed.
+
+    ``known_new`` of ``None`` means strict: any un-pinned new symbol is a
+    violation. Imports and module docstrings are exempt, mirroring
+    :func:`_classify`.
+    """
+    allowed_new = known_new if known_new is not None else {}
+    out: list[str] = []
+    for k in new:
+        if _is_per_module_necessity(k):
+            continue
+        live_digests = sorted(d for d, _f in merged[k])
+        if k not in allowed_new:
+            out.append(f"NEW {k}  (not in the pinned known-new manifest)")
+        elif live_digests != sorted(allowed_new[k]):
+            out.append(f"NEW {k}  (known-new digest/multiplicity mismatch — live "
+                       f"{live_digests} != pinned {sorted(allowed_new[k])}: an altered "
+                       f"body or a duplicated key behind an allowed name)")
+    # A pinned key that is DELETED from the live set is absent from the loop
+    # above and is NOT a baseline MISSING (known-new keys are absent from the
+    # baseline by definition), so refuse it explicitly.
+    for k in sorted(set(allowed_new) - set(new)):
+        if _is_per_module_necessity(k):
+            continue
+        out.append(f"MISSING-KNOWN-NEW {k}  (a pinned known-new symbol was deleted from "
+                   f"the live module set)")
+    return out
+
+
+def verify(baseline_path: str | Path, module_paths: list[str | Path],
+           known_new: dict[str, list[str]] | None = None,
+           *, require_known_new: bool = False) -> int:
+    """Verify a module set against the baseline, and -- when given the known-new
+    manifest -- against that too.
+
+    ``known_new`` is how a NEW symbol gets pinned at all: the baseline covers
+    only MOVED symbols, so without the manifest a new symbol's body is
+    unconstrained forever. Pass it for any real-tree verification.
+    ``require_known_new`` makes its absence an error rather than a warning, so
+    a caller that means to enforce cannot silently fall back to advisory mode.
+    """
     baseline: dict[str, dict] = json.loads(Path(baseline_path).read_text(encoding="utf-8"))
     merged, _ = _merge_current(module_paths)
     problems, _changed, _missing, _duplicate, new = _classify(baseline, merged)
@@ -212,6 +269,22 @@ def verify(baseline_path: str | Path, module_paths: list[str | Path]) -> int:
     for key in new:
         where = ", ".join(f for _d, f in merged[key])
         print(f"note: NEW {key}  ({where})", file=sys.stderr)
+
+    if known_new is None:
+        if require_known_new:
+            print("AST attestation FAILED — enforcement was requested but no "
+                  "known-new manifest was supplied; NEW symbols would go "
+                  "unpinned.", file=sys.stderr)
+            return 1
+        if any(not _is_per_module_necessity(k) for k in new):
+            # Non-silent: without the manifest these bodies are pinned by
+            # nothing, and a pass here does not mean what it looks like.
+            print("warning: no known-new manifest supplied — the NEW symbols "
+                  "above are NOT pinned by this run; their bodies may change "
+                  "freely without detection. Pass --known-new to enforce.",
+                  file=sys.stderr)
+    else:
+        problems = list(problems) + known_new_violations(new, merged, known_new)
 
     if problems:
         print(f"AST attestation FAILED — {len(problems)} non-pure-motion symbol(s):", file=sys.stderr)
@@ -318,37 +391,7 @@ def update_symbol(
             print(f"  {p}", file=out)
         return 4
 
-    # Every NEW top-level symbol must match the pinned known-new manifest by digest AND
-    # multiplicity (Codex confirmation R2-2 Finding 1 + recheck). The cascade only mutates
-    # an existing mapping's value; a new symbol, an altered body behind an allowed name, or
-    # a duplicated allowed key is a HOLD. ``known_new`` omitted ⇒ strict (any new refuses).
-    allowed_new = known_new if known_new is not None else {}
-    new_problems: list[str] = []
-    for k in new:
-        if _is_per_module_necessity(k):
-            # Imports and module docstrings are per-module necessities, not
-            # single-source moved symbols (mirrors _classify()'s exemption) --
-            # never require a known_new pin, regardless of whether one exists.
-            continue
-        live_digests = sorted(d for d, _f in merged[k])
-        if k not in allowed_new:
-            new_problems.append(f"NEW {k}  (not in the pinned known-new manifest)")
-        elif live_digests != sorted(allowed_new[k]):
-            new_problems.append(f"NEW {k}  (known-new digest/multiplicity mismatch — live "
-                                f"{live_digests} != pinned {sorted(allowed_new[k])}: an altered "
-                                f"body or a duplicated key behind an allowed name)")
-    # Complete-set equality (Codex final confirmation): a pinned known-new key that is DELETED
-    # from the live set is absent from the loop above and is NOT a baseline MISSING (known-new
-    # keys are absent from the baseline by definition). Refuse it, so a security-relevant facade
-    # symbol cannot be silently removed under cover of a mapping update.
-    for k in sorted(set(allowed_new) - set(new)):
-        if _is_per_module_necessity(k):
-            # Symmetric with the loop above: a pinned Import:/Docstring# key
-            # that vanishes from the live set (e.g. the exact import line
-            # changed) is not a removed facade symbol -- don't refuse over it.
-            continue
-        new_problems.append(f"MISSING-KNOWN-NEW {k}  (a pinned known-new symbol was deleted from "
-                            f"the live module set)")
+    new_problems = known_new_violations(new, merged, known_new)
     if new_problems:
         print(f"[update-symbol] REFUSED — {len(new_problems)} new-symbol violation(s) alongside "
               f"the mapping change; a surgical re-baseline must NOT bless injected or altered "
@@ -395,6 +438,9 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("verify", help="verify a stage's module set against a baseline")
     v.add_argument("baseline")
     v.add_argument("modules", nargs="+")
+    v.add_argument("--known-new", default=None, dest="known_new",
+                   help="pinned known-new manifest; NEW symbols are enforced "
+                        "against it instead of merely reported")
     u = sub.add_parser(
         "update-symbol",
         help="surgically rewrite ONE allowlisted mapping symbol's digest in the baseline",
@@ -422,7 +468,10 @@ def main(argv: list[str] | None = None) -> int:
             args.baseline, args.symbol, args.expect_old, args.modules,
             known_new=known_new, dry_run=args.dry_run, out=sys.stderr,
         )
-    return verify(args.baseline, args.modules)
+    verify_known_new = None
+    if getattr(args, "known_new", None):
+        verify_known_new = json.loads(Path(args.known_new).read_text(encoding="utf-8"))
+    return verify(args.baseline, args.modules, verify_known_new)
 
 
 if __name__ == "__main__":

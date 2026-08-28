@@ -138,6 +138,8 @@ GATE_COMMANDS: list[dict] = [
     {"id": "ast-attest-verify",
      "cmd": ["python", "bootstrap/tests/_ast_attest.py", "verify",
              "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+             "--known-new",
+             "bootstrap/tests/fixtures/scaffold_ast_known_new.json",
              "bootstrap/_scaffold/*.py"],
      "expect": "exit 0 — every baselined symbol accounted for unchanged; the ONLY "
                "permitted CHANGED is the predeclared one-symbol mapping delta"},
