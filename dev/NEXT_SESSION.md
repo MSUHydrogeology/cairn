@@ -1,113 +1,94 @@
 # Next session
 
-*Rewritten from scratch at the 2026-08-26 pause. Read `python tools/board.py`
-first — it is derived and current; this file is a hand-written orientation and
-may already be stale.*
+*Rewritten from scratch 2026-08-28, before a context compaction. Run
+`python tools/board.py` first — it is derived and current; this file is
+hand-written orientation and may already be stale.*
 
 ## Where the project stands
 
-**The subtraction sweep is most of the way done.** C1 through C7's first half
-have landed: **58,985 deletions against 6,865 insertions** across 167 files.
-Everything below is either yours or the prose phase.
+**The subtraction sweep's agent-side work is done.** C1–C7 landed; four
+Internal code reviews ran and were answered. `dev/PLANNING.md` went **2,591 →
+869**. Cairn's security debt now lives in one place: the **Live residual
+register** in `dev/strategy/2026-08-05-codex-security-strategy.md`.
 
-The suite is green apart from one standing fence and one pre-existing finding.
+**109 commits are unpushed.** Nothing has been pushed at any point. Pushing is
+the Maintainer's, always.
 
-## Start here
+## Two things are STOPPED, and both are stopped correctly
 
-1. **The AST baseline is the one thing genuinely waiting on you.** 13+ symbols
-   changed. Self-service repair reaches only four allowlisted symbols and only
-   when the target is the *sole* changed symbol, so it refuses here — the
-   runbook (`bootstrap/AST_BASELINE_RUNBOOK.md`) calls this a Maintainer-run,
-   dry-run-verified direct correction. Derive the CHANGED set against the
-   committed baseline rather than carrying a figure forward from this file.
+**1. The gate-anchor ceremony. Do not run it.**
 
-2. **The gate manifest is DONE** — re-anchored on your authorization, 209 → 178
-   rows, verified by set equality. `verify` returns OK. Nothing owed.
+An External Security Review of the launcher template found — and this session
+independently reproduced — an **environment-injection path into the ceremony's
+own values reader**. Neither reader initialised its outputs, and the schema
+check asks *"is this variable set"*, which an exported environment variable
+answers exactly as a values-file line does:
 
-3. **Onboarding is prepared but not executed.** The whole edit was validated in
-   a throwaway worktree and the findings are in
-   `dev/plans/subtraction-sweep.md` > "C6 onboarding". Two things there are
-   decisions, not chores: `assert_always_on_complete` loses its subject, and
-   the side-door parity property loses its category. Both are yours.
+```
+clean environment          ->  REFUSE: missing required key 'python'
+V_python=/bin/echo in env  ->  OK: the values file satisfies the schema
+```
 
-4. **C7's second half is the PLANNING bankruptcy** — 2,591 lines, 127 tagged
-   rows, 86 in a 1,010-line security-cluster block at `:1509`. You ruled that
-   the sweep supersedes `2026-08-04-claude-board-retro-disposition` on this
-   row. A concurrent Strategy session gave the security-cluster block a named
-   destination: fold surviving material into
-   `dev/strategy/2026-08-05-codex-security-strategy.md`'s cluster map, PLANNING
-   keeping pointers only. **This is the next substantive work and needs nothing
-   from you.**
+`$V_python` is what executes the gate checker. Worse, the disclosure print then
+showed the injected value beneath *"nothing below was discovered"* — the
+operator's one moment of real oversight, handed a false statement.
 
-5. **C7's other half: the checker de-scope.** The accepted falsifier is
-   *"an archived file draws no flag; prose files carry zero checker
-   boilerplate; success is silent."* Current state:
+Fixed at `4bb6bb4` with an `unset` in each reader plus a regression test that
+**fails against the unfixed reader** (control-run). **But editing `reanchor.sh`
+voided the authority-closure clearance** recorded at `57ba93a`. The three
+closure files must be re-reviewed before any ceremony.
 
-   | family | active | archived |
-   |---|---:|---:|
-   | `claim-check-allow` | 34 | 68 |
-   | `cairn-internal-ref-allow` | 44 | 74 |
-   | `link-check-allow` | 4 | 3 |
+Also unresolved from that review: the **instantiated launcher is bound to the
+reviewed template by nothing** — not the closure, not the frozen set, not the
+packet. And the launcher performs 9 of the registry's 19 steps, including every
+step that decides whether candidate code starts.
 
-   **145 archived files carry directives that are never read** —
-   `--include-archives` already defaults off — so those delete for free and
-   satisfy the first falsifier immediately. The 82 active ones move into one
-   config per family, reason text preserved.
+**2. `scripts/correct_pinned_digests.py`. It refuses on entry.**
 
-   **Read "retire the directives" carefully.** It means retire them *into a
-   config*, not delete the exemptions. `_CAIRN_INTERNAL_PREFIXES` is
-   `('doctrine/',)` — `doctrine/` is the only internal prefix, so exempting it
-   by convention would make that check a no-op reporting success while testing
-   nothing. This session nearly did exactly that.
+A Codex External Security Review returned **BLOCK** — seven findings, two
+CRITICAL, each reproduced. The headline: the plan digest binds only the plan's
+*projection*, not the complete preimage or output. Two materially different
+trees produced **identical digests**, and apply wrote the unauthorized values.
+The review's final section is a redesign, not a patch. Corrections go back to
+being done by hand under their runbooks until someone commissions it.
 
-   Four active `claim-check-allow` directives were added on 2026-08-26 (the
-   sweep plan, `CHANGELOG.md`, `tag-pass-dispositions.md`, the nimbleness
-   note). Correct for a tree that still uses file-top directives; debt against
-   the accepted outcome, and they move into the config with the rest.
+## What is genuinely next
 
-6. **76 unpushed commits.** Pushing is yours, always.
-
-## What is left after that
-
-C8 (install-contract ceremony) and C9 (both sister migrations) are
-MAINTAINER-gated end to end. The sweep's Cairn-side work finishes at C7.
+* **C9 — the sister migrations.** Unblocked in principle: the Maintainer ruled
+  C9 follows code review, and code review has run and been answered. The
+  lockfile the sisters would inherit is now correct.
+* **C8's remainder** — only the gate anchor, which is stopped above.
+* **The four unfiled issue drafts** in `dev/measurement/queued-issue-drafts.md`
+  — drafted, verified, never filed. Filing is outward-facing.
+* **The `defer` batch** in the sweep plan's Dispositions block — five deposits
+  awaiting one Maintainer authorization, presented as a batch.
 
 ## What this session learned that is worth not relearning
 
-**I ran one gate diligently and never ran the others.** `claim_check` on every
-prose edit, file by file — and never `check_cairn`, which runs claim_check over
-the *whole tree* plus the link and loop-fidelity checks. It went 11 issues → 93
-before I noticed, and I only noticed by accident while mapping something else.
-Prose work runs *all* its applicable gates.
+**A diff review cannot find a pre-existing defect.** The authority-closure
+review was scoped to what changed since the anchor, so it structurally could not
+see the injection that predated it. Scoping a security review to a diff is a
+briefing decision with a blind spot; say which you want.
 
-**A guard naming more than its tests need turns an unrelated deletion into
-invisible coverage loss.** Measured three times: 30 tests in
-`test_lifecycle_vocabulary.py` switched off by the transition-lint removal and
-recorded as verified; 37 in `test_upgrade_module_additions.py` switched off by
-the metrics removal, one of them a path-traversal containment test that had
-stopped attempting the traversal; 3 more in the repointed session suites.
+**A guard that passes is not a guard that works.** Three times this session a
+control was written, run, and found to be vacuous — a summary that reported
+"docstring-only" having determined nothing; a probe aimed at the wrong twin so
+the suite stayed green; a test modelling `PATH` when the channel was an exported
+variable. Every one was caught by deliberately breaking the thing and checking
+the test noticed. **Do that every time.**
 
-**Reconcile skips, not just passes.** A passed→skipped transition leaves the
-collected total unchanged, so a reconciliation watching passes is blind to
-exactly the failure it exists to catch.
+**Numbers shrink when you look at them.** A loop-fidelity count went 128 → 99 →
+smaller; a lockfile "19 stale records" was really 3 of one kind and 19 of
+another. A figure that moves under inspection was standing in for a judgment
+nobody made.
 
-**A manifest cannot be verified against the list it summarises.** The sweep's
-own inventory was checked by `wc -l` over its own file list: the sum was right
-and the set was wrong, in both directions.
-
-**Parse before writing.** Two files were left syntactically broken on disk
-because a span-removal script wrote first and validated after.
+**Do not commit into a running review's scope.** `HEAD` moved five times during
+one review and one of those commits edited a file it was reading.
 
 ## Open threads
 
-* `2026-08-20-claude-adopter-path-consolidation` — `awaiting-review`, untouched
-  all session.
-* `portable-sweeps-cannot-run` and `scanner-claim-scope` — accepted, terminal,
-  no plans.
-* Issue #18 (`lhm` foldback #59) carries an **unsigned export affirmation** —
-  yours to sign; an agent drafted it but cannot attest it.
-* `dev/measurement/collision_log.md` is untracked and unclaimed; it predates
-  this session.
-* `templates/skills/_lib/` is outside the gate's frozen globs, so the session
-  kernel — a declared executable trust root — is not fingerprinted by the
-  differential gate. Pre-existing, not caused by the sweep, flagged for C8.
+* `2026-08-20-claude-adopter-path-consolidation` — `awaiting-review`, untouched.
+* Four `line-bounds` flags in `2026-08-20-claude-scanner-claim-scope.md` are a
+  **known, dated non-pass**: the lockfile shrank and that proposal is
+  append-only, so its citations were corrected by appending, not editing.
+* `dev/measurement/collision_log.md` is untracked and predates all of this.
