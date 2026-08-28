@@ -9,21 +9,21 @@
     "bootstrap/tests/fixtures/scaffold_ast_baseline.json": {
       "governed_by": "_ast_attest.py update-symbol \u2014 one allowlisted baseline key, --expect-old guarded",
       "mode": "100644",
-      "oid": "6f794c9c4be0da765229d6811ce9e213c71fe74f",
-      "pre_run_sha256": "b2980146d014f36e2fefb513f431e5fa06759393efd554e921af32bd7c358dd5"
+      "oid": "b2a19c0af6fa8ff509fae055d58a6ff3766ef6ed",
+      "pre_run_sha256": "4221aaed00da61f3e90ff1212eca70806584fcc8b7360a01ac609949d7a04318"
     }
   },
   "collection": {
-    "node_count": 3180,
+    "node_count": 3178,
     "node_ids": [
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_in_outcome",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestActivatePromptEmission::test_active_prompt_not_re_emitted_on_second_run",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestIdempotency::test_all_emitted_returns_none",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestIdempotency::test_prior_emission_in_log_suppresses_re_fire",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_collab_agreement_wins_over_level_graduation",
+      "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_collab_agreement_wins_over_second_agent_type",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_level_graduation_wins_over_second_agent",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_no_triggers_returns_none",
-      "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_second_agent_wins_over_foldback",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_unmatched_trigger_returns_none",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestTaskCap::test_max_three_tasks_per_goodnight",
       "bootstrap/tests/test_active_surfacing_render.py::TestPerPresetDistinguishingLanguage::test_collaborative_team_collab_agreement_invokes_negotiation",
@@ -39,9 +39,6 @@
       "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[second-agent-type-collaborative-team]",
       "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[second-agent-type-high-rigor-legacy]",
       "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[second-agent-type-solo-greenfield]",
-      "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[upstream-PR-issue-walkthrough-collaborative-team]",
-      "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[upstream-PR-issue-walkthrough-high-rigor-legacy]",
-      "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[upstream-PR-issue-walkthrough-solo-greenfield]",
       "bootstrap/tests/test_api_access_security.py::test_a10_a_complete_engine_does_not_report_engine_incomplete",
       "bootstrap/tests/test_api_access_security.py::test_a10_a_missing_engine_member_exits_twenty_with_no_policy_read[net.py]",
       "bootstrap/tests/test_api_access_security.py::test_a10_a_missing_engine_member_exits_twenty_with_no_policy_read[policy.py]",
@@ -107,6 +104,7 @@
       "bootstrap/tests/test_api_access_security.py::test_e1_deletion_mutant_makes_unconfigured_stop_being_exit_five",
       "bootstrap/tests/test_api_access_security.py::test_e1_the_untouched_stub_is_incomplete_not_clean",
       "bootstrap/tests/test_api_access_security.py::test_e2_configured_true_over_an_empty_matrix_is_a_schema_refusal",
+      "bootstrap/tests/test_ast_attest.py::test_an_altered_known_new_body_is_caught",
       "bootstrap/tests/test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set",
       "bootstrap/tests/test_ast_attest.py::test_changed_symbol_fails",
       "bootstrap/tests/test_ast_attest.py::test_committed_baseline_accounted_for_across_the_engine_package",
@@ -1280,6 +1278,7 @@
       "bootstrap/tests/test_module_merge_lockfile.py::test_the_shipped_merge_module_declares_its_directive",
       "bootstrap/tests/test_module_merge_lockfile.py::test_writer_accepts_the_untampered_merge_target_on_a_rewrite",
       "bootstrap/tests/test_module_merge_lockfile.py::test_writer_still_refuses_when_a_merge_target_is_tampered",
+      "bootstrap/tests/test_module_roster.py::test_the_roster_names_only_modules_that_ship",
       "bootstrap/tests/test_notice_install.py::test_content_scan_twin_is_present_and_byte_identical[runner]",
       "bootstrap/tests/test_notice_install.py::test_content_scan_twin_is_present_and_byte_identical[scanner]",
       "bootstrap/tests/test_notice_install.py::test_every_self_hosted_twin_carries_spdx_header",
@@ -1970,7 +1969,7 @@
       "bootstrap/tests/test_reference_scripts.py::TestLineBoundsChecking::test_missing_file_line_citation_flags",
       "bootstrap/tests/test_reference_scripts.py::TestLineBoundsChecking::test_out_of_bounds_line_citation_flags",
       "bootstrap/tests/test_reference_scripts.py::TestLineBoundsChecking::test_valid_line_citation_resolves",
-      "bootstrap/tests/test_reference_scripts.py::TestMultiScriptModules::test_multi_script_module_installs_all_scripts[NOTSET]",
+      "bootstrap/tests/test_reference_scripts.py::TestMultiScriptModules::test_multi_script_module_installs_all_scripts[issue-capture]",
       "bootstrap/tests/test_replacement_tools.py::TestTheAuditReporterDetectsAbsenceForRealReasons::test_a_complete_change_raises_no_warning",
       "bootstrap/tests/test_replacement_tools.py::TestTheAuditReporterDetectsAbsenceForRealReasons::test_a_ledger_naming_no_numbers_is_flagged",
       "bootstrap/tests/test_replacement_tools.py::TestTheAuditReporterDetectsAbsenceForRealReasons::test_pending_is_an_accepted_outcome",
@@ -2818,8 +2817,6 @@
       "bootstrap/tests/test_trigger_evaluation_action.py::TestCollabAgreementSigningTrigger::test_positive_roster_unfilled_and_proposal_archived",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestCrossTypeReviewTrigger::test_does_not_fire_for_same_type_review",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestCrossTypeReviewTrigger::test_fires_when_cross_type_review_present",
-      "bootstrap/tests/test_trigger_evaluation_action.py::TestFoldbackCandidateTrigger::test_does_not_fire_without_candidate_row",
-      "bootstrap/tests/test_trigger_evaluation_action.py::TestFoldbackCandidateTrigger::test_fires_with_candidate_row",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestMixedAction::test_full_collaborative_team_state_fires_many",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestPlanTriggers::test_first_plan_archived_positive",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestPlanTriggers::test_first_plan_opened_positive",
@@ -2936,6 +2933,7 @@
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_stage_then_apply",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_structural_new_modules",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_to_ref_requires_git_source",
+      "bootstrap/tests/test_upgrade.py::TestVerbatim::test_apply_leaves_base_hash_equal_to_hash_for_an_untouched_verbatim",
       "bootstrap/tests/test_upgrade.py::TestVerbatim::test_classify",
       "bootstrap/tests/test_upgrade_module.py::test_cairn_root_resolves_from_upgrade_module",
       "bootstrap/tests/test_upgrade_module.py::test_cli_entrypoints_stay_in_engine_not_upgrade",
@@ -3203,9 +3201,9 @@
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestIdempotency::test_all_emitted_returns_none",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestIdempotency::test_prior_emission_in_log_suppresses_re_fire",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_collab_agreement_wins_over_level_graduation",
+      "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_collab_agreement_wins_over_second_agent_type",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_level_graduation_wins_over_second_agent",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_no_triggers_returns_none",
-      "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_second_agent_wins_over_foldback",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestPriorityOrder::test_unmatched_trigger_returns_none",
       "bootstrap/tests/test_active_surfacing_mechanism.py::TestTaskCap::test_max_three_tasks_per_goodnight",
       "bootstrap/tests/test_active_surfacing_render.py::TestPerPresetDistinguishingLanguage::test_collaborative_team_collab_agreement_invokes_negotiation",
@@ -3221,9 +3219,6 @@
       "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[second-agent-type-collaborative-team]",
       "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[second-agent-type-high-rigor-legacy]",
       "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[second-agent-type-solo-greenfield]",
-      "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[upstream-PR-issue-walkthrough-collaborative-team]",
-      "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[upstream-PR-issue-walkthrough-high-rigor-legacy]",
-      "bootstrap/tests/test_active_surfacing_render.py::TestTwelveCombinations::test_renders_non_empty_body[upstream-PR-issue-walkthrough-solo-greenfield]",
       "bootstrap/tests/test_cairn_prefix_links.py::test_every_cairn_prefixed_template_token_resolves",
       "bootstrap/tests/test_cairn_prefix_links.py::test_guard_catches_a_broken_token",
       "bootstrap/tests/test_cairn_prefix_links.py::test_placeholder_tokens_are_skipped",
@@ -3762,7 +3757,7 @@
       "bootstrap/tests/test_reference_scripts.py::TestLineBoundsChecking::test_missing_file_line_citation_flags",
       "bootstrap/tests/test_reference_scripts.py::TestLineBoundsChecking::test_out_of_bounds_line_citation_flags",
       "bootstrap/tests/test_reference_scripts.py::TestLineBoundsChecking::test_valid_line_citation_resolves",
-      "bootstrap/tests/test_reference_scripts.py::TestMultiScriptModules::test_multi_script_module_installs_all_scripts[NOTSET]",
+      "bootstrap/tests/test_reference_scripts.py::TestMultiScriptModules::test_multi_script_module_installs_all_scripts[issue-capture]",
       "bootstrap/tests/test_scaffold_substrate.py::test_F1_sitecustomize_canonical_preload_is_refused",
       "bootstrap/tests/test_scaffold_substrate.py::test_F2_submodule_symlink_escape_is_refused",
       "bootstrap/tests/test_scaffold_substrate.py::test_F4_failed_load_leaves_clean_namespace_and_retry_is_clean",
@@ -4012,8 +4007,6 @@
       "bootstrap/tests/test_trigger_evaluation_action.py::TestCollabAgreementSigningTrigger::test_positive_roster_unfilled_and_proposal_archived",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestCrossTypeReviewTrigger::test_does_not_fire_for_same_type_review",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestCrossTypeReviewTrigger::test_fires_when_cross_type_review_present",
-      "bootstrap/tests/test_trigger_evaluation_action.py::TestFoldbackCandidateTrigger::test_does_not_fire_without_candidate_row",
-      "bootstrap/tests/test_trigger_evaluation_action.py::TestFoldbackCandidateTrigger::test_fires_with_candidate_row",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestMixedAction::test_full_collaborative_team_state_fires_many",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestPlanTriggers::test_first_plan_archived_positive",
       "bootstrap/tests/test_trigger_evaluation_action.py::TestPlanTriggers::test_first_plan_opened_positive",
@@ -4130,6 +4123,7 @@
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_stage_then_apply",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_structural_new_modules",
       "bootstrap/tests/test_upgrade.py::TestUpgradeModes::test_to_ref_requires_git_source",
+      "bootstrap/tests/test_upgrade.py::TestVerbatim::test_apply_leaves_base_hash_equal_to_hash_for_an_untouched_verbatim",
       "bootstrap/tests/test_upgrade.py::TestVerbatim::test_classify",
       "bootstrap/tests/test_upgrade_module_additions.py::test_adopt_collisions_records_fork_and_unblocks",
       "bootstrap/tests/test_upgrade_module_additions.py::test_adopt_collisions_records_only_the_authorized_bytes",
@@ -4265,13 +4259,13 @@
     },
     "bootstrap/tests/_ast_attest.py": {
       "mode": "100644",
-      "oid": "c0b4343e5cfe2bae62750195b361ea57dc93e89b",
-      "sha256": "8826a2eb8c2f7bca4ebe94d48c3d832f49ecfc8bda54f32ceb023cb9d339c10c"
+      "oid": "3132d7c16905f2f93862221d62dbec158814d7a6",
+      "sha256": "8280d432dae5931167bfb0f823e89cd51bec0fc6aff99a3c79f45923146e6006"
     },
     "bootstrap/tests/_gate_manifest.py": {
       "mode": "100644",
-      "oid": "0c2b719b13ea0f17e5760be5b19fa14672b51ac7",
-      "sha256": "94913bf309297ecdb04fcafe10bbbda27b74d1295c6d561a7f540573b4e0d544"
+      "oid": "91d901fa0e036362a43a7dcfcd43118a96c9a958",
+      "sha256": "1226747df47df2b5475c800bded2ae4892a3f2ad95aa039570b30d42953a6e8e"
     },
     "bootstrap/tests/_gate_preflight.py": {
       "mode": "100644",
@@ -4325,8 +4319,8 @@
     },
     "bootstrap/tests/fixtures/scaffold_ast_known_new.json": {
       "mode": "100644",
-      "oid": "ef59bff9b7006f27f5c66e22eafa9e4269d640eb",
-      "sha256": "4d961ff5f9da44c8fea4530c8dbe9dff325ce3502efdd188f8ed398a122f074d"
+      "oid": "7315a3ef9a4a3916eb435376bd9328568d004cb6",
+      "sha256": "68285f1ae41f1b4f52cbb4f011e2450bd66a6dda927434187c8d1a490558aee1"
     },
     "bootstrap/tests/fixtures/skills/README.md": {
       "mode": "100644",
@@ -4340,13 +4334,13 @@
     },
     "bootstrap/tests/test_active_surfacing_mechanism.py": {
       "mode": "100644",
-      "oid": "0ec97b4dc314c8ed3414828a5b4da5504694fa46",
-      "sha256": "59d7d4f6cba9da12f0f012f75b7291a362c589cb7186eb1e5d8949c0d8a7e003"
+      "oid": "afb03711de7a2482125f9f751e37c8d78b744a70",
+      "sha256": "48089b91ec4e2e812f03506b1e476d42d93a905488129b19559bbe32f3182976"
     },
     "bootstrap/tests/test_active_surfacing_render.py": {
       "mode": "100644",
-      "oid": "badbcd59c1ff2d482b1794b06b09f117d5b9e633",
-      "sha256": "b212170c3ef6148b9a73a97803fb14ee45cbb94486885fcf7ae448620a069584"
+      "oid": "1f7cb59bb4ccb4cf770a0af54b9e7d0ba39aa542",
+      "sha256": "20d6cb15c7873409705242c38fe0bffb11da091b8e171b20b4b20685b1bbb942"
     },
     "bootstrap/tests/test_api_access_security.py": {
       "mode": "100644",
@@ -4355,8 +4349,8 @@
     },
     "bootstrap/tests/test_ast_attest.py": {
       "mode": "100644",
-      "oid": "741e416f2ee1669c0a2a3c3053d89d35a069f4e6",
-      "sha256": "7f3f28f68722a6c60f5cae3cd8c2e494fc24fbc753bc523823d776a171c8265d"
+      "oid": "63971e1f220553edfabb741ed64e0bf0e89308aa",
+      "sha256": "e4e6c45d85f75d3c8ec3a7a06898575e0dcd952aacca9ca034fbf9dbe9bcac96"
     },
     "bootstrap/tests/test_broad_run_guard.py": {
       "mode": "100644",
@@ -4430,8 +4424,8 @@
     },
     "bootstrap/tests/test_deferred_task_store.py": {
       "mode": "100644",
-      "oid": "42caa84403974de0f4745f3523f3fbb3ead9d771",
-      "sha256": "d579a07addd8118aa5c67ac94e634fa57cd17aec46dea964c29220b9d7e91588"
+      "oid": "403da4b75817cc62885afdd9b2f9343d5bd7d744",
+      "sha256": "ba5eaacd3fb6e8ec732f6bc5dc2481bf3484ab1e08b72eab9cfa9e63a48de2c2"
     },
     "bootstrap/tests/test_doc_drift_tools.py": {
       "mode": "100644",
@@ -4568,6 +4562,11 @@
       "oid": "754f036a120c7131713376b8fdb050a2d9f7f1fc",
       "sha256": "9fc21ce969e211d84c9bc60710d9944c8eb0b1f4300a8c02a1d8800e2bed671e"
     },
+    "bootstrap/tests/test_module_roster.py": {
+      "mode": "100644",
+      "oid": "c28b316fba6b2fd3d6cc3086ee501ec5c7c026f6",
+      "sha256": "d29a18ef613a9ab249007315368cfdd3085fb43af3f2a390e51ea74f2c8f1143"
+    },
     "bootstrap/tests/test_notice_install.py": {
       "mode": "100644",
       "oid": "bcaee282e97f78b8c498746a217f12cfbd873fe1",
@@ -4675,8 +4674,8 @@
     },
     "bootstrap/tests/test_reference_scripts.py": {
       "mode": "100644",
-      "oid": "325f6b1080935df40acd22ac46564d8dfa7b50e5",
-      "sha256": "3cb24209ed56ab8a64f2c6b36ea4acf6418c94debdfca716f969e6c3b06dd285"
+      "oid": "eb1304aa644f4e20fa281237da7d2313e6701243",
+      "sha256": "0616421b20deedc87e69cf526cec2b7ed94069f17ac49420b2b88c39b65aa806"
     },
     "bootstrap/tests/test_replacement_tools.py": {
       "mode": "100644",
@@ -4805,8 +4804,8 @@
     },
     "bootstrap/tests/test_trigger_evaluation_action.py": {
       "mode": "100644",
-      "oid": "bef71ece6391e90706c71c1e6993aca87ae80cb4",
-      "sha256": "8a05d760adadfee014b12ce00b0085bb63503c0f6b52ed297d0216fc022b78bd"
+      "oid": "08ffc424a7a9e1435b298ad22cc5609bd4829824",
+      "sha256": "716620b69d519db93e660a1fb18fd7f0d6945db04a4315365feb5c3cb5d0a76a"
     },
     "bootstrap/tests/test_trigger_evaluation_maturity.py": {
       "mode": "100644",
@@ -4815,8 +4814,8 @@
     },
     "bootstrap/tests/test_upgrade.py": {
       "mode": "100644",
-      "oid": "c9019882cd6eb5d65a9df241a6b937d448645e76",
-      "sha256": "fdf758022386aab86e6cd403048d7803bb52a66b72e40b5af17734866a292791"
+      "oid": "a106342855cbaecbfe72bd7f86ac51989f553d3f",
+      "sha256": "ab00d87cf215a59450509a0ce61d97b0501ac0c227b5ab98f8b9b4df8f8a8fc8"
     },
     "bootstrap/tests/test_upgrade_module.py": {
       "mode": "100644",
@@ -4890,8 +4889,8 @@
     },
     "scripts/claim_check.py": {
       "mode": "100644",
-      "oid": "8f70698b3ce296b03fb46e1f153bb2b7c6c9f35e",
-      "sha256": "56adeff64a28a154eb4706bbe9626e1b3cf7241bb36ce9b9ab3355fdb5820140"
+      "oid": "b76a3d0ec1e84a289e46f276116430f9087ff944",
+      "sha256": "1efd6e5cfdff7d6e0fe06063c25648fbc7fd41560360cb5de4327966a2447303"
     },
     "scripts/content_scan.py": {
       "mode": "100644",
@@ -4945,8 +4944,8 @@
     },
     "scripts/reanchor_ceremony.py": {
       "mode": "100644",
-      "oid": "1bde9bab2f5b76651dca19a6f4b0b9056d4a3090",
-      "sha256": "2c730b9b32c305839842663bcb5d78d51b5d6f5908a856d799e6be04be18bde6"
+      "oid": "c4216a25f829d90db6be1cacf8a7952709038ca4",
+      "sha256": "f824248ba951eff4b7684d567c7b578e0cf1d4e1be9081e2780a677dcd5d266f"
     },
     "scripts/run_portable_security_sweeps.py": {
       "mode": "100644",
@@ -4975,8 +4974,8 @@
     },
     "templates/modules/default-on/_onboarding/__init__.py": {
       "mode": "100644",
-      "oid": "7f9271d1784613fe4ed22cf848c8b25ba7dbbfd3",
-      "sha256": "aa4198712ccca928950f7f564e02fc26b69eeabd5215570a003683b3f97fc60b"
+      "oid": "678fdcc9d3f08d302f1cc7197b08aa70ac25af46",
+      "sha256": "dc164db9e714a534fadaf56c494fb39921dc14d5d18fb55f26cf5bf1a126728f"
     },
     "templates/modules/default-on/_onboarding/activation.py": {
       "mode": "100644",
@@ -4990,8 +4989,8 @@
     },
     "templates/modules/default-on/_onboarding/prompts.py": {
       "mode": "100644",
-      "oid": "8f55e2536b4681bdafd7eb83d41ead682e26cfff",
-      "sha256": "8a5256f4fb191d0272696fb1c98057652bdbbbba9ea58e045311a82d178f81c3"
+      "oid": "e5fcdee00615198858cc621186b79eca54ac386c",
+      "sha256": "5ac21a7a60b13f1fac1653968da07415d488ccaf03da2500a564b9e1a1eb1bd9"
     },
     "templates/modules/default-on/_onboarding/security.py": {
       "mode": "100644",
@@ -5010,13 +5009,13 @@
     },
     "templates/modules/default-on/_onboarding/triggers.py": {
       "mode": "100644",
-      "oid": "77d2efe2db0170b930346ed06edae5b3d10abe06",
-      "sha256": "b82ecbef8170b7e8967125e737b84a1cf96b89e59daad01f70f2f0870dbd957a"
+      "oid": "75eb24735dd6d8580cc975b53d98b6a5f552f11a",
+      "sha256": "a40e8fa0b8338f396166252828758161aec621082b159b673cab987661dc6ae4"
     },
     "templates/modules/default-on/claim_check.py": {
       "mode": "100644",
-      "oid": "8f70698b3ce296b03fb46e1f153bb2b7c6c9f35e",
-      "sha256": "56adeff64a28a154eb4706bbe9626e1b3cf7241bb36ce9b9ab3355fdb5820140"
+      "oid": "b76a3d0ec1e84a289e46f276116430f9087ff944",
+      "sha256": "1efd6e5cfdff7d6e0fe06063c25648fbc7fd41560360cb5de4327966a2447303"
     },
     "templates/modules/default-on/evolution_infer.py": {
       "mode": "100644",
@@ -5050,8 +5049,8 @@
     },
     "templates/modules/team-gated/_intent/conflict.py": {
       "mode": "100644",
-      "oid": "b6fead16bd5730297d9550bc666aaca0f3662aa8",
-      "sha256": "0188b9d25940446eb751d79f787e4a7916eae9b488ad2374911b05cbbb2b518f"
+      "oid": "6cbb7b63aa6fb225d70f1c505121139565b14f3d",
+      "sha256": "8d9601865c386ee355ced1d35574fea1911abe224b7dd142e07eeb7a144444da"
     },
     "templates/modules/team-gated/_intent/hooks.py": {
       "mode": "100644",
@@ -5174,6 +5173,8 @@
         "bootstrap/tests/_ast_attest.py",
         "verify",
         "bootstrap/tests/fixtures/scaffold_ast_baseline.json",
+        "--known-new",
+        "bootstrap/tests/fixtures/scaffold_ast_known_new.json",
         "bootstrap/_scaffold/*.py"
       ],
       "expect": "exit 0 \u2014 every baselined symbol accounted for unchanged; the ONLY permitted CHANGED is the predeclared one-symbol mapping delta",
