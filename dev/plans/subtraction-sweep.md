@@ -2137,3 +2137,80 @@ checks for a ledger file nothing creates any more, so it can never fire --
 and `test_active_surfacing_mechanism.py` hard-codes it as one of four
 triggers, so removing it reddens a test. That coupling is why it stays
 deferred rather than being cleaned up in passing.
+
+## The AST attestation had a hole, and it is closed -- 2026-08-28
+
+*Recorded here rather than in a commit body: the trace table below is the
+evidence for a trust-fixture write, and a reviewer needs to be able to
+challenge it.*
+
+**The defect, demonstrated.** `_ast_attest.verify` classifies an altered
+known-new body as **NEW, never CHANGED**, and returns non-zero only on
+CHANGED / MISSING / DUPLICATE. The digest check that would have caught it was
+a parameter of `update_symbol` -- the repair path, reachable only for the four
+allowlisted symbols -- so a known-new body was pinned *during a surgical
+re-baseline* and by nothing at all the rest of the time.
+
+Injecting one statement into `verify_within_root`, the symlink/containment
+guard `AGENTS.md` names as the scaffold engine's protection:
+
+```
+classified CHANGED?  False
+classified NEW?      True
+problems raised:     0
+```
+
+The gate printed `note: NEW` and exited 0. `AST_BASELINE_RUNBOOK.md` already
+stated the hazard -- *"a symbol in known-new is invisible to the baseline
+gate"* -- but nothing enforced it. **A named hazard with no enforcing trigger
+is the case Cairn's own doctrine warns about**, and it sat in the runbook that
+warns about it.
+
+**Closed at `3079d27`**: the predicate is a shared helper both callers use,
+`verify` enforces it, the gate command and both real-tree tests pass the
+manifest, and a run without it warns rather than passing quietly. Re-running
+the injection now fails on a digest mismatch.
+
+### The 16 re-pinned known-new entries, and why each was admitted
+
+Enforcement immediately surfaced 15 symbols whose bodies had drifted from
+their pinned digests, plus 1 never listed -- [TRU-4]'s *"15 are currently
+rekeyed"*, visible for the first time. The plan asserted they *"all trace to
+reviewed work"*; that is now shown rather than asserted:
+
+| symbol | origin commit |
+|---|---|
+| `ClassDef:ScaffoldLoaderError` | `d105967` scaffold-split: substrate Security re-review-2 fixups |
+| `ClassDef:UpstreamSource` | `9bd6752` fork-advisory-semantics (Chunks A, C-E) |
+| `FunctionDef:trusted_upstream` | `9bd6752` (same) |
+| `FunctionDef:_adopt_token_unfilled` *(unlisted)* | `bec2cca` adopt-into-existing-tree D1/D2 |
+| `FunctionDef:_commit_lock_and_caches` | `bec2cca` (same) |
+| `FunctionDef:_resolve_current_profile` | `bec2cca` (same) |
+| `FunctionDef:_always_on_group_complete` | `ed5a670` Sharpen side-door parity: 2 P1 from External-Security review |
+| `FunctionDef:_cmd_adopt_collisions` | `ed5a670` (same) |
+| `FunctionDef:assert_always_on_complete` | `ed5a670` (same) |
+| `FunctionDef:duplicate_destinations` | `ed5a670` (same) |
+| `FunctionDef:_assert_mapping_ownership` | `5d7d8f5` Sharpen new-module path: External Security review F1-F4 |
+| `FunctionDef:_print_adopt_command` | `0d3d38f` Sharpen adopt-as-fork (re-review r2) |
+| `FunctionDef:_record_fork_entry` | `9bc1119` install.py side-door executable parity |
+| `FunctionDef:missing_always_on_sources` | `9bc1119` (same) |
+| `FunctionDef:_rendered_onboarding_overlay` | `e71abd9` security-verification-activation |
+| `FunctionDef:missing_required_tokens` | `246b0db` security-apparatus-enrichment Chunk B0 |
+
+Every one is named, reviewed work; most are explicitly *security-review*
+fixups. The re-pin was bounded by measurement -- exactly the 15 drifted and 1
+missing the enforcement itself reported -- and refuses any other delta.
+
+**The BASELINE was deliberately NOT touched.** `_apply_upgrade` is this
+session's own change and sits there as CHANGED. Blessing one's own change is
+what the fence exists for, so it stays the Maintainer's.
+
+### Two re-anchors are now owed, not one
+
+1. **The AST baseline**, for `_apply_upgrade` -- `CHANGED 1, MISSING 0,
+   DUPLICATE 0`, `65a5f59ef844cfb9 -> dc53397782e91c18`.
+2. **The gate manifest.** Retiring the dead trigger removed a test class and
+   shrank a parametrize set, so the pinned collection changed. This is the
+   pitfall `AGENTS.md` documents: the manifest self-verifies a freshly
+   produced manifest and never diffs the committed fixture, so **a green
+   suite is not evidence that no re-anchor is owed.**
