@@ -113,7 +113,12 @@ Maintainer was handed a digest to paste. So the human leg is:
    boundary during a root move is **capability separation — the dedicated
    ceremony key**: Maintainer-only unlock, absent while candidate code
    runs. The ordinary signing key, which agents commit with, supplies no
-   such boundary and is never described as one.
+   such boundary and is never described as one. The landed form (the
+   ceremony driver, 2026-08-28, after its adversarial review caught the
+   tool comparing its own arithmetic against itself): the confirmation
+   value is computed **twice, by two different programs**, both shown,
+   disagreement refuses — described in the tool's own text as exactly what
+   it is: two programs on one machine, not a second party.
 3. **The key (RA-16)** — the one step in the entire registry no code can
    enforce, which the runbook itself calls the real fence. That it is the
    *only* such step is the runbook's own argument for this whole strategy:
@@ -137,6 +142,12 @@ runner and the thrice-rewritten scratch scripts. Three verbs:
   confirmation value from the rendered transaction (their intent record);
   atomic contained writes with read-back; no `--authorize`, no
   non-interactive path to the human act.
+
+One rule for every check the tool makes, from a shape that recurred twice
+in one day (a lockfile reconciliation, then the ceremony packet): **measure
+over the declared set, never the present one.** A packet with zero member
+rows must refuse, not vacuously match — and each such check gets a
+zero-member control test proving it can.
 
 The Codex redesign requirements are inherited **as triaged by the working
 agent, not verbatim**: items (1) and (5) without reservation — the closed
@@ -206,7 +217,12 @@ draft, adopted as design rules:
   clone**, so the live tree never has to go globally quiet; and give the
   proposal both a **risk/volume trigger and a maximum review budget**, with
   the classified report retained as a security acceptance criterion, not a
-  nicety cadence buys back.
+  nicety cadence buys back. *Measured confirmation, 2026-08-28:* the
+  ceremony that closed a 362-commit-stale anchor carried **74 changed
+  frozen files** (31 modified / 11 added / 32 removed) — a handful of files
+  per week had it run weekly, an unreadable lump as it stood. The whole
+  causal chain — staging cost → infrequency → unreviewable diff → the human
+  reduced to transcription — was visible in that one run.
 
 **2. Two tiers, one kernel, typed adapters — not one generic algorithm.**
 *Re-pin* (routine): gate manifest, AST baseline, lockfile — the three-act
@@ -242,21 +258,38 @@ discipline the sweep session proved three guards were missing.
 
 ## Current state, corrected — and what the stopped period was hiding
 
-**The gate anchor is no longer stopped.** The Maintainer, in the working
-agent's session, verbatim: *"We don't need to re-review everything. I bless
-the security of this session for re-anchoring. Let's go ahead with the
-ceremony."* That ceremony is executing there. **`correct_pinned_digests.py`
-alone stays refused**; routine corrections continue by hand under their
-runbooks until the successor lands.
+**The re-anchor ceremony ran to completion on 2026-08-28** — authorized by
+the Maintainer (*"I bless the security of this session for re-anchoring"*),
+driven end-to-end through the ceremony driver (**`reanchor_drive.py`** —
+built in the working session and not yet landed in this tree; a deliberate
+forward reference), anchor moved
+`5f99273 → bd66a70` under the ceremony key, branch and anchor in one
+transaction, both pushed by the Maintainer. The Maintainer's experience was
+this strategy's target UX, demonstrated live at the anchor tier: **the
+machine did the arithmetic; the human answered two questions.**
+**`correct_pinned_digests.py` alone stays refused**; routine corrections
+continue by hand until the `repin` successor lands, building on the
+driver's skeleton rather than beside it.
 
-The working agent is building **`scripts/reanchor_drive.py`** on exactly
-this note's principle — the machine does the arithmetic, the closure prints
-three ways so the transition is visible at a glance, a free read-only
-rehearsal runs before any key or package is spent, and the human is asked
-exactly two questions: *does this report describe what you intend to bless?*
-and *is the key loaded?* It is under adversarial review now. It is the
-concrete tier-*anchor* instance of this strategy; the routine-tier `repin`
-tool builds on the same skeleton rather than beside it.
+The driver's adversarial review (42 findings, 28 surviving refutation) and
+the run itself yielded **two hazards of making a ceremony friendly — the
+two ditches the build must steer between**:
+
+* **The silent-tool hazard.** The driver's "read-only" rehearsal wrapper
+  swallowed the ceremony's own banner disclosing that candidate code
+  executes — usability work on a trust ceremony characteristically
+  suppresses disclosures to reduce noise, and the disclosure is the one
+  line the operator most needs. Every disclosure the ceremony makes is a
+  property the friendly surface must *forward*, control-tested.
+* **The retreat hazard, the opposite ditch.** After the review, the driver
+  was cut to read-only — treating "the convenient version had defects" as
+  proof the convenience was unsafe, when only **one** of 28 findings
+  genuinely resisted automation. The Maintainer caught it (*"did you end up
+  cutting the tool to not doing anything useful then?"*). **A security
+  review's findings are a specification for what to fix, not an argument
+  for retreat** — retreat feels rigorous and lands the operator back at
+  pasting commands and transcribing hex, the exact state this strategy
+  exists to end.
 
 Four things the stopped period was hiding, now written down (working
 agent's inventory):
@@ -288,6 +321,16 @@ agent's inventory):
   tooling effort goes first.
 * **RA-16 (key handling) is the only step no code can enforce** — the
   runbook's own text, and the strongest argument for this whole direction.
+* **RD-3, found by the driver's review and still unfixed: the launcher
+  template is not a closure member.** The operative launcher is
+  manufactured from a template that **nothing in the repository pins** —
+  yet it is the pre-candidate trust root, running before the checker
+  exists. The ten-member closure has a hole exactly where it matters most,
+  invisible because the closure looks complete; the 2026-08-28 ceremony
+  itself launched from bytes nothing pins. The driver now names the
+  template (blob digest + object-store OID) but cannot pin it. **Making
+  the launcher template the eleventh closure member is an acceptance
+  criterion of the coming proposal**, not a tidiness item.
 
 ## Route and sequencing
 
@@ -300,6 +343,10 @@ agent's inventory):
 3. The plan builds the tool tier-1 first (routine re-pins — highest
    frequency, no key), then the re-anchor integration, then the runbook
    rewrite that shrinks both documents around the tool.
+4. Two acceptance criteria are pre-registered here so they cannot slip:
+   the **launcher template joins the authority closure** (RD-3), and every
+   ceremony disclosure is **forwarded by the friendly surface**, with a
+   control test per disclosure.
 
 ## Success criteria — the Maintainer's, not the apparatus's
 
