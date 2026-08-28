@@ -115,24 +115,6 @@ goodnight-incident-tracker-migration` slot anchor).
 > structurally weren't) are logged for base-rate visibility but do
 > NOT count against the rate-limit gate's trigger.
 
-## Cross-reference to `lifecycle-metrics`
-
-The trackers feed the rate-limit gate; the `lifecycle-metrics`
-module *correlates across* trackers (and across other durable
-artifacts: proposals, plans, commits). The two modules compose:
-
-* **`incident-trackers`** logs point-in-time events with the
-  semantic-field schema.
-* **`lifecycle-metrics`** correlates trackers over time and across
-  classes for the cross-cutting signal.
-
-The `lifecycle-metrics` module's eventual cross-adopter harvest
-reads the canonical 7-column semantic-field contract; adopters with
-existing trackers may ship a per-tracker schema-mapping file (e.g.,
-`tracker_schema.yml`) documenting how their tracker's columns
-project onto the canonical fields. Adopters using only the
-canonical form ship no mapping; the harvest reads directly.
-
 ## Cross-reference to the rate-limit gate
 
 `doctrine/rationale.md` > "Adaptive-doctrine rate-limit gate" is
@@ -150,10 +132,8 @@ a doctrine proposal when the count meets the recurrence threshold
 (default `>=2`). It is **fail-closed**: a tracker whose rolling window
 is unparseable is reported and not silently defaulted (the gate cannot
 be evaluated until the adopter sets it). The tool **only suggests** —
-the decision to open a proposal stays human. It also flags a **fold-up
-backlog** from the fold-back ledger's open-candidate count. The full
-handoff runs it read-only; run it any time with
-`python tools/evolution_infer.py`.
+the decision to open a proposal stays human. The full handoff runs it
+read-only; run it any time with `python tools/evolution_infer.py`.
 
 ## Forking the template
 

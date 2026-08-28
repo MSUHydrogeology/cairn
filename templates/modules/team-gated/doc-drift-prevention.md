@@ -54,7 +54,7 @@ Merged into the project's docs guide:
 
 This module ships the **discipline above** *and* a **stack-neutral,
 scaffold-installed tooling set** -- the way the `claim-check` and
-`lifecycle-metrics` modules ship runnable scripts (the 1:many
+`portable-security-sweeps` modules ship runnable scripts (the 1:many
 verbatim-install pattern). Two stdlib-only scripts land in the target's
 `scripts/` directory:
 

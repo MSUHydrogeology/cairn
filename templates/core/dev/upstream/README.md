@@ -33,8 +33,8 @@ OSS libraries and tools {{project_name}} uses.
 
 It is **not** the methodology channel. If {{project_name}} runs the Cairn
 methodology and discovers an improvement to Cairn's *own* doctrine or
-tooling, that belongs upstream as a Cairn issue (the fold-back
-ledger, installed by the `fold-back-ledger` module), not here.
+tooling, that belongs upstream as a Cairn issue (a fold-back candidate,
+filed on Cairn's issue tracker), not here.
 
 | Channel | Home | What it carries |
 |---------|------|-----------------|
@@ -43,7 +43,7 @@ ledger, installed by the `fold-back-ledger` module), not here.
 
 A finding that spans both (e.g. a dependency bug that also reveals a gap in
 Cairn's review doctrine) gets a file here for the upstream code report and
-a row in the fold-back ledger for the methodology takeaway.
+a fold-back issue filed against Cairn for the methodology takeaway.
 
 ## What a draft file contains
 

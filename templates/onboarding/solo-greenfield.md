@@ -81,10 +81,11 @@ no multi-agent coordination, no legacy-tree pre-pass.
   checklist.
 
 * [trigger: first-foldback-candidate; id: walk-foldback-protocol]
-  Your fold-back ledger has its first open candidate ready to
-  surface upstream. This is your introduction to the fold-back
-  issue template (`.github/ISSUE_TEMPLATE/foldback.md`); it walks
-  you through filing your first upstream Cairn issue or PR.
+  The fold-back practice: when you improve the method itself, not
+  just your project, that improvement belongs upstream. This is
+  your introduction to the fold-back issue template
+  (`.github/ISSUE_TEMPLATE/foldback.md`); it walks you through
+  filing your first upstream Cairn issue or PR.
 
 ## Active-surfacing prompt content (per-preset)
 
@@ -125,7 +126,7 @@ work Dual-Review carries.
 
 ### Row 4 -- upstream PR/issue walkthrough prompt
 
-Your fold-back ledger now carries a candidate ready to surface
-upstream. This is your first introduction to the fold-back issue
-template (`.github/ISSUE_TEMPLATE/foldback.md`) -- it walks you
-through filing a Cairn issue or PR.
+When you notice you've improved the method itself, not just your
+project, it belongs upstream. This is your first introduction to
+the fold-back issue template (`.github/ISSUE_TEMPLATE/foldback.md`)
+-- it walks you through filing a Cairn issue or PR.

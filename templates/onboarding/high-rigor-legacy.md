@@ -116,14 +116,14 @@ goes live.
   default going forward.
 
 * [trigger: first-foldback-candidate; id: walk-foldback-protocol]
-  Your fold-back ledger has its first open candidate ready to
-  surface upstream. The fold-back issue template
-  (`.github/ISSUE_TEMPLATE/foldback.md`) walks through
-  filing; the high-rigor-legacy profile installs the
-  content-security scanner and the security-review checklist --
-  run `python scripts/content_scan.py` over the drafted filing
-  body and walk the security-review checklist before it leaves
-  the deployment.
+  The fold-back practice: when the method itself improves, not
+  just this legacy tree, that improvement belongs upstream.
+  Notice it, then file a Cairn issue with the fold-back issue
+  template (`.github/ISSUE_TEMPLATE/foldback.md`); the
+  high-rigor-legacy profile installs the content-security scanner
+  and the security-review checklist -- run `python
+  scripts/content_scan.py` over the drafted filing body and walk
+  the security-review checklist before it leaves the deployment.
 
 ## Active-surfacing prompt content (per-preset)
 
@@ -159,8 +159,8 @@ codebases carry.
 
 ### Row 4 -- upstream PR/issue walkthrough prompt
 
-Your fold-back ledger carries a candidate ready for upstream
-filing. The fold-back issue template
+When the method itself improves, not just this legacy tree, it
+belongs upstream. The fold-back issue template
 (`.github/ISSUE_TEMPLATE/foldback.md`) walks through
 filing; the high-rigor-legacy profile installs the
 content-security scanner and the security-review checklist --

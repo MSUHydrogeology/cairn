@@ -807,8 +807,8 @@ def liveness_scope(doc_rel: str | None, text: str) -> _LivenessScope | None:
 #: appears in the onboarding doc, the concurrent presets, and the rendered
 #: PLANNING slot; once a project *self-hosts* Cairn its own doctrine /
 #: templates / changelog cite the machine-state tree too), so a per-document
-#: exemption directive would not scale and would break on every fresh clone
-#: (fold-back #42).  Scoped tightly: the *committed* lockfile / profile /
+#: exemption directive would not scale and would break on every fresh clone.
+#: Scoped tightly: the *committed* lockfile / profile /
 #: mapping under ``dev/.cairn/`` are NOT here -- they resolve and stay
 #: checkable; only the generated / per-adopter-optional state is exempt.
 #: Each entry is a *framework-defined* path the doctrine / modules reference
@@ -823,8 +823,12 @@ _DEFAULT_EXEMPT_PATHS: frozenset[str] = frozenset({
     "dev/intent-config.json",                   # work-intent config (legacy path)
     "dev/.cairn/local-env.json",                # interpreter binding (gitignored)
     "dev/.cairn/intent-config.json",            # work-intent config (canonical)
-    "dev/.cairn/metrics-config.json",           # lifecycle-metrics config (optional)
-    "dev/.cairn/foldback_export_denylist.txt",  # foldback export-scan denylist (optional)
+    # These two belonged to modules Cairn no longer ships. They stay exempt on
+    # purpose: a tree still migrating off them carries the files for a while,
+    # and flagging a citation during exactly that window is the opposite of
+    # helpful. They install nowhere new.
+    "dev/.cairn/metrics-config.json",           # legacy: removed lifecycle-metrics module
+    "dev/.cairn/foldback_export_denylist.txt",  # legacy: removed fold-back export scan
     "dev/measurement/incident_log.md",          # incident-trackers log (created on first use)
     "dev/measurement/collision_log.md",         # coordination collision log (created on first use)
     "dev/measurement/coordination_log.md",      # coordination event log (created on first use)

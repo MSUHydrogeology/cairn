@@ -31,10 +31,8 @@ instance; the module file states the tool's contract.
 
 | Set | Module | Selected when |
 |-----|--------|---------------|
-| default-on | `lifecycle-metrics` | default; removed only for the smallest adoptions |
 | default-on | `claim-check` | default |
 | default-on | `reflections` | multi-agent adoptions; a solo, single-agent project may omit (the cross-agent handoff function disappears) |
-| default-on | `fold-back-ledger` | default; the deployment-side improvement channel back to Cairn — a solo, single-deployment adopter that will never fold doctrine up may omit |
 | default-on | `content-security` | default; explicit `modules_remove` opt-out for operator-attached-only workflows |
 | default-on | `security-verification` | default; installs the local evidence *route* — the dispatcher plus its source-owned registry, which ships **empty**, so an adopter with no admitted security capability gathers nothing and is told so |
 | token-gated | `python-security` | selected when `python_package` is declared and filled; never for a non-Python adopter |

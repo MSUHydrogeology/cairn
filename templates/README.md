@@ -19,7 +19,8 @@ method and `dimensions/` describes how an adoption is *adapted*,
   decided from its dimensional profile — see `dimensions/`.
 * **`skills/`** — the **lifecycle-routine skills**: the agentskills.io
   `SKILL.md` pair (`session-start`, `session-end`) plus the deterministic
-  CLI they orchestrate (`_lib/lifecycle.py`) and the data-driven vendor
+  CLI they orchestrate (`_lib/session.py`, plus `_lib/board.py`) and the
+  data-driven vendor
   fan-out table (`_data/vendor_targets.yml`). Because the session routines
   are invariant kernel, the skills install **unconditionally, like `core/`**
   (to the canonical `.agents/skills/` + `tools/session.py`), not
@@ -34,7 +35,7 @@ what a script can do, what needs a reasoning agent, and what is
 filled at write-time by a document author.
 
 * **Inline tokens** — `{{project_name}}`, `{{test_command}}`,
-  `{{claim_check_command}}`, `{{metrics_command}}` and the like:
+  `{{claim_check_command}}` and the like:
   a short value substituted in place. Inline tokens are
   **mechanical** — the bootstrap fills them by simple substitution
   from the profile config at install time. The current set is

@@ -31,8 +31,8 @@ them.
 
 * **Not an archive.** Historical / closed records live under `dev/**/archive/`.
   This folder is live measurement, not a graveyard of finished work.
-* **Not framework-adopter state.** The Cairn lockfile, base cache, `profile.yml`,
-  and the fold-back ledger live in `dev/.cairn/` — scaffold-tool /
+* **Not framework-adopter state.** The Cairn lockfile, base cache, and
+  `profile.yml` live in `dev/.cairn/` — scaffold-tool /
   framework-relationship machinery, not process-health measurement.
 
 Two calls that are **tempting but excluded** (the guard made concrete):

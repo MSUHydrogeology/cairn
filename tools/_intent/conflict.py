@@ -64,8 +64,8 @@ ALLOW_UNCLAIMED_ENV_VAR = "CAIRN_INTENT_ALLOW_UNCLAIMED"
 INTENT_CONFIG_RELPATH = "dev/intent-config.json"
 
 
-#: Canonical config location going forward: the ``dev/.cairn/`` convention the
-#: ``lifecycle-metrics`` module states ("``dev/.cairn/`` holds config").  Reads
+#: Canonical config location going forward: the ``dev/.cairn/`` convention --
+#: that directory holds machine-owned config.  Reads
 #: prefer this; ``INTENT_CONFIG_RELPATH`` above stays a **transitional
 #: fallback** so an existing adopter is not broken (no flag-day).  Resolution
 #: lives in :func:`_resolve_intent_config`.

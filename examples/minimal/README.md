@@ -46,13 +46,11 @@ but the shape is identical. For the narrated, step-by-step version see
 
 > **The default-on disciplines come with tools.** This hand-copied
 > Level-1 example runs the lifecycle by hand, but an adopter who
-> bootstraps with the scaffold gets the two default-on disciplines as
-> *runnable scripts*, not just prose: `claim_check.py` (in `scripts/`)
-> and `lifecycle_metrics.py` (in `tools/`) are installed and wired to
-> the `{{claim_check_command}}` / `{{metrics_command}}` tokens. See the
-> [`claim-check`](../../templates/modules/default-on/claim-check.md) and
-> [`lifecycle-metrics`](../../templates/modules/default-on/lifecycle-metrics.md)
-> modules.
+> bootstraps with the scaffold gets the claim-check discipline as a
+> *runnable script*, not just prose: `claim_check.py` (in `scripts/`) is
+> installed and wired to the `{{claim_check_command}}` token. See the
+> [`claim-check`](../../templates/modules/default-on/claim-check.md)
+> module.
 
 ## Files in this example
 

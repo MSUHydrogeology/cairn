@@ -21,9 +21,9 @@ The `collaborative-team` preset assumes a richer shape than
 solo-greenfield: 2-4 humans + 1-2 agent types on a greenfield or
 near-greenfield codebase. The tasks are calibrated for that scale
 -- team coordination matters from day one; the second agent type
-is part of the expected baseline, not a future upgrade; the
-fold-back ledger is staffed enough that the upstream contribution
-loop earns its keep early.
+is part of the expected baseline, not a future upgrade; a team
+this size has the standing capacity to notice and file fold-back
+candidates upstream early, rather than letting the practice lapse.
 
 ## Tasks
 
@@ -101,11 +101,12 @@ loop earns its keep early.
   the backup, not the baseline.
 
 * [trigger: first-foldback-candidate; id: walk-foldback-protocol]
-  Your fold-back ledger has its first open candidate ready to
-  surface upstream. Use the fold-back issue template
-  (`.github/ISSUE_TEMPLATE/foldback.md`); the team-handoff
-  owner files; coordinate with the team before filing to avoid
-  duplicate Cairn issues.
+  The fold-back practice: when the team improves the method
+  itself, not just this project, that improvement belongs
+  upstream. Notice it, then file a Cairn issue with the fold-back
+  issue template (`.github/ISSUE_TEMPLATE/foldback.md`); the
+  team-handoff owner files, coordinating with the team first to
+  avoid duplicate Cairn issues.
 
 * [trigger: level-1-to-2; id: graduate-to-level-2]
   Your team has accreted enough lifecycle activity that
@@ -147,8 +148,8 @@ preconditions, so spin-up is faster than a fresh start.
 
 ### Row 4 -- upstream PR/issue walkthrough prompt
 
-Your team's fold-back ledger now carries a candidate ready for
-upstream filing. The fold-back issue template
-(`.github/ISSUE_TEMPLATE/foldback.md`) walks the team-
+When your team notices an improvement to the method itself, not
+just this project, it belongs upstream. The fold-back issue
+template (`.github/ISSUE_TEMPLATE/foldback.md`) walks the team-
 handoff owner through filing; coordinate with the team before
 filing to avoid duplicate Cairn issues.
