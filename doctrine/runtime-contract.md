@@ -144,7 +144,6 @@ recorded, visible condition, not a silent omission (see
 |------|--------|--------------|---------------------|
 | `claim_check.py` | `default-on` | Weaker-but-supported | Broken doc paths, stale line citations, wrong count claims pass undetected until human review |
 | `link_check` | `default-on` | Weaker-but-supported | Broken cross-references in docs pass undetected; doc rot accumulates silently |
-| `lifecycle_metrics` | `default-on` | Weaker-but-supported | Proposal/plan cycle-time and throughput are unmeasured; the Measurement Compact's quality surface is blank |
 | `python-security` (`bandit` + `pip-audit`) | `python-security` (team-gated, opt-in) | Equivalent (for non-Python adopters); weaker for Python adopters | Python static-analysis + CVE scan missing for Python adopters; non-Python adopters never acquire this module |
 | `doc-drift-prevention` | team-gated | Equivalent | Drift gate for generated/reference docs absent; docs can silently diverge from source of truth |
 

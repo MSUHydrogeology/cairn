@@ -496,15 +496,17 @@ standing process that closes that gap.
   **recorded with the cadence** — the doctrine fixes that a count
   governs, not the specific number.
 * **Where findings go.** Until Cairn runs its own `dev/`, a finding
-  enters an adopter's fold-back ledger → proposal → lands in cairn (the
-  adopter-lifecycle these very items rode); once Cairn adopts its own
-  `dev/`, findings become Cairn's own proposals. Either way the finding
-  is *deliberated*, not applied raw — the harvest feeds the lifecycle,
-  it does not bypass it. The fold-back ledger itself — the deployment-side
-  artifact, its lifecycle and status vocabulary, the nightly capture, and
-  the scrub-before-export rule — is specified in the retired fold-back doctrine;
-  the harvest is the framework-side *pull*, the ledger the deployment-side
-  *push*, and both record here.
+  is filed as an upstream fold-back issue on Cairn's own tracker
+  (`.github/ISSUE_TEMPLATE/foldback.md`) → proposal → lands in cairn
+  (the adopter-lifecycle these very items rode); once Cairn adopts its
+  own `dev/`, findings become Cairn's own proposals. Either way the
+  finding is *deliberated*, not applied raw — the harvest feeds the
+  lifecycle, it does not bypass it. The local ledger this once routed
+  through — the deployment-side artifact, its lifecycle and status
+  vocabulary, the nightly capture, and the scrub-before-export rule —
+  is retired; filing now goes straight upstream. The harvest remains
+  the framework-side *pull*, filing the deployment-side *push*, and
+  both record here.
 
 A companion **core-completeness probe** — the adopter-side check that an
 install merged all its module content and captured its tacit rules in
@@ -518,12 +520,11 @@ R-F fidelity gate, which proves only *faithful install*.
 Honesty is part of the method. Two areas the anchors expose as
 under-built — carried as named open problems, not hidden:
 
-* **Measurement.** Anchor 3 asks for *measurable* trust. Cairn
-  ships the infrastructure for a lifecycle-metrics layer and a
-  baseline, but a single baseline is not yet a trend; the
-  lifecycle-metrics v2 snapshot/trend layer has begun turning that
-  baseline into trend infrastructure, but a single baseline is not
-  yet a long trend. The longitudinal evidence remains future work.
+* **Measurement.** Anchor 3 asks for *measurable* trust. Cairn does
+  not currently ship any metrics tooling for proposal/plan cycle time
+  or throughput — the layer that once did was removed, with no
+  replacement built — so measurable trust for this anchor is not yet
+  mechanized. The longitudinal evidence remains future work.
 * **Scientific-correctness interlock.** Anchor 4's failure mode —
   a wrong result that looks right — is only partly addressed by
   structural review. The V&V canon (Oberkampf & Roy 2010,

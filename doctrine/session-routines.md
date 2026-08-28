@@ -316,22 +316,21 @@ allowed to become a doctrine change, on a cadence the team can
 absorb. A single incident does not earn a doctrine change here
 unless the Maintainer has classified it high-risk.
 
-### Goodnight foldback-capture — when the fold-back-ledger module is installed
+### Goodnight foldback-capture
 
-A deployment running the **fold-back-ledger** module adds one more
-standing goodnight step for the full-handoff owner: scan the
+One more standing goodnight step for the full-handoff owner: scan the
 session-day's doctrine activity for **Cairn-portable** candidates —
 generalizable improvements that should fold *up* into Cairn — and
-capture each in the deployment's fold-back ledger. Capture never lapses;
-an **empty capture is success** (do not manufacture marginal
-candidates). Whether to *open a sync* upstream is the separate,
-judgment-gated decision the framework's harvest cadence governs. The
-ledger is a cross-repository export surface, so candidates carry no
+capture each as a draft fold-back issue, using the fold-back issue
+template (`.github/ISSUE_TEMPLATE/foldback.md`) in the Cairn repository.
+Capture never lapses; an **empty capture is success** (do not
+manufacture marginal candidates). Filing is the separate,
+judgment-gated step: an agent may draft the issue body, but only the
+Maintainer files it, by hand, on Cairn's public issue tracker — a
+fold-back issue is a public export surface, so a candidate carries no
 secrets, credentials, internal hostnames/IPs, local paths, or
 proprietary domain detail, and the Maintainer confirms no private
-coordinate leaks before any item becomes a public Cairn proposal. A
-candidate is filed as an issue upstream rather than staged in a local
-ledger; this step is the capture cadence that feeds it.
+coordinate leaks before it becomes a public Cairn issue.
 
 ### Goodnight RULES.md maintenance — when the project keeps a RULES.md
 

@@ -638,9 +638,7 @@ genuinely sees first — irreducible independence the sweep cannot
 substitute for. The record cannot size those two shares in advance, so
 the safe instrument is not an automatic rule (which would trade away an
 unknown amount of independence) but a human deciding per change, with
-the coverage line as evidence. Whether the trade actually pays is
-measured, not asserted — see the late-blocker bundle in
-`lifecycle-metrics.md`.
+the coverage line as evidence.
 
 ## Briefs to reviewers — don't telegraph the lens
 

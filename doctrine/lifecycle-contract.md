@@ -72,7 +72,8 @@ authored by a reviewer (an AI agent or a human), but a **Decision** is a
   agent identities), **known-human-Maintainer** (on a *project-owned
   Maintainer allowlist*), or **unknown**. Both lists are extended by
   configuration, never a code edit — the same open posture as the
-  model-tier list in `lifecycle_metrics`.
+  tier-to-model mapping the `model-selection` module seeds at
+  `dev/.cairn/model-selection-mapping.yml`.
 * **Humanity must be proved, never assumed.** A denylist alone cannot
   establish human authority — a novel, renamed, or local agent identity
   would launder into a "residual human." So a terminal **Decision**
