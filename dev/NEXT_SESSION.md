@@ -49,7 +49,41 @@ being done by hand under their runbooks until someone commissions it.
 
 ## What is genuinely next
 
-* **C9 — the sister migrations.** Unblocked on every count now: code review ran
+* **C9 — `modflow_tools` is ~90% migrated, on a branch, PAUSED mid-work.**
+  *(2026-08-28. Maintainer chose "do C9 now, then archive" over splitting it
+  out, and authorized the five-item `defer` batch as one batch.)*
+
+  Work is committed to branch **`cairn-0.3.0-migration`** in
+  `/Users/kendal30/Code/modflow_tools`; **`master` is untouched**. Suite there:
+  **3470 passed, 3 failed**. The commit body lists what landed.
+
+  **Three failures remain, all doc/config consequences of the removal:**
+  `test_living_state_partition_applied`;
+  `test_content_scan_audit[dev/.cairn/cairn_foldback.md]`;
+  `test_repo_passes_default_scan` (7 broken links). Also
+  `docs/{user_guide,reference}/lifecycle_metrics.md` still document the
+  deleted tool — a doc-cleanup agent was mid-read when the session paused and
+  had made **no edits**.
+
+  **Two findings the next session must not rediscover the hard way:**
+
+  * **`upgrade --apply` deletes nothing.** `removed-upstream` is not in
+    `_ADVANCING_KINDS` and the apply path has no `unlink`. It *reports* the
+    files upstream dropped; removing them is the adopter's, by hand. Same for
+    `slot-removed`, which is why `dev/agent_collaboration.md` was never staged.
+  * **[TRU-1] cost a third ceremony.** The lockfile kept 19 records for files
+    the migration removed, and `--finalize` refuses on a missing record
+    ("fix or re-install first"). There is still no regenerate command. It was
+    resolved by a scratch prune that drops a record **only when its file AND
+    its upstream `src` are both gone**, never rewriting a hash — a different
+    class of act from the BLOCKED `correct_pinned_digests`, which rewrote
+    pinned digests. `verify_integrity` went 21 violations → OK. **If this
+    recurs on `lhm`, fix [TRU-1] instead of writing the script a third time.**
+
+  **`lhm` has not been started**, and must not be until `modflow_tools` is
+  green — the plan's fence is sequential and per-sister.
+
+* **C9's original framing.** Unblocked on every count: code review ran
   and was answered, the lockfile is correct, and the anchor the sisters would
   inherit is current rather than 362 commits stale. Still MAINTAINER-GATED per
   sister.
