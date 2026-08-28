@@ -5,7 +5,7 @@
 # Plan: Subtraction sweep
 
 **Source proposal**: `dev/proposals/archive/2026-08-25-claude-subtraction-sweep.md`
-**Status**: implementing — C1-C7 landed; **C8 and C9 remain, and both are the Maintainer's** (C8 MAINTAINER-ONLY, C9 MAINTAINER-GATED per sister). The plan is not `awaiting-code-review`, because it is not fully implemented.
+**Status**: archived — C1-C9 all landed; code review satisfied for every chunk group the plan names; dispositions final; lasting truths migrated. See `## Archive` at the foot.
 **Plan review**: required(**Internal** + **Internal Security Review**) — two passes, one per clause, each naming its clause in its own `**Obligation**:` line. The Internal pass reads the deletion manifest. **The Security Review is a single pass covering both security surfaces this plan touches** — the trust-root extraction (C1) and the registry-edit approach (C5/C6) — because both are decided here, in this document, and reviewing the same design twice is the ratchet this sweep removes. C1 and C4 are its *fences*, not additional reviews.
 **Last update**: 2026-08-27
 
@@ -2214,3 +2214,63 @@ what the fence exists for, so it stays the Maintainer's.
    pitfall `AGENTS.md` documents: the manifest self-verifies a freshly
    produced manifest and never diffs the committed fixture, so **a green
    suite is not evidence that no re-anchor is owed.**
+
+## Archive -- 2026-08-28
+
+**Dispositions restated.** The template's rule is that an append re-opens the
+attestation, and this plan gained three sections after the original line was
+written (C8 complete, C9 complete, the AST attestation record). Restated over
+the whole record, final:
+
+`Dispositions:` accept x13, guard x2, defer x5 (**authorized**), wontfix x0.
+
+The `defer` batch is no longer unauthorized. The Maintainer authorized all five
+as one batch, quoted at `## C9 complete`. **Two of the five have since been
+closed rather than deposited**, so the deposit is smaller than the line
+suggests and the record should say which:
+
+* **[VER-5] closed.** `_MULTI_SCRIPT_MODULES` was an empty dict, so the
+  multi-script install assertion parametrized over nothing and pytest skipped
+  it -- the suite's only skip. Repointed at `issue-capture`, which ships the
+  same two-script shape, and control-tested.
+* **The `first-foldback-candidate` trigger closed.** It detected a ledger row
+  in a file nothing creates, so it could never fire, and it could not be
+  repointed because the surviving channel leaves no artifact in the adopter's
+  tree. Retired end to end; the active-surfacing set went from four rows to
+  three.
+* **Still deposited (3):** [TRU-4]'s known-new graduation decision, C6's two
+  onboarding findings behind the MAINTAINER-GATED `_ALWAYS_ON_MAPPINGS` fence,
+  and the four unfiled forge issues.
+
+**Superseding the `### Still owed before this plan can archive` block.** That
+block was written before the work ran and is now false in every clause. For the
+record: **C8 landed** (`refs/cairn/gate-anchor` `5f99273 -> bd66a70`, signed,
+both refs pushed); **C9 landed** (both sisters, on branches, masters untouched);
+and the **code review floor is met** -- the plan names its groups as *C1, C2+C3,
+C5+C6, C7*, and one round ran for each. The block's "Zero rounds have run" was
+true when written and is not now.
+
+**Final verification.** Full suite `CAIRN_FULL_SUITE=1 pytest bootstrap/tests
+--quality-gate-shuffle-seed=0` -> **3176 passed, 0 skipped, 2 failed**, Python
+3.13.13, on a quiet tree; the two failures were the AST baseline pair, which the
+Maintainer's re-anchor then cleared. After both re-anchors: `_ast_attest verify`
+**OK, 173 baselined symbols, unchanged** -- the count did not grow, so it was a
+correction and not a re-pin -- and `_gate_manifest verify` **OK, 183 frozen
+files, 3178 pinned nodes**.
+
+**What did NOT archive with this plan.** Work done after C9, at the Maintainer's
+explicit direction, extends beyond any chunk and was not code-reviewed: the
+doctrine pass, the shipped-template prose fix, and the AST attestation
+enforcement. It is recorded above and its live half is homed elsewhere on
+purpose -- **an archived plan is a poor home for an open security finding.**
+`AGENTS.md`'s note that the gate manifest goes stale silently, and the
+attestation's own `--known-new` requirement, both live in `NEXT_SESSION.md` and
+the runbook rather than here.
+
+**Lasting truths migrated** to
+`dev/strategy/2026-08-21-claude-nimbleness-recovery.md`: the
+measured-versus-estimated table with the ~55,000 corrected figure and its
+double-count, and the three struck rows with their revival conditions. Row 3
+resolved to **struck under its own condition** -- `link-check-allow` was never
+folded in, so **three directive families remain, not two**. A future de-scope
+that believes it is closing the last one will be wrong.

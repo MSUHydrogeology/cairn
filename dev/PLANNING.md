@@ -139,7 +139,7 @@ pass, taking it from 852 lines to 260.
   comparator, the five plan-review basis fields, transition-lint, the
   review-allocation pilot) and one had been marked resolved since 2026-08-20.
   Each is on the dead list in
-  [`plans/subtraction-sweep.md`](plans/subtraction-sweep.md) with the
+  [`plans/archive/subtraction-sweep.md`](plans/archive/subtraction-sweep.md) with the
   measurement that showed it gone.
 
 **What remains here is the untriaged product, docs and process backlog**, which
@@ -786,7 +786,7 @@ owns the residual and what revives it.
 | A live residual and what revives it | the strategy's **Live residual register** |
 | The cluster a finding belongs to, and whether two findings are one scope | the strategy's **Cluster map** and **Decision test for new findings** |
 | Reproductions, per-row evidence, review findings | the archived plan named on the register entry |
-| What the sweep deleted, and the measurement that justified it | [`dev/plans/subtraction-sweep.md`](plans/subtraction-sweep.md), C7 bankruptcy record |
+| What the sweep deleted, and the measurement that justified it | [`dev/plans/archive/subtraction-sweep.md`](plans/archive/subtraction-sweep.md), C7 bankruptcy record |
 
 **Filing a new security finding.** It receives one primary cluster, one owner or
 revival trigger, and one decisive evidence path — in the strategy, not here.

@@ -896,3 +896,64 @@ recorded decision trail, append-only on the artifacts that keep it,
 verification for shipped code, or editing history. The four-part core
 is the point of Cairn and stays. What goes is the mass around it — the
 armor agents grew because nothing in the rules ever told them to stop.
+
+## What the sweep actually cost — migrated on archive, 2026-08-28
+
+*Migrated from `dev/plans/archive/subtraction-sweep.md` under that plan's
+lasting-truth clause. The build table above is what this note estimated; this
+is what the work measured. Kept here because the estimate is only worth
+anything next to its outcome.*
+
+**The 61k headline did not survive contact**, and the Decision's own preamble
+said to treat it as a headline until the manifest landed. Summing the build
+table's rows naively **double-counts ~4,300 lines** across the order-4/order-5
+boundary: C5 removes ~1,440 lines from each side of the `lifecycle.py` twin
+pair and C6 then removes all 3,910 of each, while `test_pilot_evidence.py`
+(1,437) appears under both rows. **Net removal is closer to ~55,000**, and that
+figure is a *consequence* of the manifest rather than a target the manifest was
+fitted to.
+
+Measured `as_of 2026-08-25`, against this note's estimates:
+
+| build-table row | order | estimate | **measured** | |
+|---|---|---|---|---|
+| Constitution rewrite + both templates | 1–2 | −~1,300 | −1,357 self-hosted | ~2,600 if shipped twins compress proportionally |
+| Three small tools | 3 | +~530 | — | additive; not measured |
+| Transition lint, pilot ledgers, slot ratchet | 4 | −~4,000 | **7,240–7,450** | 1.8× low |
+| Suite-run ledger | 4 | −~1,700 | **2,285** | 34% low |
+| Lifecycle CLI + planner (+ twins, tests) | 5 | −~45,000 | **36,332** across 15 files | 19% high |
+| Onboarding | 5 | −~2,000 | **8,500–9,100** | 4.3× low |
+| Foldback | 5 | −~2,000 | **3,152** | 1.6× low |
+| PLANNING bankruptcy + dead doctrine prose | 6 | −~6,000 | 2,576-line file, 117 tagged lines | — |
+
+**The estimates were wrong in both directions and by large factors** — one row
+4.3× low, another 19% high. An aggregate that averages those out looks
+accurate while every row inside it is wrong, which is the argument for a
+per-file manifest over a headline.
+
+### The three struck rows, with the conditions that revive them
+
+Struck because each named nothing in the tree. Each survives here with its
+revival condition, so a later reader can reopen it rather than rediscover it.
+
+1. **"Slot ratchet"** — the phrase occurs in exactly two places repository-wide
+   (this note's build table and the proposal's §4) and matches no identifier,
+   file, or symbol. **Revives** if anyone can identify what it meant, as its own
+   row rather than folded silently into a neighbouring deletion.
+2. **"Attic notes pointing into git history"** — the prose-slice pass could not
+   turn it into a file list. **Revives** on the same condition.
+3. **`link-check-allow`** — this one is different: it was an *addition* to
+   accepted scope, admitted on condition that C7 fold it into the same rule as
+   the other two directive families and meet four falsifiers (a broken live path
+   still fails; an archived artifact is excluded from bulk scans and labelled
+   informational on direct invocation; a legitimate exemption still works; an
+   exemption matching nothing draws a stale warning). **It did not.** C7's code
+   review recorded that those falsifiers were never restated for this family,
+   and the scope delta the Maintainer accepted narrowed the de-scope to
+   `claim-check-allow` only. The row is therefore **struck under its own stated
+   condition — it stays as it is.**
+
+   **The lasting truth: there are still three directive families, not two.**
+   `claim-check-allow` moved to a config file; `cairn-internal-ref-allow` and
+   `link-check-allow` remain per-file directives. A future de-scope that
+   believes it is closing the last one will be wrong.
