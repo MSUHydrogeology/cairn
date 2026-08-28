@@ -2063,3 +2063,77 @@ member is unclosed work**, and it predates this plan.
 **C9 is now unblocked on every count.** Code review ran and was answered, the
 lockfile is correct, and the anchor the sisters would inherit is current. C9
 remains MAINTAINER-GATED per sister.
+
+## C9 complete, and the four decisions it leaves -- 2026-08-28
+
+**C9 is done.** Both sister migrations landed on `cairn-0.3.0-migration`
+branches, with each `master` untouched.
+
+| repo | suite | baseline | integrity |
+|---|---|---|---|
+| `modflow_tools` | 3472 passed, 0 failed | — | OK |
+| `lhm` | 1223 passed, 9 skipped, 0 failed | master had 1 failed | OK |
+
+**The Maintainer's authorizations, quoted:**
+
+> Do C9 now, then archive
+
+> Authorize all five as a batch
+
+The second closes the `defer` batch above. Those five deposits are now
+**authorized**, and the Dispositions line becomes `accept x13, guard x2,
+defer x5 (authorized), wontfix x0`.
+
+### Four decisions this chunk raises, which belong here rather than in a commit body
+
+**1. An engine change landed without the proposal its surface calls for.**
+`AGENTS.md` lists the scaffold/merge engine under *High-risk surfaces
+(Security-Review + proposal triggers)*. Commit `3a99590` changes
+`_apply_upgrade` and did not go through one. The author's argument for
+treating it as a correction rather than a design change: `upgrade.py:1561`
+already states the intended invariant -- *"base_hash = upstream for BOTH
+verbatim and mergeable"* -- and one path did not honour it. **That is the
+author's judgment, and the trigger is the Maintainer's to waive or enforce.**
+It is unpushed and reversible either way.
+
+**2. The AST baseline is stale and self-service is closed.** `_apply_upgrade`
+is baselined but absent from `_ast_attest._UPDATE_ALLOWLIST`, so
+`update-symbol` refuses it. Derived against the committed baseline, not
+carried forward: `CHANGED 1, MISSING 0, DUPLICATE 0`,
+`65a5f59ef844cfb9 -> dc53397782e91c18`, not pure motion. Per
+`AST_BASELINE_RUNBOOK.md` this is a Maintainer-run direct correction. Until
+it runs the suite carries exactly two failures, both in `test_ast_attest.py`.
+
+**3. C7's prose phase was incomplete, and it reached adopters.** Cairn went on
+*shipping* prose about the machinery it removed: the module roster advertised
+two uninstallable modules, all three onboarding scripts told a new adopter
+their fold-back ledger held a candidate, and `examples/minimal` promised a
+tool that no longer ships. Both sisters inherited these **through** the
+upgrade, because a file classified `clean` correctly takes upstream's version.
+Fixed at `e9e8af7`, with `test_module_roster.py` added so the roster is
+checked rather than remembered. **Recorded as a scope observation, not a
+deviation**: C7 said "dead doctrine sections" and it is arguable whether
+shipped templates were inside that. The Maintainer may read it either way.
+
+**4. Doctrine still carries the same staleness, and it is NOT fixed.**
+Eight files under `doctrine/` describe the removed machinery as live --
+`session-routines.md` gates a whole section on *"when the fold-back-ledger
+module is installed"*, `runtime-contract.md` lists `lifecycle_metrics` in a
+capability table, `rationale.md` describes the ledger as the mechanism, and
+`onboarding.md` documents a trigger that can no longer fire. This is the
+published methodology rather than the scaffolding around it, so it was left
+for an explicit decision rather than swept in. **It is open work.**
+
+### Two findings worth keeping after this plan archives
+
+**`upgrade --apply` deletes nothing.** `removed-upstream` is not in
+`_ADVANCING_KINDS` and the apply path contains no `unlink`. It *reports* what
+upstream dropped; retiring those files is the adopter's, by hand. The same is
+true of `slot-removed`. An adopter who trusts `--apply` to complete a
+migration is left carrying every removed file.
+
+**A trigger can outlive the thing it tests.** `first-foldback-candidate`
+checks for a ledger file nothing creates any more, so it can never fire --
+and `test_active_surfacing_mechanism.py` hard-codes it as one of four
+triggers, so removing it reddens a test. That coupling is why it stays
+deferred rather than being cleaned up in passing.
