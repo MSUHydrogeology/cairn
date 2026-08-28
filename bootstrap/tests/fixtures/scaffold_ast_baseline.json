@@ -520,7 +520,7 @@
     "type": "Expr"
   },
   "FunctionDef:_apply_upgrade": {
-    "digest": "65a5f59ef844cfb9",
+    "digest": "dc53397782e91c18",
     "span": [
       1788,
       2036
