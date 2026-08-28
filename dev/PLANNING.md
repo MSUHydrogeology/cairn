@@ -51,6 +51,31 @@ directions now order the remaining work** (Maintainer, 2026-07-22):
 first two weeks; and *fix defects, build nothing new* — any new tool or
 mechanism needs an explicit go-ahead, however well it reviews.
 
+**The subtraction sweep is done and archived (2026-08-28).** ~55,000 lines of
+Cairn's own process machinery removed, measured per file rather than headlined;
+the record is
+[`plans/archive/subtraction-sweep.md`](plans/archive/subtraction-sweep.md) and
+what it cost against what it was estimated to cost migrated to
+[`strategy/2026-08-21-claude-nimbleness-recovery.md`](strategy/2026-08-21-claude-nimbleness-recovery.md).
+The gate anchor moved `5f99273 -> bd66a70` after eight days stopped, and both
+sister repositories consumed the change — `lhm` merged, `modflow_tools` still on
+its migration branch.
+
+**Three defects surfaced during that work that nobody had filed**, each closed
+with a control test: the upgrade engine never advanced `base_hash` for verbatim
+records, so adopters silently froze on old versions of every shipped script and
+were told they had forked files they never touched; the AST attestation's
+known-new digest check ran only on its repair path, so an injected statement in
+the containment guard passed the gate; and Cairn was still *shipping* prose about
+machinery it had removed, which both sisters inherited through the upgrade.
+
+**Next is the `repin` tool** — the successor to the blocked digest corrector,
+designed in
+[`strategy/2026-08-28-claude-repin-revitalization.md`](strategy/2026-08-28-claude-repin-revitalization.md)
+and routed through the deliberate lane, because it is a trust-ceremony surface
+and the External floor belongs at the proposal where the design is still
+movable. Until it lands, corrections continue by hand.
+
 *(Refreshed at each goodnight scrub.)*
 <!-- cairn:end project-status -->
 
