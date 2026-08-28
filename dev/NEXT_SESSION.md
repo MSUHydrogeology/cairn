@@ -169,31 +169,47 @@ Fix what the findings describe; withdraw only what cannot be made honest.
   ```
 
   Until it runs, `test_ast_attest.py` has exactly 2 failures. **Full suite:
-  3178 passed, 1 skipped, 2 failed** — those two and nothing else.
+  3176 passed, 0 skipped, 2 failed** — those two and nothing else,
+  measured on a quiet tree.
+
+  **The attestation itself was holed until 2026-08-28**, and the fix
+  changes what a clean run means. `verify` classifies an altered
+  known-new body as NEW, never CHANGED, and the digest check that would
+  have caught it ran only on the `update-symbol` repair path — so a
+  statement injected into `verify_within_root`, the containment guard,
+  printed `note: NEW` and exited 0. Closed at `3079d27`; **a `verify`
+  run without `--known-new` still passes over an altered known-new body
+  and warns that it did — treat such a run as not having checked.**
 
   Also open on that commit: AGENTS.md makes the scaffold engine a proposal +
   Security-Review trigger. The change is a bounded correctness fix restoring
   intent the code already states at `upgrade.py:1561`, but whether it routes
   through a proposal is the Maintainer's call, not the author's.
-* **`_gate_manifest.py verify` reports HOLD, and that is correct** *(dated
-  2026-08-28)*. Two violations, both `scripts/reanchor_ceremony.py`:
-  FROZEN-MODIFIED and FROZEN-OID. The 2026-08-28 ceremony re-froze the manifest
-  at tree `0353b32`; the `ssh-add` fix landed after it. `scripts/*.py` is a
-  gate-frozen glob, so **any** edit there HOLDs the manifest until the next
-  re-anchor. **Do not regenerate the fixture to clear it.** An actor that edits
-  a gate-control file and then re-freezes it is the exact attack the manifest
-  exists to detect, and the tool's own docstring says so. It clears at the next
-  ceremony.
+* **`_gate_manifest.py verify` reports HOLD — 44 violations — and a re-anchor
+  is genuinely owed** *(re-measured 2026-08-28, after the doctrine and
+  attestation work)*. By class: 17 FROZEN-MODIFIED + 17 FROZEN-OID (frozen
+  files edited), 7 COLLECTION-DROPPED (the retired `first-foldback-candidate`
+  trigger's test class, and the parametrize case that only existed because
+  `_MULTI_SCRIPT_MODULES` was empty), 3 SKIP-XFAIL-NEW (new test nodes; the
+  label is about node identity, not skip markers).
 
-  Two things worth knowing about this state. First, **the suite stays green
-  while it holds** -- `test_gate_manifest.py` self-verifies a freshly produced
-  manifest and never diffs the committed fixture, so nothing reddens; it was
-  found by running `verify` directly, not by testing. Second, the ceremony's own
-  preflight reads CLEAR, because `check` re-derives the manifest from raw commit
-  objects rather than diffing the fixture. The two disagree by design and answer
-  different questions.
+  **Do not clear it by regenerating the fixture on its own.** An actor that
+  edits a gate-control file and then re-freezes it is the attack the manifest
+  detects, and the tool's own docstring says so. It clears at the ceremony.
 
-  This is also a real cost worth naming: between ceremonies, editing any file
-  under `bootstrap/tests/**` or `scripts/*.py` leaves the repository in HOLD.
-  That is an argument for the re-anchor cadence the repin strategy proposes,
-  not an argument for looser freezing.
+  Three properties of this state are counter-intuitive and each cost time
+  today:
+  * **A committed change to a frozen file does not redden the suite; an
+    uncommitted one does.** The check derives a manifest from the committed
+    state and compares it to the working tree. Five gate-manifest tests failed
+    mid-session purely because edits were not yet committed, and cleared on
+    commit — not because anything was wrong.
+  * **The suite passes while the manifest HOLDs.** `test_gate_manifest.py`
+    self-verifies a freshly produced manifest and never diffs the committed
+    fixture. This was found by running `verify` directly, never by testing.
+  * The ceremony's own preflight reads CLEAR regardless, because `check`
+    re-derives from raw commit objects. The two disagree by design.
+
+  Between ceremonies, any edit under `bootstrap/tests/**` or `scripts/*.py`
+  puts the repository here. That is an argument for the re-anchor cadence the
+  repin strategy proposes, not for looser freezing.
