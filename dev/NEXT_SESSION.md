@@ -51,6 +51,24 @@ figure, and expect its fidelity manifest to want the same follow-up `lhm` got.
 * **`2026-08-20-claude-adopter-path-consolidation`** — `awaiting-review`,
   untouched throughout.
 
+* **A standing constraint just expired, and nothing recorded it.** The
+  nimbleness note's Tier 1.6 declared *"no new doctrine, gates, lifecycle
+  vocabulary, ledgers, or trackers **until the Tier-2 removal pass is
+  complete**."* Tier 2 was the subtraction sweep, and it completed 2026-08-28 —
+  **so the moratorium's own lift condition has fired.** It was never formally
+  declared in any live artifact, which is why nothing enforced it and why
+  nothing announced its end either. Worth deciding deliberately rather than
+  letting it lapse: a constraint that quietly stops being true, with no record
+  of when, is the kind of thing a later reader cannot reconstruct.
+
+* **The nimbleness note itself is NOT archivable yet**, though it looks it. Its
+  Tier 2 is spent and its outcome now sits in the note, but **Tier 1 and Tier 3
+  are unadopted** — the proposal/plan/review size budgets landed nowhere, the
+  moratorium above landed nowhere, and Tier 3 in full landed nowhere. Its status
+  is still `revised`, two states short of `promoted`. Archiving it would mark
+  live direction as historical, and six artifacts cite it. The Maintainer has
+  comments pending on it; those fold in **inline**, per this tier's discipline.
+
 ## Things that are true and will look wrong
 
 * **`check_cairn` reports 6.** Two are pre-existing; four are `line-bounds`
