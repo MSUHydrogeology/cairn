@@ -107,3 +107,25 @@ Fix what the findings describe; withdraw only what cannot be made honest.
   **known, dated non-pass**: the lockfile shrank and that proposal is
   append-only, so its citations were corrected by appending, not editing.
 * `dev/measurement/collision_log.md` is untracked and predates all of this.
+* **`_gate_manifest.py verify` reports HOLD, and that is correct** *(dated
+  2026-08-28)*. Two violations, both `scripts/reanchor_ceremony.py`:
+  FROZEN-MODIFIED and FROZEN-OID. The 2026-08-28 ceremony re-froze the manifest
+  at tree `0353b32`; the `ssh-add` fix landed after it. `scripts/*.py` is a
+  gate-frozen glob, so **any** edit there HOLDs the manifest until the next
+  re-anchor. **Do not regenerate the fixture to clear it.** An actor that edits
+  a gate-control file and then re-freezes it is the exact attack the manifest
+  exists to detect, and the tool's own docstring says so. It clears at the next
+  ceremony.
+
+  Two things worth knowing about this state. First, **the suite stays green
+  while it holds** -- `test_gate_manifest.py` self-verifies a freshly produced
+  manifest and never diffs the committed fixture, so nothing reddens; it was
+  found by running `verify` directly, not by testing. Second, the ceremony's own
+  preflight reads CLEAR, because `check` re-derives the manifest from raw commit
+  objects rather than diffing the fixture. The two disagree by design and answer
+  different questions.
+
+  This is also a real cost worth naming: between ceremonies, editing any file
+  under `bootstrap/tests/**` or `scripts/*.py` leaves the repository in HOLD.
+  That is an argument for the re-anchor cadence the repin strategy proposes,
+  not an argument for looser freezing.
