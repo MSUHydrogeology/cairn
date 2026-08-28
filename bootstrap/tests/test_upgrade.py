@@ -425,6 +425,57 @@ class TestVerbatim:
         assert s.classify_verbatim(script, h, script) == "up-to-date"
         assert s.classify_verbatim(None, h, script) == "missing"
 
+    def test_apply_leaves_base_hash_equal_to_hash_for_an_untouched_verbatim(
+        self, tmp_path: Path,
+    ) -> None:
+        """After an apply installs upstream bytes for a verbatim record, that
+        record's ``base_hash`` must equal its ``hash``.
+
+        ``base_hash`` is the as-shipped baseline the NEXT upgrade uses for fork
+        detection (``classify_verbatim``). A verbatim record has no
+        ``base_cache``, so if apply advances ``hash`` without ``base_hash`` the
+        two fields disagree while the file on disk is untouched upstream
+        content -- and the next upgrade reads that disagreement as an adopter
+        fork. It then refuses to update the file, to protect a customization
+        that does not exist, and the adopter is frozen on that version for
+        good. Measured on two real adopter trees: 32 files stuck on templates
+        four months old, with no adopter edit behind any of them.
+        """
+        assert _install(tmp_path) == 0
+        lock = s.read_lockfile(tmp_path)
+        verbatim = [r for r in lock["files"]
+                    if r.get("verbatim") and (tmp_path / r["dst"]).exists()]
+        assert verbatim, "the preset must install at least one verbatim file"
+
+        # Model an OLD install: the file and both hash fields carry content
+        # that predates the current upstream template, so the upgrade sees a
+        # genuine upstream change with no adopter edit behind it.
+        rec = verbatim[0]
+        old = b"# old upstream content\n"
+        (tmp_path / rec["dst"]).write_bytes(old)
+        old_h = "sha256:" + s._sha256_hex(old)
+        for r in lock["files"]:
+            if r["dst"] == rec["dst"]:
+                r["hash"] = r["base_hash"] = old_h
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text(
+            s._emit_lock_yaml(lock), encoding="utf-8")
+
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert s.main(["upgrade", "--target", str(tmp_path), "--apply",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+
+        after = next(r for r in s.read_lockfile(tmp_path)["files"]
+                     if r["dst"] == rec["dst"])
+        on_disk = "sha256:" + s._sha256_hex((tmp_path / rec["dst"]).read_bytes())
+        assert after["hash"] == on_disk, "apply must advance hash to the applied bytes"
+        assert after["base_hash"] == after["hash"], (
+            f"base_hash went stale: hash={after['hash'][:19]} "
+            f"base_hash={after.get('base_hash', '(none)')[:19]}. The next "
+            f"upgrade will read {rec['dst']} as an adopter fork and stop "
+            f"updating it."
+        )
+
 
 # ---------------------------------------------------------------------------
 # upgrade subcommand: modes + safety contract

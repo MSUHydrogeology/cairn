@@ -2135,16 +2135,33 @@ def _apply_upgrade(
             if resolved is not None:
                 rec["dst"] = resolved
         if rec["dst"] in staged_set:
-            rec["hash"] = "sha256:" + _sha256_hex((target / rec["dst"]).read_bytes())
+            new_h = "sha256:" + _sha256_hex((target / rec["dst"]).read_bytes())
+            rec["hash"] = new_h
             if rec.get("base_cache"):
                 cache_abs = target / rec["base_cache"]
                 if cache_abs.exists():
                     rec["base_hash"] = \
                         "sha256:" + _sha256_hex(cache_abs.read_bytes())
+            elif rec.get("verbatim"):
+                # A verbatim record has NO base_cache -- there is no merge, so
+                # the file IS the template and the bytes just applied ARE the
+                # new as-shipped baseline. Advancing `hash` alone leaves
+                # `base_hash` pinned to the install-time template forever, and
+                # `base_hash` is what `classify_verbatim` compares against for
+                # fork detection. The next upgrade then reads untouched
+                # upstream content as an adopter fork, declines to update it to
+                # protect a customization nobody made, and the adopter is
+                # frozen on that version permanently.
+                rec["base_hash"] = new_h
         elif rec["dst"] in rehash_set and (target / rec["dst"]).exists():
             # #48: heal a stale verbatim hash whose on-disk content already
             # equals the new upstream (no content swap -- recompute on disk).
-            rec["hash"] = "sha256:" + _sha256_hex((target / rec["dst"]).read_bytes())
+            healed = "sha256:" + _sha256_hex((target / rec["dst"]).read_bytes())
+            rec["hash"] = healed
+            if rec.get("verbatim"):
+                # Same reason as above: on-disk already equals the new
+                # upstream, so it is also the new as-shipped baseline.
+                rec["base_hash"] = healed
         new_files.append(rec)
     # #47: append lockfile records for new core-like files added this upgrade
     # (auto-added; src/verbatim/base_cache carried through stage metadata).
