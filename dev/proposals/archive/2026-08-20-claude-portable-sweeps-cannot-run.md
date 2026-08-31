@@ -18,7 +18,7 @@ change to executable resolution or the revalidation points, no change to
 **Related**: adopter issue
 [#4](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/4).
 Sibling drafts opened the same day:
-[`2026-08-20-claude-adopt-into-existing-tree`](archive/2026-08-20-claude-adopt-into-existing-tree.md),
+[`2026-08-20-claude-adopt-into-existing-tree`](2026-08-20-claude-adopt-into-existing-tree.md),
 [`2026-08-20-claude-scanner-claim-scope`](2026-08-20-claude-scanner-claim-scope.md).
 **Plan review**: required(**Internal**) — an Internal proposal review spends no
 different-agent-type read, so no `Plan readiness` inheritance is claimed and the
@@ -244,7 +244,7 @@ that from the output. The three are cheap and they unblock each other in order.
 * **Public-path → test mapping.** `probe_version`, the new extractor,
   `select_mode`, and `screen_local_config`, each exercised through its real
   entry point in
-  [`test_portable_security_sweeps.py`](../../bootstrap/tests/test_portable_security_sweeps.py).
+  [`test_portable_security_sweeps.py`](../../../bootstrap/tests/test_portable_security_sweeps.py).
 * **Known omissions.** The extractor is pinned against observed shapes only. The
   ceremony in D3 is documented, not executed — **this proposal admits no
   artifact and reaches no full mode.** Whether the two `glab`/VS Code keys are
@@ -959,7 +959,7 @@ here grants authority.
 **Public paths → tests.** `probe_version`, the extractor, `parse_version`,
 `select_mode`, `screen_local_config`, and the twin guard — all through their
 real entry points in
-[`test_portable_security_sweeps.py`](../../bootstrap/tests/test_portable_security_sweeps.py).
+[`test_portable_security_sweeps.py`](../../../bootstrap/tests/test_portable_security_sweeps.py).
 
 ### Security preflight — S5, rewritten
 
@@ -1370,7 +1370,7 @@ added here grants authority.
 **Public paths → tests.** `probe_version`, the extractor, `parse_version`,
 `select_mode`, `screen_local_config`, `_leg_argv`, and the twin guard — all
 through their real entry points in
-[`test_portable_security_sweeps.py`](../../bootstrap/tests/test_portable_security_sweeps.py).
+[`test_portable_security_sweeps.py`](../../../bootstrap/tests/test_portable_security_sweeps.py).
 
 ### Security preflight — S1 to S5, restated in full
 
