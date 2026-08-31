@@ -6,8 +6,8 @@
 **Evaluator**: Antigravity (Gemini 3.7 Flash)  
 **Target Proposals**:
 1. [`dev/proposals/2026-08-20-claude-adopt-into-existing-tree.md`](../proposals/archive/2026-08-20-claude-adopt-into-existing-tree.md) (Operative: **Revision 2**) — Issues #5 (gaps 1–2), #7
-2. [`dev/proposals/2026-08-20-claude-portable-sweeps-cannot-run.md`](../proposals/2026-08-20-claude-portable-sweeps-cannot-run.md) (Operative: **Revision 4**) — Issue #4
-3. [`dev/proposals/2026-08-20-claude-scanner-claim-scope.md`](../proposals/2026-08-20-claude-scanner-claim-scope.md) (Operative: **Revision 4**) — Issues #5 (gap 3), #6
+2. [`dev/proposals/2026-08-20-claude-portable-sweeps-cannot-run.md`](../proposals/archive/2026-08-20-claude-portable-sweeps-cannot-run.md) (Operative: **Revision 4**) — Issue #4
+3. [`dev/proposals/2026-08-20-claude-scanner-claim-scope.md`](../proposals/archive/2026-08-20-claude-scanner-claim-scope.md) (Operative: **Revision 4**) — Issues #5 (gap 3), #6
 
 ---
 

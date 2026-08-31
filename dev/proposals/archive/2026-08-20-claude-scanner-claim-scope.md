@@ -20,7 +20,7 @@ is scanned, to what is reported, or to the residual baseline's contents.**
 [#6](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/6).
 Siblings opened the same day:
 [`2026-08-20-claude-portable-sweeps-cannot-run`](2026-08-20-claude-portable-sweeps-cannot-run.md),
-[`2026-08-20-claude-adopt-into-existing-tree`](archive/2026-08-20-claude-adopt-into-existing-tree.md).
+[`2026-08-20-claude-adopt-into-existing-tree`](2026-08-20-claude-adopt-into-existing-tree.md).
 **Plan review**: required(**Internal**) — an Internal proposal review spends no
 different-agent-type read, so no `Plan readiness` inheritance is claimed. **No
 Security Review trigger**: no trust boundary is added, moved or widened, and no
@@ -65,7 +65,7 @@ evidence that covers only its own audited set.
 
 The adopter correctly notes the disagreement is downstream of the silent-keep
 defect drafted in
-[`2026-08-20-claude-adopt-into-existing-tree`](archive/2026-08-20-claude-adopt-into-existing-tree.md)
+[`2026-08-20-claude-adopt-into-existing-tree`](2026-08-20-claude-adopt-into-existing-tree.md)
 — two scanners from different upstreams. **It still needs fixing independently:**
 that proposal stops the mixed tree, but an imperative that overreaches its
 audited set is wrong on a clean tree too. It just stops getting caught.
@@ -244,7 +244,7 @@ actually runs.
   (`Pillow`/`pillow`); a closure of size zero.
 * **Public-path → test mapping.** `run_content_scan` and the exit-3 path, plus
   the pip-audit leg's report assembly, through their real entry points in
-  [`test_security_stack.py`](../../bootstrap/tests/test_security_stack.py).
+  [`test_security_stack.py`](../../../bootstrap/tests/test_security_stack.py).
 * **Known omissions.** The annotation's *accuracy* is not claimed to be
   complete — only that it is honest about `unknown` and that it gates nothing.
   Whether the four measured baseline consumers are the complete set is
@@ -340,7 +340,7 @@ alone** — D2 is the whole of it.
 **It holds the last piece of issue
 [#5](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/5), and
 cannot close it alone.** Gap 3 is D1 here; gaps 1 and 2 are in
-[`2026-08-20-claude-adopt-into-existing-tree`](archive/2026-08-20-claude-adopt-into-existing-tree.md).
+[`2026-08-20-claude-adopt-into-existing-tree`](2026-08-20-claude-adopt-into-existing-tree.md).
 Issue #5 closes **only when both proposals have landed**, and the closing
 comment names which proposal took which gap — the adopter offered the split
 (*"Happy to file separately if that suits triage better"*), so it is owed an
@@ -973,7 +973,7 @@ zero; a distribution with zero vulnerabilities.
 **Public paths → tests.** `run_content_scan`, `_print_summary`, the exit-3 path,
 `classify_pip_audit_output` and the leg's report assembly, through their real
 entry points in
-[`test_security_stack.py`](../../bootstrap/tests/test_security_stack.py).
+[`test_security_stack.py`](../../../bootstrap/tests/test_security_stack.py).
 
 ### Security preflight — revised for the declared Security Review
 
@@ -1424,7 +1424,7 @@ each exceeded; a distribution with zero vulnerabilities.
 **Public paths → tests.** `run_content_scan`, `_print_summary`, the exit-3 path,
 `classify_pip_audit_output`, the closure walk, and the report assembly — through
 their real entry points in
-[`test_security_stack.py`](../../bootstrap/tests/test_security_stack.py).
+[`test_security_stack.py`](../../../bootstrap/tests/test_security_stack.py).
 
 ### Security preflight — S1 to S5, restated in full
 
@@ -1495,7 +1495,7 @@ adopter's 299/93/212 measurement is field evidence, not a test.
   closes with this proposal alone — D2 and D2b are the whole of it.
 * **Issue [#5](https://github.com/MSUHydrogeology/cairn-scientist-ai-teams/issues/5)**:
   this proposal holds **gap 3** only; gaps 1–2 are in
-  [`2026-08-20-claude-adopt-into-existing-tree`](archive/2026-08-20-claude-adopt-into-existing-tree.md).
+  [`2026-08-20-claude-adopt-into-existing-tree`](2026-08-20-claude-adopt-into-existing-tree.md).
   #5 closes **only when both have landed**; **whichever lands second carries the
   close, the first posts a progress comment**, and the comment names which
   proposal took which gap — the adopter offered the split, so it is owed an
