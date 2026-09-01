@@ -1039,6 +1039,231 @@ def installed_distribution_names() -> set[str]:
     return names
 
 
+# --------------------------------------------------------------------------
+# The declared dependency closure -- a reachability axis for triage, never a
+# gate. See ``resolve_declared_closure`` for the authority and the failure
+# direction; the annotation it feeds decides nothing.
+# --------------------------------------------------------------------------
+
+#: Traversal bounds. Distribution metadata is package-controlled input, so the
+#: walk is capped in both breadth and depth. The numbers are far above any real
+#: closure -- a scientific stack enumerates a few hundred distributions and the
+#: deepest real chains run tens of nodes -- so a legitimate closure never trips
+#: a cap, while hostile or looping metadata cannot drive an unbounded walk.
+#: Exceeding either cap makes the WHOLE closure unknown, never a truncated one:
+#: a partial closure silently mislabels everything it did not reach.
+_CLOSURE_NODE_CAP = 2000
+_CLOSURE_DEPTH_CAP = 32
+
+#: A PEP 508 requirement's distribution name, anchored at the start of the
+#: stripped requirement. Anchoring is the point: an unanchored search finds a
+#: name inside a version specifier or a marker, which is how a hand-built
+#: closure produced entries like ``cffi~`` and ``mdurl~``.
+_REQUIREMENT_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+
+#: Environment-marker tokens. ``extra`` has to be recognised as a *variable*
+#: rather than as text, so quoted strings are one token and bare identifiers
+#: are another; a substring test for ``extra ==`` cannot tell the two apart.
+_MARKER_TOKEN_RE = re.compile(
+    r"""(?P<str>'[^']*'|"[^"]*")
+      | (?P<op>===|==|!=|<=|>=|~=|<|>|\(|\)|,)
+      | (?P<name>[A-Za-z_][A-Za-z0-9_.]*)
+      | (?P<ws>\s+)""",
+    re.VERBOSE,
+)
+
+
+def _split_requirement_marker(text: str) -> tuple[str, str | None]:
+    """Split a PEP 508 requirement at its marker separator, quote-aware.
+
+    The separator is the first ``;`` **outside** a quoted string. A naive
+    ``split(";")`` cuts inside a quoted marker value and hands the parser a
+    fragment."""
+    quote = None
+    for index, char in enumerate(text):
+        if quote is not None:
+            if char == quote:
+                quote = None
+        elif char in "'\"":
+            quote = char
+        elif char == ";":
+            return text[:index], text[index + 1:]
+    return text, None
+
+
+def _tokenize_marker(marker: str) -> list[tuple[str, str]] | None:
+    """Marker text -> ``(kind, text)`` tokens, or ``None`` if it does not
+    tokenize. Whitespace is dropped, so adjacency is spacing-independent."""
+    tokens: list[tuple[str, str]] = []
+    position = 0
+    while position < len(marker):
+        match = _MARKER_TOKEN_RE.match(marker, position)
+        if match is None:
+            return None
+        position = match.end()
+        if match.lastgroup != "ws":
+            tokens.append((match.lastgroup, match.group()))
+    return tokens
+
+
+def _marker_extra_disposition(marker: str) -> str:
+    """How an environment marker bears on extras: ``included``,
+    ``extras-gated``, ``unreadable`` or ``whole-closure-unknown``.
+
+    Only an **equality** against the bare ``extra`` variable, in either operand
+    order, gates a requirement on an extra. ``extra`` inside quotes is a value
+    and means nothing here. Any other unquoted use of the variable is an
+    expression whose truth this walk cannot decide, and deciding it wrongly
+    would put a distribution in or out of the closure on a guess -- so it makes
+    the whole closure unknown instead. Non-extras markers are included without
+    evaluation: this is a triage axis, and a requirement excluded because it is
+    Windows-only would read as out-of-closure on Linux, which is worse than
+    including it."""
+    tokens = _tokenize_marker(marker)
+    if tokens is None:
+        return "unreadable"
+    for index, (kind, text) in enumerate(tokens):
+        if kind != "name" or text != "extra":
+            continue
+        following = tokens[index + 1] if index + 1 < len(tokens) else None
+        after = tokens[index + 2] if index + 2 < len(tokens) else None
+        preceding = tokens[index - 1] if index >= 1 else None
+        before = tokens[index - 2] if index >= 2 else None
+        if following == ("op", "==") and after is not None and after[0] == "str":
+            return "extras-gated"
+        if preceding == ("op", "==") and before is not None and before[0] == "str":
+            return "extras-gated"
+        return "whole-closure-unknown"
+    return "included"
+
+
+def _requirement_edge(raw: str) -> tuple[str, str | None]:
+    """One ``Requires-Dist`` line -> ``(disposition, normalized name | None)``.
+
+    Dispositions: ``include`` (follow the edge), ``skip`` (extras-gated, not
+    part of the default closure), ``unreadable`` (the edge cannot be named, so
+    neither it nor anything beyond it is known), ``whole-closure-unknown``.
+
+    An unnameable edge takes the **unreadable** disposition rather than the
+    absent one. The distinction decides what the un-reached distributions are
+    called: an absent requirement is genuinely not in the closure, while an
+    edge that could not be read might have led anywhere, so calling the
+    remainder ``out-of-closure`` would assert something this walk never
+    established."""
+    requirement, marker = _split_requirement_marker(raw.strip())
+    match = _REQUIREMENT_NAME_RE.match(requirement.strip())
+    if match is None:
+        return "unreadable", None
+    if marker is not None:
+        disposition = _marker_extra_disposition(marker)
+        if disposition != "included":
+            return ("skip" if disposition == "extras-gated" else disposition), None
+    return "include", _canonical_name(match.group())
+
+
+def _root_distributions(top_level: str) -> list[str] | None:
+    """The installed distributions providing an importable top-level package,
+    PEP 503-normalized, or ``None`` if the mapping cannot be read.
+
+    ``packages_distributions()`` is the authority deliberately: it reports what
+    is **installed**, which is the same world the audited leg reports on. A
+    project file such as ``pyproject.toml`` describes what was *declared*, and
+    a declared-versus-installed mismatch would silently reclassify real
+    findings."""
+    try:
+        mapping = importlib.metadata.packages_distributions()
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return [_canonical_name(name) for name in mapping.get(top_level, ())]
+
+
+def _distribution_requirements(name: str) -> list[str] | None:
+    """One installed distribution's ``Requires-Dist`` lines, or ``None`` when
+    its metadata cannot be read. Called only for names already known to be
+    installed, so ``None`` always means unreadable, never absent."""
+    try:
+        dist = importlib.metadata.distribution(name)
+        return list(dist.requires or ())
+    except Exception:  # noqa: BLE001 -- package-controlled metadata; any read
+        return None    # failure is UNKNOWN, never an absent requirement
+
+
+def resolve_declared_closure(
+    python_package: Path,
+) -> tuple[frozenset[str], frozenset[str]] | None:
+    """The distributions reachable from the project's own package, and the
+    distributions whose reachability could not be decided.
+
+    Returns ``(in_closure, unknown)`` as PEP 503-normalized names, or ``None``
+    when the **whole** closure is unknown -- a traversal cap exceeded, an
+    ``extra`` expression this walk will not guess at, or a root that does not
+    resolve to exactly one installed distribution.
+
+    **Authority**: the installed metadata graph, rooted at the distribution
+    providing the top-level package the lockfile's ``python_package`` names.
+
+    **Failure direction, and why it is the whole point**: every failure moves a
+    distribution toward ``unknown``, never toward ``in-closure`` or
+    ``out-of-closure``. The result feeds a *reachability annotation* on a
+    report and gates nothing -- no exit code, no tier, no coverage count -- so
+    being wrong costs triage order, not coverage. That tolerance exists only
+    because the annotation decides nothing; if it ever gates what is reported,
+    this walk is no longer safe to be this approximate."""
+    discoverable = installed_distribution_names()
+    roots = _root_distributions(python_package.name)
+    if roots is None or len(roots) != 1:
+        # Zero (or an ambiguous several) means the project's own package is not
+        # identifiable in this environment, so nothing here can be partitioned.
+        return None
+
+    in_closure: set[str] = set()
+    unknown_seeds: set[str] = set()
+    remainder_unknown = False
+    visited: set[str] = set()
+    # A list plus a read index is the queue: breadth-first, no import.
+    frontier: list[tuple[str, int]] = [(roots[0], 0)]
+    head = 0
+    while head < len(frontier):
+        name, depth = frontier[head]
+        head += 1
+        if name in visited:
+            continue          # the visited set is what terminates cycles
+        visited.add(name)
+        if len(visited) > _CLOSURE_NODE_CAP or depth > _CLOSURE_DEPTH_CAP:
+            return None
+        requirements = _distribution_requirements(name)
+        if requirements is None:
+            unknown_seeds.add(name)
+            remainder_unknown = True
+            continue
+        in_closure.add(name)
+        for raw in requirements:
+            disposition, required = _requirement_edge(raw)
+            if disposition == "whole-closure-unknown":
+                return None
+            if disposition == "unreadable":
+                remainder_unknown = True
+                continue
+            if disposition == "skip":
+                continue
+            if required in discoverable:
+                frontier.append((required, depth + 1))
+            # An absent requirement terminates this branch contributing
+            # nothing: it is not installed, so it is not in the audited set
+            # either, and nothing downstream of it exists here to mislabel.
+
+    if remainder_unknown:
+        # An edge that could not be read might have reached anything the walk
+        # did not, so the entire un-reached remainder is unknown rather than
+        # out-of-closure. The reached set is still established and keeps its
+        # in-closure answer.
+        unknown = ((frozenset(discoverable) | frozenset(unknown_seeds))
+                   - frozenset(in_closure))
+    else:
+        unknown = frozenset()
+    return frozenset(in_closure), unknown
+
+
 def conda_non_coverage(
     prefix: Path, python_dist_names: set[str], *,
     max_records: int = _CONDA_META_MAX_RECORDS,

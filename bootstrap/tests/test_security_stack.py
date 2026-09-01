@@ -1609,3 +1609,284 @@ def test_d_t8_hostile_conda_meta_is_bounded_and_fails_closed(orchb, tmp_path):
     assert scope.conda_only == 1
     # A prefix that is not a conda environment is simply not applicable.
     assert orchb.conda_non_coverage(tmp_path / "nope", set()).applicable is False
+
+
+# --- The declared dependency closure: the reachability axis ------------------
+#
+# CHANNEL NOTE. Subject: resolve_declared_closure. Oracles: literal requirement
+# strings and a literal installed-name set the test itself authors, injected at
+# the three seams the walk reads its environment through, plus this file's own
+# import graph read with `ast`. No expectation here is derived from the walk.
+#
+# What the walk is for: the pip-audit leg audits the whole environment, which on
+# a conda scientific stack is several times the project's own dependency
+# closure. The closure lets each reported distribution carry an in-closure /
+# out-of-closure / unknown label so a reader can triage. It gates nothing, and
+# every failure direction below moves a distribution toward `unknown`.
+
+#: The lockfile's `python_package` is a path; only its final component -- the
+#: importable top-level name -- reaches the walk.
+_CLOSURE_PKG = Path("src") / "demo"
+_ROOT_DIST = "demo-pkg"
+
+#: Messy by construction, because real metadata is: an extras-gated edge, a
+#: non-extras marker-gated edge, a Pillow/pillow normalization pair, a `~`
+#: terminated identifier, a requirement nothing installed provides, a cycle
+#: back to the root, a two-node cycle, and a distribution in nobody's closure.
+_MESSY = {
+    _ROOT_DIST: [
+        "requests>=2.0",
+        "Pillow (>=10)",
+        'sphinx; extra == "docs"',
+        'tomli; python_version < "3.11"',
+        "cffi~=1.0",
+        "mdurl~",
+        "nothing-provides-this>=1",
+        "cyclic-a",
+    ],
+    "requests": ["urllib3", _ROOT_DIST],
+    "pillow": [],
+    "tomli": [],
+    "cffi": [],
+    "mdurl": [],
+    "urllib3": [],
+    "cyclic-a": ["cyclic-b"],
+    "cyclic-b": ["cyclic-a"],
+    # Reached by nobody: the 71%-of-the-environment case the axis exists for.
+    "orphan-dist": [],
+    # Extras-gated, so installed but outside the default closure.
+    "sphinx": [],
+}
+_MESSY_REACHED = frozenset({
+    _ROOT_DIST, "requests", "pillow", "tomli", "cffi", "mdurl", "urllib3",
+    "cyclic-a", "cyclic-b",
+})
+
+
+def _closure_env(orch, monkeypatch, requirements, *, installed=None,
+                 roots=(_ROOT_DIST,)):
+    """Point the walk at a literal environment.
+
+    A `None` requirements value is an *installed* distribution whose metadata
+    cannot be read; a missing key is a name that is simply not installed. Only
+    names in `installed` are ever looked up, so the two never collide."""
+    names = set(requirements) if installed is None else set(installed)
+    monkeypatch.setattr(orch, "installed_distribution_names", lambda: set(names))
+    monkeypatch.setattr(orch, "_root_distributions",
+                        lambda _top: None if roots is None else list(roots))
+    monkeypatch.setattr(orch, "_distribution_requirements",
+                        lambda name: requirements.get(name, []))
+
+
+def test_closure_is_rooted_in_the_installed_distribution_metadata(orchb,
+                                                                  monkeypatch):
+    """The root is the distribution that *provides* the project's top-level
+    package in this environment. Rooting in a project file instead would
+    describe what was declared, and a declared-versus-installed mismatch
+    reclassifies real findings on a fact the audited environment contradicts."""
+    # Control: the real resolver reads the live mapping and discriminates.
+    assert orchb._root_distributions("pytest"), (
+        "control: the authority must resolve a package known to be installed")
+    assert orchb._root_distributions("cairn-no-such-top-level") == []
+
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert in_closure == _MESSY_REACHED
+    assert unknown == frozenset()
+
+    # A different root gives a different closure over the same environment.
+    _closure_env(orchb, monkeypatch, _MESSY, roots=("cyclic-a",))
+    other, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert other == frozenset({"cyclic-a", "cyclic-b"})
+
+
+def test_requirement_names_are_normalized_before_comparison(orchb, monkeypatch):
+    """`Pillow` in a requirement and `pillow` in the environment are one
+    distribution. Comparing raw names splits it in two and reports the
+    project's own dependency as outside its closure."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "pillow" in in_closure
+    assert "Pillow" not in in_closure, "names are PEP 503 canonical on both sides"
+
+
+def test_requirement_identifier_stops_at_the_version_specifier(orchb,
+                                                               monkeypatch):
+    """A hand-built closure produced entries like `cffi~` and `mdurl~` because
+    it took the requirement text up to a delimiter it did not include `~` in.
+    An anchored identifier match ends at the first character that cannot be
+    part of a name."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert {"cffi", "mdurl"} <= in_closure
+    assert not any("~" in name for name in in_closure)
+
+
+@pytest.mark.parametrize("marker", [
+    'extra == "docs"',
+    'extra=="docs"',
+    'extra  ==  "docs"',
+    '"docs" == extra',
+    'python_version >= "3.9" and extra == "docs"',
+])
+def test_extras_gated_requirements_are_excluded(orchb, monkeypatch, marker):
+    """An extra is opt-in, so a requirement gated on one is not part of the
+    default closure. Spacing and operand order are formatting, not meaning."""
+    _closure_env(orchb, monkeypatch,
+                 {**_MESSY, _ROOT_DIST: [f"sphinx; {marker}"]})
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert in_closure == frozenset({_ROOT_DIST})
+    assert "sphinx" not in in_closure
+    assert unknown == frozenset()
+
+
+def test_quoted_extra_text_is_a_value_not_the_marker_variable(orchb,
+                                                              monkeypatch):
+    """`extra` inside quotes is a string a package chose, not the marker
+    variable. A substring test for `extra ==` cannot tell the two apart and
+    silently drops a real dependency out of the closure."""
+    _closure_env(orchb, monkeypatch, {
+        **_MESSY,
+        _ROOT_DIST: ['requests; platform_release == "extra == dev"'],
+    })
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "requests" in in_closure
+    assert unknown == frozenset()
+
+
+@pytest.mark.parametrize("marker", ['extra != "docs"', 'extra in "docs"'])
+def test_unrecognized_extra_expression_makes_the_closure_unknown(orchb,
+                                                                 monkeypatch,
+                                                                 marker):
+    """Only equality against `extra` has a meaning this walk can act on.
+    Guessing at any other expression puts a distribution in or out of the
+    closure on an assumption, which is the one thing the axis must not do."""
+    _closure_env(orchb, monkeypatch,
+                 {**_MESSY, _ROOT_DIST: [f"sphinx; {marker}"]})
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+
+def test_non_extras_markers_are_included_without_evaluation(orchb, monkeypatch):
+    """A requirement excluded because it is Windows-only, or because the
+    running interpreter is too new, would read `out-of-closure` on a machine
+    where it genuinely is a dependency. Over-including costs triage order;
+    under-including asserts something false."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    # The canonical interpreter is 3.13, so `python_version < "3.11"` is false
+    # here: tomli is present precisely because the marker is not evaluated.
+    assert sys.version_info >= (3, 11), "control: the marker must be FALSE here"
+    assert "tomli" in in_closure
+
+
+def test_uninstalled_requirement_terminates_the_branch_without_unknown(
+        orchb, monkeypatch):
+    """A requirement nothing installed provides is not in the audited
+    environment either, so nothing downstream of it can be mislabelled. It
+    contributes no uncertainty -- unlike an edge that could not be read."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "nothing-provides-this" not in in_closure
+    assert unknown == frozenset(), "an absent requirement is not uncertainty"
+    # The orphan is therefore genuinely out-of-closure, not unknown.
+    assert "orphan-dist" not in in_closure and "orphan-dist" not in unknown
+
+
+def test_unreadable_metadata_makes_its_subtree_unknown(orchb, monkeypatch):
+    """An installed distribution whose metadata will not read might require
+    anything. Its own disposition is unknown, and so is everything that could
+    only have been reached through it."""
+    _closure_env(orchb, monkeypatch, {**_MESSY, "requests": None})
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "requests" not in in_closure
+    assert "requests" in unknown
+    # urllib3 was reachable only through requests, so it is unknown, not
+    # out-of-closure -- and so is every other un-reached distribution.
+    assert "urllib3" in unknown
+    assert "orphan-dist" in unknown
+    assert in_closure & unknown == frozenset()
+
+
+def test_an_ungrammatical_requirement_edge_is_unknown_not_out_of_closure(
+        orchb, monkeypatch):
+    """An edge whose name cannot be parsed might have led anywhere. Giving it
+    the absent-requirement disposition would let the walk call the whole
+    un-reached remainder `out-of-closure` -- an assertion it never
+    established, over exactly the distributions the axis exists to sort."""
+    _closure_env(orchb, monkeypatch, {
+        **_MESSY,
+        _ROOT_DIST: ["requests>=2.0", "==1.2.3"],
+    })
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert {_ROOT_DIST, "requests", "urllib3"} <= in_closure, (
+        "the reached set is still established")
+    assert "orphan-dist" in unknown, "the un-reached remainder is unknown"
+    assert "sphinx" in unknown
+
+
+def test_cycles_terminate_via_the_visited_set(orchb, monkeypatch):
+    """Distribution metadata is package-controlled and cycles occur in real
+    environments. A walk without a visited set does not return."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    # Both the two-node cycle and the cycle back through the root resolve.
+    assert {"cyclic-a", "cyclic-b"} <= in_closure
+    assert {"requests", _ROOT_DIST} <= in_closure
+
+
+def test_exceeding_a_traversal_cap_makes_the_whole_closure_unknown(orchb,
+                                                                   monkeypatch):
+    """A truncated closure is worse than none: it silently relabels everything
+    it did not reach as outside the project. Both caps read from the module's
+    own constants, so the numbers can move without this test lying."""
+    depth = orchb._CLOSURE_DEPTH_CAP
+    nodes = orchb._CLOSURE_NODE_CAP
+
+    chain = {f"d{i}": [f"d{i + 1}"] for i in range(depth + 3)}
+    chain[f"d{depth + 3}"] = []
+    _closure_env(orchb, monkeypatch, chain, roots=("d0",))
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+    wide = {"w-root": [f"w{i}" for i in range(nodes + 5)]}
+    wide.update({f"w{i}": [] for i in range(nodes + 5)})
+    _closure_env(orchb, monkeypatch, wide, roots=("w-root",))
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+    # Control: a walk inside both caps is NOT unknown, so the node
+    # discriminates rather than always returning None.
+    short = {f"d{i}": [f"d{i + 1}"] for i in range(depth - 2)}
+    short[f"d{depth - 2}"] = []
+    _closure_env(orchb, monkeypatch, short, roots=("d0",))
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is not None
+
+
+@pytest.mark.parametrize("roots", [(), ("a-dist", "b-dist"), None])
+def test_unresolvable_root_makes_every_distribution_unknown(orchb, monkeypatch,
+                                                            roots):
+    """Zero, several, or an unreadable mapping all mean the same thing: the
+    project's own package is not identifiable here, so no distribution can be
+    partitioned against it. `None` is the whole-closure-unknown signal the
+    annotation turns into `unknown` for every reported distribution."""
+    _closure_env(orchb, monkeypatch, _MESSY, roots=roots)
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+
+def test_closure_walk_imports_only_the_standard_library():
+    """This orchestrator installs into an adopter's `scripts/`, and adopters
+    take on zero runtime dependencies. A closure walk is exactly the code that
+    invites a requirement-parsing library, and one import here would put that
+    dependency in every installing project."""
+    import ast  # noqa: PLC0415
+
+    imported = set()
+    for node in ast.walk(ast.parse(_ORCH_SRC.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            imported |= {alias.name.split(".")[0] for alias in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            imported.add(node.module.split(".")[0])
+
+    # Two controls: the instrument sees this file's imports at all, and the
+    # comparison it makes would flag a third-party name if one were present.
+    assert "importlib" in imported
+    assert {"packaging"} - sys.stdlib_module_names == {"packaging"}
+    assert imported - sys.stdlib_module_names == set()
