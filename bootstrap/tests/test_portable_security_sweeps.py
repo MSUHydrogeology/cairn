@@ -115,6 +115,7 @@ def fake_tool(
     *,
     version: str = "8.30.1",
     version_rc: int = 0,
+    bare_version: bool = False,
     log: Path | None = None,
     scan_rc: int = 0,
     mutate_self_on_version: bool = False,
@@ -133,7 +134,14 @@ def fake_tool(
     The oracle is the *log this tool writes*, never anything the runner
     computes.  The shebang is an absolute interpreter path on purpose: the
     child ``PATH`` the runner builds contains no ``/usr/bin``, so a
-    ``#!/usr/bin/env python3`` shebang would not resolve."""
+    ``#!/usr/bin/env python3`` shebang would not resolve.
+
+    ``--version`` emits the **banner** shape by default, because that is the
+    only shape the real adapter emits from that flag; the bare shape belongs
+    to its ``version`` subcommand and is reached by passing ``bare_version``.
+    A fixture emitting a shape the adapter never emits is how a module that
+    cannot run keeps a green suite."""
+    version_line = version if bare_version else f"gitleaks version {version}"
     body = f'''#!{sys.executable}
 import json, os, sys
 LOG = {str(log) if log is None else repr(str(log))}
@@ -156,7 +164,7 @@ if "--version" in sys.argv[1:]:
     if {mutate_self_on_version!r}:
         with open(__file__, "a", encoding="utf-8") as fh:
             fh.write("# swapped between validation and invocation\\n")
-    sys.stdout.write({version!r} + "\\n")
+    sys.stdout.write({version_line!r} + "\\n")
     raise SystemExit({version_rc!r})
 record("scan")
 {extra}
@@ -509,6 +517,43 @@ def test_mode_selection_maps_versions_to_modes() -> None:
         assert choice.result == runner._AGG_INCOMPLETE, (
             f"{unmeasured!r} did not classify as INCOMPLETE without execution"
         )
+
+
+def test_the_version_banner_extracts_to_an_exact_triple() -> None:
+    """``--version`` prints ``gitleaks version X.Y.Z``; the parser accepts only
+    a bare ``X.Y.Z``.  With nothing between them the probe and the parser are
+    specified independently, so every run against the shape the adapter really
+    emits refuses as unmeasured and no scan leg ever executes."""
+    runner = load_runner()
+    extracted = runner.extract_version("gitleaks version 8.30.1")
+    assert runner.parse_version(extracted) == (8, 30, 1)
+    key = ("darwin", "arm64")
+    digest = "a" * 64
+    admissions = {
+        ("8.30.1", "darwin", "arm64"): runner.Admission(digest, "GL-banner"),
+    }
+    choice = runner.select_mode(extracted, digest, key, admissions)
+    assert choice.mode == "full", choice
+
+
+def test_the_bare_version_string_still_extracts() -> None:
+    """The adapter's ``version`` subcommand prints a bare ``X.Y.Z``.  Both
+    shapes it actually emits must reach the parser: admitting the banner must
+    not cost the shape that already worked."""
+    runner = load_runner()
+    extracted = runner.extract_version("8.30.1")
+    assert extracted == "8.30.1"
+    assert runner.parse_version(extracted) == (8, 30, 1)
+
+
+def test_a_prerelease_suffix_does_not_extract() -> None:
+    """The banner match is anchored at both ends.  Unanchored, a modified build
+    announcing ``8.30.1-dirty`` reduces to the exact release it was built from,
+    and an unmeasured artifact is treated as a measured one."""
+    runner = load_runner()
+    banner = "gitleaks version 8.30.1-dirty"
+    assert runner.extract_version(banner) == banner
+    assert runner.parse_version(runner.extract_version(banner)) is None
 
 
 def test_the_shipped_admitted_artifact_set_is_empty_until_a_record_exists() -> None:
@@ -2060,6 +2105,29 @@ def test_verify_version_support_emits_a_complete_record(
     assert executed["declared_source"] == "test fixture"
     assert record["platform"] == list(platform_triple("x")[1:])
     assert sorted(record["end_to_end"]) == ["current-tree", "history"]
+
+
+def test_the_evidence_record_keeps_the_raw_version_banner(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Both JSON-visible version fields carry what the binary actually said.
+    The triple is derivable from the banner and the banner is not derivable
+    from the triple, so a record storing only the triple loses the evidence it
+    exists to hold.  The admission key the extractor produces is recorded
+    beside it, not in place of it."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 0, out
+    assert record["candidate_version"] == "gitleaks version 8.30.1", record
+    assert record["candidate_version_key"] == "8.30.1", record
+
+    _rc, summary, sweep_out, _log = _run_with_tool(
+        tmp_path / "sweep", sweep_target, findings=[]
+    )
+    assert summary["adapter_facts"]["adapter_version_output"] == (
+        "gitleaks version 8.30.1"
+    ), sweep_out
 
 
 def test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_git_subcommand(

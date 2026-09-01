@@ -285,6 +285,35 @@ def parse_version(text: str) -> tuple[int, int, int] | None:
     return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
 
+#: The adapter's ``--version`` banner, anchored at **both** ends against the
+#: same exact ``X.Y.Z`` shape the parser accepts.  Unanchored, a modified build
+#: announcing ``gitleaks version 8.30.1-dirty`` would reduce to ``8.30.1`` and
+#: an unmeasured artifact would read as a measured one.
+_VERSION_BANNER_RE = re.compile(
+    r"\Agitleaks version (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\Z"
+)
+
+
+def extract_version(text: str) -> str:
+    """Reduce an adapter ``--version`` line to the version string it carries.
+
+    The adapter prints ``gitleaks version 8.30.1`` for ``--version`` and a bare
+    ``8.30.1`` for its ``version`` subcommand; ``parse_version`` accepts only
+    the bare form.  Without a named step between the probe and the parser the
+    two are specified independently, and every run against the shape the
+    adapter actually emits refuses as *unmeasured* before any leg executes.
+
+    **Total, and it loosens nothing.**  Any text that is not exactly the banner
+    is returned unchanged, so ``parse_version`` stays the single arbiter of
+    what counts as measured and ``None`` keeps meaning *unmeasured*."""
+    if not isinstance(text, str):
+        return text
+    match = _VERSION_BANNER_RE.match(text)
+    if match is None:
+        return text
+    return f"{match.group(1)}.{match.group(2)}.{match.group(3)}"
+
+
 def platform_key() -> tuple[str, str]:
     """The ``(system, machine)`` half of an admitted-artifact key."""
     return (platform.system().lower(), platform.machine().lower())
@@ -1381,7 +1410,13 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                 version_text = probe_version(exe, env)
             except Degraded as exc:
                 return refuse(f"the candidate's --version is unusable: {exc}")
+            # The banner verbatim, because a record exists to hold what the
+            # binary actually said; beside it the version component of the
+            # ``(version, platform, architecture)`` key a reviewed source
+            # change would have to type, which is the extractor's output and
+            # not the banner.
             record["candidate_version"] = version_text
+            record["candidate_version_key"] = extract_version(version_text)
             record["platform"] = list(platform_key())
             record["git_version"] = "absent"
             if real_git:
@@ -1737,9 +1772,13 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
                 target, policy_path, legs, None,
                 "the adapter is present but unsound", facts,
             )
+        # The raw banner is what the fact records; the extractor's output is
+        # what selects the mode.
         facts["adapter_version_output"] = version_text
 
-        choice = select_mode(version_text, adapter.digest, platform_key())
+        choice = select_mode(
+            extract_version(version_text), adapter.digest, platform_key()
+        )
         if choice.mode is None:
             status = "DEGRADED" if choice.result == _AGG_DEGRADED else "INCOMPLETE"
             legs = [LegOutcome("adapter", choice.result, status, choice.reason)]
