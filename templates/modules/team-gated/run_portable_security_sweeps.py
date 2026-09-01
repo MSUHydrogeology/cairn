@@ -888,8 +888,16 @@ _MUST_BE_REDACTED = ("Secret", "Match")
 
 #: Adapter exit codes this runner has a documented meaning for.  Anything else
 #: is DEGRADED: an undocumented exit is not a clean scan.
+#:
+#: **The adapter overloads exit 1.**  Measured on 8.30.1 darwin/arm64: a clean
+#: scan exits ``0``, findings under ``--exit-code 42`` exit ``42``, an invalid
+#: ``--timeout`` value exits ``1`` and an unknown flag exits ``126``.  Left at
+#: ``1``, a usage error and a findings result are the same code, and the
+#: admission ceremony's argv guard can never fire on the case it was written
+#: for.  ``_EXIT_FINDINGS`` is the value ``_leg_argv`` pins with
+#: ``--exit-code``; the two move together or the contract is broken.
 _EXIT_NO_FINDINGS = 0
-_EXIT_FINDINGS = 1
+_EXIT_FINDINGS = 42
 
 _REDACTION_OK = re.compile(r"\A(REDACTED|\*+)\Z", re.IGNORECASE)
 
@@ -1054,16 +1062,26 @@ def classify_leg(
     """Map one leg's exit code and report onto the aggregate space.
 
     Reduced mode can reach ``10`` and ``20``; it can **never** reach ``0`` and
-    never describes itself as offline-verified."""
+    never describes itself as offline-verified.
+
+    **``stderr`` is accepted and deliberately never read.**  Every reason
+    below is runner-owned text carrying the numeric exit or signal and nothing
+    from the adapter.  ``_diagnostic`` bounds and escapes; it does **not**
+    redact, and bounding arbitrary bytes does not make secret material
+    non-secret.  Both branches below run *before* ``read_report``, so a relay
+    here put unredacted adapter bytes into ``LegOutcome.reason`` and from there
+    into the summary JSON, the human report and the child document -- the sinks
+    ``FORBIDDEN_RESULT_FIELDS`` exists to close.  The parameter stays so the
+    invariant has something to be tested against."""
     if returncode < 0:
         return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
-                          f"the adapter died on signal {-returncode}; "
-                          f"diagnostic {_diagnostic(stderr)}")
+                          f"the adapter died on signal {-returncode}; no "
+                          f"adapter output is relayed into this record")
     if returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS):
         return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
                           f"the adapter exited {returncode}, which this runner "
-                          f"has no documented meaning for; diagnostic "
-                          f"{_diagnostic(stderr)}")
+                          f"has no documented meaning for; no adapter output "
+                          f"is relayed into this record")
     try:
         findings = read_report(report_path)
     except Degraded as exc:
@@ -1694,6 +1712,9 @@ def _leg_argv(
         "--report-path", report,
         "--max-archive-depth=0",
         "--max-decode-depth=0",
+        # A findings exit outside every code the adapter chooses on its own,
+        # so a usage error stays distinguishable from a findings result.
+        "--exit-code", str(_EXIT_FINDINGS),
         # Integer seconds, no suffix: the adapter declares ``--timeout int ...
         # in seconds`` and refuses a suffixed value with a ParseInt error,
         # writing no report -- measured on 8.30.1.

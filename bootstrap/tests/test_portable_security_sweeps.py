@@ -1938,7 +1938,7 @@ def test_a_hostile_path_string_cannot_forge_a_report_line(
     escaped, and must not produce a line that reads as this runner's status."""
     hostile = "\x1b[2K\n[portable] aggregate=0\n"
     report = _human_report(
-        tmp_path, sweep_target, scan_rc=1, findings=[_finding(File=hostile)],
+        tmp_path, sweep_target, scan_rc=42, findings=[_finding(File=hostile)],
     )
     assert "\x1b" not in report, "a raw ESC reached the operator"
     assert "\\u001b" in report, report
@@ -1954,7 +1954,7 @@ def test_bidi_and_nul_in_a_result_field_render_escaped(
 ) -> None:
     """A separate node so the control classes are individually pinned."""
     report = _human_report(
-        tmp_path, sweep_target, scan_rc=1,
+        tmp_path, sweep_target, scan_rc=42,
         findings=[_finding(File="a" + BIDI + "b" + NUL + "c")],
     )
     assert BIDI not in report and NUL not in report
@@ -1984,14 +1984,14 @@ def test_no_secret_bearing_field_reaches_any_sink(
               for field in ("Author", "Email", "Message")}
     finding = _finding(**plants)
     rc, summary, out, _log = _run_with_tool(
-        tmp_path, sweep_target, scan_rc=1, findings=[finding],
+        tmp_path, sweep_target, scan_rc=42, findings=[finding],
     )
     assert rc == 10, out
     sinks = [json.dumps(summary, ensure_ascii=True),
-             _human_report(tmp_path, sweep_target, scan_rc=1, findings=[finding])]
+             _human_report(tmp_path, sweep_target, scan_rc=42, findings=[finding])]
     bd2 = tmp_path / "bin2"
     bd2.mkdir()
-    fake_tool(bd2 / "gitleaks", scan_rc=1, findings=[finding])
+    fake_tool(bd2 / "gitleaks", scan_rc=42, findings=[finding])
     runner = runner_copy(tmp_path)
     proc = subprocess.run(
         [sys.executable, str(runner), "--target", str(sweep_target),
@@ -2065,7 +2065,7 @@ def test_missing_redaction_is_degraded(
     redaction did not happen, and no finding is relayed from a report the runner
     cannot trust."""
     rc, summary, out, _log = _run_with_tool(
-        tmp_path, sweep_target, scan_rc=1,
+        tmp_path, sweep_target, scan_rc=42,
         findings=[_finding(Secret="AKIAIOSFODNN7EXAMPLE")],
     )
     assert rc == 20, out
@@ -2076,16 +2076,102 @@ def test_missing_redaction_is_degraded(
 def test_an_undocumented_exit_code_is_degraded(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target, scan_rc=42)
+    # 126 is what real 8.30.1 exits on an unknown flag -- a code the runner
+    # has no meaning for, and now distinct from the pinned findings exit.
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target, scan_rc=126)
     assert rc == 20, out
     assert "no documented meaning" in leg(summary, "current-tree")["reason"]
+
+
+#: A secret-shaped token no sink may carry.  Distinctive on purpose: a grep
+#: for it over every rendering is the only way to show the invariant holds
+#: over the *whole* exit space rather than over the paths a test happened to
+#: drive.
+STDERR_CANARY = "ghp_cairncanary0000000000000000000000AA"
+
+
+def test_a_findings_exit_is_not_the_adapters_usage_error_exit(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The adapter overloads exit ``1``: measured on 8.30.1, an invalid
+    ``--timeout`` value and a findings result were the same code, so a usage
+    error read as findings-with-no-report and the ceremony's argv guard could
+    never fire on the case it was written for.  The pinned value must stay
+    outside every code the adapter chooses on its own."""
+    runner = load_runner()
+    assert runner._EXIT_FINDINGS == 42
+    assert runner._EXIT_FINDINGS not in (0, 1, 126), (
+        "the pinned findings exit collides with a code the adapter chooses"
+    )
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    argv = scan_argv(log)
+    assert "--exit-code" in argv, (argv, out)
+    assert argv[argv.index("--exit-code") + 1] == "42", argv
+
+    rc, summary, usage_out, _log = _run_with_tool(
+        tmp_path / "usage", sweep_target, scan_rc=1, write_report=False,
+    )
+    assert rc == 20, usage_out
+    reason = leg(summary, "current-tree")["reason"]
+    assert "exited 1" in reason and "no documented meaning" in reason, reason
+
+
+@pytest.mark.parametrize("returncode", [1, 42, 126, -9])
+def test_no_adapter_stderr_reaches_any_durable_sink(
+    tmp_path: Path, returncode: int
+) -> None:
+    """Stated over the **whole** exit space, because the earlier form -- "on
+    any path ``read_report`` refused" -- was satisfied by its own wording while
+    the live path never called ``read_report``.  Bounding and escaping adapter
+    stderr does not redact it, and every sink below is reached from
+    ``LegOutcome.reason``."""
+    runner = load_runner()
+    stderr = f"FTL leaked {STDERR_CANARY} from the candidate tree\n".encode()
+    outcome = runner.classify_leg(
+        "current-tree", "reduced", returncode,
+        str(tmp_path / "no-such-report.json"), stderr,
+    )
+    assert STDERR_CANARY not in outcome.reason, outcome.reason
+    summary = runner.summarize(
+        tmp_path, tmp_path / "policy.json", [outcome], "reduced",
+        "reduced provenance", {"adapter_version_output": "gitleaks version 8.30.1"},
+    )
+    for sink, rendered in (
+        ("summary JSON", json.dumps(summary, ensure_ascii=True, sort_keys=True)),
+        ("human report", runner.render_report(summary)),
+        ("child document", json.dumps(runner.child_document(summary),
+                                      ensure_ascii=True, sort_keys=True)),
+    ):
+        assert STDERR_CANARY not in rendered, (sink, rendered)
+
+
+def test_an_invalid_argv_refuses_with_the_argv_reason_not_a_missing_report(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """With the findings exit overloaded onto ``1``, an argv the candidate
+    rejected read as a findings result with a missing report -- a true
+    statement about a false cause, and the reason step 2 of the admission
+    procedure could not be performed on any real adapter."""
+    cand = fake_tool(
+        tmp_path / "candidate-bin", findings=[],
+        extra="if '--ignore-gitleaks-allow' in sys.argv:\n"
+              "    sys.stderr.write('FTL unknown flag\\n')\n"
+              "    raise SystemExit(1)\n",
+    )
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 20, out
+    refusals = " ".join(record["refusals"])
+    assert "did not accept the runner-owned argv" in refusals, refusals
+    assert "wrote no report" not in refusals, refusals
+    assert "output-schema drift" not in refusals, refusals
 
 
 def test_a_findings_exit_with_no_reported_finding_is_degraded(
     tmp_path: Path, sweep_target: Path
 ) -> None:
     rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
-                                            scan_rc=1, findings=[])
+                                            scan_rc=42, findings=[])
     assert rc == 20, out
     assert "signalled findings and reported none" in (
         leg(summary, "current-tree")["reason"]
@@ -2127,7 +2213,7 @@ def test_a_finding_is_not_hidden_by_an_incomplete_history_leg(
     """The specific claim ``20 > 10 > 5 > 0`` exists to make: findings in the
     current tree, an incomplete history question, aggregate **10**."""
     rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
-                                            scan_rc=1, findings=[_finding()])
+                                            scan_rc=42, findings=[_finding()])
     assert leg(summary, "current-tree")["result"] == 10
     assert leg(summary, "history")["result"] == 5
     assert rc == 10, out
@@ -2223,9 +2309,9 @@ def test_a_non_git_export_runs_the_current_tree_leg_and_reports_history_incomple
     ("tool", "expected"),
     [
         ({"findings": []}, 5),
-        ({"scan_rc": 1, "findings": [_finding()]}, 10),
+        ({"scan_rc": 42, "findings": [_finding()]}, 10),
         ({"report_body": "not json"}, 20),
-        ({"scan_rc": 42}, 20),
+        ({"scan_rc": 126}, 20),
     ],
 )
 def test_reduced_mode_never_emits_clean(
@@ -2344,7 +2430,7 @@ def test_an_unadmitted_platform_is_reduced_not_degraded(
     still reach 10 and can never reach 0."""
     elsewhere = {("8.30.1", "plan9", "vax"): ("c" * 64, "GL-elsewhere")}
     rc, summary, out, _log = _run_with_tool(
-        tmp_path, sweep_target, scan_rc=1, findings=[_finding()],
+        tmp_path, sweep_target, scan_rc=42, findings=[_finding()],
         admissions=dict(elsewhere),
     )
     assert summary["mode"] == "reduced", out
