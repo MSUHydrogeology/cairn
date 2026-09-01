@@ -51,6 +51,7 @@ import json
 import os
 import platform
 import re
+import secrets
 import shutil
 import subprocess
 import sys
@@ -59,9 +60,10 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 # --- the shared aggregate exit space -----------------------------------------
-# Reuses python-security's space (see templates/modules/team-gated/
-# run_security_audit.py) so an adopter reads one exit vocabulary across every
-# Cairn security module.  Precedence: degraded > findings > incomplete > clean.
+# Reuses python-security's space (that module installs its orchestrator at
+# scripts/run_security_audit.py) so an adopter reads one exit vocabulary across
+# every Cairn security module.  Precedence: degraded > findings > incomplete >
+# clean.
 _AGG_CLEAN = 0
 _AGG_INCOMPLETE = 5
 _AGG_FINDINGS = 10
@@ -86,8 +88,10 @@ _ADAPTER = "gitleaks"
 # --- the source-owned admitted-artifact set ----------------------------------
 #: Keyed by ``(version, system, machine)``; the value carries the SHA-256 of
 #: the artifact the admission matrix was actually run against plus the
-#: identifier of its evidence record in
-#: ``dev/measurement/gitleaks-version-support.md``.
+#: identifier of its evidence record.  **Where those records live is the
+#: adopting project's choice** -- this module installs no ledger, so this
+#: comment names no path an adopter cannot follow; the installed module
+#: doctrine at ``dev/modules/portable-security-sweeps.md`` states the cadence.
 #:
 #: **Not policy-controlled, not environment-controlled, and not adopter-
 #: editable without editing reviewed code.**  The digest deliberately does not
@@ -96,10 +100,19 @@ _ADAPTER = "gitleaks"
 #: a candidate *admit its own binary* -- strictly weaker than the self-reported
 #: version string it replaces.
 #:
-#: **Initially empty.**  ``8.30.1`` enters only when the admission subcommand
-#: emits a record against a Maintainer-supplied, checksum-verified binary.  An
-#: empty set means the module ships reduced-provenance-only: useful current-tree
-#: findings and an honest INCOMPLETE, never CLEAN.
+#: **Initially empty, and nothing this program does can change that.**
+#: ``--verify-version-support`` emits an *evidence record*; **emitting one
+#: admits nothing**.  A version enters this set only at the fourth step of a
+#: four-step, deliberately un-automated ceremony: the project supplies a
+#: checksum-verified binary at a stable path, the matrix subcommand emits a
+#: record against it, a security-lens review reads that record, and only then
+#: does a reviewed source change add the key and its measured digest here.  An
+#: automated writer that read a record and edited this block would be a path by
+#: which anything that can produce a record can admit a binary -- the manual
+#: step **is** the control.
+#:
+#: An empty set means the module ships reduced-provenance-only: useful
+#: current-tree findings and an honest INCOMPLETE, never CLEAN.
 
 
 class Admission(NamedTuple):
@@ -283,6 +296,35 @@ def parse_version(text: str) -> tuple[int, int, int] | None:
     if match is None:
         return None
     return (int(match.group(1)), int(match.group(2)), int(match.group(3)))
+
+
+#: The adapter's ``--version`` banner, anchored at **both** ends against the
+#: same exact ``X.Y.Z`` shape the parser accepts.  Unanchored, a modified build
+#: announcing ``gitleaks version 8.30.1-dirty`` would reduce to ``8.30.1`` and
+#: an unmeasured artifact would read as a measured one.
+_VERSION_BANNER_RE = re.compile(
+    r"\Agitleaks version (0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\Z"
+)
+
+
+def extract_version(text: str) -> str:
+    """Reduce an adapter ``--version`` line to the version string it carries.
+
+    The adapter prints ``gitleaks version 8.30.1`` for ``--version`` and a bare
+    ``8.30.1`` for its ``version`` subcommand; ``parse_version`` accepts only
+    the bare form.  Without a named step between the probe and the parser the
+    two are specified independently, and every run against the shape the
+    adapter actually emits refuses as *unmeasured* before any leg executes.
+
+    **Total, and it loosens nothing.**  Any text that is not exactly the banner
+    is returned unchanged, so ``parse_version`` stays the single arbiter of
+    what counts as measured and ``None`` keeps meaning *unmeasured*."""
+    if not isinstance(text, str):
+        return text
+    match = _VERSION_BANNER_RE.match(text)
+    if match is None:
+        return text
+    return f"{match.group(1)}.{match.group(2)}.{match.group(3)}"
 
 
 def platform_key() -> tuple[str, str]:
@@ -608,6 +650,14 @@ _SCREEN_ARGV_TAIL = (
 )
 _SCREEN_MAX_BYTES = 256 * 1024
 
+#: How many offending key names one refusal may name before it elides the rest
+#: and says how many it elided.  Offending names are candidate-controlled text
+#: entering a durable sink, so the refusal's *size* must not be
+#: candidate-steerable; ten is enough for an operator to recognize the
+#: offending family.  ``_SCREEN_MAX_BYTES`` bounds the input, this bounds the
+#: report.
+_SCREEN_MAX_NAMED_KEYS = 10
+
 #: The **source-owned** inert allowlist for repository-local configuration.
 #: Deny-by-default: anything not named here refuses before execution.  Not
 #: policy-controlled.
@@ -621,10 +671,22 @@ _INERT_LOCAL_KEYS = frozenset({
 #: mode that gets a security control switched off.  None of them is a program
 #: reference: transport is pinned inert by ``protocol.allow=never`` and no leg
 #: fetches.
+#:
+#: **Deny-by-default is on the variable, not the subsection.**  A Git key is
+#: ``section.subsection.variable``, Git stores the subsection verbatim, and
+#: what can reference a program is the variable -- ``branch.<anything>.remote``
+#: is a tracking string whatever ``<anything>`` is.  Fencing the subsection
+#: with ``[^.]+`` bought no security property and refused legal names: measured,
+#: ``git checkout -b v1.2`` writes ``branch.v1.2.remote`` and the screen
+#: refused the checkout before any leg ran.  The subsection is an anchored
+#: greedy ``.+``; the variable stays a closed named set.  ``.`` does not match
+#: a newline, so a newline-bearing key still refuses.
 _INERT_LOCAL_PATTERNS = (
     re.compile(r"\Aextensions\.[a-z0-9]+\Z"),
-    re.compile(r"\Aremote\.[^.]+\.(url|fetch|pushurl|mirror|tagopt)\Z"),
-    re.compile(r"\Abranch\.[^.]+\.(remote|merge|rebase)\Z"),
+    re.compile(
+        r"\Aremote\..+\.(url|fetch|pushurl|mirror|tagopt|glab-resolved)\Z"
+    ),
+    re.compile(r"\Abranch\..+\.(remote|merge|rebase|vscode-merge-base)\Z"),
 )
 
 _IGNORE_FILENAME = ".gitleaksignore"
@@ -777,6 +839,13 @@ def screen_local_config(
             f"refused"
         )
     pairs = parse_screen_output(proc.stdout)
+    #: Non-inert keys accumulate; the two origin checks above them do not.
+    #: A screen that stopped at the first non-inert key made an operator fix
+    #: one key, re-run, and meet the next -- and it *masked* an injected origin
+    #: sitting behind that first refusal.  The origin checks stay
+    #: first-failure: an escape already detected must not be followed by more
+    #: ``resolve()`` calls on candidate-controlled origin strings.
+    non_inert: list[str] = []
     for origin, key in pairs:
         if not origin.startswith("file:"):
             raise Degraded(
@@ -794,10 +863,17 @@ def screen_local_config(
                 f"includeIf injection; refused before execution"
             )
         if not _key_is_inert(key):
-            raise Degraded(
-                f"repository-local configuration key {key!r} is not on the "
-                f"reviewed inert allowlist; refused before execution"
-            )
+            non_inert.append(key)
+    if non_inert:
+        named = non_inert[:_SCREEN_MAX_NAMED_KEYS]
+        elided = len(non_inert) - len(named)
+        tail = (
+            f"; {elided} further key(s) not named" if elided else ""
+        )
+        raise Degraded(
+            f"repository-local configuration key(s) {named!r} are not on the "
+            f"reviewed inert allowlist; refused before execution{tail}"
+        )
     return pairs
 
 
@@ -825,8 +901,16 @@ _MUST_BE_REDACTED = ("Secret", "Match")
 
 #: Adapter exit codes this runner has a documented meaning for.  Anything else
 #: is DEGRADED: an undocumented exit is not a clean scan.
+#:
+#: **The adapter overloads exit 1.**  Measured on 8.30.1 darwin/arm64: a clean
+#: scan exits ``0``, findings under ``--exit-code 42`` exit ``42``, an invalid
+#: ``--timeout`` value exits ``1`` and an unknown flag exits ``126``.  Left at
+#: ``1``, a usage error and a findings result are the same code, and the
+#: admission ceremony's argv guard can never fire on the case it was written
+#: for.  ``_EXIT_FINDINGS`` is the value ``_leg_argv`` pins with
+#: ``--exit-code``; the two move together or the contract is broken.
 _EXIT_NO_FINDINGS = 0
-_EXIT_FINDINGS = 1
+_EXIT_FINDINGS = 42
 
 _REDACTION_OK = re.compile(r"\A(REDACTED|\*+)\Z", re.IGNORECASE)
 
@@ -991,16 +1075,26 @@ def classify_leg(
     """Map one leg's exit code and report onto the aggregate space.
 
     Reduced mode can reach ``10`` and ``20``; it can **never** reach ``0`` and
-    never describes itself as offline-verified."""
+    never describes itself as offline-verified.
+
+    **``stderr`` is accepted and deliberately never read.**  Every reason
+    below is runner-owned text carrying the numeric exit or signal and nothing
+    from the adapter.  ``_diagnostic`` bounds and escapes; it does **not**
+    redact, and bounding arbitrary bytes does not make secret material
+    non-secret.  Both branches below run *before* ``read_report``, so a relay
+    here put unredacted adapter bytes into ``LegOutcome.reason`` and from there
+    into the summary JSON, the human report and the child document -- the sinks
+    ``FORBIDDEN_RESULT_FIELDS`` exists to close.  The parameter stays so the
+    invariant has something to be tested against."""
     if returncode < 0:
         return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
-                          f"the adapter died on signal {-returncode}; "
-                          f"diagnostic {_diagnostic(stderr)}")
+                          f"the adapter died on signal {-returncode}; no "
+                          f"adapter output is relayed into this record")
     if returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS):
         return LegOutcome(leg, _AGG_DEGRADED, "DEGRADED",
                           f"the adapter exited {returncode}, which this runner "
-                          f"has no documented meaning for; diagnostic "
-                          f"{_diagnostic(stderr)}")
+                          f"has no documented meaning for; no adapter output "
+                          f"is relayed into this record")
     try:
         findings = read_report(report_path)
     except Degraded as exc:
@@ -1186,6 +1280,30 @@ REQUIRED_LEG_OPTIONS = (
 #: reading as a verbosity switch.
 CONFIRM_FLAG = "--confirm-executing-an-unadmitted-binary"
 
+#: The rows the admission matrix measures for **each** subcommand.  The runner
+#: depends on the candidate's exit contract -- a findings result and a usage
+#: error must be different codes -- so an admission records that contract
+#: measured against *this* candidate rather than assumed from its major.  A
+#: record missing a row is refused: an incomplete measurement is not a weaker
+#: admission, it is no admission.
+MATRIX_SCENARIOS = ("clean", "planted_finding", "invalid_argv")
+
+#: The controlled invalid element the third row sends.  ``--timeout`` is
+#: declared ``int``, so a non-integer is refused during argument parsing before
+#: any candidate content is read: the row measures a usage error without
+#: scanning anything.
+_MATRIX_INVALID_TIMEOUT = "--timeout=cairn-not-an-integer"
+
+#: The planted-finding fixture's shape.  A fresh high-entropy value in the
+#: shape the default ruleset's ``generic-api-key`` rule matches; measured on
+#: 8.30.1, ``--redact=100`` empties both ``Secret`` and ``Match``.
+#:
+#: **Not a published example credential.**  The default ruleset allowlists
+#: AWS's own documented ``AKIAIOSFODNN7EXAMPLE``, so a matrix planted with it
+#: scans clean and the row reads as a passing scan of a tree that had nothing
+#: to find -- a silently wrong measurement, which is worse than a missing one.
+_PLANTED_FIXTURE_TEMPLATE = 'api_key = "%s"\n'
+
 _CANARY_ENV = "CAIRN_PORTABLE_NETWORK_CANARY"
 
 
@@ -1345,6 +1463,13 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             with open(os.path.join(fixture, "seed.txt"), "w",
                       encoding="utf-8") as handle:
                 handle.write("nothing sensitive\n")
+            planted = os.path.join(workdir, "planted")
+            os.makedirs(planted)
+            with open(os.path.join(planted, "config.py"), "w",
+                      encoding="utf-8") as handle:
+                handle.write(
+                    _PLANTED_FIXTURE_TEMPLATE % secrets.token_urlsafe(32)
+                )
             work = materialize_workspace(os.path.join(workdir, "work"), [])
             shim_dir = os.path.join(workdir, "shim")
             os.makedirs(shim_dir)
@@ -1366,6 +1491,14 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     subprocess.run([real_git, "-C", fixture, *command],
                                    capture_output=True, env=setup_env,
                                    timeout=_SCREEN_TIMEOUT, check=False)
+                # The history subcommand reads commits, so the planted value
+                # must be committed for the history leg's findings row to
+                # measure anything.
+                for command in (["init", "-q"], ["add", "config.py"],
+                                ["commit", "-qm", "planted"]):
+                    subprocess.run([real_git, "-C", planted, *command],
+                                   capture_output=True, env=setup_env,
+                                   timeout=_SCREEN_TIMEOUT, check=False)
                 _write_git_shim(os.path.join(shim_dir, "git"), real_git, git_log)
 
             exe = Resolved("gitleaks", lexical, resolved,
@@ -1381,7 +1514,13 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                 version_text = probe_version(exe, env)
             except Degraded as exc:
                 return refuse(f"the candidate's --version is unusable: {exc}")
+            # The banner verbatim, because a record exists to hold what the
+            # binary actually said; beside it the version component of the
+            # ``(version, platform, architecture)`` key a reviewed source
+            # change would have to type, which is the extractor's output and
+            # not the banner.
             record["candidate_version"] = version_text
+            record["candidate_version_key"] = extract_version(version_text)
             record["platform"] = list(platform_key())
             record["git_version"] = "absent"
             if real_git:
@@ -1416,35 +1555,106 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     )
                 record["screen"] = "ran under the sterilized child environment"
 
+            # Published as it fills, not at the end: a refusing record must
+            # still show which rows were measured and which one stopped it,
+            # because that is the difference between "this candidate failed
+            # the matrix" and "the matrix never ran".
             scenarios: dict[str, Any] = {}
-            for leg in ("current-tree", "history"):
-                argv, report = _leg_argv(exe, leg, Path(fixture), work)
-                missing = [opt for opt in REQUIRED_LEG_OPTIONS if opt not in argv]
-                if missing:
-                    return refuse(
-                        f"the runner-owned argv for the {leg!r} leg is missing "
-                        f"required option(s) {missing}"
-                    )
-                try:
-                    proc = subprocess.run(argv, capture_output=True, env=env,
-                                          cwd=workdir, timeout=_SCAN_TIMEOUT,
-                                          check=False)
-                except (OSError, subprocess.SubprocessError) as exc:
-                    return refuse(f"the {leg!r} leg could not run: {exc}")
-                if proc.returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS):
-                    return refuse(
-                        f"the candidate did not accept the runner-owned argv "
-                        f"for the {leg!r} leg (exit {proc.returncode}); a "
-                        f"candidate that rejects a required option is not the "
-                        f"tool this contract was measured against"
-                    )
-                try:
-                    findings = read_report(report)
-                except Degraded as exc:
-                    return refuse(f"output-schema drift on the {leg!r} leg: {exc}")
-                scenarios[leg] = {"exit": proc.returncode,
-                                  "validated_findings": len(findings)}
             record["end_to_end"] = scenarios
+            for leg in ("current-tree", "history"):
+                rows: dict[str, Any] = {}
+                scenarios[leg] = rows
+                for scenario, tree in (("clean", fixture),
+                                       ("planted_finding", planted),
+                                       ("invalid_argv", fixture)):
+                    argv, report = _leg_argv(exe, leg, Path(tree), work)
+                    missing = [opt for opt in REQUIRED_LEG_OPTIONS
+                               if opt not in argv]
+                    if missing:
+                        return refuse(
+                            f"the runner-owned argv for the {leg!r} leg is "
+                            f"missing required option(s) {missing}"
+                        )
+                    if scenario == "invalid_argv":
+                        argv = [_MATRIX_INVALID_TIMEOUT
+                                if item.startswith("--timeout=") else item
+                                for item in argv]
+                    # Each row is measured against a report it wrote itself; a
+                    # row that reads the previous row's file measures nothing.
+                    try:
+                        os.unlink(report)
+                    except FileNotFoundError:
+                        pass
+                    try:
+                        proc = subprocess.run(
+                            argv, capture_output=True, env=env, cwd=workdir,
+                            timeout=_SCAN_TIMEOUT, check=False,
+                        )
+                    except (OSError, subprocess.SubprocessError) as exc:
+                        return refuse(
+                            f"the {leg!r} leg could not run the {scenario!r} "
+                            f"scenario: {exc}"
+                        )
+                    if scenario == "invalid_argv":
+                        if proc.returncode in (_EXIT_NO_FINDINGS,
+                                               _EXIT_FINDINGS):
+                            return refuse(
+                                f"the {leg!r} leg's invalid argv exited "
+                                f"{proc.returncode}, which this runner reads "
+                                f"as a scan result; a usage error the runner "
+                                f"cannot tell from a scan makes every other "
+                                f"row unreadable"
+                            )
+                        rows[scenario] = {
+                            "exit": proc.returncode,
+                            "element": _MATRIX_INVALID_TIMEOUT,
+                        }
+                        continue
+                    if proc.returncode not in (_EXIT_NO_FINDINGS,
+                                               _EXIT_FINDINGS):
+                        return refuse(
+                            f"the candidate did not accept the runner-owned "
+                            f"argv for the {leg!r} leg's {scenario!r} scenario "
+                            f"(exit {proc.returncode}); a candidate that "
+                            f"rejects a required option is not the tool this "
+                            f"contract was measured against"
+                        )
+                    try:
+                        findings = read_report(report)
+                    except Degraded as exc:
+                        return refuse(
+                            f"output-schema drift on the {leg!r} leg's "
+                            f"{scenario!r} scenario: {exc}"
+                        )
+                    expected = (_EXIT_NO_FINDINGS if scenario == "clean"
+                                else _EXIT_FINDINGS)
+                    if proc.returncode != expected:
+                        return refuse(
+                            f"the {leg!r} leg's {scenario!r} scenario exited "
+                            f"{proc.returncode}, not the {expected} this "
+                            f"runner's exit contract requires"
+                        )
+                    if scenario == "planted_finding" and not findings:
+                        return refuse(
+                            f"the {leg!r} leg reported no validated finding "
+                            f"against the planted fixture; the findings half "
+                            f"of the exit contract is unmeasured"
+                        )
+                    if scenario == "clean" and findings:
+                        return refuse(
+                            f"the {leg!r} leg reported {len(findings)} "
+                            f"finding(s) against a fixture that carries none"
+                        )
+                    rows[scenario] = {"exit": proc.returncode,
+                                      "validated_findings": len(findings)}
+                absent = [name for name in MATRIX_SCENARIOS if name not in rows]
+                if absent:
+                    return refuse(
+                        f"the admission matrix for the {leg!r} leg is missing "
+                        f"scenario row(s) {absent}; an incomplete measurement "
+                        f"of the exit contract is not a weaker admission, it "
+                        f"is no admission"
+                    )
 
             # The hostile-ambient-config matrix, run through the runner's own
             # pre-execution refusals rather than re-implemented here.
@@ -1625,7 +1835,13 @@ def _leg_argv(
         "--report-path", report,
         "--max-archive-depth=0",
         "--max-decode-depth=0",
-        f"--timeout={_ADAPTER_TIMEOUT}s",
+        # A findings exit outside every code the adapter chooses on its own,
+        # so a usage error stays distinguishable from a findings result.
+        "--exit-code", str(_EXIT_FINDINGS),
+        # Integer seconds, no suffix: the adapter declares ``--timeout int ...
+        # in seconds`` and refuses a suffixed value with a ParseInt error,
+        # writing no report -- measured on 8.30.1.
+        f"--timeout={_ADAPTER_TIMEOUT}",
     ]
     return argv, report
 
@@ -1737,9 +1953,13 @@ def run_sweep(args: argparse.Namespace) -> tuple[int, dict[str, Any]]:
                 target, policy_path, legs, None,
                 "the adapter is present but unsound", facts,
             )
+        # The raw banner is what the fact records; the extractor's output is
+        # what selects the mode.
         facts["adapter_version_output"] = version_text
 
-        choice = select_mode(version_text, adapter.digest, platform_key())
+        choice = select_mode(
+            extract_version(version_text), adapter.digest, platform_key()
+        )
         if choice.mode is None:
             status = "DEGRADED" if choice.result == _AGG_DEGRADED else "INCOMPLETE"
             legs = [LegOutcome("adapter", choice.result, status, choice.reason)]

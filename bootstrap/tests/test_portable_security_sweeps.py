@@ -17,6 +17,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -110,11 +111,156 @@ def runner_copy(tmp_path: Path, admissions: dict | None = None) -> Path:
     return dest
 
 
+#: The adapter's **globally** declared flags and their declared value types,
+#: transcribed from ``gitleaks dir --help`` and ``gitleaks git --help`` on
+#: 8.30.1 darwin/arm64.  A table rather than one more pinned string, because
+#: the defect it has to catch is a *class*: a field-invalid value against a
+#: typed flag, which the real adapter refuses and a fake that accepts every
+#: argv does not.  That is how a green suite coexisted with a module no leg of
+#: which could run on a real host.
+ADAPTER_GLOBAL_FLAGS = {
+    "-b": "string", "--baseline-path": "string",
+    "-c": "string", "--config": "string",
+    "--diagnostics": "string", "--diagnostics-dir": "string",
+    "--enable-rule": "strings",
+    "--exit-code": "int",
+    "-i": "string", "--gitleaks-ignore-path": "string",
+    "--ignore-gitleaks-allow": "bool",
+    "-l": "string", "--log-level": "string",
+    "--max-archive-depth": "int", "--max-decode-depth": "int",
+    "--max-target-megabytes": "int",
+    "--no-banner": "bool", "--no-color": "bool",
+    "--redact": "uint",
+    "-f": "string", "--report-format": "string",
+    "-r": "string", "--report-path": "string",
+    "--report-template": "string",
+    "--timeout": "int",
+    "-v": "bool", "--verbose": "bool",
+    "-h": "bool", "--help": "bool",
+}
+
+#: What each subcommand declares on top of the global set.  ``--follow-symlinks``
+#: is a ``dir`` flag and ``--log-opts`` a ``git`` one; sending either to the
+#: other subcommand is a usage error, which is why the table is per-subcommand
+#: and not one flat set.
+ADAPTER_SUBCOMMAND_FLAGS = {
+    "dir": {"--follow-symlinks": "bool"},
+    "git": {"--log-opts": "string", "--platform": "string",
+            "--pre-commit": "bool", "--staged": "bool"},
+}
+
+#: The fake's argv gate, injected into every generated adapter.  Value checks
+#: mirror the adapter's own: an ``int`` flag given ``840s`` is a ``ParseInt``
+#: failure and exits ``1``; an undeclared flag exits ``126``.  Both were
+#: measured on real 8.30.1.
+_FAKE_ARGV_GATE = '''
+def _argv_fail(message, code):
+    sys.stderr.write(message + "\\n")
+    raise SystemExit(code)
+
+
+def _check_value(name, kind, value):
+    if kind in ("int", "uint"):
+        digits = value.lstrip("-") if kind == "int" else value
+        if not digits.isdigit():
+            _argv_fail(
+                'FTL invalid argument "%s" for "%s" flag: strconv.ParseInt: '
+                'parsing "%s": invalid syntax' % (value, name, value), 1)
+    elif kind == "bool":
+        if value not in ("true", "false", "1", "0", "t", "f", "T", "F",
+                         "TRUE", "FALSE", "True", "False"):
+            _argv_fail(
+                'FTL invalid argument "%s" for "%s" flag: strconv.ParseBool: '
+                'parsing "%s": invalid syntax' % (value, name, value), 1)
+
+
+def _check_argv(argv):
+    sub = argv[0] if argv else ""
+    if sub not in SUBCOMMAND_FLAGS:
+        _argv_fail('Error: unknown command "%s" for "gitleaks"' % (sub,), 126)
+    declared = dict(GLOBAL_FLAGS)
+    declared.update(SUBCOMMAND_FLAGS[sub])
+    index = 1
+    while index < len(argv):
+        item = argv[index]
+        if not item.startswith("-"):
+            index += 1
+            continue
+        name, sep, value = item.partition("=")
+        if name not in declared:
+            _argv_fail("Error: unknown flag: %s" % (name,), 126)
+        kind = declared[name]
+        if not sep:
+            if kind in ("bool", "uint"):
+                index += 1
+                continue
+            index += 1
+            if index >= len(argv):
+                _argv_fail("Error: flag needs an argument: %s" % (name,), 126)
+            value = argv[index]
+        _check_value(name, kind, value)
+        index += 1
+
+
+_check_argv(sys.argv[1:])
+'''
+
+#: A fake that reports the same findings whatever it is pointed at cannot
+#: measure a findings row, so it scans its target the way the adapter does:
+#: for the ``generic-api-key`` shape the admission matrix plants.  The exit
+#: code on a hit comes from the runner-owned ``--exit-code``, which is the
+#: half of the exit contract the matrix exists to measure.
+_FAKE_PLANTED_SCAN = '''
+import re as _re
+
+_PLANTED_RE = _re.compile('api_key\\\\s*=\\\\s*"([A-Za-z0-9_-]{20,})"')
+
+
+def _exit_code_from_argv():
+    argv = sys.argv[1:]
+    for index, item in enumerate(argv):
+        if item == "--exit-code" and index + 1 < len(argv):
+            return int(argv[index + 1])
+        if item.startswith("--exit-code="):
+            return int(item.split("=", 1)[1])
+    return 1
+
+
+def _scan_for_planted():
+    argv = sys.argv[1:]
+    if len(argv) < 2:
+        return None
+    for base, _dirs, names in os.walk(argv[1]):
+        for name in sorted(names):
+            path = os.path.join(base, name)
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+                    body = fh.read()
+            except OSError:
+                continue
+            if _PLANTED_RE.search(body):
+                return path
+    return None
+
+
+def _planted_finding(path):
+    return {"RuleID": "generic-api-key",
+            "Description": "Detected a Generic API Key",
+            "StartLine": 1, "EndLine": 1, "StartColumn": 1, "EndColumn": 55,
+            "Match": "REDACTED", "Secret": "REDACTED", "File": path,
+            "SymlinkFile": "", "Commit": "", "Entropy": 4.6,
+            "Author": "", "Email": "", "Date": "", "Message": "", "Tags": [],
+            "Fingerprint": path + ":generic-api-key:1"}
+'''
+
+
 def fake_tool(
     path: Path,
     *,
     version: str = "8.30.1",
     version_rc: int = 0,
+    bare_version: bool = False,
+    blind_to_planted: bool = False,
     log: Path | None = None,
     scan_rc: int = 0,
     mutate_self_on_version: bool = False,
@@ -133,9 +279,21 @@ def fake_tool(
     The oracle is the *log this tool writes*, never anything the runner
     computes.  The shebang is an absolute interpreter path on purpose: the
     child ``PATH`` the runner builds contains no ``/usr/bin``, so a
-    ``#!/usr/bin/env python3`` shebang would not resolve."""
+    ``#!/usr/bin/env python3`` shebang would not resolve.
+
+    ``--version`` emits the **banner** shape by default, because that is the
+    only shape the real adapter emits from that flag; the bare shape belongs
+    to its ``version`` subcommand and is reached by passing ``bare_version``.
+    A fixture emitting a shape the adapter never emits is how a module that
+    cannot run keeps a green suite.
+
+    The generated tool **refuses an argv the real adapter refuses**, against a
+    per-subcommand flag table transcribed from the adapter's own ``--help``."""
+    version_line = version if bare_version else f"gitleaks version {version}"
     body = f'''#!{sys.executable}
 import json, os, sys
+GLOBAL_FLAGS = {ADAPTER_GLOBAL_FLAGS!r}
+SUBCOMMAND_FLAGS = {ADAPTER_SUBCOMMAND_FLAGS!r}
 LOG = {str(log) if log is None else repr(str(log))}
 def record(kind):
     if LOG is None:
@@ -156,10 +314,18 @@ if "--version" in sys.argv[1:]:
     if {mutate_self_on_version!r}:
         with open(__file__, "a", encoding="utf-8") as fh:
             fh.write("# swapped between validation and invocation\\n")
-    sys.stdout.write({version!r} + "\\n")
+    sys.stdout.write({version_line!r} + "\\n")
     raise SystemExit({version_rc!r})
 record("scan")
+{_FAKE_ARGV_GATE}
+{_FAKE_PLANTED_SCAN}
 {extra}
+_hit = None if {blind_to_planted!r} else _scan_for_planted()
+_findings = {findings!r} or []
+_rc = {scan_rc!r}
+if _hit is not None:
+    _findings = [_planted_finding(_hit)]
+    _rc = _exit_code_from_argv()
 if {write_report!r} and "--report-path" in sys.argv:
     dest = sys.argv[sys.argv.index("--report-path") + 1]
     if {report_bytes!r} is not None:
@@ -170,7 +336,7 @@ if {write_report!r} and "--report-path" in sys.argv:
             fh.write({report_body!r})
     else:
         with open(dest, "w", encoding="utf-8") as fh:
-            json.dump({findings!r} or [], fh)
+            json.dump(_findings, fh)
 if {stdout_text!r}:
     sys.stdout.write({stdout_text!r})
 if {stderr_text!r}:
@@ -181,7 +347,7 @@ if {hang!r}:
 if {die_on_signal!r}:
     import signal
     os.kill(os.getpid(), signal.SIGKILL)
-raise SystemExit({scan_rc!r})
+raise SystemExit(_rc)
 '''
     path.write_text(body, encoding="utf-8")
     path.chmod(0o755)
@@ -509,6 +675,43 @@ def test_mode_selection_maps_versions_to_modes() -> None:
         assert choice.result == runner._AGG_INCOMPLETE, (
             f"{unmeasured!r} did not classify as INCOMPLETE without execution"
         )
+
+
+def test_the_version_banner_extracts_to_an_exact_triple() -> None:
+    """``--version`` prints ``gitleaks version X.Y.Z``; the parser accepts only
+    a bare ``X.Y.Z``.  With nothing between them the probe and the parser are
+    specified independently, so every run against the shape the adapter really
+    emits refuses as unmeasured and no scan leg ever executes."""
+    runner = load_runner()
+    extracted = runner.extract_version("gitleaks version 8.30.1")
+    assert runner.parse_version(extracted) == (8, 30, 1)
+    key = ("darwin", "arm64")
+    digest = "a" * 64
+    admissions = {
+        ("8.30.1", "darwin", "arm64"): runner.Admission(digest, "GL-banner"),
+    }
+    choice = runner.select_mode(extracted, digest, key, admissions)
+    assert choice.mode == "full", choice
+
+
+def test_the_bare_version_string_still_extracts() -> None:
+    """The adapter's ``version`` subcommand prints a bare ``X.Y.Z``.  Both
+    shapes it actually emits must reach the parser: admitting the banner must
+    not cost the shape that already worked."""
+    runner = load_runner()
+    extracted = runner.extract_version("8.30.1")
+    assert extracted == "8.30.1"
+    assert runner.parse_version(extracted) == (8, 30, 1)
+
+
+def test_a_prerelease_suffix_does_not_extract() -> None:
+    """The banner match is anchored at both ends.  Unanchored, a modified build
+    announcing ``8.30.1-dirty`` reduces to the exact release it was built from,
+    and an unmeasured artifact is treated as a measured one."""
+    runner = load_runner()
+    banner = "gitleaks version 8.30.1-dirty"
+    assert runner.extract_version(banner) == banner
+    assert runner.parse_version(runner.extract_version(banner)) is None
 
 
 def test_the_shipped_admitted_artifact_set_is_empty_until_a_record_exists() -> None:
@@ -1192,7 +1395,63 @@ def test_the_gitleaks_timeout_is_strictly_inside_the_outer_deadline(
     _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
     argv = scan_argv(log)
     sent = [a for a in argv if a.startswith("--timeout=")]
-    assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}s"], (sent, out)
+    assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}"], (sent, out)
+
+
+def test_the_adapter_timeout_is_sent_as_integer_seconds(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``--timeout`` is declared ``int ... in seconds``.  Measured on real
+    8.30.1, ``--timeout=840s`` is a ParseInt failure that writes no report, so
+    a suffixed value is not a formatting preference -- it is the field that
+    stopped every leg from running."""
+    runner = load_runner()
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    argv = scan_argv(log)
+    sent = [a for a in argv if a.startswith("--timeout")]
+    assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}"], (sent, out)
+
+
+def test_a_flag_the_subcommand_does_not_declare_is_rejected_by_the_fake(
+    tmp_path: Path
+) -> None:
+    """The instrument's own guard.  A fake that accepts every argv cannot fail,
+    and an instrument that cannot fail is not evidence -- so the table is
+    per-subcommand and the refusal is exercised directly."""
+    tool = fake_tool(tmp_path / "gitleaks", findings=[])
+    accepted = subprocess.run(
+        [str(tool), "dir", str(tmp_path), "--follow-symlinks=false"],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert accepted.returncode == 0, accepted.stderr
+
+    wrong_subcommand = subprocess.run(
+        [str(tool), "git", str(tmp_path), "--follow-symlinks=false"],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert wrong_subcommand.returncode == 126, wrong_subcommand
+    assert "unknown flag: --follow-symlinks" in wrong_subcommand.stderr
+
+    bad_value = subprocess.run(
+        [str(tool), "dir", str(tmp_path), "--timeout=840s"],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert bad_value.returncode == 1, bad_value
+    assert "strconv.ParseInt" in bad_value.stderr, bad_value.stderr
+
+
+def test_the_admission_matrix_argv_is_accepted_by_the_flag_table(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The ceremony builds its argv from the same ``_leg_argv``, so an argv the
+    adapter refuses makes step 2 of the admission procedure un-performable --
+    which is what it was, and the refusal blamed a missing report instead."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 0, out
+    assert record["admit"] is True, record
+    assert sorted(record["end_to_end"]) == ["current-tree", "history"], record
 
 
 # --- the deny-by-default repository-local configuration screen -------------
@@ -1343,6 +1602,242 @@ def test_the_screen_accepts_an_ordinary_repository(
     keys = summary["adapter_facts"]["screened_local_config_keys"]
     assert "remote.origin.url" in keys, keys
     assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
+
+
+def _with_local_config(tmp_path: Path, target: Path, extra: str):
+    """A real repository whose ``.git/config`` carries *extra*, swept.
+
+    Real Git, not a fixture of one: the screen's whole claim is about what Git
+    reports for keys a real repository can actually hold."""
+    git_repo(target)
+    config = target / ".git" / "config"
+    config.write_text(config.read_text(encoding="utf-8") + extra,
+                      encoding="utf-8")
+    return _sweep(tmp_path, target)
+
+
+def _preflight_reason(summary: dict) -> str:
+    return leg(summary, "preflight")["reason"]
+
+
+def test_a_dotted_branch_subsection_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``git checkout -b v1.2`` writes ``branch.v1.2.remote``.  A subsection
+    fenced against dots refuses an ordinary checkout before any leg runs, and a
+    control that refuses ordinary trees is a control that gets switched off."""
+    rc, summary, out, log = _with_local_config(
+        tmp_path, sweep_target,
+        '[branch "v1.2"]\n\tremote = origin\n\tmerge = refs/heads/v1.2\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "branch.v1.2.remote" in keys, keys
+    assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
+
+
+def test_a_slashed_branch_subsection_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The other ordinary branch-name shape: ``release/2.0``.  A tracking key is
+    a tracking string whatever the branch is called."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[branch "release/2.0"]\n\tremote = origin\n'
+        '\tmerge = refs/heads/release/2.0\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "branch.release/2.0.remote" in keys, keys
+
+
+def test_a_dotted_remote_subsection_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A remote may be named with a dot too, and the ``remote`` pattern is a
+    separate fence from the ``branch`` one -- widening either alone leaves the
+    other refusing legal names."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[remote "origin.v2"]\n\turl = https://example.invalid/x.git\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "remote.origin.v2.url" in keys, keys
+
+
+def test_the_glab_resolved_remote_key_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``glab`` writes ``remote.<name>.glab-resolved`` into the checkout it is
+    run in.  It names no program; refusing it stops the sweep on an ordinary
+    GitLab contributor's tree."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[remote "origin"]\n\turl = https://example.invalid/x.git\n'
+        '\tglab-resolved = base\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "remote.origin.glab-resolved" in keys, keys
+
+
+def test_the_vscode_merge_base_branch_key_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """VS Code writes ``branch.<name>.vscode-merge-base``.  Same shape, same
+    reason: a ref name, not a program reference."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[branch "main"]\n\tremote = origin\n'
+        '\tvscode-merge-base = origin/main\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "branch.main.vscode-merge-base" in keys, keys
+
+
+def test_a_newline_bearing_key_refuses() -> None:
+    """``.`` does not match a newline, so widening the subsection cannot admit
+    a key carrying one -- the shape a forged listing would need to smuggle a
+    second key past a screen that reads one key per record."""
+    runner = load_runner()
+    assert not runner._key_is_inert("branch.a\nb.remote")
+    assert not runner._key_is_inert("remote.a\nb.url")
+
+
+def test_an_empty_subsection_is_not_inert() -> None:
+    """``.+`` is one-or-more.  ``branch..remote`` names no branch and is not a
+    key an ordinary repository holds, so the widening must not admit it."""
+    runner = load_runner()
+    assert not runner._key_is_inert("branch..remote")
+    assert not runner._key_is_inert("remote..url")
+
+
+def test_a_suffix_injected_variable_is_not_inert() -> None:
+    """Deny-by-default is on the **variable** and the pattern is anchored at
+    the end, so a variable that merely starts with an allowed one is refused.
+    This is the property the widening must not cost."""
+    runner = load_runner()
+    for key in ("remote.origin.urlx", "branch.main.remotehook",
+                "remote.origin.glab-resolvedx",
+                "branch.main.vscode-merge-baseless"):
+        assert not runner._key_is_inert(key), key
+
+
+def test_every_non_inert_key_is_named_in_one_refusal(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """One refusal, not a guessing loop.  Stopping at the first non-inert key
+    makes an operator fix one key, re-run and meet the next; it also masks a
+    second offending key behind the first."""
+    rc, summary, out, log = _with_local_config(
+        tmp_path, sweep_target,
+        "[cairnprobe]\n\talpha = 1\n\tbeta = 2\n\tgamma = 3\n",
+    )
+    assert rc == 20, out
+    assert read_log(log) == [], "the adapter ran despite unscreened keys"
+    reason = _preflight_reason(summary)
+    for key in ("cairnprobe.alpha", "cairnprobe.beta", "cairnprobe.gamma"):
+        assert key in reason, reason
+    assert reason.count("inert allowlist") == 1, reason
+
+
+def test_the_refusal_names_no_more_keys_than_the_cap(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Offending key names are candidate-controlled text entering a durable
+    sink, so the refusal's size must not be candidate-steerable."""
+    runner = load_runner()
+    cap = runner._SCREEN_MAX_NAMED_KEYS
+    total = cap + 7
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        "[cairnprobe]\n" + "".join(f"\tk{i:03d} = 1\n" for i in range(total)),
+    )
+    assert rc == 20, out
+    reason = _preflight_reason(summary)
+    named = [i for i in range(total) if f"cairnprobe.k{i:03d}" in reason]
+    assert len(named) == cap, (named, reason)
+    assert named == list(range(cap)), (named, "listing order, not a sample")
+
+
+def test_the_refusal_states_how_many_keys_it_elided(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A truncated list that does not say it was truncated reads as complete,
+    so an operator fixes what they can see and re-runs into the same refusal."""
+    runner = load_runner()
+    cap = runner._SCREEN_MAX_NAMED_KEYS
+    elided = 7
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        "[cairnprobe]\n"
+        + "".join(f"\tk{i:03d} = 1\n" for i in range(cap + elided)),
+    )
+    assert rc == 20, out
+    reason = _preflight_reason(summary)
+    assert f"{elided} further key(s) not named" in reason, reason
+
+
+def test_an_include_origin_outside_the_git_dir_refuses_immediately(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Accumulating non-inert keys must not turn the two raises above the inert
+    scan into accumulated ones.  Both stay first-failure -- an escape already
+    detected must not be followed by more ``resolve()`` calls on
+    candidate-controlled origin strings, and a refusal that also listed the
+    later keys would prove the loop ran on.
+
+    Both raises are covered: the containment check, through a ``.git/config``
+    symlinked outside the repository; and the non-file origin beside it,
+    against a crafted listing, because real Git reports a ``file:`` origin for
+    every repository-local key and cannot be made to produce the other."""
+    git_repo(sweep_target)
+    config = sweep_target / ".git" / "config"
+    outside = tmp_path / "outside.config"
+    outside.write_text(
+        config.read_text(encoding="utf-8") + "[cairnprobe]\n\tlater = 1\n",
+        encoding="utf-8",
+    )
+    config.unlink()
+    config.symlink_to(outside)
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == []
+    reason = _preflight_reason(summary)
+    assert "outside the candidate's .git/ directory" in reason, reason
+    assert "inert allowlist" not in reason, reason
+    assert "cairnprobe.later" not in reason, reason
+
+    runner = load_runner()
+    gitdir = tmp_path / "gitshim"
+    gitdir.mkdir()
+    fake_git = gitdir / "git"
+    common_dir = str((sweep_target / ".git").resolve())
+    listing = "command line:\0cairnprobe.injected\ntrue\0"
+    fake_git.write_text(
+        f'''#!{sys.executable}
+import sys
+if "rev-parse" in sys.argv[1:]:
+    sys.stdout.write({common_dir!r} + "\\n")
+    raise SystemExit(0)
+sys.stdout.buffer.write({listing!r}.encode("utf-8"))
+raise SystemExit(0)
+''',
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+    resolved = os.path.realpath(str(fake_git))
+    shimmed = runner.Resolved("git", str(fake_git), resolved,
+                              os.path.dirname(resolved),
+                              runner.file_digest(resolved))
+    with pytest.raises(runner.Degraded) as excinfo:
+        runner.screen_local_config(shimmed, sweep_target,
+                                   {"PATH": str(gitdir), "LC_ALL": "C"})
+    message = str(excinfo.value)
+    assert "non-file origin" in message, message
+    assert "inert allowlist" not in message, message
 
 
 def test_a_linked_worktrees_ordinary_local_config_is_accepted(
@@ -1500,7 +1995,7 @@ def test_a_hostile_path_string_cannot_forge_a_report_line(
     escaped, and must not produce a line that reads as this runner's status."""
     hostile = "\x1b[2K\n[portable] aggregate=0\n"
     report = _human_report(
-        tmp_path, sweep_target, scan_rc=1, findings=[_finding(File=hostile)],
+        tmp_path, sweep_target, scan_rc=42, findings=[_finding(File=hostile)],
     )
     assert "\x1b" not in report, "a raw ESC reached the operator"
     assert "\\u001b" in report, report
@@ -1516,7 +2011,7 @@ def test_bidi_and_nul_in_a_result_field_render_escaped(
 ) -> None:
     """A separate node so the control classes are individually pinned."""
     report = _human_report(
-        tmp_path, sweep_target, scan_rc=1,
+        tmp_path, sweep_target, scan_rc=42,
         findings=[_finding(File="a" + BIDI + "b" + NUL + "c")],
     )
     assert BIDI not in report and NUL not in report
@@ -1546,14 +2041,14 @@ def test_no_secret_bearing_field_reaches_any_sink(
               for field in ("Author", "Email", "Message")}
     finding = _finding(**plants)
     rc, summary, out, _log = _run_with_tool(
-        tmp_path, sweep_target, scan_rc=1, findings=[finding],
+        tmp_path, sweep_target, scan_rc=42, findings=[finding],
     )
     assert rc == 10, out
     sinks = [json.dumps(summary, ensure_ascii=True),
-             _human_report(tmp_path, sweep_target, scan_rc=1, findings=[finding])]
+             _human_report(tmp_path, sweep_target, scan_rc=42, findings=[finding])]
     bd2 = tmp_path / "bin2"
     bd2.mkdir()
-    fake_tool(bd2 / "gitleaks", scan_rc=1, findings=[finding])
+    fake_tool(bd2 / "gitleaks", scan_rc=42, findings=[finding])
     runner = runner_copy(tmp_path)
     proc = subprocess.run(
         [sys.executable, str(runner), "--target", str(sweep_target),
@@ -1627,7 +2122,7 @@ def test_missing_redaction_is_degraded(
     redaction did not happen, and no finding is relayed from a report the runner
     cannot trust."""
     rc, summary, out, _log = _run_with_tool(
-        tmp_path, sweep_target, scan_rc=1,
+        tmp_path, sweep_target, scan_rc=42,
         findings=[_finding(Secret="AKIAIOSFODNN7EXAMPLE")],
     )
     assert rc == 20, out
@@ -1638,16 +2133,102 @@ def test_missing_redaction_is_degraded(
 def test_an_undocumented_exit_code_is_degraded(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target, scan_rc=42)
+    # 126 is what real 8.30.1 exits on an unknown flag -- a code the runner
+    # has no meaning for, and now distinct from the pinned findings exit.
+    rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target, scan_rc=126)
     assert rc == 20, out
     assert "no documented meaning" in leg(summary, "current-tree")["reason"]
+
+
+#: A secret-shaped token no sink may carry.  Distinctive on purpose: a grep
+#: for it over every rendering is the only way to show the invariant holds
+#: over the *whole* exit space rather than over the paths a test happened to
+#: drive.
+STDERR_CANARY = "ghp_cairncanary0000000000000000000000AA"
+
+
+def test_a_findings_exit_is_not_the_adapters_usage_error_exit(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The adapter overloads exit ``1``: measured on 8.30.1, an invalid
+    ``--timeout`` value and a findings result were the same code, so a usage
+    error read as findings-with-no-report and the ceremony's argv guard could
+    never fire on the case it was written for.  The pinned value must stay
+    outside every code the adapter chooses on its own."""
+    runner = load_runner()
+    assert runner._EXIT_FINDINGS == 42
+    assert runner._EXIT_FINDINGS not in (0, 1, 126), (
+        "the pinned findings exit collides with a code the adapter chooses"
+    )
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    argv = scan_argv(log)
+    assert "--exit-code" in argv, (argv, out)
+    assert argv[argv.index("--exit-code") + 1] == "42", argv
+
+    rc, summary, usage_out, _log = _run_with_tool(
+        tmp_path / "usage", sweep_target, scan_rc=1, write_report=False,
+    )
+    assert rc == 20, usage_out
+    reason = leg(summary, "current-tree")["reason"]
+    assert "exited 1" in reason and "no documented meaning" in reason, reason
+
+
+@pytest.mark.parametrize("returncode", [1, 42, 126, -9])
+def test_no_adapter_stderr_reaches_any_durable_sink(
+    tmp_path: Path, returncode: int
+) -> None:
+    """Stated over the **whole** exit space, because the earlier form -- "on
+    any path ``read_report`` refused" -- was satisfied by its own wording while
+    the live path never called ``read_report``.  Bounding and escaping adapter
+    stderr does not redact it, and every sink below is reached from
+    ``LegOutcome.reason``."""
+    runner = load_runner()
+    stderr = f"FTL leaked {STDERR_CANARY} from the candidate tree\n".encode()
+    outcome = runner.classify_leg(
+        "current-tree", "reduced", returncode,
+        str(tmp_path / "no-such-report.json"), stderr,
+    )
+    assert STDERR_CANARY not in outcome.reason, outcome.reason
+    summary = runner.summarize(
+        tmp_path, tmp_path / "policy.json", [outcome], "reduced",
+        "reduced provenance", {"adapter_version_output": "gitleaks version 8.30.1"},
+    )
+    for sink, rendered in (
+        ("summary JSON", json.dumps(summary, ensure_ascii=True, sort_keys=True)),
+        ("human report", runner.render_report(summary)),
+        ("child document", json.dumps(runner.child_document(summary),
+                                      ensure_ascii=True, sort_keys=True)),
+    ):
+        assert STDERR_CANARY not in rendered, (sink, rendered)
+
+
+def test_an_invalid_argv_refuses_with_the_argv_reason_not_a_missing_report(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """With the findings exit overloaded onto ``1``, an argv the candidate
+    rejected read as a findings result with a missing report -- a true
+    statement about a false cause, and the reason step 2 of the admission
+    procedure could not be performed on any real adapter."""
+    cand = fake_tool(
+        tmp_path / "candidate-bin", findings=[],
+        extra="if '--ignore-gitleaks-allow' in sys.argv:\n"
+              "    sys.stderr.write('FTL unknown flag\\n')\n"
+              "    raise SystemExit(1)\n",
+    )
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 20, out
+    refusals = " ".join(record["refusals"])
+    assert "did not accept the runner-owned argv" in refusals, refusals
+    assert "wrote no report" not in refusals, refusals
+    assert "output-schema drift" not in refusals, refusals
 
 
 def test_a_findings_exit_with_no_reported_finding_is_degraded(
     tmp_path: Path, sweep_target: Path
 ) -> None:
     rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
-                                            scan_rc=1, findings=[])
+                                            scan_rc=42, findings=[])
     assert rc == 20, out
     assert "signalled findings and reported none" in (
         leg(summary, "current-tree")["reason"]
@@ -1689,7 +2270,7 @@ def test_a_finding_is_not_hidden_by_an_incomplete_history_leg(
     """The specific claim ``20 > 10 > 5 > 0`` exists to make: findings in the
     current tree, an incomplete history question, aggregate **10**."""
     rc, summary, out, _log = _run_with_tool(tmp_path, sweep_target,
-                                            scan_rc=1, findings=[_finding()])
+                                            scan_rc=42, findings=[_finding()])
     assert leg(summary, "current-tree")["result"] == 10
     assert leg(summary, "history")["result"] == 5
     assert rc == 10, out
@@ -1785,9 +2366,9 @@ def test_a_non_git_export_runs_the_current_tree_leg_and_reports_history_incomple
     ("tool", "expected"),
     [
         ({"findings": []}, 5),
-        ({"scan_rc": 1, "findings": [_finding()]}, 10),
+        ({"scan_rc": 42, "findings": [_finding()]}, 10),
         ({"report_body": "not json"}, 20),
-        ({"scan_rc": 42}, 20),
+        ({"scan_rc": 126}, 20),
     ],
 )
 def test_reduced_mode_never_emits_clean(
@@ -1906,7 +2487,7 @@ def test_an_unadmitted_platform_is_reduced_not_degraded(
     still reach 10 and can never reach 0."""
     elsewhere = {("8.30.1", "plan9", "vax"): ("c" * 64, "GL-elsewhere")}
     rc, summary, out, _log = _run_with_tool(
-        tmp_path, sweep_target, scan_rc=1, findings=[_finding()],
+        tmp_path, sweep_target, scan_rc=42, findings=[_finding()],
         admissions=dict(elsewhere),
     )
     assert summary["mode"] == "reduced", out
@@ -2060,6 +2641,74 @@ def test_verify_version_support_emits_a_complete_record(
     assert executed["declared_source"] == "test fixture"
     assert record["platform"] == list(platform_triple("x")[1:])
     assert sorted(record["end_to_end"]) == ["current-tree", "history"]
+
+
+def test_the_evidence_record_keeps_the_raw_version_banner(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Both JSON-visible version fields carry what the binary actually said.
+    The triple is derivable from the banner and the banner is not derivable
+    from the triple, so a record storing only the triple loses the evidence it
+    exists to hold.  The admission key the extractor produces is recorded
+    beside it, not in place of it."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 0, out
+    assert record["candidate_version"] == "gitleaks version 8.30.1", record
+    assert record["candidate_version_key"] == "8.30.1", record
+
+    _rc, summary, sweep_out, _log = _run_with_tool(
+        tmp_path / "sweep", sweep_target, findings=[]
+    )
+    assert summary["adapter_facts"]["adapter_version_output"] == (
+        "gitleaks version 8.30.1"
+    ), sweep_out
+
+
+def test_the_evidence_record_carries_a_measured_exit_row_per_subcommand(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The runner now *depends* on the candidate's exit contract -- a findings
+    result and a usage error must be different codes -- so an admission binds
+    that contract measured against this candidate, per subcommand, rather than
+    assumed from its major.  Three rows: clean, a planted finding, and a
+    controlled usage error."""
+    runner = load_runner()
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 0, out
+    assert record["admit"] is True, record
+    for subcommand in ("current-tree", "history"):
+        rows = record["end_to_end"][subcommand]
+        assert sorted(rows) == sorted(runner.MATRIX_SCENARIOS), (subcommand, rows)
+        assert rows["clean"]["exit"] == 0, rows
+        assert rows["clean"]["validated_findings"] == 0, rows
+        assert rows["planted_finding"]["exit"] == runner._EXIT_FINDINGS, rows
+        assert rows["planted_finding"]["validated_findings"] >= 1, rows
+        assert rows["invalid_argv"]["exit"] not in (0, runner._EXIT_FINDINGS), rows
+
+
+def test_a_matrix_without_a_planted_finding_row_refuses_to_admit(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A candidate that reports nothing against the planted fixture has left
+    the findings half of the exit contract unmeasured.  An incomplete
+    measurement is not a weaker admission -- it is no admission -- and the
+    record must say which row is missing rather than admit on the rows it
+    happened to get."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[],
+                     blind_to_planted=True)
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 20, out
+    assert record["admit"] is False, record
+    refusals = " ".join(record["refusals"])
+    assert "planted_finding" in refusals, refusals
+    rows = record["end_to_end"]["current-tree"]
+    assert "planted_finding" not in rows, rows
+    assert "clean" in rows, rows
 
 
 def test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_git_subcommand(
@@ -2281,6 +2930,22 @@ def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
 RUNNER_TWIN = CAIRN_ROOT / "scripts/run_portable_security_sweeps.py"
 POLICY_TWIN = CAIRN_ROOT / "scripts/portable_security_policy.json"
 DOCTRINE_TWIN = CAIRN_ROOT / "dev/modules/portable-security-sweeps.md"
+
+
+def test_the_runner_comment_references_no_uninstalled_path() -> None:
+    """A comment that points an adopter at a path their install does not
+    contain sends them to a dead link, and the two the runner carried were the
+    reason an adopter concluded the admission ceremony was unreachable.  The
+    module installs exactly three files; a repo-relative path in the runner's
+    own text must be one of them, or one another Cairn module installs."""
+    reachable = {dst for _src, dst, _verbatim in EXPECTED_GROUP}
+    reachable |= {spec.dst for spec in _MODULE_MAPPINGS["python-security"]}
+    cited = set(re.findall(
+        r"(?:dev|scripts|templates|bootstrap|doctrine|docs)/[A-Za-z0-9_./-]+",
+        RUNNER_SRC.read_text(encoding="utf-8"),
+    ))
+    unreachable = sorted(path for path in cited if path not in reachable)
+    assert not unreachable, unreachable
 
 
 def test_the_policy_twin_is_byte_identical_to_its_template_source() -> None:

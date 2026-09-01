@@ -4,7 +4,7 @@
 — accepted as revised (Revision 4) on 2026-08-20. **The plan-open commit archives
 the source proposal**, so the path above is where it lives from that commit
 onward (`dev/plans/_template.md:18-19`, `doctrine/plans.md:40-41`).
-**Status**: ready-to-implement
+**Status**: awaiting-code-review
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header. The **Security Review** the implementation carries is a *different
 instrument*: mandated by the portable-sweep executable trust root `AGENTS.md`
@@ -730,3 +730,207 @@ outcome; the one addition is recorded separately so growth-by-allowance is not
 mistaken for drift.
 
 **Status → `ready-to-implement`.**
+
+## Implementation verification -- Claude (Implementation) -- 2026-08-31
+
+**Boundary B mode**: full
+
+Bounded mode was refused at plan-open on two independent grounds and both hold:
+both runner paths are frozen in `bootstrap/tests/fixtures/gate_manifest.json`
+and pinned in `dev/.cairn/cairn-lock.yml` (**contract surface**), and the change
+edits the portable-sweep executable trust root and the admission ceremony
+(**trust-ceremony surface**).
+
+**Interpreter**: Python 3.13.13, the canonical 3.13.x.
+**Reviewed range**: `d49059d..12a536f` -- seven commits, chunks A through F.
+**Tested SHA**: `12a536f`, the final implementation commit.
+**Clean pre/post state**: `git status --short` empty before the run and after
+it; the run mutates nothing tracked.
+**Twin**: both runner paths at sha256
+`9bf5122ab77741e92c9ce44ffd8371459f0cc68ac732b68432223abb82dbad88`, verified
+with `shasum` independently of the suite node that claims it.
+
+### Commands and outcomes
+
+| Command | Outcome | Timing |
+|---|---|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | **3205 passed, 1 failed**, 0 skipped, 0 xfail, 0 xpass, 3 warnings | 569.01s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | `[neutrality] fail=79 info=21`; `[redundancy] fail=0 info=0`; exit 0 | under 5s |
+| `python scripts/check_cairn.py` | `3 issue(s) across 173 file(s)`; 29 external links not probed | under 5s |
+| `python scripts/claim_check.py dev/plans/portable-sweeps-cannot-run.md` | **OK, no claim-check flags** | under 5s |
+| `python scripts/claim_check.py dev/measurement/gitleaks-version-support.md` | **OK, no claim-check flags** | under 5s |
+
+The module doc `templates/modules/team-gated/portable-security-sweeps.md` was
+re-read in chunk F and **not edited**, so it does not join the `claim_check`
+list.
+
+### Disposition of every non-pass
+
+* **`test_cairns_own_install_records_all_three_files_in_the_lockfile` -- FAILED,
+  expected, not repaired.** It hashes `scripts/run_portable_security_sweeps.py`
+  on disk against `dev/.cairn/cairn-lock.yml:414-419`, which still carries the
+  pre-change `sha256:3c2ebff3...`. The lockfile is tool-owned and
+  regenerate-only; the re-anchor is the Maintainer's.
+
+  **This contradicts one sentence in this plan** (*Fences and mechanical
+  consequences*), which says gate-manifest and lockfile staleness means
+  "nothing goes red". That is true of the gate manifest and **false of the
+  lockfile** -- this node reddened on the first chunk and stayed red through all
+  seven commits. The plan was implemented as written (report, do not repair);
+  the inaccuracy is recorded rather than worked around.
+* **Baselines, measured on a clean tree immediately before chunk A** and
+  unchanged by this work: `check_cairn` `3 issue(s) across 173 file(s)` -- all
+  three are stale `dev/measurement/` path citations in
+  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`, unrelated to this
+  surface; `quality_gate --sub neutrality` `fail=79 info=21`; `--sub redundancy`
+  `fail=0`. Every post-change figure matches its own baseline exactly. (The
+  plan's frozen `6 issue(s)` figure did not survive, exactly as it warned.)
+* **0 skipped, 0 xfail, 0 xpass** in the full run, so no passed-to-skipped
+  transition can hide behind an unchanged collected total.
+
+### Test-count movement, reconciled
+
+`bootstrap/tests/test_portable_security_sweeps.py` carried **163** collected
+nodes and **100** `def test_` names at `d49059d`; it now carries **191**
+collected and **125** names. That is **25 new test names** -- four (A), twelve
+(B), three (C), three (D), two (E), one (F), exactly the plan's accounting --
+and **+28 collected**, because
+`test_no_adapter_stderr_reaches_any_durable_sink` is parametrized over four
+cases. One node was re-pointed as the plan directs
+(`test_the_gitleaks_timeout_is_strictly_inside_the_outer_deadline`, off the
+suffixed `--timeout` string it had been locking in).
+
+### Chunk G -- the two real-adapter instruments
+
+Run against **gitleaks 8.30.1** at `/opt/homebrew/bin/gitleaks`, resolved to
+`/opt/homebrew/Cellar/gitleaks/8.30.1/bin/gitleaks`, sha256
+`f414bc2fb952be6c9072b75cb411e3368614ef4b16d48dbd9ad238034afd2302`. Git 2.53.0,
+darwin/arm64.
+
+**Instrument 1 -- the reduced-mode sweep. Predicate met.** Against a fresh
+repository carrying one commit whose identity came from `GIT_AUTHOR_*` /
+`GIT_COMMITTER_*` in the environment: `result: 5`, `mode: "reduced"`,
+current-tree leg **INCOMPLETE** with the reason *"no finding, but the adapter
+version is not admitted on this platform"* -- so the leg **ran** -- history leg
+INCOMPLETE (Git is unreachable from the reduced child), and **no leg with status
+DEGRADED**.
+
+**Instrument 1's falsifier, run at the pre-A commit `d49059d`** against the same
+repository: `result: 5`, `status: INCOMPLETE`, reason verbatim
+`adapter version 'gitleaks version 8.30.1' is not an exact X.Y.Z; the version is
+unmeasured, so no scan leg was run` -- the exact string this plan predicted. The
+instrument measures what the plan claims.
+
+**The documented trap, reproduced.** The same repository built the ordinary way
+(`git config user.email` / `user.name`) returns `result: 20`, DEGRADED, before
+any leg: `repository-local configuration key(s) ['user.email', 'user.name'] are
+not on the reviewed inert allowlist`. That is correct -- `user.*` is not an
+inert family and chunk B did not widen it -- and the refusal now names **both**
+keys in one message, which is chunk B's accumulation visible on a real tree.
+
+**Instrument 2 -- the admission ceremony. Predicate met; the ceremony does not
+complete.** `--verify-version-support /opt/homebrew/bin/gitleaks
+--confirm-executing-an-unadmitted-binary` reaches a **real matrix result**: the
+record carries `end_to_end` rows, the `current-tree` `clean` row measured
+end-to-end against the real adapter (`exit 0`, report validated, zero findings),
+and `candidate_version_key: "8.30.1"`. It does **not** refuse on argv, which is
+what the predicate asks. For contrast, the same command at `d49059d` returns
+`end_to_end: null` and the refusal *"the adapter wrote no report"* -- the true
+statement about a false cause D3 named.
+
+The record then refuses at the `planted_finding` row with `admit: false`, on the
+runner's own redaction control; see the finding below. **Nothing was admitted;
+`_ADMITTED_ARTIFACTS` is untouched and still empty.**
+
+**Gate 3's attestation is NOT closed by this record.** The plan assigns that
+attestation to the Maintainer or the adopter as a human step. The runs above are
+verification evidence produced by an agent, against a binary found on `PATH`
+that is neither Maintainer-supplied nor checksum-verified.
+
+### A defect chunk E surfaced, recorded and not fixed
+
+Measured 2026-08-31 on real 8.30.1 darwin/arm64: `--redact=100` empties `Secret`
+to `REDACTED` but renders `Match` as `api_key = "REDACTED"` -- the redacted
+secret **inside its surrounding context**. The runner's `_MUST_BE_REDACTED`
+check requires the whole field to be `REDACTED` or asterisks, so **no real
+finding from this adapter can pass it**: the matrix's planted row refuses, and
+an ordinary sweep would report DEGRADED rather than FINDINGS on a real secret.
+
+This is a **pre-existing runner control**, not something this change introduced
+-- and it was invisible until chunk E made the matrix measure a real finding,
+which is precisely what invariant (viii) exists for. Reconciling the check with
+what the adapter emits is **new scope**; it is recorded in
+`dev/measurement/gitleaks-version-support.md` under *Known gap* and left for a
+decision.
+
+### Frozen and pinned files touched -- reported, not repaired
+
+The re-anchor is the Maintainer's, per `bootstrap/REANCHOR_RUNBOOK.md`.
+
+| File | Where pinned | Recorded | On disk now |
+|---|---|---|---|
+| `scripts/run_portable_security_sweeps.py` | `gate_manifest.json:4950-4954` | `3c2ebff3...` | `9bf5122a...` |
+| `templates/modules/team-gated/run_portable_security_sweeps.py` | `gate_manifest.json:5135-5139` | `3c2ebff3...` | `9bf5122a...` |
+| `bootstrap/tests/test_portable_security_sweeps.py` | `gate_manifest.json:4610-4614` | `e5ce3500...` | `1b16651a...` |
+| `scripts/run_portable_security_sweeps.py` | `dev/.cairn/cairn-lock.yml:414-419` | `3c2ebff3...` | `9bf5122a...` |
+
+The manifest's `collection` list also enumerates this test file's node ids and
+does not yet carry the 25 new names. **The plan named two stale entries; there
+are four**, because the test file is frozen too -- and only the lockfile one
+reddens.
+
+### Deviations and disclosed implementation choices
+
+Every accepted outcome is delivered; nothing was dropped. Five choices a code
+reviewer should see:
+
+1. **`record["candidate_version_key"]` is a new field in the evidence record.**
+   The *Sequence* row for A requires the extractor to be "reached by both probe
+   call sites", and N3's Decision requires the **raw banner** in the two
+   JSON-visible fields -- which implies the extractor's output at the ceremony
+   site lands somewhere else. It carries the version component of the
+   `(version, platform, architecture)` key a reviewed source change would type;
+   without it, after A the ceremony's record names a banner that is not the key
+   `select_mode` matches.
+2. **Two exit fixtures re-pointed beyond the one the plan counts.**
+   `test_an_undocumented_exit_code_is_degraded` and one
+   `test_reduced_mode_never_emits_clean` case used `42` as an *undocumented*
+   code; `42` is now the pinned findings exit, so both move to `126` -- what
+   real 8.30.1 exits on an unknown flag. Ten findings fixtures move from
+   `scan_rc=1` to `42` for the same reason.
+3. **Chunk F also corrected a second uninstalled path in the same comment
+   block** -- `templates/modules/team-gated/run_security_audit.py`, corrected to
+   the destination `python-security` installs its orchestrator at,
+   `scripts/`+`run_security_audit.py` (**an adopter-side path, deliberately not
+   written as one citation**: Cairn has not adopted that module, so it does not
+   resolve in this tree). F's criterion is "references **no** path the
+   `team-gated` module does not install", so the node would have flagged the
+   original.
+4. **`end_to_end` is published as it fills**, not assigned once at the end, so a
+   refusing record still shows which rows were measured. E's own criterion --
+   "a matrix missing any row refuses with `admit: false`" -- presupposes a
+   record that can be missing a row.
+5. **The fake adapter now scans its target** for the planted `generic-api-key`
+   shape and exits the runner-owned `--exit-code` on a hit. A fake that reports
+   the same findings whatever it is pointed at cannot measure a findings row.
+
+**Chunk M was NOT executed.** It is MAINTAINER-GATED and closes public issue #4;
+no authorization exists, nothing was posted, and `gh` was never run.
+
+### Known omissions, carried unchanged
+
+The extractor pins observed shapes only. Not tested: Linux, Windows, a symlinked
+Git common directory, a malicious adapter binary, a full-mode admitted digest,
+or every legal exit an unknown future adapter might choose. The ceremony is
+documented and, after C and D, *reaches a real matrix result* -- **it is not
+performed to completion by this change** (see the redaction finding above), and
+**no artifact is admitted**.
+
+Two omissions this implementation adds:
+
+* The **flag table** in the test fake is transcribed by hand from
+  `gitleaks dir --help` and `gitleaks git --help` on 8.30.1 darwin/arm64. It is
+  an instrument, not a contract: a future adapter's `--help` will not update it.
+* The **planted-finding fixture** depends on the default ruleset's
+  `generic-api-key` rule and on `--redact=100` behaviour, both measured on
+  8.30.1 only.
