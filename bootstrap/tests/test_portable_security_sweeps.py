@@ -204,6 +204,54 @@ def _check_argv(argv):
 _check_argv(sys.argv[1:])
 '''
 
+#: A fake that reports the same findings whatever it is pointed at cannot
+#: measure a findings row, so it scans its target the way the adapter does:
+#: for the ``generic-api-key`` shape the admission matrix plants.  The exit
+#: code on a hit comes from the runner-owned ``--exit-code``, which is the
+#: half of the exit contract the matrix exists to measure.
+_FAKE_PLANTED_SCAN = '''
+import re as _re
+
+_PLANTED_RE = _re.compile('api_key\\\\s*=\\\\s*"([A-Za-z0-9_-]{20,})"')
+
+
+def _exit_code_from_argv():
+    argv = sys.argv[1:]
+    for index, item in enumerate(argv):
+        if item == "--exit-code" and index + 1 < len(argv):
+            return int(argv[index + 1])
+        if item.startswith("--exit-code="):
+            return int(item.split("=", 1)[1])
+    return 1
+
+
+def _scan_for_planted():
+    argv = sys.argv[1:]
+    if len(argv) < 2:
+        return None
+    for base, _dirs, names in os.walk(argv[1]):
+        for name in sorted(names):
+            path = os.path.join(base, name)
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as fh:
+                    body = fh.read()
+            except OSError:
+                continue
+            if _PLANTED_RE.search(body):
+                return path
+    return None
+
+
+def _planted_finding(path):
+    return {"RuleID": "generic-api-key",
+            "Description": "Detected a Generic API Key",
+            "StartLine": 1, "EndLine": 1, "StartColumn": 1, "EndColumn": 55,
+            "Match": "REDACTED", "Secret": "REDACTED", "File": path,
+            "SymlinkFile": "", "Commit": "", "Entropy": 4.6,
+            "Author": "", "Email": "", "Date": "", "Message": "", "Tags": [],
+            "Fingerprint": path + ":generic-api-key:1"}
+'''
+
 
 def fake_tool(
     path: Path,
@@ -211,6 +259,7 @@ def fake_tool(
     version: str = "8.30.1",
     version_rc: int = 0,
     bare_version: bool = False,
+    blind_to_planted: bool = False,
     log: Path | None = None,
     scan_rc: int = 0,
     mutate_self_on_version: bool = False,
@@ -268,7 +317,14 @@ if "--version" in sys.argv[1:]:
     raise SystemExit({version_rc!r})
 record("scan")
 {_FAKE_ARGV_GATE}
+{_FAKE_PLANTED_SCAN}
 {extra}
+_hit = None if {blind_to_planted!r} else _scan_for_planted()
+_findings = {findings!r} or []
+_rc = {scan_rc!r}
+if _hit is not None:
+    _findings = [_planted_finding(_hit)]
+    _rc = _exit_code_from_argv()
 if {write_report!r} and "--report-path" in sys.argv:
     dest = sys.argv[sys.argv.index("--report-path") + 1]
     if {report_bytes!r} is not None:
@@ -279,7 +335,7 @@ if {write_report!r} and "--report-path" in sys.argv:
             fh.write({report_body!r})
     else:
         with open(dest, "w", encoding="utf-8") as fh:
-            json.dump({findings!r} or [], fh)
+            json.dump(_findings, fh)
 if {stdout_text!r}:
     sys.stdout.write({stdout_text!r})
 if {stderr_text!r}:
@@ -290,7 +346,7 @@ if {hang!r}:
 if {die_on_signal!r}:
     import signal
     os.kill(os.getpid(), signal.SIGKILL)
-raise SystemExit({scan_rc!r})
+raise SystemExit(_rc)
 '''
     path.write_text(body, encoding="utf-8")
     path.chmod(0o755)
@@ -2607,6 +2663,51 @@ def test_the_evidence_record_keeps_the_raw_version_banner(
     assert summary["adapter_facts"]["adapter_version_output"] == (
         "gitleaks version 8.30.1"
     ), sweep_out
+
+
+def test_the_evidence_record_carries_a_measured_exit_row_per_subcommand(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The runner now *depends* on the candidate's exit contract -- a findings
+    result and a usage error must be different codes -- so an admission binds
+    that contract measured against this candidate, per subcommand, rather than
+    assumed from its major.  Three rows: clean, a planted finding, and a
+    controlled usage error."""
+    runner = load_runner()
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 0, out
+    assert record["admit"] is True, record
+    for subcommand in ("current-tree", "history"):
+        rows = record["end_to_end"][subcommand]
+        assert sorted(rows) == sorted(runner.MATRIX_SCENARIOS), (subcommand, rows)
+        assert rows["clean"]["exit"] == 0, rows
+        assert rows["clean"]["validated_findings"] == 0, rows
+        assert rows["planted_finding"]["exit"] == runner._EXIT_FINDINGS, rows
+        assert rows["planted_finding"]["validated_findings"] >= 1, rows
+        assert rows["invalid_argv"]["exit"] not in (0, runner._EXIT_FINDINGS), rows
+
+
+def test_a_matrix_without_a_planted_finding_row_refuses_to_admit(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A candidate that reports nothing against the planted fixture has left
+    the findings half of the exit contract unmeasured.  An incomplete
+    measurement is not a weaker admission -- it is no admission -- and the
+    record must say which row is missing rather than admit on the rows it
+    happened to get."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[],
+                     blind_to_planted=True)
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 20, out
+    assert record["admit"] is False, record
+    refusals = " ".join(record["refusals"])
+    assert "planted_finding" in refusals, refusals
+    rows = record["end_to_end"]["current-tree"]
+    assert "planted_finding" not in rows, rows
+    assert "clean" in rows, rows
 
 
 def test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_git_subcommand(

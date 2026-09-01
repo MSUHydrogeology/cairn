@@ -51,6 +51,7 @@ import json
 import os
 import platform
 import re
+import secrets
 import shutil
 import subprocess
 import sys
@@ -1267,6 +1268,30 @@ REQUIRED_LEG_OPTIONS = (
 #: reading as a verbosity switch.
 CONFIRM_FLAG = "--confirm-executing-an-unadmitted-binary"
 
+#: The rows the admission matrix measures for **each** subcommand.  The runner
+#: depends on the candidate's exit contract -- a findings result and a usage
+#: error must be different codes -- so an admission records that contract
+#: measured against *this* candidate rather than assumed from its major.  A
+#: record missing a row is refused: an incomplete measurement is not a weaker
+#: admission, it is no admission.
+MATRIX_SCENARIOS = ("clean", "planted_finding", "invalid_argv")
+
+#: The controlled invalid element the third row sends.  ``--timeout`` is
+#: declared ``int``, so a non-integer is refused during argument parsing before
+#: any candidate content is read: the row measures a usage error without
+#: scanning anything.
+_MATRIX_INVALID_TIMEOUT = "--timeout=cairn-not-an-integer"
+
+#: The planted-finding fixture's shape.  A fresh high-entropy value in the
+#: shape the default ruleset's ``generic-api-key`` rule matches; measured on
+#: 8.30.1, ``--redact=100`` empties both ``Secret`` and ``Match``.
+#:
+#: **Not a published example credential.**  The default ruleset allowlists
+#: AWS's own documented ``AKIAIOSFODNN7EXAMPLE``, so a matrix planted with it
+#: scans clean and the row reads as a passing scan of a tree that had nothing
+#: to find -- a silently wrong measurement, which is worse than a missing one.
+_PLANTED_FIXTURE_TEMPLATE = 'api_key = "%s"\n'
+
 _CANARY_ENV = "CAIRN_PORTABLE_NETWORK_CANARY"
 
 
@@ -1426,6 +1451,13 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
             with open(os.path.join(fixture, "seed.txt"), "w",
                       encoding="utf-8") as handle:
                 handle.write("nothing sensitive\n")
+            planted = os.path.join(workdir, "planted")
+            os.makedirs(planted)
+            with open(os.path.join(planted, "config.py"), "w",
+                      encoding="utf-8") as handle:
+                handle.write(
+                    _PLANTED_FIXTURE_TEMPLATE % secrets.token_urlsafe(32)
+                )
             work = materialize_workspace(os.path.join(workdir, "work"), [])
             shim_dir = os.path.join(workdir, "shim")
             os.makedirs(shim_dir)
@@ -1445,6 +1477,14 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                 for command in (["init", "-q"], ["add", "seed.txt"],
                                 ["commit", "-qm", "fixture"]):
                     subprocess.run([real_git, "-C", fixture, *command],
+                                   capture_output=True, env=setup_env,
+                                   timeout=_SCREEN_TIMEOUT, check=False)
+                # The history subcommand reads commits, so the planted value
+                # must be committed for the history leg's findings row to
+                # measure anything.
+                for command in (["init", "-q"], ["add", "config.py"],
+                                ["commit", "-qm", "planted"]):
+                    subprocess.run([real_git, "-C", planted, *command],
                                    capture_output=True, env=setup_env,
                                    timeout=_SCREEN_TIMEOUT, check=False)
                 _write_git_shim(os.path.join(shim_dir, "git"), real_git, git_log)
@@ -1503,35 +1543,106 @@ def cmd_verify_version_support(args: argparse.Namespace) -> int:
                     )
                 record["screen"] = "ran under the sterilized child environment"
 
+            # Published as it fills, not at the end: a refusing record must
+            # still show which rows were measured and which one stopped it,
+            # because that is the difference between "this candidate failed
+            # the matrix" and "the matrix never ran".
             scenarios: dict[str, Any] = {}
-            for leg in ("current-tree", "history"):
-                argv, report = _leg_argv(exe, leg, Path(fixture), work)
-                missing = [opt for opt in REQUIRED_LEG_OPTIONS if opt not in argv]
-                if missing:
-                    return refuse(
-                        f"the runner-owned argv for the {leg!r} leg is missing "
-                        f"required option(s) {missing}"
-                    )
-                try:
-                    proc = subprocess.run(argv, capture_output=True, env=env,
-                                          cwd=workdir, timeout=_SCAN_TIMEOUT,
-                                          check=False)
-                except (OSError, subprocess.SubprocessError) as exc:
-                    return refuse(f"the {leg!r} leg could not run: {exc}")
-                if proc.returncode not in (_EXIT_NO_FINDINGS, _EXIT_FINDINGS):
-                    return refuse(
-                        f"the candidate did not accept the runner-owned argv "
-                        f"for the {leg!r} leg (exit {proc.returncode}); a "
-                        f"candidate that rejects a required option is not the "
-                        f"tool this contract was measured against"
-                    )
-                try:
-                    findings = read_report(report)
-                except Degraded as exc:
-                    return refuse(f"output-schema drift on the {leg!r} leg: {exc}")
-                scenarios[leg] = {"exit": proc.returncode,
-                                  "validated_findings": len(findings)}
             record["end_to_end"] = scenarios
+            for leg in ("current-tree", "history"):
+                rows: dict[str, Any] = {}
+                scenarios[leg] = rows
+                for scenario, tree in (("clean", fixture),
+                                       ("planted_finding", planted),
+                                       ("invalid_argv", fixture)):
+                    argv, report = _leg_argv(exe, leg, Path(tree), work)
+                    missing = [opt for opt in REQUIRED_LEG_OPTIONS
+                               if opt not in argv]
+                    if missing:
+                        return refuse(
+                            f"the runner-owned argv for the {leg!r} leg is "
+                            f"missing required option(s) {missing}"
+                        )
+                    if scenario == "invalid_argv":
+                        argv = [_MATRIX_INVALID_TIMEOUT
+                                if item.startswith("--timeout=") else item
+                                for item in argv]
+                    # Each row is measured against a report it wrote itself; a
+                    # row that reads the previous row's file measures nothing.
+                    try:
+                        os.unlink(report)
+                    except FileNotFoundError:
+                        pass
+                    try:
+                        proc = subprocess.run(
+                            argv, capture_output=True, env=env, cwd=workdir,
+                            timeout=_SCAN_TIMEOUT, check=False,
+                        )
+                    except (OSError, subprocess.SubprocessError) as exc:
+                        return refuse(
+                            f"the {leg!r} leg could not run the {scenario!r} "
+                            f"scenario: {exc}"
+                        )
+                    if scenario == "invalid_argv":
+                        if proc.returncode in (_EXIT_NO_FINDINGS,
+                                               _EXIT_FINDINGS):
+                            return refuse(
+                                f"the {leg!r} leg's invalid argv exited "
+                                f"{proc.returncode}, which this runner reads "
+                                f"as a scan result; a usage error the runner "
+                                f"cannot tell from a scan makes every other "
+                                f"row unreadable"
+                            )
+                        rows[scenario] = {
+                            "exit": proc.returncode,
+                            "element": _MATRIX_INVALID_TIMEOUT,
+                        }
+                        continue
+                    if proc.returncode not in (_EXIT_NO_FINDINGS,
+                                               _EXIT_FINDINGS):
+                        return refuse(
+                            f"the candidate did not accept the runner-owned "
+                            f"argv for the {leg!r} leg's {scenario!r} scenario "
+                            f"(exit {proc.returncode}); a candidate that "
+                            f"rejects a required option is not the tool this "
+                            f"contract was measured against"
+                        )
+                    try:
+                        findings = read_report(report)
+                    except Degraded as exc:
+                        return refuse(
+                            f"output-schema drift on the {leg!r} leg's "
+                            f"{scenario!r} scenario: {exc}"
+                        )
+                    expected = (_EXIT_NO_FINDINGS if scenario == "clean"
+                                else _EXIT_FINDINGS)
+                    if proc.returncode != expected:
+                        return refuse(
+                            f"the {leg!r} leg's {scenario!r} scenario exited "
+                            f"{proc.returncode}, not the {expected} this "
+                            f"runner's exit contract requires"
+                        )
+                    if scenario == "planted_finding" and not findings:
+                        return refuse(
+                            f"the {leg!r} leg reported no validated finding "
+                            f"against the planted fixture; the findings half "
+                            f"of the exit contract is unmeasured"
+                        )
+                    if scenario == "clean" and findings:
+                        return refuse(
+                            f"the {leg!r} leg reported {len(findings)} "
+                            f"finding(s) against a fixture that carries none"
+                        )
+                    rows[scenario] = {"exit": proc.returncode,
+                                      "validated_findings": len(findings)}
+                absent = [name for name in MATRIX_SCENARIOS if name not in rows]
+                if absent:
+                    return refuse(
+                        f"the admission matrix for the {leg!r} leg is missing "
+                        f"scenario row(s) {absent}; an incomplete measurement "
+                        f"of the exit contract is not a weaker admission, it "
+                        f"is no admission"
+                    )
 
             # The hostile-ambient-config matrix, run through the runner's own
             # pre-execution refusals rather than re-implemented here.
