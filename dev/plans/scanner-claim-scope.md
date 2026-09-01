@@ -5,7 +5,7 @@
 opening commit archives it** — [`_template.md:18-19`](_template.md),
 [`doctrine/plans.md:40-41`](../../doctrine/plans.md) — so the path above is where
 it lives from the moment this plan exists, not somewhere it goes later.
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header and re-stated by the Decision (*"Plan review is `required(Internal)` (no
 Security Review trigger)"*). The **Security Review: REQUIRED** declaration in
@@ -468,3 +468,261 @@ requirement carried forward, not an escalation this plan invents.
 ## Dispositions
 
 *Filled at archive-preparation.*
+
+## Plan review -- Claude (Internal, fresh-context subagent) -- 2026-08-31
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+Reviewed commit: 2c218188bb0837f570526b42200addf0e08f7d4c
+
+Fresh-context Internal pass on the whole plan against the accepted proposal
+`dev/proposals/archive/2026-08-20-claude-scanner-claim-scope.md` and against the
+live tree. I did not write this plan. I checked *translation fidelity and
+executability*, not the design: the Decision of 2026-08-20 settled D1/D1b/D2/D2b,
+the marker tokenizer, the triple oracle and the gating, and none of that is
+reopened here.
+
+**Verdict: REVISE** — two blocking findings, three notes, two nits, plus one call
+routed to the Maintainer because a reviewer cannot make it.
+
+### What I checked
+
+Canonical interpreter `/Users/kendal30/conda_envs/lhm/bin/python3.13`, clean tree
+at the reviewed commit, read-only.
+
+* **Instrument control before trusting any absence.** `grep -rc
+  test_stale_baseline_is_three bootstrap/tests/test_security_stack.py` → **1**
+  (the pattern can match); the same instrument then returns **0** files across
+  `bootstrap/ scripts/ templates/` for `resolve_declared_closure` and every new
+  node name I spot-checked, so the new names are genuinely free.
+* **Counts measured, not taken** — `grep -c "run_pip_audit_pass("` → **11**,
+  `grep -c "classify_pip_audit_output("` → **6**; both match `:257` exactly.
+* **`frozen_files` in `bootstrap/tests/fixtures/gate_manifest.json`** (183 keys)
+  read directly and filtered for every Scope-table surface → **B1**.
+* **The cross-module positional call** — `run_security_audit.py:627` is
+  `runner._print_summary(code, files, all_flags, new_flags, stale)`, exactly as
+  `:124` claims.
+* **Both `content-security.md` passages in full** (`:80-95`, `:118-126`) before
+  making the Chunk B call, plus the accepted wording at proposal `:874-883`,
+  `:1284-1291` and `:2447`.
+* **Standing-gate baseline, run just now** — control for **N2**: `check_cairn.py`
+  0; `--sub redundancy` 0; `claim_check.py` on this plan 0 with both
+  forward-reference exemptions firing; `link_check.py` **1** (3 findings, all
+  lines 103, 113 and 123 of
+  `templates/modules/default-on/documentation-plan.md`); `--sub
+  neutrality` **1** (**79** FAILs — I checked the overlap rather than assuming
+  it: the only 3 under `templates/modules/team-gated/` are
+  `content_scan.py` (lines 329 and 547) and `intent.py` (line 64), untouched here);
+  `verify_integrity.py --target .` **1** (21 violations, neither reconciled path
+  among them).
+* **The arithmetic of Chunk G's transcribed figures** against proposal `:77-83`
+  and `:390-391` → **B2**.
+
+### Steelman
+
+The citation work here is unusually good and should not be contested without new
+evidence.
+
+* Every file:line I opened landed on exactly what the plan says: the STALE branch
+  at `content_scan_runner.py:593-597`; `load_audit_roots()` at `:136-201`;
+  `validate_python_package` at `run_security_audit.py:209-242`; `Coverage` at
+  `:767-787` with exactly the seven fields enumerated; `vulnerabilities +=
+  len(vulns)` at `:942`; the coverage print at `:1198-1203`; `pkg =
+  validate_python_package(...)` at `:1285` and the leg's lambda at `:1299`, which
+  today does **not** pass `python_package` on — so Chunk D's edit is real and
+  needed, not a restatement. Both byte-identity hashes check out on disk
+  (`4c9af385…`, `be93184e…`).
+* The `Coverage`-grows-by-one-defaulted-field design is verified safe: all four
+  construction sites pass five positional arguments and rely on the two existing
+  trailing defaults, and nothing in the tree positionally unpacks a `Coverage`.
+  Invariant (ii) is realistic, not hopeful.
+* Chunk H's central claim is substantiated rather than asserted:
+  `test_gate_manifest.py` never loads the committed fixture — it produces one
+  fresh and self-verifies that. Report-not-repair is the correct disposition, and
+  citing the lockfile by `dst` key rather than line (`:55`, `:355`) is the right
+  lesson from the proposal's own 2026-08-27 Correction.
+* `Scope delta: preserved` holds. I walked every accepted outcome — D1, D1b, D2,
+  D2b, the Revision 4 tokenizer, the triple oracle, the five mutations, the
+  raise-pair, the tripwire threshold, the measurement home, both issue closures
+  — into a named chunk. Nothing accepted is quietly dropped.
+
+### Finding B1 (blocking) -- a closed count of frozen files, asserted against an instrument the plan did not run, short by one
+
+`:363` enumerates the gate-manifest-frozen files this plan changes as three:
+`scripts/content_scan_runner.py`, `templates/modules/team-gated/content_scan_runner.py`,
+`templates/modules/team-gated/run_security_audit.py`. `:432` repeats the count —
+*"Three gate-manifest-frozen files change."*
+
+Read directly from the fixture, `frozen_files` also keys
+**`bootstrap/tests/test_security_stack.py`** — and Chunks A, C, D and E all add
+nodes to that exact file. That is a **fourth** frozen file this plan modifies,
+named nowhere in the Scope table, Chunk H, or the Boundary B tally.
+
+Blocking under C0 because the damage is silent and lands on a trust ceremony.
+`AGENTS.md`'s own operational pitfall says a frozen file whose bytes change does
+not redden anything; Chunk H exists precisely to hand the Maintainer the list the
+suite will never produce. A list short by one sends the re-anchor ceremony in
+under-informed, and no gate anywhere will contradict it. It is also the exact
+failure `AGENTS.md` > *Confirm the instrument before trusting an absence* exists
+to prevent. The `full` mode conclusion is unaffected — three frozen files already
+force the refusal — so this is a contract-surface accounting defect, not a mode
+error.
+
+**Remedy.** Add `bootstrap/tests/test_security_stack.py` to `:363`'s enumeration
+and to the Scope table's frozen accounting; change `:432` to four. Keep `:363`'s
+"every `FROZEN-MODIFIED` entry this plan creates" wording and add one clause
+telling the implementer to re-derive the list from the manifest at commit time
+rather than transcribing the plan's — the plan's prose is what just failed.
+
+### Finding B2 (blocking) -- Chunk G transcribes a field measurement whose two categories do not sum to its own total, into a durable file a public issue comment will name
+
+`:328` instructs the implementer to record *"the adopter's field measurement —
+299 discoverable, 93 in closure, 212 outside, 144 findings, 27 reachable"*.
+
+**93 + 212 = 305, not 299.** The figures are real and inherited, not invented
+here: proposal `:77-83` carries the table (`299` discoverable, `93` in closure,
+`212 (71%)` outside) and `:390-391` restates the five inline. `71%` is `212/299`
+while `93/299` is `31%` — the two shares sum to 102%, so this is not rounding.
+No third bucket is stated to absorb the 6, and neither document says which figure
+is the odd one.
+
+Blocking under C0 because of where it lands. `dev/measurement/` is durable and
+gate-adjacent, and Chunk M then posts a public comment on issue #6 that **names
+this file**, to the adopter who supplied these numbers, under a stated honesty
+bar. Handing someone their own field data back as a partition that does not close
+is not undone by editing a file afterwards, and the plan gives the implementer
+nothing that would make them notice — "transcribe" is the whole spec.
+
+**The remedy is neither a narrowing nor a relitigation.** Gate 4's accepted
+outcome is that the field evidence does not evaporate; recording it as reported
+*with the discrepancy visible* delivers that more completely than a clean-looking
+partition would.
+
+**Remedy.** One added clause in Chunk G item 1: record the five figures as
+reported, attributed to issue #6, with an explicit note that the in-closure and
+outside counts exceed the stated discoverable total by 6 and that this plan does
+not resolve which figure moves. Optionally Chunk M's #6 comment asks the
+reporter. Do **not** silently adjust a number to make it close.
+
+### The two disclosed items -- the calls this pass owes
+
+**Chunk B's second site (`content-security.md:89-91`) is genuinely added scope,
+and I cannot authorize it.** The accepted terms name one passage: D1b at proposal
+`:874-883` and `:1284-1291` cites `content-security.md:122-123`, and the
+Decision's accepted-terms summary at `:2447` says *"syncs copy to
+`content-security.md:122-123`"*. Having read both passages, `:89-91` is not a
+wrapped continuation of that range — it is a separate normative sentence in a
+separate section (the exit-code contract list), ending *"prune the baseline."*
+No revision or review round saw it. Under `AGENTS.md` that is "a contract the
+review never saw" — a deviation, and additions are deviations exactly as removals
+are. The plan's own fence at `:99` is therefore correct: Chunk B needs the
+**Maintainer's explicit allowance** before it lands. I am also not striking it —
+narrowing on a reviewer's own authority is what the scope-floor rule forbids.
+
+**Maintainer question, one sentence.** *Chunk B also wants to scope the exit-3
+bullet at `content-security.md:89-91` ("prune the baseline"), which the accepted
+proposal named nowhere — may it?* **Recommended default: yes.** Refusing leaves
+one file carrying both the new scoped instruction and the old unscoped one, with
+the unscoped copy in the exit-code contract an operator reads *first* on exit 3
+— which is most of D1b's own stated reason for touching this file (proposal
+`:879-880`). Three lines of prose, in the file D1b already opens, with no code,
+exit-code or test consequence.
+
+**Chunk A's `load_audit_roots()` degrade is not scope in either direction, and no
+allowance is owed.** It adds no deliverable, no exit path, no reported field and
+no operator-visible surface beyond the message D1 already rewrites; it is the
+failure behavior of an input D1's own message introduces. The plan's handling
+needs no change: pinned by
+`test_unresolvable_roots_degrade_the_message_without_changing_exit_three`
+(`:148`) and named for the code reviewer at `:458`.
+
+### Note N1 (non-blocking) -- Chunk C's `unknown` set needs an environment enumeration the plan never names, and Chunk D's annotation rule is unstated
+
+`:192` fixes the return as `tuple[frozenset[str], frozenset[str]] | None` — two
+name sets. `:200` then requires that after an ungrammatical requirement edge *"the
+whole un-reached remainder"* annotate `unknown` rather than `out-of-closure`. A
+rooted walk never visits that remainder, so materializing it needs an enumeration
+of every installed distribution — `importlib.metadata.distributions()`, which the
+plan never names; `:198` names only `packages_distributions()`, and only as the
+*root*-resolution authority. (`:204`'s unresolvable-root case is fine: `:195`
+routes it to `None`.) Relatedly, `:261` says "annotate each reported distribution
+… against Chunk C's closure" without stating the three-way rule, in particular
+what a reported name absent from both sets gets.
+
+Non-blocking: `test_an_ungrammatical_requirement_edge_is_unknown_not_out_of_closure`
+pins the behavior and the stated falsifier reddens on the wrong choice, so the
+implementer is forced to the right answer — they just have to rediscover it.
+
+**Remedy.** In Chunk C, say the walk enumerates
+`importlib.metadata.distributions()` to materialize the remainder, and note that
+this same enumeration is the "discoverable set" Chunk G's tripwire is a fraction
+*of*. In Chunk D, state the rule in one line: in `in_closure` → `in-closure`; in
+`unknown` → `unknown`; in neither → `out-of-closure`; walk returned `None` → all
+`unknown`.
+
+### Note N2 (non-blocking) -- two acceptance criteria demand "clean" from whole-repo gates that are red today for unrelated reasons
+
+`:174` (Chunk B) and `:315-316` (Chunk F) require `link_check.py` and
+`quality_gate.py --sub neutrality` **clean**; `:400` repeats both plan-wide.
+Measured above: `link_check.py` exits 1 with 3 findings in
+`documentation-plan.md`; neutrality exits 1 with 79 FAILs, none in a file this
+plan touches. As written, a correct Chunk B or F cannot satisfy these bullets, so
+the implementer either blocks on unrelated red or silently redefines "clean" —
+the second being likely, and it quietly retires the criterion. Non-blocking: the
+failure is loud at run time and the Boundary B record already has a
+non-pass-disposition field.
+
+**Remedy.** Scope both to "no new findings beyond the pre-existing baseline," and
+name that baseline in the plan the way `:401` already names D2's un-smokable
+path: `link_check` 3, `neutrality` 79, `verify_integrity` 21, measured 2026-08-31
+at `2c21818`.
+
+### Note N3 (non-blocking) -- Chunk G's tripwire node is the one new node with no non-vacuity guarantee
+
+`:402` claims every new node is shown non-vacuous "by Chunk E's ledger for the D2
+oracle and by the Chunk A/C falsifiers elsewhere" — Chunk G is in neither list.
+Its node (`:344-347`) asserts a *fixture* closure stays under a threshold derived
+from a *real* environment measurement (item 2), and its falsifier — restore the
+extras-inclusive policy and the node reddens — only holds if the fixture's
+extras-gated subtree is itself large enough to cross the threshold. Nothing says
+so, and a fixture built without that property is green under both policies: a
+tripwire that reports success without testing its claimed property, which
+`AGENTS.md` calls a worse defect than no tool because it is silent.
+
+**Remedy.** State the fixture constraint in Chunk G (the extras-gated subtree
+alone must cross the recorded threshold), and add G's node to `:402`'s
+non-vacuity coverage with its falsifier required to be *run and recorded*, not
+merely stated.
+
+### Nits
+
+* **`:231`'s "2,314-marker environment corpus" carries no `as_of`.** The same
+  measurement in this environment today gives 2,373 requirement strings with a
+  marker clause — likely drift, and harmless, since the plan is explicit that the
+  corpus is a positive control no node asserts against. But `doctrine/plans.md` >
+  *Count claims* wants the date and the counting rule attached.
+* **A `Chunk D` name collision inside the test file.**
+  `bootstrap/tests/test_security_stack.py:1240-1533` already carries a banner
+  comment `# --- Chunk D: the denominator, the dispositions, and the CLEAN gate
+  ---` from earlier, unrelated work, and `:424` routes *this* plan's Chunk D
+  nodes into that same range. Two different "Chunk D"s in one region is the
+  decayed-coordinate problem `AGENTS.md` > *Durable artifacts stand without the
+  deliberation that produced them* warns about; one line telling the implementer
+  not to extend or reuse that banner is enough.
+
+### Verdict
+
+**REVISE** — the plan moves to `revising-plan`. Two blocking findings (B1, B2),
+three notes (N1–N3), two nits, one Maintainer question routed above.
+
+Both blocking findings are small, local corrections to a plan that is otherwise
+an accurate and executable translation of the accepted proposal; neither touches
+its design, chunking, or scope. What could have found otherwise and did not:
+every file:line citation I opened resolved as claimed, both byte-identity hashes
+matched on disk, both call-site counts matched on `grep -c`, no new symbol or
+node name collides with anything in the tree, `claim_check.py` is clean over the
+plan, and `Scope delta: preserved` survives a walk of every accepted outcome into
+a named chunk. Chunk B stays fenced on the Maintainer's answer however B1 and B2
+are dispositioned; Chunks A and C–H are ready to implement once B1 and B2 land.
