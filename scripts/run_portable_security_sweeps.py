@@ -637,6 +637,14 @@ _SCREEN_ARGV_TAIL = (
 )
 _SCREEN_MAX_BYTES = 256 * 1024
 
+#: How many offending key names one refusal may name before it elides the rest
+#: and says how many it elided.  Offending names are candidate-controlled text
+#: entering a durable sink, so the refusal's *size* must not be
+#: candidate-steerable; ten is enough for an operator to recognize the
+#: offending family.  ``_SCREEN_MAX_BYTES`` bounds the input, this bounds the
+#: report.
+_SCREEN_MAX_NAMED_KEYS = 10
+
 #: The **source-owned** inert allowlist for repository-local configuration.
 #: Deny-by-default: anything not named here refuses before execution.  Not
 #: policy-controlled.
@@ -650,10 +658,22 @@ _INERT_LOCAL_KEYS = frozenset({
 #: mode that gets a security control switched off.  None of them is a program
 #: reference: transport is pinned inert by ``protocol.allow=never`` and no leg
 #: fetches.
+#:
+#: **Deny-by-default is on the variable, not the subsection.**  A Git key is
+#: ``section.subsection.variable``, Git stores the subsection verbatim, and
+#: what can reference a program is the variable -- ``branch.<anything>.remote``
+#: is a tracking string whatever ``<anything>`` is.  Fencing the subsection
+#: with ``[^.]+`` bought no security property and refused legal names: measured,
+#: ``git checkout -b v1.2`` writes ``branch.v1.2.remote`` and the screen
+#: refused the checkout before any leg ran.  The subsection is an anchored
+#: greedy ``.+``; the variable stays a closed named set.  ``.`` does not match
+#: a newline, so a newline-bearing key still refuses.
 _INERT_LOCAL_PATTERNS = (
     re.compile(r"\Aextensions\.[a-z0-9]+\Z"),
-    re.compile(r"\Aremote\.[^.]+\.(url|fetch|pushurl|mirror|tagopt)\Z"),
-    re.compile(r"\Abranch\.[^.]+\.(remote|merge|rebase)\Z"),
+    re.compile(
+        r"\Aremote\..+\.(url|fetch|pushurl|mirror|tagopt|glab-resolved)\Z"
+    ),
+    re.compile(r"\Abranch\..+\.(remote|merge|rebase|vscode-merge-base)\Z"),
 )
 
 _IGNORE_FILENAME = ".gitleaksignore"
@@ -806,6 +826,13 @@ def screen_local_config(
             f"refused"
         )
     pairs = parse_screen_output(proc.stdout)
+    #: Non-inert keys accumulate; the two origin checks above them do not.
+    #: A screen that stopped at the first non-inert key made an operator fix
+    #: one key, re-run, and meet the next -- and it *masked* an injected origin
+    #: sitting behind that first refusal.  The origin checks stay
+    #: first-failure: an escape already detected must not be followed by more
+    #: ``resolve()`` calls on candidate-controlled origin strings.
+    non_inert: list[str] = []
     for origin, key in pairs:
         if not origin.startswith("file:"):
             raise Degraded(
@@ -823,10 +850,17 @@ def screen_local_config(
                 f"includeIf injection; refused before execution"
             )
         if not _key_is_inert(key):
-            raise Degraded(
-                f"repository-local configuration key {key!r} is not on the "
-                f"reviewed inert allowlist; refused before execution"
-            )
+            non_inert.append(key)
+    if non_inert:
+        named = non_inert[:_SCREEN_MAX_NAMED_KEYS]
+        elided = len(non_inert) - len(named)
+        tail = (
+            f"; {elided} further key(s) not named" if elided else ""
+        )
+        raise Degraded(
+            f"repository-local configuration key(s) {named!r} are not on the "
+            f"reviewed inert allowlist; refused before execution{tail}"
+        )
     return pairs
 
 

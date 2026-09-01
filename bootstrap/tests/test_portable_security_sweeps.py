@@ -1390,6 +1390,242 @@ def test_the_screen_accepts_an_ordinary_repository(
     assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
 
 
+def _with_local_config(tmp_path: Path, target: Path, extra: str):
+    """A real repository whose ``.git/config`` carries *extra*, swept.
+
+    Real Git, not a fixture of one: the screen's whole claim is about what Git
+    reports for keys a real repository can actually hold."""
+    git_repo(target)
+    config = target / ".git" / "config"
+    config.write_text(config.read_text(encoding="utf-8") + extra,
+                      encoding="utf-8")
+    return _sweep(tmp_path, target)
+
+
+def _preflight_reason(summary: dict) -> str:
+    return leg(summary, "preflight")["reason"]
+
+
+def test_a_dotted_branch_subsection_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``git checkout -b v1.2`` writes ``branch.v1.2.remote``.  A subsection
+    fenced against dots refuses an ordinary checkout before any leg runs, and a
+    control that refuses ordinary trees is a control that gets switched off."""
+    rc, summary, out, log = _with_local_config(
+        tmp_path, sweep_target,
+        '[branch "v1.2"]\n\tremote = origin\n\tmerge = refs/heads/v1.2\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "branch.v1.2.remote" in keys, keys
+    assert [e for e in read_log(log) if e["kind"] == "scan"], "no leg ran"
+
+
+def test_a_slashed_branch_subsection_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The other ordinary branch-name shape: ``release/2.0``.  A tracking key is
+    a tracking string whatever the branch is called."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[branch "release/2.0"]\n\tremote = origin\n'
+        '\tmerge = refs/heads/release/2.0\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "branch.release/2.0.remote" in keys, keys
+
+
+def test_a_dotted_remote_subsection_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A remote may be named with a dot too, and the ``remote`` pattern is a
+    separate fence from the ``branch`` one -- widening either alone leaves the
+    other refusing legal names."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[remote "origin.v2"]\n\turl = https://example.invalid/x.git\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "remote.origin.v2.url" in keys, keys
+
+
+def test_the_glab_resolved_remote_key_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``glab`` writes ``remote.<name>.glab-resolved`` into the checkout it is
+    run in.  It names no program; refusing it stops the sweep on an ordinary
+    GitLab contributor's tree."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[remote "origin"]\n\turl = https://example.invalid/x.git\n'
+        '\tglab-resolved = base\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "remote.origin.glab-resolved" in keys, keys
+
+
+def test_the_vscode_merge_base_branch_key_is_inert(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """VS Code writes ``branch.<name>.vscode-merge-base``.  Same shape, same
+    reason: a ref name, not a program reference."""
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        '[branch "main"]\n\tremote = origin\n'
+        '\tvscode-merge-base = origin/main\n',
+    )
+    assert rc != 20, out
+    keys = summary["adapter_facts"]["screened_local_config_keys"]
+    assert "branch.main.vscode-merge-base" in keys, keys
+
+
+def test_a_newline_bearing_key_refuses() -> None:
+    """``.`` does not match a newline, so widening the subsection cannot admit
+    a key carrying one -- the shape a forged listing would need to smuggle a
+    second key past a screen that reads one key per record."""
+    runner = load_runner()
+    assert not runner._key_is_inert("branch.a\nb.remote")
+    assert not runner._key_is_inert("remote.a\nb.url")
+
+
+def test_an_empty_subsection_is_not_inert() -> None:
+    """``.+`` is one-or-more.  ``branch..remote`` names no branch and is not a
+    key an ordinary repository holds, so the widening must not admit it."""
+    runner = load_runner()
+    assert not runner._key_is_inert("branch..remote")
+    assert not runner._key_is_inert("remote..url")
+
+
+def test_a_suffix_injected_variable_is_not_inert() -> None:
+    """Deny-by-default is on the **variable** and the pattern is anchored at
+    the end, so a variable that merely starts with an allowed one is refused.
+    This is the property the widening must not cost."""
+    runner = load_runner()
+    for key in ("remote.origin.urlx", "branch.main.remotehook",
+                "remote.origin.glab-resolvedx",
+                "branch.main.vscode-merge-baseless"):
+        assert not runner._key_is_inert(key), key
+
+
+def test_every_non_inert_key_is_named_in_one_refusal(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """One refusal, not a guessing loop.  Stopping at the first non-inert key
+    makes an operator fix one key, re-run and meet the next; it also masks a
+    second offending key behind the first."""
+    rc, summary, out, log = _with_local_config(
+        tmp_path, sweep_target,
+        "[cairnprobe]\n\talpha = 1\n\tbeta = 2\n\tgamma = 3\n",
+    )
+    assert rc == 20, out
+    assert read_log(log) == [], "the adapter ran despite unscreened keys"
+    reason = _preflight_reason(summary)
+    for key in ("cairnprobe.alpha", "cairnprobe.beta", "cairnprobe.gamma"):
+        assert key in reason, reason
+    assert reason.count("inert allowlist") == 1, reason
+
+
+def test_the_refusal_names_no_more_keys_than_the_cap(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Offending key names are candidate-controlled text entering a durable
+    sink, so the refusal's size must not be candidate-steerable."""
+    runner = load_runner()
+    cap = runner._SCREEN_MAX_NAMED_KEYS
+    total = cap + 7
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        "[cairnprobe]\n" + "".join(f"\tk{i:03d} = 1\n" for i in range(total)),
+    )
+    assert rc == 20, out
+    reason = _preflight_reason(summary)
+    named = [i for i in range(total) if f"cairnprobe.k{i:03d}" in reason]
+    assert len(named) == cap, (named, reason)
+    assert named == list(range(cap)), (named, "listing order, not a sample")
+
+
+def test_the_refusal_states_how_many_keys_it_elided(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A truncated list that does not say it was truncated reads as complete,
+    so an operator fixes what they can see and re-runs into the same refusal."""
+    runner = load_runner()
+    cap = runner._SCREEN_MAX_NAMED_KEYS
+    elided = 7
+    rc, summary, out, _log = _with_local_config(
+        tmp_path, sweep_target,
+        "[cairnprobe]\n"
+        + "".join(f"\tk{i:03d} = 1\n" for i in range(cap + elided)),
+    )
+    assert rc == 20, out
+    reason = _preflight_reason(summary)
+    assert f"{elided} further key(s) not named" in reason, reason
+
+
+def test_an_include_origin_outside_the_git_dir_refuses_immediately(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """Accumulating non-inert keys must not turn the two raises above the inert
+    scan into accumulated ones.  Both stay first-failure -- an escape already
+    detected must not be followed by more ``resolve()`` calls on
+    candidate-controlled origin strings, and a refusal that also listed the
+    later keys would prove the loop ran on.
+
+    Both raises are covered: the containment check, through a ``.git/config``
+    symlinked outside the repository; and the non-file origin beside it,
+    against a crafted listing, because real Git reports a ``file:`` origin for
+    every repository-local key and cannot be made to produce the other."""
+    git_repo(sweep_target)
+    config = sweep_target / ".git" / "config"
+    outside = tmp_path / "outside.config"
+    outside.write_text(
+        config.read_text(encoding="utf-8") + "[cairnprobe]\n\tlater = 1\n",
+        encoding="utf-8",
+    )
+    config.unlink()
+    config.symlink_to(outside)
+    rc, summary, out, log = _sweep(tmp_path, sweep_target)
+    assert rc == 20, out
+    assert read_log(log) == []
+    reason = _preflight_reason(summary)
+    assert "outside the candidate's .git/ directory" in reason, reason
+    assert "inert allowlist" not in reason, reason
+    assert "cairnprobe.later" not in reason, reason
+
+    runner = load_runner()
+    gitdir = tmp_path / "gitshim"
+    gitdir.mkdir()
+    fake_git = gitdir / "git"
+    common_dir = str((sweep_target / ".git").resolve())
+    listing = "command line:\0cairnprobe.injected\ntrue\0"
+    fake_git.write_text(
+        f'''#!{sys.executable}
+import sys
+if "rev-parse" in sys.argv[1:]:
+    sys.stdout.write({common_dir!r} + "\\n")
+    raise SystemExit(0)
+sys.stdout.buffer.write({listing!r}.encode("utf-8"))
+raise SystemExit(0)
+''',
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+    resolved = os.path.realpath(str(fake_git))
+    shimmed = runner.Resolved("git", str(fake_git), resolved,
+                              os.path.dirname(resolved),
+                              runner.file_digest(resolved))
+    with pytest.raises(runner.Degraded) as excinfo:
+        runner.screen_local_config(shimmed, sweep_target,
+                                   {"PATH": str(gitdir), "LC_ALL": "C"})
+    message = str(excinfo.value)
+    assert "non-file origin" in message, message
+    assert "inert allowlist" not in message, message
+
+
 def test_a_linked_worktrees_ordinary_local_config_is_accepted(
     tmp_path: Path,
 ) -> None:
