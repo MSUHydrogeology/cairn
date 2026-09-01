@@ -149,6 +149,23 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
+* **Re-anchor the gate manifest — 10 frozen files.** Deposited 2026-09-01 at
+  the archive of `plans/archive/portable-sweeps-cannot-run.md` and
+  `plans/archive/scanner-claim-scope.md`. The frozen files changed by those two
+  implementations plus the active-surfacing prompt fix are stale against
+  `bootstrap/tests/fixtures/gate_manifest.json`. Maintainer authorization for
+  the deferral, quoted verbatim:
+
+  > "If we don't need to re-anchor now, let's not. We've got a couple of big
+  > new features coming, one of which will be a better automation."
+
+  **This will not announce itself.** `test_gate_manifest.py` verifies a freshly
+  produced manifest and never diffs the committed fixture, so the suite stays
+  green while the trust root sits stale — which is why the deferral is on this
+  board and not only in the archived plans that declared it. The procedure is
+  `bootstrap/REANCHOR_RUNBOOK.md`, and it is Maintainer-only and supervised:
+  an implementing agent must not perform it.
+
 
 **Nineteen rows left this block on 2026-08-27**, at the sweep's C7 bankruptcy
 pass, taking it from 852 lines to 260.
