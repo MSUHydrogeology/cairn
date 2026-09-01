@@ -110,6 +110,101 @@ def runner_copy(tmp_path: Path, admissions: dict | None = None) -> Path:
     return dest
 
 
+#: The adapter's **globally** declared flags and their declared value types,
+#: transcribed from ``gitleaks dir --help`` and ``gitleaks git --help`` on
+#: 8.30.1 darwin/arm64.  A table rather than one more pinned string, because
+#: the defect it has to catch is a *class*: a field-invalid value against a
+#: typed flag, which the real adapter refuses and a fake that accepts every
+#: argv does not.  That is how a green suite coexisted with a module no leg of
+#: which could run on a real host.
+ADAPTER_GLOBAL_FLAGS = {
+    "-b": "string", "--baseline-path": "string",
+    "-c": "string", "--config": "string",
+    "--diagnostics": "string", "--diagnostics-dir": "string",
+    "--enable-rule": "strings",
+    "--exit-code": "int",
+    "-i": "string", "--gitleaks-ignore-path": "string",
+    "--ignore-gitleaks-allow": "bool",
+    "-l": "string", "--log-level": "string",
+    "--max-archive-depth": "int", "--max-decode-depth": "int",
+    "--max-target-megabytes": "int",
+    "--no-banner": "bool", "--no-color": "bool",
+    "--redact": "uint",
+    "-f": "string", "--report-format": "string",
+    "-r": "string", "--report-path": "string",
+    "--report-template": "string",
+    "--timeout": "int",
+    "-v": "bool", "--verbose": "bool",
+    "-h": "bool", "--help": "bool",
+}
+
+#: What each subcommand declares on top of the global set.  ``--follow-symlinks``
+#: is a ``dir`` flag and ``--log-opts`` a ``git`` one; sending either to the
+#: other subcommand is a usage error, which is why the table is per-subcommand
+#: and not one flat set.
+ADAPTER_SUBCOMMAND_FLAGS = {
+    "dir": {"--follow-symlinks": "bool"},
+    "git": {"--log-opts": "string", "--platform": "string",
+            "--pre-commit": "bool", "--staged": "bool"},
+}
+
+#: The fake's argv gate, injected into every generated adapter.  Value checks
+#: mirror the adapter's own: an ``int`` flag given ``840s`` is a ``ParseInt``
+#: failure and exits ``1``; an undeclared flag exits ``126``.  Both were
+#: measured on real 8.30.1.
+_FAKE_ARGV_GATE = '''
+def _argv_fail(message, code):
+    sys.stderr.write(message + "\\n")
+    raise SystemExit(code)
+
+
+def _check_value(name, kind, value):
+    if kind in ("int", "uint"):
+        digits = value.lstrip("-") if kind == "int" else value
+        if not digits.isdigit():
+            _argv_fail(
+                'FTL invalid argument "%s" for "%s" flag: strconv.ParseInt: '
+                'parsing "%s": invalid syntax' % (value, name, value), 1)
+    elif kind == "bool":
+        if value not in ("true", "false", "1", "0", "t", "f", "T", "F",
+                         "TRUE", "FALSE", "True", "False"):
+            _argv_fail(
+                'FTL invalid argument "%s" for "%s" flag: strconv.ParseBool: '
+                'parsing "%s": invalid syntax' % (value, name, value), 1)
+
+
+def _check_argv(argv):
+    sub = argv[0] if argv else ""
+    if sub not in SUBCOMMAND_FLAGS:
+        _argv_fail('Error: unknown command "%s" for "gitleaks"' % (sub,), 126)
+    declared = dict(GLOBAL_FLAGS)
+    declared.update(SUBCOMMAND_FLAGS[sub])
+    index = 1
+    while index < len(argv):
+        item = argv[index]
+        if not item.startswith("-"):
+            index += 1
+            continue
+        name, sep, value = item.partition("=")
+        if name not in declared:
+            _argv_fail("Error: unknown flag: %s" % (name,), 126)
+        kind = declared[name]
+        if not sep:
+            if kind in ("bool", "uint"):
+                index += 1
+                continue
+            index += 1
+            if index >= len(argv):
+                _argv_fail("Error: flag needs an argument: %s" % (name,), 126)
+            value = argv[index]
+        _check_value(name, kind, value)
+        index += 1
+
+
+_check_argv(sys.argv[1:])
+'''
+
+
 def fake_tool(
     path: Path,
     *,
@@ -140,10 +235,15 @@ def fake_tool(
     only shape the real adapter emits from that flag; the bare shape belongs
     to its ``version`` subcommand and is reached by passing ``bare_version``.
     A fixture emitting a shape the adapter never emits is how a module that
-    cannot run keeps a green suite."""
+    cannot run keeps a green suite.
+
+    The generated tool **refuses an argv the real adapter refuses**, against a
+    per-subcommand flag table transcribed from the adapter's own ``--help``."""
     version_line = version if bare_version else f"gitleaks version {version}"
     body = f'''#!{sys.executable}
 import json, os, sys
+GLOBAL_FLAGS = {ADAPTER_GLOBAL_FLAGS!r}
+SUBCOMMAND_FLAGS = {ADAPTER_SUBCOMMAND_FLAGS!r}
 LOG = {str(log) if log is None else repr(str(log))}
 def record(kind):
     if LOG is None:
@@ -167,6 +267,7 @@ if "--version" in sys.argv[1:]:
     sys.stdout.write({version_line!r} + "\\n")
     raise SystemExit({version_rc!r})
 record("scan")
+{_FAKE_ARGV_GATE}
 {extra}
 if {write_report!r} and "--report-path" in sys.argv:
     dest = sys.argv[sys.argv.index("--report-path") + 1]
@@ -1238,6 +1339,62 @@ def test_the_gitleaks_timeout_is_strictly_inside_the_outer_deadline(
     argv = scan_argv(log)
     sent = [a for a in argv if a.startswith("--timeout=")]
     assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}s"], (sent, out)
+
+
+def test_the_adapter_timeout_is_sent_as_integer_seconds(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """``--timeout`` is declared ``int ... in seconds``.  Measured on real
+    8.30.1, ``--timeout=840s`` is a ParseInt failure that writes no report, so
+    a suffixed value is not a formatting preference -- it is the field that
+    stopped every leg from running."""
+    runner = load_runner()
+    _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
+    argv = scan_argv(log)
+    sent = [a for a in argv if a.startswith("--timeout")]
+    assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}"], (sent, out)
+
+
+def test_a_flag_the_subcommand_does_not_declare_is_rejected_by_the_fake(
+    tmp_path: Path
+) -> None:
+    """The instrument's own guard.  A fake that accepts every argv cannot fail,
+    and an instrument that cannot fail is not evidence -- so the table is
+    per-subcommand and the refusal is exercised directly."""
+    tool = fake_tool(tmp_path / "gitleaks", findings=[])
+    accepted = subprocess.run(
+        [str(tool), "dir", str(tmp_path), "--follow-symlinks=false"],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert accepted.returncode == 0, accepted.stderr
+
+    wrong_subcommand = subprocess.run(
+        [str(tool), "git", str(tmp_path), "--follow-symlinks=false"],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert wrong_subcommand.returncode == 126, wrong_subcommand
+    assert "unknown flag: --follow-symlinks" in wrong_subcommand.stderr
+
+    bad_value = subprocess.run(
+        [str(tool), "dir", str(tmp_path), "--timeout=840s"],
+        capture_output=True, text=True, timeout=60,
+    )
+    assert bad_value.returncode == 1, bad_value
+    assert "strconv.ParseInt" in bad_value.stderr, bad_value.stderr
+
+
+def test_the_admission_matrix_argv_is_accepted_by_the_flag_table(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """The ceremony builds its argv from the same ``_leg_argv``, so an argv the
+    adapter refuses makes step 2 of the admission procedure un-performable --
+    which is what it was, and the refusal blamed a missing report instead."""
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 0, out
+    assert record["admit"] is True, record
+    assert sorted(record["end_to_end"]) == ["current-tree", "history"], record
 
 
 # --- the deny-by-default repository-local configuration screen -------------
