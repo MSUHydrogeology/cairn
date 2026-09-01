@@ -41,10 +41,12 @@ awaiting-review <-> revising -> awaiting-decision
                              -> accepted / rejected / superseded
 ```
 
-Each status names **who holds it next**. A blocking review moves a proposal to
-`revising`; the author's Response returns it to `awaiting-review`; a clearing
-review moves it to `awaiting-decision`, which is the Maintainer's. `accepted`
-is terminal — archiving is a file move, not a status.
+Each status names **who holds it next**. A review moves a proposal to
+`revising`; **the author's Response and revision carry it to
+`awaiting-decision`**, which is the Maintainer's. There is no clearing round —
+no review is run merely to move a status — except a Security Review, which
+clears the obligation it was raised against. `accepted` is terminal —
+archiving is a file move, not a status.
 
 Two rules are bright-line:
 
