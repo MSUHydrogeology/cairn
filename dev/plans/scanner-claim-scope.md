@@ -5,7 +5,7 @@
 opening commit archives it** — [`_template.md:18-19`](_template.md),
 [`doctrine/plans.md:40-41`](../../doctrine/plans.md) — so the path above is where
 it lives from the moment this plan exists, not somewhere it goes later.
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header and re-stated by the Decision (*"Plan review is `required(Internal)` (no
 Security Review trigger)"*). The **Security Review: REQUIRED** declaration in
@@ -1022,3 +1022,168 @@ implementation had to choose. Each is a place to look first.
    `dev/measurement/pip-audit-closure-ratio.md`", and the paragraph names the
    figures. It does not cite the path, because `python-security.md` installs
    into an adopter's tree and would then point at a file only Cairn has.
+
+## Code review -- Claude (Code Review, independent context) -- 2026-09-01
+
+Reviewed range: `d49059d..fd28a83` (chunks A-H), as merged. SHAs are for
+locatability only; nothing below rests on one.
+Target: the implementation against this plan's Scope, Sequence, Acceptance
+criteria and the appended `## Implementation verification`.
+Prior findings: the Internal plan review's B1/B2, N1-N3 and two nits, folded by
+the Response and confirmed folded here. First pass over code.
+Assurance path: high-assurance (security-stack and contract surfaces).
+
+**Model**: claude-opus-5
+**Tier**: External (stance), Code Review
+**Independence**: fresh context; I wrote no part of the plan or the
+implementation. **Same agent type as the implementer** -- structural freshness,
+not cross-vendor distance. Read that discount into the pass.
+**Findings**: raised -- 5 (1 blocking, 3 notes, 1 nit)
+**Verdict**: REVISE -- status `revising-code`
+
+### Should this have been built this way
+
+Yes, with one disclosure missing. The load-bearing decision is that the
+reachability axis is **rendered, never stored**: `closure` enters
+`classify_pip_audit_output` and is discarded (`run_security_audit.py:920`), the
+labels are joined to `Coverage.vulnerable` at print time (`:1381`), and
+`unknown_total` keeps its three original terms. I walked every path a label could
+take into the tier and found none. That is what makes an admittedly approximate
+walk safe to ship; storing labels on `Coverage` would have put an approximate
+resolver inside the object the CLEAN gate reads. Two further calls I would have
+made the same way: `resolve_declared_closure` returning `None` for every total
+failure, with the leg's `try/except` mapping a raise onto the same `None` (one
+fail-closed path, not two); and the caps returning `None` rather than a truncated
+closure, which would silently relabel everything it did not reach. The inert
+`closure` parameter is dead weight a maintainer will be tempted to "fix" --
+defensible as a declared seam, but the one place the discipline rests on a
+comment rather than on structure.
+
+### The strongest rejected alternative
+
+**Narrow the leg to audit only the declared closure** -- issue #6's option 2,
+refused on the reporter's own caution. Its strongest form is not convenience: it
+makes the walk's correctness *loud*. As shipped, a walk error is a silent
+mislabel on a row nobody re-checks; narrowed, the same error means a distribution
+was never audited -- visible in the UNKNOWN count, and the tier acts on it. It
+still loses, for a reason this implementation makes concrete rather than assumed:
+narrowing changes the question from *"is the environment I execute in
+vulnerable?"* to *"is my closure vulnerable?"*, so a wrong closure **drops
+findings** instead of misordering them -- and `pip-audit-closure-ratio.md` §4
+measures 6 of 309 top-level names here as ambiguous namespace packages, for which
+the narrowed design would audit nothing and say so quietly.
+
+### What would falsify this pass
+
+* A label reaching `unknown_total`, the tier or an exit code on a path I did not
+  walk. That is the bright line; its breach makes the axis unshippable.
+* An extras-inclusive walk over a real environment landing *below* 50% -- §3's
+  separation would then be an artifact of the six roots it measured.
+* `test_reported_rows_match_the_literal_expected_triples` surviving mutation 3
+  (`if annotation == _REACH_OUT: continue`); if it did, the oracle is decorative.
+* The twins diverging on disk. Checked: both runners `dc34b740…`, the three
+  `content-security.md` copies all `030f15ca…`, matching the record.
+
+### Findings
+
+**B1 (blocking) -- `out-of-closure` provably contains dependencies the project
+declared, and the doc telling an operator to deprioritize it says nothing of it.**
+
+`_marker_extra_disposition` (`run_security_audit.py:1157-1159`) returns
+`extras-gated` for any `extra ==` equality and `_requirement_edge` (`:1184`)
+turns that into `skip`, so the edge is never followed -- whether or not that
+extra was installed. `installed_distribution_names()` still enumerates the
+distribution, so with `remainder_unknown` false it is in neither set and
+`annotate_reachability` (`:1351`) returns `out-of-closure`. Concretely: a project
+declaring `plotting = ["matplotlib"]` under `[project.optional-dependencies]` and
+installed as `pip install .[plotting]` gets `matplotlib -- out-of-closure`.
+`python-security.md:72-74` calls the label "with respect to your declared
+dependency closure" and then instructs "**Start with `in-closure`, then
+`unknown`**". An optional-dependency group *is* declared; the sentence names a
+set wider than the walk established and the instruction says to skip the
+difference. §3's extras-inclusive table puts the excluded set near 180
+distributions for the reference root, so it is not a corner.
+
+Blocking, weighed against the bar: it changes no exit code and drops no finding,
+so the damage is bounded, but it is an **operator instruction whose scope exceeds
+its evidence**, shipped into adopter trees where correcting it costs an upgrade --
+the exact failure class D1 exists to answer. The policy is settled and I do not
+reopen it: following extras re-inflates the closure to 78% and kills the axis.
+
+**Remedy.** One sentence in `python-security.md`'s new paragraph: extras-gated
+requirements are not followed, so a dependency installed through an extra reads
+`out-of-closure`; read the label as *"not reached by the default closure"*, not
+*"not yours"*. And qualify `:1229` -- "every failure moves a distribution toward
+`unknown`" is true of failures and false of this exclusion.
+
+**N1 (note) -- the REACHABILITY banner claims over a set wider than its own
+rows.** `:1388-1389` prints "every reported distribution appears either way";
+`:1522`, immediately above, defines "reported" as the child's full
+`len(coverage.names)` set. Rows come from `coverage.vulnerable`, so the fixture's
+5 reported distributions yield 3 rows. The disclosed *reading* is right -- rows
+per vulnerable distribution is what "N vulnerabilities across M distributions"
+and Chunk M's "per-distribution counts" both mean, and what mutation 3 tests; the
+sentence asserts the other one. Non-blocking: the intended sense is recoverable
+and nothing carrying a finding is omitted. **Remedy**: "every *vulnerable*
+distribution appears whatever its label."
+
+**N2 (note) -- a plan-stated Chunk C falsifier does not reproduce; a substitute
+ran and the record does not say so.** Plan `:263` states "use an unanchored search
+for the identifier and the `~` node goes red".
+`_REQUIREMENT_NAME_RE.search("cffi~=1.0")` returns `cffi`, exactly as `.match`
+does, so `test_requirement_identifier_stops_at_the_version_specifier`
+(`test_security_stack.py:1714`) stays green. Commit C's ledger records a different
+mutation (`~` admitted into the identifier class) that does redden it; the record
+then summarizes "Chunk C: five falsifiers run" (plan `:937`), which reads as the
+plan's five. Non-blocking, and the substitute is the better mutation: the stated
+form reddens `test_an_ungrammatical_requirement_edge_is_unknown_not_out_of_closure`
+(`:1811`) instead, so anchoring is pinned either way. **Remedy**: one line naming
+the substitution and why.
+
+**N3 (note) -- the tripwire's framing promises an environment check; the node
+checks a policy over a synthetic fixture.** `pip-audit-closure-ratio.md:10` and
+`:121` describe a wire that trips when a closure re-inflates.
+`test_closure_stays_a_bounded_fraction_of_the_discoverable_set` (`:2087`) builds a
+100-name literal environment and asserts 11/100 <= 50% and 71/100 > 50% -- a
+genuinely non-vacuous **policy** regression detector, pinning the threshold from
+both sides, more than plan-review N3 asked. But no real ratio is measured at test
+time, so a re-inflation from any other cause trips nothing. **Remedy**: one clause
+in §3 saying the node detects a change in the extras policy against a fixture, and
+that the environment ratio is re-measured by hand.
+
+**Nit -- citations written without backticks so `claim_check.py` cannot see
+them.** Plan `:983` and `:895` name gitignored `dev/measurement/` records bare,
+disclosed as deliberate. Honest, but it makes "claim_check 0" a weaker signal
+than it reads as. Mark it at the citation site, not only in the record.
+
+### The verification record, Chunk M, and the re-anchor
+
+The record holds. `check_cairn.py` in the primary checkout returns **0 across 174
+files**, so the record's worktree-artifact disposition of its `3` is correct --
+that was the one figure I would otherwise not have relied on, since the plan
+requires that gate clean and the run never observed it clean. Scope is exactly
+the eleven files the Scope table names: nothing authorized is undelivered,
+nothing extra shipped, `bootstrap/requirements-dev.txt` untouched, and the
+stdlib-only node carries two live controls.
+`test_the_established_coverage_fields_are_unchanged_by_the_annotation` is true by
+construction today (`_ = closure` guarantees it) -- not a defect, but a change
+detector aimed at the future edit that would breach the bright line, reddened by
+Chunk E's mutation 4. Named so nobody later reads it as evidence about the
+current implementation.
+
+**Chunk M is done**: issues #4, #5 and #6 were closed 2026-09-01 on Maintainer
+authorization, after this range landed; withholding it during implementation was
+correct, and no forge contact happened without the gate. The gate-manifest
+re-anchor for the four FROZEN-MODIFIED files (`test_security_stack.py`, both
+`content_scan_runner.py` twins, `run_security_audit.py`) is **deferred by the
+Maintainer, not forgotten** -- a green suite is not evidence that none is owed,
+and the list was re-derived from the manifest's own keys rather than transcribed.
+
+### Verdict
+
+**REVISE** -- one blocking finding (B1), three notes, one nit. Status moves to
+`revising-code`; the author's revision closes this loop and no second pass is
+owed. B1 is a one-sentence disclosure plus a qualified docstring line, not a
+design change; N1 is one word. Everything structural here is sound, and the parts
+I attacked hardest -- the bright line, the literal oracle, the fail-closed
+pairing, twin parity -- held.

@@ -4,7 +4,7 @@
 — accepted as revised (Revision 4) on 2026-08-20. **The plan-open commit archives
 the source proposal**, so the path above is where it lives from that commit
 onward (`dev/plans/_template.md:18-19`, `doctrine/plans.md:40-41`).
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header. The **Security Review** the implementation carries is a *different
 instrument*: mandated by the portable-sweep executable trust root `AGENTS.md`
@@ -934,3 +934,153 @@ Two omissions this implementation adds:
 * The **planted-finding fixture** depends on the default ruleset's
   `generic-api-key` rule and on `--redact=100` behaviour, both measured on
   8.30.1 only.
+
+## Code review -- Claude (Code Review, independent context) -- 2026-09-01
+
+Reviewed range: `d49059d..12a536f` (chunks A-F), plus the post-merge `9960814`, which touches
+`dev/.cairn/cairn-lock.yml` only. Target: the runner and its `templates/modules/team-gated/` twin,
+`test_portable_security_sweeps.py` and `gitleaks-version-support.md`, against this plan's Scope,
+Sequence, criteria and verification record. The plan review's blocking B1 landed in full.
+
+**Stance**: External. **Floor**: not the implementing agent. **Independence, stated honestly**:
+fresh-context, **same agent type** as the author -- no cross-type or human distance was staffed.
+**Model**: claude-opus-5
+**Findings**: raised -- 2 blocking, 2 notes, 2 nits
+**Chunk M**: done -- issues #4, #5, #6 closed 2026-09-01 on Maintainer authorization, after the
+record above was written, which is why it still says "NOT executed". The gate-manifest re-anchor
+for 10 frozen files is **deferred by the Maintainer, not forgotten** (`9960814` quotes it).
+
+### Was it built this way, and should it have been
+
+**Yes, with one reservation.** The load-bearing decision is `_EXIT_FINDINGS = 42`
+(`scripts/run_portable_security_sweeps.py:913`) sent as `--exit-code` (`:1840`). It inverts a
+dependency: the runner stops *decoding* the adapter's exit vocabulary and starts *imposing*
+one. Right call -- that vocabulary is provably ambiguous (`1` is both findings and a
+`--timeout` usage error) and no decoder separates them. The cost is a new hard dependency on
+the candidate honouring `--exit-code`, and E pays it in the right place: measured per
+candidate, refused if unmet (`:1650`). `extract_version` being **total** -- input returned unchanged
+on non-match rather than raising or returning `None` (`:310-327`) -- is right too: `parse_version`
+stays the single arbiter and invariant (i) survives unchanged. The out-of-scope assertion holds on
+a read of the diff: `resolve_executable`, all six `revalidate` sites, `child_env`, the policy
+schema, `_AGG_*` precedence and `_ADMITTED_ARTIFACTS` are byte-unchanged; both twins are at
+`9bf5122a...` with textually equal chunk diffs, checked outside the suite node.
+
+**The strongest rejected alternative, which the plan never engages: send no `--exit-code`;
+discriminate findings from usage error by the report file.** The runner owns `--report-path`,
+already unlinks it per row (`:1585`), and `read_report` already raises *"the adapter wrote no
+report"*. A usage error writes none; a findings run writes one. `_EXIT_FINDINGS` stays `1`, no
+new flag is sent, E's `invalid_argv` row is unnecessary, and **nothing depends on the candidate
+honouring a flag** -- strictly less trust in the binary, the direction this surface's doctrine
+pushes. It loses on soundness: an adapter can write a report *and* exit on a usage error, and a
+truncated report from a killed adapter is indistinguishable from a clean one, whereas the exit
+code is the one channel the candidate *tree* cannot steer. The design wins; the alternative
+still deserved a line.
+
+**What would falsify it.** One observation: `--verify-version-support` against real 8.30.1 in
+which the **`history`/`git`** leg rejects or ignores `--exit-code` -- exiting `1` on findings, or
+`126` on an unknown flag. The record shows the real-adapter matrix stopping at
+`current-tree`/`planted_finding`: **no `history` row, and no findings row on either leg, has ever
+been measured against a real adapter.** If that row comes back wrong, the `--exit-code` dependency
+is unsound for half the module and D5 needs the report-file discriminator above. Close B1/B2,
+re-run instrument 2: that single observation withdraws this verdict.
+
+### Findings
+
+**B1. BLOCKING -- the planted-finding instrument emits a `Match` shape the real adapter does
+not emit, so the findings path is green in the suite and refused in reality.**
+`_planted_finding` returns `"Match": "REDACTED"` at line 250 of
+`bootstrap/tests/test_portable_security_sweeps.py`; the pre-existing `_finding` helper at
+`:1950` does the same. The implementation *measured* what real 8.30.1 emits under
+`--redact=100` -- `Match` comes back as `api_key = "REDACTED"`, the secret inside its context
+(`dev/measurement/gitleaks-version-support.md:85-95`). `_redaction_is_intact`
+(`scripts/run_portable_security_sweeps.py:918-927`) requires the **whole** field to match
+`\A(REDACTED|\*+)\Z`, so the real shape raises at `:987-991` and **no real finding from this
+adapter can pass**. Both E nodes therefore assert a measurable findings row against a fixture that
+misreports the adapter -- the defect class D1 existed to kill, named in this file's own `fake_tool`
+docstring: *a fixture emitting a shape the adapter never emits is how a module that cannot run
+keeps a green suite* (`:287-288`).
+
+*Polarity -- blocking*: the runtime failure is loud (DEGRADED, not a missed secret), but the
+**evidence** failure is silent and durable. The next agent touching redaction validates against
+the wrong shape and reads a green suite as proof the findings path works -- the
+false-durable-record hazard `AGENTS.md` reserves full weight for here. *Remedy*: a node pinning
+the *measured* shape (`runner._redaction_is_intact('api_key = "REDACTED"')`) marked
+`pytest.mark.xfail(strict=True)` citing the ledger's Known gap, disposed in the next record.
+
+**B2. BLOCKING -- the installed module doc states an exit-`10` FINDINGS outcome the
+implementation's own measurement contradicts, and never names the gap.**
+`templates/modules/team-gated/portable-security-sweeps.md:107` tells an adopter `10 | FINDINGS
+— at least one validated finding`. After B1, against the only adapter anyone has measured, a
+real finding yields `20` DEGRADED, reason *"carries an unredacted 'Match'"*. That doc is unedited
+in this range (four files in the diffstat, not it), and the gap lives only in `dev/measurement/`
+and this plan -- **neither installed by the `team-gated` module**, as the runner's own new comment
+says (`scripts/run_portable_security_sweeps.py:88-94`). F's attestation was honest: the doc needed
+no edit *when F's criterion was written*; E surfaced the fact that changes the answer, later.
+
+*Polarity -- blocking*: an outward-facing claim in an installed artifact, now known false, on a
+security module whose issue was closed 2026-09-01 as resolved -- an adopter hits DEGRADED on a
+real secret with nothing explaining it. *Remedy*: one paragraph near that exit table naming the
+gap, the DEGRADED outcome and that it is under decision, plus a follow-up comment on the closed
+#4. Neither is new feature scope -- both disclose a limitation the implementation recorded.
+
+**N1. Note -- chunk E's falsifier claim names two nodes; one reddens, and the second passes
+because the mutation reproduces the state it asserts.** `63b3027`'s body says *"drop the
+planted-finding scenario -- the two E nodes fail"*. Dropping `("planted_finding", planted)` from
+the loop (`:1567`) leaves `absent = ["planted_finding"]` (`:1650`), which refuses with `admit:
+false`, a refusal naming `planted_finding`, and `rows` carrying `clean` but not
+`planted_finding` -- *exactly* what the node at
+`bootstrap/tests/test_portable_security_sweeps.py:2693-2711` asserts, so it stays green;
+`test_the_evidence_record_carries_a_measured_exit_row_per_subcommand` reddens on `:2685`.
+**Judgement on the disclosed item: evidence-record imprecision, not a hole in what the nodes
+pin** -- node 2's named property genuinely holds under that mutation; the verifier is right.
+Alongside it one real coverage gap: `if scenario == "planted_finding" and not findings` (`:1637`)
+is unreachable by any current fixture, because `blind_to_planted=True` exits `0` (`:323-325`) and
+is caught by the exit-mismatch check at `:1631`. *Remedy*: correct the falsifier line in this
+record, and add a `blind_to_planted=True, scan_rc=42` fixture.
+
+**N2. Note -- the `absent` check is a source-drift guard, not a runtime one, and the ledger reads
+as if it were the latter.** `MATRIX_SCENARIOS` (`:1289`) and the loop's inline tuple (`:1567`) are
+two literals in one function; every path either returns or writes its row, so at runtime `rows` is
+never short one. The check fires only if a future edit moves one literal and not the other -- a
+legitimate guard, but *"A record missing any row does not admit"*
+(`gitleaks-version-support.md:74`) invites reading it as runtime behaviour. *Remedy*: one clause at
+`:1650` saying what it actually guards.
+
+**Nit 1** -- `test_no_adapter_stderr_reaches_any_durable_sink`'s docstring says the invariant is
+stated "over the **whole** exit space"; it drives `classify_leg` only. Two `_diagnostic()` relays
+survive at `:783` and `:1068` -- both **git** stderr, not the adapter's, so invariant (vi) holds
+exactly as worded; add "adapter" to the docstring. **Nit 2** -- `_SCREEN_MAX_NAMED_KEYS`'s comment
+(`:653-659`) says it stops the refusal's *size* being candidate-steerable; it bounds the *count* of
+names, and the size bound is `_SCREEN_MAX_BYTES` (`:836`), unchanged here. Say "count".
+
+### The verification record, judged
+
+**It holds.** `3205 passed, 1 failed`, the failure disposed as the stale `cairn-lock.yml` hash,
+is accurate; `9960814` reconciled it post-merge with a diff of one `hash` line, so **no
+implementation, test, executable-template or fixture bytes moved** -- the Boundary B record is
+not invalidated and no fresh full run is owed. `Boundary B mode: full` is correct and
+over-determined (contract *and* trust-ceremony surface), so no `**Bounding**` field is owed. The
+count reconciliation (163→191 collected, 100→125 names, +28 from one 4-way parametrize) matches
+the chunk accounting; `0 skipped, 0 xfail, 0 xpass` is the right thing to have recorded, and its own
+disclosure that the plan's "nothing goes red" sentence was false of the lockfile, and that four
+frozen entries are stale rather than two, is what makes the rest credible. **One figure I would not
+lean on**: chunk G instrument 2's "predicate met" -- as
+written (*reach a real matrix result rather than refusing on argv*) it is genuinely met, but it is
+one row of six on one leg: evidence the ceremony is *reachable*, not that the contract is measured.
+
+**Scope**: preserved both directions. Every accepted outcome is delivered; the one addition (F's
+ledger correction) carries its verbatim authorization. The five disclosed choices sit inside what
+the plan authorised -- `candidate_version_key` is additive to a record outside the install
+contract, the exit-fixture re-pointing follows from `_EXIT_FINDINGS`, and F's second uninstalled
+path would have tripped F's own node. `import secrets` is stdlib.
+
+### Verdict
+
+**REVISE.** Two blocking findings, one discovered fact between them, both with small remedies:
+the findings-path instrument encodes a shape the adapter does not emit (B1), and the installed
+module doc asserts an outcome that fact contradicts (B2). Nothing in the runner's logic is wrong
+and the five accepted defects are each genuinely fixed -- the module that could not run now runs,
+up to INCOMPLETE. It cannot yet report FINDINGS against a real adapter, and neither the suite nor
+the adopter's documentation says so.
+
+**Status → `revising-code`.**
