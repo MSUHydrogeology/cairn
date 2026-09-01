@@ -785,6 +785,13 @@ class Coverage(NamedTuple):
     #: Count of validated vulnerability entries in the child's structured
     #: report. CLEAN requires this to be zero independently of the exit code.
     vulnerabilities: int = 0
+    #: ``(PEP 503 name, vulnerability count)`` per distribution the child
+    #: reported vulnerabilities for -- the association the bare count above
+    #: discards. Counts only: no vulnerability id, alias or fix version is
+    #: retained, so the parse surface bound to the established schema does not
+    #: widen. It is the join key for the reachability annotation, which is
+    #: rendered into the report and never stored here.
+    vulnerable: tuple[tuple[str, int], ...] = ()
 
 
 class LocalBuilds(NamedTuple):
@@ -878,8 +885,19 @@ def _valid_pip_audit_vulnerability(value: object) -> bool:
 
 def classify_pip_audit_output(
     text: str, *, schema_established: bool | None = None,
+    closure: tuple[frozenset[str], frozenset[str]] | None = None,
 ) -> Coverage:
     """Classify the child's report into the three accepted dispositions.
+
+    ``closure`` is the declared-closure walk's return value, accepted here and
+    **deliberately inert**: it changes nothing this function returns. The
+    reachability annotation is a triage axis rendered into the report, and it
+    must never reach the UNKNOWN count, the vulnerability count, the coverage
+    note or the tier -- the moment it does, an approximate walk has become a
+    second claim about coverage and the design has to be refused. This
+    parameter is the seam where that could happen, and
+    ``test_the_established_coverage_fields_are_unchanged_by_the_annotation``
+    is what proves it has not.
 
     **The denominator is the distribution set the child reported** -- the
     ``dependencies`` array of pip-audit's own ``--format json`` output. The
@@ -899,6 +917,7 @@ def classify_pip_audit_output(
     CLEAN. Individual entries that match neither the resolved nor the skipped
     shape count UNKNOWN rather than being dropped. The alternative (assume clean
     on parse failure) is the single defect this contract exists to prevent."""
+    _ = closure  # accepted, deliberately inert -- see the docstring above
     established = (_PIP_AUDIT_SCHEMA_ESTABLISHED if schema_established is None
                    else schema_established)
     if not established:
@@ -923,6 +942,7 @@ def classify_pip_audit_output(
             f"(top level seen: {sorted(report)[:8] if isinstance(report, dict) else type(report).__name__})")
     scanned = unknown = vulnerabilities = 0
     names: list[str] = []
+    vulnerable: list[tuple[str, int]] = []
     for entry in entries:
         if not isinstance(entry, dict):
             unknown += 1
@@ -940,6 +960,10 @@ def classify_pip_audit_output(
             if all(_valid_pip_audit_vulnerability(vuln) for vuln in vulns):
                 scanned += 1
                 vulnerabilities += len(vulns)
+                if vulns:
+                    # Retain the (distribution, count) association the bare sum
+                    # discards; the count is all that is kept.
+                    vulnerable.append((_canonical_name(names[-1]), len(vulns)))
             else:
                 # A malformed vulnerability entry makes the distribution's
                 # disposition unknown; it is never silently counted as clean.
@@ -953,7 +977,7 @@ def classify_pip_audit_output(
         f"and queried, {unknown} UNKNOWN (unresolved by the tool or not matching "
         f"the schema established against pip-audit {_PIP_AUDIT_SCHEMA_VERSION}). "
         f"{_DISPOSITION_NO_MATCH} is {_NO_MATCH_NOT_OBSERVABLE}.",
-        tuple(names), vulnerabilities)
+        tuple(names), vulnerabilities, tuple(vulnerable))
 
 
 def local_build_disposition(raw: str | None) -> str:
@@ -1316,8 +1340,66 @@ def conda_non_coverage(
     return CondaScope(True, len(records), len(conda_only), unknown)
 
 
+#: The three reachability labels. They describe a *triage order*, never
+#: coverage: a distribution labelled ``unknown`` here is still audited, still
+#: reported, and still counted exactly as it was before the label existed.
+_REACH_IN = "in-closure"
+_REACH_OUT = "out-of-closure"
+_REACH_UNKNOWN = "unknown"
+
+
+def annotate_reachability(
+    reported_name: str,
+    closure: tuple[frozenset[str], frozenset[str]] | None,
+) -> str:
+    """Label one reported distribution against the declared closure.
+
+    ``in_closure`` is consulted first, so a name in both sets reads
+    ``in-closure``. The walk cannot produce that overlap today; fixing the
+    order here means the answer does not depend on that staying true."""
+    if closure is None:
+        # A closure that could not be established says nothing about any
+        # distribution, so no distribution is labelled as though it did.
+        return _REACH_UNKNOWN
+    in_closure, unknown = closure
+    canonical = _canonical_name(reported_name)
+    if canonical in in_closure:
+        return _REACH_IN
+    if canonical in unknown:
+        return _REACH_UNKNOWN
+    return _REACH_OUT
+
+
+def _print_reachability(coverage: Coverage,
+                        closure: tuple[frozenset[str], frozenset[str]] | None,
+                        ) -> None:
+    """Render the reachability partition and its per-distribution rows.
+
+    Every vulnerable distribution the child reported gets a row, whatever its
+    label. Omitting rows by label is the collapse this axis must not make: the
+    leg would then be reporting a narrowed set while claiming the wide one."""
+    rows = tuple((name, count, annotate_reachability(name, closure))
+                 for name, count in coverage.vulnerable)
+    inside = [row for row in rows if row[2] == _REACH_IN]
+    print(f"[pip-audit] REACHABILITY: {coverage.vulnerabilities} "
+          f"vulnerability(ies) across {len(rows)} distribution(s), of which "
+          f"{sum(count for _n, count, _a in inside)} across {len(inside)} "
+          "are in the declared dependency closure. TRIAGE AXIS ONLY -- it "
+          "gates nothing (no exit code, no tier, no coverage count) and every "
+          "reported distribution appears either way.")
+    if closure is None:
+        print("[pip-audit] the declared dependency closure could not be "
+              "established, so every reported distribution is annotated "
+              f"{_REACH_UNKNOWN} for reachability. The audited set, the "
+              "findings and the exit code are unaffected.", file=sys.stderr)
+    for name, count, annotation in rows:
+        print(f"  [reachability] {annotation:<15} {name} -- {count} "
+              "vulnerability(ies)")
+
+
 def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
-                       passthrough_env: tuple[str, ...] = ()) -> tuple[str, int]:
+                       passthrough_env: tuple[str, ...] = (),
+                       python_package: Path | None = None) -> tuple[str, int]:
     """pip-audit over the active interpreter's Python distributions.
 
     **Declared scope.** This leg audits the Python distributions discoverable
@@ -1341,7 +1423,17 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
 
     **CLEAN requires zero UNKNOWN.** Findings dominate clean; degraded
     dominates both. A NO-MATCH-IN-PINNED-SOURCES count is reported alongside a
-    clean result and never folded into it."""
+    clean result and never folded into it.
+
+    **Reachability is a triage axis, not a second claim.** Given
+    ``python_package`` the pass resolves the project's declared dependency
+    closure and labels each vulnerable distribution ``in-closure`` /
+    ``out-of-closure`` / ``unknown``. On an environment several times the size
+    of the project's own closure -- the ordinary conda case -- that is the
+    difference between a report that is read and one that is skimmed. Omitted,
+    or unresolvable, or raising: every distribution is labelled ``unknown``,
+    which is one fail-closed path rather than two. The label reaches no exit
+    code, no tier and no coverage count."""
     print("\n[pip-audit] DECLARED SCOPE -- Python distributions discoverable "
           "in the audited environment. Conda-managed native packages, system "
           "packages and vendored / statically-linked libraries are NOT "
@@ -1417,7 +1509,14 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
         # tool failure -> DEGRADED, never reported as vulnerabilities.
         return "pip-audit:error", _AGG_DEGRADED
 
-    coverage = classify_pip_audit_output(run.stdout)
+    closure = None
+    if python_package is not None:
+        try:
+            closure = resolve_declared_closure(python_package)
+        except Exception:  # noqa: BLE001 -- an annotation that can fail the leg
+            closure = None  # is worse than no annotation; this is the SAME
+            # fail-closed path a None return takes, never a second one.
+    coverage = classify_pip_audit_output(run.stdout, closure=closure)
     builds = survey_local_builds()
     unknown_total = coverage.unknown + builds.unknown + scope.unknown
     print(f"\n[pip-audit] coverage over the {len(coverage.names)} "
@@ -1427,6 +1526,7 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
           f"(sources queried: {', '.join(_PINNED_ADVISORY_SOURCES)} -- accepted "
           "non-coverage, NOT evidence of safety).")
     print(f"[pip-audit] {_DISPOSITION_NO_MATCH}: {_NO_MATCH_NOT_OBSERVABLE}.")
+    _print_reachability(coverage, closure)
     if not coverage.established:
         print(f"[pip-audit] COVERAGE NOT ESTABLISHED -- {coverage.note}",
               file=sys.stderr)
@@ -1523,7 +1623,7 @@ def main(argv: list[str] | None = None) -> int:
         ("adopted-exec", lambda: run_adopted_executable_gate(_REPO_ROOT, lock)),
         ("pip-audit", lambda: run_pip_audit_pass(
             _REPO_ROOT, allow_egress=allow_egress,
-            passthrough_env=passthrough_env)),
+            passthrough_env=passthrough_env, python_package=pkg)),
     ):
         _banner(label)
         try:

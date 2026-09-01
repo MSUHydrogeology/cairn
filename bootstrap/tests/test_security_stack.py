@@ -26,6 +26,7 @@ from __future__ import annotations
 import builtins
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -1890,3 +1891,176 @@ def test_closure_walk_imports_only_the_standard_library():
     assert "importlib" in imported
     assert {"packaging"} - sys.stdlib_module_names == {"packaging"}
     assert imported - sys.stdlib_module_names == set()
+
+
+# --- Reachability: the retained association, the labels, the emitted rows ----
+#
+# CHANNEL NOTE. Subject: the pip-audit leg's report. Oracle: a literal,
+# pre-normalized multiset of (distribution, count, label) triples written in
+# this file, compared against triples parsed back out of the EMITTED report.
+# The expectation is authored here, never computed from the code under test --
+# a derived expectation cannot fail.
+
+#: A child report carrying a vulnerable distribution in EACH label class, plus
+#: a clean one and a skipped one that must not become rows. The entry shape is
+#: pip-audit 2.10.1 JsonFormat's, evidenced by the formatter-emitted payloads
+#: above; `Requests` and `opaque_dist` are spelled un-normalized on purpose, so
+#: a label joined on the raw name cannot pass.
+_PA_THREE_REACH_CLASSES = (
+    '{"dependencies": ['
+    '{"name": "Requests", "version": "2.31.0", "vulns": '
+    '[{"id": "CVE-2099-0001", "fix_versions": ["2.31.1"]}, '
+    '{"id": "CVE-2099-0002", "fix_versions": ["2.31.1"]}]}, '
+    '{"name": "sphinx", "version": "7.0.0", "vulns": '
+    '[{"id": "CVE-2099-0003", "fix_versions": ["7.0.1"]}]}, '
+    '{"name": "opaque_dist", "version": "1.0", "vulns": '
+    '[{"id": "CVE-2099-0004", "fix_versions": ["1.1"]}]}, '
+    '{"name": "clean-dist", "version": "9.9", "vulns": []}, '
+    '{"name": "unresolved-dist", "skip_reason": "Dependency not found on PyPI '
+    'and could not be audited: unresolved-dist (0.0.1)"}], "fixes": []}')
+
+#: The closure that sorts the fixture into three classes: requests is reached,
+#: opaque-dist is one the walk could not decide, sphinx is in neither set.
+_REACH_CLOSURE = (frozenset({"requests"}), frozenset({"opaque-dist"}))
+
+#: Written out, pre-normalized, by hand.
+_EXPECTED_TRIPLES = frozenset({
+    ("requests", 2, "in-closure"),
+    ("sphinx", 1, "out-of-closure"),
+    ("opaque-dist", 1, "unknown"),
+})
+
+_ROW_RE = re.compile(
+    r"\[reachability\] (\S+)\s+(\S+) -- (\d+) vulnerabilit")
+
+
+def _observed_triples(text: str) -> frozenset:
+    """Parse the emitted report back into (distribution, count, label)."""
+    return frozenset((name, int(count), label)
+                     for label, name, count in _ROW_RE.findall(text))
+
+
+def _reach_run(orchb, tmp_path, monkeypatch, capsys, *, closure_value,
+               report=_PA_THREE_REACH_CLASSES, raise_instead=False):
+    """Run the leg over a literal report with a literal closure, and return
+    ``(status, tier, stdout+stderr)``."""
+    _only_child_reported_unknowns(orchb, monkeypatch)
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+    monkeypatch.setattr(orchb, "_run_tool",
+                        lambda *a, **k: orchb.ToolRun(1, "ran", report, ""))
+
+    def _closure(_pkg):
+        if raise_instead:
+            raise RuntimeError("the walk blew up")
+        return closure_value
+
+    monkeypatch.setattr(orchb, "resolve_declared_closure", _closure)
+    status, tier = orchb.run_pip_audit_pass(
+        tmp_path, allow_egress=True, python_package=Path("src") / "demo")
+    captured = capsys.readouterr()
+    return status, tier, captured.out + captured.err
+
+
+def test_reported_rows_match_the_literal_expected_triples(orchb, tmp_path,
+                                                          monkeypatch, capsys):
+    """The report has to carry the label on the row, or a reader still cannot
+    tell which findings are theirs. Exact multiset equality against a
+    hand-written expectation is what makes a dropped row, a wrong count and a
+    swapped label all visible -- each on its own."""
+    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                      closure_value=_REACH_CLOSURE)
+    assert _observed_triples(text) == _EXPECTED_TRIPLES
+    # A distribution with no vulnerabilities and one the tool skipped are not
+    # findings, so they are not rows.
+    assert "clean-dist" not in text.split("REACHABILITY")[-1]
+
+
+def test_the_established_coverage_fields_are_unchanged_by_the_annotation(
+        orchb, tmp_path, monkeypatch, capsys):
+    """The bright line. A reachability walk is approximate by admission; that
+    is tolerable only while it decides nothing. If it ever moved the UNKNOWN
+    count or the tier, an annotation would have become a coverage claim resting
+    on a resolver nobody trusts that far."""
+    plain = orchb.classify_pip_audit_output(_PA_THREE_REACH_CLASSES)
+    annotated = orchb.classify_pip_audit_output(_PA_THREE_REACH_CLASSES,
+                                                closure=_REACH_CLOSURE)
+    for field in ("established", "scanned", "no_match", "unknown", "note",
+                  "names", "vulnerabilities"):
+        assert getattr(plain, field) == getattr(annotated, field), field
+    assert plain.vulnerable == annotated.vulnerable
+    assert annotated.vulnerable == (("requests", 2), ("sphinx", 1),
+                                    ("opaque-dist", 1))
+    # Control: the fixture must actually exercise the fields, or equality here
+    # would be equality between two empty results.
+    assert plain.scanned == 4 and plain.unknown == 1
+    assert plain.vulnerabilities == 4 and len(plain.names) == 5
+
+    with_closure = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                              closure_value=_REACH_CLOSURE)[:2]
+    _only_child_reported_unknowns(orchb, monkeypatch)
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+    monkeypatch.setattr(
+        orchb, "_run_tool",
+        lambda *a, **k: orchb.ToolRun(1, "ran", _PA_THREE_REACH_CLASSES, ""))
+    without = orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
+    capsys.readouterr()
+    assert with_closure == without
+
+
+def test_report_states_the_in_closure_partition(orchb, tmp_path, monkeypatch,
+                                                capsys):
+    """A reader triaging 144 findings needs the subtotal in the same output as
+    the total; a ratio in a doc they do not have open is not a triage aid."""
+    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                      closure_value=_REACH_CLOSURE)
+    line = next(ln for ln in text.splitlines() if "REACHABILITY:" in ln)
+    assert "4 vulnerability(ies) across 3 distribution(s)" in line
+    assert "2 across 1 are in the declared dependency closure" in line
+
+
+def test_a_failed_closure_annotates_every_distribution_unknown(
+        orchb, tmp_path, monkeypatch, capsys):
+    """An annotation that can fail a security leg is worse than no annotation.
+    A walk that raises takes the same path as one that returns nothing: one
+    fail-closed disposition, not two."""
+    status, tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                    closure_value=None, raise_instead=True)
+    assert tier == orchb._AGG_FINDINGS and "findings" in status, (
+        "the leg still succeeds on its own terms")
+    assert all(label == "unknown"
+               for label, _n, _c in _ROW_RE.findall(text))
+    assert "closure could not be established" in text
+
+
+def test_a_failed_closure_drops_no_distribution(orchb, tmp_path, monkeypatch,
+                                                capsys):
+    """The paired half. Labelling everything `unknown` is honest; reporting
+    fewer findings because the labeller failed is the collapse into a narrowed
+    audited set that the design refuses outright."""
+    _s, _t, good = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                              closure_value=_REACH_CLOSURE)
+    _s, _t, failed = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                closure_value=None, raise_instead=True)
+    names_and_counts = {(n, c) for n, c, _a in _observed_triples(good)}
+    assert names_and_counts == {(n, c) for n, c, _a in _observed_triples(failed)}
+    assert names_and_counts == {("requests", 2), ("sphinx", 1),
+                                ("opaque-dist", 1)}
+
+
+def test_no_per_vulnerability_identity_is_retained(orchb, tmp_path, monkeypatch,
+                                                   capsys):
+    """Counts only. Retaining ids, aliases or fix versions would widen the
+    parse surface bound to the established pip-audit schema, so a schema drift
+    the version pin did not catch would start producing wrong records rather
+    than an unestablished coverage result."""
+    coverage = orchb.classify_pip_audit_output(_PA_THREE_REACH_CLASSES,
+                                               closure=_REACH_CLOSURE)
+    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                      closure_value=_REACH_CLOSURE)
+    # Control: the identities are present in the input the parser was handed.
+    assert "CVE-2099-0001" in _PA_THREE_REACH_CLASSES
+    assert "2.31.1" in _PA_THREE_REACH_CLASSES
+    for identity in ("CVE-2099-0001", "CVE-2099-0002", "CVE-2099-0003",
+                     "CVE-2099-0004", "fix_versions", "2.31.1"):
+        assert identity not in repr(coverage), identity
+        assert identity not in text, identity
