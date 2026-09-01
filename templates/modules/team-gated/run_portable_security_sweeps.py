@@ -1694,7 +1694,10 @@ def _leg_argv(
         "--report-path", report,
         "--max-archive-depth=0",
         "--max-decode-depth=0",
-        f"--timeout={_ADAPTER_TIMEOUT}s",
+        # Integer seconds, no suffix: the adapter declares ``--timeout int ...
+        # in seconds`` and refuses a suffixed value with a ParseInt error,
+        # writing no report -- measured on 8.30.1.
+        f"--timeout={_ADAPTER_TIMEOUT}",
     ]
     return argv, report
 

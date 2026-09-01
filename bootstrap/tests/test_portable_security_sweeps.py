@@ -1338,7 +1338,7 @@ def test_the_gitleaks_timeout_is_strictly_inside_the_outer_deadline(
     _rc, _summary, out, log = _sweep(tmp_path, sweep_target)
     argv = scan_argv(log)
     sent = [a for a in argv if a.startswith("--timeout=")]
-    assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}s"], (sent, out)
+    assert sent == [f"--timeout={runner._ADAPTER_TIMEOUT}"], (sent, out)
 
 
 def test_the_adapter_timeout_is_sent_as_integer_seconds(
