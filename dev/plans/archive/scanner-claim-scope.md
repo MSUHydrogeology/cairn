@@ -5,7 +5,7 @@
 opening commit archives it** — [`_template.md:18-19`](_template.md),
 [`doctrine/plans.md:40-41`](../../doctrine/plans.md) — so the path above is where
 it lives from the moment this plan exists, not somewhere it goes later.
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header and re-stated by the Decision (*"Plan review is `required(Internal)` (no
 Security Review trigger)"*). The **Security Review: REQUIRED** declaration in
@@ -539,7 +539,19 @@ requirement carried forward, not an escalation this plan invents.
 
 ## Dispositions
 
-*Filled at archive-preparation.*
+`Dispositions: accept x3, wontfix x1, defer x1 (authorized)`
+
+* **accept** — D1, D1b, D2, D2b, the marker tokenizer and triple oracle, the
+  mutation ledger, the closure-ratio measurement and its tripwire; the second
+  scoping site the Maintainer authorized 2026-08-31; the `out-of-closure`
+  scope disclosure the code review required.
+* **wontfix** — `base_hash` not equal to `hash` on the two reconciled records.
+  `--finalize` advances `hash` only, and Cairn is its own upstream here, so
+  this reads as a self-hosted install one upgrade behind its own source rather
+  than a fork; the on-disk base cache already carries the new bytes.
+  Disclosed, not repaired, and the lockfile tests stay green.
+* **defer** — the gate-manifest re-anchor for the four frozen files this work
+  touched, under the same Maintainer authorization quoted at `9960814`.
 
 ## Plan review -- Claude (Internal, fresh-context subagent) -- 2026-08-31
 
@@ -1200,3 +1212,19 @@ One loop: this revision closes the review (`doctrine/dual-review.md`). Landed at
 | **N2** plan-stated falsifier does not reproduce; a substitute was run | **accepted as stated** — the substitute is the better mutation and anchoring is pinned either way; recorded rather than re-run | this section |
 | **N3** tripwire framing vs what its node checks | **note, carried** — the node checks the extras policy over a synthetic fixture, which is what it should check; the measurement file's framing is the loose part | — |
 | nit | **accepted** | — |
+
+## Archive -- 2026-09-01
+
+`Dispositions: accept x3, wontfix x1, defer x1 (authorized)` — see
+*Dispositions* above.
+
+Closed the loops it opened: adopter issues #5 and #6, filed 2026-08-20, closed
+2026-09-01 on Maintainer authorization. Chunks A–H landed; M executed.
+
+**The lasting truth.** A control that names a set wider than the one it audited
+is not imprecise, it is wrong: this runner told an operator to prune a shared
+security baseline on the authority of a narrower scan, and the adopter followed
+it. The same shape recurred inside the fix — `out-of-closure` claimed "your
+declared dependency closure" while the walk skips extras-gated edges, so a
+dependency installed through an extra was labelled as though unused. Both are
+one defect: **an instruction whose scope exceeds its evidence.**

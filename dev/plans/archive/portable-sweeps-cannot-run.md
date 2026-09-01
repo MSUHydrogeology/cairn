@@ -4,7 +4,7 @@
 — accepted as revised (Revision 4) on 2026-08-20. **The plan-open commit archives
 the source proposal**, so the path above is where it lives from that commit
 onward (`dev/plans/_template.md:18-19`, `doctrine/plans.md:40-41`).
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header. The **Security Review** the implementation carries is a *different
 instrument*: mandated by the portable-sweep executable trust root `AGENTS.md`
@@ -461,7 +461,31 @@ substitutes for the other.
 
 ## Dispositions
 
-*Filled at archive-preparation.*
+`Dispositions: accept x2, guard x1, wontfix x2, defer x1 (authorized)`
+
+* **accept** — D1 through D5 and the admission matrix, all delivered; the
+  exit-table disclosure in both module-doc copies.
+* **guard (`bootstrap/tests/test_portable_security_sweeps.py::test_the_adapters_real_redaction_shape_fails_validation`)**
+  — reconciling the runner's whole-field redaction check with the shape the
+  adapter actually emits is new scope and is not taken here. It is held by a
+  node that fails if the real shape ever starts validating, so the gap cannot
+  drift back into silence. Also recorded in
+  `dev/measurement/gitleaks-version-support.md` under *Known gap*.
+* **wontfix** — the uncovered branch at the matrix guard: unreachable by any
+  current fixture, and reachable only by a candidate that misreports its own
+  output.
+* **wontfix** — a follow-up comment on the now-closed issue #4: a comment on a
+  closed issue reaches nobody and is therefore not a control. The disclosure
+  that does reach an adopter is in the installed module doc, and ships through
+  the upgrade path.
+* **defer** — the gate-manifest re-anchor for the frozen files this work
+  touched. Maintainer authorization, quoted verbatim at `9960814`:
+
+  > "If we don't need to re-anchor now, let's not. We've got a couple of big
+  > new features coming, one of which will be a better automation."
+
+  This is a hazard a green suite will not surface: `test_gate_manifest.py`
+  verifies a freshly produced manifest and never diffs the committed fixture.
 
 ## Plan review -- Claude (Internal, fresh-context subagent) -- 2026-08-31
 
@@ -1093,7 +1117,7 @@ One loop: this revision closes the review (`doctrine/dual-review.md`). Landed at
 | Finding | Disposition | Where |
 |---|---|---|
 | **B1** planted fixture emits a shape no adapter produces | **accepted** | `_planted_finding` now emits the adapter's real `Match`; `test_the_adapters_real_redaction_shape_fails_validation` pins the consequence; nine nodes measuring other properties opt into the idealized shape via `ideal_redaction=True` rather than inheriting it |
-| **B2** installed doc says a finding yields `10` | **accepted** | disclosure at the exit table in both module-doc copies, stating the finding is still reported and `20` is the fail-closed direction |
+| **B2** installed doc says a finding yields `10` | **accepted in part** — the doc half delivered; the reviewer's second half, a follow-up comment on the closed #4, is **wontfix**: a comment on a closed issue reaches nobody, so it is not a control (`AGENTS.md`, "a named hazard with no enforcing trigger is not a control"). The installed doc is what reaches an adopter, and it ships through the upgrade path. | disclosure at the exit table in both module-doc copies, stating the finding is still reported and `20` is the fail-closed direction |
 | **N1** chunk E's falsifier reddens one node, not two | **accepted as stated** — evidence-record imprecision, not a gap in what the nodes pin; the reviewer's reasoning is recorded and the claim is not repeated | this section |
 | **N1b** an uncovered branch at the matrix guard | **wontfix** — unreachable by any current fixture and reachable only by a candidate that lies about its own output; the redaction node now covers the neighbouring path | — |
 | nits | **accepted** where they cost a line; otherwise recorded here | — |
@@ -1102,3 +1126,19 @@ One loop: this revision closes the review (`doctrine/dual-review.md`). Landed at
 real tool never emits, with green tests over it. The guard is not vigilance —
 it is that a fixture's default is now the observed shape, and departing from it
 takes an explicit, named argument at the call site.
+
+## Archive -- 2026-09-01
+
+`Dispositions: accept x2, guard x1, wontfix x2, defer x1 (authorized)` — see
+*Dispositions* above.
+
+Closed the loop it opened: adopter issue #4, filed 2026-08-20, closed
+2026-09-01 on Maintainer authorization. Chunks A–F landed; M executed.
+
+**The lasting truth, worth more than the fix.** The defect this plan repaired
+was a fake adapter emitting a version string the real tool never produces, so
+the suite stayed green while no scan leg could run. The repair introduced a
+planted-finding fixture emitting a *redaction* shape the real tool never
+produces — green tests, same file, same class, caught only by code review.
+A fixture's default is now the observed shape, and departing from it costs an
+explicit argument at the call site.
