@@ -26,6 +26,7 @@ from __future__ import annotations
 import builtins
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -542,6 +543,84 @@ class TestRunnerExitContract:
             tmp_path / "scripts" / "content_scan_residuals.txt",
             deadline=time.monotonic() - 1.0)
         assert code == 2
+
+
+class TestStaleBaselineMessageScope:
+    """The exit-3 message names the set it audited, and instructs accordingly.
+
+    The runner concludes over the roots its manifest names, but the reviewed
+    residual baseline it compares against has several consumers. On a tree
+    where two of those consumers disagree, the old wording -- a bare "prune the
+    residual baseline" -- told an operator to delete live entries from a shared
+    reviewed security artifact on evidence that covered only this runner's own
+    set. One did, and was saved by a contract test they happened to have.
+    """
+
+    _STALE = [("dev/gone.md:homoglyph:0123456789ab", 1)]
+
+    def _summary_stderr(self, csr, capsys) -> str:
+        csr._print_summary(3, [], [], [], self._STALE)
+        return capsys.readouterr().err
+
+    def test_stale_message_names_the_audited_roots(self, csr, capsys):
+        """Naming the set makes the claim checkable instead of merely hedged.
+
+        The manifest *filename* is not the set: a reader cannot tell from it
+        what was covered, and the filename is what the message already carried.
+        """
+        roots = [rel for rel, _required in csr.load_audit_roots()]
+        assert len(roots) > 1, "control: the manifest must resolve to several roots"
+        err = self._summary_stderr(csr, capsys)
+        for root in roots:
+            assert root in err, f"audited root {root!r} is not named in the message"
+
+    def test_stale_message_defers_to_other_consumers_before_pruning(
+            self, csr, capsys):
+        """A conclusion drawn over one consumer's set cannot carry an
+        unconditional imperative over an artifact several consumers read."""
+        err = self._summary_stderr(csr, capsys)
+        assert "prune the residual baseline)" not in err, (
+            "the bare imperative is what produced the incident")
+        assert "consumer" in err
+        assert "confirm" in err.lower()
+        # The disagreement framing: exit 3 is a signal, not a verdict.
+        assert "DISAGREE" in err
+        assert "NOT a verdict that the baseline is wrong" in err
+
+    def test_stale_message_requires_lockfile_reconciliation(self, csr, capsys):
+        """The mixed-tree case that produced the report: a drifted apparatus
+        copy makes a live entry look dead, and the lockfile record is where
+        that drift is visible."""
+        assert "lockfile" in self._summary_stderr(csr, capsys)
+
+    def test_print_summary_signature_is_positionally_stable(self, csr):
+        """The dependency-audit orchestrator calls this across a module
+        boundary with five positional arguments. A signature change breaks
+        exactly the mixed-tree condition the message exists for."""
+        import inspect  # noqa: PLC0415
+
+        params = list(inspect.signature(csr._print_summary).parameters.values())
+        assert [p.name for p in params] == [
+            "code", "files", "all_flags", "new_flags", "stale"]
+        assert all(
+            p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD for p in params)
+
+    def test_unresolvable_roots_degrade_the_message_without_changing_exit_three(
+            self, csr, capsys, monkeypatch):
+        """The message's own input can fail. It must then say so and still
+        report exit 3 -- a summary that raised would convert a fail-closed
+        detection into a crash on the one path this wording exists to fix."""
+        def _boom(*_a, **_k):
+            raise csr.AuditError("manifest unreadable")
+
+        monkeypatch.setattr(csr, "load_audit_roots", _boom)
+        monkeypatch.setattr(
+            csr, "audit", lambda *_a, **_k: (3, [], [], [], self._STALE))
+        assert csr.main() == 3
+        err = capsys.readouterr().err
+        assert csr._ROOTS_MANIFEST.name in err
+        assert "could NOT be resolved" in err
+        assert "STALE baseline authority" in err
 
 
 @pytest.mark.skipif(not _HAS_GIT, reason="git not available")
@@ -1531,3 +1610,516 @@ def test_d_t8_hostile_conda_meta_is_bounded_and_fails_closed(orchb, tmp_path):
     assert scope.conda_only == 1
     # A prefix that is not a conda environment is simply not applicable.
     assert orchb.conda_non_coverage(tmp_path / "nope", set()).applicable is False
+
+
+# --- The declared dependency closure: the reachability axis ------------------
+#
+# CHANNEL NOTE. Subject: resolve_declared_closure. Oracles: literal requirement
+# strings and a literal installed-name set the test itself authors, injected at
+# the three seams the walk reads its environment through, plus this file's own
+# import graph read with `ast`. No expectation here is derived from the walk.
+#
+# What the walk is for: the pip-audit leg audits the whole environment, which on
+# a conda scientific stack is several times the project's own dependency
+# closure. The closure lets each reported distribution carry an in-closure /
+# out-of-closure / unknown label so a reader can triage. It gates nothing, and
+# every failure direction below moves a distribution toward `unknown`.
+
+#: The lockfile's `python_package` is a path; only its final component -- the
+#: importable top-level name -- reaches the walk.
+_CLOSURE_PKG = Path("src") / "demo"
+_ROOT_DIST = "demo-pkg"
+
+#: Messy by construction, because real metadata is: an extras-gated edge, a
+#: non-extras marker-gated edge, a Pillow/pillow normalization pair, a `~`
+#: terminated identifier, a requirement nothing installed provides, a cycle
+#: back to the root, a two-node cycle, and a distribution in nobody's closure.
+_MESSY = {
+    _ROOT_DIST: [
+        "requests>=2.0",
+        "Pillow (>=10)",
+        'sphinx; extra == "docs"',
+        'tomli; python_version < "3.11"',
+        "cffi~=1.0",
+        "mdurl~",
+        "nothing-provides-this>=1",
+        "cyclic-a",
+    ],
+    "requests": ["urllib3", _ROOT_DIST],
+    "pillow": [],
+    "tomli": [],
+    "cffi": [],
+    "mdurl": [],
+    "urllib3": [],
+    "cyclic-a": ["cyclic-b"],
+    "cyclic-b": ["cyclic-a"],
+    # Reached by nobody: the 71%-of-the-environment case the axis exists for.
+    "orphan-dist": [],
+    # Extras-gated, so installed but outside the default closure.
+    "sphinx": [],
+}
+_MESSY_REACHED = frozenset({
+    _ROOT_DIST, "requests", "pillow", "tomli", "cffi", "mdurl", "urllib3",
+    "cyclic-a", "cyclic-b",
+})
+
+
+def _closure_env(orch, monkeypatch, requirements, *, installed=None,
+                 roots=(_ROOT_DIST,)):
+    """Point the walk at a literal environment.
+
+    A `None` requirements value is an *installed* distribution whose metadata
+    cannot be read; a missing key is a name that is simply not installed. Only
+    names in `installed` are ever looked up, so the two never collide."""
+    names = set(requirements) if installed is None else set(installed)
+    monkeypatch.setattr(orch, "installed_distribution_names", lambda: set(names))
+    monkeypatch.setattr(orch, "_root_distributions",
+                        lambda _top: None if roots is None else list(roots))
+    monkeypatch.setattr(orch, "_distribution_requirements",
+                        lambda name: requirements.get(name, []))
+
+
+def test_closure_is_rooted_in_the_installed_distribution_metadata(orchb,
+                                                                  monkeypatch):
+    """The root is the distribution that *provides* the project's top-level
+    package in this environment. Rooting in a project file instead would
+    describe what was declared, and a declared-versus-installed mismatch
+    reclassifies real findings on a fact the audited environment contradicts."""
+    # Control: the real resolver reads the live mapping and discriminates.
+    assert orchb._root_distributions("pytest"), (
+        "control: the authority must resolve a package known to be installed")
+    assert orchb._root_distributions("cairn-no-such-top-level") == []
+
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert in_closure == _MESSY_REACHED
+    assert unknown == frozenset()
+
+    # A different root gives a different closure over the same environment.
+    _closure_env(orchb, monkeypatch, _MESSY, roots=("cyclic-a",))
+    other, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert other == frozenset({"cyclic-a", "cyclic-b"})
+
+
+def test_requirement_names_are_normalized_before_comparison(orchb, monkeypatch):
+    """`Pillow` in a requirement and `pillow` in the environment are one
+    distribution. Comparing raw names splits it in two and reports the
+    project's own dependency as outside its closure."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "pillow" in in_closure
+    assert "Pillow" not in in_closure, "names are PEP 503 canonical on both sides"
+
+
+def test_requirement_identifier_stops_at_the_version_specifier(orchb,
+                                                               monkeypatch):
+    """A hand-built closure produced entries like `cffi~` and `mdurl~` because
+    it took the requirement text up to a delimiter it did not include `~` in.
+    An anchored identifier match ends at the first character that cannot be
+    part of a name."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert {"cffi", "mdurl"} <= in_closure
+    assert not any("~" in name for name in in_closure)
+
+
+@pytest.mark.parametrize("marker", [
+    'extra == "docs"',
+    'extra=="docs"',
+    'extra  ==  "docs"',
+    '"docs" == extra',
+    'python_version >= "3.9" and extra == "docs"',
+])
+def test_extras_gated_requirements_are_excluded(orchb, monkeypatch, marker):
+    """An extra is opt-in, so a requirement gated on one is not part of the
+    default closure. Spacing and operand order are formatting, not meaning."""
+    _closure_env(orchb, monkeypatch,
+                 {**_MESSY, _ROOT_DIST: [f"sphinx; {marker}"]})
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert in_closure == frozenset({_ROOT_DIST})
+    assert "sphinx" not in in_closure
+    assert unknown == frozenset()
+
+
+def test_quoted_extra_text_is_a_value_not_the_marker_variable(orchb,
+                                                              monkeypatch):
+    """`extra` inside quotes is a string a package chose, not the marker
+    variable. A substring test for `extra ==` cannot tell the two apart and
+    silently drops a real dependency out of the closure."""
+    _closure_env(orchb, monkeypatch, {
+        **_MESSY,
+        _ROOT_DIST: ['requests; platform_release == "extra == dev"'],
+    })
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "requests" in in_closure
+    assert unknown == frozenset()
+
+
+@pytest.mark.parametrize("marker", ['extra != "docs"', 'extra in "docs"'])
+def test_unrecognized_extra_expression_makes_the_closure_unknown(orchb,
+                                                                 monkeypatch,
+                                                                 marker):
+    """Only equality against `extra` has a meaning this walk can act on.
+    Guessing at any other expression puts a distribution in or out of the
+    closure on an assumption, which is the one thing the axis must not do."""
+    _closure_env(orchb, monkeypatch,
+                 {**_MESSY, _ROOT_DIST: [f"sphinx; {marker}"]})
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+
+def test_non_extras_markers_are_included_without_evaluation(orchb, monkeypatch):
+    """A requirement excluded because it is Windows-only, or because the
+    running interpreter is too new, would read `out-of-closure` on a machine
+    where it genuinely is a dependency. Over-including costs triage order;
+    under-including asserts something false."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    # The canonical interpreter is 3.13, so `python_version < "3.11"` is false
+    # here: tomli is present precisely because the marker is not evaluated.
+    assert sys.version_info >= (3, 11), "control: the marker must be FALSE here"
+    assert "tomli" in in_closure
+
+
+def test_uninstalled_requirement_terminates_the_branch_without_unknown(
+        orchb, monkeypatch):
+    """A requirement nothing installed provides is not in the audited
+    environment either, so nothing downstream of it can be mislabelled. It
+    contributes no uncertainty -- unlike an edge that could not be read."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "nothing-provides-this" not in in_closure
+    assert unknown == frozenset(), "an absent requirement is not uncertainty"
+    # The orphan is therefore genuinely out-of-closure, not unknown.
+    assert "orphan-dist" not in in_closure and "orphan-dist" not in unknown
+
+
+def test_unreadable_metadata_makes_its_subtree_unknown(orchb, monkeypatch):
+    """An installed distribution whose metadata will not read might require
+    anything. Its own disposition is unknown, and so is everything that could
+    only have been reached through it."""
+    _closure_env(orchb, monkeypatch, {**_MESSY, "requests": None})
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert "requests" not in in_closure
+    assert "requests" in unknown
+    # urllib3 was reachable only through requests, so it is unknown, not
+    # out-of-closure -- and so is every other un-reached distribution.
+    assert "urllib3" in unknown
+    assert "orphan-dist" in unknown
+    assert in_closure & unknown == frozenset()
+
+
+def test_an_ungrammatical_requirement_edge_is_unknown_not_out_of_closure(
+        orchb, monkeypatch):
+    """An edge whose name cannot be parsed might have led anywhere. Giving it
+    the absent-requirement disposition would let the walk call the whole
+    un-reached remainder `out-of-closure` -- an assertion it never
+    established, over exactly the distributions the axis exists to sort."""
+    _closure_env(orchb, monkeypatch, {
+        **_MESSY,
+        _ROOT_DIST: ["requests>=2.0", "==1.2.3"],
+    })
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert {_ROOT_DIST, "requests", "urllib3"} <= in_closure, (
+        "the reached set is still established")
+    assert "orphan-dist" in unknown, "the un-reached remainder is unknown"
+    assert "sphinx" in unknown
+
+
+def test_cycles_terminate_via_the_visited_set(orchb, monkeypatch):
+    """Distribution metadata is package-controlled and cycles occur in real
+    environments. A walk without a visited set does not return."""
+    _closure_env(orchb, monkeypatch, _MESSY)
+    in_closure, _unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    # Both the two-node cycle and the cycle back through the root resolve.
+    assert {"cyclic-a", "cyclic-b"} <= in_closure
+    assert {"requests", _ROOT_DIST} <= in_closure
+
+
+def test_exceeding_a_traversal_cap_makes_the_whole_closure_unknown(orchb,
+                                                                   monkeypatch):
+    """A truncated closure is worse than none: it silently relabels everything
+    it did not reach as outside the project. Both caps read from the module's
+    own constants, so the numbers can move without this test lying."""
+    depth = orchb._CLOSURE_DEPTH_CAP
+    nodes = orchb._CLOSURE_NODE_CAP
+
+    chain = {f"d{i}": [f"d{i + 1}"] for i in range(depth + 3)}
+    chain[f"d{depth + 3}"] = []
+    _closure_env(orchb, monkeypatch, chain, roots=("d0",))
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+    wide = {"w-root": [f"w{i}" for i in range(nodes + 5)]}
+    wide.update({f"w{i}": [] for i in range(nodes + 5)})
+    _closure_env(orchb, monkeypatch, wide, roots=("w-root",))
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+    # Control: a walk inside both caps is NOT unknown, so the node
+    # discriminates rather than always returning None.
+    short = {f"d{i}": [f"d{i + 1}"] for i in range(depth - 2)}
+    short[f"d{depth - 2}"] = []
+    _closure_env(orchb, monkeypatch, short, roots=("d0",))
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is not None
+
+
+@pytest.mark.parametrize("roots", [(), ("a-dist", "b-dist"), None])
+def test_unresolvable_root_makes_every_distribution_unknown(orchb, monkeypatch,
+                                                            roots):
+    """Zero, several, or an unreadable mapping all mean the same thing: the
+    project's own package is not identifiable here, so no distribution can be
+    partitioned against it. `None` is the whole-closure-unknown signal the
+    annotation turns into `unknown` for every reported distribution."""
+    _closure_env(orchb, monkeypatch, _MESSY, roots=roots)
+    assert orchb.resolve_declared_closure(_CLOSURE_PKG) is None
+
+
+def test_closure_walk_imports_only_the_standard_library():
+    """This orchestrator installs into an adopter's `scripts/`, and adopters
+    take on zero runtime dependencies. A closure walk is exactly the code that
+    invites a requirement-parsing library, and one import here would put that
+    dependency in every installing project."""
+    import ast  # noqa: PLC0415
+
+    imported = set()
+    for node in ast.walk(ast.parse(_ORCH_SRC.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            imported |= {alias.name.split(".")[0] for alias in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            imported.add(node.module.split(".")[0])
+
+    # Two controls: the instrument sees this file's imports at all, and the
+    # comparison it makes would flag a third-party name if one were present.
+    assert "importlib" in imported
+    assert {"packaging"} - sys.stdlib_module_names == {"packaging"}
+    assert imported - sys.stdlib_module_names == set()
+
+
+# --- Reachability: the retained association, the labels, the emitted rows ----
+#
+# CHANNEL NOTE. Subject: the pip-audit leg's report. Oracle: a literal,
+# pre-normalized multiset of (distribution, count, label) triples written in
+# this file, compared against triples parsed back out of the EMITTED report.
+# The expectation is authored here, never computed from the code under test --
+# a derived expectation cannot fail.
+
+#: A child report carrying a vulnerable distribution in EACH label class, plus
+#: a clean one and a skipped one that must not become rows. The entry shape is
+#: pip-audit 2.10.1 JsonFormat's, evidenced by the formatter-emitted payloads
+#: above; `Requests` and `opaque_dist` are spelled un-normalized on purpose, so
+#: a label joined on the raw name cannot pass.
+_PA_THREE_REACH_CLASSES = (
+    '{"dependencies": ['
+    '{"name": "Requests", "version": "2.31.0", "vulns": '
+    '[{"id": "CVE-2099-0001", "fix_versions": ["2.31.1"]}, '
+    '{"id": "CVE-2099-0002", "fix_versions": ["2.31.1"]}]}, '
+    '{"name": "sphinx", "version": "7.0.0", "vulns": '
+    '[{"id": "CVE-2099-0003", "fix_versions": ["7.0.1"]}]}, '
+    '{"name": "opaque_dist", "version": "1.0", "vulns": '
+    '[{"id": "CVE-2099-0004", "fix_versions": ["1.1"]}]}, '
+    '{"name": "clean-dist", "version": "9.9", "vulns": []}, '
+    '{"name": "unresolved-dist", "skip_reason": "Dependency not found on PyPI '
+    'and could not be audited: unresolved-dist (0.0.1)"}], "fixes": []}')
+
+#: The closure that sorts the fixture into three classes: requests is reached,
+#: opaque-dist is one the walk could not decide, sphinx is in neither set.
+_REACH_CLOSURE = (frozenset({"requests"}), frozenset({"opaque-dist"}))
+
+#: Written out, pre-normalized, by hand.
+_EXPECTED_TRIPLES = frozenset({
+    ("requests", 2, "in-closure"),
+    ("sphinx", 1, "out-of-closure"),
+    ("opaque-dist", 1, "unknown"),
+})
+
+_ROW_RE = re.compile(
+    r"\[reachability\] (\S+)\s+(\S+) -- (\d+) vulnerabilit")
+
+
+def _observed_triples(text: str) -> frozenset:
+    """Parse the emitted report back into (distribution, count, label)."""
+    return frozenset((name, int(count), label)
+                     for label, name, count in _ROW_RE.findall(text))
+
+
+def _reach_run(orchb, tmp_path, monkeypatch, capsys, *, closure_value,
+               report=_PA_THREE_REACH_CLASSES, raise_instead=False):
+    """Run the leg over a literal report with a literal closure, and return
+    ``(status, tier, stdout+stderr)``."""
+    _only_child_reported_unknowns(orchb, monkeypatch)
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+    monkeypatch.setattr(orchb, "_run_tool",
+                        lambda *a, **k: orchb.ToolRun(1, "ran", report, ""))
+
+    def _closure(_pkg):
+        if raise_instead:
+            raise RuntimeError("the walk blew up")
+        return closure_value
+
+    monkeypatch.setattr(orchb, "resolve_declared_closure", _closure)
+    status, tier = orchb.run_pip_audit_pass(
+        tmp_path, allow_egress=True, python_package=Path("src") / "demo")
+    captured = capsys.readouterr()
+    return status, tier, captured.out + captured.err
+
+
+def test_reported_rows_match_the_literal_expected_triples(orchb, tmp_path,
+                                                          monkeypatch, capsys):
+    """The report has to carry the label on the row, or a reader still cannot
+    tell which findings are theirs. Exact multiset equality against a
+    hand-written expectation is what makes a dropped row, a wrong count and a
+    swapped label all visible -- each on its own."""
+    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                      closure_value=_REACH_CLOSURE)
+    assert _observed_triples(text) == _EXPECTED_TRIPLES
+    # A distribution with no vulnerabilities and one the tool skipped are not
+    # findings, so they are not rows.
+    assert "clean-dist" not in text.split("REACHABILITY")[-1]
+
+
+def test_the_established_coverage_fields_are_unchanged_by_the_annotation(
+        orchb, tmp_path, monkeypatch, capsys):
+    """The bright line. A reachability walk is approximate by admission; that
+    is tolerable only while it decides nothing. If it ever moved the UNKNOWN
+    count or the tier, an annotation would have become a coverage claim resting
+    on a resolver nobody trusts that far."""
+    plain = orchb.classify_pip_audit_output(_PA_THREE_REACH_CLASSES)
+    annotated = orchb.classify_pip_audit_output(_PA_THREE_REACH_CLASSES,
+                                                closure=_REACH_CLOSURE)
+    for field in ("established", "scanned", "no_match", "unknown", "note",
+                  "names", "vulnerabilities"):
+        assert getattr(plain, field) == getattr(annotated, field), field
+    assert plain.vulnerable == annotated.vulnerable
+    assert annotated.vulnerable == (("requests", 2), ("sphinx", 1),
+                                    ("opaque-dist", 1))
+    # Control: the fixture must actually exercise the fields, or equality here
+    # would be equality between two empty results.
+    assert plain.scanned == 4 and plain.unknown == 1
+    assert plain.vulnerabilities == 4 and len(plain.names) == 5
+
+    with_closure = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                              closure_value=_REACH_CLOSURE)[:2]
+    _only_child_reported_unknowns(orchb, monkeypatch)
+    monkeypatch.setattr(orchb.shutil, "which", lambda _n: "/usr/bin/pip-audit")
+    monkeypatch.setattr(
+        orchb, "_run_tool",
+        lambda *a, **k: orchb.ToolRun(1, "ran", _PA_THREE_REACH_CLASSES, ""))
+    without = orchb.run_pip_audit_pass(tmp_path, allow_egress=True)
+    capsys.readouterr()
+    assert with_closure == without
+
+
+def test_report_states_the_in_closure_partition(orchb, tmp_path, monkeypatch,
+                                                capsys):
+    """A reader triaging 144 findings needs the subtotal in the same output as
+    the total; a ratio in a doc they do not have open is not a triage aid."""
+    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                      closure_value=_REACH_CLOSURE)
+    line = next(ln for ln in text.splitlines() if "REACHABILITY:" in ln)
+    assert "4 vulnerability(ies) across 3 distribution(s)" in line
+    assert "2 across 1 are in the declared dependency closure" in line
+
+
+def test_a_failed_closure_annotates_every_distribution_unknown(
+        orchb, tmp_path, monkeypatch, capsys):
+    """An annotation that can fail a security leg is worse than no annotation.
+    A walk that raises takes the same path as one that returns nothing: one
+    fail-closed disposition, not two."""
+    status, tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                    closure_value=None, raise_instead=True)
+    assert tier == orchb._AGG_FINDINGS and "findings" in status, (
+        "the leg still succeeds on its own terms")
+    assert all(label == "unknown"
+               for label, _n, _c in _ROW_RE.findall(text))
+    assert "closure could not be established" in text
+
+
+def test_a_failed_closure_drops_no_distribution(orchb, tmp_path, monkeypatch,
+                                                capsys):
+    """The paired half. Labelling everything `unknown` is honest; reporting
+    fewer findings because the labeller failed is the collapse into a narrowed
+    audited set that the design refuses outright."""
+    _s, _t, good = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                              closure_value=_REACH_CLOSURE)
+    _s, _t, failed = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                closure_value=None, raise_instead=True)
+    names_and_counts = {(n, c) for n, c, _a in _observed_triples(good)}
+    assert names_and_counts == {(n, c) for n, c, _a in _observed_triples(failed)}
+    assert names_and_counts == {("requests", 2), ("sphinx", 1),
+                                ("opaque-dist", 1)}
+
+
+def test_no_per_vulnerability_identity_is_retained(orchb, tmp_path, monkeypatch,
+                                                   capsys):
+    """Counts only. Retaining ids, aliases or fix versions would widen the
+    parse surface bound to the established pip-audit schema, so a schema drift
+    the version pin did not catch would start producing wrong records rather
+    than an unestablished coverage result."""
+    coverage = orchb.classify_pip_audit_output(_PA_THREE_REACH_CLASSES,
+                                               closure=_REACH_CLOSURE)
+    _status, _tier, text = _reach_run(orchb, tmp_path, monkeypatch, capsys,
+                                      closure_value=_REACH_CLOSURE)
+    # Control: the identities are present in the input the parser was handed.
+    assert "CVE-2099-0001" in _PA_THREE_REACH_CLASSES
+    assert "2.31.1" in _PA_THREE_REACH_CLASSES
+    for identity in ("CVE-2099-0001", "CVE-2099-0002", "CVE-2099-0003",
+                     "CVE-2099-0004", "fix_versions", "2.31.1"):
+        assert identity not in repr(coverage), identity
+        assert identity not in text, identity
+
+
+# --- The closure-size tripwire ----------------------------------------------
+
+#: The measurement record is the ONLY copy of the threshold; this node reads it
+#: from there so the number and its justification cannot drift apart.
+_CLOSURE_RATIO_RECORD = CAIRN_ROOT / "dev" / "measurement" / "pip-audit-closure-ratio.md"
+_THRESHOLD_RE = re.compile(
+    r"\*\*Tripwire threshold\*\*:\s*`closure <= (\d+)% of the discoverable set`")
+
+
+def _recorded_closure_threshold() -> float:
+    match = _THRESHOLD_RE.search(
+        _CLOSURE_RATIO_RECORD.read_text(encoding="utf-8"))
+    assert match is not None, (
+        f"{_CLOSURE_RATIO_RECORD} no longer states a tripwire threshold in the "
+        "form this node reads; the record and the gate have come apart")
+    return int(match.group(1)) / 100
+
+
+def test_closure_stays_a_bounded_fraction_of_the_discoverable_set(orchb,
+                                                                  monkeypatch):
+    """The annotation is only worth having while the closure is a small part of
+    the environment. Re-inflate it -- by following extras-gated edges, which is
+    the policy this design withdrew -- and `out-of-closure` covers a fifth of a
+    report instead of most of it: the axis stops partitioning and the reader is
+    back to triaging a hundred findings by hand. Nothing about coverage breaks
+    when that happens, which is exactly why it needs a tripwire rather than a
+    failing assertion somewhere in the leg.
+
+    The fixture is built so that the extras-gated subtree ALONE crosses the
+    recorded threshold. Without that, this node is green under both policies --
+    a tripwire reporting success without testing its claimed property."""
+    threshold = _recorded_closure_threshold()
+
+    plain = [f"plain-{i}" for i in range(10)]
+    gated = [f"gated-{i}" for i in range(60)]
+    filler = [f"filler-{i}" for i in range(29)]
+    requirements = {
+        "ratio-root": ([f"{name}>=1" for name in plain]
+                       + [f'{name}; extra == "all"' for name in gated]),
+    }
+    requirements.update({name: [] for name in plain + gated + filler})
+    _closure_env(orchb, monkeypatch, requirements, roots=("ratio-root",))
+
+    discoverable = len(requirements)
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert unknown == frozenset()
+    assert len(in_closure) / discoverable <= threshold, (
+        f"closure {len(in_closure)}/{discoverable} exceeds the "
+        f"{threshold:.0%} recorded in {_CLOSURE_RATIO_RECORD.name}")
+
+    # The fixture constraint, asserted rather than assumed: following the
+    # extras-gated edges alone would carry this closure OVER the threshold, so
+    # the bound above is a measurement and not a formality.
+    inflated = len(in_closure) + len(gated)
+    assert inflated / discoverable > threshold, (
+        "the fixture's extras-gated subtree is too small to cross the "
+        "threshold, so this node would pass under either policy")

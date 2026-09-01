@@ -570,10 +570,37 @@ def audit(repo_root: Path = _REPO_ROOT,
     return code, files, all_flags, new_flags, stale
 
 
+def _audited_scope_sentence() -> str:
+    """Name the audited roots this run actually resolved, for the STALE message.
+
+    The STALE class instructs an operator to change a *shared* reviewed
+    artifact, so the instruction has to carry the set the conclusion was drawn
+    from. Resolution can itself fail (an unreadable or malformed manifest), and
+    a message that raises on the very path it exists to fix would be worse than
+    the unscoped one it replaces -- so a failure degrades to naming the
+    manifest and saying the roots are unresolved. It never changes the exit
+    code and never adds an exit path."""
+    try:
+        roots = [rel for rel, _required in load_audit_roots()]
+    except Exception:  # noqa: BLE001 -- the message must survive its own input
+        return (f"the roots named by {_ROOTS_MANIFEST.name}, which could NOT be "
+                "resolved on this run and are therefore not listed here")
+    return (f"the audited roots resolved from {_ROOTS_MANIFEST.name}: "
+            + ", ".join(roots))
+
+
 def _print_summary(code: int, files, all_flags, new_flags, stale) -> None:
     """Info #7: every output surface carries the audited-set identity, the
     trusted-apparatus identity, and the tripwire-not-proof qualifier. Never a
-    bare PASS."""
+    bare PASS.
+
+    The STALE (exit 3) message additionally **names the set it audited** and
+    scopes its instruction to that set: this runner audits the roots its
+    manifest names, while the reviewed baseline it compares against has other
+    consumers, so an entry with no occurrence here can still be live for one of
+    them. The signature is fixed by a cross-module positional call in the
+    dependency-audit orchestrator; adding or reordering a parameter breaks the
+    mixed-tree condition this message exists for."""
     print(
         f"content_scan runner: scanned {len(files)} audited text file(s) "
         f"from {_ROOTS_MANIFEST.name}; apparatus = {_CONTENT_SCAN.name} + "
@@ -592,7 +619,17 @@ def _print_summary(code: int, files, all_flags, new_flags, stale) -> None:
                   file=sys.stderr)
     elif code == 3:
         print(f"result: STALE baseline authority ({len(stale)} entr(y/ies)) "
-              "-- FAILS (prune the residual baseline).", file=sys.stderr)
+              "-- FAILS.", file=sys.stderr)
+        print(f"  audited set: {_audited_scope_sentence()}.", file=sys.stderr)
+        print("  MEANING: exit 3 says the reviewed baseline and THIS scan "
+              "DISAGREE over the audited set above. It is NOT a verdict that "
+              "the baseline is wrong.", file=sys.stderr)
+        print("  An entry with no occurrence in that set may still be live "
+              f"for another consumer of {_RESIDUAL_BASELINE.name}. Before "
+              "pruning anything: confirm the entry is dead across every "
+              "consumer of this baseline, and reconcile the lockfile record "
+              "for this apparatus (a drifted copy produces exactly this "
+              "disagreement).", file=sys.stderr)
         for fp, surplus in stale:
             print(f"  STALE {fp} (x{surplus} no longer present)", file=sys.stderr)
     else:

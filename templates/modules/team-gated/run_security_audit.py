@@ -785,6 +785,13 @@ class Coverage(NamedTuple):
     #: Count of validated vulnerability entries in the child's structured
     #: report. CLEAN requires this to be zero independently of the exit code.
     vulnerabilities: int = 0
+    #: ``(PEP 503 name, vulnerability count)`` per distribution the child
+    #: reported vulnerabilities for -- the association the bare count above
+    #: discards. Counts only: no vulnerability id, alias or fix version is
+    #: retained, so the parse surface bound to the established schema does not
+    #: widen. It is the join key for the reachability annotation, which is
+    #: rendered into the report and never stored here.
+    vulnerable: tuple[tuple[str, int], ...] = ()
 
 
 class LocalBuilds(NamedTuple):
@@ -878,8 +885,19 @@ def _valid_pip_audit_vulnerability(value: object) -> bool:
 
 def classify_pip_audit_output(
     text: str, *, schema_established: bool | None = None,
+    closure: tuple[frozenset[str], frozenset[str]] | None = None,
 ) -> Coverage:
     """Classify the child's report into the three accepted dispositions.
+
+    ``closure`` is the declared-closure walk's return value, accepted here and
+    **deliberately inert**: it changes nothing this function returns. The
+    reachability annotation is a triage axis rendered into the report, and it
+    must never reach the UNKNOWN count, the vulnerability count, the coverage
+    note or the tier -- the moment it does, an approximate walk has become a
+    second claim about coverage and the design has to be refused. This
+    parameter is the seam where that could happen, and
+    ``test_the_established_coverage_fields_are_unchanged_by_the_annotation``
+    is what proves it has not.
 
     **The denominator is the distribution set the child reported** -- the
     ``dependencies`` array of pip-audit's own ``--format json`` output. The
@@ -899,6 +917,7 @@ def classify_pip_audit_output(
     CLEAN. Individual entries that match neither the resolved nor the skipped
     shape count UNKNOWN rather than being dropped. The alternative (assume clean
     on parse failure) is the single defect this contract exists to prevent."""
+    _ = closure  # accepted, deliberately inert -- see the docstring above
     established = (_PIP_AUDIT_SCHEMA_ESTABLISHED if schema_established is None
                    else schema_established)
     if not established:
@@ -923,6 +942,7 @@ def classify_pip_audit_output(
             f"(top level seen: {sorted(report)[:8] if isinstance(report, dict) else type(report).__name__})")
     scanned = unknown = vulnerabilities = 0
     names: list[str] = []
+    vulnerable: list[tuple[str, int]] = []
     for entry in entries:
         if not isinstance(entry, dict):
             unknown += 1
@@ -940,6 +960,10 @@ def classify_pip_audit_output(
             if all(_valid_pip_audit_vulnerability(vuln) for vuln in vulns):
                 scanned += 1
                 vulnerabilities += len(vulns)
+                if vulns:
+                    # Retain the (distribution, count) association the bare sum
+                    # discards; the count is all that is kept.
+                    vulnerable.append((_canonical_name(names[-1]), len(vulns)))
             else:
                 # A malformed vulnerability entry makes the distribution's
                 # disposition unknown; it is never silently counted as clean.
@@ -953,7 +977,7 @@ def classify_pip_audit_output(
         f"and queried, {unknown} UNKNOWN (unresolved by the tool or not matching "
         f"the schema established against pip-audit {_PIP_AUDIT_SCHEMA_VERSION}). "
         f"{_DISPOSITION_NO_MATCH} is {_NO_MATCH_NOT_OBSERVABLE}.",
-        tuple(names), vulnerabilities)
+        tuple(names), vulnerabilities, tuple(vulnerable))
 
 
 def local_build_disposition(raw: str | None) -> str:
@@ -1039,6 +1063,231 @@ def installed_distribution_names() -> set[str]:
     return names
 
 
+# --------------------------------------------------------------------------
+# The declared dependency closure -- a reachability axis for triage, never a
+# gate. See ``resolve_declared_closure`` for the authority and the failure
+# direction; the annotation it feeds decides nothing.
+# --------------------------------------------------------------------------
+
+#: Traversal bounds. Distribution metadata is package-controlled input, so the
+#: walk is capped in both breadth and depth. The numbers are far above any real
+#: closure -- a scientific stack enumerates a few hundred distributions and the
+#: deepest real chains run tens of nodes -- so a legitimate closure never trips
+#: a cap, while hostile or looping metadata cannot drive an unbounded walk.
+#: Exceeding either cap makes the WHOLE closure unknown, never a truncated one:
+#: a partial closure silently mislabels everything it did not reach.
+_CLOSURE_NODE_CAP = 2000
+_CLOSURE_DEPTH_CAP = 32
+
+#: A PEP 508 requirement's distribution name, anchored at the start of the
+#: stripped requirement. Anchoring is the point: an unanchored search finds a
+#: name inside a version specifier or a marker, which is how a hand-built
+#: closure produced entries like ``cffi~`` and ``mdurl~``.
+_REQUIREMENT_NAME_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+
+#: Environment-marker tokens. ``extra`` has to be recognised as a *variable*
+#: rather than as text, so quoted strings are one token and bare identifiers
+#: are another; a substring test for ``extra ==`` cannot tell the two apart.
+_MARKER_TOKEN_RE = re.compile(
+    r"""(?P<str>'[^']*'|"[^"]*")
+      | (?P<op>===|==|!=|<=|>=|~=|<|>|\(|\)|,)
+      | (?P<name>[A-Za-z_][A-Za-z0-9_.]*)
+      | (?P<ws>\s+)""",
+    re.VERBOSE,
+)
+
+
+def _split_requirement_marker(text: str) -> tuple[str, str | None]:
+    """Split a PEP 508 requirement at its marker separator, quote-aware.
+
+    The separator is the first ``;`` **outside** a quoted string. A naive
+    ``split(";")`` cuts inside a quoted marker value and hands the parser a
+    fragment."""
+    quote = None
+    for index, char in enumerate(text):
+        if quote is not None:
+            if char == quote:
+                quote = None
+        elif char in "'\"":
+            quote = char
+        elif char == ";":
+            return text[:index], text[index + 1:]
+    return text, None
+
+
+def _tokenize_marker(marker: str) -> list[tuple[str, str]] | None:
+    """Marker text -> ``(kind, text)`` tokens, or ``None`` if it does not
+    tokenize. Whitespace is dropped, so adjacency is spacing-independent."""
+    tokens: list[tuple[str, str]] = []
+    position = 0
+    while position < len(marker):
+        match = _MARKER_TOKEN_RE.match(marker, position)
+        if match is None:
+            return None
+        position = match.end()
+        if match.lastgroup != "ws":
+            tokens.append((match.lastgroup, match.group()))
+    return tokens
+
+
+def _marker_extra_disposition(marker: str) -> str:
+    """How an environment marker bears on extras: ``included``,
+    ``extras-gated``, ``unreadable`` or ``whole-closure-unknown``.
+
+    Only an **equality** against the bare ``extra`` variable, in either operand
+    order, gates a requirement on an extra. ``extra`` inside quotes is a value
+    and means nothing here. Any other unquoted use of the variable is an
+    expression whose truth this walk cannot decide, and deciding it wrongly
+    would put a distribution in or out of the closure on a guess -- so it makes
+    the whole closure unknown instead. Non-extras markers are included without
+    evaluation: this is a triage axis, and a requirement excluded because it is
+    Windows-only would read as out-of-closure on Linux, which is worse than
+    including it."""
+    tokens = _tokenize_marker(marker)
+    if tokens is None:
+        return "unreadable"
+    for index, (kind, text) in enumerate(tokens):
+        if kind != "name" or text != "extra":
+            continue
+        following = tokens[index + 1] if index + 1 < len(tokens) else None
+        after = tokens[index + 2] if index + 2 < len(tokens) else None
+        preceding = tokens[index - 1] if index >= 1 else None
+        before = tokens[index - 2] if index >= 2 else None
+        if following == ("op", "==") and after is not None and after[0] == "str":
+            return "extras-gated"
+        if preceding == ("op", "==") and before is not None and before[0] == "str":
+            return "extras-gated"
+        return "whole-closure-unknown"
+    return "included"
+
+
+def _requirement_edge(raw: str) -> tuple[str, str | None]:
+    """One ``Requires-Dist`` line -> ``(disposition, normalized name | None)``.
+
+    Dispositions: ``include`` (follow the edge), ``skip`` (extras-gated, not
+    part of the default closure), ``unreadable`` (the edge cannot be named, so
+    neither it nor anything beyond it is known), ``whole-closure-unknown``.
+
+    An unnameable edge takes the **unreadable** disposition rather than the
+    absent one. The distinction decides what the un-reached distributions are
+    called: an absent requirement is genuinely not in the closure, while an
+    edge that could not be read might have led anywhere, so calling the
+    remainder ``out-of-closure`` would assert something this walk never
+    established."""
+    requirement, marker = _split_requirement_marker(raw.strip())
+    match = _REQUIREMENT_NAME_RE.match(requirement.strip())
+    if match is None:
+        return "unreadable", None
+    if marker is not None:
+        disposition = _marker_extra_disposition(marker)
+        if disposition != "included":
+            return ("skip" if disposition == "extras-gated" else disposition), None
+    return "include", _canonical_name(match.group())
+
+
+def _root_distributions(top_level: str) -> list[str] | None:
+    """The installed distributions providing an importable top-level package,
+    PEP 503-normalized, or ``None`` if the mapping cannot be read.
+
+    ``packages_distributions()`` is the authority deliberately: it reports what
+    is **installed**, which is the same world the audited leg reports on. A
+    project file such as ``pyproject.toml`` describes what was *declared*, and
+    a declared-versus-installed mismatch would silently reclassify real
+    findings."""
+    try:
+        mapping = importlib.metadata.packages_distributions()
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return [_canonical_name(name) for name in mapping.get(top_level, ())]
+
+
+def _distribution_requirements(name: str) -> list[str] | None:
+    """One installed distribution's ``Requires-Dist`` lines, or ``None`` when
+    its metadata cannot be read. Called only for names already known to be
+    installed, so ``None`` always means unreadable, never absent."""
+    try:
+        dist = importlib.metadata.distribution(name)
+        return list(dist.requires or ())
+    except Exception:  # noqa: BLE001 -- package-controlled metadata; any read
+        return None    # failure is UNKNOWN, never an absent requirement
+
+
+def resolve_declared_closure(
+    python_package: Path,
+) -> tuple[frozenset[str], frozenset[str]] | None:
+    """The distributions reachable from the project's own package, and the
+    distributions whose reachability could not be decided.
+
+    Returns ``(in_closure, unknown)`` as PEP 503-normalized names, or ``None``
+    when the **whole** closure is unknown -- a traversal cap exceeded, an
+    ``extra`` expression this walk will not guess at, or a root that does not
+    resolve to exactly one installed distribution.
+
+    **Authority**: the installed metadata graph, rooted at the distribution
+    providing the top-level package the lockfile's ``python_package`` names.
+
+    **Failure direction, and why it is the whole point**: every failure moves a
+    distribution toward ``unknown``, never toward ``in-closure`` or
+    ``out-of-closure``. The result feeds a *reachability annotation* on a
+    report and gates nothing -- no exit code, no tier, no coverage count -- so
+    being wrong costs triage order, not coverage. That tolerance exists only
+    because the annotation decides nothing; if it ever gates what is reported,
+    this walk is no longer safe to be this approximate."""
+    discoverable = installed_distribution_names()
+    roots = _root_distributions(python_package.name)
+    if roots is None or len(roots) != 1:
+        # Zero (or an ambiguous several) means the project's own package is not
+        # identifiable in this environment, so nothing here can be partitioned.
+        return None
+
+    in_closure: set[str] = set()
+    unknown_seeds: set[str] = set()
+    remainder_unknown = False
+    visited: set[str] = set()
+    # A list plus a read index is the queue: breadth-first, no import.
+    frontier: list[tuple[str, int]] = [(roots[0], 0)]
+    head = 0
+    while head < len(frontier):
+        name, depth = frontier[head]
+        head += 1
+        if name in visited:
+            continue          # the visited set is what terminates cycles
+        visited.add(name)
+        if len(visited) > _CLOSURE_NODE_CAP or depth > _CLOSURE_DEPTH_CAP:
+            return None
+        requirements = _distribution_requirements(name)
+        if requirements is None:
+            unknown_seeds.add(name)
+            remainder_unknown = True
+            continue
+        in_closure.add(name)
+        for raw in requirements:
+            disposition, required = _requirement_edge(raw)
+            if disposition == "whole-closure-unknown":
+                return None
+            if disposition == "unreadable":
+                remainder_unknown = True
+                continue
+            if disposition == "skip":
+                continue
+            if required in discoverable:
+                frontier.append((required, depth + 1))
+            # An absent requirement terminates this branch contributing
+            # nothing: it is not installed, so it is not in the audited set
+            # either, and nothing downstream of it exists here to mislabel.
+
+    if remainder_unknown:
+        # An edge that could not be read might have reached anything the walk
+        # did not, so the entire un-reached remainder is unknown rather than
+        # out-of-closure. The reached set is still established and keeps its
+        # in-closure answer.
+        unknown = ((frozenset(discoverable) | frozenset(unknown_seeds))
+                   - frozenset(in_closure))
+    else:
+        unknown = frozenset()
+    return frozenset(in_closure), unknown
+
+
 def conda_non_coverage(
     prefix: Path, python_dist_names: set[str], *,
     max_records: int = _CONDA_META_MAX_RECORDS,
@@ -1091,8 +1340,66 @@ def conda_non_coverage(
     return CondaScope(True, len(records), len(conda_only), unknown)
 
 
+#: The three reachability labels. They describe a *triage order*, never
+#: coverage: a distribution labelled ``unknown`` here is still audited, still
+#: reported, and still counted exactly as it was before the label existed.
+_REACH_IN = "in-closure"
+_REACH_OUT = "out-of-closure"
+_REACH_UNKNOWN = "unknown"
+
+
+def annotate_reachability(
+    reported_name: str,
+    closure: tuple[frozenset[str], frozenset[str]] | None,
+) -> str:
+    """Label one reported distribution against the declared closure.
+
+    ``in_closure`` is consulted first, so a name in both sets reads
+    ``in-closure``. The walk cannot produce that overlap today; fixing the
+    order here means the answer does not depend on that staying true."""
+    if closure is None:
+        # A closure that could not be established says nothing about any
+        # distribution, so no distribution is labelled as though it did.
+        return _REACH_UNKNOWN
+    in_closure, unknown = closure
+    canonical = _canonical_name(reported_name)
+    if canonical in in_closure:
+        return _REACH_IN
+    if canonical in unknown:
+        return _REACH_UNKNOWN
+    return _REACH_OUT
+
+
+def _print_reachability(coverage: Coverage,
+                        closure: tuple[frozenset[str], frozenset[str]] | None,
+                        ) -> None:
+    """Render the reachability partition and its per-distribution rows.
+
+    Every vulnerable distribution the child reported gets a row, whatever its
+    label. Omitting rows by label is the collapse this axis must not make: the
+    leg would then be reporting a narrowed set while claiming the wide one."""
+    rows = tuple((name, count, annotate_reachability(name, closure))
+                 for name, count in coverage.vulnerable)
+    inside = [row for row in rows if row[2] == _REACH_IN]
+    print(f"[pip-audit] REACHABILITY: {coverage.vulnerabilities} "
+          f"vulnerability(ies) across {len(rows)} distribution(s), of which "
+          f"{sum(count for _n, count, _a in inside)} across {len(inside)} "
+          "are in the declared dependency closure. TRIAGE AXIS ONLY -- it "
+          "gates nothing (no exit code, no tier, no coverage count) and every "
+          "reported distribution appears either way.")
+    if closure is None:
+        print("[pip-audit] the declared dependency closure could not be "
+              "established, so every reported distribution is annotated "
+              f"{_REACH_UNKNOWN} for reachability. The audited set, the "
+              "findings and the exit code are unaffected.", file=sys.stderr)
+    for name, count, annotation in rows:
+        print(f"  [reachability] {annotation:<15} {name} -- {count} "
+              "vulnerability(ies)")
+
+
 def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
-                       passthrough_env: tuple[str, ...] = ()) -> tuple[str, int]:
+                       passthrough_env: tuple[str, ...] = (),
+                       python_package: Path | None = None) -> tuple[str, int]:
     """pip-audit over the active interpreter's Python distributions.
 
     **Declared scope.** This leg audits the Python distributions discoverable
@@ -1116,7 +1423,17 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
 
     **CLEAN requires zero UNKNOWN.** Findings dominate clean; degraded
     dominates both. A NO-MATCH-IN-PINNED-SOURCES count is reported alongside a
-    clean result and never folded into it."""
+    clean result and never folded into it.
+
+    **Reachability is a triage axis, not a second claim.** Given
+    ``python_package`` the pass resolves the project's declared dependency
+    closure and labels each vulnerable distribution ``in-closure`` /
+    ``out-of-closure`` / ``unknown``. On an environment several times the size
+    of the project's own closure -- the ordinary conda case -- that is the
+    difference between a report that is read and one that is skimmed. Omitted,
+    or unresolvable, or raising: every distribution is labelled ``unknown``,
+    which is one fail-closed path rather than two. The label reaches no exit
+    code, no tier and no coverage count."""
     print("\n[pip-audit] DECLARED SCOPE -- Python distributions discoverable "
           "in the audited environment. Conda-managed native packages, system "
           "packages and vendored / statically-linked libraries are NOT "
@@ -1192,7 +1509,14 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
         # tool failure -> DEGRADED, never reported as vulnerabilities.
         return "pip-audit:error", _AGG_DEGRADED
 
-    coverage = classify_pip_audit_output(run.stdout)
+    closure = None
+    if python_package is not None:
+        try:
+            closure = resolve_declared_closure(python_package)
+        except Exception:  # noqa: BLE001 -- an annotation that can fail the leg
+            closure = None  # is worse than no annotation; this is the SAME
+            # fail-closed path a None return takes, never a second one.
+    coverage = classify_pip_audit_output(run.stdout, closure=closure)
     builds = survey_local_builds()
     unknown_total = coverage.unknown + builds.unknown + scope.unknown
     print(f"\n[pip-audit] coverage over the {len(coverage.names)} "
@@ -1202,6 +1526,7 @@ def run_pip_audit_pass(repo_root: Path, *, allow_egress: bool,
           f"(sources queried: {', '.join(_PINNED_ADVISORY_SOURCES)} -- accepted "
           "non-coverage, NOT evidence of safety).")
     print(f"[pip-audit] {_DISPOSITION_NO_MATCH}: {_NO_MATCH_NOT_OBSERVABLE}.")
+    _print_reachability(coverage, closure)
     if not coverage.established:
         print(f"[pip-audit] COVERAGE NOT ESTABLISHED -- {coverage.note}",
               file=sys.stderr)
@@ -1298,7 +1623,7 @@ def main(argv: list[str] | None = None) -> int:
         ("adopted-exec", lambda: run_adopted_executable_gate(_REPO_ROOT, lock)),
         ("pip-audit", lambda: run_pip_audit_pass(
             _REPO_ROOT, allow_egress=allow_egress,
-            passthrough_env=passthrough_env)),
+            passthrough_env=passthrough_env, python_package=pkg)),
     ):
         _banner(label)
         try:

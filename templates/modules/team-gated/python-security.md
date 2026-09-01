@@ -51,6 +51,32 @@ the number as *not audited*, so the gap is a figure you can see rather than a
 caveat you have to remember; it never looks any of them up, and the report says
 so.
 
+**The ceiling, which is the direction people are surprised by.** Everything
+above describes what the leg does *not* cover. The opposite gap is larger and
+less expected: **most of what it does report is not yours.** The leg audits the
+environment, and in a conda workflow an environment is shared across projects,
+so it substantially exceeds any one project's own dependency closure. Measured
+on the reference environment this module is developed against — 299 discoverable
+distributions, `as_of 2026-08-31` — a scientific project's own closure came to
+**53 of them (18%)**, and the largest closure produced by any of 303 installed
+packages was **89 (30%)**. A team who measured the same thing on their own stack
+reported **93 of 299 in their closure** and, more to the point, **144
+vulnerabilities across 21 packages of which 27 across 2 were reachable from a
+declared dependency** — roughly five reported findings for every one that was
+theirs.
+
+**This is not a defect and the leg is not narrowed to fix it.** A narrowed claim
+over an ambient environment is exactly as false as a wide one, and *"is the
+environment I execute in vulnerable?"* is the right question for a self-audit
+tripwire. What changes is where triage starts: the report labels each vulnerable
+distribution **`in-closure`**, **`out-of-closure`** or **`unknown`** with respect
+to your declared dependency closure, and prints the partition alongside the
+total. Start with `in-closure`, then `unknown`. The label is a triage axis and
+**gates nothing** — no exit code, no tier, no coverage count — and every
+distribution is reported whichever label it carries. If the closure cannot be
+worked out, everything is labelled `unknown` and the report says so; the
+findings are unaffected.
+
 ## Required configuration
 
 This module requires the **`python_package`** token: the repo-relative path of
