@@ -207,10 +207,14 @@ without it.* Every **explicitly-deferred follow-up** this plan carries takes one
 recorded disposition: `accept` (fixed in scope), `guard (<path>::<node>)` (homed
 in something that **executes** and names the node -- a comment is not eligible,
 because comments do not fire), `wontfix` (explicit non-action, with a
-rationale), or `defer` (deposited on the roadmap, **requiring the Maintainer's
-authorization quoted verbatim**, because a deposit is a scope decision).
-Present `defer` requests as **one batch** -- that batching is what keeps the
-Maintainer gate affordable.
+rationale), or `defer`.
+
+**Every deferred item is recorded in `dev/PLANNING.md`, and requires the
+Maintainer's authorization quoted verbatim.** Writing the disposition is not
+performing the deposit. An item left only in a plan that then archives is
+invisible to anyone looking for outstanding work, and archived artifacts are
+not scanned by default -- so it is not deferred, it is lost. Present `defer`
+requests as **one batch**; that batching keeps the Maintainer gate affordable.
 
 Record the outcome as a `Dispositions: ...` line so it reconstructs from the
 durable record alone. **An append re-opens the attestation**: this section is
