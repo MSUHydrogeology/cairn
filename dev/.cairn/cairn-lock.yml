@@ -175,7 +175,7 @@
       "base_cache": "dev/.cairn/base/dev/modules/portable-security-sweeps.md",
       "base_hash": "sha256:cba01db05f42625e3d1b2b65a494b7d878b0903ffcc2292befcbaf5fec30fb64",
       "dst": "dev/modules/portable-security-sweeps.md",
-      "hash": "sha256:cba01db05f42625e3d1b2b65a494b7d878b0903ffcc2292befcbaf5fec30fb64",
+      "hash": "sha256:b3e5efe034c3d40c9e1c543d2bfb628c5460d12167acf0b4446d49d01f4d066a",
       "src": "modules/team-gated/portable-security-sweeps.md",
       "verbatim": false
     },

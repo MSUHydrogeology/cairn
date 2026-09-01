@@ -111,6 +111,16 @@ Precedence is **`20 > 10 > 5 > 0`**: a finding is never hidden by an incomplete
 sibling leg. **NOT APPLICABLE** is distinct from INCOMPLETE and contributes
 nothing to the aggregate — it never weakens another leg.
 
+> **Known gap — a real finding reports `20`, not `10`.** A finding must pass the
+> runner's redaction check to be *validated*, and that check requires the
+> redacted field to be redacted in whole. Against gitleaks 8.30.1, `--redact=100`
+> empties `Secret` but leaves `Match` as the redacted secret inside its
+> surrounding context, so the check refuses and the leg aggregates to `20`
+> DEGRADED. **You still see the finding** — nothing is suppressed, and `20` is
+> the fail-closed direction — but do not read `10` as the code a live secret
+> produces on this adapter. Measured 2026-09-01; pinned by
+> `test_the_adapters_real_redaction_shape_fails_validation`.
+
 ## The suppression boundary
 
 The policy document carries **reviewed fingerprint suppressions and nothing

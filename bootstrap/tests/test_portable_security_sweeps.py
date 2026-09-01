@@ -244,10 +244,17 @@ def _scan_for_planted():
 
 
 def _planted_finding(path):
+    # gitleaks 8.30.1 under --redact=100 empties Secret to "REDACTED" but
+    # leaves Match as the redacted secret inside its surrounding context.
+    # Emitting a bare "REDACTED" here would be a shape no adapter produces --
+    # the same fiction that let the version probe stay green while no leg
+    # could run.  IDEAL_REDACTION opts into the whole-field form for the one
+    # test that measures the exit contract rather than the redaction check.
+    _match = "REDACTED" if IDEAL_REDACTION else 'api_key = "REDACTED"'
     return {"RuleID": "generic-api-key",
             "Description": "Detected a Generic API Key",
             "StartLine": 1, "EndLine": 1, "StartColumn": 1, "EndColumn": 55,
-            "Match": "REDACTED", "Secret": "REDACTED", "File": path,
+            "Match": _match, "Secret": "REDACTED", "File": path,
             "SymlinkFile": "", "Commit": "", "Entropy": 4.6,
             "Author": "", "Email": "", "Date": "", "Message": "", "Tags": [],
             "Fingerprint": path + ":generic-api-key:1"}
@@ -261,6 +268,7 @@ def fake_tool(
     version_rc: int = 0,
     bare_version: bool = False,
     blind_to_planted: bool = False,
+    ideal_redaction: bool = False,
     log: Path | None = None,
     scan_rc: int = 0,
     mutate_self_on_version: bool = False,
@@ -321,6 +329,7 @@ record("scan")
 {_FAKE_PLANTED_SCAN}
 {extra}
 _hit = None if {blind_to_planted!r} else _scan_for_planted()
+IDEAL_REDACTION = {ideal_redaction!r}
 _findings = {findings!r} or []
 _rc = {scan_rc!r}
 if _hit is not None:
@@ -1446,7 +1455,7 @@ def test_the_admission_matrix_argv_is_accepted_by_the_flag_table(
     """The ceremony builds its argv from the same ``_leg_argv``, so an argv the
     adapter refuses makes step 2 of the admission procedure un-performable --
     which is what it was, and the refusal blamed a missing report instead."""
-    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], ideal_redaction=True)
     runner_path = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
     assert rc == 0, out
@@ -2619,7 +2628,7 @@ def test_verify_version_support_emits_a_complete_record(
 ) -> None:
     """Against a **fake** candidate that satisfies the matrix: every declared
     field is present and non-empty."""
-    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], ideal_redaction=True)
     runner = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner, cand, sweep_target,
                                  extra=["--declared-source", "test fixture"])
@@ -2651,7 +2660,7 @@ def test_the_evidence_record_keeps_the_raw_version_banner(
     from the triple, so a record storing only the triple loses the evidence it
     exists to hold.  The admission key the extractor produces is recorded
     beside it, not in place of it."""
-    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], ideal_redaction=True)
     runner_path = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
     assert rc == 0, out
@@ -2675,7 +2684,11 @@ def test_the_evidence_record_carries_a_measured_exit_row_per_subcommand(
     assumed from its major.  Three rows: clean, a planted finding, and a
     controlled usage error."""
     runner = load_runner()
-    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    # ideal_redaction: this node measures the *exit* contract, so it needs a
+    # finding that clears the runner's redaction check.  A real adapter's
+    # redaction shape does not, and that is pinned separately below.
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[],
+                     ideal_redaction=True)
     runner_path = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
     assert rc == 0, out
@@ -2688,6 +2701,28 @@ def test_the_evidence_record_carries_a_measured_exit_row_per_subcommand(
         assert rows["planted_finding"]["exit"] == runner._EXIT_FINDINGS, rows
         assert rows["planted_finding"]["validated_findings"] >= 1, rows
         assert rows["invalid_argv"]["exit"] not in (0, runner._EXIT_FINDINGS), rows
+
+
+def test_the_adapters_real_redaction_shape_fails_validation(
+    tmp_path: Path, sweep_target: Path
+) -> None:
+    """A finding redacted the way the adapter actually redacts does not pass
+    the runner's redaction check, so admission is refused rather than granted.
+
+    ``--redact=100`` empties ``Secret`` but leaves ``Match`` as the redacted
+    secret inside its surrounding context, and the check is anchored
+    whole-field.  This is the runner's own standing gap; it is pinned here so
+    the admission matrix cannot appear to measure a findings row that no real
+    candidate can produce.  Without this node the matrix is green against a
+    shape no adapter emits -- the defect that let a broken version probe ship.
+    """
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    runner_path = runner_copy(tmp_path)
+    rc, record, out = _admit_cmd(runner_path, cand, sweep_target)
+    assert rc == 20, out
+    assert record["admit"] is False, record
+    rows = record["end_to_end"]["current-tree"]
+    assert rows.get("planted_finding", {}).get("validated_findings", 0) == 0, rows
 
 
 def test_a_matrix_without_a_planted_finding_row_refuses_to_admit(
@@ -2720,6 +2755,7 @@ def test_verify_version_support_refuses_a_candidate_that_invokes_an_unaccounted_
         extra="import subprocess\n"
               "subprocess.run(['git', 'rev-list', '--all'], "
               "capture_output=True)\n",
+        ideal_redaction=True,
     )
     runner = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner, cand, sweep_target)
@@ -2760,6 +2796,7 @@ def test_verify_version_support_refuses_a_candidate_that_contacts_a_remote(
               "    host, port = addr.rsplit(':', 1)\n"
               "    s = socket.create_connection((host, int(port)), 5)\n"
               "    s.close()\n",
+        ideal_redaction=True,
     )
     runner = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner, cand, sweep_target)
@@ -2786,7 +2823,7 @@ def test_verify_version_support_cannot_mutate_the_source_version_set(
 ) -> None:
     """Two halves, and the second is the one that matters: a mutation reverted
     before the assertion would pass a file-compare alone."""
-    cand = fake_tool(tmp_path / "candidate-bin", findings=[], version="8.29.0")
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], version="8.29.0", ideal_redaction=True)
     runner = runner_copy(tmp_path)
     before = runner.read_bytes()
     rc, record, out = _admit_cmd(runner, cand, sweep_target)
@@ -2797,7 +2834,7 @@ def test_verify_version_support_cannot_mutate_the_source_version_set(
 
     bd = tmp_path / "bin2"
     bd.mkdir()
-    fake_tool(bd / "gitleaks", version="8.29.0", findings=[])
+    fake_tool(bd / "gitleaks", version="8.29.0", findings=[], ideal_redaction=True)
     parts = [str(bd)]
     if REAL_GIT:
         parts.append(os.path.dirname(REAL_GIT))
@@ -2828,7 +2865,7 @@ def test_verify_version_support_refuses_without_the_confirmation_argument(
 def test_the_emitted_record_states_that_an_unadmitted_binary_was_executed(
     tmp_path: Path, sweep_target: Path
 ) -> None:
-    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], ideal_redaction=True)
     runner = runner_copy(tmp_path)
     rc, record, out = _admit_cmd(runner, cand, sweep_target)
     assert rc == 0, out
@@ -2844,7 +2881,7 @@ def test_the_human_report_opens_with_the_unadmitted_execution_statement(
 ) -> None:
     """Asserted on the report's **first** rendered line: a friction statement a
     reader meets after the result is not friction."""
-    cand = fake_tool(tmp_path / "candidate-bin", findings=[])
+    cand = fake_tool(tmp_path / "candidate-bin", findings=[], ideal_redaction=True)
     runner = runner_copy(tmp_path)
     rc, _record, out = _admit_cmd(runner, cand, sweep_target)
     assert rc == 0, out

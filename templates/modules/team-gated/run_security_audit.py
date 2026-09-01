@@ -1226,9 +1226,14 @@ def resolve_declared_closure(
     **Authority**: the installed metadata graph, rooted at the distribution
     providing the top-level package the lockfile's ``python_package`` names.
 
-    **Failure direction, and why it is the whole point**: every failure moves a
-    distribution toward ``unknown``, never toward ``in-closure`` or
-    ``out-of-closure``. The result feeds a *reachability annotation* on a
+    **Failure direction, and why it is the whole point**: every *walk* failure
+    moves a distribution toward ``unknown``, never toward ``in-closure`` or
+    ``out-of-closure``. The one systematic exception is not a failure: an edge
+    gated on an optional extra is not descended -- installed extras are not
+    recoverable from metadata -- so a distribution reached only through an
+    extra annotates ``out-of-closure`` rather than ``unknown``. That is a
+    deliberate policy, disclosed in ``python-security.md``, and it is why the
+    label is worded as *not on the unconditional path*. The result feeds a *reachability annotation* on a
     report and gates nothing -- no exit code, no tier, no coverage count -- so
     being wrong costs triage order, not coverage. That tolerance exists only
     because the annotation decides nothing; if it ever gates what is reported,

@@ -73,7 +73,15 @@ distribution **`in-closure`**, **`out-of-closure`** or **`unknown`** with respec
 to your declared dependency closure, and prints the partition alongside the
 total. Start with `in-closure`, then `unknown`. The label is a triage axis and
 **gates nothing** — no exit code, no tier, no coverage count — and every
-distribution is reported whichever label it carries. If the closure cannot be
+distribution is reported whichever label it carries.
+
+> **What `out-of-closure` does not mean.** The walk follows the *declared*
+> graph and does not descend edges gated on an optional extra, because it
+> cannot tell from metadata which extras you installed. A distribution that
+> reached your environment only through `pip install .[some-extra]` therefore
+> annotates `out-of-closure` even though you do depend on it. Read the label as
+> *"not on the unconditional dependency path"*, not as *"you do not use this"*.
+> If you install with extras, triage `out-of-closure` too. If the closure cannot be
 worked out, everything is labelled `unknown` and the report says so; the
 findings are unaffected.
 
