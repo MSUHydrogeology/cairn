@@ -544,6 +544,84 @@ class TestRunnerExitContract:
         assert code == 2
 
 
+class TestStaleBaselineMessageScope:
+    """The exit-3 message names the set it audited, and instructs accordingly.
+
+    The runner concludes over the roots its manifest names, but the reviewed
+    residual baseline it compares against has several consumers. On a tree
+    where two of those consumers disagree, the old wording -- a bare "prune the
+    residual baseline" -- told an operator to delete live entries from a shared
+    reviewed security artifact on evidence that covered only this runner's own
+    set. One did, and was saved by a contract test they happened to have.
+    """
+
+    _STALE = [("dev/gone.md:homoglyph:0123456789ab", 1)]
+
+    def _summary_stderr(self, csr, capsys) -> str:
+        csr._print_summary(3, [], [], [], self._STALE)
+        return capsys.readouterr().err
+
+    def test_stale_message_names_the_audited_roots(self, csr, capsys):
+        """Naming the set makes the claim checkable instead of merely hedged.
+
+        The manifest *filename* is not the set: a reader cannot tell from it
+        what was covered, and the filename is what the message already carried.
+        """
+        roots = [rel for rel, _required in csr.load_audit_roots()]
+        assert len(roots) > 1, "control: the manifest must resolve to several roots"
+        err = self._summary_stderr(csr, capsys)
+        for root in roots:
+            assert root in err, f"audited root {root!r} is not named in the message"
+
+    def test_stale_message_defers_to_other_consumers_before_pruning(
+            self, csr, capsys):
+        """A conclusion drawn over one consumer's set cannot carry an
+        unconditional imperative over an artifact several consumers read."""
+        err = self._summary_stderr(csr, capsys)
+        assert "prune the residual baseline)" not in err, (
+            "the bare imperative is what produced the incident")
+        assert "consumer" in err
+        assert "confirm" in err.lower()
+        # The disagreement framing: exit 3 is a signal, not a verdict.
+        assert "DISAGREE" in err
+        assert "NOT a verdict that the baseline is wrong" in err
+
+    def test_stale_message_requires_lockfile_reconciliation(self, csr, capsys):
+        """The mixed-tree case that produced the report: a drifted apparatus
+        copy makes a live entry look dead, and the lockfile record is where
+        that drift is visible."""
+        assert "lockfile" in self._summary_stderr(csr, capsys)
+
+    def test_print_summary_signature_is_positionally_stable(self, csr):
+        """The dependency-audit orchestrator calls this across a module
+        boundary with five positional arguments. A signature change breaks
+        exactly the mixed-tree condition the message exists for."""
+        import inspect  # noqa: PLC0415
+
+        params = list(inspect.signature(csr._print_summary).parameters.values())
+        assert [p.name for p in params] == [
+            "code", "files", "all_flags", "new_flags", "stale"]
+        assert all(
+            p.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD for p in params)
+
+    def test_unresolvable_roots_degrade_the_message_without_changing_exit_three(
+            self, csr, capsys, monkeypatch):
+        """The message's own input can fail. It must then say so and still
+        report exit 3 -- a summary that raised would convert a fail-closed
+        detection into a crash on the one path this wording exists to fix."""
+        def _boom(*_a, **_k):
+            raise csr.AuditError("manifest unreadable")
+
+        monkeypatch.setattr(csr, "load_audit_roots", _boom)
+        monkeypatch.setattr(
+            csr, "audit", lambda *_a, **_k: (3, [], [], [], self._STALE))
+        assert csr.main() == 3
+        err = capsys.readouterr().err
+        assert csr._ROOTS_MANIFEST.name in err
+        assert "could NOT be resolved" in err
+        assert "STALE baseline authority" in err
+
+
 @pytest.mark.skipif(not _HAS_GIT, reason="git not available")
 class TestRunnerGitBoundary:
     def test_ambient_git_dir_cannot_redirect_the_audited_set(
