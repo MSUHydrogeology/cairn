@@ -104,7 +104,7 @@
       "base_cache": "dev/.cairn/base/dev/modules/content-security.md",
       "base_hash": "sha256:be93184eb37dc179983ae6d4fd7b4935156bc1e527fe662f1d696a85a1f5ac0f",
       "dst": "dev/modules/content-security.md",
-      "hash": "sha256:be93184eb37dc179983ae6d4fd7b4935156bc1e527fe662f1d696a85a1f5ac0f",
+      "hash": "sha256:030f15ca2eaf82954490ec1d6b4423ad92035d370c33b6783273477a3049b7b2",
       "src": "modules/team-gated/content-security.md",
       "verbatim": false
     },
@@ -385,7 +385,7 @@
     {
       "base_hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
       "dst": "scripts/content_scan_runner.py",
-      "hash": "sha256:4c9af3859f6cd815a719322bee41d0db1e26681edd01a30dc12200578aa18390",
+      "hash": "sha256:dc34b74062c4b69a0b5667a74904e120cb949717453e80e581bc68344bc696a1",
       "src": "modules/team-gated/content_scan_runner.py",
       "verbatim": true
     },
