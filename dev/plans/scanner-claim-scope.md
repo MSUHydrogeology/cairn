@@ -31,8 +31,10 @@ restated in Revision 2; it re-argues nothing.
 
 *Forward references this plan creates. Drop a line once its path resolves.*
 
-Proposed paths:
-- `dev/measurement/pip-audit-closure-ratio.md` — the closure-ratio measurement and the tripwire threshold; Chunk G.
+None outstanding. `dev/measurement/pip-audit-closure-ratio.md` — the
+closure-ratio measurement and the tripwire threshold — materialized with Chunk
+G, so its declaration is dropped rather than left exempting a path that now
+resolves.
 
 ## Scope
 

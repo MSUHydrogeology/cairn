@@ -2064,3 +2064,62 @@ def test_no_per_vulnerability_identity_is_retained(orchb, tmp_path, monkeypatch,
                      "CVE-2099-0004", "fix_versions", "2.31.1"):
         assert identity not in repr(coverage), identity
         assert identity not in text, identity
+
+
+# --- The closure-size tripwire ----------------------------------------------
+
+#: The measurement record is the ONLY copy of the threshold; this node reads it
+#: from there so the number and its justification cannot drift apart.
+_CLOSURE_RATIO_RECORD = CAIRN_ROOT / "dev" / "measurement" / "pip-audit-closure-ratio.md"
+_THRESHOLD_RE = re.compile(
+    r"\*\*Tripwire threshold\*\*:\s*`closure <= (\d+)% of the discoverable set`")
+
+
+def _recorded_closure_threshold() -> float:
+    match = _THRESHOLD_RE.search(
+        _CLOSURE_RATIO_RECORD.read_text(encoding="utf-8"))
+    assert match is not None, (
+        f"{_CLOSURE_RATIO_RECORD} no longer states a tripwire threshold in the "
+        "form this node reads; the record and the gate have come apart")
+    return int(match.group(1)) / 100
+
+
+def test_closure_stays_a_bounded_fraction_of_the_discoverable_set(orchb,
+                                                                  monkeypatch):
+    """The annotation is only worth having while the closure is a small part of
+    the environment. Re-inflate it -- by following extras-gated edges, which is
+    the policy this design withdrew -- and `out-of-closure` covers a fifth of a
+    report instead of most of it: the axis stops partitioning and the reader is
+    back to triaging a hundred findings by hand. Nothing about coverage breaks
+    when that happens, which is exactly why it needs a tripwire rather than a
+    failing assertion somewhere in the leg.
+
+    The fixture is built so that the extras-gated subtree ALONE crosses the
+    recorded threshold. Without that, this node is green under both policies --
+    a tripwire reporting success without testing its claimed property."""
+    threshold = _recorded_closure_threshold()
+
+    plain = [f"plain-{i}" for i in range(10)]
+    gated = [f"gated-{i}" for i in range(60)]
+    filler = [f"filler-{i}" for i in range(29)]
+    requirements = {
+        "ratio-root": ([f"{name}>=1" for name in plain]
+                       + [f'{name}; extra == "all"' for name in gated]),
+    }
+    requirements.update({name: [] for name in plain + gated + filler})
+    _closure_env(orchb, monkeypatch, requirements, roots=("ratio-root",))
+
+    discoverable = len(requirements)
+    in_closure, unknown = orchb.resolve_declared_closure(_CLOSURE_PKG)
+    assert unknown == frozenset()
+    assert len(in_closure) / discoverable <= threshold, (
+        f"closure {len(in_closure)}/{discoverable} exceeds the "
+        f"{threshold:.0%} recorded in {_CLOSURE_RATIO_RECORD.name}")
+
+    # The fixture constraint, asserted rather than assumed: following the
+    # extras-gated edges alone would carry this closure OVER the threshold, so
+    # the bound above is a measurement and not a formality.
+    inflated = len(in_closure) + len(gated)
+    assert inflated / discoverable > threshold, (
+        "the fixture's extras-gated subtree is too small to cross the "
+        "threshold, so this node would pass under either policy")
