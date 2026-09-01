@@ -87,8 +87,12 @@ The runner's exit code is the fail-closed contract a CI step keys on:
   breach (a file or the set over the size budget, or the wall-clock ceiling).
   **Fails closed** — "did not actually scan" must never read as "clean".
 * **`3`** — **STALE baseline authority**: a reviewed-residual entry has no live
-  occurrence. A distinct fail-closed class (a stale fingerprint could
-  preauthorize a replay); prune the baseline.
+  occurrence **in the roots this run audited**. A distinct fail-closed class (a
+  stale fingerprint could preauthorize a replay). It says the baseline and this
+  scan **disagree over that set** — not that the baseline is wrong. The runner
+  names the audited set in the message; confirm the entry is dead across every
+  consumer of the baseline, and reconcile this apparatus's lockfile record,
+  before pruning anything.
 
 ### Audited-roots manifest (`content_scan_roots.txt`)
 
@@ -119,8 +123,12 @@ flag is fingerprinted `(relpath, pattern_id, hash(line))` and compared as a
 * A flag occurrence **beyond** its reviewed count is **NEW** — so duplicating
   an already-reviewed line surfaces the extra copy (a plain set would hide it).
   **Review every NEW finding, regardless of class.**
-* A baseline entry with no live occurrence is **STALE** and **fails** the scan
-  (exit 3): it must be deleted before the baseline is current.
+* A baseline entry with no live occurrence **in the audited roots** is **STALE**
+  and **fails** the scan (exit 3). That is a disagreement between the baseline
+  and this scan over the set this runner covered, not proof the entry is dead:
+  the same baseline is read by other consumers, and a drifted apparatus copy
+  produces exactly this result. Confirm the entry is dead across every consumer,
+  and reconcile this apparatus's lockfile record, before deleting it.
 * When a NEW flag is reviewed and judged acceptable, add a baseline line
   `<fingerprint>  # [tag] reason` — every entry carries a non-placeholder
   rationale tag (e.g. `[multi-tenant-url]`, `[sci-unit]`, `[doctrine-comment]`).
