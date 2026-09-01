@@ -36,32 +36,62 @@ MAX_NEW_TASKS_PER_GOODNIGHT = 3
 
 
 #: Per-preset prompt-content section anchor.  The preset file's
-#: active-surfacing prompt content lives under markdown headings
-#: matching this pattern, with the row-name embedded.  Tolerant to
-#: small wording variations between presets (the regex captures the
-#: row keyword, not the exact heading text).
-_PROMPT_HEADING_RE_CACHE: dict[str, re.Pattern[str]] = {}
+#: active-surfacing prompt content lives under `### Row N -- <label>`
+#: headings.  Matching is two-stage: this pattern enforces the
+#: structural shape and captures the label, and the label is then
+#: compared to the row name under `_fold_for_match` below.
+#:
+#: The `Row N -- ` prefix is load-bearing, not decoration: without it
+#: `### Notes on collab-agreement-signing` matches as readily as the
+#: real prompt heading.  Keep the two-hyphen separator required.
+_ROW_HEADING_RE = re.compile(
+    r"\A###\s+Row\s+\d+\s+--\s+(?P<label>.*)\Z",
+    re.IGNORECASE,
+)
+
+#: Arrow spellings a heading label may use for a level transition.
+_ARROW_FORMS = ("\u2192", "->")
 
 
-def _prompt_heading_re(row_name: str) -> re.Pattern[str]:
-    """Build (cached) a regex that matches the markdown heading
-    introducing the prompt content for *row_name* in a preset file.
+def _fold_for_match(text: str) -> str:
+    """Fold a row name or a heading label to one comparable shape.
 
-    Per Claude External code review P3-3: tightened from the
-    earlier overly-permissive ``^###\\s+.*<row>.*$`` (which would
-    match `### Notes on collab-agreement-signing` as well as the
-    real prompt heading).  The convention the three preset files
-    use is `### Row N -- <row-keyword> ...`; the regex requires the
-    row keyword to follow a `Row N -- ` shape so off-pattern
-    headings don't false-match.
+    Row names are registry identifiers (`Level-1-to-2-graduation`);
+    heading labels are prose written for a human to read
+    (`Level 1\u21922 graduation prompt`).  The two spell the same
+    transition differently, so a literal substring test between them
+    is false whenever a label uses an arrow or a space where the row
+    name uses `-to-` or a hyphen.
+
+    Folding both sides is what lets the identifier stay stable while
+    the prose stays readable.  The row name is an idempotency key --
+    `select_active_prompt_to_fire` derives the activation-log marker
+    from it -- so renaming a row to match its heading would re-fire a
+    one-shot prompt for everyone who had already dismissed it.
     """
-    if row_name not in _PROMPT_HEADING_RE_CACHE:
-        slug = row_name.lower()
-        _PROMPT_HEADING_RE_CACHE[row_name] = re.compile(
-            r"^###\s+Row\s+\d+\s+--\s+.*" + re.escape(slug) + r".*$",
-            re.IGNORECASE,
-        )
-    return _PROMPT_HEADING_RE_CACHE[row_name]
+    folded = text.lower()
+    for arrow in _ARROW_FORMS:
+        folded = folded.replace(arrow, "-to-")
+    folded = re.sub(r"[\s_]+", "-", folded)
+    return re.sub(r"-{2,}", "-", folded)
+
+
+def _heading_matches(line: str, row_name: str) -> bool:
+    """Is *line* the prompt heading introducing *row_name*?
+
+    Structure is checked on the raw line so the `Row N -- ` shape
+    still gates the match; only the captured label is folded.
+    """
+    found = _ROW_HEADING_RE.match(line)
+    if found is None:
+        return False
+    label = _fold_for_match(found.group("label"))
+    row = _fold_for_match(row_name)
+    # Anchored at the front and at a token boundary, not bare containment:
+    # a label may trail extra words ("... graduation prompt"), but a row name
+    # must not match because it happens to appear mid-label. Bare containment
+    # let a heading mentioning another row's words capture that row's body.
+    return label == row or label.startswith(row + "-")
 
 
 def render_active_surfacing_prompt(
@@ -78,11 +108,10 @@ def render_active_surfacing_prompt(
     Returns the body text, or ``None`` if the row's heading is not
     found.
     """
-    heading_re = _prompt_heading_re(row_name)
     lines = preset_text.splitlines()
     body_start: int | None = None
     for i, line in enumerate(lines):
-        if heading_re.match(line):
+        if _heading_matches(line, row_name):
             body_start = i + 1
             break
     if body_start is None:

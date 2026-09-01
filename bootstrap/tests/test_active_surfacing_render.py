@@ -61,16 +61,65 @@ def helper() -> ModuleType:
 
 
 PRESETS = ("solo-greenfield", "collaborative-team", "high-rigor-legacy")
-ROWS = (
-    "collab-agreement-signing",
-    "Level-1-to-2-graduation",
-    "second-agent-type",
-)
+def _registry_rows() -> tuple[str, ...]:
+    """Row names exactly as the shipped registry declares them.
+
+    Derived, never transcribed: a hand-copied list drifts from the
+    registry silently, and every combination below would keep passing
+    against names production no longer uses.
+    """
+    if not HELPER_SRC.exists():
+        return ()
+    try:
+        return tuple(
+            row for row, _trigger in _load_helper()._ACTIVE_SURFACING_ROWS
+        )
+    except Exception:
+        # An engine that fails to import must not abort collection for the
+        # entire suite; the non-vacuity test below reports it readably.
+        return ()
+
+
+ROWS = _registry_rows()
 
 
 def _preset_text(preset: str) -> str:
     return (ONBOARDING_DIR / f"{preset}.md").read_text(encoding="utf-8")
 
+
+def test_the_row_registry_is_not_empty(helper: ModuleType) -> None:
+    """Refuse to pass vacuously.
+
+    Every combination test below is parametrized over ROWS.  If the
+    registry could not be read, ROWS is empty, pytest generates no
+    cases, and the whole file reports green having checked nothing.
+    """
+    registry = tuple(row for row, _trigger in helper._ACTIVE_SURFACING_ROWS)
+    assert registry, "the shipped registry declares no active-surfacing rows"
+    assert ROWS == registry, (
+        f"ROWS drifted from the registry: {ROWS!r} != {registry!r}"
+    )
+
+
+@pytest.mark.parametrize("preset", PRESETS)
+def test_each_row_renders_a_distinct_body(
+    helper: ModuleType, preset: str,
+) -> None:
+    """Two rows must never resolve to the same heading.
+
+    The matcher accepts a label that begins with the row name, so a row
+    whose name is a prefix of another row's label would capture that
+    row's body and still look healthy to a non-empty check.
+    """
+    bodies = {
+        row: helper.render_active_surfacing_prompt(_preset_text(preset), row)
+        for row in ROWS
+    }
+    rendered = [b for b in bodies.values() if b is not None]
+    assert len(set(rendered)) == len(rendered), (
+        f"two rows share a body in preset={preset}: "
+        f"{ {r: (b or '')[:40] for r, b in bodies.items()} }"
+    )
 
 # ---------------------------------------------------------------------------
 # The 12 fixture combinations: each renders a non-empty body
@@ -83,20 +132,13 @@ class TestTwelveCombinations:
     def test_renders_non_empty_body(
         self, helper: ModuleType, preset: str, row: str,
     ) -> None:
-        # Match the heading slug used in the preset files:
-        # "collab-agreement-signing", "Level 1->2 graduation",
-        # "second-agent-type spin-up".
-        # The render helper matches case-insensitive substring, so
-        # passing the row name above works against the actual heading
-        # text in each preset file IF the heading mentions the
-        # relevant keyword.  Below we pass a normalized row keyword.
-        keyword_for_row = {
-            "collab-agreement-signing": "collab-agreement-signing",
-            "Level-1-to-2-graduation": "Level 1",
-            "second-agent-type": "second-agent",
-        }[row]
+        # The row name is passed exactly as the registry holds it --
+        # the same value production passes.  An earlier version
+        # substituted a hand-picked keyword here ("Level 1" for
+        # "Level-1-to-2-graduation"), which made this test green while
+        # the real row name matched no heading in any preset.
         body = helper.render_active_surfacing_prompt(
-            _preset_text(preset), keyword_for_row,
+            _preset_text(preset), row,
         )
         assert body is not None, (
             f"prompt content missing for preset={preset} row={row}"
@@ -162,8 +204,12 @@ class TestPerPresetDistinguishingLanguage:
         names a concrete action (walk a specific doc, coordinate
         with maintainer, etc.)."""
         for preset in PRESETS:
+            graduation_row = next(
+                row for row, trigger in helper._ACTIVE_SURFACING_ROWS
+                if trigger == "level-1-to-2"
+            )
             body = helper.render_active_surfacing_prompt(
-                _preset_text(preset), "Level 1",
+                _preset_text(preset), graduation_row,
             )
             assert body is not None, (
                 f"Level 1->2 prompt missing for preset={preset}"
