@@ -23,62 +23,80 @@ The two are not redundant. Internal review improves a change;
 External review tests whether it should exist. A change can be
 well-improved and still wrong.
 
+**A tier is a stance, not a staffing class.** It says what the reviewer is
+incentivized to do, so any agent can be asked for either — which is what makes
+both requirable by every adopter.
+
+**The difference is visible in what each produces.** An Internal review works
+inside the frame: sharpenings tied to what is proposed. An External review owes
+what a constructive read would not —
+
+* a verdict on whether the change should happen **at all**, engaging the
+  do-nothing option;
+* the strongest form of at least one rejected alternative;
+* what would **falsify** it: the observation that would make the author withdraw.
+
+An External review carrying only sharpenings-within-the-frame has done Internal
+work, whoever held it and whatever its heading says. The test reads off the
+artifact, not the reviewer — which is how a stance is arranged rather than
+merely intended.
+
+**What "outside the frame" means depends on the artifact.** For a proposal it is
+the design and the problem statement. For an implementation it is *should this
+have been built this way, and what breaks it* — never *should this exist*, which
+the Decision settled and which a reviewer never reopens.
+
 ## Structural independence
 
-A review is worth only as much as the reviewer's independence from
-the author's blind spots. Cairn does not rely on a reviewer
-*trying* to be independent; it arranges **structural**
-independence — the reviewer's reasoning genuinely does not share
-the author's:
+A review is worth what the reviewer's reasoning does not share with the
+author's. Cairn does not rely on a reviewer *intending* to be independent; it
+arranges independence two ways — by the **brief** the tier sets, and by the
+**distance** the reviewer happens to have:
 
-* **A different agent type.** A different model architecture has
-  different failure modes; it does not silently inherit the
-  author's. This is the strongest readily-available independence,
-  and it is the External-review floor.
-* **A fresh session.** The same agent type, but with no shared
-  context — the mental model is rebuilt from the artifacts, not
-  carried over. This is the Internal-review floor.
+* **A fresh session.** The same agent type with no shared context — the mental
+  model is rebuilt from the artifacts, not carried over. **Every review's
+  floor.**
+* **A different agent type.** A different architecture has different failure
+  modes and does not silently inherit the author's. The strongest readily
+  available distance, and **recommended wherever it can be staffed.**
 * **A human.** The Maintainer or another contributor.
-* **Domain rotation.** On a large team of domain-specialized
-  agents, the reviewer is an agent from a *different* domain —
-  independence by rotation rather than by model type.
+* **Domain rotation.** On a team of domain-specialized agents, a reviewer from
+  a *different* domain — independence by rotation rather than by model type.
 
-The floors: **Internal review** accepts same-agent-fresh-session;
-**External review** requires a different agent type or a human.
-Code review — the implementation-side pass — has its own floor:
-**not the implementing agent**.
+**No tier requires a different agent type — not External, not Security Review,
+not code review.** Only `agent_team: concurrent-multi-type` can staff one, so a
+requirement is dead vocabulary for most adopters and a demand on the Maintainer
+for the rest; the one act nobody else can perform is the Decision, and a tier
+that spends their attention as a reviewer spends it at the worst moment. A
+required tier answered by a skim is worse than no requirement, because the
+record then asserts an independence the change never received. Applied to
+Security Review it is worse still: an adopter who cannot staff a second type
+could never perform one at all, which lowers their security practice to zero
+rather than raising it.
 
-### Worked example — the floor pays its way
+**Distance is recorded, not required.** A review names its reviewer in its own
+attribution; that is where a reader weighs how far the reasoning stood from the
+author's. Code review keeps its own floor — **not the implementing agent.**
 
-The different-agent-type floor is not a formality; in the reference
-deployment it repeatedly caught what the same-vendor pass missed,
-*including the blind spots the same-vendor reviewer shared with the
-author*. A few representative findings across one development window
-(all on Claude-authored work, caught by a cross-type External read):
+### What the record actually shows
 
-* A **preset-name path traversal** in a security-hardening proposal; a
-  **null-default interior hole** and a **partial-dict regression** in an
-  override-validation change — both critical, both surfaced by the
-  cross-type reviewers, and the partial-dict one was a blind spot the
-  same-vendor pass *shared with the author*.
-* At the implementation stage: a **diverged generated copy preserved as
-  the active read-path**, and **state written before its `.gitignore`
-  seed** — two supply-chain edge bugs the author's green test suite
-  passed straight over.
-* The single largest catch: a core integrity anchor whose facts **were
-  never extracted in production** — dormant in every real build despite a
-  fully green unit suite, because no unit test exercised the real call
-  chain.
+The different-agent-type read was Cairn's External floor for most of the
+project's life, and the case made here for it was never measurable: with the
+floor in force, **every** External review was cross-type and every same-type
+review was Internal, so stance and reviewer type are perfectly confounded in
+the record and no comparison exists. The requirement removed its own control
+group.
 
-The cumulative signal is the point: across a run of consecutive
-cross-type reviews, **each caught at least one real integrity-surface
-bug**, spanning the proposal, plan, *and* code-review stages — a rate a
-same-vendor reviewer (sharing the author's architecture, and often the
-author's blind spot) does not match. The recurring lesson is also
-portable: **green unit tests do not clear the floor** — exercise the
-integration path (the real call chain, real config), not just the unit
-contracts the author already trusted.
+What the record does show, across the review sections in `dev/proposals/`:
+same-type Internal passes raise **more** blocking findings per review than
+cross-type External ones and run several times longer, while the tiers differ
+sharply in *verdict* rate. That is a difference in **stance**, not in defect
+density — which is why the tiers are defined by stance below, and why type is
+recommended rather than required.
 
+One portable lesson survives from the cross-type reads and is worth keeping:
+**green unit tests do not clear a review** — exercise the real call chain and
+real config, not the unit contracts the author already trusted.
 ## Asynchronous and commit-mediated
 
 A review is not a live conversation. It is a **section appended to
@@ -94,7 +112,7 @@ is deliberate:
   happened in conversation and was never written down did not
   happen.
 
-## C0 — the blocking test, and C1 — the editor ends the loop
+## The blocking test, and who ends a loop
 
 Two rules govern when a review finding stops a change and who may close
 a review round. They apply across the lifecycle's lanes — the
@@ -103,95 +121,64 @@ design and code review alike. The **editor** is whoever holds the
 artifact at that point in its lifecycle status — the author during
 revision, the Maintainer at Decision.
 
-**C0 is the blocking test, with explicit polarity**: *would shipping this
+**The risk posture.** Cairn is a method for scientific and research
+software, not safety-critical systems. The reviewer's question is *would
+shipping this cause damage that is hard to undo?* — **not** *is this correct in
+every respect?* Full weight is retained for the high-risk surfaces `AGENTS.md`
+names and for any release or security ceremony.
+
+**The blocking test, with explicit polarity**: *would shipping this
 cause damage that is hard to undo?* **Yes → blocking**; a blocking finding
 on the standard lane forces escalation to deliberate or an explicit
 recorded Maintainer disposition. No → `note` / `nit`, recorded, non-blocking.
 
 Full review weight remains on the deliberate lane, where every finding
-gets the complete review the lane already runs; C0 is what lets the
+gets the complete review the lane already runs; the test is what lets the
 standard lane stay light without becoming a place hard-to-undo damage can
 slip through unblocked.
 
 **The editor may end any loop at any time** over open findings by naming
-them (C1). A clearing verdict requires a whole-artifact read — cheap at
-two pages, which is the point.
+them.
+
+**One loop, closed by the author.** A review round and the author's revision
+close the loop, and **the author's revision carries the status forward** — there
+is no clearing round, and no review is run merely to move a status. The
+exception is a **Security Review**, which does clear the obligation it was
+raised against.
+
+**A second round is taken only for a recorded reason** — a Security Review, or
+scope the Maintainer widened, or a comparable cause named on the artifact.
+Absent one, the artifact moves on.
+
+The reason is not that late rounds find nothing; they find plenty. It is that
+they find it **redundantly**: implementation discovers what deliberation would
+not have, and code review is a further net, so a finding forgone in round three
+is mostly caught later and cheaper. The cost of the alternative is not
+marginal — four adopter bug reports (a regex fix, a timeout flag, a stale
+comment, an exit-code cleanup) took twelve days and three proposals of some six
+thousand lines to reach a shipped fix. Endless iteration destroys progress, and
+leanness here is a **correctness** property and not only a cost one: an
+over-stuffed record degrades the accuracy of every reader after it. The
+standard is a good-faith attempt to find things, not exhaustion.
 
 ## Decision-support Round-2 review
 
-Once an author has Responded and produced a revised proposal,
-the proposal is substantively ready for the Maintainer's
-Decision. But a *second* reviewer may read the revised
-proposal and surface findings — not findings the first
-reviewer missed, but findings the revision itself
-introduced or that a different reviewer's blind-spot
-profile exposes. The lifecycle as drawn (review → response
-→ revision, repeating) does not name this case, and two
-failure modes follow if it is unnamed:
+A second reviewer may read the *revised* proposal — surfacing what the revision
+introduced, or what a different blind-spot profile exposes. That read is
+**Decision-support**: it feeds `awaiting-decision`, never another revision.
 
-* **The second reviewer's findings get treated as
-  Round-1 findings** and trigger another revision cycle.
-  Author writes another Response, possibly revises again,
-  cycle restarts. With each round the proposal diverges
-  further from any one reviewer's read; the cycle no
-  longer closes.
-* **The second reviewer's findings get dropped.** The
-  author refuses to re-open the cycle; the critique lives
-  unanswered in a Review section; the Decision is taken
-  in tension with a critique the lifecycle did not
-  metabolize.
+* It does not move status to `revising`, and the author writes no Response to
+  it. The author's side of the cycle has closed.
+* The Maintainer's Decision addresses Round-1 and Round-2 findings in one place.
+* A Round-2 reviewer who thinks the revision is fundamentally wrong recommends
+  **reject or supersede**; they cannot require another revision.
+* A Round-1 review cannot be re-labelled Round-2 to avoid Responding to it.
+* The Decision closes the phase. Later critique becomes a new proposal.
 
-The pattern Cairn names is a **Decision-support Round-2
-review** — a Review section appended *after* the author's
-Response and Revised proposal. It has three structural
-properties that distinguish it from a Round-1 review:
-
-1. **The Round-2 Review does not move status to `revising`.**
-   It feeds `awaiting-decision`; it does not send the author
-   back for another revision. The author has already
-   completed their part of the cycle.
-2. **Append-only against the proposal, not the cycle.**
-   The author does not write a Response section to a
-   Round-2 review; the cycle has already closed on the
-   author's side.
-3. **Feeds the Decision, not another revision.** The
-   Maintainer's Decision, when written, addresses both
-   Round-1 and Round-2 findings in one place.
-
-The load-bearing word is *Decision-support*. A Round-1
-reviewer's job is to test the idea so the author can
-revise it. A second-reviewer-after-Response is doing
-something different: providing independent perspective to
-the Maintainer, who is the only actor with authority to
-weigh competing reviews and Decide. Naming the role makes
-the structural difference visible; without the name the
-second reviewer is mis-modeled as another Round-1
-reviewer and the lifecycle breaks.
-
-**The pattern is bounded.** It is *not* "the lifecycle
-allows unlimited review rounds":
-
-* It does not permit the author to skip Responding to a
-  Round-1 review by re-labeling it Round-2. Round-1
-  reviews remain author-Response-bound until the author's
-  Response and revision return the proposal to
-  `awaiting-review`.
-* It does not permit a Decision-support reviewer to demand
-  another revision. If a Round-2 reviewer believes the
-  revision is fundamentally wrong, the proper response is
-  to recommend the Maintainer reject or supersede, not to
-  require another revision.
-* It does not permit unbounded Round-2 reviews after a
-  Round-2 review. The Maintainer's Decision closes the
-  Decision-support phase; further critique becomes a new
-  proposal that amends or supersedes.
-
-The pattern extends the existing two-tier review framework
-(Internal / External, with Code review on the
-implementation side) by adding one more shape — not by
-adding a new tier. Internal-, External-, Code-, and
-domain-rotation-review floors all still apply when a
-Round-2 reviewer fills the role.
+This adds a shape, not a tier; the floors above apply unchanged. Naming it
+matters because both failure modes are real: an unnamed second reviewer is
+either mis-modelled as Round-1 and restarts the cycle, or is dropped and the
+Decision is taken in tension with a critique the lifecycle never metabolised.
 
 ## Plan review is Internal, always
 

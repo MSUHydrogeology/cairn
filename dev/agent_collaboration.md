@@ -15,11 +15,18 @@ ask.
   Decision authority. The one role that is not interchangeable.
 * **Strategy** — surveys the landscape, frames problems, drafts proposals.
 * **Implementation** — carries an accepted proposal through its plan.
-* **Internal Reviewer** — the constructive second read. Floor: the same agent
-  type in a fresh session.
-* **External Reviewer** — the independent, make-it-prove-itself read. Floor: a
-  different agent type, or a human.
-* **Security Review** — a focused-mode pass over a high-risk surface.
+* **Internal Reviewer** — strengthens the change *within* the structure
+  proposed: catches problems, sharpens the argument, surfaces what the author
+  missed.
+* **External Reviewer** — evaluates that structure *from outside*: whether the
+  change should happen at all, the strongest rejected alternative, and what
+  would falsify it.
+* **Security Review** — the same adversarial read, aimed at a high-risk
+  surface, and run as a parallel lens rather than a second stop.
+
+Tiers are **stances**, not staffing classes — a fresh session is every
+review's floor and no tier requires a different agent type. Full definitions,
+and what each review owes, in `doctrine/dual-review.md`.
 * **User Agent** — exercises Cairn from an adopter's position and files what
   it hits.
 

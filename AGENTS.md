@@ -28,9 +28,12 @@ awaiting-review <-> revising -> awaiting-decision
                              -> accepted / rejected / superseded
 ```
 
-A blocking review moves a proposal to `revising`; the author's Response returns
-it to `awaiting-review`; a clearing review moves it to `awaiting-decision`,
-which is the Maintainer's. A non-trivial accepted proposal then gets a plan:
+A review moves a proposal to `revising`; **the author's Response and revision
+carry it to `awaiting-decision`**, which is the Maintainer's. There is no
+clearing round — no review is run merely to move a status — except a Security
+Review, which clears the obligation it was raised against. A second round is
+taken only for a reason recorded on the artifact. A non-trivial accepted
+proposal then gets a plan:
 
 ```
 awaiting-plan-review <-> revising-plan -> ready-to-implement
@@ -51,18 +54,30 @@ Details are in the two `_template.md` files.
 
 ## Review
 
-* **Internal review** helps a change land — a constructive second read. Floor:
-  the same agent in a fresh session.
-* **External review** makes a change prove it should land. Floor: a different
-  agent type, or a human.
+* **Internal review** helps a change land — it strengthens the change *within*
+  the structure proposed.
+* **External review** makes a change prove it should land — it evaluates that
+  structure *from outside*, and owes a verdict on whether the change should
+  happen at all, the strongest rejected alternative, and what would falsify it.
+  A pass carrying only sharpenings-within-the-frame did Internal work whatever
+  its heading says.
+
+**A tier is a stance, not a staffing class.** Every review's floor is a fresh
+session; **no tier requires a different agent type — External and Security
+Review included.** A different type is the strongest distance available and is
+recommended wherever it can be staffed; which distance a review actually had is
+read from its attribution.
+
+**A reviewer reasons through what is proposed; they are not a second
+implementer.** Verification belongs to the implementation and its recorded
+evidence, not to every reader re-running it.
 
 Review is asynchronous and commit-mediated: a review is a section appended to
 the artifact and committed, not a conversation that leaves no record.
 
-**A plan review is Internal, fresh-context — always.** External plan review does
-not exist as a tier; the External floor lives at the deliberate lane's
-**proposal** review, where the design is still movable. **Code review's floor is
-separate and independent: not the implementing agent.** A plan whose surface
+**A plan review is Internal, fresh-context — always.** **Code review is
+External by default** — its job is falsification — and its floor is separate
+and independent: **not the implementing agent.** A plan whose surface
 calls for security treatment declares
 `Plan review: required(Internal + Internal Security Review)`, satisfied only by
 an appended `## Plan review` pass whose `**Obligation**` line matches — never by
@@ -209,9 +224,15 @@ The roster is in `dev/agent_collaboration.md`.
     record; a **trust ceremony that explicitly requires** one applies; or there
     is a **concrete reason to distrust or falsify** the evidence.
 
-  Prose-only work runs its applicable claim, link, snippet and neutrality gates.
-  Release verification is a separate strict ceremony. Name the interpreter
-  alongside every suite figure.
+  **Prose-only work does not run the suite.** Markdown has no importers: a
+  sentence cannot propagate into behaviour the way a changed symbol does, so
+  the blast radius is bounded by what *reads the file*. Run the applicable
+  claim, link, snippet and neutrality gates, plus any test that actually reads
+  the changed file — find them, do not assume the set is empty and do not
+  assume it is everything. A prose change to a contract surface does not
+  trigger the full suite unless a test or manifest pins its bytes; check
+  whether one does. Release verification is a separate strict ceremony. Name
+  the interpreter alongside every suite figure.
 * **Keep commit bodies concise.** The body is a *snapshot* — what shipped and how
   it was verified — not a restatement of the proposal or plan. Target 15–30
   lines for a non-trivial commit: a one- or two-sentence opener cross-referencing

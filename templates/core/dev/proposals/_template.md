@@ -40,9 +40,11 @@ Two rules are bright-line:
 
 ## Review
 
-**Internal review** helps a change land — a constructive second read; floor is
-the same agent in a fresh session. **External review** makes it prove it should
-— floor is a different agent type, or a human. Reviews are **attributed and
+**Internal review** strengthens the change within the structure proposed.
+**External review** evaluates that structure from outside, and owes a verdict on
+whether the change should happen at all, the strongest rejected alternative, and
+what would falsify it. Both are **stances**: a fresh session is the floor for
+each, and no tier requires a different agent type. Reviews are **attributed and
 self-committed**: a review you did not write is not yours to sign, and an
 independent read is only independent if its author is its committer.
 

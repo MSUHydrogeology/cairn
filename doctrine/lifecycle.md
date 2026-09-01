@@ -69,10 +69,10 @@ order** — the first match assigns the lane:
    standard-note contract carried in the plan template.
 
 The **deliberate** lane is today's two-stage proposal-then-plan
-machinery below, unchanged: review floors — who is independent enough
-to review — stay as declared, including the External floor on
-**proposal** review (`dual-review.md`); a floor is not a reviewer's
-lever. Election upward to the deliberate lane is open to the author or
+machinery below, unchanged: review obligations stay as declared and a
+declared tier is not a reviewer's lever (`dual-review.md`). A tier names
+the reviewer's **stance**, never their agent type, so every lane's
+obligations are satisfiable by every adopter. Election upward to the deliberate lane is open to the author or
 the Maintainer for anything else genuinely architectural.
 **Uncertainty resolves upward**, and only the Maintainer may override
 the procedure's result, on the record.
