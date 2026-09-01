@@ -58,8 +58,8 @@ the record is
 what it cost against what it was estimated to cost migrated to
 [`strategy/2026-08-21-claude-nimbleness-recovery.md`](strategy/2026-08-21-claude-nimbleness-recovery.md).
 The gate anchor moved `5f99273 -> bd66a70` after eight days stopped, and both
-sister repositories consumed the change — `lhm` merged, `modflow_tools` still on
-its migration branch.
+sister repositories consumed the change — `lhm` and `modflow_tools` are both
+merged to their own `master`.
 
 **Three defects surfaced during that work that nobody had filed**, each closed
 with a control test: the upgrade engine never advanced `base_hash` for verbatim
@@ -69,12 +69,32 @@ known-new digest check ran only on its repair path, so an injected statement in
 the containment guard passed the gate; and Cairn was still *shipping* prose about
 machinery it had removed, which both sisters inherited through the upgrade.
 
-**Next is the `repin` tool** — the successor to the blocked digest corrector,
-designed in
-[`strategy/2026-08-28-claude-repin-revitalization.md`](strategy/2026-08-28-claude-repin-revitalization.md)
-and routed through the deliberate lane, because it is a trust-ceremony surface
-and the External floor belongs at the proposal where the design is still
-movable. Until it lands, corrections continue by hand.
+**Review doctrine was rewritten on 2026-09-01** (`d98b4c1`), on Maintainer
+direction and after months of the same argument recurring. A review tier is a
+**stance**, not a staffing class: Internal strengthens a change within the
+structure proposed, External evaluates that structure from outside and owes a
+verdict on whether it should happen at all, the strongest rejected alternative,
+and what would falsify it. **No tier requires a different agent type** —
+External and Security Review included — because only `concurrent-multi-type`
+can staff one, so the requirement was dead vocabulary for most adopters and a
+demand on the Maintainer for the rest. Cross-type is the strongest distance and
+stays recommended. **One loop**: the author's revision carries the status, there
+is no clearing round except a Security Review, and a second round needs a reason
+recorded on the artifact. A reviewer **reasons** through what is proposed rather
+than re-running it, and prose-only work does not run the suite.
+
+The change was net-negative in prose, and one deletion is worth naming: the
+worked example arguing the cross-type floor "pays its way" could not be
+substantiated — its cited findings are not in the tree, and with the floor in
+force every External review was cross-type, so the requirement had destroyed
+its own control group.
+
+**The `repin` tool remains the next build** — the successor to the blocked
+digest corrector, designed in
+[`strategy/2026-08-28-claude-repin-revitalization.md`](strategy/2026-08-28-claude-repin-revitalization.md).
+Its route changes under the new doctrine: the External round is recommended,
+not required, so it no longer waits on a second agent type. Until it lands,
+corrections continue by hand.
 
 *(Refreshed at each goodnight scrub.)*
 <!-- cairn:end project-status -->

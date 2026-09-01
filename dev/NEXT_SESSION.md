@@ -1,114 +1,93 @@
 # Next session
 
-*Rewritten from scratch 2026-08-28, after the subtraction sweep archived. Run
-`python tools/board.py` first — it is derived and current; this file is
-hand-written orientation and may already be stale.*
+*Rewritten from scratch 2026-09-01. Run `python tools/board.py` first — it is
+derived and current; this file is hand-written orientation and may already be
+stale. **Check its claims before repeating them.** A stale line in this file
+was repeated four times in one session before anyone opened the repository it
+described.*
 
 ## Where the project stands
 
-**The subtraction sweep is archived.** `dev/plans/archive/subtraction-sweep.md`.
-C1–C9 landed, the code-review floor was met for every chunk group it names, both
-re-anchors ran, and its lasting truths migrated to
-`dev/strategy/2026-08-21-claude-nimbleness-recovery.md`.
+**Review doctrine changed today** (`d98b4c1`), and it is the session's main
+output. A tier is a **stance**, not a staffing class. **No tier requires a
+different agent type** — External and Security Review included. **One loop**:
+the author's revision carries the status, no clearing round except a Security
+Review, and a second round needs a reason recorded on the artifact. A reviewer
+**reasons** rather than re-runs. Prose-only work does not run the suite. Read
+`doctrine/dual-review.md` before running any review; several habits it retires
+were load-bearing yesterday.
 
-**The tree is fully green** for the first time in the sweep's life: full suite
-**3178 passed, 0 skipped, 0 failed** (Python 3.13.13, quiet tree);
-`_ast_attest verify` OK at 173 baselined symbols, unchanged; `_gate_manifest
-verify` OK at 183 frozen files / 3178 pinned nodes.
+**Both 2026-08-20 plans are archived**, and adopter issues #4, #5 and #6 are
+closed — twelve days after filing, which is the number the nimbleness note
+exists to bring down.
 
-**19 commits are unpushed.** Pushing is the Maintainer's, always.
+**The tree is green.** No failing tests. `check_cairn` OK across 172 files;
+neutrality `fail=77`; `verify_integrity` at its long-standing baseline of 21.
 
-## The one asymmetry to resolve first
-
-**`lhm` is merged; `modflow_tools` is not.** `lhm`'s `cairn-0.3.0-migration`
-merged to its `master` (plus a Maintainer follow-up recording the 0.3.0 consume
-in its fidelity manifest). `modflow_tools` is still sitting on its
-`cairn-0.3.0-migration` branch with `master` untouched at `5ef8851b`.
-
-Its suite was green at **3472 passed / 0 failed** when the branch was cut. It has
-not been re-verified since; **re-run before merging** rather than trusting that
-figure, and expect its fidelity manifest to want the same follow-up `lhm` got.
+**60 commits are unpushed.** Pushing is the Maintainer's, always.
 
 ## What is genuinely next
 
-* **The `repin` tool.** The successor to the blocked
-  `scripts/correct_pinned_digests.py`, designed in
-  `dev/strategy/2026-08-28-claude-repin-revitalization.md`. Its route is already
-  set: a **deliberate-lane proposal** with Security Review declared and the
-  External floor at the *proposal*, because that is where the design is still
-  movable. Codex reviewing the successor to the thing it blocked is named as the
-  natural External seat. **Until it lands, corrections continue by hand** — that
-  is the strategy's own instruction, not a shortcut.
-* **RD-3, pre-registered as an acceptance criterion for that proposal.** The
-  re-anchor launcher is built from `bootstrap/reanchor-launcher.template.sh`,
-  and **the template is not a closure member** — nothing pins the
-  pre-candidate trust root, whose work all happens before the checker exists.
-* **Three deposits still open**, from the batch the Maintainer authorized:
-  [TRU-4]'s known-new graduation decision (now much cheaper — the manifest is
-  enforced and accurate), C6's two onboarding findings behind the
-  MAINTAINER-GATED `_ALWAYS_ON_MAPPINGS` fence, and the four unfiled forge
-  issues in `dev/measurement/queued-issue-drafts.md`.
-* **`2026-08-20-claude-adopter-path-consolidation`** — `awaiting-review`,
-  untouched throughout.
-
-* **A standing constraint just expired, and nothing recorded it.** The
-  nimbleness note's Tier 1.6 declared *"no new doctrine, gates, lifecycle
-  vocabulary, ledgers, or trackers **until the Tier-2 removal pass is
-  complete**."* Tier 2 was the subtraction sweep, and it completed 2026-08-28 —
-  **so the moratorium's own lift condition has fired.** It was never formally
-  declared in any live artifact, which is why nothing enforced it and why
-  nothing announced its end either. Worth deciding deliberately rather than
-  letting it lapse: a constraint that quietly stops being true, with no record
-  of when, is the kind of thing a later reader cannot reconstruct.
-
-* **The nimbleness note itself is NOT archivable yet**, though it looks it. Its
-  Tier 2 is spent and its outcome now sits in the note, but **Tier 1 and Tier 3
-  are unadopted** — the proposal/plan/review size budgets landed nowhere, the
-  moratorium above landed nowhere, and Tier 3 in full landed nowhere. Its status
-  is still `revised`, two states short of `promoted`. Archiving it would mark
-  live direction as historical, and six artifacts cite it. The Maintainer has
-  comments pending on it; those fold in **inline**, per this tier's discipline.
+* **`2026-08-20-claude-adopter-path-consolidation`** — `revising`, nine
+  blocking findings. Two are worth knowing before opening it: the proposal
+  claims "the gate manifest is unchanged" and **seven frozen files change**;
+  and `[R5]` is a live shipped defect independent of the proposal. The Internal
+  review recommends **splitting** it — documentation consolidation is low-risk,
+  the executable half is not. That call is the Maintainer's and it changes what
+  a reviewer should read.
+* **The `repin` tool** — designed in
+  `strategy/2026-08-28-claude-repin-revitalization.md`. Its route is now
+  lighter: the External round is recommended, not required, so it does not wait
+  on a second agent type.
+* **The deferred gate re-anchor** — 10 frozen files, on the `## Queued` board
+  in `PLANNING.md` with the authorization quoted. **Maintainer-only and
+  supervised**; an implementing agent must not perform it.
+* **Three deposits still open** from the earlier authorized batch: `[TRU-4]`'s
+  known-new graduation, the two onboarding findings behind the
+  MAINTAINER-GATED `_ALWAYS_ON_MAPPINGS` fence, and the four unfiled issue
+  drafts in `dev/measurement/queued-issue-drafts.md`.
 
 ## Things that are true and will look wrong
 
-* **`check_cairn` reports 6.** Two are pre-existing; four are `line-bounds`
-  flags in `2026-08-20-claude-scanner-claim-scope.md`, a **known, dated
-  non-pass** — the lockfile shrank and that proposal is append-only, so its
-  citations were corrected by appending rather than editing.
-* **`quality_gate --sub neutrality` reports fail=79.** Unchanged for months;
-  not introduced by recent work.
-* **A `verify` run without `--known-new` still passes over an altered
-  known-new body**, and warns that it did. **Treat such a run as not having
-  checked.** The attestation gained that enforcement on 2026-08-28 after an
-  injection into `verify_within_root`, the containment guard, printed
-  `note: NEW` and exited 0.
-* **`_gate_manifest.py verify` will HOLD again after the next edit** to
-  anything under `bootstrap/tests/**` or `scripts/*.py`. A *committed* change
-  to a frozen file does not redden the suite; an *uncommitted* one does. And
-  the suite passes while the manifest HOLDs, because the test self-verifies a
-  freshly produced manifest and never diffs the committed fixture — **a green
-  suite is not evidence that no re-anchor is owed.**
+* **A green suite is not evidence the gate manifest is current.**
+  `test_gate_manifest.py` verifies a freshly produced manifest and never diffs
+  the committed fixture. Ten frozen files are stale right now, deliberately.
+  Nothing will go red to remind you.
+* **`quality_gate --sub neutrality` reports `fail=77`.** Long-standing, and
+  two lower than yesterday only because a vendor-heavy passage was cut.
+* **Archiving improves the gate counts without fixing anything.** Archived
+  files leave the default scans. When two proposals archived today,
+  `check_cairn` went 6 → 0 while nine relative links silently broke; only
+  `link_check --include-archives` could see them. Read a count that improves at
+  an archive as *content left the measurement*.
 
 ## Worth not relearning
 
-**Measure over the DECLARED set, never the present one.** Three instances in
-one day, in unrelated code: a lockfile scan that skipped absent files and
-reported the intersection as the whole; a packet check that compared only the
-rows the packet happened to contain; and a grep over a *truncated* report that
-concluded about the twelve entries it could not see. Iterate over what is
-declared and let a missing entry be visible as missing.
+**A rule outlives its reason, and then gets re-argued for months.** Six
+instances surfaced in one session. Five were the same shape — the roster's
+purpose overwritten by a staffing floor, the `revising-plan →
+ready-to-implement` edge, `Closes on`, the C0 risk posture, and a stale fact in
+this file. When landing a rule, land why it exists in the same commit.
 
-**A named hazard with no enforcing trigger is not a control.** The AST runbook
-stated *"a symbol in known-new is invisible to the baseline gate"* — correctly,
-in writing, for months — while nothing enforced it.
+**The sixth was worse, and different.** The `defer`-deposit rule was present
+*with* its reason, in the paragraph being written — and the half that reads as
+ceremony (quoting the authorization) got performed while the half that does
+something (the deposit) did not. Sentence structure defeated it. Both are now
+separate imperatives in the plan template.
 
-**A review's findings are a specification, not an argument for retreat.** An
-adversarial review of a convenience tool returned 28 confirmed findings and the
-first instinct was to delete the half they landed in. Only one of six root
-causes genuinely resisted automation. Retreat *feels* like rigour and cannot be
-shown wrong, because the deleted version is never built.
+**Confirm the instrument on a representative case.** A grep proving it can
+match somewhere proves nothing about the shape you are hunting: a line-based
+sweep for `clearing review` could never match it wrapped across a newline, and
+the control passed on files where it happened not to wrap.
 
-**Quiesce the tree, then measure.** A suite in flight while files are being
-edited returns figures that are worthless in both directions. This cost time
-three times: a review whose `HEAD` moved beneath it, a ceremony refused by a
-peer's mid-write, and a suite run against a tree being committed to.
+**Do not take a subagent's contradiction at face value.** One arrived with a
+commit SHA and a mechanism, and was wrong. The control is what settled it.
+
+**Name the prohibited act, not the category.** A subagent told "read-only"
+committed to `master` to simulate a commit; it did not classify a commit as a
+file edit.
+
+**Exhaustiveness is not rigour.** Most of a productive day was spent building
+verification apparatus around doctrine that should have made it unnecessary.
+The bound has to hold against an agent incentivized toward thoroughness, or it
+is not a bound.
