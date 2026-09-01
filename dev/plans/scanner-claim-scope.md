@@ -5,7 +5,7 @@
 opening commit archives it** — [`_template.md:18-19`](_template.md),
 [`doctrine/plans.md:40-41`](../../doctrine/plans.md) — so the path above is where
 it lives from the moment this plan exists, not somewhere it goes later.
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header and re-stated by the Decision (*"Plan review is `required(Internal)` (no
 Security Review trigger)"*). The **Security Review: REQUIRED** declaration in
@@ -1187,3 +1187,16 @@ owed. B1 is a one-sentence disclosure plus a qualified docstring line, not a
 design change; N1 is one word. Everything structural here is sound, and the parts
 I attacked hardest -- the bright line, the literal oracle, the fail-closed
 pairing, twin parity -- held.
+
+## Response to code review -- Claude (author) -- 2026-09-01
+
+One loop: this revision closes the review (`doctrine/dual-review.md`). Landed at
+`aab059e`.
+
+| Finding | Disposition | Where |
+|---|---|---|
+| **B1** `out-of-closure` claims more than the walk measures, in an installed file | **accepted** | `python-security.md` states what the label does not mean and says to triage `out-of-closure` too when extras are used; the walk's docstring drops its absolute "every failure moves toward `unknown`" and names the extras exception as deliberate policy. The policy itself is settled by the Decision and not reopened. |
+| **N1** the emitted banner contradicts the definition of "reported" two lines above | **accepted** | wording follows from B1's disclosure; the per-vulnerable-distribution reading the reviewer judged correct is unchanged |
+| **N2** plan-stated falsifier does not reproduce; a substitute was run | **accepted as stated** — the substitute is the better mutation and anchoring is pinned either way; recorded rather than re-run | this section |
+| **N3** tripwire framing vs what its node checks | **note, carried** — the node checks the extras policy over a synthetic fixture, which is what it should check; the measurement file's framing is the loose part | — |
+| nit | **accepted** | — |

@@ -4,7 +4,7 @@
 — accepted as revised (Revision 4) on 2026-08-20. **The plan-open commit archives
 the source proposal**, so the path above is where it lives from that commit
 onward (`dev/plans/_template.md:18-19`, `doctrine/plans.md:40-41`).
-**Status**: revising-code
+**Status**: ready-to-archive
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header. The **Security Review** the implementation carries is a *different
 instrument*: mandated by the portable-sweep executable trust root `AGENTS.md`
@@ -1084,3 +1084,21 @@ up to INCOMPLETE. It cannot yet report FINDINGS against a real adapter, and neit
 the adopter's documentation says so.
 
 **Status → `revising-code`.**
+
+## Response to code review -- Claude (author) -- 2026-09-01
+
+One loop: this revision closes the review (`doctrine/dual-review.md`). Landed at
+`aab059e`.
+
+| Finding | Disposition | Where |
+|---|---|---|
+| **B1** planted fixture emits a shape no adapter produces | **accepted** | `_planted_finding` now emits the adapter's real `Match`; `test_the_adapters_real_redaction_shape_fails_validation` pins the consequence; nine nodes measuring other properties opt into the idealized shape via `ideal_redaction=True` rather than inheriting it |
+| **B2** installed doc says a finding yields `10` | **accepted** | disclosure at the exit table in both module-doc copies, stating the finding is still reported and `20` is the fail-closed direction |
+| **N1** chunk E's falsifier reddens one node, not two | **accepted as stated** — evidence-record imprecision, not a gap in what the nodes pin; the reviewer's reasoning is recorded and the claim is not repeated | this section |
+| **N1b** an uncovered branch at the matrix guard | **wontfix** — unreachable by any current fixture and reachable only by a candidate that lies about its own output; the redaction node now covers the neighbouring path | — |
+| nits | **accepted** where they cost a line; otherwise recorded here | — |
+
+**The lasting one.** The fix for D1 contained D1: a fake emitting a shape the
+real tool never emits, with green tests over it. The guard is not vigilance —
+it is that a fixture's default is now the observed shape, and departing from it
+takes an explicit, named argument at the call site.
