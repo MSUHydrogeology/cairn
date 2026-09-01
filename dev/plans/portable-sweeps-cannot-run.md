@@ -4,7 +4,7 @@
 — accepted as revised (Revision 4) on 2026-08-20. **The plan-open commit archives
 the source proposal**, so the path above is where it lives from that commit
 onward (`dev/plans/_template.md:18-19`, `doctrine/plans.md:40-41`).
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header. The **Security Review** the implementation carries is a *different
 instrument*: mandated by the portable-sweep executable trust root `AGENTS.md`
@@ -50,8 +50,9 @@ coordinate the proposal cites still matches. One host fact *has* changed:
 `gitleaks 8.30.1` is now on this host's `PATH` (`/opt/homebrew/bin/gitleaks`),
 where the ledger's `as_of 2026-08-05` measurement says it is not
 (`dev/measurement/gitleaks-version-support.md:65-67`). Chunk G is therefore
-performable here; chunk F corrects the ledger claim — **disclosed as a possible
-scope expansion, flagged under F's acceptance criterion, not absorbed**.
+performable here; chunk F corrects the ledger claim — ruled **added scope** by
+the plan review and **authorized by the Maintainer on 2026-08-31**, quoted
+verbatim under F's acceptance criterion.
 
 ### Documentation / doctrine surface
 
@@ -70,11 +71,11 @@ must state what is true *after* D4 and D5 land.
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
 | A | **D1 — extraction between probe and parse.** One anchored, total extractor accepting exactly `gitleaks version <X.Y.Z>` or bare `<X.Y.Z>`, reached by both probe call sites (`:1381`, `:1733`). `parse_version` (`:275-285`) is **not modified** — `None` keeps meaning *unmeasured*. `fake_tool`'s `--version` default flips to the banner shape; the bare form stays an explicit parametrization | — | 1 commit |
-| B | **D2 — a structural inert-key fence.** Subsection widens from `[^.]+` to an anchored greedy `.+`; the variable stays a closed named set gaining `glab-resolved` and `vscode-merge-base`. Non-inert keys **accumulate into one refusal** naming at most `_SCREEN_MAX_NAMED_KEYS = 10` of them plus the elided count; **containment stays first-failure** | — | 1 commit |
+| B | **D2 — a structural inert-key fence. Four deltas at `scripts/run_portable_security_sweeps.py:624-628`, each separately pinned**: the `remote` subsection widens from `[^.]+` to an anchored greedy `.+`, the `branch` subsection widens likewise, `glab-resolved` joins the remote alternation, `vscode-merge-base` joins the branch alternation. The variable stays a closed named set. Non-inert keys **accumulate into one refusal** naming at most `_SCREEN_MAX_NAMED_KEYS = 10` of them plus the elided count; the **two** raises that precede the inert scan in the same loop — the non-file-origin check (`scripts/run_portable_security_sweeps.py:781-783`) and containment — **both stay first-failure** | — | 1 commit |
 | C | **D4 — integer-seconds `--timeout`.** The fake gains a per-subcommand flag table derived from the adapter's own `--help` and **lands red first**; then `_leg_argv` (`:1628`) emits the measured integer form and the pinning test is re-pointed | — | 2 commits (red fake, then fix) |
 | D | **D5 — exit split and no adapter bytes in any durable outcome.** Pin `--exit-code 42` in the leg argv and set `_EXIT_FINDINGS` to match; rewrite `classify_leg`'s signal (`:995-998`) and unknown-exit (`:999-1003`) reasons as runner-owned messages carrying the numeric exit or signal and nothing from the adapter | — | 1–2 commits |
 | E | **The admission matrix proves the exit contract it now depends on** (invariant viii). `cmd_verify_version_support`'s `end_to_end` block runs three recorded scenarios per subcommand, and the ledger says what an evidence record must now contain | — | 1 commit |
-| F | **D3 — the comment states what is true.** Correct the runner header comment (`:86-90`, `:99-102`); re-read the module doc and `AGENTS.md` for agreement; correct the ledger's stale PATH measurement (**disclosed possible expansion — see F's acceptance criterion**) | — | 1 commit |
+| F | **D3 — the comment states what is true.** Correct the runner header comment (`:86-90`, `:99-102`); re-read the module doc and `AGENTS.md` for agreement (**human attestations, recorded in the commit body**); correct the ledger's stale PATH measurement (**Maintainer-authorized addition — see F's acceptance criterion**) | — | 1 commit |
 | G | **Real-adapter instruments.** The two smokes the proposal names, run against real gitleaks and recorded | — | evidence, no source change |
 | M | **Close adopter issue #4** against the proposal's five gates | **MAINTAINER-GATED** | one comment, one close |
 
@@ -129,18 +130,37 @@ Per chunk, each falsifiable. Test names pin the property, not this document.
 * **A** — a probe output of `gitleaks version 8.30.1` reaches `select_mode` as
   `(8, 30, 1)`; a bare `8.30.1` still does; `parse_version`'s existing tests are
   unmodified and green.
+  **Decision — the raw banner survives into the two JSON-visible fields**, not
+  the extractor's output. `probe_version`'s return keeps reaching
+  `record["candidate_version"]` (`scripts/run_portable_security_sweeps.py:1384`)
+  and `facts["adapter_version_output"]` (`:1740`) verbatim: the ledger's purpose
+  is recording what the binary actually said, and the triple is derivable from
+  the banner while the banner is not derivable from the triple. Pinned because
+  the only existing test on either field checks presence, not shape
+  (`bootstrap/tests/test_portable_security_sweeps.py:2047-2052`), so leaving it
+  to the implementer is an unreviewed change to a `--json` contract.
   **Nodes**: `test_the_version_banner_extracts_to_an_exact_triple`,
   `test_the_bare_version_string_still_extracts`,
-  `test_a_prerelease_suffix_does_not_extract`.
+  `test_a_prerelease_suffix_does_not_extract`,
+  `test_the_evidence_record_keeps_the_raw_version_banner`.
   **Falsifier**: unanchor the extractor — a fixture emitting
   `gitleaks version 8.30.1-dirty` must not parse as `8.30.1`; the prerelease
-  node goes red. Run this mutation and record it (S2).
-* **B** — `branch.v1.2.remote` and `branch.release/2.0.remote` are INERT;
+  node goes red. Then substitute the extracted triple into either JSON-visible
+  field — the banner node goes red. Run both mutations and record them (S2).
+* **B — all four allowlist deltas, each pinned by its own node, because each is
+  independently droppable.** `branch.v1.2.remote` and `branch.release/2.0.remote`
+  are INERT (the `branch` widening) and so is `remote.origin.v2.url` (the
+  `remote` widening, which the `branch` cases do not exercise);
+  `remote.origin.glab-resolved` and `branch.main.vscode-merge-base` — the two
+  keys the Decision's D2 term names — are INERT;
   a newline-bearing key, an empty subsection and a suffix-injected variable are
   all REFUSED; a synthesized config with more non-inert keys than the cap
   produces **one** refusal naming the first ten in listing order plus the elided
   count; an include origin outside the candidate's `.git/` refuses
-  **immediately**, before the inert scan completes.
+  **immediately**, before the inert scan completes — and so does a
+  **non-file config origin** (`scripts/run_portable_security_sweeps.py:781-783`),
+  the other raise in that loop, which the accumulation change must leave
+  first-failure exactly as it leaves containment.
   **Decision — the cap is ten**, as `_SCREEN_MAX_NAMED_KEYS = 10` beside the
   file's other named caps (`scripts/run_portable_security_sweeps.py:609`):
   offending key names are candidate-controlled text entering a durable sink, so
@@ -148,6 +168,9 @@ Per chunk, each falsifiable. Test names pin the property, not this document.
   operator to recognize the offending family.
   **Nodes**: `test_a_dotted_branch_subsection_is_inert`,
   `test_a_slashed_branch_subsection_is_inert`,
+  `test_a_dotted_remote_subsection_is_inert`,
+  `test_the_glab_resolved_remote_key_is_inert`,
+  `test_the_vscode_merge_base_branch_key_is_inert`,
   `test_a_newline_bearing_key_refuses`,
   `test_an_empty_subsection_is_not_inert`,
   `test_a_suffix_injected_variable_is_not_inert`,
@@ -155,9 +178,15 @@ Per chunk, each falsifiable. Test names pin the property, not this document.
   `test_the_refusal_names_no_more_keys_than_the_cap`,
   `test_the_refusal_states_how_many_keys_it_elided`,
   `test_an_include_origin_outside_the_git_dir_refuses_immediately`.
-  **Falsifier**: restore `[^.]+` at
-  `scripts/run_portable_security_sweeps.py:624-628` — the dotted and slashed
-  cases go red. Run it and record it (S2).
+  **Falsifier — four mutations, one per delta, run separately.** At
+  `scripts/run_portable_security_sweeps.py:624-628`: restore `[^.]+` on the
+  `branch` pattern alone (the two `branch` nodes go red, the `remote` one stays
+  green); restore it on the `remote` pattern alone (the reverse); drop
+  `glab-resolved` from the remote alternation; drop `vscode-merge-base` from the
+  branch alternation — each of the last two reddens exactly its own key node. A
+  single mutation that reddens everything cannot distinguish a fully-landed D2
+  from one delta of four, which is the failure this criterion exists to catch.
+  Run all four and record them (S2).
 * **C** — the flag-table fake lands **red against the current argv in its own
   commit**, and the recorded failure is quoted in that commit body; after the
   fix, `sent == [f"--timeout={runner._ADAPTER_TIMEOUT}"]` at
@@ -211,25 +240,44 @@ Per chunk, each falsifiable. Test names pin the property, not this document.
   (`:1977`, `:1993`, `:2005`) stay green: no version is admitted.
 * **F** — the runner's header comment references no path the `team-gated`
   module does not install, and no longer says a record "enters" the admitted
-  set; the module doc's mode table (`portable-security-sweeps.md:82-85`),
-  unreachability statement (`:96-99`) and cadence (`:162-174`) are re-read and
-  confirmed to imply no route to full mode that has never worked; the ledger's
-  four-step ceremony (`gitleaks-version-support.md:26-38`) still reads as four
-  steps and un-automated; `AGENTS.md`'s portable-sweep paragraph is confirmed
-  unchanged-needing.
+  set.
   **Node**: `test_the_runner_comment_references_no_uninstalled_path`.
   **Falsifier**: re-insert `dev/measurement/gitleaks-version-support.md` into
   the runner header comment; the node goes red.
-  **DISCLOSED POSSIBLE EXPANSION — flagged for the plan reviewer and the
-  Maintainer, deliberately not absorbed.** This chunk also corrects the ledger's
-  `as_of 2026-08-05` claim that gitleaks is absent from this host's `PATH`
-  (`:65-67`), now measurably false. It lands inside D3's own obligation
-  ("document what is actually true") on a file the proposal's header already
-  names as touched, and it changes no disposition — the set stays empty because
-  no *Maintainer-supplied, checksum-verified* binary has been measured. If the
-  reviewer reads it as new scope instead, it needs the Maintainer's word before
-  it lands. Note `test_the_ledger_states_the_empty_set_consequence` (`:2005`)
-  reads this section and is the node that catches a careless edit.
+  **The chunk's other three claims are human attestations, not checks — said
+  plainly here** in the same voice as G's operator attestation and S3's "a
+  person typing it", because a *confirm-nothing-changed* claim has no falsifier
+  and a reader must not assume a node exists. Each is recorded in F's commit
+  body, naming what was read and what was found: (1) the module doc's mode table
+  (`portable-security-sweeps.md:82-85`), unreachability statement (`:96-99`) and
+  cadence (`:162-174`) imply no route to full mode that has never worked;
+  (2) the ledger's four-step ceremony (`gitleaks-version-support.md:26-38`)
+  still reads as four steps and un-automated; (3) `AGENTS.md`'s portable-sweep
+  paragraph needs no edit. A code reviewer looks for these three in the commit
+  body, not in the suite.
+  **The ledger's stale `PATH` measurement — added scope, and authorized.** The
+  plan review ruled the correction *added scope* rather than tidying, because
+  the fact post-dates the 2026-08-20 Decision, and referred it. Asked and
+  answered on 2026-08-31:
+
+  > **Question put to the Maintainer**: "The portable-sweeps plan wants to also
+  > fix one sentence in dev/measurement/gitleaks-version-support.md. That
+  > sentence says gitleaks is not installed on this machine. It now is --
+  > version 8.30.1, measured today. The accepted proposal (2026-08-20) never
+  > mentioned that sentence, so this is genuinely new scope rather than tidying,
+  > which is why it needs your word. May it?"
+  >
+  > **Maintainer**: "Yes, fix it"
+
+  The fence is discharged and the correction lands in F. It changes no
+  disposition — the set stays empty, because no *Maintainer-supplied,
+  checksum-verified* binary has been measured. Following the ledger's own idiom
+  of dated measurements that are **superseded, not overwritten** (the Retirement
+  log's "with the reason and the date" convention,
+  `dev/measurement/gitleaks-version-support.md:75-80`), a new dated line lands
+  beside the `as_of 2026-08-05` one (`:65-67`) rather than replacing it. Note
+  `test_the_ledger_states_the_empty_set_consequence` (`:2005`) reads this
+  section and is the node that catches a careless edit.
 * **G** — two real-adapter runs, each recorded with the adapter path and
   version:
   1. `python scripts/run_portable_security_sweeps.py --target <fresh-repo> --json`
@@ -291,10 +339,19 @@ Per chunk, each falsifiable. Test names pin the property, not this document.
 **Scope delta**: preserved.
 
 Every outcome the accepted Revision 4 and the Decision commit to is placed in a
-chunk: D1→A, D2→B, D3→F, D4→C, D5 (Parts A and B)→D, invariant (viii) and the
-per-candidate exit contract→E, the two real-adapter instruments→G, the
-five-gate issue closure→M. Nothing is dropped, and nothing is deferred —
-Revision 4's **Deferred: Nothing** carries into this plan unchanged.
+chunk: D1→A, D2→B — **all four of its allowlist deltas, each with its own node
+and its own mutation** after the plan review found three of the four unverified
+— D3→F, D4→C, D5 (Parts A and B)→D, invariant (viii) and the per-candidate exit
+contract→E, the two real-adapter instruments→G, the five-gate issue closure→M.
+Nothing is dropped, and nothing is deferred — Revision 4's **Deferred: Nothing**
+carries into this plan unchanged.
+
+**One item was added, and it was allowed — scope grew, it did not narrow.**
+Chunk F's correction of the ledger's stale `PATH` measurement was ruled added
+scope by the plan review, put to the Maintainer, and authorized on 2026-08-31;
+the authorization is quoted verbatim in F's acceptance criterion. It is recorded
+separately here so a reader can see the growth came by allowance and not by
+drift: no accepted outcome moved, shrank, or was traded to make room for it.
 
 ## Verification
 
@@ -303,8 +360,8 @@ the inline invariant list above.
 
 | Changed surface / invariant | Mapped test node or file | Standing gates |
 |---|---|---|
-| A — the extractor; `parse_version` unmodified (invariant i); `fake_tool` default | `test_portable_security_sweeps.py` version-parsing and mode-selection nodes (`:478-524`) plus A's three new nodes | twin identity (`:2300`, `test_notice_install.py:114`) |
-| B — the inert fence; no leg before the screen returns (invariant ii) | the config-screen block (`test_portable_security_sweeps.py:1145-1423`) plus B's seven nodes | twin identity |
+| A — the extractor; `parse_version` unmodified (invariant i); `fake_tool` default | `test_portable_security_sweeps.py` version-parsing and mode-selection nodes (`:478-524`) plus A's four new nodes, including the raw-banner field shape | twin identity (`:2300`, `test_notice_install.py:114`) |
+| B — the inert fence; no leg before the screen returns (invariant ii) | the config-screen block (`test_portable_security_sweeps.py:1145-1423`) plus B's twelve nodes — one per allowlist delta | twin identity |
 | C — `_leg_argv` and all three call sites; the emitted argv stays acceptable to the admitted adapter major (invariant v) | the argv/config-flag block (`:907-1145`), `:1186-1200`, the admission-ceremony nodes (`:1881-2266`) | twin identity |
 | D — exit contract and `classify_leg` reasons (invariants vi, vii) | report/exit classification (`:1571-1806`), the child-document contract (`:1806-1881`), output-sink/redaction (`:1423-1571`) | twin identity |
 | E — the admission matrix (invariant viii); `_ADMITTED_ARTIFACTS` untouched (invariant iii) | `:1977`, `:1993`, `:2005`, `:2135`, plus E's two nodes | `python scripts/check_cairn.py`; `python scripts/claim_check.py dev/measurement/gitleaks-version-support.md` |
@@ -350,20 +407,30 @@ commit under the canonical interpreter (Python 3.13.x):
 CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
 python scripts/quality_gate.py --sub neutrality --sub redundancy
 python scripts/check_cairn.py
+python scripts/claim_check.py dev/plans/portable-sweeps-cannot-run.md
+python scripts/claim_check.py dev/measurement/gitleaks-version-support.md
 ```
+
+The last two are the write-time claim check `dev/plans/_template.md:168-169`
+requires **once for each authored document** — this plan and the ledger both
+change here, and if F's module-doc re-read turns into an edit,
+`templates/modules/team-gated/portable-security-sweeps.md` joins the list. F's
+per-chunk row below already runs it, but those runs go stale the moment a later
+commit touches a document; the clean-tree pass is what catches that.
 
 Append the evidence as
 `## Implementation verification -- <agent> -- YYYY-MM-DD` with the tested SHA,
 reviewed range, interpreter, clean pre/post state, the command table with
-pass/fail/skip/xfail/xpass counts and timing, the disposition of every non-pass,
-the plan-specific acceptance commands (chunk G's two real-adapter runs and their
-operator attestation), and known omissions.
+pass/fail/skip/xfail/xpass counts and timing, **the `claim_check` result per
+edited document**, the disposition of every non-pass, the plan-specific
+acceptance commands (chunk G's two real-adapter runs and their operator
+attestation), and known omissions.
 
 **Expected test-count movement, accounted rather than observed:** the file
-carries 163 nodes today; A–F add **twenty-one new test names** — three, nine,
+carries 163 nodes today; A–F add **twenty-five new test names** — four, twelve,
 three, three, two and one, by chunk — and re-point one
 (`bootstrap/tests/test_portable_security_sweeps.py:1195`). The *collected* total
-rises by more than twenty-one, because
+rises by more than twenty-five, because
 `test_no_adapter_stderr_reaches_any_durable_sink` is parametrized over four
 cases. Any node that
 moves from passed to **skipped** is a defect until reconciled by name — a
@@ -641,3 +708,25 @@ the Boundary B `full` determination against the tree myself, and each held.
 **Status → `revising-plan`.** Separately, chunk F's ledger `PATH` correction is
 ruled **added scope** and waits on the Maintainer's word before that line lands;
 the rest of F is unaffected, and no scope is removed by this pass.
+
+## Response to plan review -- Claude (author) -- 2026-08-31
+
+Every finding is folded **into the operative cell it belongs to**, in place, per
+`dev/plans/_template.md:24-32`. This table points at those cells; it does not
+restate them, because a second copy of a cell is a second answer to the same
+question. The `## Plan review` section above is untouched.
+
+| Finding | Disposition | Where it landed |
+|---|---|---|
+| **B1** (blocking) — three of D2's four allowlist deltas unpinned; B's falsifier green without them | **accepted** | *Acceptance criteria* > **B**: three added nodes (`test_a_dotted_remote_subsection_is_inert`, `test_the_glab_resolved_remote_key_is_inert`, `test_the_vscode_merge_base_branch_key_is_inert`), the criterion text now naming all four deltas, and the **Falsifier** replaced by four separate mutations that redden disjoint node sets. Dependent counts corrected: the *Sequence* chunk-B row, the Boundary A table's B cell (seven → **twelve**), and *Expected test-count movement* (twenty-one → **twenty-five**; `three, nine, …` → `four, twelve, …`). *Scope delta* now states the D2→B mapping as four-deltas-each-pinned. **One variation, disclosed**: the remedy said to fix "B's node count in the chunk row" — the row carried no count, but it did carry a one-delta description (*"Subsection widens"*, singular), which is corrected instead. |
+| **N1** — Boundary B omits `claim_check.py` | **accepted** | *Verification* > Boundary B: two `claim_check` lines added to the command block (this plan, the ledger) with the module doc named conditionally, and **the `claim_check` result per edited document** added to the evidence-record fields. |
+| **N2** — three of F's four sub-clauses are unlabelled attestations | **accepted** | *Acceptance criteria* > **F**: the three re-stated as **human attestations recorded in F's commit body**, in the same voice as G's operator attestation and S3's "a person typing it", with what a code reviewer should look for. The *Sequence* chunk-F row carries the same label. |
+| **N3** — the extractor's two JSON-visible fields are unpinned | **accepted**, recommendation adopted | *Acceptance criteria* > **A**: a **Decision** clause pinning the **raw banner** (not the triple) into `record["candidate_version"]` and `facts["adapter_version_output"]`, a fourth node `test_the_evidence_record_keeps_the_raw_version_banner`, and a second mutation in A's falsifier. |
+| **Nit** — B names containment but not the non-file-origin raise | **accepted** | Named in **both** cells the reviewer's remedy could mean: the *Sequence* chunk-B row and *Acceptance criteria* > **B**, each stating that **both** pre-scan raises stay first-failure. No node added — the remedy asked for a clause, and this is a preserve-unchanged claim, so the twelve-node count stands. |
+| **Scope call** — the ledger `PATH` correction is added scope | **resolved: authorized, not absorbed** | Put to the Maintainer and allowed on 2026-08-31. The fence at *Acceptance criteria* > **F** is discharged and the authorization is **quoted verbatim in a blockquote in its place**; *Scope* and *Scope delta* record the growth as an allowance. The reviewer's execution suggestion — supersede the dated line, do not overwrite it — is adopted in F. |
+
+**No finding is declined.** Scope delta stays **preserved** for every accepted
+outcome; the one addition is recorded separately so growth-by-allowance is not
+mistaken for drift.
+
+**Status → `ready-to-implement`.**
