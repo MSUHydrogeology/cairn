@@ -5,7 +5,7 @@
 opening commit archives it** — [`_template.md:18-19`](_template.md),
 [`doctrine/plans.md:40-41`](../../doctrine/plans.md) — so the path above is where
 it lives from the moment this plan exists, not somewhere it goes later.
-**Status**: ready-to-implement
+**Status**: awaiting-code-review
 **Plan review**: required(**Internal**) — carried verbatim from the proposal
 header and re-stated by the Decision (*"Plan review is `required(Internal)` (no
 Security Review trigger)"*). The **Security Review: REQUIRED** declaration in
@@ -835,3 +835,190 @@ The stale banner at `test_security_stack.py:1240` was read in place.
 **Status** moves to `ready-to-implement`: both blocking findings are folded, all
 three notes and both nits with them, and Chunk B's fence is discharged by the
 recorded authorization rather than removed.
+
+## Implementation verification -- Claude (Implementation) -- 2026-08-31
+
+**Model**: claude-opus-5 (Claude Opus 5)
+**Boundary B mode**: full — as this plan declared in advance. Bounded mode was
+refused and no `**Bounding**` line is owed. **Four** gate-manifest-frozen files
+changed and two lockfile records were reconciled, so the change touches a
+**contract surface**; the content scanner and the dependency-audit orchestrator
+are **security-stack** surfaces.
+
+**Tested SHA**: `fd28a831ffedcaebf3d4572397d60a108c7352fa`
+**Reviewed range**: `d49059d..fd28a83` (eight commits, A–H; **Chunk M was not
+executed** — see *Chunk M*, below).
+**Interpreter**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` — **Python
+3.13.13** (conda-forge, Clang 19.1.7), Cairn's canonical interpreter.
+**Clean state**: `git status --short` empty before the run and empty after it;
+no file was modified by any command in the table.
+**Where it ran**: an isolated git worktree of this repository, not the primary
+checkout. That matters for exactly one figure — see *Known omissions* item 3.
+
+### Commands
+
+| # | command | exit | outcome | elapsed |
+|---|---|---:|---|---:|
+| 1 | `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | 0 | **3211 passed**, 0 failed, **0 skipped, 0 xfail, 0 xpass**, 3 warnings | 562.6 s |
+| 2 | `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality `fail=79 info=21`; redundancy `fail=0 info=0` | 1.0 s |
+| 3 | `python scripts/check_cairn.py` | 1 | 3 issues across 174 files | 2 s |
+| 4 | `python scripts/link_check.py` | 1 | 3 issues across 174 files | 2 s |
+| 5 | `python bootstrap/verify_integrity.py --target .` | 1 | 21 violations | <1 s |
+| 6 | `python scripts/claim_check.py dev/plans/scanner-claim-scope.md` | 0 | no flags | <1 s |
+| 7 | `python scripts/claim_check.py dev/measurement/pip-audit-closure-ratio.md` | 0 | no flags | <1 s |
+| 8 | `python scripts/content_scan_runner.py` (D1 smoke) | 0 | 76 audited text files, clean | 3 s |
+
+### Disposition of every non-pass
+
+Commands 2–5 exit non-zero against the **pre-existing baseline** this plan
+records under *Acceptance criteria* > *Standing gates*. The criterion is **no
+new finding beyond that baseline**, and each count is unchanged:
+
+* **neutrality 79** — identical to the plan's recorded 79. Checked by overlap
+  rather than by count alone: the only three FAILs under
+  `templates/modules/team-gated/` are `content_scan.py:329`,
+  `content_scan.py:547` and `intent.py:64`, none of which this plan touches.
+  **Neither `python-security.md` nor `content-security.md` nor
+  `run_security_audit.py` contributes a FAIL.** (This gate is why Chunk F's new
+  paragraph quotes the measured ratio without naming the package the
+  measurement was rooted at: `modflow_tools` is itself an unsanctioned token
+  under `templates/`, as those first two FAILs show.)
+* **redundancy 0**, **claim_check 0** — clean, as required.
+* **link_check 3** — identical to the recorded baseline, all three at
+  `templates/modules/default-on/documentation-plan.md` lines 103, 113 and 123.
+* **verify_integrity 21** — identical to the recorded baseline. It read **23**
+  after Chunk B and before Chunk H's reconciliation, and Chunk H returned it to
+  21; neither reconciled path appears in the 21.
+* **check_cairn 3** — the plan records this gate as clean (0), and it *is* clean
+  in the primary checkout. All three findings are
+  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md` citing
+  the suite-cost and suite-runs records under `dev/measurement/`, which are
+  **gitignored** (`.gitignore:18-19`) and therefore absent from a fresh
+  worktree checkout while present on disk in the primary tree. Their paths are
+  named here without backticks on purpose: `claim_check.py` hard-flags a cited
+  path that does not resolve, and in this worktree they do not. This is a
+  property of where the run happened, not of the change: the count was 3 before
+  the first implementation commit and 3 after the last. A reviewer running in
+  the primary checkout should expect 0.
+* **3 pytest warnings** — all `stevedore/extension.py:187`, a deprecation
+  notice from a third-party dev dependency. Nothing this plan touches.
+
+### Plan-specific acceptance
+
+* **Invariant (i)** — the emitted-report triple multiset equals the literal
+  fixture multiset: `test_reported_rows_match_the_literal_expected_triples`.
+* **Invariant (ii)** — the seven pre-existing `Coverage` fields and the returned
+  `(status, tier)` are identical with the annotation present and absent, the
+  appended `vulnerable` field being the only difference:
+  `test_the_established_coverage_fields_are_unchanged_by_the_annotation`.
+* **Invariant (iii)** — exit codes unchanged: the pre-existing exit-contract
+  nodes (`TestRunnerExitContract::test_stale_baseline_is_three`,
+  `test_d_t2d_report_findings_and_exit_code_cannot_contradict`,
+  `test_d_t2_one_unknown_gates_clean`,
+  `test_d_t1_a_skipped_distribution_is_never_scanned`) pass **unmodified**, as
+  do all eleven `run_pip_audit_pass` and six `classify_pip_audit_output` call
+  sites.
+* **Invariant (iv)** — neither tool writes the residual baseline: unchanged;
+  nothing in this range adds a write.
+* **Invariant (v)** — `_print_summary`'s signature:
+  `test_print_summary_signature_is_positionally_stable`.
+* **Invariant (vi)** — byte-identity, measured on the tested SHA:
+  `scripts/content_scan_runner.py` = `templates/modules/team-gated/content_scan_runner.py`
+  = `dc34b74062c4b69a0b5667a74904e120cb949717453e80e581bc68344bc696a1`;
+  the three `content-security.md` copies (`templates/modules/team-gated/`,
+  `dev/modules/`, `dev/.cairn/base/dev/modules/`) =
+  `030f15ca2eaf82954490ec1d6b4423ad92035d370c33b6783273477a3049b7b2`.
+* **Invariant (vii)** — the closure walk imports nothing outside the standard
+  library: `test_closure_walk_imports_only_the_standard_library`, which reads
+  the orchestrator's own import graph with `ast` and carries two controls (the
+  instrument sees the file's imports; the comparison would flag a third-party
+  name).
+* **Non-vacuity** — every new node is covered. Chunk A: four falsifiers run.
+  Chunk C: five falsifiers run. Chunk D/E: the five-mutation ledger plus the
+  raise-pair, in commit `1f418b7`. Chunk G: its own falsifier run and recorded
+  in `759fc6c` (extras-inclusive policy → `closure 71/100 exceeds the 50%
+  recorded in pip-audit-closure-ratio.md`). No new node is outside this list.
+* **D1 exit-3 smoke on this tree, read-only** — the real script loaded against
+  the real roots manifest with a synthetic stale entry prints the audited set
+  (`AGENTS.md, .agents/skills, dev, docs, RULES.md, CLAUDE.md, VENDOR.md`), the
+  disagreement framing, the cross-consumer instruction and the lockfile clause.
+  Nothing was written.
+
+### FROZEN-MODIFIED — the re-anchor the Maintainer owes
+
+Re-derived at commit time by filtering the gate manifest's own 183
+`frozen_files` keys against the paths this range changed — not transcribed from
+this plan's prose. The suite does **not** diff the committed fixture, so the
+green run above is **not** evidence that no re-anchor is owed:
+
+* `bootstrap/tests/test_security_stack.py`
+* `scripts/content_scan_runner.py`
+* `templates/modules/team-gated/content_scan_runner.py`
+* `templates/modules/team-gated/run_security_audit.py`
+
+No `bootstrap/_scaffold/` file changed, so **no AST attestation re-anchor is
+owed** — stated because its absence is otherwise indistinguishable from an
+oversight.
+
+### Known omissions
+
+1. **D2 cannot be smoked on this tree.** `python-security` is not in Cairn's
+   installed roster and the orchestrator has no self-hosted twin under
+   `scripts/`, so the pip-audit leg is exercised only through
+   `test_security_stack.py`'s orchestrator fixture against the template file.
+   The plan records this as a real omission and it remains one.
+2. **`base_hash` is not equal to `hash`** for the two reconciled lockfile
+   records — reported in `fd28a83` rather than closed quietly, as Chunk H
+   requires. `--finalize` advances `hash` only. Cairn is its own upstream here
+   and the templates moved in the same range, so this reads as a self-hosted
+   install one upgrade behind its own source rather than a fork; the on-disk
+   base cache already carries the new bytes. Not repaired here.
+3. **check_cairn's 3 findings are a worktree artifact**, not a regression — see
+   *Disposition*, above. Re-measure in the primary checkout to see 0.
+4. **The interpreter version in three earlier commit bodies is wrong.** Commits
+   `69906a6` (A), `236e19a` (B) and `73c78e4` (C) say "Python 3.13.7". The
+   interpreter was **Python 3.13.13** throughout; nothing else about those runs
+   changes. Corrected here rather than by rewriting the commits.
+5. **A stale precedent in this plan's own Chunk G rationale.** The plan cites
+   the suite-cost record (again unbackticked, for the reason above) as one of
+   two precedents for the folder's membership rule. That file is gitignored and
+   untracked, so it is not a committed precedent. The other precedent
+   (`dev/measurement/gitleaks-version-support.md`) is tracked, is an apparatus
+   measurement, and a test binds to it — and the new record follows that
+   pattern exactly: `test_closure_stays_a_bounded_fraction_of_the_discoverable_set`
+   parses the threshold out of the record itself. The placement stands on the
+   one live precedent.
+
+### Chunk M -- NOT EXECUTED
+
+**Chunk M is MAINTAINER-GATED and was skipped in full.** No comment was posted
+to issue #5 or #6, no `gh` invocation was made, and no GitHub state was read or
+changed. The authorization the chunk names does not exist, and neither does the
+gate it also requires (the implementation's External Security code review,
+which has not happened). It remains outstanding.
+
+### Author-disclosed reading calls
+
+Three places where the plan admitted more than one reading and the
+implementation had to choose. Each is a place to look first.
+
+1. **Which distributions get a report row.** Rows are emitted per **vulnerable**
+   distribution — the entries of `Coverage.vulnerable` — so a distribution with
+   zero vulnerabilities and one the tool skipped get no row. This follows the
+   field's name, the partition sentence ("N vulnerabilities across M
+   distributions"), and Chunk M's own wording ("per-distribution counts, not
+   per-finding records"). "Every distribution still appears" is therefore read
+   as *no vulnerable distribution is omitted, whatever its label*, which is
+   exactly what mutation 3 tests.
+2. **`closure` on `classify_pip_audit_output` is deliberately inert.** The plan
+   fixes the parameter and simultaneously requires that supplying it change
+   nothing the function returns. Implemented literally: the parameter is
+   accepted, marked inert at the top of the body, and the docstring says the
+   seam exists so that a node can prove the annotation never became a coverage
+   claim. A reviewer who thinks the parameter should be doing work should read
+   that pairing first.
+3. **Chunk F names the ratio but does not cite the record's path.** The
+   acceptance reads "names the ratio recorded in
+   `dev/measurement/pip-audit-closure-ratio.md`", and the paragraph names the
+   figures. It does not cite the path, because `python-security.md` installs
+   into an adopter's tree and would then point at a file only Cairn has.
