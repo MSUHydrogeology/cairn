@@ -17,6 +17,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -2929,6 +2930,22 @@ def test_the_accounted_git_subcommand_set_is_the_declared_one() -> None:
 RUNNER_TWIN = CAIRN_ROOT / "scripts/run_portable_security_sweeps.py"
 POLICY_TWIN = CAIRN_ROOT / "scripts/portable_security_policy.json"
 DOCTRINE_TWIN = CAIRN_ROOT / "dev/modules/portable-security-sweeps.md"
+
+
+def test_the_runner_comment_references_no_uninstalled_path() -> None:
+    """A comment that points an adopter at a path their install does not
+    contain sends them to a dead link, and the two the runner carried were the
+    reason an adopter concluded the admission ceremony was unreachable.  The
+    module installs exactly three files; a repo-relative path in the runner's
+    own text must be one of them, or one another Cairn module installs."""
+    reachable = {dst for _src, dst, _verbatim in EXPECTED_GROUP}
+    reachable |= {spec.dst for spec in _MODULE_MAPPINGS["python-security"]}
+    cited = set(re.findall(
+        r"(?:dev|scripts|templates|bootstrap|doctrine|docs)/[A-Za-z0-9_./-]+",
+        RUNNER_SRC.read_text(encoding="utf-8"),
+    ))
+    unreachable = sorted(path for path in cited if path not in reachable)
+    assert not unreachable, unreachable
 
 
 def test_the_policy_twin_is_byte_identical_to_its_template_source() -> None:

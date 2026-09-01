@@ -106,6 +106,15 @@ Maintainer-supplied, checksum-verified binary yet. Measured `as_of 2026-08-05`:
 `gitleaks` is **not on this host's `PATH`**, and the plan's second Maintainer
 fence forbids an implementing agent acquiring one.
 
+Superseded `as_of 2026-08-31`: `gitleaks 8.30.1` **is** now on this host's
+`PATH`, at `/opt/homebrew/bin/gitleaks`. **The disposition does not change and
+the set stays empty** — availability was never the control. What admission
+requires is a *Maintainer-supplied, checksum-verified* binary and a
+security-lens review of the record measured against it; a binary an agent finds
+on `PATH` satisfies neither, and the fence above still forbids acquiring one.
+The earlier line is left standing rather than overwritten, so a reader can see
+which fact was true when.
+
 The consequence, stated plainly rather than left to be discovered: the module
 ships **reduced-provenance-only**. Full mode — the only mode that can report
 `0` — is unreachable until a record lands here. An adopter gets useful

@@ -60,9 +60,10 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 # --- the shared aggregate exit space -----------------------------------------
-# Reuses python-security's space (see templates/modules/team-gated/
-# run_security_audit.py) so an adopter reads one exit vocabulary across every
-# Cairn security module.  Precedence: degraded > findings > incomplete > clean.
+# Reuses python-security's space (that module installs its orchestrator at
+# scripts/run_security_audit.py) so an adopter reads one exit vocabulary across
+# every Cairn security module.  Precedence: degraded > findings > incomplete >
+# clean.
 _AGG_CLEAN = 0
 _AGG_INCOMPLETE = 5
 _AGG_FINDINGS = 10
@@ -87,8 +88,10 @@ _ADAPTER = "gitleaks"
 # --- the source-owned admitted-artifact set ----------------------------------
 #: Keyed by ``(version, system, machine)``; the value carries the SHA-256 of
 #: the artifact the admission matrix was actually run against plus the
-#: identifier of its evidence record in
-#: ``dev/measurement/gitleaks-version-support.md``.
+#: identifier of its evidence record.  **Where those records live is the
+#: adopting project's choice** -- this module installs no ledger, so this
+#: comment names no path an adopter cannot follow; the installed module
+#: doctrine at ``dev/modules/portable-security-sweeps.md`` states the cadence.
 #:
 #: **Not policy-controlled, not environment-controlled, and not adopter-
 #: editable without editing reviewed code.**  The digest deliberately does not
@@ -97,10 +100,19 @@ _ADAPTER = "gitleaks"
 #: a candidate *admit its own binary* -- strictly weaker than the self-reported
 #: version string it replaces.
 #:
-#: **Initially empty.**  ``8.30.1`` enters only when the admission subcommand
-#: emits a record against a Maintainer-supplied, checksum-verified binary.  An
-#: empty set means the module ships reduced-provenance-only: useful current-tree
-#: findings and an honest INCOMPLETE, never CLEAN.
+#: **Initially empty, and nothing this program does can change that.**
+#: ``--verify-version-support`` emits an *evidence record*; **emitting one
+#: admits nothing**.  A version enters this set only at the fourth step of a
+#: four-step, deliberately un-automated ceremony: the project supplies a
+#: checksum-verified binary at a stable path, the matrix subcommand emits a
+#: record against it, a security-lens review reads that record, and only then
+#: does a reviewed source change add the key and its measured digest here.  An
+#: automated writer that read a record and edited this block would be a path by
+#: which anything that can produce a record can admit a binary -- the manual
+#: step **is** the control.
+#:
+#: An empty set means the module ships reduced-provenance-only: useful
+#: current-tree findings and an honest INCOMPLETE, never CLEAN.
 
 
 class Admission(NamedTuple):
