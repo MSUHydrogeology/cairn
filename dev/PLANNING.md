@@ -170,6 +170,20 @@ with the plan's filename stem.
   `bootstrap/REANCHOR_RUNBOOK.md`, and it is Maintainer-only and supervised:
   an implementing agent must not perform it.
 
+* **F8 — the post-install report asks for work the profile does not make
+  live.** Deferred 2026-10-01 at the Decision on
+  `proposals/2026-08-20-claude-adopter-path-consolidation.md` (Revision 2 >
+  Scope delta). A `solo-greenfield` install — six modules — reports 22
+  unfilled slots, including `coordination-additions` for a coordination module
+  the profile never installs, which makes the smallest install feel large on
+  first contact. Fixing it means classifying slot obligations by what the
+  accepted profile makes live, which changes the install reporting path in
+  `bootstrap/_scaffold/`: a high-risk surface, so it takes its own proposal.
+  Maintainer authorization for the deferral, quoted verbatim:
+
+  > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
+  > board. No second review round; External floor waived."
+
 
 **Nineteen rows left this block on 2026-08-27**, at the sweep's C7 bankruptcy
 pass, taking it from 852 lines to 260.
