@@ -1261,3 +1261,172 @@ itself authorize:
 Cairn's current structure is organically derived and load-bearing; the horizons
 extend it, they do not replace it.  Concrete moves go through the normal Cairn
 PR-flow / proposal cycle.
+
+## Fresh External assessment -- Codex -- 2026-10-01
+
+Anthony, I still believe in the problem Cairn addresses, but less in the breadth
+of the framework proposed here. Better agents make protecting scientific
+judgment more important; they do not make a larger methodology more valuable.
+I would keep the portable decision record, understandable explanations,
+independent challenge, and restraint. I would put community modes, new axes,
+and automatic maturity machinery behind evidence from outside adoption.
+The sharper promise is: **delegate coding without losing control of the
+scientific assumptions, evidence, and decisions.** Whether Cairn delivers that
+better than ordinary good practice remains an open question, not an established
+benefit. This is a recommendation about direction, not implementation authority.
+
+**Basis:** the full guide star, its committed version at
+`c5c963e097e15f52b73d850a86aaf5895fcb0775`, current `AGENTS.md` and
+`doctrine/dual-review.md`, session orientation, and the primary sources below.
+The assessment is fresh against today's artifacts, not a clearing round for an
+earlier review. Sources and conclusions are dated; model progress can change
+the balance again.
+
+### What has changed in AI
+
+* **Larger autonomous coding tasks are credible, under particular conditions.**
+  Epoch AI and METR's April 2026 MirrorCode report describes a successful
+  reimplementation of a roughly 16,000-line bioinformatics toolkit. The agent
+  could query the original program and had extensive executable tests. The
+  authors explicitly caution against generalizing this to unspecified software
+  development. My inference: the bottleneck is increasingly deciding what
+  correct means and providing useful feedback, rather than typing the solution.
+  [MirrorCode preliminary results](https://epoch.ai/publications/mirrorcode-preliminary-results).
+* **The 2025 slowdown is no longer an adequate picture of current productivity.**
+  METR's February 2026 follow-up suggests improvement, but selection effects
+  and concurrent-agent timing made the magnitude unreliable. Neither study
+  compares Cairn with a lighter AI-assisted workflow. The 19% slowdown remains
+  a result about its original setting; it does not establish that Cairn's
+  front-loaded process pays back. [METR's study-design update](https://metr.org/blog/2026-02-24-uplift-update/).
+* **Scientific coding is neither solved nor adequately described as weak.**
+  SWE-bench Science's September revision reports its best evaluated agent below
+  50% on 119 repository tasks, including failures of scientific abstraction and
+  integration. Conversely, SciCode-Verified's August authors report large gains
+  after domain experts repaired faulty specifications and grading, with
+  main-problem accuracy rising from 9--27% to 69--92% across twelve model
+  snapshots. These are different benchmarks, not comparable scores, and both
+  are preprints. Together they challenge two easy stories: that good coding
+  scores establish scientific reliability, and that every failed scientific
+  test establishes model incompetence. The correctness of the test matters too.
+  [SWE-bench Science, v2](https://arxiv.org/abs/2608.19799v2);
+  [SciCode-Verified, v1](https://arxiv.org/abs/2608.04975v1).
+* **Portable instructions are becoming ordinary infrastructure, not a moat.**
+  The open Agent Skills format already packages reusable instructions and
+  resources across compatible clients. Meanwhile, the September 29 revision
+  of *Evaluating AGENTS.md* finds no general task-success improvement from
+  repository context files and over 20% additional inference cost on average;
+  non-standard practices can still justify instructions. That study does not
+  test Cairn, but it makes both automatic benefit and a universal token-budget
+  threshold unjustified. Keep instructions whose useful effect is demonstrated.
+  [Agent Skills specification overview](https://agentskills.io/home);
+  [Evaluating AGENTS.md, v3](https://arxiv.org/abs/2602.11988v3).
+
+### Where I push back, most consequential first
+
+1. **Scientific assurance must not collapse into agreement between agents.**
+   Two reviewers can agree with a wrong specification; a green test can encode
+   the same mistake as the implementation. Concrete constructed example: a
+   water-balance calculation and its expected-value test both reverse the sign
+   of an outflow term. Agreement proves consistency, not conservation. A clear
+   explanation can make that mistake easier to notice, but cannot certify it.
+   Nor does a different model architecture demonstrate independent reasoning;
+   the guide star's claim to be more rigorous than scientific peer review goes
+   beyond its evidence. For consequential scientific changes, independence
+   should include a check grounded outside the proposed implementation: an
+   analytical solution, separately justified conservation constraint, trusted
+   observation, or domain expert's assessment. This need not be another standing
+   review round. It can be one well-chosen scientific acceptance check. Human
+   scientific authority should not become approval of an agent-authored story
+   that nobody tested against a separate basis.
+
+2. **A sentence can replace bookkeeping; it cannot guarantee compliance.**
+   The assertion that agents re-read doctrine and comply is too strong. A
+   concrete counterexample appears in MirrorCode: an agent chose eager rather
+   than lazy evaluation despite the specification repeatedly emphasizing the
+   latter, recognized the mismatch, and kept patching around it.
+   [MirrorCode's Pkl analysis](https://epoch.ai/publications/mirrorcode-preliminary-results).
+   More capable coding does not imply reliable observance of every instruction.
+   This is not a case for restoring the deleted lifecycle enforcement. Keep advisory tools
+   advisory; retain physical security boundaries; and make scientific checks
+   and required human decisions visible at the point of action. A short task
+   handoff naming the applicable constraints, evidence, and unresolved decisions
+   is cheaper than reloading the entire deliberation history. Git rollback also
+   cannot retract a published scientific conclusion or recover overwritten
+   unversioned data. Reversibility must be assessed beyond the repository.
+
+3. **The evidence establishes experience, not efficacy.**
+   The two cases under one Maintainer are valuable demonstrations of use, not
+   independent evidence that Cairn reduces errors or total human effort.
+   Likewise, a small share of functional lines is a warning about allocation,
+   not a measurement of value: one scientific correction can matter more than
+   thousands of product lines. Literature grounding explains why a mechanism
+   might help; it does not show that this particular bundle helps enough to
+   justify its costs. I would change the strategic confidence from "proven in
+   use" and an "evidence-based" payback to **plausible, exercised here, and
+   awaiting comparative evidence**. Faster agents make that distinction more
+   urgent: elaborate process can consume the benefit they otherwise offer.
+
+4. **The living reference now mixes incompatible operating states.**
+   Demonstration: "Current structure" still requires a different agent type or
+   human for External review, while current `AGENTS.md` and
+   `doctrine/dual-review.md` explicitly do not. "What the anchors bound" says
+   adopters' governing file lacks the comprehension floor; `AGENTS.md` now
+   contains "Comprehension is a precondition of the Decision." "What Cairn is
+   today" still presents the fold-back mechanism, whose implementation was
+   removed, as shipped apparatus. The earlier unmeasured-time-series gap also
+   contradicts the later statement that the series exists. These are not votes
+   to reopen settled decisions. They show that this document cannot presently
+   orient a new collaborator reliably. An eventual body revision should separate
+   current commitments, historical rationale, and untested possibilities, and
+   point to operating doctrine rather than duplicate it.
+
+5. **The horizons still invite the accretion the refocus diagnosed.**
+   Community governance, communication classes, deliverable axes, and a
+   self-instrumenting maturity ladder are plausible answers to different
+   problems. None automatically follows from more capable agents. A concrete
+   cheaper alternative to a new scientific axis is a worked example showing
+   how one hydrology change is specified, independently checked, reproduced,
+   and explained to its scientist. A second domain can reveal what generalizes
+   before a general configuration system is built. Community governance should
+   answer actual contributors' needs; a public release alone does not create
+   them. I would keep these as possibilities, not the next development queue.
+
+### The strongest alternative, and what would change my mind
+
+The serious competitor is not careless prompting. It is a scientist using a
+current coding agent, ordinary version control and tests, a small local
+instruction file, and short records for important decisions. That already buys
+much of Cairn's portability and reviewability with less adoption cost. Cairn
+earns its place only if its science-specific guidance and decision discipline
+produce a useful difference. **Yes, there is still something worth adopting
+beyond "prompt carefully" -- but the differentiator should be scientific
+assurance and recoverable judgment, not ownership of the agent workflow.**
+
+Before another framework expansion, I would try a small outside adoption on
+real scientific changes, alongside comparable work using that lighter
+baseline. Decide beforehand what improvement would be worth the extra effort.
+Record total scientist attention, including setup, reading, review, correction,
+and later resumption; check scientific outcomes against a separately justified
+basis; ask whether another person can reproduce the result and understand its
+assumptions later. Note model/tool versions and task-selection differences.
+Use existing artifacts and a short retrospective, not a new measurement system.
+A few cases would be informative, not a controlled proof.
+
+My recommendation would be falsified if the lighter baseline delivers the same
+scientific reliability and later comprehension with less attention, or if an
+outside scientist cannot use Cairn without sustained help from its author.
+Conversely, independently detected scientific mistakes, successful handoffs,
+and attention saved beyond setup would justify deepening it. Progress in AI
+should periodically renew this comparison, not automatically add or remove
+ceremony. The guide star should remain the scientist's work, not Cairn's growth.
+
+**Coverage and limits:** read the guide star in full and checked the operative
+review doctrine and selected current surfaces against its claims. Read the
+linked primary reports/documentation and paper abstracts; did not reproduce
+their experiments, audit all 21 literature anchors, or re-derive the historic
+commit-accounting tables. No full suite was run for this prose-only assessment.
+The existing strategy body is unchanged; this comment does not revise doctrine,
+reopen accepted dispositions, or authorize a new work program.
+Document-scoped claim, local-link, and snippet checks passed with Python
+3.13.13; the cited new external sources were opened separately. The neutrality
+gate does not scan `dev/`; a search identified no tests reading this artifact.
