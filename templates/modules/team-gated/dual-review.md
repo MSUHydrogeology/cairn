@@ -28,7 +28,7 @@ Merged into `dev/agent_collaboration.md`:
 >
 > Both tiers work through the shared **review sweep** — the generic,
 > change-agnostic lens roster below — and close with the **two-part
-> coverage line** + an explicit second-round recommendation. The
+> coverage line**; neither tier prescribes a second round. The
 > External tier layers its independence stance *on top* of that shared
 > base — the *make-it-prove-itself* read is what a different agent type
 > brings that the sweep alone cannot — and its coverage line names the

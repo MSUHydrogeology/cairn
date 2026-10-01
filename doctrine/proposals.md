@@ -36,7 +36,8 @@ proposed  ->  reviewed  ->  revised  ->  accepted (stays in dev/proposals/)
 * **revised** — the author appends a `## Response` **and one complete
   current-contract revision** (`## Revised proposal`, or `## Revision <n>`).
   The revision is mandatory with every Response, not conditional on how
-  much changed. Review and revision may repeat.
+  much changed. One round: the revision carries the proposal to the
+  Decision, and back to review only if it widened scope.
 * **accepted / rejected / superseded** — the Maintainer appends the
   `## Decision`. **The Decision commit does not archive an *accepted*
   proposal**: it stays in `dev/proposals/` and moves to `archive/`

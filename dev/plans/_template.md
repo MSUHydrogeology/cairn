@@ -10,7 +10,7 @@ happens and how you will know it worked; it does not re-argue the decision.
 ## Lifecycle
 
 ```
-awaiting-plan-review <-> revising-plan -> ready-to-implement
+awaiting-plan-review -> revising-plan -> ready-to-implement
   -> implementing -> awaiting-code-review <-> revising-code
   -> ready-to-archive -> archived
 ```
@@ -32,8 +32,9 @@ disposition table that *points at* them — a second copy of a cell is
 immediately a second answer to the same question.
 Once execution of a chunk begins, changes append instead.
 
-**A plan review is Internal, fresh-context.** Code review's floor is separate
-and independent: not the implementing agent.
+**A plan review is Internal, fresh-context, and one round.** The fold carries
+the plan to `ready-to-implement`; there is no second plan-review pass. Code
+review's floor is separate and independent: not the implementing agent.
 
 **Deviating from an accepted plan takes the Maintainer's word** — new scope, a
 contract review never saw, an acceptance criterion you cannot meet, **or
@@ -264,7 +265,10 @@ the left margin is what the checker reads.
 
 Floor: a same-type agent in an independent context, not the implementing agent.
 Self-committed by its author; blocking findings move the plan to
-`revising-code`. Same basis block, with the range made explicit:
+`revising-code`, and the implementer's answer carries it to `ready-to-archive`.
+A second code-review pass runs only when the revision introduced new defects,
+never to re-confirm that the first round's findings were addressed. Same basis
+block, with the range made explicit:
 
 ```
 Reviewed commit: <full commit id>

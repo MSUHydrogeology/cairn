@@ -45,8 +45,9 @@ Each status names **who holds it next**. A review moves a proposal to
 `revising`; **the author's Response and revision carry it to
 `awaiting-decision`**, which is the Maintainer's. There is no clearing round —
 no review is run merely to move a status — except a Security Review, which
-clears the obligation it was raised against. `accepted` is terminal —
-archiving is a file move, not a status.
+clears the obligation it was raised against. A second review round exists only
+when the revision **widened scope** — material the review never saw.
+`accepted` is terminal — archiving is a file move, not a status.
 
 Two rules are bright-line:
 

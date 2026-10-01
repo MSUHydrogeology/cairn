@@ -133,7 +133,8 @@ the closed triage procedure above routes there.
 flowchart LR
     AR["awaiting-review<br/>(a reviewer holds it)"] --> AD["awaiting-decision<br/>(the Maintainer holds it)"]
     AR --> RV["revising<br/>(the author holds it)"]
-    RV --> AR
+    RV --> AD
+    RV -. revision widened scope .-> AR
     AD --> ACC["accepted"]
     AD --> REJ["rejected"]
     AD --> SUP["superseded"]
@@ -154,10 +155,12 @@ and in longitudinal metrics, and are refused on an active one.
   a review. Either way the next move is someone else's.
 * **revising** — held by the author. A *blocking* review moved it
   here (see `dual-review.md`); the author owes a Response **and** one
-  complete current-contract revision, which together return it to
-  `awaiting-review`. Review and revision may repeat.
-* **awaiting-decision** — held by the Human Maintainer. A *clearing*
-  review moved it here; no further authorship is owed, only the
+  complete current-contract revision, which together carry it to
+  `awaiting-decision`. It returns to `awaiting-review` only when the
+  revision widened scope — added material the review never saw — and
+  only that material gets the round.
+* **awaiting-decision** — held by the Human Maintainer. The author's
+  revision moved it here; no further authorship is owed, only the
   Decision.
 * **accepted / rejected / superseded** — the Human Maintainer
   appends the Decision. Acceptance is a *decision*, not an
@@ -218,13 +221,14 @@ records *how the work was carried out, and that it was verified*.
 ```mermaid
 flowchart TD
     APR["awaiting-plan-review<br/>(a plan reviewer holds it)"] --> RVP["revising-plan<br/>(the author holds it)"]
-    RVP --> APR
     APR --> RTI["ready-to-implement<br/>(the implementer holds it)"]
+    RVP --> RTI
     RTI --> IMP["implementing<br/>(the implementer holds it)"]
     IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
-    RVC --> ACR
     ACR --> RTA["ready-to-archive"]
+    RVC --> RTA
+    RVC -. revision introduced new defects .-> ACR
     RTA --> ARC["archived"]
 ```
 
@@ -237,8 +241,8 @@ holder.
   but implementation has not started; it waits for its plan-review
   section (see the plan-review precondition below).
 * **revising-plan** — held by the author, who folds plan-review
-  findings into the plan's operative cells and returns it to
-  `awaiting-plan-review`.
+  findings into the plan's operative cells; the fold carries it to
+  `ready-to-implement`. Plan review has one round, never a second.
 * **ready-to-implement** — held by the implementer: the review gate is
   satisfied and work may begin. A plan marked `Plan review: not
   required` may **open** directly here, or at `implementing` when the
@@ -251,7 +255,8 @@ holder.
 * **awaiting-code-review** — held by a code reviewer, who is never the
   implementing agent.
 * **revising-code** — held by the implementer, answering code-review
-  findings; it returns to `awaiting-code-review`.
+  findings; the answer carries it to `ready-to-archive`, and back to
+  `awaiting-code-review` only when the revision introduced new defects.
 * **ready-to-archive** — held by whoever closes the loop: review has
   passed and the archive commit is owed.
 * **archived** — lasting truth has migrated to durable homes (topic

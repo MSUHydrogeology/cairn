@@ -140,15 +140,30 @@ slip through unblocked.
 **The editor may end any loop at any time** over open findings by naming
 them.
 
-**One loop, closed by the author.** A review round and the author's revision
+**One round, closed by the author.** A review round and the author's revision
 close the loop, and **the author's revision carries the status forward** — there
 is no clearing round, and no review is run merely to move a status. The
-exception is a **Security Review**, which does clear the obligation it was
-raised against.
+reviewer has already said what would satisfy each blocking finding; doing it
+*is* the closure. Re-reading the revision to confirm that the reviewer's own
+instructions were followed is a second round nobody needs.
 
-**A second round is taken only for a recorded reason** — a Security Review, or
-scope the Maintainer widened, or a comparable cause named on the artifact.
-Absent one, the artifact moves on.
+**When a second round exists.** Three cases, each tied to material the first
+round could not have read; absent one, the artifact moves on.
+
+* **Proposal review: only when the revision widened scope.** A Response that
+  adds material the review never saw has unreviewed content, and that content
+  — not the whole proposal — gets a round. A revision that only answers the
+  findings goes straight to `awaiting-decision`.
+* **Plan review: never.** Findings fold into the plan's operative cells and the
+  plan proceeds to `ready-to-implement`. Whatever the fold leaves unreviewed is
+  caught by implementation and code review, which were always going to run.
+* **Code review: only when the revision introduced new defects.** The
+  implementer's answer carries the plan to `ready-to-archive`. A second pass
+  runs only if a reader of the revision finds something new *in it* — never to
+  re-confirm that the first round's findings were addressed.
+* **Security Review is the exception.** It clears the obligation it was raised
+  against and takes the rounds it needs; a security finding not yet closed is
+  reason enough for another.
 
 The reason is not that late rounds find nothing; they find plenty. It is that
 they find it **redundantly**: implementation discovers what deliberation would
@@ -161,24 +176,7 @@ leanness here is a **correctness** property and not only a cost one: an
 over-stuffed record degrades the accuracy of every reader after it. The
 standard is a good-faith attempt to find things, not exhaustion.
 
-## Decision-support Round-2 review
-
-A second reviewer may read the *revised* proposal — surfacing what the revision
-introduced, or what a different blind-spot profile exposes. That read is
-**Decision-support**: it feeds `awaiting-decision`, never another revision.
-
-* It does not move status to `revising`, and the author writes no Response to
-  it. The author's side of the cycle has closed.
-* The Maintainer's Decision addresses Round-1 and Round-2 findings in one place.
-* A Round-2 reviewer who thinks the revision is fundamentally wrong recommends
-  **reject or supersede**; they cannot require another revision.
-* A Round-1 review cannot be re-labelled Round-2 to avoid Responding to it.
-* The Decision closes the phase. Later critique becomes a new proposal.
-
-This adds a shape, not a tier; the floors above apply unchanged. Naming it
-matters because both failure modes are real: an unnamed second reviewer is
-either mis-modelled as Round-1 and restarts the cycle, or is dropped and the
-Decision is taken in tension with a critique the lifecycle never metabolised.
+The Decision closes the phase. Later critique becomes a new proposal.
 
 ## Plan review is Internal, always
 
@@ -241,12 +239,11 @@ parser branch is invented for it.
 
 **For a scientific assumption, a destructive migration, or a
 governing-doctrine / lifecycle-enforcement change**, the fresh-context
-Internal reviewer's judgement plus the *optional* `recommend-and-decide`
-escalation below is the whole structural guarantee a plan gets before
-implementation — there is no tier a plan can acquire from its topic or
-its assurance path that buys a different-agent-type read automatically.
-Any reviewer, author, or Maintainer may still spend a second
-independent pass deliberately, through `recommend-and-decide`.
+Internal reviewer's judgement is the whole structural guarantee a plan
+gets before implementation — there is no tier a plan can acquire from its
+topic or its assurance path that buys a different-agent-type read, and no
+second plan-review round. The Maintainer may still ask any reader for
+anything; that is their choice to spend, not a reviewer's to prescribe.
 
 **Type-scoped removal, not vocabulary deletion.** `External` remains
 valid vocabulary where it survives: **proposal** reviews and
@@ -441,8 +438,8 @@ For lens #2 (production path), for example:
 
 **The sweep is a floor, not a ceiling**, and it **never silently
 downgrades a declared-`required` review tier.** It names the minimum
-breadth to cover and report; it can recommend *upward* escalation when
-coverage is weak (see *recommend-and-decide*, below), but a tier the
+breadth to cover and report; its negative-space line tells the Maintainer
+what was not covered (see *The coverage line*, below), and a tier the
 lifecycle declared `required` still runs regardless.
 
 The domain adds its own probes — units, coordinate systems, numerical
@@ -575,16 +572,11 @@ judgment. **Mechanize when the failure is silent, the check is substantive
 rather than formal, and the consequence is expensive or hard to reverse.**
 Otherwise state the norm and accept the occasional miss.
 
-## Recommend-and-decide — the second independent pass
+## The coverage line — what the pass did not cover
 
-The review sweep is the *one* pass that always runs. What it cannot
-decide on its own is whether a **second, structurally-independent
-(cross-type) pass** is worth its cost — that is the Maintainer's call,
-and the first reviewer's job is to *inform* it, not pre-empt it. So
-every first-pass review **ends with two things**.
-
-**1. A two-part coverage line.** Not a verdict — a map of what the pass
-did and did not cover:
+The review sweep is the one pass that runs, and it ends with a **two-part
+coverage line**. Not a verdict — a map of what the pass did and did not
+cover:
 
 * **Covered** — the lenses swept, each with its falsifiable citation
   (the file / test-node / line / command that backs it).
@@ -592,40 +584,22 @@ did and did not cover:
   exercise the scientific math", "could not run the sibling-repo test",
   "same-type reviewer — no cross-type independence on this pass." A
   covered-only line manufactures false comfort; the *negative* space is
-  what the Maintainer most needs, and it is the evidence behind the
-  recommendation.
+  what the Maintainer most needs at Decision.
 
-**2. An explicit second-round recommendation.** *Recommended* or *not
-recommended*, with reasons, grounded in that coverage line. The factors
-that might once have fired an automatic second review — high blast
-radius, a novel framework or abstraction, a scientific-correctness or
-security / trust-boundary surface, weak coverage in the negative-space
-line — are **inputs to this recommendation**, not a gate that fires by
-itself.
+**The coverage line does not end in a recommendation for more review.**
+High blast radius, a novel abstraction, a scientific-correctness or
+trust-boundary surface, thin coverage — the Maintainer reads these off
+the negative space and may act on them by asking any reader for anything.
+They are not a reviewer's lever for prescribing another round. Reviewers
+over-prescribe rounds the way urgent care over-prescribes antibiotics:
+each is cheap to recommend and never shown wrong, because the round not
+run cannot be blamed for anything. The only triggers for a second round
+are the ones *One round, closed by the author* names.
 
-**The decision is the Maintainer's, never an automatic default.** A
-second independent round is neither default-on for the "risky" triggers
-nor default-off for the routine; the reviewer recommends, the Maintainer
-decides per change. This is the same authority structure as the
-**Decision-support Round-2 review** (above): a later pass provides
-independent perspective *to the Maintainer*, who is the only actor with
-authority to weigh competing reads and Decide.
-
-**A declared-`required` tier stays a floor.** Recommend-and-decide
-governs only the *optional escalation beyond* what the lifecycle already
-declared. A `Plan review: required(Internal + Internal Security Review)`
-line still runs regardless of any recommendation — "don't default to a
-second round" never downgrades a tier the proposal or plan declared
+**A declared-`required` tier stays a floor.** A `Plan review:
+required(Internal + Internal Security Review)` line runs regardless —
+"one round" never downgrades a tier the proposal or plan declared
 `required`.
-
-Why this shape: the cost of a reviewer-pass is real, and most redundant
-later passes only re-caught *lens-coverage* misses the sweep now folds
-into pass one. But some later passes catch what a *different prior*
-genuinely sees first — irreducible independence the sweep cannot
-substitute for. The record cannot size those two shares in advance, so
-the safe instrument is not an automatic rule (which would trade away an
-unknown amount of independence) but a human deciding per change, with
-the coverage line as evidence.
 
 ## Briefs to reviewers — don't telegraph the lens
 

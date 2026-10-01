@@ -27,13 +27,14 @@ and warning behavior is the note's own contract, not restated here.
 ```mermaid
 flowchart TD
     APR["awaiting-plan-review<br/>(a plan reviewer holds it)"] --> RVP["revising-plan<br/>(the author holds it)"]
-    RVP --> APR
     APR --> RTI["ready-to-implement<br/>(the implementer holds it)"]
+    RVP --> RTI
     RTI --> IMP["implementing<br/>(the implementer holds it)"]
     IMP --> ACR["awaiting-code-review<br/>(a code reviewer, never the implementer)"]
     ACR --> RVC["revising-code<br/>(the implementer holds it)"]
-    RVC --> ACR
     ACR --> RTA["ready-to-archive"]
+    RVC --> RTA
+    RVC -. revision introduced new defects .-> ACR
     RTA --> ARC["archived"]
 ```
 
@@ -45,7 +46,8 @@ proposal. Each status names who holds it next.
   implementation has not started, waiting for its plan-review section
   to land.
 * **revising-plan** — the author folds plan-review findings into the
-  plan's operative cells, returning it to `awaiting-plan-review`.
+  plan's operative cells; the fold carries it to `ready-to-implement`.
+  Plan review has one round, never a second.
 * **ready-to-implement** — the review gate is satisfied and work may
   begin. A plan marked `Plan review: not required` may open directly
   here, or at `implementing` when the opening commit already carries
@@ -53,8 +55,9 @@ proposal. Each status names who holds it next.
 * **implementing** — implementation commits land.
 * **awaiting-code-review** — a code-review pass examines the
   implementation; the reviewer is never the implementing agent.
-* **revising-code** — the implementer answers code-review findings,
-  returning it to `awaiting-code-review`.
+* **revising-code** — the implementer answers code-review findings; the
+  answer carries it to `ready-to-archive`, and back to
+  `awaiting-code-review` only when the revision introduced new defects.
 * **ready-to-archive** — review has passed and the archive commit is
   owed.
 * **archived** — lasting truth has migrated to durable homes and the
@@ -691,15 +694,10 @@ sufficient because <reason>).
 1. <action>
 2. <action>
 
-**Coverage + second-round recommendation** (see `doctrine/dual-review.md` >
-"Recommend-and-decide"):
+**Coverage line** (see `doctrine/dual-review.md` > "The coverage line"):
 
 * **Covered** -- <review-sweep lenses swept, each with a falsifiable citation>
 * **Not covered / low confidence** -- <the negative space>
-
-Recommendation: <recommended / not recommended a second cross-type pass, with
-reasons grounded in the negative space>. (A declared-`required` tier runs
-regardless.)
 ```
 
 Priority labels:
@@ -841,8 +839,11 @@ Sequence-revision rule (see Mutability rule above).
 
 ### Multi-round review
 
-Each subsequent review pass gets its own dated subsection with a round
-suffix:
+A plan review has one round; the fold carries the plan forward and no
+second plan-review pass is run. The only plan-stage pass that may recur
+is a **Security Review**, which takes the rounds it needs to close the
+obligation it was raised against. When one does, each later pass gets its
+own dated subsection with a round suffix:
 
 ```
 ## Plan review -- <reviewer> -- YYYY-MM-DD (round 2)
@@ -889,13 +890,12 @@ confirming second different-agent-type pass. Minimal ledger shape:
 * **Verification** — the checks run (or consciously not run, with why).
 * **Residual risk** — what remains unverified.
 
-**End with the coverage line + recommendation** (`doctrine/dual-review.md` >
-"Recommend-and-decide"): **Covered** (the review-sweep lenses swept, with
-citations) / **Not covered / low confidence** (the negative space), then a
-recommendation on whether a further independent pass is warranted. For a clean
-final pre-archive review this composes with the falsification ledger above —
-the ledger *is* the "Covered" evidence, and the negative space is what a
-second pass would target.
+**End with the coverage line** (`doctrine/dual-review.md` > "The coverage
+line"): **Covered** (the review-sweep lenses swept, with citations) / **Not
+covered / low confidence** (the negative space). For a clean final pre-archive
+review this composes with the falsification ledger above — the ledger *is* the
+"Covered" evidence, and the negative space is the residual the Maintainer
+reads at archive.
 
 **Reviewer identity** (per the structural-independence tier rule, see
 `dev/collaboration_agreement.md` > "External Review Norms" and

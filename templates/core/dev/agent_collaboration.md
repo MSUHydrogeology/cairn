@@ -94,10 +94,6 @@ the baseline, so declining it is not a reduction and owes no record
 (see `doctrine/dual-review.md` > "Review expectations — the
 scope-reduction trap").
 
-A **Decision-support Round-2 review** is a Review section appended *after* the
-author's Response and revised proposal; it feeds the Maintainer's Decision
-rather than triggering another revision cycle.
-
 ## Surfacing judgment calls to the Maintainer
 
 Most calls are the agent's to make. Escalate when the answer would change what

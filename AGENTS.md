@@ -31,12 +31,14 @@ awaiting-review <-> revising -> awaiting-decision
 A review moves a proposal to `revising`; **the author's Response and revision
 carry it to `awaiting-decision`**, which is the Maintainer's. There is no
 clearing round — no review is run merely to move a status — except a Security
-Review, which clears the obligation it was raised against. A second round is
-taken only for a reason recorded on the artifact. A non-trivial accepted
-proposal then gets a plan:
+Review, which clears the obligation it was raised against. A second round
+exists only for material the first could not have read: a proposal revision
+that **widened scope**, a code revision that **introduced new defects**, or a
+Security Review still open. **Plan review never has a second round.** A
+non-trivial accepted proposal then gets a plan:
 
 ```
-awaiting-plan-review <-> revising-plan -> ready-to-implement
+awaiting-plan-review -> revising-plan -> ready-to-implement
   -> implementing -> awaiting-code-review <-> revising-code
   -> ready-to-archive -> archived
 ```
