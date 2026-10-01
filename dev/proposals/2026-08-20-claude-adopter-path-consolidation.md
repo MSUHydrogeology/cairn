@@ -3,24 +3,28 @@
 **Author**: Claude (Strategy)
 **Model**: Opus 5 (opened); Opus 5.5 (Response, 2026-10-01)
 **Opened**: 2026-08-20
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: required(External) — the deliberate-lane proposal floor
 (`doctrine/dual-review.md:217`). The one round taken (2026-08-31) was Internal;
-the Response recommends the Maintainer waive the floor at Decision rather than
-run a second round, and says why.
+the first Response recommends the Maintainer waive the floor at Decision rather
+than run a second round, and says why.
 **Assurance path**: high-assurance — the change edits `doctrine/onboarding.md`,
-and anything under `doctrine/` is a mandatory trigger.
-**Touches** (Revision 1 — the documentation half): `README.md`;
+removes code from adopter-executed scripts, and changes frozen files.
+**Touches** (Revision 2 — retire the adoption levels): `README.md`;
 `on-ramp/README.md`; `docs/getting-started.md`; `docs/quickstart.md`;
-`docs/solo-legacy-recipe.md`; `bootstrap/profiles/solo-greenfield.yml` (header
-comment only); `bootstrap/prompts/bootstrap-lite.md`; `bootstrap/BOOTSTRAP.md`;
-`bootstrap/UPGRADE.md` (one line); `templates/README.md`;
-`templates/codebase-readiness-report.md`; `templates/onboarding/*.md` (prompt
-bodies; row headings unchanged); **`doctrine/onboarding.md`**;
-`examples/minimal/README.md`; `examples/scientific-minimal/README.md`. **Not
-touched:** `bootstrap/_scaffold/`, `scripts/_onboarding/` and its template
-twin, any test, any frozen file — the executable half is split out (Revision 1
-> Scope delta).
+`docs/solo-legacy-recipe.md`; `docs/agent-team-onboarding.md`;
+`docs/workflow-role.md`; `docs/further-reading.md`; the three
+`bootstrap/profiles/*.yml` header comments; `bootstrap/prompts/bootstrap-lite.md`;
+`bootstrap/BOOTSTRAP.md`; `bootstrap/UPGRADE.md` (one line);
+`templates/README.md`; `templates/codebase-readiness-report.md`;
+`templates/onboarding/*.md` and Cairn's copies in `dev/modules/onboarding/`;
+**`doctrine/onboarding.md`**; `examples/minimal/README.md`;
+`examples/scientific-minimal/README.md`; `scripts/_onboarding/{triggers,prompts,__init__}.py`
+and their byte-twins under `templates/modules/default-on/_onboarding/`; the
+onboarding trigger and active-surfacing tests; Cairn's own
+`dev/.cairn/cairn-lock.yml` (re-finalize); and, Maintainer-only,
+`bootstrap/tests/fixtures/gate_manifest.json` (re-anchor). **Not touched:**
+`bootstrap/_scaffold/`.
 **Related**: `dev/strategy/archive/2026-06-12-claude-adopter-friction-audit.md` (merged 2026-08-26 into `dev/strategy/2026-07-08-claude-broad-look-skeptical-review.md`) — this is
 the "adopter-path consolidation proposal" that note named as its first
 downstream surface and that was never opened;
@@ -29,8 +33,9 @@ deferred the README lines here) and > F8 (the install-output friction, deferred
 here and re-deferred below); the same-day sibling
 `dev/proposals/archive/2026-08-20-claude-adopt-into-existing-tree.md` (disjoint
 surfaces, same triage).
-**Plan review**: required(**Internal**) — with item 6 split out, the plan is a
-prose rewrite over the surfaces enumerated in Revision 1. Ratified at Decision.
+**Plan review**: required(**Internal**) — the plan is a documentation rewrite
+plus a bounded deletion over the surfaces enumerated in Revision 2, with no open
+design question. Ratified at Decision.
 
 ## Context
 
@@ -1175,3 +1180,362 @@ the author's reply between the two messages: adopt alternative A3 (retire the
 Level 1 / Level 2 distinction), return the proposal to `revising`, and write
 Revision 2. Status moves `awaiting-decision` -> `revising`. Scribed by Claude
 (claude-opus-5-5) on the Maintainer's instruction.
+
+## Response -- Claude (author) -- 2026-10-01 (Revision 2)
+
+**Model**: claude-opus-5-5 (Claude Opus 5.5)
+Responding to: the Maintainer direction above. Revision 2 replaces Revision 1 in full.
+
+**The Maintainer is right, and the staffing criterion of Revision 1 fails on the
+Maintainer's point.** Any agent that delegates to a subagent is two agents working at once, so
+"more than one agent in the tree at once" describes nearly every adopter. This
+repository is the example: one Maintainer, routinely two sessions plus subagents.
+The deeper reason is that Level 1's stated purpose is gone. `on-ramp/README.md:35`
+justifies it for adopters for whom "staffing a second independent reviewer is not
+yet realistic"; since 2026-09-01 a fresh session satisfies every review tier, and
+delegation supplies one for free. **Revision 2 retires the levels.**
+
+**One departure from what the author described to the Maintainer: the code half
+comes back.** The reply said the executable half would become "deleting the level
+triggers". Writing this revision showed it should not stay split:
+
+* **There is no design question left.** The split existed because item 6 was "a
+  design still movable". With levels retired, item 6 is a deletion: the four level
+  triggers (the two deepen triggers drive no prompt anywhere -- checked) and the one
+  graduation prompt.
+* **Splitting would ship a contradiction.** The documentation would say there are no
+  levels while every scaffold install still received a prompt headed "Level 1->2
+  graduation".
+* **The ceremony is already queued.** The deletion changes frozen files, so it needs
+  the Maintainer-only gate-manifest re-anchor. `dev/PLANNING.md` > Queued already
+  holds that ceremony for ten files, including three this change also touches (from
+  `a1a58f93`). This adds a few files to a batch the Maintainer runs anyway, rather
+  than a second proposal, review and plan.
+
+So the scope returns to the proposal as opened -- item 6 delivered as a deletion --
+and Revision 1's Scope delta is withdrawn.
+
+**Effect on the review's findings**, where Revision 1's disposition changes:
+
+* **[R1]** -- no criterion is needed; there are no levels to tell apart. Its
+  substance survives as "the profile decides the modules".
+* **[R4]** -- frozen files change again. The plan carries a MAINTAINER-ONLY chunk,
+  sequenced after the last implementation commit, naming
+  `bootstrap/REANCHOR_RUNBOOK.md` and the expected changed set, joined to the queued
+  batch.
+* **[R5]** -- the row is removed rather than protected. Adopters who already dismissed
+  it keep an activation-log line that nothing reads; those who have not never see it.
+  No prompt re-fires.
+* **[R7]** -- the negative trigger invariant is back, strengthened: no trigger id
+  beginning `level-` from the trigger evaluator, on a fresh install or a mature one.
+* **[N1]** -- all three profiles' header comments change, not only `solo-greenfield`.
+* **[N6] / A3** -- adopted. The review found the A3 rejection rested on a consequence
+  no code path produces.
+* **[N7]** -- back in: Cairn's own lockfile is re-finalized and
+  `bootstrap/verify_integrity.py` runs, because `scripts/_onboarding/` is
+  lockfile-recorded.
+* **[N8]** -- moot. `second-agent-type` keeps its own prompt.
+
+Every other disposition in Revision 1 stands as written.
+
+**On a second review round.** Revision 2 adopts an alternative the review examined
+and found wrongly rejected ([N6]), and its deletion answers [R4], [R7] and [N7] with
+their own satisfiers. I do not think it contains material the review never saw, and
+I recommend no second round. That is the Maintainer's call at Decision, as is the
+External-floor waiver recommended in the first Response, which is unchanged.
+
+## Revision 2 -- Claude -- 2026-10-01 -- the complete current contract
+
+### Context
+
+Cairn publishes a three-level adoption ladder: Level 0, read the doctrine; Level 1,
+**hand-copy the kernel**; Level 2, run the bootstrap. Two things are wrong with it.
+
+**Level 1's method is one nobody uses, and the published material contradicts
+itself about it.** Hand-copying means placing 18 kernel files, substituting tokens and
+filling slots at destinations documented nowhere. The Maintainer: "no one will ever
+actually hand-copy Cairn, that's against the whole philosophy." Meanwhile the scaffold
+already performs that install -- `docs/quickstart.md` runs it with the `solo-greenfield`
+profile, exit 0 -- and the material around it disagrees with itself:
+`bootstrap/profiles/solo-greenfield.yml:22-24` recommends hand-copying and then hands
+you the scaffold command; `docs/solo-legacy-recipe.md:35` calls itself "a Level 1
+hand-copy path". This is internal self-contradiction, and it needs no adopters to be
+real -- Cairn has none yet.
+
+**The distinction between Level 1 and Level 2 has lost its reason.** Level 1 exists
+for adopters for whom "staffing a second independent reviewer is not yet realistic"
+(`on-ramp/README.md:35`). Since 2026-09-01 a fresh session satisfies every review tier,
+and delegation makes fresh sessions and concurrent agents ordinary. No engine code
+reads a level -- the module roster comes from the profile -- so the levels exist only
+in prose and in the onboarding triggers, where `level-1-to-2` fires on the lockfile
+that every scaffold install writes (`scripts/_onboarding/triggers.py:104`): today it
+tells every new adopter to graduate.
+
+The hand-copy finding has been deferred four times: the friction audit named a
+consolidation proposal nobody opened; `adopter-entry-doc-refresh` and
+`solo-legacy-adopter-path` each did an adjacent piece and archived; the documentation
+note's F9 deferred to this artifact before it existed.
+
+### Proposal
+
+**Retire the adoption levels. One installer, sized by a profile.**
+
+There are **two ways to use Cairn**, and they are not rungs:
+
+* **Read it.** The doctrine informs how you already work; nothing is installed.
+* **Install it.** Run the scaffold with a profile. The profile decides the modules.
+  Start with the smallest that fits -- `solo-greenfield` for a new project, the
+  composed profile in `docs/solo-legacy-recipe.md` for existing code -- and add
+  modules as the work warrants (`scaffold.py upgrade --adopt-module <name>`).
+
+The route is one: choose a profile (a preset, bootstrap-lite's assessment, or
+`bootstrap/BOOTSTRAP.md` Act I), run the scaffold, then do the four steps the
+installer prints for a real adoption (Act II-3 to II-6). A second agent type is never
+required; it strengthens review where a team has one.
+
+Concretely:
+
+1. **`on-ramp/README.md`** -- the three level sections, the choosing-a-level table,
+   the solo-legacy paragraph and the maturity ladder become: read it or install it;
+   choosing a profile; growing an install; and the migration note (item 9).
+2. **`README.md`** -- the three-level block and the Level 1 bullet (`:266`).
+3. **`docs/getting-started.md`** -- the ladder gloss (`:4`) and the level pointer
+   (`:84-86`).
+4. **`docs/quickstart.md`** -- stays a disposable shakedown: its teardown, its
+   signature-check waiver for the throwaway clone, and its framing are unchanged. It
+   says plainly that the commands just run are a real install with the smallest
+   profile, and "What to do next" gives the real route: Steps 2-3 in your own
+   repository, from a release tag verified per `bootstrap/PROVENANCE.md`, then Act
+   II-3 to II-6. The level summary (`:350-353`) goes; `NOTICE.md` joins the Step 3
+   staging list (`:194`); the unsupported "Time: ~30 seconds" (`:296`) goes. The
+   phrases `**N** modules listed` and `**N unfilled block slots**` stay -- a frozen
+   test reads them.
+5. **The three `bootstrap/profiles/*.yml` header comments** -- each "On-ramp
+   recommendation: Level N" becomes who the profile is for; `solo-greenfield.yml`'s
+   roster comment (`:17-19`) drops the modules retired in August.
+6. **`docs/solo-legacy-recipe.md`** -- its "Which level" section goes; the page
+   becomes "run the scaffold with this profile", with the roster corrected to the
+   eight modules it installs today.
+7. **Every remaining level reference:** `bootstrap/BOOTSTRAP.md` (`:7`; the
+   assessment output's "Adoption level" line at `:231`);
+   `bootstrap/prompts/bootstrap-lite.md`; `templates/README.md` (`:82-86`);
+   `templates/codebase-readiness-report.md` (`:340-347`, which maps its scores onto
+   levels -- it maps them onto how small to start instead); both example READMEs
+   (describing how each was actually built); `docs/agent-team-onboarding.md:9`;
+   `docs/workflow-role.md:83`; `docs/further-reading.md:30`; the three
+   `templates/onboarding/*.md` presets; and Cairn's own copies under
+   `dev/modules/onboarding/`.
+8. **The level triggers and the graduation prompt are deleted** (formerly item 6).
+   In `scripts/_onboarding/` and its byte-identical twin
+   `templates/modules/default-on/_onboarding/`: `evaluate_maturity_triggers` and its
+   four triggers in `triggers.py`, its export in `__init__.py`, its call in the union
+   evaluator, and the `Level-1-to-2-graduation` row in `prompts.py`. In the three
+   presets and Cairn's own copies: the `### Row 2 -- Level 1->2 graduation prompt`
+   sections and the `[trigger: level-1-to-2; ...]` tag. The remaining rows keep their
+   heading labels -- the renderer matches on them. Tests: the maturity test file is
+   repurposed to pin the negative invariant below; the active-surfacing mechanism and
+   render tests drop the row. **Prefer editing a frozen test file to deleting it**: a
+   deleted frozen file reddens `test_gate_manifest.py` until the re-anchor runs.
+9. **A migration note, in `on-ramp/README.md`.** A hand-copied tree is a valid
+   install. Without a lockfile it receives no upgrades and no onboarding prompts. To
+   bring it under the installer: run `python bootstrap/scaffold.py upgrade --target
+   <repo> --init-lock`; fill the four placeholders it writes into
+   `dev/.cairn/profile.yml`; re-run. Files whose tokens were filled by hand upgrade as
+   review-only diffs. **Do not re-run the install with `--force`** -- it overwrites
+   what you wrote. `bootstrap/UPGRADE.md` gains one line naming hand-copied trees in
+   its migration section.
+10. **MAINTAINER-ONLY, last: the gate-manifest re-anchor** for the frozen files
+    item 8 changes, per `bootstrap/REANCHOR_RUNBOOK.md`, joined to the batch already
+    queued in `dev/PLANNING.md`. Expected changed set:
+    `templates/modules/default-on/_onboarding/{triggers,prompts,__init__}.py` and
+    `bootstrap/tests/test_{trigger_evaluation_maturity,active_surfacing_mechanism,active_surfacing_render}.py`,
+    plus any the plan's search adds. Before it, Cairn's own lockfile is
+    re-finalized for `scripts/_onboarding/`, and `bootstrap/verify_integrity.py` runs.
+
+And `doctrine/onboarding.md`, below.
+
+### Rationale
+
+**Why retire rather than redefine.** A level is useful only if an adopter can locate
+themselves by it and something follows from the answer. Defined by method, Level 1
+named a technique nobody uses; defined by staffing, it named a condition delegation
+makes universal. And nothing follows: the installer reads the profile, not a level.
+The profile already carries every real difference -- which modules, which staffing
+axes -- so the level was a second, drifting description of a decision the profile
+makes.
+
+**Why not make hand-copying executable (A2).** It is available: the gate table says
+which modules a profile selects, and `scaffold.py --manifest` lists 97
+source-to-destination rows. But a route nobody walks is not an adoption path, and it
+would commit Cairn to a second installer maintained by hand beside one that works.
+
+**Why keep the quickstart disposable.** Its teardown is an `rm -rf`, and it waives the
+release-signature check *because* the target is thrown away
+(`docs/quickstart.md:61-67`). Sanctioning the page itself for real repositories would
+carry both into one. Pointing from it to the real route keeps the trust step mandatory
+where it matters, and keeps the installer's own "throwaway repo" line
+(`bootstrap/_scaffold/install.py:1462-1469`) true.
+
+**What "start small" loses, and why that is fine.** The ladder carried a real message
+to a hesitant scientist: you do not need all of this. The profile carries it better --
+`solo-greenfield` is six modules -- and the doctrine now says outright that no review
+tier needs a second agent type.
+
+### Alternatives considered
+
+The original labels are kept, so A3 below is the alternative the opened proposal
+rejected and this revision adopts.
+
+**A1 -- Do nothing.** The contradiction stays, and the graduation prompt keeps telling
+every new adopter to graduate. Rejected.
+
+**A2 -- Make hand-copy executable.** Rejected above.
+
+**A3 -- Collapse the levels.** Adopted: this revision is A3, taken one step further
+-- reading the doctrine is no longer a level either (A6).
+
+**A4 -- Rename the levels.** Moot: there are no levels to rename.
+
+**A5 -- Redefine the levels by staffing** (Revision 1). Rejected: delegation makes the
+staffing condition universal, and no code would read the result.
+
+**A6 -- Keep Level 0 as a rung.** Rejected. Reading the doctrine is worth saying, and
+the page says it; but it is not a step toward installing, and calling it one revives
+the ladder.
+
+**A7 -- Split the trigger deletion into its own proposal** (Revision 1's split).
+Rejected: it would ship documentation without levels beside a prompt headed
+"Level 1->2", for no saving -- the re-anchor it needs is already queued.
+
+### Documentation / doctrine surface
+
+The change lands in the entry and descriptive layers listed in items 1-7, and in one
+doctrine file. **`doctrine/onboarding.md`**: the maturity-ladder trigger kind
+(`:62-77`) is removed, with its claim to "observe the existing on-ramp doctrine"; the
+active-surfacing section's three named rows (`:118-123`) become two. The action
+triggers are untouched.
+
+**Doctrine-change rate-limit: applies, and is met twice.** The hand-copy finding
+recurred across four artifacts (Context), and the levels' stated reason was removed by
+the 2026-09-01 doctrine change. Neither is a single incident.
+
+### Evidence / verification plan
+
+| Claim | How it was established (2026-10-01 unless stated) |
+|---|---|
+| Level 1 is defined as hand-copy, and justified by unstaffable review | `on-ramp/README.md:24`, `:33-38` |
+| No review tier needs a second agent type | `doctrine/dual-review.md` (2026-09-01) |
+| The scaffold already performs the small install | `solo-greenfield` into a fresh repo: exit 0, six modules, 140 lines of output, 22 slots |
+| The legacy route works through the scaffold | the recipe's profile into a scratch repo with its own `README.md` and `CHANGELOG.md`: exit 0, lockfile written, both files unchanged, eight modules |
+| The hand-copy migration works | `upgrade --init-lock` on a scratch hand-copied tree: exit 2 with four placeholders; filled and re-run: exit 0, lockfile written |
+| `level-1-to-2` fires for every scaffold install | `scripts/_onboarding/triggers.py:104`; every install writes the lockfile |
+| The deepen triggers drive no prompt | no consumer outside `triggers.py` and `doctrine/onboarding.md` |
+| Which touched files are frozen | `frozen_files` in the committed fixture (183 entries): the six in item 10; every documentation file is free |
+
+#### Acceptance criteria
+
+* **Completeness.** `grep -rlE "Level [012]|level-[012]-|Level-1-to-2|hand-copy([^i]|$)"
+  --exclude-dir=dev --exclude-dir=.git --exclude-dir=.claude --exclude=CHANGELOG.md .`
+  returns 29 files before the change -- its positive control. After implementation it
+  returns only `bootstrap/tests/fixtures/gate_manifest.json`, which the re-anchor
+  clears, and the repurposed maturity test, which names the retired ids on purpose.
+  The same pattern over `dev/modules/onboarding/` returns nothing.
+* **Negative invariant** ([R7]). The trigger evaluator returns no id beginning `level-`
+  on a fresh `solo-greenfield` install, nor on a tree with a lockfile, five archived
+  proposals and three archived plans.
+* **Doctrine matches code.** Every trigger id `doctrine/onboarding.md` names is one the
+  code evaluates.
+* **Twins stay identical**, and `bootstrap/verify_integrity.py` passes on Cairn's own
+  tree after the lockfile re-finalize.
+* **The published manifest does not move.** `scaffold.py --manifest` is byte-identical
+  before and after, provided no installed file is added, removed or renamed.
+
+#### Tests and gates
+
+* **Boundary A:** the onboarding test family (`test_trigger_evaluation_*`,
+  `test_active_surfacing_*`, `test_onboarding_activation_helper.py`) and
+  `test_quickstart_sequence.py`.
+* **Boundary B: full suite.** The change touches frozen files, which bounded mode
+  refuses. `test_gate_manifest.py` is expected to report the changed frozen files
+  until the re-anchor; that is disposed of in the record, not treated as noise.
+* `scripts/claim_check.py`, `scripts/link_check.py`, `scripts/check_cairn.py` and the
+  neutrality gate over every touched file.
+* A scaffold run of `solo-greenfield` and of the legacy recipe's profile into temporary
+  targets.
+
+#### Security preflight
+
+N/A: no trust boundary added, moved, or widened. Item 8 removes code from an
+adopter-executed script and adds none; release-tag verification becomes mandatory on
+the real-adoption route.
+
+### Signals the change is wrong
+
+* **Adopters ask "which level am I?"** -- the vocabulary had a job this revision did
+  not replace. The fix is a sentence pointing at profile choice, not a level.
+* **A solo adopter installs a wide profile because nothing said to start small.** Then
+  the "start with the smallest that fits" line is not where adopters look.
+* **The completeness grep needs an exception this revision did not foresee** -- a
+  retained level reference the rewrite missed.
+* **Someone misses the graduation prompt** -- a team that would have added modules on
+  that nudge and did not. Then "growing an install" needs a prompt of its own, keyed on
+  something real.
+
+### Scope delta
+
+**Scope delta**: preserved. Item 6's outcome -- no promotion signal that fires for
+every install -- is delivered by deleting the signal.
+
+One item carried from the opened version needs a board row:
+
+* **F8 -- the post-install report lists slots for modules the profile did not select**
+  (22 slots on a six-module install). **disposition**: defer -- fixing it changes the
+  install reporting path in `bootstrap/_scaffold/`. It needs a row in
+  `dev/PLANNING.md` and the Maintainer's authorization quoted verbatim
+  (`dev/plans/_template.md`); the deposit is its own commit after the Decision.
+
+The friction audit's eight success criteria
+(`dev/strategy/archive/2026-06-12-claude-adopter-friction-audit.md:426-440`):
+
+* **Met here:** one obvious trial and one obvious real next step; no undefined
+  hand-copy operation on any recommended route; one installer for every install.
+* **Met for the quickstart:** the unsupported timing claim is removed.
+* **Deferred:** a post-install report that asks only for live work (F8).
+* **Not addressed, and never in scope:** every published command under a governing
+  test; a release gate on stale first-contact docs; a canary adopter (none exist).
+
+### Assurance path
+
+**Assurance path**: high-assurance -- the change edits `doctrine/onboarding.md` (any
+`doctrine/` change is a mandatory trigger), removes code from adopter-executed
+scripts, and changes frozen files covered by the gate manifest.
+
+### Withdrawn / superseded commitments
+
+Relative to Revision 1:
+
+* Keeping three levels, and Level 1 / Level 2 defined by staffing -- withdrawn; the
+  levels are retired (Maintainer direction).
+* The A3 rejection -- reversed; A3 adopted.
+* Level 0 as a rung -- withdrawn; reading the doctrine is a way to use Cairn, not a
+  level (A6).
+* Revision 1's A4 rejection ("Rejected. The substance is the definition") -- moot;
+  there are no levels to rename.
+* The split, item 6's `defer`, and Scope delta `degraded` -- withdrawn; item 6 is
+  delivered as a deletion and scope is `preserved`. Revision 1's rejection of
+  "settle item 6 here" is reversed with it.
+* "No file in the revised Touches is frozen" and "prose-only, so the suite does not
+  run" -- withdrawn; six frozen files change, Boundary B runs the full suite, and a
+  MAINTAINER-ONLY re-anchor closes it ([R4]).
+* [R7] and [N7] "leave with the split" -- withdrawn; both are back in.
+* [N8] as the split-out proposal's starting point -- moot.
+* Item 5 narrowed to `solo-greenfield.yml` -- widened to all three profiles' level lines.
+* The invariant that `### Row N --` headings are not renamed -- superseded: the Row 2
+  sections are removed; the remaining rows keep their labels.
+* The early-graduation-prompt cost and its signal -- withdrawn; the prompt is removed.
+* The ten-file completeness set -- superseded by the 29-file set above.
+* The two-item defer batch -- now F8 alone.
+* The plan-review justification "a prose rewrite" -- restated: the plan is a
+  documentation rewrite plus a bounded deletion over an enumerated surface list; the
+  tier stays `required(Internal)`.
+* Header: `Touches`, `Assurance path` and `Plan review` restated for this revision.
