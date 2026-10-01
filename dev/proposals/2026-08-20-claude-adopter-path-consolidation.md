@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Opus 5 (opened); Opus 5.5 (Response, 2026-10-01)
 **Opened**: 2026-08-20
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(External) — the deliberate-lane proposal floor
 (`doctrine/dual-review.md:217`). The one round taken (2026-08-31) was Internal;
 the first Response recommends the Maintainer waive the floor at Decision rather
@@ -1539,3 +1539,26 @@ Relative to Revision 1:
   documentation rewrite plus a bounded deletion over an enumerated surface list; the
   tier stays `required(Internal)`.
 * Header: `Touches`, `Assurance path` and `Plan review` restated for this revision.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-01
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "Accept Revision 2 as written. Defer the install-report fix (F8) to the board. No second review round; External floor waived."
+
+*Scribe's note, separate from the quoted words:*
+
+* **Revision 2 binds**, as written. The adoption levels are retired, and the level
+  triggers and graduation prompt are deleted within this proposal's plan.
+* **`Plan review: required(Internal)`** is ratified as declared in the header.
+* **No second review round.** The 2026-08-31 Internal review is the proposal's one
+  round.
+* **The External floor** (`doctrine/dual-review.md:217`) is **waived** on the record
+  for this proposal.
+* **F8 is deferred** -- the post-install report listing slots for modules the profile
+  did not select. Its row on `dev/PLANNING.md` > Queued is deposited in its own commit
+  after this one, with the quoted authorization.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction. Nothing
+else lands in this commit.
