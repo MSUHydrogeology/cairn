@@ -1,7 +1,7 @@
 # Plan: retire the adoption levels
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopter-path-consolidation.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits
 `doctrine/onboarding.md`, removes code from adopter-executed scripts, and
@@ -260,3 +260,155 @@ moved, or widened. The chunking changes no answer.
 the queued re-anchor row in `dev/PLANNING.md`, which Revision 2 item 10
 authorizes; and `CHANGELOG.md` > Unreleased gets one entry for the retired
 levels.
+
+## Plan review -- Claude (Internal, fresh-context subagent) -- 2026-10-01
+
+**Model**: claude-opus-5-5
+
+Reviewed commit: fbdc0ed94367169d489157cd05cb7ae13ab8c3cf
+Target: the plan as opened -- all sections
+Prior findings: none
+Assurance path: high-assurance
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**What holds.** Each item below was checked against the tree at the reviewed
+commit, not taken from the plan.
+
+* **Scope.** Every Revision 2 outcome (items 1–10 and the
+  `doctrine/onboarding.md` change) maps to a chunk, and the plan adds no
+  outcome Revision 2 did not accept.
+* **The frozen set is seven, and correct.** I looked each touched file up in
+  the keys of `frozen_files` (183 entries), with
+  `templates/modules/default-on/_onboarding/triggers.py` as the known-present
+  control. The seven are the three template `_onboarding/` files, the three
+  named tests, and `test_practice_modules.py`. `test_presets.py` and
+  `test_quickstart_sequence.py` are frozen but not edited. Every doc, profile,
+  preset, `scripts/_onboarding/` file and the lockfile is free.
+* **The suite stays green at each chunk boundary.** Outside the two
+  `_onboarding/` packages and the three test files C1 names, no Python file
+  references the row, a `level-` trigger id or `evaluate_maturity_triggers`. No test counts a preset's deferred tasks, and
+  none reads the chosen active prompt without an override. No link targets an
+  on-ramp section by fragment, so C3–C6 leave no broken anchor between
+  commits.
+* **Measured figures.** The completeness grep returns 29 files today. The
+  output of `verify_integrity` matches the plan (exit 1, 21 violations, the
+  three `scripts/_onboarding/` files among them). C5's eight modules are
+  `_DEFAULT_ON_MODULES` (six) plus the two the recipe adds, which
+  `test_presets.py` derives.
+* **The narrower `verify_integrity` reading is sound.** Item 10's outcome
+  (re-finalize `scripts/_onboarding/`, run the check) is delivered in full.
+  Finalizing the other 18 would re-attest drift that nobody reviewed in this
+  change. [P4] covers the one gap in how the plan asks for the allowance.
+
+### Findings
+
+**[P1] blocking — the negative-invariant test cannot catch two of the four
+restorations.** Each deleted trigger has its own firing condition
+(`scripts/_onboarding/triggers.py:41-50`, `:110-121`). `level-1-deepen` fires
+only *without* a lockfile, at 5 archived proposals and 3 archived plans.
+`level-2-deepen` fires only *with* a lockfile, at 15 and 10. Both of the
+criterion's fixtures carry a lockfile: the fresh `solo-greenfield` install,
+and the lockfile tree with 5 and 3. Neither reaches 15 and 10. So restoring
+`out.add("level-1-deepen")` or `out.add("level-2-deepen")` leaves the
+rewritten test green, and the Boundary C probe in this plan would expose it.
+*Close:* in *Acceptance criteria* > C1 — negative invariant, keep Revision 2's
+two fixtures and add two more, so that every deleted trigger would fire on at
+least one fixture:
+* a tree **without** a lockfile, with 5 archived proposals and 3 archived
+  plans (this exercises `level-0-to-1` and `level-1-deepen`);
+* a tree **with** a lockfile, with 15 archived proposals and 10 archived plans
+  (this exercises `level-1-to-2` and `level-2-deepen`).
+
+**[P2] blocking — the re-anchor handoff does not account for the test nodes
+the plan removes.** The gate manifest pins pytest node IDs as well as file
+bytes. Its verifier treats a dropped node as a hold
+(`bootstrap/tests/_gate_manifest.py:33-36`, `:672-680`), and the ceremony
+shows the Maintainer the change in the collection count
+(`bootstrap/tests/_gate_preflight.py:1958-1959`). Counted against
+`collection.node_ids` in `bootstrap/tests/fixtures/gate_manifest.json`, the
+plan drops 19 pinned nodes:
+* in C1, all 12 current nodes of `test_trigger_evaluation_maturity.py`, which
+  the rewrite replaces;
+* in C1, four in `test_active_surfacing_render.py`:
+  `test_level_graduation_drafts_concrete_per_preset_p3_9` and the three
+  `TestTwelveCombinations` cases parametrized on `Level-1-to-2-graduation`;
+* in C1, two in `test_active_surfacing_mechanism.py`:
+  `TestPriorityOrder::test_collab_agreement_wins_over_level_graduation` and
+  `::test_level_graduation_wins_over_second_agent`;
+* in C3, `test_practice_modules.py::TestLadderCorrespondence::test_ladder_levels_match_adoption_levels`.
+
+The *Expected non-pass* cell, the M row and *Dispositions* name only the seven
+files. A smaller collection is the signal the gate exists to raise, and as
+written it would reach the Maintainer's supervised ceremony with no
+explanation. Earlier plans attributed theirs
+(`dev/plans/archive/profile-parse-fail-open.md:901`). *Close:* in the
+*Expected non-pass* cell, the M row and *Dispositions*, require the
+implementation record to list every pinned node this plan drops and every
+node it adds, by node ID and by chunk. Carry that list into the queued
+re-anchor row at archive.
+
+**[P3] blocking — some level vocabulary is reached by neither the chunk cells
+nor the completeness grep.**
+*(a) Doctrine.* C2 names only `doctrine/onboarding.md:62-77` and `:118-123`.
+Four other passages in the same file still describe the levels:
+* `:26` says activation fires on "maturity-ladder transitions";
+* `:218-221` lists "Level 1 → 2 graduation" in the priority order;
+* `:288-289` says v1 ships "all three active-surfacing rows";
+* `:350-351` describes `on-ramp/README.md` as the ladder the triggers observe.
+
+A second doctrine file, `doctrine/session-routines.md:375`, describes the
+goodnight helper as scanning for maturity-ladder transitions. C2's criterion
+checks trigger ids only, so it passes with every one of these passages still
+in place.
+*(b) The grep's spelling gaps.* The C6 pattern misses spellings that are in
+use today in files this plan edits:
+* `examples/minimal/README.md:48`: "Level-1";
+* `docs/quickstart.md:339`: "pick a level";
+* `docs/quickstart.md:367`: "maturity ladder";
+* `bootstrap/prompts/bootstrap-lite.md:52` and `:159`: "the three adoption
+  levels";
+* `scripts/_onboarding/triggers.py:438` and its twin: the union docstring.
+
+C4 names only `docs/quickstart.md:350-353`. Once those lines are gone, the
+file drops out of the grep's results while `:339` and `:367` still point at a
+ladder that C3 removes.
+*Close:* (a) Widen C2's cell to cover the four further passages and
+`doctrine/session-routines.md:375`. In *Scope fidelity*, record that item 7's
+"every remaining level reference" reaches this second doctrine file, so the
+Maintainer sees the change named rather than finding it later. (b) Widen the
+C6 pattern. Measured today, `grep -rlE "Level[ -][012]|level-[012]-|Level-1-to-2|hand-copy([^i]|$)|[Mm]aturity[- ]ladder|adoption levels?|(pick|choose|which) (an? )?(adoption )?level\b"`,
+with the same excludes, returns 31 files: the 29 plus
+`bootstrap/tests/test_practice_modules.py` and `doctrine/session-routines.md`.
+Every line the added terms match is a true positive. The after-set stays the
+same two files. Over `dev/modules/onboarding/`, the widened pattern matches
+both Cairn copies before C6 and nothing after.
+
+**[P4] non-blocking — the requested allowance has no landing point.**
+*Scope delta* says the narrowed `verify_integrity` criterion "needs the
+Maintainer's allowance". No chunk, gate or record point asks for it, though.
+The template has this review's fold carry the plan straight to
+`ready-to-implement` (`dev/plans/_template.md:35-43`), so C1 would run against
+a criterion nobody ratified. *Close:* make the quoted allowance C1's gate,
+appended to this plan before C1 runs. Alternatively, argue in *Scope delta*
+that no allowance is owed, because item 10's outcome is delivered whole and
+only the proposal's acceptance wording narrows. Either way, take the "other
+18" figure immediately before C1 rather than carrying today's number forward.
+
+**[P5] non-blocking — C1 leaves the maturity evaluator's helpers behind.**
+Some helpers have no remaining consumer once `evaluate_maturity_triggers` is
+gone. They are the four `LEVEL_{1,2}_DEEPEN_*_THRESHOLD` constants
+(`scripts/_onboarding/triggers.py:41-50`) and the two archived-count helpers
+(`:53-72`). Inside the package, nothing else uses them. Outside it, the only
+reader is the maturity test that C1 rewrites. All six are re-exported at
+`scripts/_onboarding/__init__.py:111-119`, and the completeness grep cannot
+see an underscore-and-capitals name like `LEVEL_1_DEEPEN`. *Close:* say in
+C1's cell that these six names and their re-exports are deleted with the
+evaluator, or say that they stay and why. If they go, [P1]'s fixtures use
+literal counts.
+
+**Disposition:** `revising-plan`. Three blocking findings, each closed by an
+edit to a cell. The plan's structure, chunk order, frozen set and test
+mapping are sound.
