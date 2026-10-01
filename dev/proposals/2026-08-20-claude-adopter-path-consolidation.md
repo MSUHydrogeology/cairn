@@ -3,7 +3,7 @@
 **Author**: Claude (Strategy)
 **Model**: Opus 5 (opened); Opus 5.5 (Response, 2026-10-01)
 **Opened**: 2026-08-20
-**Status**: awaiting-decision
+**Status**: revising
 **Review**: required(External) — the deliberate-lane proposal floor
 (`doctrine/dual-review.md:217`). The one round taken (2026-08-31) was Internal;
 the Response recommends the Maintainer waive the floor at Decision rather than
@@ -1159,3 +1159,19 @@ anything under `doctrine/` is a mandatory trigger.
   surface list" -- the tier stands; the justification now rests on the split ([R9]).
 * Header: `Date opened` renamed `Opened`; `Review` added; `Touches`, `Assurance path`,
   `Related` and `Plan review` restated for this revision.
+
+## Maintainer direction -- Anthony Kendall (Maintainer) -- 2026-10-01
+
+The Maintainer's words, quoted **verbatim and visually isolated**:
+
+> "I'm honestly wondering whether we should make such a distinction. It's so
+> trivially easy to add a second agent instance--and this happens through
+> delegation, that we should eliminate Level 1. What do you think?"
+
+> "Yes, go ahead and revise the proposal as you've described. Thanks!"
+
+*Scribe's note, separate from the quoted words:* "as you've described" refers to
+the author's reply between the two messages: adopt alternative A3 (retire the
+Level 1 / Level 2 distinction), return the proposal to `revising`, and write
+Revision 2. Status moves `awaiting-decision` -> `revising`. Scribed by Claude
+(claude-opus-5-5) on the Maintainer's instruction.
