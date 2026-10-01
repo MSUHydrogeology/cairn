@@ -3,7 +3,7 @@
 
 **Author**: Claude (Strategy)
 **Date**: 2026-05-14
-**Status**: living (last major revision 2026-08-24: the nimbleness refocus, Anchors 18–19)
+**Status**: living (last major revision 2026-10-01: field-currency pass against the 2026 literature, folding a fresh External assessment; Anchor 22)
 **Type**: living-reference
 **Audience**: maintainer + collaborating AI agents; secondary audience is a scientist implementing a human + AI development methodology on their own scientific-computing project (Cairn's reader); a future paper reader is tertiary
 
@@ -39,12 +39,51 @@ Cairn is **repo-first**: a forkable, DOI-bearing repository gets *adopted* where
 a paper gets *cited*.  A short paper or preprint is optional later amplification,
 not the primary artifact -- see "Cairn as a publishable artifact" below.
 
+## The promise, and what the evidence supports
+
+*(Settled 2026-10-01, folding a fresh External assessment.)* Stated as sharply
+as it can honestly be put, Cairn's promise is: **delegate the coding without
+losing control of the scientific assumptions, the evidence, and the
+decisions.** Four things carry it, and they are the parts worth defending —
+the portable decision record, explanations the scientist can follow,
+independent challenge, and restraint. Everything else in this document is a
+possibility that waits on evidence.
+
+**Evidence status: plausible, exercised here, awaiting comparative evidence.**
+Two cases under one Maintainer demonstrate *use*; they are not independent
+evidence that Cairn reduces errors or total human effort. The literature
+anchors explain why each mechanism might help; they do not show that this
+bundle helps enough to pay for itself. Faster agents make that distinction
+more urgent, not less: elaborate process can consume the benefit they offer.
+
+**The serious alternative is not careless prompting.** It is a scientist using
+a current coding agent, ordinary version control and tests, a small local
+instruction file, and short records for important decisions. That already buys
+much of Cairn's portability and reviewability at lower adoption cost. Cairn
+earns its place only where its science-specific assurance and decision
+discipline make a difference that lighter practice does not.
+
+**What would settle it.** Before any further expansion: one small outside
+adoption on real scientific changes, alongside comparable work under the
+lighter baseline, with the improvement worth the extra effort declared
+beforehand. Record total scientist attention (setup, reading, review,
+correction, later resumption); check scientific outcomes against a separately
+justified basis; ask whether another person can later reproduce the result and
+understand its assumptions; note model and tool versions. Existing artifacts
+and a short retrospective, not a new measurement system. The promise is
+falsified if the lighter baseline delivers the same scientific reliability and
+later comprehension with less attention, or if an outside scientist cannot use
+Cairn without sustained help from its author. It is supported by independently
+detected scientific mistakes, successful handoffs, and attention saved beyond
+setup. Progress in AI should renew this comparison periodically, not add or
+remove ceremony on its own.
+
 ## Framework anchors
 
 Citable frameworks ground the rationale. The numbering is **canonical and
 append-only**: a new anchor takes the next integer and a new row in the index
 below, so "Anchor 10" stays unambiguous as the set grows.
-As of 2026-08-26, the index contains **21 anchors**.
+As of 2026-10-01, the index contains **22 anchors**.
 
 **Every anchor is introduced where it bites**, with its full citation at that
 point. There is no privileged tier. The first six were once set apart because
@@ -62,7 +101,7 @@ by number:
 4. **Scientific-software rigor** -- Bridgeford, E. W., Campbell, I., Chen, Z., Lin, Z., Ritz, H., Vandekerckhove, J., & Poldrack, R. A. (2025). *Ten Simple Rules for AI-Assisted Coding in Science.*  [arXiv:2510.22254](https://arxiv.org/abs/2510.22254).  Four-theme framework: problem preparation & understanding; managing context & interaction; testing & validation; code quality assurance & iterative improvement.  Paired with the risk-side anchor: Nature Computational Science (2025), *Threats to scientific software from over-reliance on AI code assistants.*  [doi:10.1038/s43588-025-00845-2](https://www.nature.com/articles/s43588-025-00845-2).
 5. **Inter-agent communication patterns** -- two literatures provide complementary lenses:
    * **Cognitive stigmergy / artifact-mediated coordination** -- Ricci, A., Omicini, A., Viroli, M., Gardelli, L., & Oliva, E. (2007). *Cognitive Stigmergy: Towards a Framework Based on Agents and Artifacts.*  In *Environments for Multi-Agent Systems III* (LNAI 4389), Springer.  Crowston, K. *The under-appreciated role of stigmergic coordination in software development.*  Agents coordinate via persistent artifacts in a shared environment; FLOSS / git / issue trackers are canonical software-engineering examples.
-   * **Direct agent communication protocols** -- Ehtesham, A. et al. (2025). *A Survey of Agent Interoperability Protocols: Model Context Protocol (MCP), Agent Communication Protocol (ACP), Agent-to-Agent Protocol (A2A), and Agent Network Protocol (ANP).*  [arXiv:2505.02279](https://arxiv.org/abs/2505.02279).  Real-time message-passing protocols dominant in 2025 multi-agent LLM systems.
+   * **Direct agent communication protocols** -- Ehtesham, A. et al. (2025). *A Survey of Agent Interoperability Protocols: Model Context Protocol (MCP), Agent Communication Protocol (ACP), Agent-to-Agent Protocol (A2A), and Agent Network Protocol (ANP).*  [arXiv:2505.02279](https://arxiv.org/abs/2505.02279).  Real-time message-passing protocols dominant in 2025 multi-agent LLM systems; since then ACP merged into A2A (2025-08), MCP and A2A moved under the Linux Foundation's Agentic AI Foundation (2025-12), and every major coding harness shipped native agent-to-agent messaging in early 2026.
    * **Multi-agent debate as a coordination pattern** -- Du, Y., Li, S., Torralba, A., Tenenbaum, J. B., & Mordatch, I. (2024). *Improving Factuality and Reasoning in Language Models through Multiagent Debate.*  Proceedings of the 41st International Conference on Machine Learning (ICML 2024).  [arXiv:2305.14325](https://arxiv.org/abs/2305.14325).  Foundational paper for agents-debate-to-consensus patterns; typically synchronous in implementations.
 6. **Scientific peer review as a process model** -- the project's review system has its closest real-world analog not in the multi-agent-debate literature (Anchor 5) but in scientific peer review itself.  Anchored on the peer-review process as codified by editorial-standards bodies (the [ICMJE *Recommendations*](https://www.icmje.org/recommendations/) and the [Council of Science Editors](https://www.councilscienceeditors.org/)), which fix the author / editor / reviewer division of labor, and on the open-peer-review taxonomy -- Ross-Hellauer, T. (2017). *What is open peer review? A systematic review.*  *F1000Research* 6:588.  [f1000research.com/articles/6-588](https://f1000research.com/articles/6-588) -- which classifies review systems by seven openness traits.
 
@@ -96,6 +135,7 @@ cross-cutting), and define the citation at its point of introduction.
 | | 16 | Recipient-calibrated communication + the comprehension floor (Miller 2019; Kalyuga 2007; Clark & Brennan 1991; Rozenblit & Keil 2002; appropriate-reliance literature) | "Trust as design center" > "Recipient-calibrated communication and the comprehension floor" |
 | | 19 | The oversight bottleneck and the theory of the firm (Coase 1937; oversight-in-practice + the 2026 OSS maintainer crisis) | "Restraint as design center" > "The 2026-08 refocus" |
 | | 20 | The operator's own allocation (Ferster & Skinner 1957; Alter 2017) | "Restraint as design center" > "The human side of restraint" |
+| | 22 | The agent supply-chain incident record (Thompson 1984; s1ngularity 2025; Clinejection 2026; "Comment and Control" 2026) | "Restraint as design center" > "Not all weight is waste" |
 | **III · Scientific-software rigor & validation** | 4 | Scientific-software rigor (Bridgeford et al. 2025; Nature CS 2025) | "Framework anchors" |
 | | 6 | Scientific peer review as a process model | "What the anchors bound" > peer review, not agent debate |
 | | 15 | Research-software character taxonomy + V&V / reproducibility canon (Hasselbring 2024; Oberkampf & Roy 2010; Roache 2002; PROV-DM; Sandve 2013; Eisty & Carver 2022) | "Where Cairn is headed" > "The scientific-character dimension" |
@@ -105,41 +145,14 @@ cross-cutting), and define the citation at its point of introduction.
 | | 9 | Open-development playbook for scientific software (Prlić & Procter 2012) | Horizon 1 |
 | | 17 | Waste, and how much process a project should carry (Poppendieck & Poppendieck 2003; Boehm & Turner 2003; Saltzer & Schroeder 1975) | "Restraint as design center" |
 
-## Current structure (compact reference)
+## Current structure
 
-Before the gap analysis, a one-page sketch of what currently exists:
-
-* **People**: 1 human maintainer (Anthony Kendall, hydrogeologist) + 2 AI collaborators (Claude, Codex).  Co-authorship recorded in commit trailers; signed instrument in `dev/collaboration_agreement.md`.
-* **AI surface is bimodal** -- documented in `dev/agent_collaboration.md` > "The AI surface is bimodal":
-  - *Agent-side*: Claude + Codex operating under the role roster below; structural work (proposals, plans, implementation, review).
-  - *Inline-side*: GitHub Copilot used by the maintainer during hand-edits.  Named in the doctrine as inline-tier editing tooling -- not a team role -- so the distinction between "AI the team coordinates with" and "AI the maintainer uses while editing" is explicit.
-* **Roles** (named in `dev/agent_collaboration.md > Team Roles`):
-  - Human Maintainer -- product direction, scientific priorities, final judgment.
-  - Strategy and Research Agent -- frames proposals, writes plans.
-  - Implementation Agent -- ships code against plans.
-  - Internal Reviewer -- collaborative-skeptical review pass; also synthesizes a decision-support recommendation for the maintainer and scribes the maintainer's Decision (the maintainer retains the call).
-  - External Reviewer -- harder-to-please stress-test (structural-independence floor: different agent type or human).
-  - User Agent -- pairs interactively with the maintainer; captures gaps to GitLab Issues.
-  - Security Review (focused mode) -- specialized application of Internal/External review.
-* **Lifecycles**:
-  - Proposal: `proposed -> reviewed -> revised -> accepted/rejected/superseded` with append-only bright-line and one commit per transition.
-  - Plan: `open -> executing -> review -> archived` with mutability rule (chunk cells editable pre-impl, append-only post-impl) and load-bearing plan-archive precondition (archive ALWAYS distinct from implementing commits, ALWAYS after code review).
-* **Capture surfaces**:
-  - `dev/proposals/` (deliberation, append-only).
-  - `dev/plans/` (execution, mutable per template).
-  - `dev/strategy/` (assessment / horizon-setting).
-  - `dev/PLANNING.md` (roadmap status -- mutable).
-  - `dev/NEXT_SESSION.md` (cold-pickup context; written at the goodnight routine or on explicit instruction).
-  - `dev/reflections/` (per-agent end-of-session retrospectives, read forward by the agent running the goodnight routine; gitignored and pruned).
-  - GitLab Issues (in-the-moment friction capture; User Agent's surface).
-* **Doctrine**:
-  - `AGENTS.md` (cross-agent operational).
-  - `CLAUDE.md` + memory files (Claude-specific).
-  - `STYLE_GUIDE.md` (design + code style).
-* **Review discipline**:
-  - Internal Review Norms: steelman first, numbered findings, accept/reject/defer.
-  - External Review Norms: make confidence prove itself; closed by fix or explicit wontfix; reviewer prefers different agent type (Codex if Claude authored; Claude if Codex authored).
-  - Structural-independence tiers (per `dev/collaboration_agreement.md`): Internal-review tier accepts same-agent-fresh-session; External-review tier requires different agent type or human; code-review tier floors at "not the implementing agent."
+This document does not restate the operating structure; it would go stale by
+construction, and did. The roles are in `doctrine/roles.md` and
+`dev/agent_collaboration.md`; the two lifecycles and the review floors are in
+`AGENTS.md`; the review tiers, the one-round rule, and the stance distinction
+are in `doctrine/dual-review.md`. Where this document and those disagree,
+those are right.
 
 ## What the anchors bound, and what came out of it
 
@@ -173,44 +186,73 @@ scientist already understands.
 | Scientific peer review | Cairn |
 |---|---|
 | Manuscript → editor → referees → decision | Proposal → maintainer → review tiers → Decision |
-| Pre-submission collegial read | **Internal review** (same agent type, fresh session) |
-| Independent journal referees | **External review** (different agent type, or a human) |
-| Report → rebuttal → revised manuscript | Review → Response → Revised sections |
-| Conflict-of-interest rules; open review | Structural-independence tiers; attributed, append-only files in git |
+| Pre-submission collegial read | **Internal review** (strengthens the change within its own frame; a fresh session) |
+| Independent journal referees | **External review** (makes it prove it should land; a different agent type or a human is the strongest distance and is recommended, never required) |
+| Report → rebuttal → revised manuscript | Review → Response → Revised sections, one round |
+| Conflict-of-interest rules; open review | Attributed, self-committed reviews; the whole arc in git |
 
-Three differences are the interesting part. Independence is **structural, not
-institutional** — a different model architecture is a brighter line than "no
-recent co-authorship." The record is **radically open**: the whole arc replays
-from `git log`. And the proposal's up-front verification plan gives it a
-**registered-report flavour**, committing to what would falsify the change
+Three differences are the interesting part. Independence is a **stance first
+and a staffing choice second**: Internal strengthens within the structure
+proposed, External evaluates that structure from outside and owes a verdict on
+whether the change should happen at all. A different model architecture is the
+strongest distance available, and the first controlled study of the question
+says the direction of the pairing matters — Xiang et al. (2026), *Cross-Model
+LLM Code Review: Should you use Claude to review Codex or vice versa?*,
+[arXiv:2607.21656](https://arxiv.org/abs/2607.21656): on 116 tasks, one
+cross-model direction raised pass rate 71.6% → 89.7%, the reverse direction
+*lowered* it 91.4% → 82.8%, and self-review ranged from +13 points to no
+effect. That is why cross-type is recommended and not required: a blanket rule
+can make a change worse. The record is **radically open**: the whole arc
+replays from `git log`. And the proposal's up-front verification plan gives it
+a **registered-report flavour**, committing to what would falsify the change
 before the work starts.
 
-Two costs come with it. Reviewer diversity is bounded by the number of model
-families available, so the External tier reduces correlated blind spots without
-eliminating them. And the maintainer is editor, domain expert, and reviewer at
-once — efficient at this scale, and a real single point of judgment.
+**One round.** A review and the author's revision close the loop, and the
+revision carries the artifact to the Decision; a second round exists only for
+material the first could not have read (a revision that widened scope; a code
+revision that introduced new defects; an open Security Review). The reviewer
+has already said what satisfies each blocking finding, and the field measured
+what further rounds buy — modest recall at a precision-destroying
+false-positive rate (Anchor 18). The differentiator's truer name is
+**recorded, replayable deliberation**; append-only is one mechanism for it,
+kept on the deliberate lane, while `git log` carries the property everywhere.
 
-*(Reframe in flight, 2026-08-24 — the refocus, recorded in
-`2026-08-21-claude-nimbleness-recovery` and two pending proposals: the review
-question becomes "does this work, and what is the shortest path to yes,"
-answered evidence-first; two rounds then the author decides with dissent
-recorded; loops terminate agent-side with an irreversibility tripwire routing
-to the Maintainer; External independence concentrates at the proposal. The
-differentiator survives intact but its truer name is **recorded, replayable
-deliberation** — append-only was one mechanism for it, kept on the deliberate
-lane, while `git log` carries the property everywhere.)*
+Two costs and one limit come with it. Reviewer diversity is bounded by the
+number of model families available, so the External tier reduces correlated
+blind spots without eliminating them. The maintainer is editor, domain expert,
+and reviewer at once — efficient at this scale, and a real single point of
+judgment. And **agreement between agents establishes consistency, not
+correctness**: two reviewers can agree with a wrong specification, and a green
+test can encode the same mistake as the implementation (a water-balance
+calculation and its expected-value test that both reverse the sign of an
+outflow term agree perfectly and conserve nothing). For a consequential
+scientific change, independence has to include a basis *outside* the proposed
+implementation — an analytical solution, a separately justified conservation
+constraint, a trusted observation, or a domain expert's judgment — as one
+well-chosen acceptance check, not another standing round. This is the
+`deliverable` axis's concrete mechanism (below), and it is why the earlier
+claim that Cairn is "more rigorous" than scientific peer review is withdrawn:
+the apparatus is more *open* and its independence more *checkable*; whether it
+is more rigorous is what the comparative evidence above has to show.
 
 ### What the analysis produced
 
 Four things Cairn does that the surveyed literature does not describe, or
 describes only in passing:
 
-* **The Dual-Review model.** Two tiers — one that helps a change land, one that
-  makes it prove it should — executed across structural independence,
-  asynchronously, mediated by commits. This is Cairn's most legible
+* **The Dual-Review model.** Two *stances* — one that helps a change land, one
+  that makes it prove it should — executed asynchronously, mediated by commits,
+  on a record that replays. AI code review itself is now default tooling and
+  cross-model review a studied practice (Anchor 6), so the uncommon part is
+  not "two AI reviewers"; it is the stance distinction and the recorded,
+  attributable, replayable deliberation. That is Cairn's most legible
   contribution to a scientific audience, and one of its two differentiators.
-* **Stigmergic coordination as a deliberate choice.** Agents leave traces in
-  version-controlled artifacts rather than messaging each other. No server, no
+* **The record is file-mediated; the channel is whatever the harness
+  provides.** Nothing load-bearing exists until it is in the tree: a decision,
+  a review, a plan, a hold. Agents may coordinate over harness messaging —
+  every major harness ships it as of early 2026, and Cairn's own sessions use
+  it for holds and relays — but the durable state lives in version-controlled
+  artifacts, never in a session or a tool's memory. No server, no
   session-spanning agent identity, and any model family can join by reading and
   writing files. That is where vendor-neutrality actually comes from.
 * **Test and documentation absorbed into every proposal**, rather than split
@@ -226,24 +268,21 @@ describes only in passing:
 anchor it comes from, so a new anchor arrives with its gap rather than needing
 a table row.
 
-* **Measurement has no trend** (3). The layer emits rows; the time series is
-  not in the record. Coordination-failure rates and reviewer-diversity blind
-  spots are unmeasured. See the metrics note for what should and should not be
-  measured at all.
+* **Measurement has a trend but no comparison** (3, 21). The git-derived
+  time series exists (the takeover table); nothing compares Cairn against the
+  lighter baseline named under *The promise*. Coordination-failure rates and
+  reviewer-diversity blind spots are unmeasured.
 * **No external-facing transparency artifact** (3, 8). The in-repo record is
   complete and hard to read from outside. An outside reader should not have to
   walk `git log` to reconstruct a decision.
-* **Scientific correctness routes entirely through the human** (4). No
-  agent-side check exists for domain error as distinct from structural error.
-  The `deliverable` axis is the proposed way to move part of it into the
-  apparatus.
+* **No scientific acceptance check grounded outside the implementation** (4,
+  6). Scientific correctness routes entirely through the human, and nothing in
+  the apparatus asks for a basis independent of the proposed code and its
+  tests. The `deliverable` axis is the proposed way to move part of it into
+  the apparatus; the one-check form above is the cheap first step.
 * **Reviewer diversity is bounded by the model families available** (6). The
   External tier reduces correlated blind spots; it cannot manufacture
   independence past the number of distinct families in use.
-* **The comprehension floor is stated where adopters never see it** (16). The
-  norm lives in `doctrine/rationale.md`; the file every adopter receives says
-  nothing about it, and `doctrine/` is not installed. The calibration *axis* is
-  a separate, unbuilt question needing its own evidence.
 * **Stack-neutrality of the tooling is aspirational** (13). The methodology
   sits at the waist and is stack-independent; the Python tooling sits above it
   and has no second implementation.
@@ -255,15 +294,17 @@ a table row.
   substantive, but in practice the heavy path is the default and the maintainer
   has to intervene to get the cheap one.
 
-Four early gaps are closed and now live in the doctrine: the bimodal AI surface
+Five early gaps are closed and now live in the doctrine: the bimodal AI surface
 is documented, test and documentation requirements sit in the proposal
-template, the verify-before-asserting failure typology is structured, and the
+template, the verify-before-asserting failure typology is structured, the
 write-time claim checker moved agent-output validation from reactive to
-proactive.
+proactive, and the comprehension floor (16) is in the file every adopter
+receives — `AGENTS.md` states that comprehension is a precondition of the
+Decision.
 
 ## What Cairn is today
 
-Cairn is at **v0.2.0** -- the realized methodology repository this doc's
+Cairn is at **v0.3.0** -- the realized methodology repository this doc's
 rationale grounds.  Its surfaces:
 
 * **`doctrine/`** -- the generalized doctrine: collaboration-stance,
@@ -291,34 +332,47 @@ rationale grounds.  Its surfaces:
 
 * the **append-only, git-committed deliberation lifecycle** -- every decision's
   full arc reconstructible from `git log`; and
-* the **Dual-Review model** -- two-tier review (Internal helps a change land;
-  External makes it prove it should) executed across structural independence,
-  asynchronously and commit-mediated; a faithful, and on the openness and
-  independence axes more rigorous, instantiation of scientific peer review
-  (Anchor 6).
+* the **Dual-Review model** -- two review stances (Internal helps a change
+  land; External makes it prove it should) executed asynchronously and
+  commit-mediated, with the strongest independence available recommended; a
+  faithful instantiation of scientific peer review that is more *open* and
+  whose independence is more *checkable* (Anchor 6).
 
 **The apparatus an adoptable methodology demands.**  Beyond doctrine and
 templates, Cairn ships what a *forkable, living* standard needs and a static
 prose framework does not: a four-layer **security model** (scaffold safety,
 lockfile integrity, content scanning, vendor-neutrality checks); an **upgrade
 capability** (3-way module merge with a lockfile and base-cache, so a deployment
-folds in new Cairn doctrine while keeping local optimizations); the
-**fold-back-ledger mechanism** (a standing channel by which deployments improve
-Cairn upstream); and the **work-intent tool** (an executable collision-avoidance
-primitive realizing the stigmergic coordination of Anchor 5).
+folds in new Cairn doctrine while keeping local optimizations); a **fold-back
+channel** (`dev/upstream/`, a ledger and template by which deployments propose
+improvements upstream; its tooling was retired in the 2026-08 sweep); and the
+**work-intent tool** (an executable collision-avoidance primitive realizing the
+stigmergic coordination of Anchor 5).
 
-**The honest value curve, grounded.**  Cairn *adds friction before code* and pays
-it back later -- in less rework, fewer forgotten decisions, fewer agent
-collisions, and fewer unreviewed scientific changes.  This is an evidence-based
-bet, not an aspiration (**Anchor 11**):
+**The value curve, honestly.**  Cairn *adds friction before code* and is meant
+to pay it back later -- in less rework, fewer forgotten decisions, fewer agent
+collisions, and fewer unreviewed scientific changes.  That payback is the bet,
+and as *The promise* says, it is plausible and exercised, not yet shown
+(**Anchor 11**):
 
-* *Raw AI speed is partly illusory.*  METR's randomized controlled trial -- METR
-  (2025), *Measuring the Impact of Early-2025 AI on Experienced Open-Source
-  Developer Productivity*, [arXiv:2507.09089](https://arxiv.org/abs/2507.09089)
-  -- found experienced developers working on their own mature repositories were
-  **19% slower** with early-2025 AI tools, while believing they were ~20%
-  *faster*.  Closing that perception-vs-reality gap with a recorded, reviewed
-  process is exactly the friction Cairn front-loads.
+* *The bottleneck has moved from writing code to verifying it.*  METR's
+  early-2025 randomized trial -- METR (2025), *Measuring the Impact of
+  Early-2025 AI on Experienced Open-Source Developer Productivity*,
+  [arXiv:2507.09089](https://arxiv.org/abs/2507.09089) -- found experienced
+  developers on their own mature repositories **19% slower** with AI while
+  believing themselves ~20% *faster*.  METR's own February 2026 update retired
+  the slowdown as a current picture: the same developers re-measured at −18%
+  with an interval spanning zero, newly recruited ones at −4%, and selection
+  effects (developers unwilling to work without AI; 30–50% withholding the
+  tasks they expected AI to help most) obscure a speedup METR now calls
+  likely ([study-design update](https://metr.org/blog/2026-02-24-uplift-update/)).
+  A tens-of-thousands-of-engineers rollout at Microsoft measured ~24% more
+  merged pull requests over four months, with the authors' caveat that a
+  merged PR is not value ([arXiv:2607.01418](https://arxiv.org/abs/2607.01418)).
+  What survives all of it: the **perception gap** is real, the uplift is real
+  and instrument-dependent, and the cost has moved to review.  Neither study
+  compares a Cairn-shaped process with a lighter one; the 19% result does not
+  establish that Cairn's front-loaded friction pays back.
 * *The expensive errors are the late ones.*  The cost-of-change literature --
   Boehm, B. (1981), *Software Engineering Economics*, Prentice Hall; Boehm, B. &
   Basili, V. (2001), *Software Defect Reduction Top 10 List*, IEEE Computer --
@@ -339,17 +393,20 @@ the maturity-ladder direction below.
 
 Cairn is **repo-first**: a forkable, DOI-bearing repository gets *adopted* where
 a paper gets *cited*.  It is largely an *extraction and generalization* of
-doctrine proven in use, and -- carrying a DOI via a release plus a
+doctrine exercised in use, and -- carrying a DOI via a release plus a
 `CITATION.cff`, dual-licensed (CC BY for prose / templates, a permissive license
 for scripts) -- it is itself a citable Open Science artifact independent of any
 paper.
 
-**The two-case comparison is the evidence spine.**  modflow_tools (AI-team-first)
-and LHM (a long-lived, majority-MATLAB, majority-untested landscape-hydrology
-model retrofitted under the same maintainer) are a before/after on each side, not
-"apparatus vs. none": LHM's baseline is its pre-adoption ad-hoc state, and its
-treatment is the modflow_tools apparatus *deliberately adapted* for a large, old,
-multi-language legacy codebase.  What the pair shows:
+**The two-case comparison is the spine -- of the description, not yet of the
+efficacy claim.**  modflow_tools (AI-team-first) and LHM (a long-lived,
+majority-MATLAB, majority-untested landscape-hydrology model retrofitted under
+the same maintainer) are a before/after on each side, not "apparatus vs.
+none": LHM's baseline is its pre-adoption ad-hoc state, and its treatment is
+the modflow_tools apparatus *deliberately adapted* for a large, old,
+multi-language legacy codebase.  Both are one Maintainer's; they show what
+generalizes and what does not, and they are not independent evidence that the
+apparatus reduces errors or effort.  What the pair shows:
 
 * **What generalizes vs. what is project-specific accretion.**  Generalizes
   near-verbatim: the proposal/plan lifecycle, append-only deliberation, the
@@ -376,8 +433,10 @@ multi-language legacy codebase.  What the pair shows:
 software** -- not software-engineering generalists or agentic-framework builders
 -- who care about rigor, reproducibility, and review discipline; the methodology
 was developed by a scientist on scientific software, an authentic and
-underserved niche.  Cairn does not pitch `AGENTS.md` (now a cross-vendor
-standard) or spec-driven-development tooling (crowded); it leads with the two
+underserved niche.  Cairn does not pitch `AGENTS.md` (a Linux Foundation
+standard since 2025-12 under the Agentic AI Foundation, read natively by every
+major harness -- Claude Code since v2.1.277, 2026-09-18, wherever no
+`CLAUDE.md` exists) or spec-driven-development tooling (crowded); it leads with the two
 differentiators above, and The Turing Way is its model for adoptability (a
 template repository, a quickstart, a piecemeal-adoption path).  **If a paper is
 ever written** it is optional amplification -- a short arXiv preprint (cs.SE)
@@ -459,7 +518,7 @@ community-mode horizon directly address.
 * **Recipient-designed explanation** -- Miller (2019), *Explanation in artificial intelligence: insights from the social sciences* (Artificial Intelligence 267:1--38; doi:10.1016/j.artint.2018.07.007): human explanation is selective and tailored to the listener (contrastive, social), not exhaustive.  An agent that dumps everything it knows is transcribing, not explaining.
 * **The right level depends on expertise, and must move with it** -- Kalyuga (2007), *Expertise Reversal Effect and Its Implications for Learner-Tailored Instruction* (Educational Psychology Review 19:509--539): instructional support that helps a novice actively *harms* an expert (redundant detail becomes cognitive-load cost), and the reverse.  There is no one-size explanation.  Cairn adopters span no-software-background to senior engineer, and a single Maintainer's level varies by subsystem -- so the agent calibrates per person and per topic, and recalibrates as understanding grows.
 * **Comprehension is built and verified, not assumed** -- Clark & Brennan (1991), *Grounding in communication* (in *Perspectives on Socially Shared Cognition*, 127--149): mutual understanding is *grounded* turn by turn, the listener signalling understanding and the speaker confirming.  The agent owns the grounding -- it checks the human is still with it, rather than reading the silence after a wall of jargon as assent.
-* **When this fails, the human over-relies** -- the appropriate-reliance literature (e.g. *Knowing About Knowing: An Illusion of Human Competence Can Hinder Appropriate Reliance on AI Systems*, arXiv:2301.11333; *In Search of Verifiability: Explanations Rarely Enable Complementary Performance in AI-Advised Decision Making*, arXiv:2305.07722): fluent explanations can *increase* over-reliance and manufacture an *illusion of understanding*; genuine complementary performance needs **verifiability**, not a plausible-sounding story.  This is the empirical shape of the rubber-stamp.
+* **When this fails, the human over-relies** -- the appropriate-reliance literature (e.g. *Knowing About Knowing: An Illusion of Human Competence Can Hinder Appropriate Reliance on AI Systems*, arXiv:2301.11333; *In Search of Verifiability: Explanations Rarely Enable Complementary Performance in AI-Advised Decision Making*, arXiv:2305.07722): fluent explanations can *increase* over-reliance and manufacture an *illusion of understanding*; genuine complementary performance needs **verifiability**, not a plausible-sounding story.  This is the empirical shape of the rubber-stamp.  The agent-research community reached the same place in 2026: a thirteen-author position paper argues the bottleneck has shifted from task-solving to how users communicate with, supervise, and trust agents -- verifiability and steerability first (*Humans are Missing from AI Coding Agent Research*, [arXiv:2608.12355](https://arxiv.org/abs/2608.12355)); and a Microsoft study of agent-trace interfaces found a redesign that cut error-detection time while raising user confidence *without* raising accuracy (*Overseeing Agents Without Constant Oversight*, [arXiv:2602.16844](https://arxiv.org/abs/2602.16844)) -- the illusion, measured.
 
 **Leg 2 -- plain explanation is also a test of the explainer's own understanding.**  The discipline cuts both ways.  For humans this is well established: the **illusion of explanatory depth** (Rozenblit & Keil 2002, *The misunderstood limits of folk science: an illusion of explanatory depth*, Cognitive Science 26:521--562) -- people are confident they understand a bicycle or a zipper until asked to explain it step by step, at which point the understanding collapses.  Explaining plainly *tests* understanding; it does not merely deliver it.  **The same is plausibly true of AI** -- stated honestly as a well-motivated extension, not a settled result: a model can produce fluent, confident jargon that pattern-matches expertise without a correct, grounded claim beneath it, and the jargon then *shields* that claim from scrutiny -- the human's and the model's own.  This makes the plain-language requirement a **correctness check on the explainer**, not only a service to the reader, and ties it to Cairn's existing `verify-before-asserting` discipline (Anchor 3's Bias & Robustness leg): jargon can hide an unverified assertion; plain words expose it to challenge.
 
@@ -547,8 +606,8 @@ interface available: text under version control.  The model maps directly:
   neutralities*; they are not two features but one principle seen from two
   sides.
 
-This also sharpens the companion stack-neutrality assessment
-(`2026-06-05-claude-cairn-stack-neutrality`): the *methodology* sits at the
+This also sharpens the 2026-06-05 stack-neutrality assessment, since folded
+into this section: the *methodology* sits at the
 waist and is already stack-independent, while the *Python tooling* sits
 **above** the waist -- which is exactly why it can be made replaceable without
 disturbing the substrate.  The hourglass predicts that the layer above the
@@ -715,6 +774,28 @@ So the line runs between two things that are easy to confuse:
 The test is not "is this security?" It is **does the deliberation cost track
 the blast radius, or how interesting the question is?**
 
+22. **The agent supply-chain incident record.** The posture above was argued
+    from Thompson in 2026-08; by 2026-10 the field had supplied the incidents.
+    *s1ngularity* (2025-08-26): malicious releases of the Nx build system
+    weaponized developers' own Claude, Gemini and Q command-line agents, with
+    permission-bypass flags, to enumerate and exfiltrate 2,349 credentials
+    from 1,079 machines. *Clinejection* (2026-02-17): a prompt injection
+    carried in a GitHub *issue title* reached a Claude Code CI workflow holding
+    shell and write permissions, stole an npm publish token, and shipped a
+    rogue agent to ~4,000 developer machines in eight hours
+    ([CSA research note](https://labs.cloudsecurityalliance.org/research/csa-research-note-clinejection-prompt-injection-cicd-cache-p/)).
+    *Comment and Control* (2026-06): Claude Code, Gemini CLI and Copilot
+    agent integrations all treated pull-request titles, issue bodies and HTML
+    comments as instructions, yielding live API keys and write-scoped tokens
+    ([CSA research note](https://labs.cloudsecurityalliance.org/research/csa-research-note-claude-code-github-action-prompt-injection/));
+    OWASP's 2026 reporting puts prompt injection behind most agentic security
+    failures in production. The live attack class is **an agent reading
+    untrusted repository content as instructions while holding credentials**.
+    Cairn's answers are structural rather than clever: no CI agent, no egress
+    path, humans alone push, the instruction-source boundary in every agent's
+    standing rules, and trust roots that are measured before use. Those are
+    cheap to hold and were not premature.
+
 ### The default is currently backwards
 
 Cairn's triage separates trivial from substantive work, but in practice
@@ -774,8 +855,10 @@ deliberation converges on what Cairn became. This is not unique to Cairn:
     compute; deliberation past a point degrades results, not just budgets.
     Review-round inflation is measured too: *More Rounds, More Noise*
     ([arXiv:2603.16244](https://arxiv.org/pdf/2603.16244)) finds added review
-    rounds buy modest recall at precision-destroying false-positive rates —
-    the empirical footing under the refocus's two-round cap. And verbosity
+    rounds buy modest recall at precision-destroying false-positive rates
+    (a second round raised findings per artifact 9.3 → 15.2, true positives
+    only 2.64 → 3.03) — the empirical footing under the one-round rule the
+    doctrine adopted 2026-10-01. And verbosity
     bias in preference data and judges
     ([arXiv:2310.10076](https://arxiv.org/pdf/2310.10076)) is the mechanism
     by which agent prose armor gets rewarded at the foundations.
@@ -792,10 +875,13 @@ deliberation converges on what Cairn became. This is not unique to Cairn:
     refocus's specific mechanisms — reversibility-sorted escalation, batched
     review windows, risk-tiered oversight. At internet scale the same
     economics is the 2026 open-source crisis: AI-generated contributions
-    cheap to create and expensive to review flooding maintainers (curl's
-    bug-bounty closure at ~5% valid reports; project shutdowns; platform
-    rate-limit deliberations) — rationed there by refusal, where Cairn's
-    answer is pricing and routing.
+    cheap to create and expensive to review flooding maintainers. curl ended
+    its six-year bug bounty on 2026-01-21 after the valid-report rate fell
+    from ~15% to under 5% (the first three weeks of 2026: twenty reports,
+    none valid); Jazzband sunset its 84 projects in 2026-03 naming the flood;
+    tldraw auto-closes every external pull request; Ghostty bans AI-written
+    code; GitHub publicly weighed a pull-request kill switch. Rationed there
+    by refusal, where Cairn's answer is pricing and routing.
 
 **The counterforce, settled with the Maintainer** (details in the refocus
 note): the four-part core is untouchable — intent before code, independent
@@ -813,11 +899,25 @@ competing for role seats, and the Maintainer's own continued investment.
 **The build honors economy of mechanism** (Anchor 17's Saltzer principle,
 now applied to the apparatus itself): ~30 required new lines of code against
 a measured ~61k-line subtraction — because for an agent, a sentence of
-doctrine *is* the machinery: agents re-read the constitution each session
-and comply with what it says, so enforcement code guarded a reader who never
-needed it. Code keeps only what text cannot do: compute, execute, and
-physically protect. The standing razor: *could this be a sentence instead of
-a script?*
+doctrine does most of what bookkeeping code did: agents re-read the
+constitution each session and largely comply, so enforcement code guarded a
+reader who rarely needed it. *Largely*, not reliably: a mining study of 7,310
+agent-rule entries across 83 projects found compliance rising from 49% to 72%
+after corrective rules landed, with 78% of edits adding negative constraints
+after an AI error ([arXiv:2606.12231](https://arxiv.org/abs/2606.12231)), and
+Epoch AI / METR's MirrorCode report records an agent choosing eager over lazy
+evaluation against a specification that repeatedly said otherwise,
+recognizing the mismatch, and patching around it
+([MirrorCode](https://epoch.ai/publications/mirrorcode-preliminary-results)).
+So a sentence replaces a ledger; it does not replace a boundary. Code keeps
+what text cannot do: compute, execute, and physically protect — and the
+scientific checks and required human decisions are placed *at the point of
+action*, in a short handoff naming the applicable constraints, evidence, and
+open decisions, rather than in a history the agent is trusted to have read.
+Reversibility is judged beyond the repository too: git can roll back a
+commit, not a published conclusion or overwritten unversioned data. The
+standing razor: *could this be a sentence instead of a script?* — answered
+for bookkeeping, never for a trust boundary.
 
 ### The human side of restraint — the operator's own allocation
 
@@ -871,27 +971,45 @@ firm design, applied to the operator:
 
 ## Where Cairn is headed
 
-These are **grounded horizons, not commitments** -- the anti-scope at the end
-binds, and each goes through the normal Cairn PR-flow / proposal cycle before
-shipping.
+These are **possibilities, not a queue** -- the anti-scope at the end binds,
+each would go through the normal proposal cycle, and *(settled 2026-10-01)*
+every one of them now sits behind the comparative evidence named under *The
+promise*: an outside adoption on real scientific changes, measured against
+the lighter baseline. None of them follows automatically from more capable
+agents. A cheaper move than any new axis is a **worked example**: one
+hydrology change, specified, independently checked against a basis outside
+its implementation, reproduced, and explained to its scientist. A second
+domain would show what generalizes before any general configuration is built.
 
-**The open empirical work** *(revised 2026-08-24)*.  The time series now
-exists — derived from git alone, no instrument layer: the weekly
+**The open empirical work** *(revised 2026-10-01)*.  The time series exists
+— derived from git alone, no instrument layer: the weekly
 deliberation/machinery/product accounting in
 `2026-08-21-claude-nimbleness-recovery` (the "takeover table," product share
-~5% of lines written since July 2026). The lifecycle-metrics layer this
-paragraph previously named as the vehicle is slated for retirement in the
-refocus's subtraction sweep; the empirical program continues on
-**git-derivable staff gauges** read at the goodnight routine, which is
-cheaper and survives the sweep by construction.  Two
-measurement gaps ride on it: **reviewer-pool diversity** (does the current small
-agent corpus systematically miss particular finding-classes?) and a
-**coordination-failure taxonomy** (industry reporting attributes a large share of
-multi-agent failures to coordination/orchestration; Cairn has countermeasures but
-no measurement of them).  A separate live operational question -- whether
-modflow_tools' own contended tree warrants **sharded PLANNING** -- sits in the
-same measurement bucket; the work-intent tool already mitigates the staged-index
-hazard that raised it.
+~5% of lines written since July 2026). The lifecycle-metrics layer that once
+carried this was retired in the subtraction sweep; the program continues on
+**git-derivable staff gauges** read at the goodnight routine. A small share
+of functional lines is a warning about *allocation*, not a measure of value
+— one scientific correction can matter more than thousands of product lines
+— which is why the comparison above, not the share, is the test.  Two
+measurement gaps ride on it: **reviewer-pool diversity** (does the current
+small agent corpus systematically miss particular finding-classes?) and a
+**coordination-failure taxonomy** (industry reporting attributes a large share
+of multi-agent failures to coordination/orchestration; Cairn has
+countermeasures but no measurement of them).
+
+**The agents the apparatus was sized for are gone.** METR's time-horizon
+series doubles roughly every four months as of early 2026, and a frontier
+model crossed a full working day of autonomous task length in 2026-02; the
+MirrorCode report describes a ~16,000-line bioinformatics toolkit
+reimplemented end to end, under the explicit conditions of an executable
+oracle and extensive tests, with the authors warning against generalizing
+beyond them. Two consequences for this document. The maturity ladder (Horizon
+2) runs *down* as agents strengthen — much of the 2026-08 bloat was process
+built for weaker agents and never re-sized. And what the agent cannot supply
+is unchanged by its horizon: deciding what *correct* means for the science,
+and supplying the feedback that says so. Better agents make protecting
+scientific judgment more important; they do not make a larger methodology
+more valuable.
 
 Two horizons follow.
 
@@ -976,12 +1094,12 @@ doctrine already has a community-mode analog waiting to be drawn out:
   solo project needs none; a community project needs `CONTRIBUTING.md`,
   drive-by-PR triage, a labeled good-first-issue surface, and an explicit
   path by which a repeat contributor earns commit / review standing.  Cairn
-  has the *capture* surfaces (GitLab-issue doctrine, the User Agent role)
+  has the *capture* surfaces (issue-tracker doctrine, the User Agent role)
   but not the *graduation* mechanics.
 * **Distributed, asynchronous review with an external reviewer pool.**  The
   **Dual-Review model** already assumes structural independence; community
-  mode generalizes the External Reviewer from "a different agent type" to
-  "a rotating pool of external human + AI reviewers."  This directly attacks
+  mode generalizes the External Reviewer from "the strongest distance one
+  team can staff" to "a rotating pool of external human + AI reviewers."  This directly attacks
   the open reviewer-diversity gap -- a community is *how* the reviewer
   pool grows past N=2.
 * **Maintainer sustainability as the design center.**  Eghbal's thesis is
@@ -1092,6 +1210,34 @@ validity routes wholly through the human maintainer* is the verification-owner
 bottleneck, and the PV/NT/PROV disciplines -- with USGS's domain review as the
 proof-of-concept -- are how some of it moves into the apparatus.
 
+**The 2026 field evidence lands exactly here.** OpenAI's field report on
+agents in scientific computing (2026-08; eight projects, mostly genomics;
+Codex and Claude Code) reports speedups to 60× alongside agents that were
+"eloquent, convincing, and confidently wrong in ways that are easy to miss" —
+one package shipped inverted control parameters whose plausible output passed
+initial validation and was caught only by calibration against synthetic data
+— and concludes that the bottleneck has moved "toward validation, scientific
+review, and clear responsibility for maintenance." Two benchmarks say the same
+from opposite sides: SWE-bench Science's September revision puts the best
+agent below 50% on 119 repository tasks, with failures of scientific
+abstraction ([arXiv:2608.19799](https://arxiv.org/abs/2608.19799)), while
+SciCode-Verified's authors report main-problem accuracy rising from 9–27% to
+69–92% once domain experts repaired faulty specifications and grading
+([arXiv:2608.04975](https://arxiv.org/abs/2608.04975)) — good coding scores
+do not establish scientific reliability, and a failed scientific test does
+not establish incompetence, because the correctness of the *test* is in
+question too. The closest prior art to this axis is Bhave et al. (Idaho
+National Laboratory, 2026), AI-assisted verification and validation inside a
+nuclear quality-assurance regime — disclosure and review standards, auditable
+artifacts, human accountability, demonstrated on a fusion code with
+known-solution validation cases
+([arXiv:2605.17675](https://arxiv.org/abs/2605.17675)); the 2026
+scientific-computing-ecosystems workshop report names trust, validation and
+traceability a strategic theme ([arXiv:2608.26519](https://arxiv.org/abs/2608.26519)).
+The disciplines this axis names are the apparatus-side form of what all of
+them ask for, and the one-check rule under Anchor 6 is their cheapest first
+instance.
+
 **Anchor 15** (the science-disciplines' canon, verified 2026-06-05): Hasselbring
 et al. (2024), *Toward Research Software Categories*, arXiv:2404.14364, with Eisty
 & Carver (2022), *Testing research software: a survey*, *Empirical Software
@@ -1110,7 +1256,7 @@ Orthogonal to the governance-regime axis but sharing its root insight: **Cairn
 should guide an adopter to *deepen* its apparatus as project complexity rises,
 rather than asking it to guess the right depth up front.**
 
-Cairn v0.2 ships the **static half**: the `on-ramp/` defines three graduated
+Cairn v0.3 ships the **static half**: the `on-ramp/` defines three graduated
 levels (read-the-doctrine → hand-copy the kernel → full bootstrap), recommends a
 starting level from the dimensional profile, and states that a project can move
 up. What is missing is the **dynamic half** -- the recommendation is made *once,
@@ -1122,8 +1268,8 @@ lost deliberation, shared-blind-spot review, staged-index collisions); an
 over-installed project carries ceremony it never needed.
 
 The proposal: **extend the on-ramp from a static install-time recommendation
-into a self-instrumenting one** -- Cairn ships metrics + heuristics that observe a
-live deployment (the lifecycle-metrics layer, collision log, intent log, commit
+into a self-instrumenting one** -- Cairn ships heuristics that observe a
+live deployment (the git-derived gauges, collision log, intent log, commit
 cadence, contributor count -- data it already produces) and *recommend* when to
 move up a level or promote a module. Several such triggers already run here as
 one-off internal rules (the R2 collision window; rising review/revision counts;
@@ -1146,30 +1292,29 @@ model from *statically-profiled* axes into *continuously re-observed* ones, and
 is the natural consumer of the still-open **empirical time-series** work -- the
 triggers need a *trend*, not a snapshot.
 
-### Near-term moves
+### Candidate moves
 
-Each goes through the normal proposal cycle before shipping; the detail lives in
-each proposal, not here:
+None is queued. One gates the rest, and each of the rest would go through the
+normal proposal cycle if the gate opens:
 
-* **Governance-regime axis** (Horizon 1) and **self-instrumenting maturity layer**
-  (Horizon 2) -- each a Cairn proposal adding a new `dimensions/` axis / the
-  trend-driven on-ramp extension over the lifecycle-metrics / collision / intent
-  data.
-* **Governed AI-community-contributor scope** -- the agent-authored-PR /
-  cross-fork work-intent sub-problem Horizon 1 opens (the candidate Cairn-native
-  contribution none of the anchors describe).
-* **Cairn as its own community-mode case study** -- dogfooding Horizon 1; gated on
-  the public-flip decision.
-* **The LHM operating case** -- carry LHM from adopted to *operating*, then a
-  measurement pass across both projects.
-* **Adopter first-use friction** -- the pre-0.3 friction package (Codex's audit);
-  tracked in `dev/PLANNING.md`.
-* **Per-project efficacy-data infrastructure** (pre-0.4/0.5) -- a
-  privacy-by-design, stays-local primitive (no telemetry / no auto-upload /
-  per-occurrence opt-in) for deployments to collect their own efficacy data,
-  **gated on the consent / audit-trail / no-network-by-default trust architecture
-  landing first** (each Anchor-10 TRUST dimension checked before it ships). Detail
-  in its own proposal.
+* **The outside adoption with a pre-declared threshold** (*The promise*) --
+  the one move that can turn the horizons from possibilities into work.
+* **The worked example** -- one hydrology change carried through
+  specification, an independent scientific check, reproduction, and plain
+  explanation; cheaper than any axis and the first `deliverable` discipline
+  in practice.
+* **The LHM operating case** -- carry LHM from adopted to *operating*; the
+  second domain that shows what generalizes.
+* **Governance-regime axis**, **self-instrumenting maturity layer**, and the
+  **governed AI-community-contributor scope** -- behind the gate; community
+  governance should answer actual contributors' needs, and a public release
+  alone does not create them.
+
+Retired from this list 2026-10-01: the pre-0.3 friction package (shipped in
+0.3.0) and the per-project efficacy-data primitive, which Anchor 21's
+measurement discipline and the retired metrics program argue against building
+-- a short retrospective on existing artifacts is the instrument, not a new
+collection layer.
 
 ### Horizon 3 -- the apparatus's context budget (token efficiency)
 
@@ -1204,28 +1349,46 @@ footing -- correctness, not only cost.
     only ~55-64% (Arcade).  *(Synthesized June 2026 via a deep-research pass
     over ≈25 sources with adversarial claim-verification; the primary sources
     are cited inline above, so this anchor stands on its own when this doc
-    moves into Cairn.)*
+    moves into Cairn.)*  **Three 2026 results cut against the simplest
+    reading.**  A study of 10,664 agent trajectories across nine models finds
+    that **step count, not context length, drives long-horizon degradation,
+    and that constraining context *accelerates* decay** (Mittal, *How Fast Do
+    Agents Rot?*, [arXiv:2609.01660](https://arxiv.org/abs/2609.01660)).
+    *Evaluating AGENTS.md* (Gloaguen et al., final version 2026-09-29,
+    [arXiv:2602.11988](https://arxiv.org/abs/2602.11988)) finds repository
+    context files do **not** generally improve task success, cost over 20%
+    more inference on average, and help only where they specify non-standard
+    practices — agents followed the instructions; the repository overviews
+    model providers recommend were simply not useful.  And the rule-file
+    mining study under Anchor 17 (arXiv:2606.12231) finds such files are
+    mostly low-level workflow and formatting, updated mainly as corrective
+    negative constraints after an error.
 
 Three things follow -- two of them the **framework's own contribution**, where
 it leads the literature rather than borrows from it (as with the AI-team-first
 lifecycle, User Agent, and stigmergic-coordination contributions):
 
-* **Lean is a *correctness* property, not only a cost one.**  The earlier
-  "faster / cheaper" framing undersold the case: an over-stuffed
-  always-loaded doctrine surface does not merely cost cache-write tokens, it
-  *degrades the agent's accuracy*.  This is the empirical backbone under the
-  **adoption promise** ("keep the apparatus only as heavy as your codebase
-  and team earn") and under the `RULES.md`-as-router design now landing in
-  the modflow_tools Cairn adoption: a small always-loaded bright-line set + a
-  routing table to on-demand docs *is* progressive disclosure, and the
-  maturity ladder (Horizon 2) is its **profile-sizing** control.
+* **Lean is a cost, a routing-reliability, and a *currency* property; whether
+  it is also a correctness property is contested.**  The length effect is real
+  (EMNLP 2025) and the inference from it -- that a fat always-loaded prefix
+  degrades accuracy -- is now contradicted by the step-count result, so this
+  document no longer leans on it.  What is not contested: an instruction file
+  earns its tokens only where it states what the agent would not otherwise
+  know, and a stale or generic one is pure cost.  That is the backbone under
+  the **adoption promise** ("keep the apparatus only as heavy as your codebase
+  and team earn") and under the `RULES.md`-as-router design: a small
+  always-loaded bright-line set + a routing table to on-demand docs *is*
+  progressive disclosure, and the maturity ladder (Horizon 2) is its
+  **profile-sizing** control.  Keep the instructions whose useful effect is
+  demonstrated; no universal token threshold is justified.
 * **A governed, measured always-loaded token budget is a Cairn lead.**  The
   literature supplies the measurement primitives (≈100 tokens per skill;
-  the finite-attention-budget framing) but **no surveyed source describes a
-  governed, measured always-loaded budget as a standing engineering
-  control**.  That is the framework's to define -- the same move the
-  lifecycle-metrics layer makes for the review process, applied to the
-  apparatus's own context weight.
+  the finite-attention-budget framing) and, as of 2026, the nearest
+  neighbours (the AGENTS.md evaluation; the rule-file taxonomy), but **no
+  surveyed source describes a governed, measured always-loaded budget as a
+  standing engineering control**.  That is the framework's to define, applied
+  to the apparatus's own context weight -- and the budget is as much about
+  rule *quality and currency* as about size.
 * **The `sessions × agents × adopters` fan-out is a Cairn lead.**  All
   verified work is single-agent / single-session.  The shared-context
   economics of *one* always-loaded doctrine file read by *many* agents
@@ -1255,178 +1418,10 @@ itself authorize:
 * Building the self-instrumenting maturity layer.
 * Changing Cairn's role roster, lifecycle, or structural-independence tiers.
 * Amending a signed collaboration agreement (which requires a formal amendment).
-* Flipping the v0.2.0 tag public, or any other public-surface action -- those
+* Making the repository public, or any other public-surface action -- those
   are maintainer-performed.
 
 Cairn's current structure is organically derived and load-bearing; the horizons
 extend it, they do not replace it.  Concrete moves go through the normal Cairn
-PR-flow / proposal cycle.
-
-## Fresh External assessment -- Codex -- 2026-10-01
-
-Anthony, I still believe in the problem Cairn addresses, but less in the breadth
-of the framework proposed here. Better agents make protecting scientific
-judgment more important; they do not make a larger methodology more valuable.
-I would keep the portable decision record, understandable explanations,
-independent challenge, and restraint. I would put community modes, new axes,
-and automatic maturity machinery behind evidence from outside adoption.
-The sharper promise is: **delegate coding without losing control of the
-scientific assumptions, evidence, and decisions.** Whether Cairn delivers that
-better than ordinary good practice remains an open question, not an established
-benefit. This is a recommendation about direction, not implementation authority.
-
-**Basis:** the full guide star, its committed version at
-`c5c963e097e15f52b73d850a86aaf5895fcb0775`, current `AGENTS.md` and
-`doctrine/dual-review.md`, session orientation, and the primary sources below.
-The assessment is fresh against today's artifacts, not a clearing round for an
-earlier review. Sources and conclusions are dated; model progress can change
-the balance again.
-
-### What has changed in AI
-
-* **Larger autonomous coding tasks are credible, under particular conditions.**
-  Epoch AI and METR's April 2026 MirrorCode report describes a successful
-  reimplementation of a roughly 16,000-line bioinformatics toolkit. The agent
-  could query the original program and had extensive executable tests. The
-  authors explicitly caution against generalizing this to unspecified software
-  development. My inference: the bottleneck is increasingly deciding what
-  correct means and providing useful feedback, rather than typing the solution.
-  [MirrorCode preliminary results](https://epoch.ai/publications/mirrorcode-preliminary-results).
-* **The 2025 slowdown is no longer an adequate picture of current productivity.**
-  METR's February 2026 follow-up suggests improvement, but selection effects
-  and concurrent-agent timing made the magnitude unreliable. Neither study
-  compares Cairn with a lighter AI-assisted workflow. The 19% slowdown remains
-  a result about its original setting; it does not establish that Cairn's
-  front-loaded process pays back. [METR's study-design update](https://metr.org/blog/2026-02-24-uplift-update/).
-* **Scientific coding is neither solved nor adequately described as weak.**
-  SWE-bench Science's September revision reports its best evaluated agent below
-  50% on 119 repository tasks, including failures of scientific abstraction and
-  integration. Conversely, SciCode-Verified's August authors report large gains
-  after domain experts repaired faulty specifications and grading, with
-  main-problem accuracy rising from 9--27% to 69--92% across twelve model
-  snapshots. These are different benchmarks, not comparable scores, and both
-  are preprints. Together they challenge two easy stories: that good coding
-  scores establish scientific reliability, and that every failed scientific
-  test establishes model incompetence. The correctness of the test matters too.
-  [SWE-bench Science, v2](https://arxiv.org/abs/2608.19799v2);
-  [SciCode-Verified, v1](https://arxiv.org/abs/2608.04975v1).
-* **Portable instructions are becoming ordinary infrastructure, not a moat.**
-  The open Agent Skills format already packages reusable instructions and
-  resources across compatible clients. Meanwhile, the September 29 revision
-  of *Evaluating AGENTS.md* finds no general task-success improvement from
-  repository context files and over 20% additional inference cost on average;
-  non-standard practices can still justify instructions. That study does not
-  test Cairn, but it makes both automatic benefit and a universal token-budget
-  threshold unjustified. Keep instructions whose useful effect is demonstrated.
-  [Agent Skills specification overview](https://agentskills.io/home);
-  [Evaluating AGENTS.md, v3](https://arxiv.org/abs/2602.11988v3).
-
-### Where I push back, most consequential first
-
-1. **Scientific assurance must not collapse into agreement between agents.**
-   Two reviewers can agree with a wrong specification; a green test can encode
-   the same mistake as the implementation. Concrete constructed example: a
-   water-balance calculation and its expected-value test both reverse the sign
-   of an outflow term. Agreement proves consistency, not conservation. A clear
-   explanation can make that mistake easier to notice, but cannot certify it.
-   Nor does a different model architecture demonstrate independent reasoning;
-   the guide star's claim to be more rigorous than scientific peer review goes
-   beyond its evidence. For consequential scientific changes, independence
-   should include a check grounded outside the proposed implementation: an
-   analytical solution, separately justified conservation constraint, trusted
-   observation, or domain expert's assessment. This need not be another standing
-   review round. It can be one well-chosen scientific acceptance check. Human
-   scientific authority should not become approval of an agent-authored story
-   that nobody tested against a separate basis.
-
-2. **A sentence can replace bookkeeping; it cannot guarantee compliance.**
-   The assertion that agents re-read doctrine and comply is too strong. A
-   concrete counterexample appears in MirrorCode: an agent chose eager rather
-   than lazy evaluation despite the specification repeatedly emphasizing the
-   latter, recognized the mismatch, and kept patching around it.
-   [MirrorCode's Pkl analysis](https://epoch.ai/publications/mirrorcode-preliminary-results).
-   More capable coding does not imply reliable observance of every instruction.
-   This is not a case for restoring the deleted lifecycle enforcement. Keep advisory tools
-   advisory; retain physical security boundaries; and make scientific checks
-   and required human decisions visible at the point of action. A short task
-   handoff naming the applicable constraints, evidence, and unresolved decisions
-   is cheaper than reloading the entire deliberation history. Git rollback also
-   cannot retract a published scientific conclusion or recover overwritten
-   unversioned data. Reversibility must be assessed beyond the repository.
-
-3. **The evidence establishes experience, not efficacy.**
-   The two cases under one Maintainer are valuable demonstrations of use, not
-   independent evidence that Cairn reduces errors or total human effort.
-   Likewise, a small share of functional lines is a warning about allocation,
-   not a measurement of value: one scientific correction can matter more than
-   thousands of product lines. Literature grounding explains why a mechanism
-   might help; it does not show that this particular bundle helps enough to
-   justify its costs. I would change the strategic confidence from "proven in
-   use" and an "evidence-based" payback to **plausible, exercised here, and
-   awaiting comparative evidence**. Faster agents make that distinction more
-   urgent: elaborate process can consume the benefit they otherwise offer.
-
-4. **The living reference now mixes incompatible operating states.**
-   Demonstration: "Current structure" still requires a different agent type or
-   human for External review, while current `AGENTS.md` and
-   `doctrine/dual-review.md` explicitly do not. "What the anchors bound" says
-   adopters' governing file lacks the comprehension floor; `AGENTS.md` now
-   contains "Comprehension is a precondition of the Decision." "What Cairn is
-   today" still presents the fold-back mechanism, whose implementation was
-   removed, as shipped apparatus. The earlier unmeasured-time-series gap also
-   contradicts the later statement that the series exists. These are not votes
-   to reopen settled decisions. They show that this document cannot presently
-   orient a new collaborator reliably. An eventual body revision should separate
-   current commitments, historical rationale, and untested possibilities, and
-   point to operating doctrine rather than duplicate it.
-
-5. **The horizons still invite the accretion the refocus diagnosed.**
-   Community governance, communication classes, deliverable axes, and a
-   self-instrumenting maturity ladder are plausible answers to different
-   problems. None automatically follows from more capable agents. A concrete
-   cheaper alternative to a new scientific axis is a worked example showing
-   how one hydrology change is specified, independently checked, reproduced,
-   and explained to its scientist. A second domain can reveal what generalizes
-   before a general configuration system is built. Community governance should
-   answer actual contributors' needs; a public release alone does not create
-   them. I would keep these as possibilities, not the next development queue.
-
-### The strongest alternative, and what would change my mind
-
-The serious competitor is not careless prompting. It is a scientist using a
-current coding agent, ordinary version control and tests, a small local
-instruction file, and short records for important decisions. That already buys
-much of Cairn's portability and reviewability with less adoption cost. Cairn
-earns its place only if its science-specific guidance and decision discipline
-produce a useful difference. **Yes, there is still something worth adopting
-beyond "prompt carefully" -- but the differentiator should be scientific
-assurance and recoverable judgment, not ownership of the agent workflow.**
-
-Before another framework expansion, I would try a small outside adoption on
-real scientific changes, alongside comparable work using that lighter
-baseline. Decide beforehand what improvement would be worth the extra effort.
-Record total scientist attention, including setup, reading, review, correction,
-and later resumption; check scientific outcomes against a separately justified
-basis; ask whether another person can reproduce the result and understand its
-assumptions later. Note model/tool versions and task-selection differences.
-Use existing artifacts and a short retrospective, not a new measurement system.
-A few cases would be informative, not a controlled proof.
-
-My recommendation would be falsified if the lighter baseline delivers the same
-scientific reliability and later comprehension with less attention, or if an
-outside scientist cannot use Cairn without sustained help from its author.
-Conversely, independently detected scientific mistakes, successful handoffs,
-and attention saved beyond setup would justify deepening it. Progress in AI
-should periodically renew this comparison, not automatically add or remove
-ceremony. The guide star should remain the scientist's work, not Cairn's growth.
-
-**Coverage and limits:** read the guide star in full and checked the operative
-review doctrine and selected current surfaces against its claims. Read the
-linked primary reports/documentation and paper abstracts; did not reproduce
-their experiments, audit all 21 literature anchors, or re-derive the historic
-commit-accounting tables. No full suite was run for this prose-only assessment.
-The existing strategy body is unchanged; this comment does not revise doctrine,
-reopen accepted dispositions, or authorize a new work program.
-Document-scoped claim, local-link, and snippet checks passed with Python
-3.13.13; the cited new external sources were opened separately. The neutrality
-gate does not scan `dev/`; a search identified no tests reading this artifact.
+PR-flow / proposal cycle.  The guide star remains the scientist's work, not
+Cairn's growth.
