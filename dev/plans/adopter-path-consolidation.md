@@ -1,7 +1,7 @@
 # Plan: retire the adoption levels
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopter-path-consolidation.md`
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits
 `doctrine/onboarding.md`, removes code from adopter-executed scripts, and
@@ -65,26 +65,30 @@ the pages in C3–C6. No `AGENTS.md` change.
 
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | **Delete the level triggers and the graduation prompt.** In `scripts/_onboarding/` and its twin `templates/modules/default-on/_onboarding/`: `evaluate_maturity_triggers` and its four triggers (`triggers.py`), its export (`__init__.py`), its call in the union evaluator, and the `Level-1-to-2-graduation` row (`prompts.py`). In the three `templates/onboarding/*.md` presets and Cairn's copy `dev/modules/onboarding/collaborative-team.md`: the `### Row 2 -- Level 1→2 graduation prompt` sections and the `[trigger: level-1-to-2; ...]` tag; the remaining rows keep their heading labels. Tests: `test_trigger_evaluation_maturity.py` is rewritten to pin the negative invariant; `test_active_surfacing_mechanism.py` and `test_active_surfacing_render.py` drop the row. Scoped lockfile finalize for the three `scripts/_onboarding/` files in the same commit. | `ready-to-implement` | one commit |
-| C2 | **Doctrine.** `doctrine/onboarding.md`: remove the maturity-ladder trigger kind (`:62-77`) and its claim to observe the on-ramp; the active-surfacing section's three named rows (`:118-123`) become two. | C1 | one commit |
-| C3 | **The on-ramp.** `on-ramp/README.md` rewritten: read it or install it; choosing a profile; growing an install (`scaffold.py upgrade --adopt-module <name>`); the migration note (Revision 2 item 9). `bootstrap/UPGRADE.md` gains one line naming hand-copied trees in "Migrating a tree installed before upgrade support". `TestLadderCorrespondence` removed. | — | one commit |
-| C4 | **Entry pages.** `README.md` (the three-level block and `:266`); `docs/getting-started.md` (`:4`, `:84-86`); `docs/quickstart.md` (real-install statement, the real route in "What to do next", the level summary at `:350-353` removed, `NOTICE.md` added to `:194`, "Time: ~30 seconds" at `:296` removed). | C3 | one commit |
-| C5 | **The install route.** `docs/solo-legacy-recipe.md` ("Which level" removed; scaffold route; roster corrected to eight); the three `bootstrap/profiles/*.yml` header comments; `bootstrap/BOOTSTRAP.md` (`:7`, `:231`); `bootstrap/prompts/bootstrap-lite.md`; `templates/codebase-readiness-report.md` (`:340-347`, scores map to how small to start). | C3 | one commit |
-| C6 | **Every remaining reference.** `templates/README.md` (`:82-86`); both example READMEs; `docs/agent-team-onboarding.md:9` and Cairn's copy `dev/modules/onboarding/agent-team-onboarding.md`; `docs/workflow-role.md:83`; `docs/further-reading.md:30`; any level wording left in the presets and Cairn's copies. Ends with the completeness grep. | C1–C5 | one commit |
+| C1 | **Delete the level triggers and the graduation prompt.** In `scripts/_onboarding/` and its twin `templates/modules/default-on/_onboarding/`: `evaluate_maturity_triggers` and its four triggers (`triggers.py`); the four `LEVEL_{1,2}_DEEPEN_*_THRESHOLD` constants and the two archived-count helpers (`triggers.py:41-72`), which nothing else uses; their re-exports and the evaluator's (`__init__.py:111-119`, `:129`); the evaluator's call in the union evaluator, and that function's docstring (`triggers.py:438`); and the `Level-1-to-2-graduation` row (`prompts.py`). The launcher's docstring, `scripts/onboarding_activate.py:8` and its twin, stops saying "maturity + action". In the three `templates/onboarding/*.md` presets and Cairn's copy `dev/modules/onboarding/collaborative-team.md`: the `### Row 2 -- Level 1→2 graduation prompt` sections; the whole `[trigger: level-1-to-2; id: graduate-to-level-2]` deferred-task entry, body included; and any intro line that counts "three active-surfacing rows". The remaining rows keep their heading labels. Tests: `test_trigger_evaluation_maturity.py` is rewritten to pin the negative invariant, using literal counts; `test_active_surfacing_mechanism.py` drops its two graduation tests; `test_active_surfacing_render.py` drops the graduation row, its graduation-specific test, and the stale counts in its docstring and in the `TestTwelveCombinations` name. Scoped lockfile finalize in the same commit. | `ready-to-implement` **and** the Maintainer's allowance on the narrowed `verify_integrity` criterion (*Scope delta*), quoted in this plan | one commit |
+| C2 | **Doctrine.** `doctrine/onboarding.md`: remove the maturity-ladder trigger kind (`:62-77`) and its claim to observe the on-ramp; activation's "maturity-ladder transitions" (`:26`); the "Level 1 → 2 graduation" entry in the priority order (`:218-221`); "all three active-surfacing rows" (`:288-289`) and the three named rows (`:118-123`), which become two; and the description of `on-ramp/README.md` as the ladder the triggers observe (`:350-351`). `doctrine/session-routines.md:375`: the goodnight helper no longer scans for maturity-ladder transitions. | C1 | one commit |
+| C3 | **The on-ramp.** `on-ramp/README.md` rewritten: read it or install it; choosing a profile; growing an install (`scaffold.py upgrade --adopt-module <name>`); the migration note (Revision 2 item 9). `bootstrap/UPGRADE.md` gains one line naming hand-copied trees in "Migrating a tree installed before upgrade support". `TestLadderCorrespondence` removed, with the module docstring's two lines about the ladder (`test_practice_modules.py:2`, `:8-10`). | — | one commit |
+| C4 | **Entry pages.** `README.md` (the three-level block and `:266`); `docs/getting-started.md` (`:4`, `:84-86`); `docs/quickstart.md` (real-install statement, the real route in "What to do next", "pick a level" at `:339` and the "maturity ladder" pointer at `:367`, the level summary at `:350-353` removed, `NOTICE.md` added to `:194`, "Time: ~30 seconds" at `:296` removed). | C3 | one commit |
+| C5 | **The install route.** `docs/solo-legacy-recipe.md` ("Which level" removed; scaffold route; roster corrected to eight); the three `bootstrap/profiles/*.yml` header comments; `bootstrap/BOOTSTRAP.md` (`:7`, `:231`); `bootstrap/prompts/bootstrap-lite.md` (including "the three adoption levels" at `:52` and `:159`); `templates/codebase-readiness-report.md` (`:340-347`, scores map to how small to start). | C3 | one commit |
+| C6 | **Every remaining reference.** `templates/README.md` (`:82-86`); both example READMEs (including "Level-1" at `examples/minimal/README.md:48`); `docs/agent-team-onboarding.md:9` and Cairn's copy `dev/modules/onboarding/agent-team-onboarding.md`; `docs/workflow-role.md:83`; `docs/further-reading.md:30`; any level wording left in the presets and Cairn's copies. Ends with the completeness grep. | C1–C5 | one commit |
 | C7 | **Boundary B**, then `## Implementation verification`; status → `awaiting-code-review`. | C6 | one commit |
-| M | **MAINTAINER-ONLY — the gate-manifest re-anchor.** This plan's changed frozen files join the batch already queued in `dev/PLANNING.md`, as Revision 2 item 10 specifies; the re-anchor runs with that batch, per `bootstrap/REANCHOR_RUNBOOK.md`. **An implementing agent must not perform it.** The agent's part is the board update at archive. | code review cleared | Maintainer |
+| M | **MAINTAINER-ONLY — the gate-manifest re-anchor.** This plan's eight changed frozen files, and every pinned test node it drops or adds (*Verification* > Expected non-pass), join the batch already queued in `dev/PLANNING.md`, as Revision 2 item 10 specifies; the re-anchor runs with that batch, per `bootstrap/REANCHOR_RUNBOOK.md`. **An implementing agent must not perform it.** The agent's part is the board update at archive. | code review cleared | Maintainer |
 
-The chunks are ordered so that code and doctrine agree at every commit (C1 then
-C2), and the one test that pins the old ladder leaves in the commit that removes
-the ladder (C3).
+The order keeps the suite green at every chunk boundary, and the one test that
+pins the old ladder leaves in the commit that removes the ladder (C3). Code and
+doctrine disagree for one commit only: C2 lands directly after C1.
 
 ## Acceptance criteria
 
 * **C1 — negative invariant.** The union trigger evaluator returns no id
-  beginning `level-` on a fresh `solo-greenfield` install, nor on a tree with a
-  lockfile, five archived proposals and three archived plans. Rewritten
-  `test_trigger_evaluation_maturity.py` asserts both, and fails if any one of
-  the four deleted `out.add("level-...")` lines is restored.
+  beginning `level-` on any of four trees, chosen so each deleted trigger would
+  fire on at least one: a fresh `solo-greenfield` install; a tree with a
+  lockfile, 5 archived proposals and 3 archived plans; a tree **without** a
+  lockfile, at 5 and 3 (`level-0-to-1`, `level-1-deepen`); and a tree with a
+  lockfile at 15 and 10 (`level-1-to-2`, `level-2-deepen`). The counts are
+  literals, because the threshold constants are deleted. Rewritten
+  `test_trigger_evaluation_maturity.py` asserts all four, and fails if any one
+  of the four deleted `out.add("level-...")` lines is restored.
 * **C1 — the prompt registry.** `_ACTIVE_SURFACING_ROWS` has two rows; every
   preset × remaining-row pair still renders a non-empty body
   (`test_active_surfacing_render.py`).
@@ -92,15 +96,19 @@ the ladder (C3).
   templates/modules/default-on/_onboarding` prints nothing.
 * **C1 — lockfile.** `python bootstrap/scaffold.py upgrade --finalize
   scripts/_onboarding/triggers.py scripts/_onboarding/prompts.py
-  scripts/_onboarding/__init__.py --target .` runs in the C1 commit. **The tree
-  does not pass `verify_integrity` today**: `python bootstrap/verify_integrity.py
-  --target .` exits 1 with 21 hash mismatches (measured 2026-10-01), and all
-  three `scripts/_onboarding/` files are among them, left by earlier unfinalized
-  changes. So the criterion is the drop, not a pass: after C1 it reports no
-  `scripts/_onboarding/` finding, and the other 18 are unchanged.
+  scripts/_onboarding/__init__.py scripts/onboarding_activate.py --target .`
+  runs in the C1 commit. **The tree does not pass `verify_integrity` today**:
+  `python bootstrap/verify_integrity.py --target .` exits 1 with 21 hash
+  mismatches (measured 2026-10-01), and all three `scripts/_onboarding/` files
+  are among them, left by earlier unfinalized changes; the launcher is not. So
+  the criterion is the drop, not a pass. **Immediately before C1**, record the
+  current finding list. After C1, it reports no finding for any
+  `scripts/_onboarding/` file or `scripts/onboarding_activate.py`, and every
+  other finding on the recorded list is unchanged.
 * **C2 — doctrine matches code.** Every trigger id named in
   `doctrine/onboarding.md` is one the trigger evaluators can return, and none
-  begins `level-`.
+  begins `level-`. Neither `doctrine/onboarding.md` nor
+  `doctrine/session-routines.md` matches the C6 pattern below.
 * **C3 — migration note.** It carries the literal
   `upgrade --target <repo> --init-lock` sequence, says the tree gets no
   upgrades and no onboarding prompts until it runs, and says not to re-run the
@@ -111,13 +119,17 @@ the ladder (C3).
 * **C5 — recipe.** `test_presets.py` passes with the canonical-profile block
   untouched; a scaffold run of that profile into a fresh repository reports
   eight modules and zero staffability warnings.
-* **C6 — completeness.** `grep -rlE "Level [012]|level-[012]-|Level-1-to-2|hand-copy([^i]|$)"
+* **C6 — completeness.** `grep -rlE "Level[ -][012]|level-[012]-|Level-1-to-2|hand-copy([^i]|$)|[Mm]aturity[- ]ladder|adoption levels?|(pick|choose|which) (an? )?(adoption )?level\b"
   --exclude-dir=dev --exclude-dir=.git --exclude-dir=.claude
-  --exclude=CHANGELOG.md .` returns 29 files before C1 (positive control) and,
-  after C6, only `bootstrap/tests/fixtures/gate_manifest.json` (cleared by M)
-  and the rewritten `test_trigger_evaluation_maturity.py` (names the retired
-  ids on purpose). The same pattern over `dev/modules/onboarding/` returns
-  nothing.
+  --exclude=CHANGELOG.md .` returns 31 files before C1 (positive control,
+  measured 2026-10-01: Revision 2's 29 plus `test_practice_modules.py` and
+  `doctrine/session-routines.md`). After C6 it returns only
+  `bootstrap/tests/fixtures/gate_manifest.json` (cleared by M) and the
+  rewritten `test_trigger_evaluation_maturity.py` (names the retired ids on
+  purpose). The same pattern over `dev/modules/onboarding/` matches both of
+  Cairn's copies before and nothing after. This pattern is wider than
+  Revision 2's, which missed spellings in use ("Level-1", "pick a level",
+  "maturity ladder", "adoption levels").
 * **Throughout — the published manifest does not move.**
   `python bootstrap/scaffold.py --manifest` is byte-identical before C1 and
   after C6.
@@ -147,6 +159,17 @@ Revision 2's outcomes, each to its chunk: item 1 → C3; 2 → C4; 3 → C4;
 negative-invariant, doctrine, twin and manifest criteria → C1, C2, C6.
 Boundary B full → C7.
 
+**Two surfaces Revision 2 did not list by name**, each reached by an accepted
+item rather than added to it:
+
+* `doctrine/session-routines.md:375` (C2) — a second doctrine file, which says
+  the goodnight helper scans for maturity-ladder transitions. Item 7, "every
+  remaining level reference", reaches it, and item 8's deletion makes it false.
+* `scripts/onboarding_activate.py:8` and its twin (C1) — the launcher's
+  docstring, which says "maturity + action" trigger evaluation. Item 8's
+  deletion makes it false. The `scripts/` copy is frozen, so it is the eighth
+  frozen file.
+
 ## Scope delta
 
 **Scope delta**: preserved. Nothing accepted is dropped. F8 was deferred by the
@@ -161,6 +184,10 @@ record unreviewed drift as trusted, which is outside this plan. The plan holds
 the criterion to the files it changes — C1 removes the three `scripts/_onboarding/`
 findings and leaves the other 18 as they are. The outcome Revision 2 names, the
 lockfile re-finalized for `scripts/_onboarding/`, is delivered in full.
+
+**The allowance is C1's gate.** C1 does not start until the Maintainer's
+allowance is appended to this plan, quoted verbatim. The "other 18" figure is
+re-measured immediately before C1, not carried forward from 2026-10-01.
 
 ## Verification
 
@@ -183,6 +210,7 @@ lockfile re-finalized for `scripts/_onboarding/`, is delivered in full.
   `test_quickstart_sequence.py` (reads `solo-greenfield.yml`), and the two
   scaffold runs (`solo-greenfield`; the recipe's profile).
 * **C6:** `test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`,
+  `test_onboarding_review_tiers.py` (reads the presets),
   `test_claim_check_module.py`, `test_link_check_exclusions.py`,
   `test_cairn_prefix_links.py`, and the completeness grep.
 * **Every chunk:** `scripts/claim_check.py`, `scripts/link_check.py` and
@@ -243,8 +271,23 @@ no other session's suite running, and say so in the record.
 
 **Expected non-pass, to be disposed of rather than treated as noise:** none
 from `test_gate_manifest.py`, because no frozen file is deleted; the manifest
-is stale for the seven changed frozen files, which a green run does not show
-(`AGENTS.md` > Operational pitfalls). The record lists the seven by path.
+is stale for the eight changed frozen files, which a green run does not show
+(`AGENTS.md` > Operational pitfalls). The record lists the eight by path.
+
+**The manifest also pins test node IDs**, and the re-anchor ceremony shows the
+Maintainer a change in the collection count, so the record accounts for it. It
+lists, by node ID and by chunk, every pinned node this plan drops and every
+node it adds. Known before implementation, 19 dropped:
+* C1 — all 12 current nodes of `test_trigger_evaluation_maturity.py`, which the
+  rewrite replaces;
+* C1 — in `test_active_surfacing_render.py`,
+  `test_level_graduation_drafts_concrete_per_preset_p3_9` and the three
+  `TestTwelveCombinations` cases parametrized on `Level-1-to-2-graduation`;
+  renaming that class changes the IDs of its remaining cases too;
+* C1 — in `test_active_surfacing_mechanism.py`,
+  `TestPriorityOrder::test_collab_agreement_wins_over_level_graduation` and
+  `::test_level_graduation_wins_over_second_agent`;
+* C3 — `test_practice_modules.py::TestLadderCorrespondence::test_ladder_levels_match_adoption_levels`.
 
 **Boundary C** is the code reviewer's. Attack at least: the negative invariant
 (restore one `out.add` line and confirm the test fails); the completeness grep's
@@ -256,7 +299,8 @@ moved, or widened. The chunking changes no answer.
 ## Dispositions
 
 *Filled at archive-preparation.* Expected: F8 is already deposited
-(`9276833c`); at archive, this plan's seven changed frozen files are added to
+(`9276833c`); at archive, this plan's eight changed frozen files, and the
+dropped and added test node IDs from the implementation record, are added to
 the queued re-anchor row in `dev/PLANNING.md`, which Revision 2 item 10
 authorizes; and `CHANGELOG.md` > Unreleased gets one entry for the retired
 levels.
@@ -412,3 +456,29 @@ literal counts.
 **Disposition:** `revising-plan`. Three blocking findings, each closed by an
 edit to a cell. The plan's structure, chunk order, frozen set and test
 mapping are sound.
+
+## Response to plan review -- Claude (author) -- 2026-10-01
+
+All five findings were verified against the tree before folding (thresholds
+5/3 and 15/10 at `scripts/_onboarding/triggers.py:41-50`; 19 dropped nodes in
+`collection.node_ids`; every P3 line; the widened grep's 31 files; the helpers'
+only consumers). Each is answered in an operative cell; this table points at
+them.
+
+| Finding | Disposition | Where |
+|---|---|---|
+| [P1] negative invariant misses two triggers | accepted | *Acceptance criteria* > C1 — negative invariant: four trees, literal counts |
+| [P2] dropped test nodes unaccounted for | accepted | *Verification* > Expected non-pass (the 19, by chunk); the M row; *Dispositions* |
+| [P3] level wording outside the cells and the grep | accepted | *Sequence* C2 (four passages, `doctrine/session-routines.md:375`), C4 (`:339`, `:367`), C5 (`:52`, `:159`), C6 (`:48`); *Acceptance criteria* > C2, C6 (widened pattern, 31 before); *Scope fidelity* names the second doctrine file |
+| [P4] the allowance has no landing point | accepted, as C1's gate | *Sequence* C1 gate; *Scope delta* (gate, re-measure before C1); *Acceptance criteria* > C1 — lockfile |
+| [P5] maturity helpers left behind | accepted, deleted | *Sequence* C1 (constants, count helpers, re-exports) |
+
+From the review's "noticed but not recorded" list, also folded: the launcher
+docstring (C1; the eighth frozen file, named in *Scope fidelity*); the whole
+deferred-task entry, the "three active-surfacing rows" intro line, and the
+render test's stale counts and class name (C1); the one-commit gap between code
+and doctrine, now stated (*Sequence*); `test_onboarding_review_tiers.py` in C6's
+mapping. Not folded: `docs/vision.md:77` ("the graduated on-ramp"), which
+describes the on-ramp as gradual rather than naming a level.
+
+Status `revising-plan` -> `ready-to-implement`. C1 waits on its gate.
