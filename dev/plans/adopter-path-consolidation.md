@@ -1,7 +1,7 @@
 # Plan: retire the adoption levels
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopter-path-consolidation.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits
 `doctrine/onboarding.md`, removes code from adopter-executed scripts, and
@@ -496,3 +496,131 @@ re-finalize" may be held to the files this plan changes, as *Scope delta*
 describes, given that 18 of the tree's 21 current mismatches are in files this
 plan never touches. It satisfies C1's gate. Scribed by Claude
 (claude-opus-5-5) on the Maintainer's instruction.
+
+## Implementation verification -- Claude (claude-opus-5-5) -- 2026-10-16
+
+* **Boundary B mode**: full — the change edits eight frozen files covered by
+  the gate manifest, a contract surface, so bounded mode refuses.
+* **Tested commit**: `9c0e002a6471216641540466ffd9782eb0eb2ff3`
+* **Reviewed range**: `c0980506` (the commit before C1) .. `9c0e002a` — C1
+  `3b44bc72`, C2 `7e423915`, C3 `e1a9933b`, C4 `6eb5a448`, C5 `5e6cb155`,
+  C6 `9c0e002a`.
+* **Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13` —
+  CPython 3.13.13 (conda-forge).
+* **Pre-run state**: `HEAD` `9c0e002a`; tracked tree clean; untracked only
+  `.claude/` and `dev/measurement/collision_log.md`, both pre-existing and
+  outside this plan. No other test run in progress and no active work
+  intents.
+* **Post-run state**: `HEAD` `9c0e002a`, unchanged; the same two untracked
+  paths.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---|---|---|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0` | 0 | 3229 passed; 0 failed, 0 skipped, 0 xfail, 0 xpass; 3 warnings | 692 s |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality fail=74, info=21; redundancy fail=0 | 1 s |
+
+**Non-pass disposition**
+
+* **Neutrality fail=74 is pre-existing.** The same gate on the pre-C1 tree
+  (`c0980506`, extracted with `git archive`) reports 77. The three no longer
+  reported were vendor names in the maturity evaluator's docstring, which C1
+  deleted. No (file, token) pair is new, and no failure sits on a line this
+  plan changed (394 changed lines intersected with 61 failing lines; the
+  intersection was checked with a synthetic overlap as control).
+* **3 warnings**: a `verify_requirements` deprecation from the third-party
+  `stevedore` package in the dev environment; unrelated to this change.
+* **`check_cairn`: 1 report, expected.** The plan review cites line 438 of
+  `scripts/_onboarding/triggers.py` as of its reviewed commit; C1 shortened
+  the file to 355 lines. The review section is the reviewer's and is not
+  edited.
+
+**Plan-specific acceptance commands**
+
+* **C1 — negative invariant.** The rewritten test passes on all four trees.
+  Restoring each deleted trigger in turn turned it red: `level-0-to-1` 3
+  failed, `level-1-to-2` 3 failed, `level-1-deepen` 1 failed, `level-2-deepen`
+  1 failed.
+* **C1 — registry.** `_ACTIVE_SURFACING_ROWS` has two rows; every row ×
+  preset renders a non-empty, distinct body (in the suite above).
+* **C1 — twins.** `diff -r --exclude=__pycache__ scripts/_onboarding
+  templates/modules/default-on/_onboarding` and the launcher pair print
+  nothing.
+* **C1 — lockfile.** `verify_integrity --target .` reported 21 findings
+  immediately before C1 and 18 after; the three removed are the
+  `scripts/_onboarding/` files, none was added, and the launcher was never
+  among them. Unchanged at 18 after C6's re-finalize of `triggers.py`.
+* **C2 — doctrine matches code.** The trigger ids `doctrine/onboarding.md`
+  names equal the ids the code can emit (8 = 8); the completeness pattern
+  finds nothing in either doctrine file.
+* **C3 — migration note.** Carries the literal `--init-lock` sequence (run on
+  a scratch hand-copied tree, 2026-10-01; `bootstrap/_scaffold/` is untouched
+  since), the no-upgrades consequence, and the `--force` warning.
+* **C4 — quickstart.** `test_quickstart_sequence.py` passes unedited; the
+  teardown and the throwaway signature-check waiver are unchanged.
+* **C5 — recipe.** `test_presets.py` passes with the canonical-profile block
+  byte-identical. The recipe's profile scaffolded into a fresh repository:
+  exit 0, eight modules, zero staffability warnings, lockfile written;
+  `solo-greenfield`: exit 0, six modules.
+* **C6 — completeness.** The plan's pattern returns exactly
+  `bootstrap/tests/fixtures/gate_manifest.json` and the rewritten
+  `test_trigger_evaluation_maturity.py`; nothing in `dev/modules/onboarding/`.
+  Spellings the pattern misses, found during C4–C5 ("Hand-copy", "Cairn
+  level"), searched separately: nothing.
+* **Manifest.** `scaffold.py --manifest` is byte-identical to `c0980506`'s
+  (98 lines).
+* **No frozen file deleted.**
+
+**Changed frozen files, for the re-anchor (M)** — filtered from the keys of
+`frozen_files`, not transcribed:
+`templates/modules/default-on/_onboarding/__init__.py`,
+`templates/modules/default-on/_onboarding/prompts.py`,
+`templates/modules/default-on/_onboarding/triggers.py`,
+`scripts/onboarding_activate.py`,
+`bootstrap/tests/test_trigger_evaluation_maturity.py`,
+`bootstrap/tests/test_active_surfacing_mechanism.py`,
+`bootstrap/tests/test_active_surfacing_render.py`,
+`bootstrap/tests/test_practice_modules.py`.
+
+**Test nodes this plan dropped and added**, against the pre-C1 collection
+(3,244 → 3,229: 25 dropped, 10 added). All paths under `bootstrap/tests/`.
+
+* C1, dropped — `test_trigger_evaluation_maturity.py`, all 12:
+  `TestLevel0to1::{test_fires_after_first_archived_proposal,
+  test_does_not_fire_with_no_archived_proposals}`;
+  `TestLevel1to2::{test_fires_when_lockfile_present,
+  test_does_not_fire_without_lockfile}`;
+  `TestLevel1Deepen::{test_fires_at_threshold_without_level_2,
+  test_suppressed_when_level_2_also_fires, test_does_not_fire_below_threshold}`;
+  `TestLevel2Deepen::{test_fires_when_level_2_and_high_thresholds_met,
+  test_does_not_fire_below_level_2, test_does_not_fire_below_high_threshold}`;
+  `TestMixedFixture::{test_level_1_install_with_deepen_threshold_fires_two,
+  test_template_does_not_count_as_archived_proposal}`.
+* C1, dropped — `test_active_surfacing_render.py`:
+  `TestTwelveCombinations::test_renders_non_empty_body[<row>-<preset>]` for
+  all 9 row × preset pairs (3 for `Level-1-to-2-graduation`; the 6 for the
+  remaining rows are renamed, below), and
+  `TestPerPresetDistinguishingLanguage::test_level_graduation_drafts_concrete_per_preset_p3_9`.
+* C1, dropped — `test_active_surfacing_mechanism.py`:
+  `TestPriorityOrder::test_collab_agreement_wins_over_level_graduation`,
+  `TestPriorityOrder::test_level_graduation_wins_over_second_agent`.
+* C3, dropped — `test_practice_modules.py::TestLadderCorrespondence::test_ladder_levels_match_adoption_levels`.
+* C1, added — `test_trigger_evaluation_maturity.py::TestNoTriggerClassifiesAnAdoptionLevel::{test_fresh_install,
+  test_activity_states[lockfile-5-3], test_activity_states[no-lockfile-5-3],
+  test_activity_states[lockfile-15-10]}`; and
+  `test_active_surfacing_render.py::TestEveryRowRendersForEveryPreset::test_renders_non_empty_body[<row>-<preset>]`
+  for the 6 remaining row × preset pairs (the rename).
+
+The plan predicted 19 dropped; the other 6 are the renamed cases, which drop
+and re-add under the new class name. The committed manifest is older than
+this plan: compared with it directly, a further 62 added nodes (and the four
+from `a1a58f93`) belong to work already queued for re-anchor, not to this
+plan.
+
+**Known omissions**
+
+* The `--init-lock` sequence was exercised on 2026-10-01, not at the tested
+  commit; the code path it runs (`bootstrap/_scaffold/`) is unchanged across
+  the reviewed range.
+* `base_hash` trails `hash` for the four finalized scripts, as for any
+  self-hosted verbatim script: `--finalize` advances `hash` only.
+* Nothing is re-anchored here; M is the Maintainer's.
