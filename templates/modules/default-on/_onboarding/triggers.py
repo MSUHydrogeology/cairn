@@ -29,9 +29,9 @@ from .security import _assert_safe_dir_for_glob, _assert_safe_read
 # The triggers observe the adopter's actual work: first-proposal-opened,
 # first-proposal-archived, first-plan-opened, first-plan-archived,
 # first-changelog-entry, second-agent-type, first-cross-type-review,
-# collab-agreement-signing.  There are no adoption-level triggers: Cairn
-# does not publish adoption levels, so nothing here classifies a tree by
-# one.
+# collab-agreement-signing.  Nothing here classifies a tree by adoption
+# stage: an adopter reads the doctrine or installs it with a profile, and
+# the triggers watch what they do.
 
 
 # Known AI-agent vendor / model / tool substrings used by the

@@ -79,5 +79,5 @@ to the tools built for those jobs.
   change moving through the lifecycle.
 * [`further-reading.md`](further-reading.md) — the craft resources
   Cairn relies on but does not re-teach.
-* [`../on-ramp/README.md`](../on-ramp/README.md) — how to adopt
-  (Level 0 / 1 / 2).
+* [`../on-ramp/README.md`](../on-ramp/README.md) — how to adopt:
+  read the doctrine, or install it with a profile.

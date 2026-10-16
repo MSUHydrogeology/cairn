@@ -5,8 +5,9 @@ an additional AI agent type -- the move that converts your
 External-review tier from same-vendor (fresh-session of the same
 agent) to **cross-type** (a structurally independent reviewer).
 For `collaborative-team` and `high-rigor-legacy` profiles this is
-day-one work; for `solo-greenfield`, it's the trigger that
-graduates the deployment past Level 1's review baseline.
+day-one work; for `solo-greenfield`, it is optional: fresh sessions
+of your one agent already cover every review tier, and a second type
+strengthens them once you have one.
 
 ## Prerequisites
 

@@ -26,8 +26,8 @@ honest:
   ethical, and collaborative data science.
   *Why it matters:* Cairn's lifecycle records *that* a change was
   reviewed and reproducible, but does not teach reproducible-research
-  practice itself — the Turing Way does, and is the model for the
-  on-ramp's Level 0 (read-the-doctrine) adoption.
+  practice itself — the Turing Way does, and is the model for
+  adopting Cairn by reading the doctrine alone.
 
 ## Foundational computing skills
 

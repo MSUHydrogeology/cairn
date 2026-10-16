@@ -74,7 +74,7 @@ marketing. Five dimensions, each mapped to a concrete commitment:
   two dogfooded case studies carry the apparatus through real work, a
   pre-release sweep gates every cut, and fail-closed integrity checks catch
   the failure modes the doctrine warns about.
-* **User focus** — the graduated on-ramp, the adopter-friction work, and
+* **User focus** — the two-ways-in on-ramp, the adopter-friction work, and
   progressive onboarding let the adopter choose their depth; multi-user is
   the design center, with the Maintainer one user among many.
 * **Sustainability** — dual CC BY 4.0 + MIT licensing, no vendor lock-in,

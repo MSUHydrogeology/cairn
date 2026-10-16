@@ -42,9 +42,9 @@ goes live.
   Fill `templates/codebase-readiness-report.md` for your legacy
   tree BEFORE engaging the team apparatus. The eleven-section
   assessment surfaces hidden state, scientific assumptions, and
-  security boundaries; the readiness scores drive whether
-  Level 2 adoption is actually right (vs. Level 1 or Level 0
-  while gaps get fixed). Do not skip this; legacy codebases
+  security boundaries; the readiness scores decide how much of
+  the apparatus to engage now (this profile, a smaller one, or
+  reading the doctrine while gaps get fixed). Do not skip this; legacy codebases
   reward the pre-pass that greenfield does not need.
 
 * [seed; id: confirm-maintainer-authority]

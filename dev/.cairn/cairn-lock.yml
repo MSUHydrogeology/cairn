@@ -322,7 +322,7 @@
     {
       "base_hash": "sha256:e7981225094ee2535ca15e1d30ff32c7934fa5bcb65405b6d5a031e6d1a79749",
       "dst": "scripts/_onboarding/triggers.py",
-      "hash": "sha256:bd741661e74ac450bb6e4c99b5532fce00c5da304f79049c8b2b7192ab40b561",
+      "hash": "sha256:be7b5caa6abc26dfbd9f8bfd6c39fb8baadd153af3676c489c4a6fe1a0c0238f",
       "src": "modules/default-on/_onboarding/triggers.py",
       "verbatim": true
     },

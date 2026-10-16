@@ -79,14 +79,17 @@ intended signal that a token has no contract.
 
 ## Using the templates
 
-* **Level 1 — hand-copy.** Copy `core/` into the repository, add
-  the modules the dimensional profile selects, and fill the
-  placeholders by hand. The graduated on-ramp (`on-ramp/`)
-  describes this path.
-* **Level 2 — bootstrap.** The bootstrap (`bootstrap/`) copies and
-  customizes the templates: it fills the inline tokens
-  mechanically and leaves the block slots, with the dimensional
-  profile, for the customizing agent.
+* **With the scaffold** — the way to install. The bootstrap
+  (`bootstrap/`) copies and customizes the templates: it fills the
+  inline tokens mechanically and leaves the block slots, with the
+  dimensional profile, for the customizing agent. The profile decides
+  which modules arrive; the on-ramp (`on-ramp/`) describes how to
+  choose one.
+* **By hand.** Copying `core/` and the selected modules into a
+  repository and filling the placeholders yourself gives the same
+  files, but without a lockfile the tree receives no upgrades or
+  onboarding prompts until it runs `scaffold.py upgrade --init-lock`
+  (see `on-ramp/README.md`).
 
 Either way the *result* is the same tree; the bootstrap only
 automates the mechanical part.

@@ -7,8 +7,8 @@ examples on real projects. This is the opposite: the **whole loop at
 the smallest possible scale**, so a newcomer sees the shape of a Cairn
 change *small* before reading the large ones.
 
-The toy project is a one-file `greet` CLI. It has adopted Cairn at
-**Level 1** (hand-copied kernel — see
+The toy project is a one-file `greet` CLI. Its Cairn kernel was copied
+in by hand, with no lockfile (see
 [`../../on-ramp/README.md`](../../on-ramp/README.md)): a `dev/` tree
 with the proposal lifecycle, run by hand.
 
@@ -45,8 +45,8 @@ but the shape is identical. For the narrated, step-by-step version see
 [`../../docs/getting-started.md`](../../docs/getting-started.md).
 
 > **The default-on disciplines come with tools.** This hand-copied
-> Level-1 example runs the lifecycle by hand, but an adopter who
-> bootstraps with the scaffold gets the claim-check discipline as a
+> example runs the lifecycle by hand, but an adopter who installs
+> with the scaffold gets the claim-check discipline as a
 > *runnable script*, not just prose: `claim_check.py` (in `scripts/`) is
 > installed and wired to the `{{claim_check_command}}` token. See the
 > [`claim-check`](../../templates/modules/default-on/claim-check.md)
