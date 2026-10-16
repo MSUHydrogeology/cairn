@@ -2,8 +2,8 @@
 
 **What this is**: a short paste-into-the-agent prompt for a
 maintainer who has one repository and one AI agent and wants
-to bring Cairn in *without* running the full Level 2 procedure
-in `../BOOTSTRAP.md` yet.
+to bring Cairn in *without* walking the full procedure in
+`../BOOTSTRAP.md`.
 
 **When to use it**: you have a real codebase you want to add
 Cairn to, you are working with one capable reasoning agent, and
@@ -18,7 +18,7 @@ assessment loop entirely. Come here after the quickstart if you
 want to adopt Cairn for real.
 
 **Where this sits**: between the quickstart (`../../docs/quickstart.md`,
-which prescribes the profile) and the full Level 2 bootstrap
+which prescribes the profile) and the full bootstrap
 (`../BOOTSTRAP.md`, which has the agent and the Maintainer run
 Acts I → II → III). bootstrap-lite carries the **assessment +
 profile-acceptance loop** of Act I in a one-shot prompt, then
@@ -49,7 +49,7 @@ do anything, read:
   * cairn/dimensions/README.md and the per-axis docs
     (age.md, size.md, complexity.md, language.md, human-team.md,
     agent-team.md) — the six axes you will score
-  * cairn/on-ramp/README.md — the three adoption levels
+  * cairn/on-ramp/README.md — the two ways in, and the profile table
 
 You may also read cairn/doctrine/README.md and
 cairn/doctrine/lifecycle.md if you want grounding before scoring,
@@ -135,11 +135,10 @@ in cairn/docs/quickstart.md.
 
 ## What the prompt *does not* do
 
-* It does not replace `../BOOTSTRAP.md`. Once your team and
-  codebase grow, run the full Level 2 procedure — bootstrap-lite
+* It does not replace `../BOOTSTRAP.md`. bootstrap-lite
   collapses Act I's six-axis scoring + the profile-acceptance
-  loop into a one-shot prompt, but Acts II–III still apply to
-  long-running adoption.
+  loop into a one-shot prompt; Act II's steps after the install,
+  and Act III, still apply.
 * It does not bypass the Maintainer-acceptance gate. The agent
   STOPs after proposing the profile and after opening the first
   dogfood proposal; both are Maintainer-decision points.
@@ -150,13 +149,13 @@ in cairn/docs/quickstart.md.
 
 ## Cross-references
 
-* `../BOOTSTRAP.md` — the full Level 2 procedure (Acts I → II → III).
+* `../BOOTSTRAP.md` — the full procedure (Acts I → II → III).
 * `../profiles/` — the three named governance presets the agent
   recommends among (`solo-greenfield`, `collaborative-team`,
   `high-rigor-legacy`).
 * `../../docs/quickstart.md` — the short throwaway-repo
   walk-through; the on-ramp *before* bootstrap-lite.
-* `../../on-ramp/README.md` — the three adoption levels and the
-  self-locate aid.
+* `../../on-ramp/README.md` — the two ways in, and how to choose a
+  profile.
 * `../../dimensions/README.md` and the six per-axis docs — the
   doctrine the agent uses to score axes during Step 2.

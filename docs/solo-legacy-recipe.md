@@ -6,34 +6,30 @@
 A verified adoption path for the solo scientist + one agent + an
 existing research codebase. If you are that persona — one human, one
 AI agent, and a codebase that already exists (messy, undocumented,
-half-tested, or all three) — the other on-ramps mis-route you: Level 2
-assumes a team big enough to staff it, and the naive shortcut ("just
-take `solo-greenfield` and set `age: legacy`") silently ships you a
-roster missing the one thing a legacy codebase actually needs. This
+half-tested, or all three) — the other routes mis-route you: the larger
+profiles assume a team big enough to staff them, and the naive shortcut
+("just take `solo-greenfield` and set `age: legacy`") silently ships you
+a roster missing the one thing a legacy codebase actually needs. This
 page is the path that doesn't do either.
 
-## Which level
+## Before you install: the readiness pre-pass
 
-**Level 1** — hand-copy the kernel (`templates/core/`), no bootstrap
-script. Solo staffing keeps you here; a large multi-team codebase would
-earn Level 2's automation, but you're not that.
-
-**With one addition a greenfield Level 1 adopter skips: fill
+You install with the scaffold, like any other adopter — **with one step
+a greenfield adopter skips: fill
 [`templates/codebase-readiness-report.md`](../templates/codebase-readiness-report.md)
 first.** The eleven-section assessment surfaces hidden state,
 scientific assumptions, and security boundaries in an *existing* tree —
-exactly what a fresh greenfield repo doesn't have yet. Its own G/M/P
-scoring will likely confirm Level 1 (solo + legacy usually lands
-"mostly Mixed with 1-2 Poor"), but do the pre-pass before you commit to
-a module roster, not after — the pre-pass is what tells you whether the
-conditional modules below actually apply to your tree.
+exactly what a fresh greenfield repo doesn't have yet. Solo + legacy
+usually scores "mostly Mixed with 1-2 Poor", which means start with the
+profile below and fix the Poor sections first. Do the pre-pass before
+you commit to a module roster, not after — it is what tells you whether
+the conditional modules below actually apply to your tree.
 
 ## The exact composed profile
 
-Use `scaffold.py --summary` as a **roster-computation oracle** — it
-tells you which modules to hand-copy, it does not install anything for
-you. This stays a Level 1 hand-copy path; the resolver just saves you
-from working out the roster by hand.
+Preview the roster with `scaffold.py --summary`, then install it with
+the scaffold — the same tool the quickstart runs, pointed at your own
+repository.
 
 <!-- solo-legacy-recipe: canonical-profile -->
 ```yaml
@@ -53,13 +49,22 @@ modules_add:
 ```
 
 Run `python bootstrap/scaffold.py --summary --config profile.yml` from
-a Cairn checkout against a scratch copy of this YAML. It should report
-a **10-module roster** — the eight default-on modules
-(`lifecycle-metrics`, `reflections`, `claim-check`, `fold-back-ledger`,
-`incident-trackers`, `documentation-plan`, `content-security`,
-`security-verification`) plus `legacy-agent` and
-`testing-discipline` — with **zero staffability warnings**. Confirm your
-own run matches before you hand-copy anything.
+a Cairn checkout — a release tag you have verified, per
+`bootstrap/PROVENANCE.md` — against a copy of this YAML. It should
+report an **8-module roster** — the six default-on modules
+(`reflections`, `claim-check`, `incident-trackers`,
+`documentation-plan`, `content-security`, `security-verification`)
+plus `legacy-agent` and `testing-discipline` — with **zero staffability
+warnings**. Confirm your own run matches, then install:
+
+```bash
+python bootstrap/scaffold.py --config profile.yml --target <your-repo>
+```
+
+The scaffold does not overwrite a file your repository already has —
+your own `README.md` or `CHANGELOG.md` stays as it is — unless you pass
+`--force`; don't. Then do the four steps it prints for a real adoption
+(`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
 
 **Two more modules, conditional on your own readiness-report
 findings — don't add them yet:**

@@ -14,14 +14,13 @@
 # Resulting module roster (from `preset: solo-greenfield` expansion in
 # bootstrap/scaffold.py's _PRESETS):
 #
-#   Default-on (always): lifecycle-metrics, reflections, claim-check,
-#     fold-back-ledger, incident-trackers, documentation-plan,
-#     content-security.
+#   Default-on (always): reflections, claim-check, incident-trackers,
+#     documentation-plan, content-security, security-verification.
 #   Team-gated baseline: (none -- no axis fires a team-gated module).
 #
-# On-ramp recommendation: Level 1 (hand-copy the kernel + default-on
-# modules; defer Level 2 bootstrap until team or codebase complexity
-# grows).  See cairn/on-ramp/README.md.
+# Who this is for: one Maintainer starting a new project -- the
+# smallest install Cairn ships.  Add modules as the work earns them.
+# See cairn/on-ramp/README.md.
 #
 # Quickstart adopters: copy this file as `profile.yml` in your target
 # repo; see cairn/docs/quickstart.md for the literal command sequence.

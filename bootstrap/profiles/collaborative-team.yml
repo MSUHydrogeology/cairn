@@ -13,16 +13,16 @@
 #
 # Resulting module roster (from `preset: collaborative-team` expansion):
 #
-#   Default-on (always): lifecycle-metrics, reflections, claim-check,
-#     fold-back-ledger, incident-trackers, documentation-plan,
-#     content-security.
+#   Default-on (always): reflections, claim-check, incident-trackers,
+#     documentation-plan, content-security, security-verification.
 #   Team-gated baseline: model-selection, testing-discipline,
 #     doc-drift-prevention (axis-driven), plus the coordination
 #     modules (dual-review, coordination-tiers) added through the
 #     team-staffing gate when the agent team can staff them.
 #
-# On-ramp recommendation: Level 2 (run the full bootstrap with this
-# profile; the agent + maintainer scaffold via cairn/bootstrap/BOOTSTRAP.md).
+# Who this is for: a team -- several people or agents working in the
+# tree at once.  Install it with the scaffold, ideally walking
+# cairn/bootstrap/BOOTSTRAP.md with your agent.
 # Default-on modules are installed alongside the axis-driven team-gated
 # set; the team-staffing gate determines whether dual-review +
 # coordination-tiers land in the baseline or stay opt-in.

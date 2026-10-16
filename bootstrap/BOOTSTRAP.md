@@ -3,9 +3,10 @@
 **Audience**: a capable reasoning agent running alongside a Human
 Maintainer who is adopting Cairn for a repository.
 
-**What this document is**: the authoritative procedure for a
-**Level 2 bootstrap** (see `../on-ramp/README.md`). It has three
-acts that must run in order. Act I produces a profile the
+**What this document is**: the authoritative procedure for the
+**full bootstrap** — the most-assisted way to install Cairn, for any
+profile (see `../on-ramp/README.md`). It has three acts that must run
+in order. Act I produces a profile the
 Maintainer accepts before anything is installed. Act II installs
 and customizes the methodology. Act III is the operating posture
 the team takes after installation.
@@ -22,9 +23,9 @@ before declaring the installation complete.
 > [`prompts/bootstrap-lite.md`](prompts/bootstrap-lite.md) instead.
 > bootstrap-lite collapses Act I's assessment + profile-acceptance
 > loop into a one-shot agent prompt and hands off to the same
-> `scaffold.py` install command this document drives. Acts II–III
-> below still apply once your team and codebase grow; bootstrap-lite
-> is the on-ramp, not the replacement.
+> `scaffold.py` install command this document drives. It replaces
+> Act I only: Act II's steps after the install apply to every real
+> adoption, and Act III once the apparatus is running.
 
 ---
 
@@ -217,9 +218,9 @@ Module selection
   Kernel (always):       lifecycle, Maintainer authority, append-only
                          deliberation, dev/ tree, baseline coordination,
                          session routines
-  Default-on (selected): lifecycle-metrics, reflections, claim-check,
-                         fold-back-ledger, incident-trackers,
-                         documentation-plan, content-security
+  Default-on (selected): reflections, claim-check, incident-trackers,
+                         documentation-plan, content-security,
+                         security-verification
   Token-gated:           <modules selected by filled declared tokens, or "none">
   Team-gated (selected): <list, or "none">
   Team-gated (deferred): <list with reason, or "none">
@@ -227,8 +228,6 @@ Module selection
   Optional templates:    <CONTRIBUTING.md if human-team >= small-multi,
                           else "none"; VENDOR.md always>
   Staffability warnings: <any explicit add of an unstaffable module, else "none">
-
-Adoption level: Level 2 (full bootstrap)
 
 Does this profile look right before I install anything?
 ```

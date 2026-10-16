@@ -13,9 +13,8 @@
 #
 # Resulting module roster (from `preset: high-rigor-legacy` expansion):
 #
-#   Default-on (always): lifecycle-metrics, reflections, claim-check,
-#     fold-back-ledger, incident-trackers, documentation-plan,
-#     content-security.
+#   Default-on (always): reflections, claim-check, incident-trackers,
+#     documentation-plan, content-security, security-verification.
 #   Team-gated baseline: legacy-agent, security-review,
 #     dual-language-tests, model-selection, testing-discipline,
 #     doc-drift-prevention (axis-driven), plus the coordination
@@ -25,13 +24,14 @@
 # Recommended pre-pass: fill cairn/templates/codebase-readiness-report.md
 # before running the bootstrap -- the eleven-section assessment
 # surfaces the hidden state, scientific assumptions, and security
-# boundaries that legacy codebases carry and that drive whether
-# Level 2 is the right adoption level at all (vs. Level 0 / Level 1).
+# boundaries that legacy codebases carry and that decide how much of
+# the apparatus to install -- or whether to read the doctrine while you
+# fix the gaps first.
 #
-# On-ramp recommendation: Level 2 with readiness-report pre-pass
-# (cairn/on-ramp/README.md > "Choosing a level").  Most adopters land
-# here when their legacy code has tests, documented data I/O, and
-# clear scientific assumptions; if the readiness report flags
+# Who this is for: a legacy codebase with a team behind it, after the
+# readiness-report pre-pass (cairn/on-ramp/README.md > "Choosing a
+# profile").  It fits when the legacy code has tests, documented data
+# I/O, and clear scientific assumptions; if the readiness report flags
 # section 10 (security boundaries) or section 11 (scientific
 # assumptions) as Poor, defer scaffolding until the gap is fixed.
 

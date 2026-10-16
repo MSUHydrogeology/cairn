@@ -3,12 +3,13 @@
 
 # Codebase Readiness Report
 
-> **Use this template before picking a Cairn level.**  Fill it for
+> **Use this template before choosing a Cairn profile.**  Fill it for
 > your existing scientific codebase -- with your AI agent's help if
-> you have one -- and the answers will tell you (a) whether you are
-> ready for Level 1, Level 2, or Level 0 (read the doctrine first
-> while you fix specific gaps), and (b) which Cairn modules your
-> dimensional profile most plausibly warrants.
+> you have one -- and the answers will tell you (a) how much of Cairn
+> to install now: the profile your axes give, the smallest one that
+> fits, or nothing yet (read the doctrine first while you fix specific
+> gaps), and (b) which Cairn modules your dimensional profile most
+> plausibly warrants.
 >
 > A filled report is also a **gift to your future self**: even if
 > you never adopt Cairn, the act of filling it surfaces the
@@ -34,7 +35,7 @@ for active, tracked work.
    under each section.  Score yourself honestly -- nobody else
    reads this unless you share it.
 3. At the end, the "Profile mapping" appendix translates your scores
-   into a recommended Cairn level and module roster.
+   into a recommended starting point and module roster.
 
 The eleven sections below cover the surfaces a scientific codebase
 needs the AI agent (and its human maintainer) to understand
@@ -57,7 +58,7 @@ The default is **safer**: fill the full report locally, then commit
   than the literal path); commit this as
   `dev/readiness-report-summary.md`.
 * **A readiness-report decision** -- a one-page artifact that
-  records the G/M/P self-score table, the chosen Cairn level, and
+  records the G/M/P self-score table, the chosen starting point, and
   a follow-up action list, **without** the eleven sections'
   narrative; commit this as `dev/readiness-report-decision.md`.
 
@@ -331,21 +332,21 @@ unless you share it.
 
 ---
 
-## Profile mapping -- which Cairn level
+## Profile mapping -- how small to start
 
 The mapping below is a guide, not a verdict.  Your maintainer
 judgment overrides it; the dimensional matrix in
 [`dimensions/`](../dimensions/) carries the full doctrine.
 
-* **Mostly Good (≥8 G)**: you can run **Level 2** (full
-  bootstrap) cleanly.  Pick a profile from
-  [`bootstrap/profiles/`](../bootstrap/profiles/) and run
+* **Mostly Good (≥8 G)**: **install the profile your axes give**.
+  Pick it from [`bootstrap/profiles/`](../bootstrap/profiles/) and run
   [`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md).
-* **Mostly Mixed, 1-2 Poor (≥6 G/M, ≤2 P)**: **Level 1**
-  (hand-copy the kernel) is the right starting point.  Your
-  apparatus stays light while you fix the P-scored sections.
-  Move to Level 2 once those sections lift.
-* **Several Poor (≥3 P)**: **Level 0** for now -- read
+* **Mostly Mixed, 1-2 Poor (≥6 G/M, ≤2 P)**: **start with the
+  smallest profile that fits** -- for a solo maintainer, the composed
+  profile in [`docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md).
+  Your apparatus stays light while you fix the P-scored sections; add
+  modules once those sections lift.
+* **Several Poor (≥3 P)**: **read the doctrine** for now -- read
   [`doctrine/`](../doctrine/) as a handbook, and use *this
   report's P sections* as the queue of things to fix before
   you add the Cairn apparatus.  Adding apparatus to a codebase
@@ -380,4 +381,4 @@ External-repo paths: `docs/assumptions.md`
   [`bootstrap/BOOTSTRAP.md`](../bootstrap/BOOTSTRAP.md)'s Act I
   assessment -- the bootstrap's six-axis dimensional profile is
   a different lens (the codebase + team, not the codebase's
-  fitness for adoption).  Run both before a full Level 2 install.
+  fitness for adoption).  Run both before a full bootstrap.
