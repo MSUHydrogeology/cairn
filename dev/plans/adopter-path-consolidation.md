@@ -798,3 +798,104 @@ change, so the Boundary B record stands.
 Not changed: the same re-install sentence printed by `upgrade --init-lock`
 itself, which lives in `bootstrap/_scaffold/` and is outside this plan. It is
 dispositioned at archive.
+
+## Code review -- Claude (fresh-context subagent) -- 2026-10-16 -- init-lock note fix
+
+**Model**: claude-opus-5-5
+
+Reviewed commit: f3c839a7f22919b027e11c5f79d37ca2914fcb56
+Target: f3c839a7 -- bootstrap/_scaffold/upgrade.py (_cmd_init_lock note) and its test
+Prior findings: none
+
+**Findings**: raised
+
+The fix holds. Every claim in the new note is true, the new test fails on the
+old message, and the commit touches nothing but the note and the test. I raise
+three non-blocking findings. One is about the test. The other two are places
+that still give the advice this commit removed, and the first of them now
+contradicts the new note.
+
+Every probe ran under `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(3.13.13), in scratch trees and `git archive` extractions outside this
+repository. "Copied kernel" below means a fresh git repository holding a copy of
+`templates/core/`, given a lockfile by `upgrade --init-lock` once the four
+profile placeholders were filled.
+
+### Ledger
+
+| Check | What it would show if the change were wrong | Result |
+|---|---|---|
+| `upgrade --stage` writes both versions side by side | a migrated file with no pair to merge from | **Holds.** `bootstrap/_scaffold/upgrade.py:866-889` writes `<file>.theirs` (new upstream) and `<file>.ours` (the on-disk copy) into the stage's `review-only/` directory, and the `--plan` next-step line (`bootstrap/_scaffold/upgrade.py:734-738`) says the same. Probe on the copied kernel: 17 review-only files, 17 pairs; `AGENTS.md.ours` is byte-identical to the file on disk. |
+| An install over the tree skips every file already there and writes no lockfile | an existing file rewritten, or a lockfile written | **Holds.** The skip is at `bootstrap/_scaffold/install.py:297`; any file that differs from a clean install refuses the lockfile (`bootstrap/_scaffold/install.py:1787`, `:1812`). Probe on the copied kernel, no `--force`: 17 `[skip]` lines, `cairn-lock.yml NOT written: 9 installed file(s) differ`, the migrated lockfile's sha256 unchanged, and `git diff` shows only two lines appended to `.gitignore`. Its one limit: a lockfile *is* written when every tracked file still matches a clean install of the running Cairn. No adopter with a reason to upgrade has such a tree; one edited line is enough to miss it (see [IL2]). |
+| `--force` overwrites edits | an adopter's line surviving `--force` | **Holds.** A committed marker line in `AGENTS.md` is gone, and git shows the 9 files that differed rewritten. `--force` also writes a full lockfile, so the note is right to present it as the cost, not the route. |
+| The new test can fail | a test that stays green on the old message | **Holds.** With the message restored byte-for-byte to the parent's (an extraction of `f3c839a7`), `TestInitLock` gives 1 failed (the `re-install` assertion) and 4 passed. Unmutated: 5 passed. |
+| The defect-repair conditions | other bytes in the commit, or more than one changed engine symbol | **Hold.** Two files changed, 6 and 21 lines. The runbook's read-only Step 1 snippet gives CHANGED 1 (`FunctionDef:_cmd_init_lock`, `a6fbdd4d4104cf53` to `ca185206bd3910b7`), MISSING 0, DUPLICATE 0, NEW 86 at `f3c839a7`, and CHANGED 0, NEW 86 on the parent's engine bytes. The engine family the commit names: 329 passed. One of its tests upgrades `--to HEAD`, which needs git metadata, so it ran in a git-initialised extraction. |
+| Other places giving the same advice | a page or message that still sends the adopter to a re-install that cannot work | **Found**, see [IL2] and [IL3]. The `--finalize` error's "fix or re-install first" (`bootstrap/_scaffold/upgrade.py:1855`) is sound: it concerns missing files, and a plain install does restore those. |
+
+### Findings
+
+**[IL1] non-blocking: the test forbids one spelling of the advice.**
+`bootstrap/tests/test_upgrade.py:956` asserts `"re-install" not in out.lower()`.
+The property its docstring names is wider: the note never advises reinstalling.
+Probe: in an extraction, I replaced the note's last sentence with "For clean
+merges, reinstall from an upgrade-capable Cairn." and kept the `--stage` clause.
+`TestInitLock` gave 5 passed. *Close:* strip hyphens before matching
+`reinstall`, or also assert the sentence that warns against installing over the
+tree.
+
+**[IL2] non-blocking: `bootstrap/UPGRADE.md` still recommends the re-install,
+and now contradicts the note.**
+
+* **The page.** `bootstrap/UPGRADE.md:185-190` keeps the re-install for
+  scaffold-installed trees and exempts only hand-copied ones. That carve-out
+  was the answer to [CR3].
+* **The code draws no such line.** The install skips a file because it exists,
+  and refuses the lockfile because a file differs. How the tree was made does
+  not enter.
+* **Probe.** I ran a scaffold install, deleted the lockfile and base cache to
+  match a tree installed before upgrade support, and appended one line to
+  `dev/NEXT_SESSION.md`. A re-install without `--force` printed `1 installed
+  file(s) differ from a clean install (dev/NEXT_SESSION.md)` and wrote no
+  lockfile.
+* **The contradiction.** The note prints for every migrated tree and says not
+  to install over it. The page that explains the note still says to.
+  `bootstrap/fidelity-check.md:106-108` offers the same route, "or re-installs
+  from an upgrade-capable Cairn", as an alternative to `--init-lock`.
+
+*Close:* make both say what the note says, for every pre-lockfile tree. This is
+prose only.
+
+**[IL3] non-blocking: the vendor-wrapper warning in `--init-lock` gives the
+same advice.**
+
+* **The warning.** It reads "Rename it to a known vendor filename or
+  re-install from an upgrade-capable Cairn"
+  (`bootstrap/_scaffold/upgrade.py:1224-1225`).
+* **Why neither remedy works.** The warning prints in the same run that writes
+  the migrated lockfile, and `--init-lock` refuses to run once a lockfile
+  exists (`bootstrap/_scaffold/upgrade.py:1167`).
+* **Probe: re-install.** On a copied kernel with no wrapper, a re-install
+  without `--force` wrote a fresh `VENDOR.md` but no lockfile, so the lockfile
+  still has no wrapper record. The next `upgrade --plan` lists `VENDOR.md` as a
+  BLOCKED new core file. That is worse than before the re-install.
+* **Probe: rename.** A `CLAUDE.md` wrapper added after the run leaves the
+  lockfile unchanged, and `upgrade --plan` offers to add `VENDOR.md`.
+
+Neither remedy tracks the wrapper unless the adopter deletes the migrated
+lockfile and runs `--init-lock` again. It is the same defect, in an engine file
+this commit did not touch. *Close:* a separate repair with its own failing
+test, or the archive dispositions.
+
+**Seen but not raised.**
+
+* For a review-only file, the staged `.theirs` is the raw template:
+  `AGENTS.md.theirs` keeps its three `{{...}}` placeholders, although the
+  migrated lockfile records the profile's token values. This predates the
+  commit and does not make the note false.
+* Over a migrated tree, the install's own refusal (`bootstrap/_scaffold/install.py:1812`)
+  points at `upgrade --init-lock`, which then reports that a lockfile already
+  exists. Nothing is written either way.
+
+**Disposition:** the fix stands, and the plan stays `ready-to-archive`. [IL1]
+is a small test tightening. [IL2] and [IL3] belong with the archive
+dispositions, next to the residual of [CR3].
