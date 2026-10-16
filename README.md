@@ -257,22 +257,18 @@ Prefer to read before running?
 through the lifecycle, and [`docs/workflow-role.md`](docs/workflow-role.md)
 explains where Cairn sits — and what it deliberately does *not* do.
 
-Three graduated levels (see [`on-ramp/README.md`](on-ramp/README.md)
-for the full ladder):
+Two ways in (see [`on-ramp/README.md`](on-ramp/README.md) for how to
+choose):
 
-- **Level 0 — read the doctrine.**  Read [`doctrine/`](doctrine/)
-  as a handbook; let it inform how the team already works.  No
-  apparatus, no `dev/` tree.  The lowest-commitment entry.
-- **Level 1 — hand-copy the kernel.**  Copy
-  [`templates/core/`](templates/core/) into the repository, add
-  the modules your dimensional profile selects, run the lifecycle
-  by hand.
-- **Level 2 — full bootstrap.**  Run
-  [`bootstrap/scaffold.py`](bootstrap/scaffold.py) against a
-  profile YAML; the bootstrap procedure
-  ([`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md)) walks an
-  agent and the maintainer through assessment, install,
-  customization, and a dogfood pass.
+- **Read it.**  Read [`doctrine/`](doctrine/) as a handbook; let it
+  inform how the team already works.  No apparatus, no `dev/` tree.
+- **Install it.**  Run [`bootstrap/scaffold.py`](bootstrap/scaffold.py)
+  against a profile YAML.  The profile decides which modules arrive:
+  start with the smallest that fits, and add modules as the work earns
+  them.  The bootstrap procedure
+  ([`bootstrap/BOOTSTRAP.md`](bootstrap/BOOTSTRAP.md)) walks an agent
+  and the maintainer through assessment, install, customization, and a
+  dogfood pass.
 
 The bootstrap is intentionally single-agent: one capable reasoning agent
 running alongside you, working from
@@ -296,7 +292,7 @@ your answers into a recommended starting point.
 | [`templates/`](templates/) | The forkable files: `core/` (the kernel), `modules/default-on/` and `modules/team-gated/` (the dimension-selected add-ons), `phase-0/` (the assessment templates), and `onboarding/` (the progressive-onboarding presets). |
 | [`bootstrap/`](bootstrap/) | The three-act install procedure (`BOOTSTRAP.md`), the scaffold that performs it (`scaffold.py` + tests), the safety rules it operates under (`SAFETY.md`), and the fidelity-check manifest spec (`fidelity-check.md`). |
 | [`case-studies/`](case-studies/) | Worked examples of the matrix applied: [`modflow_tools.md`](case-studies/modflow_tools.md) (smaller sibling) and [`lhm.md`](case-studies/lhm.md) (full apparatus). |
-| [`on-ramp/`](on-ramp/) | The graduated-adoption ladder (Level 0 / 1 / 2). |
+| [`on-ramp/`](on-ramp/) | The two ways in — read the doctrine, or install it with a profile — and how to choose a profile. |
 | [`docs/`](docs/) | Adopter orientation: Cairn's role in the workflow (`workflow-role.md`), a getting-started walkthrough (`getting-started.md`), and a curated further-reading signpost (`further-reading.md`). |
 | [`examples/`](examples/) | Worked examples; [`examples/minimal/`](examples/minimal/) traces one change through the lifecycle at the smallest scale, and [`examples/scientific-minimal/`](examples/scientific-minimal/) does the same on a tiny science workflow (a mass-balance invariant test). |
 

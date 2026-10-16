@@ -47,6 +47,12 @@ A **fresh, disposable repo** with:
 You are *not* installing Cairn into a real project here.  This is a
 shakedown.
 
+The install itself is real, though: Steps 2 and 3 are the commands you
+would run on a real project, with the smallest profile Cairn ships.
+What makes this a shakedown is the throwaway target, the trust check
+Step 1 lets you skip, and the teardown at the end.  *What to do next*
+gives the real route.
+
 ## Step 1 -- clone Cairn and create a disposable target
 
 <!-- cairn-accept: suspicious-url reason="Literal Cairn clone URL the adopter needs to copy" reviewer="Claude" date=2026-05-28 -->
@@ -191,7 +197,7 @@ Commit the install (path-scoped, since the scaffold touched many
 files; `CHANGELOG.md` was already committed in Step 1):
 
 ```bash
-git add AGENTS.md VENDOR.md .gitignore dev/ tools/ scripts/ .agents/ docs/ && \
+git add AGENTS.md VENDOR.md NOTICE.md .gitignore dev/ tools/ scripts/ .agents/ docs/ && \
     git commit -q -m "Install Cairn kernel + default-on modules"
 ```
 
@@ -293,8 +299,6 @@ cd .. && rm -rf /tmp/cairn-quickstart
 The disposable repo is gone.  Cairn (in your `cairn/` clone) is
 untouched.
 
-Time: ~30 seconds.
-
 ## What you saw
 
 * **Propose before code.**  The first commit was a proposal, not a
@@ -336,7 +340,7 @@ In order:
 
 * **Pick a real project to assess** -- use the
   [Codebase Readiness Report template](../templates/codebase-readiness-report.md)
-  to surface the questions before you pick a level.  Fill it
+  to surface the questions before you choose a profile.  Fill it
   locally first; the template's "What to check in" section names
   the safer default check-in posture.
 * **Hand the assessment to your agent (one-shot)** -- use the
@@ -347,10 +351,14 @@ In order:
   want to drive a *real* (non-trivial) proposal next: it preserves
   the Maintainer-acceptance gate the quickstart preserved, just
   scaled up to the work your repo actually does.
-* **Pick an adoption level** -- the [on-ramp](../on-ramp/README.md)
-  describes Level 0 (read the doctrine), Level 1 (hand-copy the
-  kernel), and Level 2 (full bootstrap).  Most teams start at
-  Level 1.
+* **Install Cairn into the real project** -- run Steps 2 and 3
+  against your own repository, with the profile the assessment points
+  to, from a release tag you have verified
+  (`bootstrap/PROVENANCE.md` > "Verifying a release" -- not skippable
+  for a real project).  Then do the four steps the installer prints
+  for a real adoption (`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
+  The [on-ramp](../on-ramp/README.md) has the profile table, and what
+  to do if you copied the kernel in by hand.
 * **Read the doctrine** -- [`doctrine/`](../doctrine/) is the
   invariant core; it explains *why* the lifecycle works the way it
   does.  The
@@ -364,5 +372,5 @@ Cairn is **slower for the first few changes**.  Its speed comes
 later: fewer repeated decisions, fewer forgotten assumptions, fewer
 agent collisions, and less rework after unreviewed scientific
 choices.  Keep the apparatus only as heavy as your codebase and team
-earn -- the [on-ramp's maturity ladder](../on-ramp/README.md) is
-the self-locate aid for that calibration.
+earn -- the profile you choose is that calibration (see the
+[on-ramp](../on-ramp/README.md)).

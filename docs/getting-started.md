@@ -1,8 +1,8 @@
 # Getting started — a change moving through Cairn
 
-The [on-ramp](../on-ramp/README.md) describes the adoption *levels*
-(read the doctrine / hand-copy the kernel / run the bootstrap). This
-page is the complement: a narrated trace of **one change moving
+The [on-ramp](../on-ramp/README.md) describes *how much* of Cairn to
+adopt (read the doctrine, or install it with a profile). This page is
+the complement: a narrated trace of **one change moving
 through the lifecycle**, so you see the apparatus *in motion* rather
 than only described.
 
@@ -81,10 +81,11 @@ deliberation are the durable record: a future reader can reconstruct
 ## What to do next
 
 * **Just exploring?** Read [`../doctrine/`](../doctrine/) as a handbook
-  (on-ramp Level 0) and let it inform how your team already works.
-* **Ready to adopt?** Hand-copy [`../templates/core/`](../templates/core/)
-  (Level 1) or run the bootstrap (Level 2) — see the
-  [on-ramp](../on-ramp/README.md).
+  and let it inform how your team already works.
+* **Ready to adopt?** Install it with the scaffold and a profile — see the
+  [on-ramp](../on-ramp/README.md) for how to choose one, and
+  [`quickstart.md`](quickstart.md) to try the smallest install on a
+  throwaway repository first.
 * **Need to learn the craft Cairn assumes** (testing, reproducibility,
   working with AI agents)? See [`further-reading.md`](further-reading.md);
   Cairn points you to those resources rather than re-teaching them.
