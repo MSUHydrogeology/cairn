@@ -169,8 +169,8 @@ for an existing adopter.)
 
 ## Migrating a tree installed before upgrade support
 
-If you bootstrapped before this capability existed, your tree has no
-lockfile. Create one:
+If you bootstrapped before this capability existed, or copied the kernel
+in by hand, your tree has no lockfile. Create one:
 
 ```
 python bootstrap/scaffold.py upgrade --target <repo> --init-lock

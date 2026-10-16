@@ -1,105 +1,114 @@
-# The on-ramp — graduated adoption
+# The on-ramp — two ways in
 
-Adopting Cairn is **not** all-or-nothing. There are three levels,
-and a project picks the one that fits — the bootstrap recommends a
-level from the dimensional profile, but the adopter chooses.
+Adopting Cairn is **not** all-or-nothing. You can **read it** and let the
+ideas shape how you already work, or you can **install it**. There is one
+installer, and the profile you give it decides how much it installs, so start
+small and grow.
 
-> **Honest framing.** Cairn is **slower for the first few changes**
-> at any level: writing decisions down, reviewing them, and
-> committing the trail adds friction *before* code. The payback is
-> later — fewer repeated decisions, fewer forgotten assumptions,
-> fewer agent collisions, and less rework after unreviewed
-> scientific choices. Keep the apparatus only as heavy as your
-> codebase and team earn; the three levels below are the self-locate
-> aid for that calibration.
+> **Honest framing.** Cairn is **slower for the first few changes**:
+> writing decisions down, reviewing them, and committing the trail adds
+> friction *before* code. The payback is later — fewer repeated decisions,
+> fewer forgotten assumptions, fewer agent collisions, and less rework after
+> unreviewed scientific choices. Keep the apparatus only as heavy as your
+> codebase and team earn; the profile you choose is that calibration.
 
-## Level 0 — read the doctrine
+## Read it
 
-Adopt nothing mechanically. Read `doctrine/` as a handbook and let
-it inform how the team already works — no `dev/` tree, no
-templates. This is the lowest-commitment entry: the project takes
-the *ideas* (recorded deliberation, the Dual-Review model) without
-the apparatus. The Turing Way is the model for this mode.
+Adopt nothing mechanically. Read `doctrine/` as a handbook and let it inform
+how the team already works — no `dev/` tree, no templates. The project takes
+the *ideas* (recorded deliberation, the Dual-Review model) without the
+apparatus. The Turing Way is the model for this mode.
 
-## Level 1 — hand-copy the kernel
+## Install it
 
-Copy the invariant-kernel templates (`templates/core/`) into the
-repository, add the modules the dimensional profile selects, and
-run the lifecycle by hand: write proposals, review them, record
-decisions, keep the `dev/` tree. No bootstrap script — the adopter
-fills the placeholders themselves. Best for a small, simple
-project that wants the discipline without the machinery.
+Run the scaffold with a profile. The route is the same for every project:
 
-**Level 1 is the natural home for solo + one-agent adopters.** Many
-scientists begin with one human + one AI agent, where staffing a
-second independent reviewer is not yet realistic. Level 1 is built
-for that case: the Maintainer's own review (or a fresh-session
-review from the same agent type) covers the Dual-Review tier, and
-the stronger structural-independence floor (different agent type,
-or a second human reviewer) is added when the team can staff it.
-The doctrine is sized to the work, not the other way around.
+1. **Choose a profile** (below).
+2. **Run the scaffold** against your repository.
+3. **Do the four steps the installer prints** for a real adoption — confirm the
+   installed files, fill the block slots, run the acceptance gate, and take one
+   change through the lifecycle (`bootstrap/BOOTSTRAP.md` Act II-3 to II-6).
 
-## Level 2 — run the bootstrap
+The profile decides which modules arrive; nothing else does. `team-gated` is
+the name of a folder of modules, not a rank: a solo scientist on an existing
+codebase installs some of them, and that is the right install.
 
-Run the full bootstrap (`bootstrap/`): an agent assesses the
-project (Act I), installs and customizes the apparatus (Act II),
-and the team then operates and improves it (Act III). Best for a
-large, legacy, or multi-team project, where the customization is
-substantial enough that automating it pays.
+**You do not need a second reviewer to start.** Every review tier's floor is a
+fresh session, so one agent is enough: a new session of it reviews what an
+earlier session wrote, and your own read as Maintainer counts too. A second
+agent type, or a second human, makes review stronger where you have one; it is
+never required.
 
-## Choosing a level
+To try the whole thing on a throwaway repository first, run
+[`../docs/quickstart.md`](../docs/quickstart.md). The commands it uses are a
+real install with the smallest profile.
 
-Filling [`../templates/codebase-readiness-report.md`](../templates/codebase-readiness-report.md)
-first sharpens the self-locate -- recommended for legacy codebases.
-The eleven-section assessment surfaces hidden state, scientific
-assumptions, and security boundaries, then maps your G/M/P scores
-to a recommended level (≥8 G → Level 2 cleanly; mostly Mixed with
-1–2 Poor → Level 1 first; ≥3 Poor → Level 0 while you fix gaps).
+## Choosing a profile
 
-| The project is... | Start at |
-|-------------------|----------|
-| exploring the ideas, not yet committed | Level 0 |
-| small, simple, one or two contributors | Level 1 |
-| large, legacy, or multi-team | Level 2 |
+| The project is... | Start with |
+|-------------------|------------|
+| exploring the ideas, not yet committed | reading the doctrine |
+| a new project, one Maintainer | the `solo-greenfield` profile |
+| an existing codebase, one Maintainer | the composed profile in [`../docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md) |
+| a team, or a large codebase with several contributors | `collaborative-team` or `high-rigor-legacy`, or have an agent score your project |
 
-**Solo (or two contributors) on an existing/legacy codebase** is both
-"small, simple" *and* "legacy" at once — the coarse table above doesn't
-have a row for that combination. The axis that pushes toward Level 2 is
-*team size and complexity*, not age alone: a solo-staffed legacy
-codebase stays at **Level 1**, with the readiness-report pre-pass first
-(the G/M/P mapping above already covers this — "mostly Mixed with 1-2
-Poor → Level 1 first" applies here too) plus the legacy-retrofit
-modules added by hand. See
-[`docs/solo-legacy-recipe.md`](../docs/solo-legacy-recipe.md) for the
-exact composed profile.
+Three ways to arrive at a profile, from least to most help:
 
-The levels are an **on-ramp, not a fork**: a project can move up.
-Level 0 readers become Level 1 adopters; a Level 1 project runs
-the bootstrap later to formalize what it assembled by hand. The
-dimensional matrix (`dimensions/`) informs the recommendation, but
-the choice is always the adopter's.
+* **Take a preset as it is** — the files in `bootstrap/profiles/`.
+* **Have your agent assess the repository and recommend one** —
+  [`../bootstrap/prompts/bootstrap-lite.md`](../bootstrap/prompts/bootstrap-lite.md).
+* **Score the six axes together** — `bootstrap/BOOTSTRAP.md` Act I, which the
+  dimensional matrix (`dimensions/`) informs.
 
-## The maturity ladder
+**For an existing codebase, fill
+[`../templates/codebase-readiness-report.md`](../templates/codebase-readiness-report.md)
+first.** Its eleven sections surface hidden state, scientific assumptions, and
+security boundaries, and its G/M/P scores tell you how small to start: mostly
+Good, install the profile your axes give; mostly Mixed with one or two Poor,
+start with the smallest profile that fits and fix the Poor sections first;
+three or more Poor, read the doctrine while you fix the gaps.
 
-The ladder is a **self-locate aid, not a scorecard.** It exists so an
-adopter can answer "where are we, and what is the next rung?" -- not to
-rank teams or score adoptions. (This is the Measurement Compact's
-posture: surfaces serve *system learning, not judgment*.) Each rung is
-one of the three adoption levels above; "next rung" names the next
-deliberate step, which is sometimes *deepening within* a level rather
-than jumping to the next.
+The choice is always yours; the profile and the report inform it.
 
-| Rung | You are here if... | The next rung |
-|------|--------------------|---------------|
-| **Level 0 — reading the doctrine** | the team reads `doctrine/` and lets it inform how it already works; no `dev/` tree, no templates. | **Level 1**: hand-copy the kernel and run one real change through the lifecycle (see [`../docs/getting-started.md`](../docs/getting-started.md)). |
-| **Level 1 — kernel by hand** | the `dev/` tree exists and proposals / reviews / decisions are recorded by hand; the lifecycle runs without the bootstrap script. | *Deepen within Level 1* -- turn on the practice modules the profile warrants (test tiers, the doc-drift gate, an examples gallery) -- **or** move to **Level 2** when the customization is large enough that automating it pays. |
-| **Level 2 — bootstrap + improving** | the full bootstrap installed and customized the apparatus, and the team now operates and improves it (Act III). | *Deepen within Level 2* -- adopt governance presets so the module roster is chosen by profile, broaden review tiers, and feed lessons back into the doctrine. There is no rung beyond Level 2; maturity here is depth, not a further level. |
+## Growing an install
 
-Movement is the adopter's call, informed by the dimensional matrix
-(`dimensions/`) -- the ladder shows the path, it does not push.
+Start with the smallest profile that fits, and add modules as the work earns
+them — test tiers (`testing-discipline`), the doc-drift gate
+(`doc-drift-prevention`), an examples gallery (`examples-gallery`), or the
+coordination and dual-review modules once several people or agents work in the
+tree at once. Add one to an existing install with:
 
-These levels describe *how much* to adopt. For *how the lifecycle
-runs* — one change traced end-to-end — see
-[`../docs/getting-started.md`](../docs/getting-started.md), and for
-where Cairn sits relative to your build/test/CI tooling,
+```
+python bootstrap/scaffold.py upgrade --target <repo> --adopt-module <name>
+```
+
+Growing is depth, not a promotion: there is no rung to reach. Act III of
+`bootstrap/BOOTSTRAP.md` covers operating and improving the apparatus once it
+is running.
+
+## If you copied the kernel by hand
+
+A tree whose kernel was copied in by hand is still a valid install. Without a
+lockfile (`dev/.cairn/cairn-lock.yml`), though, it receives **no upgrades and
+no onboarding prompts**. To bring it under the installer:
+
+```
+python bootstrap/scaffold.py upgrade --target <repo> --init-lock
+```
+
+The first run writes `dev/.cairn/profile.yml` with four placeholders and stops
+without writing a lockfile. Fill the placeholders, then run the same command
+again. Files whose tokens you filled in by hand upgrade as review-only diffs,
+so you compare and merge them yourself; the details are in
+`bootstrap/UPGRADE.md` > "Migrating a tree installed before upgrade support".
+
+**Do not re-run the install with `--force`** to get there. It overwrites what
+you wrote.
+
+---
+
+This page describes *how much* to adopt. For *how the lifecycle runs* — one
+change traced end-to-end — see
+[`../docs/getting-started.md`](../docs/getting-started.md), and for where
+Cairn sits relative to your build/test/CI tooling,
 [`../docs/workflow-role.md`](../docs/workflow-role.md).

@@ -1,13 +1,10 @@
 """
-Tests for the practice-discipline modules + maturity ladder.
+Tests for the practice-discipline modules.
 
 * Install-path: each new module installs to the modules tree on selection
   and respects skip-if-exists.
 * Classification: the three modules are team-gated and NOT default-on
   (an omit-`modules:` install does not pull them in).
-* Ladder correspondence: the maturity ladder in on-ramp/README.md
-  maps 1:1 onto the three on-ramp adoption levels -- dogfooding the
-  doc-drift discipline this module set itself ships.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/
@@ -15,7 +12,6 @@ Run from the cairn repo root:
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
@@ -119,40 +115,3 @@ class TestInstallPath:
         target.write_text(edited)
         install_modules(TEMPLATES_ROOT, tmp_path, {}, ["testing-discipline"])
         assert target.read_text() == edited, "re-install clobbered an edit"
-
-
-# ---------------------------------------------------------------------------
-# Ladder <-> adoption-level correspondence
-# ---------------------------------------------------------------------------
-
-class TestLadderCorrespondence:
-    def _onramp_text(self) -> str:
-        return (CAIRN_ROOT / "on-ramp" / "README.md").read_text(
-            encoding="utf-8")
-
-    def test_ladder_levels_match_adoption_levels(self) -> None:
-        text = self._onramp_text()
-        # Adoption-level headings: "## Level N — ...".
-        heading_levels = {
-            int(m) for m in re.findall(r"^##\s+Level\s+(\d)", text, re.M)
-        }
-        assert heading_levels, "no adoption-level headings found"
-
-        # The maturity-ladder section + its rung level references.
-        ladder_match = re.search(
-            r"^##\s+The maturity ladder\b(.*?)(?=^##\s|\Z)", text,
-            re.M | re.S)
-        assert ladder_match, "no maturity-ladder section found"
-        rung_levels = {
-            int(m) for m in re.findall(
-                r"\*\*Level\s+(\d)", ladder_match.group(1))
-        }
-        assert rung_levels, "ladder has no level-keyed rungs"
-
-        # 1:1 correspondence: every adoption level has a rung; every rung
-        # maps to a real adoption level.
-        assert rung_levels == heading_levels, (
-            f"ladder rungs {sorted(rung_levels)} do not match adoption "
-            f"levels {sorted(heading_levels)} -- the ladder drifted from "
-            f"the on-ramp levels"
-        )
