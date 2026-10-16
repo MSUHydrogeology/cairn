@@ -184,6 +184,26 @@ with the plan's filename stem.
   > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
   > board. No second review round; External floor waived."
 
+* **`NEXT_SESSION.md` becomes a local, untracked handoff — the reflections
+  treatment.** Deposited 2026-10-16 on Maintainer instruction. The file
+  describes itself as hand-written orientation that "may already be stale"; it
+  is rewritten from scratch at every goodnight, and everything durable in it is
+  already required to migrate to doctrine, a strategy note, or this board.
+  What remains is one operator's note to their own next session — the shape of
+  a reflection, and reflections are untracked by design. Handoff between
+  *people* goes through artifacts (this board, a plan's status, an issue),
+  never through a narrative. The archives and this board stay in the
+  repository: the record is the product's demonstration, and the board is the
+  team's serialization point. Scope: the `.gitignore` pattern (as for
+  `dev/reflections/`), the scaffold seed, `doctrine/session-routines.md`, the
+  goodnight wording in `AGENTS.md`, and the session-end skill's description of
+  the rewrite step; `tools/session.py` names the rewrite only as a judgment
+  step and does not anchor on the file. Ships to adopters as a template change.
+  Standard lane; no high-risk surface. Maintainer direction, quoted verbatim:
+
+  > "those docs should be, but maybe not NEXT_SESSION?" … "Let's put this up
+  > on the board"
+
 
 **Nineteen rows left this block on 2026-08-27**, at the sweep's C7 bankruptcy
 pass, taking it from 852 lines to 260.
