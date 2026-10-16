@@ -23,6 +23,7 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -953,7 +954,7 @@ class TestInitLock:
                        "--cairn-root", str(CAIRN_ROOT)]) == 0
         out = capsys.readouterr().out
         assert "review-only" in out  # the note itself is still printed
-        assert "re-install" not in out.lower()
+        assert not re.search(r"re-?install", out, re.IGNORECASE)
         assert "--stage" in out  # names the step that does the merge
 
     def test_init_lock_follows_vendor_rename(self, tmp_path: Path) -> None:
@@ -992,6 +993,36 @@ class TestInitLock:
         dsts = {r["dst"] for r in s.read_lockfile(tmp_path)["files"]}
         assert "VENDOR.md" not in dsts
         assert not (dsts & set(s._KNOWN_VENDOR_WRAPPERS))  # no wrong-file record
+
+    def test_untracked_wrapper_warning_gives_a_recovery_that_works(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """Following the warning's own advice must end with the wrapper
+        tracked.  The lockfile is written in the same run that warns, and
+        --init-lock refuses once one exists, so renaming alone cannot work;
+        a re-install over the tree writes no lockfile at all."""
+        assert _install(tmp_path) == 0
+        (tmp_path / "VENDOR.md").unlink()
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
+        import shutil
+        shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
+        capsys.readouterr()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        err = capsys.readouterr().err
+        assert not re.search(r"re-?install", err, re.IGNORECASE)
+        assert "delete dev/.cairn/cairn-lock.yml" in err
+        # Do what it says: put the wrapper at a known name, drop the lockfile
+        # that run wrote, and migrate again.
+        wrapper = sorted(s._KNOWN_VENDOR_WRAPPERS)[0]
+        (tmp_path / wrapper).write_text(
+            (CAIRN_ROOT / "templates" / "core" / "VENDOR.md").read_text())
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        dsts = {r["dst"] for r in s.read_lockfile(tmp_path)["files"]}
+        assert wrapper in dsts
 
 
 class TestInitLockFullProfile:

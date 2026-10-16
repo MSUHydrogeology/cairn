@@ -104,8 +104,8 @@ goodnight or a release-prep pass; a pre-lockfile tree runs
 
 The benefit is gated on the adopter actually carrying the upgrade
 machinery: a tree bootstrapped before upgrade support (no lockfile) gets
-nothing from the hash-check until it runs `--init-lock` or re-installs from
-an upgrade-capable Cairn. So for such a tree, adopting the upgrade
+nothing from the hash-check until it runs `upgrade --init-lock`. So for
+such a tree, adopting the upgrade
 apparatus *is* the fix for #35, not a step alongside it.
 
 ---

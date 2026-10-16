@@ -1221,8 +1221,11 @@ def _cmd_init_lock(
                           "renamed wrapper found at repo root (a known vendor "
                           f"filename {', '.join(_KNOWN_VENDOR_WRAPPERS)}, or a "
                           "root *.md importing @AGENTS.md) -- it will be "
-                          "untracked. Rename it to a known vendor filename or "
-                          "re-install from an upgrade-capable Cairn.",
+                          "untracked, and the lockfile this run writes cannot "
+                          "track it later. To track it: rename it to a known "
+                          "vendor filename (or restore it), delete "
+                          "dev/.cairn/cairn-lock.yml, and run --init-lock "
+                          "again.",
                           file=sys.stderr)
                     continue
                 dst_rel = resolved
