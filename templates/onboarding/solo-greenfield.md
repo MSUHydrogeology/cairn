@@ -91,7 +91,7 @@ no multi-agent coordination, no legacy-tree pre-pass.
 
 Per Codex External Review P2-3 + plan P1.10b: each active-surfacing
 row carries per-preset prompt content the activation helper emits
-to the terminal when the row's trigger fires. The three rows for
+to the terminal when the row's trigger fires. The two rows for
 the `solo-greenfield` shape:
 
 ### Row 1 -- collab-agreement-signing prompt
@@ -104,16 +104,7 @@ a formality (the second session of your agent reviewing its own
 prior work catches what the first session missed); the External
 floor is filled by the human Maintainer's read.
 
-### Row 2 -- Level 1→2 graduation prompt
-
-Your deployment has accreted enough lifecycle activity
-(proposals + plans archived) that Level 2's bootstrap-managed
-lifecycle becomes net-positive vs. by-hand operation. Walk
-`bootstrap/BOOTSTRAP.md` -- the bootstrap can re-scaffold your
-existing tree non-destructively. No urgency: Level 1 keeps
-working; Level 2 just automates what's now repeated work.
-
-### Row 3 -- second-agent-type spin-up prompt
+### Row 2 -- second-agent-type spin-up prompt
 
 Your solo deployment has matured to a point where a second agent
 type would meaningfully strengthen Dual-Review. The External floor

@@ -5,7 +5,7 @@
 """Progressive-onboarding activation helper — thin launcher/facade over the owned
 ``_onboarding/`` package.
 
-The onboarding engine (slot/preset parse, maturity + action trigger evaluation,
+The onboarding engine (slot/preset parse, trigger evaluation,
 active-surfacing prompt rendering, the activation core, and the write-containment
 guards ``_assert_safe_write`` / ``_assert_safe_read`` / ``_assert_safe_dir_for_glob``)
 lives in the private sibling package ``_onboarding/``. This file is the thin

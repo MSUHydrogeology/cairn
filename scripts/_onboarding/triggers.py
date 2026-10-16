@@ -4,10 +4,9 @@
 
 """onboarding-activate engine -- trigger evaluation.
 
-The maturity- and action-trigger evaluation engine: the deepen
-thresholds, the agent-vendor / human-maintainer authorship patterns, the
-proposal/plan counters + listers, the team-roster / cross-type-review / foldback
-probes, and the top-level ``evaluate_maturity_triggers`` /
+The action-trigger evaluation engine: the agent-vendor / human-maintainer
+authorship patterns, the proposal/plan listers, the team-roster /
+cross-type-review / foldback probes, and the top-level
 ``evaluate_action_triggers`` / ``evaluate_triggers``. Depends on the containment
 leaf (``security``) for the read + glob guards used when scanning the adopter's
 deliberation tree.
@@ -27,100 +26,12 @@ from .security import _assert_safe_dir_for_glob, _assert_safe_read
 # the activation log -- the log IS the explicit state for prior
 # trigger fires.
 #
-# The trigger matrix lives in two families:
-# * Maturity-ladder triggers (this section): level-0-to-1,
-#   level-1-to-2, level-1-deepen, level-2-deepen.
-# * Action triggers (next section): first-proposal-opened,
-#   first-proposal-archived, first-plan-opened, first-plan-archived,
-#   first-changelog-entry, second-agent-type, first-cross-type-review,
-#   collab-agreement-signing.
-
-
-# Deepen-within-level thresholds (named here so doctrine + tests
-# share the same constants).
-LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD = 5
-
-
-LEVEL_1_DEEPEN_PLANS_THRESHOLD = 3
-
-
-LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD = 15
-
-
-LEVEL_2_DEEPEN_PLANS_THRESHOLD = 10
-
-
-def _count_archived_proposals(target: Path) -> int:
-    archive = target / "dev" / "proposals" / "archive"
-    if not archive.is_dir():
-        return 0
-    _assert_safe_dir_for_glob(archive, target)
-    return sum(
-        1 for p in archive.glob("*.md")
-        if p.is_file() and not p.is_symlink() and p.name != "_template.md"
-    )
-
-
-def _count_archived_plans(target: Path) -> int:
-    archive = target / "dev" / "plans" / "archive"
-    if not archive.is_dir():
-        return 0
-    _assert_safe_dir_for_glob(archive, target)
-    return sum(
-        1 for p in archive.glob("*.md")
-        if p.is_file() and not p.is_symlink() and p.name != "_template.md"
-    )
-
-
-def evaluate_maturity_triggers(target: Path) -> set[str]:
-    """Maturity-ladder trigger evaluators.
-
-    Each trigger observes filesystem state (Codex P2-3 explicit-state
-    contract):
-
-    * ``level-0-to-1`` -- the adopter has shipped at least one
-      proposal through archive (>= 1 file in ``dev/proposals/
-      archive/``).  Per Claude External code review P2-3 +
-      Antigravity confirmation: the earlier "_template.md present"
-      check fired at install time for every adopter and carried no
-      signal value; the real transition is "the adopter has begun
-      using the lifecycle," for which the archived-proposal count
-      is a stronger explicit-state signal.
-    * ``level-1-to-2`` -- ``dev/.cairn/cairn-lock.yml`` present (canonical
-      Level 2 signal per ``bootstrap/UPGRADE.md`` doctrine).
-    * ``level-1-deepen`` -- ``level-1-to-2`` NOT fired AND archived
-      proposals >= LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD AND archived
-      plans >= LEVEL_1_DEEPEN_PLANS_THRESHOLD.
-    * ``level-2-deepen`` -- ``level-1-to-2`` IS fired AND archived
-      proposals >= LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD AND archived
-      plans >= LEVEL_2_DEEPEN_PLANS_THRESHOLD.
-    """
-    out: set[str] = set()
-
-    archived_proposals_pre = _count_archived_proposals(target)
-    if archived_proposals_pre >= 1:
-        out.add("level-0-to-1")
-
-    level_1_to_2 = (target / "dev" / ".cairn" / "cairn-lock.yml").is_file()
-    if level_1_to_2:
-        out.add("level-1-to-2")
-
-    archived_proposals = archived_proposals_pre
-    archived_plans = _count_archived_plans(target)
-    if (
-        not level_1_to_2
-        and archived_proposals >= LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD
-        and archived_plans >= LEVEL_1_DEEPEN_PLANS_THRESHOLD
-    ):
-        out.add("level-1-deepen")
-    if (
-        level_1_to_2
-        and archived_proposals >= LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD
-        and archived_plans >= LEVEL_2_DEEPEN_PLANS_THRESHOLD
-    ):
-        out.add("level-2-deepen")
-
-    return out
+# The triggers observe the adopter's actual work: first-proposal-opened,
+# first-proposal-archived, first-plan-opened, first-plan-archived,
+# first-changelog-entry, second-agent-type, first-cross-type-review,
+# collab-agreement-signing.  There are no adoption-level triggers: Cairn
+# does not publish adoption levels, so nothing here classifies a tree by
+# one.
 
 
 # Known AI-agent vendor / model / tool substrings used by the
@@ -435,14 +346,10 @@ def evaluate_triggers(
     target: Path,
     log_records: list["ActivationRecord"] | None = None,
 ) -> set[str]:
-    """Union of maturity-ladder + action trigger evaluators.
+    """Every trigger that fires for *target*.
 
-    The two-family split lets tests fixture each family independently
-    and keeps the maturity / action split visible at the
-    code surface.  ``log_records`` is forwarded to the action-trigger
-    family for the ``collab-agreement-signing`` precondition check.
+    The single entry point the activation run calls.  ``log_records`` is
+    forwarded to the action-trigger family for the
+    ``collab-agreement-signing`` precondition check.
     """
-    return (
-        evaluate_maturity_triggers(target)
-        | evaluate_action_triggers(target, log_records=log_records)
-    )
+    return evaluate_action_triggers(target, log_records=log_records)

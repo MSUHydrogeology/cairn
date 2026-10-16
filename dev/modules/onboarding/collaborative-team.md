@@ -102,15 +102,9 @@ candidates upstream early, rather than letting the practice lapse.
   team-handoff owner files, coordinating with the team first to
   avoid duplicate Cairn issues.
 
-* [trigger: level-1-to-2; id: graduate-to-level-2]
-  Your team has accreted enough lifecycle activity that
-  Level 2's bootstrap-managed lifecycle pays off vs. by-hand
-  operation. Walk `bootstrap/BOOTSTRAP.md` together; coordinate
-  with the Maintainer before re-scaffolding.
-
 ## Active-surfacing prompt content (per-preset)
 
-The three active-surfacing rows the collaborative-team preset emits:
+The two active-surfacing rows the collaborative-team preset emits:
 
 ### Row 1 -- collab-agreement-signing prompt
 
@@ -121,17 +115,7 @@ External tier structurally meaningful for a multi-agent team.
 Without it, External-tier review falls back to fresh-session
 same-vendor, which the collaborative-team shape is sized past.
 
-### Row 2 -- Level 1→2 graduation prompt
-
-Your team's lifecycle activity has crossed the threshold where
-Level 2's bootstrap-managed lifecycle saves more time than it
-costs. The bootstrap re-scaffolds an existing tree non-
-destructively + the team-staffing gate activates the dual-review
-+ coordination-tiers modules properly per your current shape.
-Walk `bootstrap/BOOTSTRAP.md`; coordinate with your maintainer
-before running.
-
-### Row 3 -- second-agent-type spin-up prompt
+### Row 2 -- second-agent-type spin-up prompt
 
 Your collaborative-team profile expects multi-agent operation;
 the second agent type fills the External-review tier with

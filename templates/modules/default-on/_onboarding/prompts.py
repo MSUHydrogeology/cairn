@@ -22,7 +22,6 @@ import re
 _ACTIVE_SURFACING_ROWS: tuple[tuple[str, str], ...] = (
     # (row-name, firing-trigger)
     ("collab-agreement-signing", "collab-agreement-signing"),
-    ("Level-1-to-2-graduation", "level-1-to-2"),
     ("second-agent-type", "second-agent-type"),
 )
 
@@ -49,19 +48,19 @@ _ROW_HEADING_RE = re.compile(
     re.IGNORECASE,
 )
 
-#: Arrow spellings a heading label may use for a level transition.
+#: Arrow spellings a heading label may use for a transition.
 _ARROW_FORMS = ("\u2192", "->")
 
 
 def _fold_for_match(text: str) -> str:
     """Fold a row name or a heading label to one comparable shape.
 
-    Row names are registry identifiers (`Level-1-to-2-graduation`);
-    heading labels are prose written for a human to read
-    (`Level 1\u21922 graduation prompt`).  The two spell the same
-    transition differently, so a literal substring test between them
-    is false whenever a label uses an arrow or a space where the row
-    name uses `-to-` or a hyphen.
+    Row names are registry identifiers (`second-agent-type`); heading
+    labels are prose written for a human to read
+    (`second-agent-type spin-up prompt`, or a transition written with
+    an arrow).  The two spell the same thing differently, so a literal
+    substring test between them is false whenever a label uses an arrow
+    or a space where the row name uses `-to-` or a hyphen.
 
     Folding both sides is what lets the identifier stay stable while
     the prose stays readable.  The row name is an idempotency key --
@@ -88,7 +87,7 @@ def _heading_matches(line: str, row_name: str) -> bool:
     label = _fold_for_match(found.group("label"))
     row = _fold_for_match(row_name)
     # Anchored at the front and at a token boundary, not bare containment:
-    # a label may trail extra words ("... graduation prompt"), but a row name
+    # a label may trail extra words ("... spin-up prompt"), but a row name
     # must not match because it happens to appear mid-label. Bare containment
     # let a heading mentioning another row's words capture that row's body.
     return label == row or label.startswith(row + "-")

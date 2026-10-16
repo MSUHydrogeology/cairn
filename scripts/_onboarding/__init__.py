@@ -54,7 +54,7 @@ subsystems form an acyclic, leaf-first DAG:
 * ``shared``     -- default paths + identity / timestamp helpers (leaf).
 * ``prompts``    -- active-surfacing rendering + UX caps (leaf).
 * ``slotparse``  -- slot + preset parsing (depends on ``security``).
-* ``triggers``   -- maturity / action trigger evaluation (depends on ``security``).
+* ``triggers``   -- trigger evaluation (depends on ``security``).
 * ``activation`` -- records, log I/O + computation (depends on ``security`` + ``slotparse``).
 * ``cli``        -- activate / seed / ``main`` (the top layer; imports downward).
 
@@ -108,15 +108,9 @@ from .slotparse import (  # noqa: F401  (re-exported for the facade)
     parse_seed_task_ids,
 )
 from .triggers import (  # noqa: F401  (re-exported for the facade)
-    LEVEL_1_DEEPEN_PLANS_THRESHOLD,
-    LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD,
-    LEVEL_2_DEEPEN_PLANS_THRESHOLD,
-    LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD,
     _AGENT_VENDOR_PATTERNS,
     _HUMAN_MAINTAINER_PATTERNS,
     _author_vendor_in_file,
-    _count_archived_plans,
-    _count_archived_proposals,
     _count_distinct_agents_in_roster,
     _has_cross_type_review_anywhere,
     _has_cross_type_review_in_file,
@@ -126,7 +120,6 @@ from .triggers import (  # noqa: F401  (re-exported for the facade)
     _team_roster_is_unfilled,
     _unreleased_changelog_has_content,
     evaluate_action_triggers,
-    evaluate_maturity_triggers,
     evaluate_triggers,
 )
 from .activation import (  # noqa: F401  (re-exported for the facade)

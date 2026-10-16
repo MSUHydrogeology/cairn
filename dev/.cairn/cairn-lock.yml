@@ -273,7 +273,7 @@
     {
       "base_hash": "sha256:96ffbb4bb647cf964397e0a12b365300b150448c876bdc784622757a6d406d4f",
       "dst": "scripts/_onboarding/__init__.py",
-      "hash": "sha256:aa4198712ccca928950f7f564e02fc26b69eeabd5215570a003683b3f97fc60b",
+      "hash": "sha256:753105c12e5655e5c78f212d3dcd4e1c0ce03a985a98a40257846837a2c5f7e7",
       "src": "modules/default-on/_onboarding/__init__.py",
       "verbatim": true
     },
@@ -294,7 +294,7 @@
     {
       "base_hash": "sha256:d0b184798376b1c0547fb31716ad307aca3ac826a0ca2833af908912ed4a413b",
       "dst": "scripts/_onboarding/prompts.py",
-      "hash": "sha256:8a5256f4fb191d0272696fb1c98057652bdbbbba9ea58e045311a82d178f81c3",
+      "hash": "sha256:d0e511f564a7e62391d848b3c3d6adaa7e543ae4e743c908c8e48f66185941ed",
       "src": "modules/default-on/_onboarding/prompts.py",
       "verbatim": true
     },
@@ -322,7 +322,7 @@
     {
       "base_hash": "sha256:e7981225094ee2535ca15e1d30ff32c7934fa5bcb65405b6d5a031e6d1a79749",
       "dst": "scripts/_onboarding/triggers.py",
-      "hash": "sha256:b82ecbef8170b7e8967125e737b84a1cf96b89e59daad01f70f2f0870dbd957a",
+      "hash": "sha256:bd741661e74ac450bb6e4c99b5532fce00c5da304f79049c8b2b7192ab40b561",
       "src": "modules/default-on/_onboarding/triggers.py",
       "verbatim": true
     },
@@ -399,7 +399,7 @@
     {
       "base_hash": "sha256:113cb1de3d738716ad1d758798ff2fd0485e71b036f5fe76945fd1b222e66e28",
       "dst": "scripts/onboarding_activate.py",
-      "hash": "sha256:0a8a404a536df99116e19d500415389407abfddcf3eb374d57722660fa5f89dd",
+      "hash": "sha256:3d7701ac873ef00844955600928ad642674360e2a667cf0b9d333b7a8e69135e",
       "src": "modules/default-on/onboarding_activate.py",
       "verbatim": true
     },

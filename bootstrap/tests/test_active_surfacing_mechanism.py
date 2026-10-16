@@ -80,32 +80,11 @@ def _scaffold_solo(target: Path) -> int:
 
 
 class TestPriorityOrder:
-    def test_collab_agreement_wins_over_level_graduation(
-        self, helper: ModuleType,
-    ) -> None:
-        chosen = helper.select_active_prompt_to_fire(
-            {"collab-agreement-signing", "level-1-to-2"},
-            log_records=[],
-        )
-        assert chosen == "collab-agreement-signing"
-
-    def test_level_graduation_wins_over_second_agent(
-        self, helper: ModuleType,
-    ) -> None:
-        chosen = helper.select_active_prompt_to_fire(
-            {"level-1-to-2", "second-agent-type"},
-            log_records=[],
-        )
-        assert chosen == "Level-1-to-2-graduation"
-
     def test_collab_agreement_wins_over_second_agent_type(
         self, helper: ModuleType,
     ) -> None:
-        """Priority order holds for non-adjacent rows too: the
-        top-priority row still wins when it fires alongside the
-        lowest-priority row, not just its immediate neighbor (the
-        other two tests in this class each cover one adjacent pair;
-        this completes the pairwise coverage across all three rows)."""
+        """When both rows fire in one goodnight, the higher-priority row
+        is the one prompt shown."""
         chosen = helper.select_active_prompt_to_fire(
             {"collab-agreement-signing", "second-agent-type"},
             log_records=[],
@@ -143,11 +122,11 @@ class TestIdempotency:
             ),
         ]
         chosen = helper.select_active_prompt_to_fire(
-            {"collab-agreement-signing", "level-1-to-2"},
+            {"collab-agreement-signing", "second-agent-type"},
             log_records=log,
         )
-        # Collab-agreement was emitted before; Level 1->2 is next.
-        assert chosen == "Level-1-to-2-graduation"
+        # Collab-agreement was emitted before; the next row is chosen.
+        assert chosen == "second-agent-type"
 
     def test_all_emitted_returns_none(self, helper: ModuleType) -> None:
         log = [

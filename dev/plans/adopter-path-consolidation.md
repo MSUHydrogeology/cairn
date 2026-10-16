@@ -1,7 +1,7 @@
 # Plan: retire the adoption levels
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopter-path-consolidation.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits
 `doctrine/onboarding.md`, removes code from adopter-executed scripts, and

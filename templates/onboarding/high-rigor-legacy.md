@@ -127,7 +127,7 @@ goes live.
 
 ## Active-surfacing prompt content (per-preset)
 
-The three active-surfacing rows the high-rigor-legacy preset emits:
+The two active-surfacing rows the high-rigor-legacy preset emits:
 
 ### Row 1 -- collab-agreement-signing prompt
 
@@ -138,16 +138,7 @@ is the expected shape; the team-roster slot is the surface
 where pre-existing power structure gets made explicit to the
 Cairn apparatus.
 
-### Row 2 -- Level 1→2 graduation prompt
-
-Your legacy-tree work has accumulated enough lifecycle activity
-that the bootstrap's preset-driven installation would now match
-your team-staffing gate's actual shape better than Level 1's
-hand-copy approach. Walk `bootstrap/BOOTSTRAP.md` + the
-`bootstrap/UPGRADE.md` pre-pass; the lockfile gives you the
-integrity surface you currently lack.
-
-### Row 3 -- second-agent-type spin-up prompt
+### Row 2 -- second-agent-type spin-up prompt
 
 Your high-rigor-legacy profile's review rigor depends on
 multi-agent staffing. Walk `dev/modules/onboarding/agent-team-onboarding.md`; the

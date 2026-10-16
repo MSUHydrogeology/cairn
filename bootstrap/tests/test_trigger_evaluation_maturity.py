@@ -1,20 +1,23 @@
-"""Tests for the maturity-ladder trigger evaluators.
+"""No onboarding trigger classifies a tree by adoption level.
 
-Plan: 2026-05-28-claude-cairn-progressive-onboarding.
+Cairn does not publish adoption levels: an adopter reads the doctrine or
+installs it with a profile, and the profile sizes the install.  So no
+trigger may fire on a guess about which level a tree is at.  The four
+level triggers this replaced keyed on states that carry no such meaning --
+``dev/.cairn/cairn-lock.yml`` is written by every install, and archive counts
+measure activity, not a level -- and one of them told every new adopter to
+"graduate" at their first goodnight.
 
-Each maturity-ladder trigger gets positive + negative fixture
-tests against synthetic adopter-tree state.  The four triggers:
+Each fixture below is a state on which one of those triggers would fire, so
+restoring any one of them turns this file red:
 
-* ``level-0-to-1`` -- adopter has shipped at least one proposal
-  through archive (``>= 1`` file in ``dev/proposals/archive/``).
-* ``level-1-to-2`` -- ``dev/.cairn/cairn-lock.yml`` exists.
-* ``level-1-deepen`` -- archived-proposal + archived-plan count
-  thresholds met AND ``level-1-to-2`` NOT yet fired.
-* ``level-2-deepen`` -- archived-proposal + archived-plan count
-  thresholds met AND ``level-1-to-2`` IS fired.
+* a fresh ``solo-greenfield`` install (lockfile, nothing archived);
+* a lockfile with 5 archived proposals and 3 archived plans;
+* no lockfile, at 5 and 3;
+* a lockfile at 15 and 10.
 
-Mixed-state fixtures verify multiple triggers can fire together
-(e.g., level-0-to-1 AND level-1-to-2 both present).
+The counts are literals, not imported constants, because the thresholds
+they once matched no longer exist.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_trigger_evaluation_maturity.py
@@ -23,6 +26,8 @@ Run from the cairn repo root:
 from __future__ import annotations
 
 import importlib.util
+import os
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -37,6 +42,8 @@ HELPER_SRC = (
     / "default-on"
     / "onboarding_activate.py"
 )
+SCAFFOLD = CAIRN_ROOT / "bootstrap" / "scaffold.py"
+SOLO_GREENFIELD = CAIRN_ROOT / "bootstrap" / "profiles" / "solo-greenfield.yml"
 
 pytestmark = pytest.mark.skipif(
     not HELPER_SRC.exists(), reason="onboarding_activate.py source missing",
@@ -45,11 +52,11 @@ pytestmark = pytest.mark.skipif(
 
 def _load_helper() -> ModuleType:
     spec = importlib.util.spec_from_file_location(
-        "_onboarding_activate_under_test_maturity", HELPER_SRC,
+        "_onboarding_activate_under_test_no_levels", HELPER_SRC,
     )
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
-    sys.modules["_onboarding_activate_under_test_maturity"] = module
+    sys.modules["_onboarding_activate_under_test_no_levels"] = module
     spec.loader.exec_module(module)
     return module
 
@@ -59,205 +66,62 @@ def helper() -> ModuleType:
     return _load_helper()
 
 
-def _make_empty_tree(tmp_path: Path) -> Path:
-    """Create an empty `dev/` subtree without _template.md or
-    cairn-lock.yml (Level 0 baseline)."""
-    (tmp_path / "dev" / "proposals" / "archive").mkdir(parents=True)
-    (tmp_path / "dev" / "plans" / "archive").mkdir(parents=True)
-    return tmp_path
+def _git(*args: str, cwd: Path) -> None:
+    env = {
+        **os.environ,
+        "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
+        "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.invalid",
+    }
+    subprocess.run(["git", *args], cwd=cwd, env=env, check=True,
+                   capture_output=True)
 
 
-def _archive_proposals(tmp_path: Path, count: int) -> None:
-    archive = tmp_path / "dev" / "proposals" / "archive"
-    archive.mkdir(parents=True, exist_ok=True)
-    for i in range(count):
-        (archive / f"2026-05-{i:02d}-author-slug.md").write_text("# x\n")
+def _fresh_install(target: Path) -> Path:
+    """Install the smallest shipped profile, exactly as an adopter would."""
+    target.mkdir(parents=True, exist_ok=True)
+    _git("init", "-q", cwd=target)
+    result = subprocess.run(
+        [sys.executable, str(SCAFFOLD), "--config", str(SOLO_GREENFIELD),
+         "--target", str(target), "--allow-dev"],
+        cwd=CAIRN_ROOT, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (target / "dev" / ".cairn" / "cairn-lock.yml").is_file(), (
+        "the fixture must carry the lockfile every install writes"
+    )
+    return target
 
 
-def _archive_plans(tmp_path: Path, count: int) -> None:
-    archive = tmp_path / "dev" / "plans" / "archive"
-    archive.mkdir(parents=True, exist_ok=True)
-    for i in range(count):
-        (archive / f"2026-05-{i:02d}-author-slug.md").write_text("# x\n")
+def _tree(target: Path, *, lockfile: bool, proposals: int, plans: int) -> Path:
+    for family, count in (("proposals", proposals), ("plans", plans)):
+        archive = target / "dev" / family / "archive"
+        archive.mkdir(parents=True, exist_ok=True)
+        for i in range(count):
+            (archive / f"2026-05-{i:02d}-author-slug.md").write_text("# x\n")
+    if lockfile:
+        (target / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
+        (target / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
+    return target
 
 
-# ---------------------------------------------------------------------------
-# level-0-to-1
-# ---------------------------------------------------------------------------
+def _level_ids(fired: set[str]) -> set[str]:
+    return {trigger for trigger in fired if trigger.startswith("level-")}
 
 
-class TestLevel0to1:
-    """Per Claude External code review P2-3 + Antigravity
-    confirmation: `level-0-to-1` was previously fired by the
-    presence of `dev/proposals/_template.md` (shipped by the
-    scaffold to every adopter; the trigger therefore carried no
-    signal value).  Reframed to fire on the real maturity
-    transition -- the adopter has shipped at least one proposal
-    through archive.
-    """
+class TestNoTriggerClassifiesAnAdoptionLevel:
+    def test_fresh_install(self, helper: ModuleType, tmp_path: Path) -> None:
+        tree = _fresh_install(tmp_path / "repo")
+        assert _level_ids(helper.evaluate_triggers(tree)) == set()
 
-    def test_fires_after_first_archived_proposal(
+    @pytest.mark.parametrize(
+        ("lockfile", "proposals", "plans"),
+        [(True, 5, 3), (False, 5, 3), (True, 15, 10)],
+        ids=["lockfile-5-3", "no-lockfile-5-3", "lockfile-15-10"],
+    )
+    def test_activity_states(
         self, helper: ModuleType, tmp_path: Path,
+        lockfile: bool, proposals: int, plans: int,
     ) -> None:
-        _make_empty_tree(tmp_path)
-        _archive_proposals(tmp_path, 1)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-0-to-1" in fired
-
-    def test_does_not_fire_with_no_archived_proposals(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        # Even with the proposals/_template.md present (which used
-        # to fire the trigger), `level-0-to-1` now requires a real
-        # archived proposal.
-        (tmp_path / "dev" / "proposals" / "_template.md").write_text("# t\n")
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-0-to-1" not in fired
-
-
-# ---------------------------------------------------------------------------
-# level-1-to-2
-# ---------------------------------------------------------------------------
-
-
-class TestLevel1to2:
-    def test_fires_when_lockfile_present(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
-        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-1-to-2" in fired
-
-    def test_does_not_fire_without_lockfile(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-1-to-2" not in fired
-
-
-# ---------------------------------------------------------------------------
-# level-1-deepen
-# ---------------------------------------------------------------------------
-
-
-class TestLevel1Deepen:
-    def test_fires_at_threshold_without_level_2(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        _archive_proposals(
-            tmp_path, helper.LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD,
-        )
-        _archive_plans(tmp_path, helper.LEVEL_1_DEEPEN_PLANS_THRESHOLD)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-1-deepen" in fired
-
-    def test_suppressed_when_level_2_also_fires(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
-        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
-        _archive_proposals(
-            tmp_path, helper.LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD,
-        )
-        _archive_plans(tmp_path, helper.LEVEL_1_DEEPEN_PLANS_THRESHOLD)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-1-deepen" not in fired
-        assert "level-1-to-2" in fired
-
-    def test_does_not_fire_below_threshold(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        _archive_proposals(
-            tmp_path, helper.LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD - 1,
-        )
-        _archive_plans(tmp_path, helper.LEVEL_1_DEEPEN_PLANS_THRESHOLD - 1)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-1-deepen" not in fired
-
-
-# ---------------------------------------------------------------------------
-# level-2-deepen
-# ---------------------------------------------------------------------------
-
-
-class TestLevel2Deepen:
-    def test_fires_when_level_2_and_high_thresholds_met(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
-        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
-        _archive_proposals(
-            tmp_path, helper.LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD,
-        )
-        _archive_plans(tmp_path, helper.LEVEL_2_DEEPEN_PLANS_THRESHOLD)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-2-deepen" in fired
-
-    def test_does_not_fire_below_level_2(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        # No lockfile -> level-1-to-2 not fired -> level-2-deepen suppressed.
-        _archive_proposals(
-            tmp_path, helper.LEVEL_2_DEEPEN_PROPOSALS_THRESHOLD,
-        )
-        _archive_plans(tmp_path, helper.LEVEL_2_DEEPEN_PLANS_THRESHOLD)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-2-deepen" not in fired
-
-    def test_does_not_fire_below_high_threshold(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / ".cairn").mkdir(parents=True, exist_ok=True)
-        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").write_text("schema: 1\n")
-        # Only Level 1 deepen threshold met; not Level 2 deepen.
-        _archive_proposals(
-            tmp_path, helper.LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD,
-        )
-        _archive_plans(tmp_path, helper.LEVEL_1_DEEPEN_PLANS_THRESHOLD)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-2-deepen" not in fired
-
-
-# ---------------------------------------------------------------------------
-# Mixed-state fixture: full Level 1 install with deepen threshold met
-# ---------------------------------------------------------------------------
-
-
-class TestMixedFixture:
-    def test_level_1_install_with_deepen_threshold_fires_two(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        """An adopter at full Level 1 (template + deepen threshold)
-        fires both level-0-to-1 + level-1-deepen, NOT level-1-to-2
-        (no lockfile yet) and NOT level-2-deepen."""
-        _make_empty_tree(tmp_path)
-        (tmp_path / "dev" / "proposals" / "_template.md").write_text("# t\n")
-        _archive_proposals(
-            tmp_path, helper.LEVEL_1_DEEPEN_PROPOSALS_THRESHOLD,
-        )
-        _archive_plans(tmp_path, helper.LEVEL_1_DEEPEN_PLANS_THRESHOLD)
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert fired == {"level-0-to-1", "level-1-deepen"}
-
-    def test_template_does_not_count_as_archived_proposal(
-        self, helper: ModuleType, tmp_path: Path,
-    ) -> None:
-        """The proposals/_template.md placed in archive (an edge case
-        if an adopter mistakenly archives the template) does not
-        count toward the deepen threshold."""
-        _make_empty_tree(tmp_path)
-        (
-            tmp_path / "dev" / "proposals" / "archive" / "_template.md"
-        ).write_text("# t\n")
-        fired = helper.evaluate_maturity_triggers(tmp_path)
-        assert "level-1-deepen" not in fired
+        tree = _tree(tmp_path, lockfile=lockfile, proposals=proposals,
+                     plans=plans)
+        assert _level_ids(helper.evaluate_triggers(tree)) == set()

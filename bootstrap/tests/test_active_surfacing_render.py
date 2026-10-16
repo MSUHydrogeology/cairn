@@ -2,18 +2,14 @@
 
 Plan: 2026-05-28-claude-cairn-progressive-onboarding.
 
-Validates the 9 fixture combinations (3 active-surfacing rows ×
-3 presets).  For each combination:
+Validates every combination of active-surfacing row and preset.  For
+each combination:
 
 * The prompt content extracted from the preset source file is
   non-empty.
 * The content includes the per-preset distinguishing language
   named in the plan + the doctrine (the maintainer-judgment
   content review surface).
-
-Per Codex External Review P3-9: the Level-1->2 prompts MUST be
-drafted concretely (not hand-wavy); each preset's variant is
-asserted to include preset-specific guidance.
 
 Run from the cairn repo root:
     python -m pytest bootstrap/tests/test_active_surfacing_render.py
@@ -122,21 +118,21 @@ def test_each_row_renders_a_distinct_body(
     )
 
 # ---------------------------------------------------------------------------
-# The 12 fixture combinations: each renders a non-empty body
+# Every row x preset combination renders a non-empty body
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("preset", PRESETS)
 @pytest.mark.parametrize("row", ROWS)
-class TestTwelveCombinations:
+class TestEveryRowRendersForEveryPreset:
     def test_renders_non_empty_body(
         self, helper: ModuleType, preset: str, row: str,
     ) -> None:
         # The row name is passed exactly as the registry holds it --
         # the same value production passes.  An earlier version
-        # substituted a hand-picked keyword here ("Level 1" for
-        # "Level-1-to-2-graduation"), which made this test green while
-        # the real row name matched no heading in any preset.
+        # substituted a hand-picked keyword for the row name, which made
+        # this test green while the real row name matched no heading in
+        # any preset.
         body = helper.render_active_surfacing_prompt(
             _preset_text(preset), row,
         )
@@ -150,8 +146,7 @@ class TestTwelveCombinations:
 
 
 # ---------------------------------------------------------------------------
-# Per-preset distinguishing language (Codex P3-9: Level-1->2
-# variants must be concretely drafted, not hand-wavy)
+# Per-preset distinguishing language
 # ---------------------------------------------------------------------------
 
 
@@ -195,30 +190,3 @@ class TestPerPresetDistinguishingLanguage:
         # Existing-maintainer authority confirmation is the
         # high-rigor-legacy marker.
         assert "existing maintainer" in lowered or "pre-existing" in lowered
-
-    def test_level_graduation_drafts_concrete_per_preset_p3_9(
-        self, helper: ModuleType,
-    ) -> None:
-        """Codex P3-9 disposition: each preset's Level-1->2 prompt is
-        a concrete paragraph, NOT hand-wavy.  Assert each variant
-        names a concrete action (walk a specific doc, coordinate
-        with maintainer, etc.)."""
-        for preset in PRESETS:
-            graduation_row = next(
-                row for row, trigger in helper._ACTIVE_SURFACING_ROWS
-                if trigger == "level-1-to-2"
-            )
-            body = helper.render_active_surfacing_prompt(
-                _preset_text(preset), graduation_row,
-            )
-            assert body is not None, (
-                f"Level 1->2 prompt missing for preset={preset}"
-            )
-            lowered = body.lower()
-            # Every variant references BOOTSTRAP.md (the concrete
-            # action surface for the Level-2 graduation).
-            assert "bootstrap.md" in lowered, (
-                f"Level 1->2 prompt for {preset} lacks concrete "
-                f"action reference to BOOTSTRAP.md (Codex P3-9): "
-                f"{body!r}"
-            )
