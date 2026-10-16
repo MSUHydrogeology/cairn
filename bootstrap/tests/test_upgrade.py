@@ -935,6 +935,27 @@ class TestInitLock:
         out = capsys.readouterr().out
         assert "review-only" in out  # no pretended 3-way merge
 
+    def test_migration_note_never_advises_reinstalling_over_the_tree(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """The note printed after a migration must point at the merge, not
+        at a re-install.  A re-install over an existing tree skips every file
+        already there and writes no lockfile, and ``--force`` overwrites the
+        adopter's own edits -- so advising one sends the adopter nowhere, or
+        into data loss."""
+        assert _install(tmp_path) == 0
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
+        import shutil
+        shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
+        capsys.readouterr()
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        out = capsys.readouterr().out
+        assert "review-only" in out  # the note itself is still printed
+        assert "re-install" not in out.lower()
+        assert "--stage" in out  # names the step that does the merge
+
     def test_init_lock_follows_vendor_rename(self, tmp_path: Path) -> None:
         """#45: a renamed vendor wrapper (VENDOR.md -> CLAUDE.md) is resolved
         and tracked under its real dst, not dropped to untracked."""

@@ -1261,8 +1261,10 @@ def _cmd_init_lock(
           f"on upgrade, per I3): {len(classification['unrecoverable-base'])}")
     print("  NOTE: a migrated lockfile cannot 3-way-merge token-substituted "
           "files (the install token values were never recorded); those "
-          "upgrade as a review-only diff. Re-install from an "
-          "upgrade-capable Cairn for clean merges.")
+          "upgrade as a review-only diff -- `upgrade --stage` writes both "
+          "versions side by side for you to merge. Do not install over this "
+          "tree to get clean merges: that skips every file already here and "
+          "writes no lockfile, and --force overwrites your edits.")
     return 0
 
 
