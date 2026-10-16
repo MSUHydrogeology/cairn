@@ -88,9 +88,12 @@ is running.
 
 ## If you copied the kernel by hand
 
-A tree whose kernel was copied in by hand is still a valid install. Without a
-lockfile (`dev/.cairn/cairn-lock.yml`), though, it receives **no upgrades and
-no onboarding prompts**. To bring it under the installer:
+A tree whose kernel was copied in by hand is still a valid install, but it
+lacks two things the installer provides, so it receives **no upgrades and no
+onboarding prompts**: a lockfile (`dev/.cairn/cairn-lock.yml`), which upgrades
+need, and the files the installer adds on top of the kernel — the session
+tools, the skills, and the onboarding helper that shows the prompts. To bring
+it under the installer:
 
 ```
 python bootstrap/scaffold.py upgrade --target <repo> --init-lock
@@ -101,6 +104,9 @@ without writing a lockfile. Fill the placeholders, then run the same command
 again. Files whose tokens you filled in by hand upgrade as review-only diffs,
 so you compare and merge them yourself; the details are in
 `bootstrap/UPGRADE.md` > "Migrating a tree installed before upgrade support".
+Once the lockfile exists, `scaffold.py upgrade --target <repo> --plan` lists
+the missing installer files as additions, and the upgrade (`--stage`, then
+`--apply` once the review-only diffs are merged) brings them in.
 
 **Do not re-run the install with `--force`** to get there. It overwrites what
 you wrote.

@@ -86,13 +86,14 @@ intended signal that a token has no contract.
   which modules arrive; the on-ramp (`on-ramp/`) describes how to
   choose one.
 * **By hand.** Copying `core/` and the selected modules into a
-  repository and filling the placeholders yourself gives the same
-  files, but without a lockfile the tree receives no upgrades or
-  onboarding prompts until it runs `scaffold.py upgrade --init-lock`
-  (see `on-ramp/README.md`).
+  repository and filling the placeholders yourself gives you the
+  kernel, but not the files the installer adds on top of it (the
+  session tools, the skills, the onboarding helper) and no lockfile,
+  so the tree receives no upgrades until it runs
+  `scaffold.py upgrade --init-lock` (see `on-ramp/README.md`).
 
-Either way the *result* is the same tree; the bootstrap only
-automates the mechanical part.
+Only the scaffold produces the complete tree; a copy by hand is the
+kernel alone.
 
 ## Vendor-neutrality
 

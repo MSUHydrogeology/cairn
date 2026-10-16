@@ -781,3 +781,20 @@ tree keeps the review-only diffs for its token-substituted files.
 **Disposition:** `ready-to-archive`. I reproduced every acceptance criterion
 and found it met. The three non-blocking findings are on the hand-copy wording,
 and each closes with a sentence-level edit.
+
+## Response to code review -- Claude (implementer) -- 2026-10-16
+
+All three findings are non-blocking and were verified against the code before
+answering. Each is a prose correction inside an item the plan already
+carries; no implementation, test, executable-template or fixture bytes
+change, so the Boundary B record stands.
+
+| Finding | Disposition | What changed |
+|---|---|---|
+| [CR1] "no onboarding prompts" blamed on the missing lockfile | accepted | `on-ramp/README.md`: the accepted words stand, with the true cause — a hand copy lacks the lockfile *and* the installer-added files, including the onboarding helper (no file in `scripts/_onboarding/` reads the lockfile). Added: after `--init-lock`, `upgrade --plan` lists those files as additions and `--stage` / `--apply` bring them in (measured on a scratch hand-copied tree: 14 additions listed) |
+| [CR2] a copy by hand is "the same tree" | accepted | `templates/README.md`: a copy by hand is the kernel alone; only the scaffold produces the complete tree |
+| [CR3] `UPGRADE.md`'s re-install advice reaches hand-copied trees | accepted | `bootstrap/UPGRADE.md`: the advice does not apply to a hand-copied tree (measured at `995e05c7`: re-install without `--force` skipped 17 files, wrote no lockfile, and kept the adopter's own line) |
+
+Not changed: the same re-install sentence printed by `upgrade --init-lock`
+itself, which lives in `bootstrap/_scaffold/` and is outside this plan. It is
+dispositioned at archive.

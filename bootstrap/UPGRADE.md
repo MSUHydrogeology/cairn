@@ -184,7 +184,10 @@ reconstructed. Those files are marked *unrecoverable-base* and upgrade as
 a **review-only diff** (you compare and merge by hand) — never a pretended
 3-way merge. Verbatim scripts are hash-tracked normally. For clean 3-way
 merges on those files, re-install from an upgrade-capable Cairn so a full
-lockfile + base cache is written.
+lockfile + base cache is written. That does not apply to a tree whose kernel
+was copied in by hand: a re-install over it skips every file already there and
+writes no lockfile, and `--force` overwrites what you wrote. Keep the migrated
+lockfile and merge the review-only diffs instead.
 
 ## Migrating your plan-review records to the gated schema
 
