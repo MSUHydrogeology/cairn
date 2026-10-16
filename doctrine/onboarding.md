@@ -23,9 +23,9 @@ once they have Cairn in their tree:
 
 The mechanism: **`dev/PLANNING.md` carries preset-keyed
 onboarding tasks that activate as the adopter's relationship with
-Cairn deepens** -- maturity-ladder transitions + concrete action
-signals fire tasks into the backlog; important transitions get
-terminal-output prompts at the next goodnight.
+Cairn deepens** -- concrete action signals fire tasks into the
+backlog; the important ones also get terminal-output prompts at the
+next goodnight.
 
 ## The four components
 
@@ -60,21 +60,11 @@ skills are there to discover, not to nag.
 
 ### Component 2 -- The trigger system
 
-Two trigger kinds drive activation: **maturity-ladder
-transitions** + **concrete action signals**.
-
-**Maturity-ladder triggers** observe the existing on-ramp
-doctrine (`on-ramp/README.md`):
-
-* `level-0-to-1` -- `dev/proposals/_template.md` is present
-  (the canonical Level 1 signal: the adopter graduated from
-  "read the doctrine" to "hand-copy the kernel").
-* `level-1-to-2` -- `dev/.cairn/cairn-lock.yml` is present (the
-  canonical Level 2 signal: the adopter ran the full bootstrap).
-* `level-1-deepen` / `level-2-deepen` -- in-level action-count
-  thresholds (e.g., five archived proposals + three archived
-  plans for `level-1-deepen`; the thresholds are concrete +
-  named in the activation helper's evaluator).
+Activation is driven by **concrete action signals**. Nothing
+classifies a deployment by level: an adopter reads the doctrine or
+installs it with a profile, and a trigger keyed on a level would fire
+on states that carry no such meaning, such as the lockfile every
+install writes.
 
 **Action triggers** observe the adopter's actual work:
 
@@ -116,12 +106,11 @@ works for ordinary roadmap items.
 
 **Active surfacing** (for important transitions): a small named
 set of transitions also gets **terminal-output prompts** at the
-goodnight activation run. The three named rows:
+goodnight activation run. The two named rows:
 
 1. **Collab-agreement signing** -- fires on the
    `collab-agreement-signing` trigger above.
-2. **Level 1 → 2 graduation** -- fires on `level-1-to-2`.
-3. **Second-agent-type spin-up** -- fires on `second-agent-type`.
+2. **Second-agent-type spin-up** -- fires on `second-agent-type`.
 
 Each row carries **per-preset prompt content** authored in the
 preset file's active-surfacing-prompt-content blocks. The
@@ -217,8 +206,7 @@ next morning doesn't surface a wall of text:
   defers identically.
 * **Priority order** (highest first):
   1. `collab-agreement-signing`
-  2. Level 1 → 2 graduation
-  3. `second-agent-type` spin-up
+  2. `second-agent-type` spin-up
 
 The priority order is **v1-fixed**; adopter-tunable priority
 becomes a v1.x candidate (see "Capability-pull follow-ups" below).
@@ -286,7 +274,7 @@ below).
 ## Capability-pull follow-ups (v1.x)
 
 V1 ships at full L3 scope -- three presets, full trigger
-matrix, all three active-surfacing rows, both tour docs. **V1.x
+matrix, both active-surfacing rows, both tour docs. **V1.x
 opens only when a real adopter hits a v1 gap**, not on a
 schedule. The named candidate gaps:
 
@@ -347,5 +335,5 @@ stays vendor-neutral; the wrapper carries the spawn recipe.
   activation helper runs at.
 * `docs/tool-usage.md` -- worked invocations of the shipped tools
   (`claim_check`, `intent.py`, `lifecycle_metrics`, `link_check`).
-* `on-ramp/README.md` -- the maturity ladder the
-  maturity-ladder triggers observe.
+* `on-ramp/README.md` -- the two ways to adopt Cairn: read the
+  doctrine, or install it with the scaffold and a profile.

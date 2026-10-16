@@ -372,8 +372,8 @@ python scripts/onboarding_activate.py        # default: scan + activate
 python scripts/onboarding_activate.py --dry-run   # show plan, no writes
 ```
 
-The helper scans the deployment for fired triggers (maturity-ladder
-transitions + action signals — the trigger matrix is enumerated in
+The helper scans the deployment for fired triggers (action signals —
+the trigger matrix is enumerated in
 [`doctrine/onboarding.md`](onboarding.md)), activates the corresponding
 deferred onboarding tasks into `dev/PLANNING.md`'s `onboarding-tasks`
 slot, emits at most one active-surfacing prompt per goodnight (the UX
