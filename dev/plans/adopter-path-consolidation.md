@@ -482,3 +482,17 @@ mapping. Not folded: `docs/vision.md:77` ("the graduated on-ramp"), which
 describes the on-ramp as gradual rather than naming a level.
 
 Status `revising-plan` -> `ready-to-implement`. C1 waits on its gate.
+
+## Maintainer allowance -- Anthony Kendall (Maintainer) -- 2026-10-16
+
+The Maintainer's words, quoted **verbatim and visually isolated**:
+
+> "Yes, that's fine, go ahead with C1"
+
+*Scribe's note, separate from the quoted words:* this answers the question put
+to the Maintainer in chat on 2026-10-16: whether the accepted criterion
+"`bootstrap/verify_integrity.py` passes on Cairn's own tree after the lockfile
+re-finalize" may be held to the files this plan changes, as *Scope delta*
+describes, given that 18 of the tree's 21 current mismatches are in files this
+plan never touches. It satisfies C1's gate. Scribed by Claude
+(claude-opus-5-5) on the Maintainer's instruction.
