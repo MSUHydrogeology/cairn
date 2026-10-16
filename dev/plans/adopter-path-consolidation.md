@@ -1,7 +1,7 @@
 # Plan: retire the adoption levels
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopter-path-consolidation.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits
 `doctrine/onboarding.md`, removes code from adopter-executed scripts, and
@@ -624,3 +624,160 @@ plan.
 * `base_hash` trails `hash` for the four finalized scripts, as for any
   self-hosted verbatim script: `--finalize` advances `hash` only.
 * Nothing is re-anchored here; M is the Maintainer's.
+
+## Code review -- Claude (External, fresh-context subagent) -- 2026-10-16
+
+**Model**: claude-opus-5-5
+
+Reviewed commit: 8d500f269294b07c1232f8114876f44f33bec172
+Target: the implementation range c0980506..9c0e002a (C1-C6) and its Boundary B record
+Prior findings: none
+
+**Tier**: External
+**Findings**: raised
+
+**Verdict.** Land it. The strongest rejected alternative, A5 (keep the levels
+and redefine them by staffing), gets no support from the code: no engine path
+reads a level, and the only onboarding trigger that keyed on the lockfile is
+the one C1 deletes. The change would be shown wrong by the signals the proposal
+lists, such as adopters asking "which level am I?". Nothing in this range shows
+them. I raise three findings, all non-blocking, all on the hand-copy migration
+wording.
+
+### The record, checked against the range
+
+I measured each item on `git archive` extractions of `c0980506` and HEAD, or
+read-only in the tree, under `/Users/kendal30/conda_envs/lhm/bin/python3.13`
+(3.13.13).
+
+* **Eight changed frozen files.** Intersecting `git diff --name-only
+  c0980506 9c0e002a` with the keys of `frozen_files` (183 entries; the control
+  `templates/modules/default-on/_onboarding/triggers.py` is present) gives
+  exactly the record's eight. `test_presets.py` and `test_quickstart_sequence.py`
+  are frozen and not edited.
+* **Test nodes.** `--collect-only` on both extractions gives 3,244 → 3,229:
+  25 dropped and 10 added, with the same node IDs the record lists. All 25
+  dropped nodes are pinned in the committed `collection.node_ids`. Base minus
+  manifest is 66, which matches the record's 62 + 4.
+* **`verify_integrity`.** Base reports 21 findings and HEAD 18. The difference
+  is exactly the three `scripts/_onboarding/` files, and the launcher is in
+  neither set. The lockfile diff touches only four `hash` lines. The three stale
+  hashes attested content from `c8e172a4`. Finalizing now also attests the later
+  `30a55d27` and `a1a58f93` edits, which Revision 2 item 10 asks for.
+* **Twins.** `diff -r --exclude=__pycache__` over both `_onboarding/` packages,
+  and over the launcher pair, prints nothing.
+* **Manifest.** `scaffold.py --manifest` gives 98 lines at both commits, and
+  `cmp` finds them identical.
+* **Neutrality 77 → 74.** Reproduced. Counted per (file, token) pair, the only
+  change is three fewer hits in the template `triggers.py`. No pair is new.
+* **`check_cairn`.** It reports one issue, the line-438 citation in the plan
+  review, as recorded.
+* **Bytes after the record.** `9c0e002a..HEAD` changes only this plan.
+
+### Falsification ledger
+
+| Probe | What it would show if the work were wrong | Result |
+|---|---|---|
+| Restore each deleted `out.add("level-...")` line into the template package (the base `triggers.py`, with the other three neutralised), then run the rewritten test | a restoration the test misses | All four go red: `level-0-to-1` 3 failed, `level-1-to-2` 3, `level-1-deepen` 1, `level-2-deepen` 1. With all four restored, 4 failed. Unmutated control: 4 passed. |
+| Each deleted trigger's firing condition against the four fixtures | a trigger condition left uncovered | Every condition is met by at least one fixture: ≥1 archived proposal; a lockfile; no lockfile at 5/3; a lockfile at 15/10. |
+| Render both remaining rows through both launchers, from every template preset, from Cairn's `dev/modules/onboarding/collaborative-team.md`, and from the three **pre-change** presets (an existing adopter's installed copy) | a row that no longer renders, or a stale Level section leaking into a body | Every pair renders a non-empty body, and no body contains "Level". `select_active_prompt_to_fire` ignores a stale `level-1-to-2` id. |
+| Grep for `evaluate_maturity_triggers`, the `LEVEL_*_DEEPEN` constants, the count helpers, the row name, every `level-*` id and `graduate-to-level`; read the trigger tags in the presets and the manifest's `mapping_symbols` | a consumer still pointing at removed code | Hits only in `CHANGELOG.md` history, archived records, this plan, and `bootstrap/tests/fixtures/gate_manifest.json` (node IDs, which M clears). |
+| Run the plan's C6 pattern at both commits. Then run wider sweeps: case-insensitive `level[ -_]?[012]`, `levels? (zero\|one\|two)`, `ladder`, `rung`, `graduat`, `hand-?cop` and `by hand`, and read every prose hit for `\blevels?\b` | a page that still teaches a level | The pattern goes from 31 files to the expected 2, and `dev/modules/onboarding/` from 2 to 0. The wider sweeps find only unrelated senses (`top-level`, `module-level`, the skills table's `level` column) and the on-ramp's own "no rung" sentence. |
+| Compare the trigger ids named in the doctrine with the `out.add` ids in the code | doctrine naming a trigger that cannot fire | 8 = 8. |
+| Run the rewritten docs' commands at HEAD and check what they cite against the code: `upgrade --help`; `--init-lock` on a tree with `dev/.cairn/` removed and on a tree copied from `templates/core/`; `--adopt-module doc-drift-prevention` on an install; `--summary`, then an install, of the recipe's YAML into a repository that has its own `README.md` and `CHANGELOG.md`; module names against `_MODULE_MAPPINGS`; the readiness report's eleven sections; Act II-3 to II-6 against the installer's printout | a flag, behaviour, name or count the docs get wrong | All hold. `--init-lock` exits 2 with exactly four placeholders, and after they are filled exits 0 and writes a lockfile. `--adopt-module` exits 0 and installs the module's three files. The recipe installs 8 modules with 0 staffability warnings, writes the lockfile, and leaves both of the repository's files untouched. `--force` is documented as an overwrite. |
+| The canonical YAML block and the quickstart's pinned phrases | a pinned byte that moved | The block's sha256 is identical at both commits, and both phrases are present. 14 mapped test files (presets, quickstart, profiles, the onboarding family, render, mechanism, maturity, practice modules): 229 passed. |
+| What the lockfile does in onboarding once the level triggers are gone | a doc claim about the lockfile that the code no longer supports | **Contradicted**, see [CR1]. |
+| What hand-copying `core/` and the modules actually yields, and what a re-install over it does | a doc claim about the hand-copy route that the scaffold contradicts | **Contradicted**, see [CR2] and [CR3]. |
+
+**A fresh full run is not owed.** None of Boundary C's triggers applies:
+
+* the record is valid and in `full` mode;
+* it reports 0 skip, 0 xfail and 0 xpass;
+* no implementation, test, template or fixture byte changed after it;
+* the collection and gate figures above reproduce exactly;
+* no unrecorded cross-surface dependency turned up. The manifest's
+  `mapping_symbols` names none of the removed symbols.
+
+### Findings
+
+**[CR1] non-blocking: the docs say a tree without a lockfile gets no
+onboarding prompts, and the code says otherwise.** `on-ramp/README.md:91-93`
+and `templates/README.md:88-92` both say this.
+
+* **Nothing in the onboarding engine reads the lockfile.** `grep -c
+  "cairn-lock\|lockfile"` returns 0 for every file in `scripts/_onboarding/`
+  and for the launcher. As a control, `PLANNING` or `onboarding-activated`
+  matches 39 times in the same package. The one thing that keyed on the
+  lockfile was `level-1-to-2`, and C1 deleted it.
+* **Probe.** I installed `solo-greenfield`, removed `cairn-lock.yml` and the
+  base cache, and added one archived proposal. Running
+  `scripts/onboarding_activate.py --dry-run` then activated two tasks and
+  printed the `collab-agreement-signing` prompt.
+* **What actually stops the prompts.** A kernel copied from `templates/core/`
+  gets no prompts because it has neither the helper nor the preset. The
+  missing lockfile is not the cause.
+* **Where the wording comes from.** The sentence is Revision 2 item 9's own
+  wording, and the C3 criterion requires it, so the implementation met its
+  criterion. The claim is still one the code contradicts.
+
+*Close:* rewrite both sentences to say only what the code supports. For
+example: "receives no upgrades, and lacks the files only the installer adds,
+the onboarding helper among them". Or drop "no onboarding prompts". Either way
+it changes accepted wording, so name it in the archive dispositions.
+
+**[CR2] non-blocking: `templates/README.md` says hand-copying gives "the
+same files" and "the same tree". It does not.** See `templates/README.md:88-95`.
+
+* **Files outside `core/`.** The scaffold delivers always-on files that are in
+  neither `core/` nor any module. On a tree copied from `templates/core/` and
+  given a lockfile, `upgrade --plan` reports "new core/skills (added) 14".
+  Among them are `tools/session.py`, `tools/board.py`,
+  `.agents/skills/session-start/SKILL.md` and `scripts/onboarding_activate.py`.
+* **Install state.** The scaffold also writes the `dev/.cairn/` state.
+* **The page contradicts itself.** The rewritten bullet names one difference
+  (no lockfile). The unchanged sentence after it then says the result is the
+  same tree.
+
+*Close:* say that the scaffold also installs the session tools, the skills and
+the onboarding helper, and records a lockfile. Then drop "Either way the
+*result* is the same tree".
+
+**[CR3] non-blocking: for hand-copied trees, the migration section recommends
+a re-install that only works with the `--force` the on-ramp forbids.**
+
+* **How the reader gets there.** C3 added hand-copied trees to
+  `bootstrap/UPGRADE.md:172-173`, and the on-ramp sends that reader to the
+  section for details (`on-ramp/README.md:101-103`).
+* **The advice.** The section closes by telling the reader to re-install for
+  clean 3-way merges, "so a full lockfile + base cache is written"
+  (`bootstrap/UPGRADE.md:185-187`).
+* **What a re-install actually does.** Over a hand-copied kernel, a re-install
+  without `--force` skips every existing file and writes no lockfile. Probe:
+  `[warn] dev/.cairn/cairn-lock.yml NOT written: 9 installed file(s) differ
+  from a clean install`, followed by a pointer to `upgrade --init-lock`.
+* **The contradiction.** The advice therefore works only with `--force`, which
+  `on-ramp/README.md:105-106` says not to use. The tool's own warning redirects
+  safely, so nothing is lost, but the two pages disagree on the route this
+  change built.
+* **Same advice in the tool, out of scope.** The `--init-lock` output carries
+  the same re-install advice. It lives in `bootstrap/_scaffold/`, which this
+  plan does not touch.
+
+*Close:* qualify the re-install sentence. Over files that differ from a clean
+install, a re-install writes no lockfile without `--force`, so a hand-copied
+tree keeps the review-only diffs for its token-substituted files.
+
+**Seen but not raised.**
+
+* `docs/vision.md:77` changed even though the plan's Response marked it "not
+  folded". Item 7 reaches it, and the C6 commit body names it.
+* C5 corrected the default-on roster in all three profile comments and in
+  BOOTSTRAP's Act I example, beyond the cited lines. The corrections match
+  `_DEFAULT_ON_MODULES`.
+* A legacy repository that already has its own `AGENTS.md` gets no lockfile
+  from the recipe's install. The scaffold warns and points at `--init-lock`,
+  and the recipe's no-overwrite sentence is true.
+
+**Disposition:** `ready-to-archive`. I reproduced every acceptance criterion
+and found it met. The three non-blocking findings are on the hand-copy wording,
+and each closes with a sentence-level edit.
