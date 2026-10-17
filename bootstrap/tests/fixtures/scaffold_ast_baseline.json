@@ -928,7 +928,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_write_stage": {
-    "digest": "2def9e4453394dae",
+    "digest": "12582d06bedaa995",
     "span": [
       744,
       938
@@ -1288,7 +1288,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:write_install_lockfile": {
-    "digest": "63e897b5d01e8deb",
+    "digest": "508bad086c11af8d",
     "span": [
       1478,
       1650
