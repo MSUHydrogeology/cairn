@@ -95,7 +95,7 @@ and for **curating** auto-rows (filling `Resolved By`, reconciling
 The goodnight routine, through `dev/agent_collaboration.md` > "Session
 reflections and handoff". The step itself is `doctrine/session-routines.md` >
 "Goodnight incident-tracker migration — when the incident-trackers module is
-installed".
+installed". <!-- cairn-internal-ref: doctrine/session-routines.md reason=citation of the doctrine step this module adds to; the step itself runs from the installed goodnight routine -->
 
 ## Merged into
 
