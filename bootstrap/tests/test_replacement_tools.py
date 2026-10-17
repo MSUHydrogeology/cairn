@@ -34,10 +34,30 @@ class TestTheBoardReadsHeadersAndJudgesNothing:
     reports header fields, because a derived judgment printed beside a fact
     reads as a fact."""
 
-    def test_it_lists_the_active_artifacts(self) -> None:
-        rows = board._rows(CAIRN_ROOT, include_archive=False)
-        assert rows, "no active artifacts found"
-        assert {r["kind"] for r in rows} <= {"proposal", "plan"}
+    def test_it_lists_the_active_artifacts(self, tmp_path) -> None:
+        """Open proposals and plans are listed; archived ones only on request;
+        templates never.  Built in a scratch tree, because an empty board is a
+        valid state of the real repository -- nothing in flight -- and must not
+        fail the suite."""
+        def write(rel: str, status: str) -> None:
+            path = tmp_path / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"# x\n\n**Status**: {status}\n\n## Body\n",
+                            encoding="utf-8")
+        write("dev/proposals/2026-01-01-a-open.md", "awaiting-review")
+        write("dev/proposals/_template.md", "awaiting-review")
+        write("dev/plans/open-plan.md", "implementing")
+        write("dev/plans/archive/done-plan.md", "archived")
+
+        rows = board._rows(tmp_path, include_archive=False)
+        assert {(r["kind"], r["artifact"]) for r in rows} == {
+            ("proposal", "2026-01-01-a-open"), ("plan", "open-plan")}
+        assert all(r["archived"] == "" for r in rows)
+
+        with_archive = board._rows(tmp_path, include_archive=True)
+        archived = [r for r in with_archive if r["archived"] == "yes"]
+        assert [(r["kind"], r["artifact"]) for r in archived] == [
+            ("plan", "done-plan")]
 
     def test_it_reports_only_fields_the_author_wrote(self, tmp_path) -> None:
         """A field the artifact does not carry must come back empty, not
