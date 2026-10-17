@@ -197,9 +197,9 @@ def _slot_body_in_text(
 
 
 def _slot_is_empty(body: str) -> bool:
-    """A slot is "empty" if its body has no non-comment, non-blank
-    content -- placeholder prose for adopter agents to fill is fine
-    (it gets overwritten on merge)."""
+    """A slot is "empty" only if its body is blank.  Any other text -- a
+    comment or placeholder prose included -- counts as content, so the
+    module merge treats the slot as filled and never overwrites it."""
     return body.strip() == ""
 
 

@@ -690,6 +690,21 @@ class TestFencesFollowTheDocumentFormat:
         hard, _ = cc.check_text(self.RST, repo, doc_rel="docs/guide.rst")
         assert [f.token for f in hard] == ["scripts/does_not_exist.py"]
 
+    def test_a_declaration_between_rst_underlines_is_read(self, cc, tmp_path):
+        """The declaration registry and the scan must walk the same lines. A
+        registry that kept Markdown fences on an `.rst` file would lose a
+        declaration sitting between two underlines, and the declared path,
+        cited later, would hard-flag."""
+        repo = self._repo(tmp_path)
+        rst = (
+            "Section\n-------\n\nSubsection one\n~~~~~~~~~~~~~~\n\n"
+            "Proposed path: `scripts/future.py`\n\n"
+            "Subsection two\n~~~~~~~~~~~~~~\n\n"
+            "The new `scripts/future.py` does the work.\n"
+        )
+        hard, _ = cc.check_text(rst, repo, doc_rel="docs/guide.rst")
+        assert hard == []
+
     def test_markdown_tilde_fences_still_hide_code(self, cc, tmp_path):
         repo = self._repo(tmp_path)
         fenced = "~~~\nSee `scripts/does_not_exist.py`.\n~~~\n"
