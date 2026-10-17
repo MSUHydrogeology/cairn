@@ -62,6 +62,7 @@ from .lockfile import (
     _emit_lock_yaml,
     _refuse_secret_tokens,
     _sha256_hex,
+    read_lockfile,
 )
 
 
@@ -1811,9 +1812,11 @@ def write_install_lockfile(
 
     if diverged:
         shown = ", ".join(diverged[:5]) + ("..." if len(diverged) > 5 else "")
-        # --init-lock refuses once a lockfile exists, so pointing a tree that
-        # already has one back at it would be a loop with no exit.
-        if (target / _LOCKFILE_REL).exists():
+        # --init-lock refuses once a readable lockfile exists, so pointing a
+        # tree that has one back at it would be a loop with no exit.  The test
+        # is the same one --init-lock applies: an unparseable lockfile counts
+        # as none, and --init-lock is then the right advice.
+        if read_lockfile(target) is not None:
             remedy = ("the existing lockfile is kept unchanged; run `python "
                       "bootstrap/scaffold.py upgrade --target <repo> --plan` "
                       "to bring this tree up to date instead.")

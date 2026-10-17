@@ -1014,6 +1014,81 @@ class TestInitLock:
                 - set(placeholder.findall(ours.read_text(encoding="utf-8"))))
         }
         assert unfilled == {}, unfilled
+        # Outside slot bodies (the adopter's side of a by-hand merge, and
+        # where an install composes module and onboarding text), the two
+        # sides are byte-equal: tokens, sizing and markers all match.
+        slot_body = re.compile(
+            r"(<!-- cairn:slot (\S+) -->).*?(<!-- cairn:end \2 -->)", re.S)
+        def outside_slots(path: Path) -> str:
+            return slot_body.sub(r"\1\3", path.read_text(encoding="utf-8"))
+        differing = [str(th.relative_to(review)) for th, ours in pairs
+                     if outside_slots(th) != outside_slots(ours)]
+        assert differing == [], differing
+
+    def _migrate(self, target: Path, *profile_lines: str) -> Path:
+        """Install, drop the lockfile, and migrate with the given extra
+        profile lines; return where ``--stage`` writes the review pairs."""
+        assert _install(target) == 0
+        import shutil
+        shutil.rmtree(target / "dev" / ".cairn")
+        prof = _seed_profile(target)
+        if profile_lines:
+            prof.write_text(prof.read_text() + "\n".join(profile_lines) + "\n")
+        assert s.main(["upgrade", "--target", str(target), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        return target / "dev" / ".cairn-upgrade" / "review-only"
+
+    def test_review_copy_keeps_a_profile_supplied_command_token(
+        self, tmp_path: Path,
+    ) -> None:
+        """The install's reference-script default fills a command token only
+        when the profile left it empty; the review copy must do the same, or
+        an adopter's own invocation reads as an upstream change."""
+        review = self._migrate(
+            tmp_path, 'claim_check_command: "make claims"')
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        theirs = (review / "dev" / "modules" / "claim-check.md.theirs").read_text()
+        assert "make claims" in theirs
+        assert "{{claim_check_command}}" not in theirs
+
+    def test_review_copy_is_sized_to_the_current_profile(
+        self, tmp_path: Path,
+    ) -> None:
+        """When the committed profile changes after migration, the review copy
+        shows the upstream text sized to the profile the adopter now has --
+        the same choice the 3-way path makes -- not the lockfile's older one."""
+        review = self._migrate(tmp_path)
+        prof = tmp_path / "dev" / ".cairn" / "profile.yml"
+        prof.write_text(prof.read_text().replace(
+            "human_team: solo", "human_team: small-multi"))
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        theirs = (review / "AGENTS.md.theirs").read_text()
+        assert "## Human contributors" in theirs  # selected by the new axis
+        assert "cairn:if" not in theirs  # markers stripped, as an install does
+
+    def test_install_without_a_readable_lockfile_points_at_init_lock(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """With no lockfile, or one that does not parse, --init-lock is the
+        command that works, so that is what the warning names."""
+        assert _install(tmp_path) == 0
+        agents = tmp_path / "AGENTS.md"
+        agents.write_text(agents.read_text() + "\nAn adopter's own line.\n")
+        lock_path = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"
+        for state in ("absent", "unparseable"):
+            if state == "absent":
+                lock_path.unlink()
+            else:
+                lock_path.write_text("this is not a lockfile\n")
+            capsys.readouterr()
+            assert _install(tmp_path) == 0
+            err = capsys.readouterr().err
+            warning = next(line for line in err.splitlines()
+                           if "NOT written" in line)
+            assert "--init-lock" in warning, (state, warning)
+            assert "--plan" not in warning, (state, warning)
 
     def test_init_lock_follows_vendor_rename(self, tmp_path: Path) -> None:
         """#45: a renamed vendor wrapper (VENDOR.md -> CLAUDE.md) is resolved

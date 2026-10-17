@@ -733,7 +733,8 @@ def main(argv: list[str] | None = None) -> int:
     # Write the install lockfile + base-template cache: the upgrade
     # ancestor anchor (dev/.cairn/cairn-lock.yml + dev/.cairn/base/).  Fail-closed
     # if the tree diverges from a clean install (P-1) -- then it points the
-    # user at `upgrade --init-lock` and the install still succeeds.
+    # user at `upgrade --init-lock`, or at `upgrade --plan` when a readable
+    # lockfile is already there, and the install still succeeds.
     lock_profile: dict[str, Any] = {"preset": cfg.get("preset")}
     lock_profile["axes"] = embedded_axes
     try:

@@ -894,9 +894,8 @@ def _write_stage(
             continue
         review_only_dsts.append(fp.dst)
         if fp.theirs_raw is not None:
-            theirs_text = substitute_tokens(fp.theirs_raw, review_tokens)
-            if review_axes:
-                theirs_text = strip_conditional_regions(theirs_text, review_axes)
+            theirs_text = strip_conditional_regions(
+                substitute_tokens(fp.theirs_raw, review_tokens), review_axes)
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
             theirs_out.write_text(theirs_text, encoding="utf-8")
