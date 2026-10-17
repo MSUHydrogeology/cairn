@@ -39,14 +39,15 @@ subset (broken repo paths, out-of-bounds line citations).
   contain the rule or API being claimed.
 
 **Lifecycle archive resolution.**  A backticked token naming a
-*missing* active lifecycle file in exactly one of these two forms:
+*missing* active lifecycle file in exactly one of these three forms:
 
-* ``dev/proposals/<file>.md``; or
-* ``dev/plans/<file>.md``,
+* ``dev/proposals/<file>.md``;
+* ``dev/plans/<file>.md``; or
+* ``dev/strategy/<file>.md``,
 
 is also checked against its exact same-family sibling under
 ``archive/`` (``dev/proposals/archive/<file>.md`` /
-``dev/plans/archive/<file>.md``).  If that exact archived file
+``dev/plans/archive/<file>.md`` / ``dev/strategy/archive/<file>.md``).  If that exact archived file
 exists, it becomes the resolution target -- for the path-exists check
 and, for a ``path:N`` / ``path:N-M`` citation, for the line-bounds
 check too, which is checked against the **archived** file's actual
@@ -420,8 +421,15 @@ def _strip_html_comments(line: str, in_comment: bool) -> tuple[str, bool]:
     return ''.join(out), in_comment
 
 
-def scannable_lines(text: str) -> list[tuple[int, str]]:
+def scannable_lines(
+    text: str, *, fences: bool = True,
+) -> list[tuple[int, str]]:
     """Return ``(1-based line number, scannable text)`` for prose lines.
+
+    ``fences=False`` turns off Markdown fence detection, for formats where a
+    line of backticks or tildes means something else -- in reStructuredText
+    a ``~~~`` line is a section underline, and treating it as a fence would
+    skip every line between two subsections unread.
 
     Fenced and indented code blocks, HTML comments, and blockquotes
     are dropped -- they carry illustrative paths and quoted
@@ -447,7 +455,7 @@ def scannable_lines(text: str) -> list[tuple[int, str]]:
         line = raw.expandtabs(4)
 
         # --- fenced code block ---
-        if re.match(r'^ {0,3}(```|~~~)', line):
+        if fences and re.match(r'^ {0,3}(```|~~~)', line):
             in_fence = not in_fence
             in_indent_code = False
             prev_blank = False
@@ -561,7 +569,7 @@ def _is_marker_block_continuation(text: str) -> bool:
     return stripped.startswith('`')
 
 
-def _walk_marker_context(text: str):
+def _walk_marker_context(text: str, *, fences: bool = True):
     """Yield ``(lineno, line, kind, block, is_marker)`` per scannable line.
 
     ``kind`` is the marker keyword governing this line -- set on a marker
@@ -578,7 +586,7 @@ def _walk_marker_context(text: str):
     kind: str | None = None
     block = 0
     prev_lineno: int | None = None
-    for lineno, line in scannable_lines(text):
+    for lineno, line in scannable_lines(text, fences=fences):
         marker_kind = _marker_line_kind(line)
         is_marker = marker_kind is not None
         contiguous = prev_lineno is not None and lineno == prev_lineno + 1
@@ -598,7 +606,7 @@ def _walk_marker_context(text: str):
 
 
 def parse_typed_declarations(
-    text: str,
+    text: str, *, fences: bool = True,
 ) -> tuple[list[Declaration], list[Flag]]:
     """Parse *text*'s marker blocks into a document registry.
 
@@ -632,7 +640,8 @@ def parse_typed_declarations(
     first_seen: dict[str, tuple[int, str]] = {}
     conflicted: set[str] = set()
     blocks_with_rows: set[int] = set()
-    for lineno, line, kind, block, is_marker in _walk_marker_context(text):
+    for lineno, line, kind, block, is_marker in _walk_marker_context(
+            text, fences=fences):
         if kind is None:
             continue
         if not is_marker:
@@ -890,12 +899,12 @@ def _node_citation_path(token: str) -> str | None:
 
 # Exact lifecycle active-to-archive resolution -- see the module
 # docstring's "Lifecycle archive resolution" paragraph.  Matches only
-# ``dev/proposals/<file>.md`` or ``dev/plans/<file>.md`` with no
+# ``dev/{proposals,plans,strategy}/<file>.md`` with no
 # further path segments in ``<file>`` -- a token that already names an
 # ``archive/`` path (or anything nested deeper) does not match and
 # falls through to ordinary resolution unchanged.
 _LIFECYCLE_ARCHIVE_RE = re.compile(
-    r'^dev/(?P<family>proposals|plans)/(?P<name>[^/]+\.md)$'
+    r'^dev/(?P<family>proposals|plans|strategy)/(?P<name>[^/]+\.md)$'
 )
 
 
@@ -923,10 +932,10 @@ def _lifecycle_archive_resolve(
     """Resolve *path* under the exact lifecycle archive-fallback rule.
 
     Returns ``None`` when *path* is not in the exact
-    ``dev/{proposals,plans}/<file>.md`` shape -- the caller falls
+    ``dev/{proposals,plans,strategy}/<file>.md`` shape -- the caller falls
     through to ordinary resolution.  Never searches by partial stem,
-    date, or author; never crosses between the proposal and plan
-    families; never applies outside these two directories.
+    date, or author; never crosses between families; never applies
+    outside these three directories.
     """
     match = _LIFECYCLE_ARCHIVE_RE.match(path)
     if match is None:
@@ -1254,7 +1263,10 @@ def _scan(
     # A malformed or duplicate entry is absent from ``registry`` -- it
     # fails closed, granting no document-wide authority -- and is
     # reported below.
-    entries, decl_problems = parse_typed_declarations(text)
+    # The registry and the scan below must walk the same lines, so both get
+    # the same fence rule for this document's format.
+    fences = not (doc_rel or "").endswith(".rst")
+    entries, decl_problems = parse_typed_declarations(text, fences=fences)
     registry: dict[str, Declaration] = {}
     for entry in entries:
         registry.setdefault(entry.path, entry)
@@ -1273,7 +1285,7 @@ def _scan(
     live_entries: set[str] = set()
 
     for lineno, line, block_kind, _block, _marker in _walk_marker_context(
-        text
+        text, fences=fences
     ):
         # A marker block's own rows stay exempt from the hard checks (and
         # an occurrence there never makes its own declaration live).

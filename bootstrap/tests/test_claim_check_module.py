@@ -640,22 +640,66 @@ class TestLifecycleArchiveResolution:
         assert hard[0].kind == "line-bounds"
         assert "exceeds" in hard[0].message
 
+    def test_archived_strategy_note_resolves(self, cc, tmp_path):
+        # Strategy notes archive like proposals and plans, so a citation
+        # to one that has since moved under `archive/` must keep resolving;
+        # a note that exists nowhere still flags.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "dev" / "strategy" / "archive").mkdir(parents=True)
+        (tmp_path / "dev" / "strategy" / "archive" / "note.md").write_text(
+            "# archived note\n")
+        hard, _soft = cc.check_text(
+            "see `dev/strategy/note.md` and `dev/strategy/gone.md`", tmp_path)
+        assert [f.token for f in hard] == ["dev/strategy/gone.md"]
+
     def test_archive_resolution_limited_to_lifecycle_dirs(self, cc, tmp_path):
-        # "the path-limited historical predicate for the dropped prefix"
-        # The resolution rule is limited to exactly the two
-        # `dev/proposals/` and `dev/plans/` prefixes -- a missing file
-        # under any OTHER top-level directory must not resolve against a
-        # same-shaped `<dir>/archive/<file>` sibling, even though one
-        # concretely exists here.  ("the dropped prefix" -- any prefix
-        # other than the two lifecycle ones is out of the rule's reach,
-        # dropped from consideration entirely, however plausible the
-        # look-alike.)
+        # The resolution rule is limited to exactly the three lifecycle
+        # families -- `dev/proposals/`, `dev/plans/`, `dev/strategy/` -- so
+        # a missing file under any OTHER directory must not resolve against
+        # a same-shaped `<dir>/archive/<file>` sibling, even though one
+        # concretely exists here, however plausible the look-alike.
         _make_lifecycle_repo(tmp_path)
         (tmp_path / "templates" / "archive" / "foo.md").write_text(
             "# archived-looking, but not a lifecycle dir\n"
         )
         hard, _soft = cc.check_text("see `templates/foo.md`", tmp_path)
         assert [f.token for f in hard] == ["templates/foo.md"]
+
+
+class TestFencesFollowTheDocumentFormat:
+    """In Markdown a `~~~` line opens a code fence; in reStructuredText it
+    underlines a section heading.  Treating an RST underline as a fence
+    skipped every line between two subsections, unchecked and unreported."""
+
+    RST = (
+        "Section\n-------\n\nSubsection one\n~~~~~~~~~~~~~~\n\n"
+        "See `scripts/does_not_exist.py` for details.\n\n"
+        "Subsection two\n~~~~~~~~~~~~~~\n\nText here.\n"
+    )
+
+    @staticmethod
+    def _repo(tmp_path: Path) -> Path:
+        # A `scripts/` directory makes `scripts/...` a repo path claim at all.
+        _make_lifecycle_repo(tmp_path)
+        (tmp_path / "scripts").mkdir()
+        (tmp_path / "scripts" / "real.py").write_text("")
+        return tmp_path
+
+    def test_rst_underlines_do_not_hide_text(self, cc, tmp_path):
+        repo = self._repo(tmp_path)
+        hard, _ = cc.check_text(self.RST, repo, doc_rel="docs/guide.rst")
+        assert [f.token for f in hard] == ["scripts/does_not_exist.py"]
+
+    def test_markdown_tilde_fences_still_hide_code(self, cc, tmp_path):
+        repo = self._repo(tmp_path)
+        fenced = "~~~\nSee `scripts/does_not_exist.py`.\n~~~\n"
+        plain = "See `scripts/does_not_exist.py`.\n"
+        assert cc.check_text(fenced, repo, doc_rel="docs/guide.md")[0] == []
+        # Control: the same line outside a fence is flagged, so the empty
+        # result above is the fence at work, not an unrecognised path.
+        assert [f.token for f in cc.check_text(
+            plain, repo, doc_rel="docs/guide.md")[0]] == [
+            "scripts/does_not_exist.py"]
 
 
 # ---------------------------------------------------------------------------
