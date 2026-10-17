@@ -230,16 +230,71 @@ class TestUnreadableTrackersFailClosed:
                     "# C\n\n**Rolling window**: 14 days.\n\n## Incidents\n\n"
                     "| Impact | Event Class | Date |\n|---|---|---|\n"
                     f"| occurred | staged-index | {_recent(1)} |\n"
-                    f"| occurred | staged-index | {_recent(2)} |\n")
+                    f"| occurred | staged-index | {_recent(2)} |\n"
+                    f"| occurred | staged-index | {_recent(40)} |\n")
         out = io.StringIO()
         with redirect_stdout(out):
             rc = ei.main(["--root", str(tmp_path), "--json"])
         assert rc == 0
         payload = json.loads(out.getvalue())
         assert [f["count"] for f in payload["findings"]] == [2]
+        # The 40-day-old row is a row, but not one inside the window.
         assert payload["trackers_read"] == [{
-            "tracker": "dev/measurement/collision_log.md", "rows": 2,
+            "tracker": "dev/measurement/collision_log.md", "rows": 3,
             "occurred_in_window": 2, "window_days": 14}]
+
+
+class TestDiscoveryNamesWhatItSkipped:
+    """In discovery -- the mode session-start runs -- a file with no
+    '## Incidents' table is not a tracker and does not fail closed. But a
+    skipped file must be named, and a run that read nothing must not print a
+    bare 'none': an adopter whose tracker lacks the heading would otherwise
+    read an unevaluated gate as a clean one."""
+
+    @staticmethod
+    def _issue_shaped(tmp_path: Path) -> None:
+        d = tmp_path / "dev" / "measurement"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "hazard_log.md").write_text(
+            "# Hazards\n\n| Date | Event class | Brief | Recovery / outcome |\n"
+            f"|---|---|---|---|\n| {_recent(1)} | x | a | b |\n")
+
+    def test_a_skipped_file_is_named(self, ei, tmp_path) -> None:
+        self._issue_shaped(tmp_path)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path), "--json"])
+        assert rc == 0
+        payload = json.loads(out.getvalue())
+        assert payload["trackers_skipped"] == ["dev/measurement/hazard_log.md"]
+        assert payload["trackers_read"] == []
+
+    def test_reading_nothing_is_not_reported_as_a_clean_none(
+            self, ei, tmp_path) -> None:
+        self._issue_shaped(tmp_path)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path)])
+        text = out.getvalue()
+        assert rc == 0
+        assert "SKIPPED (1)" in text
+        assert "dev/measurement/hazard_log.md" in text
+        assert "RATE-LIMIT SUGGESTIONS: none.\n" not in text
+        assert "no incident tracker was read" in text
+
+    def test_a_read_tracker_still_prints_a_plain_none(
+            self, ei, tmp_path) -> None:
+        d = tmp_path / "dev" / "measurement"
+        d.mkdir(parents=True)
+        (d / "collision_log.md").write_text(
+            _tracker("**Rolling window**: 14 days.",
+                     [(_recent(1), "x", "occurred")]))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path)])
+        assert rc == 0
+        assert "RATE-LIMIT SUGGESTIONS: none.\n" in out.getvalue()
+        assert "SKIPPED" not in out.getvalue()
 
 
 # ---------------------------------------------------------------------------

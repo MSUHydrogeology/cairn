@@ -30,9 +30,11 @@ or its table lacks one of those columns, the gate for that tracker **cannot
 be evaluated** -- this tool says why and exits non-zero (3) rather than
 counting zero, which would read exactly like a tracker with nothing to report.
 A tracker named with ``--trackers`` that has no ``## Incidents`` table fails
-closed the same way; during discovery, such a file is simply not an incident
-tracker and is skipped. Every evaluated tracker is listed with what was read
-from it, so an empty result can be told apart from an unread one.
+closed the same way; during discovery, such a file is not an incident tracker
+and is skipped, but it is named as skipped. Every evaluated tracker is listed
+with what was read from it, and a run that read no tracker says so instead of
+printing a bare "none", so an empty result can be told apart from an unread
+one.
 
 Usage::
 
@@ -311,13 +313,15 @@ def main(argv: list[str] | None = None) -> int:
     failclosed: list[str] = []
     reasons: dict[str, str] = {}
     read: list[dict] = []
+    skipped: list[str] = []
     for tp in tracker_paths:
         if not tp.is_file():
             continue
         text = tp.read_text(encoding="utf-8", errors="replace")
         rel = _relpath(tp, root)
         if _INCIDENTS_HEADING not in text and not args.trackers:
-            continue  # discovered, and not an incident tracker
+            skipped.append(rel)  # discovered, and not an incident tracker
+            continue
         problem = tracker_problem(text)
         if problem is not None:
             failclosed.append(rel)
@@ -346,17 +350,18 @@ def main(argv: list[str] | None = None) -> int:
             "fail_closed_trackers": failclosed,
             "fail_closed_reasons": reasons,
             "trackers_read": read,
+            "trackers_skipped": skipped,
             "threshold": args.threshold,
         }, indent=2))
     else:
-        _print_human(findings, failclosed, reasons, read, args)
+        _print_human(findings, failclosed, reasons, read, skipped, args)
 
     # Fail-closed is the only non-zero exit (besides usage): an unparseable
     # window must not pass silently.
     return 3 if failclosed else 0
 
 
-def _print_human(findings, failclosed, reasons, read, args) -> None:
+def _print_human(findings, failclosed, reasons, read, skipped, args) -> None:
     print("evolution_infer: rate-limit gate (advisory only)")
     if read:
         print(f"\nREAD ({len(read)}):")
@@ -366,6 +371,11 @@ def _print_human(findings, failclosed, reasons, read, args) -> None:
                 f"{r['occurred_in_window']} 'occurred' in the "
                 f"{r['window_days']}-day window"
             )
+    if skipped:
+        print(f"\nSKIPPED ({len(skipped)}) -- no '{_INCIDENTS_HEADING}' "
+              "table, so not read as a tracker:")
+        for rel in skipped:
+            print(f"  - {rel}")
     if findings:
         print(f"\nRATE-LIMIT SUGGESTIONS ({len(findings)}):")
         for f in findings:
@@ -376,8 +386,14 @@ def _print_human(findings, failclosed, reasons, read, args) -> None:
                 f"(>={args.threshold}) is met; a doctrine proposal may be "
                 f"justified. (Suggestion only -- the decision stays human.)"
             )
-    else:
+    elif read:
         print("\nRATE-LIMIT SUGGESTIONS: none.")
+    else:
+        # Nothing evaluated is not the same as nothing recurring.
+        print(
+            "\nRATE-LIMIT SUGGESTIONS: none -- but no incident tracker was "
+            "read, so the gate evaluated nothing."
+        )
     if failclosed:
         print(f"\nFAIL-CLOSED ({len(failclosed)}):")
         for rel in failclosed:
