@@ -122,8 +122,9 @@ Merged into `dev/agent_collaboration.md`:
 >
 > **Code review** — the implementation-side pass before a plan
 > archives — takes the same independence floor: not the
-> implementing agent, and, for contract-touching work, a
-> different agent type.
+> implementing agent. A different agent type is the strongest
+> distance and is recommended wherever it can be staffed; no
+> tier requires one.
 >
 > **A clean code review must show its work.** A pre-archive code
 > review that approves does not clear the gate by *asserting*
