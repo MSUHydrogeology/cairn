@@ -1,7 +1,7 @@
 # Plan: retire the adoption levels
 
 **Source proposal**: `dev/proposals/archive/2026-08-20-claude-adopter-path-consolidation.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits
 `doctrine/onboarding.md`, removes code from adopter-executed scripts, and
@@ -899,3 +899,45 @@ test, or the archive dispositions.
 **Disposition:** the fix stands, and the plan stays `ready-to-archive`. [IL1]
 is a small test tightening. [IL2] and [IL3] belong with the archive
 dispositions, next to the residual of [CR3].
+
+## Archive -- 2026-10-17
+
+`Dispositions: accept x4, defer x2 (authorized), wontfix x0` — restated over
+the whole record, since sections were appended after *Dispositions*.
+
+* **accept — Revision 2, items 1–10 and the doctrine change.** Delivered in
+  C1–C6 (`3b44bc72`, `7e423915`, `e1a9933b`, `6eb5a448`, `5e6cb155`,
+  `9c0e002a`); Boundary B at C7 (`8d500f26`); code review `995e05c7`.
+* **accept — the narrowed `verify_integrity` criterion.** The Maintainer's
+  allowance (`c0980506`); findings 21 → 18, the other 18 unchanged.
+* **accept — code review CR1–CR3.** `2790bd67`.
+* **accept — the `--init-lock` advice** (CR3's residual). It lives in
+  `bootstrap/_scaffold/`, which this plan does not touch, so it took the
+  defect-repair lane: `f3c839a7`, reviewed at `bab80098`; that review's
+  IL1–IL3 in `b61983bb`; the AST baseline for `_cmd_init_lock` re-anchored by
+  the Maintainer at `cef67cc0` (CHANGED 1, `a6fbdd4d4104cf53` →
+  `5ef8c28e3585286b`, baseline still 173 symbols).
+* **defer — F8**, the post-install report. On the board since `9276833c`,
+  with its authorization quoted there.
+* **defer — the gate-manifest re-anchor (M)**, Maintainer-only. The nine
+  frozen files changed since `c0980506` — this plan's eight and
+  `bootstrap/tests/test_upgrade.py` from the init-lock fixes — and the test-node
+  changes join the queued row on `dev/PLANNING.md` in the next commit, as
+  Revision 2 item 10 specifies. Authorized by the Decision, quoted verbatim:
+
+  > "Accept Revision 2 as written. Defer the install-report fix (F8) to the board. No second review round; External floor waived."
+
+**After the AST re-anchor**, the full suite at `cef67cc0` (Python 3.13.13):
+3230 passed, 1 failed —
+`bootstrap/tests/test_security_stack.py::test_a_t4_output_is_bounded`, which
+reported `truncated+cleanup-failed` where it expects `truncated`. Neither the
+test nor the runner changed in this work, it passed 5 of 5 times alone, and the
+run took 908 s against C7's 692 s: the child-process cleanup outlived its fixed
+grace period on a loaded machine. Not this plan's defect; flagged as its own
+task for the runner's review rules.
+
+**The lasting truth.** An instruction is a claim about the code, and it decays
+like one. The ladder taught a technique the installer had replaced; the
+migration note blamed a lockfile nothing reads; the `--init-lock` note
+recommended a re-install that cannot work. Each was caught by running the
+instruction against the code, never by reading it.
