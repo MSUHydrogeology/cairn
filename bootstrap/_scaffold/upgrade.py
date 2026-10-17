@@ -1507,8 +1507,9 @@ def _cmd_adopt_module(
             f"error: module {name!r} requires token(s) {', '.join(gaps)} but "
             f"no filled value is available from the lockfile or "
             f"{_PROFILE_REL}; refusing to adopt (no files written, lockfile "
-            "unchanged). Fill the token (upgrade --init-lock, or commit a "
-            "filled dev/.cairn/profile.yml) and retry.",
+            f"unchanged). Add a value for each to {_PROFILE_REL} -- the "
+            "profile you installed with; copy it there if it is not there "
+            "yet -- and retry.",
             file=sys.stderr,
         )
         return 2

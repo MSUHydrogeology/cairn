@@ -1501,6 +1501,31 @@ class TestAdoptModule:
         assert not (target / "scripts" / "run_security_audit.py").exists()
         assert s.read_lockfile(target) == before
 
+    def test_adopt_refusal_names_a_remedy_that_works(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """The refusal must point at something that fills the token.  Adopting
+        needs a lockfile, and --init-lock answers "already exists" once there
+        is one, so naming it sends the adopter nowhere.  Following the
+        message's own advice -- the install profile, with the value added, at
+        the committed install-config path -- must make the retry succeed."""
+        target = tmp_path.resolve()
+        _install(target)
+        capsys.readouterr()
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 2
+        err = capsys.readouterr().err
+        assert "init-lock" not in err
+        assert "dev/.cairn/profile.yml" in err and "python_package" in err
+        config = target / "dev" / ".cairn" / "profile.yml"
+        config.write_text((target / "profile.yml").read_text(encoding="utf-8")
+                          + "python_package: mypkg\n", encoding="utf-8")
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 0
+        assert self.TOKEN_NAME in s.read_lockfile(target)["modules"]
+
     def test_adopt_required_token_seeded_from_profile(
         self, tmp_path: Path,
     ) -> None:
