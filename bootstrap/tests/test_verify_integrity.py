@@ -50,6 +50,35 @@ def test_tampered_file_fails_closed(tmp_path: Path) -> None:
     assert verify_integrity.verify(tmp_path) == 1
 
 
+def test_a_filled_customized_slot_is_pointed_at_finalize(
+    tmp_path: Path, capsys
+) -> None:
+    """Filling a slot and marking it customized is an expected edit, so the
+    failure names the command that records it -- and following that advice
+    clears the check.  A mismatch without the marker gets no such hint:
+    suggesting --finalize for it would invite blessing a change nobody can
+    explain."""
+    assert _install(tmp_path) == 0
+    agents = tmp_path / "AGENTS.md"
+    agents.write_text(agents.read_text(encoding="utf-8")
+                      + "\n<!-- cairn:customized -->\nOur own conventions.\n",
+                      encoding="utf-8")
+    vendor = tmp_path / "VENDOR.md"
+    vendor.write_text(vendor.read_text(encoding="utf-8") + "\nunexplained\n",
+                      encoding="utf-8")
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    err = capsys.readouterr().err
+    assert "--finalize AGENTS.md" in err
+    assert "VENDOR.md" not in err.split("--finalize", 1)[1]
+
+    assert main(["upgrade", "--target", str(tmp_path), "--cairn-root",
+                 str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0
+    vendor.write_text(vendor.read_text(encoding="utf-8")
+                      .replace("\nunexplained\n", ""), encoding="utf-8")
+    assert verify_integrity.verify(tmp_path) == 0
+
+
 def test_missing_file_fails_closed(tmp_path: Path) -> None:
     assert _install(tmp_path) == 0
     lock = read_lockfile(tmp_path)

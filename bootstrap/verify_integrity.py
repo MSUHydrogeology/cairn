@@ -44,6 +44,9 @@ from bootstrap._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowe
 from bootstrap._scaffold.install import trusted_upstream  # noqa: E402  (fork-advisory comparison source)
 
 
+#: The marker an adopter adds to a slot they filled (``bootstrap/BOOTSTRAP.md``).
+_CUSTOMIZED_MARKER = b"<!-- cairn:customized -->"
+
 def verify(target: Path) -> int:
     lock = read_lockfile(target)
     if lock is None:
@@ -58,6 +61,7 @@ def verify(target: Path) -> int:
         return 1
 
     violations: list[str] = []
+    customized: list[str] = []
     skipped = 0
     target_resolved = target.resolve()
     for rec in files:
@@ -106,9 +110,12 @@ def verify(target: Path) -> int:
         if not dst.is_file():
             violations.append(f"  missing: {dst_rel}")
             continue
-        actual = "sha256:" + hashlib.sha256(dst.read_bytes()).hexdigest()
+        on_disk = dst.read_bytes()
+        actual = "sha256:" + hashlib.sha256(on_disk).hexdigest()
         if actual != recorded:
             violations.append(f"  modified (hash mismatch): {dst_rel}")
+            if _CUSTOMIZED_MARKER in on_disk:
+                customized.append(dst_rel)
 
     # Advisory (rollup #4): a verbatim facade forked from upstream whose engine
     # package is installed-but-dormant passes the hash check above (on-disk ==
@@ -132,6 +139,16 @@ def verify(target: Path) -> int:
               + "\nThe on-disk tree no longer matches its recorded install. "
               "Do not trust the shipped scripts until this is resolved.",
               file=sys.stderr)
+        if customized:
+            # Named only for files that carry the customization marker: a
+            # filled slot is an expected edit, and --finalize is how it is
+            # recorded.  Suggesting it for any other mismatch would invite an
+            # adopter to bless a change nobody can explain.
+            print("A modified file that carries a `<!-- cairn:customized -->` "
+                  "slot is usually a slot you filled on purpose. If so, record "
+                  "it: python bootstrap/scaffold.py upgrade --target <repo> "
+                  "--finalize " + " ".join(customized),
+                  file=sys.stderr)
         return 1
     checked = len(files) - skipped
     extra = (f" ({skipped} adopter-authored living-state file(s) tracked for "
