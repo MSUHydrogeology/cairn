@@ -40,6 +40,7 @@ from .config import (
     duplicate_destinations,
     load_config,
     missing_required_tokens,
+    reference_script_token_defaults,
     resolve_axes,
     strip_conditional_regions,
     superseded_local_surfaces,
@@ -871,15 +872,34 @@ def _write_stage(
     # the file is missing on disk (nothing to pair).  ``--apply`` never
     # advances these; the whole stage (incl. ``review-only/``) is rmtree'd on
     # apply.
+    #
+    # The pair exists to show what changed, so ``.theirs`` gets the tokens and
+    # sizing an install of this profile applies -- the lockfile's tokens, the
+    # reference-script defaults the install fills (setdefault, as there), and
+    # the current profile's axes.  A raw ``{{token}}`` would read as a change
+    # the adopter never made.  Slot bodies an install composes (module merges,
+    # onboarding tasks) are not reproduced: they sit inside slots, which are
+    # the adopter's side of a by-hand merge, and a migrated lockfile does not
+    # record the onboarding preset that chose them.
+    review_tokens = {str(k): str(v)
+                     for k, v in (lock.get("tokens") or {}).items()}
+    for token, value in reference_script_token_defaults(
+            sorted(lock.get("modules") or [])).items():
+        review_tokens.setdefault(token, value)
+    review_axes = _embedded_axes(
+        new_profile if new_profile is not None else lock.get("profile"))
     review_only_dsts: list[str] = []
     for fp in plans:
         if fp.kind != "review-only":
             continue
         review_only_dsts.append(fp.dst)
         if fp.theirs_raw is not None:
+            theirs_text = substitute_tokens(fp.theirs_raw, review_tokens)
+            if review_axes:
+                theirs_text = strip_conditional_regions(theirs_text, review_axes)
             theirs_out = stage / "review-only" / (fp.dst + ".theirs")
             theirs_out.parent.mkdir(parents=True, exist_ok=True)
-            theirs_out.write_text(fp.theirs_raw, encoding="utf-8")
+            theirs_out.write_text(theirs_text, encoding="utf-8")
         dst_abs = target / fp.dst
         if dst_abs.exists():
             ours_out = stage / "review-only" / (fp.dst + ".ours")

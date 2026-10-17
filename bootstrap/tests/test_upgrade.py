@@ -957,6 +957,64 @@ class TestInitLock:
         assert not re.search(r"re-?install", out, re.IGNORECASE)
         assert "--stage" in out  # names the step that does the merge
 
+    def test_install_over_a_migrated_tree_points_at_upgrade_not_init_lock(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """An install that declines to write a lockfile must not send the
+        adopter to ``--init-lock`` when the tree already has one: that command
+        answers "already exists" and does nothing, a loop with no exit.  The
+        existing lockfile is kept, and ``upgrade`` is the way forward."""
+        assert _install(tmp_path) == 0
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
+        import shutil
+        shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        lock_path = tmp_path / "dev" / ".cairn" / "cairn-lock.yml"
+        before = lock_path.read_bytes()
+        agents = tmp_path / "AGENTS.md"
+        agents.write_text(agents.read_text() + "\nAn adopter's own line.\n")
+        capsys.readouterr()
+        assert _install(tmp_path) == 0
+        err = capsys.readouterr().err
+        warning = next(line for line in err.splitlines() if "NOT written" in line)
+        assert "--init-lock" not in warning
+        assert "upgrade" in warning and "--plan" in warning
+        assert lock_path.read_bytes() == before  # the migrated lockfile is kept
+
+    def test_review_pairs_leave_no_placeholder_the_install_filled(
+        self, tmp_path: Path,
+    ) -> None:
+        """A review-only pair is for spotting what changed, so ``.theirs``
+        carries the tokens an install of this profile fills.  On a migrated
+        tree nobody has edited, every ``{{token}}`` left in a ``.theirs`` must
+        therefore also be in its ``.ours`` -- a template-only placeholder such
+        as ``{{author}}`` stays on both sides; one the install filled would
+        read as a change the adopter never made."""
+        assert _install(tmp_path) == 0
+        (tmp_path / "dev" / ".cairn" / "cairn-lock.yml").unlink()
+        import shutil
+        shutil.rmtree(tmp_path / "dev" / ".cairn")
+        _seed_profile(tmp_path)
+        assert s.main(["upgrade", "--target", str(tmp_path), "--init-lock",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        assert s.main(["upgrade", "--target", str(tmp_path), "--stage",
+                       "--cairn-root", str(CAIRN_ROOT)]) == 0
+        review = tmp_path / "dev" / ".cairn-upgrade" / "review-only"
+        pairs = [(th, th.with_name(th.name[:-len(".theirs")] + ".ours"))
+                 for th in sorted(review.rglob("*.theirs"))]
+        pairs = [(th, ours) for th, ours in pairs if ours.exists()]
+        assert pairs, "the migrated tree staged no review pairs"
+        placeholder = re.compile(r"\{\{[a-z_]+\}\}")
+        unfilled = {
+            str(th.relative_to(review)): sorted(extra)
+            for th, ours in pairs
+            if (extra := set(placeholder.findall(th.read_text(encoding="utf-8")))
+                - set(placeholder.findall(ours.read_text(encoding="utf-8"))))
+        }
+        assert unfilled == {}, unfilled
+
     def test_init_lock_follows_vendor_rename(self, tmp_path: Path) -> None:
         """#45: a renamed vendor wrapper (VENDOR.md -> CLAUDE.md) is resolved
         and tracked under its real dst, not dropped to untracked."""

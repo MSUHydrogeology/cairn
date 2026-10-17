@@ -1811,12 +1811,20 @@ def write_install_lockfile(
 
     if diverged:
         shown = ", ".join(diverged[:5]) + ("..." if len(diverged) > 5 else "")
+        # --init-lock refuses once a lockfile exists, so pointing a tree that
+        # already has one back at it would be a loop with no exit.
+        if (target / _LOCKFILE_REL).exists():
+            remedy = ("the existing lockfile is kept unchanged; run `python "
+                      "bootstrap/scaffold.py upgrade --target <repo> --plan` "
+                      "to bring this tree up to date instead.")
+        else:
+            remedy = ("run `python bootstrap/scaffold.py upgrade --init-lock "
+                      "--target <repo>` to synthesize one from the current "
+                      "tree instead.")
         print(
             f"  [warn] {_LOCKFILE_REL} NOT written: {len(diverged)} installed "
             f"file(s) differ from a clean install ({shown}). A lockfile must "
-            "record a clean ancestor; run `python bootstrap/scaffold.py "
-            "upgrade --init-lock --target <repo>` to synthesize one from the "
-            "current tree instead.",
+            f"record a clean ancestor; {remedy}",
             file=sys.stderr,
         )
         return None
