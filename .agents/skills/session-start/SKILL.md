@@ -38,12 +38,13 @@ mechanics live in `tools/session.py`; this skill never reimplements them.
 python tools/board.py
 ```
 
-One row per active artifact -- kind, artifact, status, owner role, active
-work-intent, review obligation, evidence, what blocks it, and row validity.
-**Run the board, choose the row you need, then read that artifact and the
-evidence it cites** -- not every active record. The view is derived (its footer
-says so); the artifact is authoritative, and the header names the `HEAD` the
-view came from and whether the lifecycle files differ from it. Read-only, like
+One row per active proposal and plan: its kind and name, then the header
+fields its author wrote -- status, review tier, plan-review tier, opened date,
+source proposal. The board judges nothing: who holds a row, what blocks it, and
+whether a review cleared are read from the artifact itself, never inferred from
+an empty column. **Run the board, choose the row you need, then read that
+artifact and the evidence it cites** -- not every active record. The view is
+derived (its footer says so) and the artifact is authoritative. Read-only, like
 everything else in this routine.
 
 ## 3. Judgment steps (yours, not the tool's)
