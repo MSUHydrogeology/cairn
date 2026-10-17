@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import sys
 from pathlib import Path
 
@@ -44,8 +45,28 @@ from bootstrap._scaffold.lockfile import (  # noqa: E402  (trust anchor: narrowe
 from bootstrap._scaffold.install import trusted_upstream  # noqa: E402  (fork-advisory comparison source)
 
 
-#: The marker an adopter adds to a slot they filled (``bootstrap/BOOTSTRAP.md``).
-_CUSTOMIZED_MARKER = b"<!-- cairn:customized -->"
+#: A ``cairn:slot`` body, and the marker an adopter adds inside one they
+#: filled (``bootstrap/BOOTSTRAP.md``).  Both match the way the merge engine
+#: reads them (``bootstrap/_scaffold/slotmerge.py``); they are inlined so this
+#: trust check imports nothing from the engine beyond the lockfile reader.
+_SLOT_BODY_RE = re.compile(
+    r"<!--\s*cairn:slot\s+(\S+)\s*-->(.*?)<!--\s*cairn:end\s+\1\s*-->",
+    re.IGNORECASE | re.DOTALL,
+)
+_CUSTOMIZED_MARKER_RE = re.compile(
+    r"<!--\s*cairn:customized\s*-->", re.IGNORECASE,
+)
+
+
+def _has_customized_slot(text: str) -> bool:
+    """True when some slot body carries the customized marker.
+
+    Only a marker inside a slot counts: a file that quotes the marker in
+    prose has no filled slot, so its edit is not one ``--finalize`` explains.
+    """
+    return any(_CUSTOMIZED_MARKER_RE.search(m.group(2))
+               for m in _SLOT_BODY_RE.finditer(text))
+
 
 def verify(target: Path) -> int:
     lock = read_lockfile(target)
@@ -114,7 +135,7 @@ def verify(target: Path) -> int:
         actual = "sha256:" + hashlib.sha256(on_disk).hexdigest()
         if actual != recorded:
             violations.append(f"  modified (hash mismatch): {dst_rel}")
-            if _CUSTOMIZED_MARKER in on_disk:
+            if _has_customized_slot(on_disk.decode("utf-8", errors="replace")):
                 customized.append(dst_rel)
 
     # Advisory (rollup #4): a verbatim facade forked from upstream whose engine
@@ -140,14 +161,14 @@ def verify(target: Path) -> int:
               "Do not trust the shipped scripts until this is resolved.",
               file=sys.stderr)
         if customized:
-            # Named only for files that carry the customization marker: a
-            # filled slot is an expected edit, and --finalize is how it is
-            # recorded.  Suggesting it for any other mismatch would invite an
-            # adopter to bless a change nobody can explain.
-            print("A modified file that carries a `<!-- cairn:customized -->` "
-                  "slot is usually a slot you filled on purpose. If so, record "
-                  "it: python bootstrap/scaffold.py upgrade --target <repo> "
-                  "--finalize " + " ".join(customized),
+            # Named only for files with a slot marked customized: a filled
+            # slot is an expected edit, and --finalize is how it is recorded.
+            # Suggesting it for any other mismatch would invite an adopter to
+            # bless a change nobody can explain.
+            print("A modified file with a slot marked "
+                  "`<!-- cairn:customized -->` is usually a slot you filled "
+                  "on purpose. If so, record it: python bootstrap/scaffold.py "
+                  "upgrade --target <repo> --finalize " + " ".join(customized),
                   file=sys.stderr)
         return 1
     checked = len(files) - skipped

@@ -50,21 +50,30 @@ def test_tampered_file_fails_closed(tmp_path: Path) -> None:
     assert verify_integrity.verify(tmp_path) == 1
 
 
+def _fill_slot(path: Path, slot: str, marker: str, text: str) -> None:
+    """Write *marker* and *text* into the body of slot *slot* in *path*."""
+    content = path.read_text(encoding="utf-8")
+    end = f"<!-- cairn:end {slot} -->"
+    assert end in content, f"{path.name} has no {slot} slot"
+    path.write_text(content.replace(end, f"{marker}\n{text}\n{end}"),
+                    encoding="utf-8")
+
+
 def test_a_filled_customized_slot_is_pointed_at_finalize(
     tmp_path: Path, capsys
 ) -> None:
     """Filling a slot and marking it customized is an expected edit, so the
     failure names the command that records it -- and following that advice
-    clears the check.  A mismatch without the marker gets no such hint:
-    suggesting --finalize for it would invite blessing a change nobody can
-    explain."""
+    clears the check.  The marker counts only inside a slot body, and in any
+    spacing the merge engine accepts: a file that merely quotes the marker in
+    prose, outside a slot, gets no hint, because suggesting --finalize there
+    would invite blessing a change nobody can explain."""
     assert _install(tmp_path) == 0
-    agents = tmp_path / "AGENTS.md"
-    agents.write_text(agents.read_text(encoding="utf-8")
-                      + "\n<!-- cairn:customized -->\nOur own conventions.\n",
-                      encoding="utf-8")
+    _fill_slot(tmp_path / "AGENTS.md", "project-conventions",
+               "<!--cairn:customized-->", "Our own conventions.")
     vendor = tmp_path / "VENDOR.md"
-    vendor.write_text(vendor.read_text(encoding="utf-8") + "\nunexplained\n",
+    vendor.write_text(vendor.read_text(encoding="utf-8")
+                      + "\nThe `<!-- cairn:customized -->` marker, quoted.\n",
                       encoding="utf-8")
     capsys.readouterr()
     assert verify_integrity.verify(tmp_path) == 1
@@ -74,8 +83,9 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
 
     assert main(["upgrade", "--target", str(tmp_path), "--cairn-root",
                  str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0
-    vendor.write_text(vendor.read_text(encoding="utf-8")
-                      .replace("\nunexplained\n", ""), encoding="utf-8")
+    vendor.write_text(vendor.read_text(encoding="utf-8").replace(
+        "\nThe `<!-- cairn:customized -->` marker, quoted.\n", ""),
+        encoding="utf-8")
     assert verify_integrity.verify(tmp_path) == 0
 
 
