@@ -191,6 +191,57 @@ class TestGateEval:
         assert rc == 0          # not fail-closed -- simply skipped
 
 
+class TestUnreadableTrackersFailClosed:
+    """A tracker the gate cannot read must never look like a tracker with
+    nothing to report: both used to print 'none' and exit 0."""
+
+    @staticmethod
+    def _write(tmp_path: Path, name: str, text: str) -> None:
+        d = tmp_path / "dev" / "measurement"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / name).write_text(text)
+
+    def test_incidents_table_without_an_impact_column(self, ei, tmp_path) -> None:
+        self._write(tmp_path, "hazard_log.md",
+                    "# H\n\n**Rolling window**: 14 days.\n\n## Incidents\n\n"
+                    "| Date | Event Class | Brief | Recovery |\n|---|---|---|---|\n"
+                    f"| {_recent(1)} | x (occurred) | a | b |\n")
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path), "--json"])
+        assert rc == 3
+        payload = json.loads(out.getvalue())
+        assert payload["fail_closed_trackers"] == ["dev/measurement/hazard_log.md"]
+        assert "Impact" in payload["fail_closed_reasons"][
+            "dev/measurement/hazard_log.md"]
+
+    def test_a_named_tracker_with_no_incidents_table(self, ei, tmp_path) -> None:
+        self._write(tmp_path, "hazard_log.md",
+                    "# H\n\n| Date | Event class | Brief |\n|---|---|---|\n")
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path),
+                          "--trackers", "dev/measurement/hazard_log.md"])
+        assert rc == 3
+        assert "no '## Incidents' table" in out.getvalue()
+
+    def test_columns_are_read_by_name_not_position(self, ei, tmp_path) -> None:
+        self._write(tmp_path, "collision_log.md",
+                    "# C\n\n**Rolling window**: 14 days.\n\n## Incidents\n\n"
+                    "| Impact | Event Class | Date |\n|---|---|---|\n"
+                    f"| occurred | staged-index | {_recent(1)} |\n"
+                    f"| occurred | staged-index | {_recent(2)} |\n")
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = ei.main(["--root", str(tmp_path), "--json"])
+        assert rc == 0
+        payload = json.loads(out.getvalue())
+        assert [f["count"] for f in payload["findings"]] == [2]
+        assert payload["trackers_read"] == [{
+            "tracker": "dev/measurement/collision_log.md", "rows": 2,
+            "occurred_in_window": 2, "window_days": 14}]
+
+
 # ---------------------------------------------------------------------------
 # Only-suggests invariant
 # ---------------------------------------------------------------------------

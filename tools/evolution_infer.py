@@ -23,12 +23,16 @@ of this deterministic pipeline.
 
 **Fail-closed (the gate is adopter-pinned).** The doctrine pins the rolling
 window in each tracker's prose (the ``**Rolling window**:`` line; the
-``## What counts`` sub-section defines the event classes). If a tracker
-carries an ``## Incidents`` table but **no parseable rolling window**, the
-gate for that tracker **cannot be evaluated** -- this tool reports a clear
-error and exits non-zero (3) rather than silently assuming a default window
-(which would under- or over-count the gate). A file with no ``## Incidents``
-table is simply not an incident tracker and is skipped.
+``## What counts`` sub-section defines the event classes), and the gate reads
+the ``Date``, ``Event Class`` and ``Impact`` columns by header name. If a
+tracker carries an ``## Incidents`` table but **no parseable rolling window**,
+or its table lacks one of those columns, the gate for that tracker **cannot
+be evaluated** -- this tool says why and exits non-zero (3) rather than
+counting zero, which would read exactly like a tracker with nothing to report.
+A tracker named with ``--trackers`` that has no ``## Incidents`` table fails
+closed the same way; during discovery, such a file is simply not an incident
+tracker and is skipped. Every evaluated tracker is listed with what was read
+from it, so an empty result can be told apart from an unread one.
 
 Usage::
 
@@ -42,8 +46,9 @@ Exit codes::
 
     0  -- evaluated cleanly (with or without findings)
     2  -- usage error (a named tracker path does not exist)
-    3  -- fail-closed: a tracker has an Incidents table but an unparseable
-          rolling window (the gate could not be evaluated)
+    3  -- fail-closed: a tracker the gate could not evaluate (no parseable
+          rolling window, a missing Date / Event Class / Impact column, or a
+          named tracker with no Incidents table)
 """
 from __future__ import annotations
 
@@ -65,6 +70,10 @@ _ROLLING_WINDOW_RE = re.compile(r"\*\*Rolling window\*\*\s*:\s*(.+)", re.IGNOREC
 #: A leading ``<int> [day|week]`` inside the window value ("14 days", "2 weeks",
 #: "21 days.", a bare "14").
 _DURATION_RE = re.compile(r"(\d+)\s*(days?|weeks?)?", re.IGNORECASE)
+#: The Incidents-table columns the gate reads, matched by header name
+#: (case- and whitespace-insensitive), so reordered columns still read and a
+#: missing one is refused rather than counted as zero.
+_REQUIRED_COLUMNS = ("date", "event class", "impact")
 
 
 # ---------------------------------------------------------------------------
@@ -88,6 +97,17 @@ def _section_body(text: str, heading: str) -> str:
         if in_section:
             out.append(line)
     return "".join(out)
+
+
+def _header_cells(section: str) -> list[str] | None:
+    """The normalised header row of the first markdown table in *section*,
+    or ``None`` when the section holds no table."""
+    for line in section.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|"):
+            return [" ".join(c.lower().split())
+                    for c in stripped.strip("|").split("|")]
+    return None
 
 
 def _data_rows(section: str):
@@ -146,26 +166,55 @@ def parse_rolling_window(text: str) -> int | None:
 
 
 def parse_incidents(text: str) -> list[dict]:
-    """``[{date, event_class, impact}]`` from the ``## Incidents`` table.
+    """``[{date, event_class, impact}]`` from the ``## Incidents`` table,
+    reading each column by its header name.
 
-    Rows whose first cell is not a real ISO date (the template's
+    Rows whose date cell is not a real ISO date (the template's
     ``<YYYY-MM-DD>`` placeholder, or any malformed row) are skipped
-    (fail-safe -- a bad row never crashes the evaluation)."""
+    (fail-safe -- a bad row never crashes the evaluation); a row too short to
+    reach the Impact cell counts as no impact.  A table missing a required
+    column yields no rows -- :func:`tracker_problem` is what reports it."""
     body = _section_body(text, _INCIDENTS_HEADING)
+    header = _header_cells(body) or []
+    if any(col not in header for col in _REQUIRED_COLUMNS):
+        return []
+    i_date, i_class, i_impact = (header.index(c) for c in _REQUIRED_COLUMNS)
     out: list[dict] = []
     for cells in _data_rows(body):
-        if len(cells) < 5:
+        if len(cells) <= max(i_date, i_class):
             continue
         try:
-            day = datetime.date.fromisoformat(cells[0].strip())
+            day = datetime.date.fromisoformat(cells[i_date].strip())
         except (TypeError, ValueError):
             continue
         out.append({
             "date": day,
-            "event_class": cells[1].strip(),
-            "impact": cells[4].strip().lower(),
+            "event_class": cells[i_class].strip(),
+            "impact": (cells[i_impact].strip().lower()
+                       if len(cells) > i_impact else ""),
         })
     return out
+
+
+def tracker_problem(text: str) -> str | None:
+    """Why the gate cannot evaluate this tracker, or ``None`` when it can.
+
+    Every reason is fail-closed: a tracker the gate cannot read must never be
+    reported as a tracker with nothing to report."""
+    if _INCIDENTS_HEADING not in text:
+        return "no '## Incidents' table"
+    reasons: list[str] = []
+    header = _header_cells(_section_body(text, _INCIDENTS_HEADING))
+    if header is None:
+        reasons.append("an '## Incidents' section with no table")
+    else:
+        missing = [c for c in _REQUIRED_COLUMNS if c not in header]
+        if missing:
+            names = ", ".join(f"'{c.title()}'" for c in missing)
+            reasons.append(f"no {names} column in the Incidents table")
+    if parse_rolling_window(text) is None:
+        reasons.append("no parseable '**Rolling window**:' line")
+    return "; ".join(reasons) or None
 
 
 def evaluate_tracker(
@@ -260,19 +309,33 @@ def main(argv: list[str] | None = None) -> int:
 
     findings: list[dict] = []
     failclosed: list[str] = []
+    reasons: dict[str, str] = {}
+    read: list[dict] = []
     for tp in tracker_paths:
         if not tp.is_file():
             continue
         text = tp.read_text(encoding="utf-8", errors="replace")
-        if _INCIDENTS_HEADING not in text:
-            continue  # not an incident tracker
+        rel = _relpath(tp, root)
+        if _INCIDENTS_HEADING not in text and not args.trackers:
+            continue  # discovered, and not an incident tracker
+        problem = tracker_problem(text)
+        if problem is not None:
+            failclosed.append(rel)
+            reasons[rel] = problem
+            continue
         window, tracker_findings = evaluate_tracker(
             text, today=today, threshold=args.threshold,
         )
-        rel = _relpath(tp, root)
-        if window is None:
-            failclosed.append(rel)
-            continue
+        cutoff = today - datetime.timedelta(days=window)
+        incidents = parse_incidents(text)
+        read.append({
+            "tracker": rel,
+            "rows": len(incidents),
+            "occurred_in_window": sum(
+                1 for inc in incidents
+                if inc["impact"] == "occurred" and inc["date"] >= cutoff),
+            "window_days": window,
+        })
         for f in tracker_findings:
             f["tracker"] = rel
             findings.append(f)
@@ -281,18 +344,28 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({
             "findings": findings,
             "fail_closed_trackers": failclosed,
+            "fail_closed_reasons": reasons,
+            "trackers_read": read,
             "threshold": args.threshold,
         }, indent=2))
     else:
-        _print_human(findings, failclosed, args)
+        _print_human(findings, failclosed, reasons, read, args)
 
     # Fail-closed is the only non-zero exit (besides usage): an unparseable
     # window must not pass silently.
     return 3 if failclosed else 0
 
 
-def _print_human(findings, failclosed, args) -> None:
+def _print_human(findings, failclosed, reasons, read, args) -> None:
     print("evolution_infer: rate-limit gate (advisory only)")
+    if read:
+        print(f"\nREAD ({len(read)}):")
+        for r in read:
+            print(
+                f"  - tracker {r['tracker']}: {r['rows']} incident row(s), "
+                f"{r['occurred_in_window']} 'occurred' in the "
+                f"{r['window_days']}-day window"
+            )
     if findings:
         print(f"\nRATE-LIMIT SUGGESTIONS ({len(findings)}):")
         for f in findings:
@@ -309,9 +382,8 @@ def _print_human(findings, failclosed, args) -> None:
         print(f"\nFAIL-CLOSED ({len(failclosed)}):")
         for rel in failclosed:
             print(
-                f"  - tracker {rel} has an Incidents table but no parseable "
-                "'**Rolling window**:' line -- the rate-limit gate cannot be "
-                "evaluated until you set it (no silent default)."
+                f"  - tracker {rel}: {reasons[rel]} -- the rate-limit gate "
+                "cannot be evaluated until that is fixed (no silent default)."
             )
 
 
