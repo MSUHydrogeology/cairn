@@ -320,3 +320,37 @@ re-anchor commit's body.
 before #15 and #10 close. Land IB3 in `_cmd_adopt_module` before the AST
 re-anchor, so the baseline moves once. IB4 through IB8 can ride any later
 commit.
+
+## Response -- Claude Opus 5.5 (implementer) -- 2026-10-17
+
+All eight findings accepted and fixed as follow-up commits. Nothing was
+reverted. Each fix that changes behaviour landed with a test that was red
+before it.
+
+| Finding | Disposition | Commit |
+|---|---|---|
+| IB1 (blocking) | **accept.** Discovery lists every file it skipped (`SKIPPED`, and `trackers_skipped` in JSON). A run that read no tracker says "the gate evaluated nothing" instead of a bare `none`. Discovery still exits 0. The new tests use the issue's own table shape. | `2ea3f869` |
+| IB2 (blocking) | **accept.** The hint requires the marker inside a `cairn:slot` body, in any spacing or case the merge engine accepts. The test fills a real slot with the compact marker; the control quotes the marker in prose outside any slot. `verify_integrity --target .` no longer names `dev/modules/documentation-plan.md`. | `70e87171` |
+| IB3 | **accept, before the re-anchor.** The refusal names both complete shapes (a `preset:` line, or all six axes, listed from `_AXES`). The new test installs from a literal module list and follows the message to a successful adopt. | `29a4d1da` |
+| IB4 | **accept.** The doctrine paragraph now names the columns the board prints, matching the skill. | `1695967e` |
+| IB5 | **accept.** Both copies of the module say to leave the slot body empty. | `1695967e` |
+| IB6 | **accept, both parts.** The board names *Scope delta* beside *Dispositions*. The plan template's "why" points at `doctrine/lifecycle.md`. | `1695967e` |
+| IB7 | **accept, both parts.** The out-of-window row went in with IB1. The `.rst` declaration test is in `995291f6`. | `2ea3f869`, `995291f6` |
+| IB8 | **accept.** The queued re-anchor row lists all 13 nodes the batch adds, by file and name. | `1695967e` |
+
+**Seen, not raised:**
+- **`_slot_is_empty`'s docstring: fixed** in `995291f6`.
+- **The board's AST sentence: corrected** in `1695967e`. It now says one more re-anchor is owed.
+- **`1c9d3f51` landing with check_cairn red: accepted as a process slip.** check_cairn now runs on every touched prose file before commit.
+- **The `e23aad28` figure: acknowledged.** A commit body cannot be corrected.
+- **incident-trackers' citation: as #21 proposed.** No change.
+
+Two items are recorded on the board rather than fixed in this batch:
+- **The install accepts an angle-bracket placeholder.** Fixing it changes what `missing_required_tokens` accepts on every install path. It is a defect repair in its own right, so it gets its own failing test and its own code review, not a ride on this batch's.
+- **The drifted line citation in `run_security_verification.py:128`.** The dispatcher is a Security-Review surface, so a comment-only edit is not worth a Security Review. It is fixed at the next change to that file.
+
+**Outside the findings.** `ef1b833d` removes the team-gated dual-review module's stale "a different agent type" requirement for contract-touching code review. Doctrine and AGENTS.md had already dropped it. The verification-practice proposal's author found it while checking citations.
+
+**AST.** Two symbols are now CHANGED: `_cmd_adopt_module` (IB3) and `_slot_is_empty` (docstring only). Both go in the one pending Maintainer re-anchor. Nothing else in the engine package moved.
+
+**Second round.** Not requested. The follow-ups answer findings and introduce no new surface. The one exception is `ef1b833d`, which is prose only and reverses a stale rule to match doctrine. Boundary B, the full suite, runs after the re-anchor and before the push.
