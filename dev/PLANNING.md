@@ -571,8 +571,10 @@ everything is kept *forever*. Requiring a home for every deferral
 makes this board the only sanctioned outcome, which turns it into a
 one-way accumulator.
 
-The vocabulary (full rule, including *why*, in
-`doctrine/lifecycle.md` > "Archive precondition"):
+The vocabulary, restated here so the board can be read on its own. **This
+copy is not the source — cite the governing statement instead**:
+`dev/plans/_template.md` > *Dispositions*, with the *why* in
+`doctrine/lifecycle.md` > "Archive precondition".
 
 * `accept` — fixed in scope. Includes writing the doc, and narrowing
   the artifact's own claim so the finding no longer applies (a
