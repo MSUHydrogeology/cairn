@@ -37,6 +37,28 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+### Changed — One installer; the adoption levels are retired
+
+- **Cairn no longer publishes adoption levels.**  You read the doctrine, or
+  you install it with the scaffold and a profile; the profile decides which
+  modules arrive.  `on-ramp/README.md`, the README, the quickstart, the
+  profiles, the readiness report and the onboarding presets say so, and
+  "Level 1 — hand-copy the kernel" is gone from every recommended route.
+- **The onboarding helper no longer classifies a tree by level.**  The four
+  `level-*` triggers and the "Level 1→2 graduation" prompt are removed from
+  `scripts/_onboarding/` and its template twin; the prompt had fired at every
+  new install's first goodnight.  An adopter who already dismissed it keeps a
+  log line nothing reads; one who has not seen it never will.
+- **The solo-legacy recipe installs with the scaffold**, with its roster
+  corrected to the eight modules it installs.
+- **A kernel copied in by hand has a documented way in:**
+  `scaffold.py upgrade --target <repo> --init-lock`, fill four placeholders,
+  re-run; an upgrade then adds the files the installer provides.  Do not
+  install over it, and never with `--force`.
+- **`upgrade --init-lock` gives advice that works.**  Its closing note and its
+  untracked-wrapper warning no longer recommend a re-install, which over an
+  existing tree writes no lockfile.
+
 ### Changed — Git-native security foundations
 
 - Object ids come from Git.  `bootstrap/security_check.py` no longer
