@@ -180,11 +180,16 @@ with the plan's filename stem.
   manifest's own `frozen_files` keys at ceremony time**; this list is a
   pointer, not the instrument. The pinned collection moves too: that plan
   dropped 25 test nodes and added 10, each listed by node ID in its
-  *Implementation verification* record, and the init-lock fixes (`f3c839a7`,
-  `b61983bb`) added 2 to `test_upgrade.py::TestInitLock`. A smaller or
+  *Implementation verification* record, and the engine advice fixes
+  (`f3c839a7`, `b61983bb`, `6894ed0c`, `223f6b40`) added 7 to
+  `test_upgrade.py::TestInitLock` (4 pinned, 11 now). A smaller or
   differently-named collection at the ceremony is expected for exactly these
-  reasons. The AST attestation baseline is separate and already current
-  (`cef67cc0`). Authorization for joining this batch is the Decision accepting
+  reasons. The AST attestation baseline is separate and current: re-anchored
+  by the Maintainer at `cef67cc0` and `396e001b`. Its companion,
+  `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, has carried two
+  stale `Import:` keys since it was written at `3079d272`; import keys never
+  fail `verify`, so that is bookkeeping, refreshed when the Maintainer chooses
+  (`bootstrap/AST_BASELINE_RUNBOOK.md` > Step 2). Authorization for joining this batch is the Decision accepting
   Revision 2, whose item 10 specifies it, quoted verbatim:
 
   > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
