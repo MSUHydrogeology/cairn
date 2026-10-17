@@ -18,7 +18,8 @@ these opens a proposal regardless of size:
   `bootstrap/BOOTSTRAP.md`), or the framework anchors in
   `doctrine/rationale.md`. The kernel is what makes a thing Cairn at
   all; it does not move silently, and a doctrine change additionally
-  clears the doctrine-evolution rate-limit below.
+  clears the doctrine-evolution rate-limit gate (`doctrine/rationale.md`
+  > "How the doctrine evolves under evidence").
 * **Bootstrap fidelity / install contract** — the scaffold's install
   set, the fidelity manifest (`bootstrap/fidelity-check.md`), the gate
   manifest, the lockfile schema, or the published install manifest

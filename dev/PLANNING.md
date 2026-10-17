@@ -182,10 +182,20 @@ with the plan's filename stem.
   dropped 25 test nodes and added 10, each listed by node ID in its
   *Implementation verification* record, and the engine advice fixes
   (`f3c839a7`, `b61983bb`, `6894ed0c`, `223f6b40`) added 7 to
-  `test_upgrade.py::TestInitLock` (4 pinned, 11 now). A smaller or
+  `test_upgrade.py::TestInitLock` (4 pinned, 11 now). The issue batch after
+  `4edd7778` adds 13 more and drops none: `test_claim_check_module.py` 4
+  (`test_archived_strategy_note_resolves` and `TestFencesFollowTheDocumentFormat`),
+  `test_evolution_infer.py` 6 (`TestUnreadableTrackersFailClosed`,
+  `TestDiscoveryNamesWhatItSkipped`), `test_upgrade.py` 2
+  (`test_adopt_refusal_names_a_remedy_that_works`,
+  `test_adopt_refusal_says_what_a_complete_profile_is`), and
+  `test_verify_integrity.py` 1
+  (`test_a_filled_customized_slot_is_pointed_at_finalize`). A smaller or
   differently-named collection at the ceremony is expected for exactly these
-  reasons. The AST attestation baseline is separate and current: re-anchored
-  by the Maintainer at `cef67cc0` and `396e001b`. Its companion,
+  reasons. The AST attestation baseline is separate: re-anchored by the
+  Maintainer at `cef67cc0` and `396e001b`, and owed one more, for
+  `_cmd_adopt_module` and `_slot_is_empty`, before the issue batch is pushed.
+  Its companion,
   `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, has carried two
   stale `Import:` keys since it was written at `3079d272`; import keys never
   fail `verify`, so that is bookkeeping, refreshed when the Maintainer chooses
@@ -573,7 +583,8 @@ one-way accumulator.
 
 The vocabulary, restated here so the board can be read on its own. **This
 copy is not the source — cite the governing statement instead**:
-`dev/plans/_template.md` > *Dispositions*, with the *why* in
+`dev/plans/_template.md` > *Dispositions* (and *Scope delta*, for the
+scope-reduction rule in the `accept` entry), with the *why* in
 `doctrine/lifecycle.md` > "Archive precondition".
 
 * `accept` — fixed in scope. Includes writing the doc, and narrowing

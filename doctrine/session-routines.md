@@ -49,10 +49,11 @@ The pass has four moves:
    python tools/board.py
    ```
 
-   One row per active artifact — kind, artifact, status, owner role,
-   active work-intent, review obligation, evidence, what blocks it, and
-   whether the row is still valid — under a header naming the `HEAD` the
-   view was derived from and whether the lifecycle files differ from it.
+   One row per active proposal and plan: its kind and name, then the
+   header fields its author wrote — status, review tier, plan-review tier,
+   opened date, source proposal. The board judges nothing: who holds a row,
+   what blocks it, and whether a review cleared are read from the artifact
+   itself, never inferred from an empty column.
    **Run the board, choose the row you need, then read that artifact and
    the evidence it cites** — not every active record. That ordering is the
    point of the view: it replaces "open everything under `dev/` and

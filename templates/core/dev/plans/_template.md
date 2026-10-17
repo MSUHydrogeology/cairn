@@ -1,4 +1,5 @@
 <!-- cairn-internal-ref-allow: doctrine/plans.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
+<!-- cairn-internal-ref-allow: doctrine/lifecycle.md reason=doctrine/ citation convention -- a doctrine reference is a citation to Cairn's published methodology, not an installed local file (see templates/core/AGENTS.md, "Where doctrine/ references resolve") -->
 <!-- The plan template. Copy everything below the rule into
      `dev/plans/<slug>.md`. Keep it short: a plan is a working
      document, not a second proposal. -->
@@ -229,8 +230,8 @@ Maintainer.
 **Nothing mechanical checks any of this.** The lifecycle planner that once
 parsed for a `Dispositions:` block was retired in August 2026; the enforcer is a
 reviewer opening the artifact at archive-preparation. The full rule, including
-why, is `doctrine/plans.md` > "Archive precondition" and "Lasting-truth
-migration doctrine".
+why, is `doctrine/lifecycle.md` > "Archive precondition" and
+`doctrine/plans.md` > "Lasting-truth migration doctrine".
 
 ## Plan review -- <reviewer> -- <YYYY-MM-DD>
 

@@ -43,8 +43,10 @@ directive below):
 > Review, the same tier as `bootstrap/_scaffold/` in Cairn's own
 > `AGENTS.md`.
 
-If `security-verification` is not installed, replace this section with `N/A:
-security-verification not installed`. An unfilled slot is a review finding.
+Leave the `security-verification` slot body in `AGENTS.md` empty, installed
+or not: the module-merge pass fills only an empty body, so this slot is the one
+exception to "an unfilled slot is a review finding" (the guidance above the
+slot in `AGENTS.md` says the same).
 
 ## `NOT_APPLICABLE` is not evidence
 

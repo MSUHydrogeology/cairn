@@ -240,8 +240,8 @@ Maintainer.
 **Nothing mechanical checks any of this.** The lifecycle planner that once
 parsed for a `Dispositions:` block was retired in August 2026; the enforcer is a
 reviewer opening the artifact at archive-preparation. The full rule, including
-why, is `doctrine/plans.md` > "Archive precondition" and "Lasting-truth
-migration doctrine".
+why, is `doctrine/lifecycle.md` > "Archive precondition" and
+`doctrine/plans.md` > "Lasting-truth migration doctrine".
 
 ## Plan review -- <reviewer> -- <YYYY-MM-DD>
 

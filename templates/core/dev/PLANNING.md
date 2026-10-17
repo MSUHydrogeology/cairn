@@ -106,7 +106,8 @@ one-way accumulator.
 
 The vocabulary, restated here so the board can be read on its own. **This
 copy is not the source — cite the governing statement instead**:
-`dev/plans/_template.md` > *Dispositions*, with the *why* in
+`dev/plans/_template.md` > *Dispositions* (and *Scope delta*, for the
+scope-reduction rule in the `accept` entry), with the *why* in
 `doctrine/lifecycle.md` > "Archive precondition".
 
 * `accept` — fixed in scope. Includes writing the doc, and narrowing
