@@ -1507,9 +1507,11 @@ def _cmd_adopt_module(
             f"error: module {name!r} requires token(s) {', '.join(gaps)} but "
             f"no filled value is available from the lockfile or "
             f"{_PROFILE_REL}; refusing to adopt (no files written, lockfile "
-            f"unchanged). Add a value for each to {_PROFILE_REL} -- the "
-            "profile you installed with; copy it there if it is not there "
-            "yet -- and retry.",
+            f"unchanged). Add a value for each to {_PROFILE_REL} and retry. "
+            "That file is read only when it is a complete profile -- a "
+            f"`preset:` line or all six axes ({', '.join(_AXES)}) -- so if it "
+            "is not there yet, copy in the profile you installed with and "
+            "add whichever of those it lacks.",
             file=sys.stderr,
         )
         return 2

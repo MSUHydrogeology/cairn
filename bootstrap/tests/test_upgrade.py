@@ -1526,6 +1526,40 @@ class TestAdoptModule:
         assert rc == 0
         assert self.TOKEN_NAME in s.read_lockfile(target)["modules"]
 
+    def test_adopt_refusal_says_what_a_complete_profile_is(
+        self, tmp_path: Path, capsys
+    ) -> None:
+        """dev/.cairn/profile.yml seeds a token only when it is a complete
+        profile -- a preset, or every axis.  An install from a literal
+        `modules:` list has neither, so copying that profile there, as told,
+        is refused again, by a warning that points at --init-lock, which a
+        tree with a lockfile answers "already exists".  The refusal has to
+        say what complete means, and following it must succeed."""
+        target = tmp_path.resolve()
+        cfg = target / "profile.yml"
+        cfg.write_text("project_name: Demo\ntest_command: pytest\n"
+                       "modules:\n  - claim-check\n", encoding="utf-8")
+        assert s.main(["--config", str(cfg), "--target", str(target),
+                       "--cairn-root", str(CAIRN_ROOT), "--allow-dev"]) == 0
+        capsys.readouterr()
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 2
+        err = capsys.readouterr().err
+        assert "preset:" in err
+        assert "age, size, complexity, language, human_team, agent_team" in err
+        config = target / "dev" / ".cairn" / "profile.yml"
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text(
+            cfg.read_text(encoding="utf-8")
+            + "age: greenfield\nsize: small\ncomplexity: simple\n"
+            "language: single\nhuman_team: solo\nagent_team: single\n"
+            "python_package: mypkg\n", encoding="utf-8")
+        rc = s.main(["upgrade", "--target", str(target), "--cairn-root",
+                     str(CAIRN_ROOT), "--adopt-module", self.TOKEN_NAME])
+        assert rc == 0
+        assert self.TOKEN_NAME in s.read_lockfile(target)["modules"]
+
     def test_adopt_required_token_seeded_from_profile(
         self, tmp_path: Path,
     ) -> None:
