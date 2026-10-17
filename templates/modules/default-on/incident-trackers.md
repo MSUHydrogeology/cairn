@@ -92,9 +92,10 @@ and for **curating** auto-rows (filling `Resolved By`, reconciling
 
 ## Adds to
 
-The goodnight section of `dev/agent_collaboration.md > Goodnight
-routine` (or its installed equivalent — see the `cairn:slot
-goodnight-incident-tracker-migration` slot anchor).
+The goodnight routine, through `dev/agent_collaboration.md` > "Session
+reflections and handoff". The step itself is `doctrine/session-routines.md` >
+"Goodnight incident-tracker migration — when the incident-trackers module is
+installed".
 
 ## Merged into
 

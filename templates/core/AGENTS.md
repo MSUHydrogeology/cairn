@@ -282,9 +282,12 @@ result, run the same measurement against a case known to be present.
 the standing dispatcher command and the high-risk Security-Review
 designation of the dispatcher, its registry, its child result schema, its
 binding-mode schema, and every registry entry (see
-`dev/modules/security-verification.md` > "Merged into"). If
-security-verification is not installed, put `N/A: security-verification not
-installed` between the markers below. An unfilled slot is a review finding.)
+`dev/modules/security-verification.md` > "Merged into"). **Leave the slot
+body below empty**, even when security-verification is not installed: the
+module-merge pass fills only an empty body, so anything written between the
+markers stops the dispatcher command from landing here when the module is
+installed. This slot is the one exception to "an unfilled slot is a review
+finding".)
 
 <!-- The guidance above sits OUTSIDE the marker pair on purpose, and the slot
      body below ships empty: the module-merge pass fills only an empty body, so
