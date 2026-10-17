@@ -632,7 +632,7 @@
     "type": "FunctionDef"
   },
   "FunctionDef:_cmd_init_lock": {
-    "digest": "a6fbdd4d4104cf53",
+    "digest": "5ef8c28e3585286b",
     "span": [
       1115,
       1224
