@@ -153,7 +153,7 @@ anticipated but not yet in flight. When a queued item grows into
 multi-step work, open a plan under `plans/` and replace the entry
 with the plan's filename stem.
 
-* **Re-anchor the gate manifest — 10 frozen files.** Deposited 2026-09-01 at
+* **Re-anchor the gate manifest — 10 frozen files, then nine more.** Deposited 2026-09-01 at
   the archive of `plans/archive/portable-sweeps-cannot-run.md` and
   `plans/archive/scanner-claim-scope.md`. The frozen files changed by those two
   implementations plus the active-surfacing prompt fix are stale against
@@ -169,6 +169,26 @@ with the plan's filename stem.
   board and not only in the archived plans that declared it. The procedure is
   `bootstrap/REANCHOR_RUNBOOK.md`, and it is Maintainer-only and supervised:
   an implementing agent must not perform it.
+
+  **Joined 2026-10-17** at the archive of
+  `plans/archive/adopter-path-consolidation.md`: nine frozen files changed
+  since `c0980506` —
+  `templates/modules/default-on/_onboarding/{__init__,prompts,triggers}.py`,
+  `scripts/onboarding_activate.py`, and
+  `bootstrap/tests/test_{trigger_evaluation_maturity,active_surfacing_mechanism,active_surfacing_render,practice_modules,upgrade}.py`.
+  Some overlap the ten above, so **derive the full changed set from the
+  manifest's own `frozen_files` keys at ceremony time**; this list is a
+  pointer, not the instrument. The pinned collection moves too: that plan
+  dropped 25 test nodes and added 10, each listed by node ID in its
+  *Implementation verification* record, and the init-lock fixes (`f3c839a7`,
+  `b61983bb`) added 2 to `test_upgrade.py::TestInitLock`. A smaller or
+  differently-named collection at the ceremony is expected for exactly these
+  reasons. The AST attestation baseline is separate and already current
+  (`cef67cc0`). Authorization for joining this batch is the Decision accepting
+  Revision 2, whose item 10 specifies it, quoted verbatim:
+
+  > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
+  > board. No second review round; External floor waived."
 
 * **F8 — the post-install report asks for work the profile does not make
   live.** Deferred 2026-10-01 at the Decision on
