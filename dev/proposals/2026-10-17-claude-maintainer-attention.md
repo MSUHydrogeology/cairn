@@ -1,7 +1,7 @@
 # What waits on the Maintainer: one board view, one turn rule, and no work left in archived plans
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(External)
 **Plan review**: required(Internal) — prose, two templates and one small shipped tool; no security surface (see the preflight)
 **Opened**: 2026-10-17
@@ -274,3 +274,301 @@ baseline.
 
 **Assurance path**: high-assurance — mandatory, because this edits `doctrine/`,
 the authoring templates, and a tool that adopters execute.
+
+## Review -- Claude (External) -- 2026-10-17
+
+**Model**: Claude Opus 5.5 — a fresh session of the author's own agent type: no
+shared context, and no cross-type distance.
+
+```
+Reviewed commit: adae47616642eac2af5d0b54cc6f45ac9b085971
+Target: the whole proposal, In brief through Assurance path; facts checked against the working tree on 2026-10-17
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: External
+**Findings**: raised (3 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+### Verdict in brief
+
+**Parts A and C should happen. Part B should not happen in this proposal.**
+
+* **A** is the right shape, but as written its list would be empty today while
+  three of your deferred questions and the gate re-anchor wait on you (MA-1).
+  Its central promise — one command replaces your memory of what is pending —
+  is false until it reads where part C sends the work.
+* **C** is small, sound and well evidenced. One condition in Question 1 needs
+  tightening (MA-4).
+* **B** lets agents act on a field the record shows going stale, with no rule
+  for two agents who both think it is their turn (MA-2). By the author's own
+  account it answers no incident, which the doctrine rate-limit asks for
+  (MA-3). It should come back on its own, after the live two-agent trial #13
+  itself asks for.
+* **Doing nothing** leaves you reconstructing pending work from memory (A) and
+  leaves LHM's lost-leftovers failure open (C). For B, doing nothing costs
+  about two short hand-offs per proposal, now that the one-round rule caps the
+  legs.
+
+**The strongest rejected alternative** is *declare and check* (MA-5), not the
+pure body-text parsing the proposal rejected.
+
+**What would falsify the central claim** — that `--maintainer` shows everything
+waiting on you — is one item waiting that the view did not list. The live tree
+already supplies two (MA-1). After revision, the test should be an archive-time
+check a code reviewer runs, not your memory (MA-6).
+
+### Steelman
+
+You are the one role that cannot be parallelized, and today you hold three
+kinds of state in your head: what waits for a Decision, which fences are yours,
+and what was deferred. The proposal answers this while keeping the board
+honest. The holder declares and the board reports, the same split Status
+already uses, so the tool never decides whether a gate cleared. It rejects a
+heavyweight new status, and it adds almost no machinery: one field, one flag,
+one footer, a dozen sentences. C closes a real hole by reusing the existing
+`defer` vocabulary. That restraint is right, and most of what follows asks for
+less, not more.
+
+### Findings
+
+#### MA-1 — BLOCKING: the "waiting on you" list would be empty today while things wait on you, and part C sends more of them where it never looks
+
+**Plain:** run on today's tree, `--maintainer` would print nothing. Yet three of
+your deferred questions and the gate re-anchor wait on you right now, in
+`dev/PLANNING.md`, which the board does not read. A list titled "waiting on
+you" that comes back empty teaches you to trust the empty list. That is the
+*silent miss* — a failure that looks like a clean result — which the proposal
+itself calls the dangerous failure.
+
+* `tools/board.py` reads only `dev/proposals/*.md` and `dev/plans/*.md`
+  (`_rows`, line 77). Today there is no active plan and no proposal at
+  `awaiting-decision`, so the view would have zero rows.
+* `dev/PLANNING.md:469` holds "Four deferred Maintainer questions", three still
+  open since 2026-08-03. `dev/PLANNING.md:156` holds the gate-manifest
+  re-anchor, which is Maintainer-only and says of itself "This will not
+  announce itself" (line 166). Pushes are a third class, and the footer names
+  only that one.
+* C makes this worse. Every `defer` lands on a `dev/PLANNING.md` row
+  (`dev/plans/_template.md` > Dispositions), and C2 sends work for unopened
+  plans there too. So the moment a plan archives, everything it deferred to you
+  drops out of the view. The Rationale's "without C, A misses whatever the
+  archives swallowed" has it backwards: C moves work to the one place A cannot
+  see.
+* The proposal's own test — two misses in the first month — is met before it
+  ships.
+
+**Closes it:** either (1) give a `dev/PLANNING.md` row the same declared marker
+on its first line, and have `--maintainer` read that one file for that one
+marker; or (2) say plainly that the view lists only what artifact headers
+declare, and have the footer name every class it does not list (board rows,
+undeclared fences, pushes). Option 1 is still "declare, don't judge", but it
+adds a file read, so the security preflight's "no new file reads" needs
+updating. Either way, add a fixture test that pins the choice. I recommend 1,
+because C's design sends your deferrals there.
+
+#### MA-2 — BLOCKING: part B lets agents act unattended on the status field, but that field has been wrong on the record and cannot name two holders at once
+
+**Plain:** under B, an agent reads a status and acts on it with nobody in the
+loop. Twice in August a plan's status sat wrong while work landed. B would have
+shown an implementer a plan with nothing started, and a reviewer a plan still
+awaiting review that had already been built. B also has no rule for two agents
+who both think it is their turn.
+
+* **Stale tokens.** `full-suite-interception` read `ready-to-implement` while
+  two chunks landed and a Security Review ran and closed. Its fix commit
+  `495c6a7f` gives the cause: "The header field has no moment attached to it,
+  and nothing checks the two agree". `subtraction-sweep` read
+  `awaiting-plan-review` from plan-open through C7 (`a516bcdc`). B's "fails
+  toward a human" fires on an *unknown* status, not on a stale valid one.
+* **Two holders.** A `required(A + B)` review owes two passes, but
+  `awaiting-review` names one holder. One is live today:
+  `2026-10-17-claude-neutrality-and-upgrade-slots` declares
+  `required(External + Security Review)`. After the first pass sets
+  `revising`, an author working the board can answer it and move it to
+  `awaiting-decision` with the second pass still owed. Two sessions in one
+  role can race, because a work intent is "a courtesy signal, not a lock"
+  (`doctrine/coordination.md:109`). #13 itself lists "cross-agent turn
+  arbitration" as the unsolved deployment work.
+* **Uncommitted drafts.** The board reads the working tree. During this review
+  it listed that same proposal at `awaiting-review` while it was still
+  untracked: another session was opening it. B would send a reviewer to a
+  draft that has no commit to put in `Reviewed commit:`.
+* **The stop list is incomplete by design.** B stops at "every `--maintainer`
+  row", and MA-1 shows that set is incomplete. The stop set should be
+  `AGENTS.md`'s four approval points (push, Decision, deviation, a plan's
+  fence), read from the artifact itself.
+* **The preflight's N/A covers the board, not B.** The board treats header
+  text as "untrusted for display purposes" (`tools/board.py:46`). B turns that
+  same text into the trigger for agent action. Asked of B, preflight question
+  S4 — "which way does it break?" — has an answer: toward more action.
+
+**Closes it:** B states that, before acting, the agent:
+
+* checks the status against the artifact's own record (its recent commits, the
+  chunk markers, every clause of the declared review line), and treats any
+  disagreement as a gate;
+* claims a work intent first, and stops if another session already holds one;
+* acts only on committed artifacts;
+* stops at the `AGENTS.md` approval points, not at the view.
+
+It also answers the five preflight questions for B. Or MA-3's route is taken
+instead.
+
+#### MA-3 — BLOCKING: part B has not earned a doctrine change, and should leave this proposal
+
+**Plain:** Cairn's rule is that doctrine changes only after a failure recurs.
+By the author's own account, B answers no failure. You already judged #13 done
+in substance in August. And B quietly reverses the session-start rule that the
+board is never an instruction to act.
+
+* **The rate-limit gate** — Cairn's brake on doctrine churn
+  (`doctrine/rationale.md:407`) — needs a recurring *failure*, or a synthesis
+  at a routine boundary. The proposal says B "answers no incident, only the
+  relay paid on every review leg". A recurring cost is not a recurring failure.
+* **Your own triage.** Your 2026-08-25 note on #13 reads: "Implemented in
+  substance by the accepted `convergent-lifecycle` contract". B reopens that
+  call, but Question 3 asks only whether to close the issue, not whether you
+  still want B.
+* **It reverses standing doctrine without listing it.**
+  `doctrine/session-routines.md:66` says the board is "never a mandate to
+  act". Lines 79–80 say session start is "orientation, not execution", and to
+  "await the operator's direction". "Work the board as <role>" is a standing
+  direction that hands the choice of artifact to the agent. That may be right,
+  but it amends those sentences, and the proposal does not name them in its
+  doctrine surface.
+* **The saving is small.** You still start every session and name its role. B
+  removes only the naming of the artifact and the commit.
+* **The evidence is missing.** #13 says it "wants a live two-agent drive before
+  scoping". That drive is exactly what B lacks.
+
+**Closes it:** move B into its own proposal, opened after a recorded two-agent
+drive, and record the move in Scope delta (narrowing before a Decision is
+legitimate when it is recorded). Question 2 moves with B. The proposal says "B
+separates cleanly", and nothing in A or C depends on it.
+
+#### MA-4 — non-blocking: Question 1's condition is always met, so any accepted work could drift to a plan that never opens without you seeing it
+
+**Plain:** the condition is "if the accepted proposal's own text names the
+work". But all accepted work is named in the accepted text — that is what
+accepted scope is. So as worded, an agent could push any accepted outcome to an
+unopened "later plan" by quoting your old acceptance. The board calls such a
+deposit "a scope decision" (`dev/PLANNING.md:594`), and scope decisions are
+yours.
+
+**Closes it:** make the condition "the accepted text *assigns* this work to that
+later plan" — that is, you accepted that sequencing. The defer line then quotes
+the sentence that assigns the work, not only the Decision. LHM's six-plan case
+and the gate-manifest precedent both meet that bar; a plan that simply came up
+short does not. Change the recommended answer to Question 1 to match.
+
+#### MA-5 — non-blocking: the strongest alternative was rejected for the wrong reason, because a forgotten header line fails just as silently as a parser that misses a fence
+
+**Plain:** the proposal rejects reading plan bodies because a missed fence
+would print "nothing waiting" and nobody would notice. But a holder who forgets
+to write the new line produces exactly the same silence, and MA-2 shows that
+header lines do get forgotten.
+
+* The Alternatives section concedes the alternative's merit: "a forgotten
+  declaration still gets caught".
+* The fear of unknown spellings is not borne out. All 15 fenced archived plans
+  use the two template tokens: a grep for `MAINTAINER-GATED` and
+  `MAINTAINER-ONLY` finds 57 lines. The hard part is telling a cleared fence
+  from an open one, not finding the fence.
+* **Not weighed: declare *and* check.** Keep the header line as the source of
+  truth. Add one advisory footer line naming any active plan whose body carries
+  a fence token but whose header declares no wait: *mentions a fence, declares
+  no wait — open it*. That judges nothing about clearing; it only turns the
+  forgotten-line miss from silent into visible. Active plans are few (none
+  today), so the noise is bounded. Proposed test 2 would then pin that footer
+  line instead of pinning the silence.
+
+**Closes it:** adopt the check, or answer it in Alternatives with the reason it
+loses.
+
+#### MA-6 — non-blocking: the failure test relies on your memory, the very thing the tool replaces
+
+**Plain:** "Record each case" names no place to record a miss and no one whose
+job is to notice it. The tool cannot see its own misses by construction, so only
+you would catch one, by remembering. `AGENTS.md` asks that a check whose only
+trigger is a human remembering be described that way.
+
+**Closes it:** make it an archive-time step for the code reviewer. For each
+fenced chunk, `defer` batch or deviation request the plan records, `git log -p`
+on the plan file shows whether a Waiting line was ever written. A missing line
+is a miss, recorded in a named file. The "two in the first month" threshold then
+has an instrument behind it.
+
+#### MA-7 — non-blocking: four factual corrections
+
+1. **New fields do not get a column automatically.** "The plain board shows the
+   line as a column, as it does for every field" is not true today. `_FIELDS` is
+   a fixed list (`tools/board.py:33`), and the module says any other field
+   "simply has no column" (line 32), so the change must add the field to that
+   list. Cells are cut at 48 characters (`_encode`), so "<what, in one line>"
+   needs a length budget.
+2. **Plan headers are not generally mutable.** "Plan headers are already
+   mutable, like Status" overstates the rule. `doctrine/plans.md` > "Mutability
+   rule" lists `Status` and the last-update date, not other header lines. The
+   new line needs adding to that list, and plans.md's surface entry should name
+   A as well as C2.
+3. **Cairn's second changelog example is weaker than cited.** It (`6912d526`)
+   needed your explicit yes because of the commit rule then in force, which let
+   agents commit without asking only inside `dev/` (the commit body says so).
+   That rule has since been replaced. Cairn's own evidence for C3 is therefore
+   one archive, and the recurrence rests on LHM. That still clears the gate.
+4. **B relies on a board column that does not exist.** B's paragraph lands in
+   the section of `doctrine/session-routines.md` that already promises an
+   "owner role" column the board lacks (line 52, open as IB4 in
+   `dev/reviews/2026-10-17-code-review-issue-batch.md`). B's phrase "the board
+   shows its role holding" leans on that column. The board shows Status only.
+   The status-to-holder mapping lives in `doctrine/lifecycle.md` prose, and
+   `Author` is not a column.
+
+### Questions for the Maintainer
+
+1. **Should part B leave this proposal and return after a recorded two-agent
+   trial, as #13 itself asks?** *Recommended: yes.* A and C do not need it, and
+   your August triage already counted #13 as done in substance. If yes, keep
+   #13 open as B's home (this changes the proposal's Question 3).
+2. **(Replaces Question 1.) May an agent quote your acceptance as the authority
+   to defer work to a later plan *only* when the accepted text assigned that
+   work to that plan?** *Recommended: yes, only then.* Anything else comes to
+   you in the archive batch.
+3. **Should the waiting list also read `dev/PLANNING.md` for rows marked as
+   waiting on you?** *Recommended: yes* — that is where every deferral you
+   authorize ends up.
+
+### Coverage
+
+**Covered.**
+
+* *Claims*, each checked against the tree:
+  * the doctrine quotes and anchors: `doctrine/lifecycle.md:145`,
+    `doctrine/plans.md:438`, "Lasting-truth migration doctrine" and its
+    exclusion of `NEXT_SESSION.md`, and the `dual-review.md` and
+    `coordination.md` anchors;
+  * the `PLANNING.md` rows: `dev/PLANNING.md:469` and the "Joined 2026-10-17"
+    Decision quote;
+  * the archived examples: `interpreter-trust-root-fallback.md:183`,
+    `6912d526`, and the sweep's C8/C9 at `implementing` (`a516bcdc` to
+    `636e3817`, with C1–C9 landed and C2 the constitution rewrite);
+  * the fence count: 57 lines, 58 occurrences, 15 plans;
+  * the tool: `board.py` reads headers only and runs no subprocess, its twin is
+    byte-identical, and `TestTheBoardReadsHeadersAndJudgesNothing` exists.
+* *Silent failure:* MA-1, MA-5 and MA-6.
+* *Cross-document consistency:* `session-routines.md`, `PLANNING.md`, and the
+  `plans.md` Mutability rule.
+* *Lifecycle placement:* MA-3 and MA-6.
+* *Satisfiers:* named in every finding.
+
+**Not covered / low confidence.**
+
+* No suite or fixture run, per the brief. The one board run was read-only, on
+  the live tree.
+* The LHM and modflow_tools trees were not read: their incidents and #13's
+  replay are taken as the issues state them.
+* A same-type reviewer: this review has no cross-type distance.
+* The background-watcher exclusion was not weighed beyond agreeing it is out of
+  scope.
