@@ -877,3 +877,391 @@ answered in the same revision. No question for the Maintainer. Status moves to
   time, or check the scope mapping beyond what the security questions needed.
 * I did not test D11's reading of `doctrine/lifecycle.md` against hostile
   labels. That file is Maintainer-controlled doctrine, not contributor input.
+
+## Plan review -- Claude Sonnet 5.5 (Internal) -- 2026-10-18
+
+```
+Reviewed commit: 10ae64280fbf31bae111077118d421728d5bd0ac
+Target: the whole plan as committed (header through Dispositions), read against the accepted proposal's Decision block and scribe's note, Revision 1, and the archived maintainer-attention plan it builds on; checked against the code in tools/board.py and against the open plans that share its files
+Prior findings: none of this tier
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised
+
+**Model**: claude-sonnet-5-5
+
+Distance: a fresh session. I wrote neither the proposal nor this plan. This pass
+does the scope-and-simplicity job and leaves the security job to the Internal
+Security Review (committed at `2e9cf490`). I formed my findings and ran my measurements
+before reading that pass, then read it only to avoid duplicate ids; where a
+finding overlaps it, I point at it instead of repeating it. All writing
+experiments ran in a detached worktree of `10ae6428` in a fresh scratch folder,
+under Python 3.13.13, and the worktree is removed.
+
+### In plain terms
+
+**The plan delivers everything the Decision accepted, and drops nothing.** I
+traced every Decision bullet and every Revision 1 outcome to a chunk and found
+no one removed, narrowed or reworded away. The four additions the author
+flagged (D2, D3, D4, D7) are closures of accepted outcomes with two small
+exceptions I name below, and none needs the Maintainer's word. There is no
+simpler design that still meets the accepted floor.
+
+The plan needs a revision before it is implemented, not because the design is
+wrong but because several of its tests are weaker than they read:
+
+* **The "terminal board unchanged" test (BB-PR1).** Built from the shapes the
+  plan lists, it let 12 of 33 plausible accidental changes through, even with
+  the existing board tests beside it. About a dozen more named shapes close all
+  12.
+* **The "what waits on you" check (BB-PR2, BB-PR3, BB-PR4).** It compares a
+  function with `--maintainer`, but the page the Maintainer will read is never
+  compared, a file with no header would crash the example, and the header
+  shapes that could make the two differ are not in the test trees.
+* **When you get to read the page (BB-PR5).** The plan holds your reading,
+  which is the proposal's success test, behind three other plans for no reason
+  in the work itself.
+
+None of this needs a Maintainer decision. Each fix is a test shape, a sentence
+or a re-ordering inside the accepted outcomes.
+
+### Answers to the two foundational questions
+
+**1. Does the plan deliver what the Decision accepted, all of it?** Yes.
+
+| Decision or Revision 1 item | Where the plan delivers it | Verdict |
+|---|---|---|
+| "what waits on the Maintainer" is a recipe, not a deferral | C4 recipe and `TestWaitsRecipeAgreesWithMaintainerView` | delivered; the page-level equality is thin (BB-PR4) |
+| roadmap rows that declare a wait are in the `/1` data now | C2 `roadmap_waits`, one shared row reader (D5) | delivered |
+| the `**In brief**:` prompt in the proposal and plan templates now | C5, all four files | delivered, but timed behind other plans (BB-PR5) |
+| the fence warning stays in the terminal view only | no key in C2, `TestFenceStaysInTheTerminalView` in C3 | delivered |
+| the guide is read in Cairn's docs, cited by `--help`, not installed | C2 help paragraph, C3 `TestHelpCitesTheGuide` and `TestGuideIsNotInstalled` | delivered |
+| the lookup lives in the guide, tested against `doctrine/lifecycle.md` | C3, C4 `TestGuideLookupMatchesLifecycle` | delivered |
+| the Scope delta as revised | *Scope delta* section | delivered; dispositions are guards that execute |
+| Revision 1: `--json`, the promise, the baseline, the symlink rule, the four "reads headers only" places, the stamped example, finished-plans and intent recipes, triggers, AI-agent note, Boundary B full, the scoped finalize | C1 to C6 | delivered; I walked the plan's own mapping table (lines 351-372) against Revision 1 and found no gap |
+| Revision 1's success test: you read a page and can say what needs you and what is in flight | chunk M | delivered, but see BB-PR5 on when |
+
+**Rulings on the four flagged additions.** The author asked review to overrule
+any of these; I do not.
+
+* **D2 (a present blank line is `""`, an absent line is `null`): a closure.**
+  Revision 1 says "absent is `null`, never `""`". A line that is there with
+  nothing after the colon is not absent. The Decision requires the recipe to
+  match `--maintainer`, and `--maintainer` lists a blanked Waiting line on
+  purpose (`tools/board.py:144`, pinned by
+  `test_maintainer_lists_exactly_what_authors_declared`). D2 is the only
+  reading that satisfies both. The guide should say it in two plain sentences.
+* **D3 (a file with no header is a record with every header key `null`): a
+  closure.** Revision 1 says `--json` prints "every proposal and plan". The
+  closure has a consequence the plan never tests (BB-PR3).
+* **D4 (the link rule reaches folders and `dev/PLANNING.md`, and skips are
+  reported): the reach is a closure, the report is a small addition.** Revision
+  1's own S1 says the rule closes the case where a link lets an outside file
+  supply text. A rule that stopped at the leaf would not close it for a linked
+  folder, and not for the roadmap rows the Decision added to the data.
+  `is_symlink()` on each component below the resolved root is enough against a
+  *committed* link, because git stores a link as a link. The report is a new
+  terminal line and a new published key (`skipped_symlinks`) that no accepted
+  text names. It is additive and cannot be wrong later without a `/2`, and
+  silent skipping reads as an empty board, so I keep it. The Security pass
+  (BB-SR2) also wants it on the page. It should be named where the Maintainer
+  reads (BB-PR6).
+* **D7 (the example shows control and format characters as `U+XXXX`, and its
+  footer says "n of m live rows carry an In brief line"): the first is a
+  closure, the second is a small addition.** S5 names the direction-override
+  class, and the example is where it is closed by construction. The footer
+  figure is Revision 1's 30-day signal kept alive after the Decision turned
+  the prompt on. Keep it only if the example stays within its line cap
+  (BB-PR7); it is the first thing to drop.
+* **D1 (`roadmap_read`): a closure.** `--maintainer` says when the roadmap
+  file is missing; the data needs the same flag or an empty list reads as
+  "nothing waits". Like `skipped_symlinks`, it is a published key the
+  proposal's tables do not list (BB-PR6).
+
+**2. Is there a simpler path to the same outcome?** No simpler design meets the
+accepted floor. Every candidate I tried loses an accepted outcome: scraping the
+terminal table was rejected in the proposal; shipping a view is ruled out by the
+Maintainer; importing `board.py` as a module has no contract; leaving the new
+keys out saves two keys and costs the Maintainer the visibility the plan exists
+for. Four trims cost nothing:
+
+* Move the reading (M) ahead of C5 (BB-PR5). It removes the longest wait in
+  the plan and nothing else.
+* Keep the waits function once, inside the example, instead of a standalone
+  recipe plus an unchanged copy guarded by a syntax-tree equality test
+  (BB-PR7).
+* Cut the guide's phrase-count tests to the ones that pin a promise
+  (BB-PR8). They freeze into a test file at the next re-anchor.
+* The footer figure (D7) is optional.
+
+### What I measured
+
+| Probe | Result |
+|---|---|
+| The golden test, built from the shapes `C1` lists (plan line 243), then 33 one-line breaks of `tools/board.py` copied into a scratch tree, each run through the plain board, `--archive` and `--maintainer` | 13 of 33 break the golden output. The existing `test_replacement_tools.py` catches 15 by itself. Together they catch 19, 2 breaks change no behaviour (tab and double-bullet row handling, because the code already strips after removing the bullet), and **12 survive both**. A tree with about two dozen added shapes kills all 12 (seven with the first group, five with the last five; BB-PR1). |
+| The same 12 against 28 historical `dev/` trees from this repository (every 50th commit that touched them) | only the 48-character cut dies; the other 11 survive, so real history cannot stand in for hand-built shapes |
+| The plan's two non-vacuity mutants (reword the footer, drop the `board: not listed` line) | both die under any byte comparison, so they show the node compares bytes, not that the tree holds the shapes |
+| `frozen_files` in `bootstrap/tests/fixtures/gate_manifest.json` (183 keys) against the live glob in `bootstrap/tests/_gate_manifest.py:339-366` (184, one new file from another plan) | none of the existing files the plan edits is frozen. Control: `bootstrap/tests/test_replacement_tools.py` is in both. The two new files (the test and the fixture) were simulated and both match the live glob, so both freeze at the next re-anchor, as the plan says. |
+| `bootstrap/tests/_ast_attest.py verify` against the engine, with the known-new file | 4 CHANGED symbols (`_cmd_adopt_module`, `cmd_upgrade`, `main` in `cli.py`, `seed_gitignore`), the same four the plan names |
+| `python bootstrap/verify_integrity.py --target .` | 18 violations, the list the plan quotes; both `tools/board.py` copies hash to `67f705c6...` and the record is verbatim |
+| The board follows links today: a plan linked from outside `dev/`, `dev/proposals` linked to an outside folder, `dev/PLANNING.md` linked to an outside file | all three read in the plain board and in `--maintainer` |
+| The four templates | `git ls-files` finds exactly four, and `dev/proposals/_template.md` and `dev/plans/_template.md` differ from their `templates/core/` copies, so none is a twin |
+| `git ls-tree v0.3.0` against `10ae6428` for `tools/board.py` | absent at the tag, present at the commit |
+| `git log --diff-filter=A --name-status -- dev/plans/archive` | 54 add rows for 54 archived plan files, 54 distinct paths. Author and committer dates fall on the same day for all 2427 commits here. |
+| The `In brief` share | 2 of 6 live at `72434d73`, 2 of 6 at `10ae6428` |
+| D11's reading of the two diagrams in `doctrine/lifecycle.md` (lines 132-141 and 227-239), run as written | 14 status words, and the holders match the guide's planned table; `awaiting-code-review` maps to reviewer only because of the order rule |
+| The K3 pattern against `tools/session.py` and `tools/board.py` | fires on the first, silent on the second, as the plan says |
+
+D11 is robust enough. Its failure is loud, not silent: a reworded label turns
+the test red. `review-stance-and-lenses` C4 rewrites other sentences of
+`doctrine/lifecycle.md` (the "wrong satisfier" paragraph and its search for
+"external" and "independen" hits, `dev/plans/review-stance-and-lenses.md` lines
+970-993 and 1749-1762) and no diagram label contains those words. The one
+cost: a fix to the *heuristic* after the ceremony is an edit to a frozen test;
+a fix to the guide's table is not.
+
+### Findings
+
+**[BB-PR1] (medium) The golden test pins the trees the plan lists, and twelve
+plausible accidental changes would still pass it.**
+
+* **Plain.** "Unchanged" can only be shown on the trees you try. The plan's
+  question 6 asks whether the golden test is real evidence. It is real for the
+  layout of the plain board and for several `--maintainer` shapes. It does not
+  see a change to the exact rules that decide which status, line or file counts,
+  and those are the lines C1 and C2 are about to move.
+* **Evidence.** Plan line 243 lists the shapes. Measured as above, the 12
+  survivors, each a one-line change to `tools/board.py`: the `awaiting-decision`
+  lookahead changed so `awaiting-decision-x` stops listing, or dropped so
+  `awaiting-decisions` starts (line 55); a repeated field read first-wins
+  instead of last-wins (line 96); a `##x` line ending the header early (line
+  92); header lines read unstripped (line 94) or with the field name
+  unstripped (line 96); the roadmap marker name unstripped or matched without
+  case (line 158); `split("\n")` for `splitlines()` (line 155);
+  `is_file()` widened to `exists()` (line 153); the 48-character cut moved
+  (line 83); and the `_` skip narrowed to `_template.md` (line 111). C1 moves
+  the `_` skip and the `is_dir`/`is_file` calls, and C2 moves the roadmap
+  reader and may extend `_header_fields`.
+* **Recommended fix.**
+  * Add these shapes to the golden tree, and name them in the criterion: the
+    status `awaiting-decision-x` (the board lists it) and `awaiting-decisions`
+    (it does not); a repeated `**Status**:` line; a `##notaheading` line inside
+    a header block; header lines with leading spaces; `**Waiting on Maintainer
+    **:` with a space before the closing bold; the marker in lower case in the
+    header and in a roadmap row; a 60-character Waiting text; `_notes.md`
+    beside `_template.md`; a proposal that mentions `MAINTAINER-GATED`, and a
+    plan that mentions only that word; an archived plan carrying a Waiting
+    line; a tree with no `dev/PLANNING.md` and one where it is a folder; a
+    form feed ahead of a roadmap row (the Security pass, BB-SR9, decides which
+    number is right).
+  * Run `--maintainer --archive` as a fourth mode.
+  * Replace the two footer mutants as the non-vacuity evidence with the 12
+    above, or with whichever of them the author can still kill, reported as
+    killed, survived or equivalent (the tab and double-bullet row mutants are
+    equivalent: `tools/board.py:157` strips after removing the bullet).
+  * Keep the C6 old-versus-new comparison on the live tree. It adds a tree the
+    author did not build, though real history alone is not enough: 28 sampled
+    historical trees killed one of the 12.
+
+**[BB-PR2] (medium) D5 shares the roadmap reader but not the header reader, so
+the recipe-versus-`--maintainer` trees cannot see a header difference.**
+
+* **Plain.** The plan's headline test is that the "what waits on you" recipe
+  agrees with `--maintainer` "over every shape". Both read the same header
+  lines through one function today (`tools/board.py:88-97`, called at lines
+  119 and 143). `--json` needs `null` for an absent line, and the terminal
+  row builder turns absent into `""` (line 124), so C2 will write a second
+  reader for the 11 header keys. Nothing says it must call `_header_fields`.
+* **Evidence.** D5 (plan line 156) unifies the roadmap reader only. C2's
+  mutation list (line 261) copies the roadmap grammar, not the header grammar.
+  C4's trees (line 298) hold no repeated field, no indented header line, no
+  `**Waiting on Maintainer **:`, no Waiting line under the first `##`, no
+  header-less file, no file without a Status line, and no `_`-prefixed file.
+  A JSON reader that is first-wins, or that skips indented lines, passes every
+  node as written. The Security pass asks for a forged-name and
+  repeated-Status node on the data side (BB-SR3); this is the recipe side of
+  the same hole. The plan also calls `awaiting-decision-x` a look-alike (line
+  298); the board lists it (the lookahead at line 55 excludes only letters,
+  digits and underscore), so the guide's "first word" wording and the test must
+  not treat it as not listed. `awaiting-decisions`, `awaiting-decision_x` and
+  `awaiting-decision2` are the ones that do not list.
+* **Recommended fix.** In C2, require that `--json`, `--maintainer` and the
+  plain board read header lines through one function, and add the mutant
+  "change that function alone" (all three outputs go red). In C4, add the
+  shapes above to the recipe trees and compare `(kind, artifact, reason)`. Fix
+  the look-alike wording.
+
+**[BB-PR3] (medium) D3 creates all-`null` records, and no test feeds one to the
+recipe or the page.**
+
+* **Plain.** D3 lists a file with no header lines as a record whose status,
+  waiting line and every other header key are `null`. A stray `.md` in
+  `dev/plans/` or `dev/proposals/` is enough, and the terminal board hides such
+  files today. A recipe that matches a pattern against `null`, or an example
+  that escapes `null`, fails on the first one. The plan's failure rule then
+  keeps the last good page, so the page stops updating and the only sign is its
+  older stamp.
+* **Evidence.** D3 (line 154) and C2 (line 259) test the data. C4's recipe trees
+  (line 298) and `TestViewExample` (line 299) build no header-less file and no
+  header with no Status line. Python's `re.match(pattern, None)` raises
+  `TypeError`, and `html.escape(None)` raises `AttributeError`. No header-less
+  file exists in the live tree today (checked), so the first one would be an
+  adopter's. In this tree none of the 138 artifacts, archives included, is
+  header-less or lacks a Status line (checked; control: a bare title gives an
+  empty header).
+* **Recommended fix.** Add both shapes to `TestWaitsRecipeAgreesWithMaintainerView`
+  (neither is listed by `--maintainer`, so neither is listed by the recipe) and
+  to `TestViewExample` (the page exits 0 and shows the row in "none named" with
+  the status shown as unknown). Mutant: the example indexes `status` without a
+  null guard. If the author prefers, omit header-less files from `--json` as
+  the terminal does; that is simpler, and the null case still arises from a
+  header with no Status line, so the tests are owed either way.
+
+**[BB-PR4] (medium) The page's Maintainer group is never compared with
+`--maintainer`; only the standalone function is.**
+
+* **Plain.** The proposal's success test is that the page's "needs you" entries
+  equal what `--maintainer` lists. The plan tests the recipe function against
+  `--maintainer` on many trees, and tests that the example *contains* an
+  unchanged copy of the function. Nothing requires the example to *use* it
+  for the Maintainer group.
+* **Evidence.** The proposal's Evidence section ("its artifact entries in
+  'needs you' equal the artifact lines `board.py --maintainer` lists"). Plan
+  line 299 asks for one case (an `implementing` plan carrying a wait lands under
+  the Maintainer) and a syntax-tree equality of the two function bodies; its
+  mutation list has "drop the precedence" and no "group by a different rule".
+  The only page-level comparison is the live-tree smoke check (line 308).
+* **Recommended fix.** In `TestViewExample`, parse the page's Maintainer group
+  and compare its members to `--maintainer`'s artifact lines on at least the
+  status-with-note trees and the roadmap rows. Mutant: the example builds the
+  Maintainer group from its own status lookup instead of the recipe.
+
+**[BB-PR5] (medium) Your reading of the page, and the whole plan's finish, wait
+on three other plans that have nothing to do with the work.**
+
+* **Plain.** The plan's reason for going before `model-mapping-install-path` is
+  "it has a user waiting": the hand-kept page goes stale several times a day.
+  Then its own order holds your reading of the page behind `neutrality-and-upgrade-slots`
+  (implementing), `independent-scientific-check` and `review-stance-and-lenses`
+  (both ready to implement, the second with eight chunks). None is near code
+  review.
+* **Evidence.** C5's gate (plan line 188) is "the three plans ahead have
+  archived or reached code review". M follows C5 (line 189), and D13 (line 164)
+  says that is because "the page needs the finished board and guide". The page
+  needs C1 to C4. The `**In brief**:` prompt changes what authors write later,
+  not the page; the page already falls back to the title (line 299). C1 to
+  C4 touch none of the three plans' files except disjoint lockfile records and
+  one paragraph of `docs/tool-usage.md`. The "three come before this one"
+  order is also not settled: `dev/plans/independent-scientific-check.md` lines
+  339-341 put the combined plan last, and `dev/plans/review-stance-and-lenses.md`
+  line 330 and `dev/plans/neutrality-and-upgrade-slots.md` line 151 put it
+  third. The real hazard behind C5's gate is a shared working tree: `git commit
+  <path>` commits the whole file, so another agent's unfinished edit to the same
+  template would ride in under C5's message. That is checkable directly.
+* **Recommended fix.** (1) Move M to follow C4. (2) Replace C5's gate with a
+  file-level one: C5 starts when `git status --short` shows none of the four
+  templates modified and `python tools/intent.py list` shows no live claim on
+  them; it re-reads them as it already says. (3) Say in *Sequencing* that the
+  order of the three plans is the Maintainer's and unsettled between the plans'
+  own texts, and that C1 to C4 do not depend on it. I agree with the
+  recommendation to go before `model-mapping-install-path`: this plan edits no
+  engine file and adds no AST symbol, and the files the two share are
+  housekeeping plus the one pinned `--maintainer` output.
+
+**[BB-PR6] (low) The text the Maintainer reads does not say the contract grows
+by two keys and the page by one figure.**
+
+* **Plain.** The proposal's tables listed three top-level keys. The plan ships
+  six, and a key in a published contract is the one thing that cannot be taken
+  back inside `/1` (the proposal's own Rationale calls removal the one-way
+  door).
+* **Evidence.** *In brief* (plan lines 17-37) says the board "names what it
+  skipped" but never mentions `roadmap_read` or `skipped_symlinks`, and does
+  not mention the footer figure. The author's own sentence at line 374 says
+  the Maintainer's allowance "is not assumed for any of them".
+* **Recommended fix.** One plain sentence in *In brief*: "The data carries two
+  fields you did not see in the proposal, one saying whether the roadmap file
+  was read and one listing links the board skipped; the page footer also
+  reports how many live items carry a summary line. Each only adds, and none
+  can be removed later without a new version." The Security pass notes the
+  `CHANGELOG.md` entry must also warn an adopter who keeps `dev/` as a link;
+  keep that one.
+
+**[BB-PR7] (low) The example will probably exceed its 80-line cap, and the
+waits function exists twice.**
+
+* **Evidence.** I drafted the example with everything C4 requires (the lookup,
+  groups, the declared-wait precedence, roadmap rows, `html.escape` plus the
+  `U+XXXX` step, the stamp, the advisory sentence, the share figure, the
+  not-read message, a single write at the end) and it ran to 73 lines before
+  adding the recipe function, which adds about 14. The proposal said "about 50".
+  The plan's fallback (line 303) splits the waits group into its own block, and
+  C4 then guards two copies of the function with a syntax-tree equality test
+  (line 299). The two-subprocess test (line 301) also assumes two literal call
+  sites with literal argument lists, which fixes the example's shape.
+* **Recommended fix.** Hold the waits function once, in the example, tag that
+  block, and have the recipe section link to it. That removes the copy test,
+  the 14 duplicated lines and the cap problem. If the author wants the
+  standalone recipe for copy-paste, say so and accept the copy test. Drop the
+  D7 footer figure first if the example is still long.
+
+**[BB-PR8] (low) Prose pins and host-dependent nodes will freeze into one test
+file.**
+
+* **Plain.** The plan's question 5 asks whether freezing the fixture makes a
+  needed fix too costly. For the baseline fixture, no: a change to it should
+  be a hold. The cost is in the test file, where many nodes pin guide wording
+  or depend on the machine, because each later edit to a frozen test is a
+  re-anchor only the Maintainer can run.
+* **Evidence.** C3 and C4 carry 14 phrase-count checks as written (lines 286-288,
+  306: `ignore keys`, `must not overwrite`, `reading aid`, `post-commit hook`,
+  `snapshot` and so on). A rewording that keeps the promise turns one red. The
+  finished-plans and intent nodes (lines 304-305) create commits, set dates and
+  spawn the intent tool, so they depend on git configuration and the
+  environment. The v0.3.0 claim (line 289) is "checked from the tree" with
+  `git ls-tree v0.3.0`, which fails in a copy that has no tags.
+* **Recommended fix.** Keep the structural nodes (tables against output, lookup
+  against the lifecycle, help citation resolves, tagged blocks run) and keep
+  phrase counts only for the promise statements and the safety sentences; the
+  rest is review's job. Scratch repositories use `-c user.name=... -c
+  user.email=... -c commit.gpgsign=false` and `GIT_CONFIG_GLOBAL` set to the null
+  device, as `bootstrap/tests/test_portable_security_sweeps.py` does. Record the
+  `v0.3.0` check in the C3 commit body, not as a node (a skip is a Boundary B
+  finding). Name the date the finished-plans recipe reports (author date) and
+  set both dates in the test. Run the new file once from another working
+  directory before the ceremony.
+
+### Verdict
+
+**REVISE.** BB-PR1 to BB-PR5 are medium; BB-PR6 to BB-PR8 are low. All eight
+are answered in the plan's cells without a new mechanism and without the
+Maintainer. No accepted outcome is dropped, and none of the flagged additions
+needs the Maintainer's word. The Security pass's two blocking findings
+(BB-SR1, BB-SR2) stand independently of mine. Status was already
+`revising-plan` when I appended, so I left it.
+
+### What I did not cover
+
+* I did not build `--json`, the guide or the example. The 73-line figure is a
+  draft I wrote, not the plan's code, and I did not run it.
+* I did not review security. I read the Security pass after my findings were
+  formed, only to avoid duplicate ids.
+* I did not run the full suite, Bandit, `check_cairn.py`, `link_check.py` or the
+  neutrality gate. I re-derived the frozen-file, AST, lockfile and archive-date
+  figures only.
+* I did not read the proposal's External review (`fe0d093c`) in full. I relied on
+  the Response, Revision 1 and the Decision, which bind.
+* I did not check the other plans beyond the shared-file rows and the lines they
+  say about this plan and about `doctrine/lifecycle.md`. `model-mapping-install-path`
+  is an uncommitted draft; I did not review it.
+* I did not test D11's reading against rewording of the diagram labels, only
+  against the labels at `10ae6428` and the text of the plan that edits the file.
+* I did not rule on the wording of the *Dispositions* pre-statement. It uses
+  `accept` for two watch items that nothing fixes, where the template defines
+  `accept` as "fixed in scope"; archive-preparation reads it.
+* I did not confirm that "dozens" of tests drive a scaffold install, which is
+  the plan's reason for running the full suite. The full run is mandatory here
+  anyway (a contract surface and a trust-ceremony surface are touched).
