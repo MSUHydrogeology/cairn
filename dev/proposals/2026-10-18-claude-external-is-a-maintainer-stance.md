@@ -1,7 +1,7 @@
 # External is the Maintainer's call: one review stance, with the questions changing by stage
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(Internal)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-18
@@ -496,3 +496,245 @@ package is untouched.
 
 Proposed paths:
 * `bootstrap/tests/test_review_stance_in_shipped_files.py`
+
+## Review -- Claude Opus 5.5 (fresh session) -- 2026-10-18
+
+```
+Reviewed commit: ef0e28934432cdffa4327a87dea7168c15312f92
+Target: the whole proposal, "In plain terms" through "Assurance path"
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Internal
+**Findings**: raised
+**Verdict**: REVISE
+
+This pass answers the three foundational questions this proposal sets for proposal
+review, each with its evidence, and names what it did not cover.
+
+**Foundations**
+
+* **Should this happen as framed?** Yes, with changes. The design is right. The value
+  of the External passes was their three questions, and this keeps the questions and
+  removes the choice. Four things need fixing first: one route still lets External
+  back into the usual procedure (ES1); the after-check cannot see four rules that
+  choose distance (ES2); `AGENTS.md`'s own text makes a Security Review owed (ES3);
+  and the Decision is asked to accept a new headline claim it is never shown (ES4).
+  Evidence: the findings below.
+* **Best alternative.** Strike only the selection points and leave the two stances
+  as they are: no `required(External)`, no floor, no escalation, and External only
+  when called. That is smaller, and it touches neither the framework anchor nor plan
+  and code review. It loses because proposal review would then default to the
+  Internal stance, which works inside the frame. The record says the two stances
+  differ in *verdict*, meaning whether the change should happen at all
+  (`doctrine/dual-review.md` > "What the record actually shows"). This proposal
+  keeps that verdict at the proposal stage without anyone selecting it. The minimal
+  version would quietly drop it. Add it to *Alternatives considered* with that
+  reason. Splitting the work into two proposals (removal now, stages later) loses
+  for the same reason, because the first half alone leaves proposals with the
+  weaker review until the second half lands.
+* **What would show it wrong.** Proposal reviews whose first answer is a plain
+  "yes", pass after pass, with no alternative the author adopts. The proposal names
+  this signal but gives it no window and no threshold, and there is no baseline:
+  most External-headed passes in `dev/proposals/` record no `**Verdict**:` line at
+  all (ES8).
+
+### Findings
+
+**ES1 -- blocking. The "standing instruction" route puts External back inside the
+usual procedure.**
+The Maintainer said External is "something that the maintainer decides to do
+outside of the usual procedure". Section 3 lets the Maintainer ask "in a standing
+instruction you author". A standing instruction *is* usual procedure. Each time it
+might apply, an agent has to decide whether this artifact falls under it, which is
+an agent choosing External under another name. The floor began that way. The
+proposal's own first signal already gives the remedy: "Reintroduce a floor on
+purpose, with a recorded reason."
+*Recommend*: keep only per-artifact routes (chat, a Decision), and say that a
+standing call is a floor, which returns only by proposal. *Closes when* section 3
+offers no standing route.
+
+**ES2 -- blocking. Rules that choose more distance survive without the word
+"External", and two of them need a design decision here.**
+The plan's broad search for External, tier and independence would surface the
+lines below. But the after-check ("every hit must be the Maintainer-called
+definition ...") and the new test match only phrasings. A selection rule reworded
+without the word passes both. On a clean extraction of `ef0e2893`, the instrument
+matches 27 files on my scope. The proposal says 26 and does not pin the path set.
+It misses all four of these:
+
+* `dimensions/complexity.md:26-27`, the Simple position: "**External** review is
+  reserved for genuinely contract-touching changes". The bold markup splits the
+  phrase, and the proposal names only the Complex line.
+* `doctrine/roles.md:139-145`: External "when the change needs structural
+  independence ... Pick the tier from the change's risk".
+* `doctrine/plans.md`, the code-review reviewer-identity note (line 931 at
+  `ef0e2893`, 944 at `31d9cefe`): "Escalate to the External-review tier (different
+  agent type or human)". The hyphen gets past `External[ -]tier`.
+* `templates/modules/team-gated/model-selection.md:114-118`: a cheaper author is
+  allowed only when the reviewer is "architecturally diverse (a different model
+  family)". That *requires* distance, while section 6 says distance is "never
+  required". This contradiction is a policy choice, not a plan detail.
+
+`dimensions/README.md:29` also says the complexity axis sets "how often External
+review is mandatory". The proposal does not say what the Complex position gives a
+scientific team in place of its mandatory External read, and that team is Cairn's
+core audience.
+*Recommend*: add a second search that looks for the act of selecting rather than
+the word: pick / choose / escalat / reserved / mandatory / requires, near tier /
+independence / different agent type / model family / architectur. Use these five
+lines as its positive controls. Decide the downshift rule here: either carve it out
+as a cost rule that names its own reviewer, or reword it. Give the Complex position
+one line. *Closes when* both searches, their controls, and the two decisions are in
+the proposal.
+
+**ES3 -- blocking. A Security Review is owed, and the proposal says it is not.**
+`AGENTS.md` lists the install contract ("the fidelity manifest, the gate manifest")
+under "High-risk surfaces (Security-Review + proposal triggers)". This change
+deletes a frozen gate test, which changes the gate manifest, and it edits the role
+roster in the fidelity manifest's sample (`bootstrap/fidelity-check.md:161-167`).
+The proposal's own *Boundary B* paragraph calls both of these contract surfaces.
+Yet *Assurance path* says "no trust boundary or high-risk surface in `AGENTS.md`
+changes", and the Security preflight answers N/A. The template gates that preflight
+on touching "a high-risk surface this project's `AGENTS.md` names". The one decision
+this proposal keeps the `**Review**:` field for is the one its own header gets
+wrong.
+*Recommend*: declare `required(Internal + Security Review)` and
+`Plan review: required(Internal + Internal Security Review)`, and answer S1-S5. The
+scope is narrow (one frozen test retired, its replacement, one sample roster line),
+so the pass is cheap, and S2 is the mutation controls the new test already plans.
+If the author would rather argue an exemption, write the argument down and give it
+to the Maintainer as a question with a default. *Closes when* the header and the
+preflight agree with `AGENTS.md`.
+
+**ES4 -- blocking. The Decision would accept a new headline claim for Cairn without
+seeing it.**
+Cairn tells scientists that its sharpest point is "a different model architecture"
+as a conflict-of-interest test that can be enforced more readily than journal peer
+review's (`doctrine/rationale.md:364-373`). The README makes the same promise in
+four places: two table rows (`README.md:49`, `README.md:51`), "a brighter line"
+(`README.md:53-54`), and "The stronger review has to come from a different AI
+model, or from a person" (`README.md:102-104`). After this change none of those is
+a rule. *In plain terms* says the Decision accepts the anchor edit "knowingly", but
+the proposal never shows the new sentence. The README scope it names, "alt text and
+the paragraph beneath the figure", misses all four places. Comprehension is a
+precondition of the Decision, and a claim the Maintainer is never shown cannot be
+understood.
+*Recommend*: put the replacement anchor sentence, the two table rows and the
+"What you get" bullet into *In plain terms*, about eight lines. *Closes when* they
+are there and the README scope names lines 49-54 and 102-104.
+
+**ES5 -- non-blocking. `required(Internal)` now names the stance this proposal
+retires.**
+Under this proposal, the usual proposal review owes what External used to owe.
+Labelling it `Internal` gives it the archive's name for the lesser stance. Today's
+`AGENTS.md` Review section says "A pass carrying only sharpenings-within-the-frame
+did Internal work", and every archived record reads that way. This pass is an
+example: it answers whether the change should happen, yet its header says Internal.
+The proposal keeps the token because "68 proposals and plans use it". That figure
+reproduces at `ef0e2893` only as a count of lines, and 65 of the 68 are
+`**Plan review**:` lines, which this change leaves alone anyway. Only one prior
+artifact, `board-as-basis`, writes `**Review**: required(Internal)`. The other two
+hits are the template and this proposal.
+*Recommend*: make `**Review**:` carry only the decision it still forces, for example
+`**Review**: standard | standard + Security Review`, or rename the field
+`**Security Review**: owed | not owed -- <why>`. Make the `**Tier**:` values
+`standard | Security Review`, plus `External` only with `**Called by**`.
+`Plan review: required(Internal)` stays, as ruled. If the author keeps the token,
+add a fifth Maintainer question with this as the alternative.
+
+**ES6 -- non-blocking. The facts about the re-anchor and the tests are stale or
+incomplete.**
+
+* "Exactly one `frozen_files` entry ... changes" describes this change's share, not
+  the ceremony. `produce()` rebuilds the whole frozen set from a glob
+  (`bootstrap/tests/_gate_manifest.py:339-363`). On `ef0e2893`, 24 frozen files
+  already differ from their pinned hashes, and they make up the batch already
+  waiting on the board (`dev/PLANNING.md` > "Re-anchor the gate manifest"). Say
+  that this change joins that batch.
+* The new test stays unfrozen only until that re-anchor. The glob covers
+  `bootstrap/tests/**/*.py`, so the new test and
+  `test_review_and_verification_rules_ship.py` (unfrozen today) both become frozen
+  at that point. Both must be final before it runs, or every later edit owes the
+  Maintainer another re-anchor.
+* `f93eef04` landed after this proposal. At `31d9cefe`,
+  `bootstrap/tests/test_review_and_verification_rules_ship.py` pins "External by
+  default" as an absence, which is compatible with this change. But its docstring
+  (lines 40-43) and its failure message (lines 162-165) restate "An External code
+  review is an escalation for risk that proposal review did not resolve", the rule
+  this change retires. It is a 19th test file that mentions External, and the test
+  table does not list it. Its forbidden pattern `external[- ]by[- ]default` would
+  also fail a new `AGENTS.md` sentence such as "no review is External by default",
+  and the plan should name that trap. The migration row about a pin on
+  "escalation" is overtaken: what landed was the absence.
+
+*Recommend*: update the migration row and the test table, and do the rewording of
+that test's text before the re-anchor.
+
+**ES7 -- non-blocking. The proposal does not say what the reviewer roster becomes.**
+`doctrine/roles.md:47-55` lists an Internal Reviewer and an External Reviewer as
+roles, and the Internal Reviewer also carries "post-review decision-support", a
+neutral briefing for the Maintainer. The fidelity-manifest sample lists both roles.
+With one stance there is one reviewer role, and the briefing duty must land on it.
+"External Reviewer" should leave the roster, because it is now a Maintainer call,
+not a role. Separately, the engine comment at `bootstrap/_scaffold/config.py:1323`
+("fill its External tier") will be false after this change, not merely
+"acceptable". Leaving it alone is right, but deposit a board row so the next engine
+change fixes it.
+*Recommend*: one line in section 5 naming the roster after the change.
+
+**ES8 -- non-blocking. The "reviews read as polish" signal has no window and no
+threshold.**
+The signal is the right one, and only this change can create its baseline, because
+past passes did not record a should-it-happen answer in one comparable form.
+*Recommend*: start counting from the first pass. If every Answer 1 across the next
+ten proposal reviews is a plain "yes" and no review's alternative is adopted, log
+it in the incident tracker and put it to the Maintainer. For code review, let
+Answer 3 point at the falsification ledger instead of restating it, so the block
+adds no second record.
+
+### Comprehension: can the Maintainer decide from "In plain terms" and the Questions?
+
+Nearly. Three things are missing: ES4's new claim, ES3's Security Review, and one
+line saying the change owes a Maintainer-run re-anchor (joining the batch already
+waiting). Question 3 uses "the lens roster" and "the scope-reduction trap" without
+saying what they are, and one clause each would fix that.
+
+To cut: the length note (lines 9-14), which is about the document, not the change.
+To move to the plan: the per-file detail of *Documentation / doctrine surface*
+(lines 350-380) and the 18-row test table (lines 431-442). By the proposal's own
+statement, the search is the authority and the list is not. Keep one line per layer
+with counts, plus the search commands. That saves about 50 lines.
+
+### Checked and confirmed
+
+These were measured on a clean `git archive` extraction of `ef0e2893` unless noted:
+
+* 78 External-headed review sections. 73 name a vendor other than the author's, and
+  the 5 same-vendor passes were all on proposals opened 2026-10-17 or 2026-10-18.
+* Each of the seven dated occurrences matches its source. Occurrences 1 and 2 fall
+  on the same day and concern the same artifact kind, and occurrence 7 is this
+  direction, so the evidence is five independent rulings plus the trigger. The
+  recurrence gate is met either way.
+* No tool parses the `**Tier**` or `**Review**` values. `tools/board.py` prints them
+  and `tools/audit_report.py` checks that a risk field is present.
+* 18 `.py` test files mention External. `test_onboarding_review_tiers.py` is frozen,
+  with its five nodes in the manifest. The only frozen `.md` file is
+  `bootstrap/tests/fixtures/skills/README.md`.
+* `check_module_body_coverage.py` reports 8 missing topics (at `31d9cefe`).
+* `dual-review` installs only for `concurrent-multi-type`
+  (`bootstrap/_scaffold/config.py:1325-1330`), and `scaffold.py --manifest` installs
+  no `doctrine/` file. Reaching adopters through `templates/core/AGENTS.md` and the
+  two templates is therefore the right route.
+* The "External Review Norms" pointer also dangles from `doctrine/plans.md` (line
+  924 at `ef0e2893`), not only from `security-review.md`.
+
+### What this pass did not cover
+
+I ran no test, no mutation and no scratch install. I did not read
+`doctrine/lifecycle-contract.md`, `doctrine/session-routines.md` or the `docs/`
+pages in full, nor the onboarding presets beyond their External lines. I did not
+check whether the record holds the Maintainer's ruling that plan review is
+"Internal, unchanged". Where `maintainer-attention` commits after `ef0e2893` moved a
+line, the line is given at both commits.
