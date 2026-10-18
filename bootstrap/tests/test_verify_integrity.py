@@ -85,6 +85,8 @@ def test_a_filled_customized_slot_is_pointed_at_finalize(
     # and say this tool cannot do it, since it keeps only a hash.
     assert "nothing outside its slots changed" in err
     assert "keeps only a hash" in err
+    # History alone misses uncommitted edits, so it is not offered as enough.
+    assert "history misses uncommitted edits" in err
 
     assert main(["upgrade", "--target", str(tmp_path), "--cairn-root",
                  str(CAIRN_ROOT), "--finalize", "AGENTS.md"]) == 0

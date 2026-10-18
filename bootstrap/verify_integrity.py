@@ -182,10 +182,11 @@ def verify(target: Path) -> int:
             print("A modified file with a slot marked "
                   "`<!-- cairn:customized -->` is usually a slot you filled "
                   "on purpose. This check keeps only a hash, not the text, so "
-                  "it cannot show you what changed: read the whole file, or "
-                  "its history since install, and confirm that nothing "
-                  "outside its slots changed (--finalize records the whole "
-                  "file). Then record it: python bootstrap/scaffold.py "
+                  "it cannot show you what changed: read the whole file in "
+                  "your repository (history misses uncommitted edits) and "
+                  "confirm that your fill is there and nothing outside its "
+                  "slots changed (--finalize records the whole file). Then "
+                  "record it: python bootstrap/scaffold.py "
                   "upgrade --target <repo> --finalize " + " ".join(customized),
                   file=sys.stderr)
         return 1
