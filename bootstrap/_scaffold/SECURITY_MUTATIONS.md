@@ -9,8 +9,13 @@ disk. The guards are the Stage-1 leaf `bootstrap/_scaffold/security.py`:
 - **`_assert_fanout_contained(dst, target)`** — the skills fan-out; like the
   above but permits `dst` itself to be the (re)created symlink.
 
-Both raise the single **`ScaffoldSecurityError`** identity, caught once at the
-CLI top level (exit 2).
+Both raise the single **`ScaffoldSecurityError`** identity. The guard raises it;
+a command turns it into a plain exit 2 only where it asks first or wraps its own
+writes: the three `.gitignore` preflights (`main`, `upgrade --adopt-module`,
+`upgrade --stage` / `--apply`), the skills fan-out and onboarding calls in `main`,
+and `--apply`, `--stage` and `--adopt-collisions` around their own writes.
+Anywhere else it propagates as a traceback with exit 1, which the differential
+oracle pins for an install over a planted link.
 
 This inventory was taken **before** the Stage-1 motion and is **regression-pinned**
 by the `bootstrap/tests/test_security_leaf.py` regression
@@ -27,6 +32,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 |---|---|---|
 | `_install_one` | `_assert_safe_write` | each installed template file |
 | `write_local_env` | `_assert_safe_write` | `dev/.cairn/local-env.json` |
+| `create_dev_tree` | `_assert_safe_write` | the empty `dev/` folder set. `mkdir(parents=True)` follows a link, so every destination is checked before the first `mkdir`: a linked `dev/`, or a linked folder below it, refuses with nothing created at either end |
 | `install_onboarding` | `_assert_safe_write` | the always-on launcher + `_onboarding/` engine (installed FROM `_ALWAYS_ON_MAPPINGS`, the SSOT `install_manifest`/`scan_targets` also consume), activation log, PLANNING slot, preset source, onboarding docs. **Fail-closed before any write** on an incomplete launcher+engine completeness group (`assert_always_on_complete`, R4) |
 | `write_install_lockfile` | `_assert_safe_write` | base-template cache, `cairn-lock.yml`. **Refuses (returns `None`)** before any write on an incomplete always-on completeness group (R4 — a partial group must not yield a lockfile tracking only the present members) |
 | `_emit_skill_copy_fallback` | `_assert_fanout_contained` | regenerated canonical skill copy, diverged-copy quarantine |
@@ -37,7 +43,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files (incl. `new-core` / `new-module` additions, which share the swap loop). `cmd_upgrade` refuses a linked `.gitignore` (a `seed_gitignore` dry run, exit 2) before this runs, since an apply that adds skills seeds `.gitignore` after the swap |
 | `merge_module_into_slot` | `_assert_safe_write` | a module-merge slot write + its conflict side-file (final Security Review P1 #1) |
 | `_write_stage` | `_assert_safe_write` | every staged-file / new-base / review-only destination, validated up-front for ALL plans (External Security review F1). `cmd_upgrade` refuses a linked `.gitignore` (a `seed_gitignore` dry run, exit 2) before this runs, since the stage seeds the review surface's ignore entry last |
-| `seed_gitignore` | `_assert_safe_write` | the appended lines in `<target>/.gitignore`. A fixed path is **not** contained by construction: a checkout can make `.gitignore` a link to a file outside the tree, and the appended lines would land there. The guard runs before the read, and on `--dry-run` too, so a dry run never promises a seed the install refuses. A link is refused wherever it points, inside the tree or out. `main`, `upgrade --adopt-module`, `--stage` and `--apply` run the same check before their first write, so an install, dry run, adoption, stage or apply over a linked `.gitignore` stops with exit 2 and nothing written; `--plan` writes nothing and is not asked. The `--stage` and `--apply` check is unconditional, though an apply seeds only when it adds skills: a stage always seeds, so an adopter with a linked `.gitignore` cannot reach `--apply` through the normal flow anyway |
+| `seed_gitignore` | `_assert_safe_write` | the appended lines in `<target>/.gitignore`. A fixed path is **not** contained by construction: a checkout can make `.gitignore` a link to a file outside the tree, and the appended lines would land there. The guard runs before the read, and on `--dry-run` too, so a dry run never promises a seed the install refuses. A link is refused wherever it points, inside the tree or out: the stricter rule, "never write through a link", stays, because following an in-tree link would mean judging the final destination of a link chain in this one function. An adopter who keeps a shared `.gitignore` by link replaces the link with a regular file; every refusal says so. `main`, `upgrade --adopt-module`, `--stage` and `--apply` run the same check before their first write, so an install, dry run, adoption, stage or apply over a linked `.gitignore` stops with exit 2 and nothing written; `--plan` writes nothing and is not asked. The `--stage` and `--apply` check is unconditional, though an apply seeds only when it adds skills: a stage always seeds, so an adopter with a linked `.gitignore` cannot reach `--apply` through the normal flow anyway |
 
 ### Fail-closed refusals added by the side-door-parity change (writes PREVENTED, not performed)
 

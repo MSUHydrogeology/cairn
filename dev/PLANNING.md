@@ -331,13 +331,13 @@ with the plan's filename stem.
   and the Maintainer chose one combined ceremony, later** (2026-10-18, chat:
   "One combined ceremony later"). There is no separate re-anchor for the
   `.gitignore` repair. One run, after that plan archives, covers: the repair's
-  four CHANGED functions (`main`, `seed_gitignore`, `_cmd_adopt_module`,
-  `cmd_upgrade`); the plan's own delta, which is `capture_model_selection_mapping`
+  five CHANGED functions (`main`, `seed_gitignore`, `_cmd_adopt_module`,
+  `cmd_upgrade`, `create_dev_tree`); the plan's own delta, which is `capture_model_selection_mapping`
   (newly CHANGED), `main`, `_cmd_adopt_module`, `cmd_upgrade` and `seed_gitignore`
   (changed again), and `_commit_lock_and_caches`, which `scaffold_ast_known_new.json` pins by
   digest, so the ceremony sees it as REKEYED and traces it to the plan's C4
   commit; and two new top-level functions, `_mapping_is_unfilled` and
-  `model_selection_notice_lines`, for the ceremony to pin. At the end that is five
+  `model_selection_notice_lines`, for the ceremony to pin. At the end that is six
   CHANGED, one re-keyed and two NEW; derive the set at ceremony time
   (`bootstrap/AST_BASELINE_RUNBOOK.md`). None is in `_UPDATE_ALLOWLIST`, so the
   correction is the Maintainer's own. `bootstrap/_scaffold/` is on the
@@ -366,6 +366,43 @@ with the plan's filename stem.
   `PHASE-CHANGED` note for it and never a hold. The `.gitignore` repair is still
   in code review and may change the same functions again, so derive the AST set
   at ceremony time.
+
+  **Joined 2026-10-18** at the code-review answer for the `.gitignore` seed guard
+  (commits `b8a402c6` through `3ba6f230`, review
+  `dev/reviews/2026-10-18-code-review-gitignore-seed-guard.md`, GS-CR5). The repair
+  has no plan of its own, so it joins here; it is **already changed**, not
+  planned. Its symbols wait for the one combined AST ceremony above (the
+  Maintainer's "One combined ceremony later"), after the model-mapping plan
+  archives. What it adds for the ceremony:
+
+  * **Frozen files whose bytes changed:** `bootstrap/tests/test_security_leaf.py`
+    (also on the model-mapping list above) and
+    `bootstrap/tests/test_skills_upgrade.py`, which is not. With it the frozen
+    files changed are eight, not seven. The manifest still holds their pre-repair
+    blob ids, `726781fa` and `29087bd2`. The verifier reports each as
+    `FROZEN-MODIFIED`, a hold, while `test_gate_manifest.py` stays green, so
+    nothing in the suite says a re-anchor is owed.
+  * **Nodes missing from the pinned collection (16):**
+    `test_skills_upgrade.py` gains `test_stage_over_a_linked_gitignore_refuses_before_staging_anything`,
+    `test_apply_over_a_linked_gitignore_refuses_before_applying_anything` and
+    `test_plan_over_a_linked_gitignore_stays_read_only_and_unaffected`;
+    `test_intents_tool.py` (phase-mutable, so a `PHASE-CHANGED` note and no hold)
+    gains `TestGitignoreSeedingRefusesLinks` (`test_seed_refuses_a_linked_gitignore`
+    x4, `test_install_through_a_link_to_an_outside_file_exits_2`,
+    `test_install_through_a_link_to_a_file_inside_the_target_exits_2`,
+    `test_adopt_module_refuses_before_recording_anything`,
+    `test_dry_run_install_predicts_the_refusal`) and `TestDevTreeRefusesLinks`
+    (`test_create_dev_tree_refuses_a_linked_folder_and_makes_none` x4,
+    `test_install_over_a_linked_dev_makes_no_folder_anywhere`). No pinned node
+    leaves.
+  * **AST symbols, five CHANGED, no NEW:** `main`
+    (`5c197afe8ee049d4` at the baseline), `seed_gitignore` (`55a95c62ab693619`),
+    `_cmd_adopt_module` (`92290a6b95389cc2`), `cmd_upgrade`
+    (`d98eff085ea46b43`) and `create_dev_tree` (digest in the answer commit's
+    body). The first four are on the combined list above; `create_dev_tree` is
+    the one new name, so the combined set is the six counted above. None is in
+    `_UPDATE_ALLOWLIST`. Derive the digests at ceremony time; these are the
+    baseline's, not the new ones.
 
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 

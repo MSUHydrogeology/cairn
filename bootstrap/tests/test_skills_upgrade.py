@@ -222,6 +222,9 @@ def test_skills_gitignore_seeded_idempotently_on_apply(tmp_path: Path):
 #: file elsewhere on the machine that the seed must never append to.
 _OUTSIDE_BYTES = b"# a file that belongs to someone else\nalias ll='ls -l'\n"
 
+#: The one-line remedy every refusal of a linked `.gitignore` carries.
+_REMEDY = "replace the link with a regular file, then re-run"
+
 
 def _link_gitignore_outside(target: Path, outside: Path) -> None:
     """Replace the installed ``.gitignore`` with a link to *outside*."""
@@ -254,6 +257,7 @@ def test_stage_over_a_linked_gitignore_refuses_before_staging_anything(
     assert rc == 2, err
     assert ".gitignore seed refused (containment)" in err
     assert "symlinked destination" in err
+    assert _REMEDY in err
     assert not (target / "dev" / ".cairn-upgrade").exists()
     assert lock_path.read_bytes() == lock_before
     assert outside.read_bytes() == _OUTSIDE_BYTES
@@ -297,6 +301,7 @@ def test_apply_over_a_linked_gitignore_refuses_before_applying_anything(
     assert rc == 2, err
     assert ".gitignore seed refused (containment)" in err
     assert "symlinked destination" in err
+    assert _REMEDY in err
     assert not (target / SKILL_START).exists(), "the staged skills were applied"
     assert not (target / LIFECYCLE).exists(), "the staged skills were applied"
     assert lock_path.read_bytes() == lock_before, "the lockfile advanced"

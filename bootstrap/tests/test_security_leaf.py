@@ -46,6 +46,9 @@ _GUARDED_WRITE_FUNCS = {
     # The fixed path `<target>/.gitignore` is not safe by construction: a
     # checkout can make it a link to a file outside the tree.
     "seed_gitignore",
+    # The dev/ tree is made with `mkdir(parents=True)`, which follows a linked
+    # `dev/` (or any linked folder below it) to the far end.
+    "create_dev_tree",
 }
 
 

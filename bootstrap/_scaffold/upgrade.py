@@ -1532,7 +1532,8 @@ def _cmd_adopt_module(
     try:
         seed_gitignore(target, (), dry_run=True)
     except ScaffoldSecurityError as exc:
-        print(f"error: .gitignore seed refused (containment): {exc}",
+        print(f"error: .gitignore seed refused (containment): {exc}\n"
+              "  replace the link with a regular file, then re-run.",
               file=sys.stderr)
         return 2
 
@@ -2480,7 +2481,8 @@ def cmd_upgrade(argv: list[str] | None = None) -> int:
         try:
             seed_gitignore(target, (), dry_run=True)
         except ScaffoldSecurityError as exc:
-            print(f"error: .gitignore seed refused (containment): {exc}",
+            print(f"error: .gitignore seed refused (containment): {exc}\n"
+                  "  replace the link with a regular file, then re-run.",
                   file=sys.stderr)
             return 2
 

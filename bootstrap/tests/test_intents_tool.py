@@ -51,6 +51,7 @@ from bootstrap.scaffold import (  # noqa: E402
     _GITIGNORE_SEEDS,
     _MODULE_MAPPINGS,
     ScaffoldSecurityError,
+    create_dev_tree,
     main,
     seed_gitignore,
 )
@@ -249,6 +250,20 @@ class TestGitignoreSeeding:
 _OUTSIDE_BYTES = b"# a file that belongs to someone else\nalias ll='ls -l'\n"
 
 
+#: The one-line remedy every refusal of a linked ``.gitignore`` carries.
+_REMEDY = "replace the link with a regular file, then re-run"
+
+
+def _tree(root: Path) -> list[str]:
+    """Every path under *root* -- files, folders and links, none followed --
+    so "nothing was written" can mean no file and no empty folder either."""
+    found: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        base = Path(dirpath)
+        found += [str((base / n).relative_to(root)) for n in dirnames + filenames]
+    return sorted(found)
+
+
 class TestGitignoreSeedingRefusesLinks:
     """``seed_gitignore`` routes its write through the engine's containment
     guard, like every other write into the target. A ``.gitignore`` that is a
@@ -273,16 +288,23 @@ class TestGitignoreSeedingRefusesLinks:
         return target, behind
 
     @staticmethod
-    def _install(target: Path, *extra: str) -> int:
-        cfg = target / "profile.yml"
-        cfg.write_text(
+    def _write_profile(target: Path) -> None:
+        (target / "profile.yml").write_text(
             "project_name: LinkTest\ntest_command: pytest\nmodules:\n"
             "  - coordination-tiers\n"
         )
+
+    @staticmethod
+    def _run_install(target: Path, *extra: str) -> int:
         return main(
-            ["--config", str(cfg), "--target", str(target),
+            ["--config", str(target / "profile.yml"), "--target", str(target),
              "--cairn-root", str(CAIRN_ROOT), "--allow-dev", *extra]
         )
+
+    @classmethod
+    def _install(cls, target: Path, *extra: str) -> int:
+        cls._write_profile(target)
+        return cls._run_install(target, *extra)
 
     @pytest.mark.parametrize("inside", [False, True], ids=["outside", "inside"])
     @pytest.mark.parametrize("dry_run", [False, True], ids=["write", "dry-run"])
@@ -299,15 +321,18 @@ class TestGitignoreSeedingRefusesLinks:
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
         target, outside = self._linked_gitignore(tmp_path, inside=False)
-        rc = self._install(target)
+        self._write_profile(target)
+        before = _tree(target)
+        rc = self._run_install(target)
         err = capsys.readouterr().err
         assert rc == 2, err
         assert "refus" in err and "symlinked destination" in err
         assert str(target / ".gitignore") in err
+        assert _REMEDY in err
         assert outside.read_bytes() == _OUTSIDE_BYTES, (
             "the install appended to a file outside the target through the link"
         )
-        assert not (target / "AGENTS.md").exists(), (
+        assert _tree(target) == before, (
             "the refusal came after the install had started writing"
         )
 
@@ -320,13 +345,16 @@ class TestGitignoreSeedingRefusesLinks:
         function; an adopter whose ``.gitignore`` is a link replaces it with a
         real file and re-runs."""
         target, behind = self._linked_gitignore(tmp_path, inside=True)
-        rc = self._install(target)
+        self._write_profile(target)
+        before = _tree(target)
+        rc = self._run_install(target)
         err = capsys.readouterr().err
         assert rc == 2, err
         assert "symlinked destination" in err
+        assert _REMEDY in err
         assert behind.read_bytes() == _OUTSIDE_BYTES
         assert (target / ".gitignore").is_symlink()
-        assert not (target / "AGENTS.md").exists()
+        assert _tree(target) == before
 
     def test_adopt_module_refuses_before_recording_anything(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
@@ -357,6 +385,7 @@ class TestGitignoreSeedingRefusesLinks:
         assert rc == 2, err
         assert ".gitignore seed refused (containment)" in err
         assert "symlinked destination" in err
+        assert _REMEDY in err
         assert outside.read_bytes() == _OUTSIDE_BYTES
         assert lock_path.read_bytes() == lock_before, (
             "the lockfile was rewritten before the seed was refused"
@@ -371,11 +400,15 @@ class TestGitignoreSeedingRefusesLinks:
         """A dry run that printed "Would seed .gitignore" for a file the real
         run refuses would promise something the install does not do."""
         target, outside = self._linked_gitignore(tmp_path, inside=False)
-        rc = self._install(target, "--dry-run")
+        self._write_profile(target)
+        before = _tree(target)
+        rc = self._run_install(target, "--dry-run")
         err = capsys.readouterr().err
         assert rc == 2, err
         assert "symlinked destination" in err
+        assert _REMEDY in err
         assert outside.read_bytes() == _OUTSIDE_BYTES
+        assert _tree(target) == before
 
 
 # ---------------------------------------------------------------------------
@@ -1855,3 +1888,50 @@ class TestIntentSurfacePruning:
         assert rep["refused"], rep
         assert b"racer" in log.read_bytes()
         assert before in log.read_bytes()
+
+
+class TestDevTreeRefusesLinks:
+    """``create_dev_tree`` guards every folder it makes, like every other write
+    into the target. A link at ``dev/`` (or at a folder below it) would send
+    each ``mkdir`` to the other end, so the whole set is checked before the
+    first folder is made."""
+
+    @staticmethod
+    def _target_with_link(tmp_path: Path, link: str) -> tuple[Path, Path]:
+        """A target where *link* (relative to it) points at an empty folder
+        outside; returns (target, that folder)."""
+        target = tmp_path / "tgt"
+        target.mkdir()
+        outside = tmp_path / "elsewhere"
+        outside.mkdir()
+        link_path = target / link
+        link_path.parent.mkdir(parents=True, exist_ok=True)
+        link_path.symlink_to(outside, target_is_directory=True)
+        return target, outside
+
+    @pytest.mark.parametrize("link", ["dev", "dev/plans"])
+    @pytest.mark.parametrize("dry_run", [False, True], ids=["write", "dry-run"])
+    def test_create_dev_tree_refuses_a_linked_folder_and_makes_none(
+        self, tmp_path: Path, link: str, dry_run: bool
+    ) -> None:
+        target, outside = self._target_with_link(tmp_path, link)
+        before = _tree(target)
+        with pytest.raises(ScaffoldSecurityError, match="symlinked"):
+            create_dev_tree(target, dry_run=dry_run)
+        assert list(outside.iterdir()) == [], (
+            "folders were made at the far end of the link"
+        )
+        assert _tree(target) == before, (
+            "folders were made before the linked one was reached"
+        )
+
+    def test_install_over_a_linked_dev_makes_no_folder_anywhere(
+        self, tmp_path: Path
+    ) -> None:
+        target, outside = self._target_with_link(tmp_path, "dev")
+        TestGitignoreSeedingRefusesLinks._write_profile(target)
+        before = _tree(target)
+        with pytest.raises(ScaffoldSecurityError, match="symlinked"):
+            TestGitignoreSeedingRefusesLinks._run_install(target)
+        assert list(outside.iterdir()) == []
+        assert _tree(target) == before

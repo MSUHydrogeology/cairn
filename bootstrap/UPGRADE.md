@@ -170,6 +170,14 @@ you what changed.
   you forked it, the upgrade **flags it and does not clobber** — a forked
   tool may break against new doctrine, so that is a real decision for you to
   make.
+* **A linked `.gitignore` is refused, wherever it points.** Install, `--stage`,
+  `--apply` and `--adopt-module` append ignore entries to `.gitignore`, and
+  appending through a link would change the file behind it. If your
+  `.gitignore` is a link (to a file outside the project, or to one inside it),
+  each of them stops before writing anything and tells you to replace the link
+  with a regular file, then re-run. `--plan` writes nothing and is not
+  affected. The rule is the same for every link on purpose, so a shared
+  `.gitignore` kept by link has to become a real file first.
 * **The lifecycle skills participate exactly like `core/`.** The canonical
   `.agents/skills/*/SKILL.md` files ride the token-/slot-aware 3-way merge
   (base cache + provenance), and `tools/session.py` follows the verbatim

@@ -189,7 +189,15 @@ def create_dev_tree(target: Path, *, dry_run: bool = False) -> list[Path]:
     """Create the ``dev/`` directory tree under *target*.
 
     Returns the list of directories that were (or would be) created.
+
+    ``mkdir(parents=True)`` follows a link, so a ``dev/`` (or any folder below
+    it) that is a link to somewhere else would receive every folder made here.
+    Each destination goes through :func:`_assert_safe_write` first, all of them
+    before the first ``mkdir``, so a refusal never leaves a partial tree. Raises
+    :class:`ScaffoldSecurityError`.
     """
+    for rel in _DEV_DIRS:
+        _assert_safe_write(target / rel, target)
     created: list[Path] = []
     for rel in _DEV_DIRS:
         d = target / rel
