@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -467,3 +467,495 @@ what it says?
   4; a print from `upgrade` works regardless. If the owed engine re-anchor is
   still pending when the plan is written, joining it makes "yes" much cheaper
   than the proposal says. If it has already been done, keep "no".
+
+## Response -- Claude (author) -- 2026-10-17
+
+The review is right on all four blocking findings. Its strongest alternative is
+also better than I credited. Each disposition below was checked against today's
+tree.
+
+**NU1: accepted.** The gate was cleaned to zero on 2026-05-28 (`29ffeea6`). The
+first "Codex P2-5" landed in `_onboarding/` the same afternoon (`dbc09557`). So
+"a backlog nobody cleared" was wrong, and Revision 1 withdraws it.
+
+Its Context now says why zero should hold this time. Two things have changed:
+
+* Boundary B has run this gate on every plan since `5f6ecccc` (2026-08-05). In
+  May, nothing ran it routinely.
+* The habit that produced 29 of the 74, crediting reviewers in code, now breaks
+  an `AGENTS.md` rule (`013847b6`, 2026-08-18).
+
+I spot-checked the review's blame. After 2026-06-11, the failing lines were
+touched only by an extraction (`ea3d6492`) and a rewording (`a29183a9`), and
+neither added a name.
+
+The Signals line now uses the review's concrete trigger. One Boundary B record
+after archive with a neutrality failure the change under test did not introduce
+means the commit hook is owed.
+
+**NU2: accepted, and closed using the marker rule as `70e87171` left it.**
+
+* *Confirmed today*, on a fresh `solo-greenfield` install at HEAD: write `N/A`
+  in a slot and commit, and `verify_integrity` exits 1 without naming any
+  remedy. Its `--finalize` hint now needs `<!-- cairn:customized -->` inside the
+  slot.
+* *The change:* every remedy the note prints now includes four steps. Put the
+  marker in the slot. Commit. Run `--finalize <path>`, which refuses a tree with
+  uncommitted changes. Commit the lockfile.
+* *Why that is enough:* because the slot carries the marker, the existing hint
+  names the file even if the adopter skips the record step.
+* *Run today:* fill the slot and add the marker, then commit; that exits 1 with
+  the hint naming `AGENTS.md`. After `--finalize` and a commit it exits 0, and
+  the note lists 19 slots where it listed 20.
+* *Declined:* widening the hint to fire whenever every difference from the base
+  copy lies inside slots. On the same install, `AGENTS.md` differs from its
+  base outside slots, because install renders its `cairn:if` blocks. The wider
+  rule would miss the file that matters most.
+
+**NU3: accepted.** The note now always prints a coverage line. It gives the
+slots and files it checked, and names the slots and files it could not check
+because they have no cached base copy. On Cairn's own tree that line reads 0
+checked, with 13 slots in 6 files unchecked, so a silent run no longer looks
+like a pass.
+
+Measuring surfaced two refinements:
+
+* *Verbatim records are skipped.* The note reads only non-verbatim records.
+  `scripts/_onboarding/triggers.py` quotes slot markers in code and would
+  otherwise be counted.
+* *A known gap is recorded.* When an upgrade rewords a placeholder, a slot
+  still holding the old wording reads as filled. That gap goes into
+  `bootstrap/UPGRADE.md`, and a test pins it.
+
+Part 1 does not trigger that gap, because it rewords no placeholder text. None
+of the 38 shipped hits sits inside a slot body. The same check does find a known
+slot line (`templates/core/dev/proposals/_template.md:213`), so it could have
+matched.
+
+**NU4: accepted.** Question 1 is split. The check half closes as won't-build
+under the three-recurrence rule. The sentence half becomes its own question,
+with the review's default, write it, as a separate small change. This proposal
+does not grow.
+
+**NU5: accepted.**
+
+* F8 is now cited at `dev/PLANNING.md:208`.
+* The false comment at `scripts/quality_gate.py:446` is corrected, prose only.
+  "The checker is unchanged" therefore becomes "the checker's behaviour is
+  unchanged", and pinned files go from 14 to 15.
+* The twins are now named.
+
+**The strongest alternative, weighed again.** I ran the review's falsifier (a).
+I installed at `4ad1c115`, filled only the three Maintainer-input slots, and
+upgraded to HEAD. The note then lists 17 slots, and nothing marks
+`assurance-path-triggers` as the one the upgrade added. So on a partly filled
+tree the note does not fix #8, and an upgrade-time print would.
+
+The engine change is small. The merge already holds both slot sets, and flags
+the removed case there (`bootstrap/_scaffold/merge.py:200-213`). But it changes
+at least `merge_file` and `_print_upgrade_report`, neither of which
+self-service repair covers. The re-anchor now underway will not include it, so
+it would owe its own Maintainer-run re-anchor.
+
+I keep it out of this change. Q2's default becomes "not now, but ride along":
+carry it in the next engine change to the upgrade path that already owes a
+re-anchor, or sooner if an adopter misses an upgrade-added slot. The reporting
+adopter's tree was otherwise filled, and there the note names exactly the one
+slot.
+
+**Status.** This answers the External review. The outcomes do not widen. The
+change touches one more file (the comment in `scripts/quality_gate.py`), and
+#16's sentence half moves into its own question. The Security Review that the
+header declares has not run, and it is the remaining obligation. Status returns
+to `awaiting-review` for it.
+
+## Revision 1 -- Claude (author) -- 2026-10-17 -- the complete current contract
+
+### In plain terms
+
+Two of Cairn's checks cannot be trusted today, for opposite reasons.
+
+1. **The vendor-name check is always red, so a new problem would be invisible
+   (#2).** `quality_gate.py --sub neutrality` keeps AI-vendor and project names
+   out of what Cairn ships. It reports 74 failures, and only 14 are the false
+   alarm #2 describes:
+   * **38 are real leaks:** reviewer names and our reference project's name, in
+     comments and templates every adopter receives.
+   * **22 are legitimate mentions** in Cairn's docs that lack their marker.
+
+   This proposal fixes all of them, so the check reads zero and one new leak
+   shows as one failure. The check was zeroed once before, in May, and refilled
+   within hours. Two things have changed since: it now runs in every plan's
+   final verification run, and a project rule now bars crediting reviewers in
+   code. If
+   a name still reaches the main line between runs, a commit hook comes next.
+2. **When an upgrade adds a fill-in section ("slot"), nothing says so (#8).**
+   The existing install check (`verify_integrity.py`) gets an advisory note
+   listing every slot that still holds Cairn's placeholder text.
+   * **It always reports coverage:** how many slots it could check, and which
+     files it could not, so a short report never passes for "all filled".
+   * **Its fix-it instructions end in a passing check.** Following them never
+     leaves a tamper warning behind.
+   * **One limit:** on a tree with many slots still unfilled, the new slot
+     appears in the list but is not singled out.
+3. **#16 is split.** Its proposed new check is declined, under your August
+   triage. Its one-paragraph half is a separate question, below.
+
+**Cost to you.** No engine change, so no hand re-anchor of its fingerprint. Up to
+15 files the gate manifest pins change. They join the re-anchor already queued
+(`dev/PLANNING.md:156`).
+
+**If this is wrong,** either a reworded comment loses an explanation someone
+needed, or the note nags. Both are cheap to undo.
+
+**Questions, each with a default.**
+
+* **Q1. #16 asks for two things.**
+  * (a) A new shipped check. Close it as won't-build under your
+    three-recurrence rule? *Default: yes.*
+  * (b) One paragraph in the doc-drift module naming the problem: prose that
+    names a function the code no longer has. *Default: write it, as a separate
+    small change after this Decision. #16 closes when it lands.*
+* **Q2. Should `upgrade` itself name the slots it adds?** That would single out
+  the new slot on a partly filled tree. But it changes the engine, which costs
+  you a hand re-anchor of its own. *Default: not in this change. Carry it in the
+  next engine change to the upgrade path that already owes a re-anchor, or
+  sooner if an adopter misses an upgrade-added slot.*
+
+### Context
+
+**The neutrality gate (#2).** Today (Python 3.13.13), `python
+scripts/quality_gate.py --sub neutrality` reports `fail=74 info=21` and exits 1.
+Every recorded run has been red, and the gate manifest's expected result is
+"green" (`bootstrap/tests/_gate_manifest.py:149-151`):
+
+| Failures | Source |
+|---|---|
+| 99 | `dev/proposals/archive/2026-07-11-claude-record-corrections.md:30` |
+| 93 | `dev/proposals/archive/2026-08-12-claude-boundary-b-bounding-clause.md:544` |
+| 79 | `dev/plans/archive/portable-sweeps-cannot-run.md:385` |
+| 74 | `dev/plans/archive/adopter-path-consolidation.md:520` |
+
+| Where | Count | What they are | Real leak? |
+|---|---|---|---|
+| `templates/skills/` (routing table, session kernel, session-start skill) | 9 | prose saying which harness gets the symlink route | no: restates the table |
+| `bootstrap/tests/fixtures/skills/README.md` | 5 | describes the same routing fixtures | no; Cairn-internal |
+| other shipped templates, reviewer names | 29 | a design choice credited to a reviewer ("Per Codex P2-5") | **yes**, shipped |
+| other shipped templates, `modflow_tools` | 9 | the reference project's name | **yes**, shipped |
+| `docs/` | 14 | an example roster; the reference deployment's history | no, but unmarked |
+| `doctrine/` | 8 | example agent identities; an illustrative tool list | no, but unmarked |
+
+* **The routing data already passes.** The gate matches capitalized whole words
+  (`scripts/quality_gate.py:280-281`). The routing table's target ids are
+  lowercase (`claude-code`, `codex`), so all 9 `templates/skills/` hits are
+  prose repeating a table row.
+* **The reviewer-name hits already break a rule:** `AGENTS.md` > "Comments and
+  docstrings explain the code, not the process".
+
+**Zero has been reached before.** On 2026-05-28, `29ffeea6` reached
+`fail=0`. `dbc09557` added the first "Codex P2-5" to `_onboarding/` the same
+afternoon, and by 2026-06-12 #2 counted 99. Two things differ now:
+
+* Boundary B has run the gate on every plan since `5f6ecccc` (2026-08-05).
+* Crediting reviewers in code has been against `AGENTS.md` since `013847b6`
+  (2026-08-18).
+
+Since 2026-06-11, the failing lines were touched only by an extraction
+(`ea3d6492`) and a rewording (`a29183a9`), and neither added a name.
+
+**Upgrade-introduced slots (#8).** I installed Cairn at `4ad1c115`
+(`solo-greenfield`), the parent of `76bc678b`, which added
+`assurance-path-triggers`. I filled all 23 slots, finalized the lockfile, and
+upgraded to HEAD.
+
+* **The slot arrived, and nothing reported it.** It landed in
+  `dev/proposals/_template.md` with its placeholder.
+* **The upgrade output covers only the opposite case.** It flags a removed slot
+  and has no kind for an added one (`bootstrap/_scaffold/upgrade.py:718-719`).
+* **The other tools are silent too.** `verify_integrity.py` and
+  `tools/session.py session-start` print nothing about slots.
+* **The guide does not say which slot.** `bootstrap/UPGRADE.md:101-102` says a
+  new slot "arrives with its placeholder for you to fill".
+
+A scratch prototype of the rule below (not committed) gave these results:
+
+* **Fully filled tree:** it names exactly `dev/proposals/_template.md
+  [assurance-path-triggers]`.
+* **The same upgrade with only the three Maintainer-input slots filled:** it
+  lists 17 slots, and does not single out the new one.
+* **Cairn's own tree:** it checks 0 slots. 13 slots in 6 files have no cached
+  base copy.
+
+Settled already: the issue's suggested home, `lifecycle_planner scan`, was
+removed in `bfe6bbfd`. Its untaught `**Tier**` / `**Findings**` fields are now
+taught (`templates/core/dev/proposals/_template.md:230-231`).
+
+**The note's fix-it path today.** On a fresh HEAD install:
+
+* **Without the marker:** writing `N/A` in a slot and committing makes
+  `verify_integrity` exit 1 with no remedy named. Its `--finalize` hint needs
+  `<!-- cairn:customized -->` in the slot (`70e87171`).
+* **With the marker:** filling the slot, adding the marker and committing gets
+  the hint naming the file. After `--finalize` and a commit, it exits 0.
+
+**#16.** The check it proposes is the machinery your 2026-08-25 triage declined:
+one adopter, one plan cycle, and no Cairn-side recurrence. It would also be a new
+installed file. Its other half is a paragraph naming the problem in
+`templates/modules/team-gated/doc-drift-prevention.md`, which splits drift only
+into "drift, not absence" (`:48-51`). That half shares nothing with Parts 1 and
+2, so it is Q1(b).
+
+### Proposal
+
+**Part 1: neutrality reads zero; the checker's behaviour is unchanged.**
+
+1. **The 9 `templates/skills/` hits** are reworded to point at the routing table
+   ("the `tier: symlink` rows of the fan-out table"); the lowercase ids stay.
+   The hits are:
+   * the `_doc` string in `templates/skills/_data/vendor_targets.yml`;
+   * three comments in `templates/skills/_lib/session.py`;
+   * one line in `templates/skills/session-start/SKILL.md`.
+2. **The 38 hits in 14 other shipped templates.** Each reviewer-name citation is
+   rewritten to give its reason in code terms. `modflow_tools` becomes "the
+   reference deployment", or is dropped.
+3. **The 27 hits in docs, doctrine and the fixture README (5 files)** are
+   wrapped in the existing `vendor-ok-begin` / `vendor-ok-end` markers, with a
+   reason. No wording changes.
+4. **The false comment** at `scripts/quality_gate.py:446` ("Not
+   bootstrap/tests/") is corrected. Prose only; the walk is unchanged.
+5. **The pass is logged** with one row per group in the "Dogfood disposition
+   log" of `doctrine/consolidation-review.md`.
+6. **Each twin changes in the same commit, byte-identical:**
+   * `.agents/skills/_data/vendor_targets.yml`
+   * `.agents/skills/session-start/SKILL.md`
+   * `tools/session.py`
+   * `scripts/_onboarding/` (`__init__`, `activation`, `cli`, `security`,
+     `shared`, `triggers`)
+   * `scripts/onboarding_activate.py`
+   * `tools/intent.py`
+   * `scripts/content_scan.py`
+   * `dev/modules/documentation-plan.md`
+   * `dev/modules/incident-trackers.md`
+   * `dev/modules/incident_log_template.md`
+
+**Part 2: an advisory slot note in `bootstrap/verify_integrity.py`.**
+
+1. **What it reads.** Every non-verbatim lockfile record.
+2. **What it lists.** A slot is listed when all three hold:
+   * the record has a cached base copy (`base_cache`);
+   * the slot body is unchanged from the base copy's, after spacing is
+     normalized and the lockfile's token values are substituted;
+   * the slot carries no `<!-- cairn:customized -->`.
+3. **One coverage line, always printed.** It gives the slots and files checked
+   and the number still holding the shipped text. It also names the files whose
+   slots could not be checked because they have no base copy.
+4. **The remedy, printed with each entry.**
+   * Fill the slot, write `N/A: <reason>`, or keep Cairn's text on purpose.
+   * In every case, put `<!-- cairn:customized -->` inside the slot.
+   * Commit, then run `python bootstrap/scaffold.py upgrade --target <repo>
+     --finalize <path>`. It refuses a tree with uncommitted changes.
+   * Commit the lockfile.
+
+   If the record step is skipped, the marker makes the existing `--finalize`
+   hint name the file. That hint is unchanged.
+5. **Advisory only.** Like the forked-facade note, it never changes the exit
+   code, and it prints whether or not the hash check passes.
+6. **The base path is checked before reading.** It must pass `dst`'s shape check
+   (relative, no `..` part), resolve inside the target, and not be a symlink.
+   Otherwise it is not read, and it is reported as skipped.
+7. **No new engine import.** It reuses the file's `_SLOT_BODY_RE` and
+   `_CUSTOMIZED_MARKER_RE`. The token pattern and the spacing rule are inlined,
+   and a test pins both to the engine's versions.
+8. **`bootstrap/UPGRADE.md` changes.**
+   * It gains step 4: run `verify_integrity` after `--apply`. Only a person
+     following the steps runs it.
+   * It records the known gap: when an upgrade rewords a placeholder, an
+     unfilled slot keeps the old wording and reads as filled.
+9. **Placeholder state, not obligation.** Which slots a profile needs is F8
+   (`dev/PLANNING.md:208`), which stays separate.
+
+### Rationale
+
+**Part 1.** The gate's rule is right: templates stay clean by construction, with
+no exemption path (`scripts/quality_gate.py:268-288`). Zero failed to hold in May
+because nothing ran the gate routinely, and because crediting reviewers in code
+was habitual. Both have changed. Part 1 is rewordings and markers, with no new
+code (`dev/strategy/2026-08-21-claude-nimbleness-recovery.md:724`).
+
+**Part 2.** `bootstrap/UPGRADE.md:101-102` already says a slot may be new, but
+not which. The note names it, says what it could not check, and gives a remedy
+that ends in a passing check. It warns rather than blocks
+(`dev/strategy/2026-08-21-claude-nimbleness-recovery.md:332`).
+
+### Alternatives considered
+
+* **The exemption path #2 asks for:** a carve-out, or an out-of-tree allowlist.
+  It turns "clean by construction" into "clean by review" for files every
+  adopter installs, to cover 9 lines that rewording removes.
+* **Freeze today's 74 and fail only on new failures.** This accepts 38 real
+  shipped leaks, with no reasons recorded.
+* **`upgrade` names the slots it added (strongest rejected).** It wins on
+  trigger and on singling the new slot out, as the partly filled probe shows. It
+  loses only on timing and cost. At least `merge_file` and
+  `_print_upgrade_report` would change, outside self-service repair, and it
+  cannot join the re-anchor underway. Q2 carries it.
+* **Widen the `--finalize` hint to slot-only diffs.** Declined: `cairn:if`
+  rendering makes `AGENTS.md` differ from its base outside slots, so the rule
+  would miss it.
+* **Block on an unfilled slot.** Process checks warn and never bind (nimbleness
+  note 1.5).
+* **Do nothing.** A gate nobody can read stays that way. Reviewer names keep
+  shipping, and new slots stay silent.
+
+### Documentation / doctrine surface
+
+* **Descriptive.** `bootstrap/UPGRADE.md` gets step 4, the note's meaning, and
+  the known gap.
+* **Governing.** None: `AGENTS.md` > "Vendor-neutrality" stays literally true.
+* **Doctrine.**
+  * Marker-only edits in `doctrine/lifecycle-contract.md` and
+    `doctrine/rationale.md`.
+  * Log rows in `doctrine/consolidation-review.md`.
+* **CHANGELOG.** One entry.
+* **Rate-limit gate** (`doctrine/rationale.md:405-417`): not triggered. No
+  doctrine rule changes; the edits follow the procedure that
+  `doctrine/consolidation-review.md` prescribes.
+
+If a reviewer counts the markers as doctrine changes, the fallback is to leave
+those 8 lines unmarked and logged `accepted-noise`. The gate would then read
+`fail=8`.
+
+### Evidence / verification plan
+
+#### Tests required
+
+All in `bootstrap/tests/test_verify_integrity.py`. Each case builds its own
+lockfile, base cache and files in `tmp_path`.
+
+**The whole loop, as one test.** A slot is listed. It is filled with the marker
+and committed. `verify_integrity` exits 1, with the hint naming the file. After
+`--finalize` and a commit, it exits 0 and the slot is no longer listed.
+
+**One test each for:**
+
+* the coverage line on a tree with no base copies (0 checked, files named);
+* a verbatim record that quotes slot markers, which is not read;
+* a customized slot, which is not listed;
+* a `{{token}}` base slot, matched after substitution;
+* an unsafe `base_cache` (absolute, `..`, or a symlink), which is skipped and
+  reported;
+* the exit code, which is the same with and without the note;
+* the inlined patterns, which agree with the engine's;
+* the reworded-placeholder case, which is pinned as the recorded known gap.
+
+**Elsewhere.** `bootstrap/tests/test_quality_gate_neutrality.py` needs no
+change; `TestTemplatesDirectiveForbidden` already pins template tokens.
+**Boundary B mode: full.**
+
+#### Examples / smoke checks
+
+* **Zero, and still able to fail.** The gate reads `fail=0`. A name planted in
+  `templates/skills/` prose makes it `fail=1` (today, on a copy of HEAD:
+  74 → 75).
+* **Comment-only proof.**
+  * Every edited `.py` file must give an identical docstring-stripped `ast.dump`
+    before and after. That covers the templates, their twins, and
+    `scripts/quality_gate.py`.
+  * `vendor_targets.yml` must parse the same apart from `_doc`.
+  * To show the proof can fail, make a one-character code change in a scratch
+    copy; it must break the comparison.
+* **Twins must be byte-identical.**
+* **Both probes, re-run on the implementation commit.**
+  * Fully filled: the note names exactly the one added slot.
+  * Partly filled: the new slot is listed among the rest, which is the expected
+    limit (Q2).
+  * The fresh-install loop above.
+* **`python scripts/check_cairn.py`** over the touched Markdown.
+
+#### Security preflight — five questions, answered in writing
+
+* **S1 — Who supplied it?**
+  * Part 1 adds no decision and no exemption path.
+  * Part 2 decides from the installed file, its base copy and the lockfile's
+    tokens. The adopter's tree supplies all three, so they come from the thing
+    being judged. That is acceptable only because the note is advisory: a
+    tampered base can hide or invent a placeholder, but it grants nothing.
+* **S2 — Can it fail?** Yes, and each was run today:
+  * a planted name moved the gate from 74 to 75;
+  * filling the slot took the prototype from 1 to 0;
+  * the loop went from exit 1 to exit 0.
+
+  Part 2's expectation comes from the base copy, not from the file it checks.
+* **S3 — What fires it, over what?**
+  * Part 1: a person runs it at Boundary B (`AGENTS.md` > "Verification
+    boundaries") and at the gate-manifest ceremony. No hook runs it. Its input
+    is `_NEUTRALITY_FILE_SUFFIXES` (`scripts/quality_gate.py:440-449`).
+  * Part 2: a person runs `verify_integrity`, and UPGRADE.md step 4 says so.
+    Its input is the non-verbatim lockfile records.
+* **S4 — Which way does it break?** Toward a quieter note, and the coverage line
+  says so:
+  * a missing or unsafe base path is not read and is named;
+  * absent tokens make a token-bearing placeholder read as changed;
+  * a reworded placeholder reads as filled (the known gap).
+
+  The exit code never changes.
+
+  The remedy has the adopter run `--finalize`, which records the whole file. A
+  finalize run is therefore exactly as safe as the adopter's review of their
+  own commit, and its dirty-tree guard refuses uncommitted work.
+* **S5 — Who still wins?**
+  * The denylist is enumerated and case-sensitive. 26 lowercase-only vendor
+    mentions in 14 files under `templates/` and `doctrine/` pass unseen, mostly
+    routing ids and environment-variable names. So does any vendor not on the
+    list.
+  * In Part 2, anyone who can edit the base cache can hide a placeholder.
+  * The `--finalize` hint (`70e87171`, unchanged here) fires on a marked file
+    even when text outside its slots also changed.
+
+### Signals the change is wrong
+
+* **A neutrality failure slips in between runs.** A Boundary B record after
+  archive shows a failure that the change under test did not introduce. Then
+  the commit hook is owed.
+* **A reworded comment dropped an explanation** a later reader needed.
+* **The note is ignored.** Adopters add `cairn:customized` by reflex, or the
+  note names slots they did fill, so it is noise.
+* **An upgrade-added slot is missed anyway.** An adopter misses one on a partly
+  filled tree. Q2 comes due.
+
+### Scope delta
+
+**Scope delta**: preserved. Nothing in the opened baseline is dropped. The
+revision adds one touched file (the `scripts/quality_gate.py` comment). #16's
+paragraph becomes Q1(b), outside this change.
+
+### Assurance path
+
+**Assurance path**: high-assurance
+
+The change reaches four sensitive surfaces:
+
+* the vendor-neutrality boundary;
+* the content scanner and the interpreter-binding module, both edited in
+  comments only;
+* `scripts/quality_gate.py`, one comment;
+* a lockfile reader adopters run before trusting their scripts.
+
+### Withdrawn / superseded commitments
+
+* **"What failed was a backlog nobody cleared."** Withdrawn (NU1). The
+  Rationale now names the May precedent and what has changed since.
+* **The note's remedy** ("fill, write `N/A`, or add the marker"). Superseded by
+  the marker → commit → `--finalize` → commit remedy (NU2).
+* **Silence as a result.** Superseded by the always-printed coverage line
+  (NU3).
+* **Q1 as a single close of #16.** Superseded by Q1(a) and Q1(b) (NU4).
+* **"The checker's code does not change."** Superseded: its behaviour is
+  unchanged, and one comment is corrected (NU5).
+* **"Up to 14 pinned files."** Now 15.
+* **F8 cited at `:198`.** Now `:208`.
+* **Signals: "red again within a few plans."** Superseded by the Boundary B
+  trigger above.
+* **Q2 default "no; revisit if an adopter misses an upgrade-added slot."**
+  Superseded by "not in this change; ride along with the next engine change to
+  the upgrade path, or sooner on that miss."
