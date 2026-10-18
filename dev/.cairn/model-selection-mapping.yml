@@ -6,6 +6,8 @@
 #   python scripts/check_model_selection.py
 #
 # Record schema: dev/modules/model-selection.md > "Mapping-record schema".
+# Models are named by family, never by version: each row means the latest
+# release of that family (Maintainer, 2026-10-18), so a new version needs no edit.
 # These rows bind tiers by name, not by measurement, and each `source` says
 # so. Re-rank when `re_verification_trigger` fires.
 #
@@ -15,20 +17,20 @@
 
 mapping:
   - tier: high
-    model: "claude-opus-5-5"
+    model: "Opus"              # Claude (Anthropic), latest release
     date_verified: "2026-10-18"
     task_family: "strategy, proposal authoring, proposal review, Security Review"
     source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
-    re_verification_trigger: major-model-release
+    re_verification_trigger: a release that changes which family fits the tier
   - tier: medium
-    model: "claude-sonnet-5-5"
+    model: "Sonnet"            # Claude (Anthropic), latest release
     date_verified: "2026-10-18"
     task_family: "implementation, plan review, code review, routine authoring"
     source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
-    re_verification_trigger: major-model-release
+    re_verification_trigger: a release that changes which family fits the tier
   - tier: low
-    model: "claude-haiku-5-5"
+    model: "Haiku"             # Claude (Anthropic), latest release
     date_verified: "2026-10-18"
     task_family: "trivial edits: typos, wording, link fixes"
     source: "Maintainer's assignment, 2026-10-18 -- by name, not benchmarked"
-    re_verification_trigger: major-model-release
+    re_verification_trigger: a release that changes which family fits the tier
