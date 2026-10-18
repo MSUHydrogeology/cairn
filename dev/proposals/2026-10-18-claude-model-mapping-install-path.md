@@ -1,7 +1,7 @@
 # The model mapping gets filled on every install path, and something checks it
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(Internal + Security Review) — the scaffold engine's write path is touched; the Maintainer asked for this change, so "should it exist" is settled
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/` and a script adopters run (see the preflight)
 **Opened**: 2026-10-18
@@ -862,3 +862,273 @@ and the onboarding overlay written into preset adopters' `dev/PLANNING.md`.
 * **"The seed is the durable line" as sufficient:** withdrawn; the seed is a Waiting row, and
   II-5 and the suite test carry the trigger.
 * **Frozen files "four certain":** six, with both AST fixtures in the table.
+
+## Review -- Claude Opus 5.5 (Security Review, fresh session) -- 2026-10-18
+
+**Model**: Claude Opus 5.5, a fresh session with no shared context; the same agent family as
+the author and the standard reviewer, so no cross-type distance. Probes ran in scratch
+installs outside this tree, with Python 3.13.13 and PyYAML 6.0.3 on macOS.
+
+```
+Reviewed commit: 440724b0f3983445301c431af4f378697841f940
+Target: Revision 1 (the binding contract), its Response and Security preflight S1-S5, and the engine, checker and stub code they cite, read at 059a823fb0d2975da490873f5c02152f46830422 (those paths unchanged since 440724b0)
+Prior findings: none at this tier; the standard review's four "For the Security Review" flags are answered below
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised (2 blocking, 6 non-blocking)
+**Verdict**: REVISE
+
+**The Security Review obligation is not cleared yet.** Two findings block, and both are
+small. The other six are owed to the plan, where its `required(Internal + Internal Security
+Review)` pass checks them.
+
+**In plain terms.** The change itself is safe to make. The notice prints fixed text, the new
+guard stops the write the author found, and the new comment rule fails safe where it
+matters. Two things block. First, a serious hole sits next door: the installer already
+writes outside your project through a planted `.gitignore` link, and I turned that into a
+program that runs whenever a terminal opens in the project (SEC-1). The table this change
+edits calls that write safe, and it is not. Second, the upgrade notice is checked before the
+upgrade adds the file, so it stays silent on exactly the kind of upgrade that gave `lhm` its
+stub (SEC-2).
+
+### Findings
+
+#### SEC-1 -- BLOCKING: the installer writes outside the project through a `.gitignore` link, and the inventory this change edits says it cannot
+
+**Plain:** if a project's `.gitignore` is a link to a file elsewhere, every install rewrites
+that other file. The fix is the same one-line guard this change gives the capture.
+
+* `seed_gitignore` (`bootstrap/_scaffold/install.py:203`) reads `target/.gitignore` and
+  writes it back with lines appended, with no guard. `SECURITY_MUTATIONS.md:73` lists it
+  under Class B, "contained by construction", because the path is fixed. A fixed path can be
+  a link, and that is the reasoning that led this change to guard the capture.
+* Exercised: in a scratch tree whose `.gitignore` linked to a file outside it, a
+  non-interactive collaborative-team install exited 0 and silently appended five lines to
+  the outside file.
+* How it arrives: git 2.53 clones and checks out a linked `.gitignore`, and warns only when
+  the link is committed. A third-party repository is therefore enough, and the
+  high-rigor-legacy preset exists to adopt Cairn into existing code.
+* How it escalates: the appended lines are relative paths, such as `dev/.cairn/handoff.lock`.
+  If the link points at a shell startup file (`../../.zshrc`), those lines become commands.
+  I tested this with a stand-in startup file in scratch. A shell started in the repository
+  ran an executable that the repository shipped at `dev/.cairn/handoff.lock`. I did not touch
+  a real startup file.
+* It runs on every install and every `--adopt-module`. It also runs inside `write_local_env`,
+  before that function's own guard (`install.py:401`, guard at `:403`).
+* This change did not cause it. But this change edits the same inventory, adds the same guard
+  to the capture, and already pays for a Maintainer-run AST ceremony. Fixing it here adds one
+  CHANGED symbol to that ceremony, instead of a whole second ceremony later.
+
+**Closes when** Revision 2 states one of two dispositions. **(a) Recommended: fold it in.**
+`seed_gitignore` calls `_assert_safe_write(gitignore, target)` before its read. It moves from
+Class B to Class A and into `_GUARDED_WRITE_FUNCS`. A test plants a linked `.gitignore` and
+asserts that the install refuses and that the outside file is byte-identical. Callers let the
+refusal propagate (fail closed). If (a) lands as written here, it needs no further security
+round. **(b) If the author declines,** the defect goes into Named residuals with this
+evidence, for the Maintainer to route. The plan must still correct `SECURITY_MUTATIONS.md:73`,
+because this change must not ship a containment claim that the probe falsifies.
+
+#### SEC-2 -- BLOCKING: the upgrade notice is checked before the upgrade adds the file, so it is silent on the upgrade that delivers the stub
+
+**Plain:** the kind of upgrade that put the stub in `lhm` would still say nothing.
+
+* Revision 1 places one call in `cmd_upgrade` "after the `--to` check (`upgrade.py:2429`)",
+  ahead of every branch. `--apply` runs later, at `upgrade.py:2473`.
+* Exercised: I made a scratch install, then removed the mapping and its lockfile record, the
+  shape of a tree from before the stub existed. `upgrade --plan` listed the mapping as "new
+  module file (added)". `--stage` left it absent on disk, and `--apply` created it. At the
+  proposed call site the file is absent on all three runs, so the helper returns `[]` each
+  time. The notice first appears on the upgrade after that.
+* The same placement also prints the notice above three refusals that come after it: the
+  required-token preflight (exit 2), the refusals inside `_apply_upgrade`, and the `--stage`
+  containment refusal. This is harmless, because the notice only reads and its text is
+  fixed. But it reads as part of a run that changed nothing.
+
+**Closes when** Revision 2 moves the `--apply` call to after a successful apply
+(`rc = _apply_upgrade(...)`, print the notice when `rc == 0`, return `rc`). It keeps a call for
+`--plan` and `--stage` after their reports, and adds the delivering apply to
+`TestNoticeOnEveryInstallPath`. `cmd_upgrade` is already counted as CHANGED, so the AST
+accounting does not move.
+
+#### SEC-3 -- non-blocking, owed to the plan: the capture checks once and writes only after the person has answered, and a hard link passes the check
+
+**Plain:** the gap between the check and the write is as long as a person takes to answer
+three prompts. The check also never looks for a hard link, which is a second name for an
+outside file.
+
+* Revision 1 §4 calls the guard once, before the prompts, and then writes with `write_text`,
+  which follows a link. `SAFETY.md:240-247` accepts "a small TOCTOU window" (the gap between
+  a check and a write) under "no concurrent filesystem attacker". This window lasts as long
+  as the prompts.
+* Exercised: I put a hard link at the mapping path, pointing at an outside file that held
+  `FILL ME`. `_assert_safe_write` passed it, and today's capture overwrote the outside file.
+  Git cannot carry a hard link, so this needs someone already on the machine, and the risk
+  stays low.
+* Fix: keep the early check, so that nobody answers questions only to be refused. Then write
+  the way `_commit_lock_and_caches` already does (`upgrade.py:1328`): run the guard again,
+  write a temporary file beside the mapping, guard that file too, and `os.replace` it over the
+  mapping. A replace swaps the file's name and never writes into the old file. That closes
+  the swapped link, the hard link and the half-written file together. S5 should name the
+  hard link.
+
+#### SEC-4 -- non-blocking, owed to the plan: exit 2 is right, but "like every other refusal" is not true, and the linked-folder test can pass for the wrong reason
+
+**Plain:** today some refusals end in a crash report, not a clean exit 2. A test that plants
+a linked `dev/.cairn` is also stopped by an earlier step before the capture ever runs.
+
+* `main` catches only two refusals: `cli.py:529` and `:569`. Exercised: with `dev/.cairn`
+  linked outside the tree, the install stopped in `write_local_env` (`install.py:403`) with a
+  traceback and exit 1, before the capture ran. So `SECURITY_MUTATIONS.md:12-13` ("caught
+  once at the CLI top level (exit 2)") is false today. Correct it in the same edit.
+* The capture's own exit 2 matches the two sites that exit cleanly, so keep it. Also keep its
+  message a constant, as Revision 1 writes it. Do not append `{exc}`: its "outside the target"
+  wording includes the resolved link target, which the tree chose.
+* `TestCaptureRefusesBeforeAskingAnything` must prove that the capture itself refused, not
+  just that something refused. Either assert the capture's own refusal line, or call
+  `capture_model_selection_mapping` directly with a prompt that fails the test if called. A
+  real-install fixture needs `local-env.json` and the activation log already in place behind
+  the link; otherwise an earlier write refuses first.
+* Only that behavioural test pins the order. `test_security_leaf` checks that the function
+  calls a guard somewhere, not where.
+* One asymmetry is acceptable, and should be stated. On a non-interactive install the capture
+  returns before its guard, so a linked mapping gives exit 0 and the "could not be read"
+  notice. An interactive install gives exit 2. Neither writes anything.
+* The standard review's flag about the quiet side is answered. A refused capture leaves the
+  installed files in place and no lockfile, and that is recoverable. Exercised: re-running
+  the install over such a tree exited 0 and wrote the lockfile.
+
+#### SEC-5 -- non-blocking, owed to the plan: the checker and the YAML reader disagree in more places than the residual names
+
+**Plain:** the bare checker reads lines, but YAML reads values, which can be spread across
+lines or spelled with escapes. Revision 1 names one case. Seven more get past the bare
+checker, and two get past both checkers.
+
+I wrote the Revision 1 §3 rule as code from its text and ran 16 cases through it, both bare
+and with PyYAML (exit codes):
+
+| Case | Bare | PyYAML | YAML reads |
+|---|---|---|---|
+| a `#` line inside a block scalar (the named case) | 0 | 1 | `x`, newline, `# FILL ME` |
+| a plain value folded over two lines | 0 | 1 | `FILL ME` |
+| a double- or single-quoted value folded over two lines | 0 | 1 | `FILL ME` |
+| a double-quoted line continuation | 0 | 1 | `FILL ME` |
+| `"FILL\x20ME"` and `"FILL ME"` | 0 | 1 | `FILL ME` |
+| a second, empty `mapping:` key | 0 | 1 | `[]` |
+| `!!binary RklMTCBNRQ==` | 0 | **0** | the bytes `FILL ME` |
+| `!!set {"FILL\x20ME"}` | 0 | **0** | a set holding `FILL ME` |
+
+The author's closures hold. Lines led by a tab, a no-break space or a form feed are scanned
+and fail, and a value hidden behind U+2028 is caught. The tab-led and no-break-space-led
+lines are YAML errors as well, so the checker and the reader agree there.
+
+Each case needs a deliberate spelling by someone who could edit the checker anyway, so none
+of them carries authority. But S4 says the quiet side is "only" the block-scalar case, and
+that is false.
+
+* Name the class in Named residuals, S4 and S5. On the bare path and in the engine, a value
+  whose `FILL ME` is not spelled out on one non-comment line reads as filled, and so does a
+  file with a repeated `mapping:` key.
+* With PyYAML, scan every value `safe_load` can return. That includes dict keys, set members,
+  and bytes read as text. "Every string" misses the last two.
+* Anchor the bare row check at the start of the line (`^ *(- +)?tier *:`), so that a `tier:`
+  inside some other value does not count as a row.
+
+#### SEC-6 -- non-blocking, owed to the plan: "never raises" is not "never blocks"
+
+**Plain:** a named pipe at the mapping path passes the guard and freezes any read of it. (A
+named pipe is a special file that makes a reader wait for a writer.) The notice could
+therefore hang an install or an `upgrade --plan`.
+
+* Exercised: `_assert_safe_write` passed a named pipe at the mapping path, and `read_text`
+  blocked until I killed it after 3 seconds. Git cannot carry a named pipe, so the risk is
+  low.
+* Fix: the helper checks the file type first (`lstat`). Anything other than a regular file
+  gets the "could not be read" variant and is never opened. The capture already returns
+  early on `not mapping.is_file()`; keep that check before the read.
+* The capture reads with a strict UTF-8 decode, and `main` catches only `KeyboardInterrupt`
+  around it. So an existing mapping that is not UTF-8 crashes an interactive install after the
+  module files are written but before the lockfile. Have the capture treat an undecodable file
+  as the helper does: leave the file alone, return, and let the notice say it could not be
+  read.
+
+#### SEC-7 -- non-blocking, owed to the plan: the parity test is the right instrument, but as specified it either fails or is fitted to a false claim
+
+**Plain:** two copies of one rule stay in step only on the inputs the test tries.
+
+* `TestEngineAndCheckerAgreeOnUnfilled` expects the PyYAML checker to differ "only on the
+  named multi-line cases". The single-line escapes in SEC-5 differ too. With them in the
+  corpus, the test fails as written. Without them, it passes over a corpus picked to agree.
+* Generate the corpus instead of writing it by hand. Combine every line lead (none, space,
+  tab, no-break space, form feed, byte-order mark) with every line break (the six named) and
+  every position (comment, value, row). Add a mutation to S2: drop U+2028 from one copy's
+  break set, and the parity test must go red.
+* One version gap no Cairn test can see: an adopter's checker is whatever version they last
+  upgraded to, while the engine is current. On `upgrade --plan` before `--apply`, a
+  hand-filled file is silent in the new engine but fails the old checker. Name this gap; the
+  next `--apply` updates the verbatim checker and closes it.
+
+#### SEC-8 -- non-blocking: reusing the write guard on a read is right here, and it fires a revisit note left in the code
+
+**Plain:** for a read, the reuse checks the right things except the kind of file. And a code
+comment says to reconsider exactly this reuse once a second reader appears.
+
+* For a read, the three checks are the ones that matter: a link at the file, a link in a
+  parent folder, and an escape from the target. A read through a swapped link can leak one
+  bit here, namely which of two fixed notices prints. I accept the reuse.
+* `lockfile.py:448-453` already reuses the guard on a read. Its comment says to revisit on "a
+  second read-side caller, or any divergence between what a read and a write must refuse".
+  This change adds two read-side callers, and SEC-6 is such a divergence. Revision 2 should
+  say the trigger fired and record the answer: keep the reuse, and add the regular-file check
+  at the call site. That answer belongs in the comment too. `lockfile.py` is on the "not
+  touched" list, so either allow a comment-only edit there, or leave the comment for its own
+  change.
+* Drift found while checking the inventory: `_write_stage` is in the Class A table
+  (`SECURITY_MUTATIONS.md:39`) but not in `_GUARDED_WRITE_FUNCS` (`test_security_leaf.py:30`).
+  So "Class A is the pinned regression surface" overstates the pinning. The plan already edits
+  both files, and adding the entry costs one line.
+
+### The checks asked for
+
+* **Containment guard.** It comes before any read, print or prompt, as written; only
+  `is_file()`, a status check, comes first. `_assert_safe_write` refuses both a linked
+  `dev/.cairn` and a linked file. A real install with a linked `dev/.cairn` is refused even
+  earlier (SEC-4). A path swapped between the check and the write is not covered, and a hard
+  link is not covered at all (SEC-3). Exit 2 matches the two sites that exit cleanly, not
+  every refusal (SEC-4). The files table adds the capture to `_GUARDED_WRITE_FUNCS` and to the
+  inventory table.
+* **Notice.** As specified, both variants are constants and never echo tree text. "Never
+  raises" holds by design, but "never blocks" needs SEC-6. The notice changes no exit code;
+  the capture's refusal does, and does so on purpose.
+* **Comment rule.** The author's closures hold. The surviving residual is a class of cases,
+  not a single case (SEC-5).
+* **Two copies of the predicate.** The parity test is necessary but, as specified, not
+  sufficient (SEC-7).
+* **Upgrade call site.** It prints before the refusals and is silent on the run that delivers
+  the stub (SEC-2). On a tree that is mid-upgrade it reads only the live file, never the
+  staging folder, which is harmless.
+* **`seed_gitignore`.** Fix it in this change (SEC-1).
+* **Vendor-neutrality.** Clean. The quoted notice, the seed and the II-5 block name no vendor
+  and no model, and the stub is unchanged. I ran the II-5 pattern plus three model-family
+  words over the quoted shipped text and got no matches; as a control, the proposal's author
+  line did match. Three shipped texts are described but not quoted yet: the "could not be
+  read" variant, the module-doc paragraph and the fourth allowed match. The plan's neutrality
+  gate covers them, and the fourth allowed match must describe the mapping without naming a
+  model.
+
+### What I did not do
+
+I ran no suite and no test node. The change is not implemented, so the SEC-5 numbers come
+from my own coding of §3, not from the author's prototype. Probes ran in scratch installs on
+macOS, and nothing in this tree was written except this section and its status line. I did
+not test Windows, YAML readers other than PyYAML, or a real shell startup file. I did not
+re-examine the standard review's findings beyond the four flags it handed to this pass.
+
+### What clears this
+
+A Revision 2 that closes SEC-1, with its disposition stated, and SEC-2. The next Security
+Review pass then reads only those two findings and the withdrawal ledger. SEC-3 to SEC-8 are
+carried into the plan, and its Internal Security Review checks them.
+
+Untracked path: `dev/.cairn/handoff.lock` -- the gitignored session lock (`.gitignore` line 8). SEC-1 cites it as a path inside a hostile repository, and no checkout carries it.
