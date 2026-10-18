@@ -1,7 +1,7 @@
 # Every install gets the review lenses and the scope-reduction trap
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-decision
 **Review**: required(Internal) — the recommended option touches no engine file, install-contract surface or trust root; options (a) and (c) below would make it `required(Internal + Security Review)`
 **Plan review**: required(Internal)
 **Opened**: 2026-10-18
@@ -382,3 +382,278 @@ Cairn's doctrine requires every plan review and code review to end in a coverage
 * My simulation moved today's module text word for word. The plan will carry the stance-rebased, possibly compressed text, which does not exist yet. RL1's frozen-file risk is a forecast from the stance proposal's description of its test, not a measurement.
 * The adopter rehearsals copied only tracked `dev/`, `AGENTS.md` and `CLAUDE.md`, so their "file missing" noise is mine. I ran `--plan` and `--stage` on the copies, never `--apply`, and changed nothing in either repository.
 * I did not draft or judge the `doctrine/dual-review.md` > "Adaptation" sentences, and did not test other interpreters.
+
+## Response -- Claude (author) -- 2026-10-18
+
+Answers the Internal review at `b16f4607` (REVISE; RL1 blocking, RL2 to RL7 non-blocking). I accept every
+recommendation, so no finding is dispositioned *reject*, and nothing here narrows the opened scope. I did not
+repeat the review's simulation (a word-for-word move in detached worktrees: manifest identical, 22 test files
+green, +86 lines, the LHM staging). I did re-open the citations the findings lean on, and they hold: the stance
+proposal at `:422-424`, `:1035`, `:1068`, `:1277`; `doctrine/plans.md:918-930`; module lines `136-144`;
+`templates/core/AGENTS.md:272`; `scripts/check_cairn.py:532`; the two precedent plans, which do drain three and
+two accepted proposals into one plan.
+
+* **RL1, accept.** The review-stance proposal was **accepted at `58f30d6c`**, not "awaiting Decision". My
+  "Sequencing" sentence was stale and its "if rejected" branch is withdrawn. I agree one plan is the better
+  order, for three reasons: the wording is written once instead of rewritten in the module and then moved; the
+  stance plan's new test is written against the final homes, so my "no frozen file edited" stays true
+  instead of resting on a test not yet written; and there is one plan review and one code review. The cost is
+  real and goes in front of you as **Question 5**: that plan cannot open until this proposal is decided, and the
+  combined plan is bigger. The fall-back order stays written for a "no". The `AGENTS.md` pointer is rebased to
+  the accepted stance text (the lenses are where the evidence for the three answers comes from).
+* **RL2, accept, and I pick the doctrine's shape.** One ledger ships: surfaces probed; a negative or edge-case
+  attempt; verification; residual risk; and mutation when a claim names a set. Why that one and not the
+  module's four items: the doctrine is the canonical source and the module is the derived subset; the
+  mutation rule already ships in every `AGENTS.md` (`:272`), so a ledger without it would be a third
+  definition; and the module's "failure modes tested" is covered by the negative-attempt item. The module's
+  one good sentence stays (a reviewer who tried to break it and could not has cleared the gate; one who only
+  read it has not). `doctrine/plans.md:918` points at a heading, "Review Expectations", that exists in neither
+  copy of `dev/agent_collaboration.md`; the plan retargets it to "The review sweep". **Plan work only: this
+  commit edits no doctrine.** That paragraph is already struck by the stance plan ("or a confirming second
+  different-agent-type pass"), so it is one edit in one place.
+* **RL3, accept.** I said 60 lines; the review measured +86 word for word. Corrected to 85 to 95, and the
+  signal is recast on what it guards, doctrine reasoning leaking into installed text.
+* **RL4, accept.** My advice would have left LHM with two ledgers and two clean-pass statements. Reworded
+  below; the signal now counts duplicate definitions; the sweep gains one sentence inviting project-specific
+  probes after the nine. Body text, not a slot: a new slot adds an unfilled-slot finding to every install.
+* **RL5, accept.** The "binds non-trivial changes only" sentence was in my signals and in none of the shipped
+  text. It moves into the sweep and the new test pins it.
+* **RL6, accept.** The negative assertion now covers the roster, the citation rule and the ledger labels, and
+  the mutant "restore the ledger in the module copy" is added. The body-coverage count stays 8 under a move; I
+  now call it a regression check, not evidence of arrival.
+* **RL7, accept.** Thinning the module breaks two line-bound citations in the stance proposal's Security
+  Review (`:1277`). That record is append-only, so the plan treats the two `check_cairn.py` flags as expected
+  until that proposal archives (the checker skips archives), and thins the module in its last chunk.
+
+**Does the revision widen scope?** No second round is owed. Revision 1 adds a single-shape ledger, a scope
+sentence, a project-probes sentence, one doctrine pointer fix and test assertions. Each is a reviewer
+recommendation the review read, none is an outcome the review could not have seen, and nothing in the opening
+is dropped. So **Status goes to `awaiting-decision`.** If a reader sees a widening, the fix is a second pass.
+
+## Revision 1 -- Claude (author) -- 2026-10-18
+
+The complete current contract. It supersedes the opening *Proposal*, *Sequencing and upgrade*, *Rationale*,
+*Alternatives*, *Documentation / doctrine surface*, *Evidence*, *Signals*, *Scope delta* and *Assurance path* in
+full. *Origin* and *Context* stand as opened. **Declarations**: **Review**: required(Internal), done at
+`b16f4607`. **Plan review**: required(Internal + Internal Security Review) for the combined plan (the stance
+proposal's declaration binds it; this work adds no security surface and is covered by the stronger one); if
+Question 5 is "no", required(Internal). **Assurance path**: high-assurance. **Boundary B**: `full` in the combined
+plan, since the stance plan touches contract surfaces; `bounded` is expected only if this runs alone.
+
+### In plain terms
+
+Half of what you asked for is already done: a solo install carries the scope-reduction trap, pinned by a test on
+16 surfaces. What it lacks is the nine lenses (the fixed list of categories a reviewer works through), the rule
+that each lens **cites what backs it** (a bare "checked" is an incomplete review), the **coverage line** that
+ends a review (what was covered, what was not), and the ledger a clean code review must show. Cairn's doctrine
+already tells every plan and code review to end with that coverage line, so a solo team is asked for something it
+was never given. The fix is text in the review-loop document every install receives, beside the trap, plus a
+seven-line pointer in `AGENTS.md`. No new module, no change to who gets which module, no engine, install-list or
+published-manifest change.
+
+**What the review changed.** Build this in one plan with the review-stance change (Question 5). Ship one ledger,
+not two. The added text is about 90 lines, not 60. LHM keeps its domain probes and drops its duplicate ledger.
+
+### Questions for the Maintainer
+
+Each has my default. An unanswered question takes it.
+
+1. **Put the falsification ledger in the same move, as one definition?** It is the checklist a clean code review
+   must show: surfaces probed, a negative or edge-case attempt, verification, residual risk, and mutation when a
+   claim names a set. `AGENTS.md` already uses the term; only the module defines it, and Cairn has two versions.
+   About 14 lines. *Default: yes, using the doctrine's version.*
+2. **Where does the full text live?** The review-loop document, with a seven-line pointer in `AGENTS.md`, which you
+   asked to keep lean. *Default: that.*
+3. **Add a coverage-line stanza to the proposal and plan review scaffolds?** *Default: no.* The line is defined
+   once in the review-loop document; the scaffolds can cite it later.
+4. **Run the real upgrade on LHM and modflow_tools?** *Default: no.* The plan rehearses on scratch copies. LHM's own
+   `AGENTS.md` makes its review-loop document Maintainer-gated, so the merge there is yours.
+5. **Build this and the review-stance change in one plan?** That change was accepted today and has no plan yet.
+   One plan means the lens wording is written once, in its final place, and reviewed once, and a new test cannot be
+   written against wording this change then moves (which would mean editing a pinned test file and a re-anchor).
+   The costs: that plan cannot open until you decide this proposal, and it gets bigger. *Default: yes.* Say no and
+   the review-stance plan goes first; this one follows.
+
+### Proposal
+
+Proposed paths:
+* `bootstrap/tests/test_review_sweep_ships.py` — the new test
+
+1. **"The review sweep" joins `templates/core/dev/agent_collaboration.md`**, before the trap paragraph so "the
+   mirror" has its referent. Body text, not a slot. Contents: the clean-pass statement; the nine lenses as the
+   generic, change-agnostic roster, written as **where the evidence for a review's three answers comes from**
+   (the accepted stance wording), not a second checklist; the **scope sentence** (the sweep applies to the reviews
+   the lifecycle calls for; a trivial change with no review owes none); the citation rule; the two-part coverage
+   line, which does not end in a recommendation for more review; "a floor, never a downgrade of a declared tier";
+   one sentence inviting project-specific probes after the nine; and the ledger in the doctrine's shape. About 85
+   to 95 lines (the review measured +86 word for word); the document goes from 152 to about 240.
+2. **`AGENTS.md` gains a pointer** in "Review", about 7 lines. Draft wording, to be fitted to the stance's
+   "Review" text in the same plan; the test pins the obligations, not the sentences:
+
+   > **Every review shows its evidence.** The three answers a review owes rest on the nine standing lenses in
+   > `dev/agent_collaboration.md` > "The review sweep". A lens a review cites names the file, test, line or
+   > command that backs it (a bare "checked" is an incomplete review), and the coverage line that ends the
+   > review says what the pass did not cover. A reviewer who recommends narrowing the work states what is
+   > lost and why the narrower change still reaches the cause; only the Maintainer concedes a loss.
+3. **The module keeps what is about multi-type teams.** `templates/modules/team-gated/dual-review.md` drops the
+   roster, the citation rule and the ledger for a two-line pointer (152 to about 84 lines). Its trap and
+   outcome-test paragraphs **and the "scope-cut means claim correction" clause** stay: the frozen
+   `test_scope_reduction_trap.py` pins that clause, and the review's mutant (delete it) fails exactly that node.
+   Id, gate and install path do not change. The plan thins the module in its **last chunk**.
+4. **Cairn's own copies follow**: `AGENTS.md`, `dev/agent_collaboration.md`, `dev/modules/dual-review.md`.
+5. **Doctrine, as plan work.** `doctrine/dual-review.md` > "Adaptation" gets two sentences (the sweep and the trap
+   are no longer team-gated). `doctrine/plans.md:918` is retargeted from "Review Expectations" to "The review
+   sweep". No rule changes, only where it ships and a pointer that now resolves. `doctrine/plans.md` is already in
+   the stance plan's doctrine list, so the combined plan gains no file.
+6. **One new test**, `test_review_sweep_ships.py`. *Positive*: install `solo-greenfield` through the real CLI and
+   assert the installed loop document carries all nine lens labels, the scope sentence, the citation rule, both
+   coverage-line halves and the ledger's five labels, and the installed `AGENTS.md` the pointer; the same over the
+   four source surfaces. *Negative*: the module carries none of the lens labels, the citation rule or the ledger
+   labels.
+
+**Not in this proposal**: the engine; profiles and presets; `bootstrap/BOOTSTRAP.md`; the proposal and plan
+templates (Question 3); `README.md` and `docs/`; retiring the module's duplicate trap paragraphs and their pins
+(the plan deposits one board row at its archive).
+
+### Order of work and upgrade
+
+**One plan, two source proposals** (Question 5, default yes). The plan opens when this proposal is decided,
+keeping the rebase conditions the stance proposal already names. **If "no"**: the stance plan runs first and this
+one follows on its text. Then, if the stance test pins module wording that item 3 moves, and the Maintainer's
+re-anchor has already frozen that test, editing it adds one entry to the next re-anchor batch. The plan states
+which case it is in.
+
+**Expected checker flags.** Thinning the module breaks two line-bound citations in the stance proposal's Security
+Review (`dev/proposals/2026-10-18-claude-external-is-a-maintainer-stance.md:1277`, citing module lines 132-133 and
+131-132). `check_cairn.py` will report both until that proposal archives, since it skips archives. They are
+expected; the plan records them and does not edit the append-only record.
+
+**Reaching installed trees** is the three-way merge on `upgrade --stage` then `--apply` (`bootstrap/UPGRADE.md`).
+modflow_tools merges clean. For LHM the review's rehearsal shows the sweep and ledger arriving **above** the
+existing conflict with no markers of their own; the conflict is LHM's own clean-pass list, ledger, briefs and
+restricted-verification text against nothing upstream. So the advice is: take the core sweep, **keep LHM's domain
+probes** (units and coordinate systems, HDF5 quantization, the MATLAB and MODFLOW boundaries), which now have a home
+in the project-probes sentence, and **drop LHM's duplicate ledger and clean-pass statement**. A tree with no
+lockfile gets a by-hand diff (`--init-lock`). A tree that never runs `upgrade` gets nothing. A slot would freeze
+the roster at its first paste, which is why this is body text.
+
+### Rationale
+
+The outcome is that an agent in any install reads the lenses when it reviews. Agents are sent to `AGENTS.md` and
+the review-loop document; the adopter evidence (5 hits in the module, 0 in each of the other two, in both trees)
+shows nobody carries a module's text there. So the question is only the cheapest carrier. The *AST baseline* is the
+committed fingerprint of the engine's top-level definitions; a symbol outside the four allowlisted ones needs a
+Maintainer-run correction.
+
+| Option | Engine and AST baseline | Install set, manifest, lockfile | Reaches an installed tree? |
+|---|---|---|---|
+| **(b) core text** (recommended) | none | none; `--manifest` byte-identical (measured by the review) | yes, three-way merge |
+| (a1) `dual-review` default-on, in place | `_DEFAULT_ON_MODULES`, `_TEAM_STAFFING_GATES`, `_TEAM_STAFFING_GATED` (`bootstrap/_scaffold/config.py:82`, `:1325`, `:1334`) outside `_UPDATE_ALLOWLIST` (`bootstrap/tests/_ast_attest.py:143`); `bootstrap/_scaffold/upgrade.py:1087` would make `init-lock` infer a multi-type team everywhere | +1 file per install; frozen `test_presets.py` and `test_onboarding_seed_roster.py` assert a team without two agent types gets none | no: opt-in, and a manual paste |
+| (a2) file moved to `default-on/` | as (a1), plus `_MODULE_MAPPINGS` | as (a1), plus the manifest source column; both adopters' locks name the old path | no |
+| (c) new default-on module | `_MODULE_MAPPINGS` (allowlisted), `_DEFAULT_ON_MODULES` (not) | new id, new manifest rows | no: opt-in; a slot never updates |
+| (b') one new core file | `_CORE_MAPPINGS` (allowlisted) | +1 manifest row | yes, auto-added |
+
+**Why (b).** It delivers the outcome in the files agents read, travels by the path core text already takes, and
+leaves the install contract alone; the review checked the engine citations and found no cheaper carrier. (b') only
+spares LHM a merge it already has, and costs a published-manifest row and splits one subject across two files. The
+module stays: its id is install contract, and thinning it further is a follow-on.
+
+### Alternatives considered
+
+* **(a1), (a2), (c), (b')**: above.
+* **Do the stance plan first, then this one** (my opening order). Lost to RL1: it writes the same text twice and
+  risks editing a pinned test; it is the fall-back for Question 5.
+* **Keep the module's four-item ledger.** Lost: it is the older shape and lacks the mutation line `AGENTS.md`
+  already requires.
+* **Point solo teams at the doctrine, or put the full text in `AGENTS.md`.** Lost: `doctrine/` is not installed;
+  about 90 lines do not belong in the file you asked to keep lean.
+* **Do nothing.** A solo team keeps being asked for a coverage line it was never shown.
+
+### Documentation / doctrine surface
+
+Routed by `docs/DOCUMENTATION_PLAN.md`: prescription goes to the governing layer. **Edited**: the six prose files
+of item 1 to 4 (`templates/core/AGENTS.md`, `AGENTS.md`, `templates/core/dev/agent_collaboration.md`,
+`dev/agent_collaboration.md`, `templates/modules/team-gated/dual-review.md`, `dev/modules/dual-review.md`) and, as
+plan work, `doctrine/dual-review.md` and `doctrine/plans.md`. **New**: the test. **Untouched**: every
+`bootstrap/_scaffold/` file (**no AST impact**), `bootstrap/tests/fixtures/gate_manifest.json`,
+`scaffold_ast_baseline.json`, the profiles, the proposal and plan templates, `README.md`, `docs/`. **Frozen files**
+(pinned by hash in `gate_manifest.json` > `frozen_files`): this work edits none, **in the one-plan order**, because
+the stance test is written against the final homes. In the fall-back order that holds only if the stance test pins no
+module wording this moves (Order of work). Seven frozen files exercise these surfaces and must stay green unedited:
+`test_scope_reduction_trap.py`, `test_presets.py`, `test_onboarding_seed_roster.py`, `test_scaffold.py`,
+`test_profiles_smoke.py`, `test_loop_fidelity_gate.py`, `test_verification_boundaries.py`. The new test joins your next
+re-anchor batch and must be final before it.
+
+### Evidence / verification plan
+
+Falsifiers: a fresh `solo-greenfield` install lacking a lens label, the scope sentence, the citation rule, either
+coverage-line half, a ledger label or the `AGENTS.md` pointer; the module carrying any of them; or
+`scaffold.py --manifest` differing before and after.
+
+#### Tests required
+
+* **New**: `test_review_sweep_ships.py` (above), through the real install path, with literal patterns that are not
+  derived from the files they check.
+* **Mapped, unedited**: the review found 22 test files that read these files and ran them on a simulated change
+  (625 passed): the plan maps those, led by `test_scope_reduction_trap.py`, `test_verification_boundaries.py`
+  (forbids Cairn-only tokens in the adopter `AGENTS.md`, so the pointer names no `bootstrap/tests` path),
+  `test_review_and_verification_rules_ship.py`, `test_loop_fidelity_gate.py`, `test_scaffold.py`,
+  `test_profiles_smoke.py`, `test_presets.py` and `test_onboarding_seed_roster.py`.
+* **Mutations, each beside an unmutated control**, each of which must turn the new test red: delete lens 4; delete
+  the "Not covered" half; delete the scope sentence; restore the roster, then the citation rule, then the ledger,
+  in the module copy.
+
+#### Examples / smoke checks
+
+`claim_check.py` and `check_cairn.py` over every changed file (two expected flags, above);
+`quality_gate.py --sub neutrality` (pre-existing failures under `templates/skills/` before and after, none new);
+`scaffold.py --manifest` diffed before and after; the control grep rerun on a fresh solo install; and the
+Question 4 rehearsal on scratch copies of both adopters, checking each staged merge for a duplicate roster, ledger or
+clean-pass statement. `check_module_body_coverage.py` stays at 8 missing topics under a move: a regression check, not
+evidence the text arrived; the new test and the install grep are the evidence.
+
+##### Security preflight
+
+N/A: no trust boundary added, moved, or widened. Prose, and one test that reads tracked files.
+
+### Signals the change is wrong
+
+* A staged merge for either adopter holds **two definitions of the roster, the ledger or the clean pass**, or a file
+  that merges clean today conflicts outside the review-loop region.
+* The added text restates the staged evidence bar, the ritual signal or don't-telegraph-the-lens: the doctrine's
+  reasoning is leaking into installed text.
+* Coverage lines converge on "all lenses swept, clean" across trivial and complex changes (the ritual signal in
+  `doctrine/dual-review.md`). Log it in the incident tracker.
+* A solo team runs the sweep on trivial changes: the scope sentence is not doing its job.
+
+### Scope delta
+
+**Scope delta**: preserved. The baseline is your two items. The trap already reaches every install and stays
+pinned; the lenses, citation rule and coverage line reach every install through this change. The ledger, the scope
+and project-probes sentences, the doctrine pointer fix and the extra test assertions are additions, so declining any
+is not a reduction.
+
+### Assurance path
+
+**Assurance path**: high-assurance, unchanged. The trigger is governing text: this edits `doctrine/` and the
+`AGENTS.md` every adopter receives. It is **not** the engine, the install contract, a trust root or anything an adopter
+executes. In the combined plan the stance proposal's Security Review obligations apply to the whole plan. If you
+choose (a) or (c), the engine is touched and a revision makes this `required(Internal + Security Review)`.
+
+### Withdrawn / superseded commitments
+
+* "Waits for the review-stance plan; its plan opens when that plan has archived": superseded by one plan (Question 5),
+  kept as the fall-back.
+* "Revision 1, awaiting Decision" for the stance proposal, and "if that proposal is rejected, this one moves today's
+  text": withdrawn; it was accepted at `58f30d6c`.
+* "Frozen files: none edited" stated unconditionally: made conditional on the order (Documentation surface).
+* The module's four-item ledger as the shape to ship: superseded by the doctrine's five items.
+* "About 60 lines; 152 to about 212": superseded by 85 to 95 lines, 152 to about 240.
+* The signal "the plan's added text passes about 80 lines": recast on doctrine reasoning leaking into installed text.
+* The signal "two rosters": widened to two definitions of the roster, the ledger or the clean pass.
+* "Keep theirs, fold in the roster, or adopt the core text" (LHM): superseded by keep LHM's domain probes, drop its
+  duplicate ledger and clean-pass statement.
+* The claim that a solo team "binds non-trivial changes only" as a signal: now a sentence in the shipped sweep.
+* `**Plan review**: required(Internal)` and "Boundary B expected `bounded`": superseded by the combined plan's
+  declarations; both stand only if Question 5 is "no".
+* The `AGENTS.md` pointer "It works the nine standing lenses": rebased to the accepted stance wording.
