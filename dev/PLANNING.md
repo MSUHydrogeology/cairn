@@ -257,6 +257,32 @@ with the plan's filename stem.
   > "Accept A, B, C and D as revised, with every recommended answer, including
   > B’s scope cut and D’s scope delta."
 
+  **Joined 2026-10-18** at the opening of
+  `plans/review-stance-and-lenses.md` — **planned, not yet changed**: derive the
+  changed set from the manifest's `frozen_files` keys at ceremony time. That
+  plan **deletes** one frozen file,
+  `bootstrap/tests/test_onboarding_review_tiers.py` (5 pinned nodes, in its
+  chunk C7). The verifier reports it as `FROZEN-MISSING` plus five
+  `COLLECTION-DROPPED`, while `test_gate_manifest.py` stays green, so nothing in
+  the suite says a re-anchor is owed. That plan also adds two test files,
+  test_review_stance_in_shipped_files.py and test_review_sweep_ships.py, which
+  become frozen when the ceremony re-globs `bootstrap/tests/**/*.py`, and
+  rewords `test_review_and_verification_rules_ship.py`, unpinned today, which
+  freezes at the same moment. **All three must be final first.** The plan's last
+  test-changing chunk is C7, and its chunk M waits for code review to clear and
+  for every `revising-code` commit to land. If the ceremony runs before C7, that
+  plan owes its own re-anchor. The node IDs of the new files are listed in its
+  *Implementation verification* record. No `bootstrap/_scaffold/` symbol
+  changes. Authorization for joining this batch is the Decision accepting the
+  review-stance proposal, quoted verbatim:
+
+  > "accept both as descried"
+
+  and the Decision accepting the review-lenses proposal, which builds the two as
+  one plan and adds the second test:
+
+  > "I accept all five of your recommendations. Accept as recommended"
+
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
 * **F8 — the post-install report asks for work the profile does not make
