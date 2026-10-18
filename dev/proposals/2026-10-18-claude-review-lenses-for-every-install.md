@@ -1,7 +1,7 @@
 # Every install gets the review lenses and the scope-reduction trap
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(Internal) — the recommended option touches no engine file, install-contract surface or trust root; options (a) and (c) below would make it `required(Internal + Security Review)`
 **Plan review**: required(Internal)
 **Opened**: 2026-10-18
@@ -259,3 +259,126 @@ every adopter receives. It is **not** the engine, the install contract, a trust 
 executes. A Security Review is not declared, because none of `AGENTS.md`'s high-risk surfaces is touched; if
 you choose (a) or (c) the engine is, and the header becomes `required(Internal + Security Review)` in a
 revision.
+
+## Review -- Claude Opus 5.5 (Internal) -- 2026-10-18
+
+**Model**: Claude Opus 5.5, a fresh session with no shared context, of the same agent family as the author; no cross-type distance. An Internal pass, taking the stance the Maintainer's accepted review-stance Decision sets for proposal review: should this exist, and is there a better design.
+
+```
+Reviewed commit: 2e7f41dfd054f93449cff0afa719c04f491e68e6
+Target: the whole proposal, In plain terms through Assurance path; every figure measured in detached worktrees of that commit; LHM and modflow_tools read only
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Internal
+**Findings**: raised (1 blocking, 6 non-blocking)
+**Verdict**: REVISE
+
+### Verdict in brief
+
+**This should exist, and option (b) is the right carrier.** I tested the "no contract effect" claim by applying a word-for-word version of the change to a scratch copy. The published install manifest came out byte-identical, no frozen file changed, and the 22 test files that read these files stayed green. The trap does already ship to a solo install; the lenses, the citation rule and the coverage line do not. modflow_tools takes the change with no hand-merge. LHM's conflict is the one it has today.
+
+One thing needs an answer before a Decision (RL1): **the order of work.** The review-stance plan, which this one waits for, adds a test that reads the `dual-review` module and is frozen at the next re-anchor. If that test pins any wording this proposal moves out of the module, "no frozen file edited" is false and you owe a re-anchor. The strongest design the proposal did not weigh avoids that and saves a whole plan cycle: **implement both accepted proposals in one plan**, writing the lens text once, in its final home. Cairn has done this twice before.
+
+RL2 to RL7 sharpen the text the plan will write: one ledger shape, not two; a realistic size; LHM's hand-merge advice; two test gaps; one checker side effect.
+
+### Steelman
+
+Cairn's doctrine requires every plan review and code review to end in a coverage line built from "review-sweep lenses swept", and the shipped review-loop document refers to a clean pass it never states. A solo team is held to a rule it was never shown. The proposal puts the missing text in the one document every install has and reviewers already use, adds six lines to `AGENTS.md` to send them there, and leaves the engine, the install list and the published manifest alone. It found the one trap in its own move (the `scope-cut` clause the module test pins), and it rejects slots for the right reason: a slot body belongs to the adopter and never updates. The adopter evidence (in both science repositories the lens text sits unread in `dev/modules/`) shows why the module could not be the carrier.
+
+### Foundations
+
+* **Should this exist? Yes.** You asked for it ("Everyone should get them", recorded in the Decision at `58f30d6c`). The shipped text already points at what it never defines: `templates/core/dev/agent_collaboration.md:74` (the clean pass) and `templates/core/AGENTS.md:256` (the falsification ledger), against `doctrine/plans.md:732` and `:932`. A fresh `solo-greenfield` install at `2e7f41df` contains none of `Name the satisfier`, `Silent failure`, `Cross-document consistency`, `Falsifiable coverage` or `coverage line`; the same patterns all match the module (the control). The payoff today is LHM and modflow_tools, whose agents never read the module file; future installs get it from day one.
+* **Is there a better design? For the carrier, no; for the order of work, yes.** (b) is the least contract change that reaches installed trees. I checked the engine citations in the options table (`bootstrap/_scaffold/config.py:82`, `:1325`, `:1334`; `bootstrap/tests/_ast_attest.py:143`; `bootstrap/_scaffold/upgrade.py:1087`) and found no cheaper carrier the author missed. The better order is RL1: one plan for both proposals.
+
+### Findings
+
+#### RL1 -- BLOCKING: waiting for the review-stance plan carries a frozen-file risk, and one plan is the cheaper order
+
+**Plain:** the plan this one waits for will add a test that reads the module this one thins, and that test will be frozen before this plan runs. Doing both changes in one plan avoids the clash and writes the lens text once.
+
+* The stance proposal's accepted text adds a test, `test_review_stance_in_shipped_files`, that "reads both `AGENTS.md` copies, the two templates, the `dual-review` module and the onboarding presets" (`dev/proposals/2026-10-18-claude-external-is-a-maintainer-stance.md:422-424`). Its gate-manifest row says the re-anchor re-globs the tests, so that test becomes frozen (`:1068`). The same proposal says "the module keeps the lenses, the trap, the ledger" (`:1035`). A test written to that sentence can pin module wording that item 3 here deletes. Item 3 would then edit a frozen file and owe a Maintainer-only re-anchor. The claim "Frozen files: none edited" is true today (measured below), but it is stated unconditionally about a test not yet written.
+* This order does not avoid writing the text twice. The stance plan rewrites the module's lens and ledger paragraphs, then this plan moves them. Either order writes twice; one plan writes once.
+* Precedent: `dev/plans/archive/comprehension-outlives-the-artifact.md` drains three accepted proposals into one plan "by Maintainer direction"; `dev/plans/archive/convergent-lifecycle.md` drains two.
+* Stale text: "Sequencing and upgrade" calls the stance proposal "Revision 1, awaiting Decision" and plans for its rejection. It was accepted at `58f30d6c`, the commit this proposal's own Context installs from.
+* The `AGENTS.md` pointer is quoted as final ("It works the nine standing lenses"), but the accepted stance text makes the lenses "where the evidence comes from, not a second checklist" (`:953-955`). The pointer needs the same rebase as the rest.
+
+**Recommend:** add **Question 5: implement this through the review-stance plan, one plan with two source proposals? Default: yes.** The lens, citation, coverage-line and ledger text is then written once, in the core review-loop document, in the stance plan's wording; the stance test pins it there rather than in the module; and there is one plan review and one code review instead of two. If the answer is no, keep this order but write the contingency into "Documentation / doctrine surface": if the stance test pins module text that item 3 moves, this plan edits that test and adds one entry to the re-anchor batch. Either way, fix the stale sentence and mark the pointer wording as rebased.
+
+#### RL2 -- non-blocking: Cairn defines the ledger twice, and the proposal would ship the older shape
+
+**Plain:** "falsification ledger" has two definitions in Cairn with different items. The one that would ship lacks the mutation line that every installed `AGENTS.md` already asks for.
+
+* The module's shape, which item 1 moves: probed edge cases, failure modes tested, verification run, residual risks (`templates/modules/team-gated/dual-review.md:136-144`).
+* The doctrine's shape: surfaces probed, a negative or edge-case attempt, verification, residual risk, and **mutation** when a claim names a set (`doctrine/plans.md:923-930`). The mutation-ledger rule already ships in `templates/core/AGENTS.md:272`.
+* `doctrine/plans.md:918` points readers at `dev/agent_collaboration.md` > "Review Expectations", a heading in neither copy of that file. This change creates the heading that pointer needs.
+
+**Recommend:** ship one shape: the doctrine's, or the module's four items plus the mutation line. Have the new test pin its labels. Retarget `doctrine/plans.md:918` to "The review sweep" in the same edit; that adds one doctrine file, as a pointer fix, not a rule change.
+
+#### RL3 -- non-blocking: "about 60 lines" measures at about 85, and the proposal's own signal fires at about 80
+
+* I moved the module text word for word into a scratch copy (lenses, the `scope-cut` clause, the citation rule, a three-line coverage line, the floor sentence, the ledger). `templates/core/dev/agent_collaboration.md` went from 152 to 238 lines (+86); the module went from 152 to 84.
+* Getting to 60 means compressing, and compressed text is new wording that should be reviewed as new, not as a move. A line count is also a weak proxy for what the signal guards: the doctrine's deeper reasoning leaking into installed text.
+
+**Recommend:** say 75 to 90 lines, and recast the signal as "the added text restates the staged evidence bar, the ritual signal, or don't-telegraph-the-lens".
+
+#### RL4 -- non-blocking: for LHM, the suggested hand merge leaves two ledgers and two clean-pass statements
+
+**Plain:** in LHM the new text merges in automatically above the conflict, so keeping LHM's side of the conflict keeps a duplicate.
+
+* Read-only rehearsal on a scratch copy of LHM's tracked `dev/`, `AGENTS.md` and `CLAUDE.md`, with the simulated change: `upgrade --stage` places the sweep (lenses, citation rule, ledger) with no conflict at lines 163-248 of the staged review-loop file. The conflict is lines 272-391: LHM's own clean-pass list (five standing checks), its ledger, briefs and restricted-verification text, against nothing upstream. That is the 118-line conflict the proposal reports.
+* Keeping LHM's side (the first option the proposal offers) leaves two ledger definitions and two clean-pass statements. The signal the proposal names, "two rosters", does not fire, because LHM's five checks are not the nine lenses.
+
+**Recommend:** reword the advice: the core sweep and ledger arrive above the conflict; keep LHM's domain probes (units and coordinate systems, HDF5 quantization, the MATLAB and MODFLOW boundaries) and drop its duplicate ledger. Widen the signal to "two definitions of the roster, the ledger or the clean pass". Add one sentence to the sweep inviting project-specific probes after the nine, so a list like LHM's has a home. Keep it body text, not a slot: a new slot adds an unfilled-slot finding to every install.
+
+#### RL5 -- non-blocking: a signal relies on a sentence the shipped text does not carry
+
+* "Signals" says a solo team will not find the sweep heavy because "it binds non-trivial changes only; a trivial change is made and says so in the commit". None of the six pieces item 1 lists says so, and the module text it moves reads "a fixed, change-agnostic roster every reviewer works through", with no scope.
+
+**Recommend:** put the scope sentence in the sweep (it applies to the reviews the lifecycle calls for; a trivial change with no review owes none) and have the new test pin it.
+
+#### RL6 -- non-blocking: the new test stops the roster returning to the module, not the citation rule or the ledger
+
+* Item 6 asserts "the module does not restate the roster". The citation rule and the ledger move too, and nothing else would catch them drifting back: `scripts/quality_gate.py --sub redundancy` compares only `doctrine/`, `dimensions/`, `on-ramp/` and `docs/` (`scripts/quality_gate.py:498`), so it cannot see one template repeating another.
+* The body-coverage criterion "must not exceed 8" stays at 8 under a word-for-word move (measured before and after). It works as a regression check; it is not evidence the text arrived.
+
+**Recommend:** extend the negative assertion to the citation rule and the ledger labels, and add the mutant "restore the ledger in the module copy" to the three listed.
+
+#### RL7 -- non-blocking: thinning the module breaks two line citations in the stance proposal
+
+* Measured: with the module thinned, `python scripts/check_cairn.py` goes from clean to 2 issues, both line-bounds citations in the stance proposal's Security Review (`dev/proposals/2026-10-18-claude-external-is-a-maintainer-stance.md:1277`, citing lines 132-133 and 131-132 of the two module copies, which would be 84 and 83 lines long). That record is append-only.
+* `check_cairn.py` skips archived records unless asked (`scripts/check_cairn.py:532`), so under the proposal's order the flags never appear. That is a second, unstated reason for the order.
+
+**Recommend:** name this effect in "Sequencing and upgrade". Under RL1's one plan, thin the module in the last chunk and record the two flags as expected until the stance proposal archives.
+
+### Measured: the contract claims
+
+* **Frozen files.** None of the six edited prose files, nor `doctrine/dual-review.md`, is in `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files`; the same search finds `bootstrap/tests/test_scope_reduction_trap.py` (control). Static `python bootstrap/tests/_gate_manifest.py verify --no-collect` on the simulated change reports 50 holds: 25 frozen files already drifted and queued for the re-anchor, none of them touched here.
+* **Collection.** No pinned test ID is built from these files' contents. A dropped ID would hold and an added one is allowed (`bootstrap/tests/_gate_manifest.py:672-686`).
+* **`scaffold.py --manifest`**: byte-identical before and after. It lists destination, source and mode, no content hash.
+* **AST baseline**: engine symbols only; no template path or text appears in `scaffold_ast_baseline.json` or `scaffold_ast_known_new.json`.
+* **Fidelity manifest** (`bootstrap/fidelity-check.md`): names `dev/agent_collaboration.md` as a kernel file and `dual-review` as a module; nothing pins their text.
+* **Tests that read these files**, found by searching `bootstrap/tests`, `scripts`, `tools` and the engine for each path, then run on the simulated change under Python 3.13: 22 files (the proposal's eight mapped files and `test_comprehension_floor.py`, `test_documentation_plan_module.py`, `test_quickstart_sequence.py`, `test_cairn_prefix_links.py`, `test_check_cairn_content.py`, `test_quality_gate_neutrality.py`, `test_onboarding_review_tiers.py`, `test_manifest.py`, `test_module_roster.py`, `test_module_merge.py`, `test_merge_module.py`, `test_upgrade.py`, `test_lockfile_module.py`, `test_verify_integrity.py`), 625 passed. Unmutated control for the first 14 files: 395 passed before, 395 after. One mutant: deleting the `scope-cut` clause from the thinned module fails exactly that node of `test_scope_reduction_trap.py` (killed), so the proposal's note to keep the clause is load-bearing.
+* **Gates.** Neutrality: the same pre-existing failures before and after (all under `templates/skills/`), none new. Redundancy: clean both ways, and blind to templates (RL6). `check_cairn.py`: RL7.
+* **The trap ships (check 2).** In the solo install, `scope-reduction trap` is in `dev/agent_collaboration.md`; `Scope delta` is in `AGENTS.md`, `dev/agent_collaboration.md`, `dev/PLANNING.md` and both templates. Confirmed.
+* **Upgrade (check 3).** The two lock commits are 181 and 167 behind `58f30d6c`, as stated. modflow_tools, today and with the simulated change: `AGENTS.md` and `dev/agent_collaboration.md` merge clean, the module is "clean (untouched)", and the staged files carry the sweep, the pointer and the thinned module with no conflict marker. LHM: as in RL4; `documentation-plan` and `security-verification` are listed opt-in, as stated.
+
+### Answers to the proposal's four questions
+
+1. **The ledger in the same move:** yes, in one shape (RL2).
+2. **Where the full text lives:** the review-loop document, with the pointer. Measured cost to the shipped `AGENTS.md`: 7 lines, about 120 tokens on 6,150.
+3. **A coverage-line stanza in the review scaffolds:** agree, not in this change. Under RL1's one plan it lands naturally, since that plan rewrites those blocks.
+4. **Real upgrades on LHM and modflow_tools:** agree, no. LHM's own `AGENTS.md` makes its `AGENTS.md`, review-loop document and `dev/modules/*` Maintainer-gated ("Doctrine surfaces stay Maintainer-gated regardless", its line 198), so an agent should not run it there anyway. The scratch rehearsal is enough; I ran it with the change applied and recorded the result above.
+
+### Coverage
+
+* **Covered** -- claims: the contract list, measured on a simulated change with controls (above). Production path: a real `solo-greenfield` install through `bootstrap/scaffold.py`, and real `upgrade --plan` and `--stage` runs. Cross-document consistency: RL1, RL2, RL7 (the stance proposal, `doctrine/plans.md`, `check_cairn.py`). Drift: RL3 (size), RL5 (signals). Lifecycle placement: RL1 (order), Question 4 against LHM's own gate. Test-plan completeness: RL6 and one mutant.
+* **Not covered / low confidence** -- below.
+
+### What I did not cover
+
+* I did not run the full suite, or `_gate_manifest.py verify` with collection; Boundary B is the implementation's.
+* My simulation moved today's module text word for word. The plan will carry the stance-rebased, possibly compressed text, which does not exist yet. RL1's frozen-file risk is a forecast from the stance proposal's description of its test, not a measurement.
+* The adopter rehearsals copied only tracked `dev/`, `AGENTS.md` and `CLAUDE.md`, so their "file missing" noise is mine. I ran `--plan` and `--stage` on the copies, never `--apply`, and changed nothing in either repository.
+* I did not draft or judge the `doctrine/dual-review.md` > "Adaptation" sentences, and did not test other interpreters.
