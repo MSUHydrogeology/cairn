@@ -1270,3 +1270,109 @@ fixed at `5b6676af` and closed at the second review, `87fd7e2e`.*
   takes sections 8 to 10), by the Decision's sequencing, which postdates the
   opened text. The opened text has all ten sections and names no split, and
   neither input here names one, so the drafter drafts for the proposal as written.
+
+### The blind drafts, verbatim
+
+Both drafts are in. **Nothing has been scored.** A separate fresh agent scores
+them next, and its output, the verdicts on (A) and (B) alone and combined, and
+the stop-rule outcome are appended below in a later commit.
+
+**How each drafter was briefed** (the coordinating session's account; I did not
+see the briefs):
+* Each drafter was a fresh-context Sonnet agent, neither the implementer nor the
+  scorer.
+* Each was told it could read exactly two files with the Read tool: the wording
+  (input 1) and its proposal as opened (input 2 or 3), both in one folder. It was
+  told to read, search and list nothing else, run no commands and use no web.
+* The assemble drafter's brief also carried the part-naming sentence from input
+  3, verbatim.
+* Each drafter made **3 tool calls in total**: the two reads and the hand-back.
+  The coordinating session extracted each draft byte for byte from the drafter's
+  hand-back (the input of that tool call) into a file, and checked its copy of the
+  first against the raw transcript.
+* **Limitation.** Blindness rests on the instruction and on that observed tool
+  count. It was not enforced by a sandbox, and a negative cannot be proved beyond
+  the count.
+* **Order.** The error statements above were committed in this record at
+  `0ac2b567` (2026-10-18 17:51:45). The draft files were extracted at 17:54, after
+  that commit. By the briefing above, neither drafter was given an error
+  statement or any review.
+
+Each draft is the text between its fences, byte for byte; no draft contains a
+fence of its own. A draft's headings are inside the fence and are not headings
+of this plan.
+
+#### Draft 1: stor-modflow (38 lines)
+
+Drafter: fresh Sonnet agent. File: `draft-stor-modflow.raw.md`. Input: the
+wording and the stor-modflow proposal as opened (`b9d4c59a`). SHA-256 of the
+file: `06ff7a020870d225066ac427ef12af2abc40d6264366a0ee159bbfe946e97837`.
+
+```text
+### Independent scientific check
+
+**The check: the recomputed unsaturated-zone store against the model's own saved `unsatStorage`** (§6, `OUTS_newBC_v5-2000-2025_20260219.mat`).
+
+* **What it compares.** The monthly `unsaturated_zone_water` this script builds from PERC, `vk` and the stress-period lengths, against the `unsatStorage` the MATLAB model saved for the same run. The comparison covers all 312 months, cell by cell on the 798×647 surface grid and as a domain total.
+  * **Expected value.** Agreement, with a residual of zero up to numerical precision. No residual has ever been computed, for the current code or the new code.
+  * **Tolerance.** The proposal gives none, and I cannot source one from what I have in hand. What I would write into the plan before the first run is the worst-case rounding from PERC's integer quantization, summed over the `maxDelay`-deep stack (26 deep, per the proposal's description of `unsaturated_zone_module.m`), plus the float precision of the stored arrays. The source is the quantization step in PERC's `/lookup` and the dtype in OUTS. I have read neither.
+  * **The Signals criterion is not a tolerance.** "Does not shrink materially against the current implementation" is a relative test. A residual can shrink and still be wrong, so that test stays a secondary signal and the absolute bound above is the check.
+  * **Data in hand.** The file is named and sized (137 MB), and the accepted proposal says it holds `unsatStorage`. This proposal's recon table has no OUTS row, so nobody has recorded opening it.
+  * **Not checked:**
+    * that the variable exists;
+    * its units (depth or mass), its grid, and its time coverage;
+    * whether it is an end-of-month value or a monthly mean, which decides whether a correct recomputation agrees;
+    * that it comes from the same run as PERC.
+  * **To confirm.** Open OUTS and `unsaturated_zone_module.m`, and record these facts before the check is relied on.
+
+* **Why the expectation is independent.** The expected value is produced by the MATLAB model, not by this script and not by a test written from my reading of that module. Its basis is the saved output of the model the code reads. That makes it independent of the port, not of the model's physics. A pass shows the product reports what the model computed. It does not show the model's unsaturated zone is right about the aquifer. PERC is read from the file here, where MATLAB used its own in-memory copy, so a reading error (dequantization, a shifted time axis) can show up instead of cancelling.
+
+* **The error it would catch.** The hardcoded 1-day stress-period length where `perlen` is `[1, 5, 7]`. It would also catch a scalar-mean `vk` in place of layer-1 `vk` regridded, `vka` read as a conductivity when it is a ratio, and a one-day offset in the PERC time axis.
+  * **At implementation:** restore the hardcoded `1.0` on purpose, run the check, and record the failing output.
+  * **How large the error may be.** The recon numbers (1358 periods, 9498 step totims, `perlen` in {1, 5, 7}) imply, if steps are daily, that nearly all periods are 7 days. I have not seen the per-period counts. If so, the mutant should be far off.
+  * **If the mutant stays inside the tolerance,** the check cannot see this error, and the record must say so.
+
+* **When the check passes by finding nothing.** A near-zero residual is a "no difference" result.
+  * **Positive control.** The mutant run above is the control. The current implementation's residual against OUTS (never computed) is the second. If the current code is already inside the tolerance, this check cannot discriminate the §5 fixes.
+  * **Guard against a vacuous pass.** The comparison must assert that it compared a nonzero count of finite cells in every month, and that the compared fields are not constant.
+  * **An absent OUTS is not a pass.** §6 makes OUTS an optional source. The smoke-check acceptance requires the residual to be reported, so a run where OUTS is absent or skipped fails acceptance.
+
+**What this does not cover.** It covers the unsaturated store only. The unsaturated store lives on the surface grid and is built from PERC, with no heads, so these items do not pass through it:
+* the overhang fix (§3);
+* month-to-head pairing (§4);
+* units and `ibound` from the DIS and BAS6 (§2);
+* the groundwater ΔS.
+
+That leaves four of the five defects in Context without an independent expected value, and I am not inventing one.
+* **Overhang.** The arithmetic agrees with the FloPy-measured offset. 1637×1313 at 500 m is 818.5 × 656.5 km against 798 × 647 km, which gives 20.5 km north and 9.5 km east. Both numbers come from one grid description, so this is a consistency check, not an independent one.
+* **Mass conservation.** The proposal's "mass conserved where grids align" invariant is a closed budget and would not catch a wrong input.
+* **A basis I would open.** I would check whether the run's MODFLOW listing file prints the volumetric budget with STORAGE terms. The cell-budget files lack one, but the listing file is a separate output. I have not seen whether it exists for this run. If it does, domain-total ΔS per stress period against the listing would be an independent check on the groundwater half. The Maintainer should weigh that this proposal currently has no such check for that half.
+```
+
+#### Draft 2: assemble part A (18 lines)
+
+Drafter: fresh Sonnet agent. File: `draft-assemble-part-a.raw.md`. Input: the
+wording, the assemble-full-port proposal as opened (`dde80719`) and the
+part-naming sentence. SHA-256 of the file:
+`212fc76e4a9fbd814cae8ff9addaab9d0492840235bc0c4db14111de4bc76207`.
+
+```text
+### Independent scientific check
+
+This part is gated in. A2 makes the corrected area-weighted `helper/zonal.cell_statistics` the single implementation that every LAND loader uses, and its output becomes model input. A3 also says that when a fix breaks a parity check, the MATLAB import is fixed too and its baselines are rebuilt. After that, MATLAB parity for this function shows that two implementations agree. It does not show that either places data correctly. This check is the one that can.
+
+* **What it compares.** It compares the area-weighted mean per coarse cell from `cell_statistics` (production path, `matlabParity=False`) against the exact mean of a known field.
+  * **Fixture.** The fine grid is synthetic and generated in the test: 11 × 11 fine cells. The coarse grid is 4 × 4 cells, each exactly 3 × 3 fine cells, aligned to the fine cell edges. The last coarse row and column therefore cover only 2 of 3 fine cells and test the "edge cells kept" claim.
+  * **Field.** Each fine cell holds a linear field, `f = 100 + 2·(x) − 3·(y)`, sampled at the fine cell centre. Positions are in fine-cell widths from the grid origin, and y is northing. The slopes differ in sign and size so a swapped, transposed or reversed axis cannot cancel out. The values are illustrative and are fixed in the plan.
+  * **Expected value.** For an interior coarse cell, it is `f` at the centre of the coarse cell. For an edge cell, it is `f` at the centre of the overlapped rectangle, with weights normalised by the overlapped area. The helper's contract for edge cells (mean over the overlap, not over the full coarse cell) is my reading of "edge cells kept", and the test pins it.
+  * **Reuse across grids.** The same call runs three layers with different slopes, to exercise the geometry that is "computed once and reused across grids".
+  * **Tolerance.** The identity is exact in real arithmetic, so the tolerance is round-off only. It is 1e-9 absolute on values near 100 if the helper works in float64, where the actual round-off over at most 9 terms is around 1e-13. If the helper works in float32, it is about 1e-4. Both are far below the 1.5 value-unit effect of the mistake below. The tolerance's source is the working dtype of the helper, which I have not opened and the plan must read off the code.
+  * **Data.** It needs no external data. The expected values are worked out by hand from the grid numbers and committed in the test before the helper is run against it. At opening they do not exist, so nothing has been checked.
+* **Why the expectation is independent.** Its basis is an analytical solution. The mean of a linear function over a rectangle equals its value at the rectangle's centroid. That follows from the field and the grid numbers alone, and neither the helper nor MATLAB computes it. Because the field is not constant, the check cannot pass by default: a constant field is unchanged by a shift.
+  * **What is still shared.** The test and the helper share one assumption: row 0 is the northern edge, as the raster header convention has it. The fixture states that convention in its own comments, not through `raster.get_raster_header`, so the reviewer can challenge it.
+  * **Not covered.** The check does not cover non-integer or misaligned grid ratios. A mistake that appears only there is left to the helper's existing tests and to A3's Cedar comparisons. Those comparisons run against MATLAB baselines that are rebuilt under the same corrected understanding, so they are independent of the port but not of that understanding.
+  * **Unopened.** I have not opened `helper/zonal.py` or its tests under `tests/helper/`. I also have not checked whether Cedar's real fine-to-coarse ratio is an integer, or what the `sum` and `majority` options return on this fixture. The plan opens those first. If the ratio is not an integer, the fixture would not resemble the data the loaders actually aggregate.
+  * **Time axis.** The merge of the datenum conversions is also outside this check. It rests on MATLAB bytes only, and one cheap additional anchor would be the known `datenum(1970,1,1) = 719529`.
+* **The error it would catch.** Rows placed half a fine cell high, which is the MATLAB placement the corrected algorithm removes. The consolidation could bring it back, for example by routing the default path through the parity branch, or by reusing geometry built for one extent on another grid. With a y slope of 3 per fine cell, the shift moves every coarse mean by about 1.5 value units, nine orders of magnitude above the tolerance. It also changes the edge cells, because the overlapped rectangle moves. At implementation the implementer makes this mistake on purpose, in a separate copy of the code. They record the failing output, which should name the cells and show differences near 1.5, beside an unmutated control run.
+* **When the check passes by finding nothing.** It does not. It passes by matching distinct, nonzero expected values in every cell, and it fails whenever any cell moves. The deliberate half-cell-high run serves as the positive control, since its effect (about 1.5) is far larger than the effect that matters (anything above round-off). The implementer records it with the failing run.
+```
