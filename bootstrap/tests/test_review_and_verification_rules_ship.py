@@ -25,6 +25,10 @@ The rules pinned here:
   every small fix to the full suite. The fence's trust-ceremony surface is
   defined in the file that uses it, because the adopter's copy is the only one
   they receive.
+* **"Substantive surface" is defined once.** It is anything that is not
+  ordinary prose, and that includes prose a test or manifest pins. A narrower
+  "code" reading misses exactly the template rewrite whose pinned prose broke
+  tests its author never ran.
 
 Each obligation is an alternation matched against whitespace-collapsed text, so
 a rewording that keeps the obligation passes and a deletion fails. Node IDs are
@@ -93,6 +97,11 @@ _OBLIGATIONS = {
         r"name the touched surfaces, the test files or nodes",
     "trust-ceremony-surface-is-defined":
         r"trust-ceremony surface\*{0,2} \(any high-risk surface this file names",
+    # One term, defined where it is used.
+    "substantive-surface-is-defined":
+        r"substantive surface\*{0,2} is anything that is not ordinary prose",
+    "pinned-prose-is-substantive":
+        r"and prose a test or manifest pins",
 }
 
 #: label -> pattern that must NOT occur in either copy.

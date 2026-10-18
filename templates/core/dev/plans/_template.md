@@ -142,7 +142,7 @@ plus its standing gates.
 Before implementation, make Boundary A a **reviewed mapping**: for each changed
 invariant and public path, name the exact affected test node/file and every
 standing non-test gate for the touched surface. Run that scope while iterating.
-There is no permanent fast tier; if a substantive code surface has no reviewed
+There is no permanent fast tier; if a substantive surface has no reviewed
 mapping or cannot be bounded confidently, run the configured full suite.
 
 After the final implementation commit, Boundary B runs once against a clean,

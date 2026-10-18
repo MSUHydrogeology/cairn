@@ -291,7 +291,7 @@ plan before relying on it. A trivial change, with no proposal or plan, maps
 instead to the tests that own each touched surface, found by searching for what
 imports or reads the touched files rather than by expectation, plus that
 surface's standing gates. There is no permanent "fast suite": speed does not
-establish coverage. If a substantive code surface has no such mapping, or its
+establish coverage. If a substantive surface has no such mapping, or its
 effects cannot be bounded confidently, the full project suite is the
 fail-closed fallback.
 
@@ -299,6 +299,9 @@ Work confined to ordinary prose or deliberation records runs the applicable
 claim, link, snippet, schema, and neutrality gates rather than an unrelated
 engine suite, on any surface, a high-risk one included. Executable snippets, generated or frozen fixtures, gate
 manifests, and contracts whose plans name test coverage are not ordinary prose.
+A **substantive surface** is anything that is not ordinary prose under the
+prose-only rule: code, tests, executable templates and snippets, fixtures,
+manifests, and prose a test or manifest pins.
 
 ### Boundary B — Integration (one stable record)
 

@@ -205,7 +205,9 @@ The roster is in `dev/agent_collaboration.md`.
     the tests that own each touched surface, found by searching for what imports
     or reads the touched files rather than by expectation — plus standing gates
     for every touched surface. If a substantive surface has no such mapping, run
-    the full suite.
+    the full suite. A **substantive surface** is anything that is not ordinary
+    prose under the prose-only rule below: code, tests, executable templates and
+    snippets, fixtures, manifests, and prose a test or manifest pins.
   * **B — Integration (stable evidence).** After the final implementation commit
     and before code review, against a clean unchanged commit under the
     **configured interpreter/runtime** for this project, running its
