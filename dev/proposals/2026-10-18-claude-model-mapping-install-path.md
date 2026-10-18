@@ -1,7 +1,7 @@
 # The model mapping gets filled on every install path, and something checks it
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(Internal + Security Review) — the scaffold engine's write path is touched; the Maintainer asked for this change, so "should it exist" is settled
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/` and a script adopters run (see the preflight)
 **Opened**: 2026-10-18
@@ -268,3 +268,124 @@ unfilled row through. A seed task outlives its purpose and nobody deletes it.
 
 **Assurance path**: high-assurance — the scaffold engine, a verbatim script adopters execute, and
 the onboarding overlay written into every preset adopter's `dev/PLANNING.md`.
+
+## Review -- Claude Sonnet 5.5 (Internal) -- 2026-10-18
+
+**Model**: Claude Sonnet 5.5, a fresh session with no shared context, of the same agent family as the author; no cross-type distance. An Internal pass: it strengthens the change inside its structure, and, as asked, also answers the four stance questions below. The Security Review follows separately; items for it are flagged at the end, not probed.
+
+```
+Reviewed commit: 6a11e26366fb8072d1746c43b709c337835895c8
+Target: the whole proposal, In brief through Assurance path; every cited fact checked against the working tree at d88a14f9479f7350f40853d9bbb7739e78aa7cae on 2026-10-18
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Internal
+**Findings**: raised (3 blocking, 4 non-blocking)
+**Verdict**: REVISE
+
+### Verdict in brief
+
+**The change should happen, and its core is sound:** the notice on every install path, the checker fix, the symlink guard. I reproduced or confirmed by reading all four causes and both side-findings. Three things in the framing need answers before a Decision:
+
+* The "durable line" (section 4) is not a trigger in the sense `AGENTS.md` uses the word, and the reason the proposal gives for rejecting the onboarding trigger applies to it equally (MM-1).
+* One of its three seed copies can never render and would turn a pinned test red (MM-2).
+* The only live instance of this failure that I could find, the unfilled mapping in `lhm`, is out of reach of everything proposed. Question 3 should flip to yes (MM-3).
+
+**The strongest alternative the proposal did not weigh** is to put the question inside the agent's own install checklist (BOOTSTRAP.md II-5), which the installer already tells the agent to run last. It adds one line of prose and no engine symbol.
+
+### Steelman
+
+One assumption, a person at a terminal, met a world where agents run installs, and the one tree where it mattered went four months with a failing check nobody ran. The proposal speaks on the path agents take, stops the check failing on a correctly filled file so the notice is not crying wolf, refuses to invent a non-interactive way to answer a question only the Maintainer owns (no flag, no profile key), and leaves the install contract alone. That restraint is right, and most of what follows asks for corrections, not additions.
+
+### Findings
+
+#### MM-1 -- BLOCKING: the seed task is not a trigger, and the proposal's own objection to the onboarding trigger applies to it
+
+**Plain:** a line in a file that nothing tells anyone to open fails the same way the unrun check failed. The proposal says "a notice scrolls away; a task in `dev/PLANNING.md` does not" and rejects the onboarding trigger because it "would sit unseen". Both depend on someone reading the file.
+
+* Cairn's own `dev/PLANNING.md` onboarding slot still holds all eight seeds the self-host commit `7519c5da` wrote on 2026-06-12. None is removed or marked, though the board's rule is that finished items are removed. One of them (`agent-team-onboarding`, about capability tiers) is the closest relative of this task. A seed has no done-mark, so the list cannot tell outstanding from finished.
+* Nothing in the routines reads that slot. `tools/session.py` has no reference to `PLANNING.md` or onboarding (searched). The `session-start` skill runs `session.py` and `tools/board.py`; the board reads proposal and plan headers, and under `--maintainer` only rows carrying the Waiting marker.
+* No mechanism carries a new seed into an existing tree. The seed text lives in `templates/onboarding/*.md`, not in `PLANNING.md`'s own template, and the upgrade code notes that onboarding slot bodies are not reproduced, because they sit inside slots on the adopter's side of a merge (`bootstrap/_scaffold/upgrade.py:880-884`). I read that; I did not run an upgrade.
+* So, under "check what it checks, and open it", the seed's chain ends at "someone opens PLANNING.md": a person remembering, like the check. That is acceptable if written down, and it is not.
+
+**Recommend:**
+(a) Say so in Question 2 and the S3 answer.
+(b) Add the trigger that sits on the agent's path. `scaffold.py` ends its output with "5. Run the R-F acceptance gate (II-5)" (I ran an install; it is line 136 of 169). II-5 (`bootstrap/BOOTSTRAP.md`, "All items below must pass before declaring the installation complete") already checks unfilled tokens and slots and says nothing of the mapping. One item: "if `model-selection` was installed, `python scripts/check_model_selection.py` exits 0; ask the Maintainer which model fills each tier, do not guess." That puts the question inside a step the installing agent is told to finish. It is prose in a file that is not frozen and is not the fidelity manifest (`bootstrap/fidelity-check.md`); the only test reading BOOTSTRAP.md reads the Appendix B and preset example blocks (`test_profile_grammar.py:1001-1131`), and the plan should confirm it does not pin II-5.
+(c) If the seed stays, write it as a marked row (`**Waiting on Maintainer**: fill the model mapping`, under 48 characters), so `python tools/board.py --maintainer` lists it. That marker exists for "a question only they answer" (`templates/core/dev/PLANNING.md:97`) and ships to adopters.
+
+Do not cut the seed to make this tidy: the durable line is a baseline outcome (In brief, item 4), so removal would be a Scope delta only the Maintainer can allow. (a)-(c) preserve it.
+
+#### MM-2 -- BLOCKING: the solo-greenfield seed never renders at that preset's own settings, and it turns a pinned test red
+
+**Plain:** one of the three seed copies is dead text, and adding it breaks the test that guards the seed lists.
+
+* solo-greenfield's complexity is `simple` (`bootstrap/_scaffold/config.py:1356`), so `cairn:if complexity in moderate,complex` strips the seed. I ran `strip_conditional_regions` with each preset's axes on a two-seed sample: 1 of 2 kept for solo-greenfield, 2 of 2 for the other two.
+* `test_onboarding_slot_substitution.py::TestInstallPath::test_slot_seed_count_matches_source[solo-greenfield]` counts `* [seed;` in the rendered slot against the source file and demands equality. The source gains one, the slot does not: red. That file is frozen, so it would be another re-anchor entry. (From reading the test and the strip run; I did not edit a template to watch it fail.)
+* The gate is keyed on `complexity`, but the module also follows `modules_add` and `modules_remove`. A moderate-complexity install with `model-selection` removed renders a seed naming `scripts/check_model_selection.py`, a surface the roster did not install, which `test_onboarding_seed_roster.py` exists to prevent. The seed's "If `...mapping.yml` exists" opening hedges it; say that this is why it is there.
+
+**Recommend:** ship the seed in the two presets that install the module at their own settings (collaborative-team, high-rigor-legacy). Because "installs from a preset get one" is baseline wording, record the solo copy in the Scope delta as dropped-for-cause (it has no behaviour) for the Maintainer's allowance, or keep it and amend the count test.
+
+#### MM-3 -- BLOCKING: leaving `upgrade` out leaves the one live case unreached, and the recommendation to leave it out rests on code that was not read
+
+**Plain:** the unfilled mapping that exists today is in your science repository `lhm`, and nothing in the proposal tells anyone about it.
+
+* Read-only, in the sister repository `lhm` (outside this tree; I changed nothing): its `dev/.cairn/model-selection-mapping.yml` is the stub (8 lines carrying `FILL ME`) and the checker exits 1. The only commit that ever touched that file is its 2026-06-10 upgrade commit `22413d95`. So the stub reached it through `upgrade`, a third arrival path that "every install and every `--adopt-module`" omits. (`modflow_tools` filled its file by hand and exits 0.)
+* Nothing proposed can reach it: the seed is not delivered by upgrade (MM-1), the suite test covers only Cairn, and the notice fires at install and adopt. Cairn's own case is fixed (`22dabd45`); `lhm`'s is not, and its next upgrade will say nothing.
+* The call sites exist. In `cmd_upgrade` (`upgrade.py:2287`) `lock` and `target` are in scope at all three exits: `--apply` (2471), `--stage` (ends 2522), and the default plan (ends 2534). The helper needs only the target; gate it on `"model-selection"` in `lock["modules"]`. One call before the dispatch also works, at the cost of printing above a long report. Price: `cmd_upgrade` is a baselined symbol, so the Maintainer-run ceremony gains a fourth CHANGED entry.
+
+**Recommend:** flip the recommended answer to yes, name the call site, and add `cmd_upgrade` to the accounting in section 5.
+
+#### MM-4 -- non-blocking: the comment rule is right for the defect that was observed, but has two holes and one lost feature
+
+**Plain:** ignoring comment lines cures the false failure, but a `FILL ME` can still sit where the rule thinks it sees a comment, and the rule removes a check someone wrote on purpose. I ran the rule patched into scratch copies of the checker.
+
+* **Spec detail.** "First non-blank character is `#`" must mean space or tab only. `str.lstrip()` strips Unicode whitespace: a line `U+00A0# FILL ME` after a valid row exits 3 with PyYAML (parse error) and **0 without it**. With `lstrip(" \t")` it exits 1 either way.
+* **Block scalars.** A `#`-led line inside `model: |` is data, not a comment. That file exits 0 under the rule, PyYAML present. Where PyYAML exists the structural step already parses the file; have it also fail on any string value containing the sentinel. The dependency-bare path keeps the line rule, and the S4 answer should name this residual, which it does not (it mentions only comments). The engine erring toward "filled" here is the safe direction (it never clobbers).
+* **Lost feature.** `test_fill_me_in_comment_fails` pins a deliberate behaviour, with its own example `# TODO: FILL ME -- add medium-tier model here`. Partial-fill markers now pass; the replacement test should pin that loss explicitly rather than only delete the old one. And `mapping: []` plus the header comments now passes (today it exits 1 only by accident of the stub's comments; under the rule, 0), and the notice goes silent with it, because the engine uses the same rule. Decide and record: either accept it under S4 ("attests shape, not truth"), or have `_structural_validate` require at least one row. I would tighten that one line.
+
+#### MM-5 -- non-blocking: the notice tells an agent to fill "each FILL ME row", and the stub has one row
+
+**Plain:** an agent following the notice literally fills the one row it sees with one model, and the check passes with one tier of three.
+
+* The stub's `mapping:` holds a single list item whose five fields all read `FILL ME` (`model_selection_mapping_stub.yml:35-39`). The Terms ("five rows") and the notice ("each FILL ME row") both misdescribe it. The check never requires three tiers.
+* Reword the notice: "The stub holds one placeholder row; replace it with one row per tier (high, medium, low), copying its shape." This sentence decides whether the agent-path result is right, so it is worth the care.
+
+#### MM-6 -- non-blocking: nothing will say when the mapping goes stale, and the module doc says something will
+
+**Plain:** the filled mapping is dated 2026-10-18 and names a re-verification trigger, and no routine reads either.
+
+* `dev/modules/model-selection.md:156-157` (byte-identical to the template; the proposal edits both) says staleness is "surfaced by an existing routine". I searched `tools/`, `scripts/`, the skills and the doctrine for any reader of `date_verified` or the re-verification field and found none; only the capture writes them.
+* The proposed suite test asserts "not the stub, parses", not "current".
+* Add no mechanism (the standing direction is to fix defects and build nothing new). Correct that sentence in the same edit, so the new paragraph does not sit beside an unbacked claim, and record staleness in the proposal as a named residual that no part of this change addresses.
+
+#### MM-7 -- non-blocking: the accounting is nearly right; four corrections
+
+* **AST symbols, verified** against the committed baseline: `capture_model_selection_mapping`, `main` and `_cmd_adopt_module` are all baselined (3 CHANGED); `_mapping_is_unfilled` and `model_selection_notice_lines` would be 2 NEW, each needing a pin in `bootstrap/tests/fixtures/scaffold_ast_known_new.json`. Import-line edits cost nothing: the attestation skips imports. None is in `_UPDATE_ALLOWLIST`, so Maintainer-run is right. MM-3 adds `cmd_upgrade`.
+* **The files table omits two ceremony files:** `scaffold_ast_known_new.json` (frozen) and `scaffold_ast_baseline.json` (not frozen). The seed test goes in `test_onboarding_seed_roster.py` or `test_presets.py`, both frozen, so that one is certain rather than "joins if they pin seed lists". The certain frozen set is the checker pair, `test_model_selection_stub.py`, `test_security_leaf.py`, `scaffold_ast_known_new.json` and the seed-test home; the count test joins if the solo copy stays.
+* **The guard is right-sized** (one call, one inventory row, one test-set entry); answer Question 4 yes. Place it before the prompts, not after, so a person is not asked three tiers of questions and then told the write was declined. The guard makes three checks, so test a symlinked parent (`dev/.cairn` as a link) as well as a symlinked file.
+* The install report is already on the board as too long (`dev/PLANNING.md`, F8: 22 unfilled slots on the smallest install). This adds a block to it. Cross-reference F8 in Context so whoever fixes the report folds this notice in.
+
+### The four questions
+
+**1. Should this happen as framed, and is there a better design?** Yes for sections 1-3. Section 4 needs MM-1 to MM-3. The better design is the same engine core (notice on install, adopt and upgrade; the checker rule with the MM-4 corrections; the guard) plus the II-5 line, the suite test, and the seed kept in two presets as a marked Waiting row. It adds one prose line and one call site, and removes one dead template copy.
+
+**2. The strongest alternative.** The II-5 acceptance-gate line as the primary agent-path trigger (MM-1), absent from the Alternatives. Of those that are there: a session-start surfacing is the only candidate that would also catch staleness (MM-6); I do not press it, because the standing "build nothing new" direction is a fair reason to decline it. Rewording the stub is rejected on a conflict for "every adopter who filled the file"; today that is two repositories, both the Maintainer's (`dev/PLANNING.md` still lists the first external adopter as ahead), so its cost is smaller than stated. I still agree with the checker route, because it also repairs files already in the field.
+
+**3. What would show it wrong.** (i) An agent-driven install of a moderate profile that reports done without having asked about models; the II-5 item would make that visible at the step where it happens. (ii) `lhm` still on the stub after its next upgrade. (iii) Seed lines untouched months on: Cairn's own slot is the base rate, 8 of 8 untouched since 2026-06-12. (iv) A mapping that passes with fewer than three tiers or with `mapping: []` (MM-4, MM-5); the proposal's own signal, `source` lines reading "recorded at install", also stands.
+
+**4. What I did not cover.** I ran no pytest node and not the suite. I did not edit a template to watch the MM-2 count test fail; that rests on reading the test and the strip run. I did not re-run the author's `merge_file` conflict experiment. I read `_apply_upgrade` only at its call site, and did not run an upgrade to confirm MM-1's third bullet. I did not test non-3.13 interpreters or Windows line endings; the dependency-bare checker was simulated by blocking the `yaml` import. I read the sister repositories only for the mapping file and its history. Security probing was left to the Security Review.
+
+### Recommended answers to the proposal's four questions
+
+1. Stop counting comments: **yes**, with the MM-4 corrections.
+2. Trigger: the notice, the II-5 line and the suite test; the seed in two presets as a marked Waiting row; no onboarding trigger now. I confirmed the premise for declining it: the activation log holds only its header beside 73 archived proposals, `onboarding_activate.py --dry-run` lists two long-fired tasks (it wrote nothing; the tree is unchanged), and the goodnight skill does not call the helper.
+3. Notice on `upgrade`: **yes** (MM-3).
+4. Symlink guard: **yes** (MM-7).
+
+### For the Security Review (flagged, not probed)
+
+* The capture call site catches `ScaffoldSecurityError` locally and continues. `SECURITY_MUTATIONS.md` says every refusal is caught once at the CLI top level (exit 2). The proposal's reason ("never blocks the install") is stated; confirm the quiet side is right, since files are already written and the lockfile is not.
+* The notice helper reads a tree-controlled path and may follow a symlink. Keep the notice text fixed: never echo the path, an OS error message or file content (terminal control sequences; `encode_display` in `tools/session.py` is the one encoder).
+* `seed_gitignore` is listed in `SECURITY_MUTATIONS.md` Class B as "contained by construction" on the strength of a fixed path, the same reasoning the capture write had until this proposal showed a fixed path can be a symlink. Not this change's to fix.
+* MM-4 is a parser-differential class: the checker and the YAML loader disagree about what a comment is.
