@@ -1,7 +1,7 @@
 # Plan: verification practice — a review reads a commit, mutation for set claims, a test scope for small fixes
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-verification-practice.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/` and
 a shipped template.
@@ -508,3 +508,305 @@ moved, or widened. The chunking changes no answer.
   goes to that batch only if plan review judges it owed.
 * Closing issues #12, #17 and #25 is a public action after a push, so it is the
   Maintainer's call.
+
+## Plan review -- Claude Opus 5.5 (Internal, fresh session) -- 2026-10-18
+
+```
+Reviewed commit: 73284010a3d1d3711dc59b553b1f614b37346b76
+Target: the whole plan (Source proposal through Dispositions), read against Revision 1 and the Decision of dev/proposals/archive/2026-10-17-claude-verification-practice.md and the tree at the reviewed commit
+Prior findings: none
+Assurance path: high-assurance — inherited
+```
+
+**Obligation**: Internal
+**Tier**: Internal
+**Findings**: raised (3 blocking, 4 non-blocking)
+**Verdict**: REVISE → `revising-plan`
+
+Distance: a fresh session of the author's agent type. I did not write this plan
+and will not implement it.
+
+### In plain terms
+
+The plan is sound and close to ready. Every outcome the Maintainer accepted has
+a chunk. The two places where the author departed from Revision 1's wording are
+both right. The test, frozen-file and lockfile claims check out. Three wording
+gaps need fixing before work starts, and each takes a line or two:
+
+* One rewrite would accidentally delete "which parts were touched" from what a
+  reduced test run must record. That is the item the code reviewer is told to
+  challenge.
+* The plan says a small fix writes its test evidence into its commit message.
+  But three nearby sentences still describe only a plan's record: when the run
+  happens, where the record is written, and what it contains. A small fix
+  cannot follow the text word for word, and Revision 1 makes that its test of
+  success.
+* The sentence that would send every small fix to the full test suite comes out
+  of both `AGENTS.md` copies but stays in the doctrine file.
+
+The other four findings are improvements the author may take or decline.
+
+### The two wording choices
+
+* **"has no such mapping" in Boundary B delivers the outcome.** Without it, B
+  keeps "if a substantive surface has no reviewed mapping … the full suite
+  runs" (`AGENTS.md:197-199`). A trivial change's mapping is reviewed only
+  afterwards, by Bounding, so a literal reader derives a full run for every
+  small fix, which is Revision 1's own falsifier. "Such mapping" is the phrase
+  Revision 1 already uses in Boundary A, so A and B now name the same thing. The
+  fallback still fires where it should: a trivial change whose owning tests
+  cannot be named has no such mapping and runs full. Nothing is removed. [PR3]
+  carries the same fix to the doctrine copy.
+* **"claimed first if the project uses file claims" in the shipped copy
+  delivers the outcome.** The shipped `AGENTS.md` and
+  `templates/core/dev/agent_collaboration.md` never mention claims. The
+  mechanism ships only with the team-gated `coordination-tiers` module
+  (`templates/modules/team-gated/coordination-tiers.md:20-29`). The half of
+  rule 1 that prevents data loss stays unconditional: no `restore`, `checkout`,
+  `stash`, `reset` or `clean`, and every other write goes to a separate copy.
+  An adopter who has claims still claims. An unconditional clause would repeat
+  VP1's failure, a rule broken on first use. [PR5] suggests that the doctrine
+  copy take this form too.
+
+### Findings
+
+#### [PR1] blocking — C3's rewrite drops "the touched surfaces" from the bounded record
+
+**Plain.** When a change runs fewer than all the tests, the record must say
+which parts were touched, which tests ran, and why that was enough. The plan's
+rewrite of that list in the two `AGENTS.md` copies deletes "which parts were
+touched". The code reviewer's step is built on that item. The doctrine file and
+both plan templates would keep it, so the files would disagree.
+
+**Precision.** *Wording* > 3 says that "on `bounded`, name the touched surfaces,
+the mapping and gates run" becomes "the test files or nodes and the gates run,
+with counts". Applied as written to `AGENTS.md:204-206` and
+`templates/core/AGENTS.md:208-210`, it removes both "on `bounded`, name" and
+"the touched surfaces". Boundary C in both copies has the reviewer challenge "at
+least one named surface, mapped test, or stated omission" (`AGENTS.md:217-219`),
+and the named surface comes from that list. The parallel `doctrine/plans.md`
+edit replaces only "the reviewed mapping and standing gates it ran"
+(`doctrine/plans.md:319-322`) and keeps the surfaces, as do both plan templates
+(`dev/plans/_template.md:178-180`). Revision 1 adds the test files or nodes and
+the counts. It removes nothing. No test pins "touched surfaces", so nothing
+would catch the loss.
+
+**Closes when** both copies read "on `bounded`, name the touched surfaces, the
+test files or nodes and the gates run, with counts, why the effects are bounded,
+…", or an equivalent that keeps the surfaces.
+
+#### [PR2] blocking — a trivial change's record is its commit body, but three sentences around it still describe only a plan's record
+
+**Plain.** The new paragraph says a small fix records its test evidence in its
+commit message. The same section still says three things that do not fit:
+
+* the run happens *after* the commit;
+* the evidence is appended to a plan section, which a small fix does not have;
+* the reviewer checks details, such as which Python ran it and whether the
+  folder was clean, that the commit message is never told to carry.
+
+An author who follows the text word for word cannot comply. A reviewer who
+follows the doctrine can call every such record invalid, which sends the fix
+back to a full run, the cost #25 removes.
+
+**Precision.**
+* B's opener (`AGENTS.md:191-193`, `templates/core/AGENTS.md:195-197`,
+  `doctrine/plans.md:302-303`) runs B "after the final implementation commit …
+  against a clean unchanged commit". The new paragraph measures the trivial
+  record "on exactly the bytes being committed", that is, before the commit. A
+  commit body is written before its commit exists.
+* "Append the tested SHA/range, interpreter, clean pre/post state, … as
+  `## Implementation verification -- …`" (`AGENTS.md:211-213`,
+  `templates/core/AGENTS.md:215-217`) follows the new paragraph unqualified. A
+  trivial change has no artifact to append to, and a commit body cannot name its
+  own SHA.
+* C3's `doctrine/dual-review.md` edit makes the commit body a record that
+  Boundary C checks for the tested revision, "interpreter/runtime" and "clean
+  pre/post state" (`doctrine/dual-review.md:295-299`). Neither `AGENTS.md` copy
+  asks the commit body to carry the interpreter.
+
+Revision 1 leaves these bytes to the plan ("the plan fixes the bytes"). Its
+measure of success is that "the next trivial change and its review can follow
+the text literally".
+
+**Closes when** the Boundary B text says three things, either in the new
+paragraph or by qualifying the old sentences:
+
+* (a) a trivial change runs B before committing, on the bytes being committed;
+* (b) a plan appends `## Implementation verification`, and a trivial change's
+  commit body carries the record instead;
+* (c) the commit body carries at least the mode, on `bounded` the touched
+  surfaces and the test files or nodes and gates with counts, and the
+  interpreter.
+
+C3's falsifier criterion (a) then adds "and the interpreter". B's default, its
+fence and the six triggers do not move.
+
+#### [PR3] blocking — `doctrine/plans.md` keeps the "no reviewed mapping" fallback
+
+**Plain.** The plan removes the sentence that would send every small fix to the
+full suite, but only from the two `AGENTS.md` copies. The same sentence in the
+doctrine file is not listed for change. The check that the sentence is gone
+looks only at the two copies.
+
+**Precision.** Revision 1 puts its Boundary A text, ending "If a substantive
+surface has no such mapping, run the full suite", in "both copies and in
+`doctrine/plans.md`". `doctrine/plans.md:291-293` reads "If a substantive code
+surface has no reviewed mapping, or its effects cannot be bounded confidently,
+the full project suite is the fail-closed fallback." For `doctrine/plans.md`,
+*Wording* > 3 names "the trivial-change mapping in Boundary A" but not this
+clause. C3's criterion that "has no reviewed mapping" occurs in neither copy
+does not read `doctrine/plans.md`. C4 drops "code" from the same sentence, and
+its positive control expects "substantive code surface" to still count 1 there
+before C4.
+
+**Closes when** three things hold:
+
+* *Wording* > 3 names the change in `doctrine/plans.md`: "has no reviewed
+  mapping" becomes "has no such mapping".
+* C3's criterion also reads `doctrine/plans.md`.
+* C3 leaves "code" for C4, so that C4's positive control still holds, or the
+  control moves.
+
+#### [PR4] non-blocking — pin what item 3 is for, plus two properties the criteria already assert
+
+**Plain.** The new tests check that each new rule's wording is present. They do
+not check that the old sentence sending small fixes to the full suite stays
+gone. Nor do they check two things the acceptance criteria rely on: that rule 1
+sits inside the Review section, and that the adopters' copy keeps "if the
+project uses file claims" while Cairn's copy does not.
+
+**Precision.**
+* **A negative pin.** Neither copy may tie the full-suite fallback to a
+  *reviewed* mapping, for example no match for `no reviewed\s+mapping`. Add a
+  guard that inserting the phrase trips the pin. C3's criterion checks this once
+  by grep; a pin holds it after C3.
+* **Placement and asymmetry.** Pin C1's placement inside `## Review`, as
+  `test_comprehension_floor_sits_in_the_review_section` does. Pin the claim
+  clause in both directions, because syncing the twins could silently flip
+  either one.
+* **Stable node IDs.** Give the parametrized nodes stable `ids=` taken from the
+  obligation labels. `test_comprehension_floor.py`'s node IDs embed the regex
+  (`bootstrap/tests/fixtures/gate_manifest.json:253-261`). Once the queued
+  re-anchor pins this file's IDs, rewording one pattern would drop a pinned node
+  and the gate would report `COLLECTION-DROPPED`.
+* **Robust guards.** Collapse whitespace before matching, and have the guard
+  remove *every* match (`re.sub`). The new guards then avoid the
+  once-and-one-line constraints the plan lists for the frozen ones.
+* **Optional.** One assertion on an installed `AGENTS.md`, from a single
+  scaffold install into a temp directory, would show that adopters receive the
+  rules. That is the stated reason the rules go in `AGENTS.md`. The edits sit
+  outside every slot and `cairn:if` region, so the template source is a fair
+  proxy.
+
+#### [PR5] non-blocking — the doctrine copy of rule 1 should take the conditional claim clause
+
+**Plain.** The plan gives the doctrine file Cairn's unconditional "claimed
+first". Doctrine is the published method that adopters cite, and its own
+coordination chapter treats file claims as an optional tier for concurrent
+teams.
+
+**Precision.** `doctrine/coordination.md:103-110` introduces work intents as
+"Tier 2", "for concurrent teams". `doctrine/session-routines.md:34-36` reads the
+intent set only "if the `coordination-tiers` module is installed". An
+unconditional claim in `doctrine/dual-review.md` would contradict both. Give
+doctrine the shipped wording, and keep Cairn's `AGENTS.md` unconditional.
+
+#### [PR6] non-blocking — say whether the prose-only rule governs a prose-only change on a named high-risk surface
+
+**Plain.** The new sentence "Boundary B governs every implementation, a trivial
+change included" meets an existing rule: "Prose-only work does not run the
+suite." Take a text-only fix to a file the project names as high-risk. One rule
+says to run the full suite, and the other says to run none.
+
+**Precision.** B's fence refuses bounded mode on a trust-ceremony surface. The
+prose-only rule already overrides the fence for contract surfaces, but it says
+nothing about trust-ceremony surfaces (`AGENTS.md:229-236`). In Cairn's tree the
+case is mostly unreachable, because a change on a named surface is deliberate
+unless it is a test-reproduced defect repair (`doctrine/lifecycle.md:47-58`).
+The shipped copy has no lanes, so the case is reachable for adopters. Plans
+already face the same tension today; the new reach makes it the common case.
+
+**Recommended default:** the prose-only rule governs prose-only work, as it
+already does for contract surfaces. One clause in the new paragraph says so. I
+do not read Q1 as reaching prose-only edits, because its example was the
+scaffold engine. So either answer stays inside the Decision, but the text has to
+give one.
+
+#### [PR7] non-blocking — small corrections
+
+* *Scope* > "The install family" says "The edits add prose outside every slot
+  and `cairn:if` region". C4's plan-template edit is inside the
+  `verification-commands` slot (`templates/core/dev/plans/_template.md:141-180`).
+  No module fills that slot (I searched `templates/`, `bootstrap/_scaffold/`
+  and `scripts/`), so its default ships and nothing breaks. The sentence needs
+  correcting.
+* In `doctrine/plans.md` the *Wording* > 4 definition joins the prose paragraph
+  itself, so "under the prose-only rule below" points nowhere there. Drop
+  "below".
+* The coordinate grep on the new file is case-sensitive, so a name like
+  `test_c3_…` passes it. Add `-i`.
+* The "never wrap" exception names two tokens. The frozen file's other raw-text
+  dependencies also need one line each: "no valid Boundary B record exists",
+  "**Reviewed range**" and "Reviewed range", and the opener "required when any
+  of these six triggers applies:" with its blank line before "Review-only". No
+  edited line carries one, so this matters only if an implementer reflows a
+  paragraph.
+
+### Disposition question left to this review
+
+The no-plan accepted proposal's record location (*Found while planning*) is
+**owed to the archive batch, not to this plan**. The gap predates the plan, and
+filling it here would widen scope. Left only in an archived plan, it is lost.
+
+### Claims checked
+
+These hold at the reviewed commit:
+
+* **Raw-text guards.** The five guards are named correctly at the cited lines,
+  and each guard's constraint is stated correctly. Each token occurs once today:
+  "cannot be bounded confidently" in `AGENTS.md`, "no valid Boundary B record
+  exists" in `doctrine/dual-review.md`, "**Reviewed range**" in
+  `doctrine/plans.md`, and "Reviewed range" in `dev/plans/_template.md`. Every
+  "trust-ceremony surface" in `AGENTS.md` sits on one line. The six-trigger span
+  stays clear: C2 inserts after the first paragraph of Boundary C, before it.
+* **Frozen files.** None of the six edited files, and not the new test file, is
+  among `gate_manifest.json`'s 183 `frozen_files`;
+  `test_verification_boundaries.py` is. Added nodes do not redden the gate:
+  `test_verify_allows_added_test` reports them as `COLLECTION-ADDED` and passes.
+* **AST.** Nothing under `bootstrap/_scaffold/` changes.
+* **Lockfile.** `dev/.cairn/cairn-lock.yml` tracks `AGENTS.md` and
+  `dev/plans/_template.md`, not the doctrine files. A read-only
+  `verify_integrity.py --target .` reports 18 findings, and both tracked files
+  are already among them. "No new path" can therefore hold without finalizing.
+* **Published manifest.** `scaffold.py --manifest` prints paths and modes, not
+  hashes, so prose edits leave it byte-identical.
+* **Neutrality.** The neutrality leg reports 74 failures, none in an edited
+  file.
+* **Other carriers.** No tracked file outside the deliberation record and the
+  six edited files carries the boundary text (`git grep`). `check_cairn.py`'s
+  loop-fidelity leg would flag a `doctrine/` reference in the shipped copy; the
+  planned wording has none.
+* **Twins.** Both `AGENTS.md` copies and both plan templates are edited in
+  lockstep. Doctrine has no shipped twin.
+* **Siblings.** `maintainer-attention`'s Part B cut removed both `AGENTS.md`
+  copies from its scope (its proposal, lines 833-834). The lens-8 sentence is
+  deferred by `independent-scientific-check`'s Decision. Neither sibling edits
+  the `verification-commands` slot.
+* **Boundary B `full`.** Reason 1 holds at `AGENTS.md:324-325`, and reason 4 at
+  Revision 1's "Boundary B: `full`". The mapping names the right families. The
+  other tests that mention `dual-review` (`test_loop_fidelity_gate.py`,
+  `test_onboarding_review_tiers.py`, `test_presets.py`) do not read the doctrine
+  file.
+* **Comprehension.** Each chunk opens with a plain sentence that a reader
+  outside software can follow.
+
+### Not covered
+
+I ran no pytest node. I did not draft the edited text to measure its line
+wrapping. I did not re-measure the 57-file install family or the 182-pass
+figure; Boundary B's full run covers both.
+
+Nothing here needs the Maintainer if the findings are folded as recommended.
+[PR1] restores an obligation rather than removing one, and [PR6]'s default stays
+inside the Decision.
