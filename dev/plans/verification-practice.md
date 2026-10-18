@@ -1,7 +1,7 @@
 # Plan: verification practice — a review reads a commit, mutation for set claims, a test scope for small fixes
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-verification-practice.md`
-**Status**: awaiting-code-review
+**Status**: ready-to-archive
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/` and
 a shipped template.
@@ -1108,3 +1108,425 @@ run created only ignored caches (`.pytest_cache/`,
   the coordinating session, not directly.
 * Other sessions were active on the machine during the run, so elapsed times
   may be inflated; outcomes are unaffected.
+
+## Code review -- Claude Sonnet 5.5 (fresh session, not the implementer) -- 2026-10-18
+
+```
+Reviewed commit: 739e3aba2f65035d60937d6702328c60256ed44a
+Target: d1aacb8e..739e3aba -- this plan's chunks 296cdfad (C1), 0a4becdb (C2), 399d406d (C3), f4d4ff3c (C4) and the record commit 739e3aba (C5), plus b712020d (out of plan), reviewed as its own change. Not reviewed: c61da58b, 3ed57e72, 30ff0cd5, 7d9e1637 and 5bcfa9e1, which belong to other sessions.
+Prior findings: none
+```
+
+**Obligation**: Code review (the floor: not the implementing agent)
+**Tier**: Internal
+**Bounding**: not applicable. The record is `full`; the field adjudicates a `bounded` record.
+**Findings**: raised (0 blocking, 2 medium, 6 low)
+**Verdict**: ACCEPT-WITH-FOLLOWUPS -> `ready-to-archive`
+
+Distance: a fresh session of the implementer's agent type on a different model
+(this pass Sonnet 5.5; the implementing commits carry Opus 5.5). It clears the
+floor and is not an External review. I did not write or implement any of it.
+Interpreter for every figure: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13. Every figure below comes from new, empty copies of the reviewed
+commits (`git archive` extractions and one detached worktree) under my own
+scratchpad; my first extractions reused folders an earlier session had left, and
+I discarded them (see [CR7]). The shared tree got this review and the claim,
+nothing else.
+
+### In plain terms
+
+The work does what Revision 1 and the Maintainer's answers accepted. All four
+rules are in both `AGENTS.md` copies, the doctrine files carry them, the two
+copies agree except where the plan said they should differ, and the recorded
+test run holds up: I re-measured every figure I could and each matched.
+
+I then tried to break the new wording 30 different ways in a throwaway copy,
+and the tests caught 13 and missed 17 (every one is listed below). Most of the
+misses sit in places the plan chose not to guard. But five rules that the plan or the Maintainer cared about
+most are guarded by nothing, so a later edit could undo them with every test
+still green. And the mutation rule uses testing words ("killed", "survived")
+that no file defines, which the repo's own comprehension rule forbids.
+
+Nothing here could do damage that is hard to undo: each finding is a wording
+or test addition that can land at any time. So none blocks, and the plan can
+go to archive preparation with the eight follow-ups below.
+
+### The Boundary B record, checked against the range
+
+* **Tested commit.** `b712020d2f76187db729152cbf7921f010c41e29` is the right
+  full SHA and is an ancestor of the reviewed head. It contains the whole
+  implementation range `d1aacb8e..b712020d`; `d1aacb8e` is the plan at
+  `ready-to-implement`.
+* **Same bytes.** Nothing outside `dev/` changed between `b712020d` and
+  `739e3aba` (`git diff --stat b712020d 739e3aba -- . ':!dev'` is empty), so the
+  tested bytes are the reviewed implementation bytes. The tree has since moved
+  to `8e5df0f0` through other sessions' `dev/` commits only.
+* **Interpreter.** Python 3.13.13 at the recorded path, confirmed by running it.
+* **3,347 passed.** I did not re-run the 11-minute suite (see *Fresh full
+  run*). `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --collect-only
+  --quality-gate-shuffle-seed=0` collects exactly 3,347 items at both
+  `b712020d` and `739e3aba`. Collected equals passed, so nothing was skipped,
+  xfailed or deselected. The implementer's raw log in the shared scratchpad
+  agrees (3,347 passed, 3 warnings, 614 s); that is corroboration, not an
+  independent measurement.
+* **Pre and post state.** Not re-observable: the worktree was removed. The
+  worktree list shows no leftover, and the log's rootdir is the recorded
+  worktree.
+* **The 74 neutrality failures are pre-existing.** The `FAIL` set is
+  line-for-line identical at `d1aacb8e`, `b712020d` and `739e3aba`
+  (74 failures, 21 info; redundancy 0 and 0). None of the 8 files this plan
+  edits has a hit. The instrument can match: the same output has 14 hits under
+  `docs/`.
+* **`check_cairn` exit 1.** At `b712020d` in a clean worktree it reports exactly
+  the 3 issues the record names, all in
+  `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`, citing two gitignored
+  files. **At `739e3aba` it reports 6** (finding [CR5]).
+* **Frozen files.** Each of the six commits checked against the manifest's 183
+  `frozen_files`, with `test_verification_boundaries.py` present as the control:
+  none touched. Only `3ed57e72` (another session) touches one, in
+  `bootstrap/tests/test_security_stack.py`; the re-anchor that owes is that
+  session's. The frozen test file is byte-identical across the range and its 40
+  nodes pass.
+* **Added nodes.** 93 collected in the new file, no skip or xfail marker, and
+  the coordinate grep prints nothing.
+* **Published manifest and integrity.** `scaffold.py --manifest` is
+  byte-identical at `d1aacb8e`, `b712020d` and `739e3aba` (98 lines).
+  `verify_integrity.py --target .` prints identical output (18 findings) at all
+  three.
+* **Marker check.** For all five implementation commits the
+  `git diff -U0 ... | grep -E '^[+-].*(\{\{|cairn:)'` check prints nothing; a
+  planted marker line matches it, so the pattern can fire.
+* **Phrase counts behind the raw-text guards.** "cannot be bounded
+  confidently": 1 in each copy. "trust-ceremony surface": 2 raw and 2 collapsed
+  in each (never wrapped). `no reviewed\s+mapping`: 0 in both copies and in
+  `doctrine/plans.md`. "no valid Boundary B record exists": 1 in
+  `doctrine/dual-review.md`. "**Reviewed range**": 1 in `doctrine/plans.md`;
+  "Reviewed range": 1 in `dev/plans/_template.md`. "substantive code surface":
+  0 in `doctrine/plans.md` and both plan templates.
+* **Boundary A counts.** The five direct readers: 182 passed at `d1aacb8e`, 275
+  at `739e3aba`; the difference is the 93 new nodes. The four install-structure
+  files other than `test_scaffold.py` pass 240 at `739e3aba`.
+* **Not re-measured:** elapsed times, the token-budget figure (information
+  only), and the implementer's per-chunk mutation runs.
+
+### Scope fidelity
+
+* Every accepted outcome landed (Revision 1 items 1 to 4; Q1, Q2, Q3; the tests
+  and smoke checks). Nothing accepted was dropped, so the plan's *Scope delta*
+  of `preserved` holds.
+* Nothing beyond the plan except `b712020d`. The doctrine edits are exactly the
+  planned ones, including the two plan-review additions (the validity sentence
+  and "contract or high-risk surface").
+* **Twins agree.** The diff of the two `AGENTS.md` diffs differs only in the
+  planned claim clause ("claimed first" unconditional in Cairn's copy;
+  "if the project uses file claims" in the shipped copy). Both plan templates
+  carry the same one-word edit. `doctrine/dual-review.md` carries the shipped
+  rule-1 wording, conditional included, plus the planned reason sentence.
+* **Other carriers.** `git grep` over the tree for "reviewed mapping",
+  "substantive code surface" and "External ... default" finds no remaining
+  carrier of the old wording outside the deliberation record, the intended plan
+  templates and the frozen test.
+* **Adopter reality.** A scratch install of the reviewed commit into an empty
+  repository puts every new rule in the installed `AGENTS.md`, with the
+  conditional claim clause, and the new text adds no `doctrine/` reference.
+
+### The out-of-plan commit b712020d, as its own change
+
+* **Matches the decision.** The Maintainer's quoted words are "No external by
+  default." The commit removes "Code review is External by default" from both
+  copies and says code review's floor is "not the implementing agent" and that
+  an External code review is an escalation, never the default.
+* **Matches doctrine.** The new sentence restates
+  `doctrine/dual-review.md:292-295` and `doctrine/plans.md:130-134`, which were
+  already right. It adds no doctrine. Those two files still agree.
+* **Consistent everywhere it matters.** A case-insensitive tree search finds no
+  other statement that code review is External by default. The role roster in
+  `dev/agent_collaboration.md` does not assign code review to the External tier.
+* **Open points.** The quoted words reached the implementer second-hand,
+  relayed by the coordinating session; the coordinating session should confirm
+  they are the Maintainer's. The sentence carries no guard ([CR3]).
+
+### Falsification ledger
+
+**What I attacked, and why a ledger.** The plan claims each rule reaches every
+carrier of the old wording and that its pins fail when a clause goes. Both are
+"every member of a set" claims, so I listed the set from the tree (`git grep`,
+not the diff) and mutated each member in a separate copy, as the rule under
+review asks. I also attacked meaning, not only phrases: reversals and deletions
+in clauses the plan had not pinned.
+
+**Control.** A fresh `git archive` extraction of `739e3aba`: the five direct
+readers plus the new file, 275 passed.
+
+**Killed (13).**
+
+| Mutant | Killed by |
+|---|---|
+| drop `clean` from the forbidden commands | `no-reverting-commands-in-a-shared-tree` |
+| "before the commit, not after" -> "after the commit" | `a-trivial-change-runs-before-its-commit` |
+| "A plan appends" -> "Append" | `a-plan-appends-its-verification-section` |
+| put "no reviewed mapping" back in Boundary B | the forbidden-phrasing pin |
+| shipped copy: "claimed first" made unconditional | `test_the_shipped_copy_makes_claiming_conditional` |
+| drop "never as a bare N of M killed" | `ledger-never-reports-a-bare-count` |
+| drop the "not measured is a survivor" sentence | `unmeasured-equivalence-is-a-survivor` |
+| drop "and prose a test or manifest pins" | `pinned-prose-is-substantive` |
+| drop "the test files or nodes" from the bounded record | `bounded-record-names-touched-surfaces-and-tests` |
+| drop the interpreter from the commit-body record | `the-commit-body-carries-mode-and-interpreter` |
+| move rule 1 out of `## Review` | `test_the_commit_rule_sits_in_the_review_section` |
+| wrap "trust-ceremony surface" across a line | frozen `test_bounded_guard_detects_a_removed_fence` |
+| a second "cannot be bounded confidently" | frozen `test_operational_guard_detects_removed_full_fallback` |
+
+Each killing node was named by ID in the run output, for both copies where the
+mutant touched both.
+
+**Survived (17).** None is reported as equivalent: these are wording edits, and
+no behaviour test measured any of them as harmless.
+
+| Mutant | Where | Matters? |
+|---|---|---|
+| S1 "passes under the mutation" -> "fails under the mutation" (reverses the equivalence test) | both copies | yes ([CR2]) |
+| S4 prose-only rule back to "a contract surface" | both copies | yes ([CR2]) |
+| S8 "unless the mapping bounds" -> "unless the plan's reviewed mapping bounds" | both copies | yes ([CR2]) |
+| S9 trigger widened from set claims to "any defect" | both copies | yes ([CR2]) |
+| S10 drop "the tests that own each touched surface" from Boundary A | both copies | yes ([CR2]) |
+| S12 restore "Code review is External by default" | both copies | yes ([CR3]) |
+| D3 `doctrine/plans.md`: restore "has no reviewed mapping" | doctrine | yes ([CR4]) |
+| D4 `doctrine/plans.md`: delete the trivial-change paragraph | doctrine | yes ([CR4]) |
+| S2 drop ", in a separate copy" from the mutation rule | both copies | minor |
+| S3 drop "Boundary C's Bounding verdict reviews it afterwards" | both copies | minor |
+| S5 drop "or a separate copy holding only it" | both copies | minor |
+| S6 drop ", not a plan section" | both copies | minor |
+| S7 drop "or release or security ceremony work" from the definition | both copies | minor |
+| S11 drop rule 1's "The author commits ... names that commit" | both copies | minor |
+| S16 drop "with counts" from the bounded record | both copies | minor |
+| D1 `doctrine/dual-review.md`: drop rule 1's reason sentence | doctrine | minor |
+| D2 `doctrine/dual-review.md`: reverse the equivalence test | doctrine | minor |
+
+**Reading the ledger.** The implementer's per-chunk ledger (26 killed, 0
+survived) is accurate for what it attacked: every mutant there aimed at a clause
+the pins quote. The pins are obligation-level by design, and the plan says so.
+What the plan's ledger cannot show is how much meaning sits just outside the
+quoted phrases. Survivors S1, S4, S8, S9 and S10 are the clauses that carry
+Q1, Q2, PR6 and the proposal's own falsifier, which is why [CR2] exists.
+
+**Other falsification.**
+* **The falsifier, read from the shipped copy alone.** (a), (b) and (c) of the
+  plan's C3 criterion all derive as written, and no sentence sends a trivial
+  change to a plan section. Two edges are left open ([CR8]).
+* **Frozen guards under mutation.** The five raw-text guards behave as the plan
+  says: a wrapped "trust-ceremony surface" and a second "cannot be bounded
+  confidently" both turn them red.
+* **Plan-reading tests at the head.** 17 test files that read `dev/plans` or the
+  governing files, plus the new file and the comprehension test: 961 passed at
+  `739e3aba`, no skip or xfail.
+
+### Findings
+
+None blocks. By the blocking test (*would shipping this cause damage that is
+hard to undo?*) each is no: a wording or pin edit can land after archive.
+
+#### [CR1] medium -- the mutation rule ships words nobody defines
+
+**Plain.** The new rule tells a reviewer to report each "mutant" as "killed",
+"survived" or "equivalent", next to an "unmutated control run". No file defines
+those words, so an adopter's reviewer, and the Maintainer reading the ledger,
+cannot tell what "killed" claims.
+
+**Precision.** The rule is at `templates/core/AGENTS.md:260-269`,
+`AGENTS.md:256-265`, `doctrine/dual-review.md:320-329` and the bullet at
+`doctrine/plans.md:906`. A search of `AGENTS.md`, `templates/core`, `doctrine`
+and `docs` for "killed", "mutant" and "survived" finds only these uses. The
+shipped copy's own rule says to "define a specialist term the first time it
+carries weight" (`templates/core/AGENTS.md:109-114`). "Equivalent" is half
+defined by the next sentence; the other three are not.
+
+**Closes when** each of the three places carries one parenthetical, such as "(a
+mutant is a deliberate break; killed means some check fails on it, survived
+means every check still passes, equivalent means the break changes no
+behaviour)", with the pinned phrase "killed, survived or equivalent, beside an
+unmutated control" left intact.
+
+#### [CR2] medium -- the pins check that clauses exist, not what they say; five decisions have no guard
+
+**Plain.** The new tests catch a deleted or reworded rule when a quoted phrase
+goes. They do not catch an edit that keeps the phrase and flips its meaning, or
+that removes a neighbouring clause. Five such clauses carry decisions that
+people cared about, and today nothing would notice them changing back.
+
+**Precision.** Survivors S1, S4, S8, S9, S10 in the ledger:
+* **S8** is the weightiest. Revision 1's falsifier is that a reader can still
+  derive "run the full suite" for a trivial change. The wording that prevents
+  it is "unless the mapping bounds" (`templates/core/AGENTS.md:218`). The
+  negative pin forbids only "no reviewed mapping", so putting back "unless the
+  plan's reviewed mapping bounds", which a plan-less change cannot satisfy,
+  passes.
+* **S4** is plan review's PR6 decision (a text-only fix on a high-risk surface
+  runs the prose gates), at `templates/core/AGENTS.md:276`. The plan's C3
+  criterion checks it once by grep; no test holds it.
+* **S9** is Q2 (mutation required only when a finding names a set): the trigger
+  sentence at `templates/core/AGENTS.md:260` is unpinned although its last
+  sentence ("mutation stays the reviewer's choice") is.
+* **S1** reverses what "measured equivalence" means; only the heading words
+  "Equivalence is measured, not argued" are pinned.
+* **S10** removes Boundary A's new trivial-change mapping
+  (`templates/core/AGENTS.md:206`); the pin quotes the clause after it.
+
+**Closes when** the new file gains one entry per clause, for both copies, as
+obligations or forbidden phrasings, such as: forbidden `plan's reviewed\s+mapping
+bounds`; `contract or high-risk surface`; `When a finding or claim says a value
+must reach every member of a set`; `passes under the mutation`; and `the tests
+that own each touched surface`. Stable `ids=` as before. **This changes test
+bytes, which is a Boundary C trigger; see *Fresh full run*.** A `wontfix` with a
+rationale is also open if the Maintainer prefers obligation-level pins; I
+recommend the pins, since the cost is five lines and one run.
+
+#### [CR3] low -- the sentence `b712020d` fixed has no guard
+
+**Plain.** The wrong claim "Code review is External by default" is exactly what
+a careless sync of the two copies, or of an older copy, would bring back, and
+no test would notice.
+
+**Precision.** No file under `bootstrap/tests` pins "escalation", "not the
+implementing agent" or "never the default" for `AGENTS.md` (searched); mutant
+S12 survives. The commit body says as much, and so do *Known omissions*.
+
+**Closes when** the new file carries an obligation `An External code review is
+an escalation` and a forbidden `Code review is External by default`, for both
+copies.
+
+#### [CR4] low -- the doctrine copies of the rules are unguarded, so a drift from `AGENTS.md` goes unseen
+
+**Plain.** The plan tests the two `AGENTS.md` files only. If someone edits the
+doctrine wording later, or reverts it, no test compares the two.
+
+**Precision.** Survivors D1 to D4. Disclosed in *Known omissions* and within
+Revision 1's test scope, so this is a follow-up, not a defect. Doctrine is not
+shipped, and the frozen file already pins the six-trigger tokens.
+
+**Closes when** it takes a recorded disposition. I recommend `wontfix`, with
+that rationale. `accept` (extending the new file to the labels that also appear
+in the doctrine) is equally valid and adds more test bytes.
+
+#### [CR5] low -- the record commit adds three hard `claim_check` flags and three `check_cairn` issues in a clean checkout
+
+**Plain.** The record says `claim_check` is clean on this plan, and it is, in
+the shared tree. In a clean copy of the committed plan it is not: the record
+cites three paths that do not exist there. They exist only as ignored local
+files in the shared tree. This is the hazard the record itself names, a figure
+measured away from the commit's bytes.
+
+**Precision.** At `b712020d`, `claim_check` on the plan is clean and
+`check_cairn` reports 3 issues. At `739e3aba` in a detached worktree,
+`claim_check` flags `dev/plans/verification-practice.md:975` (the tests'
+cache folder), `:993` and `:994` (the gitignored suite-runs and suite-cost
+files under `dev/measurement`), and `check_cairn` reports 6. In the shared
+tree both pass, because those ignored files exist there. (This section names
+them in words for the same reason.)
+
+**Closes when** the three paths are written as plain words, not as backticked
+paths (no meaning changes), or the correction is noted in an appended addendum
+to the record. If a fresh run happens ([CR2]), the addendum is already due.
+
+#### [CR6] low -- rule 1's "one write" does not cover the Status line the review must move
+
+**Plain.** The rule says a reviewer's only write is its own review record,
+"nothing else: no other edits". But the lifecycle has the reviewer move the
+artifact's Status (this review does), which is an edit to a line that is not the
+appended record.
+
+**Precision.** `templates/core/AGENTS.md:35` ("A review moves a proposal to
+`revising`") and `templates/core/dev/plans/_template.md:257` ("blocking findings
+move the plan to `revising-code`") against `templates/core/AGENTS.md:87-90`. Test
+runs also leave ignored caches in a tree, which "anything else that writes"
+read literally forbids.
+
+**Closes when** the sentence reads "its own review record, and the Status line
+of the artifact it reviews, appended or created ..." (or equivalent) in both
+copies and `doctrine/dual-review.md:118`. Pin phrase "makes one write: its own
+review record" must stay.
+
+#### [CR7] low -- the rule offers a `git archive` extraction and a worktree as equals, and they are not
+
+**Plain.** An extraction has no repository in it, so any check that asks git a
+question fails there for a reason unrelated to the code. Reusing a folder that
+already holds files is also not "a copy of the reviewed commit".
+
+**Precision.** The plan measured it (*Verification* > "Where": 34 nodes need a
+repository). I reproduced it: `check_cairn.py` in an extraction dies with
+`git ls-files` exit 128. In this review my first extractions went into folders
+an earlier session had left; the neutrality leg read 85 failures instead of 74.
+I discarded those figures and redid every measurement in new empty folders.
+
+**Closes when** rule 1's parenthesis reads "(a fresh, empty `git archive`
+extraction, or a separate worktree for anything that needs the repository)" in
+both copies and `doctrine/dual-review.md`.
+
+#### [CR8] low -- Boundary B's text still has two gaps for a change with no plan, and for an unpinned text-only fix
+
+**Plain.** (i) The shipped copy says to name the project's interpreter and full
+suite "in the plan's verification slot", which a plan-less change does not
+have. (ii) A text-only fix to a high-risk surface that nothing pins is told to
+run only the prose gates, yet B "governs every implementation" and a bounded
+record must state "the explicit absence of any contract or trust-ceremony
+surface", which is false for that fix. So it has no record it can truthfully
+write.
+
+**Precision.** (i) `templates/core/AGENTS.md:214-217`. (ii) `:226-229` and
+`:231-237` against `:271-279`. The same tension existed for contract surfaces
+before this plan; the PR6 phrase and the reach to trivial changes widen it.
+Falsifier (c) is still met, because no sentence demands a full run; the gap is
+the record.
+
+**Closes when** (i) the sentence says where a plan-less change finds the
+configured suite and interpreter (the plan template's verification slot, or the
+project conventions), and (ii) one clause says a text-only fix's record is the
+gates it ran and the search showing nothing pins the prose.
+
+Nit, not numbered: three lines in the new `doctrine/plans.md` text run past 80
+columns (`:300`, `:328` and `:381`); wrapping is free.
+
+**Recommended dispositions** (the implementer's to record at archive
+preparation; any `defer` needs the Maintainer's quoted authorization): `accept`
+[CR1], [CR5], [CR6], [CR7], [CR8]; `accept` as pins [CR2], [CR3]; `wontfix`
+[CR4]. One commit for the wording edits and one for the pins, then one fresh
+full run and a short addendum to the record, would close all of it.
+
+### Fresh full run
+
+**Not required by any Boundary C trigger as the plan stands.**
+1. A valid record exists: right tested SHA, whole range inside it, interpreter
+   confirmed, non-passes dispositioned (and re-measured above).
+2. No unrecorded cross-surface dependency: the 17 plan-reading test files, the
+   comprehension test and the install-structure files all pass at `739e3aba`
+   (961 and 240).
+3. No skip, xfail or xpass: 3,347 collected equals 3,347 passed.
+4. No review sharpening has changed any bytes yet.
+5. No trust ceremony requires one (no release in play).
+6. No concrete reason to distrust the evidence: every figure I re-measured
+   matched, and the two defects I found are in the record's prose, not its
+   numbers.
+
+**One consequence to plan for.** If [CR2] or [CR3] land before archive, they
+change test bytes, and the rule says a change to test bytes invalidates the
+record. The run then repeats (about 11 minutes of machine time, no Maintainer
+time). The wording edits alone ([CR1], [CR6] to [CR8]) touch pinned prose but
+no test, executable template or fixture: re-run the plan's Boundary A mapping.
+
+### Comprehension
+
+For the Maintainer: rule 1 (a review reads a commit) and rules 3 and 4 (a small
+fix runs the tests that own what it touched; one defined term) read plainly,
+and the plan's own opening paragraph carries all four rules in everyday words.
+The one place a non-specialist cannot follow is rule 2's ledger vocabulary
+([CR1]). Put plainly, the rule asks a reviewer to break each place on purpose and
+report, for each break, whether any check noticed. That is the kind of
+sensitivity test a hydrogeologist already runs on a model, and one sentence says
+so.
+
+### Not covered
+
+I did not re-run the full suite, the elapsed times or the token-budget figure,
+and I did not re-run the implementer's per-chunk mutation runs. I did not review
+`dev/PLANNING.md` row M or `CHANGELOG.md`, which are archive-time edits. I
+read the doctrine edits against `AGENTS.md` and the proposal but did not mutate
+them beyond D1 to D4.
