@@ -88,10 +88,11 @@ a scratch install, runs in a separate copy of the reviewed commit (a
 `git archive` extraction or a separate worktree). A figure is evidence only if
 it was measured on that commit's bytes.
 
-**A plan review is Internal, fresh-context — always.** **Code review is
-External by default** — its job is falsification — and its floor is separate
-and independent: **not the implementing agent.** A plan whose surface
-calls for security treatment declares
+**A plan review is Internal, fresh-context — always.** Code review's job is
+falsification, and its floor is separate and independent:
+**not the implementing agent.** **An External code review is an escalation**
+for implementation risk the proposal review did not resolve, never the default.
+A plan whose surface calls for security treatment declares
 `Plan review: required(Internal + Internal Security Review)`, satisfied only by
 an appended `## Plan review` pass whose `**Obligation**` line matches — never by
 an ordinary Internal pass, and never by a heading the checker cannot parse.
