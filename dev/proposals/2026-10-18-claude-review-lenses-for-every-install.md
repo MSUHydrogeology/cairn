@@ -1,7 +1,7 @@
 # Every install gets the review lenses and the scope-reduction trap
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(Internal) — the recommended option touches no engine file, install-contract surface or trust root; options (a) and (c) below would make it `required(Internal + Security Review)`
 **Plan review**: required(Internal)
 **Opened**: 2026-10-18
@@ -657,3 +657,32 @@ choose (a) or (c), the engine is touched and a revision makes this `required(Int
 * `**Plan review**: required(Internal)` and "Boundary B expected `bounded`": superseded by the combined plan's
   declarations; both stand only if Question 5 is "no".
 * The `AGENTS.md` pointer "It works the nine standing lenses": rebased to the accepted stance wording.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "I accept all five of your recommendations. Accept as recommended"
+
+*Scribe's note, separate from the quoted words.* "All five" names Revision 1's
+five Questions for the Maintainer. Each takes its recommended default, as the
+scribe's summary put them to the Maintainer in chat on 2026-10-18:
+
+* **Q1:** yes. The falsification ledger moves in the same change, as a single
+  definition: the doctrine's five items.
+* **Q2:** yes. The full text lives in the review-loop document, with a short
+  pointer in `AGENTS.md`.
+* **Q3:** no. No coverage-line stanza in the review scaffolds in this change.
+* **Q4:** no. The plan rehearses the LHM and modflow_tools upgrades on scratch
+  copies only; the real upgrades stay the Maintainer's.
+* **Q5:** yes. This proposal and the accepted review-stance proposal
+  (`2026-10-18-claude-external-is-a-maintainer-stance.md`, accepted at
+  `58f30d6c`) are built in **one plan**. Its plan review is
+  `required(Internal + Internal Security Review)`, per Revision 1's
+  declarations.
+
+Revision 1 binds.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
