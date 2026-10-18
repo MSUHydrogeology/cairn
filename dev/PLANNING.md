@@ -248,7 +248,15 @@ with the plan's filename stem.
   line here names. `bootstrap/verify_integrity.py` is also on the differential
   oracle's refactor-sensitive roster (`bootstrap/tests/_oracle_activation.py`)
   and already differs from the gate anchor `bd66a70c`, so the ceremony's
-  sensitive-path check covers it either way. No `bootstrap/_scaffold/` symbol
+  sensitive-path check covers it either way. The differential oracle does not
+  run `verify_integrity` (the unit suite covers it), so the evidence behind
+  that authorization is the unit suite, the old-versus-new comparison the plan
+  records, and the code review. Two more files it edits are not frozen
+  but *phase-mutable* in the manifest:
+  `templates/modules/team-gated/intent.py` and
+  `templates/modules/default-on/onboarding_activate.py` (the second already
+  differs from its recorded hash), so changing either gives a `PHASE-CHANGED`
+  note at the ceremony and never a hold. No `bootstrap/_scaffold/` symbol
   changes, so that plan adds nothing to the AST baseline. It also makes
   `python scripts/quality_gate.py --sub neutrality` read `fail=0`, the "green"
   the manifest's recorded gate command already expects of it. Authorization for
