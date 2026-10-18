@@ -219,6 +219,33 @@ with the plan's filename stem.
   > "Accept Revision 2 as written. Defer the install-report fix (F8) to the
   > board. No second review round; External floor waived."
 
+* **Agents taking their own review turns (#13) — the part cut from
+  Maintainer attention.** Deferred 2026-10-18 at the Decision on
+  `proposals/2026-10-17-claude-maintainer-attention.md` (Revision 1 > Scope
+  delta). An agent told "work the board as <role>" would take its role's turns
+  from the status field, so the Maintainer stops relaying commit references.
+  Review found the field has gone stale on the record, cannot name two
+  holders, and answers no recurring failure. Its home is issue #13, kept open.
+  Revival: a recorded two-agent drive, then a fresh proposal that meets the
+  review's four conditions (MA-2) and names the `doctrine/session-routines.md`
+  phrases it amends. Maintainer authorization, quoted verbatim:
+
+  > "Accept A, B, C and D as revised, with every recommended answer, including
+  > B’s scope cut and D’s scope delta."
+
+* **The independent-scientific-check rule as doctrine (#19) — the sentence cut
+  from proposal D.** Deferred 2026-10-18 at the Decision on
+  `proposals/2026-10-17-claude-independent-scientific-check.md` (Revision 1 >
+  Scope delta). The check lands as template guidance; the lens-8 sentence in
+  `doctrine/dual-review.md` waits, because adopters never receive `doctrine/`
+  and its independent-basis half has no incident behind it yet. Revisit with
+  the `deliverable` axis, when the third-party probe row moves, or at the
+  Maintainer's call once about ten real checks exist; issue #19 stays open as
+  the home. Maintainer authorization, quoted verbatim:
+
+  > "Accept A, B, C and D as revised, with every recommended answer, including
+  > B’s scope cut and D’s scope delta."
+
 * **`NEXT_SESSION.md` becomes a local, untracked handoff — the reflections
   treatment.** Deposited 2026-10-16 on Maintainer instruction. The file
   describes itself as hand-written orientation that "may already be stale"; it
