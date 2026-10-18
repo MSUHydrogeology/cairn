@@ -34,9 +34,12 @@ weight and verification depth.
 * **External review is mandatory** for any change touching a
   contract or a scientific assumption — the make-it-prove-itself
   tier is not optional where a quiet error is costly.
-* A **scientific-trust review lens** is in the roster: a reviewer
-  frame that checks domain correctness, not only structural
-  correctness.
+* The proposal template's **independent scientific check** is expected
+  of every change that touches a scientific assumption or a published
+  result: one check whose expected value neither the code nor its
+  tests compute, shown to fail under the mistake it names. The block
+  is gated on the change, not on this axis. Here, an unexplained "N/A"
+  on a change that touches a computed result is a review finding.
 * The full **verify-before-asserting** discipline applies — claims
   about the tree, the data, or the result are checked, not
   asserted from memory. The costliest claims are about *what a call

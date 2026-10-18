@@ -26,7 +26,7 @@ very different points, and they should.
 |------|-------|----------------|
 | **Age** (`age.md`) | greenfield ↔ legacy | Whether a retrofit apparatus is needed — a legacy-agent role, a surface-readiness map, characterization testing. |
 | **Size** (`size.md`) | small ↔ large | Whether the *code* is partitioned into domains, and whether the role roster specializes by domain. |
-| **Complexity** (`complexity.md`) | simple ↔ complex | Review weight and verification depth — how often External review is mandatory, whether a scientific-trust review lens is in the roster. |
+| **Complexity** (`complexity.md`) | simple ↔ complex | Review weight and verification depth — how often External review is mandatory, whether an unexplained "N/A" on the independent scientific check is a review finding. |
 | **Language** (`language.md`) | single ↔ multi | Whether a multi-language test architecture and cross-language seam doctrine are needed. |
 
 ### Team axes — who builds it

@@ -21,6 +21,15 @@ swallowed into it and no test would go red, because both copies grow alike.
 Neither text may sit inside a slot, because an adopter who fills the slot
 replaces everything in it.
 
+Three further places tell a reader what the review practice does about
+scientific results: the Complex position in ``dimensions/complexity.md``, the
+Complexity row of ``dimensions/README.md``, and the profile-filling paragraph
+of ``bootstrap/BOOTSTRAP.md``. Each must point at the check, not at a review
+lens that no module installs, and this module requires each to name it. That
+is presence only, never absence: a later change may reword those places, or
+put a lens beside the check, without touching this module, provided the check
+stays named.
+
 Whitespace is collapsed before comparing, so the check is on words and not on
 line width. A failure names the copy and the first sentence that differs.
 
@@ -46,6 +55,17 @@ _PROPOSAL_TEMPLATES = (
 _PLAN_TEMPLATES = (
     "dev/plans/_template.md",
     "templates/core/dev/plans/_template.md",
+)
+
+_PROMISE_SITES = (
+    "dimensions/complexity.md",
+    "dimensions/README.md",
+    "bootstrap/BOOTSTRAP.md",
+)
+_CHECK_NAME = "independent scientific check"
+_COMPLEXITY_FINDING = (
+    'an unexplained "N/A" on a change that touches a computed result '
+    "is a review finding"
 )
 
 _BLOCK_HEADING = "### Independent scientific check"
@@ -163,7 +183,8 @@ def _read(rel: str) -> list[str]:
 
 def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
     """Both proposal copies hold the block, both plan copies hold the paragraph,
-    each word for word and outside every slot.
+    each word for word and outside every slot, and the three places that
+    describe the review practice name the check.
 
     The groups accumulate into one ``failures`` list rather than stopping at
     the first, so every group runs every time and a failure shows all of what
@@ -172,7 +193,10 @@ def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
     (a) the block, in each proposal copy, equals the reviewed text;
     (b) the paragraph, in each plan copy, equals the reviewed text;
     (c) placement: the block sits after the security-preflight sub-block, and
-        neither text holds a slot marker or sits inside a slot.
+        neither text holds a slot marker or sits inside a slot;
+    (d) the three promise sites each name the check, and the Complex position
+        says an unexplained "N/A" on a change that touches a computed result
+        is a review finding. Presence only.
     """
     failures: list[str] = []
 
@@ -238,5 +262,18 @@ def test_the_check_guidance_reaches_every_copy_and_promise_site() -> None:
             failures.append(f"(c) {rel}: the paragraph holds a slot marker")
         if _inside_a_slot(lines, start):
             failures.append(f"(c) {rel}: the paragraph sits inside a slot")
+
+    for rel in _PROMISE_SITES:
+        try:
+            text = _collapse("\n".join(_read(rel)))
+        except OSError as exc:
+            failures.append(f"(d) {rel}: cannot be read: {exc}")
+            continue
+        if _CHECK_NAME not in text:
+            failures.append(f"(d) {rel}: does not name the {_CHECK_NAME!r}")
+        if rel == _PROMISE_SITES[0] and _COMPLEXITY_FINDING not in text:
+            failures.append(
+                f"(d) {rel}: does not say that {_COMPLEXITY_FINDING!r}"
+            )
 
     assert not failures, "\n".join(failures)

@@ -61,8 +61,9 @@ Choose the applicable profile template:
   `../templates/phase-0/project-profile-greenfield.md`
 
 Fill the template. Do not skimp on the scientific-surface and
-documentation-trust sections — those drive the legacy-agent and
-scientific-trust-reviewer decisions downstream. If uncertain,
+documentation-trust sections — those drive the legacy-agent decision,
+and show which changes touch a scientific assumption and so need the
+proposal template's independent scientific check. If uncertain,
 mark a field `[TBD — needs maintainer input]` rather than guessing;
 the profile is presented to the Maintainer before installation.
 
