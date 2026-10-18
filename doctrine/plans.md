@@ -297,8 +297,11 @@ fail-closed fallback.
 
 Work confined to ordinary prose or deliberation records runs the applicable
 claim, link, snippet, schema, and neutrality gates rather than an unrelated
-engine suite, on any surface, a high-risk one included. Executable snippets, generated or frozen fixtures, gate
-manifests, and contracts whose plans name test coverage are not ordinary prose.
+engine suite, on any surface, a high-risk one included. When a search finds no
+test or manifest that pins the prose, its record is the gates run and that
+search, in place of a bounded record. Executable snippets, generated or frozen
+fixtures, gate manifests, and contracts whose plans name test coverage are not
+ordinary prose.
 A **substantive surface** is anything that is not ordinary prose under the
 prose-only rule: code, tests, executable templates and snippets, fixtures,
 manifests, and prose a test or manifest pins.
@@ -325,7 +328,8 @@ ceremony, which keeps its own exhaustive commands). **Uncertainty resolves to
 `**Boundary B mode**: full | bounded`. On `bounded` it must also name the
 touched surfaces, the test files or nodes and the standing gates it ran, with
 counts, why the effects are bounded, and the explicit absence of any contract
-or trust-ceremony surface. Boundary C then records `**Bounding**: ACCEPTED | FULL RUN REQUIRED`.
+or trust-ceremony surface. Boundary C then records
+`**Bounding**: ACCEPTED | FULL RUN REQUIRED`.
 `FULL RUN REQUIRED` **invalidates** the bounded record, which lands it on
 trigger 1 ("no valid Boundary B record exists") — the six triggers stay six.
 
@@ -378,8 +382,9 @@ later plan-only commit, so live `HEAD` may advance without changing the tested
 implementation bytes.
 
 A plan's record is valid only when the tested commit contains the entire
-reviewed range, pre/post `HEAD` both equal the full tested revision, and the tree is clean
-before and after. A later review or record-only commit does not invalidate it.
+reviewed range, pre/post `HEAD` both equal the full tested revision, and the
+tree is clean before and after. A later review or record-only commit does not
+invalidate it.
 A later unrelated implementation commit neither falsifies what the record says
 about its named tree nor gains coverage from it. Any later commit included in
 the review that changes implementation, tests, executable templates, or
@@ -903,9 +908,10 @@ confirming second different-agent-type pass. Minimal ledger shape:
 * **Negative / edge-case attempt** — at least one, when applicable.
 * **Verification** — the checks run (or consciously not run, with why).
 * **Residual risk** — what remains unverified.
-* **Mutation**, when a finding or claim names a set: each mutant killed,
-  survived or equivalent beside an unmutated control, never a bare count
-  (`dual-review.md` > "Boundary C").
+* **Mutation**, when a finding or claim names a set: each mutant (a deliberate
+  break) killed (some check fails on it), survived (every check still passes)
+  or equivalent (it changes no behaviour) beside an unmutated control, never a
+  bare count (`dual-review.md` > "Boundary C").
 
 **End with the coverage line** (`doctrine/dual-review.md` > "The coverage
 line"): **Covered** (the review-sweep lenses swept, with citations) / **Not

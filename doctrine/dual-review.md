@@ -117,14 +117,18 @@ commits what is to be reviewed before handing it over (locally;
 committing is not pushing), and the review names that commit. In a
 working tree it shares with an author, a reviewer makes one write: its
 own review record, appended to the artifact or created as its own
-review file, claimed first if the project uses file claims, and
-committed by explicit path. Nothing else: no other edits, and no
-`restore`, `checkout`, `stash`, `reset` or `clean`. Anything else that
-writes, such as a mutation or a scratch install, runs in a separate
-copy of the reviewed commit (a `git archive` extraction or a separate
-worktree). A figure is evidence only if it was measured on that
-commit's bytes. The rule guards against loss that cannot be undone:
-git cannot bring back an uncommitted file that a `restore` reverted.
+review file (plus the artifact's Status line, where the review moves
+it), claimed first if the project uses file claims, and committed by
+explicit path. Nothing else: no other edits, and no `restore`,
+`checkout`, `stash`, `reset` or `clean`. Anything else that writes,
+such as a mutation or a scratch install, runs in a separate copy of
+the reviewed commit, in a fresh, empty folder every time: a detached
+`git worktree` (a second checkout of the same repository) by default,
+and a `git archive` extraction (plain files, no repository) only for
+checks that just read files. A figure is evidence only if it was
+measured on that commit's bytes. The rule guards against loss that
+cannot be undone: git cannot bring back an uncommitted file that a
+`restore` reverted.
 
 ## The blocking test, and who ends a loop
 
@@ -322,11 +326,13 @@ Copying the implementation's broad command does not satisfy that ledger.
 diff, and mutate each member, in a separate copy; reading the diff does not
 settle it. A mutation ledger reports each mutant as killed, survived or
 equivalent, beside an unmutated control run, never as a bare "N of M killed".
-Equivalence is measured, not argued: a behaviour test through the real entry
-point passes under the mutation, and where another site is said to recover the
-value, mutating that site fails. Any equivalence that was not measured is
-reported as a survivor. Outside that trigger, mutation stays the reviewer's
-choice.
+A mutant is one deliberate break, made to see whether any check notices: it is
+killed if some check fails on it, survived if every check still passes, and
+equivalent if the break changes no behaviour. Equivalence is measured, not
+argued: a behaviour test through the real entry point passes under the
+mutation, and where another site is said to recover the value, mutating that
+site fails. Any equivalence that was not measured is reported as a survivor.
+Outside that trigger, mutation stays the reviewer's choice.
 
 **A Boundary B record may be `full` or `bounded`** (`doctrine/plans.md`). On a
 bounded record the reviewer additionally records

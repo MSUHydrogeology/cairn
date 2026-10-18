@@ -85,12 +85,16 @@ the artifact and committed, not a conversation that leaves no record.
 what is to be reviewed before handing it over (locally; committing is not
 pushing), and the review names that commit. In a working tree it shares with
 an author, a reviewer makes one write: its own review record, appended to the
-artifact or created as its own review file, claimed first if the project uses
-file claims, and committed by explicit path. Nothing else: no other edits,
-and no `restore`, `checkout`, `stash`, `reset` or `clean`. Anything else that
-writes, such as a mutation or a scratch install, runs in a separate copy of
-the reviewed commit (a `git archive` extraction or a separate worktree). A
-figure is evidence only if it was measured on that commit's bytes.
+artifact or created as its own review file (plus the artifact's Status line,
+where the review moves it), claimed first if the project uses file claims,
+and committed by explicit path. Nothing else: no other edits, and no
+`restore`, `checkout`, `stash`, `reset` or `clean`. Anything else that writes,
+such as a mutation or a scratch install, runs in a separate copy of the
+reviewed commit, in a fresh, empty folder every time: a detached
+`git worktree` (a second checkout of the same repository) by default, and a
+`git archive` extraction (plain files, no repository) only for checks that
+just read files. A figure is evidence only if it was measured on that
+commit's bytes.
 
 **A plan review is Internal, fresh-context — always.** Code review's job is
 falsification, and its floor is separate and independent:
@@ -213,8 +217,10 @@ The roster is in `dev/agent_collaboration.md`.
     and before code review, against a clean unchanged commit under the
     **configured interpreter/runtime** for this project, running its
     **configured full suite** and every standing gate. Name both in the plan's
-    verification slot; this file does not hard-code either, because the command
-    that is right here is wrong in the next repository.
+    verification slot; a change with no plan names them in its commit body,
+    taking them from the plan template's slot or the project's conventions.
+    This file does not hard-code either, because the command that is right
+    here is wrong in the next repository.
     Run the **full suite unless the mapping bounds the change's effects
     confidently** — if a substantive surface has no such mapping, or its effects
     **cannot be bounded confidently**, the full suite runs. **Bounded mode refuses**,
@@ -262,11 +268,14 @@ The roster is in `dev/agent_collaboration.md`.
     diff, and mutate each member, in a separate copy; reading the diff does not
     settle it. A mutation ledger reports each mutant as killed, survived or
     equivalent, beside an unmutated control run, never as a bare "N of M
-    killed". Equivalence is measured, not argued: a behaviour test through the
-    real entry point passes under the mutation, and where another site is said
-    to recover the value, mutating that site fails. Any equivalence that was not
-    measured is reported as a survivor. Outside that trigger, mutation stays the
-    reviewer's choice.
+    killed". A mutant is one deliberate break, made to see whether any check
+    notices: it is killed if some check fails on it, survived if every check
+    still passes, and equivalent if the break changes no behaviour. Equivalence
+    is measured, not argued: a behaviour test through the real entry point
+    passes under the mutation, and where another site is said to recover the
+    value, mutating that site fails. Any equivalence that was not measured is
+    reported as a survivor. Outside that trigger, mutation stays the reviewer's
+    choice.
 
   **Prose-only work does not run the suite.** Markdown has no importers: a
   sentence cannot propagate into behaviour the way a changed symbol does, so
@@ -275,8 +284,10 @@ The roster is in `dev/agent_collaboration.md`.
   the changed file — find them, do not assume the set is empty and do not
   assume it is everything. A prose change to a contract or high-risk surface
   does not trigger the full suite unless a test or manifest pins its bytes;
-  check whether one does. Release verification is a separate strict ceremony. Name
-  the interpreter alongside every suite figure.
+  check whether one does. When none does, the record is the gates run and the
+  search that found none, in place of a bounded record. Release verification
+  is a separate strict ceremony. Name the interpreter alongside every suite
+  figure.
 * **Keep commit bodies concise.** The body is a *snapshot* — what shipped and how
   it was verified — not a restatement of the proposal or plan. Target 15–30
   lines for a non-trivial commit: a one- or two-sentence opener cross-referencing
