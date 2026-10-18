@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -2805,3 +2805,125 @@ removed, along with the step-3 diff check in the loop test.
 * **The UPGRADE.md section offering `git log -p` as the review.** Superseded: it
   leads with reading the whole file and says `git log -p` misses uncommitted
   edits (SR16).
+
+## Review -- Claude Opus 5.5 (Security Review, SR15 closure, fresh session) -- 2026-10-17
+
+```
+Reviewed commit: a89babe94d9d06f349943ac47e09aa2b6d4dcb6b
+Target: SR15 and SR16 in the SR8-closure Security pass, the Response to it, and Revision 4, against bootstrap/verify_integrity.py and _cmd_finalize_lockfile in bootstrap/_scaffold/upgrade.py
+Prior findings: SR15 (blocking), SR16 (non-blocking), both this tier
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised (2 non-blocking)
+**Verdict**: ACCEPT
+
+Distance: a fresh session of the author's agent type, not a different type. I
+wrote neither the proposal nor an earlier review of it. This pass reads SR15's
+closure, as the last pass set out, and does not reopen earlier rounds.
+
+### In plain terms
+
+SR15 is closed, and the Security Review obligation is **cleared**. The note no
+longer prints any command. So there is nothing an adopter can run that comes
+back empty while `--finalize` records a planted line. What is left is a person
+reading their own file, which is the safe fallback SR15 itself named.
+
+Two small wording fixes would make that reading harder to get wrong. Neither
+blocks, and both can land in the plan:
+
+* The new UPGRADE.md section should say which copy to read: the one in your
+  project, not the file of the same name in the Cairn folder you ran the check
+  from. It should also say your own fill must be in what you read.
+* The existing hint still says reading the file's history is enough. The new
+  section says history misses edits not yet committed. Both can appear in the
+  same output, so one of them should change.
+
+### The three questions
+
+**1. Can the note's output, or the section it points to, still lead an adopter
+to record a tampered file?** Not through anything the note prints.
+
+* The note's lines name a file and a slot, say how to fill it, and give one
+  warning and one pointer. None of that is a command. So none of it can run in
+  the wrong folder or against the wrong baseline, SR15's two causes.
+* The note grants nothing. Recording is a separate command the adopter types
+  after reading. The scoped `--finalize` records the bytes on disk
+  (`bootstrap/_scaffold/upgrade.py:1874`) and skips the dirty-tree guard
+  (`:1819`), and the section says both.
+* The pointer leads to `bootstrap/UPGRADE.md` in the Cairn checkout, the
+  verifier's side. The install manifest does not ship it to adopters
+  (`scaffold.py --manifest` lists `AGENTS.md` twice and `UPGRADE.md` never). So
+  a tampered target cannot rewrite the advice the note points to.
+* What remains is a reader who reads the wrong copy, or cannot tell that a
+  change is not theirs. SR17 covers both.
+
+**2. Is the prose review sound?** Yes, as the strongest review that does not
+depend on git state. Reading the whole file covers every byte `--finalize`
+records, whether staged, committed or neither. Calling `git log -p -- <path>`
+supplementary, because it shows committed history only, is correct. That closes
+SR16's UPGRADE.md point. Its limits are SR17.
+
+**3. Did Revision 4 open anything new?** No. It removes output rather than
+adding it.
+
+* Dropping NU2's printed finalize command loses no security property. The loop
+  test still proves a filled slot can get back to a passing check, and the
+  printed command is where SR2, SR8 and SR15 all lived. The change narrows
+  scope, so it needs no second External round.
+* The withdrawal ledger covers what Revision 4 replaces. I checked it against
+  Revision 3's Part 2 items 5 and 7, its tests, and its S4 and S5.
+* SR16's three assertions are restated in full, scoped to the note's lines as
+  asked.
+
+### Findings
+
+**[SR17] (non-blocking) The section should say which copy to read, that your
+fill must be in it, and what reading cannot catch.** A reader can check a clean
+file and still record a tampered one, if the clean file is the wrong copy.
+
+* **Which copy.** The note prints paths relative to the target. The adopter runs
+  the check from the Cairn checkout, which has its own `AGENTS.md`. That is
+  SR15's wrong-folder cause, now in prose. It is weaker here, since nothing runs
+  by itself, but it is the same mistake. The section should say: read the file
+  inside your project, under the `--target` you passed. Your own fill must be in
+  what you read; if it is not, you are reading the wrong copy. That is SR15's
+  own step-3 check, kept without the command.
+* **What reading cannot catch.** Reading finds a line you know is not yours,
+  such as SR15's planted instruction to download and run a script. It does not
+  reliably find a small rewording of text Cairn shipped, because the check keeps
+  no copy to compare with. S5 should name "an adopter who reads but cannot tell"
+  beside "an adopter who records without reading". The section may suggest
+  comparing with a copy you trust, as an aid in the same standing as
+  `git log -p`, never as proof.
+
+*Closes when* the plan's UPGRADE.md text carries the two sentences on which copy
+and the fill being present, and S5 names the reading limit.
+
+**[SR18] (non-blocking) The existing hint and the new section disagree about
+history.** In one run, an adopter can see two standards for the same review.
+
+* The hint says to read "the whole file, or its history since install"
+  (`bootstrap/verify_integrity.py:185-186`). The "or" offers history as enough
+  on its own.
+* The section says history shows committed edits only, so it is never enough on
+  its own. That is SR16's point, and it applies to the hint equally.
+* For a modified file with a marked slot, both print in the same output. Case B
+  is exactly that file.
+
+No test pins the hint's phrase. Dropping ", or its history since install," is a
+one-phrase change in a file this proposal already edits. Revision 3 item 6 left
+the hint alone on purpose, so this is the author's call.
+
+*Closes when* the plan removes the phrase, or S5's hint entry names the
+disagreement.
+
+### Verdict
+
+**ACCEPT.** SR15 is closed by construction, because the note prints no command.
+SR16 is closed. The Security Review obligation is **cleared**, and Status moves
+to `awaiting-decision`. SR17 and SR18 land in the plan, where its Internal
+review can check them.
+
+**No new question for the Maintainer.**
