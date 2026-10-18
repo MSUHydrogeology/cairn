@@ -1,7 +1,7 @@
 # Plan: maintainer attention — a list of what waits on the Maintainer, and no work left in archived plans
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-maintainer-attention.md`
-**Status**: ready-to-implement
+**Status**: implementing
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the authoring templates, and a tool adopters run
 **Opened**: 2026-10-18
