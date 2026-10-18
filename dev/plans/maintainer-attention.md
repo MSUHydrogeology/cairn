@@ -1,7 +1,7 @@
 # Plan: maintainer attention — a list of what waits on the Maintainer, and no work left in archived plans
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-maintainer-attention.md`
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the authoring templates, and a tool adopters run
 **Opened**: 2026-10-18
@@ -37,7 +37,8 @@ Part B is not in this plan's baseline.
 * `tools/board.py`, its byte-identical shipped twin
   `templates/skills/_lib/board.py`, and that file's lockfile record in
   `dev/.cairn/cairn-lock.yml`.
-* `bootstrap/tests/test_replacement_tools.py`, which gets five new nodes.
+* `bootstrap/tests/test_replacement_tools.py`, which gets five new nodes: five
+  test functions, none parametrized, so the collection grows by exactly five.
 * `doctrine/lifecycle.md`:
   * the status sentence in "The proposal lifecycle";
   * "Archive precondition".
@@ -62,6 +63,10 @@ range:
   `doctrine/proposals.md`: Part B's surfaces left with it.
 * `bootstrap/_scaffold/`: so there is **no AST impact**.
 * `CHANGELOG.md`, until the archive commit (C3, applied to this plan itself).
+* `docs/tool-usage.md`: its "tools/board.py" entry describes the plain board,
+  which does not change. It is not on the accepted documentation surface, and
+  whether to add a `--maintainer` sentence there is a question put to the
+  Maintainer in the Response.
 
 **Frozen files.** One, `bootstrap/tests/test_replacement_tools.py`, read from
 `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files`. Its bytes change,
@@ -72,12 +77,15 @@ ceremony.
 The other files checked are not frozen: both `board.py` copies, both plan
 templates, both `PLANNING.md` files, `doctrine/lifecycle.md` and
 `doctrine/plans.md`. The instrument was checked against a known frozen key.
+`bootstrap/tests/test_scope_reduction_trap.py` is also frozen; this plan reads it
+and does not edit it.
 
 **Lockfile.** `tools/board.py` is a verbatim lockfile record (source
 `skills/_lib/board.py`), so changing it leaves the record's hash stale.
 
 * C1 reconciles it with a scoped finalize of that one path, following the
-  precedent `2ea3f869`.
+  precedent `2ea3f869`. Any later edit to `tools/board.py` (a code-review fix)
+  owes the same finalize in its own commit.
 * `dev/plans/_template.md` already reports a hash mismatch in
   `bootstrap/verify_integrity.py --target .`. It is **not** finalized, because
   that would re-attest earlier, unreviewed drift.
@@ -85,27 +93,36 @@ templates, both `PLANNING.md` files, `doctrine/lifecycle.md` and
 
 ### Sequencing with the sibling plans
 
-`verification-practice` is implementing now and **lands first**. This plan
-**rebases onto it**:
+`verification-practice` has landed its implementation chunks C1–C4 (`296cdfad`,
+`0a4becdb`, `399d406d`, `f4d4ff3c`) and its Boundary B record (`739e3aba`, now
+`awaiting-code-review`). Read against the tree at `739e3aba`:
 
-* **`doctrine/plans.md`.** That plan edits "Boundary A", "Boundary B" and "Code
-  review — doctrine"; this one edits "Mutability rule", "Accepted scope is a
-  floor" and "Lasting-truth migration doctrine".
-* **Both plan templates.** That plan changes one word in the
-  `verification-commands` slot; this one edits other sections.
-* **Its pins.** It adds `bootstrap/tests/test_review_and_verification_rules_ship.py`,
-  which pins plan-template text, so that file joins this plan's Boundary A.
+* **`doctrine/plans.md`.** That plan edited "Boundary A", "Boundary B" and the
+  record-validity sentence; this one edits "Mutability rule", "Accepted scope is
+  a floor" and "Lasting-truth migration doctrine". No section overlaps.
+* **Both plan templates.** That plan changed one word in the
+  `verification-commands` slot ("substantive code surface" became "substantive
+  surface"); this one edits other sections.
+* **Its pins.** `bootstrap/tests/test_review_and_verification_rules_ship.py`
+  reads only the two `AGENTS.md` copies, which this plan does not touch, so it
+  is not in this plan's Boundary A.
 
-C2 and C3 therefore start only from a tree that holds verification-practice's
-last implementation commit. C1 and C5 touch none of its files and may run
-earlier.
+Its code review is still ahead, and a `revising-code` fix could edit those files
+again. So C2 and C3 **re-read the section they edit at edit time**. Both plans
+commit to `master`; "rebases onto it" means only that. C1 and C5 touch none of
+its files and start as soon as this plan is `ready-to-implement`.
 
-Two other siblings:
+Three other siblings:
 
 * `independent-scientific-check` edits the templates' *Acceptance criteria*,
   which this plan does not touch.
 * `neutrality-and-upgrade-slots` makes the neutrality checker stricter. Every
   line this plan adds names no vendor, HTML comments included.
+* `dev/proposals/2026-10-18-claude-board-as-basis.md` (not yet decided, no plan
+  yet) would change `tools/board.py`, its twin and the same lockfile record
+  after C1 lands. Nothing here changes for it, except that C1 must land
+  finalized, list each artifact once, and read active artifacts only under
+  `--maintainer`.
 
 ### Found while planning, not widened
 
@@ -117,6 +134,9 @@ Two other siblings:
   `templates/core/dev/PLANNING.md` restates the archive precondition too. The
   accepted text gives that file only the marker line, and its restatement
   already says "This copy is not the source", so it is delivered as written.
+  Because `doctrine/` is not installed in an adopter tree, the shipped
+  *Dispositions* text states the archive rule in words rather than only citing
+  it.
 * **Two other mentions of sequencing.** `AGENTS.md` and
   `doctrine/dual-review.md` both say "sequencing may move work between chunks".
   The accepted C2 names `doctrine/plans.md` and the plan templates only, and
@@ -125,6 +145,13 @@ Two other siblings:
   becomes a partial name once the board reads `dev/PLANNING.md` too. The
   accepted text puts the nodes in that class, and the property it pins, judging
   nothing, still holds. Renaming the class is not in scope.
+* **A near-miss spelling is documented, not detected.** A line written
+  `**Waiting on Maintainer:** …`, with the colon inside the bold, does not match
+  the header rule. On a plan that mentions a fence, the advisory names it anyway,
+  since no wait is declared. On a plan with no fence token (a deviation request)
+  only the code-review check and the miss tracker catch it. The template
+  preamble says the colon sits outside the bold. Detecting a second spelling
+  would add a rule the accepted text does not have.
 
 ### Documentation / doctrine surface
 
@@ -139,111 +166,250 @@ The rate-limit grounds are the proposal's, and the Decision ratified them.
 
 ## Sequence
 
+The rows are in run order. The labels C1–C6 and M keep the plan review's and
+the Response's references, so C5 runs second and C2's gate names it.
+
 | # | Chunk | Gate | Ships |
 |---|---|---|---|
-| C1 | **The board learns the list.** `board.py` gains `--maintainer`: <ul><li>it lists artifacts at `awaiting-decision`, artifacts whose header carries `**Waiting on Maintainer**:`, and `dev/PLANNING.md` lines carrying it (each named by line number);</li><li>one advisory footer line names each active plan whose body has `MAINTAINER-GATED` or `MAINTAINER-ONLY` but whose header has no Waiting line;</li><li>the footer names pushes (`git status`) and anything undeclared as unlisted, and names a missing `dev/PLANNING.md`.</li></ul>The field joins `_FIELDS`, and the docstring gains one sentence naming the two new reads. Twin byte-identical. Five nodes in `TestTheBoardReadsHeadersAndJudgesNothing`, each red before the code. Scoped finalize of `tools/board.py`. | plan review landed | one commit |
-| C2 | **The line, written down.** Doctrine and templates say what the Waiting line is and when to write it:<ul><li>`doctrine/lifecycle.md` gains the exception to "status alone names the holder";</li><li>`doctrine/plans.md` > "Mutability rule" lists the line beside Status;</li><li>both plan templates get the line documented in the preamble, a *Sequence* sentence (write it when work reaches a fenced chunk), a *Dispositions* sentence (write it with a `defer` batch), and a *Code review* check (`git log -p` on the plan shows a Waiting line for each fenced chunk and deviation request in the range; a missing line is a finding, recorded in the project's incident tracker);</li><li>`templates/core/dev/PLANNING.md` gets one line stating the row marker.</li></ul> | C1; verification-practice's last implementation commit is in the tree | one commit |
-| C3 | **Archived files are records.** Nothing still to be done may live only in an archived file:<ul><li>`doctrine/lifecycle.md` > "Archive precondition" gains the rule and the live-home definition;</li><li>`doctrine/plans.md` > "Accepted scope is a floor" gains "of a live plan" and the Q2 rule;</li><li>`doctrine/plans.md` > "Lasting-truth migration doctrine" gains changelog-at-archive;</li><li>both templates gain *Scope delta* "of a live plan" with the Q2 rule, and in *Dispositions* a pointer to the rule plus the changelog line.</li></ul> | C2 | one commit |
-| C4 | **Today's waiting rows are marked.** One commit to `dev/PLANNING.md` under the Decision's instruction:<ul><li>the marker is stated once;</li><li>the rows that wait on the Maintainer are marked: the gate-manifest re-anchor, the open "Four deferred Maintainer questions", the stage-reader row's question (3), and any others a sweep finds (each listed in the commit body with its reason);</li><li>one line joins the *Archive preconditions* restatement for C3's rule.</li></ul> | C1, C3 | one commit |
-| C5 | **The miss tracker.** A miss is recorded, not remembered. `dev/measurement/maintainer-view-misses.md` is forked from `dev/modules/incident_log_template.md`, with a 30-day window. A miss is a code-review "waiting-line miss" finding, or anything the Maintainer reports waited without being listed, board rows included. | plan review landed | one commit |
+| C1 | **A new command lists everything waiting on the Maintainer.** `python tools/board.py --maintainer` reads active artifacts only (`--archive` has no effect on it) and prints one entry per item, with the columns kind, artifact, reason and text:<ul><li>an artifact whose status begins `awaiting-decision`, or whose header carries `**Waiting on Maintainer**:`, appears **once**, however many ways it qualifies (reason `awaiting-decision` or `declared`);</li><li>a `dev/PLANNING.md` line that matches the **row form** below appears as kind `roadmap`, named `dev/PLANNING.md:<line>`;</li><li>**row form**: after leading spaces and one optional `* ` or `- `, the line is `**Waiting on Maintainer**: <what>`, read by the same rule as a header field. A mention inside a sentence or in backticks is not a marker, and a line with no text still counts as declared, so a blanked line stays visible;</li><li>one advisory footer line, always printed (`none` when empty), names each active plan whose body has `MAINTAINER-GATED` or `MAINTAINER-ONLY` and whose header has no Waiting line;</li><li>the footer names pushes (`git status`) and anything undeclared as unlisted, and names a missing `dev/PLANNING.md`.</li></ul>The field joins `_FIELDS`. The docstring's "and nothing else", the usage block and the help text are rewritten to name the two new reads; the plain-mode footer is unchanged. Twin byte-identical. Five nodes in `TestTheBoardReadsHeadersAndJudgesNothing`, each red on the parent commit. Scoped finalize of `tools/board.py`. The commit sets Status to `implementing`. | `ready-to-implement` | one commit |
+| C5 | **A file that records each time something waited on the Maintainer without appearing on the list.** `dev/measurement/maintainer-view-misses.md`, forked from `dev/modules/incident_log_template.md`, with a 30-day window and **one** event class covering both sources: a code-review "waiting-line miss" finding, and anything the Maintainer reports as waiting without being listed, board rows included. Its Purpose says what two rows in the window mean: declaring is the wrong design (Revision 1), not only a rate-limit suggestion. The commit also drops this plan's `Proposed paths:` line, as the template says once a path resolves. It runs before C2 so Cairn's own template can name the file. | `ready-to-implement` | one commit |
+| C2 | **The line, written down.** Doctrine and templates say what the Waiting line is and when to write it:<ul><li>`doctrine/lifecycle.md` gains the exception to "status alone names the holder": inside a plan, the Waiting line names a Maintainer gate;</li><li>`doctrine/plans.md` > "Mutability rule" lists the line beside Status;</li><li>both plan templates get a **preamble** paragraph (above the rule, so not copied into a plan) that gives the exact form, says it goes in the header block beside Status, names the three triggers (a fenced chunk, a `defer` batch, a deviation request), says to delete it when answered, gives the 48-character budget, says change notes (`dev/plans/<slug>.md`) carry it too, and says the colon sits outside the bold;</li><li>the sentences that **are** copied into a plan say where it goes: *Sequence* (write it when work reaches a fenced chunk) and *Dispositions* (write it with a `defer` batch), each "in the header block, beside Status";</li><li>the *Code review* check: `git log -p` on the plan shows a Waiting line for each fenced chunk whose fence became the next move inside the reviewed range, and for each deviation request made in it. A fence the range did not reach is not checked, and one whose wait is declared on a marked board row is checked there. A missing line is a finding, recorded in the miss tracker: Cairn's copy names `dev/measurement/maintainer-view-misses.md`, the shipped copy says "the project's incident tracker";</li><li>`templates/core/dev/PLANNING.md` gets one line stating the row marker, in the row form C1 fixes.</li></ul> | C1, C5; re-read each section at edit time | one commit |
+| C3 | **Archived files are records.** Nothing still to be done may live only in an archived file:<ul><li>`doctrine/lifecycle.md` > "Archive precondition" gains the rule, the live-home definition, and the negative clause: a pointer to an archived artifact, or to an unopened plan, is not a live home;</li><li>`doctrine/plans.md` > "Accepted scope is a floor" gains "of a live plan", the hand-off clause (work handed to an unopened plan is a `defer`, with a board row listing the items) and the Q2 rule (a quoted Decision authorizes a later-plan `defer` only when the accepted text **assigns** that work to that plan; a plan that simply fell short is not an assignment);</li><li>`doctrine/plans.md` > "Lasting-truth migration doctrine" gains changelog-at-archive;</li><li>both templates gain, in *Scope delta*, "of a live plan", the hand-off clause and the Q2 rule; and in *Dispositions* the archive rule in words, the changelog line, and the sentence that an archiving plan carries no Waiting line (a wait still open then moves to a marked board row).</li></ul> | C2; re-read each section at edit time | one commit |
+| C4 | **Today's waiting rows are marked.** One commit to `dev/PLANNING.md`, under the Decision's instruction (quoted verbatim in the body):<ul><li>claim the file and read the active set first (`python tools/intent.py claim`, then `list`);</li><li>the marker is stated once, inline in backticks and never as a line-initial example, in the row form;</li><li>a row is marked when its next move is one only the Maintainer can make: a ceremony only they run, a question only they answer, a go-ahead only they give. An authorized deferral whose next move is anyone's is not marked. Marked: the gate-manifest re-anchor row and the stage-reader row's question (3), plus any others a sweep of the whole board finds; the commit body lists each with its reason;</li><li>one line joins the *Archive preconditions* restatement for C3's rule.</li></ul> | C1, C3 | one commit |
 | C6 | **Boundary B, then the record.** The whole suite runs once on the finished work, and the result is written down: full mode (*Verification*), then `## Implementation verification`. Status moves to `awaiting-code-review`. | C1–C5 | one commit |
-| M | **MAINTAINER-ONLY — no new ceremony.** `bootstrap/tests/test_replacement_tools.py` and its five new node IDs join the re-anchor row already queued. **An implementing agent must not perform the re-anchor.** The agent's part is the board note at archive. | code review cleared | Maintainer |
+| M | **MAINTAINER-ONLY — no new ceremony.** The *re-anchor* is the supervised ceremony, run only by the Maintainer, that brings the gate manifest up to date with the changed tests (`bootstrap/REANCHOR_RUNBOOK.md`). `bootstrap/tests/test_replacement_tools.py` and its five new node IDs join the re-anchor row already queued, which C4 marks, so M needs no Waiting line in this plan: the wait is declared on that row. **An implementing agent must not perform the re-anchor.** The agent's part is the board note at archive. | code review cleared | Maintainer |
 
-**Shared-file discipline.** C4 runs `python tools/intent.py list` before editing,
-because `dev/PLANNING.md` is a coordination surface.
+**Shared-file discipline.** C4 claims `dev/PLANNING.md` with `python
+tools/intent.py claim` and reads `python tools/intent.py list` before editing,
+because the file is a coordination surface (`doctrine/coordination.md` >
+"Required signal+read for coordination-surface files"). A commit by path takes
+the whole file, so C4 checks the diff before committing (see its criteria).
 
 ## Acceptance criteria
 
+**Reading these criteria.** Each ends with *Red when*: a change that turns it
+red. Prose checks use `count(file, section, phrase)`, the number of times a fixed
+phrase occurs in a section of a file, taken on whitespace-collapsed text (as the
+existing pins do), the section running from its heading to the next heading of the
+same or higher level. A count of a new phrase is taken at the chunk's parent and
+must be 0 there, then the stated number at the chunk's commit. These are one-shot
+checks the implementer runs and records; no standing test pins the new prose,
+because the accepted evidence plan names five nodes. Boundary C attacks the prose.
+
 ### C1
 
-* **On a scratch tree, `--maintainer` lists exactly:**
-  * an `awaiting-decision` proposal;
-  * a plan carrying the line;
-  * a `dev/PLANNING.md` line carrying it.
+Every node builds a scratch tree in `tmp_path`.
 
-  Nothing else is listed (node 1).
-* **A plan with a fence token in its body and no Waiting line** is named on the
-  advisory line and is not listed as waiting (node 2). Deleting the advisory
-  code in a scratch copy turns node 2 red.
-* **A row that only mentions the marker mid-sentence** (in backticks) is not
-  listed (node 3).
-* **The footer** names pushes and undeclared items as unlisted, and names a
-  missing `dev/PLANNING.md` (node 4).
-* **A control character in a header value and in a row value** comes out escaped
-  (node 5).
-* **Each new node is red before the code change.** The record names the commit
-  where each was red.
-* **The plain board is unchanged** on a tree that carries no Waiting line: its
-  output is byte-identical before and after.
-* **The two copies are identical:**
-  `cmp tools/board.py templates/skills/_lib/board.py` exits 0.
-* **No new subprocess:** `grep -nE "subprocess|Popen|os\.system" tools/board.py`
-  prints nothing.
+* **Node 1 lists exactly the declared set.** The tree holds:
+  * listed: a proposal at `awaiting-decision`; a proposal whose status reads
+    `awaiting-decision — note`; a plan carrying the line; a plan whose line has
+    no text; a proposal that is both at `awaiting-decision` and carrying the
+    line (**one** entry); a `dev/PLANNING.md` line indented two spaces; a
+    `dev/PLANNING.md` sub-bullet line (`  * **Waiting on Maintainer**: …`);
+  * not listed: a proposal at `awaiting-review`; a plan with no line; an archived
+    plan carrying the line.
+
+  *Red when:* the status is compared exactly (the decorated one drops); the board
+  file is not read; the sub-bullet form is not matched; the both-ways artifact
+  prints twice; an empty line is dropped; or an archived artifact appears.
+* **Node 2 names a fence with no declared wait, and only a live plan.** An active
+  plan with a fence token in its body and no Waiting line is named on the
+  advisory line and is not listed as waiting. An archived plan, a `_template.md`
+  and an active proposal, each with a fence token and no line, are named nowhere,
+  with and without `--archive`. With none qualifying, the advisory line reads
+  `none`. *Red when:* the advisory code is deleted, **in a throwaway `git
+  worktree` at C1's commit** (the test loads `tools/board.py` from the tree it
+  sits in, so a scratch copy would never be read); archives are scanned;
+  `_`-prefixed files are not skipped; or the empty case prints nothing.
+* **Node 3 ignores a mention.** A `dev/PLANNING.md` line that names the marker
+  mid-sentence or inside backticks is not listed. *Red when:* the matcher is
+  loosened to a substring search.
+* **Node 4 names the gaps.** The footer names pushes and undeclared items as
+  unlisted. On a tree with no `dev/PLANNING.md`, it names the missing file and
+  the artifact entries still list. *Red when:* a missing file reads as zero rows
+  without a word.
+* **Node 5 encodes every value.** A control character (ESC) in a header value,
+  in a row value, and in an artifact name printed on the advisory line or in a
+  listed entry comes out escaped. *Red when:* any one of the three prints raw.
+* **Exactly five nodes.** `pytest --collect-only -q
+  bootstrap/tests/test_replacement_tools.py` shows five more nodes than at the
+  parent. *Red when:* a node is parametrized or split.
+* **Red before the code.** Run the five nodes against C1's parent, in a throwaway
+  worktree at the parent with only the new test file copied in. Each fails
+  because `--maintainer` is unknown, not on an import error. The commit body names
+  the parent SHA and the failure. *Red when:* any node passes at the parent.
+* **The plain board is unchanged.** Run the parent's `board.py` and the new one
+  against the same `--root`, once on the live tree and once on a scratch tree
+  with no Waiting line; `cmp` of the two outputs exits 0. *Red when:* the new
+  column or any new footer text appears in plain mode.
+* **The tool describes itself truly.** `python tools/board.py --help` names
+  `--maintainer` and no longer says "header blocks only"; the docstring's "and
+  nothing else" names the two `--maintainer` reads; the plain-mode footer line is
+  unchanged. *Red when:* the old help sentence is left in place.
+* **The two copies are identical.** `cmp tools/board.py
+  templates/skills/_lib/board.py` exits 0, and the twin-parity test in
+  `bootstrap/tests/test_notice_install.py` passes. *Red when:* either copy is
+  edited alone.
+* **No new subprocess.** First run the pattern on `tools/session.py` and see it
+  match, which shows the instrument can fire. Then `grep -nE "import
+  subprocess|subprocess\.|Popen|os\.system|os\.popen" tools/board.py` prints
+  nothing. If a docstring trips it, reword the docstring, not the pattern.
+  *Red when:* `import subprocess` is added.
 * **The lockfile.** After `python bootstrap/scaffold.py upgrade --target .
-  --finalize tools/board.py`:
-  * the lockfile diff touches only the `tools/board.py` record;
-  * `python bootstrap/verify_integrity.py --target .` lists no finding for
-    `tools/board.py`.
-
-### C2
-
-* **`doctrine/lifecycle.md`** carries the exception: inside a plan, the Waiting
-  line names a Maintainer gate.
-* **"Mutability rule"** in `doctrine/plans.md` lists the line.
-* **No template line begins with the marker.**
-  `grep -n "^\*\*Waiting on Maintainer\*\*" dev/plans/_template.md templates/core/dev/plans/_template.md`
-  prints nothing, so a copied plan carries no live line.
-* **The added sentences match.** The *Sequence*, *Dispositions* and *Code
-  review* sentences are identical in both plan templates.
-* **A fresh install lists nothing.** Install into a scratch tree with
-  `bootstrap/scaffold.py`, then run `board.py --maintainer --root <scratch>`. It
-  lists zero rows, so the new `PLANNING.md` line does not list itself.
-* **`python scripts/check_cairn.py` passes.** Any new `doctrine/` reference in a
-  shipped template carries its `cairn-internal-ref-allow` marker.
-
-### C3
-
-* **The rule is in place.** `doctrine/lifecycle.md` > "Archive precondition"
-  holds the rule, *nothing still to be done may have an archived artifact as its
-  only home*. It also holds the live-home definition: an open artifact that names
-  the item, an issue by number, or a board row.
-* **Sequencing.** Both `doctrine/plans.md` and the two templates read "between
-  chunks of a live plan". They keep the pinned phrases "Sequencing is free;
-  removal is not" (doctrine) and "Sequencing is free" (templates).
-* **The Q2 rule says "assigns".** The Decision quote authorizes a later-plan
-  `defer` only when the accepted text assigns that work to that plan, and the
-  `defer` line quotes the assigning sentence.
-* **Changelog at archive.** `doctrine/plans.md` > "Lasting-truth migration
-  doctrine" and both templates say the archive commit writes the plan's
-  changelog entry. The `NEXT_SESSION.md` sentences in that section are
-  unchanged.
-* **`bootstrap/tests/test_scope_reduction_trap.py` passes unchanged.** Deleting
-  "Sequencing is free" from a scratch copy of a template turns it red, which
-  confirms the pin still reads the edited sentence.
-
-### C4
-
-* **The live list is not empty.** `python tools/board.py --maintainer` on the
-  live tree lists at least the three named rows.
-* **Every marker value is short.** Each is under 48 characters, so no `…`
-  appears in the output.
-* **The commit is narrow.** It touches only `dev/PLANNING.md`.
-* **Every mark has a reason.** The commit body names each marked row and why its
-  next move is the Maintainer's. A deferral already authorized is queued work and
-  is not marked.
+  --finalize tools/board.py`, the lockfile diff touches only the `tools/board.py`
+  record, and `python bootstrap/verify_integrity.py --target .` reports the same
+  findings before and after C1, none for `tools/board.py`. *Red when:* the
+  finalize is skipped (`tools/board.py` appears) or run unscoped (other records
+  change).
+* **A day-one figure.** The commit body records the advisory line the live tree
+  prints, the starting figure for the "noisy check" signal. *Red when:* it is
+  absent.
 
 ### C5
 
 * **The tracker is a real tracker.** It has the template's sections, an empty
-  `## Incidents` table, a 30-day window, and a *What counts* entry covering both
-  sources.
-* **It is read, not skipped.** `python tools/evolution_infer.py` reads it: it
-  appears among the trackers read, not under `SKIPPED`.
+  `## Incidents` table, `**Rolling window**: 30 days`, and a *What counts* that
+  names **one** `Class name` and says both sources count under it; its Purpose
+  says two rows in the window mean declaring is the wrong design. *Red when:* a
+  second `Class name` entry exists, or the window line is missing.
+* **It is read, not skipped.** `python tools/evolution_infer.py` lists it among
+  the trackers read, not under `SKIPPED`, and exits 0. *Red when:* the
+  `## Incidents` heading is removed.
+* **The two sources add up.** A scratch copy with two `occurred` rows dated today
+  under the file's class, one described as a code-review finding and one as a
+  Maintainer report, makes `python tools/evolution_infer.py --trackers <scratch
+  copy>` print a rate-limit suggestion for that class. *Red when:* the file
+  defines two classes (the rows then carry different names and no suggestion
+  fires) or the window line cannot be parsed (exit 3).
+* **The prose gates are clean** on the tracker, and `claim_check` on this plan is
+  clean after its `Proposed paths:` line is dropped.
+
+### C2
+
+* **`doctrine/lifecycle.md` carries the exception.** `count(doctrine/lifecycle.md,
+  "The proposal lifecycle", "Waiting on Maintainer")` is 1. *Red when:* the
+  sentence is removed.
+* **"Mutability rule" lists the line.** `count(doctrine/plans.md, "Mutability
+  rule", "Waiting on Maintainer")` is 1. *Red when:* it is removed.
+* **The preamble tells an author everything.** In each template, the paragraph
+  that opens `**The Waiting line.**` (above the rule) contains each of: `fenced
+  chunk`, `defer`, `deviation`, `delete`, `48`, `beside Status`, `colon`,
+  `dev/plans/<slug>.md`. *Red when:* any one is missing; the check prints a line
+  per missing term.
+* **The copied sentences say where.** Below the rule, at C2's commit, `in the
+  header block, beside Status` occurs 2 times in each template (*Sequence*,
+  *Dispositions*).
+  *Red when:* one drops the words, as a sentence that omits "header" would put the
+  line where the board does not read it.
+* **The *Code review* check is exact.** In each template's *Code review* section,
+  `git log -p`, `became the next move`, `is not checked` and `marked board row`
+  each occur once. Cairn's copy names `dev/measurement/maintainer-view-misses.md`
+  once and the shipped copy says `the project's incident tracker` once and names
+  no Cairn path. *Red when:* the "not reached" clause is dropped (the false-miss
+  case returns) or the shipped copy names a Cairn path.
+* **The added text is identical in both templates, but for the tracker name.**
+  Take each template's added lines from C2's diff, leave out
+  `cairn-internal-ref-allow` lines, replace the tracker path with `the project's
+  incident tracker` in Cairn's, and `diff` exits 0. *Red when:* a word differs in
+  one copy.
+* **No template line begins with the marker.** `grep -nE '^ *([*-] )?\*\*Waiting
+  on Maintainer\*\*' dev/plans/_template.md templates/core/dev/plans/_template.md`
+  prints nothing, so a copied plan carries no live line. *Red when:* the
+  preamble or header shows the line-initial form.
+* **The shipped board line states the row form.** In
+  `templates/core/dev/PLANNING.md`, `Waiting on Maintainer` occurs once (on
+  collapsed text); the sentence says the marker goes inside the row, when the
+  row's next move is the Maintainer's, in the row form C1 fixes; and no line of
+  the file begins with the marker (the `grep -nE` above, run on this file,
+  prints nothing). *Red when:* it is written as a line-initial example.
+* **A fresh install lists nothing, with the installed tool.** Install into a
+  scratch tree with `bootstrap/scaffold.py` (the `collaborative-team` preset
+  works), `cd` into it and run its own `python tools/board.py --maintainer`. It
+  exits 0 and lists zero entries. This also shows the shipped twin and encoder run
+  in an adopter tree. *Red when:* the new `PLANNING.md` line lists itself.
+* **`python scripts/check_cairn.py` passes.** Any new `doctrine/` reference in a
+  shipped template carries its `cairn-internal-ref-allow` marker. *Red when:* a
+  reference lacks one.
+
+### C3
+
+* **The rule and its negative clause are in place.** In
+  `doctrine/lifecycle.md` > "Archive precondition", `only home` occurs once (the
+  rule: nothing still to be done may have an archived artifact as its only home),
+  `is not a live home` once (a pointer to an archived artifact or an unopened plan
+  is not one), `by number` once (the issue home), and `board row` at least once.
+  *Red when:* the negative clause is dropped.
+* **Sequencing stays within a live plan.** `of a live plan` occurs once in
+  `doctrine/plans.md` > "Accepted scope is a floor" and once in each template's
+  *Scope delta*. *Red when:* a copy keeps the unqualified sentence.
+* **The hand-off clause is in place.** `board row listing the items` occurs once
+  in the same doctrine section and once in each template's *Scope delta*. This is
+  the clause that closes the six-plan failure. *Red when:* it is dropped.
+* **The Q2 rule says "assigns".** `assigns` occurs once in that doctrine section
+  and once in each template's *Scope delta*, with the `defer` line quoting the
+  assigning sentence and the Decision. *Red when:* the word reverts to "names".
+* **Changelog at archive.** `writes its own changelog entry` occurs once in
+  `doctrine/plans.md` > "Lasting-truth migration doctrine" and once in each
+  template's *Dispositions*. The `NEXT_SESSION.md` sentences in that section are
+  unchanged: C3's diff of `doctrine/plans.md` has no changed line containing
+  `NEXT_SESSION`. *Red when:* either is edited.
+* **The shipped *Dispositions* states the rule in words.** In each template,
+  `only home` occurs once and `carries no Waiting line` once, so an adopter, who
+  has no `doctrine/`, meets the rule itself. *Red when:* it cites a doctrine file
+  and nothing else.
+* **The standing pins pass unchanged.**
+  `bootstrap/tests/test_scope_reduction_trap.py` passes at C3's commit with the
+  phrases "Sequencing is free; removal is not" (doctrine) and "Sequencing is free"
+  (templates) intact.
+* **The pins still read these sentences.** In a throwaway worktree at C3's
+  commit, delete the **whole** edited sentence from each template (both "Sequencing
+  is free" and "moving work between chunks", since the pin accepts either) and
+  "Sequencing is free; removal is not" from `doctrine/plans.md`. The test reads the
+  files of the tree it sits in, so only a worktree can show this. Three nodes go
+  red, and the record names them: `dev/plans/_template.md::sequencing between
+  chunks owes nothing`, `templates/core/dev/plans/_template.md::sequencing between
+  chunks owes nothing` and `doctrine/plans.md::sequencing is free, removal is
+  not`. *Red when:* fewer than those three do, which means a second phrase still
+  satisfies a pin; or more do, which means the deletion reached beyond the
+  sentence.
+
+### C4
+
+* **The live list holds the named rows.** `python tools/board.py --maintainer` on
+  the live tree lists, as kind `roadmap`, at least the gate-manifest re-anchor
+  row and the stage-reader row's question (3), plus each row the sweep marked.
+  *Red when:* a named row is unmarked.
+* **Every marker value is short.** Each is under 48 characters, so `python
+  tools/board.py --maintainer | grep -c '…'` prints 0. *Red when:* a value runs
+  long.
+* **Nothing lists itself.** The number of `roadmap` entries equals the number of
+  rows the commit body says it marked, so the statement line and the restatement
+  line are not markers. *Red when:* the statement is written as a line-initial
+  marker (the count is one too high).
+* **The commit is narrow.** `git show --stat` shows one file, `dev/PLANNING.md`,
+  and its hunks (`git diff -U0 dev/PLANNING.md` before committing) are exactly
+  the marks, the statement and the restatement line, each accounted for in the
+  body. *Red when:* a hunk is another session's unfinished edit; stop and
+  coordinate.
+* **Every mark has a reason, and the Decision is quoted.** The body names each
+  marked row and why its next move is the Maintainer's, and quotes the Decision's
+  authorization verbatim and visually isolated:
+  `git show -s --format=%B <C4> | grep -cF "Accept A, B, C and D as revised, with
+  every recommended answer, including B’s scope cut and D’s scope delta."`
+  prints 1. *Red when:* it is paraphrased (prints 0). A deferral already
+  authorized, whose next move is anyone's, is queued work and is not marked.
+* **The pinned restatement text survives.**
+  `bootstrap/tests/test_scope_reduction_trap.py` passes at C4's commit, because it
+  pins the *Archive preconditions* text of both `PLANNING.md` files.
 
 ### C6
 
-* **The record is complete.** `## Implementation verification` carries every
-  field in *Verification*, and lists the five new node IDs for the re-anchor row.
+* **The record is complete.** `## Implementation verification` carries each field
+  *Verification* lists (mode, tested commit, reviewed range, interpreter, pre-run
+  and post-run state, the command table, non-pass disposition, plan-specific
+  commands, known omissions), and lists the five new node IDs, which match
+  `pytest --collect-only -q` for the five added nodes. *Red when:* a field label
+  is absent or an ID differs.
 
 ## Scope delta
 
@@ -253,15 +419,19 @@ outcome in it maps to a chunk:
 | Accepted outcome | Chunk |
 |---|---|
 | the line in plans and change notes | C1, C2 |
-| the line in `dev/PLANNING.md` rows | C1, C4 |
+| the "Mutability rule" line | C2 |
+| the line in `dev/PLANNING.md` rows, and its form | C1, C4 |
 | `--maintainer`, column | C1 |
 | declare and check | C1 |
 | the footer | C1 |
 | today's rows marked | C4 |
 | the lifecycle.md exception | C2 |
 | the docstring | C1 |
-| the archive rule | C3 |
-| sequencing within a live plan, and Q2 | C3 |
+| the archive rule, its live-home definition, and the clause that a pointer to an archived artifact or an unopened plan is not a live home | C3 |
+| a pointer from *Dispositions*, and one line in the board's restatement | C3, C4 |
+| sequencing within a live plan | C3 |
+| work handed to an unopened plan is a `defer`, with a board row listing the items | C3 |
+| Q2: a quoted Decision authorizes a later-plan `defer` only when the accepted text assigns the work | C3 |
 | changelog at archive | C3 |
 | the tracker and its code-review check | C2, C5 |
 | the shipped `PLANNING.md` line | C2 |
@@ -269,6 +439,11 @@ outcome in it maps to a chunk:
 | Boundary B full | C6 |
 
 Part B is not in this baseline: the Decision cut it before this plan opened.
+
+One accepted example changed: the "Four deferred Maintainer questions" row was
+retired at `30ff0cd5`, because all four questions were settled. The outcome,
+"today's waiting rows are marked", is still delivered for the rows that wait
+now. A wait that ended is not a removal.
 
 ## Verification
 
@@ -278,13 +453,20 @@ scripts/claim_check.py` on each edited document.
 
 | Chunk | Tests |
 |---|---|
-| C1 | `test_replacement_tools.py`, `test_session_kernel.py`, `test_security_lint.py`, `test_skills_upgrade.py`, `test_skills_self_heal.py`, `test_verify_integrity.py` |
-| C2, C3 | `test_scope_reduction_trap.py`, `test_verification_boundaries.py`, `test_review_and_verification_rules_ship.py`, `test_scaffold.py`, `test_claim_check_module.py`, `test_loop_fidelity_gate.py`, `test_documentation_plan_module.py`, `test_quickstart_sequence.py`, `test_core_dev_folders.py`, `test_upgrade.py`, `test_module_merge_lockfile.py` |
-| C4, C5 | the claim and prose gates only (prose a test does not read) |
+| C1 | `test_replacement_tools.py`, `test_notice_install.py` (twin byte-identity and SPDX header), `test_session_kernel.py`, `test_security_lint.py`, `test_skills_upgrade.py`, `test_skills_self_heal.py`, `test_verify_integrity.py` |
+| C2, C3 | `test_scope_reduction_trap.py`, `test_verification_boundaries.py`, `test_scaffold.py`, `test_claim_check_module.py`, `test_loop_fidelity_gate.py`, `test_documentation_plan_module.py`, `test_quickstart_sequence.py`, `test_core_dev_folders.py`, `test_upgrade.py`, `test_module_merge_lockfile.py`; C2 also the four tests that render the shipped `PLANNING.md`: `test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`, `test_onboarding_activation_helper.py`, `test_skills_onboarding.py` |
+| C4 | `test_scope_reduction_trap.py` (it pins the *Archive preconditions* text of both `PLANNING.md` files), then the claim and prose gates |
+| C5 | the claim and prose gates; `python tools/evolution_infer.py` |
 
 All tests are in `bootstrap/tests/`. The C2 and C3 set is not a confident bound:
-some 57 install tests render the shipped plan template. So Boundary B is the
-real check.
+57 test files drive a scaffold install, which renders the shipped plan template
+(counted in the `verification-practice` plan). So Boundary B is the real check.
+
+**Known omission.** No standing test pins the new C2–C4 prose. The accepted
+evidence plan names five nodes and no prose pin, and a pin file would be a new
+frozen-file ceremony. The prose is checked once, by the counts above, and again by
+Boundary C. The older pins in `test_scope_reduction_trap.py` protect only the
+sentences they already read, which is why C3 shows they still do.
 
 **Boundary B mode**: full. The refusal rules in `AGENTS.md` settle it:
 
@@ -299,8 +481,9 @@ real check.
    is uncertain, and uncertainty resolves to `full`.
 4. **The accepted text says so:** "Boundary B runs full".
 
-**How it runs.** After C5, against a clean, unchanged commit, under the
-canonical interpreter (Python 3.13.x, as `tools/session.py` resolves it):
+**How it runs.** After the last implementation chunk (C4), against a clean,
+unchanged commit, under the canonical interpreter (Python 3.13.x, as
+`tools/session.py` resolves it):
 
 ```
 CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0
@@ -327,25 +510,34 @@ attacking:
 
 * **The silent-miss case.** A plan that waits on the Maintainer must show up,
   either listed or flagged.
-* **The mid-sentence filter.** Does it hold for a list-item marker
-  (`* **Waiting on Maintainer**:`)?
+* **The row form.** Does the parser match exactly the form the instructions
+  document, and nothing an author would write by accident: a mention in
+  backticks, mid-sentence, or a fenced example?
+* **The near-miss spelling.** `**Waiting on Maintainer:**`, colon inside the
+  bold: does the preamble say it is wrong, and does a fenced plan written that way
+  show on the advisory?
+* **Reached or not.** Can a code reviewer, reading the *Code review* sentence
+  alone, tell a fence the range reached from one it did not?
 * **The shipped template, read cold as an adopter.** Can you follow the Waiting
-  line and the *Code review* check?
+  line, the archive rule and the *Code review* check without `doctrine/`?
 * **The lockfile diff.** Is it confined to one record?
 
 **Security preflight.** N/A, as in the proposal: no trust boundary is added,
 moved, or widened. The new read is a fixed path holding the same class of
-Markdown the board already reads, through the same encoder, with no subprocess.
-The chunking changes no answer.
+Markdown the board already reads, through the same encoder, with no subprocess;
+the file names the advisory prints are encoded too (C1 node 5). The chunking
+changes no answer.
 
 ## Dispositions
 
-*Filled at archive-preparation.* Two items are known now:
+*Filled at archive-preparation.* Three items are known now:
 
 * **The archive commit writes this plan's `CHANGELOG.md` entry**, applying C3
   to itself.
 * **It adds a note to the queued re-anchor row** naming
   `test_replacement_tools.py` and the five node IDs (chunk M).
+* **This plan carries no Waiting line at archive**, applying C3 to itself: the
+  open wait, the re-anchor, is declared on its marked board row.
 
 ## Plan review -- Claude Opus 5.5 (Internal, fresh session) -- 2026-10-18
 
@@ -791,3 +983,67 @@ a ceremony the Maintainer runs.
 * I did not count the plan's "some 57 install tests".
 * The vendor-neutrality of lines not yet written cannot be checked.
 * A same-type reviewer: no cross-type distance.
+
+## Response to plan review -- Claude Sonnet 5.5 (author) -- 2026-10-18
+
+This answers the Internal plan review at `7d9e1637` (reviewed commit
+`c61da58b`). I took the plan over from its first author. I checked each finding
+against the tree at `739e3aba` before folding it, and reproduced [PR1]'s
+mutation in a scratch copy of the pin test and its 17 surfaces: deleting only
+"Sequencing is free" left all 99 nodes green, and deleting the whole sentence
+turned exactly three red. All thirteen findings are answered: eleven accepted,
+two in part ([PR9], [PR10]). Each is answered in an operative cell, and this
+table points at them.
+
+**What changed since the plan opened.**
+
+* `30ff0cd5` retired the "Four deferred Maintainer questions" row, which is
+  [PR2]'s trigger.
+* `verification-practice` landed C1–C4 and its Boundary B record. None of its
+  edits overlaps a section this plan edits; its code review is still ahead.
+* A new proposal, `dev/proposals/2026-10-18-claude-board-as-basis.md`, builds on
+  C1 and is noted in *Scope* > "Sequencing with the sibling plans".
+
+| Finding | Disposition | Where |
+|---|---|---|
+| [PR1] C3's pin check cannot fail | accepted | *Acceptance criteria* > C3, "The pins still read these sentences": a throwaway worktree, the whole sentence removed from each template, and the three node IDs that must go red. *Acceptance criteria* > C1, node 2, now names a throwaway worktree in place of "a scratch copy". |
+| [PR2] C4 names a retired row, and its marking rule contradicts its first example | accepted | *Sequence* > C4 names the two rows that remain plus the sweep, and states the marking test in the review's words. *Acceptance criteria* > C4 reads "at least" those two. *Scope delta* records that the retired row was a wait that ended, which is not a removal. |
+| [PR3] the check counts a fence the work never reached | accepted | *Sequence* > C2, the *Code review* check: a fence "inside the reviewed range", "not reached" is not checked, and a wait declared on a marked board row is checked there. M declares its own wait on the marked re-anchor row. *Acceptance criteria* > C2, "The *Code review* check is exact". |
+| [PR4] the form of a board-row marker is left to code review | accepted, the reviewer's grammar | *Sequence* > C1 defines the row form once. Node 1 lists the indented and sub-bullet forms and node 3 keeps the backticked negative. C2's shipped line and C4's statement use that form, and Boundary C's bullet becomes "The row form". One refinement: the parser reuses the header-field rule, so there is one grammar rather than two, and a line with no text counts as declared. |
+| [PR5] two accepted clauses have no home | accepted | *Sequence* > C3 and *Acceptance criteria* > C3 carry both: the negative live-home clause in `doctrine/lifecycle.md`, and the hand-off-is-a-`defer` clause in `doctrine/plans.md` and both templates' *Scope delta*. *Scope delta* splits the row that hid them. Q2 also states that a plan which simply fell short is not an assignment, which is Revision 1's own last sentence on the point. |
+| [PR6] C2's criteria do not check what the text tells an author | accepted, all five | *Acceptance criteria* > C2: the preamble's eight terms, "in the header block, beside Status" twice per template, and the shipped `PLANNING.md` line. *Acceptance criteria* > C3: the shipped *Dispositions* states the rule in words and "carries no Waiting line". *Dispositions* applies that last rule to this plan. The fifth applies Revision 1's accepted archive rule to waits; it adds no outcome. |
+| [PR7] Cairn's template should name the tracker | accepted | *Sequence* > C2 (Cairn's copy names `dev/measurement/maintainer-view-misses.md`, the shipped copy keeps the portable phrase); *Acceptance criteria* > C2 allows exactly that one difference. C5 runs second and C2 gates on it. The rows are in run order and the labels are kept, so this table, the review and the Response still cite the same names. |
+| [PR8] Boundary A misses three readers | accepted, all four | *Verification* > Boundary A table. I dropped `test_review_and_verification_rules_ship.py`: it reads `templates/core/AGENTS.md` and `AGENTS.md` only, and this plan touches neither. |
+| [PR9] pin where the advisory does not look | accepted in part | **Accepted:** node 2's three negatives with and without `--archive`; `--maintainer` reads active artifacts only and ignores `--archive` rather than refusing it, because Cairn's tooling warns and does not block; node 5 covers names printed on the advisory line; C1's body records the day-one advisory figure. *Sequence* > C1 and *Acceptance criteria* > C1. **Declined:** detecting the `**Waiting on Maintainer:**` near-miss. On a plan that mentions a fence the advisory already names it, since no wait is declared. On a plan without one it is a deviation request, which the code-review check and the miss tracker exist for. Detecting a second spelling adds a rule to a contract Revision 1 fixes as one field. Instead the preamble says where the colon goes, and Boundary C attacks it. See *Scope* > "Found while planning". |
+| [PR10] the tool's description becomes false | accepted in part | **Accepted:** the docstring, usage block and help text name the two reads, and the plain-mode footer stays byte-identical, which is why `--maintainer` carries its own footer. *Sequence* > C1; *Acceptance criteria* > C1, "The tool describes itself truly". **Declined:** the `docs/tool-usage.md` sentence. That page describes the plain board, which does not change, so nothing on it becomes false; it is not on the accepted documentation surface. Put to the Maintainer as the question below. |
+| [PR11] C4's shared-file steps | accepted, all three | *Sequence* > C4 and *Shared-file discipline*: claim as well as list; the diff-hunk check; the Decision quoted verbatim. *Acceptance criteria* > C4 gives the `grep -cF` that fails on a paraphrase. |
+| [PR12] the tracker should count both sources together | accepted | *Sequence* > C5 and *Acceptance criteria* > C5: one event class, a Purpose that says what two rows mean, and "The two sources add up", a scratch tracker run through `evolution_infer.py`. |
+| [PR13] small mechanics, and two first sentences | accepted, all six | C1 and C5 gate on `ready-to-implement`. *Acceptance criteria* > C1: the parent SHA the nodes failed against, and the subprocess pattern, run first on `tools/session.py` to show it can match. *Acceptance criteria* > C2: a fresh install runs its own installed `tools/board.py` (I ran this once on the current board, which works). *Scope* > "Sequencing with the sibling plans" and C2 and C3's gates: re-read at edit time. C1 and C5 open on the suggested sentences. |
+
+The comprehension note is also folded: chunk M now says what the re-anchor is.
+
+**Calls I made while folding.** Each is a detail the plan had to settle because
+two readings would diverge silently. None adds an outcome.
+
+* An artifact's status is matched on its first word, so `awaiting-decision —
+  note` still lists. A silent drop is the failure this feature exists to remove.
+* An artifact is listed once, however many ways it qualifies, and a Waiting line
+  with no text counts as declared.
+* `--maintainer` ignores `--archive`.
+
+**Question for the Maintainer.** Should C1 also add one sentence about
+`--maintainer` to `docs/tool-usage.md`? *Recommended: no.* The page describes the
+plain board, which does not change, and the board-as-basis proposal edits that
+same entry next and can describe both flags in one edit. If you say yes, C1
+gains that one sentence and nothing else changes. Nothing waits on the answer:
+the plan is complete without it.
+
+**Scope.** Nothing accepted is dropped, and *Scope delta* stands at `preserved`.
+Two edits go a little past Revision 1's wording, and both answer a finding:
+
+* [PR3] makes "in the reviewed range" exact: a fence the range reached.
+* [PR6]'s last item states, in the one place an archiving author reads, that an
+  archiving plan carries no Waiting line.
+
+There is no second plan-review round. Status `revising-plan` ->
+`ready-to-implement`.
