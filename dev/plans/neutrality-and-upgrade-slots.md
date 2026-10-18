@@ -1552,3 +1552,176 @@ Also run: `test_security_lint.py` and `test_scaffold_substrate.py`, 29 passed. T
 * **The note's agreement with the engine's marker parsing**, beyond reading the tests that pin it.
 * **Unicode look-alikes in vendor names.** That is the plan's named "hiding a name on purpose" limit.
 * **Other sessions' uncommitted edits** in the shared tree (including `bootstrap/UPGRADE.md`, `tools/session.py` and `templates/skills/_lib/session.py`). I reviewed committed bytes only.
+
+## Code review -- Claude Sonnet 5.5 -- 2026-10-18
+
+```
+Reviewed commit: afbb1f232bc2e7fa8a639590632aba15ce58ce89
+Target: this plan's commits d0647d5f, 1fb06ea6 (C1), 0c9b568c (C11), 01d21423 (C2-C4), 346eda64 (C5), 0000c15b (C6), a1e2bc9d (C7), ca7179a6 (C8), 67aac1d4 (C10), 63336156 (C9), 7d528f4d (C9 follow-up, the tested commit), d820d856 (guide fix) and afbb1f23 (the record), read against the plan's parent bb4f710a. Other sessions' commits in that range are not reviewed.
+Prior findings: none of this pass. The parallel Security Review (e73b1572, NU-CSR1 to NU-CSR6) is read, not reopened; where this pass overlaps it, the finding says so.
+```
+
+**Obligation**: Code review (the floor: not the implementing agent)
+**Tier**: Internal
+**Bounding**: not owed. Boundary B ran in `full` mode, and the field adjudicates a `bounded` record. A fresh full run is owed after the revision below, because it changes implementation and test bytes.
+**Findings**: raised (0 blocking, 3 medium, 5 low)
+**Verdict**: REVISE -> `revising-code`. The Security Review had already moved Status there at e73b1572; this pass keeps it there and edits no other line.
+
+Distance: a fresh session of the implementer's agent type (Claude Sonnet 5.5). I wrote none of the code, the record or any earlier review. This is the Internal code review, whose job is falsification; it is not External. Interpreter for every figure: `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13). Every figure comes from new, empty folders of my own (detached `git worktree`s of the reviewed commits and `git archive` extractions); the shared tree got this claim and this section, nothing else.
+
+### In plain terms
+
+The work does what the plan promised, and the recorded test run holds up: I ran the full suite again on the tested commit and got the same numbers. The vendor-name check now reads zero; it catches every shape of leak the plan said it would, and every miss I found is a limit the plan already names. The reworded programs are the same programs apart from comments and docstrings, shown by a script and mutated in all 20 files. The new install-check note lists the right slots, prints no command, never printed a raw control character in 25 hostile trees, and its verdict matched the old check on every one of them.
+
+It is not ready to archive, for three reasons, none of them a wrong answer today.
+
+1. **A passing check can read as failed, under an everyday shell idiom** (NU-CR1). Pipe the check into `grep -q` with the shell's "fail if any part fails" option and the old check passed 40 times in 40; the new one failed 40 in 40. The guide says no code can prevent this; a four-line change does.
+2. **Two safety guards in the file reader, and the size limit on reads, are not pinned by any test** (NU-CR2, NU-CR3). They work today. If someone removed one, every test would stay green. The plan's own rule says each guard must be shown exercised; for these it was not.
+3. **Five smaller things** (NU-CR4 to NU-CR8): a few unpinned behaviours, a name list that can lose a name without anyone noticing, two sentences C2 made untrue, two stale lines still in `docs/DOCUMENTATION_PLAN.md`, and the missing line cap (which I would accept).
+
+The Maintainer has nothing to decide. All of it is the author's call, in one revision and one more full run, together with the Security Review's NU-CSR1 to NU-CSR3.
+
+### The Boundary B record, checked against the tested commit
+
+* **Right bytes.** `7d528f4d` is an ancestor of `afbb1f23`. A diff of `bootstrap/_scaffold` and `bootstrap/scaffold.py` between `3ba6f230` and `7d528f4d` is empty, and none of this plan's commits names a path in either, so the engine is identical from the other session's `.gitignore` repair to the tested commit.
+* **3504 passed, 2 failed: reproduced.** `CAIRN_FULL_SUITE=1`, `--quality-gate-shuffle-seed=0`, a fresh worktree of `7d528f4d`, `PYTHONDONTWRITEBYTECODE=1`, clean before: **3504 passed, 2 failed, 3 warnings in 704 s.** The two failures are `test_ast_attest.py::test_ast_gate_passes_over_the_full_scaffold_module_set` and `::test_committed_baseline_accounted_for_across_the_engine_package`, as recorded; no skip, xfail or xpass.
+* **The AST set is not this plan's.** `_ast_attest.py verify` on extractions: `bb4f710a` reports 3 CHANGED symbols (`_cmd_adopt_module`, `main`, `seed_gitignore`); `7d528f4d` reports 4 (those and `cmd_upgrade`). The extra one arrived with `3ba6f230`.
+* **Neutrality and prose gates.** At `7d528f4d` and again at `afbb1f23`: neutrality `fail=0 info=56`, redundancy `fail=0 info=0`. At `afbb1f23`: `check_cairn.py` OK (182 files), `link_check.py` OK on the guide, `claim_check.py` clean on the eight edited documents I ran it on.
+* **The 111 node IDs match the collection.** `pytest --collect-only` before and after, sorted, differs from the record's list by nothing (8 in the neutrality file, 103 in the install-check file); all 41 base nodes of the two files are still collected.
+* **Frozen and phase-mutable files.** From the manifest's 183 `frozen_files` (control: the install check is frozen, `README.md` is not): 14 changed, the same 14 the plan names; 2 phase-mutable, the same 2. No plan commit touches the gate-manifest files, `AGENTS.md`, `templates/core/AGENTS.md`, `check_model_selection.py` or the AST baseline; the only `doctrine/` files touched are the three the plan lists.
+* **Add-only.** `git diff -U0 81e6371f 7d528f4d` removes no line from `bootstrap/verify_integrity.py` or its frozen test (control: `7c077ddf^..7c077ddf` prints the removed hint lines). `return 1` and `return 0` stand untouched.
+* **After the tested commit.** `d820d856` changes only `bootstrap/UPGRADE.md`. The one test file that reads that guide passes at `afbb1f23` (122), and the prose gates are clean, so the record's claim that it stands is right.
+* **The probe that justifies the feature, reproduced.** Install `4ad1c115` (`solo-greenfield`), fill 18 slots, finalize with the old engine, upgrade to the tested commit (one prose conflict resolved by keeping both sides), run the new check: the note names `assurance-path-triggers` as the one upgrade-added slot, plus the three living-state slots I left unfilled.
+
+### Chunk by chunk: the criteria most likely to be met only on paper
+
+| Chunk | What I ran | Result |
+|---|---|---|
+| C1 | New test file at the parent's checker; the five-site comment grep; `_R1_SCAN_ROOTS` | 8 fail on assertions, 22 pass; the grep prints 4 lines, each in a sentence that says tokens are scanned; `_R1_SCAN_ROOTS` is at `scripts/quality_gate.py:508` |
+| C2 | The plan's ten-function script on both copies; the set listed from the tree (the eight functions that resolve, probe or use the interpreter path, the terminal encoder, and `cmd_session_end`, which the plan adds); routing table with `_doc` removed | SAME; the set is complete; JSON equal. Wording of `_doc` is NU-CR6 |
+| C2-C5 | K2 on all 20 edited `.py`; `cmp` on all 16 pairs; the lockfile diff of both finalize commits | SAME for 20; 16 pairs identical; 12 `hash` lines only, each equal to the file's SHA-256; `verify_integrity.py --target .` lists the plan's 18 files |
+| C4 | Scanner on the red-team sample, old against new; look-alike signs | byte-identical output; `len(set(_OHM_SIGNS))` is 2 |
+| C5 | Scanner on the two security modules with `reviewer` removed; with the marker id broken | findings unchanged (it never reads the value); the broken marker makes it flag 6 (the instrument can fire) |
+| C6 | Delete each marker and its space from the three prose files; reason lengths and the imperative regex | parent bytes returned; doctrine files gained 0 lines; reasons are 43-71 characters, none matches (control: "ignore" matches) |
+| C7 | 49 plant shapes; the one-time name search over this plan's added lines | see the ledger; 33 hits in 13 distinct words, all routing ids, paths, URLs on marker lines, or "metadata" |
+| C8, C9 | Reader greps; print sites from the tree; real-tree counts; old against new on 25 more trees | one `os.open` and one `read_bytes`; five print sites; fresh install: 27 files, 22 slots checked, 20 listed, equal to an independent count with the engine's own slot functions; Cairn's own tree: 35 in scope, 1 checked, 17 no base copy, 16 failed, 1 hash mismatch, consistent with the lockfile (35 non-verbatim records, 2 with a base copy, 16 of the 18 violations non-verbatim); 25 of 25 trees equal |
+| C10 | Eleven required phrases counted in the section; heading; the SR18 grep | each occurs at least once; heading exact; grep prints nothing |
+| C11 | Paragraph length, placement, twin, slot markers | 8 lines in the merged block; two Cairn-only sentences in "Doctrine + tooling"; `cmp` 0; 0 slot markers |
+| C12 | Record fields, not-touched list | complete |
+
+### Falsification ledger
+
+Each mutant is one deliberate break, made in a separate copy and run against the chunk's tests, beside an unmutated control. "Equivalent" below means a behaviour test passes under the mutant and mutating the site that recovers the value fails; anything not measured is listed as a survivor.
+
+**A. The install check's reader, fence and printing** (control: `test_verify_integrity.py`, 122 passed). 61 mutants: **46 killed, 15 survived.** Killed include most of the mutants the plan names (the note inside the loop or missing on either exit, an `Exception`-only fence, the fence printing a message, `O_NONBLOCK`, `O_NOFOLLOW`, the regular-file check, read-cap-plus-one, base-folder containment, the hash comparison, the token type checks, the decode checks, the per-record handler, a verbatim read, a living file read with `Path.read_bytes`, the dropped flush, the symlink walk) and others of mine (slot-name and marker case handling, spacing rules, the customized marker, the substitution-length bound, the failed count, the warning conditions, `ascii()` for the path and for the name separately, pairing by per-name search, the advice lines). Not re-run as such: "fence removed" and "note before the report". The 15 survivors:
+
+| Survivor | Disposition |
+|---|---|
+| drop the `..` check (`bootstrap/verify_integrity.py:130`) | **real**: NU-CR2 |
+| containment weakened to "first component is `dev`" (`:132`) | **real**: NU-CR2 |
+| read the whole file, size-check after (`:148-149`) | **real**: NU-CR3 |
+| loop bound `<=` to `<` (`:148`) | differs only on a short read; survivor: NU-CR3 |
+| `tokens` null or absent treated as unusable (`:165`) | **real**, small: NU-CR4 |
+| last duplicate slot wins, not first (`:196`) | **real**, small: NU-CR4 |
+| living-state `verbatim` filter dropped (`:303`) | unmeasured; survivor: NU-CR4 |
+| substitution bound `>=` for `>` | boundary only; survivor: NU-CR4 |
+| drop `O_NOCTTY`; drop `O_BINARY` | no test can see them here (no terminal; not Windows); survivors |
+| drop the leaf check in the symlink walk | equivalent: `O_NOFOLLOW` refuses a leaf link; that mutant is killed |
+| drop `is_absolute`, the NUL check, the empty-parts check, `isinstance(rel, str)` | equivalent: each is backed by the prefix check or the per-record handler (both mutants killed) or, for living-state paths, by the record loop that already refuses such a `dst` |
+
+**B. The checker** (control: `test_quality_gate_neutrality.py`, 30 passed). 29 mutants: **11 killed, 18 survived.** Killed: dropping Claude, Codex, Copilot, Windsurf, Cline, OpenCode or `modflow_tools`; dropping `.md`, `.json` or `.txt` from the `templates` entry; putting the comment-line skip back. Survived: dropping any of Anthropic, OpenAI, Google, DeepMind, Microsoft, Meta, Gemini, GPT, Llama, LLaMA, Antigravity, Cursor or `LHM`; dropping `.yml`, `.yaml`, `.py` or `.toml`; removing the word boundary in the `templates` branch (that last one would fail loudly on the real tree). NU-CR5.
+
+**C. The comment-only proof.** For each of the 20 edited `.py`, an appended statement reads DIFFERENT (20 of 20) and a changed integer literal reads DIFFERENT (10 of 10 that have one); an appended comment reads SAME (20 of 20). Interpreter-binding set, each of the ten functions: an added statement reads DIFFERENT (10 of 10); an added comment inside `cmd_session_start` or `cmd_session_end` reads DIFFERENT, an edited docstring line in either reads SAME (2 of 2); control SAME.
+
+**D. Plants** (control: the unplanted tree reads `fail=0 info=56`). 28 shapes that must fail all raised `fail` and exit 1: prose, whole-line comment, `.txt`, `.json` key and value, `.yml`, `.toml`, `.py` string, comment and docstring, file ending without a newline, CRLF, bare CR, link text, code fence, `Claude's`, `Claude-3`, `GPT-4`, `Claude.md`, a hidden folder, a deep folder, a same-line marker, a block marker (3 fails), an above-line marker (2), a byte-order mark, `LHM`, `modflow_tools`, a non-breaking space. 21 shapes that the plan names as blind spots all read `fail=0`: lower case, `ClaudeCode`, `CLAUDE`, `ChatGPT`, a zero-width character, a Cyrillic first letter, `.MD`, `.sh`, `.html`, `.cfg`, no suffix, UTF-16, `Claude2`, `reviewer_Claude`, `Claudes`, and six names missing from the list (Sonnet, Mistral, Aider, Kiro, Grok, Devin). No surprise either way; nothing outside the documented limits leaked.
+
+**E. Hostile trees, parent's verifier against the new one** (same engine; exit code, stdout, and stderr minus `slot note:` lines compared). 25 shapes beyond the suite's 24, all equal: a `base_cache` of 100,000 characters, the base folder itself, a list, a mapping; `tokens` a list, a string, null, absent, 100,000 entries, one 300 KiB value; a duplicate record; a record whose `dst` is a symlink to a tracked file; an installed file of 300 KiB and one that is not UTF-8 (hashes re-recorded); a slot name with ESC, a right-to-left mark and DEL; a file name with a newline and ESC; 5,000 unfilled slots; a base copy or a living file that is a FIFO, a socket, a folder, a symlink, or a 5 GiB sparse file; the base folder moved behind a symlink. Raw non-printable bytes in the note: 0 in every shape. Not equal, by the edge itself: the closed-pipe probes under NU-CR1.
+
+### Findings
+
+None is a wrong answer today, and none needs the Maintainer. The three mediums are where the plan's own promises are weaker than written.
+
+#### NU-CR1 -- Medium -- A passing check can read as failed when its stderr reader goes away, and the guide's "no code can close this" is wrong
+
+**Plain.** The note writes to the error stream after the "OK" line. If whatever is reading that stream has already stopped, the write fails and Python turns the whole run's exit code from 0 into 120. Stopping early is exactly what `grep -q` and `head` do. So `... 2>&1 | grep -q "verify_integrity: OK"` with `set -o pipefail` used to pass and now fails, every time.
+
+**Precision.** Fresh `solo-greenfield` install, the parent's verifier against the new one, same engine. (1) That pipeline, 40 runs: parent 0 failures, new **40**. (2) Stderr reader closed before launch, passing tree: parent exit 0, new **120**; failing tree: 120 in both; stdout closed: the same in both. The plan accepted the edge (S4, C10: `bootstrap/UPGRADE.md:108`, "One edge no code can close") and described the trigger as a closed pipe. The common trigger is the idiom above, and the claim is false: in a scratch copy, adding to the fence's `except` branch `os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stderr.fileno())` when the exception is an `OSError` gave 0 failures in 40, and exit 0 with the reader closed. I read NU-CSR4, which recommends rewording only because the edge "turns a pass into a failure". I agree with its facts and differ on the recommendation: a red integrity check that people learn to call spurious is how a real red gets ignored, the note is advisory by the plan's own words, and the fix is smaller than the guard NU-CSR4 declines to add.
+
+**Closes when** either (preferred) the fence redirects descriptor 2 to the null device after a failed write, a test starts the check with the stderr reader already closed and requires exit 0 on a passing tree, and the guide drops the "no code can close" sentence; or the author declines, in which case the guide says "one edge this check leaves open" (NU-CSR4) and names the `grep -q` and `head` cases under `pipefail`. If the code is changed, the Security Reviewer should read those four lines, since they sit in the fence.
+
+#### NU-CR2 -- Medium -- Two of the reader's path guards are pinned by no test (extends NU-CSR3)
+
+**Plain.** The reader refuses a base-copy path that climbs out of the project or strays outside the base-copy folder. Both refusals work. But the tests only try one shape of each, so removing the real guard, or weakening it, leaves every test green.
+
+**Precision.** Removing `".." in path.parts` (`bootstrap/verify_integrity.py:130`) survives all 122 tests, as NU-CSR3 found. Not equivalent: with a base-copy path that climbs out with four `..` parts to a file whose hash is recorded, the built check counts 26 of 27 files checked (that one unreadable); the mutant counts 27 and lists the four `AGENTS.md` slots from a file outside the project. New here: weakening the prefix check (`:132`) so that only the first component must be `dev` also survives; the suite's near-miss is a path whose first part differs, so only that is exercised. The plan's C8 reader criterion says "the mutation ledger shows each guard is exercised"; the 36-mutant ledger in the record has neither. (Dropping `is_absolute`, the NUL check, the empty-path check and the string check also survive but are equivalent; see ledger A.)
+
+**Closes when** the verdict test gains cases, add-only: a climb-out path whose target file really exists with a matching hash, a path in a sibling folder of the base-copy folder, and a path in another folder under `dev`; each counted "unreadable" with exit code and report unchanged. Re-run both mutants; both must die.
+
+#### NU-CR3 -- Medium -- The cap on how much of a file is read is pinned by no test
+
+**Plain.** The note is meant to read at most 256 KiB of any file, so a huge file cannot slow or crash the check after it has already printed its report. Reading the whole file and rejecting it afterwards gives the same answers, so no test notices.
+
+**Precision.** The mutant `while True: os.read(fd, 1 << 20)` with the size check kept (`bootstrap/verify_integrity.py:148-149`) survives. On a 2 GiB sparse living-state file (no hash covers living files) the built check takes 0.1 s and 35 MB; the mutant takes 0.9 s and 679 MB, and a larger file would take proportionally more. The note runs after the report and before the process returns its exit code, so a long read delays the exit code and an out-of-memory kill removes it. The implementer's "read without the cap" mutant presumably removed the check, so it was killed; this variant keeps the check and drops the bound. The same gap hides the `<=` in the loop condition, which matters only on a short read.
+
+**Closes when** a test wraps `os.read` for a file over the cap and asserts no request exceeds the cap plus one byte (and, with a fake that returns short reads, that a file over the cap is still refused); the mutant above must die.
+
+#### NU-CR4 -- Low -- Four smaller behaviours are pinned by nothing
+
+**Plain.** A few rules in the note have no test that fails if they flip.
+
+**Precision.** Surviving mutants (ledger A): (a) a lockfile with `tokens` null or absent is read as "no tokens" (`bootstrap/verify_integrity.py:165`); flipping it labels every file of an older lockfile without `tokens` "unreadable" and loses all coverage; (b) when a slot name appears twice, the first complete pair wins (`:196`, and the docstring says so); the last-wins mutant survives; (c) a living-state record flagged `verbatim` is skipped (`:303`); (d) the substitution bound at exactly the cap. `O_NOCTTY` and `O_BINARY` cannot be killed on this platform.
+
+**Closes when** tests exist for (a) and (b) (two nodes), (c) and (d) are optional, and the revision's record lists `O_NOCTTY` and `O_BINARY` as survivors no test can reach here.
+
+#### NU-CR5 -- Low -- The checker's name list and file-type list are pinned for only some members, so one can vanish silently
+
+**Plain.** Remove "Gemini" from the list of forbidden names and every test still passes, and the gate still reads zero, because nothing in the tree uses it any more. The same holds for `.py` in the list of file types read under `templates/`, the type that held 33 of the 81 hits this plan fixed.
+
+**Precision.** Ledger B: 13 of the 20 names and 4 of the 7 `templates` suffixes (`scripts/quality_gate.py:456`) can be removed without a failing test. Not made by C1, but this plan's whole value is a check that can be trusted, and the same test file was already being extended. It complements NU-CSR6(b), which asks for a test that every shipped file type is one the gate reads.
+
+**Closes when** one parametrized test puts each listed name alone into a `templates/` Markdown file and each listed suffix alone into a `templates/` file, and requires a failure for each (about 27 nodes), plus NU-CSR6(b)'s manifest-suffix test if the author takes it. Both mutant sets must die.
+
+#### NU-CR6 -- Low -- Two sentences stopped being true when C2 followed C1
+
+**Plain.** C2 rewrote a sentence in the routing table's `_doc` string; C1's comment in the checker points at that table as the reason four names were added. Afterwards the pointer is wrong for two of the four, and the rewritten sentence says something the old one did not.
+
+**Precision.** (a) `templates/skills/_data/vendor_targets.yml:2`: old "Gemini CLI / Cline / OpenCode are documented future data-row adds"; new "Further harnesses that read .agents/skills/ directly are documented future data-row adds". The qualifier "that read .agents/skills/ directly" is new, and nothing in the old text said those three read that folder. The commit body discloses the rewording but not this addition. Nothing reads `_doc`. (b) `scripts/quality_gate.py:208-210` says the routing table "lists them as harnesses a project can use" for Copilot, Windsurf, Cline and OpenCode. After C2 its rows list `github-copilot` and `windsurf`; Cline and OpenCode appear nowhere in it.
+
+**Closes when** the `_doc` sentence reads "Further harnesses are documented future data-row adds." (template, twin, one scoped finalize of that record) and the checker comment gives the reason without pointing at the table. Both are string or comment edits; the K2 proof and the 18-file list must still hold.
+
+#### NU-CR7 -- Low -- `docs/DOCUMENTATION_PLAN.md` still says Cairn's `dev/` tree is in the future on two lines; they need a disposition before archive
+
+**Plain.** C6 fixed six lines that said Cairn does not yet keep its own `dev/` tree. The same page still has two more that say it, so it now contradicts itself.
+
+**Precision.** `docs/DOCUMENTATION_PLAN.md:206` ("once Goal 1 self-hosts `cairn/dev/`") and `:364` ("own future deliberation tree") against `:101`, which C6 rewrote to say the tree is in place. `:177` ("Goal 1 substrate") is only a label and is true. These are not among the six lines the plan names, so leaving them is not a deviation; but the record lists them under "Known omissions", which is not a home: an archived plan may not be the only place an open item lives.
+
+**Closes when** the author chooses: (preferred) fix the two lines in the revision, prose only, `claim_check` and `check_cairn` clean, the file's record still one of the 18, and one sentence in the Response saying two lines beyond the named six were fixed; or write the `defer` in the batch the plan already puts to the Maintainer at archive-preparation.
+
+#### NU-CR8 -- Low (accept) -- The note has no cap on the number of lines it prints
+
+**Plain.** An honest tree lists a few dozen slots. A lockfile built to flood the screen could list thousands. I measured it and would not change it.
+
+**Precision.** 5,000 distinct unfilled slots in one base copy under the size cap printed 5,023 lines (988 KB) in 0.09 s, exit code unchanged; the Security Review saw 3,003 lines from 3,000 records. It needs a changed lockfile and base copy, which already steer the note (S5); nothing printed is a command or a control byte (ledger E); the coverage line already reports the total. A cap would change what the accepted text says the note lists.
+
+**Closes when** it is recorded as `accept`. If it ever matters, "the first N, then M more" is a small change.
+
+### Your open items, answered
+
+* **No cap on note lines: a real problem?** No. NU-CR8: measured, bounded in time, and it grants nothing.
+* **Three future-tense lines in `docs/DOCUMENTATION_PLAN.md`: in scope?** Not in the accepted six, so not a deviation. Two of the three are genuinely stale (`:206`, `:364`); `:177` is a true label. They need a disposition: NU-CR7.
+* **The wrong sentence in C8's commit body?** Harmless. The body says the swap test "was added after" its comparison, but the two blobs it quotes (`635112be`, `dace9edf`) are exactly the commit's own files, and the swap test is in that commit. The old-against-new comparison was repeated on the tested commit (27 trees, per the record), and I ran 25 further trees myself. No action.
+* **Bounding.** Not owed: Boundary B ran in `full` mode.
+
+### What the revision should cover, in one pass
+
+The Security Review's NU-CSR1 (one substitution budget per file), NU-CSR2 (keep only the bytes the note can use) and NU-CSR3 (the `..` test, folded into NU-CR2) belong in the same revision as NU-CR1 to NU-CR6, so one fresh full Boundary B (which this pass makes owed: implementation and test bytes change, and `AGENTS.md` says that voids the record) covers all of them. A second code-review pass is owed only if the revision introduces new defects; the Security Reviewer should read the fence change if NU-CR1 takes the code fix. Waiting-line check: none is owed in the reviewed range. The plan has no fenced chunk reached in it, and the re-anchor wait is declared on its marked board row in `dev/PLANNING.md`, where it is checked.
+
+### What I did not cover
+
+* **Linux and Windows.** macOS only; `O_NONBLOCK` on a FIFO and `O_NOFOLLOW` on a symlinked leaf ran on one platform. `O_NOCTTY` and `O_BINARY` could not be exercised at all.
+* **The implementer's 36-mutant ledger.** I did not repeat it; I ran 61 of my own aimed at the reader, the fence, the order and the printing, and re-ran the ones the plan names that I could.
+* **The Security Review's depth.** I read NU-CSR1 to NU-CSR6, corroborated NU-CSR1's order of magnitude only (4,000 near-cap bodies in one file: 0.41 s against 0.08 s), and did not re-measure NU-CSR2's memory or the hard-link and parent-swap races.
+* **NU-CR1 on a filled tree.** I measured the pipeline on a fresh install (note lists 20 slots). A passing tree with everything filled still prints the coverage line at least, so the same trigger applies, but I did not run that tree.
+* **The full text of every reworded comment in C3 to C5.** I read all of the onboarding, scanner, intent, session and Markdown diffs and found no lost explanation; I did not re-derive each with a separate reader.
+* **Unicode look-alikes and names missing from the list.** The plan's named limits. Shipped code itself lists `mistral`, `deepseek`, `aider` and `devin` in lower case as agent patterns; none is in the checker's list, which is the "names missing from the list" limit, not a finding.
+* **Other sessions' uncommitted edits** in the shared tree. I read committed bytes only.
