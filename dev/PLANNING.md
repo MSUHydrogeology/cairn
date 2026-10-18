@@ -308,6 +308,38 @@ with the plan's filename stem.
 
   > "accept both as descried"
 
+  **Joined 2026-10-18** at the opening of `plans/model-mapping-install-path.md` —
+  **planned, not yet changed**: derive the changed set from the manifest's
+  `frozen_files` keys at ceremony time. That plan edits five frozen files:
+  `templates/modules/team-gated/check_model_selection.py`,
+  `scripts/check_model_selection.py`,
+  `bootstrap/tests/test_model_selection_stub.py`,
+  `bootstrap/tests/test_onboarding_seed_roster.py` and
+  `bootstrap/tests/test_security_leaf.py`. The pinned collection moves: new test
+  classes join the first two (node IDs in the plan's *Implementation
+  verification* record), and **one pinned node leaves on purpose**,
+  `test_model_selection_stub.py::TestFidelityCheck::test_fill_me_in_comment_fails`,
+  because the Maintainer reversed the rule it pinned (a `FILL ME` in a comment no
+  longer fails the check). The verifier reports it as `COLLECTION-DROPPED` while
+  `test_gate_manifest.py` stays green. A sixth frozen file,
+  `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, is written by the AST
+  ceremony below, not by an agent. **That plan also changes the engine**, so it
+  adds to the AST baseline, which is a separate ceremony with its own runbook
+  (`bootstrap/AST_BASELINE_RUNBOOK.md`). It changes four functions:
+  `capture_model_selection_mapping` (newly CHANGED) and `main`,
+  `_cmd_adopt_module` and `cmd_upgrade` (already CHANGED by the `.gitignore`
+  repair). It adds two top-level functions, `_mapping_is_unfilled` and
+  `model_selection_notice_lines`, for the ceremony to pin. With the repair's
+  `seed_gitignore` that is five CHANGED and two NEW at the end; derive the set at
+  ceremony time. None is in `_UPDATE_ALLOWLIST`, so the correction is the
+  Maintainer's own, and **it should wait until that plan archives**, or a second
+  pass is owed. `bootstrap/_scaffold/` is on the differential oracle's sensitive
+  roster, and the plan also edits a comment in `lockfile.py`, which adds that file
+  to the changed sensitive paths. Authorization for joining this batch is the
+  Decision accepting the proposal, quoted verbatim:
+
+  > "accept as answered"
+
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
 * **F8 — the post-install report asks for work the profile does not make
