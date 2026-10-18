@@ -187,24 +187,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Entry point.  Returns an exit code (0 = success, 1 = error, 2 = refused).
-
-    A write into the target that the containment guard declines raises
-    :class:`ScaffoldSecurityError` from somewhere beneath this call.  It is
-    reported once, here, as a crisp exit 2 rather than a traceback, so no write
-    path can fail open or leak a stack trace.  The narrower handlers deeper in
-    (skills fan-out, onboarding, upgrade apply/stage) keep their own wording.
-    """
-    try:
-        return _run_cli(argv)
-    except ScaffoldSecurityError as exc:
-        print(f"error: refused (containment): {exc}", file=sys.stderr)
-        return 2
-
-
-def _run_cli(argv: list[str] | None = None) -> int:
-    """The install / upgrade dispatch; :func:`main` is the refusal boundary
-    around it."""
+    """Entry point.  Returns an exit code (0 = success, 1 = error)."""
     raw = sys.argv[1:] if argv is None else argv
     # `scaffold.py upgrade ...` routes to the adopter upgrade path, which has
     # its own argument parser (isolated from the install CLI).
@@ -465,6 +448,16 @@ def _run_cli(argv: list[str] | None = None) -> int:
             "re-run.",
             file=sys.stderr,
         )
+        return 2
+
+    # A linked .gitignore is refused here, before the first write, so the
+    # refusal never leaves a half-installed tree and a dry run predicts it.
+    # seed_gitignore's own guard is what runs: with no entries it writes nothing.
+    try:
+        seed_gitignore(target, (), dry_run=True)
+    except ScaffoldSecurityError as exc:
+        print(f"error: .gitignore seed refused (containment): {exc}",
+              file=sys.stderr)
         return 2
 
     if args.dry_run:

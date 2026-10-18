@@ -37,7 +37,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files (incl. `new-core` / `new-module` additions, which share the swap loop) |
 | `merge_module_into_slot` | `_assert_safe_write` | a module-merge slot write + its conflict side-file (final Security Review P1 #1) |
 | `_write_stage` | `_assert_safe_write` | every staged-file / new-base / review-only destination, validated up-front for ALL plans (External Security review F1) |
-| `seed_gitignore` | `_assert_safe_write` | the appended lines in `<target>/.gitignore`. A fixed path is **not** contained by construction: a checkout can make `.gitignore` a link to a file outside the tree, and the appended lines would land there. The guard runs before the read, and on `--dry-run` too, so a dry run never promises a seed the install refuses. A link is refused wherever it points, inside the tree or out. The refusal reaches `main`'s exit-2 boundary |
+| `seed_gitignore` | `_assert_safe_write` | the appended lines in `<target>/.gitignore`. A fixed path is **not** contained by construction: a checkout can make `.gitignore` a link to a file outside the tree, and the appended lines would land there. The guard runs before the read, and on `--dry-run` too, so a dry run never promises a seed the install refuses. A link is refused wherever it points, inside the tree or out. `main` runs the same check before the install's first write, so an install or dry run over a linked `.gitignore` stops with exit 2 and nothing written; the upgrade callers let the refusal propagate |
 
 ### Fail-closed refusals added by the side-door-parity change (writes PREVENTED, not performed)
 

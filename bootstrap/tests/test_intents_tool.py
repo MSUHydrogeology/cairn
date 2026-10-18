@@ -307,6 +307,9 @@ class TestGitignoreSeedingRefusesLinks:
         assert outside.read_bytes() == _OUTSIDE_BYTES, (
             "the install appended to a file outside the target through the link"
         )
+        assert not (target / "AGENTS.md").exists(), (
+            "the refusal came after the install had started writing"
+        )
 
     def test_install_through_a_link_to_a_file_inside_the_target_exits_2(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
@@ -323,6 +326,7 @@ class TestGitignoreSeedingRefusesLinks:
         assert "symlinked destination" in err
         assert behind.read_bytes() == _OUTSIDE_BYTES
         assert (target / ".gitignore").is_symlink()
+        assert not (target / "AGENTS.md").exists()
 
     def test_dry_run_install_predicts_the_refusal(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
