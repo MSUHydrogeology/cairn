@@ -1,7 +1,7 @@
 # Fix easy problems where you find them, and look before you build
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(Internal)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-18
@@ -1376,3 +1376,51 @@ plan needs no Security Review either.
   all six files, tested with a control.
 * **Question 3's title "One line":** now "a four-line reuse rule".
 * **The opening Questions 1 to 5 as worded:** superseded by Revision 1's five.
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED, with the Maintainer's changes.** The Maintainer's authorization,
+quoted **verbatim and visually isolated**:
+
+> "Accept, with my changes: promise-only defect fixes with no date cut-off; the per-plan total becomes a warning sign; no mandatory Known-defects cell; one small ship test. Answers to Q1–Q5 as recommended. The rate-limit gate is waived, not met."
+
+*Scribe's note, separate from the quoted words.* The Maintainer was answering
+a recommendation given in chat on 2026-10-18 (an External-stance read of
+Revision 1). Read against it, the changes are binding on the plan:
+
+* **Revision 1 binds, except where these changes narrow it.**
+  * **Promise-only defect fixes, no date cut-off.** A defect fix during the
+    work restores a promise already in the file the change edits (what the
+    file, its docstring, its tests or its governing text already say). The
+    "on the record" route and the "before the plan became ready to implement"
+    cut-off in §2 are struck. A note, an issue or a review comment never
+    makes something a defect. The rest of §2's defect definition stands: the
+    fix adds no new file, function, option or public name, and changes no
+    rule text.
+  * **The per-plan total becomes a warning sign.** "Together such fixes stay
+    within about a chunk's worth" leaves the rule and joins *Signals the
+    change is wrong*.
+  * **No mandatory Known-defects cell.** The *Known defects in the files this
+    plan edits* line under *Scope* is not added to the plan templates. A plan
+    may still name defect fixes in its *Scope*, as it can today. The *Reuse*
+    line stays.
+  * **One small ship test.** §6's test pins only the few load-bearing
+    sentences: the three `defer` reasons, the defect-fix sentence and its cost
+    bar, the module's pointer to `AGENTS.md`, and the absence of `defer-OK`.
+    The six-file mutation program in *Evidence* is struck.
+  * The `AGENTS.md` text shrinks with these cuts, from about 44 lines per copy
+    to roughly a dozen. The commit-body line for a defect fix stays, as one
+    line naming the promise, the file and the test.
+* **Answers to Q1–Q5 "as recommended"** are the chat recommendation's:
+  * **Q1, cheap:** the default. Cheap counts steps that need a person, not
+    machine time.
+  * **Q2, fixing without asking:** yes, by the promise-only route above.
+  * **Q3, the reuse rule in both `AGENTS.md` files:** yes, as one sentence.
+  * **Q4, order:** follow the combined review-stance and review-lenses plan,
+    and do not fold into it.
+  * **Q5, the rate-limit gate:** waived, not met. In particular, the rule on
+    fixing defects rests on the Maintainer's direction alone.
+* **No second review round.** The changes narrow the reviewed contract.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
