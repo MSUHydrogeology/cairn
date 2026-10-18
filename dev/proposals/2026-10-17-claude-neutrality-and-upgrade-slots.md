@@ -1,7 +1,7 @@
 # Two checks you can trust: a neutrality gate that reads zero, and a note for slots an upgrade adds
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(External + Security Review)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-17
@@ -2927,3 +2927,32 @@ to `awaiting-decision`. SR17 and SR18 land in the plan, where its Internal
 review can check them.
 
 **No new question for the Maintainer.**
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "Accept A, B, C and D as revised, with every recommended answer, including B’s scope cut and D’s scope delta."
+
+*Scribe's note, separate from the quoted words.* The four proposals of
+2026-10-17 were put to the Maintainer as one batch, labelled A
+(verification practice), B (Maintainer attention), C (neutrality and upgrade
+slots) and D (independent scientific check). This proposal is **C**.
+"Every recommended answer" means the recommended default of each question in
+its newest revision, as put to the Maintainer:
+
+* **Revision 4 binds**, over Revisions 1-3 as it states. The Security Review
+  obligation was cleared at `eca6ca1d`.
+* **Q1(a) -- yes.** #16's proposed symbol-drift check is closed as
+  won't-build, under the three-recurrence rule, keeping its revival rule.
+* **Q1(b) -- yes.** #16's one-paragraph half is written in the
+  `doc-drift-prevention` module as a separate small change after this
+  Decision. #16 closes when it lands.
+* **Q2 -- not now.** `upgrade` itself does not print the slots it adds in this
+  change. That rides with the next engine change to the upgrade path that
+  already owes a re-anchor, or sooner if an adopter misses an upgrade-added
+  slot.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
