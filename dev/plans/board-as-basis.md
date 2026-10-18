@@ -1,7 +1,7 @@
 # Plan: the board as the basis for richer views -- a data output, and a guide to building on it
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-board-as-basis.md`
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: `tools/board.py` is run by every adopter and its output becomes a published contract
 **Opened**: 2026-10-18
@@ -482,3 +482,398 @@ then `python scripts/check_cairn.py`, and `python scripts/claim_check.py` and `p
   * *Two views carry different lookups, or one disagrees with `doctrine/lifecycle.md`*: `guard`, `TestGuideLookupMatchesLifecycle`.
 * **A reading that asks for more.** If the Maintainer's answer at M asks for a field the data lacks, that is a new additive key and a deviation request, not a silent addition.
 * Any `defer` that arises is put to the Maintainer as **one batch** at archive-preparation, with the Waiting line, and needs the Decision's words quoted verbatim. None is known now.
+
+## Plan review -- Claude Opus 5.5 (Internal Security Review) -- 2026-10-18
+
+```
+Reviewed commit: 10ae64280fbf31bae111077118d421728d5bd0ac
+Target: the whole plan, read for security: C1's link rule, C2's data form and failure path, C3's promise and trust statements, C4's example, recipes and hook advice, the terminal and data encoders, pathological input, and the lockfile and frozen-file handling; checked against the proposal's F10 and its preflight S1-S5
+Prior findings: none of this tier on the plan; the proposal's F10 is read for whether the plan answers it
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Model**: claude-opus-5-5
+
+Distance: a fresh session of the author's agent type. I wrote neither the
+proposal, its review, nor this plan. This pass runs beside the ordinary Internal
+pass and does not repeat its scope-and-simplicity job.
+
+### In plain terms
+
+The plan's design is safe, and it is the simplest safe design I can see:
+refusing every link (rather than working out where a link points) is simpler
+and stricter. Two gaps in how that rule is tested need closing before
+implementation.
+
+* **What already holds, measured.** The terminal board already shows hostile
+  characters safely: escape sequences, terminal-title tricks and
+  direction-reversing characters all come out as visible codes. The planned data
+  form will be plain printable text whatever a file holds. The example page's
+  escaping stops the dangerous characters. All three reasons the proposal's
+  review added this Security Review (F10) are answered.
+* **Blocking 1 (BB-SR1).** A link that points nowhere, or at itself, looks to
+  the board like "no folder here", so the board says nothing. The plan's tests
+  only build links that point at something real, so they would pass a version
+  that still drops these silently. They also never link `dev/` itself or an
+  archive folder.
+* **Blocking 2 (BB-SR2).** After C1 the terminal will say what it skipped, and
+  the data will list it. But the page you will read, and the "what waits on
+  you" recipe, do not have to show it. One link would give you a page that says
+  nothing needs you while the terminal says the board read nothing.
+* **Medium.** No test feeds a header line that pretends to be one of the
+  board's own facts, such as `**Archived**: yes` (BB-SR3). The guide's suggested
+  post-commit hook would run another person's copy of the board whenever you
+  commit on their branch (BB-SR4).
+* **Low.** BB-SR5 to BB-SR10: where the board loads its one other file from,
+  a key the guide calls unique that is not, folders and pipes named like files,
+  invisible characters and very long values on the page, roadmap line numbers,
+  and one sentence about status words and Decisions.
+
+None needs a new mechanism or a Maintainer decision. Each fix is a test case, a
+mutant, or a sentence inside an accepted outcome.
+
+### F10: why this pass exists, and whether the plan answers it
+
+F10 (`dev/proposals/archive/2026-10-18-claude-board-as-basis.md:632`) raised
+three points. The preflight described a file-handling rule and an attacker who
+survives it, yet the plan review was declared "no security surface". S2 named
+no mutant for the symlink rule or for "failure prints nothing". And the example
+found `python` on `PATH`. The plan answers all three: the declaration (plan
+line 5), the link-check mutants at three call sites (lines 247 and 394), the
+failure mutant (lines 264 and 399), and `sys.executable` with no bare `python`
+(line 301).
+
+### What I measured
+
+All probes ran at `10ae6428` in a detached worktree in a fresh scratch folder,
+with `python3.13 -I`, against scratch trees passed through `--root`.
+
+| Probe | Today's board |
+|---|---|
+| a plan linked to a file outside `dev/`; `dev/proposals` linked to a folder outside; `dev/PLANNING.md` linked to a file outside | all three read, in the plain board and `--maintainer` (agrees with the plan's *Found while planning*) |
+| `dev` itself linked | read |
+| `dev/plans/archive` linked, with `--archive` | read |
+| a leaf link to itself | the whole board fails with a traceback, exit 1 |
+| `dev/plans` linked to itself | "0 row(s)", no mention of anything |
+| `dev/plans` and `dev/PLANNING.md` as dangling links | every plan silently absent; the roadmap file called "missing" |
+| a folder named `x.md` | the whole board fails (`IsADirectoryError`), exit 1 |
+| a named pipe `fifo.md` (git cannot store one) | hangs; killed by the 3-second timeout |
+| ESC colour codes, a terminal-title sequence, BEL, U+202E, `\|` and `\` in Status and Waiting lines; ESC in a file name | all escaped; no raw control byte and no U+202E in standard output (control: the same check on the source file finds five control bytes and U+202E) |
+| a form feed and U+2028 ahead of a marked roadmap row | `--maintainer` says line 6; `grep -n` says line 4 |
+| a `--root` tree holding a planted `tools/session.py` that writes a marker file | not executed (control: loading the planted file directly writes the marker) |
+| `json.dumps(..., ensure_ascii=True)` over U+0000-U+00FF, U+202E, U+2028, a lone surrogate and a tag character | printable ASCII and newlines only; round-trips through `json.loads` |
+| the plan's D7 rule, modelled: `html.escape`, then category C shown as `U+XXXX` | ESC, U+202E, U+2066, U+200F, U+FEFF, U+00AD, NUL, a lone surrogate and U+E0041 shown as codes; `"><img src=x onerror=...>` escaped; U+3164, U+115F, U+034F, U+FE0F and U+E0100 pass through raw |
+
+Lockfile: both finalize precedents (`2ea3f869`, `72254d0e`) change the `"hash"`
+line of one record and leave `base_hash`, which is what K2 expects. The
+`tools/board.py` record's hash (`67f705c6...`) equals both copies today.
+
+### Findings
+
+**[BB-SR1] (blocking) The link rule's tests would pass a version that still
+drops a broken or looping link without a word, and they never link `dev/` or an
+archive folder.**
+
+* **Evidence.** `tools/board.py:104`, `:107` and `:153` ask `is_dir()` and
+  `is_file()`, which follow links, before anything is read. Measured above: a
+  folder linked to itself gives "0 row(s)" with no mention; a dangling
+  `dev/plans` link drops every plan silently; a dangling `dev/PLANNING.md` is
+  called "missing". C1's links tree (plan line 244) holds a leaf link, a
+  `dev/proposals` link and a `dev/PLANNING.md` link, all to targets that exist,
+  plus a link inside `dev/`. Its mutants (line 247) kill "check the leaf only",
+  but two others survive every C1 node: "check `dev/proposals`, `dev/plans` and
+  the leaf, but not `dev` or `archive`", and "keep `if not base.is_dir():
+  continue` ahead of the link check". Each leaves a link unreported, which D4
+  (line 155) names as the failure: "A skip nobody can see reads as an empty
+  board."
+* **Recommended fix.**
+  * State the rule as: every path component strictly below the resolved root,
+    from `dev` down to the leaf, is examined with `is_symlink()` (an `lstat`)
+    before any call that follows links (`is_dir`, `is_file`, `exists`, `glob`,
+    `read_text`).
+  * Add to `TestSymlinkedSourcesAreNotRead`: `dev` itself linked;
+    `dev/plans/archive` linked, run with `--archive`; a dangling folder link; a
+    folder linked to itself; a dangling `dev/PLANNING.md`. Each is named once,
+    in the skip line and in `skipped_symlinks`; `roadmap_read` is false; and
+    `--maintainer` does not call a linked or dangling roadmap file, or one under
+    a linked `dev`, "missing".
+  * Add one case that keeps the rule from reaching too far: a root reached
+    through a linked parent folder, and `--root` given as a link, read normally.
+    `main()` resolves the root today (`tools/board.py:213`), which is correct.
+    An implementation that also tested folders above the root would empty the
+    board for anyone whose home folder sits on a linked volume, and the cheapest
+    repair an adopter would find is deleting the check.
+  * Add the two surviving mutants to the ledger row at line 394.
+
+**[BB-SR2] (blocking) What the board skipped reaches the data but never the
+page or the recipe.**
+
+* **Evidence.** `TestViewExample` (plan line 299) requires the page to say so
+  when `roadmap_read` is false, but says nothing about `skipped_symlinks`.
+  `TestWaitsRecipeAgreesWithMaintainerView` (line 298) compares the C1 links
+  tree on `(kind, artifact, reason)`, where both sides list nothing, and never
+  compares the skip report. The guide's "What the data can and cannot show"
+  (line 288) has no sentence about it. The plan's own S4 (line 458) says the
+  skip list exists so that "a short list" is not read "as an empty one", but
+  nothing that reaches the Maintainer uses it. The case is not only hostile: an
+  adopter who keeps `dev/` on a synced folder through a link gets an empty page.
+* **Recommended fix.**
+  * `TestViewExample`: on the C1 links tree, and on a tree whose `dev/plans` is
+    a link, the page footer names each skipped path (through the same
+    `html.escape` and `U+XXXX` step) and says the page is incomplete. Mutant:
+    drop that footer line.
+  * The waits recipe returns the skip list, and its node compares it with
+    `--maintainer`'s skip lines.
+  * "What the data can and cannot show" says a non-empty `skipped_symlinks`
+    means the data is incomplete and a view must show it. Phrase count:
+    `skipped_symlinks`, at least 1.
+
+**[BB-SR3] (medium) No test feeds a header line named like one of the board's
+own facts.**
+
+* **Plain.** Four values in each record come from where the file sits (`kind`,
+  `id`, `path`, `archived`), not from what an author wrote, and a page-builder
+  will trust them more than free text. If the code ever copied header lines into
+  the record by name, a file could write `**Archived**: yes` or
+  `**Path**: javascript:alert(1)` over them. The plan's table does not do this,
+  but no planned test would notice if the code did.
+* **Evidence.** The contract table (plan lines 73-82) gives each key one source.
+  The value test (line 257) and `TestGuideAndOutputAgree` (line 285) use a tree
+  "with every field written", meaning the contract's own lines, and on that tree
+  a by-name copy emits exactly the same keys. The header pattern accepts any
+  name of letters, spaces, `/` and `-` (`tools/board.py:42`). Revision 1 calls
+  `path` "a link target"
+  (`dev/proposals/archive/2026-10-18-claude-board-as-basis.md:817`).
+* **Recommended fix.** One node in C2: a header carrying `**Kind**: proposal`,
+  `**Id**: forged`, `**Path**: javascript:alert(1)`, `**Archived**: yes`,
+  `**Schema**: cairn-board/2`, `**Title**: forged`, `**Includes archive**:
+  true`, a non-contract `**Assurance path**:` line, and two `**Status**:` lines.
+  Required: the record's keys are exactly the twelve; `kind`, `id`, `path` and
+  `archived` come from the location; `title` comes from the `# ` line; `schema`
+  is `cairn-board/1`; the repeated Status gives the value `--maintainer` uses
+  (the last, `tools/board.py:96`). Mutant: build the record by copying every
+  header field in under a snake_case name.
+
+**[BB-SR4] (medium) The guide's suggested post-commit hook runs whatever board a
+checked-out branch carries.**
+
+* **Plain.** A hook runs on every commit, and the example runs
+  `tools/board.py` from the working tree. Check out someone else's branch to
+  review it, commit your review, and the hook runs their copy of the board, and
+  of the script too if it lives in the tree. Without the hook, committing a
+  review runs nothing of theirs.
+* **Evidence.** "Keeping a page honest" (plan line 306) names the hook as a
+  trigger; its phrase counts are `post-commit hook`, `never writes`,
+  `snapshot`, `regenerate` and `working tree`. S5 (line 464) says only that the
+  adopter "adds a subprocess to their own tree". The example's command is
+  `[sys.executable, "tools/board.py", "--json"]`
+  (`dev/proposals/archive/2026-10-18-claude-board-as-basis.md:895`), a path
+  inside the working tree. Hooks in `.git/hooks` serve every worktree of a
+  repository. Session-start also runs the checked-out board
+  (`.agents/skills/session-start/SKILL.md:38`), but a person or agent chooses
+  that run; a hook fires on a commit made for another reason.
+* **Recommended fix.** The section says that a hook runs the board and the
+  script of whatever commit is checked out, so a branch from someone else runs
+  its own code on your next commit; install the hook only where you trust
+  `tools/`, or point it at a board and script kept outside the working tree.
+  Phrase count: `whatever commit is checked out`, at least 1.
+
+**[BB-SR5] (low) The "no dynamic code" check cannot see the board's one dynamic
+load, and nothing pins where that load comes from.**
+
+* **Plain.** The board already runs one other file: it loads the terminal
+  encoder from its own `tools/session.py`. Today that is always the tool's own
+  copy, never the copy inside a tree named by `--root` (measured). That is the
+  property that matters: the other way, reading a stranger's tree would run the
+  stranger's code. K3 would not notice the change.
+* **Evidence.** `tools/board.py:73-76` (`spec_from_file_location`,
+  `exec_module`, the path from `_repo_root()`). K3's pattern (plan line 233)
+  holds `exec\(`, which does not match `exec_module(`, and its control fires on
+  `subprocess` in `tools/session.py`. That proves the pattern can match one
+  word, not that it can see the dynamic-load class K3 claims to check. Probe
+  above: the planted `tools/session.py` under `--root` was not run; loaded
+  directly, it wrote the marker.
+* **Recommended fix.** Add `exec_module|spec_from_file_location|import_module|runpy|compile\(`
+  to K3 and require exactly the two known lines in `_encode` (a count, not
+  "nothing"). Add a C1 node that runs each mode with `--root` on a tree holding
+  a planted `tools/session.py` that writes a marker, and requires no marker.
+  Mutant: load the encoder from `root`.
+
+**[BB-SR6] (low) The promise names a key that is not unique.**
+
+* **Plain.** The guide will tell page-builders to key records on `kind` and
+  `id`. With `--archive`, a live file and an archived file can share a name, and
+  a page keyed that way keeps one and drops the other. For proposals the
+  archived one comes second in the output and wins, so a stray archive copy of
+  a proposal awaiting your decision would show it as archived.
+* **Evidence.** Promise 5 (plan line 286;
+  `dev/proposals/archive/2026-10-18-claude-board-as-basis.md:861`). `id` is the
+  file name without `.md` (line 76). Output is ordered by `path` (D10, line
+  161), and a live proposal's path (`dev/proposals/` then a date) sorts before
+  an archived one's (`dev/proposals/archive/`), because a digit sorts before
+  `a`.
+  No such pair exists at `10ae6428` (checked over both folders with `comm`; the
+  listings held 6 live and 54 archived plans, so the instrument ran), so this
+  is about a future copy-instead-of-move or a hostile file.
+* **Recommended fix.** The guide says `path` is the unique key, and that
+  `(kind, id)` is unique among live records only. One node: a live and an
+  archived file of the same name give two records with different `path`. This
+  corrects a statement of fact in the promise; it removes no outcome.
+
+**[BB-SR7] (low) Folders and pipes named like files, and huge files, have no
+criterion.**
+
+* **Plain.** A folder named `x.md/`, which git can store, makes the whole board
+  fail today. A named pipe called `x.md`, which git cannot store but a local
+  person or an unpacked archive can make, makes it hang. Session-start runs the
+  board, so a hang stalls a session. The plan does not say what happens to
+  either after it.
+* **Evidence.** The probes above. D6 (line 157) covers "an unreadable or
+  non-UTF-8 source", and its nodes (line 264) test non-UTF-8 only. The board
+  reads each file whole (`tools/board.py:113`) and never recurses: it globs at a
+  fixed depth (`tools/board.py:106-108`), so a deep tree is not a case. Link
+  loops are BB-SR1.
+* **Recommended fix.** In the one check function, the same `lstat` that finds a
+  link also requires a regular file for a leaf and a real folder for a folder.
+  Anything else is skipped and named like a link (or, if the plan prefers, is a
+  D6 failure). Add a folder-named-`x.md` case to C1 and C2, and a pipe case run
+  under a timeout. Record in S5 that a very large committed file is read whole,
+  as today, and is accepted: it shows itself in the clone, and the tool only
+  reads. Optional and not required: opening the leaf with
+  `getattr(os, "O_NOFOLLOW", 0)` and `O_NONBLOCK`, then checking `fstat`
+  (precedent `tools/_intent/record_io.py:465`), closes the leaf half of the
+  race S5 records at no cost.
+
+**[BB-SR8] (low) The example's escaping leaves invisible characters and
+unbounded length.**
+
+* **Plain.** The page example makes control and direction-reversing characters
+  visible, which is the dangerous class. It leaves invisible "filler"
+  characters that the repository's own terminal encoder treats as unsafe, so a
+  row can look blank or look like another row. And a value of any length goes
+  into the page: the terminal cuts at 48 characters, the data does not.
+* **Evidence.** The modelled D7 rule (line 158) above: U+3164, U+115F, U+034F,
+  U+FE0F and U+E0100 pass raw, and `tools/session.py:113-139` lists each as
+  unsafe. Promise 7 (line 286) is silent on length.
+* **Recommended fix.** Default: one sentence in the guide stating the limit
+  (invisible fillers are shown raw), with `TestViewExample` feeding U+3164 so the
+  stated behaviour is pinned. Copying `encode_display`'s range table into the
+  example would make a second table to keep in step, so I do not recommend it.
+  Add "any bound on a value's length" to promise 7's list of what is not
+  promised, and have the example cut long labels (one line). Add `"` and `'` to
+  the `<script>` title case, with a `quote=False` mutant, so attribute escaping
+  is pinned too.
+
+**[BB-SR9] (low) `line` counts line breaks the way Python does, not the way an
+editor does.**
+
+* **Plain.** The roadmap line number in the data can point a reader at the
+  wrong line, because the board treats some invisible characters as line breaks
+  that editors and `grep` do not.
+* **Evidence.** `tools/board.py:155` uses `splitlines()`, which also breaks on
+  form feed, U+2028 and others. Probe: `--maintainer` says line 6, `grep -n`
+  says line 4. D5 makes `--json` equal `--maintainer`, and the contract says
+  `line` is "the 1-based line of `dev/PLANNING.md`" (line 86).
+* **Recommended fix.** Either count `\n` lines in the shared reader (dropping a
+  trailing `\r`) and add a case with a form feed and U+2028 ahead of a row, or
+  keep the count and say in the guide's field table that it is Python's line
+  count. The first changes `--maintainer`'s number only on trees holding those
+  characters, which the golden tree does not. The plan should say which it
+  chooses.
+
+**[BB-SR10] (low) The guide should say plainly that a status word is not
+evidence of a Decision.**
+
+* **Plain.** The guide lists "done" among what the data can show. A page that
+  shows `accepted` or `archived` repeats what a file says, and anyone who can
+  edit the file can write it. "Never an approval record" is right, but it is not
+  tied to the words a reader most wants to trust.
+* **Evidence.** Line 288's derivable list and its phrase counts; promise 7's
+  "any meaning of free text".
+* **Recommended fix.** One sentence in "What the data can and cannot show":
+  `accepted`, `archived` and a file under `archive/` say what a file claims or
+  where it sits, not that a Decision was recorded, by whom, or that a review
+  ran; those are in the artifact's `## Decision` section and its commit. Phrase
+  count: `not that a Decision`, at least 1.
+
+### Answers to the five questions
+
+1. **Link handling.** As written, the rule is closed for leaf files,
+   `dev/proposals` and `dev/PLANNING.md`, in both modes. It is not yet
+   demonstrably closed for `dev`, `archive`, or broken and looping links
+   (BB-SR1). The board builds no path from file content: it reads only glob
+   results under fixed folders, plus `dev/PLANNING.md`
+   (`tools/board.py:100-113`, `:152-155`). As planned, the example and recipes
+   open no path taken from the data (the intent join matches `stem` as text), so
+   a `..` has nowhere to enter. A linked parent above the root is rightly
+   outside the rule, because the root is resolved first; BB-SR1 asks for a test
+   that keeps it so. Hard links are not a gap: git records content, not hard
+   links, so a cloned tree cannot carry one, and making one needs local write
+   access to the tree, where the text could simply be written. **The race
+   disposition is sound.** The rule answers a committed link, which exists
+   before any check. Winning the race needs local write access during the run,
+   and the tool only reads.
+2. **Terminal and output injection.** The terminal modes are safe now and stay
+   on the one encoder: every cell goes through `encode_display`
+   (`tools/board.py:65-85`), the new skip line must as well (line 246), and the
+   probe found no raw control or direction byte. The `--json` failure line uses
+   Python's `ascii()`, which emits printable ASCII only. It is not a second
+   escape table. A one-line comment saying why it does not use the encoder (so
+   `--json` loads no other file) would stop a later reader "fixing" it. File
+   content cannot break the JSON, and a person running `--json` in a terminal
+   sees only printable ASCII (probe). A forged field is untested (BB-SR3), and
+   an over-long value passes unbounded (BB-SR8). The page example's `U+XXXX`
+   claim holds for every control and direction character I tried, but not for
+   invisible fillers (BB-SR8).
+3. **Pathological input.** Deep trees are not a case. Link loops are covered
+   once BB-SR1 lands. Folders and pipes named like files need a criterion, and
+   huge files are an accepted risk to write down (BB-SR7).
+4. **The data contract as a trust surface.** The planned statements are the
+   right ones: "reading aid", "never an approval record", "not a check that a
+   status is current or true", "none named is not nobody needed", and no
+   meaning of free text promised. The gaps: skips do not reach a view
+   (BB-SR2), the unique key is mis-stated (BB-SR6), and status words are not
+   tied to Decisions (BB-SR10).
+5. **Frozen files and the lockfile.** The install contract is kept honest. K2
+   matches both precedents: only the `"hash"` line of one record moves, and
+   `base_hash` stays. The later-edit rule, the twin check, the manifest diff
+   and the not-installed test cover the rest, and both new frozen files must be
+   final before the ceremony, as the plan says. One sentence is owed to the
+   archive's `CHANGELOG.md` entry: an adopter who keeps `dev/` as a link will
+   find, after upgrading, that the board reads nothing and prints a skip line.
+   The entry should say so, so that the skip line is not their first notice.
+
+### Verdict
+
+**REVISE.** BB-SR1 and BB-SR2 block. They concern the plan's one safety rule
+and the one place its report would reach the Maintainer, and in both the
+planned tests would pass an implementation that drops content without a word.
+Both fixes are test cases, mutants and a sentence, inside accepted outcomes
+(the symlinked-artifact rule and the worked example). BB-SR3 to BB-SR10 can be
+answered in the same revision. No question for the Maintainer. Status moves to
+`revising-plan`.
+
+### What I did not cover
+
+* I did not build `--json` or the example. Every claim about them is read from
+  the plan; the escaping and JSON behaviour were modelled in a few lines of
+  Python.
+* A file name holding bytes that are not UTF-8: APFS refuses such names, so I
+  could not make one. Python on Linux carries them as lone surrogates. The
+  modelled JSON stays valid ASCII, and the example's category-C step shows them,
+  but I did not run that on Linux.
+* Windows: whether a committed link arrives as a link or as a small text file
+  depends on git's `core.symlinks`. I reasoned about it and did not test it.
+  Junctions cannot come from git.
+* A link to `/dev/zero`: not run, because it would exhaust this machine's
+  memory. The link rule closes it like any other link.
+* I did not run the test suite, Bandit, the neutrality gate or
+  `verify_integrity.py`.
+* I did not read the ordinary Internal pass, which was being written at the same
+  time, or check the scope mapping beyond what the security questions needed.
+* I did not test D11's reading of `doctrine/lifecycle.md` against hostile
+  labels. That file is Maintainer-controlled doctrine, not contributor input.
