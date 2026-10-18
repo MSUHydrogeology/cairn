@@ -1207,15 +1207,20 @@ def test_closed_slots_on_both_sides_cost_linear_time(tmp_path: Path) -> None:
 
 # --- agreement with the merge engine -----------------------------------------
 
-_MARKER_VARIANTS = [
-    "<!-- cairn:slot x -->", "<!--cairn:slot x-->", "<!--  cairn:slot   x  -->",
-    "<!-- CAIRN:SLOT x -->", "<!-- cairn:slot\tx -->", "<!-- cairn:slot x-->",
-    "<!-- cairn:slot -->", "<!-- cairn:slot x y -->", "<!-- cairn:slot x -- >",
-    "<!-- cairn:slotx -->",
+_MARKER_SHAPES = [
+    "<!-- cairn:{kind} x -->", "<!--cairn:{kind} x-->",
+    "<!--  cairn:{kind}   x  -->", "<!-- CAIRN:{KIND} x -->",
+    "<!-- cairn:{kind}\tx -->", "<!-- cairn:{kind} x-->",
+    "<!-- cairn:{kind} -->", "<!-- cairn:{kind} x y -->",
+    "<!-- cairn:{kind} x -- >", "<!-- cairn:{kind}x -->",
 ]
 
 
-@pytest.mark.parametrize("marker", _MARKER_VARIANTS)
+def _markers(kind: str) -> list[str]:
+    return [shape.format(kind=kind, KIND=kind.upper()) for shape in _MARKER_SHAPES]
+
+
+@pytest.mark.parametrize("marker", _markers("slot"))
 def test_the_note_reads_slot_openers_as_the_engine_does(marker: str) -> None:
     engine = engine_slots._SLOT_RE.search(marker)
     ours = verify_integrity._MARKER_RE.search(marker)
@@ -1225,8 +1230,7 @@ def test_the_note_reads_slot_openers_as_the_engine_does(marker: str) -> None:
         assert engine.group(1).lower() == ours.group(2).lower()
 
 
-@pytest.mark.parametrize("marker", [m.replace("slot", "end")
-                                    for m in _MARKER_VARIANTS])
+@pytest.mark.parametrize("marker", _markers("end"))
 def test_the_note_reads_slot_closers_as_the_engine_does(marker: str) -> None:
     engine = engine_slots._SLOT_END_RE.search(marker)
     ours = verify_integrity._MARKER_RE.search(marker)
