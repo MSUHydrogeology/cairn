@@ -216,8 +216,15 @@ def seed_gitignore(
     be added without writing).  Returns the entries actually added (or
     that would be added under ``dry_run``); an empty list means the
     file already covered everything.
+
+    The fixed path is not safe by itself: a checkout can make ``.gitignore`` a
+    link to a file elsewhere, and the appended lines would land there.  The
+    destination goes through :func:`_assert_safe_write` first -- before the
+    read, and on a dry run too, so a dry run never lists entries for a file the
+    real run would refuse.  Raises :class:`ScaffoldSecurityError`.
     """
     gitignore = target / ".gitignore"
+    _assert_safe_write(gitignore, target)
     text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
     existing = {ln.strip() for ln in text.splitlines()}
     to_add = [e for e in entries if e not in existing]

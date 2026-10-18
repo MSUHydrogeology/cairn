@@ -50,6 +50,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from bootstrap.scaffold import (  # noqa: E402
     _GITIGNORE_SEEDS,
     _MODULE_MAPPINGS,
+    ScaffoldSecurityError,
     main,
     seed_gitignore,
 )
@@ -237,6 +238,103 @@ class TestGitignoreSeeding:
         would = seed_gitignore(tmp_path, ("dev/intents.jsonl",), dry_run=True)
         assert would == ["dev/intents.jsonl"]
         assert not (tmp_path / ".gitignore").exists()
+
+
+# ---------------------------------------------------------------------------
+# .gitignore seeding never writes through a link
+# ---------------------------------------------------------------------------
+
+#: What a hostile checkout could make the seed append to if it followed a link:
+#: a stand-in for a file elsewhere on the machine (a shell startup file, say).
+_OUTSIDE_BYTES = b"# a file that belongs to someone else\nalias ll='ls -l'\n"
+
+
+class TestGitignoreSeedingRefusesLinks:
+    """``seed_gitignore`` routes its write through the engine's containment
+    guard, like every other write into the target. A ``.gitignore`` that is a
+    link is refused -- whether it points outside the target or inside it -- and
+    the file behind the link is left byte-for-byte alone."""
+
+    @staticmethod
+    def _linked_gitignore(tmp_path: Path, *, inside: bool) -> tuple[Path, Path]:
+        """A target whose ``.gitignore`` is a link; returns (target, file behind it)."""
+        target = tmp_path / "tgt"
+        target.mkdir()
+        if inside:
+            (target / "dev").mkdir()
+            behind = target / "dev" / "shared.gitignore"
+            link_to = Path("dev") / "shared.gitignore"  # relative, stays in the tree
+        else:
+            behind = tmp_path / "elsewhere" / "startup-file"
+            behind.parent.mkdir()
+            link_to = behind
+        behind.write_bytes(_OUTSIDE_BYTES)
+        (target / ".gitignore").symlink_to(link_to)
+        return target, behind
+
+    @staticmethod
+    def _install(target: Path, *extra: str) -> int:
+        cfg = target / "profile.yml"
+        cfg.write_text(
+            "project_name: LinkTest\ntest_command: pytest\nmodules:\n"
+            "  - coordination-tiers\n"
+        )
+        return main(
+            ["--config", str(cfg), "--target", str(target),
+             "--cairn-root", str(CAIRN_ROOT), "--allow-dev", *extra]
+        )
+
+    @pytest.mark.parametrize("inside", [False, True], ids=["outside", "inside"])
+    @pytest.mark.parametrize("dry_run", [False, True], ids=["write", "dry-run"])
+    def test_seed_refuses_a_linked_gitignore(
+        self, tmp_path: Path, inside: bool, dry_run: bool
+    ) -> None:
+        target, behind = self._linked_gitignore(tmp_path, inside=inside)
+        with pytest.raises(ScaffoldSecurityError, match="symlinked destination"):
+            seed_gitignore(target, ("dev/intents.jsonl",), dry_run=dry_run)
+        assert behind.read_bytes() == _OUTSIDE_BYTES
+        assert (target / ".gitignore").is_symlink()
+
+    def test_install_through_a_link_to_an_outside_file_exits_2(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        target, outside = self._linked_gitignore(tmp_path, inside=False)
+        rc = self._install(target)
+        err = capsys.readouterr().err
+        assert rc == 2, err
+        assert "refus" in err and "symlinked destination" in err
+        assert str(target / ".gitignore") in err
+        assert outside.read_bytes() == _OUTSIDE_BYTES, (
+            "the install appended to a file outside the target through the link"
+        )
+
+    def test_install_through_a_link_to_a_file_inside_the_target_exits_2(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """The guard's rule is one rule for every destination: a link is
+        refused wherever it points. Following in-tree links would mean judging
+        the final destination of a link chain here, a second rule for one
+        function; an adopter whose ``.gitignore`` is a link replaces it with a
+        real file and re-runs."""
+        target, behind = self._linked_gitignore(tmp_path, inside=True)
+        rc = self._install(target)
+        err = capsys.readouterr().err
+        assert rc == 2, err
+        assert "symlinked destination" in err
+        assert behind.read_bytes() == _OUTSIDE_BYTES
+        assert (target / ".gitignore").is_symlink()
+
+    def test_dry_run_install_predicts_the_refusal(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A dry run that printed "Would seed .gitignore" for a file the real
+        run refuses would promise something the install does not do."""
+        target, outside = self._linked_gitignore(tmp_path, inside=False)
+        rc = self._install(target, "--dry-run")
+        err = capsys.readouterr().err
+        assert rc == 2, err
+        assert "symlinked destination" in err
+        assert outside.read_bytes() == _OUTSIDE_BYTES
 
 
 # ---------------------------------------------------------------------------

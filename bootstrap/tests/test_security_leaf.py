@@ -43,6 +43,9 @@ _GUARDED_WRITE_FUNCS = {
     # path + the shared guarded/atomic lock-and-cache committer.
     "_cmd_adopt_collisions",
     "_commit_lock_and_caches",
+    # The fixed path `<target>/.gitignore` is not safe by construction: a
+    # checkout can make it a link to a file outside the tree.
+    "seed_gitignore",
 }
 
 

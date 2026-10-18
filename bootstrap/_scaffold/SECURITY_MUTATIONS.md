@@ -37,6 +37,7 @@ destination before any `mkdir` / `write_*` / `shutil` write:
 | `_apply_upgrade` | `_assert_safe_write` | the swapped-in upgraded files (incl. `new-core` / `new-module` additions, which share the swap loop) |
 | `merge_module_into_slot` | `_assert_safe_write` | a module-merge slot write + its conflict side-file (final Security Review P1 #1) |
 | `_write_stage` | `_assert_safe_write` | every staged-file / new-base / review-only destination, validated up-front for ALL plans (External Security review F1) |
+| `seed_gitignore` | `_assert_safe_write` | the appended lines in `<target>/.gitignore`. A fixed path is **not** contained by construction: a checkout can make `.gitignore` a link to a file outside the tree, and the appended lines would land there. The guard runs before the read, and on `--dry-run` too, so a dry run never promises a seed the install refuses. A link is refused wherever it points, inside the tree or out. The refusal reaches `main`'s exit-2 boundary |
 
 ### Fail-closed refusals added by the side-door-parity change (writes PREVENTED, not performed)
 
@@ -70,7 +71,6 @@ facade-without-engine surface, and are listed so the inventory stays complete:
   `_assert_fanout_contained` at the `fan_out_skills` call site before it runs.
 - **`_symlinks_available`**: writes/removes only a probe symlink it creates and
   immediately unlinks; fail-soft, no caller-controlled path.
-- **`seed_gitignore`**: read-then-append on the fixed `target/.gitignore`.
 
 ## Class C — documented follow-up gaps (the deferred single-write-capability redesign, RR6/SR6)
 
