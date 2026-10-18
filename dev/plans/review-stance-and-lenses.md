@@ -1,7 +1,7 @@
 # Plan: review stance and lenses — one review at every stage, and the lenses in every install
 
 **Source proposal**: `dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md` (accepted `58f30d6c`) and `dev/proposals/archive/2026-10-18-claude-review-lenses-for-every-install.md` (accepted `fbf664f0`)
-**Status**: awaiting-plan-review
+**Status**: revising-plan
 **Plan review**: required(Internal + Internal Security Review)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/`, the governing `AGENTS.md` every adopter receives, the authoring templates and a framework anchor.
 **Opened**: 2026-10-18
@@ -1191,3 +1191,395 @@ check is a reader.
   second belongs to an accepted Decision's contract.
 * **This plan carries no Waiting line at archive.** The open wait, the re-anchor, is
   declared on its marked board row.
+
+## Plan review -- Claude Opus 5.5 (Internal Security Review) -- 2026-10-18
+
+```
+Reviewed commit: 8cc124b5f537ca14742216e53224cfd7e2d4345c
+Target: the whole plan, read for the review trust apparatus: W1-W8, Acceptance criteria C1-C8 and M, Scope delta (the SR table), Verification, Dispositions; checked against the stance proposal's Revision 1 and its Security Review
+Prior findings: SR1-SR6 (the stance proposal's Security Review at 11fb067d), checked for closure here
+Assurance path: high-assurance
+```
+
+**Obligation**: Internal Security Review
+**Tier**: Internal Security Review
+**Findings**: raised
+
+**Verdict**: REVISE. Four findings block (RS-SR1 to RS-SR4). Each is fixed by a few
+words of plan text and a test label, not by a redesign.
+
+**In plain terms.** The plan does what the Security Review asked. SR1 to SR6 each
+become a criterion or a named disposition, both old privileges are struck, and
+the `Called by` rule says plainly that nothing mechanical checks the quote. The
+gap is in what the plan **rewrites without pinning**. Four rules that protect
+the review apparatus sit in paragraphs this plan rewrites, and no test or
+criterion makes them survive:
+
+1. **A Security Review is its own pass; an ordinary review never clears it.**
+   The shipped proposal template states this in the `required(A + B)` syntax
+   that this plan retires.
+2. **The `dual-review` module's sentence that a contract change "gets an External
+   review".** The accepted proposal strikes it, but no chunk does, and C7 says to
+   keep the module's multi-type content.
+3. **The new low-tier row for docstring cleanup.** It says the review "stays at
+   the usual stage tier" on high-risk files, but `usual` is now the header word
+   for *no* Security Review.
+4. **The Maintainer's quote in the commit body.** The accepted proposal required
+   it, and W2 leaves it out.
+
+None of these is a hole at the base. Each is a sentence a careful implementer
+would probably keep and a hurried one could drop while every criterion stays
+green.
+
+### Answers to the six questions
+
+1. **Does every SR item become a criterion or a named disposition?** Yes, with
+   two leaks.
+   * **SR1.** W2 (lines 419-435) carries all four statements: the read adds and
+     replaces nothing; its brief removes no owed answer and discharges no
+     Security Review; other authority lives only in a Decision or a plan fence;
+     and it never comes from a `Called by` line. C1 pins them as labels and C2
+     carries them to the four templates. The module clause is struck in C1,
+     the archive-precondition branch and "Tier ordering" in C4, and C8 re-runs
+     the probe. **Leaks:** the commit-body copy of the quote (RS-SR4), and
+     Revision 1's "a try-to-kill brief narrows the pass to that", which SR1
+     flagged and nothing keeps out of doctrine (RS-SR5).
+   * **SR2.** Closed by C7 (lines 890-901). It carries both literals, each with
+     its own control, globs the presets and `dev/modules/onboarding/`, asserts
+     the glob is non-empty, and says which control does not depend on the
+     pattern.
+   * **SR3.** Closed. The board line is deposited: the opening commit adds 26
+     lines to the re-anchor row in `dev/PLANNING.md`. C7 is the last chunk that
+     changes test bytes, M is gated on code review, and "owes its own" is
+     stated. The `AGENTS.md` correction SR3 asked for has since landed at
+     `69d3ac59`, after the reviewed commit, so *Dispositions* item (a) and the
+     plan decision at lines 348-352 are now overtaken (RS-SR8).
+   * **SR4.** W4 says "different model architecture", says the check is never
+     a lifecycle pass, and puts the data-governance gate first. Closed. RS-SR3
+     covers the paragraph W4 sits in.
+   * **SR5.** W5, the sixth category, and a byte-identical runbook and launcher.
+     Closed, except for the record-form conflict in RS-SR5.
+   * **SR6.** Closed by a per-chunk baseline diff. Reproduced at
+     8cc124b5: `quality_gate.py --sub neutrality` exits 1 with 74 FAIL lines. 18
+     of them sit in the five named files (8, 5, 3, 1, 1), and no other file this
+     plan edits has one.
+2. **Authority leaks after the plan lands:**
+   * clearing a Security Review with an ordinary pass: RS-SR1;
+   * an agent selecting External: RS-SR2;
+   * lowering a review: RS-SR3;
+   * an agent reviewing its own implementation: the floor is pinned in both
+     `AGENTS.md` copies but not in the plan templates (RS-SR1).
+
+   I found no sentence that lets an agent *call* a Maintainer read on its own.
+   W2's never-list and the read rule cover it. The method is set out below.
+3. **The `Called by` quote.** The plan names plainly that nothing mechanical
+   checks it: W2's last sentence, the label
+   `nothing-checks-the-quote-a-reader-does`, and a red-when for any sentence
+   that says a tool checks it. A forgery does not pay. Once SR1's four
+   statements land, a forged quote buys one extra read and no authority. There
+   is one dropped requirement and one cheap hardening (RS-SR4).
+4. **The deleted frozen test.** I measured it on the reviewed commit's bytes, in
+   a detached worktree with the file removed:
+   * `pytest bootstrap/tests/test_gate_manifest.py`: **21 passed** in 22.5 s.
+   * `_gate_manifest.py verify`: **exactly six new lines**, one `FROZEN-MISSING`
+     and five `COLLECTION-DROPPED` (one per node). These land on a verifier that
+     already reports `HOLD -- 154` at the base, so it reads 160 after.
+
+   The plan describes this exactly and does not rely on the suite. What the
+   five nodes protected:
+   * the non-empty glob, the two literals and the non-vacuity fixture carry
+     into the stance test;
+   * the "exactly three staffed paragraphs" node retires with its premise;
+   * the positive fixture guarded only the old test's own patterns.
+
+   The remaining gap is the window from C7 to M, when that protection lives in
+   unfrozen bytes (RS-SR8).
+5. **The low-tier rows.** Yes, the wording can leak (RS-SR3).
+6. **The install contract is byte-stable**, and the one contract-adjacent edit
+   is declared.
+   * `scaffold.py --manifest` at 8cc124b5 is 98 lines of `destination`,
+     `source` and `verbatim|substituted`, with no content hashes, and the mode
+     is set per file in config, not derived from content. No file is added to
+     or removed from the install set, so the manifest cannot move.
+   * `AGENTS.md` lists the fidelity manifest as install contract. The plan
+     edits only its sample `roles:` (`bootstrap/fidelity-check.md:162-167`) and
+     declares the edit (lines 217-221; Boundary B reason 1).
+   * Its only content reader is `bootstrap/tests/test_scaffold.py:895-900`,
+     which pins three substrings. The other mentions, in `cli.py`, `config.py`
+     and `check_module_body_coverage.py`, are strings and comments.
+   * It is pinned in neither `gate_manifest.json` nor `cairn-lock.yml` (0
+     entries each), and no `.py` file reads a role name except two
+     review-heading fixtures.
+   * Of every file this plan touches, including all of `doctrine/`, `docs/`
+     and `dimensions/`, only the deleted test is a `frozen_files` key (183
+     keys; control `test_scaffold.py` present). None is in `phase_mutable` or
+     `cascade_mutable`.
+
+**How I searched.** I used my own paragraph-level script over the plan's 15
+pinned roots: `.md`, `.yml` and `.svg` files, archives excluded, markup
+stripped, whitespace collapsed, and blank blockquote lines splitting
+paragraphs. A hit is two term sets within 120 characters, at 8cc124b5.
+
+| Probe | Terms | Hits | Known-present control |
+|---|---|---|---|
+| authority | distance term near waive, exempt, satisfy, clear, substitute, skip, instead of, replace, discharge, confirm | 18 paragraphs, 14 files | all three privileges: "Tier ordering" and the archive-precondition branch in `doctrine/plans.md`, the module clause in both copies |
+| Security Review clearing | "security review" near the same verbs, or optional, ordinary, usual | 15, 10 | the plan-obligation sentence in both `AGENTS.md` copies |
+| lowering | review near lower, downgrade, downshift, low | 24, 10 | the bright-line and downshift paragraphs in both `model-selection` copies |
+| self-review | implement or author near "its own" review, "clears its own", "same agent" | 3, 3 | `doctrine/dual-review.md` "no artifact clears its own obligation" |
+| selection | Search B-like | 69, 35 | all five of the plan's Search B controls, and the module paragraph in both copies |
+
+An exact `git grep` over `bootstrap/tests/*.py`, `scripts/` and `tools/` found
+no test or tool that pins any of the protective sentences below: "one pass per
+clause", "takes a Security Review", `Obligation`, "implementing agent". The
+same grep over the templates finds each one, which is the control.
+
+### Findings
+
+**RS-SR1 -- blocking. The rule that only a Security Review clears a Security
+Review has no criterion, and its shipped form uses syntax this plan retires.**
+
+* **Proposal templates.** The only shipped statement that each clause of a
+  review header needs its own pass is
+  `templates/core/dev/proposals/_template.md:54-55` ("A high-risk surface
+  takes a Security Review. ... `required(A + B)` means one pass per clause,
+  each naming its own obligation"), and `dev/proposals/_template.md:73`. C2
+  replaces `required(...)` on the `**Review**:` line with `usual + Security
+  Review` (lines 687-690). After C2, nothing says the `+ Security Review`
+  clause is a separate pass. Next to "one review at every stage", a reader can
+  take one usual pass as covering both.
+* **Plans.** The rule that a plan's security obligation is cleared only by a
+  matching `**Obligation**` line, "never by an ordinary Internal pass", sits
+  in the very paragraph C1 must rewrite to strike the escalation sentence:
+  `templates/core/AGENTS.md:99-106` and `AGENTS.md:94-101`.
+* **Doctrine.** The matching doctrine section is "Plan review is Internal,
+  always", with its obligation paragraph and the "Security Reviews wherever
+  they attach" bullet (`doctrine/dual-review.md:241`). C4 strips bullets from
+  that same list.
+* **The code-review floor.** "Not the implementing agent" is pinned by a C1
+  label in `AGENTS.md` only. The two plan-template statements
+  (`templates/core/dev/plans/_template.md:39`, `:287`) are rewritten in C2
+  with no criterion.
+* **No test pins any of these** (grep above), and the C1 label list (lines
+  552-575) and the C2 criteria (lines 683-720) carry none of them.
+
+*Fix.*
+* Add these labels to C1 (both `AGENTS.md` copies) and C2 (all four
+  templates):
+  * `a-high-risk-surface-takes-a-security-review`;
+  * `usual-plus-security-review-is-two-passes-and-the-usual-pass-never-clears-the-second`;
+  * `a-plan-security-obligation-is-cleared-only-by-a-matching-obligation-line`
+    (both `AGENTS.md` copies and both plan templates).
+* Extend `code-review-floor-is-not-the-implementing-agent` to both plan
+  templates, covering the preamble and the Code review skeleton.
+* Add a mutant that turns a named node red: delete the two-pass sentence from
+  one template copy.
+* In C4, add a criterion that the obligation paragraph and the "Security
+  Reviews wherever they attach" bullet survive, reworded only as RS-SR6 asks.
+
+**RS-SR2 -- blocking. The module's External-selecting paragraph is assigned to
+no chunk, and C7's wording says to keep it.**
+
+* **The paragraph.** `templates/modules/team-gated/dual-review.md:17-23`, and
+  `dev/modules/dual-review.md:16-22`, say "A change touching a contract or a
+  load-bearing assumption gets an External review in addition to the Internal
+  pass ... a human fills the External tier". That is a rule selecting
+  distance by risk, in a shipped module. Revision 1's table disposes of it as
+  "Struck".
+* **The plan's wording.** C7 says the thinned module keeps "what is about
+  multi-type teams" (lines 912-915), and the Scope delta row says "The module
+  keeps multi-type content" (line 1000). The C7 completeness check accepts any
+  file named in an exemption table with a reason (lines 902-906), which the
+  plan itself lists as a route to hide a hit (line 1151).
+* **The surrounding text.** Line 25 ("make it prove itself"), lines 29-34 and
+  120-121 ("The External tier ... layers"), and the opening and closing lines
+  (8-11, 150-152, "two-tier ... structurally independent") go the same way.
+* **An ambiguity in C1.** C1's forbidden-phrasing group already covers "the
+  two module copies" (lines 651-654). If it uses Search A's patterns, C1 is red
+  on this paragraph. If it carries only the privilege clause, nothing removes
+  the paragraph.
+
+*Fix.*
+* C7 names this strike explicitly: the module's External paragraphs give way
+  to a pointer to the Maintainer-called read, as Revision 1's table says.
+* C7 puts both module copies under every Search A pattern.
+* The completeness check forbids an exemption for any file in the install set
+  (`templates/`, `dev/modules/`, both `AGENTS.md` copies, both loop documents).
+* C1 states that its module group holds only the privilege-clause literal.
+
+**RS-SR3 -- blocking. The low-tier row's "usual stage tier" can lower the review
+of a high-risk edit.**
+
+* **The row's wording.** C3 (lines 732-734): docstring and comment cleanup is
+  low, "with the clause that its review stays at the usual stage tier wherever
+  it touches a surface the project's `AGENTS.md` names as high-risk". After
+  this plan, `usual` is the header token meaning *no Security Review* (W2,
+  C2).
+* **What it means in Cairn.** `AGENTS.md` lists the scaffold engine under
+  "High-risk surfaces (Security-Review + proposal triggers)". A docstring
+  edit in `bootstrap/_scaffold/` changes the AST attestation hash
+  (`bootstrap/tests/_ast_attest.py:84` hashes `ast.dump` of the whole
+  definition, docstring included). So the review owed there is a Security
+  Review at high. Read with the new vocabulary, the row says a usual review at
+  medium.
+* **Unreconciled text.** The row also contradicts the bright-line list, "the
+  high-risk trust boundaries ... stay at the high floor regardless"
+  (`templates/modules/team-gated/model-selection.md:128-131`), and C3 does not
+  say how the two are reconciled.
+* **The downshift paragraph.** W4 rewrites the paragraph that holds the four
+  conditions and the exclusion "does not apply to ... security-sensitive
+  changes" (lines 114-126), and nothing pins that those survive.
+
+*Fix.* Quote the row in *Wording the plan fixes* and keep "usual" out of it.
+For example:
+
+> **Docstring and comment cleanup may be written at low.** This covers an edit
+> that changes only docstrings and comments: no executable token, and no bytes
+> that a test, manifest or attestation pins. It lowers the writing step only.
+> The review keeps its stage's floor (medium for code review). Where the edit
+> touches a surface this project's `AGENTS.md` names as high-risk, it also owes
+> the Security Review that surface already requires, at high. Nothing in this
+> row lowers a review or removes a Security Review.
+
+Then add two C3 criteria:
+* The bright-line list keeps "the high-risk trust boundaries", with one
+  clause naming this row as the only exception, and only for the writing step.
+* The four downshift conditions and the exclusion list are unchanged apart
+  from W4's words.
+
+If the Maintainer meant that *reviews* of cleanup away from high-risk files may
+also run at low, the row must say so in words. That is a lowering, and it
+should not be left to inference.
+
+**RS-SR4 -- blocking (scope floor). W2 drops the commit-body copy of the
+Maintainer's quote.**
+
+* **What dropped.** Revision 1, section 2, says the pass carries the quote
+  "and the same quote in the commit body, as for a scribed Decision"
+  (`dev/proposals/archive/2026-10-18-claude-external-is-a-maintainer-stance.md:973-975`).
+  W2 (lines 421-423) and the label `called-by-carries-the-maintainers-words-verbatim`
+  leave it out, and nothing else in the plan restores it.
+* **Why it counts.** The Scope delta says "preserved" (line 1046). By
+  `AGENTS.md`, removed accepted scope is a deviation.
+* **The security value is modest.** The copy sits in a record that cannot
+  change without rewriting history, so a later edit to the quote in the pass
+  shows without archaeology.
+* **Harmless omissions.** W2 also omits "or an equivalent in a header" and
+  "head a pass External on its own" from the never-list. The read rule makes
+  both harmless, so this is noted only.
+
+*Fix.*
+* Restore the commit-body phrase in W2 and in the label.
+* As cheap hardening, have the line say where the words live:
+  `**Called by**: Maintainer -- Decision at <commit>` or `-- chat, <date>`, plus
+  `, relayed by <who>` where it was relayed. A quote taken from a Decision is
+  then checkable against a committed block by the next reader. A quote taken
+  from chat stays a reader's trust, as W2 already says.
+
+**RS-SR5 -- non-blocking. W2 and W5 disagree about the launcher's "External
+Security review".**
+
+* **The conflict.** W2 makes `**Tier**: External` valid only with `Called by`,
+  reads anything else as the usual review, and says a called read "discharges
+  no Security Review". W5 keeps the runbook's "External Security review" of
+  the launcher as the one standing call. The Maintainer verifies the launcher
+  against "the review's record" (`bootstrap/REANCHOR_RUNBOOK.md:48`).
+* **What a literal reader gets.** The next launcher review's record either
+  needs a `Called by` line, which W5 never mentions, or reads as a usual review,
+  that is, not a Security review. And W2 says a Security Review the Maintainer
+  calls from more distance clears nothing.
+* **An unguarded phrase.** Revision 1 section 2's "a try-to-kill brief narrows
+  the pass to that" (proposal line 984), the phrase SR1 objected to, has no
+  guard if C4 carries section 2 into doctrine.
+
+*Fix.*
+* W5 adds: "Its record carries `**Called by**` with the Maintainer's
+  commissioning words, and it is a Security Review."
+* W2's clause becomes "discharges no Security Review by its distance or its
+  brief; a pass clears a Security Review only by being one".
+* `narrows the pass` reads 0 in doctrine after C4.
+* The runbook stays untouched.
+
+**RS-SR6 -- non-blocking. The paragraphs being rewritten credit the security
+obligation to a checker that no longer exists, and one doctrine page names the
+wrong satisfier.**
+
+* **The checker named.**
+  * `AGENTS.md:101` and `templates/core/AGENTS.md:106` say "never by a heading
+    the checker cannot parse".
+  * `doctrine/dual-review.md:223` and `:228` name `_pass_headings` and
+    `normalize_required_obligations`.
+  * `doctrine/lifecycle-contract.md:158` says "the checker reads as two
+    distinct passes".
+* **Measured: no such checker.** In `*.py`, those two names appear only in a
+  comment (`scripts/gen_legacy_passes.py:16`). `Obligation` appears in no
+  `.py` or `.sh` file; the control finds it in 3 `.md` files.
+* **The wrong satisfier.** `doctrine/lifecycle.md:313-314` says the plan
+  obligation is "satisfied only by an appended `## Security review (Internal)`
+  record". `doctrine/plans.md:643` and the `dual-review` paragraph say such a
+  heading carries no weight.
+* **These are all in scope.** C1 and C4 rewrite each of these paragraphs, and
+  my selection probe hits the `lifecycle.md` one.
+* **Why it matters.** `AGENTS.md` > "Verifying claims" calls a described check
+  that tests nothing worse than no check. W2 already sets the honest
+  standard for `Called by`.
+
+*Fix.*
+* Say the same for the `Obligation` line: no tool reads it; the next
+  reviewer, the code reviewer and the Maintainer do.
+* Conform `lifecycle.md` to `plans.md`.
+* After C4, a grep for `_pass_headings|normalize_required_obligations|the
+  checker cannot parse` over live docs reads 0, or each hit is marked as
+  history.
+
+**RS-SR7 -- non-blocking. C1's module edit moves the lockfile count that C3 says
+holds.**
+
+* **Measured on a copy of 8cc124b5.** Striking the privilege clause from
+  `dev/modules/dual-review.md` takes `verify_integrity.py --target .` from 18
+  to **19**, and the new entry is that file.
+* **Why C3 goes red.** The plan finalizes that record only at C7 (lines
+  939-940), but C3 requires "still reports 18" (line 768), so C3 is red as
+  written. A red integrity count that "everyone knows about" is the habit of
+  routing around a refusal, and an unscoped finalize to fix the number would
+  re-attest the 18 drifted files (lines 225-227).
+
+*Fix.* C1 scoped-finalizes `dev/modules/dual-review.md` in the same commit,
+C7 finalizes it again, and the count reads 18 at every chunk.
+
+**RS-SR8 -- non-blocking. The window between C7 and the re-anchor, and a stale
+disposition.**
+
+* **What reaches the ceremony.** The re-anchor pins whatever is tracked when it
+  runs. The row says "derive the changed set ... at ceremony time". From C1
+  to M, the three test files that inherit the old pin's protection are
+  unfrozen. The archive note records their node IDs (lines 1170-1172), and
+  node IDs do not detect a change of bytes.
+* **The stale disposition.** The `AGENTS.md` pitfall sentence was corrected at
+  `69d3ac59` (Cairn's root copy only).
+
+*Fix.*
+* The archive note records the git blob id of each of the three test files at
+  the code-reviewed commit (`git ls-tree <sha> -- <paths>`), and the row asks
+  the ceremony to confirm it pins those bytes.
+* Drop *Dispositions* item (a) and the plan decision at lines 348-352, or
+  restate them as closed by `69d3ac59`, the next time the plan's operative
+  cells are revised.
+
+### What I did not cover
+
+* I did not run the full suite or the plan's 22-file mapped set. My suite
+  evidence is `test_gate_manifest.py` only, run once with the file deleted.
+* I did not rebuild Searches A and B to the plan's exact patterns. My probes
+  are lexical with their own terms and a 120-character window, so a privilege
+  phrased without them escapes. My selection probe's 69 paragraphs in 35
+  files and the plan's 61 in 30 are not reconciled.
+* I did not read `docs/`, `dimensions/`, the presets, `bootstrap/UPGRADE.md`
+  or the README in full, or the 2026-08-27 launcher review record.
+* The two new tests do not exist, so their controls and mutants are judged
+  by design only.
+* I did not run the adopter rehearsal, the AST verifier or the body-coverage
+  probe.
+* I left scope, simplicity, sequencing with plans C and D, and RL1 to RL7 to
+  the ordinary Internal pass, except where they touch the trust apparatus.
+* I read the work at 8cc124b5. Later commits are named only where they
+  overtake a plan statement (`69d3ac59`).
