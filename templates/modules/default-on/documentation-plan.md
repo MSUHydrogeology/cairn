@@ -57,7 +57,7 @@ when adding new content. The module ships:
 The placement-decision procedure itself is **prose**, not
 mechanical enforcement. Programmatic placement-rule enforcement in
 `check_cairn.py` is logged as a follow-up for a future module
-(deferred per the proposal's Antigravity P3 disposition;
+(deferred;
 procedure stabilizes through use before mechanical enforcement
 becomes the right next step).
 
@@ -65,7 +65,7 @@ becomes the right next step).
 
 A one-size-fits-all tier vocabulary. The four-layer vision is the
 doctrine; the *tier names within each layer* are deployment-
-specific (modflow_tools uses `quickstart / user_guide / theory /
+specific (the reference deployment uses `quickstart / user_guide / theory /
 reference / developer` for the descriptive layer; a different
 deployment might use `getting-started / how-to / explanation /
 reference` from the Diátaxis framework, or any other split). The
@@ -168,9 +168,9 @@ through when adding new content.
 
 ## Cross-reference to the reference deployment
 
-The placement-decision procedure was validated by modflow_tools'
-reference deployment over multiple months of doc-restructure
-work (`docs/DOCUMENTATION_PLAN.md` in the modflow_tools tree).
+The placement-decision procedure was validated by the reference
+deployment over multiple months of doc-restructure
+work (its `docs/DOCUMENTATION_PLAN.md`).
 The procedure surfaces here as Cairn doctrine because it is
 **Cairn-portable** -- the four-layer vision and the placement
 procedure generalize across project domains; only the *tier

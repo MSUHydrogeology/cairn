@@ -89,10 +89,10 @@ no multi-agent coordination, no legacy-tree pre-pass.
 
 ## Active-surfacing prompt content (per-preset)
 
-Per Codex External Review P2-3 + plan P1.10b: each active-surfacing
-row carries per-preset prompt content the activation helper emits
-to the terminal when the row's trigger fires. The two rows for
-the `solo-greenfield` shape:
+Each active-surfacing row carries per-preset prompt content that
+the activation helper emits to the terminal when the row's
+trigger fires. The two rows for the `solo-greenfield` shape are
+given below:
 
 ### Row 1 -- collab-agreement-signing prompt
 

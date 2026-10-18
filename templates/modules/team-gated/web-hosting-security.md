@@ -67,7 +67,7 @@ read-only in code.
 
 Against the declared `site_type` (`static`, `browser-app`, `data-api`):
 
-<!-- cairn-accept: suspicious-url reason="prose naming the two URL schemes it contrasts; the scanner reads a backtick-quoted scheme prefix as a URL. No host is named." reviewer="Claude (Implementation)" date=2026-08-10 -->
+<!-- cairn-accept: suspicious-url reason="prose naming the two URL schemes it contrasts; the scanner reads a backtick-quoted scheme prefix as a URL. No host is named." reviewer="agent" date=2026-08-10 -->
 * **HTTP → HTTPS upgrade, and the ordering of it.** An HTTP origin must reach
   HTTPS **before** it changes host. A redirect that moves host while still on
   `http://` has carried the request over a channel an attacker on the path can
@@ -90,7 +90,7 @@ Against the declared `site_type` (`static`, `browser-app`, `data-api`):
 Lives at `dev/.cairn/web-hosting-policy.json`, generated from the installed stub,
 and is a **tracked file** whose review channel is git.
 
-<!-- cairn-accept: suspicious-url reason="documentation example: a loopback fixture address and RFC-2606 reserved example.org, in a policy example an adopter must be able to copy. Neither is a reachable third-party host." reviewer="Claude (Implementation)" date=2026-08-10 -->
+<!-- cairn-accept: suspicious-url reason="documentation example: a loopback fixture address and RFC-2606 reserved example.org, in a policy example an adopter must be able to copy. Neither is a reachable third-party host." reviewer="agent" date=2026-08-10 -->
 ```json
 {
   "schema": "cairn.security.web-hosting-policy.v1",

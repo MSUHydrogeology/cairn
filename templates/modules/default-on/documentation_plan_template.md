@@ -315,7 +315,7 @@ may want to add (or strip) sections that are domain-specific:
   numerical methods, scientific computation, or any domain
   where wrong defaults are load-bearing, a "high-risk
   reminders" section in `AGENTS.md` paired with theory-tier
-  rationale is the typical shape (modflow_tools' reference
+  rationale is the typical shape (the reference
   deployment uses this).
 * **Static-build documentation** (Sphinx, mkdocs, RTD) -- this
   file covers *content organization* only.  Choosing a static-

@@ -2,7 +2,7 @@
 # <tracker_name> -- incident log
 
 **Purpose**: <describe what event class(es) this tracker records, e.g.,
-"staged-index collisions in the modflow_tools dev tree" or "all
+"staged-index collisions in the project's dev tree" or "all
 coordination + commit-discipline incidents.">
 
 **Rate-limit gate connection**: this tracker is the parse target for

@@ -151,6 +151,6 @@ class structure the deployment uses:
   `dev/measurement/coordination_log.md` for work-intent collisions).
   Each carries its own "What counts" + table.
 
-The reference deployment (modflow_tools) runs class-specific
+The reference deployment runs class-specific
 trackers; a smaller team typically runs one combined; a larger
 multi-team deployment may run several.
