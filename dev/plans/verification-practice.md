@@ -1,7 +1,7 @@
 # Plan: verification practice — a review reads a commit, mutation for set claims, a test scope for small fixes
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-verification-practice.md`
-**Status**: revising-plan
+**Status**: ready-to-implement
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/` and
 a shipped template.
@@ -113,9 +113,11 @@ structure:
   `bootstrap/tests/test_security_verification.py`: slot merges into it;
 * `bootstrap/tests/test_verify_integrity.py`: the finalize hint on `AGENTS.md`.
 
-The edits add prose outside every slot and `cairn:if` region, with no `{{`
-token. The rest of the family should therefore see no change, and Boundary B's
-full run checks that.
+The `AGENTS.md` edits sit outside every slot and `cairn:if` region. C4's
+one-word edit sits inside the plan templates' `verification-commands` slot,
+which no module fills, so its default text ships as written. No edit adds a
+`{{` token. The rest of the family should therefore see no change, and Boundary
+B's full run checks that.
 
 ### Found while planning
 
@@ -137,8 +139,27 @@ anything, and both are named here so the plan reviewer can say otherwise.
   `AGENTS.md` and `templates/core/dev/agent_collaboration.md` never mention it.
   An unconditional "claimed first" would be a rule an adopter without that
   module breaks on first use, which is VP1's failure again. The shipped copy
-  says "claimed first if the project uses file claims". Cairn's copy stays
+  says "claimed first if the project uses file claims", and so does
+  `doctrine/dual-review.md`, because doctrine treats work intents as an
+  optional tier (`doctrine/coordination.md:103-110`,
+  `doctrine/session-routines.md:34-36`). Cairn's `AGENTS.md` stays
   unconditional (`dev/agent_collaboration.md:114`).
+
+**Decided at plan review: a text-only fix on a high-risk surface.** "Boundary B
+governs every implementation" meets "Prose-only work does not run the suite".
+For a text-only fix to a surface the file names as high-risk, one rule said to
+run the full suite and the other said to run none. The prose-only rule
+already settles this for contract surfaces: no full suite unless a test or
+manifest pins the prose's bytes. This plan extends that one sentence to
+high-risk surfaces ("a contract or high-risk surface").
+* Prose that nothing pins runs the prose gates on any surface. No test can fail
+  on it, and on Cairn's one prose high-risk surface, vendor-neutrality, the
+  neutrality gate is the check that matters.
+* Prose that a test or manifest pins is a substantive surface (item 4). On a
+  high-risk surface it runs the full suite once.
+
+That is Q1's stated purpose: a missed pin must not reach adopters. So this
+stays inside the Maintainer's answer to Q1 and is not put to the Maintainer.
 
 Also noticed, and not widened:
 
@@ -149,7 +170,7 @@ Also noticed, and not widened:
   is neither "a trivial change, with no proposal or plan" nor a plan. Under the
   new text it has no mapping, so it runs full. Where its record goes is unstated
   today and stays unstated. That is a pre-existing gap and not this plan's to
-  fill.
+  fill. Plan review judged it owed to the archive batch (*Dispositions*).
 * `bootstrap/verify_integrity.py --target .` already reports 18 findings,
   `AGENTS.md` and `dev/plans/_template.md` among them. The plan does not
   finalize, because that would re-attest earlier, unreviewed drift.
@@ -198,7 +219,7 @@ suite is green at every chunk boundary. C1 creates the file.
 |---|---|---|---|
 | C1 | **A review reads a commit.** A reviewer works from the author's commit and, in a shared folder, writes only its own review. Text: *Wording* > 1, added after "Review is asynchronous and commit-mediated" in both copies (`AGENTS.md:77-78`, `templates/core/AGENTS.md:81-82`) and to `doctrine/dual-review.md` > "Asynchronous and commit-mediated" (`:100-113`). Creates `bootstrap/tests/test_review_and_verification_rules_ship.py` with this rule's pins, the parametrized guard and the floor test. | `ready-to-implement` | one commit |
 | C2 | **Mutation for set claims, and an honest ledger.** When a review claims a value must reach every place in a set, the reviewer breaks each place on purpose and reports every result. Text: *Wording* > 2, added to Boundary C in both copies (`AGENTS.md:214-227`, `templates/core/AGENTS.md:218-231`) and to `doctrine/dual-review.md` > "Boundary C" directly after its first paragraph (`:294-302`), outside the six-trigger span; one pointer bullet in the ledger shape of `doctrine/plans.md` > "Code review — doctrine" (`:886-891`), not a second copy of the rule. Adds pins. | C1 | one commit |
-| C3 | **Boundary B reaches a trivial change.** A small fix with no plan runs the tests that own what it touched and names them in its commit message, the code reviewer rules on that choice, and on a contract or high-risk surface it runs the full suite once. Text: *Wording* > 3, in Boundaries A and B of both copies and of `doctrine/plans.md` (`:285-298`, `:300-341`), plus the opening sentence of `doctrine/dual-review.md` > "Boundary C" (`:295-296`). Adds pins. | C2 | one commit |
+| C3 | **Boundary B reaches a trivial change.** A small fix with no plan runs the tests that own what it touched and names them in its commit message, the code reviewer rules on that choice, and on a contract or high-risk surface it runs the full suite once. Text: *Wording* > 3, in Boundaries A and B and the prose-only paragraph of both copies; in Boundaries A and B of `doctrine/plans.md` (`:285-298`, `:300-372`), its validity sentence included; and in the opening sentence of `doctrine/dual-review.md` > "Boundary C" (`:295-296`). Adds pins. | C2 | one commit |
 | C4 | **One term.** Defines "substantive surface" once, so that code, tests and prose a test reads all count, and drops the narrower "substantive code surface". Text: *Wording* > 4, in Boundary A of both copies and `doctrine/plans.md` (`:291`, `:295-298`); "code" removed at `dev/plans/_template.md:151` and `templates/core/dev/plans/_template.md:145`. Adds the pin. | C3 | one commit |
 | C5 | **Boundary B, then the record.** Runs the whole suite once on the finished work and writes down the result. Full mode (*Verification*), then `## Implementation verification`; status to `awaiting-code-review`. | C4 | one commit |
 | M | **MAINTAINER-ONLY — no new ceremony.** No frozen file changes. The new test file and the nodes it adds join the gate-manifest re-anchor already queued on `dev/PLANNING.md`. **An implementing agent must not perform it.** The agent's part is the board note at archive. | code review cleared | Maintainer |
@@ -206,12 +227,20 @@ suite is green at every chunk boundary. C1 creates the file.
 ### Wording each chunk lands
 
 The shipped copy's bytes are given here. Cairn's copy is identical except where
-noted. Line wrapping is free, except that "trust-ceremony surface" and "cannot
-be bounded confidently" never wrap in Cairn's copy.
+noted. Line wrapping is free, except that the frozen guards read these phrases
+from raw text, so none may wrap or gain a second copy:
+* "trust-ceremony surface" and "cannot be bounded confidently" in Cairn's
+  `AGENTS.md`;
+* "no valid Boundary B record exists" in `doctrine/dual-review.md`, and the
+  opener "required when any of these six triggers applies:", which keeps its
+  blank line before "Review-only";
+* "**Reviewed range**" in `doctrine/plans.md`;
+* "Reviewed range" in `dev/plans/_template.md`.
 
 **1 — Review section, both copies.** Cairn's copy drops "if the project uses
-file claims". `doctrine/dual-review.md` takes Cairn's sentences, plus one of
-reason: git cannot bring back an uncommitted file that a `restore` reverted.
+file claims". `doctrine/dual-review.md` takes the shipped sentences, conditional
+included, plus one of reason: git cannot bring back an uncommitted file that a
+`restore` reverted.
 
 > **A review reads a commit, never a shared working tree.** The author commits
 > what is to be reviewed before handing it over (locally; committing is not
@@ -250,31 +279,55 @@ an unmutated control, never a bare count (`dual-review.md` > "Boundary C")."
 > for every touched surface. If a substantive surface has no such mapping, run
 > the full suite.
 
-In Boundary B: "unless the plan's reviewed mapping bounds" becomes "unless the
-mapping bounds"; "if a substantive surface has no reviewed mapping" becomes "has
-no such mapping"; the fence reads "or a **trust-ceremony surface** (any
-high-risk surface this file names, or release or security ceremony work)"; and
-"on `bounded`, name the touched surfaces, the mapping and gates run" becomes
-"the test files or nodes and the gates run, with counts". Before "An
-already-open plan keeps…", add:
+In Boundary B:
+* "unless the plan's reviewed mapping bounds" becomes "unless the mapping
+  bounds".
+* "if a substantive surface has no reviewed mapping" becomes "has no such
+  mapping".
+* The fence reads "or a **trust-ceremony surface** (any high-risk surface this
+  file names, or release or security ceremony work)".
+* In the record sentence, only "the mapping and gates run" changes, to "the
+  test files or nodes and the gates run, with counts". The sentence then reads
+  "on `bounded`, name the touched surfaces, the test files or nodes and the
+  gates run, with counts, why the effects are bounded, and …".
+* "Append the tested SHA/range" becomes "A plan appends the tested SHA/range".
+
+Before "An already-open plan keeps…", add:
 
 > **Boundary B governs every implementation, a trivial change included.** A
 > trivial change's mapping is the owning tests Boundary A names, and Boundary
-> C's Bounding verdict reviews it afterwards. Its record is its commit body,
-> measured on exactly the bytes being committed: a tree clean apart from the
-> change, or a separate copy holding only it.
+> C's Bounding verdict reviews it afterwards. It runs before the commit, not
+> after, on exactly the bytes being committed: a tree clean apart from the
+> change, or a separate copy holding only it. Its record is its commit body,
+> not a plan section, and carries the mode, the interpreter, and on `bounded`
+> every field the record sentence above names.
 
-`doctrine/plans.md` gets the same changes: the trivial-change mapping in
-Boundary A; "a plan whose reviewed mapping bounds" becomes "work whose mapping
-bounds"; the paragraph above; and "the reviewed mapping and standing gates it
-ran" becomes "the test files or nodes and the standing gates it ran, with
-counts". In `doctrine/dual-review.md` > "Boundary C", "For a plan with a valid
-Boundary B Implementation verification record" becomes "For work with a valid
-Boundary B record (a plan's Implementation verification section, or a trivial
-change's commit body)".
+In the prose-only paragraph, "A prose change to a contract surface" becomes "A
+prose change to a contract or high-risk surface".
+
+`doctrine/plans.md` gets the same changes in its own sentences:
+* **Boundary A:** the trivial-change mapping. "has no reviewed mapping" becomes
+  "has no such mapping"; C3 leaves "code" for C4. The prose paragraph says it
+  holds on any surface, a high-risk one included.
+* **Boundary B:**
+  * "a plan whose reviewed mapping bounds" becomes "work whose mapping bounds";
+  * the paragraph above is added;
+  * "the reviewed mapping and standing gates it ran" becomes "the test files or
+    nodes and the standing gates it ran, with counts", keeping the touched
+    surfaces;
+  * "The record is valid only when…" (`:366-368`) becomes "A plan's record is
+    valid only when…", since the new paragraph states a trivial change's.
+
+In `doctrine/dual-review.md` > "Boundary C", "For a plan with a valid Boundary B
+Implementation verification record" becomes "For work with a valid Boundary B
+record (a plan's Implementation verification section, or a trivial change's
+commit body, whose tested revision is that commit and whose clean state is a
+tree clean apart from the change)".
 
 **4 — Boundary A, both copies, after "run the full suite."** In
-`doctrine/plans.md` this joins the "Work confined to ordinary prose" paragraph.
+`doctrine/plans.md` this joins the "Work confined to ordinary prose" paragraph,
+with "under the prose-only rule below" shortened to "under the prose-only rule",
+since there it sits inside that rule.
 
 > A **substantive surface** is anything that is not ordinary prose under the
 > prose-only rule below: code, tests, executable templates and snippets,
@@ -283,10 +336,18 @@ change's commit body)".
 ## Acceptance criteria
 
 **How the pins are built.** Each pin is an obligation, asserted on both copies
-as an alternation, as `test_comprehension_floor.py` does, so a rewording passes
-and a deletion fails. One parametrized guard removes each obligation's matched
-text from the intact file and asserts that obligation is reported. One floor
-test asserts that an empty file reports every obligation.
+as an alternation over whitespace-collapsed text, as
+`test_comprehension_floor.py` does. A rewording passes and a deletion fails.
+* **Stable IDs.** Parametrized node IDs come from the obligation labels
+  (`ids=`), never from the pattern. Once the queued re-anchor pins this file,
+  rewording a pattern then cannot drop a pinned node.
+* **The guard.** One parametrized guard collapses whitespace, removes every
+  match of each obligation (`re.sub`), and asserts that the obligation is
+  reported. The new guards therefore carry none of the one-copy, one-line
+  constraints of the frozen ones. The negative pin's guard inserts the
+  forbidden phrase instead.
+* **The floor.** One test asserts that an empty file reports every positive
+  obligation.
 
 * **Every chunk:**
   * `bootstrap/tests/test_verification_boundaries.py` passes, and no chunk
@@ -301,7 +362,11 @@ test asserts that an empty file reports every obligation.
   * the one write, its own review record;
   * the forbidden commands;
   * a separate copy for anything else that writes;
-  * figures measured on the commit's bytes.
+  * figures measured on the commit's bytes;
+  * the rule sits inside `## Review`, located as
+    `test_comprehension_floor_sits_in_the_review_section` locates it;
+  * the claim clause both ways: the shipped copy carries "if the project uses
+    file claims"; Cairn's carries "claimed first" without it.
 * **C2 — the ledger.** Both copies and `doctrine/dual-review.md` carry
   *Wording* > 2. "no valid Boundary B record exists" still occurs once in
   `doctrine/dual-review.md`, and the six-trigger list still parses as 1 to 6.
@@ -311,19 +376,39 @@ test asserts that an empty file reports every obligation.
   * never a bare count;
   * measured equivalence, with unmeasured equivalence reported as a survivor;
   * mutation stays the reviewer's choice outside the trigger.
-* **C3 — the reach and the fence.** Both copies carry *Wording* > 3.
+* **C3 — the reach and the fence.** Both copies, `doctrine/plans.md` and
+  `doctrine/dual-review.md` carry *Wording* > 3.
   * Phrase counts in `AGENTS.md`: "cannot be bounded confidently" occurs exactly
     once, and every "trust-ceremony surface" sits on one physical line.
-  * "has no reviewed mapping" occurs in neither copy.
-  * The pins: B governs a trivial change; its record is its commit body; the
-    owning tests are found by search; the record names test files or nodes; and
-    the trust-ceremony definition.
-  * **The falsifier, read from the shipped copy alone.** A reader derives (a) a
-    trivial change on an ordinary surface runs its owning tests, recorded in its
-    commit body with files and counts, and takes a Bounding verdict; and (b) a
-    trivial change on a surface the file names as high-risk runs the full suite
-    once, before its code review. No sentence in Boundaries A to C yields "run
-    the full suite" for case (a).
+  * On whitespace-collapsed text, `no reviewed\s+mapping` matches in neither
+    copy and not in `doctrine/plans.md`. The plan templates keep "reviewed
+    mapping", because they govern plans only.
+  * "substantive code surface" still occurs once in `doctrine/plans.md` after
+    C3, so C4's control holds.
+  * Both copies' prose-only paragraph reads "a contract or high-risk surface".
+  * The pins:
+    * B governs a trivial change;
+    * it runs before the commit, on the bytes being committed;
+    * its record is its commit body, carrying the mode and the interpreter;
+    * a plan appends the Implementation verification section;
+    * the owning tests are found by search;
+    * the bounded record names the touched surfaces and the test files or
+      nodes;
+    * the trust-ceremony definition;
+    * negatively, no "no reviewed mapping" in either copy.
+  * **The falsifier, read from the shipped copy alone.** A reader derives:
+    * (a) a trivial change on an ordinary surface runs its owning tests before
+      committing, records them in its commit body (the mode, the interpreter,
+      the touched surfaces, the files and counts), and takes a Bounding
+      verdict;
+    * (b) a trivial change to code, or to prose a test pins, on a surface the
+      file names as high-risk, runs the full suite once, before its code
+      review;
+    * (c) a text-only fix that nothing pins runs the prose gates, on any
+      surface.
+
+    No sentence in Boundaries A to C yields "run the full suite" for case (a)
+    or (c). No sentence says a trivial change appends to a plan.
 * **C4 — the term.** Both copies define "substantive surface" as in *Wording* >
   4, and the pin holds it.
   `grep -c "substantive code surface" doctrine/plans.md dev/plans/_template.md templates/core/dev/plans/_template.md`
@@ -332,8 +417,8 @@ test asserts that an empty file reports every obligation.
 * **The new file, by C5:**
   * no skip or xfail marker, because a newly marked node holds the gate;
   * names and docstrings state the property, with no finding id, chunk letter or
-    issue number: `grep -nE "VP[0-9]|EA[0-9]|\bC[1-5]\b|#1[27]\b|#25\b"` on it
-    prints nothing.
+    issue number: `grep -inE "VP[0-9]|PR[0-9]|EA[0-9]|\bC[1-5]\b|_c[1-5]_|#1[27]\b|#25\b"`
+    on it prints nothing.
 * **Throughout:**
   * This plan adds no shipped file, so its commits leave
     `python bootstrap/scaffold.py --manifest` byte-identical.
@@ -376,6 +461,12 @@ test asserts that an empty file reports every obligation.
 **Scope delta**: preserved. Every Revision 1 outcome is mapped above and nothing
 is dropped. The two byte-level choices in *Found while planning* deliver
 outcomes that the quoted wording would have missed, and they remove nothing.
+Plan review added two edits outside Revision 1's surface table, each answering
+a finding:
+* `doctrine/plans.md`'s validity sentence (PR2);
+* "contract or high-risk surface" in the prose-only paragraph (PR6).
+
+Neither moves B's default, its fence list or the six triggers.
 
 ## Verification
 
@@ -505,7 +596,7 @@ moved, or widened. The chunking changes no answer.
   declined it for now, with a revival condition ("build it if the rule fails in
   practice"), and the accepted text assigns it to no later plan.
 * **The no-plan accepted proposal's record location** (*Found while planning*)
-  goes to that batch only if plan review judges it owed.
+  goes to that batch. Plan review judged it owed there, not to this plan.
 * Closing issues #12, #17 and #25 is a public action after a push, so it is the
   Maintainer's call.
 
@@ -810,3 +901,35 @@ figure; Boundary B's full run covers both.
 Nothing here needs the Maintainer if the findings are folded as recommended.
 [PR1] restores an obligation rather than removing one, and [PR6]'s default stays
 inside the Decision.
+
+## Response to plan review -- Claude (author) -- 2026-10-18
+
+Every finding was checked against the tree before folding, at
+`AGENTS.md:204-213`, `doctrine/plans.md:289-337` and `:366-368`,
+`doctrine/coordination.md:103-110` and `doctrine/session-routines.md:34-36`.
+All seven are accepted, one in part. Each is answered in an operative cell, and
+this table points at them.
+
+| Finding | Disposition | Where |
+|---|---|---|
+| [PR1] the rewrite drops "the touched surfaces" | accepted | *Wording* > 3: only "the mapping and gates run" changes, and the full resulting sentence is quoted. *Acceptance criteria* > C3 pins the touched surfaces, which no test pinned before. |
+| [PR2] three sentences still describe only a plan's record | accepted, and carried one sentence further | *Wording* > 3: (a) the new paragraph runs a trivial change "before the commit, not after"; (b) "A plan appends"; (c) the commit body carries the mode, the interpreter and every bounded field; dual-review's check sentence names the commit as the tested revision. The same finding reaches `doctrine/plans.md:366-368` ("pre/post `HEAD` both equal the full tested revision"), which a commit body can never meet; it becomes "A plan's record is valid only when…". *Acceptance criteria* > C3 adds the pins and the interpreter to the falsifier. |
+| [PR3] `doctrine/plans.md` keeps "no reviewed mapping" | accepted | *Wording* > 3, `doctrine/plans.md` > Boundary A. *Acceptance criteria* > C3 reads `doctrine/plans.md`, and "code" is left for C4 so its control holds. *Sequence* > C3. |
+| [PR4] pin the negative, the placement and the asymmetry; stable IDs; robust guards | accepted, except the optional install assertion | *Acceptance criteria* > "How the pins are built", C1 and C3. **Declined:** the optional install assertion. The marker check shows no edit sits in a slot or `cairn:if` region, so the template source is the installed text. Asserting on an install would tie a prose-pin file to the engine's API for no added coverage. |
+| [PR5] doctrine should take the conditional claim clause | accepted | *Wording* > 1; *Found while planning* |
+| [PR6] the prose-only rule on a named high-risk surface | accepted; decided, not escalated | *Found while planning* > "Decided at plan review"; *Wording* > 3 (one phrase in the prose-only paragraph, "contract or high-risk surface"; `doctrine/plans.md`'s prose paragraph); *Acceptance criteria* > C3 falsifier (b) and (c). Prose that nothing pins runs the prose gates on any surface. Prose a test or manifest pins is a substantive surface and runs full on a high-risk surface. This is the reviewer's default, made exact by item 4's definition, and it keeps Q1's purpose: a missed pin never reaches adopters. |
+| [PR7] small corrections | accepted, all four | *Scope* > install family (C4's edit is inside the slot no module fills); *Wording* > 4 ("below" dropped in doctrine); *Acceptance criteria* > the new file (`grep -i`, plus `PR` and `_c[1-5]_`, since `\b` does not split `test_c3_`); *Wording* > the never-wrap list, now all six raw-text dependencies |
+
+**The disposition question** is folded. The no-plan record location goes to the
+archive batch (*Dispositions*; *Found while planning*).
+
+**Scope.** Nothing accepted is dropped. Two edits reach text that Revision 1's
+surface table did not name, and both answer a finding:
+* PR2's validity sentence in `doctrine/plans.md`;
+* PR6's phrase in the prose-only paragraph of both copies.
+
+Neither moves B's default, its fence list or the six triggers. *Scope delta*
+stands at `preserved`.
+
+There is no second plan-review round. Status `revising-plan` ->
+`ready-to-implement`.
