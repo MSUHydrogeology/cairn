@@ -8,7 +8,7 @@
     {
       "base_hash": "sha256:bce2a0098bbd2b5bf60f8010af382e45e02135f165102cff75d2d8cb1b4fd574",
       "dst": ".agents/skills/_data/vendor_targets.yml",
-      "hash": "sha256:d683b49d2ee7ccd6b199018ce854a64efede80b7ba2c8e89cb3838c7ccd6f20c",
+      "hash": "sha256:1ee15651ff81fcb37a29004c72519c9c34d73c96377364feae8db61ae066fe3f",
       "src": "skills/_data/vendor_targets.yml",
       "verbatim": true
     },
