@@ -1530,3 +1530,215 @@ and I did not re-run the implementer's per-chunk mutation runs. I did not review
 `dev/PLANNING.md` row M or `CHANGELOG.md`, which are archive-time edits. I
 read the doctrine edits against `AGENTS.md` and the proposal but did not mutate
 them beyond D1 to D4.
+
+## Response to code review -- Claude Sonnet 5.5 (implementer of the follow-ups) -- 2026-10-18
+
+I did not write, implement or review this plan; I picked up the eight follow-ups
+after the review's commit `a0be1e2b`. All eight are answered: seven accepted
+and one `wontfix`. The wording landed in `4f1b076f` and the pins in `f93eef04`.
+Both are local; nothing is pushed. Status stays `ready-to-archive`, which the
+review set, and this answer carries it there: the review found nothing that
+blocks, so this section moves nothing. I did not archive.
+
+**In plain terms.** The rule now defines its own testing words. It says a
+reviewer's one write includes moving the Status line, and says which kind of
+copy to read from. The two gaps for a change with no plan are closed with one
+clause each. Meaning is now guarded in six more places: I broke each guarded
+clause on purpose, in a scratch copy of the files, and the new tests caught
+every break that the old ones let through.
+
+| Finding | Disposition | Where |
+|---|---|---|
+| [CR1] undefined mutation words | accept (commit `4f1b076f`) | One sentence defines "mutant", "killed", "survived" and "equivalent", placed after the pinned ledger phrase, which is intact: `AGENTS.md`, `templates/core/AGENTS.md` and `doctrine/dual-review.md`. The ledger bullet in `doctrine/plans.md` is a pointer, so it carries each term as a few words in brackets. |
+| [CR2] five clauses unguarded | accept, as pins (commit `f93eef04`) | `bootstrap/tests/test_review_and_verification_rules_ship.py`, both copies: five obligations (the set-claim trigger; the equivalence test; Boundary A's trivial-change mapping; bounded mode needs a mapping; unpinned prose on a high-risk surface) and one forbidden phrasing, "plan's reviewed mapping bounds", which backs the weightiest of them. The mutation table in the record below shows each one failing under its mutant. |
+| [CR3] the "External by default" sentence | accept, as an absence pin (commit `f93eef04`) | The phrase is forbidden in both copies, in any case or line wrapping, hyphens allowed. I did not add the review's positive pin on "An External code review is an escalation". `dev/proposals/2026-10-18-claude-external-is-a-maintainer-stance.md` reworks the review vocabulary and may drop the word from the usual procedure. An absence pin survives that; a pin on today's sentence would not. |
+| [CR4] doctrine copies unguarded | **wontfix** | The reviewer's rationale, adopted: doctrine is not shipped, so a drift between it and `AGENTS.md` reaches no adopter; the omission is disclosed in *Known omissions* and sits inside Revision 1's test scope; and the frozen `test_verification_boundaries.py` already pins the six triggers on both doctrine files. Eligibility: it does not reach an adopter, block a release or need a Decision, and no closed artifact names it. Cost accepted: a later doctrine edit can drift from `AGENTS.md` unseen. These follow-ups were applied to the doctrine by hand, in lockstep. |
+| [CR5] record cites three gitignored paths | accept (this record's commit) | An addendum in the section below, with the three paths declared as untracked. The original record text is not edited. |
+| [CR6] "one write" and the Status line | accept (commit `4f1b076f`) | "(plus the artifact's Status line, where the review moves it)" in both copies and `doctrine/dual-review.md`. The pinned phrase "makes one write: its own review record" is intact. |
+| [CR7] extraction and worktree offered as equals | accept (commit `4f1b076f`) | A fresh, empty folder every time. A detached `git worktree` (a second checkout of the same repository) is the default; a `git archive` extraction (plain files, no repository) is only for checks that just read files. Both copies and `doctrine/dual-review.md`. |
+| [CR8] Boundary B, two gaps | accept (commit `4f1b076f`) | (i) Shipped copy only, since Cairn's copy names its commands outright: a change with no plan names the configured interpreter and suite in its commit body, taking them from the plan template's slot or the project's conventions. (ii) Both `AGENTS.md` copies and `doctrine/plans.md`: when nothing pins the prose of a text-only fix, its record is the gates run and the search that found no pin, in place of a bounded record. |
+| Nit: three lines over 80 columns | accept (commit `4f1b076f`) | Rewrapped in `doctrine/plans.md`; no word changed. |
+
+**Scope: no deviation.** Nothing accepted was dropped and nothing was added, so
+*Scope delta* stands at `preserved`. The two [CR8] clauses stay inside accepted
+outcomes. (i) puts the existing "Name both" at the record Boundary B already
+gives a trivial change, its commit body. (ii) gives the plan-review decision on
+a text-only fix to a high-risk surface a record it can truthfully write,
+instead of a bounded claim of "no contract or trust-ceremony surface" that
+would be false for it.
+
+**Not closed here, as before.** Where an accepted proposal that was implemented
+with no plan records its result is still unstated. Plan review judged it owed
+to the archive batch (*Dispositions*), and writing it would settle a third
+class of work no accepted outcome covers. [CR8] (i) is about finding the
+configured suite and interpreter; it does not touch that.
+
+**A second code-review round is not owed.** The revision introduced no known
+defect: the pins were run against their own mutants, and every reader passes
+on the new bytes. The pins changed test bytes, so the earlier Boundary B record
+no longer covers the tree; the new record below does.
+
+For the archive-preparation `Dispositions:` line: [CR1] accept; [CR2] accept;
+[CR3] accept; [CR4] wontfix; [CR5] accept; [CR6] accept; [CR7] accept; [CR8]
+accept. None needs `dev/PLANNING.md` or a Maintainer quotation: no `defer`.
+
+## Implementation verification -- Claude Sonnet 5.5 -- 2026-10-18 (follow-ups)
+
+**This record replaces the earlier one for the code as it now stands.** The
+pins in `f93eef04` changed test bytes, and a change to test bytes invalidates a
+Boundary B record. The earlier record, tested at `b712020d`, stays as written;
+it is no longer the valid record for the tree.
+
+### Addendum to the earlier record
+
+The earlier record cites three paths in backticks that exist only as ignored
+local files in the shared tree: the tests' bytecode folder, and the two
+measurement files that `.gitignore` excludes. A fresh checkout does not carry
+them, so there `claim_check` flagged three paths in this plan and `check_cairn`
+counted them. None of the record's figures is affected. The three paths are
+declared below as untracked, and the checker honours a declaration anywhere in
+the file, so the earlier text stands exactly as written.
+
+Untracked paths: `bootstrap/tests/__pycache__/`, `dev/measurement/suite-runs.jsonl`, `dev/measurement/suite-cost.md`
+
+Measured in fresh, detached worktrees at `f93eef04` with this file in place
+(the two ignored measurement files absent in the fresh rows, and created empty in the "present" row to stand in for the shared tree):
+
+| Check | Before the addendum | After the addendum |
+|---|---|---|
+| `claim_check` on this plan, fresh checkout | 3 hard flags | 0 hard flags; the three paths are reported as exempted by the declaration |
+| `claim_check` on this plan, with the three files present | 0 | 0 hard flags |
+| `check_cairn`, fresh checkout | 6 issues | 3 issues, none in this plan |
+
+The 3 that remain are in a closed review,
+`dev/reviews/2026-08-27-code-review-c5-c6-removals.md` (lines 380, 398 and 400),
+which cites the same two ignored measurement files. They are older than this
+plan and identical at its base, and the file is outside this work, so they are
+untouched. With the ignored files present, as in the shared tree,
+`check_cairn` reports no issues.
+
+### The record
+
+**Boundary B mode**: full. The follow-ups edit both `AGENTS.md` copies and
+`doctrine/`, which `AGENTS.md` names as a high-risk surface through
+vendor-neutrality, and they change test bytes. Bounded mode refuses on either.
+**Tested commit**: `f93eef04b94f762e5234d7609e9c23eaff46f45e`
+**Reviewed range**: `a0be1e2b..f93eef04`. The base is the code review's commit.
+The range holds:
+* **This work:**
+  * `4f1b076f`, the wording edits;
+  * `f93eef04`, the pins.
+* **Other sessions' commits**, in the tested tree and not this work's:
+  * `42fa6804`, a `dev/` edit for the maintainer-attention plan;
+  * `22dabd45`, Cairn's own model-selection mapping under `dev/.cairn`;
+  * `ef0e2893`, a newly opened proposal under `dev/proposals`.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13, first on `PATH`.
+**Pre-run state**: a new detached `git worktree` at the tested commit, under
+this session's own scratchpad folder.
+* `git status --porcelain` was empty and `HEAD` equalled the tested commit.
+* `refs/cairn/gate-anchor` was visible, since worktrees share refs.
+* It did not run in the shared tree, where other sessions' uncommitted files
+  sit, nor in a `git archive` extraction, which holds no repository.
+
+**Post-run state**: the same `HEAD`, and `git status --porcelain` empty. The run created only
+ignored caches, as the earlier run did. The worktree was then removed.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -rfEsxX` | 0 | 3384 passed; 0 failed, 0 errors, 0 skipped, 0 xfailed, 0 xpassed; 3 warnings | 1066 s (1071 s wall) |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality fail=74 info=21; redundancy fail=0 info=0 | 2 s |
+
+`-rfEsxX` only lists any non-pass; it changes no outcome.
+
+**Non-pass disposition**:
+* **`quality_gate` exit 1: pre-existing.** All 74 neutrality failures are
+  line-for-line the same set, sorted and diffed, as at the pre-work base
+  `42fa6804` and at the code review's measured head `739e3aba`. None is in a
+  file this work edits: the five edited files have no hit, and the same output
+  does show hits elsewhere, so the check could have matched. Redundancy is
+  clean.
+* **The 3 warnings** are a deprecation inside the third-party `stevedore`
+  package, not in this tree.
+* **A first run was killed and discarded.** It received SIGTERM (exit 143) 274
+  s in, from outside the run: the machine was at a load average near 240 with
+  other sessions' suites running. Its partial log proves nothing and is not
+  used. The figures above come from a second run, in a new worktree at the
+  same commit.
+* **The count.** 3,384 passed is the earlier record's 3,347, plus 5 tests
+  another session added in `72254d0e`, plus this work's 32.
+
+**Plan-specific acceptance commands**:
+* **Boundary A, on the final bytes.** The five direct readers plus the pin file:
+  307 passed (the readers' 182, plus the pin file's 125 nodes; it was 93). The
+  five install-structure files: 307 passed. The wording commit alone, against
+  the previous pin file: 275 passed.
+* **The files that read plans, with this record in place.** The 17 test files
+  that name `dev/plans`, plus the comprehension test and the pin file, run on a
+  copy of the tree holding this record: 998 passed.
+* **The frozen file.** `bootstrap/tests/test_verification_boundaries.py` is
+  byte-identical to its state before this work, and its 40 nodes pass in the
+  readers above.
+* **Mutation, against an unmutated control.** Run in a private detached
+  worktree. Control: the new pin file 125 passed, the previous one 93 passed.
+  Each mutant was applied to one `AGENTS.md` copy at a time, and the table shows
+  the failing nodes for that copy. Each one passes under the previous file:
+
+  | Mutant | Killed by (new pins) | Survived under the previous pins |
+  |---|---|---|
+  | the equivalence test reversed, "passes" to "fails" under the mutation | `an-equivalent-mutant-passes-the-behaviour-test` | yes, both copies |
+  | the prose-only rule back to "a contract surface" | `unpinned-prose-on-a-high-risk-surface-runs-the-prose-gates` | yes, both copies |
+  | bounded mode tied to "the plan's reviewed mapping" | `bounded-mode-needs-a-mapping-not-a-plans-reviewed-mapping` and `bounding-is-not-tied-to-a-plans-reviewed-mapping` | yes, both copies |
+  | the mutation trigger widened from a set claim to any defect | `a-set-claim-is-the-mutation-trigger` | yes, both copies |
+  | Boundary A's "the tests that own each touched surface" dropped | `a-trivial-change-maps-to-the-tests-that-own-its-surface` | yes, both copies |
+  | "Code review is External by default" restored | `code-review-is-not-external-by-default` | yes, both copies |
+
+  That is 6 mutants times 2 copies: 12 killed, 0 survived, 0 equivalent. For
+  each, the failing nodes were the matching copy's only: the "carries" and
+  "removal is reported" pair for an obligation, the "omits" and "insertion is
+  reported" pair for a forbidden phrasing. The pins are on the shipped copy and
+  on Cairn's own, so a mutant in one copy cannot hide behind the other.
+* **Throughout.**
+  * `python bootstrap/scaffold.py --manifest` is byte-identical before and
+    after (98 lines).
+  * `python bootstrap/verify_integrity.py --target .` reports the same 18
+    findings as before, and none was finalized, `AGENTS.md` and
+    `dev/plans/_template.md` among them.
+  * `claim_check` is clean on all four edited files.
+  * `check_cairn` and `link_check` report the same issues as before the
+    wording commit: none in an edited file.
+  * The marker check, `git diff -U0` over `{{` and `cairn:` lines, prints
+    nothing for either commit; a planted marker line matches it.
+  * The case-insensitive coordinate grep over the pin file prints nothing, and
+    a planted line matches it.
+* **Added nodes for the queued re-anchor (row M).** 32, all in the tracked
+  `bootstrap/tests/test_review_and_verification_rules_ship.py`, none with a skip
+  or xfail marker. No frozen file changed, and no node was dropped:
+  * `test_agents_md_carries_the_obligation[<label>-<shipped|own>]` and
+    `test_removing_the_obligation_is_reported[<label>-<shipped|own>]` for 5
+    labels: `a-set-claim-is-the-mutation-trigger`,
+    `an-equivalent-mutant-passes-the-behaviour-test`,
+    `a-trivial-change-maps-to-the-tests-that-own-its-surface`,
+    `bounded-mode-needs-a-mapping-not-a-plans-reviewed-mapping` and
+    `unpinned-prose-on-a-high-risk-surface-runs-the-prose-gates` (20 nodes);
+  * `test_agents_md_omits_the_forbidden_phrasing[<label>-<shipped|own>]` and
+    `test_inserting_the_forbidden_phrasing_is_reported[<label>-<shipped|own>]`
+    for 2 labels: `bounding-is-not-tied-to-a-plans-reviewed-mapping` and
+    `code-review-is-not-external-by-default` (8 nodes);
+  * `test_the_external_by_default_pin_ignores_case_and_wrapping[plain|capitals|wrapped|hyphenated]`
+    (4 nodes).
+
+**Known omissions**:
+* The new pins cover the two `AGENTS.md` copies only, as before. The doctrine
+  copies are covered by `claim_check`, `check_cairn` and the frozen file's
+  existing doctrine pins; that is the [CR4] `wontfix`.
+* The wording added for [CR1], [CR6], [CR7] and [CR8] carries no pin of its own.
+  Their coverage is the readers above and the `claim_check` and `check_cairn`
+  runs; the review asked for pins on [CR2] and [CR3] only.
+* `check_cairn` still exits 1 in a fresh checkout, on the 3 issues in the closed
+  review named above. They are not this plan's, and the file that would close
+  them, that review or `dev/.cairn/claim-check-allow.json`, is not one this
+  work edits.
+* Other sessions were active on the machine during the run, so elapsed times
+  may be inflated; outcomes are unaffected.
