@@ -606,6 +606,33 @@ def _t_huge_substitution(target: Path) -> str:
     return ""
 
 
+def _elsewhere(base_cache: str, location: Callable[[Path], Path]) -> Callable[[Path], str]:
+    """The victim's base copy sits at *location* (its bytes match the
+    recorded hash) and the record points *base_cache* there: a path that the
+    reader must refuse for where it leads, not for being unreadable."""
+    def build(target: Path) -> str:
+        _clean_tree(target)
+        place = location(target)
+        place.parent.mkdir(parents=True, exist_ok=True)
+        place.write_bytes(b"victim\n")
+        _edit_lock(target, lambda lock: _lock_rec(lock, "notes.md").__setitem__(
+            "base_cache", base_cache))
+        return ""
+    return build
+
+
+def _t_many_near_cap_slots(target: Path) -> str:
+    """Three thousand slots in one file, each a token whose value is 200 KB:
+    every body is under the cap, together they are 600 MB.  The cap holds per
+    file, not per slot."""
+    text = "".join(f"<!-- cairn:slot s{i} -->\n{{{{v}}}}\n<!-- cairn:end s{i} -->\n"
+                   for i in range(3000)).encode()
+    _note_tree(target, [{"dst": "ctl.md"},
+                        {"dst": "notes.md", "installed": text, "base": text}],
+               tokens={"v": "x" * 200_000})
+    return ""
+
+
 _ONE_BAD = {"in_scope": 2, "checked": 1, "unreadable": 1}
 _ALL_BAD = {"in_scope": 2, "checked": 0, "unreadable": 2}
 
@@ -644,6 +671,21 @@ _HOSTILE_CASES: list[_Hostile] = [
     _Hostile("token-value-times-twenty-over-the-cap", _t_huge_substitution,
              {"in_scope": 2, "checked": 1, "slots_checked": 0, "unreadable": 1},
              max_seconds=10.0),
+    _Hostile("base_cache-dotdot-out-of-the-project",
+             _elsewhere("dev/.cairn/base/../../../../outside.md",
+                        lambda t: t.parent / "outside.md"), _ONE_BAD),
+    _Hostile("base_cache-dotdot-within-the-project",
+             _elsewhere("dev/.cairn/base/../notes.md",
+                        lambda t: t / "dev" / ".cairn" / "notes.md"), _ONE_BAD),
+    _Hostile("base_cache-beside-the-base-dir-sharing-its-name",
+             _elsewhere("dev/.cairn/base2/notes.md",
+                        lambda t: t / "dev" / ".cairn" / "base2" / "notes.md"),
+             _ONE_BAD),
+    _Hostile("base_cache-in-another-folder-under-dev",
+             _elsewhere("dev/other/notes.md",
+                        lambda t: t / "dev" / "other" / "notes.md"), _ONE_BAD),
+    _Hostile("many-slots-each-near-the-cap-in-one-file", _t_many_near_cap_slots,
+             {"in_scope": 2, "checked": 1, "unreadable": 1}, max_seconds=10.0),
 ]
 
 
@@ -842,7 +884,13 @@ def test_one_reader_opens_every_file_the_note_reads() -> None:
                 if (isinstance(node, ast.Call)
                         and isinstance(node.func, ast.Attribute)
                         and node.func.attr in {"read_bytes", "read_text", "open"}):
-                    reads.append((func.name, node.func.attr))
+                    # Opening the null device for writing (to stop writing to
+                    # a stderr nobody reads) reads nothing.
+                    writes_only = any(
+                        isinstance(sub, ast.Attribute) and sub.attr == "O_WRONLY"
+                        for arg in node.args for sub in ast.walk(arg))
+                    if not writes_only:
+                        reads.append((func.name, node.func.attr))
                 elif (isinstance(node, ast.Call)
                         and isinstance(node.func, ast.Name)
                         and node.func.id == "open"):
@@ -1458,3 +1506,184 @@ def test_a_placeholder_reworded_by_an_upgrade_reads_as_filled(
     _, err = _run_note(tmp_path, capsys)
     assert _held_lines(err) == []
     assert _coverage(err)["slots_checked"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Revision after code review: the exit code, the reader's guards, the budgets
+# ---------------------------------------------------------------------------
+
+def test_a_passing_check_exits_0_when_nothing_is_reading_stderr(
+    tmp_path: Path
+) -> None:
+    """The note writes to stderr after the report.  When the reader of that
+    stream has already gone (as `grep -q` and `head` go), the write fails and
+    Python turns the process's exit code from 0 into 120 at exit, which made
+    `verify_integrity ... 2>&1 | grep -q OK` under `set -o pipefail` fail on
+    every passing run.  The note is advisory: it must not change the code."""
+    _clean_tree(tmp_path)
+    reader, writer = os.pipe()
+    os.close(reader)
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(_VERIFY_PY), "--target", str(tmp_path)],
+            stdout=subprocess.PIPE, stderr=writer, timeout=20)
+    finally:
+        os.close(writer)
+    assert proc.returncode == 0
+    assert "verify_integrity: OK" in _text(proc.stdout)
+
+
+@pytest.mark.parametrize("raised, silenced", [
+    (BrokenPipeError(32, "Broken pipe"), True),
+    (OSError(5, "I/O error"), True),
+    (RuntimeError("not a write failure"), False),
+    (SystemExit(3), False),
+])
+def test_stderr_is_silenced_only_after_a_write_to_it_failed(
+    raised: BaseException, silenced: bool, tmp_path: Path, monkeypatch, capsys
+) -> None:
+    _clean_tree(tmp_path)
+    calls: list = []
+
+    def fail(*args, **kwargs):
+        raise raised
+
+    monkeypatch.setattr(verify_integrity, "_slot_note", fail)
+    monkeypatch.setattr(verify_integrity, "_stop_writing_to_stderr",
+                        lambda: calls.append("silenced"))
+    assert verify_integrity.verify(tmp_path) == 0
+    assert (calls == ["silenced"]) is silenced
+
+
+def test_the_note_is_handed_no_more_of_a_file_than_it_can_use(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The loop that decides the verdict keeps what the note will read.  A
+    file over the cap is refused whole, so one byte past the cap is enough to
+    say so; keeping the rest only makes the check hold every accepted file in
+    memory until the note runs."""
+    huge = b"i" * (_CAP + 500)
+    _note_tree(tmp_path, [{"dst": "ctl.md"},
+                          {"dst": "huge.md", "installed": huge, "base": b"base\n"}])
+    handed: dict = {}
+    monkeypatch.setattr(
+        verify_integrity, "_slot_note",
+        lambda target, accepted, *rest: handed.update(
+            {rec["dst"]: len(data) for rec, data in accepted}))
+    assert verify_integrity.verify(tmp_path) == 0
+    assert handed == {"ctl.md": len(b"installed text\n"), "huge.md": _CAP + 1}
+
+
+def _spy_reads_of_big_files(monkeypatch, *, at_most: int | None = None) -> list:
+    """Record every ``os.read`` size asked of a descriptor whose file is
+    larger than the cap; with *at_most*, also return short reads."""
+    real_read, asked = os.read, []
+
+    def spy(fd, size):
+        if os.fstat(fd).st_size > _CAP:
+            asked.append(size)
+        return real_read(fd, size if at_most is None else min(size, at_most))
+
+    monkeypatch.setattr(os, "read", spy)
+    return asked
+
+
+def test_no_read_asks_for_more_than_the_cap_plus_one_byte(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """A living-state file has no hash to bound it, so the size of the read is
+    the only thing standing between the check and a huge file: reading it
+    whole and refusing it afterwards gives the same answer, slowly."""
+    _note_tree(tmp_path, [{"dst": _LIVING, "installed": b"x" * (_CAP + 4096),
+                           "base": b"roadmap\n", "living": True}])
+    asked = _spy_reads_of_big_files(monkeypatch)
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 0
+    monkeypatch.undo()
+    assert asked and max(asked) <= _CAP + 1
+    assert _coverage(capsys.readouterr().err)["unreadable"] == 1
+
+
+def test_the_cap_holds_when_reads_come_back_short(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    """``os.read`` may return fewer bytes than asked.  A file of exactly the
+    cap is still read whole and one byte more is still refused, however the
+    bytes are chunked."""
+    asked = _spy_reads_of_big_files(monkeypatch, at_most=4096)
+    for name, base_len, bucket in (("at-cap", _CAP, "checked"),
+                                   ("one-over", _CAP + 1, "unreadable")):
+        target = tmp_path / name
+        target.mkdir()
+        _cap_tree(target, base_len, 10)
+        capsys.readouterr()
+        assert verify_integrity.verify(target) == 0
+        cov = _coverage(capsys.readouterr().err)
+        assert cov[bucket] == 1 and cov["in_scope"] == 1, (name, cov)
+    monkeypatch.undo()
+    assert asked
+
+
+@pytest.mark.parametrize("tokens", [None, "absent"])
+def test_a_lockfile_without_tokens_is_read_as_having_none(
+    tokens, tmp_path: Path, capsys
+) -> None:
+    """Older lockfiles carry no ``tokens`` key.  That is "no substitutions
+    recorded", unlike a mapping of the wrong shape, which is refused."""
+    text = _slot("goals", "Describe your goals here.")
+    _slot_tree(tmp_path, text, text)
+
+    def drop(lock: dict) -> None:
+        if tokens == "absent":
+            del lock["tokens"]
+        else:
+            lock["tokens"] = None
+
+    _edit_lock(tmp_path, drop)
+    _, err = _run_note(tmp_path, capsys)
+    assert len(_held_lines(err)) == 1
+    assert _coverage(err)["unreadable"] == 0
+
+
+def test_when_a_slot_name_repeats_the_first_complete_pair_decides(
+    tmp_path: Path, capsys
+) -> None:
+    base = _slot("goals", "First placeholder.") + _slot("goals", "Second placeholder.")
+    installed = _slot("goals", "First placeholder.") + _slot("goals", "Filled in.")
+    _slot_tree(tmp_path, base, installed)
+    _, err = _run_note(tmp_path, capsys)
+    assert len(_held_lines(err)) == 1
+    assert _coverage(err)["slots_checked"] == 1
+
+
+def test_a_living_state_record_marked_verbatim_is_not_opened_or_counted(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    _note_tree(tmp_path, [
+        {"dst": "ctl.md"}, {"dst": "bad.md"},
+        {"dst": _LIVING, "installed": b"roadmap\n", "base": b"roadmap\n",
+         "living": True, "verbatim": True}])
+    (tmp_path / "bad.md").write_bytes(b"modified after install\n")
+    real_open, opened = os.open, []
+
+    def spy_open(path, *args, **kwargs):
+        opened.append(str(path))
+        return real_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", spy_open)
+    capsys.readouterr()
+    assert verify_integrity.verify(tmp_path) == 1
+    monkeypatch.undo()
+    assert not any(p.endswith("PLANNING.md") for p in opened), opened
+    assert _coverage(capsys.readouterr().err) == _expected_coverage(
+        {"in_scope": 2, "checked": 1, "failed": 1})
+
+
+def test_the_substitution_budget_is_the_cap_and_is_spent_across_a_file() -> None:
+    body = "{{big}}"
+    assert verify_integrity._substituted(body, {"big": "v" * _CAP}) == "v" * _CAP
+    assert verify_integrity._substituted(body, {"big": "v" * (_CAP + 1)}) is None
+    # The limit a caller passes is what is checked: one slot may take the
+    # whole budget and the next then has none to spend.
+    assert verify_integrity._substituted(body, {"big": "v" * 10}, 10) == "v" * 10
+    assert verify_integrity._substituted(body, {"big": "v" * 10}, 9) is None

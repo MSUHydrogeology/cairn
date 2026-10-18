@@ -204,20 +204,22 @@ def _squeeze(text: str) -> str:
     return "\n".join(line.strip() for line in text.splitlines() if line.strip())
 
 
-def _substituted(body: str, tokens: dict) -> str | None:
+def _substituted(body: str, tokens: dict, limit: int = _NOTE_CAP) -> str | None:
     """*body* with the recorded tokens substituted and unknown ones left
-    intact, or ``None`` if the result would be longer than the cap.
+    intact, or ``None`` if the result would be longer than *limit*.
 
     The length is worked out from the token matches first, so a result that
     large is never built: the lockfile's token values are read without a cap,
-    and a small body of tokens can stand for hundreds of megabytes.
+    and a small body of tokens can stand for hundreds of megabytes.  The caller
+    passes what is left of the file's budget, so the cap bounds the whole file
+    and not each slot in it.
     """
     total = len(body)
     for m in _TOKEN_RE.finditer(body):
         value = tokens.get(m.group(1))
         if value is not None:
             total += len(value) - len(m.group(0))
-    if total > _NOTE_CAP:
+    if total > limit:
         return None
     return _TOKEN_RE.sub(lambda m: tokens.get(m.group(1), m.group(0)), body)
 
@@ -251,6 +253,7 @@ def _note_file(target: Path, rec: dict, installed: bytes | None,
             return "unreadable", 0, [], 0
         held = _slots(installed.decode("utf-8"))
         checked = empty = 0
+        budget = _NOTE_CAP
         listed: list[str] = []
         for key, (name, base_body) in _slots(base_bytes.decode("utf-8")).items():
             if key not in held:
@@ -259,9 +262,10 @@ def _note_file(target: Path, rec: dict, installed: bytes | None,
             installed_body = held[key][1]
             if _CUSTOMIZED_RE.search(installed_body):
                 continue
-            expected = _substituted(base_body, tokens)
+            expected = _substituted(base_body, tokens, budget)
             if expected is None:
                 return "unreadable", 0, [], 0
+            budget -= len(expected)
             if _squeeze(expected) != _squeeze(installed_body):
                 continue
             if base_body.strip():
@@ -289,9 +293,11 @@ def _slot_note(target: Path, accepted: list, living: list, tokens: object,
     in-scope records did not pass -- never the violation list, the skipped
     count or the exit code, so it has nothing to change them with.
 
-    It prints no command: it reports where a slot still holds Cairn's text
-    and leaves the adopter to read the file and decide.  Every name and path
-    it prints goes through ``ascii()``.
+    It prints no command of its own: it reports where a slot still holds
+    Cairn's text and leaves the adopter to read the file and decide.  Every
+    name and path it prints goes through ``ascii()``, which escapes control
+    and non-ASCII characters but leaves other printable text alone, so a path
+    or slot name from the tree is shown quoted and can spell any printable text.
     """
     usable = _usable_tokens(tokens)
     counts = dict.fromkeys(("checked",) + _NOT_CHECKED, 0)
@@ -327,6 +333,25 @@ def _slot_note(target: Path, accepted: list, living: list, tokens: object,
         _say(f"See bootstrap/UPGRADE.md > {_RECORDING_SECTION}.")
 
 
+def _stop_writing_to_stderr() -> None:
+    """Point descriptor 2 at the null device.
+
+    Called when a write to stderr has failed because whatever read it has gone
+    (as ``grep -q`` and ``head`` go).  Python keeps the unwritten text and tries
+    again when it exits, and that second failure turns the exit code of a run
+    that passed into 120.  Redirecting the descriptor lets the exit-time flush
+    succeed; nothing is read from stderr after this point anyway.
+    """
+    try:
+        null = os.open(os.devnull, os.O_WRONLY)
+        try:
+            os.dup2(null, sys.stderr.fileno())
+        finally:
+            os.close(null)
+    except Exception:
+        return
+
+
 def _run_slot_note(target: Path, files: list, accepted: list, living: list,
                    tokens: object) -> None:
     """Run the note inside a fence.  An exception, ``SystemExit`` included,
@@ -340,6 +365,8 @@ def _run_slot_note(target: Path, files: list, accepted: list, living: list,
                   - sum(1 for r in living if not r.get("verbatim")))
         _slot_note(target, accepted, living, tokens, failed)
     except (Exception, SystemExit) as exc:
+        if isinstance(exc, OSError):
+            _stop_writing_to_stderr()
         name = re.sub(r"[^A-Za-z0-9_]", "?", type(exc).__name__)
         try:
             print(f"slot note: not run ({name})", file=sys.stderr)
@@ -420,7 +447,7 @@ def verify(target: Path) -> int:
             if _has_customized_slot(on_disk.decode("utf-8", errors="replace")):
                 customized.append(dst_rel)
         elif not rec.get("verbatim"):
-            accepted.append((rec, on_disk))
+            accepted.append((rec, on_disk[:_NOTE_CAP + 1]))
 
     # Advisory (rollup #4): a verbatim facade forked from upstream whose engine
     # package is installed-but-dormant passes the hash check above (on-disk ==

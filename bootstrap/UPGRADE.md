@@ -105,10 +105,9 @@ python bootstrap/verify_integrity.py --target <repo>            # 4. verify
   slots listed, plus its coverage line, means *none found among what it could
   check*, never *none exist*. The note never changes the result
   `verify_integrity` returns, and it reports state, not obligation: it does
-  not say a slot is required. One edge no code can close: the note always
-  writes to stderr, so if stderr is a closed pipe, Python's flush at exit can
-  make the process exit 120 where a passing run used to write nothing there
-  and exit 0.
+  not say a slot is required. The note always writes to stderr. If whatever
+  reads stderr has already gone away (`grep -q` and `head` do this), the note
+  stops writing and the exit code is unchanged.
 * **Known gap.** A placeholder that an upgrade rewords reads as filled: the
   note compares your slot with the base copy recorded for it, and after an
   upgrade the base copy holds the new wording while your slot still holds
