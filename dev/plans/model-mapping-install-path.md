@@ -15,17 +15,17 @@
 3. **The check is wrong in both directions.** It fails a mapping that was filled correctly if the stub's explanatory comments were left in, and it passes a file that has no rows at all.
 4. **`upgrade` and `--adopt-module` never mention the mapping.** The stub reached the Maintainer's other project that way.
 
-A fifth, found on the way: the step that writes the answers has no protection against a *link*. A link (symlink) is a file that points at another file. If the mapping were one, the answers would be written into the file it points at, outside the project.
+A fifth, found on the way: the step that writes the answers has no protection against a *link*. A link (symlink) is a file that points at another file. If the mapping were one, the answers would be written into the file it points at, outside the project. A related flaw, found while planning: the code that commits Cairn's own install record (`_commit_lock_and_caches`) writes through a temporary file whose name anyone can predict, so a *hard link* (a second name for an outside file) planted at that name would receive the record. The Maintainer folded its fix into this plan.
 
 **What this plan does,** in five chunks that each land as one commit:
 
 * **C1, the check.** Comments no longer count as placeholders, a mapping needs at least one row, and with PyYAML (a common but optional Python library) the check also reads the values the way YAML does, so a placeholder hidden by clever spelling is still found.
 * **C2, the words and the reminder.** The stub's example says to name a model *family* and never a version. A "Filling the mapping" paragraph joins the module document. The installer's acceptance checklist (II-5) gains one item asking that the check pass. Two presets (`collaborative-team`, `high-rigor-legacy`) seed a row, `**Waiting on Maintainer**: fill the model mapping`, which `python tools/board.py --maintainer` lists on day one.
 * **C3, the notice on install.** A fixed notice prints on every install, including one run by an agent, while the mapping is unfilled. It tells the agent to ask the Maintainer which model family fills each tier, and not to guess.
-* **C4, the safe write.** The interactive capture refuses a link before it asks anything, and writes by creating a fresh temporary file and renaming it over the mapping, so no link or second name for an outside file can redirect the write.
+* **C4, the safe writes.** The interactive capture refuses a link before it asks anything, and writes by creating a fresh temporary file and renaming it over the mapping, so no link or second name for an outside file can redirect the write. The same fix is made to the function that commits the install record.
 * **C5, the notice on adopt and upgrade.** `--adopt-module` and `upgrade --plan`, `--stage` and `--apply` print the same notice. `--apply` prints it only after the apply succeeded, which is the run that delivers the stub to a project that predates it.
 
-**What it costs the Maintainer.** Nothing is pushed, and no re-anchor is performed by an implementing agent. Two ceremonies are owed, and both belong to the Maintainer. First, the *gate-manifest re-anchor*: five *frozen files* (files whose exact bytes the gate manifest records) change, and one pinned test node leaves on purpose, because you reversed the rule it pinned. The opening commit adds these to the queued row on `dev/PLANNING.md`. Second, the *AST correction*: the engine's fingerprint file records the exact shape of each engine function, and this plan changes four functions and adds two (none is on the list an agent may repair itself). That is a Maintainer-run correction. It is already owed for the `.gitignore` repair, whose four functions show as changed today; three of this plan's four are among them, so the correction covers five functions in all. One adopter-visible cost, accepted at the Decision: a project whose stub header was rewritten (LHM is one) meets one merge conflict at its next upgrade, and keeping its own side resolves it.
+**What it costs the Maintainer.** Nothing is pushed, and no re-anchor is performed by an implementing agent. Two ceremonies are owed, and both belong to the Maintainer. First, the *gate-manifest re-anchor*: six *frozen files* (files whose exact bytes the gate manifest records) change, and one pinned test node leaves on purpose, because you reversed the rule it pinned. The opening commit adds these to the queued row on `dev/PLANNING.md`. Second, the *AST correction*: the engine's fingerprint file records the exact shape of each engine function, and this plan changes five functions and adds two (none is on the list an agent may repair itself). That is a Maintainer-run correction, and you chose **one combined ceremony, later**: no separate correction for the `.gitignore` repair. It runs once, after this plan archives, and covers the repair's four changed functions, this plan's changes and its two new functions together. One adopter-visible cost, accepted at the Decision: a project whose stub header was rewritten (LHM is one) meets one merge conflict at its next upgrade, and keeping its own side resolves it.
 
 **How we will know it worked.** Each of these is a test that fails if the property is broken, and a mutation run (a deliberate break made to see whether any test notices) confirms it:
 
@@ -33,6 +33,7 @@ A fifth, found on the way: the step that writes the answers has no protection ag
 * a hand-filled stub with its comments left in passes the check, and a mapping with no rows fails it;
 * the engine and the check agree, line for line, on a generated set of 108 awkward files;
 * a mapping that is a link, or sits behind one, is refused before any question, and the file it points at is byte-identical afterwards;
+* a hard link planted at the install record's old temporary name no longer redirects the write, and the test is shown red before the fix;
 * Cairn's own mapping passes its own check, and the test fails if it returns to the stub;
 * `python tools/board.py --maintainer` lists the seeded row on a fresh install from either preset.
 
@@ -48,7 +49,7 @@ Accepted 2026-10-18 at `7f1bcdf0`. Revision 2 binds over Revision 1 where they d
 * **Q5, the stub example:** "Yes, edit it". The example block says to name a model family, never a version. The Maintainer's direction, recorded in `47b38074`, is "Versions should not be named here, rather the latest version should be used". The accepted cost is one merge conflict for an adopter whose stub header was rewritten.
 * **Q4, onboarding prompts in goodnight:** not part of this contract. It is carried as a board item at archive (*Dispositions*).
 
-The plan executes the accepted text. It does not re-argue it.
+The plan executes the accepted text. It does not re-argue it. Three further answers came after the plan opened and are recorded under *Scope* (*Answered by the Maintainer after the plan opened*): the install-record fix is folded in, the AST correction is one combined ceremony later, and the build order.
 
 ## Scope
 
@@ -61,7 +62,7 @@ Measured at `72434d73`, the HEAD when this plan was written.
 | The check | `templates/modules/team-gated/check_model_selection.py` and its byte-identical copy `scripts/check_model_selection.py`; `bootstrap/tests/test_model_selection_stub.py` | C1 |
 | Words and seeds | `templates/modules/team-gated/model_selection_mapping_stub.yml` (the example block only); `templates/modules/team-gated/model-selection.md` and its byte-identical copy `dev/modules/model-selection.md`; `bootstrap/BOOTSTRAP.md` (II-5 and the vendor-neutrality list inside it); `templates/onboarding/collaborative-team.md`, `templates/onboarding/high-rigor-legacy.md`; `bootstrap/tests/test_onboarding_seed_roster.py` | C2 |
 | Install notice | `bootstrap/_scaffold/install.py`, `bootstrap/_scaffold/cli.py`; one comment in `bootstrap/_scaffold/lockfile.py`; `test_model_selection_stub.py` | C3 |
-| Capture write | `install.py`, `cli.py`; `bootstrap/_scaffold/SECURITY_MUTATIONS.md`; `bootstrap/tests/test_security_leaf.py`; `test_model_selection_stub.py` | C4 |
+| Capture write, and the install-record write | `install.py`, `cli.py`; `bootstrap/_scaffold/upgrade.py` (`_commit_lock_and_caches` only); `bootstrap/_scaffold/SECURITY_MUTATIONS.md`; `bootstrap/tests/test_security_leaf.py`; `bootstrap/tests/test_upgrade_module_additions.py`; `test_model_selection_stub.py` | C4 |
 | Adopt and upgrade | `bootstrap/_scaffold/upgrade.py`; `test_model_selection_stub.py` | C5 |
 | Cairn's install record | `dev/.cairn/cairn-lock.yml`: two records, `scripts/check_model_selection.py` (C1) and `dev/modules/model-selection.md` (C2) | C1, C2 |
 | Board and changelog | `dev/PLANNING.md` (the opening commit joins the re-anchor row; the archive commit adds the node note and the deferrals); `CHANGELOG.md` (the archive commit) | opening, archive |
@@ -69,6 +70,32 @@ Measured at `72434d73`, the HEAD when this plan was written.
 **Not touched,** each checked by `git diff --stat` over the implementation range (C6): `bootstrap/_scaffold/config.py`, `security.py`, `slotmerge.py`, and `lockfile.py` apart from the one comment; `bootstrap/scaffold.py`; Cairn's own filled mapping `dev/.cairn/model-selection-mapping.yml`; `tools/session.py` and `templates/skills/_lib/session.py`; `scripts/_onboarding/`; `templates/onboarding/solo-greenfield.md`; Cairn's own onboarding slot in `dev/PLANNING.md` and its installed preset copy `dev/modules/onboarding/collaborative-team.md` (the lockfile does not track it, and it already differs from the template); the profile schema; the gate-manifest fixture; and the two AST fixtures, which only the Maintainer writes (*Frozen files, AST and the oracle*).
 
 **Dry runs and other upgrade actions.** `scaffold.py --dry-run` returns before any module file is written, so it stays silent. `upgrade --init-lock`, `--finalize` and `--adopt-collisions` stay silent too: the accepted text names install, `--adopt-module` and `--plan`, `--stage` and `--apply`, and nothing else.
+
+### Answered by the Maintainer after the plan opened
+
+On 2026-10-18 the Maintainer answered three questions in chat, by multiple-choice, relayed by the coordinating session. The exact wording of each question is not reproduced here, because I did not see it; the chosen options are quoted verbatim.
+
+1. **The hard-link defect in the install-record writer (`_commit_lock_and_caches`), found while planning.** I had carried it as a deferral. He was asked whether to fold it into this plan, and chose:
+
+   > "Fold into this plan (Recommended)"
+
+   with the option text he was shown:
+
+   > "Same fix, same chunk, same AST correction. The plan's two reviews (including Security) see it before any code is written. Adds one engine function to your eventual AST re-anchor."
+
+   **So it is accepted scope, an addition at the Maintainer's instruction.** The function writes the lockfile and the base-template caches through a temporary file with a **fixed** name beside each target. A hard link planted at that name passes the guard, and the write goes through to the file the link points at. Measured in a scratch tree: a hard link at the lockfile's temporary name, pointing at an outside file, left that file holding the lockfile's text. The fix is the mechanism the capture uses, exclusive creation (here `os.open` with `O_CREAT | O_EXCL` under a random name; P13). It lands in **C4**, beside the capture, with its own criteria, tests and mutants. It adds no top-level symbol. The function is pinned by digest in `scaffold_ast_known_new.json`, so the ceremony sees it as a re-keyed symbol (*Frozen files, AST and the oracle*). The function has two callers, found by search: `_cmd_adopt_module` and `_cmd_adopt_collisions`.
+
+2. **When the AST correction runs.** He chose:
+
+   > "One combined ceremony later"
+
+   So there is **no separate re-anchor for the `.gitignore` repair.** Chunk M re-anchors everything at once, after this plan archives: the repair's four CHANGED functions (`main`, `seed_gitignore`, `_cmd_adopt_module`, `cmd_upgrade`), this plan's own delta (including the install-record function) and its two NEW functions.
+
+3. **The build order.** He chose:
+
+   > "Board-as-basis first (Recommended)"
+
+   The order is `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`, `board-as-basis`, this plan, then the `stewardship-and-reuse` plan (*Sequencing with the other plans*).
 
 ### What the exit codes are now (re-derived from the code at `72434d73`)
 
@@ -102,24 +129,27 @@ So the chain is: there is **no single catch**; each caller that wanted a clean e
 
 ### Frozen files, AST and the oracle
 
-**Frozen files: six, measured.** Read from `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files` (183 keys) and intersected by script with every file this plan edits. The instrument was checked against a known key (`bootstrap/tests/test_scaffold.py` is reported frozen). The six:
+**Frozen files: seven, measured.** Read from `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files` (183 keys) and intersected by script with every file this plan edits. The instrument was checked against a known key (`bootstrap/tests/test_scaffold.py` is reported frozen). The six:
 
-* edited by an implementing agent (five): `templates/modules/team-gated/check_model_selection.py`, `scripts/check_model_selection.py` (C1); `bootstrap/tests/test_model_selection_stub.py` (C1, C3, C4, C5); `bootstrap/tests/test_onboarding_seed_roster.py` (C2); `bootstrap/tests/test_security_leaf.py` (C4);
+* edited by an implementing agent (six): `templates/modules/team-gated/check_model_selection.py`, `scripts/check_model_selection.py` (C1); `bootstrap/tests/test_model_selection_stub.py` (C1, C3, C4, C5); `bootstrap/tests/test_onboarding_seed_roster.py` (C2); `bootstrap/tests/test_security_leaf.py` (C4); `bootstrap/tests/test_upgrade_module_additions.py` (C4; it already holds the install-record writer's atomicity test, and 37 nodes of it are pinned);
 * written by the Maintainer's AST ceremony (one): `bootstrap/tests/fixtures/scaffold_ast_known_new.json`. The proposal's table lists it as touched. It is, but only the Maintainer-run correction may write it, because no symbol here is allowlisted; the repair that preceded this plan left its new symbol for the same ceremony. This is a sequencing fact, not a reduction: the outcome, that the new symbols are pinned, is delivered by the ceremony.
 
 `bootstrap/tests/fixtures/scaffold_ast_baseline.json` is cascade-mutable in the manifest, not hash-pinned, and also Maintainer-written. Not frozen, though edited: every engine file, `SECURITY_MUTATIONS.md`, `BOOTSTRAP.md`, the stub, the module pair and both presets. Frozen files that **read** these surfaces and must stay green **unedited**: `test_scaffold.py`, `test_presets.py`, `test_profiles_smoke.py`, `test_onboarding_slot_substitution.py`, `test_active_surfacing_render.py`, `test_trigger_evaluation_action.py`, `test_skills_onboarding.py`, `test_onboarding_review_tiers.py` (if `review-stance-and-lenses` has not already deleted it), `test_default_security_stance.py`, `test_profile_grammar.py` (it reads two example fences in `BOOTSTRAP.md`, not II-5), `test_upgrade.py`, `test_upgrade_module.py`, `test_security_capability_install.py`, `test_security_verification.py` and `_oracle.py`.
 
-**The pinned collection moves.** New classes join `test_model_selection_stub.py` and `test_onboarding_seed_roster.py`; their node IDs are listed in the *Implementation verification* record. **One pinned node leaves on purpose:** `bootstrap/tests/test_model_selection_stub.py::TestFidelityCheck::test_fill_me_in_comment_fails` pins the rule the Maintainer reversed (Q1). It is replaced by `TestCommentsAreNotPlaceholders`, not renamed in place, because a node called "a comment fails" that asserts the opposite would mislead. `test_pyyaml_absent_degrades_gracefully` keeps its ID with a changed fixture (it needs a row; see C1). Changed frozen bytes do not redden `test_gate_manifest.py`, which verifies a freshly produced manifest and never diffs the committed fixture, so a green suite is no evidence the re-anchor is paid. **The re-anchor is the Maintainer's alone** (`bootstrap/REANCHOR_RUNBOOK.md`). The opening commit adds this plan's files to the queued row, marked planned and not yet changed; the archive commit adds the node IDs.
+**The pinned collection moves.** New classes join `test_model_selection_stub.py`, `test_onboarding_seed_roster.py` and `test_upgrade_module_additions.py`; their node IDs are listed in the *Implementation verification* record. **One pinned node leaves on purpose:** `bootstrap/tests/test_model_selection_stub.py::TestFidelityCheck::test_fill_me_in_comment_fails` pins the rule the Maintainer reversed (Q1). It is replaced by `TestCommentsAreNotPlaceholders`, not renamed in place, because a node called "a comment fails" that asserts the opposite would mislead. `test_pyyaml_absent_degrades_gracefully` keeps its ID with a changed fixture (it needs a row; see C1). Changed frozen bytes do not redden `test_gate_manifest.py`, which verifies a freshly produced manifest and never diffs the committed fixture, so a green suite is no evidence the re-anchor is paid. **The re-anchor is the Maintainer's alone** (`bootstrap/REANCHOR_RUNBOOK.md`). The opening commit adds this plan's files to the queued row, marked planned and not yet changed; the archive commit adds the node IDs.
 
 **AST: measured, not assumed.** The method is `bootstrap/AST_BASELINE_RUNBOOK.md` Step 1, run at `72434d73` (no file under `bootstrap/_scaffold/` has an uncommitted change). The baseline is **already red:** `CHANGED 4, MISSING 0, DUPLICATE 0` (`main` in `cli.py`, `seed_gitignore` in `install.py`, `_cmd_adopt_module` and `cmd_upgrade` in `upgrade.py`), all from the `.gitignore` repair, and `test_ast_attest.py` fails 2 of 30 nodes. This plan's delta against that:
 
 * **already CHANGED, change again** (no new entry for the Maintainer): `main`, `_cmd_adopt_module`, `cmd_upgrade`;
 * **newly CHANGED:** `capture_model_selection_mapping` (baselined; C4);
+* **re-keyed, not CHANGED:** `_commit_lock_and_caches` (C4, folded in at the Maintainer's instruction). It is not in the baseline; `scaffold_ast_known_new.json` pins it by digest. Changing one line of it in a scratch copy made the verifier report `NEW FunctionDef:_commit_lock_and_caches (known-new digest/multiplicity mismatch ...)`, and not CHANGED. The runbook's Step 2 lists it as REKEYED, a review item to trace to its commit; C4's commit is that trace;
 * **NEW, to be pinned in `scaffold_ast_known_new.json`:** `_mapping_is_unfilled` and `model_selection_notice_lines` (C3), both in `install.py`;
 * **comment-only, no AST effect:** `lockfile.py` (the attestation parses code and sees no comments; C3 proves it by showing no `lockfile.py` symbol among the CHANGED);
 * **not changed by this plan:** `seed_gitignore` (it stays CHANGED from the repair, and is the fifth of the five), `_write_stage` (it only joins a test list), `_yaml_dq`, and the `_MODEL_SELECTION_*` constants.
 
-Expected end state: **5 CHANGED, 2 new NEW.** The figure is a pointer, not the instrument: C6 derives it again at the parent and at the tested commit and requires the difference to be exactly the delta above. **No symbol here is in `_UPDATE_ALLOWLIST`** (`_MODULE_MAPPINGS`, `_SKILLS_MAPPINGS`, `_CORE_MAPPINGS`, `install_onboarding`), so the correction is a Maintainer-run, dry-run-verified direct correction that an implementing agent does not perform. Imports are not attested, so the new standard-library imports cost nothing, and `test_install_module.py::test_install_depends_only_downward` (install imports only its lower siblings) is unaffected.
+Expected end state: **5 CHANGED, 1 re-keyed, 2 new NEW.** The figure is a pointer, not the instrument: C6 derives it again at the parent and at the tested commit and requires the difference to be exactly the delta above. **No symbol here is in `_UPDATE_ALLOWLIST`** (`_MODULE_MAPPINGS`, `_SKILLS_MAPPINGS`, `_CORE_MAPPINGS`, `install_onboarding`), so the correction is a Maintainer-run, dry-run-verified direct correction that an implementing agent does not perform.
+
+**One combined ceremony, after this plan archives** (the Maintainer's choice, "One combined ceremony later"). It re-anchors the repair's four functions, this plan's delta and its two new functions once. Nothing re-anchors the repair on its own before then. `test_ast_attest.py` stays red until the ceremony runs, and Boundary B disposes of it each time (*Verification*). Imports are not attested, so the new standard-library imports cost nothing, and `test_install_module.py::test_install_depends_only_downward` (install imports only its lower siblings) is unaffected.
 
 **The oracle.** `bootstrap/_scaffold/` is on the differential oracle's sensitive roster (`bootstrap/tests/_oracle_activation.py`). Against the gate anchor `bd66a70c`, five engine paths already differ at HEAD: `cli.py`, `install.py`, `upgrade.py`, `slotmerge.py` and `SECURITY_MUTATIONS.md`. The comment in `lockfile.py` makes it a sixth changed path for the ceremony's path check, a small real cost of an edit the accepted text asked for. The oracle's fresh-install scenario installs each preset non-interactively with the **current** templates and byte-compares the resulting trees; notice lines go to standard output, which it does not compare, and the stub, seeds and checker are templates both engines read. So the oracle should be unmoved, and Boundary B shows it.
 
@@ -135,7 +165,7 @@ Expected end state: **5 CHANGED, 2 new NEW.** The figure is a pointer, not the i
 
 * **A pinned test needs a row under the new rule.** `test_pyyaml_absent_degrades_gracefully` checks that the bare path degrades gracefully, using the file `mapping: [unclosed`. That file has no row, so the new rule fails it with exit 1 and the test would go red for the wrong reason. C1 gives its fixture a row line; the assertion and the node ID are unchanged.
 * **The checker can crash on deeply nested YAML.** `yaml.safe_load` raises `RecursionError` at about 500 nested flow sequences. `_structural_validate` catches only `yaml.YAMLError`, so today the checker ends in a raw traceback. The new value scan touches this path, so C1 catches it and reports exit 3, "not valid YAML" (*Plan decisions*, P8).
-* **`_commit_lock_and_caches` has the hole the capture is being fixed to avoid.** It writes its lockfile and caches through a temporary file with a **fixed** name beside the target. A hard link planted at that name passes the guard, and the write goes through to the file the link points at. Measured in a scratch tree: a hard link at the lockfile's temporary name to an outside file left that file holding the lockfile's text. Git cannot carry a hard link, so it needs someone already on the machine, and the risk is low. It is outside this proposal, so it is **not fixed here** (fixing it would change a symbol that `scaffold_ast_known_new.json` pins by digest, which the proposal does not name). C4 does not copy that recipe. It is carried to *Dispositions* as a deferral that needs the Maintainer's authorization.
+* **`_commit_lock_and_caches` had the hole the capture is being fixed to avoid; its fix is folded in** (*Answered by the Maintainer after the plan opened*). The same class is wider than that one function, and the wider part is **not** folded in. The module-merge conflict side-file in `slotmerge.py` is written with `write_text` onto a name fixed by the file and slot (read in the code, not run). More generally `_assert_safe_write` refuses symbolic links, not hard links, so any in-place engine write onto a name that a hard link already occupies goes through. The hard-linked `.gitignore` is one such case, which the review of the `.gitignore` repair lists on its own. No complete sweep of the engine for the class was made, and git cannot carry a hard link, so each case needs someone already on the machine.
 * **The `Waiting on Maintainer` marker on the queued row names only the gate-manifest re-anchor.** The AST correction is a separate ceremony with its own runbook. The row's prose can carry it, but the marker, and so `board.py --maintainer`, does not list it. Whether the AST ceremony needs its own marked row is the Maintainer's call; this plan declares no Waiting line, and the question is put at archive (*Dispositions*).
 * **Citations from other plans.** `review-stance-and-lenses` cites `templates/modules/team-gated/model-selection.md:128-131`; C2 inserts its paragraph below line 158, so those lines hold (a criterion). It also cites `bootstrap/_scaffold/install.py` around line 1012, which moves when C3 and C4 land; it is an evidence note in a record, and `claim_check` checks only that a cited line is in bounds. `independent-scientific-check` states the AST baseline as two changed symbols; it is four now (above), and its own criterion says to derive the figure again.
 * **The proposal's own line citations moved** (`cli.py:625` is now 635, and so on). This plan cites by function name and uses a line number only where it says "at `72434d73`".
@@ -156,6 +186,7 @@ The accepted text fixes the behaviour, not every shape. These are this plan's ch
 * **P10, the notice's second line.** For a file with no rows at all, "still holds the FILL ME stub" is imprecise. The quoted text binds, so it is kept and the imprecision is named. The first line, "is not filled in", and the instruction to write one row per tier stay true.
 * **P11, the AST fixtures.** Neither is edited by an implementing agent (above).
 * **P12, names.** Every test class and node is named for the property it pins. No finding id, chunk letter or plan row appears in an added comment, docstring or test name (a criterion in C6, with a control).
+* **P13, the install-record writer's temporary files.** `os.open(name, O_WRONLY | O_CREAT | O_EXCL, 0o666)` under a name made of the target's name, a dot, `secrets.token_hex(8)` and `.tmp`, written through the descriptor, guarded, then renamed. `0o666` means the umask applies, so the permissions are exactly what the `write_text` it replaces gave. The capture uses `mkstemp` and copies the old file's mode instead, because it replaces a file the person may have changed the mode of. A name collision makes the creation raise, so the commit fails closed before anything live is replaced. A temporary file still present when the function fails is removed. Both mechanisms are the exclusive creation the Maintainer named.
 
 ### Documentation / doctrine surface
 
@@ -172,7 +203,7 @@ All shipped text stays vendor-neutral. The neutrality gate (`python scripts/qual
 
 ### Sequencing with the other plans
 
-Three plans are open ahead of this one, in this order: `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`. `board-as-basis` is planned beside it (opened at `10ae6428`) and, as *Recommendation* below says, I think it should go ahead of this plan too. **This plan starts only when each plan ahead of it has reached `awaiting-code-review` or later.** Implementation is sequential because every plan commits to the same `master`, and interleaving would make each Boundary B range ambiguous. Plan review can run alongside, since a review writes only its own section. Files were read from each plan's own text at `72434d73` (`board-as-basis` at `10ae6428`).
+Four plans are ahead of this one, in the order the Maintainer set ("Board-as-basis first (Recommended)"): `neutrality-and-upgrade-slots`, `independent-scientific-check`, `review-stance-and-lenses`, `board-as-basis`. The `stewardship-and-reuse` plan comes after this one. **This plan starts only when each plan ahead of it has reached `awaiting-code-review` or later.** Implementation is sequential because every plan commits to the same `master`, and interleaving would make each Boundary B range ambiguous. Plan review can run alongside, since a review writes only its own section. Files were read from each plan's own text at `72434d73` (`board-as-basis` at `10ae6428`).
 
 | Plan | Files shared with this one | What each does there | Effect |
 |---|---|---|---|
@@ -189,21 +220,15 @@ Three plans are open ahead of this one, in this order: `neutrality-and-upgrade-s
 | | `bootstrap/tests/test_onboarding_seed_roster.py` | its plan runs it unedited | it runs first; this plan adds its seed tests afterwards |
 | | `scripts/check_model_selection.py`, its template, `dev/.cairn/model-selection-mapping.yml` | its criterion: `git diff --stat` shows them untouched in its range | holds, because this plan's edits are outside its range |
 | | `dev/.cairn/cairn-lock.yml`, `dev/PLANNING.md`, `CHANGELOG.md` | the `model-selection.md` record and its row paragraph | same record, sequentially |
-| **`board-as-basis`** (plan open at `10ae6428`; recommended ahead of this one) | **the `board.py --maintainer` output** (installed from `templates/skills/_lib/board.py`) | its C1 pins the terminal board and `--maintainer` byte for byte, then its C2 moves the roadmap-row reader into one function shared with `--json` | this plan reads the output in one seed test and pins only the substring `fill the model mapping` and the word `declared`, never the column layout. If this plan runs second, its seed test is the first to run against the finished reader |
-| | **the `dev/PLANNING.md` row grammar** (what counts as a row that declares a wait) | its golden tree covers rows in plain, indented, sub-bullet and dash-bullet forms and a marker mentioned inside a sentence, and its C2 test mutates the grammar | this plan's seed puts the marker on a two-space-indented continuation line inside a `* [seed; ...]` item: `**Waiting on Maintainer**: fill the model mapping` (22 characters, under the board's 48; measured to list at `dev/PLANNING.md:100` in a scratch install). I did not check that its "indented" form is this exact shape, so this plan's seed test is a second pin on exactly this shape: a grammar change that stops listing an indented seed line turns it red, whichever plan lands first |
+| **`board-as-basis`** (plan open at `10ae6428`; ahead of this one, by the Maintainer's order) | **the `board.py --maintainer` output** (installed from `templates/skills/_lib/board.py`) | its C1 pins the terminal board and `--maintainer` byte for byte, then its C2 moves the roadmap-row reader into one function shared with `--json` | this plan reads the output in one seed test and pins only the substring `fill the model mapping` and the word `declared`, never the column layout. This plan runs second, so its seed test is the first to run against the finished reader |
+| | **the `dev/PLANNING.md` row grammar** (what counts as a row that declares a wait) | its golden tree covers rows in plain, indented, sub-bullet and dash-bullet forms and a marker mentioned inside a sentence, and its C2 test mutates the grammar | this plan's seed puts the marker on a two-space-indented continuation line inside a `* [seed; ...]` item: `**Waiting on Maintainer**: fill the model mapping` (22 characters, under the board's 48; measured to list at `dev/PLANNING.md:100` in a scratch install). I did not check that its "indented" form is this exact shape, so this plan's seed test is a second pin on exactly this shape: a grammar change that stops listing an indented seed line turns it red |
 | | `dev/PLANNING.md` (the re-anchor row) | its paragraph is already in the row (`10ae6428`) | this plan's opening commit adds its own after it and before the Waiting line, re-reading the file first |
 | | `dev/.cairn/cairn-lock.yml` | its `tools/board.py` record | disjoint |
 | | `CHANGELOG.md` | its archive entry | commit by path |
 
-`stewardship-and-reuse` (accepted, no plan yet) edits the plan templates' *Scope*, *Dispositions* and deviation sentence, and `AGENTS.md`; it shares nothing with this plan.
+`stewardship-and-reuse` (accepted; its plan opens after this one) edits the plan templates' *Scope*, *Dispositions* and deviation sentence, `AGENTS.md` and the doctrine pages. It shares `dev/PLANNING.md` (it mirrors the board's archive-preconditions section at a serialization point) and `CHANGELOG.md` with this plan, and no other file.
 
-**Recommendation: `board-as-basis` goes before this plan.** I wrote the opposite first and changed it after reading that plan. Three of its four reasons hold. The fourth (the rows this plan seeds would appear on the page from day one) does not, because the seed reaches fresh installs, not Cairn's own board. Two reasons of mine did not hold either: the "live defect" (below) and the "longer critical path", since both plans carry an Internal Security Review.
-
-* **It has a user waiting; this plan has no pending case.** The hand-synced board page goes stale several times a day. Both known unfilled mappings are already filled (Cairn's own, and the Maintainer's other project's), so what this plan guards is the next install or upgrade into a tree whose mapping is not filled. That is a real risk, but nobody is hurt by it this week. My first draft called it a live defect, and that was too strong.
-* **It changes no engine file,** so its position cannot change what the AST ceremony owes. This plan is the only open one that does.
-* **The one argument for going first is the AST ceremony, and it is under the Maintainer's control.** The correction is owed once, for the repair's four functions and this plan's four (three are the same functions), five in all. If it runs before this plan lands, a second pass is owed. It has no deadline, and the queued row records the Maintainer's wish not to re-anchor early. **So hold the AST correction until this plan archives, whichever plan goes first.** That removes the argument.
-* **The two share no implementation file.** The only couplings are the pinned `--maintainer` output and the row grammar (both in the table above); its C1 pins the output before anything else changes, so neither order costs a rewrite. If it lands first, this plan's seed test is written against the final board, which is a slightly better place to be.
-* **The order is the Maintainer's to set,** and nothing breaks if it is reversed.
+**Order, as the Maintainer set it:** `board-as-basis` first, then this plan. The couplings are the pinned `--maintainer` output and the row grammar (both in the table above), so neither order would cost a rewrite. The AST ceremony is one combined run after this plan archives, so this plan's position cannot cause a second pass.
 
 ## Sequence
 
@@ -214,10 +239,10 @@ The chunks run in order. Each lands as one commit; nothing is pushed.
 | C1 | **The check.** Both copies of the checker: YAML 1.1 line breaks only, full-line comments skipped, at least one row, the widened bare row pattern, the value scan when PyYAML is present, the `RecursionError` catch, the docstring and "whole-file scan" comment rewritten. In `test_model_selection_stub.py`: `TestCommentsAreNotPlaceholders` replaces the reversed node; the row, value-scan, bare-residual and Cairn's-own-mapping classes; the corpus generator and the checker side of the parity test; `test_pyyaml_absent_degrades_gracefully` gets a row. Scoped finalize of `scripts/check_model_selection.py`. | plan review landed (`ready-to-implement`); every plan the Maintainer has put ahead of it at `awaiting-code-review` or later; the entry condition re-read | one commit |
 | C2 | **The words and the reminder.** The stub's example block; the module pair (paragraph and corrected sentence); the II-5 block and the fourth allowed match in `BOOTSTRAP.md`; the seed in both presets; the seed, II-5 and stub tests; the `TestFamilyNotVersionReachesEverySite` class with its C2 sites. Scoped finalize of `dev/modules/model-selection.md`. | C1 (the paragraph says what the check does) | one commit |
 | C3 | **The notice on install.** In `install.py`: `_mapping_is_unfilled` and `model_selection_notice_lines`, with both variants as constants. In `cli.py`: the call after the capture block, and the old interactive-only line removed. The comment in `lockfile.py`. Tests: the install-path rows, constant text, the named pipe, the missing-file silence, and the engine side of the parity test. | C1 (the parity test compares the two rules), C2 | one commit |
-| C4 | **The safe write.** `capture_model_selection_mapping`: early guard, strict read, write-time guard, `mkstemp`, guard on the temp file, copied mode bits, `os.replace`, cleanup on failure, the family prompt and header, the docstring. `main` catches the refusal (constant line, exit 2). `test_security_leaf.py` gains the capture and `_write_stage`; `SECURITY_MUTATIONS.md` gains the capture row and the corrected exit-code paragraph. | C3 | one commit |
+| C4 | **The safe writes.** `capture_model_selection_mapping`: early guard, strict read, write-time guard, `mkstemp`, guard on the temp file, copied mode bits, `os.replace`, cleanup on failure, the family prompt and header, the docstring. `main` catches the refusal (constant line, exit 2). `test_security_leaf.py` gains the capture and `_write_stage`; `SECURITY_MUTATIONS.md` gains the capture row and the corrected exit-code paragraph. `_commit_lock_and_caches` in `upgrade.py` writes the lockfile and caches through exclusively created temporary files (P13), with its tests in `test_upgrade_module_additions.py`. | C3 | one commit |
 | C5 | **The notice on adopt and upgrade.** `_cmd_adopt_module` and `cmd_upgrade`: five call sites in all. Tests: adopt, `--plan`, `--stage`, the delivering `--apply`, a refused `--apply`, and the no-module silence. | C3 | one commit |
 | C6 | **Boundary B, the evidence the suite cannot give, then the record.** One full run on a clean commit; the mutation ledger; the stub merge measurement; the smoke checks; the AST, frozen and lockfile derivations. Appended as `## Implementation verification`. Status moves to `awaiting-code-review`. A surviving mutant sends the work back to its chunk and Boundary B is redone. | C1-C5 | one commit |
-| M | **MAINTAINER-ONLY, no new ceremony.** The gate-manifest re-anchor and the AST correction. The five frozen files and the node changes join the queued row; the AST delta is in the record. **An implementing agent must not perform either.** The agent's part is the board note at archive. | code review cleared | Maintainer |
+| M | **MAINTAINER-ONLY, no new ceremony.** The gate-manifest re-anchor, and **one combined AST ceremony after this plan archives**: the repair's four CHANGED functions (`main`, `seed_gitignore`, `_cmd_adopt_module`, `cmd_upgrade`), this plan's delta (the capture, and the install-record writer re-keyed) and its two NEW functions, all at once. The six frozen files and the node changes join the queued row; the AST delta is in the record. **An implementing agent must not perform either.** The agent's part is the board note at archive. | code review cleared | Maintainer |
 
 No Waiting line in this plan: the wait is already declared on the marked board row.
 
@@ -295,7 +320,7 @@ That file was not changed. Open it yourself, then run
 * **`lockfile.py` changes by one comment.** It states the answer to its own revisit note: keep the reuse of the write guard on a read, and add the file-type check at the call site. No `lockfile.py` symbol appears among the AST CHANGED. `git diff` on the file shows comment lines only.
 * **Exit codes are unchanged** for every install path; the notice changes no code.
 
-### C4 -- The safe write
+### C4 -- The safe writes
 
 The order inside `capture_model_selection_mapping`:
 
@@ -316,6 +341,13 @@ The order inside `capture_model_selection_mapping`:
 * **The asymmetry is pinned.** Non-interactive with a linked mapping: exit 0, the second text, nothing written. Interactive: exit 2, nothing written, no lockfile. Re-running the interactive install over that tree afterwards exits 0 and writes the lockfile.
 * **Family, never a version** at the two engine sites: the prompt reads `<tier> tier -- model family, not a version (blank to skip):` and the header the capture writes carries one line saying so. The class from C2 gains both.
 * **The inventory.** `capture_model_selection_mapping` and `_write_stage` are in `_GUARDED_WRITE_FUNCS`, and `test_guarded_write_functions_still_call_a_containment_guard` passes. `SECURITY_MUTATIONS.md` gains the capture's Class A row, stating both guards, the exclusive temporary file and the rename; its opening paragraph is corrected to the table above (no single catch, each caller chooses, everything else a traceback with exit 1). The `seed_gitignore` row is untouched. *Red when:* the capture's call to the guard is removed (`test_security_leaf` fails).
+* **The install record is committed through exclusive temporary files** (folded in at the Maintainer's instruction; `TestLockCommitWritesThroughExclusiveTemporaries`, in `test_upgrade_module_additions.py`). `_commit_lock_and_caches` creates each temporary file (one per cache, one for the lockfile) with `os.open(..., O_WRONLY | O_CREAT | O_EXCL, 0o666)` under a random name beside its target, writes through the descriptor, guards the path, and renames it; the preflight guards before any write stay. *Red when:* a temporary name is fixed.
+* **A hard link at the old fixed name is harmless, red then green.** At the parent, a hard link to an outside file planted at the lockfile's old temporary name (its name with `.tmp` appended) makes the function overwrite the outside file with lockfile text; the test fails there for that reason, and the commit body names the parent. After the change the outside file is byte-identical and the lockfile is right. The same for a cache's old temporary name. A symbolic link planted at either name is harmless: the commit completes and the outside file is unchanged. *Red when:* either temporary file is written by name with `write_text` or `write_bytes`.
+* **Exclusive creation is tested on its own.** The test fixes the random name (it patches `secrets.token_hex` to a constant), plants a hard link at that exact name, and expects the commit to fail closed with an `OSError` before anything live is replaced: the outside file byte-identical and the old lockfile unchanged. *Red when:* `O_EXCL` is dropped (a random name alone would not show it).
+* **Both callers are covered,** listed from the tree by searching for `_commit_lock_and_caches(`: `_cmd_adopt_module` and `_cmd_adopt_collisions`. A real `--adopt-module` run and a real `--adopt-collisions` run, each with links planted at the old names, exit 0 and leave the outside files byte-identical.
+* **Nothing is left behind, and permissions are as before.** After a success there is no `*.tmp` file in `dev/.cairn/` or the base-cache folder. After a forced failure of the lockfile rename, the lockfile's temporary file is gone, and the existing `test_commit_lock_and_caches_is_atomic_on_lockfile_failure` passes unedited. Under umask 022 a new lockfile is `0o644`, which is what the `write_text` it replaces gave.
+* **The inventory.** The `_commit_lock_and_caches` row in `SECURITY_MUTATIONS.md` says the temporaries are created exclusively; the function stays in `_GUARDED_WRITE_FUNCS` and still calls the guard.
+* **The AST effect is as declared:** the verifier reports one known-new digest mismatch for this function and no CHANGED symbol beyond the five.
 * **No new top-level symbol** beyond C3's two, so the AST delta is as declared.
 
 ### C5 -- The notice on adopt and upgrade
@@ -331,11 +363,11 @@ The order inside `capture_model_selection_mapping`:
 
 ### C6 -- Boundary B, the evidence, and the record
 
-* **The record is complete,** with the template's fields, and it lists the new node IDs, the one node that left, and the AST derivation for the Maintainer's use: the CHANGED set and the digests of the two new symbols at the tested commit.
+* **The record is complete,** with the template's fields, and it lists the new node IDs, the one node that left, and the AST derivation for the Maintainer's use: the CHANGED set, the digests of the two new symbols and the new digest of the re-keyed install-record writer, at the tested commit.
 * **The mutation ledger** (*Verification*) is complete: every row has a result of killed, survived or equivalent, beside an unmutated control run. Equivalence is measured: a behaviour test through the real entry point passes under the mutation, and where another site is said to recover the value, mutating that site fails. An unmeasured equivalence is reported as a survivor. A survivor is fixed in its chunk, and the record is redone.
 * **The stub merge measurement** (*Verification*) is recorded, with the three outcomes and the fail-closed apply.
-* **The AST derivation matches the declared delta:** the set at the tested commit minus the set at its parent is exactly the delta in *Frozen files, AST and the oracle*, and no other symbol moved. The same four symbols the repair changed show the same classification.
-* **The frozen list matches:** the six, derived by script, with the control.
+* **The AST derivation matches the declared delta:** the set at the tested commit minus the set at its parent is exactly the delta in *Frozen files, AST and the oracle*, and no other symbol moved. The same four symbols the repair changed show the same classification, and the only known-new mismatch is `_commit_lock_and_caches`.
+* **The frozen list matches:** the seven, derived by script, with the control.
 * **The install contract is unchanged:** `scaffold.py --manifest` output is byte-identical to the parent's.
 * **`git diff --stat` over the range** shows none of the files under *Not touched*, and `lockfile.py` as comment lines only.
 
@@ -357,6 +389,7 @@ Every finding the accepted text carried into this plan, and where it is closed. 
 | CL-3 | a missing mapping stays silent, first; a dangling link is not missing; the wording "That file was not changed" | C3 (P5), C5 |
 | SEC-7 | a generated corpus; the U+2028 mutation; the version gap named | C1, C3; mutation M8; *Named residuals* |
 | SEC-8 | the revisit note in `lockfile.py` answered in the comment; the file-type check at the call site; `_write_stage` in `_GUARDED_WRITE_FUNCS` | C3, C4 |
+| The hard-link defect in the install-record writer (found while planning; folded in at the Maintainer's instruction) | exclusive temporary files, with planted-link tests and mutants | C4; mutations M24-M27 |
 | Neutrality of the shipped text | every quoted shipped block scanned | measured here; `--sub neutrality` stays zero at every chunk |
 
 ## Scope delta
@@ -388,7 +421,7 @@ Not in the baseline: Q4, which the Decision left out of this contract.
 
   > "accept as answered"
 
-Additions, not removals: the `upgrade` notice, the II-5 item, the row requirement, the family wording, the module-document fix, the `lockfile.py` comment, the `RecursionError` catch (P8).
+Additions, not removals: the `upgrade` notice, the II-5 item, the row requirement, the family wording, the module-document fix, the `lockfile.py` comment, the `RecursionError` catch (P8), and the install-record writer's fix (`_commit_lock_and_caches`, at the Maintainer's instruction, quoted under *Scope*).
 
 ## Verification
 
@@ -398,7 +431,7 @@ Additions, not removals: the `upgrade` notice, the II-5 item, the row requiremen
 |---|---|
 | C1 | `test_model_selection_stub.py`, `test_scaffold.py` (module registration), `test_security_lint.py`, `test_security_check.py` (the Bandit gate sees the script) |
 | C2 | `test_model_selection_stub.py`, `test_onboarding_seed_roster.py`, `test_onboarding_slot_substitution.py`, `test_presets.py`, `test_profiles_smoke.py`, `test_active_surfacing_render.py`, `test_trigger_evaluation_action.py`, `test_skills_onboarding.py`, `test_onboarding_review_tiers.py`, `test_onboarding_activation_helper.py`, `test_deferred_task_store.py`, `test_default_security_stance.py`, `test_profile_grammar.py`, `test_scaffold.py` |
-| C3, C4 | `test_model_selection_stub.py`, `test_security_leaf.py`, `test_install_module.py`, `test_intents_tool.py` (the `.gitignore` refusals), `test_scaffold.py`, `test_ast_attest.py` (the same 2 nodes red, no more), `test_oracle.py`, `test_oracle_activation.py`, `test_lockfile_module.py`, `test_security_capability_install.py`, `test_security_verification.py` |
+| C3, C4 | `test_model_selection_stub.py`, `test_upgrade_module_additions.py`, `test_security_leaf.py`, `test_install_module.py`, `test_intents_tool.py` (the `.gitignore` refusals), `test_scaffold.py`, `test_ast_attest.py` (the same 2 nodes red, no more), `test_oracle.py`, `test_oracle_activation.py`, `test_lockfile_module.py`, `test_security_capability_install.py`, `test_security_verification.py` |
 | C5 | the C3 and C4 set plus `test_upgrade.py`, `test_upgrade_module.py`, `test_upgrade_module_additions.py`, `test_upgrade_side_door_parity.py`, `test_skills_upgrade.py`, `test_lockfile_provenance.py`, `test_security_stack.py`, `test_portable_security_sweeps.py` |
 
 This is not a confident bound. 39 test files import the scaffold's entry point or its facade, and the engine files here sit on the install path of all of them, so **Boundary B is the real check.** If `board-as-basis` has landed first, add its contract test and `test_replacement_tools.py` to the C2 row, since the seed test reads the board's `--maintainer` output.
@@ -408,7 +441,7 @@ This is not a confident bound. 39 test files import the scaffold's entry point o
 * **C1:** `TestCommentsAreNotPlaceholders`, `TestAMappingNeedsAtLeastOneRow`, `TestParsedValuesAreScannedWhenYamlIsPresent`, `TestBarePathResidualIsPinned`, `TestValueScanVisitsEachObjectOnce`, `TestThisRepositorysMappingIsFilled`, and `TestEngineAndCheckerAgreeOnUnfilled` (the checker side; the engine side joins in C3).
 * **C2:** `TestStubExampleNamesAFamilyNotAVersion`, `TestAcceptanceChecklistNamesTheMappingCheck`, `TestFamilyNotVersionReachesEverySite` (grows in C3 and C4). In `test_onboarding_seed_roster.py`: the seed renders at moderate and complex in the two presets, strips at simple, is absent from `solo-greenfield`, survives a removed module, is listed by `board.py --maintainer`, and a live install writes a clean lockfile.
 * **C3:** `TestNoticeOnEveryInstallPath` (the install rows), `TestNoticeTextIgnoresFileContent`, `TestNoticeNeverOpensAnythingButARegularFile`.
-* **C4:** `TestCaptureRefusesBeforeAskingAnything`, `TestCaptureWritesByReplacing`, `TestCaptureLeavesUnreadableMappingsAlone`, `TestCaptureNeverClobbersAHandFilledMapping`, `TestCaptureRefusalIsAConstantLine`.
+* **C4:** `TestLockCommitWritesThroughExclusiveTemporaries` (in `test_upgrade_module_additions.py`), `TestCaptureRefusesBeforeAskingAnything`, `TestCaptureWritesByReplacing`, `TestCaptureLeavesUnreadableMappingsAlone`, `TestCaptureNeverClobbersAHandFilledMapping`, `TestCaptureRefusalIsAConstantLine`.
 * **C5:** `TestNoticeOnEveryInstallPath` gains the adopt and upgrade rows; `TestNoticeComesOnlyAfterAnApplySucceeds`.
 * **Removed:** `TestFidelityCheck::test_fill_me_in_comment_fails`, replaced by `TestCommentsAreNotPlaceholders`.
 
@@ -416,7 +449,7 @@ This is not a confident bound. 39 test files import the scaffold's entry point o
 
 1. **A contract surface and the install path are touched.** `install.py`, `cli.py` and `upgrade.py` print new output on every install and upgrade, and the published `--manifest` and the lockfile must be shown unchanged. Bounded mode refuses.
 2. **A trust-ceremony surface is touched.** The scaffold and merge engine is a high-risk surface that `AGENTS.md` names, and the work adds a containment guard and an exit-code change to it.
-3. **A frozen file changes and the pinned collection moves.** Five frozen files change, one pinned node leaves, and new nodes join.
+3. **A frozen file changes and the pinned collection moves.** Six frozen files change, one pinned node leaves, and new nodes join.
 4. **A verbatim adopter script changes.** The checker is shipped byte for byte, so its behaviour reaches every adopter.
 
 Uncertainty resolves to full, and the accepted text says full.
@@ -432,7 +465,7 @@ then `check_cairn.py`, and `claim_check.py` on each edited file. Run it from a s
 
 **Expected non-pass,** each disposed of rather than treated as noise:
 
-* **`test_ast_attest.py`: the same 2 nodes** (`test_committed_baseline_accounted_for_across_the_engine_package` and `test_ast_gate_passes_over_the_full_scaffold_module_set`) fail, as they do at the base, and for the same reason: the baseline is stale. The disposition shows the CHANGED set equals the declared delta, so nothing unintended moved, and that the failure ends when the Maintainer runs the correction.
+* **`test_ast_attest.py`: the same 2 nodes** (`test_committed_baseline_accounted_for_across_the_engine_package` and `test_ast_gate_passes_over_the_full_scaffold_module_set`) fail, as they do at the base, and for the same reason: the baseline is stale. The disposition shows the CHANGED set equals the declared delta, so nothing unintended moved, that the only known-new mismatch is the install-record writer, and that the failure ends when the Maintainer runs the combined ceremony.
 * **`test_gate_manifest.py`:** no expected failure. Changed frozen bytes do not redden it.
 * **The neutrality leg:** `fail=0`, no expected failure.
 
@@ -463,6 +496,10 @@ then `check_cairn.py`, and `claim_check.py` on each edited file. Run it from a s
 | M21 | Cairn's mapping is reset to the stub | the repository's-mapping test |
 | M22 | the capture's guard is removed | `test_guarded_write_functions_still_call_a_containment_guard` |
 | M23 | the capture's catch prints the exception text | the real-install refusal test |
+| M24 | the install-record writer's lockfile temporary reverts to a fixed name written with `write_text` | the lockfile hard-link test |
+| M25 | the same for a cache's temporary, written with `write_bytes` | the cache hard-link test |
+| M26 | `O_EXCL` is dropped from the temporary's creation | the forced-name collision test |
+| M27 | the cleanup of a leftover temporary on failure is dropped | the failure-cleanup test |
 
 **The stub merge measurement** (C6, on the real commit). The real merge, with the parent's stub as the common base and the edited stub as theirs, over four of the adopter's files: (a) an untouched stub; (b) a hand-filled stub with its comments kept; (c) a file written by the interactive capture, whose header was rewritten; (d) a file whose header was rewritten by hand. Expected: (a) and (b) clean, (c) and (d) conflict. Then, for (c), `upgrade --apply` refuses while conflict markers remain and writes nothing. The author measured this on the drafted edit; C6 repeats it on the commit.
 
@@ -473,6 +510,7 @@ then `check_cairn.py`, and `claim_check.py` on each edited file. Run it from a s
 * **The order inside the capture.** Is any read, print or prompt reachable before the early guard? Does the temporary file get a name another process can predict?
 * **The silent cases.** Can any path print the second text for a project that never had the module, or stay silent for a stub?
 * **The parity corpus.** Is it fitted to a claim, or does it contain a member that the engine and the checker disagree on? List the corpus members from the tree.
+* **The install-record writer's temporary names.** Is any name predictable, any temporary left behind after a failure, any caller missed? Does the mode a new lockfile gets match today's?
 * **The seed, read cold as an adopter.** Does the Waiting row make sense on day one, and does deleting it work?
 * **The lockfile diff.** Confined to two records?
 
@@ -480,7 +518,7 @@ then `check_cairn.py`, and `claim_check.py` on each edited file. Run it from a s
 
 * **S2, can it fail.** The ledger above is the answer, and it runs once, at C6, against the finished commits. A surviving mutant sends the work back to its chunk.
 * **S3, what fires it, over what.** The notice: `scaffold.py` install, `upgrade --adopt-module`, and `upgrade --plan`, `--stage` and `--apply`, over one fixed path. The check: an agent following II-5, a person running the script, `board.py --maintainer` showing the seeded row, and `TestThisRepositorysMappingIsFilled` in Cairn's suite. **Said plainly, nothing fires any of these unprompted.** Opened to the end: no git hook and no CI configuration runs the suite (`.git/hooks` holds only the work-intent pair, and Cairn has no CI). The test runs when a person or agent performs Boundary B, which every implementation plan requires, so its chain ends at a person or agent following `AGENTS.md`. The proposal's "only the suite reaches a machine" is therefore a test that exists, not a machine that runs it.
-* **S5, who still wins.** Someone who can write the tree can enter plausible model names, edit the tree-local checker, or spell a placeholder so the bare path misses it. A link swapped in the last instant before the rename narrows the window to one rename and does not eliminate it; the threat model is "no concurrent filesystem attacker" (`bootstrap/SAFETY.md`, "Documented residual risks (Layer 4)"). **The hard-link case is closed by construction** (exclusive creation, then a rename that never writes into the old file).
+* **S5, who still wins.** Someone who can write the tree can enter plausible model names, edit the tree-local checker, or spell a placeholder so the bare path misses it. A link swapped in the last instant before the rename narrows the window to one rename and does not eliminate it; the threat model is "no concurrent filesystem attacker" (`bootstrap/SAFETY.md`, "Documented residual risks (Layer 4)"). **The hard-link case is closed by construction** for the capture and for the install-record writer (exclusive creation, then a rename that never writes into the old file). Other in-place engine writes are not covered (*Named residuals*).
 
 ### Named residuals
 
@@ -492,6 +530,7 @@ then `check_cairn.py`, and `claim_check.py` on each edited file. Run it from a s
 * **The second notice line is imprecise for a file with no rows** (P10), and there is no read-size cap (P9).
 * **A profile that removes the module from a moderate preset** gets a Waiting row naming a file it lacks; a test pins it.
 * **Non-interactive and interactive installs disagree on a bad mapping path** (exit 0 with a notice, and exit 2). Neither writes anything.
+* **In-place engine writes through a hard link are not closed,** apart from the capture and the install-record writer: the module-merge conflict side-file and the `.gitignore` append are the cases seen. `_assert_safe_write` checks symbolic links, not link counts.
 * **The stub edit costs one merge conflict** for an adopter whose header was rewritten. `lhm` is one; keeping its side resolves it, and `--apply` refuses until then, so a half-merged mapping is never written.
 
 ## Dispositions
@@ -499,7 +538,7 @@ then `check_cairn.py`, and `claim_check.py` on each edited file. Run it from a s
 *Filled at archive-preparation.* Known now:
 
 * **Q4, goodnight running the activation helper.** `defer`. The accepted text assigns it to the board: Revision 1 says "a separate board item at the next scrub, not in this change", and the Decision says it "is not part of this contract". The archive commit deposits the board row and quotes both, with the Decision's words "accept as answered". Until then this plan is its live home.
-* **`_commit_lock_and_caches` writes through a pre-planted hard link at its fixed temporary name** (*Found while planning*). `defer`, as one batch with Q4 at archive. It needs the Maintainer's authorization quoted verbatim, so this plan does not deposit it. It reaches an adopter's machine only through local access, so it is not a release blocker.
+* **The wider hard-link class** (the module-merge conflict side-file, in-place writes such as the `.gitignore` append): not folded in. The install-record writer is no longer a deferral; it is accepted scope (C4). Whether any of the wider class joins this plan is with the Maintainer. Unless it does, the class is a `defer` at archive, in one batch with Q4, which needs his authorization quoted verbatim, so this plan does not deposit it.
 * **The solo-greenfield seed.** `wontfix`, with the Maintainer's allowance quoted in *Scope delta*.
-* **Whether the AST ceremony needs its own marked board row.** The Maintainer's call, raised in the report; if yes, the archive commit adds the row.
-* **The archive commit writes this plan's `CHANGELOG.md` entry,** and adds the node note and the AST delta to the queued re-anchor row.
+* **Whether the combined AST ceremony needs its own marked board row.** The queued row's marker names only the gate-manifest re-anchor. The Maintainer's call; if yes, the archive commit adds the row.
+* **The archive commit writes this plan's `CHANGELOG.md` entry,** and adds the node note, and the AST delta as part of the one combined ceremony, to the queued re-anchor row.

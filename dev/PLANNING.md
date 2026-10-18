@@ -310,35 +310,48 @@ with the plan's filename stem.
 
   **Joined 2026-10-18** at the opening of `plans/model-mapping-install-path.md` —
   **planned, not yet changed**: derive the changed set from the manifest's
-  `frozen_files` keys at ceremony time. That plan edits five frozen files:
+  `frozen_files` keys at ceremony time. That plan edits six frozen files:
   `templates/modules/team-gated/check_model_selection.py`,
   `scripts/check_model_selection.py`,
   `bootstrap/tests/test_model_selection_stub.py`,
-  `bootstrap/tests/test_onboarding_seed_roster.py` and
-  `bootstrap/tests/test_security_leaf.py`. The pinned collection moves: new test
-  classes join the first two (node IDs in the plan's *Implementation
-  verification* record), and **one pinned node leaves on purpose**,
+  `bootstrap/tests/test_onboarding_seed_roster.py`,
+  `bootstrap/tests/test_security_leaf.py` and
+  `bootstrap/tests/test_upgrade_module_additions.py`. The pinned collection
+  moves: new test classes join the first, second and last (node IDs in the plan's
+  *Implementation verification* record), and **one pinned node leaves on
+  purpose**,
   `test_model_selection_stub.py::TestFidelityCheck::test_fill_me_in_comment_fails`,
   because the Maintainer reversed the rule it pinned (a `FILL ME` in a comment no
   longer fails the check). The verifier reports it as `COLLECTION-DROPPED` while
-  `test_gate_manifest.py` stays green. A sixth frozen file,
+  `test_gate_manifest.py` stays green. A seventh frozen file,
   `bootstrap/tests/fixtures/scaffold_ast_known_new.json`, is written by the AST
-  ceremony below, not by an agent. **That plan also changes the engine**, so it
-  adds to the AST baseline, which is a separate ceremony with its own runbook
-  (`bootstrap/AST_BASELINE_RUNBOOK.md`). It changes four functions:
-  `capture_model_selection_mapping` (newly CHANGED) and `main`,
-  `_cmd_adopt_module` and `cmd_upgrade` (already CHANGED by the `.gitignore`
-  repair). It adds two top-level functions, `_mapping_is_unfilled` and
-  `model_selection_notice_lines`, for the ceremony to pin. With the repair's
-  `seed_gitignore` that is five CHANGED and two NEW at the end; derive the set at
-  ceremony time. None is in `_UPDATE_ALLOWLIST`, so the correction is the
-  Maintainer's own, and **it should wait until that plan archives**, or a second
-  pass is owed. `bootstrap/_scaffold/` is on the differential oracle's sensitive
-  roster, and the plan also edits a comment in `lockfile.py`, which adds that file
-  to the changed sensitive paths. Authorization for joining this batch is the
-  Decision accepting the proposal, quoted verbatim:
+  ceremony below, not by an agent.
+
+  **That plan also changes the engine, so the AST baseline is owed a correction,
+  and the Maintainer chose one combined ceremony, later** (2026-10-18, chat:
+  "One combined ceremony later"). There is no separate re-anchor for the
+  `.gitignore` repair. One run, after that plan archives, covers: the repair's
+  four CHANGED functions (`main`, `seed_gitignore`, `_cmd_adopt_module`,
+  `cmd_upgrade`); the plan's own delta, which is `capture_model_selection_mapping`
+  (newly CHANGED), `main`, `_cmd_adopt_module` and `cmd_upgrade` (changed again),
+  and `_commit_lock_and_caches`, which `scaffold_ast_known_new.json` pins by
+  digest, so the ceremony sees it as REKEYED and traces it to the plan's C4
+  commit; and two new top-level functions, `_mapping_is_unfilled` and
+  `model_selection_notice_lines`, for the ceremony to pin. At the end that is five
+  CHANGED, one re-keyed and two NEW; derive the set at ceremony time
+  (`bootstrap/AST_BASELINE_RUNBOOK.md`). None is in `_UPDATE_ALLOWLIST`, so the
+  correction is the Maintainer's own. `bootstrap/_scaffold/` is on the
+  differential oracle's sensitive roster, and the plan also edits a comment in
+  `lockfile.py`, which adds that file to the changed sensitive paths.
+  Authorization for joining this batch is the Decision accepting the proposal,
+  quoted verbatim:
 
   > "accept as answered"
+
+  The install-record fix (`_commit_lock_and_caches`) was added to that plan at the
+  Maintainer's instruction after it opened. The option he chose, quoted verbatim:
+
+  > "Fold into this plan (Recommended)"
 
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
