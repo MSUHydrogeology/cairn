@@ -1,7 +1,7 @@
 # One independent scientific check: the first step on scientific correctness
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-decision
+**Status**: accepted
 **Review**: required(External)
 **Plan review**: required(Internal) — prose edits to two authoring templates (each with its self-hosted twin) and three kernel sentences; no doctrine, engine, install-contract or trust-boundary surface
 **Opened**: 2026-10-17
@@ -1000,3 +1000,34 @@ templates.
   file is edited.
 * **Q2's default "close #18 as met"**: superseded by "close as a duplicate of
   #19".
+
+## Decision -- Anthony Kendall (Maintainer) -- 2026-10-18
+
+**ACCEPTED.** The Maintainer's authorization, quoted **verbatim and visually
+isolated**:
+
+> "Accept A, B, C and D as revised, with every recommended answer, including B’s scope cut and D’s scope delta."
+
+*Scribe's note, separate from the quoted words.* The four proposals of
+2026-10-17 were put to the Maintainer as one batch, labelled A
+(verification practice), B (Maintainer attention), C (neutrality and upgrade
+slots) and D (independent scientific check). This proposal is **D**.
+"Every recommended answer" means the recommended default of each question in
+its newest revision, as put to the Maintainer:
+
+* **Revision 1 binds.**
+* **Q1 -- yes: the Scope-delta entry is conceded.** The step lands as
+  template guidance. The lens-8 doctrine sentence is deferred to the axis
+  revisit; its board row is deposited in its own commit after the four
+  Decisions, with this quoted authorization.
+* **Q2 -- yes.** A gated paragraph in an existing template sits outside the
+  guide star's "before any further expansion" gate.
+* **Q3 -- yes.** #18 is closed as a duplicate of #19, not as met. #19 stays
+  open for the axis, the disciplines, the governance reframe and the deferred
+  doctrine. #18's export-safety affirmation stays the Maintainer's to sign.
+* **Q4 -- yes.** The axis is revisited when the third-party probe row moves,
+  or at the Maintainer's call once about ten real checks exist.
+* **`Plan review: required(Internal)`** is ratified as declared.
+
+Scribed by Claude (claude-opus-5-5) on the Maintainer's explicit instruction.
+Nothing else lands in this commit.
