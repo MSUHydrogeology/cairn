@@ -1,7 +1,7 @@
 # Plan: verification practice — a review reads a commit, mutation for set claims, a test scope for small fixes
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-verification-practice.md`
-**Status**: ready-to-archive
+**Status**: archived
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/` and
 a shipped template.
@@ -1742,3 +1742,92 @@ ignored caches, as the earlier run did. The worktree was then removed.
   work edits.
 * Other sessions were active on the machine during the run, so elapsed times
   may be inflated; outcomes are unaffected.
+
+## Archive -- 2026-10-18
+
+`Dispositions: accept x5, wontfix x3, defer x0` — restated over
+the whole record, since sections were appended after *Dispositions*. Status
+`ready-to-archive` -> `archived`; the plan moves to `dev/plans/archive/`.
+
+* **accept — Revision 1, items 1 to 4 and Q1 to Q3.** Delivered in C1 to C4
+  (`296cdfad`, `0a4becdb`, `399d406d`, `f4d4ff3c`). Boundary B, mode `full`, at
+  `739e3aba`, and again at `f93eef04` once the follow-ups changed test bytes:
+  3,384 passed under Python 3.13.13. `b712020d` ("code review is not External
+  by default") was a Maintainer-directed change outside the plan, reviewed as
+  its own change and pinned by the follow-ups.
+* **accept — plan review [PR1] to [PR7]**, folded into the operative cells before
+  work began (*Response to plan review*).
+* **accept — code review [CR1] to [CR3], [CR5] to [CR8] and the line-length
+  nit.** Wording in `4f1b076f`, pins in `f93eef04`, the record and its
+  addendum in `a0810700`.
+* **accept — chunk M's board note.** No frozen file changed in any commit of the
+  range, checked against the manifest's `frozen_files` keys with
+  `bootstrap/tests/test_verification_boundaries.py` as the positive control.
+  The 125 nodes of `bootstrap/tests/test_review_and_verification_rules_ship.py`
+  join the queued re-anchor row on `dev/PLANNING.md` in the archive commit. The
+  ceremony stays that row's: Maintainer-only, and not performed here.
+* **wontfix — [PR4]'s optional install assertion.** No edit sits in a slot or
+  `cairn:if` region, so the template source is the installed text; an assertion
+  on an installed tree would tie a prose-pin file to the engine's API for no
+  added coverage. It reaches no adopter, blocks no release and needs no
+  Decision.
+* **wontfix — [CR4]**, the doctrine copies carry no pins of their own. Doctrine
+  is not shipped, so drift from `AGENTS.md` reaches no adopter, and the frozen
+  `test_verification_boundaries.py` already pins the six triggers on both
+  doctrine files. Reasoning in *Response to code review*.
+* **wontfix — #12 by tooling**, a helper that extracts the reviewed commit or a
+  hook that refuses `git restore`. The accepted proposal declined it with its
+  reason and a revival condition ("build it if the rule fails in practice",
+  Revision 1 > Alternatives considered), and the Decision accepted Revision 1.
+  It reaches no adopter, blocks no release and needs no Decision, and no
+  disposition block names it. If a reviewer's write again reverts an author's
+  uncommitted work after this rule shipped, file a new issue citing #12.
+* **accept — where an accepted proposal implemented with no plan records its
+  Boundary B result.** Found at plan time (*Found while planning*) and owed to
+  this archive by plan review; it is neither "a trivial change, with no
+  proposal or plan" nor a plan, so the shipped text gave its record no home.
+  It was outside the accepted scope, so the Maintainer's allowance widened the
+  plan by one sentence instead of deferring it, and `941cb34d` landed it in both
+  `AGENTS.md` copies and `doctrine/plans.md`: the record is the commit body, as
+  for a trivial change, and if fewer than all the tests ran, the code
+  reviewer's Bounding verdict rules on whether the tests chosen were enough.
+  Prose only, with no new pin and no test that reads the new words:
+  `test_verification_boundaries.py`, the pin file and four other direct readers
+  307 passed, the five install-structure files 307 passed, and `claim_check`,
+  `check_cairn` and the neutrality gate (74, unchanged) clean on the edited
+  files. `doctrine/dual-review.md` was outside the allowance, and its Boundary C
+  opening still names only "a trivial change's commit body". The Maintainer's
+  allowance, relayed by the coordinating session, quoted verbatim, in answer to
+  a recommendation to fix it in this plan (the recommendation's full text is in
+  the body of `941cb34d`):
+
+  > "Go with your instincts on plan A."
+
+**Left to the Maintainer, and not deferred work.** Issues #12, #17 and #25 stay
+open until the Maintainer closes them after the push; they are the live home
+until then.
+
+**Evidence shipped**: the wording in both `AGENTS.md` copies,
+`doctrine/dual-review.md`, `doctrine/plans.md` and both plan templates; the 125
+pins in `bootstrap/tests/test_review_and_verification_rules_ship.py`, with the
+per-chunk and follow-up mutation runs recorded; both Boundary B records; and
+the one-sentence record rule for a proposal built with no plan (`941cb34d`).
+**Evidence deferred**: none was planned. The known omissions in the two records (unpinned doctrine
+copies, and unpinned wording for [CR1], [CR6], [CR7], [CR8]) were never planned
+checks; [CR4] is the `wontfix` above. **Deferred evidence home**: not
+applicable.
+
+**Fidelity sign-off.** The landed commits `296cdfad`, `0a4becdb`, `399d406d`
+and `f4d4ff3c` match the accepted `## Revision 1` of
+`dev/proposals/archive/2026-10-17-claude-verification-practice.md`, which
+governs, as ratified by the Decision of 2026-10-18. Two byte-level choices
+(*Found while planning*) and two additions from plan review ([PR2], [PR6])
+deliver outcomes that Revision 1's wording would have missed, and `941cb34d`
+is the one scope addition, allowed by the Maintainer as quoted above. *Scope
+delta* stays `preserved`: nothing accepted was dropped.
+
+**The lasting truth.** A rule is only as usable as its worst-served case: the
+full-suite default priced a small fix out of the rule, and a record location
+named for plans alone left the case beside them with none. Each was found by
+reading the shipped text as an adopter would, with no plan and no doctrine
+open.

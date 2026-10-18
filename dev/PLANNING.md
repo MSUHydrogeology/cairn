@@ -190,7 +190,20 @@ with the plan's filename stem.
   (`test_adopt_refusal_names_a_remedy_that_works`,
   `test_adopt_refusal_says_what_a_complete_profile_is`), and
   `test_verify_integrity.py` 1
-  (`test_a_filled_customized_slot_is_pointed_at_finalize`). A smaller or
+  (`test_a_filled_customized_slot_is_pointed_at_finalize`). The
+  verification-practice plan (archived 2026-10-18) changes no frozen file and
+  adds 125 more nodes, dropping none, all in the new, unfrozen
+  `bootstrap/tests/test_review_and_verification_rules_ship.py`:
+  `test_agents_md_carries_the_obligation` and
+  `test_removing_the_obligation_is_reported` 52 each,
+  `test_agents_md_omits_the_forbidden_phrasing` and
+  `test_inserting_the_forbidden_phrasing_is_reported` 6 each,
+  `test_the_external_by_default_pin_ignores_case_and_wrapping` 4,
+  `test_the_commit_rule_sits_in_the_review_section` 2, and one each of
+  `test_an_empty_file_carries_no_obligation`,
+  `test_the_shipped_copy_makes_claiming_conditional` and
+  `test_cairns_own_copy_claims_unconditionally`; the parametrized labels are in
+  that plan's two *Implementation verification* records. A smaller or
   differently-named collection at the ceremony is expected for exactly these
   reasons. The AST attestation baseline is separate: re-anchored by the
   Maintainer at `cef67cc0` and `396e001b`, and owed one more, for

@@ -37,6 +37,32 @@ release is cut, that section is renamed to the version + date
 and a new empty `Unreleased` is started above.
 
 ## Unreleased
+### Changed — Reviews read a commit; a small fix runs the tests that own it
+
+- **A review reads a commit, never a shared working tree.**  The author commits
+  what is to be reviewed (locally; committing is not pushing).  In a tree it
+  shares with the author, a reviewer writes only its own review record and the
+  artifact's Status line, and runs no `restore`, `checkout`, `stash`, `reset` or
+  `clean`; anything else that writes runs in a separate copy.  A reviewer's
+  `git restore` once reverted an author's uncommitted work (#12).
+- **Mutation is the instrument for "every place" claims.**  When a finding says
+  a value must reach every member of a set, the reviewer lists the set from the
+  tree and breaks each member on purpose, then reports each break as killed,
+  survived or equivalent beside an unmutated control, never as a bare count
+  (#17).
+- **A small fix with no plan has a test scope.**  It runs the tests that own
+  what it touched, found by search, and records them in its commit body before
+  it commits; the code reviewer rules on that choice.  On a contract or
+  high-risk surface it still runs the full suite once.  An accepted proposal
+  built in one commit with no plan records its result the same way.
+  "Substantive surface" is defined once (#25).
+- **Code review is no longer described as External by default.**  An External
+  review is an escalation for risk the proposal review did not resolve.
+- The text is in both `AGENTS.md` copies, `doctrine/dual-review.md`,
+  `doctrine/plans.md` and both plan templates, and
+  `bootstrap/tests/test_review_and_verification_rules_ship.py` pins the shipped
+  rules.  From `dev/plans/archive/verification-practice.md`.
+
 ### Changed — One installer; the adoption levels are retired
 
 - **Cairn no longer publishes adoption levels.**  You read the doctrine, or
