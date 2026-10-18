@@ -333,8 +333,8 @@ with the plan's filename stem.
   `.gitignore` repair. One run, after that plan archives, covers: the repair's
   four CHANGED functions (`main`, `seed_gitignore`, `_cmd_adopt_module`,
   `cmd_upgrade`); the plan's own delta, which is `capture_model_selection_mapping`
-  (newly CHANGED), `main`, `_cmd_adopt_module` and `cmd_upgrade` (changed again),
-  and `_commit_lock_and_caches`, which `scaffold_ast_known_new.json` pins by
+  (newly CHANGED), `main`, `_cmd_adopt_module`, `cmd_upgrade` and `seed_gitignore`
+  (changed again), and `_commit_lock_and_caches`, which `scaffold_ast_known_new.json` pins by
   digest, so the ceremony sees it as REKEYED and traces it to the plan's C4
   commit; and two new top-level functions, `_mapping_is_unfilled` and
   `model_selection_notice_lines`, for the ceremony to pin. At the end that is five
@@ -352,6 +352,20 @@ with the plan's filename stem.
   Maintainer's instruction after it opened. The option he chose, quoted verbatim:
 
   > "Fold into this plan (Recommended)"
+
+  The three small `.gitignore` points from the Security Review of the
+  `.gitignore` repair (the race inside `seed_gitignore`, a hard-linked
+  `.gitignore`, and the preflight's read) were added the same way. His answer,
+  quoted verbatim:
+
+  > "Yes, fix the .gitignore points"
+
+  They add no frozen file and no new symbol: `seed_gitignore` is already CHANGED
+  and changes again. Their tests go in `bootstrap/tests/test_intents_tool.py`,
+  which the manifest lists as phase-mutable, so the ceremony gives a
+  `PHASE-CHANGED` note for it and never a hold. The `.gitignore` repair is still
+  in code review and may change the same functions again, so derive the AST set
+  at ceremony time.
 
   **Waiting on Maintainer**: run the gate-manifest re-anchor
 
