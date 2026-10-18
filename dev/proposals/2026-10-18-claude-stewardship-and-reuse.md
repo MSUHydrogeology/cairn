@@ -1,7 +1,7 @@
 # Fix easy problems where you find them, and look before you build
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: revising
 **Review**: required(Internal)
 **Plan review**: required(Internal)
 **Opened**: 2026-10-18
@@ -508,3 +508,214 @@ vendor-neutrality boundary, so `Review` stays `required(Internal)` and no Securi
 If the Maintainer judges the loosened deviation gate to need one, that is a one-word change to the
 header. **Plan review**: `required(Internal)`. The chunk list adds no engine, contract or trust-root
 file, so the plan needs no Security Review either.
+
+## Review -- Claude Opus 5.5 (Internal) -- 2026-10-18
+
+**Model**: Claude Opus 5.5, a fresh session with no shared context, of the same agent family as the author; no cross-type distance. An Internal pass, taking the stance the accepted review-stance Decision sets for proposal review: should this exist, and is there a better design.
+
+```
+Reviewed commit: f804f3b7a347d148ecac41edee21204f61c2de39
+Target: the whole proposal, In brief through Assurance path; every tree figure read at that commit in a detached worktree; LHM read only
+Prior findings: none
+Assurance path: high-assurance
+```
+
+**Tier**: Internal
+**Findings**: raised (3 blocking, 7 non-blocking)
+**Verdict**: REVISE
+
+### Verdict in brief
+
+**Most of this should go ahead: a deferral that says why, the module's new default, and the reuse question. The exception to the deviation rule needs work before you answer Question 2.** Three things need an answer first:
+
+* **SW1. As written, "cheap" would let an agent defer almost every code fix found at code review, which is LHM's exact case.** After a code review, any change to code or tests makes Cairn require a fresh full test run (`AGENTS.md:253-258`). The proposal says a cheap fix "never forces a full-suite run", and that doubt means not cheap. Read together, an agent can honestly call each of LHM's eight easy fixes "over the cost bar".
+* **SW2. The exception can be used to widen a plan.** An agent can write a "defect" into the plan in one commit and fix it in the next, and every condition holds. "Defect" is never defined, so a feature someone wants can be filed as one.
+* **SW3. The module and the exception give opposite instructions.** The module will say to fix friction "where you meet it". The exception says a problem met fresh is written down and waits. An adopter's agent that follows the module would be committing a deviation.
+
+There is a better design for the exception: **name these fixes in the plan before work starts, where the plan reviewer sees them** (SW4). Cairn's plans already do this informally under "Found while planning". Note also that the exception is the one part of the proposal that moves an approval point, and no incident shows it is needed. LHM's eight were findings on the plan's own code, and the proposal itself says those need no exception (lines 100-102). The exception rests on your direction alone (SW7).
+
+### Steelman
+
+Cairn's rules make a deferral cost one line, and a fix cost a test, a review and the risk of a deviation, so agents defer. The proposal leaves the deferral vocabulary and its August design alone: no order, no quota, no tool. It prices the one disposition that hands the cost to someone else, by making it name one of three reasons. It closes the obvious escape into `wontfix`. It flips the one shipped text, the issue-capture module, that teaches capture over fixing. It defines "cheap" by ceremony rather than by line count, which is the right axis in a tree where a one-line engine change costs a Security Review. And it adds a reuse question to the plan with a check a reviewer can repeat. It also says honestly that its evidence does not clear the rate-limit gate.
+
+### Foundations
+
+* **Should this exist? Yes, and the exception should exist only in a narrower form.** The deferral pull is real and documented twice. LHM's archive deferred eight easy fixes (issue #30), and in August Cairn's board held 59 deferred items in 1,002 lines (`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md:24-25`). The shipped module still says the exception "is the genuinely one-line, on-path fix" (`templates/modules/team-gated/issue-capture.md:61-62`). Rule 1, the module flip and the label fixes answer LHM's case without touching any approval point. The exception is a separate question: it changes who approves new scope, and no recorded incident turns on it.
+* **Is there a better design? For rule 1, the module and the reuse question: no.** I looked for a cheaper carrier than a template question plus a reviewer check, and found none that is not a tool the Maintainer has said no to. **For the exception: yes.** Exercise it at plan time, where a one-round fresh plan review reads it before any code exists, and keep the implementation-time path only as a narrow backstop (SW4). That design closes most of SW2 by construction, gives the "leave it better" duty a trigger, and lets a defect the planner meets fresh be fixed in the same plan. That is closer to "when they encounter it" than Question 2's default.
+
+### Findings
+
+#### SW1 -- BLOCKING: the cost bar prices out the fixes the evidence is about
+
+**Plain:** after code review, Cairn requires a fresh full test run whenever code or tests change. The proposal's "cheap" says a cheap fix never forces a full run. So every fix to code made after code review fails "cheap", and "doubt means not cheap" settles the argument toward deferring.
+
+* The proposal: "This is the line Boundary B already draws for bounded mode, so a cheap fix never forces a full-suite run. **Doubt means not cheap**" (lines 202-204). Item 3's bar also says a cheap fix "sets off nothing beyond the change's own review" (lines 200-201).
+* `AGENTS.md:253-258`: "A fresh full run is required when: ... **review sharpening changes implementation, tests, executable templates, or** fixtures — any change to implementation/test/executable-template/fixture bytes invalidates the record". The shipped copy says the same (`templates/core/AGENTS.md:260-265`), and so does LHM's installed `AGENTS.md` (lines 274-277).
+* LHM's eight came from a code review that had already approved: "a strict type check, two name refusals, an archive-entry path check, two refuse-before-write reorderings, and missing tests for existing refusals" (issue #30). Each is a code or test change after review. Read as a criterion, the proposal's sentence makes all eight "not cheap", and rule 1 then changes nothing for the case it was written for.
+* The equivalence is not exact either. Boundary B's refusal list names contract surfaces and trust-ceremony surfaces (`AGENTS.md:219-224`). "A file whose bytes a gate pins" and "a step only the Maintainer can run" are additions. Boundary B also runs full for a surface with no mapping, or one it cannot bound (`:217-219`), so "never forces" is not true of the fence itself.
+* **Usable mid-task?** The named-surface half, yes: an agent can check a path against the high-risk list, the gate manifest's frozen files and the contract list. "About a chunk's worth", no. It grows with the plan's chunk size, it is judged per fix with no total, and a trivial change or a one-commit proposal has no chunk (`doctrine/lifecycle.md:214-219`). That half will be argued, in whichever direction the agent already leans.
+
+**Recommend:**
+1. Strike "so a cheap fix never forces a full-suite run". Say instead that the bar counts work that needs a person (a step only the Maintainer can run, a Security Review, a new proposal or decision), not machine time. A re-run that the change's own verification already prescribes is paid once per sharpening batch and is never a reason to defer one finding.
+2. Say the surface list "reuses Boundary B's refusal list and adds frozen files and Maintainer-only steps", not "is the line Boundary B draws".
+3. Use two bars. For rule 1 (a finding on the plan's own change, which is already in scope), "about a chunk's worth" is fine, and it is the issue's own example. For the exception (scope nobody accepted), use a test an agent can apply without judgment: the fix restores behaviour the file already promises, adds no new file, function, option or public name, and changes nothing beyond the defect's own lines and its test (see SW2).
+
+#### SW2 -- BLOCKING: the exception can be used to widen a plan
+
+**Plain:** an agent that wants to add something the plan left out can first write it down as a "defect" and then fix it under the exception. Nothing in the five conditions tells that apart from a real fix.
+
+* "The defect is already on the record before you start" (line 174) does not say before *what*: the plan, the chunk, or the fix. Question 2 says "before the work began" (line 51), and "a defect met fresh is recorded first and fixed on the next touch" (line 52). A later chunk of the same plan is a next touch.
+* **The abuse, step by step.** Plan P edits file F, and an implementing agent wants an option P did not include. Commit 1 appends a plan note: "Defect: F does not handle X." Commit 2 adds X, with a test and a commit body that cites the note. Every condition holds. It was on the record before the fix started, F is a file the change edits, the agent judges it cheap, it has its own test, it is named, and it is in the reviewed range. A review finding works too: a reviewer who writes "while you are in F, also handle X" creates the record that authorizes the widening. `AGENTS.md:157-158` forbids a reviewer from creating authority to *narrow*. The exception lets one create authority to *widen*, and the proposal never says that asymmetry is intended.
+* **"Defect" is not defined anywhere in the proposal.** `doctrine/roles.md:62-66` already holds the test that would close this: "a one-line change that re-decides that design is captured, while a larger fix squarely within the bug's own contract may land." Item 4 would overwrite it (SW3).
+* **No total.** Each fix is judged alone, so a plan that edits ten files can absorb ten chunk-sized fixes. The proposal's signal (lines 472-474) fires only on a fix in a file the range did not otherwise edit, which the conditions already forbid, so it cannot see this.
+* **"A change to what a rule says is still a deviation"** (lines 181-182) gives no test for "rule". In Cairn's prose tree, a reviewer can check it once it is defined. In an adopter's code it means little, and the defect definition has to do the work. As written, the code reviewer has no claim to falsify.
+
+**Recommend:**
+1. Anchor the record to a moment git can show: the record predates the commit that moved the plan to `ready-to-implement` (for a change with no plan, its first commit). A record made after that counts as met fresh.
+2. Define defect, taking the test from `roles.md`: the file does not do what it, its docstring, its tests or its governing text already say it does. The fix restores that and re-decides nothing. Anything that adds a behaviour or option nothing promised is new scope.
+3. Add a total: the fixes made under the exception in one plan together stay within one chunk's worth, and the rest are captured.
+4. Give each fix one commit-body line that can be grepped, shaped like `Dispositions:`. For example: `Exception fix: <record> -> <file> -- test <path::node> -- changes no rule text`. The code reviewer can then list every fix, check each record's date and falsify the "no rule text" claim, and the "plans absorb unrelated fixes" signal can be counted.
+5. Define "what a rule says": any sentence that tells a reader what to do, or states what a check, contract or acceptance criterion requires.
+6. State the asymmetry: a review finding may authorize a fix under the exception, but never a narrowing, and say why.
+
+#### SW3 -- BLOCKING: the module flip and the exception give opposite instructions for a problem met fresh
+
+**Plain:** the new module text tells an agent to fix easy friction where it meets it. The new `AGENTS.md` text says a problem met fresh is written down and fixed later, and that fixing it now is a deviation. The two texts ship together.
+
+* New module text: "Friction is **fixed where you meet it** when the fix is cheap, testable and in a file you are already working in" (lines 224-225). Its Fix bullet (lines 228-230) lists the cost bar, the file, the test, naming and review, but not "already on the record". Its User Agent sentence says "a diagnosed fix that meets it lands with its test" (lines 236-237). A bug the User Agent has just diagnosed is by definition not on the record beforehand.
+* The exception (lines 174-175) and Question 2's default (lines 50-52) make that same fix a deviation whenever a plan is open.
+* The top 60 lines already show the split without flagging it: "What changes" item 2 says "known" (line 23), and item 3 does not (line 25).
+* `roles.md` would be "changed to the same test" (lines 240-242). That replaces "**scope, not size, is the bar**" (`doctrine/roles.md:62`) with a test of size and ceremony, and loses the one existing sentence that answers SW2.
+* The module is often used outside any plan: a User Agent session, or a trivial change. There, no accepted plan exists to deviate from, and the proposal does not say which rule governs.
+
+**Recommend:** state the rule once, in `AGENTS.md`, and have the module and `roles.md` point at it instead of restating it. Say which case is which:
+
+* **Inside an open plan**, the exception's conditions govern.
+* **Outside a plan**, a fix that meets the defect definition (SW2.2) and the cost bar may land with its test, named in its commit and reviewed, because there is no accepted scope to deviate from.
+
+If the author wants record-first everywhere instead, change the module's headline to "recorded where you meet it, fixed on the next touch". Either way, keep `roles.md`'s "scope, not size" sentence and make it the defect definition rather than overwriting it.
+
+#### SW4 -- non-blocking (recommended): name the fixes in the plan, before work starts
+
+**Plain:** the "leave it better" duty has no one assigned to check it. A line in the plan, which the plan reviewer re-checks, gives it a checker, and catches most misuse before any code is written.
+
+* The duty: "A known cheap defect in a file you edited and did not fix needs a reason in the plan" (lines 182-183). Nothing says who checks it. To do so, a code reviewer would have to search every record for every edited file. `AGENTS.md` > "Verifying claims": "Any document that describes a check says what runs it."
+* Cairn already does this informally. `dev/plans/archive/verification-practice.md:120-124` has a "Found while planning" section, and its items are "named here so the plan reviewer can say otherwise". `dev/plans/archive/maintainer-attention.md` has the same heading. `941cb34d` came out of that section.
+* Plan cells "revise in place until implementation begins" (`templates/core/dev/plans/_template.md:24`), so naming a fix there costs one line, and the plan review reads it before any code exists.
+
+**Recommend:** add a second line beside *Reuse* under *Scope*: "**Known defects in the files this plan edits.** Where did you search the record (issues, the board, open findings), what did you find, and which cheap ones does this plan fix?" Plan review re-runs the search. Make this the exception's main path, so that a fix named there is reviewed scope. Keep the implementation-time path only for a record that predates `ready-to-implement` and that the search missed. What this gains:
+
+* the duty gets a trigger;
+* most fixes are seen before any code exists;
+* a defect the planner meets fresh, while reading the files, can be fixed in the same plan. That answers the doubt the proposal names at line 349.
+
+#### SW5 -- non-blocking: "belongs to work already in motion" has no place in the `defer` grammar
+
+* Reason 2 says the item "is written into that plan's text ... and does not become a new issue" (lines 135-137). But a `defer` is "deposited on the roadmap board" (`doctrine/lifecycle.md:592`). Both templates say "Every deferred item is recorded in `dev/PLANNING.md`" (`templates/core/dev/plans/_template.md:234`, `dev/plans/_template.md:244`), and item 1 only appends to that sentence (lines 150-153). The new block form ends `-> dev/PLANNING.md > <section>` (line 149). A `defer` into an open plan fits none of the three.
+* Once the receiving plan's chunks start, it changes by appending, not by editing in place (`templates/core/dev/plans/_template.md:35`). The item is also new scope for that plan.
+
+**Recommend:** give the block form a second shape, `-> defer (in motion) -> dev/plans/<slug>.md > <section>`. Change "recorded in `dev/PLANNING.md`" to "recorded in `dev/PLANNING.md` or in the open plan that takes it". Say the item is *appended* to that plan. Say that the Maintainer's quoted authorization also covers the addition to the receiving plan.
+
+#### SW6 -- non-blocking: Cairn already asks why; and the `wontfix` sentence collides with "consequence, not convenience"
+
+* The proposal says "nothing asks *why* it was not fixed" (lines 81-82). `doctrine/lifecycle.md:600-602` says: "There is no required order. What is required is that the record say why the chosen disposition is the right one." That sentence is how August's finding I9 was resolved (`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md:1063-1069`). Item 1 is therefore narrower than presented: it names which reasons count for a `defer`. Saying so is more accurate, and it makes a smaller doctrine change for the gate to weigh.
+* The new `wontfix` sentence (lines 142-143) meets `doctrine/lifecycle.md:608-609`: "Consequence, not convenience, decides what may be declined." Under the August rule, low consequence can justify a decline. The new sentence says "it is minor" is not enough for a cheap true defect. Both can hold, but a reader needs to be told how they combine.
+* Calibration is available. The two baseline archives carry six `wontfix` items between them (`5d00fa96`, `9832c411`). "CR4, doctrine copies unpinned -> wontfix (doctrine is not shipped)" gives a consequence reason that the new sentence may reject. "CR3 ... -> wontfix (reaches no adopter; pinning edits a frozen test file and costs a full run)" gives a reason the bar accepts, since a frozen file is not cheap.
+
+**Recommend:**
+* Reword the Context sentence and item 1's lead to say that the record already gives a why, and that for a `defer` the why must be one of three.
+* Add one sentence that combines the two rules: "Consequence decides what may not be declined; cost decides what must be fixed. A true defect under the cost bar is fixed unless fixing it needs a decision."
+* Dry-run the new rules on the six baseline `wontfix` items and report how many would change. That calibrates the bar, and it gives the "deferrals vanish into `wontfix`" signal a baseline (already three per archive).
+
+#### SW7 -- non-blocking: the rate-limit section, stated more exactly
+
+The conclusion is honest: the gate is not met on evidence. Five parts of how it is stated should change.
+
+* **The precedent is misdescribed.** "It can be cleared by your Decision, as the lenses proposal's was" (lines 375-376). The lenses proposal argued that the gate did not apply ("No rule changes, only where it ships, so I do not claim the recurrence", `dev/proposals/2026-10-18-claude-review-lenses-for-every-install.md:129-130`). Its Decision (`:661-690`) does not mention the gate. Nothing was cleared by a Decision.
+* **The gate's text has no Decision bypass.** Its one bypass is high-risk classification, limited to security and data-loss surfaces, and "Any other 'this feels urgent' framing falls outside the bypass and obeys the recurrence requirement" (`doctrine/rationale.md:407-431`). Proceeding is a waiver the doctrine does not provide for. Question 5 calls it an "override" (line 61), which is right. Line 375 calls it "cleared", which is not. The record the proposal recommends (the Decision says it proceeds on direction, with the gate not met) is the right one, and the wording should match it.
+* **A corrected figure is back.** The table cites "about 16 follow-ups per plan" (line 369). August's own review showed that 16 counts candidates, and that the board figure was 4.67 rows per plan. The author accepted that correction (`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md:533-556`, `:1016`).
+* **No recurrence window is named.** Cairn's trackers pin 14 days (`dev/measurement/review-floor-deviations.md:19`) and, as a stated departure, 90 days (`dev/measurement/attestation-replay-failures.md:21`). August 4 to October 18 is 75 days. That is a recurrence only under the 90-day choice, and only if the two are the same shape. August's was a board that only grew; October's is cheap fixes filed instead of made.
+* **The evidence differs by item.** The exception has no incident behind it: LHM's eight were findings on the plan's own change, which the proposal says "collides with nothing" (lines 100-102). The reuse half is one incident.
+* **"Counting from here needs no tracker"** (line 380). The `Dispositions:` grep counts outcomes. The gate counts `Impact = occurred` rows in a tracker (`doctrine/rationale.md:447`), and `tools/evolution_infer.py` reads only trackers. I re-ran it at `f804f3b7`: "RATE-LIMIT SUGGESTIONS: none." So if the answer to Question 5 is "hold", nothing records this first instance where the gate could count a second.
+
+**Recommend:**
+* Say "waive", not "clear", and describe the lenses precedent accurately.
+* Correct the 16 to 4.67 board rows per plan, and name the window.
+* Say per item what the evidence is. Rule 1, the module and the label fixes rest on an arguable recurrence. The exception and the reuse question rest on the Maintainer's direction.
+* On "hold", log this incident as a tracker row with a stated class and window.
+
+#### SW8 -- non-blocking: sequencing facts and the shared-file list
+
+* **A stale status.** Line 295 calls the review-lenses proposal "awaiting decision". It was accepted at `fbf664f0`, an ancestor of `f804f3b7`. Its Status reads `accepted`, and its Decision's Q5 sets up the one combined plan (`dev/proposals/2026-10-18-claude-review-lenses-for-every-install.md:679-684`).
+* **`doctrine/lifecycle.md` belongs in the shared list.** The proposal puts it under "No overlap I found" (lines 321-323). The stance proposal lists it among its doctrine files (`dev/proposals/2026-10-18-claude-external-is-a-maintainer-stance.md:366`), and has its plan read every hit of `external` and `independen` there (`:407-409`). `lifecycle.md` carries tier and independence text at `:73`, `:282` and `:307-310`. These are different sections from "Archive precondition" (`:532` onward), so a textual collision is unlikely, but the file is shared.
+* **"Prose-only" is not accurate.** Question 4 (lines 58-59) and line 300 describe this as a prose-only change. It adds a test (lines 274-283) and expects a full Boundary B run (lines 449-450). The case for following still holds, since this change does not need the combined plan's Internal Security Review. The reason should just be stated accurately.
+* **A forecast, not a measurement.** The combined plan adds tests that become frozen at the next re-anchor. `test_review_stance_in_shipped_files.py` reads both `AGENTS.md` copies, both templates and the `dual-review` module (stance proposal `:1088`, first described at `:422-424`), and `test_review_sweep_ships.py` reads the installed review-loop document (lenses proposal `:133`). This plan adds text to those same files. Adding text usually leaves short-phrase pins green, but "Frozen files: none edited" (lines 419-422) is a claim about tests that do not exist yet.
+
+**Recommend:** fix the status. Move `lifecycle.md` into the shared list. Drop "prose-only". Have the plan re-measure the frozen set against the then-current gate manifest before its first chunk. **"Follow, do not fold" is right.** Lens 5's final home is the one real dependency, and waiting for the archive is the only point at which that text is settled.
+
+#### SW9 -- non-blocking: two citations
+
+* Line 113 cites the suite-cost file under `dev/measurement/`. That file is gitignored (`.gitignore:18`), so it exists only on this machine. On a clean checkout of `f804f3b7`, `scripts/claim_check.py` hard-flags it ("cited path does not resolve"). It passes in the shared tree only because the local copy exists. The figure itself matches the local file (about 9½ to 11½ minutes, measured 2026-08-19). **Recommend:** declare it on an `Untracked paths:` line (`doctrine/lifecycle.md:189` names that form), or cite a tracked source.
+* Lines 443-444 say the set of files that restate the deviation rule was "found by searching for 'struck chunk' and 'Deviating from'". At `f804f3b7` that search returns five files. `doctrine/plans.md` is not among them, because "struck" and "chunk" fall on separate lines (`:487-488`). The six-file set is right; the stated search is not. **Recommend:** name a search that finds all six, so the plan's mutation set is listed from the tree as `AGENTS.md` asks.
+
+#### SW10 -- non-blocking: the top 60 lines
+
+They mostly stand alone and read plainly. Five changes would let you decide from them alone:
+
+* Question 2 asks whether a fix may skip your word, but not who checks the conditions instead. The answer is the code reviewer, after the code exists (or, under SW4, the plan reviewer, before it). That is the fact you need to answer the question.
+* Neither the brief nor Question 2 says that the exception is the one part no incident shows is needed (SW7).
+* Question 3 says "One line" in its title and "four lines" in its default (lines 53-55).
+* Question 1 uses "contract surface" and "a file a gate pins by hash". In plain terms: nothing that would need a re-anchor, a Security Review, a new proposal, or your decision.
+* "The rate-limit gate" (line 35) is not explained in the brief. Add "(the rule that one incident does not change doctrine)".
+
+### Checked and confirmed
+
+Read at `f804f3b7` unless noted.
+
+* **The module.** The quote matches `templates/modules/team-gated/issue-capture.md:57-62` and `:66`, and the `dev/modules/` copy is byte-identical (an empty `diff`).
+* **The doctrine quotes:**
+  * `doctrine/plans.md:744` (`defer-OK`), `:915` (the sharpening sentence) and `:1011` (the block form);
+  * `doctrine/proposals.md:380` (the block form);
+  * `doctrine/dual-review.md:151` (the blocking test);
+  * `doctrine/lifecycle.md:600-602` (no required order);
+  * `doctrine/roles.md:60-62` (the User Agent sentence);
+  * `AGENTS.md:148-150` (the deviation list).
+* **The commits.**
+  * `5d00fa96` and `9832c411` carry the two `Dispositions:` lines as quoted, and `9832c411` the "pinning edits a frozen test file and costs a full run" rationale.
+  * `941cb34d` added one sentence to `AGENTS.md`, `templates/core/AGENTS.md` and `doctrine/plans.md` on the Maintainer's quoted word, and records neutrality at 74.
+* **The board quotes.** "fix defects, build nothing new" is at `dev/PLANNING.md:51`, and "If we don't need to re-anchor now, let's not." at `:163`.
+* **The shipped `AGENTS.md`** is 419 lines, and its unfilled-slot rule is at `templates/core/AGENTS.md:10-19`.
+* **Lens 5.** Its text is at `templates/modules/team-gated/dual-review.md:58-60` and `dev/modules/dual-review.md:57-59`.
+* **The redundancy gate.** R1 scans only `doctrine`, `dimensions`, `on-ramp` and `docs` (`scripts/quality_gate.py:498`), and R6 finds unreferenced definitions.
+* **Cairn-only tokens.** `bootstrap/tests/test_verification_boundaries.py:79-89` forbids `bootstrap/tests`, `scripts/quality_gate.py`, `Python 3.13` and `Cairn's ordinary pair` in the shipped `AGENTS.md`.
+* **The "external" counts.** Case-insensitive counts in `doctrine/plans.md`, `dual-review.md`, `roles.md` and `proposals.md` are 16, 17, 5 and 3.
+* **The frozen-file counts.** 32, 6, 4, 3 and 1, reproduced from `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files`. No frozen file, and no test, script or tool, contains any phrase this proposal removes or rewrites: `defer-OK`, `genuinely one-line`, `Capture vs`, `scope, not size`, `There is no required order`, `Every deferred item is recorded`, `trivial one-line bar`. Control: the same search finds `accepted scope is a floor` pinned in the gate manifest.
+* **The August figures.** 59 items in 1,002 lines (`dev/proposals/archive/2026-08-04-claude-deferral-discipline.md:24-25`); finding I9 is at `:711`.
+
+### Answers to the proposal's five questions
+
+1. **What counts as cheap.** Agree on counting ceremony, not lines, and on "doubt means not cheap" for the named surfaces. Two changes first (SW1). Drop the full-run sentence. Use two bars: "about a chunk's worth" for the plan's own findings, and the fix-shaped test for the exception.
+2. **May a qualifying fix skip your word.** Yes, but only in the narrowed form:
+   * the record is dated before `ready-to-implement`;
+   * a defect means restoring behaviour the file already promised;
+   * there is a total per plan;
+   * each fix carries one line that can be grepped;
+   * preferably, the fix is named in the plan before work starts (SW2, SW4).
+
+   Under the exception, the code reviewer checks each fix, not you. No incident shows this part is needed; your direction is its basis.
+3. **The reuse line in both `AGENTS.md` files.** Yes. It is the only carrier for work with no plan, and it adds no slot. Fix the "one line" against "four lines" wording.
+4. **Order.** Follow, do not fold. Agree. Fix the stale status and add `doctrine/lifecycle.md` to the shared list (SW8).
+5. **The rate-limit gate.** Agree with proceeding on your direction, with the Decision saying the gate is waived, not met. I would have the Decision name the exception separately, since it rests on direction alone. On "hold", log this incident in a tracker so that a second one can count (SW7).
+
+### Coverage
+
+* **Covered** -- claims: every quote, line number, count and commit the proposal cites about Cairn's tree, read at `f804f3b7`, plus `claim_check` on a clean checkout (SW9). Production path: none run; no install path changes. Cross-document consistency: SW3, SW5, SW6, SW8, against `AGENTS.md`, `lifecycle.md`, `roles.md`, the plan templates and both accepted proposals. Drift: the rate-limit evidence (SW7). Lifecycle placement: the deviation gate (SW2, SW4) and the order of work (SW8). Test-plan completeness: the mutation-set search (SW9).
+* **Not covered / low confidence** -- below.
+
+### What I did not cover
+
+* **LHM's archive.** I could not find the archive with 13 deferrals in the local LHM clone (latest commit `d3b5bd0f`, 2026-10-18). No commit or file carries the reviewer's roll-up wording. The 13/5/8 sort, and my reading that the eight were code-review findings on the plan's own code, rest on the issue's text.
+* **The combined plan.** The plan file `review-stance-and-lenses` under `dev/plans/` is uncommitted and still being written. I judged sequencing against the two accepted proposals behind it and did not read the draft. SW8's frozen-file point is a forecast.
+* **Runs I did not make.** No suite run, no scratch install and no upgrade rehearsal on LHM or modflow_tools. Those belong to the implementation, and the new test does not exist yet.
+* **Wording I did not draft or test.** I did not draft replacement text for every carrier, and did not run the neutrality gate on any proposed wording.
+* **The redundancy gate.** I did not check how R1 would score the new `lifecycle.md` text against the doctrine copies that point at it.
