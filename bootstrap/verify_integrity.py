@@ -96,6 +96,16 @@ _NOT_CHECKED = (
     "unreadable",
 )
 
+#: The section of ``bootstrap/UPGRADE.md`` the note points to.  A test pins
+#: that a heading of exactly this name exists there.
+_RECORDING_SECTION = "Recording an edit you made"
+
+#: The customized marker and the token pattern, as the merge engine reads
+#: them (``bootstrap/_scaffold/slotmerge.py``).  Inlined, so this trust check
+#: imports nothing more from the engine; a test pins both to the engine's.
+_CUSTOMIZED_RE = re.compile(r"<!--\s*cairn:customized\s*-->", re.IGNORECASE)
+_TOKEN_RE = re.compile(r"\{\{(\w+)\}\}")
+
 
 class _Unreadable(Exception):
     """A file the slot note will not use.  It carries no message: paths and
@@ -162,31 +172,109 @@ def _usable_tokens(tokens: object) -> dict | None:
     return tokens
 
 
-def _note_bucket(target: Path, rec: dict, installed: bytes | None,
-                 tokens: dict | None) -> str:
-    """Where one in-scope file lands: ``"checked"``, or one of the reasons in
+def _slots(text: str) -> dict[str, tuple[str, str]]:
+    """The slots that open and close in *text*: lower-case name -> (name as
+    written, body).
+
+    One pass over the markers, keeping at most one slot open, so each
+    character belongs to at most one body and a file of unclosed or repeated
+    openers costs linear time.  A slot that never closes, or whose closer
+    names another slot, is not returned; the first complete pair for a name
+    wins.
+    """
+    found: dict[str, tuple[str, str]] = {}
+    open_name: str | None = None
+    written = ""
+    body_start = 0
+    for m in _MARKER_RE.finditer(text):
+        kind, name, customized = m.groups()
+        if customized:
+            continue
+        if kind.lower() == "slot":
+            open_name, written, body_start = name.lower(), name, m.end()
+        elif open_name is not None and name.lower() == open_name:
+            found.setdefault(open_name, (written, text[body_start:m.start()]))
+            open_name = None
+    return found
+
+
+def _squeeze(text: str) -> str:
+    """Whitespace-normalized form for comparing two slot bodies: every line
+    stripped, blank lines dropped (the merge engine's own rule)."""
+    return "\n".join(line.strip() for line in text.splitlines() if line.strip())
+
+
+def _substituted(body: str, tokens: dict) -> str | None:
+    """*body* with the recorded tokens substituted and unknown ones left
+    intact, or ``None`` if the result would be longer than the cap.
+
+    The length is worked out from the token matches first, so a result that
+    large is never built: the lockfile's token values are read without a cap,
+    and a small body of tokens can stand for hundreds of megabytes.
+    """
+    total = len(body)
+    for m in _TOKEN_RE.finditer(body):
+        value = tokens.get(m.group(1))
+        if value is not None:
+            total += len(value) - len(m.group(0))
+    if total > _NOTE_CAP:
+        return None
+    return _TOKEN_RE.sub(lambda m: tokens.get(m.group(1), m.group(0)), body)
+
+
+def _note_file(target: Path, rec: dict, installed: bytes | None,
+               tokens: dict | None) -> tuple[str, int, list, int]:
+    """One in-scope file: ``(bucket, slots checked, names still holding
+    Cairn's text, empty slots)``.  The bucket is ``"checked"`` or a reason in
     ``_NOT_CHECKED``.  Any exception for a single record counts that record as
-    unreadable and never reaches the rest of the note."""
+    unreadable and never reaches the rest of the note.
+
+    A slot is listed when its body equals the base copy's after spacing is
+    normalized and the recorded tokens are substituted, unless it carries the
+    customized marker.  A slot that is blank in the base copy as well is
+    counted, not listed: nothing was shipped in it to leave in place.
+    """
     try:
         base_rel = rec.get("base_cache")
         if base_rel is None:
-            return "no base copy"
+            return "no base copy", 0, [], 0
         base_bytes = _read_bounded(target, base_rel, _BASE_CACHE_PARTS)
         recorded = rec.get("base_hash")
         if not (isinstance(recorded, str) and recorded
                 == "sha256:" + hashlib.sha256(base_bytes).hexdigest()):
-            return "base hash mismatch"
+            return "base hash mismatch", 0, [], 0
         if tokens is None:
-            return "unreadable"
+            return "unreadable", 0, [], 0
         if installed is None:
             installed = _read_bounded(target, rec.get("dst"))
         elif len(installed) > _NOTE_CAP:
-            return "unreadable"
-        base_bytes.decode("utf-8")
-        installed.decode("utf-8")
-        return "checked"
+            return "unreadable", 0, [], 0
+        held = _slots(installed.decode("utf-8"))
+        checked = empty = 0
+        listed: list[str] = []
+        for key, (name, base_body) in _slots(base_bytes.decode("utf-8")).items():
+            if key not in held:
+                continue
+            checked += 1
+            installed_body = held[key][1]
+            if _CUSTOMIZED_RE.search(installed_body):
+                continue
+            expected = _substituted(base_body, tokens)
+            if expected is None:
+                return "unreadable", 0, [], 0
+            if _squeeze(expected) != _squeeze(installed_body):
+                continue
+            if base_body.strip():
+                listed.append(name)
+            else:
+                empty += 1
+        return "checked", checked, listed, empty
     except Exception:
-        return "unreadable"
+        return "unreadable", 0, [], 0
+
+
+def _say(message: str) -> None:
+    print("slot note: " + message, file=sys.stderr)
 
 
 def _slot_note(target: Path, accepted: list, living: list, tokens: object,
@@ -200,22 +288,43 @@ def _slot_note(target: Path, accepted: list, living: list, tokens: object,
     legitimate living-state records, the lockfile's tokens, and how many
     in-scope records did not pass -- never the violation list, the skipped
     count or the exit code, so it has nothing to change them with.
+
+    It prints no command: it reports where a slot still holds Cairn's text
+    and leaves the adopter to read the file and decide.  Every name and path
+    it prints goes through ``ascii()``.
     """
     usable = _usable_tokens(tokens)
     counts = dict.fromkeys(("checked",) + _NOT_CHECKED, 0)
     counts["failed the integrity check"] = (
         failed if isinstance(failed, int) and failed > 0 else 0)
-    for rec, installed in accepted:
-        counts[_note_bucket(target, rec, installed, usable)] += 1
-    for rec in living:
-        if not rec.get("verbatim"):
-            counts[_note_bucket(target, rec, None, usable)] += 1
-    print(
-        f"slot note: files in scope {sum(counts.values())}; "
-        f"checked {counts['checked']}; slots checked 0, listed 0, "
-        f"empty (filled when its module is installed) 0; not checked: "
-        + ", ".join(f"{name} {counts[name]}" for name in _NOT_CHECKED),
-        file=sys.stderr)
+    slots_checked = empty = 0
+    held: list[tuple[object, str, bool]] = []
+    work = [(rec, installed, False) for rec, installed in accepted]
+    work += [(rec, None, True) for rec in living if not rec.get("verbatim")]
+    for rec, installed, is_living in work:
+        bucket, checked, names, blank = _note_file(target, rec, installed, usable)
+        counts[bucket] += 1
+        slots_checked += checked
+        empty += blank
+        held += [(rec.get("dst"), name, is_living) for name in names]
+    for path, name, is_living in held:
+        advice = ("This is project state: fill it in." if is_living else
+                  "Write the content, or N/A: <reason>. To keep Cairn's text "
+                  "on purpose, add <!-- cairn:customized --> inside the slot "
+                  "instead.")
+        _say(f"{ascii(path)} slot {ascii(name)} still holds the text Cairn "
+             f"shipped. {advice}")
+    _say(f"files in scope {sum(counts.values())}; "
+         f"checked {counts['checked']}; slots checked {slots_checked}, "
+         f"listed {len(held)}, "
+         f"empty (filled when its module is installed) {empty}; "
+         f"not checked: "
+         + ", ".join(f"{name} {counts[name]}" for name in _NOT_CHECKED))
+    if held or counts["failed the integrity check"]:
+        _say("This check keeps only a hash of each file, not its text, so it "
+             "cannot show you what changed. Before you record an edit, read "
+             "the whole file and confirm your edit is the only change.")
+        _say(f"See bootstrap/UPGRADE.md > {_RECORDING_SECTION}.")
 
 
 def _run_slot_note(target: Path, files: list, accepted: list, living: list,
