@@ -49,6 +49,15 @@ Merged into the project's docs guide:
 > docs match their source; it does not know a *new* capability went
 > undocumented. The "absorb docs into the change" lifecycle step covers
 > that -- the gate and the discipline are complementary.
+>
+> **Prose that names a symbol the code no longer has.** A third kind of
+> drift: a sentence cites a function, flag or config key since removed
+> or renamed (docs say `parse_config()`, the code `load_config()`). It is
+> present, so not absence; nothing generates or syncs it, so not drift
+> from a source; no gate above sees it. When a change removes or renames
+> a symbol, search the docs, README, changelog and docstrings for the old
+> name in the same change. The `dev/` record is history and may keep it;
+> a changelog may name it to say it was removed.
 
 ## Doctrine + tooling
 
@@ -92,6 +101,12 @@ duplication. Cairn itself runs this composition —
 `cairn/scripts/check_cairn.py` imports the
 *shipped* `link_check.py` and `claim_check.py`, so the methodology's own
 gate and the tools it hands an adopter are the same code.
+
+**The check for prose naming a removed symbol is *not* shipped either.**
+No tool ships for that third category: a generic symbol check drowns in
+false positives, so it rests on the discipline above alone. It becomes
+machinery only after three independent recurrences of prose-versus-symbol
+drift.
 
 **The schema-doc generator is deferred — an adopter slot, not a shipped
 tool.** Generating a reference doc from a machine-readable schema (a
