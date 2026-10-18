@@ -414,10 +414,13 @@ trustworthy is the signature on the commit it names.
   derive the expected CHANGED set against the committed baseline rather than
   carrying a figure forward.
 * **The gate manifest goes stale silently — whether a frozen file changes or is
-  deleted.** Neither reddens the suite: `test_gate_manifest.py` self-verifies a
-  freshly produced manifest and never diffs the committed fixture, and a deleted
-  file simply drops out of the fresh one. So a green suite is not evidence that
-  no re-anchor is owed. Only `python bootstrap/tests/_gate_manifest.py verify`
+  deleted.** Once committed, neither reddens the suite: `test_gate_manifest.py`
+  self-verifies a freshly produced manifest and never diffs the committed
+  fixture, and a deleted file simply drops out of the fresh one. So a green suite
+  is not evidence that no re-anchor is owed. An *uncommitted* edit to a frozen
+  file does redden it (`FROZEN-MODIFIED`): the fresh manifest hashes the
+  committed blob, the check hashes the working tree. That is a reason to run
+  Boundary B on a committed tree, not a sign that a re-anchor is owed. Only `python bootstrap/tests/_gate_manifest.py verify`
   compares the tree with the committed fixture (it reports `FROZEN-MODIFIED`,
   `FROZEN-MISSING`, `COLLECTION-DROPPED`), and nothing runs it automatically: it
   runs by hand, in the re-anchor ceremony (`bootstrap/REANCHOR_RUNBOOK.md`).
