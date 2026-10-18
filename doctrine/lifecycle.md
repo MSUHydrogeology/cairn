@@ -550,6 +550,18 @@ artifact cannot fix, and this precondition obliges the board to keep
 all of it. There is no discarding step anywhere in that chain unless
 this rule provides one.
 
+**An archived artifact is a record, not a to-do list.** Nothing still to be
+done may have an archived artifact as its **only home**. A live home is one of:
+
+* an open proposal or plan that names the item in its own text;
+* an issue, cited by number;
+* a board row.
+
+A pointer to an archived artifact, or to a plan that has not been opened yet,
+is not a live home: the first is closed and no one reads it, and the second
+does not exist. Work handed to such a plan is a `defer`
+(`plans.md` > "Accepted scope is a floor").
+
 ### The disposition vocabulary
 
 Use the disposition grammar already defined in `proposals.md` >

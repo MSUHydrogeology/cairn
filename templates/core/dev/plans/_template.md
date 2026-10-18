@@ -127,8 +127,13 @@ check).
 
 **Accepted scope is a floor.** The baseline is the scope as accepted by the
 proposal, and dropping an outcome it committed to is a deviation exactly as
-adding one is. Sequencing is free — moving work between chunks owes nothing —
-but delivering less does not.
+adding one is. Sequencing is free — moving work between chunks of a live plan
+owes nothing — but delivering less does not. Work handed to a plan that is not
+open yet is a `defer`, with a board row listing the items. When the accepted
+text assigns that work to the later plan, the `defer` line quotes that
+assigning sentence and the Decision, which is the authorization; a plan that
+simply fell short has no assignment to quote, and its remainder goes to the
+Maintainer.
 
 **A reviewer cannot create that authority by calling the remainder "out of
 scope."** Narrowing is the path of least resistance in review: it costs the
@@ -235,6 +240,14 @@ requests as **one batch**; that batching keeps the Maintainer gate affordable.
 When you put the batch to the Maintainer, write the Waiting line
 (`**Waiting on Maintainer**: <what>`) in the header block, beside Status, and
 delete it when they answer.
+
+**Archived files are records, not to-do lists.** Nothing still to be done may
+have an archived file as its **only home**. A live home is an open proposal or
+plan that names the item in its own text, an issue by number, or a board row;
+a pointer to an archived file, or to a plan that is not open yet, is not a live
+home. The archive commit writes its own changelog entry, so no line is left
+owed to the next session. An archiving plan carries no Waiting line: a wait
+still open at archive moves to a board row marked with the Waiting line.
 
 Record the outcome as a `Dispositions: ...` line so it reconstructs from the
 durable record alone. **An append re-opens the attestation**: this section is

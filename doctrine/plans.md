@@ -458,9 +458,18 @@ So, post-Decision:
   scope-reduction trap"): `preserved` owes nothing; `degraded` or `lost`
   takes the declaration, the grouped scope-remainder record, and the
   Maintainer's explicit disposition under the deviation gate.
-* **Sequencing is free; removal is not.** Moving work between chunks,
-  re-ordering them, or splitting one across commits changes no outcome
-  and owes no declaration. Dropping an accepted outcome does.
+* **Sequencing is free; removal is not.** Moving work between chunks
+  of a live plan, re-ordering them, or splitting one across commits
+  changes no outcome and owes no declaration. Dropping an accepted
+  outcome does.
+* **Work handed to a plan that is not open yet is a `defer`.** A pointer
+  to an unopened plan is not a home (`lifecycle.md` > "Archive
+  precondition"), so the hand-off takes a board row listing the items,
+  deposited with the Maintainer's authorization quoted. When the accepted
+  text **assigns** that work to the later plan, quoting that sentence and
+  the Decision is the authorization. A plan that simply fell short has no
+  assignment to quote: its remainder comes to the Maintainer in the archive
+  batch.
 * **A plan reviewer cannot create that authority by calling the
   remainder "out of scope."** A reviewer may recommend a reduction and
   must state what is lost; only the Maintainer may concede it.
@@ -979,6 +988,14 @@ Acceptable `defer` homes:
 at the goodnight routine and on explicit user instruction. A small,
 pickable-cold follow-up goes to `dev/PLANNING.md` here; the goodnight
 scrub then surfaces it into `NEXT_SESSION.md`.
+
+**The archive commit writes its own changelog entry.** `AGENTS.md`
+already makes an archive a serialization point for the changelog, so the
+plan's line is written in that commit and not left owed to the next
+goodnight. Two archives on the same day take the required signal and read
+for a coordination-surface file (`doctrine/coordination.md` > "Required
+signal+read for coordination-surface files"). The goodnight still
+verifies the changelog.
 
 The archive commit body must name each item's disposition, in the
 form:
