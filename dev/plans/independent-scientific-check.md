@@ -1376,3 +1376,94 @@ This part is gated in. A2 makes the corrected area-weighted `helper/zonal.cell_s
 * **The error it would catch.** Rows placed half a fine cell high, which is the MATLAB placement the corrected algorithm removes. The consolidation could bring it back, for example by routing the default path through the parity branch, or by reusing geometry built for one extent on another grid. With a y slope of 3 per fine cell, the shift moves every coarse mean by about 1.5 value units, nine orders of magnitude above the tolerance. It also changes the edge cells, because the overlapped rectangle moves. At implementation the implementer makes this mistake on purpose, in a separate copy of the code. They record the failing output, which should name the cells and show differences near 1.5, beside an unmutated control run.
 * **When the check passes by finding nothing.** It does not. It passes by matching distinct, nonzero expected values in every cell, and it fails whenever any cell moves. The deliberate half-cell-high run serves as the positive control, since its effect (about 1.5) is far larger than the effect that matters (anything above round-off). The implementer records it with the failing run.
 ```
+
+### The scores, verbatim
+
+**The scorer.** A fresh Sonnet agent, neither the implementer nor either
+drafter (the coordinating session's account). It could read only the two drafts
+and the two error statements, and made 5 tool calls: four reads and the
+hand-back. As for the drafters, blindness rests on the instruction and on that
+observed count, not on a sandbox. Its rubric was this plan's questions (A) and
+(B) as written in C1, including that a draft repeating the data claim as "in
+hand" fails (B), and that every "yes" quotes a sentence of the draft. The basis
+kind and its independence were recorded and not scored. The coordinating session
+extracted the output byte for byte from the scorer's hand-back (11 lines,
+SHA-256 `6d0ff759a17cb644d5fa5552c2ecb30e68e28b56e056da2cf62cf86f9f286fb5`).
+The text between the fences is that output; it contains no fence of its own.
+
+```text
+#### Draft 1 (stor-modflow)
+- **(A):** yes. The check compares the recomputed monthly unsaturated store against the model's own saved array and expects a near-zero residual. The error is an unprimed percolation stack (no 365-day warm-up), which offsets the domain-mean anomaly by about 14.9 kg m-2 for the whole series, plus a smaller RAMP shift of about -0.15. Either would leave a residual far above the rounding-level tolerance the draft proposes. The check never names the warm-up as a target, but it would fail under it. Quoted: "Agreement, with a residual of zero up to numerical precision." and "The monthly `unsaturated_zone_water` this script builds from PERC, `vk` and the stress-period lengths, against the `unsatStorage` the MATLAB model saved for the same run."
+- **(B):** yes, narrowly. The error statement says `unsatStorage` was never saved (2.80 GB, over the 2 GB file-format limit), so the draft's premise that the model saved it is false. The draft does not claim it verified that. Under a heading labelled "Data in hand", it says nobody has recorded opening the file, lists "that the variable exists" as not checked, and names the file to open (OUTS). That meets the "not confirmed, and names what would be opened" branch. The "What it compares" line does assert the array as saved, but the draft's own "Not checked" list overrides it. Quoted: "This proposal's recon table has no OUTS row, so nobody has recorded opening it." and "**To confirm.** Open OUTS and `unsaturated_zone_module.m`, and record these facts before the check is relied on."
+- **Verdict:** yes.
+- **Basis (not scored):** the saved output of the model the code reads. It is independent of the port code under review. The draft itself notes it is not independent of the model's physics.
+
+#### Draft 2 (assemble-part-a)
+- **(A):** no. The check runs `cell_statistics` on a synthetic 11 × 11 linear field aggregated onto a 4 × 4 coarse grid. Every coarse cell, including the edge cells, overlaps the fine grid with nonzero area. The error is a land-use weight build whose fill is 0/0 for cells with no partial land-use coverage, giving NaN weights for uncovered cells. The fixture has no land-use classes, no partial-coverage threshold and no uncovered cells, so that branch never runs and the check would pass with the error in place. No draft sentence reaches this failure, so none can be quoted.
+- **(B):** yes. The fixture is synthetic and generated in the test, so the check could have been run. The draft says no external data is needed and names the files the plan would open for what it has not read. Nothing in the error statement contradicts its data claims. Quoted: "It needs no external data. The expected values are worked out by hand from the grid numbers and committed in the test before the helper is run against it." and "I have not opened `helper/zonal.py` or its tests under `tests/helper/`." and "The plan opens those first."
+- **Verdict:** no.
+- **Basis (not scored):** an analytical solution (the mean of a linear field over a rectangle equals its value at the centroid). It is independent of the code under review.
+```
+
+**The quotes check out.** I looked up each sentence the scorer quotes in the
+draft it names (a plain string search against the two draft files): all are
+there, word for word. Every "yes" carries a quoted sentence.
+
+### The verdicts, and the stop rule
+
+| Plan | (A) alone: a check that fails under the error | (B): could it have been run | Combined verdict |
+|---|---|---|---|
+| stor-modflow | yes | yes, narrowly | **yes** |
+| assemble part A | no | yes | **no** |
+
+* **(B) did not decide either plan.** Read on (A) alone the table is the same:
+  stor-modflow yes, assemble part A no. For stor-modflow (B) was the closer call:
+  the draft's bullet is headed "Data in hand", but its text says nobody has
+  recorded opening the file and lists "that the variable exists" as not checked,
+  and it names the file to open. The scorer read the text over the label and
+  passed it by the "not confirmed, and names what would be opened" branch. A
+  draft that had said the array was in hand would have failed (B), and the plan's
+  reading of the accepted question exists for that case. The code reviewer can
+  look at that call.
+* **The stop rule, as written.** Stop only if **both** verdicts are no. One is
+  yes, so **the plan proceeds.** The plan that passed is **stor-modflow**. The
+  other, **assemble part A**, is a **no**, reported here to the Maintainer; the
+  archive commit repeats it (the plan requires it in both places). It does not
+  stop the plan, and the stop was neither softened to a warning nor hardened to
+  "either".
+
+**What the "no" showed, in plain words.** The assemble draft chose a good check
+for the change the proposal describes (the corrected area-weighted average of
+the grids, tested against the exact mean of a known field), built to fail under
+a half-cell shift, and one that could be run with no outside data. But the error
+the plan later hit lives in a different place, the fill for uncovered land-use
+cells, and the proposal as opened says nothing about it (see "Noted before
+drafting"). So the draft's check would have passed with that error in place. The
+block did not fail here for lack of a good check; it was pointed at a different
+risk.
+
+**What the "yes" showed, and what it did not.** The stor-modflow "yes" rests on
+a check against the model's own saved `unsatStorage` array, and per the error
+statement that array had never been saved. The scorer's verdict is the verdict:
+yes. The plain addition is this: **what the block would have caught is the
+missing reference array, earlier, not the priming defect directly.** The block's
+data-status prompt would have sent the author to open the OUTS file at the
+outset; the array's absence would have shown up before three responses repeated
+the claim, and the author would have had to find another basis. Whether a check
+whose reference turns out not to exist counts as one that "fails under the
+error" is the judgment the plan says is not mechanical. The Maintainer can weigh
+it at archive.
+
+**The null-result bullet is not claimed as tested.** Neither plan found a false
+null. The "passes by finding nothing" bullet has no occurred instance behind it
+and rests on argument. Neither plan is cited as support for it.
+
+**Limits of the exercise.** One drafter and one scorer per plan, two plans, and
+blindness by instruction. The result is a go/no-go gate, not a measurement of how
+often the block helps.
+
+### C1 verdict
+
+**C1 says continue.** One plan passed and one did not, which under the accepted
+stop rule does not stop the plan. Status stays `implementing`; no Waiting line is
+written. C2 to C4 follow, one commit each.
