@@ -1,7 +1,7 @@
 # Plan: verification practice — a review reads a commit, mutation for set claims, a test scope for small fixes
 
 **Source proposal**: `dev/proposals/archive/2026-10-17-claude-verification-practice.md`
-**Status**: implementing
+**Status**: awaiting-code-review
 **Plan review**: required(Internal)
 **Assurance path**: high-assurance — inherited: the change edits `doctrine/` and
 a shipped template.
@@ -931,3 +931,180 @@ stands at `preserved`.
 
 There is no second plan-review round. Status `revising-plan` ->
 `ready-to-implement`.
+
+## Implementation verification -- Claude (implementer) -- 2026-10-18
+
+**Boundary B mode**: full — fixed by the plan, for the four reasons in
+*Verification*. The plan edits `doctrine/` and templates, which `AGENTS.md`
+names as a high-risk surface, so bounded mode refuses. The change also rewrites
+Boundary B's own fence, 57 install-family tests read the shipped template, and
+Revision 1 says "Boundary B: `full`".
+**Tested commit**: `b712020d2f76187db729152cbf7921f010c41e29`
+**Reviewed range**: `d1aacb8e..b712020d`. The base is the plan at
+`ready-to-implement`. The range holds:
+* **This plan's chunks:**
+  * `296cdfad` C1, which also set the status to `implementing`;
+  * `0a4becdb` C2;
+  * `399d406d` C3;
+  * `f4d4ff3c` C4.
+* **Out of plan, Maintainer-directed:** `b712020d`, "AGENTS.md: code review
+  is not External by default (Maintainer decision)". It rewords one sentence in
+  the Review section of both `AGENTS.md` copies. It was routed to this
+  implementer because the plan had `AGENTS.md` open, and committed separately,
+  with the Maintainer's words quoted verbatim in its body. **It is not scope
+  this plan added.** Review it as its own change.
+* **Other sessions' commits.** These are in the tested tree but are not this
+  plan's:
+  * `c61da58b`, the maintainer-attention plan open (`dev/plans/`,
+    `dev/proposals/` only);
+  * `3ed57e72`, a `test_security_stack.py` fix;
+  * `30ff0cd5`, a `dev/PLANNING.md` board edit.
+
+**Interpreter/runtime**: `/Users/kendal30/conda_envs/lhm/bin/python3.13`,
+Python 3.13.13, first on `PATH`.
+**Pre-run state**: a detached `git worktree` at the tested commit, under this
+session's scratchpad.
+* `git status --porcelain` was empty, and `HEAD` equalled the tested commit.
+* `refs/cairn/gate-anchor` was visible, since worktrees share refs.
+* It deliberately ran neither in the shared tree, where other sessions'
+  uncommitted files sit, nor in a `git archive` extraction, which lacks a
+  repository.
+
+**Post-run state**: the same `HEAD`, and `git status --porcelain` empty. The
+run created only ignored caches (`.pytest_cache/`,
+`bootstrap/tests/__pycache__/`). The worktree was then removed.
+
+| Command | Exit | Outcomes | Elapsed |
+|---|---:|---|---:|
+| `CAIRN_FULL_SUITE=1 python -m pytest bootstrap/tests --quality-gate-shuffle-seed=0 -rfEsxX` | 0 | 3347 passed; 0 failed, 0 errors, 0 skipped, 0 xfailed, 0 xpassed; 3 warnings | 614 s (617 s wall) |
+| `python scripts/quality_gate.py --sub neutrality --sub redundancy` | 1 | neutrality fail=74 info=21; redundancy fail=0 info=0 | 1 s |
+| `python scripts/check_cairn.py` | 1 | 3 issues, all pre-existing (below) | 2 s |
+| `python scripts/claim_check.py <file>` on the six edited files and this plan | 0 | OK, no flags, each | under 1 s each |
+
+`-rfEsxX` only lists any non-pass; it changes no outcome.
+
+**Non-pass disposition**:
+* **`quality_gate` exit 1: pre-existing.** All 74 neutrality failures are
+  line-for-line the same set as at the base `d1aacb8e`, diffed after sorting.
+  None is in a file this plan edits. Redundancy is clean.
+* **`check_cairn` exit 1: pre-existing, and outside this plan.**
+  * The three issues are in `dev/reviews/2026-08-27-code-review-c5-c6-removals.md`,
+    at lines 380, 398 and 400.
+  * They cite `dev/measurement/suite-runs.jsonl` and
+    `dev/measurement/suite-cost.md`, which are gitignored local files
+    (`.gitignore:18-19`).
+  * They exist in the shared tree, where `check_cairn` reports 0, and not in a
+    clean checkout of the commit. Neither the review nor `.gitignore` changes
+    in the range.
+  * This is the hazard rule 1 names: a figure is evidence only if it was
+    measured on the commit's bytes.
+* **The 3 warnings** are a deprecation inside the third-party `stevedore`
+  package, not in this tree.
+
+**Gate manifest, for the queued re-anchor (row M):**
+* **Frozen files.** This plan's commits change none: each commit's files were
+  checked against the manifest's `frozen_files` keys, with
+  `test_verification_boundaries.py` as the known-present control. In the
+  range, only another session's `3ed57e72` changes a frozen file,
+  `bootstrap/tests/test_security_stack.py`.
+* **Dropped nodes:** none.
+* **Added nodes:** 93, all in the new, tracked
+  `bootstrap/tests/test_review_and_verification_rules_ship.py`. None carries a
+  skip or xfail marker.
+  * `test_agents_md_carries_the_obligation[<label>-<shipped|own>]` and
+    `test_removing_the_obligation_is_reported[<label>-<shipped|own>]`, for
+    these 21 labels:
+    * `review-reads-a-commit`, `reviewer-writes-only-its-own-record`,
+      `no-reverting-commands-in-a-shared-tree`,
+      `other-writes-go-to-a-separate-copy`,
+      `figures-are-measured-on-the-commit`;
+    * `set-claims-are-listed-from-the-tree-and-mutated`,
+      `ledger-reports-each-mutant-against-a-control`,
+      `ledger-never-reports-a-bare-count`,
+      `equivalence-is-measured-not-argued`,
+      `unmeasured-equivalence-is-a-survivor`,
+      `mutation-is-otherwise-the-reviewers-choice`;
+    * `boundary-b-governs-a-trivial-change`,
+      `a-trivial-change-runs-before-its-commit`,
+      `a-trivial-changes-record-is-its-commit-body`,
+      `the-commit-body-carries-mode-and-interpreter`,
+      `a-plan-appends-its-verification-section`,
+      `owning-tests-are-found-by-search`,
+      `bounded-record-names-touched-surfaces-and-tests`,
+      `trust-ceremony-surface-is-defined`;
+    * `substantive-surface-is-defined`, `pinned-prose-is-substantive`.
+
+    That is 84 nodes.
+  * `test_agents_md_omits_the_forbidden_phrasing[no-full-run-tied-to-a-reviewed-mapping-<shipped|own>]`
+    and `test_inserting_the_forbidden_phrasing_is_reported[...-<shipped|own>]`:
+    4 nodes.
+  * `test_an_empty_file_carries_no_obligation`,
+    `test_the_commit_rule_sits_in_the_review_section[shipped|own]`,
+    `test_the_shipped_copy_makes_claiming_conditional` and
+    `test_cairns_own_copy_claims_unconditionally`: 5 nodes.
+
+**Plan-specific acceptance commands**:
+* **Every chunk.** No chunk commit touches `test_verification_boundaries.py`,
+  and it passes at each. The `{{`/`cairn:` marker check is clean for each
+  chunk commit.
+* **Boundary A, per chunk.** The direct readers plus the new file gave 207,
+  231, 267 and 275 passed (182 at the base). The five install-structure files
+  gave 307 passed at each chunk and again after `b712020d`.
+* **Mutation, per chunk.** Each ran in a `git archive` extraction of the base,
+  with the chunk's files overlaid, never in the shared tree. Each mutant is
+  reported against an unmutated control:
+
+  | Chunk | Control | Killed | Survived | Equivalent |
+  |---|---|---:|---:|---:|
+  | C1 | 25 passed | 8 | 0 | 0 |
+  | C2 | 49 passed | 6 | 0 | 0 |
+  | C3 | 85 passed | 10 | 0 | 0 |
+  | C4 | 93 passed | 2 | 0 | 0 |
+
+  Each mutant was killed by the pin aimed at it, checked by node ID. That
+  includes the touched surfaces dropped from the bounded record, the fallback
+  tied back to a reviewed mapping, Review placement, and the claim clause
+  flipped either way.
+* **C3 counts.** "cannot be bounded confidently" occurs once in `AGENTS.md`.
+  "trust-ceremony surface" occurs twice, with the raw and collapsed counts
+  equal, so it is never wrapped. `no reviewed\s+mapping` matches 0 times in
+  both copies and `doctrine/plans.md`. "no valid Boundary B record exists" and
+  "**Reviewed range**" each still occur once. The prose-only paragraph carries
+  "contract or high-risk surface".
+* **C4 control.** "substantive code surface" went from 1/1/1 to 0/0/0 in
+  `doctrine/plans.md` and both plan templates. Both slots keep "reviewed
+  mapping" and "full suite".
+* **New file.** The case-insensitive coordinate grep is clean, and a planted
+  `test_c3_x … VP1` line matches it, which is the positive control.
+* **Throughout.**
+  * `python bootstrap/scaffold.py --manifest` is byte-identical between
+    `d1aacb8e` and `b712020d` (98 lines).
+  * `python bootstrap/verify_integrity.py --target .` reports the same 18
+    findings as before C1, and none was finalized.
+* **The falsifier, read from the shipped copy.**
+  * (a) A trivial change on an ordinary surface runs its owning tests, found
+    by search, before committing. It records the mode, the interpreter, the
+    touched surfaces and the files with counts in its commit body, and takes a
+    Bounding verdict.
+  * (b) Code or pinned prose on a surface the file names as high-risk runs the
+    full suite once, before code review.
+  * (c) Unpinned prose runs the prose gates.
+  * No sentence sends a trivial change to a plan section.
+* **Size.** The `scripts/token_budget.py` figure for `AGENTS.md` went from
+  5,824 to 6,472 tokens (+648). This is information only; no cap is
+  configured.
+
+**Known omissions**:
+* The new pins cover the two `AGENTS.md` copies only, as Revision 1 scopes
+  them. The doctrine edits are covered by `claim_check`, `check_cairn` and the
+  frozen file's existing doctrine pins, not by new mutation.
+* The falsifier reading is a human reading, not a test.
+* Most of the install family ran only in this full run. Boundary A ran five of
+  its files per chunk.
+* `b712020d`'s reworded sentence is pinned by no test. Its coverage is the
+  tree-wide search, both whitespace-collapsed and line-based, and the Review
+  section tests, which pass.
+* The Maintainer's words quoted in `b712020d` reached this session relayed by
+  the coordinating session, not directly.
+* Other sessions were active on the machine during the run, so elapsed times
+  may be inflated; outcomes are unaffected.
