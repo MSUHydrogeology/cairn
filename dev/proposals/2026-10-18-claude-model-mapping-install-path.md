@@ -1,7 +1,7 @@
 # The model mapping gets filled on every install path, and something checks it
 
 **Author**: Claude (Strategy)
-**Status**: revising
+**Status**: awaiting-review
 **Review**: required(Internal + Security Review) — the scaffold engine's write path is touched; the Maintainer asked for this change, so "should it exist" is settled
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/` and a script adopters run (see the preflight)
 **Opened**: 2026-10-18
@@ -389,3 +389,476 @@ Do not cut the seed to make this tidy: the durable line is a baseline outcome (I
 * The notice helper reads a tree-controlled path and may follow a symlink. Keep the notice text fixed: never echo the path, an OS error message or file content (terminal control sequences; `encode_display` in `tools/session.py` is the one encoder).
 * `seed_gitignore` is listed in `SECURITY_MUTATIONS.md` Class B as "contained by construction" on the strength of a fixed path, the same reasoning the capture write had until this proposal showed a fixed path can be a symlink. Not this change's to fix.
 * MM-4 is a parser-differential class: the checker and the YAML loader disagree about what a comment is.
+
+## Response -- Claude (Strategy) -- 2026-10-18
+
+This answers the Internal review at `8b8d3fe6` (reviewed commit `6a11e263`). Revision 1
+follows with the complete current contract.
+
+**In plain terms.** I accept the verdict and all seven findings. The reviewer's central
+point is right: a line in a file nobody opens fails the way the unrun check did. So the
+proposal now says where each reminder ends, asks the installing agent at the step the
+installer already tells it to finish, makes the line a row the Maintainer can list, and
+covers `upgrade`, the path by which `lhm` got its stub. Two places I went past or off the
+review, both defended below: a tab-led comment line is scanned, not skipped; and a capture
+refused by the guard stops the install with exit 2 instead of carrying on.
+
+* **[MM-1]** accept (a), (b) and (c); the seed stays.
+  * (a) Question 2 and S3 now name where each chain ends. The seed's ends at someone
+    opening `dev/PLANNING.md` or running `board.py --maintainer`. The acceptance step's ends
+    at an agent following a checklist the installer prints. Only the suite test reaches a
+    machine, and only in Cairn. Cairn's own slot is the base rate: all eight seeds written
+    at the 2026-06-12 self-host are still there, none removed or marked done (one was edited
+    for a renamed tool; I diffed the slot).
+  * (b) The II-5 item is added. The review did not see one thing about it: II-5's own
+    vendor-neutrality grep scans `<target>/dev/` for `claude` and its kin, so it matches a
+    *filled* mapping (I ran the pattern on Cairn's filled file: three matches). An agent told
+    to fill the mapping and then to run that grep would meet a "finding" on the file it just
+    filled. The list of allowed matches gains a fourth class. Neither edit touches the matrix
+    or the module gate-table, and the rate-limit gate is met by recurrence: two trees, two
+    arrival paths (Revision 1 > Documentation).
+  * (c) Written as `**Waiting on Maintainer**: fill the model mapping` (22 characters). I
+    rendered the seed through the real overlay function and ran `board.py --maintainer
+    --root` on the result: it lists `dev/PLANNING.md:38 | declared | fill the model mapping`.
+    At `complexity: simple` the seed is stripped.
+* **[MM-2]** accept. The seed ships in `collaborative-team` and `high-rigor-legacy`. The
+  solo copy is dropped and recorded in the Scope delta. A second pinned test would also have
+  gone red, `test_solo_greenfield_is_a_no_op_it_carries_no_gated_seed`
+  (`test_onboarding_seed_roster.py:125`). **Roster gating: declined.** The `cairn:if` markers read
+  only the six axes, and `embedded_axes` is exactly the block the lockfile's `profile`
+  embeds. Adding the roster means threading modules through `install_onboarding`,
+  `write_install_lockfile` and the overlay helper, which must agree or the lockfile
+  divergence guard trips on every install. Four attested symbols on the install-contract
+  path, to fix a rare mismatch. The seed's opening hedge ("If ... exists") is the answer, and
+  the residual is named.
+* **[MM-3]** accept; Question 3 flips to yes. One call in `cmd_upgrade`, which adds a
+  fourth CHANGED engine symbol. `lhm` has since been filled by hand (its commit `fb7c1bab`),
+  so it is no longer a live case. I do not lean on that: its stub arrived through `upgrade`
+  (commit `22413d95`), and Cairn's through a no-terminal install. Two trees, two paths, and the
+  proposal now covers both plus adopt.
+* **[MM-4]** accept, with one change. The rule skips a line only when its first character
+  *other than a space* is `#`. The review said space or tab; I tested the tab case and it is
+  a real differential: a tab-led `# FILL ME` line is a YAML error (exit 3 with PyYAML) but
+  passes the bare checker (exit 0). Scanning it closes that, at the cost that a hand-written
+  tab-led comment holding the phrase fails, which is the safe side. I also split lines on
+  every YAML 1.1 line break, because `# note` then U+2028 then `model: FILL ME` is two lines
+  to YAML and would otherwise hide a value. Block scalars and multi-line quoted scalars are
+  handled as the review asked: with PyYAML the parsed values are scanned too. The bare path
+  keeps the line rule and the residual is named. At least one row is required on both paths.
+  The partial-fill loss is pinned by a test. I ran the rule over 18 files (stub, hand-filled,
+  both live mappings, 15 constructed cases).
+* **[MM-5]** accept. The Terms and cause 3 said "five rows"; the stub holds one row of five
+  fields. The notice now says to replace it with one row per tier. The check does not require
+  three tiers, and need not: the module doc says to list models for each tier "you populate".
+* **[MM-6]** accept. The module doc's sentence is corrected in the same edit, and staleness
+  is a named residual (Revision 1 > Named residuals). I re-searched `tools/`, `scripts/`,
+  `templates/skills/`, `doctrine/`, `bootstrap/_scaffold/` and `.agents/`: nothing reads
+  `date_verified` or the re-verification field.
+* **[MM-7]** accept all four. The AST symbols are now counted: 4 CHANGED, 2 NEW. The files
+  table carries both AST fixtures and names the seed-test home as certain. The guard moves
+  before the first prompt, with a test for a symlinked parent. F8 is cross-referenced.
+  **One reversal of my own:** the opening had a refused capture print a notice and carry on.
+  `main` already treats a containment refusal as fatal (`cli.py:569`, exit 2), and a symlink
+  at a path the installer manages is a hostile-tree signal. So a refusal now stops the
+  install with exit 2, like the others. Reading stays soft: the notice helper never raises.
+* **Stance questions.** I take all four recommended answers (comments: yes; trigger set as
+  above; `upgrade`: yes; guard: yes).
+* **Flags for the Security Review.** The local catch is now a refusal, not a continue. The
+  notice text is a constant in both variants and a test pins that. The `seed_gitignore` claim
+  is not this change's; I neither rely on nor edit it. The comment rule's differentials are
+  enumerated in Revision 1 > S2 and S4.
+
+## Revision 1 -- Claude -- 2026-10-18 -- the complete current contract
+
+**Section inventory.** Every opening section carries forward from In brief through
+Assurance path, restated here in full. Added: Named residuals, and the withdrawal ledger.
+Changed: Question 3 (now settled as yes), the seed (two presets, a Waiting row), the check
+(rule corrections, a row requirement, a parsed-values scan), the guard (before the prompts;
+a refusal stops the install). Added scope: the `upgrade` notice, the II-5 acceptance item,
+the module-doc sentence fix.
+
+**Declarations.** **Review**: required(Internal + Security Review), as opened; no External.
+**Plan review**: required(Internal + Internal Security Review), as opened. **Assurance
+path**: high-assurance.
+
+### In brief
+
+Every install, every `--adopt-module` and every `upgrade` prints a plain notice while the
+model mapping is unfilled; the acceptance checklist the installer tells the agent to run
+asks for it to pass; the check stops failing on a filled file and stops passing an empty
+one; two presets seed a row that `board.py --maintainer` lists; Cairn's own suite fails if
+its mapping returns to the stub. No new flag, profile key or lockfile field.
+
+### What changes for you
+
+Cairn's own `dev/.cairn/model-selection-mapping.yml` sat on its `FILL ME` stub from the
+2026-06-12 self-host to 2026-10-18 (commit `22dabd45` filled it). Its check failed the whole
+time and nobody saw. `lhm` got its stub through an upgrade (commit `22413d95`, June) and was
+filled by hand the same day as Cairn's. This closes the holes that allowed both.
+
+1. **Every install, adopt and upgrade says so,** including one run by an agent with no
+   terminal. The notice names the file, says the check fails until it is filled, and tells the
+   agent to ask you which model fills each tier, not to guess.
+2. **The agent's own checklist asks.** `scaffold.py` ends by telling the agent to run the
+   acceptance gate (II-5). II-5 gains one item: the mapping check passes.
+3. **The check is right in both directions.** A mapping you filled by hand, with the stub's
+   comments left alone, passes. A mapping with no rows, or with a `FILL ME` hidden in a
+   value, fails.
+4. **A row you can list.** Installs from `collaborative-team` and `high-rigor-legacy` seed
+   `**Waiting on Maintainer**: fill the model mapping`, so `python tools/board.py
+   --maintainer` shows it on day one.
+5. **Cairn's suite fails if Cairn's mapping goes back to the stub.**
+6. **A safety fix:** the interactive capture checks for a symlink before it asks anything.
+   A refusal stops the install with exit 2, like every other containment refusal.
+7. **A false sentence is corrected:** the module doc says an "existing routine" will surface
+   a stale mapping. None does.
+
+Unchanged: the install of a missing or skipped mapping is never blocked; no flag, profile
+key or lockfile field; the stub's bytes; the install manifest (no file added or removed);
+`tools/session.py`; the onboarding engine.
+
+### Questions for the Maintainer
+
+1. **Stop counting comments, and fail an empty mapping?** Today a `FILL ME` in a comment
+   fails the check and a test pins that as intended; a mapping with no rows can pass.
+   *Recommended: yes to both.* Rewording the stub instead would give every adopter who filled
+   the file a merge conflict on upgrade (Alternatives).
+2. **Allow the Scope delta: the seed in two presets, not three?** The solo preset's own
+   settings never select the module, so its copy could never render and would break two
+   pinned tests. *Recommended: allow.* A solo adopter who raises complexity still gets the
+   notice and the II-5 item.
+3. **Is a Waiting row right on a fresh install?** It costs you a line to delete when done,
+   and a profile that removes the module from a moderate preset gets a row naming a file it
+   lacks. *Recommended: yes.* It is the only thing here you can query without anyone
+   remembering to.
+4. **Should goodnight run `scripts/onboarding_activate.py`?** It has not worked in this tree
+   (Context). *Recommended: a separate board item at the next scrub, not in this change.*
+
+### Context
+
+**Terms.** The *mapping* is `dev/.cairn/model-selection-mapping.yml`: which model fills the
+high, medium and low tiers. The *stub* is the file as installed: one placeholder row of five
+fields, each reading `FILL ME`. The *check* is `scripts/check_model_selection.py`. A
+*non-interactive* install is one run with `--non-interactive` or without a terminal on
+stdin; an agent's shell is the second. *II-5* is the acceptance checklist in
+`bootstrap/BOOTSTRAP.md:496`.
+
+Four causes, each checked in the code today:
+
+1. **Capture and notice assume a person at a terminal.** `non_interactive` is
+   `args.non_interactive or not sys.stdin.isatty()` (`bootstrap/_scaffold/cli.py:625`).
+   Capture returns `False` at once when it is true (`install.py:700`), and the only message
+   prints under `not wrote and not non_interactive` (`cli.py:662`). The path agents take
+   prints nothing. The stub's header calls the silent empty install "the exact failure this
+   module exists to prevent". That is what happened.
+2. **Nothing runs the check.** `git grep check_model_selection` finds no caller in
+   `tools/session.py`, `scripts/quality_gate.py` or the skills, only mentions; the suite runs
+   the checker on temporary files, never on Cairn's own mapping. Cairn has no CI.
+3. **The check fails a correctly filled file.** `_FILL_ME_RE` scans the whole file, comments
+   included (`check_model_selection.py:59`), and the stub's own comments carry the phrase
+   (`model_selection_mapping_stub.yml:13, 41, 42`). I rebuilt the case: the stub with its
+   row filled by hand and every comment kept exits 1. Capture uses the same test to decide a
+   file is "already filled" (`install.py:702`), so an interactive re-run over such a file
+   would prompt and then overwrite the adopter's rows.
+4. **`--adopt-module` never captures,** though the docstring says it does
+   (`install.py:687-688`). Capture's only caller is `cli.py:656`; `_cmd_adopt_module`
+   (`upgrade.py:1441`) never calls it. Neither does `cmd_upgrade` (`upgrade.py:2287`).
+
+Findings from reading, each exercised or counted:
+
+* **The onboarding helper has not worked in this tree.** `dev/.cairn/onboarding-activated.jsonl`
+  holds only its header beside 73 archived proposals, and `python scripts/onboarding_activate.py
+  --dry-run` lists `post-first-proposal-team` and `post-first-cross-type` as pending. Its
+  triggers run when the goodnight owner runs the helper (`doctrine/session-routines.md:363`),
+  and the goodnight skill does not call it. A seed in `dev/PLANNING.md` has the same base rate:
+  all eight written at the self-host are still there, none removed or marked done.
+* **The capture write has no containment guard.** With the mapping path planted as a symlink
+  to a file containing `FILL ME`, the capture overwrote the file the link pointed to, outside
+  the tree. Exploitability is low (the target must already hold that phrase), but the function
+  is on the engine and absent from the guarded-write inventory
+  (`bootstrap/_scaffold/SECURITY_MUTATIONS.md`, `test_security_leaf.py:30`).
+* **II-5's own grep matches a filled mapping.** The vendor-neutrality lint scans
+  `<target>/dev/` for `claude` and its kin (`BOOTSTRAP.md:544` lists the allowed matches). I ran
+  its pattern on Cairn's filled mapping: three matches.
+* **The install report is already too long** (`dev/PLANNING.md`, item F8: 22 unfilled slots on
+  the smallest install). This adds a block to it; whoever fixes F8 should fold this notice in.
+
+### Proposal
+
+#### 1. One notice, on four paths (engine)
+
+A new `model_selection_notice_lines(target)` in `bootstrap/_scaffold/install.py` returns the
+notice, or `[]` when the mapping is absent or filled. It is called from `main` after capture
+(whether capture ran or was skipped), from `_cmd_adopt_module` after the adopt line, and once
+in `cmd_upgrade` after the `--to` check (`upgrade.py:2429`) so `--plan`, `--stage` and `--apply`
+all print it. The old interactive-only message goes. It prints to stdout. Text:
+
+```
+NOTE (model-selection) -- the tier-to-model mapping is not filled in:
+  dev/.cairn/model-selection-mapping.yml still holds the FILL ME stub.
+Until it is filled, `python scripts/check_model_selection.py` fails. Nothing runs
+that check automatically. Ask the Maintainer which model fills each tier (high,
+medium, low); do not guess. The stub holds one placeholder row: replace it with
+one row per tier, copying its shape (tier, model, date_verified, task_family,
+source), and say in `source` who assigned the model.
+Schema: dev/modules/model-selection.md, "Mapping-record schema".
+```
+
+A second constant variant says the file could not be read (a symlink, behind one, or
+unreadable) and that nothing was changed. **Both texts are constants**: the helper never
+echoes the path, an OS error or file content. It checks containment by calling
+`_assert_safe_write(mapping, target)` as a path check (it writes nothing), and treats a
+refusal, `OSError` or decoding error as the second variant. It never raises. The
+non-interactive fill is this notice plus an agent editing the file. A `model_tiers:` profile
+key would change the profile schema and write model names into the lockfile's profile block;
+a `--model-tier` flag would add published CLI surface and make it one line for an installing
+agent to invent an answer only the Maintainer owns.
+
+#### 2. The agent's own checklist (prose)
+
+II-5 gains one block after the vendor-neutrality block: "**Model-selection mapping** (only if
+`model-selection` was installed): `python scripts/check_model_selection.py` exits 0. If not,
+ask the Maintainer which model fills each tier and record one row per tier; do not guess."
+The vendor-neutrality block's "three classes of match" becomes four: the fourth is the
+filled `dev/.cairn/model-selection-mapping.yml`, which is adopter configuration and names
+models by design. The chain ends at an agent following a checklist the installer prints
+(`install.py:1467`): better than a person remembering, not a machine.
+
+#### 3. The check (checker, verbatim)
+
+Text is split on every YAML 1.1 line break (`\r\n`, `\n`, `\r`, U+0085, U+2028, U+2029). A line
+is a comment, and skipped, only if its first character other than a space is `#`; a tab or a
+Unicode space does not count as blank, so a line led by one is scanned. A trailing comment on a
+value line still counts. Then:
+
+* A `FILL ME` in any scanned line fails (exit 1), as today.
+* A mapping needs at least one row. Bare path: some scanned line holds a `tier:` key. With
+  PyYAML: `mapping` is a non-empty list. None fails with exit 1, "needs filling".
+* With PyYAML present, every string in the parsed document is also scanned for the sentinel,
+  which closes the case where a `#`-led line is data inside a block scalar or a multi-line
+  quoted string.
+
+The engine's "already filled" test and the notice helper use the bare-path rule. The checker's
+docstring and its "whole-file scan" comment are rewritten to match. Other exit codes keep
+their meanings.
+
+#### 4. The capture write (engine)
+
+`capture_model_selection_mapping` calls `_assert_safe_write(mapping, target)` after its
+early returns and **before** reading the file, printing, or prompting, and joins
+`_GUARDED_WRITE_FUNCS` and the SECURITY_MUTATIONS table. `main` catches
+`ScaffoldSecurityError` there, prints "model-selection capture refused (containment)", and
+returns 2, as `install_onboarding`'s refusal does at `cli.py:569`. The docstring says "at
+install time" and names `--adopt-module` and `upgrade` as notice-only.
+
+#### 5. Where it persists
+
+* **A seed in `collaborative-team.md` and `high-rigor-legacy.md`** under `<!-- cairn:if
+  complexity in moderate,complex -->`, the axis that selects the module. Text: a
+  `**Waiting on Maintainer**: fill the model mapping` line, then "If
+  `dev/.cairn/model-selection-mapping.yml` exists, ask the Maintainer which model fills each
+  tier (high, medium, low), record one row per tier, and run `python
+  scripts/check_model_selection.py`. Delete the Waiting line when it passes." The "if it
+  exists" opening covers a profile that removed the module.
+* **A suite test** that Cairn's own mapping passes its own check.
+* **The module doc** gains a short "Filling the mapping" paragraph (what runs the check: II-5
+  and the suite in Cairn, a person elsewhere), and its sentence "surfaced by an existing
+  routine" (`dev/modules/model-selection.md:156-158`) becomes: re-rank on a low-frequency
+  housekeeping pass; the `date-verified` stamp lets a reader see staleness; no routine reads it.
+
+#### 6. Files touched
+
+| File | Change | Frozen? | AST-attested? |
+|---|---|---|---|
+| `bootstrap/_scaffold/install.py` | `capture_model_selection_mapping` (docstring, rule, guard); new `_mapping_is_unfilled`, `model_selection_notice_lines` | no | **yes**: 1 changed, 2 new |
+| `bootstrap/_scaffold/cli.py` | `main`: call site, refusal; import list | no | **yes**: `main` |
+| `bootstrap/_scaffold/upgrade.py` | `_cmd_adopt_module`, `cmd_upgrade`: notice; import list | no | **yes**: 2 changed |
+| `bootstrap/tests/fixtures/scaffold_ast_baseline.json` | re-anchored by the Maintainer | no | the instrument |
+| `bootstrap/tests/fixtures/scaffold_ast_known_new.json` | pins the 2 new symbols | **yes** | the instrument |
+| `templates/modules/team-gated/check_model_selection.py` | rule, row check, parsed scan; docstring | **yes** | no |
+| `scripts/check_model_selection.py` | byte-identical copy of the above | **yes** | no |
+| `bootstrap/tests/test_model_selection_stub.py` | new tests; one reversed | **yes** | no |
+| `bootstrap/tests/test_security_leaf.py` | `_GUARDED_WRITE_FUNCS` gains the capture | **yes** | no |
+| `bootstrap/tests/test_onboarding_seed_roster.py` | seed tests (certain) | **yes** | no |
+| `bootstrap/_scaffold/SECURITY_MUTATIONS.md` | one table row | no | no |
+| `bootstrap/BOOTSTRAP.md` | II-5 block; fourth allowed match | no | no |
+| `templates/onboarding/{collaborative-team,high-rigor-legacy}.md` | one conditional seed each | no | no |
+| `templates/modules/team-gated/model-selection.md`, `dev/modules/model-selection.md` | paragraph + sentence fix, byte-identical pair | no | no |
+
+The frozen set is `bootstrap/tests/fixtures/gate_manifest.json` > `frozen_files`: six, all
+certain. They join the standing re-anchor on the `dev/PLANNING.md` board, the Maintainer's.
+The AST count (4 CHANGED, 2 NEW) is my reading, not the instrument's; the ceremony derives it
+(`bootstrap/AST_BASELINE_RUNBOOK.md`), and no symbol is in `_UPDATE_ALLOWLIST`, so it is
+Maintainer-run. Cairn's lockfile hashes the checker and the doc, so the plan also owns a
+scoped `upgrade --finalize` for those two. `test_slot_seed_count_matches_source`
+(`test_onboarding_slot_substitution.py:230`) stays green: both presets render the seed at
+their own settings.
+
+Not touched: the stub, `config.py`, `lockfile.py`, `scripts/_onboarding/`, `tools/session.py`,
+`templates/skills/_lib/session.py`, the profile schema, `scaffold.py --manifest`.
+
+#### Named residuals
+
+Staleness: nothing reads `date_verified` or the re-verification field, and nothing here
+changes that. On the bare path (and in the engine) a `#`-led line inside a multi-line scalar
+reads as a comment. A `FILL ME` in a trailing comment fails; one in a leading comment
+passes. The check passes with one tier filled, as the doctrine allows. Invented but
+plausible names pass. A profile that removes the module from a moderate preset gets a Waiting
+row to delete.
+
+### Rationale
+
+One design assumption, a person at a terminal, met a world where agents do most installs, and
+the stub reached the field by two paths. The cheapest honest fix speaks on every path, asks the
+agent at the step it is already told to finish, makes the check trustworthy so the notice is
+not crying wolf, and leaves a record the Maintainer can query. None of it changes the install
+contract. The gate is met by recurrence: two trees, two arrival paths.
+
+### Alternatives considered
+
+* **Reword the stub's comments instead.** Rejected, and tested: I ran the real `merge_file`
+  with the old stub as base, a reworded stub as theirs, and as ours both the capture's output
+  and a hand-filled file. Both returned `conflict`. Old checkers would also keep failing until
+  upgraded. The checker is verbatim, so unforked adopters take it as a clean update.
+* **Profile keys or a CLI flag for the non-interactive fill.** Rejected in section 1.
+* **An onboarding action trigger** reading the file. Right in kind, and the only candidate
+  that would also reach an adopter already on the stub. Not now: its root is the goodnight
+  helper, which has not run here. Cheap later: one evaluator, one entry per preset.
+* **Gate the seed on the module roster.** Declined: it needs modules threaded through
+  `install_onboarding`, `write_install_lockfile` and the overlay helper, which must agree or
+  the lockfile divergence guard trips. The complexity gate plus "if it exists" is enough.
+* **A step in the session-start routine.** `tools/session.py` is an executable trust root
+  (`AGENTS.md` > High-risk surfaces); even a read-only surfacing there takes a Security Review
+  of the kernel and reaches every adopter. Skill-body prose is agent-followed, the same root.
+* **A fourth `quality_gate.py` sub-gate.** Cairn-only, and the integration pair names its subs.
+* **Do nothing.** Costs another four months in whichever tree installs or upgrades next.
+
+### Documentation / doctrine surface
+
+Governing layer: the module doc gains a paragraph and a corrected sentence; `bootstrap/BOOTSTRAP.md`
+gains one II-5 block and a fourth allowed match. The template's kernel trigger names that file for
+the module gate-table; this edits the acceptance checklist, not the table, and the rate-limit
+gate is met by recurrence regardless. The module doc names II-5 without a path, since BOOTSTRAP.md is not installed. Nothing under `doctrine/` changes. Notice and seed text are
+shipped adopter prose and stay vendor-neutral (`quality_gate.py --sub neutrality`). Deliberation
+layer: this proposal. Descriptive layer: no `docs/` page names this behaviour; the plan confirms.
+
+### Evidence / verification plan
+
+Falsified if a no-terminal install selecting `model-selection` prints nothing; `upgrade --plan`
+on a stub prints nothing; a hand-filled stub still exits 1; `mapping: []` exits 0; or Cairn's
+suite stays green with its mapping reset.
+
+#### Tests required
+
+New tests go in `test_model_selection_stub.py` unless noted, named for the property:
+
+* `TestCommentsAreNotPlaceholders`: a hand-filled stub with every comment kept exits 0; the
+  shipped stub exits 1; `FILL ME` in a value exits 1; a `# TODO: FILL ME` comment above filled
+  rows exits 0 (pins the loss); lines led by a tab, a no-break space or a form feed, and
+  values behind U+2028 or U+0085, are scanned; CR-only and CRLF files read like LF. Replaces
+  `test_fill_me_in_comment_fails`.
+* `TestAMappingNeedsAtLeastOneRow`; `TestParsedValuesAreScannedWhenYamlIsPresent` (and a bare-path
+  test that pins the named residual).
+* `TestNoticeOnEveryInstallPath`: a no-terminal install prints it and exits 0; a skip-all
+  interactive install prints it; `--adopt-module` and `upgrade --plan`, `--stage` and `--apply`
+  print it for a stub; all are silent for a filled file.
+* `TestNoticeTextIgnoresFileContent`: the notice is byte-identical for different unfilled files,
+  including one holding terminal control sequences; the unreadable variant is a constant.
+* `TestCaptureNeverClobbersAHandFilledMapping`; `TestCaptureRefusesBeforeAskingAnything`: a
+  symlinked file and a symlinked `dev/.cairn`; the prompt is never called, the outside file is
+  byte-identical, exit 2.
+* `TestEngineAndCheckerAgreeOnUnfilled`: one corpus; the engine and the bare checker agree
+  exactly, and the PyYAML checker differs only on the named multi-line cases.
+* `TestThisRepositorysMappingIsFilled`; `TestAcceptanceChecklistNamesTheMappingCheck` (II-5
+  names the check, and the install's closing steps still point at II-5).
+* In `test_onboarding_seed_roster.py`: the seed and its Waiting line render at moderate and
+  complex in the two presets, strip at simple, and `board.py --maintainer` lists a rendered install.
+
+Boundary B mode is **full**: the engine, a verbatim adopter script and the install overlay are
+touched, and uncertainty resolves to full.
+
+#### Examples / smoke checks
+
+`scaffold.py --config <profile> --target <tmp> --non-interactive` prints the notice;
+`scaffold.py upgrade --plan` on that tree prints it; `board.py --maintainer --root <tmp>` lists
+the seed; `scaffold.py --manifest` is byte-identical before and after; the checker returns 1, 0
+and 0 on the stub, a hand-filled stub and Cairn's file; the claim, link and neutrality gates on
+the prose.
+
+#### Security preflight — five questions, answered in writing
+
+* **S1 — Who supplied it?** The notice, "already filled" and checker decisions read one
+  adopter-tree file, writable by anyone who can write the tree, and that file supplies the input
+  it is judged by. The notice carries no authority; the overwrite decision does, and is guarded
+  before it reads (S4). The path also comes from the tree, hence the containment check on both
+  read and write.
+* **S2 — Can it fail?** Mutations, each owed to the plan with its result: drop the comment skip
+  (hand-filled test fails); skip tab lines (the tab test fails); drop the row check (the empty
+  test fails); drop the parsed scan (the block-scalar test fails); make the helper return `[]`
+  (install and upgrade tests fail); remove the guard (the symlink tests and
+  `test_security_leaf` fail). A parity test over identical source could not fail, so it compares
+  behaviour on a corpus. Run now: the hand-filled stub exits 1 on today's checker; the symlink
+  write-through happened; the proposed rule, prototyped over 18 files, gives the intended verdicts
+  (the tab and no-break-space lines scanned, the NEL and LS values caught, the block scalar caught
+  only with PyYAML).
+* **S3 — What fires it, over what?** The notice: install, `--adopt-module` and `upgrade`, over
+  one path. The checks: an agent following II-5, a person running the script, `board.py
+  --maintainer` reading the seed's Waiting line, and the suite in Cairn only. The notice says
+  "Nothing runs that check automatically", true in adopter trees; the module paragraph says the
+  suite runs it in Cairn. Only the suite reaches a machine.
+* **S4 — Which way does it break?** Helper on an unreadable or symlinked file: the louder
+  notice. Capture on a refused guard: writes and reads nothing, stops the install with exit 2,
+  the fail-closed side and the one `main` already takes. Comment rule: the quieter side only for
+  a `#`-led line inside a multi-line scalar on the bare path, a named residual; a line led by
+  any non-space character is scanned. Row requirement: louder. A `FILL ME` left only in a
+  leading comment passes, accepted because the check attests shape, not truth.
+* **S5 — Who still wins?** Assumed: someone who can write the tree. They can still enter
+  plausible model names or edit the tree-local checker; the check cannot tell. The symlink
+  write is closed by the shared guard, closure by enumeration (the pinned inventory), not by
+  construction. A parser differential survives on the bare path (multi-line scalars).
+
+### Signals the change is wrong
+
+An agent-driven install of a moderate profile reports done without having asked about models.
+The notice becomes noise people stop reading. Agents fill all three tiers with their own model
+to silence it (look for `source` lines reading "recorded at install"). A mapping passes with
+fewer than three tiers where the team meant three. The Waiting row sits untouched for months, or
+a row appears in a tree that lacks the module. A mapping passes the check and is a year old.
+
+### Scope delta
+
+**Scope delta**: degraded. Against the opening, one unit is removed; the rest is delivered.
+
+* **The seed in `solo-greenfield`** (opening In brief item 4 and section 4, "installs from a
+  preset get one"). Its preset's own settings never select the module, so the seed could never
+  render and would break two pinned tests; rendering it would need roster gating, declined above.
+  The outcome, a durable line, is delivered in the two presets that install the module.
+  **disposition**: wontfix, for that reason. A solo adopter who raises complexity gets the notice
+  and the II-5 item. Prefer specifying to cutting: specifying it needed the roster threaded
+  through the lockfile path.
+
+Additions, not removals: the `upgrade` notice, the II-5 item, the row requirement, the
+module-doc fix.
+
+### Assurance path
+
+**Assurance path**: high-assurance — the scaffold engine, a verbatim script adopters execute,
+and the onboarding overlay written into preset adopters' `dev/PLANNING.md`.
+
+### Withdrawn / superseded commitments
+
+* **The seed in all three presets** and "installs from a preset get one": replaced by two
+  presets and the Scope delta above.
+* **A refused capture prints a notice and the install carries on:** replaced by exit 2.
+* **The guard after the early returns:** moved before any read, print or prompt.
+* **"A comment line starts with `#` after blanks":** replaced by "after spaces only", with the
+  line-break set named.
+* **"The check still passes a comments-only file":** withdrawn; a mapping needs one row.
+* **"Five rows" (Terms, cause 3) and the notice's "each `FILL ME` row":** corrected to one
+  placeholder row of five fields.
+* **"Nothing else runs that check for you" (notice):** replaced by "Nothing runs that check
+  automatically", since II-5 now asks.
+* **Question 3 (`upgrade`) recommended no:** reversed to yes and made part of the contract.
+* **"The seed is the durable line" as sufficient:** withdrawn; the seed is a Waiting row, and
+  II-5 and the suite test carry the trigger.
+* **Frozen files "four certain":** six, with both AST fixtures in the table.
