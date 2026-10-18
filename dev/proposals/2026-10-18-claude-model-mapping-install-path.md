@@ -1,7 +1,7 @@
 # The model mapping gets filled on every install path, and something checks it
 
 **Author**: Claude (Strategy)
-**Status**: awaiting-review
+**Status**: awaiting-decision
 **Review**: required(Internal + Security Review) — the scaffold engine's write path is touched; the Maintainer asked for this change, so "should it exist" is settled
 **Plan review**: required(Internal + Internal Security Review) — the plan edits `bootstrap/_scaffold/` and a script adopters run (see the preflight)
 **Opened**: 2026-10-18
@@ -1457,3 +1457,182 @@ comment.
 * **"`lockfile.py` not touched":** one comment-only edit.
 
 Nothing else in Revision 1 is withdrawn.
+
+## Review -- Claude Opus 5.5 (Security Review, closure pass, fresh session) -- 2026-10-18
+
+**Model**: Claude Opus 5.5, a fresh session with no shared context. It is the same agent
+family as the author and both earlier reviewers, so this pass has no cross-type distance.
+Probes ran in a scratch folder outside this tree, with Python 3.13.13 and PyYAML 6.0.3 on
+macOS.
+
+```
+Reviewed commit: 5656e04c0786cb3aa95073eea2bd48d4e5b0e61e
+Target: the Response to the Security Review and Revision 2, read against the code at 58f30d6cc8d531b30c87e39e883228ee0e657d27 (upgrade.py and security.py unchanged since 5656e04c; the seed_gitignore repair, b8a402c6, landed in between)
+Prior findings: SEC-1 to SEC-8 (the Security Review at 3c133398)
+Assurance path: high-assurance
+```
+
+**Tier**: Security Review
+**Findings**: raised (0 blocking, 4 non-blocking, all owed to the plan)
+**Verdict**: ACCEPT
+
+**The Security Review obligation is cleared.** SEC-1 and SEC-2, the two blocking findings,
+are closed. SEC-3 to SEC-8 are carried into the plan as requirements. The plan's
+`required(Internal + Internal Security Review)` pass checks them, together with CL-1 to CL-4
+below.
+
+**In plain terms.** The two things that blocked are fixed. The `.gitignore` hole was repaired
+in its own commit, and this proposal waits for that repair. The upgrade notice now speaks
+only after an upgrade has finished, and stays silent when one is refused. Revision 2 opened
+one new gap, in its recipe for the safer write. If the temporary file has a fixed name, a link
+already waiting at that name sends the write outside the project. The fix is one standard
+library call, and the plan must use it (CL-1). The other three findings are smaller
+corrections the plan must carry.
+
+### SEC-1 -- closed: the dependency is stated, and the repair has landed
+
+* Revision 2 binds the plan to start only after the repair. R2.7 says "The plan rebases on
+  the `seed_gitignore` repair before it starts", and the Declarations repeat it. Revision 2
+  makes no containment claim about `seed_gitignore` and leaves its inventory rows to the
+  repair. That is enough: a plan that started without the repair would be a deviation from
+  the accepted contract.
+* The repair is now commit `b8a402c6`. At HEAD, `seed_gitignore` is in `_GUARDED_WRITE_FUNCS`
+  (`bootstrap/tests/test_security_leaf.py:48`) and has a Class A row
+  (`bootstrap/_scaffold/SECURITY_MUTATIONS.md:40`). I did not review that commit; it has its
+  own reviews. The plan's entry check is those two facts, not the phrase "the repair".
+* The repair changed two facts that Revision 2 states (CL-2).
+
+### SEC-2 -- closed: the notice fires only after an action finishes
+
+Checked against `cmd_upgrade` (`bootstrap/_scaffold/upgrade.py:2287`):
+
+* **`--apply`.** `_apply_upgrade` has one `return 0` (`upgrade.py:2230`). It comes after the
+  files, the base cache and the lockfile are written and the stage is removed. Every refusal
+  before it returns 1 (leftover conflict markers among them, `:2026`) or raises
+  `ScaffoldSecurityError`, which `cmd_upgrade` turns into exit 2 (`:2477`). A refusal part-way
+  through the swap also raises. So "print when `rc == 0`" never fires on a refused or
+  half-done apply. Keep the existing `try`/`except` around the call and put the notice after
+  it, so a notice can never be reported as an apply refusal.
+* **`--stage`.** The token preflight (exit 2) and the stage containment refusal (`:2496`) both
+  return before the report (`:2499`). Nothing after the report can refuse.
+* **`--plan`.** Nothing after its report (`:2525`) can refuse.
+* **`--adopt-module`.** Its adopt line prints only after the lockfile commit and the
+  `.gitignore` seed succeed (`upgrade.py:1605-1612`).
+* **One quiet case, acceptable.** If a step after the lockfile write refuses (the `.gitignore`
+  seed for a newly added skill), the apply has delivered the file but exits 2, so the notice
+  is skipped. The next `upgrade --plan` prints it.
+* **Fixed text.** Both variants in R2.3 are constants. The only path they print is a fixed
+  relative path, never one read from the tree.
+
+### What Revision 2 carries for SEC-3 to SEC-8
+
+| Finding | Where it lands | State |
+|---|---|---|
+| SEC-3 | R2.2 step 4, `TestCaptureWritesByReplacing`, S5 | captured; the temp file needs CL-1 |
+| SEC-4 | R2.2 exit-code story, R2.6 direct-call and real-install tests, Named residuals | captured; the exit-code facts need CL-2 |
+| SEC-5 | R2.4, Named residuals | captured; the row check needs CL-4 |
+| SEC-6 | R2.2 steps 1 and 3, R2.3 `lstat` | captured; the missing file needs CL-3 |
+| SEC-7 | the generated corpus, the S2 mutations, the version-gap residual | captured; see CL-4 |
+| SEC-8 | R2.7 `lockfile.py` comment, `_write_stage` entry | captured |
+
+* **The value scan.** Visiting each object once holds up. A 22-level nested-alias document
+  loaded in 3.5 ms. Walked with the visited set it took 48 visits; without it, 25.2 million
+  visits and 8.1 s (I count strings too, so my figure is above the author's 16.7 million). A
+  document whose alias contains itself also loads, and the visited set ends that walk in 4
+  visits.
+* **The named-pipe check.** `lstat` before any open is right, and the capture's `is_file()`
+  comes before its read. See CL-3 for the missing file.
+* **The stub edit.** The one-time conflict fails closed: `--apply` refuses while a staged file
+  holds conflict markers (`upgrade.py:2026`). That adopter's upgrade waits until they resolve
+  it, and a half-merged mapping is never written. The stub is not in the gate manifest's frozen
+  set. `scaffold.py --manifest` lists it by path and merge mode only, so the edit changes no
+  published-manifest byte; R2.7's "not in the manifest" should read "not byte-pinned by it".
+* **Vendor-neutrality: clean.** I ran the II-5 pattern, the neutrality gate's denylist and
+  model-family words over the 44 shipped lines quoted in R2.3 and R2.5: both notices, the stub
+  block, the prompt, the II-5 block, the fourth allowed match, the seed, the module paragraph
+  and its replacement sentence. No match. As a control, the same pattern matched this
+  proposal's earlier Security Review header.
+
+### Findings
+
+#### CL-1 -- non-blocking, owed to the plan: the temporary file must be created fresh, never at a fixed name
+
+**Plain:** the safer write goes through a temporary file, and a file or link already waiting
+at that file's name can send the write outside the project.
+
+* R2.2 step 4 says "write a temporary file beside the mapping; guard that file too". It does
+  not say how the file is made.
+* Exercised with the engine's own `_assert_safe_write`. A hard link at
+  `model-selection-mapping.yml.tmp`, pointing at an outside file, passes the guard. Writing the
+  temp file then overwrote the outside file, and the later `os.replace` does not undo that. A
+  symbolic link at that name is refused if the guard runs first. If the guard runs after the
+  write, as step 4's order reads, the outside file is overwritten before the refusal. A
+  checkout can carry that link.
+* This is worse than the defect it replaces. The original write-through needed the outside file
+  to hold `FILL ME`; a temp-file write has no such precondition.
+* The model `_commit_lock_and_caches` (`upgrade.py:1328`) uses a fixed `.tmp` name with the
+  guard before the write. That recipe still has the hard-link gap.
+* **Requirement:** after the second guard, create the temp file with
+  `tempfile.mkstemp(dir=<the mapping's folder>)`, or `os.open` with `O_CREAT | O_EXCL`.
+  Exclusive creation refuses anything already at the name; I confirmed it with a hard link and
+  with a symbolic link. With it, S5's "The hard-link case is closed by construction" is true.
+  Test: plant a hard link and a symbolic link at the `.tmp` sibling name; both outside files
+  stay byte-identical. S2 mutation: swap exclusive creation for `write_text` on a fixed `.tmp`
+  name, and the test goes red.
+
+#### CL-2 -- non-blocking, owed to the plan: the landed repair made two of Revision 2's exit-code statements false
+
+**Plain:** the repair added one catch-all for refusals at the top of the installer, so a
+sentence Revision 2 tells the plan to write into the security inventory would now be wrong.
+
+* R2.2 says a linked `dev/.cairn` stops "with a traceback and exit 1", and that
+  `SECURITY_MUTATIONS.md:12-13` is to be corrected to say `main` catches two refusals. At HEAD,
+  `main` (`bootstrap/_scaffold/cli.py:189`) wraps the whole CLI in one `ScaffoldSecurityError`
+  catch that returns 2. Exercised: a non-interactive collaborative-team install with
+  `dev/.cairn` linked outside the tree now exits 2 with no traceback, and nothing outside is
+  written. Lines 12-13 are true as they stand.
+* **Requirement:** the plan re-derives the exit-code story against HEAD and does not apply
+  R2.2's correction to lines 12-13. Keep the capture's own catch with its constant line. The
+  top-level handler prints the exception text, which carries the link target the tree chose,
+  so the capture must not fall through to it (SEC-4).
+* The capture's call site moved from `main` to the new `_run_cli` (`cli.py:205`, the call at
+  `:673`). The AST ceremony derives its own count, so only the symbol name in Revision 1's
+  files table changes.
+
+#### CL-3 -- non-blocking, owed to the plan: a missing mapping must stay silent
+
+**Plain:** read literally, the new helper would tell every project without this module that it
+"could not read" a file it never had.
+
+* R2.3 sends "anything other than a regular file" and "an `OSError`" to the "could not read"
+  variant. A missing file is both: `lstat` raises `FileNotFoundError`, which is an `OSError`.
+  R2.1 and R2.6 depend on a missing file being silent, and Revision 1 said so before R2.3
+  replaced the helper text.
+* **Requirement:** the plan states the order: no entry at the path returns `[]`, first. A
+  dangling link is not missing, and gets the second variant. Test: an install without the
+  module prints neither variant.
+* Wording: after a successful `--apply`, "Nothing was changed" reads as if the upgrade changed
+  nothing. "That file was not changed" says what is meant.
+
+#### CL-4 -- non-blocking, owed to the plan: the YAML row check is looser than the plain one for two spellings
+
+**Plain:** two valid ways of writing a row are seen by the YAML reader and missed by the plain
+line check, so the test's claim that the YAML path is "never looser" is not true.
+
+* Exercised: a quoted key (`- "tier": high`) and a one-line list
+  (`mapping: [{tier: high, model: x}]`) fail R2.4's anchored pattern, while PyYAML reads a
+  non-empty list. The generated corpus (line lead, line break, position) contains neither. So
+  R2.6's "the PyYAML checker is never looser than the bare one" passes only because the corpus
+  leaves them out, which is the fitting SEC-7 warned against.
+* In the engine these files read as unfilled. The notice wrongly calls the mapping unfilled,
+  and an interactive re-install asks again. It writes only if the person types an answer, so no
+  authority is at stake.
+* **Requirement:** add both spellings to the corpus. Then either widen the pattern to accept
+  them, or name them in Named residuals and assert the reverse direction for them.
+
+### What I did not do
+
+I ran no suite and no test node. I did not review the `seed_gitignore` repair (`b8a402c6`). I
+did not re-run the earlier rounds' probes or the author's three-way merge measurements for the
+stub edit. Probes ran in a scratch folder on macOS. Nothing in this tree was written except
+this section and the status line.
